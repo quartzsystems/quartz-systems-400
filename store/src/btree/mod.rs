@@ -379,18 +379,30 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
         Ok(pno)
     }
 
-    /// Write `node`, splitting first if it does not fit, and free `old`.
-    fn replace(&self, p: &mut dyn Pager, old: PageNo, mut node: Node<K>) -> Result<Put<K>> {
+    /// Write `node` over `old` when this transaction allocated `old`
+    /// (nothing else can see it yet), else to a fresh page, freeing `old`.
+    fn rewrite(&self, p: &mut dyn Pager, old: PageNo, node: &Node<K>) -> Result<PageNo> {
+        if p.owns(old) {
+            let mut page = Page::zeroed();
+            node.encode(page.body_mut());
+            p.write(old, &mut page, PageType::BTreeNode, self.owner)?;
+            return Ok(old);
+        }
         p.free(old)?;
+        self.store(p, node)
+    }
+
+    /// Write `node` in place of `old`, splitting first if it does not fit.
+    fn replace(&self, p: &mut dyn Pager, old: PageNo, mut node: Node<K>) -> Result<Put<K>> {
         if node.fits() {
-            return Ok(Put::One(self.store(p, &node)?));
+            return Ok(Put::One(self.rewrite(p, old, &node)?));
         }
         let (up, right) = node.split();
         let sep = match up {
             Some(k) => k,
             None => right.first_key().expect("right half non-empty").clone(),
         };
-        let left = self.store(p, &node)?;
+        let left = self.rewrite(p, old, &node)?;
         let right = self.store(p, &right)?;
         Ok(Put::Split(left, sep, right))
     }
@@ -448,9 +460,8 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
                 let (_, old) = entries.remove(i);
                 let node = Node::Leaf(entries);
                 let underfull = node.underfull();
-                p.free(pno)?;
                 Ok(Took {
-                    page: self.store(p, &node)?,
+                    page: self.rewrite(p, pno, &node)?,
                     old: Some(old),
                     underfull,
                 })
@@ -475,9 +486,8 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
                 }
                 let node = Node::Internal { first, entries };
                 let underfull = node.underfull();
-                p.free(pno)?;
                 Ok(Took {
-                    page: self.store(p, &node)?,
+                    page: self.rewrite(p, pno, &node)?,
                     old: took.old,
                     underfull,
                 })
@@ -534,10 +544,9 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
                 });
             }
         };
-        p.free(left_pno)?;
-        p.free(right_pno)?;
         if merged.fits() {
-            let pno = self.store(p, &merged)?;
+            p.free(right_pno)?;
+            let pno = self.rewrite(p, left_pno, &merged)?;
             entries.remove(pair);
             set_child(first, entries, pair, pno);
         } else {
@@ -547,8 +556,8 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
                 Some(k) => k,
                 None => right.first_key().expect("non-empty").clone(),
             };
-            let lp = self.store(p, &left)?;
-            let rp = self.store(p, &right)?;
+            let lp = self.rewrite(p, left_pno, &left)?;
+            let rp = self.rewrite(p, right_pno, &right)?;
             set_child(first, entries, pair, lp);
             entries[pair] = (sep, rp);
         }

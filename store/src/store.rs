@@ -217,9 +217,22 @@ impl Store {
         Ok(Txn::new(self, id))
     }
 
-    /// Commit: log the record, then apply the in-place pages.
-    pub(crate) fn commit(&mut self, record: &WalRecord, sealed: Vec<(PageNo, Page)>) -> Result<()> {
+    /// Commit: write the transaction's new pages, log the record, then
+    /// apply the in-place pages.
+    pub(crate) fn commit(
+        &mut self,
+        record: &WalRecord,
+        fresh: Vec<(PageNo, Page)>,
+        sealed: Vec<(PageNo, Page)>,
+    ) -> Result<()> {
         self.check()?;
+        for (pno, mut page) in fresh {
+            if let Err(e) = self.asp.io().write_raw(pno, &mut page) {
+                self.broken = Some("page write");
+                return Err(e);
+            }
+            self.cache.insert(pno, page);
+        }
         let payload = record.encode()?;
         let pages = Wal::pages_for(payload.len());
         if pages > self.wal.pages {

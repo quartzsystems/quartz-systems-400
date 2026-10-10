@@ -5,7 +5,7 @@
 //! A transaction: the [`Pager`] the trees and objects write through,
 //! and the in-place patches, roots and serials it publishes at commit.
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 
 use crate::alloc::Run;
 use crate::obj::ObjectId;
@@ -20,7 +20,10 @@ pub struct Txn<'a> {
     store: &'a mut Store,
     id: u64,
     roots: Vec<(ObjectId, Option<PageNo>)>,
-    allocs: Vec<Run>,
+    /// Pages allocated by this transaction and not freed again.
+    owned: BTreeSet<PageNo>,
+    /// Owned pages as written, held back until commit.
+    dirty: HashMap<PageNo, Page>,
     frees: Vec<Run>,
     /// Pages changed in place, as this transaction sees them.
     patched: HashMap<PageNo, Page>,
@@ -36,7 +39,8 @@ impl<'a> Txn<'a> {
             store,
             id,
             roots: Vec::new(),
-            allocs: Vec::new(),
+            owned: BTreeSet::new(),
+            dirty: HashMap::new(),
             frees: Vec::new(),
             patched: HashMap::new(),
             patches: Vec::new(),
@@ -59,31 +63,58 @@ impl<'a> Txn<'a> {
     /// Allocate up to `pages` contiguous pages.
     pub fn alloc_run(&mut self, pages: u64) -> Result<Run> {
         let run = self.store.asp_mut().alloc(pages)?;
-        self.allocs.push(run);
+        self.owned.extend(run.start..run.start + run.len);
         Ok(run)
     }
 
     /// Grow a run in place by up to `want` pages.
     pub fn extend_run(&mut self, end: PageNo, want: u64) -> u64 {
         let got = self.store.asp_mut().extend(end, want);
-        if got > 0 {
-            self.allocs.push(Run {
-                start: end,
-                len: got,
-            });
-        }
+        self.owned.extend(end..end + got);
         got
     }
 
-    /// Free a run.
+    /// Free a run. Pages this transaction allocated go straight back;
+    /// the rest wait for the next checkpoint.
     pub fn free_run(&mut self, start: PageNo, len: u64) -> Result<()> {
-        self.store.asp_mut().free(start, len)?;
-        for p in start..start + len {
-            self.store.cache_remove(p);
-            self.patched.remove(&p);
+        let mut at = start;
+        let end = start + len;
+        while at < end {
+            let mine = self.owned.contains(&at);
+            let mut run_end = at + 1;
+            while run_end < end && self.owned.contains(&run_end) == mine {
+                run_end += 1;
+            }
+            let n = run_end - at;
+            if mine {
+                for p in at..run_end {
+                    self.owned.remove(&p);
+                    self.dirty.remove(&p);
+                }
+                self.store.asp_mut().allocator_mut().rollback_alloc(at, n);
+            } else {
+                self.store.asp_mut().free(at, n)?;
+                self.frees.push(Run { start: at, len: n });
+            }
+            for p in at..run_end {
+                self.store.cache_remove(p);
+                self.patched.remove(&p);
+            }
+            at = run_end;
         }
-        self.frees.push(Run { start, len });
         Ok(())
+    }
+
+    /// Owned pages as runs, for the WAL.
+    fn owned_runs(&self) -> Vec<Run> {
+        let mut runs: Vec<Run> = Vec::new();
+        for &p in &self.owned {
+            match runs.last_mut() {
+                Some(r) if r.start + r.len == p => r.len += 1,
+                _ => runs.push(Run { start: p, len: 1 }),
+            }
+        }
+        runs
     }
 
     /// Publish a tree root. Owner `NONE` is the object directory.
@@ -124,6 +155,18 @@ impl<'a> Txn<'a> {
                 what: format!("patch at {offset}+{} is outside the body", bytes.len()),
             });
         }
+        if let Some(p) = self.dirty.get_mut(&page) {
+            // A page this transaction created: it is written whole at
+            // commit, so the change needs no log entry of its own.
+            p.body_mut()[offset..offset + bytes.len()].copy_from_slice(bytes);
+            let t = p.trailer();
+            p.seal(
+                PageType::from_u16(t.page_type).unwrap_or(PageType::ObjectData),
+                t.owner,
+                self.id,
+            );
+            return Ok(());
+        }
         if !self.patched.contains_key(&page) {
             let p = self.store.read_page(page)?;
             self.patched.insert(page, p);
@@ -150,7 +193,7 @@ impl<'a> Txn<'a> {
         self.done = true;
         let asp = self.store.asp();
         let allocs = self
-            .allocs
+            .owned_runs()
             .iter()
             .map(|r| asp.allocator().extent_of(*r))
             .collect();
@@ -188,7 +231,8 @@ impl<'a> Txn<'a> {
             images,
             patches,
         };
-        self.store.commit(&record, sealed)
+        let fresh: Vec<(PageNo, Page)> = self.dirty.drain().collect();
+        self.store.commit(&record, fresh, sealed)
     }
 
     /// Undo everything: pages allocated go back, frees are cancelled.
@@ -199,7 +243,7 @@ impl<'a> Txn<'a> {
 
     fn rollback(&mut self) {
         self.store.note_abort();
-        for r in self.allocs.drain(..) {
+        for r in self.owned_runs() {
             for p in r.start..r.start + r.len {
                 self.store.cache_remove(p);
             }
@@ -208,6 +252,8 @@ impl<'a> Txn<'a> {
                 .allocator_mut()
                 .rollback_alloc(r.start, r.len);
         }
+        self.owned.clear();
+        self.dirty.clear();
         for r in self.frees.drain(..) {
             self.store
                 .asp_mut()
@@ -229,7 +275,7 @@ impl Drop for Txn<'_> {
 
 impl Pager for Txn<'_> {
     fn read(&mut self, pno: PageNo) -> Result<Page> {
-        if let Some(p) = self.patched.get(&pno) {
+        if let Some(p) = self.patched.get(&pno).or_else(|| self.dirty.get(&pno)) {
             return Ok(p.clone());
         }
         self.store.read_page(pno)
@@ -247,10 +293,19 @@ impl Pager for Txn<'_> {
         owner: ObjectId,
     ) -> Result<()> {
         self.patched.remove(&pno);
+        if self.owned.contains(&pno) {
+            page.seal(kind, owner, self.id);
+            self.dirty.insert(pno, page.clone());
+            return Ok(());
+        }
         self.store.write_page(pno, page, kind, owner, self.id)
     }
 
     fn free(&mut self, pno: PageNo) -> Result<()> {
         self.free_run(pno, 1)
+    }
+
+    fn owns(&self, pno: PageNo) -> bool {
+        self.owned.contains(&pno)
     }
 }

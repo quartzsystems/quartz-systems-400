@@ -94,7 +94,9 @@ Lint the Linux-only crates for the musl target too: their real code is
 
 Service console (serial, dev builds): `help`, `srcs [table]`, `hist`, `hw`,
 `lic`, `sysval NAME [VALUE]`, `mode manual|normal`, `screen`, `pwrdwn
-[restart]`. Boot parameters: `qs400.slot=A|B`, `qs400.mode=normal|manual`,
+[restart]`, `release`; store: `asp`, `lib ls`, `obj ls|crt|dlt|rnm|mov|dsp|bench`,
+`dtaara get|set`, `dtaq snd|rcv`, `usrspc rd|wr`, `rclstg [*CHECK]`, `chkstg`,
+`txn stats` (`QTEMP/NAME` addresses the temporary ASP). Boot parameters: `qs400.slot=A|B`, `qs400.mode=normal|manual`,
 `qs400.svc=1`, `qs400.ipl=D`, `qs400.media=iso`.
 
 `QS400_TARGET_DIR` relocates `target/` (use an ext4 path when the repo is on

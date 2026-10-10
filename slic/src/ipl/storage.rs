@@ -37,7 +37,6 @@ pub const SYSTEM_LIBRARIES: &[&str] = &[
 ];
 
 /// ASP 1 as opened for this IPL.
-#[allow(dead_code)] // `recovery` and `device` are read by the service console's `asp`.
 pub struct Storage {
     /// The store.
     pub store: Store,
@@ -52,7 +51,6 @@ pub struct Storage {
 }
 
 /// The temporary ASP (ASP 0) and its root library QTEMP.
-#[allow(dead_code)] // read by the service console's object commands.
 pub struct Temp {
     /// The in-memory store.
     pub store: Store,

@@ -318,6 +318,42 @@ impl Allocator {
         }
     }
 
+    /// Whether a logical page is free now.
+    #[must_use]
+    pub fn is_free(&self, pno: PageNo) -> bool {
+        self.layout
+            .locate(pno)
+            .is_some_and(|(unit, lba)| self.bitmaps[usize::from(unit)].is_free(lba))
+    }
+
+    /// Replace the free set wholesale (RCLSTG): every page not in `free`
+    /// is allocated. Pending frees and the allocation log are dropped;
+    /// the previous tree and log pages stay allocated until the next
+    /// checkpoint releases them, so `free` must not include them.
+    pub fn rebuild(&mut self, free: &[Extent]) -> Result<()> {
+        for bm in &mut self.bitmaps {
+            *bm = Bitmap::new(bm.pages());
+        }
+        self.allocs = RangeSet::default();
+        self.pending = RangeSet::default();
+        for e in free {
+            self.mark_free(*e)?;
+        }
+        Ok(())
+    }
+
+    /// Pages of the free-space tree as of the last checkpoint.
+    #[must_use]
+    pub fn tree_pages(&self) -> &[PageNo] {
+        &self.tree_pages
+    }
+
+    /// Pages of the free log as of the last checkpoint.
+    #[must_use]
+    pub fn log_pages(&self) -> &[PageNo] {
+        &self.log_pages
+    }
+
     /// Free pages now, all units, the checkpoint reserve included.
     #[must_use]
     pub fn total_free(&self) -> u64 {

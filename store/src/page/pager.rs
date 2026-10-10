@@ -37,6 +37,14 @@ pub trait Pager {
     /// Give `pno` back. It is not reused before the next checkpoint, so
     /// a reader of the old tree never sees a recycled page.
     fn free(&mut self, pno: PageNo) -> Result<()>;
+
+    /// Whether `pno` was allocated by the transaction in flight. Such a
+    /// page is invisible until commit, so a tree may rewrite it in place
+    /// instead of taking another.
+    fn owns(&self, pno: PageNo) -> bool {
+        let _ = pno;
+        false
+    }
 }
 
 /// Allocator state the test pager restores on crash.
@@ -54,6 +62,8 @@ pub struct MemPager {
     committed: AllocState,
     /// Freed in the current transaction; reusable after commit.
     pending_free: Vec<PageNo>,
+    /// Allocated in the current transaction.
+    owned: std::collections::HashSet<PageNo>,
     generation: u64,
 }
 
@@ -76,6 +86,7 @@ impl MemPager {
             committed: state.clone(),
             state,
             pending_free: Vec::new(),
+            owned: std::collections::HashSet::new(),
             generation: 1,
         }
     }
@@ -86,6 +97,7 @@ impl MemPager {
         self.dev.flush()?;
         self.state.free.append(&mut self.pending_free);
         self.committed = self.state.clone();
+        self.owned.clear();
         self.generation += 1;
         Ok(())
     }
@@ -95,6 +107,7 @@ impl MemPager {
         self.dev.drop_unflushed();
         self.state = self.committed.clone();
         self.pending_free.clear();
+        self.owned.clear();
     }
 
     /// The device, for tests that corrupt pages behind the pager's back.
@@ -126,6 +139,7 @@ impl Pager for MemPager {
 
     fn alloc(&mut self) -> Result<PageNo> {
         if let Some(p) = self.state.free.pop() {
+            self.owned.insert(p);
             return Ok(p);
         }
         if self.state.next >= self.dev.blocks() {
@@ -133,6 +147,7 @@ impl Pager for MemPager {
         }
         let p = self.state.next;
         self.state.next += 1;
+        self.owned.insert(p);
         Ok(p)
     }
 
@@ -150,8 +165,17 @@ impl Pager for MemPager {
     }
 
     fn free(&mut self, pno: PageNo) -> Result<()> {
-        self.pending_free.push(pno);
+        if self.owned.remove(&pno) {
+            // Never visible to anyone: back to the free list at once.
+            self.state.free.push(pno);
+        } else {
+            self.pending_free.push(pno);
+        }
         Ok(())
+    }
+
+    fn owns(&self, pno: PageNo) -> bool {
+        self.owned.contains(&pno)
     }
 }
 

@@ -50,6 +50,15 @@ impl AspIo {
         Ok(page)
     }
 
+    /// Read `count` consecutive pages from `pno` (within one unit), as
+    /// they are: no checksum verification.
+    pub fn read_run(&mut self, pno: PageNo, count: u64) -> Result<blockdev::AlignedBuf> {
+        let (u, lba) = self.locate(pno)?;
+        let mut buf = blockdev::AlignedBuf::new(usize::try_from(count).expect("count fits"));
+        self.devs[u].read(lba, &mut buf)?;
+        Ok(buf)
+    }
+
     /// Seal and write page `pno`.
     pub fn write_page(
         &mut self,

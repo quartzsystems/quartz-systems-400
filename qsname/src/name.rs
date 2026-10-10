@@ -110,7 +110,7 @@ impl Ord for Name {
 
 impl fmt::Display for Name {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&ccsid::decode_trimmed(&self.0))
+        f.pad(&ccsid::decode_trimmed(&self.0))
     }
 }
 

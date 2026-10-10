@@ -5,6 +5,9 @@
 //! The serial service console: a line prompt on the serial port, enabled
 //! by `qs400.svc=1`. No shell, no filesystem.
 
+mod objects;
+mod storage;
+
 use std::fmt::Write as _;
 
 use licpart::IplMode;
@@ -28,6 +31,21 @@ mode manual|normal   keylock for the next IPL
 screen               dump the console screen as text
 pwrdwn [restart]     power down (or restart)
 release              version, release, modification and build
+asp                  ASP units, free space, WAL, checkpoint generation
+lib ls               every library, EBCDIC order
+obj ls LIB [TYPE]    objects of a library
+obj crt TYPE LIB/NAME [TEXT]   create (defaults for *DTAARA, *DTAQ, *USRSPC, *USRIDX)
+obj dlt TYPE LIB/NAME          delete
+obj rnm TYPE LIB/NAME NEWNAME  rename
+obj mov TYPE LIB/NAME TOLIB    move
+obj dsp LIB/NAME     object description, every type of that name
+obj bench N          create and delete N data areas over ten libraries
+dtaara get|set LIB/NAME [VALUE]
+dtaq snd|rcv LIB/NAME [DATA]
+usrspc rd LIB/NAME OFFSET [LEN] | wr LIB/NAME OFFSET TEXT
+rclstg [*CHECK]      reclaim storage (*ALL default), or verify only
+chkstg               checksum sweep of every allocated page
+txn stats            transaction, WAL and cache counters
 ";
 
 /// Announce the console after IPL complete.
@@ -55,6 +73,15 @@ pub fn handle(system: &mut System, line: &str) {
         ("screen", _) => crate::ipl::display::dump(system),
         ("pwrdwn", []) => power::down(system, false),
         ("pwrdwn", ["restart"]) => power::down(system, true),
+        ("asp", _) => storage::asp(system),
+        ("lib", ["ls"]) => objects::lib_ls(system),
+        ("obj", rest) => objects::obj(system, rest),
+        ("dtaara", rest) => objects::dtaara_cmd(system, rest),
+        ("dtaq", rest) => objects::dtaq_cmd(system, rest),
+        ("usrspc", rest) => objects::usrspc_cmd(system, rest),
+        ("rclstg", rest) => storage::rclstg(system, rest),
+        ("chkstg", _) => storage::chkstg(system),
+        ("txn", ["stats"]) => storage::txn_stats(system),
         _ => format!("Unknown command '{cmd}'. Type help.\n"),
     };
     system.out.serial(&reply);
