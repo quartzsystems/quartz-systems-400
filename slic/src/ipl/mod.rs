@@ -38,6 +38,8 @@ pub enum Event {
     Line(String),
     /// A kernel hotplug event.
     Uevent(hwrsrc::uevent::Uevent),
+    /// Something from the local console's keyboard.
+    Console(::console::Input),
 }
 
 /// Run as PID 1. Never returns.
@@ -86,7 +88,7 @@ pub fn run() -> ! {
             .serial("slic: serial port not readable; no service console\n");
     }
 
-    if let Err(fatal) = lic_phase(&mut system, &rx, tx) {
+    if let Err(fatal) = lic_phase(&mut system, &rx, &tx) {
         system.fatal(fatal);
     }
     os_phase(&mut system);
@@ -97,7 +99,7 @@ pub fn run() -> ! {
 fn lic_phase(
     system: &mut System,
     rx: &mpsc::Receiver<Event>,
-    tx: mpsc::Sender<Event>,
+    tx: &mpsc::Sender<Event>,
 ) -> Result<(), &'static src::Src> {
     lic::attach(system)?;
 
@@ -106,7 +108,7 @@ fn lic_phase(
         "slic: {} hardware resources\n",
         system.hw.resources.len()
     ));
-    if !hwrsrc::uevent::spawn_listener(tx) {
+    if !hwrsrc::uevent::spawn_listener(tx.clone()) {
         system
             .out
             .serial("slic: uevent socket unavailable; no hotplug\n");
@@ -124,7 +126,7 @@ fn lic_phase(
     }
     system.emit(&src::CLOCK_SET);
 
-    display::attach(system);
+    display::attach(system, tx.clone());
 
     if system.mode == IplMode::Manual {
         menu::run(system, rx);
@@ -185,6 +187,9 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>) -> ! {
                 if let Some(msg) = system.hw.apply_uevent(&ev) {
                     system.out.serial(&format!("{msg}\n"));
                 }
+            }
+            Ok(Event::Console(input)) => {
+                system.out.serial(&format!("slic: console {input:?}\n"));
             }
             Err(_) => park(),
         }

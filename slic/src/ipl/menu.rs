@@ -38,17 +38,20 @@ pub fn run(system: &mut System, rx: &Receiver<Event>) {
         system.out.both("Selection: ");
         let choice = loop {
             match rx.recv() {
-                Ok(Event::Line(l)) => break l,
+                Ok(Event::Line(l) | Event::Console(console::Input::MenuSelection(l))) => break l,
                 Ok(Event::Signal(s)) if s == sys::HANDLED[0] => {
                     sys::reap();
                 }
-                Ok(Event::Signal(_) | Event::Uevent(_)) => {}
+                Ok(Event::Signal(_) | Event::Uevent(_) | Event::Console(_)) => {}
                 Err(_) => return,
             }
         };
         match choice.trim() {
             "1" => return,
             "2" | "3" | "4" | "5" => {
+                system.show(Command::ShowMenu {
+                    system: system.system_name(),
+                });
                 system.show(Command::Message {
                     text: NOT_AVAILABLE.to_string(),
                     error: false,

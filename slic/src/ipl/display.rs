@@ -11,17 +11,31 @@ use std::time::Duration;
 
 pub use console::Command;
 
+use crate::ipl::Event;
 use crate::ipl::system::System;
 use crate::src;
 
-/// Open the display, start the thread, replay the codes emitted so far.
-pub fn attach(system: &mut System) {
+/// Open the display, start the console and keyboard threads, replay the
+/// codes emitted so far. Keyboard input comes back as `Event::Console`.
+pub fn attach(system: &mut System, events: mpsc::Sender<Event>) {
     let (con, status) = console::Console::open();
     system
         .out
         .serial(&format!("slic: display: {}\n", con.describe()));
     let (tx, rx) = mpsc::channel();
-    thread::spawn(move || con.run(&rx));
+    let (input_tx, input_rx) = mpsc::channel::<console::Input>();
+    thread::spawn(move || con.run(&rx, input_tx));
+    thread::spawn(move || {
+        while let Ok(input) = input_rx.recv() {
+            if events.send(Event::Console(input)).is_err() {
+                break;
+            }
+        }
+    });
+    let keyboards = console::keyboard::spawn_readers(&tx);
+    system
+        .out
+        .serial(&format!("slic: {keyboards} keyboard device(s)\n"));
     system.console = Some(tx);
 
     let name = system.system_name();

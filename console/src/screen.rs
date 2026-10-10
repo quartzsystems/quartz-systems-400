@@ -131,6 +131,8 @@ pub struct Screen {
     pub fields: Vec<Field>,
     /// Cursor position, 0-based (row, col).
     pub cursor: (usize, usize),
+    /// Insert mode (typing shifts the rest of the field right).
+    pub insert: bool,
 }
 
 impl Default for Screen {
@@ -146,6 +148,7 @@ impl Screen {
             cells: vec![Cell::default(); ROWS * COLS],
             fields: Vec::new(),
             cursor: (0, 0),
+            insert: false,
         }
     }
 
@@ -154,6 +157,7 @@ impl Screen {
         self.cells.iter_mut().for_each(|c| *c = Cell::default());
         self.fields.clear();
         self.cursor = (0, 0);
+        self.insert = false;
     }
 
     /// A cell by 0-based position.
