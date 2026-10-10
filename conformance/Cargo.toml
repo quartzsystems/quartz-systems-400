@@ -1,0 +1,22 @@
+[package]
+name = "conformance"
+description = "QS/400 conformance harness: boots images under QEMU and checks the serial output"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "conformance"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

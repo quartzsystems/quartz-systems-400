@@ -1,0 +1,15 @@
+[package]
+name = "slic"
+description = "QS/400 PID 1"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+rustix = { version = "1.1.5", features = ["fs", "mount", "process"] }
+# Used only inside platform::sys for signal handling.
+libc = "0.2.190"
+
+[lints]
+workspace = true
