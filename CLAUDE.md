@@ -2,7 +2,10 @@
 
 A from-scratch operating system on the Linux kernel, written entirely in Rust,
 source-compatible with IBM i and screen-identical at a 5250 terminal.
-Phase 0 is the build system and a booting kernel with a Rust PID 1 (`slic`).
+Phase 0 built the build system and a booting kernel with a Rust PID 1
+(`slic`). Phase 1 made `slic` a real IPL with persistent state, system
+values and a local 5250-style console. The object store is Phase 2; code
+that waits for it is marked `MIGRATE(phase2)`.
 
 ## Ground rules
 
@@ -41,13 +44,17 @@ See `docs/ARCHITECTURE.md`. Short form:
 ```
 build/        orchestrator: cargo run -p build -- <cmd>
   src/host/     cmd, paths, hash, doctor, deny, testrun
-  src/kernel/   fetch, config, build
+  src/kernel/   fetch, config, build (slot A and B UKIs)
   src/userland/ slic build + ELF check
-  src/image/    cpio, initramfs, disk, manifest
+  src/image/    cpio, initramfs, disk (ESP + LIC partition), manifest
 kernel/       VERSION, SHA256, config/qs400.config
-slic/         PID 1 (src/platform/ holds console, mounts, sys)
-conformance/  QEMU boot harness (lib + bin + test; src/qemu/ holds firmware, serial)
-docs/         ARCHITECTURE.md, PHASE0.md
+licpart/      LIC partition: A/B record (src/format/), locate by GPT type GUID
+sysval/       catalog.toml, validation, src/tz/ time zones, LIC storage
+console/      font/qs400-9x16.txt, src/fb/ framebuffer, src/keyboard/, screens
+slic/         PID 1: src/ipl/ state machine, src/hwrsrc/, src/net/, src/svc/,
+              src/platform/ (console, mounts, power, rtc, serial, sys), src/src.rs
+conformance/  QEMU harness: src/qemu/ (session, qmp, serial, firmware), src/steps.rs
+docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, images/
 ```
 
 ## Commands
@@ -63,11 +70,22 @@ cargo run -p build -- initramfs
 cargo run -p build -- uki
 cargo run -p build -- disk
 cargo run -p build -- manifest
-cargo run -p build -- all         # the whole pipeline
-cargo run -p build -- test        # boot under QEMU, check SRC codes
+cargo run -p build -- all         # the whole pipeline (dev: service console on)
+cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
+cargo run -p build -- test        # the six-step Phase 1 suite under QEMU
 cargo run -p build -- deny        # cargo-deny + links/cc lockfile check
 cargo clippy --workspace --all-targets    # must be warning-free
+cargo clippy -p slic -p console --all-targets --target x86_64-unknown-linux-musl
+QS400_QEMU=1 cargo test -p conformance    # the suite as a cargo test
 ```
+
+Lint the Linux-only crates for the musl target too: their real code is
+`cfg(target_os = "linux")` and the host build only sees stubs.
+
+Service console (serial, dev builds): `help`, `srcs [table]`, `hist`, `hw`,
+`lic`, `sysval NAME [VALUE]`, `mode manual|normal`, `screen`, `pwrdwn
+[restart]`. Boot parameters: `qs400.slot=A|B`, `qs400.mode=normal|manual`,
+`qs400.svc=1`.
 
 `QS400_TARGET_DIR` relocates `target/` (use an ext4 path when the repo is on
 `/mnt/c`; drvfs is far too slow for a kernel build). `-v` streams tool output;
@@ -78,8 +96,9 @@ otherwise logs go to `target/logs/`.
 - Edition 2024, toolchain pinned in `rust-toolchain.toml`.
 - Workspace lints: `unsafe_op_in_unsafe_fn = deny`, clippy `pedantic` warn,
   `missing_docs` warn. Clippy must stay clean.
-- Every `unsafe` block has a `// SAFETY:` comment. `slic` is `deny(unsafe_code)`
-  except its `platform::sys` module.
+- Every `unsafe` block has a `// SAFETY:` comment. `unsafe` lives only in
+  `slic/src/platform/sys.rs` (signals), `slic/src/platform/rtc.rs` (one
+  ioctl) and `console/src/fb/raw.rs` (framebuffer ioctls).
 - Errors: `thiserror` enums in libraries, `anyhow` only in binaries.
 - Logs: `tracing`.
 - Small documented modules, one responsibility each. Private modules in
@@ -87,4 +106,11 @@ otherwise logs go to `target/logs/`.
 - Downloaded sources live under `target/src/` and are untrusted. Nothing is
   executed from there except the kernel's own `make` and `merge_config.sh`,
   always invoked with explicit paths.
-- SRC codes: `C1001000` IPL started, `C1001005` heartbeat, `B1001000` panic/fatal.
+- SRC codes live in one table, `slic/src/src.rs`; see docs/PHASE1.md.
+- Every string a user sees is Quartz-written; never reproduce IBM message
+  or help text. IBM names (system values, SRC families, screen geometry)
+  are the compatibility interface.
+- Persistence before the object store goes through `licpart` and is marked
+  `MIGRATE(phase2)`.
+- Framebuffer writes: `pwrite` under a page plus `fsync`; `mmap` does not
+  flush under simpledrm's fbdev emulation.
