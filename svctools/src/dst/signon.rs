@@ -24,14 +24,16 @@ impl Panel for SignOn {
     }
 
     fn render(&self, env: &mut dyn DstEnv) -> Screen {
-        ui::form(
+        // Both leaders run to one column and both fields are 10 wide.
+        ui::form_wide(
             "Dedicated Service Tools (DST) Sign On",
             &env.system_name(),
             &[
                 FormLine::new("Service tools user", 10, self.user.clone()),
-                FormLine::hidden("Service tools password", 32),
+                FormLine::hidden("Service tools password", 10),
             ],
             "F3=Exit   F12=Cancel",
+            40,
         )
     }
 

@@ -1,8 +1,8 @@
                      Dedicated Service Tools (DST) Sign On                      
                                                                  System:  QS400 
                                                                                 
- Service tools user . . :                                                       
- Service tools password :                                                       
+ Service tools user . . . . . . . . . . .                                       
+ Service tools password . . . . . . . . .                                       
                                                                                 
                                                                                 
                                                                                 

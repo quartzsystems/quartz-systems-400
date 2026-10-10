@@ -95,10 +95,8 @@ pub fn list(
 }
 
 /// A form: label and input field per line from row 4, labels padded to
-/// one column.
+/// one column and ended with `:`.
 pub fn form(title: &str, system: &str, lines: &[FormLine], fkeys: &str) -> Screen {
-    let mut s = Screen::new();
-    header(&mut s, title, system);
     let width = lines
         .iter()
         .map(|l| l.label.len())
@@ -106,8 +104,33 @@ pub fn form(title: &str, system: &str, lines: &[FormLine], fkeys: &str) -> Scree
         .unwrap_or(0)
         .max(20);
     let labels: Vec<String> = lines.iter().map(|l| dotted(l.label, width)).collect();
+    form_labelled(title, system, lines, &labels, fkeys)
+}
+
+/// A form whose labels are dot leaders to `width` with no `:`, the
+/// fields one column past them: the sign-on style.
+pub fn form_wide(
+    title: &str,
+    system: &str,
+    lines: &[FormLine],
+    fkeys: &str,
+    width: usize,
+) -> Screen {
+    let labels: Vec<String> = lines.iter().map(|l| leader(l.label, width)).collect();
+    form_labelled(title, system, lines, &labels, fkeys)
+}
+
+fn form_labelled(
+    title: &str,
+    system: &str,
+    lines: &[FormLine],
+    labels: &[String],
+    fkeys: &str,
+) -> Screen {
+    let mut s = Screen::new();
+    header(&mut s, title, system);
     let col = BODY_COL + labels.iter().map(String::len).max().unwrap_or(0) + 1;
-    for (i, (line, label)) in lines.iter().zip(&labels).enumerate() {
+    for (i, (line, label)) in lines.iter().zip(labels).enumerate() {
         let r = BODY_ROW + i;
         s.put(r, BODY_COL, label, Attr::GREEN);
         s.field(r, col, line.len, line.hidden);
@@ -160,12 +183,19 @@ impl FormLine {
 /// A label padded with ` . ` to `width` and ended with `:`.
 #[must_use]
 pub fn dotted(label: &str, width: usize) -> String {
+    let mut out = leader(label, width);
+    out.push(':');
+    out
+}
+
+/// A label padded with ` . ` to `width`.
+#[must_use]
+pub fn leader(label: &str, width: usize) -> String {
     let mut out = String::from(label);
     out.push(' ');
     while out.len() < width {
         out.push_str(". ");
     }
-    out.push(':');
     out
 }
 
@@ -236,6 +266,24 @@ mod tests {
         assert_eq!(dotted("User", 10), "User . . . :");
         assert_eq!(dotted("Password", 10), "Password . :");
         assert_eq!(dotted("A long label", 10), "A long label :");
+        assert_eq!(leader("User", 10), "User . . . ");
+    }
+
+    #[test]
+    fn wide_form_lines_fields_up_past_the_leaders() {
+        let f = form_wide(
+            "Sign On",
+            "QS400",
+            &[
+                FormLine::new("User", 10, ""),
+                FormLine::hidden("Password", 10),
+            ],
+            "F3=Exit",
+            20,
+        );
+        assert_eq!(f.fields.len(), 2);
+        assert_eq!((f.fields[0].col, f.fields[1].col), (24, 24));
+        assert!(f.dump().contains("User . . . . . . . .    "));
     }
 
     #[test]
