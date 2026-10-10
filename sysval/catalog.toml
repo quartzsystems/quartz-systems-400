@@ -1,0 +1,1376 @@
+# QS/400 system value catalog.
+#
+# One [[sysval]] per IBM i system value name. The names are the
+# compatibility interface; every default and every line of text here is
+# Quartz's own. Fields:
+#   name              the system value name
+#   type              char | dec | list
+#   len               characters (char) or characters per element (list)
+#   elems             maximum elements (list)
+#   default           the value a fresh system has
+#   allowed           permitted values (char), optional
+#   range             [min, max] (dec), optional
+#   restart_required  the change takes effect at the next IPL
+#   readonly          set by the system, never by a user
+#   text              one line, Quartz-written
+#   group             DATTIM EDT LIBL ALC MSG SEC STG SYSCTL NET
+
+# ---------------------------------------------------------------- DATTIM
+
+[[sysval]]
+name = "QCENTURY"
+type = "char"
+len = 1
+default = "1"
+readonly = true
+text = "Century digit: 0 for 19xx, 1 for 20xx; derived from the clock"
+group = "DATTIM"
+
+[[sysval]]
+name = "QDATE"
+type = "char"
+len = 6
+default = "000000"
+readonly = true
+text = "System date in QDATFMT order; derived from the clock"
+group = "DATTIM"
+
+[[sysval]]
+name = "QDATETIME"
+type = "char"
+len = 20
+default = "00000000000000000000"
+readonly = true
+text = "Date and time as YYYYMMDDHHMMSSmmmuuu; derived from the clock"
+group = "DATTIM"
+
+[[sysval]]
+name = "QDAY"
+type = "char"
+len = 2
+default = "01"
+readonly = true
+text = "Day of month, or day of year under the JUL date format; derived"
+group = "DATTIM"
+
+[[sysval]]
+name = "QDAYOFWEEK"
+type = "char"
+len = 4
+default = "*SUN"
+readonly = true
+text = "Day of the week as *SUN through *SAT; derived from the clock"
+group = "DATTIM"
+
+[[sysval]]
+name = "QHOUR"
+type = "char"
+len = 2
+default = "00"
+readonly = true
+text = "Hour of the day, 00 to 23; derived from the clock"
+group = "DATTIM"
+
+[[sysval]]
+name = "QLEAPADJ"
+type = "dec"
+default = 0
+range = [0, 3]
+restart_required = true
+text = "Leap year adjustment for calendars whose cycle is offset from the Gregorian one"
+group = "DATTIM"
+
+[[sysval]]
+name = "QMINUTE"
+type = "char"
+len = 2
+default = "00"
+readonly = true
+text = "Minute of the hour; derived from the clock"
+group = "DATTIM"
+
+[[sysval]]
+name = "QMONTH"
+type = "char"
+len = 2
+default = "01"
+readonly = true
+text = "Month of the year; derived from the clock"
+group = "DATTIM"
+
+[[sysval]]
+name = "QSECOND"
+type = "char"
+len = 2
+default = "00"
+readonly = true
+text = "Second of the minute; derived from the clock"
+group = "DATTIM"
+
+[[sysval]]
+name = "QTIME"
+type = "char"
+len = 6
+default = "000000"
+readonly = true
+text = "Time of day as HHMMSS; derived from the clock"
+group = "DATTIM"
+
+[[sysval]]
+name = "QTIMADJ"
+type = "char"
+len = 30
+default = "*NONE"
+text = "Time adjustment source; *NONE means the clock is set only at IPL"
+group = "DATTIM"
+
+[[sysval]]
+name = "QTIMZON"
+type = "char"
+len = 10
+default = "QN0000UTC"
+text = "Time zone description that converts the UTC clock to local time"
+group = "DATTIM"
+
+[[sysval]]
+name = "QUTCOFFSET"
+type = "char"
+len = 5
+default = "+0000"
+readonly = true
+text = "Offset of local time from UTC as sHHMM; derived from QTIMZON"
+group = "DATTIM"
+
+[[sysval]]
+name = "QYEAR"
+type = "char"
+len = 2
+default = "00"
+readonly = true
+text = "Last two digits of the year; derived from the clock"
+group = "DATTIM"
+
+# ------------------------------------------------------------------- EDT
+
+[[sysval]]
+name = "QCURSYM"
+type = "char"
+len = 1
+default = "$"
+text = "Currency symbol used when editing numbers"
+group = "EDT"
+
+[[sysval]]
+name = "QDATFMT"
+type = "char"
+len = 3
+default = "MDY"
+allowed = ["YMD", "MDY", "DMY", "JUL"]
+text = "Order of the parts of a date"
+group = "EDT"
+
+[[sysval]]
+name = "QDATSEP"
+type = "char"
+len = 1
+default = "/"
+allowed = ["/", "-", ".", ",", " "]
+text = "Character between the parts of a date"
+group = "EDT"
+
+[[sysval]]
+name = "QDECFMT"
+type = "char"
+len = 1
+default = " "
+allowed = [" ", "I", "J"]
+text = "Decimal point and thousands separator style"
+group = "EDT"
+
+[[sysval]]
+name = "QTIMSEP"
+type = "char"
+len = 1
+default = ":"
+allowed = [":", ".", ",", " "]
+text = "Character between the parts of a time"
+group = "EDT"
+
+# ------------------------------------------------------------------ LIBL
+
+[[sysval]]
+name = "QSYSLIBL"
+type = "list"
+len = 10
+elems = 15
+default = ["QSYS", "QSYS2", "QHLPSYS", "QUSRSYS"]
+text = "System part of the library list every job starts with"
+group = "LIBL"
+
+[[sysval]]
+name = "QUSRLIBL"
+type = "list"
+len = 10
+elems = 25
+default = ["QGPL", "QTEMP"]
+text = "User part of the library list every job starts with"
+group = "LIBL"
+
+# ------------------------------------------------------------------- ALC
+
+[[sysval]]
+name = "QACTJOB"
+type = "dec"
+default = 200
+range = [1, 32767]
+restart_required = true
+text = "Jobs to reserve room for at IPL"
+group = "ALC"
+
+[[sysval]]
+name = "QADLACTJ"
+type = "dec"
+default = 30
+range = [1, 32767]
+text = "Additional active jobs to make room for when the reserve runs out"
+group = "ALC"
+
+[[sysval]]
+name = "QADLSPLA"
+type = "dec"
+default = 2048
+range = [1024, 32767]
+text = "Additional spool storage to allocate per step, in KB"
+group = "ALC"
+
+[[sysval]]
+name = "QADLTOTJ"
+type = "dec"
+default = 30
+range = [1, 32767]
+text = "Additional job structures to make room for when the reserve runs out"
+group = "ALC"
+
+[[sysval]]
+name = "QJOBMSGQFL"
+type = "char"
+len = 10
+default = "*NOWRAP"
+allowed = ["*NOWRAP", "*WRAP", "*PRTWRAP"]
+text = "What happens when a job message queue fills"
+group = "ALC"
+
+[[sysval]]
+name = "QJOBMSGQMX"
+type = "dec"
+default = 16
+range = [2, 64]
+text = "Largest a job message queue may grow, in MB"
+group = "ALC"
+
+[[sysval]]
+name = "QJOBMSGQSZ"
+type = "dec"
+default = 16
+range = [8, 64]
+text = "Initial size of a job message queue, in KB"
+group = "ALC"
+
+[[sysval]]
+name = "QJOBMSGQTL"
+type = "dec"
+default = 64
+range = [8, 64]
+text = "Largest a job message queue may grow before its action applies, in KB"
+group = "ALC"
+
+[[sysval]]
+name = "QJOBSPLA"
+type = "dec"
+default = 3516
+range = [3516, 32767]
+text = "Initial spool control block size per job, in bytes"
+group = "ALC"
+
+[[sysval]]
+name = "QMAXJOB"
+type = "dec"
+default = 163520
+range = [32000, 970000]
+text = "Most jobs the system will allow at once"
+group = "ALC"
+
+[[sysval]]
+name = "QMAXSPLF"
+type = "dec"
+default = 9999
+range = [9999, 999999]
+text = "Most spooled files one job may hold"
+group = "ALC"
+
+[[sysval]]
+name = "QRCLSPLSTG"
+type = "char"
+len = 10
+default = "8"
+text = "Days to keep empty spool members before reclaiming them, or *NONE or *NOMAX"
+group = "ALC"
+
+[[sysval]]
+name = "QSPLFACN"
+type = "char"
+len = 10
+default = "*KEEP"
+allowed = ["*KEEP", "*DETACH"]
+text = "Whether spooled files stay with a finished job or detach from it"
+group = "ALC"
+
+[[sysval]]
+name = "QTOTJOB"
+type = "dec"
+default = 300
+range = [1, 32767]
+text = "Job structures to reserve room for at IPL"
+group = "ALC"
+
+# ------------------------------------------------------------------- MSG
+
+[[sysval]]
+name = "QACGLVL"
+type = "list"
+len = 10
+elems = 2
+default = ["*NONE"]
+text = "Accounting data collected per job: *NONE, *JOB, *PRINT"
+group = "MSG"
+
+[[sysval]]
+name = "QHSTLOGSIZ"
+type = "dec"
+default = 5000
+range = [1, 10000000]
+text = "Records per history log file before a new one starts"
+group = "MSG"
+
+[[sysval]]
+name = "QLOGOUTPUT"
+type = "char"
+len = 10
+default = "*JOBEND"
+allowed = ["*JOBEND", "*JOBLOGSVR", "*PND"]
+text = "Who produces the job log when a job ends"
+group = "MSG"
+
+[[sysval]]
+name = "QPRTKEYFMT"
+type = "char"
+len = 10
+default = "*PRTHDR"
+allowed = ["*NONE", "*PRTBDR", "*PRTHDR", "*PRTALL"]
+text = "Border and header printed with a screen print"
+group = "MSG"
+
+[[sysval]]
+name = "QPRTTXT"
+type = "char"
+len = 30
+default = " "
+text = "Text printed at the bottom of every listing"
+group = "MSG"
+
+[[sysval]]
+name = "QSRVDMP"
+type = "char"
+len = 10
+default = "*DMPUSRJOB"
+allowed = ["*NONE", "*DMPUSRJOB", "*DMPSYSJOB", "*DMPALLJOB"]
+text = "Which jobs get a service dump on an unmonitored escape"
+group = "MSG"
+
+[[sysval]]
+name = "QSTSMSG"
+type = "char"
+len = 10
+default = "*NORMAL"
+allowed = ["*NORMAL", "*NONE"]
+text = "Whether status messages show on the bottom line of a display"
+group = "MSG"
+
+# ------------------------------------------------------------------- SEC
+
+[[sysval]]
+name = "QALWOBJRST"
+type = "list"
+len = 10
+elems = 10
+default = ["*ALL"]
+text = "Which kinds of sensitive objects may be restored"
+group = "SEC"
+
+[[sysval]]
+name = "QALWUSRDMN"
+type = "list"
+len = 10
+elems = 50
+default = ["*ALL"]
+text = "Libraries allowed to hold user-domain objects"
+group = "SEC"
+
+[[sysval]]
+name = "QAUDCTL"
+type = "list"
+len = 10
+elems = 5
+default = ["*NONE"]
+text = "Master switch for security auditing"
+group = "SEC"
+
+[[sysval]]
+name = "QAUDENDACN"
+type = "char"
+len = 10
+default = "*NOTIFY"
+allowed = ["*NOTIFY", "*PWRDWNSYS"]
+text = "What to do when an audit record cannot be written"
+group = "SEC"
+
+[[sysval]]
+name = "QAUDFRCLVL"
+type = "char"
+len = 10
+default = "*SYS"
+text = "Audit records buffered before forcing them to disk, or *SYS"
+group = "SEC"
+
+[[sysval]]
+name = "QAUDLVL"
+type = "list"
+len = 10
+elems = 16
+default = ["*NONE"]
+text = "Events audited for every user"
+group = "SEC"
+
+[[sysval]]
+name = "QAUDLVL2"
+type = "list"
+len = 10
+elems = 99
+default = ["*NONE"]
+text = "Continuation of QAUDLVL when more than sixteen events are chosen"
+group = "SEC"
+
+[[sysval]]
+name = "QCRTAUT"
+type = "char"
+len = 10
+default = "*CHANGE"
+allowed = ["*CHANGE", "*ALL", "*USE", "*EXCLUDE"]
+text = "Public authority given to newly created objects"
+group = "SEC"
+
+[[sysval]]
+name = "QCRTOBJAUD"
+type = "char"
+len = 10
+default = "*NONE"
+allowed = ["*NONE", "*USRPRF", "*CHANGE", "*ALL"]
+text = "Auditing applied to newly created objects"
+group = "SEC"
+
+[[sysval]]
+name = "QDSPSGNINF"
+type = "char"
+len = 1
+default = "0"
+allowed = ["0", "1"]
+text = "Show the previous sign-on information after signing on"
+group = "SEC"
+
+[[sysval]]
+name = "QFRCCVNRST"
+type = "char"
+len = 1
+default = "1"
+allowed = ["0", "1", "2", "3", "4", "5", "6", "7"]
+text = "How strictly restored programs are re-translated"
+group = "SEC"
+
+[[sysval]]
+name = "QINACTITV"
+type = "char"
+len = 10
+default = "*NONE"
+text = "Minutes a workstation may sit idle, or *NONE"
+group = "SEC"
+
+[[sysval]]
+name = "QINACTMSGQ"
+type = "char"
+len = 20
+default = "*ENDJOB"
+text = "Where inactivity is reported: a message queue, *ENDJOB or *DSCJOB"
+group = "SEC"
+
+[[sysval]]
+name = "QLMTDEVSSN"
+type = "char"
+len = 1
+default = "0"
+allowed = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
+text = "Limit on concurrent device sessions per user"
+group = "SEC"
+
+[[sysval]]
+name = "QLMTSECOFR"
+type = "char"
+len = 1
+default = "1"
+allowed = ["0", "1"]
+text = "Restrict security officers to explicitly authorized devices"
+group = "SEC"
+
+[[sysval]]
+name = "QMAXSGNACN"
+type = "char"
+len = 1
+default = "3"
+allowed = ["1", "2", "3"]
+text = "Action after the sign-on limit: 1 device, 2 profile, 3 both"
+group = "SEC"
+
+[[sysval]]
+name = "QMAXSIGN"
+type = "char"
+len = 6
+default = "3"
+text = "Consecutive failed sign-on attempts allowed, or *NOMAX"
+group = "SEC"
+
+[[sysval]]
+name = "QPWDCHGBLK"
+type = "char"
+len = 10
+default = "*NONE"
+text = "Hours after a password change during which it cannot change again, or *NONE"
+group = "SEC"
+
+[[sysval]]
+name = "QPWDEXPITV"
+type = "char"
+len = 6
+default = "90"
+text = "Days a password stays valid, or *NOMAX"
+group = "SEC"
+
+[[sysval]]
+name = "QPWDEXPWRN"
+type = "dec"
+default = 7
+range = [1, 99]
+text = "Days before expiry that a password warning shows"
+group = "SEC"
+
+[[sysval]]
+name = "QPWDLMTAJC"
+type = "char"
+len = 1
+default = "0"
+allowed = ["0", "1"]
+text = "Forbid adjacent digits in passwords"
+group = "SEC"
+
+[[sysval]]
+name = "QPWDLMTCHR"
+type = "char"
+len = 10
+default = "*NONE"
+text = "Characters forbidden in passwords, or *NONE"
+group = "SEC"
+
+[[sysval]]
+name = "QPWDLMTREP"
+type = "char"
+len = 1
+default = "0"
+allowed = ["0", "1", "2"]
+text = "Forbid repeated characters in passwords"
+group = "SEC"
+
+[[sysval]]
+name = "QPWDLVL"
+type = "dec"
+default = 3
+range = [0, 4]
+restart_required = true
+text = "Password level: length limits and hashing in use"
+group = "SEC"
+
+[[sysval]]
+name = "QPWDMAXLEN"
+type = "dec"
+default = 128
+range = [1, 128]
+text = "Longest password allowed"
+group = "SEC"
+
+[[sysval]]
+name = "QPWDMINLEN"
+type = "dec"
+default = 8
+range = [1, 128]
+text = "Shortest password allowed"
+group = "SEC"
+
+[[sysval]]
+name = "QPWDPOSDIF"
+type = "char"
+len = 1
+default = "0"
+allowed = ["0", "1"]
+text = "Require each position to differ from the previous password"
+group = "SEC"
+
+[[sysval]]
+name = "QPWDRQDDGT"
+type = "char"
+len = 1
+default = "1"
+allowed = ["0", "1"]
+text = "Require a digit in passwords"
+group = "SEC"
+
+[[sysval]]
+name = "QPWDRQDDIF"
+type = "char"
+len = 1
+default = "1"
+allowed = ["0", "1", "2", "3", "4", "5", "6", "7", "8"]
+text = "How many previous passwords a new one must differ from"
+group = "SEC"
+
+[[sysval]]
+name = "QPWDRULES"
+type = "list"
+len = 15
+elems = 50
+default = ["*PWDSYSVAL"]
+text = "Password composition rules, or *PWDSYSVAL to use the QPWD values"
+group = "SEC"
+
+[[sysval]]
+name = "QPWDVLDPGM"
+type = "char"
+len = 20
+default = "*NONE"
+text = "Program that validates new passwords, or *NONE or *REGFAC"
+group = "SEC"
+
+[[sysval]]
+name = "QRETSVRSEC"
+type = "char"
+len = 1
+default = "0"
+allowed = ["0", "1"]
+text = "Keep server credentials in a recoverable form"
+group = "SEC"
+
+[[sysval]]
+name = "QRMTSIGN"
+type = "char"
+len = 20
+default = "*FRCSIGNON"
+text = "How remote sign-on requests are handled"
+group = "SEC"
+
+[[sysval]]
+name = "QSCANFS"
+type = "list"
+len = 10
+elems = 2
+default = ["*ROOTOPNUD"]
+text = "File systems whose objects may be scanned on open"
+group = "SEC"
+
+[[sysval]]
+name = "QSCANFSCTL"
+type = "list"
+len = 10
+elems = 10
+default = ["*NONE"]
+text = "Controls for file system scanning"
+group = "SEC"
+
+[[sysval]]
+name = "QSECURITY"
+type = "char"
+len = 2
+default = "40"
+allowed = ["20", "30", "40", "50"]
+restart_required = true
+text = "Security level enforced by the system"
+group = "SEC"
+
+[[sysval]]
+name = "QSHRMEMCTL"
+type = "char"
+len = 1
+default = "1"
+allowed = ["0", "1"]
+text = "Allow shared memory with write access"
+group = "SEC"
+
+[[sysval]]
+name = "QSSLCSL"
+type = "list"
+len = 40
+elems = 32
+default = ["*OPSYS"]
+text = "TLS cipher suites in preference order, or *OPSYS"
+group = "SEC"
+
+[[sysval]]
+name = "QSSLCSLCTL"
+type = "char"
+len = 10
+default = "*OPSYS"
+allowed = ["*OPSYS", "*USRDFN"]
+text = "Whether the system or the user controls the TLS cipher list"
+group = "SEC"
+
+[[sysval]]
+name = "QSSLPCL"
+type = "list"
+len = 10
+elems = 10
+default = ["*OPSYS"]
+text = "TLS protocol versions enabled, or *OPSYS"
+group = "SEC"
+
+[[sysval]]
+name = "QUSEADPAUT"
+type = "char"
+len = 10
+default = "*NONE"
+text = "Authorization list limiting who may create adopting programs, or *NONE"
+group = "SEC"
+
+[[sysval]]
+name = "QVFYOBJRST"
+type = "char"
+len = 1
+default = "3"
+allowed = ["1", "2", "3", "4", "5"]
+text = "How object signatures are verified on restore"
+group = "SEC"
+
+# ------------------------------------------------------------------- STG
+
+[[sysval]]
+name = "QBASACTLVL"
+type = "dec"
+default = 6
+range = [1, 32767]
+text = "Activity level of the base storage pool"
+group = "STG"
+
+[[sysval]]
+name = "QBASPOOL"
+type = "dec"
+default = 2000
+range = [256, 1000000000]
+text = "Smallest size the base storage pool may shrink to, in KB"
+group = "STG"
+
+[[sysval]]
+name = "QMAXACTLVL"
+type = "dec"
+default = 32767
+range = [1, 32767]
+text = "Most threads active in all pools at once"
+group = "STG"
+
+[[sysval]]
+name = "QMCHPOOL"
+type = "dec"
+default = 20000
+range = [256, 1000000000]
+text = "Size of the machine storage pool, in KB"
+group = "STG"
+
+[[sysval]]
+name = "QSTGLOWACN"
+type = "char"
+len = 10
+default = "*MSG"
+allowed = ["*MSG", "*CRITMSG", "*REGFAC", "*ENDSYS", "*PWRDWNSYS"]
+text = "Action when auxiliary storage drops below QSTGLOWLMT"
+group = "STG"
+
+[[sysval]]
+name = "QSTGLOWLMT"
+type = "dec"
+default = 5
+range = [0, 100]
+text = "Percent of auxiliary storage that must stay free"
+group = "STG"
+
+[[sysval]]
+name = "QTSEPOOL"
+type = "char"
+len = 10
+default = "*NONE"
+allowed = ["*NONE", "*BASE"]
+text = "Pool that jobs move to when their time slice ends"
+group = "STG"
+
+# ---------------------------------------------------------------- SYSCTL
+
+[[sysval]]
+name = "QABNORMSW"
+type = "char"
+len = 1
+default = "0"
+allowed = ["0", "1"]
+readonly = true
+text = "Set to 1 when the previous IPL or power down was abnormal"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QALWJOBITP"
+type = "char"
+len = 1
+default = "0"
+allowed = ["0", "1", "2"]
+text = "Whether jobs may be interrupted to run a program"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QASTLVL"
+type = "char"
+len = 10
+default = "*BASIC"
+allowed = ["*BASIC", "*INTERMED", "*ADVANCED"]
+text = "Assistance level offered on displays"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QATNPGM"
+type = "char"
+len = 20
+default = "*ASSIST"
+text = "Program run when the Attention key is pressed"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QAUTOCFG"
+type = "char"
+len = 1
+default = "1"
+allowed = ["0", "1"]
+text = "Create device descriptions automatically for new local devices"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QAUTORMT"
+type = "char"
+len = 1
+default = "1"
+allowed = ["0", "1"]
+text = "Create controller descriptions automatically for remote devices"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QAUTOSPRPT"
+type = "char"
+len = 1
+default = "0"
+allowed = ["0", "1"]
+text = "Report problems to the service provider automatically"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QAUTOVRT"
+type = "char"
+len = 10
+default = "*NOMAX"
+text = "Virtual devices created automatically, or *NOMAX or *REGFAC"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QCCSID"
+type = "dec"
+default = 37
+range = [1, 65535]
+text = "Default coded character set identifier"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QCHRID"
+type = "list"
+len = 10
+elems = 2
+default = ["697", "37"]
+text = "Graphic character set and code page for displays"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QCHRIDCTL"
+type = "char"
+len = 10
+default = "*DEVD"
+allowed = ["*DEVD", "*JOBCCSID"]
+text = "Where jobs take their character identifier from"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QCMNARB"
+type = "char"
+len = 10
+default = "*CALC"
+text = "Communication arbiter jobs to run, or *CALC or *NONE"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QCMNRCYLMT"
+type = "list"
+len = 5
+elems = 2
+default = ["0", "0"]
+text = "Recovery attempts and interval for communication errors"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QCNTRYID"
+type = "char"
+len = 2
+default = "US"
+text = "Country or region identifier"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QCONSOLE"
+type = "char"
+len = 10
+default = "QSCONSOLE"
+readonly = true
+text = "Name of the console device"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QCTLSBSD"
+type = "char"
+len = 20
+default = "QBASE QSYS"
+text = "Controlling subsystem description and its library"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QDBFSTCCOL"
+type = "char"
+len = 10
+default = "*ALL"
+allowed = ["*ALL", "*NONE", "*USER", "*SYSTEM"]
+text = "Who may request database statistics collection"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QDBRCVYWT"
+type = "char"
+len = 1
+default = "0"
+allowed = ["0", "1"]
+text = "Wait for database recovery to finish before completing the IPL"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QDEVNAMING"
+type = "char"
+len = 10
+default = "*NORMAL"
+allowed = ["*NORMAL", "*S36", "*DEVADR"]
+text = "Convention for automatically generated device names"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QDEVRCYACN"
+type = "char"
+len = 20
+default = "*DSCMSG"
+allowed = ["*DSCMSG", "*DSCENDRQS", "*ENDJOB", "*ENDJOBNOLIST", "*MSG"]
+text = "Action when a job's workstation suffers an I/O error"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QDSCJOBITV"
+type = "char"
+len = 10
+default = "240"
+text = "Minutes a disconnected job waits before ending, or *NONE"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QDYNPTYADJ"
+type = "char"
+len = 1
+default = "1"
+allowed = ["0", "1"]
+text = "Let the scheduler adjust priorities dynamically"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QDYNPTYSCD"
+type = "char"
+len = 1
+default = "1"
+allowed = ["0", "1"]
+text = "Use dynamic priority scheduling"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QENDJOBLMT"
+type = "dec"
+default = 120
+range = [45, 1000000]
+text = "Seconds an ending job gets to clean up before it is cancelled"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QIGC"
+type = "char"
+len = 1
+default = "0"
+allowed = ["0", "1"]
+readonly = true
+text = "Whether double-byte character support is installed"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QIGCCDEFNT"
+type = "char"
+len = 20
+default = "*NONE"
+text = "Default coded font for double-byte printing, or *NONE"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QIGCFNTSIZ"
+type = "dec"
+default = 0
+range = [0, 999]
+text = "Point size of the double-byte coded font, 0 for none"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QIPLDATTIM"
+type = "char"
+len = 20
+default = "*NONE"
+text = "Date and time of the next scheduled IPL, or *NONE"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QIPLSTS"
+type = "char"
+len = 1
+default = "0"
+allowed = ["0", "1", "2", "3", "4"]
+readonly = true
+text = "How the current IPL was started: 0 operator, 1 auto after power down, 2 restart, 3 timed, 4 remote"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QIPLTYPE"
+type = "char"
+len = 1
+default = "0"
+allowed = ["0", "1", "2"]
+text = "IPL type when the keylock is normal: 0 unattended, 1 attended, 2 attended with console in debug"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QKBDBUF"
+type = "char"
+len = 10
+default = "*TYPEAHEAD"
+allowed = ["*NO", "*TYPEAHEAD", "*YES"]
+text = "Keyboard type-ahead and Attention-key buffering"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QKBDTYPE"
+type = "char"
+len = 3
+default = "USB"
+text = "Keyboard language type for the console"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QLANGID"
+type = "char"
+len = 3
+default = "ENU"
+text = "Default language identifier"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QLIBLCKLVL"
+type = "char"
+len = 1
+default = "1"
+allowed = ["0", "1"]
+text = "Lock libraries in a job's library list"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QLOCALE"
+type = "char"
+len = 2080
+default = "*NONE"
+text = "Path of the default locale object, or *NONE, *C or *POSIX"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QMODEL"
+type = "char"
+len = 4
+default = "QS40"
+readonly = true
+text = "Machine model"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QPASTHRSVR"
+type = "char"
+len = 10
+default = "*CALC"
+text = "Pass-through server jobs to run, or *CALC"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QPFRADJ"
+type = "char"
+len = 1
+default = "2"
+allowed = ["0", "1", "2", "3"]
+text = "Automatic performance adjustment of pool sizes"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QPRBFTR"
+type = "char"
+len = 20
+default = "*NONE"
+text = "Problem log filter object, or *NONE"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QPRBHLDITV"
+type = "dec"
+default = 30
+range = [0, 999]
+text = "Days a problem log entry is kept"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QPRCFEAT"
+type = "char"
+len = 4
+default = "QS01"
+readonly = true
+text = "Processor feature code"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QPRCMLTTSK"
+type = "char"
+len = 1
+default = "2"
+allowed = ["0", "1", "2"]
+restart_required = true
+text = "Processor multitasking: 0 off, 1 on, 2 system controlled"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QPRTDEV"
+type = "char"
+len = 10
+default = "PRT01"
+text = "Default printer device"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QPWRDWNLMT"
+type = "dec"
+default = 1200
+range = [0, 9999]
+text = "Seconds allowed for a normal power down before it is forced"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QPWRRSTIPL"
+type = "char"
+len = 1
+default = "0"
+allowed = ["0", "1"]
+text = "IPL automatically when power returns after an outage"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QQRYDEGREE"
+type = "char"
+len = 10
+default = "*NONE"
+allowed = ["*NONE", "*IO", "*OPTIMIZE", "*MAX", "*SYSVAL"]
+text = "Parallel processing allowed for queries"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QQRYTIMLMT"
+type = "char"
+len = 10
+default = "*NOMAX"
+text = "Estimated seconds beyond which a query is refused, or *NOMAX"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QRMTIPL"
+type = "char"
+len = 1
+default = "0"
+allowed = ["0", "1"]
+text = "Allow an IPL to be started remotely"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QRMTSRVATR"
+type = "char"
+len = 1
+default = "0"
+allowed = ["0", "1"]
+text = "Allow remote service attributes to be used"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QSAVACCPTH"
+type = "char"
+len = 1
+default = "1"
+allowed = ["0", "1"]
+text = "Save access paths together with their files"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QSCPFCONS"
+type = "char"
+len = 1
+default = "1"
+allowed = ["0", "1"]
+text = "Continue an IPL in unattended mode when the console is lost"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QSETJOBATR"
+type = "list"
+len = 10
+elems = 16
+default = ["*NONE"]
+text = "Job attributes taken from the locale at job start"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QSFWERRLOG"
+type = "char"
+len = 10
+default = "*LOG"
+allowed = ["*LOG", "*NOLOG"]
+text = "Log software errors detected by the system"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QSPCENV"
+type = "char"
+len = 10
+default = "*NONE"
+allowed = ["*NONE", "*S36"]
+text = "Special environment entered after sign-on"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QSRLNBR"
+type = "char"
+len = 8
+default = "0000000"
+readonly = true
+text = "System serial number; derived from the machine identity"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QSRTSEQ"
+type = "char"
+len = 20
+default = "*HEX"
+text = "Default sort sequence table"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QSTRPRTWTR"
+type = "char"
+len = 1
+default = "1"
+allowed = ["0", "1"]
+text = "Start printer writers at IPL"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QSTRUPPGM"
+type = "char"
+len = 20
+default = "QSTRUP QSYS"
+text = "Program and library run by the controlling subsystem after IPL"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QTHDRSCADJ"
+type = "char"
+len = 1
+default = "1"
+allowed = ["0", "1"]
+text = "Adjust thread resource affinity dynamically"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QTHDRSCAFN"
+type = "list"
+len = 10
+elems = 2
+default = ["*NOGROUP", "*NORMAL"]
+text = "Thread resource affinity grouping and level"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QUPSDLYTIM"
+type = "list"
+len = 10
+elems = 2
+default = ["*CALC"]
+text = "Seconds to wait on battery power before powering down"
+group = "SYSCTL"
+
+[[sysval]]
+name = "QUPSMSGQ"
+type = "char"
+len = 20
+default = "QSYSOPR QSYS"
+text = "Message queue that receives power supply messages"
+group = "SYSCTL"
+
+# ------------------------------------------------------------------- NET
+
+[[sysval]]
+name = "QSYSNAME"
+type = "char"
+len = 8
+default = "QS400"
+text = "System name shown on the sign-on screen (Quartz; CHGNETA comes later)"
+group = "NET"

@@ -74,6 +74,8 @@ pub fn args(test: &BootTest) -> Vec<OsString> {
             "-snapshot",
             "-rtc",
             "base=utc",
+            "-uuid",
+            "51533430-0000-4000-8000-000000000400",
             "-nic",
             "none",
             "-nographic",

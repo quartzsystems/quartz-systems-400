@@ -12,6 +12,7 @@ pub mod log;
 pub mod menu;
 pub mod power;
 pub mod system;
+pub mod sysvals;
 
 use std::panic;
 use std::sync::mpsc;
@@ -151,6 +152,7 @@ fn lic_phase(
 /// C6001000 through C6001090.
 fn os_phase(system: &mut System) {
     system.emit(&src::OS_STARTED);
+    sysvals::load(system);
     system.emit(&src::SYSVALS_LOADED);
     system.emit(&src::STRUP_SKIPPED);
     lic::complete(system);

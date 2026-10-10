@@ -68,6 +68,7 @@ const REQUIRED_Y: &[&str] = &[
     "HW_RANDOM",
     "RTC_CLASS",
     "RTC_DRV_CMOS",
+    "DMIID",
 ];
 
 /// Symbols that must not be `=y`.

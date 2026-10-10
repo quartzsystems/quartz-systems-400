@@ -48,7 +48,7 @@ pub fn handle(system: &mut System, line: &str) {
         ("hist", _) => hist(system),
         ("hw", _) => format!("{}\n{}", system.hw.dump(), crate::net::dump(&system.links)),
         ("lic", _) => lic_dump(system),
-        ("sysval", _) => "System values not available yet\n".to_string(),
+        ("sysval", rest) => sysval(system, rest),
         ("mode", [m]) => mode(system, m),
         ("screen", _) => "Console screen not available yet\n".to_string(),
         ("pwrdwn", []) => power::down(system, false),
@@ -125,6 +125,47 @@ fn lic_dump(system: &mut System) -> String {
         record.history.len(),
         record.tlvs.len()
     )
+}
+
+fn sysval(system: &mut System, args: &[&str]) -> String {
+    let System { sysvals, lic, .. } = system;
+    let Some(vals) = sysvals.as_mut() else {
+        return "System values not loaded\n".to_string();
+    };
+    match args {
+        [] => "Usage: sysval NAME [VALUE]\n".to_string(),
+        [name] => {
+            let name = name.to_ascii_uppercase();
+            match vals.get(&name) {
+                Ok(v) => {
+                    let text = vals.catalog().get(&name).map_or("", |e| e.text.as_str());
+                    format!("{name}: {v}\n  {text}\n")
+                }
+                Err(e) => format!("{e}\n"),
+            }
+        }
+        [name, rest @ ..] => {
+            let name = name.to_ascii_uppercase();
+            match vals.set_text(&name, &rest.join(" ")) {
+                Ok(effect) => {
+                    let saved = match lic.as_mut() {
+                        Some((part, record)) => vals.save(part, record).map_err(|e| e.to_string()),
+                        None => Err("LIC partition not attached".to_string()),
+                    };
+                    let now = vals.get(&name).map(|v| v.text()).unwrap_or_default();
+                    let when = match effect {
+                        sysval::Effect::Immediate => "",
+                        sysval::Effect::NextIpl => " (takes effect at the next IPL)",
+                    };
+                    match saved {
+                        Ok(()) => format!("{name} set to {now}{when}\n"),
+                        Err(e) => format!("{name} set to {now}{when}, but not saved: {e}\n"),
+                    }
+                }
+                Err(e) => format!("{e}\n"),
+            }
+        }
+    }
 }
 
 fn mode(system: &mut System, m: &str) -> String {

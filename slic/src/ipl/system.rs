@@ -8,6 +8,7 @@ use std::fs::File;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use licpart::{IplMode, IplType, LicPart, Record, Slot};
+use sysval::SysVals;
 
 use crate::hwrsrc::Table;
 use crate::ipl::cmdline::Boot;
@@ -41,6 +42,8 @@ pub struct System {
     pub links: Vec<Link>,
     /// Unix time the clock was set to from the RTC, if it was.
     pub clock: Option<u64>,
+    /// System values, once loaded in the OS phase.
+    pub sysvals: Option<SysVals>,
 }
 
 impl System {
@@ -59,6 +62,7 @@ impl System {
             hw: Table::default(),
             links: Vec::new(),
             clock: None,
+            sysvals: None,
         }
     }
 
