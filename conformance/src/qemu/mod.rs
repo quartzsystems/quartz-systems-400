@@ -2,23 +2,43 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Locating QEMU, choosing acceleration and building the command line.
+//! Locating QEMU, choosing acceleration, building the command line, and
+//! talking to a running guest.
 
 pub mod firmware;
+#[cfg(unix)]
+pub mod qmp;
 pub mod serial;
+pub mod session;
 
 use std::env;
 use std::ffi::OsString;
 use std::fs::OpenOptions;
 use std::path::{Path, PathBuf};
 
-use crate::boot::BootTest;
 use crate::error::HarnessError;
 
 /// The system emulator binary.
 pub const QEMU_BINARY: &str = "qemu-system-x86_64";
 /// Environment override for the QEMU binary path.
 pub const QEMU_ENV: &str = "QS400_QEMU";
+/// Fixed SMBIOS UUID so QSRLNBR is deterministic in tests.
+pub const GUEST_UUID: &str = "51533430-0000-4000-8000-000000000400";
+
+/// How to launch the guest.
+#[derive(Debug, Clone)]
+pub struct Launch {
+    /// QEMU binary.
+    pub qemu: PathBuf,
+    /// OVMF code image.
+    pub firmware: PathBuf,
+    /// Use KVM.
+    pub kvm: bool,
+    /// Disk image (a working copy; boots write to it).
+    pub image: PathBuf,
+    /// QMP Unix socket path.
+    pub qmp: PathBuf,
+}
 
 /// Find the system emulator: the override variable, else `PATH`.
 pub fn locate() -> Result<PathBuf, HarnessError> {
@@ -50,10 +70,12 @@ pub fn kvm_available() -> bool {
             .is_ok()
 }
 
-/// The QEMU argument list for one test.
-pub fn args(test: &BootTest) -> Vec<OsString> {
+/// The QEMU argument list. `q35`, standard VGA (pinned), a virtio keyboard,
+/// serial on stdio, no reboot suppression (restart tests need it), QMP on a
+/// Unix socket.
+pub fn args(l: &Launch) -> Vec<OsString> {
     let mut a: Vec<OsString> = ["-machine", "q35"].iter().map(OsString::from).collect();
-    if test.kvm {
+    if l.kvm {
         a.extend(["-enable-kvm", "-cpu", "host"].iter().map(OsString::from));
     }
     a.extend(
@@ -61,21 +83,15 @@ pub fn args(test: &BootTest) -> Vec<OsString> {
             .iter()
             .map(OsString::from),
     );
-    a.push(join(
-        "if=pflash,format=raw,readonly=on,file=",
-        &test.firmware,
-    ));
+    a.push(join("if=pflash,format=raw,readonly=on,file=", &l.firmware));
     a.push(OsString::from("-drive"));
-    a.push(join("if=virtio,format=raw,file=", &test.image));
-    // -snapshot: OVMF without a vars flash writes NvVars onto the ESP; keep
-    // each boot's writes in a temporary overlay so the image stays pristine.
+    a.push(join("if=virtio,format=raw,file=", &l.image));
     a.extend(
         [
-            "-snapshot",
             "-rtc",
             "base=utc",
             "-uuid",
-            "51533430-0000-4000-8000-000000000400",
+            GUEST_UUID,
             "-vga",
             "std",
             "-device",
@@ -87,11 +103,15 @@ pub fn args(test: &BootTest) -> Vec<OsString> {
             "stdio",
             "-monitor",
             "none",
-            "-no-reboot",
+            "-qmp",
         ]
         .iter()
         .map(OsString::from),
     );
+    let mut qmp = OsString::from("unix:");
+    qmp.push(&l.qmp);
+    qmp.push(",server,nowait");
+    a.push(qmp);
     a
 }
 

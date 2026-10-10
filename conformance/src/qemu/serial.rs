@@ -2,13 +2,14 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Line-oriented capture of QEMU's stdout (serial) and stderr.
+//! Raw capture of QEMU's stdout (serial) and stderr. Chunks, not lines:
+//! the service console prompt has no newline after it.
 
-use std::io::{BufRead, BufReader, Read};
+use std::io::Read;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
 
-/// Forward lines from both pipes into one channel. The channel closes
+/// Forward chunks from both pipes into one channel. The channel closes
 /// when both pipes hit EOF, which is how QEMU's exit is noticed.
 pub fn stream<O, E>(stdout: Option<O>, stderr: Option<E>) -> Receiver<String>
 where
@@ -17,21 +18,26 @@ where
 {
     let (tx, rx) = mpsc::channel();
     if let Some(out) = stdout {
-        pump(out, tx.clone(), "");
+        pump(out, tx.clone());
     }
     if let Some(err) = stderr {
-        pump(err, tx, "[qemu] ");
+        pump(err, tx);
     }
     rx
 }
 
-fn pump<R: Read + Send + 'static>(reader: R, tx: Sender<String>, prefix: &'static str) {
+fn pump<R: Read + Send + 'static>(mut reader: R, tx: Sender<String>) {
     thread::spawn(move || {
-        for chunk in BufReader::new(reader).split(b'\n').map_while(Result::ok) {
-            let text = String::from_utf8_lossy(&chunk);
-            let line = format!("{prefix}{}", text.trim_end_matches('\r'));
-            if tx.send(line).is_err() {
-                break;
+        let mut buf = [0u8; 4096];
+        loop {
+            match reader.read(&mut buf) {
+                Ok(0) | Err(_) => break,
+                Ok(n) => {
+                    let text = String::from_utf8_lossy(&buf[..n]).replace('\r', "");
+                    if tx.send(text).is_err() {
+                        break;
+                    }
+                }
             }
         }
     });

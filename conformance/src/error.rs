@@ -2,16 +2,14 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Harness errors. Failures that happen after QEMU started carry the
-//! captured serial log.
+//! Harness errors. A failed step carries the serial log so far.
 
 use std::io;
 use std::path::PathBuf;
-use std::time::Duration;
 
 use thiserror::Error;
 
-/// Why a boot test could not run or did not pass.
+/// Why the suite could not run or did not pass.
 #[derive(Debug, Error)]
 pub enum HarnessError {
     /// The disk image (or its pointer file) is missing.
@@ -44,22 +42,14 @@ pub enum HarnessError {
         #[source]
         source: io::Error,
     },
-    /// QEMU exited before the expected line appeared.
-    #[error("qemu exited before `{waiting_for}` appeared")]
-    QemuExited {
-        /// The line being waited for.
-        waiting_for: &'static str,
-        /// Serial log so far.
-        log: String,
-    },
-    /// The expected line did not appear in time.
-    #[error("`{waiting_for}` did not appear within {after:?}")]
-    Timeout {
-        /// The line being waited for.
-        waiting_for: &'static str,
-        /// How long we waited.
-        after: Duration,
-        /// Serial log so far.
+    /// A step did not pass.
+    #[error("step {step}: {reason}")]
+    Failed {
+        /// Step name.
+        step: &'static str,
+        /// What went wrong.
+        reason: String,
+        /// Serial log of the session.
         log: String,
     },
     /// Any other I/O problem.
@@ -68,10 +58,10 @@ pub enum HarnessError {
 }
 
 impl HarnessError {
-    /// The captured serial log, when the failure happened after boot started.
+    /// The captured serial log, when a step failed.
     pub fn log(&self) -> Option<&str> {
         match self {
-            HarnessError::QemuExited { log, .. } | HarnessError::Timeout { log, .. } => Some(log),
+            HarnessError::Failed { log, .. } => Some(log),
             _ => None,
         }
     }

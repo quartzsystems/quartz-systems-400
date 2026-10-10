@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `build test`: boot the disk image with the conformance harness.
+//! `build test`: run the conformance suite against the disk image.
 
 use anyhow::{Context, Result};
 use tracing::{error, info};
@@ -10,27 +10,29 @@ use tracing::{error, info};
 use crate::ctx::Ctx;
 use crate::host::paths;
 
-/// Run the Phase 0 boot test.
+/// Run the Phase 1 suite.
 pub fn test(ctx: &Ctx) -> Result<()> {
     let image = paths::read_pointer(&ctx.paths.disk_pointer())
         .context("no disk image; run `disk` first")?;
-    let test = conformance::BootTest::new(image)?;
+    let suite = conformance::Suite::new(&image, ctx.paths.target.join("conformance"))?;
+    let l = suite.launch();
     info!(
         "test: {} with {} ({})",
-        test.qemu.display(),
-        test.firmware.display(),
-        if test.kvm { "kvm" } else { "tcg" }
+        l.qemu.display(),
+        l.firmware.display(),
+        if l.kvm { "kvm" } else { "tcg" }
     );
-    match test.run() {
-        Ok(report) => {
-            for (code, at) in &report.seen {
-                info!("test:   {code} at {:.1}s", at.as_secs_f64());
+    match suite.run_all() {
+        Ok(reports) => {
+            for r in &reports {
+                info!(
+                    "test: PASS {:<24} {:6.1}s  {}",
+                    r.name,
+                    r.elapsed.as_secs_f64(),
+                    r.detail
+                );
             }
-            info!(
-                "test: PASS. {} SRCs in order, {:.1}s total",
-                report.seen.len(),
-                report.elapsed.as_secs_f64()
-            );
+            info!("test: PASS, {} steps", reports.len());
             Ok(())
         }
         Err(e) => {

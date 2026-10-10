@@ -2,19 +2,19 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `conformance [--image <disk.img>]`
+//! `conformance [--image <disk.img>]`: run the Phase 1 suite.
 
 use std::path::PathBuf;
 use std::process::ExitCode;
 
 use anyhow::Result;
 use clap::Parser;
-use conformance::BootTest;
+use conformance::Suite;
 
 #[derive(Parser)]
 #[command(
     name = "conformance",
-    about = "Boot a QS/400 image under QEMU and check the SRC codes"
+    about = "Boot a QS/400 image under QEMU and run the Phase 1 steps"
 )]
 struct Cli {
     /// Disk image. Defaults to the orchestrator's latest.
@@ -28,23 +28,25 @@ fn main() -> Result<ExitCode> {
         Some(p) => p,
         None => conformance::default_image()?,
     };
-    let test = BootTest::new(image)?;
+    let suite = Suite::new(&image, conformance::target_dir().join("conformance"))?;
+    let l = suite.launch();
     println!(
         "{} + {} ({})",
-        test.qemu.display(),
-        test.firmware.display(),
-        if test.kvm { "kvm" } else { "tcg" }
+        l.qemu.display(),
+        l.firmware.display(),
+        if l.kvm { "kvm" } else { "tcg" }
     );
-    match test.run() {
-        Ok(r) => {
-            for (code, at) in &r.seen {
-                println!("  {code} at {:.1}s", at.as_secs_f64());
+    match suite.run_all() {
+        Ok(reports) => {
+            for r in &reports {
+                println!(
+                    "  PASS {:<24} {:6.1}s  {}",
+                    r.name,
+                    r.elapsed.as_secs_f64(),
+                    r.detail
+                );
             }
-            println!(
-                "PASS: {} SRCs in order, {:.1}s total",
-                r.seen.len(),
-                r.elapsed.as_secs_f64()
-            );
+            println!("PASS: {} steps", reports.len());
             Ok(ExitCode::SUCCESS)
         }
         Err(e) => {
