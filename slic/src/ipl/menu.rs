@@ -28,7 +28,30 @@ pub const MENU: &str = "\n\
 /// Message for everything but option 1.
 pub const NOT_AVAILABLE: &str = "Option not available in this release";
 
-/// Show the menu and block until option 1 is chosen.
+/// One line from the serial port or the console, serving signals
+/// meanwhile. `None` when the event source is gone.
+pub fn read_line(system: &mut System, rx: &Receiver<Event>) -> Option<String> {
+    loop {
+        match rx.recv() {
+            Ok(Event::Line(l) | Event::Console(console::Input::MenuSelection(l))) => {
+                return Some(l);
+            }
+            Ok(Event::Signal(s)) if s == sys::HANDLED[0] => {
+                sys::reap();
+            }
+            Ok(Event::Uevent(ev)) => {
+                if let Some(msg) = system.hw.apply_uevent(&ev) {
+                    system.out.serial(&format!("{msg}\n"));
+                }
+            }
+            Ok(Event::Signal(_) | Event::Console(_)) => {}
+            Err(_) => return None,
+        }
+    }
+}
+
+/// Show the menu and block until option 1 is chosen. On installation
+/// media option 2 runs the installer.
 pub fn run(system: &mut System, rx: &Receiver<Event>) {
     system.show(Command::ShowMenu {
         system: system.system_name(),
@@ -36,18 +59,17 @@ pub fn run(system: &mut System, rx: &Receiver<Event>) {
     loop {
         system.out.both(MENU);
         system.out.both("Selection: ");
-        let choice = loop {
-            match rx.recv() {
-                Ok(Event::Line(l) | Event::Console(console::Input::MenuSelection(l))) => break l,
-                Ok(Event::Signal(s)) if s == sys::HANDLED[0] => {
-                    sys::reap();
-                }
-                Ok(Event::Signal(_) | Event::Uevent(_) | Event::Console(_)) => {}
-                Err(_) => return,
-            }
+        let Some(choice) = read_line(system, rx) else {
+            return;
         };
         match choice.trim() {
             "1" => return,
+            "2" if system.boot.ipl_d => {
+                crate::ipl::install::run(system, rx);
+                system.show(Command::ShowMenu {
+                    system: system.system_name(),
+                });
+            }
             "2" | "3" | "4" | "5" => {
                 system.show(Command::ShowMenu {
                     system: system.system_name(),

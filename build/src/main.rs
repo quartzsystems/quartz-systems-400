@@ -68,6 +68,9 @@ enum Command {
         /// What to boot.
         #[arg(long, default_value = "disk")]
         media: conformance::Media,
+        /// With `--media iso`: install onto a blank disk, then boot it.
+        #[arg(long)]
+        install: bool,
     },
     /// Check host prerequisites.
     Doctor,
@@ -113,7 +116,7 @@ fn main() -> Result<()> {
             image::manifest::manifest(&ctx)?;
         }
         Command::All { release } => all(&ctx, release)?,
-        Command::Test { media } => host::testrun::test(&ctx, media)?,
+        Command::Test { media, install } => host::testrun::test(&ctx, media, install)?,
         Command::Doctor => host::doctor::doctor(&ctx)?,
         Command::Deny => host::deny::deny(&ctx)?,
     }

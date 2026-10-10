@@ -109,14 +109,7 @@ pub fn locate_and_open(system: &mut System) -> Result<(), &'static src::Src> {
     let devs: Vec<Box<dyn BlockDev>> = vec![Box::new(dev)];
     let (store, recovery, fresh) = if blank {
         system.out.serial("slic: ASP 1 unit is blank; formatting\n");
-        let params = FormatParams {
-            asp_number: 1,
-            asp_uuid: random_bytes(),
-            unit_uuids: vec![random_bytes()],
-            wal_pages: WAL_PAGES,
-            now: now_unix(),
-        };
-        match Store::format(devs, &params, config()) {
+        match Store::format(devs, &format_params(now_unix()), config()) {
             Ok(s) => (s, Recovery::default(), true),
             Err(e) => {
                 system.out.serial(&format!("slic: format ASP 1: {e}\n"));
@@ -219,8 +212,19 @@ pub fn open_objects(system: &mut System) -> Result<(), &'static src::Src> {
     Ok(())
 }
 
+/// Format parameters for a new ASP 1.
+pub fn format_params(now: u64) -> FormatParams {
+    FormatParams {
+        asp_number: 1,
+        asp_uuid: random_bytes(),
+        unit_uuids: vec![random_bytes()],
+        wal_pages: WAL_PAGES,
+        now,
+    }
+}
+
 /// QSYS plus the system libraries, then a checkpoint.
-fn bootstrap(store: &mut Store, now: u64, system_name: &str) -> store::Result<ObjectId> {
+pub fn bootstrap(store: &mut Store, now: u64, system_name: &str) -> store::Result<ObjectId> {
     let qsys = {
         let mut t = store.begin()?;
         let qsys = ops::bootstrap(&mut t, now, system_name)?;

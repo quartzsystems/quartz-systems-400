@@ -97,6 +97,8 @@ pub struct StepReport {
 pub struct Suite {
     launch: Launch,
     media: Media,
+    /// With `Media::Iso`: run the installer onto a blank disk instead.
+    install: bool,
     iso: Option<PathBuf>,
     /// Directory for the working image, the QMP socket and screenshots.
     pub out_dir: PathBuf,
@@ -151,10 +153,17 @@ impl Suite {
                 qmp: out_dir.join("qmp.sock"),
             },
             media,
+            install: false,
             iso: iso.map(Path::to_path_buf),
             out_dir,
             boot_timeout,
         })
+    }
+
+    /// With the ISO: install onto a blank 4 GiB disk and boot it, instead
+    /// of the three media steps.
+    pub fn set_install(&mut self, install: bool) {
+        self.install = install;
     }
 
     /// Launch settings.
@@ -166,8 +175,72 @@ impl Suite {
     pub fn run_all(&self) -> Result<Vec<StepReport>, HarnessError> {
         match self.media {
             Media::Disk => self.run_disk(),
+            Media::Iso if self.install => self.run_install(),
             Media::Iso => self.run_iso(),
         }
+    }
+
+    /// Install from the ISO onto a blank disk, then boot the disk alone.
+    fn run_install(&self) -> Result<Vec<StepReport>, HarnessError> {
+        let iso = self.iso.clone().expect("checked in new");
+        let blank = self.out_dir.join("install.img");
+        let f = fs::File::create(&blank)?;
+        f.set_len(4 * 1024 * 1024 * 1024)?;
+        drop(f);
+        let mut reports = Vec::new();
+        let media = Launch {
+            image: Some(blank.clone()),
+            cdrom: Some(iso),
+            cdrom_first: true,
+            ..self.launch.clone()
+        };
+        let mut s = Session::spawn(&media)?;
+        reports.push(self.step(&mut s, "1 install from media", Self::install_dialog)?);
+        s.wait_exit(Duration::from_secs(20));
+        drop(s);
+        let disk = Launch {
+            image: Some(blank),
+            cdrom: None,
+            cdrom_first: false,
+            ..self.launch.clone()
+        };
+        let mut s = Session::spawn(&disk)?;
+        reports.push(self.step(&mut s, "2 boot installed disk", Self::installed_boot)?);
+        s.command("pwrdwn", CMD).ok();
+        s.wait_exit(Duration::from_secs(15));
+        Ok(reports)
+    }
+
+    /// Install step 1: option 2, the first disk, `YES`, Enter at the end.
+    fn install_dialog(&self, s: &mut Session) -> Result<String, String> {
+        s.expect_in_order(&SRC_SEQUENCE_MEDIA[..5], self.boot_timeout)?;
+        s.expect("Selection:", self.boot_timeout)?;
+        s.send("2")?;
+        s.expect("Selection (0 to return):", CMD)?;
+        s.send("1")?;
+        s.expect("Type YES to continue:", CMD)?;
+        s.send("YES")?;
+        s.expect("ASP 1 initialized", Duration::from_secs(120))?;
+        s.expect("press Enter to power down", CMD)?;
+        s.send("")?;
+        s.expect("SRC D1001090", CMD)?;
+        Ok("disk written, LIC and ASP 1 initialized, powered down".into())
+    }
+
+    /// Install step 2: the disk IPLs on its own and reaches sign-on.
+    fn installed_boot(&self, s: &mut Session) -> Result<String, String> {
+        let seen = s.expect_in_order(SRC_SEQUENCE, self.boot_timeout)?;
+        s.expect(crate::PROMPT, CMD)?;
+        let dump = s.command("screen", CMD)?;
+        if !dump.contains("Sign On") {
+            return Err("sign-on display is not showing".into());
+        }
+        let asp = s.command("asp", CMD)?;
+        if !asp.contains("created by V1R0M0") {
+            return Err(format!("asp did not report the store: {asp}"));
+        }
+        let last = seen.last().map_or(0.0, |(_, t)| t.as_secs_f64());
+        Ok(format!("C1001080 and C6001005 seen, sign-on at {last:.1}s"))
     }
 
     /// The installation media steps, each in its own guest.

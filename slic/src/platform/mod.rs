@@ -4,6 +4,7 @@
 
 //! Linux-facing pieces: console devices, mounts, signals, power.
 
+pub mod blk;
 pub mod console;
 pub mod mounts;
 pub mod power;

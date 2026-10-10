@@ -12,6 +12,7 @@
 
 mod error;
 pub mod fat;
+pub mod iso9660;
 pub mod plan;
 mod table;
 

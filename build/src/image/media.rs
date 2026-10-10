@@ -26,6 +26,9 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
         .context("no media UKI; run `uki` first")?;
     let uki_bytes = fs::read(&uki)?;
     let hash = sha256_file(&uki)?;
+    // The installer copies the slot UKIs onto the disk's ESP.
+    let slot_a = fs::read(paths::read_pointer(&ctx.paths.uki_pointer(UkiKind::SlotA))?)?;
+    let slot_b = fs::read(paths::read_pointer(&ctx.paths.uki_pointer(UkiKind::SlotB))?)?;
 
     info!(
         "iso: building {} MiB FAT16 boot image",
@@ -46,6 +49,8 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
     let epoch: u64 = SOURCE_DATE_EPOCH.parse()?;
     let mut b = iso::IsoBuilder::new(&format!("QS400_{release}"), epoch);
     b.add_file("EFI.IMG", efi)?;
+    b.add_file("QS400A.EFI", slot_a)?;
+    b.add_file("QS400B.EFI", slot_b)?;
     b.add_file("QS400.TXT", readme.into_bytes())?;
     b.boot_image("EFI.IMG")?;
     let image = b.build()?;

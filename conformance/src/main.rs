@@ -26,18 +26,22 @@ struct Cli {
     /// What to boot: `disk` (the six steps) or `iso` (the media steps).
     #[arg(long, default_value = "disk")]
     media: Media,
+    /// With `--media iso`: install onto a blank disk and boot it.
+    #[arg(long)]
+    install: bool,
 }
 
 fn main() -> Result<ExitCode> {
     let cli = Cli::parse();
     let image = cli.image.or_else(|| conformance::default_image().ok());
     let iso = cli.iso.or_else(|| conformance::default_iso().ok());
-    let suite = Suite::new(
+    let mut suite = Suite::new(
         image.as_deref(),
         iso.as_deref(),
         cli.media,
         conformance::target_dir().join("conformance"),
     )?;
+    suite.set_install(cli.install);
     let l = suite.launch();
     println!(
         "{} + {} ({})",
