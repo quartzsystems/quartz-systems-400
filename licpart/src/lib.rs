@@ -9,8 +9,9 @@
 //! to the older copy, so a torn write can only damage the copy that was
 //! already stale; a read takes the newest copy whose CRC verifies.
 //!
-//! Everything stored here is `MIGRATE(phase2)`: it moves into the object
-//! store once that exists.
+//! What lives here is what the IPL needs before the object store is
+//! open: slots, keylock, history, and the IPL subset of the system
+//! values. Everything else is in the store.
 
 #![forbid(unsafe_code)]
 

@@ -124,6 +124,23 @@ fn data_areas() {
         dtaara::describe(&mut t, c).unwrap(),
         (DataAreaType::Char { len: 2000 }, false)
     );
+    // Small values live in the header; a 2000-byte one needs a page.
+    assert_eq!(ops::describe(&mut t, n).unwrap().size_pages, 0);
+    assert_eq!(ops::describe(&mut t, l).unwrap().size_pages, 0);
+    assert_eq!(ops::describe(&mut t, c).unwrap().size_pages, 1);
+    let small = dtaara::create(
+        &mut t,
+        &params_for(lib, "SMALL", 0),
+        DataAreaType::Char { len: 1008 },
+        &DataAreaValue::Char("edge".into()),
+    )
+    .unwrap();
+    assert_eq!(ops::describe(&mut t, small).unwrap().size_pages, 0);
+    dtaara::write_substring(&mut t, small, 1005, 4, "last").unwrap();
+    let v = dtaara::read(&mut t, small).unwrap();
+    assert!(
+        matches!(&v, DataAreaValue::Char(s) if s.starts_with("edge") && s.ends_with("last") && s.len() == 1008)
+    );
     // Substring, whole write, type mismatch, overflow.
     dtaara::write_substring(&mut t, c, 7, 5, "world").unwrap();
     assert_eq!(

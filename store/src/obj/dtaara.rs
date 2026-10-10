@@ -15,8 +15,12 @@ use crate::spec::{Layout, field};
 use crate::txn::Txn;
 use crate::{Result, StoreError};
 
-/// Bytes of the attribute area used.
+/// Bytes of the attribute area used by the fixed part.
 pub const ATTR_LEN: usize = 16;
+/// Body offset of an inline value, relative to the attribute area.
+pub const INLINE_OFF: usize = 16;
+/// Longest value kept in the attribute area; longer ones get a page.
+pub const INLINE_MAX: usize = crate::obj::header::ATTR_LEN - INLINE_OFF;
 /// Longest `*CHAR` value.
 pub const MAX_CHAR: u16 = 2000;
 /// Most `*DEC` digits.
@@ -31,7 +35,8 @@ pub static LAYOUT: Layout = Layout {
         field("decimals", 1, 1),
         field("length", 2, 2),
         field("locked", 4, 1),
-        field("reserved", 5, 3),
+        field("inline", 5, 1),
+        field("reserved", 6, 2),
         field("reserved2", 8, 8),
     ],
 };
@@ -73,6 +78,12 @@ impl DataAreaType {
         }
     }
 
+    /// Whether the value lives in the attribute area.
+    #[must_use]
+    pub fn inline(self) -> bool {
+        self.value_len() <= INLINE_MAX
+    }
+
     /// Bytes the value occupies.
     #[must_use]
     pub fn value_len(self) -> usize {
@@ -101,6 +112,7 @@ impl DataAreaType {
             }
         }
         a[4] = u8::from(locked);
+        a[5] = u8::from(self.inline());
         a
     }
 
@@ -217,7 +229,9 @@ pub fn create(
     let id = ops::create(txn, &params)?;
     let page = ops::read_header(txn, id)?.0;
     ops::write_attr(txn, page, 0, &kind.encode(false))?;
-    Space::ensure(txn, id, kind.value_len() as u64, 0x40)?;
+    if !kind.inline() {
+        Space::ensure(txn, id, kind.value_len() as u64, 0x40)?;
+    }
     write(txn, id, initial)?;
     Ok(id)
 }
@@ -238,8 +252,7 @@ pub fn describe(txn: &mut Txn<'_>, id: ObjectId) -> Result<(DataAreaType, bool)>
 /// The value.
 pub fn read(txn: &mut Txn<'_>, id: ObjectId) -> Result<DataAreaValue> {
     let (kind, _) = describe(txn, id)?;
-    let (space, _) = Space::load(txn, id)?;
-    let raw = space.read(txn, 0, kind.value_len())?;
+    let raw = read_value(txn, id, kind, 0, kind.value_len())?;
     Ok(match kind {
         DataAreaType::Char { .. } => DataAreaValue::Char(ccsid::from_ebcdic(&raw)),
         DataAreaType::Dec { .. } => {
@@ -266,7 +279,6 @@ fn check_dec(kind: DataAreaType, scaled: i128) -> Result<()> {
 /// Replace the whole value.
 pub fn write(txn: &mut Txn<'_>, id: ObjectId, value: &DataAreaValue) -> Result<()> {
     let (kind, _) = describe(txn, id)?;
-    let (space, _) = Space::load(txn, id)?;
     let bytes = match (kind, value) {
         (DataAreaType::Char { len }, DataAreaValue::Char(s)) => {
             let mut out = vec![0x40u8; usize::from(len)];
@@ -286,7 +298,7 @@ pub fn write(txn: &mut Txn<'_>, id: ObjectId, value: &DataAreaValue) -> Result<(
             });
         }
     };
-    space.write(txn, 0, &bytes)
+    write_value(txn, id, kind, 0, &bytes)
 }
 
 /// Replace `len` characters from `start` (1-based) of a `*CHAR` value.
@@ -312,8 +324,40 @@ pub fn write_substring(
     ccsid::encode_fixed(s, &mut out).map_err(|e| StoreError::BadValue {
         what: e.to_string(),
     })?;
+    write_value(txn, id, kind, usize::from(start) - 1, &out)
+}
+
+/// `len` bytes of the value from `off`: the attribute area or the page.
+fn read_value(
+    txn: &mut Txn<'_>,
+    id: ObjectId,
+    kind: DataAreaType,
+    off: usize,
+    len: usize,
+) -> Result<Vec<u8>> {
+    if kind.inline() {
+        let (page, _) = ops::read_header(txn, id)?;
+        let attr = ops::read_attr(txn, page)?;
+        return Ok(attr[INLINE_OFF + off..INLINE_OFF + off + len].to_vec());
+    }
     let (space, _) = Space::load(txn, id)?;
-    space.write(txn, u64::from(start) - 1, &out)
+    space.read(txn, off as u64, len)
+}
+
+/// Change `bytes` of the value at `off`, in place either way.
+fn write_value(
+    txn: &mut Txn<'_>,
+    id: ObjectId,
+    kind: DataAreaType,
+    off: usize,
+    bytes: &[u8],
+) -> Result<()> {
+    if kind.inline() {
+        let (page, _) = ops::read_header(txn, id)?;
+        return ops::write_attr(txn, page, INLINE_OFF + off, bytes);
+    }
+    let (space, _) = Space::load(txn, id)?;
+    space.write(txn, off as u64, bytes)
 }
 
 /// Set the lock flag (stored only in Phase 2).

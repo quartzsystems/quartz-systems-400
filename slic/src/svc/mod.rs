@@ -128,7 +128,7 @@ fn lic_dump(system: &mut System) -> String {
         return "LIC partition not attached\n".to_string();
     };
     let h = &record.header;
-    format!(
+    let mut out = format!(
         "sequence        {}\n\
          ipl_in_progress {}\n\
          last_ipl_type   {:?}\n\
@@ -153,7 +153,11 @@ fn lic_dump(system: &mut System) -> String {
         h.install_time,
         record.history.len(),
         record.tlvs.len()
-    )
+    );
+    for t in &record.tlvs {
+        let _ = writeln!(out, "  tlv {:#06x} ({} bytes)", t.tag, t.data.len());
+    }
+    out
 }
 
 fn sysval(system: &mut System, args: &[&str]) -> String {

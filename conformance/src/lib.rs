@@ -11,6 +11,7 @@
 #![forbid(unsafe_code)]
 
 mod error;
+mod phase2;
 #[cfg(unix)]
 mod png;
 mod qemu;
@@ -21,6 +22,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 pub use error::HarnessError;
+pub use phase2::SYSTEM_LIBRARIES;
 pub use qemu::firmware;
 pub use qemu::session::{PROMPT, Session};
 pub use steps::{Media, SRC_SEQUENCE, SRC_SEQUENCE_MEDIA, StepReport, Suite};

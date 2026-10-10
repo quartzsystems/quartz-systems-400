@@ -71,6 +71,12 @@ enum Command {
         /// With `--media iso`: install onto a blank disk, then boot it.
         #[arg(long)]
         install: bool,
+        /// Objects in the bench step (disk suite).
+        #[arg(long, default_value_t = 20_000)]
+        bench: u64,
+        /// Power pulls in the disk suite; 0 skips them.
+        #[arg(long, default_value_t = 3)]
+        pulls: u32,
     },
     /// Check host prerequisites.
     Doctor,
@@ -116,7 +122,12 @@ fn main() -> Result<()> {
             image::manifest::manifest(&ctx)?;
         }
         Command::All { release } => all(&ctx, release)?,
-        Command::Test { media, install } => host::testrun::test(&ctx, media, install)?,
+        Command::Test {
+            media,
+            install,
+            bench,
+            pulls,
+        } => host::testrun::test(&ctx, media, install, bench, pulls)?,
         Command::Doctor => host::doctor::doctor(&ctx)?,
         Command::Deny => host::deny::deny(&ctx)?,
     }

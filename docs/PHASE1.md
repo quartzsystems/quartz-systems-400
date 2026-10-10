@@ -14,9 +14,10 @@ conformance/  QEMU harness: the six Phase 1 steps
 build/        orchestrator (slot A/B UKIs, LIC partition, --release)
 ```
 
-Everything persisted in Phase 1 lives in the LIC partition and is marked
-`MIGRATE(phase2)` in the code; it moves into the object store when that
-exists.
+Everything persisted in Phase 1 lives in the LIC partition. Phase 2
+moved the system values into the object store's `QSYSVAL` object; the
+IPL state and the IPL subset of the system values stay here (see
+PHASE2.md).
 
 ## The IPL
 
@@ -43,7 +44,7 @@ used once, else normal.
 | C1002000 | LIC | Previous IPL was abnormal (informational, continues) |
 | C6001000 | OS | OS phase started |
 | C6001010 | OS | System values loaded |
-| C6001020 | OS | Startup program skipped, no object store (`MIGRATE(phase5)`) |
+| C6001020 | OS | Startup program skipped (`MIGRATE(phase5)`) |
 | C6001090 | OS | IPL complete |
 | A6005008 | attention | Console not found, continuing on serial |
 | B1001000 | fatal | slic panic |
@@ -256,8 +257,8 @@ System" menu appears first (option 1 continues to sign-on). On a D IPL `slic`
 records IPL type D for this IPL, and when no LIC partition is found it
 emits `C1001015 Running from installation media` instead of halting with
 B1001010, runs with an in-memory LIC record, and continues to the console.
-In Phase 1 that ends at the sign-on display. `TODO(phase2)`: first-boot
-ASP initialization against a chosen disk (manual-mode menu option 2).
+In Phase 1 that ends at the sign-on display. Phase 2 made option 2 the
+installer (see PHASE2.md).
 
 Write it to a USB stick (replace `sdX` with the stick, everything on it is
 lost):

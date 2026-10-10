@@ -4,8 +4,11 @@ A from-scratch operating system on the Linux kernel, written entirely in Rust,
 source-compatible with IBM i and screen-identical at a 5250 terminal.
 Phase 0 built the build system and a booting kernel with a Rust PID 1
 (`slic`). Phase 1 made `slic` a real IPL with persistent state, system
-values and a local 5250-style console. The object store is Phase 2; code
-that waits for it is marked `MIGRATE(phase2)`.
+values and a local 5250-style console. Phase 2 added the object store
+(`store`), the disk layout with an ASP partition, system values in the
+`QSYSVAL` object, RCLSTG, the service console's object commands and the
+ISO installer. Code waiting for a later phase is marked `MIGRATE(phaseN)`
+or `TODO(phaseN)`.
 
 ## Ground rules
 
@@ -62,7 +65,7 @@ store/        object store: src/page/, src/btree/, src/asp/ (units, superblock),
 diskimg/      GPT layout (ESP, LIC, ASP1), FAT volumes, partition lookup; build + installer
 ccsid/        CP037 <-> UTF-8 from cp037.csv (build.rs), EBCDIC collation
 qsname/       object, library and member name rules; 10-byte CP037 Name
-docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, STORE_FORMAT.md, images/
+docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, STORE_FORMAT.md, images/
 ```
 
 ## Commands
@@ -125,8 +128,9 @@ otherwise logs go to `target/logs/`.
 - Every string a user sees is Quartz-written; never reproduce IBM message
   or help text. IBM names (system values, SRC families, screen geometry)
   are the compatibility interface.
-- Persistence before the object store goes through `licpart` and is marked
-  `MIGRATE(phase2)`.
+- IPL state (slots, history, keylock, the IPL subset of the system
+  values) stays in `licpart`; everything else persists in the object
+  store.
 - On-disk store structures are specified in `docs/STORE_FORMAT.md` before
   they are coded; `store/tests/spec.rs` compares the code's `Layout`s with
   the spec tables, so both change together.

@@ -27,6 +27,9 @@ const JOB: JobHandle = JobHandle(1);
 const BENCH_BATCH: u64 = 1000;
 /// Libraries the bench spreads objects over.
 const BENCH_LIBS: u64 = 10;
+/// Checkpoint after this many batches, so a power pull mid-bench has
+/// transactions to replay.
+const CHECKPOINT_EVERY: u64 = 4;
 
 /// The store and root library a library name lives in.
 fn target<'a>(system: &'a mut System, lib: &str) -> Result<(&'a mut Store, ObjectId), String> {
@@ -345,6 +348,8 @@ fn bench(system: &mut System, n: u64) -> Result<String, String> {
         }
         txn.commit().map_err(|e| e.to_string())?;
     }
+    // Leftovers of an interrupted run go first, untimed.
+    delete_bench_objects(store, &libs)?;
     let start = Instant::now();
     let mut created = 0;
     while created < n {
@@ -362,13 +367,26 @@ fn bench(system: &mut System, n: u64) -> Result<String, String> {
             .map_err(|e| format!("create {i}: {e}"))?;
         }
         txn.commit().map_err(|e| e.to_string())?;
-        store.checkpoint().map_err(|e| e.to_string())?;
+        if (end / BENCH_BATCH).is_multiple_of(CHECKPOINT_EVERY) {
+            store.checkpoint().map_err(|e| e.to_string())?;
+        }
         created = end;
     }
     let create_secs = start.elapsed().as_secs_f64();
     let start = Instant::now();
+    let deleted = delete_bench_objects(store, &libs)?;
+    let delete_secs = start.elapsed().as_secs_f64();
+    Ok(format!(
+        "created {n} in {create_secs:.2}s ({:.0}/s); deleted {deleted} in {delete_secs:.2}s ({:.0}/s)\n",
+        n as f64 / create_secs.max(1e-9),
+        deleted as f64 / delete_secs.max(1e-9)
+    ))
+}
+
+/// Delete every bench data area in `libs`, a batch per transaction.
+fn delete_bench_objects(store: &mut Store, libs: &[ObjectId]) -> Result<u64, String> {
     let mut deleted = 0u64;
-    for lib in &libs {
+    for lib in libs {
         loop {
             let mut txn = store.begin().map_err(|e| e.to_string())?;
             let batch: Vec<ObjectId> = ops::list(&mut txn, *lib, Some(types::DTAARA))
@@ -386,16 +404,13 @@ fn bench(system: &mut System, n: u64) -> Result<String, String> {
                 ops::delete(&mut txn, JOB, *id).map_err(|e| e.to_string())?;
             }
             txn.commit().map_err(|e| e.to_string())?;
-            store.checkpoint().map_err(|e| e.to_string())?;
             deleted += batch.len() as u64;
+            if (deleted / BENCH_BATCH).is_multiple_of(CHECKPOINT_EVERY) {
+                store.checkpoint().map_err(|e| e.to_string())?;
+            }
         }
     }
-    let delete_secs = start.elapsed().as_secs_f64();
-    Ok(format!(
-        "created {n} in {create_secs:.2}s ({:.0}/s); deleted {deleted} in {delete_secs:.2}s ({:.0}/s)\n",
-        n as f64 / create_secs.max(1e-9),
-        deleted as f64 / delete_secs.max(1e-9)
-    ))
+    Ok(deleted)
 }
 
 /// `dtaara get|set LIB/NAME [value]`.

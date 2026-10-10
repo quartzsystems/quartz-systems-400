@@ -95,15 +95,19 @@ pub struct StepReport {
 
 /// The suite: launch settings and output locations.
 pub struct Suite {
-    launch: Launch,
+    pub(crate) launch: Launch,
     media: Media,
     /// With `Media::Iso`: run the installer onto a blank disk instead.
     install: bool,
+    /// Objects for the bench step.
+    pub(crate) bench: u64,
+    /// Power pulls to run (0 skips the step).
+    pub(crate) pulls: u32,
     iso: Option<PathBuf>,
     /// Directory for the working image, the QMP socket and screenshots.
     pub out_dir: PathBuf,
     /// Time allowed for an IPL to reach completion.
-    pub boot_timeout: Duration,
+    pub(crate) boot_timeout: Duration,
 }
 
 // The steps share one signature so `step` can take them as fn pointers.
@@ -154,6 +158,8 @@ impl Suite {
             },
             media,
             install: false,
+            bench: 20_000,
+            pulls: 3,
             iso: iso.map(Path::to_path_buf),
             out_dir,
             boot_timeout,
@@ -164,6 +170,13 @@ impl Suite {
     /// of the three media steps.
     pub fn set_install(&mut self, install: bool) {
         self.install = install;
+    }
+
+    /// Size of the object bench and number of power pulls in the disk
+    /// suite.
+    pub fn set_phase2(&mut self, bench: u64, pulls: u32) {
+        self.bench = bench;
+        self.pulls = pulls;
     }
 
     /// Launch settings.
@@ -333,14 +346,18 @@ impl Suite {
         reports.push(self.step(&mut s, "3 system values", Self::sysvals)?);
         reports.push(self.step(&mut s, "4 restart and history", Self::restart)?);
         reports.push(self.step(&mut s, "6 screenshot", Self::screenshot)?);
+        reports.push(self.step(&mut s, "7 libraries", Self::libraries)?);
+        reports.push(self.step(&mut s, "8 sysval in store", Self::sysval_in_store)?);
+        reports.push(self.step(&mut s, "9 object bench", Self::object_bench)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);
         reports.push(self.abnormal()?);
+        reports.push(self.power_pulls()?);
         Ok(reports)
     }
 
-    fn step(
+    pub(crate) fn step(
         &self,
         s: &mut Session,
         name: &'static str,

@@ -29,6 +29,12 @@ struct Cli {
     /// With `--media iso`: install onto a blank disk and boot it.
     #[arg(long)]
     install: bool,
+    /// Objects in the bench step of the disk suite.
+    #[arg(long, default_value_t = 20_000)]
+    bench: u64,
+    /// Power pulls in the disk suite (0 skips them).
+    #[arg(long, default_value_t = 3)]
+    pulls: u32,
 }
 
 fn main() -> Result<ExitCode> {
@@ -42,6 +48,7 @@ fn main() -> Result<ExitCode> {
         conformance::target_dir().join("conformance"),
     )?;
     suite.set_install(cli.install);
+    suite.set_phase2(cli.bench, cli.pulls);
     let l = suite.launch();
     println!(
         "{} + {} ({})",

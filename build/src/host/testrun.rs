@@ -11,7 +11,13 @@ use crate::ctx::Ctx;
 use crate::host::paths;
 
 /// Run the Phase 1 suite for `media`.
-pub fn test(ctx: &Ctx, media: conformance::Media, install: bool) -> Result<()> {
+pub fn test(
+    ctx: &Ctx,
+    media: conformance::Media,
+    install: bool,
+    bench: u64,
+    pulls: u32,
+) -> Result<()> {
     let image = paths::read_pointer(&ctx.paths.disk_pointer())
         .context("no disk image; run `disk` first")?;
     let iso = paths::read_pointer(&ctx.paths.iso_pointer()).ok();
@@ -22,6 +28,7 @@ pub fn test(ctx: &Ctx, media: conformance::Media, install: bool) -> Result<()> {
         ctx.paths.target.join("conformance"),
     )?;
     suite.set_install(install);
+    suite.set_phase2(bench, pulls);
     let l = suite.launch();
     info!(
         "test: {} with {} ({})",

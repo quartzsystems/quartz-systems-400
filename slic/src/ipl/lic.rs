@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! Attaching the LIC partition, abnormal-IPL detection, history records.
-//! MIGRATE(phase2): the record contents move into the object store.
+//! The record holds only what the IPL needs before the object store opens.
 
 use std::fs::OpenOptions;
 use std::io::Cursor;

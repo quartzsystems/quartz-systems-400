@@ -504,9 +504,11 @@ cover whole pages could skip the patch and image the page directly.
 
 ### `DtaaraAttr` (16 bytes)
 
-The value is the first bytes of the byte space: `*CHAR` the `length`
-CP037 bytes; `*DEC` a 16-byte two's complement little-endian integer
-scaled by `10^decimals`; `*LGL` one byte, 0 or 1.
+The value: `*CHAR` the `length` CP037 bytes; `*DEC` a 16-byte two's
+complement little-endian integer scaled by `10^decimals`; `*LGL` one
+byte, 0 or 1. A value of at most 1008 bytes lives in the attribute area
+from offset 16 (`inline` is 1) and the object has no payload pages; a
+longer `*CHAR` value is the first bytes of the byte space.
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
@@ -514,7 +516,8 @@ scaled by `10^decimals`; `*LGL` one byte, 0 or 1.
 | 1 | 1 | decimals | `*DEC` only, 0..9 |
 | 2 | 2 | length | `*CHAR` 1..2000, `*DEC` digits 1..24, `*LGL` 1 |
 | 4 | 1 | locked | lock flag for a later phase |
-| 5 | 3 | reserved | 0 |
+| 5 | 1 | inline | 1 when the value is in the attribute area |
+| 6 | 2 | reserved | 0 |
 | 8 | 8 | reserved2 | 0 |
 
 ### `DtaqAttr` (48 bytes)
@@ -563,8 +566,8 @@ multiple of 8.
 
 Entries live in a B+tree owned by the index, keyed by `IdxKey`, whose
 value is the entry's bytes after the key (at most 1024, so
-`entry_len` is at most `key_len + 1024`; `TODO(phase2)`: longer
-entries).
+`entry_len` is at most `key_len + 1024`; longer entries are a later
+phase).
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
