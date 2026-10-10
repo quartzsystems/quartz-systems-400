@@ -118,19 +118,27 @@ impl DstEnv for Env<'_> {
         let asp = store.asp_number();
         let infos = store.units();
         let resume = storage::resume_progress(self.system);
-        let devices: Vec<String> = self
+        // Devices by the unit UUID in their header: the order they were
+        // found in says nothing about unit numbers.
+        let devices: Vec<(Option<[u8; 16]>, String)> = self
             .system
             .storage
             .as_ref()
-            .map(|s| s.devices.iter().map(|d| d.display().to_string()).collect())
+            .map(|s| {
+                s.devices
+                    .iter()
+                    .map(|d| (storage::unit_uuid_of(d), d.display().to_string()))
+                    .collect()
+            })
             .unwrap_or_default();
         infos
             .into_iter()
             .map(|u| {
                 let e = &u.entry;
                 let device = devices
-                    .get(usize::from(u.unit))
-                    .cloned()
+                    .iter()
+                    .find(|(uuid, _)| *uuid == Some(e.unit_uuid))
+                    .map(|(_, d)| d.clone())
                     .unwrap_or_default();
                 let (type_model, _) = diskimg::locate::identity(std::path::Path::new(&device));
                 let used = (u.used_pages * 100)
@@ -149,6 +157,7 @@ impl DstEnv for Env<'_> {
                     partner: e.mirrored().then_some(e.mirror_partner),
                     attached: u.attached,
                     resume_percent: resume.filter(|p| p.unit == u.unit).map(|p| p.percent),
+                    device,
                 }
             })
             .collect()
@@ -193,24 +202,48 @@ impl DstEnv for Env<'_> {
     fn add_unit(&mut self, device: &str) -> Result<u16, String> {
         let (dev, serial) = open_unit(device)?;
         let store = self.store()?;
-        store
+        let n = store
             .add_unit(dev, storage::fresh_uuid(), &serial)
-            .map_err(|e| e.to_string())
+            .map_err(|e| e.to_string())?;
+        if let Some(s) = self.system.storage.as_mut() {
+            s.devices.push(std::path::PathBuf::from(device));
+        }
+        Ok(n)
     }
 
     fn remove_unit(&mut self, unit: u16) -> Result<(), String> {
-        self.store()?
-            .remove_unit(unit)
-            .map(|_| ())
-            .map_err(|e| e.to_string())
+        self.store()?.remove_unit(unit).map_err(|e| e.to_string())?;
+        if let Some(s) = self.system.storage.as_mut()
+            && usize::from(unit) < s.devices.len()
+        {
+            s.devices.remove(usize::from(unit));
+        }
+        Ok(())
     }
 
     fn start_mirror(&mut self, unit: u16, device: &str) -> Result<u16, String> {
+        // A unit added to the ASP leaves the configuration first.
+        let configured = self.system.storage.as_ref().and_then(|s| {
+            s.devices
+                .iter()
+                .position(|d| d.display().to_string() == device)
+        });
+        if let Some(n) = configured {
+            let n = u16::try_from(n).map_err(|_| "unit number".to_string())?;
+            self.store()?.remove_unit(n).map_err(|e| e.to_string())?;
+            if let Some(s) = self.system.storage.as_mut() {
+                s.devices.remove(usize::from(n));
+            }
+        }
         let (dev, serial) = open_unit(device)?;
         let store = self.store()?;
-        store
+        let new = store
             .start_mirror(unit, dev, storage::fresh_uuid(), &serial)
-            .map_err(|e| e.to_string())
+            .map_err(|e| e.to_string())?;
+        if let Some(s) = self.system.storage.as_mut() {
+            s.devices.push(std::path::PathBuf::from(device));
+        }
+        Ok(new)
     }
 
     fn stop_mirror(&mut self, keep: u16) -> Result<(), String> {

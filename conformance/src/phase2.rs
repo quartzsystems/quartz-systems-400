@@ -375,6 +375,7 @@ impl Suite {
         s.expect("Selection", CMD)?;
         s.send("3")?;
         s.expect("Dedicated Service Tools (DST) Sign On", CMD)?;
+        self.snap("dst-signon");
         let mut compared = Vec::new();
         compared.push(golden_matches(s, "signon")?);
         // Wrong password once, then the shipped one, which is expired.
@@ -399,6 +400,7 @@ impl Suite {
         s.send("type Quartz1")?;
         s.send("key enter")?;
         s.expect("Use Dedicated Service Tools (DST)", CMD)?;
+        self.snap("dst-main");
         compared.push(golden_matches(s, "main")?);
         // Option 1: perform an IPL.
         s.send("1")?;

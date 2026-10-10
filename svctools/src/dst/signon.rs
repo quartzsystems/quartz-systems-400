@@ -43,7 +43,7 @@ impl Panel for SignOn {
         // Failure counts and disables are durable.
         let _ = env.save_users();
         match result {
-            Ok(privileges) => Flow::Replace(Box::new(MainMenu::new(user, privileges))),
+            Ok(privileges) => Flow::Reset(Box::new(MainMenu::new(user, privileges))),
             Err(SignOnError::Expired) => Flow::Push(Box::new(ChangePassword::new(user))),
             Err(e) => Flow::Error(message(&e)),
         }
@@ -125,7 +125,7 @@ impl Panel for ChangePassword {
                     .get(&self.user)
                     .map(|u| u.privileges)
                     .unwrap_or_default();
-                Flow::Replace(Box::new(MainMenu::new(self.user.clone(), privileges)))
+                Flow::Reset(Box::new(MainMenu::new(self.user.clone(), privileges)))
             }
             Err(e) => Flow::Error(message(&e)),
         }

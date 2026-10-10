@@ -229,6 +229,8 @@ impl Suite {
         reports.push(self.step(&mut s, "3 interactive install", Self::interactive_install)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(20));
+        drop(s);
+        reports.extend(self.dst_scenarios(&media)?);
         Ok(reports)
     }
 
@@ -267,11 +269,11 @@ impl Suite {
         s.send("1")?;
         s.expect("Install Licensed Internal Code (LIC)", CMD)?;
         s.send("2")?;
-        let listing = s.expect("Opt  Resource", CMD)?;
-        let _ = listing;
         s.expect("(has data)", CMD)?;
+        self.snap("install-load-source");
         s.send("1")?;
         s.expect("Install LIC and Initialize System - Confirmation", CMD)?;
+        self.snap("install-lic-confirm");
         s.send("key f10")?;
         s.expect("SRC C6004090", Duration::from_secs(120))?;
         s.expect("SRC D1001090", CMD)?;
@@ -302,6 +304,7 @@ impl Suite {
         s.send("key f10")?;
         s.expect("SRC C6004120", Duration::from_secs(120))?;
         s.expect("IPL Options", self.boot_timeout)?;
+        self.snap("install-ipl-options");
         s.send("key enter")?;
         s.expect("Set Major System Options", CMD)?;
         s.send("key enter")?;
@@ -573,6 +576,32 @@ impl Suite {
     fn screenshot(&self, _s: &mut Session) -> Result<String, String> {
         Err("QMP screendump needs a Unix host".into())
     }
+
+    /// A screenshot of the display as `<name>.png` in the output
+    /// directory, for the documentation. Failures are reported, never
+    /// fatal: the screens are checked as text.
+    #[cfg(unix)]
+    pub(crate) fn snap(&self, name: &str) {
+        std::thread::sleep(Duration::from_millis(400));
+        let result = (|| -> Result<(), String> {
+            let mut q = crate::qemu::qmp::Qmp::connect(&self.launch.qmp)?;
+            let png = self.out_dir.join(format!("{name}.png"));
+            let raw = self.out_dir.join(format!("{name}.ppm"));
+            match q.screendump(&raw)? {
+                "png" => fs::rename(&raw, &png).map_err(|e| e.to_string())?,
+                _ => png::ppm_to_png(&raw, &png)?,
+            }
+            let _ = fs::remove_file(&raw);
+            Ok(())
+        })();
+        if let Err(e) = result {
+            eprintln!("screenshot {name}: {e}");
+        }
+    }
+
+    /// Screenshots need a Unix socket for QMP.
+    #[cfg(not(unix))]
+    pub(crate) fn snap(&self, _name: &str) {}
 
     /// Step 5: kill the guest during the LIC phase, boot again, expect the
     /// abnormal notice and QABNORMSW 1.

@@ -45,22 +45,50 @@ pub fn work_with_mirrored_protection() -> Submenu {
     )
 }
 
-/// Pair unprotected units with non-configured disks: each unit gets
-/// the first spare disk at least as large, a different disk preferred.
+/// Pair unprotected units with partners: non-configured disks first,
+/// then unprotected units added to the ASP but holding nothing yet
+/// (taken from the end of the configuration). Each unit gets the first
+/// partner at least as large, a different disk preferred.
 #[must_use]
 pub fn propose_pairs(
     units: &[DiskUnit],
     spare: &[NonConfigured],
 ) -> Vec<(DiskUnit, NonConfigured)> {
     let mut free: Vec<NonConfigured> = spare.to_vec();
+    // Added units, highest first: only the last unit can leave the
+    // configuration to become a half.
+    let mut added: Vec<&DiskUnit> = units
+        .iter()
+        .filter(|u| !u.mirrored && u.unit > 0 && u.percent_used == 0)
+        .collect();
+    added.sort_by_key(|u| std::cmp::Reverse(u.unit));
+    free.extend(added.iter().map(|u| NonConfigured {
+        device: u.device.clone(),
+        resource: u.resource.clone(),
+        serial: u.serial.clone(),
+        type_model: u.type_model.clone(),
+        size_mib: u.size_mib,
+        has_data: false,
+    }));
     let mut pairs = Vec::new();
+    let mut taken: Vec<u16> = Vec::new();
     for u in units.iter().filter(|u| !u.mirrored) {
+        if taken.contains(&u.unit) {
+            continue;
+        }
         let pick = free
             .iter()
             .position(|d| d.size_mib >= u.size_mib && d.resource != u.resource)
-            .or_else(|| free.iter().position(|d| d.size_mib >= u.size_mib));
+            .or_else(|| {
+                free.iter()
+                    .position(|d| d.size_mib >= u.size_mib && d.device != u.device)
+            });
         if let Some(i) = pick {
-            pairs.push((u.clone(), free.remove(i)));
+            let partner = free.remove(i);
+            if let Some(p) = units.iter().find(|x| x.device == partner.device) {
+                taken.push(p.unit);
+            }
+            pairs.push((u.clone(), partner));
         }
     }
     pairs

@@ -11,6 +11,12 @@ panels inside a job through another `DstEnv`.
 Titles and option numbers are the functional interface and follow IBM's
 menus; every sentence on the screens is Quartz's.
 
+![DST sign-on](images/dst-signon.png)
+
+![Use Dedicated Service Tools](images/dst-main.png)
+
+![Display Disk Configuration Status](images/dst-disk-status.png)
+
 ## Screen kit
 
 All screens share the geometry of the attended IPL menu, built by

@@ -98,14 +98,17 @@ pub fn args(l: &Launch) -> Vec<OsString> {
         a.push(join("if=none,id=hd,format=raw,file=", image));
         a.push(OsString::from("-device"));
         a.push(OsString::from(format!(
-            "virtio-blk-pci,drive=hd,bootindex={disk_index}"
+            "virtio-blk-pci,drive=hd,serial=QS400HD0,bootindex={disk_index}"
         )));
     }
     for (i, disk) in l.extra_disks.iter().enumerate() {
         a.push(OsString::from("-drive"));
         a.push(join(&format!("if=none,id=extra{i},format=raw,file="), disk));
         a.push(OsString::from("-device"));
-        a.push(OsString::from(format!("virtio-blk-pci,drive=extra{i}")));
+        a.push(OsString::from(format!(
+            "virtio-blk-pci,drive=extra{i},serial=QS400HD{}",
+            i + 1
+        )));
     }
     if let Some(cdrom) = &l.cdrom {
         a.push(OsString::from("-drive"));

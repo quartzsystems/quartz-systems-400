@@ -270,6 +270,8 @@ fn report_events(
 /// used, continuing from the journal after a crash.
 fn synchronize(system: &mut System, store: &mut Store, unit: u16) -> store::Result<()> {
     system.emit(&src::MIRROR_SYNC);
+    let name = system.system_name();
+    let console = system.console.clone();
     let mut journal = journal(&mut system.lic);
     let mut resume = store.resume_unit(unit, &mut journal)?;
     let start = resume.progress();
@@ -277,19 +279,45 @@ fn synchronize(system: &mut System, store: &mut Store, unit: u16) -> store::Resu
         "slic: synchronizing unit {unit}: {} of {} chunks already copied\n",
         start.chunks_done, start.chunks
     ));
-    let mut shown = start.percent / 10;
+    let mut shown = start.percent / 5;
+    sync_screen(console.as_ref(), &name, unit, start.percent);
     loop {
         let p = store.resume_step(&mut resume, &mut journal, SYNC_BUDGET)?;
-        if p.percent / 10 > shown || p.complete {
-            shown = p.percent / 10;
-            system.out.serial(&format!(
-                "slic: synchronizing unit {unit}: {}%\n",
-                p.percent
-            ));
+        if p.percent / 5 > shown || p.complete {
+            shown = p.percent / 5;
+            if p.percent.is_multiple_of(10) || p.complete {
+                system.out.serial(&format!(
+                    "slic: synchronizing unit {unit}: {}%\n",
+                    p.percent
+                ));
+            }
+            sync_screen(console.as_ref(), &name, unit, p.percent);
         }
         if p.complete {
             return Ok(());
         }
+    }
+}
+
+/// The `Mirrored Protection Synchronization` display with its bar.
+fn sync_screen(
+    console: Option<&std::sync::mpsc::Sender<crate::ipl::display::Command>>,
+    name: &str,
+    unit: u16,
+    percent: u8,
+) {
+    let screen = svctools::ui::text(
+        "Mirrored Protection Synchronization",
+        name,
+        &[
+            format!("Disk unit {} is being copied from its partner.", unit + 1),
+            "The IPL continues when the copy is complete.".to_string(),
+        ],
+        Some(percent),
+        "",
+    );
+    if let Some(tx) = console {
+        let _ = tx.send(crate::ipl::display::Command::ShowScreen(screen));
     }
 }
 
@@ -457,13 +485,18 @@ pub fn unit_candidates() -> Vec<PathBuf> {
 
 /// Whether a device's first page is a verifiable unit header.
 pub fn has_unit_header(path: &std::path::Path) -> bool {
-    let Ok(dev) = LinuxBlockDev::open(path) else {
-        return false;
-    };
+    unit_uuid_of(path).is_some()
+}
+
+/// The unit UUID a device's header carries, if it has one.
+pub fn unit_uuid_of(path: &std::path::Path) -> Option<[u8; 16]> {
+    let dev = LinuxBlockDev::open(path).ok()?;
     let mut page = store::Page::zeroed();
-    dev.read(0, page.bytes_mut()).is_ok()
-        && page.verify_type(0, store::PageType::UnitHeader).is_ok()
-        && store::asp::unit::UnitHeader::decode(page.body(), 0).is_ok()
+    dev.read(0, page.bytes_mut()).ok()?;
+    page.verify_type(0, store::PageType::UnitHeader).ok()?;
+    store::asp::unit::UnitHeader::decode(page.body(), 0)
+        .ok()
+        .map(|h| h.unit_uuid)
 }
 
 /// Format parameters for a new ASP 1 with one unit.

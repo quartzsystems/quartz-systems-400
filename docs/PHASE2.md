@@ -225,6 +225,12 @@ System Options` (`QAUTOCFG`, `QDEVNAMING`, `QSPCENV`). C6004190 clears
 the pending stage and the IPL reaches sign-on. An automatic install
 takes every default and asks nothing.
 
+![Select Load Source Device](images/install-load-source.png)
+
+![Install LIC and Initialize System - Confirmation](images/install-lic-confirm.png)
+
+![IPL Options](images/install-ipl-options.png)
+
 The disks come from `/sys/class/block`; the UKIs are read from the first
 optical device whose ISO 9660 volume id starts with `QS400`. The
 partition table is written with `diskimg::write_image_with` (random
@@ -257,6 +263,14 @@ described in DST.md. In short:
   dissolved through DST; the service console has `unit` and `mirror`
   commands for the same operations, and `key`, `type` and `screen` to
   drive any screen over serial.
+
+![Confirm Start Mirrored Protection](images/dst-mirror-start-confirm.png)
+
+![Mirrored Protection Synchronization](images/sync-progress.png)
+
+The screenshots come from the harness: every `build test` run that
+passes leaves them under `target/conformance/`, and the ones here were
+copied from one.
 
 ## Service console
 
@@ -306,10 +320,17 @@ Harness level (`build test`), after the Phase 1 steps:
 
 `build test` runs the bench with 20,000 objects and 3 pulls;
 `--bench 1000000 --pulls 10` is the CI size and `--pulls 100` the local
-one. `build test --media iso --install` installs onto a blank 4 GiB disk
-with option 4 (automatic), boots it alone, then installs over it again
-interactively through every screen over serial, including the DST
-sign-on the re-IPL lands in and the IPL options.
+one. `build test --media iso --install` runs the install suite:
+
+| Step | What |
+|---|---|
+| 1 automatic install | option 4 on a blank 4 GiB disk, C6004090, re-IPL from the media, C6004100, the operating system installed without prompts, sign-on |
+| 2 boot installed disk | the disk alone IPLs to sign-on |
+| 3 interactive install | option 2 over the installed disk through every screen over serial: LIC menus, load source, F10, re-IPL into DST, sign-on with the forced password change, the operating system screens, IPL options, major options, sign-on; `QAUTOCFG` applied |
+| 4 DST mirrored install | two blank disks: the LIC onto DD001, A6001260 at the re-IPL, DD002 added to ASP 1 and paired through the disk menus, option 1 re-IPLs into the synchronization |
+| 5 power pull during synchronization | killed at 20%; the next IPL continues from the journal (`N chunks already copied`), reaches 100%, the operating system is installed through DST, `asp` shows both halves active, `chkstg` clean |
+| 6 half missing in DST | the disk alone: A6001255; a manual IPL into DST shows unit 2 Missing; option 1 goes on to sign-on |
+| 7 resume and lockout in DST | both disks: three wrong QSRV passwords disable the ID, QSECOFR enables it from the environment menu, unit 2 is resumed from the recovery menu, the IPL goes on, the resume finishes in the background, `chkstg` clean |
 
 ## Numbers
 

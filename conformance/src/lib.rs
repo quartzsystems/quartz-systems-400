@@ -10,6 +10,7 @@
 
 #![forbid(unsafe_code)]
 
+mod dst;
 mod error;
 mod phase2;
 #[cfg(unix)]

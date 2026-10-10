@@ -41,6 +41,8 @@ pub struct DiskUnit {
     pub attached: bool,
     /// Percent of a resume done, while one runs on this unit.
     pub resume_percent: Option<u8>,
+    /// Device node, for pairing an added unit.
+    pub device: String,
 }
 
 /// A disk the system sees that belongs to no ASP.

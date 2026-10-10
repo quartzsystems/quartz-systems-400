@@ -51,6 +51,7 @@ fn unit(n: u16, mirrored: bool, partner: Option<u16>, status: &str, attached: bo
         partner,
         attached,
         resume_percent: None,
+        device: format!("/dev/vd{}", (b'a' + u8::try_from(n).unwrap()) as char),
     }
 }
 

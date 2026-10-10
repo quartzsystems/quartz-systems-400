@@ -187,6 +187,18 @@ fn pending_install(
 ) -> Result<(), &'static src::Src> {
     let mut auto = install::pending(system).unwrap_or(false);
     system.emit(&src::INSTALL_OS_PENDING);
+    // The ASP as it is: a pair formed in DST synchronizes here, before
+    // the service tools or the installer use it. A blank one is
+    // formatted. Whatever fails is reported again by DST on demand.
+    if system.storage.is_none()
+        && let Err(code) = storage::locate_and_open(system)
+    {
+        system.out.serial(&format!(
+            "slic: install: ASP 1 not opened yet: {}
+",
+            code.text
+        ));
+    }
     if !auto {
         let spare = diskimg::locate::whole_disks()
             .unwrap_or_default()

@@ -15,7 +15,6 @@ use std::time::Duration;
 use blockdev::{BlockDev, LinuxBlockDev};
 use diskimg::{Guids, Plan, fat, iso9660};
 use licpart::LicPart;
-use store::{Store, StoreConfig};
 use svctools::install::lic::LicEvent;
 use svctools::{DstEnv, Outcome};
 
@@ -239,34 +238,23 @@ impl Env<'_> {
         report: &mut dyn FnMut(usize, &mut dyn DstEnv),
     ) -> Result<(), String> {
         let now = now_unix();
-        let paths = storage::unit_candidates();
-        let Some(path) = paths.into_iter().next() else {
+        // The ASP as DST configured it, or a blank one formatted now.
+        if self.system.storage.is_none() {
+            storage::locate_and_open(self.system).map_err(|s| s.text.to_string())?;
+        }
+        if self.system.storage.is_none() {
             return Err("no ASP 1 partition on the load source".into());
-        };
-        storage::close(self.system);
-        let dev =
-            LinuxBlockDev::open(&path).map_err(|e| format!("open {}: {e}", path.display()))?;
-        let (_, serial) = diskimg::locate::identity(&path);
-        let devs: Vec<Box<dyn BlockDev>> = vec![Box::new(dev)];
-        let mut store = Store::format(
-            devs,
-            &storage::format_params(now, &serial),
-            StoreConfig::default(),
-        )
-        .map_err(|e| e.to_string())?;
+        }
         self.system.emit(&src::INSTALL_ASP);
         report(0, self);
-        let qsys = storage::bootstrap(&mut store, now, "QS400").map_err(|e| e.to_string())?;
+        let s = self.system.storage.as_mut().expect("opened above");
+        if s.qsys.is_none() {
+            let qsys = storage::bootstrap(&mut s.store, now, "QS400").map_err(|e| e.to_string())?;
+            s.qsys = Some(qsys);
+            s.fresh = false;
+        }
         self.system.emit(&src::INSTALL_LIBRARIES);
         report(1, self);
-        self.system.storage = Some(storage::Storage {
-            store,
-            qsys: Some(qsys),
-            fresh: false,
-            recovery: store::Recovery::default(),
-            devices: vec![path],
-            resume: None,
-        });
         // The *SYSVAL object is created when the values load.
         report(2, self);
         Ok(())

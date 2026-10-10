@@ -47,6 +47,8 @@ pub enum Flow {
     PopAll,
     /// Show another panel in this one's place.
     Replace(Box<dyn Panel>),
+    /// Forget every panel and start over with this one.
+    Reset(Box<dyn Panel>),
     /// Back `n` panels, with a message for the one revealed.
     Unwind(usize, Option<(String, bool)>),
     /// End the application.
@@ -151,6 +153,10 @@ impl Runner {
             }
             Flow::Replace(p) => {
                 self.stack.pop();
+                self.stack.push(p);
+            }
+            Flow::Reset(p) => {
+                self.stack.clear();
                 self.stack.push(p);
             }
             Flow::Unwind(n, message) => {
