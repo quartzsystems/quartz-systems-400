@@ -186,7 +186,10 @@ and `build manifest` read the whole 4 GiB.
 `build iso` puts the media UKI in the El Torito boot image and the slot
 A and B UKIs beside it as `QS400A.EFI` and `QS400B.EFI`, since the media
 UKI's command line is the D-IPL one. On a D IPL, option 2 of the
-attended menu:
+attended menu runs the installer. The display shows it as one dialog
+screen (title, text lines, a prompt field; a notice waits for Enter
+before returning to the menu) and the serial port gets the same text,
+so either keyboard answers it:
 
 ```
 Install the Operating System
@@ -301,8 +304,8 @@ cargo test -p store                       # unit, property and crash tests
   nothing adds a unit or mirrors (`mirror_of` is stored and ignored).
 - No journaling, no authority enforcement, no jobs: headers carry the
   fields; nothing acts on them (`MIGRATE(phase6)`, `MIGRATE(phase5)`).
-- No DST menus; the installer is the minimum dialog on serial and
-  console text.
+- No DST menus; the installer is one dialog screen on the display and
+  the same text on serial.
 - `*USRIDX` entries are at most the key plus 1024 bytes; user spaces at
   most 16 MiB; a queue reclaims space only when it empties.
 - Locks are in-process and per caller-supplied job handle.

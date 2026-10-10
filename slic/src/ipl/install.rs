@@ -19,6 +19,7 @@ use licpart::LicPart;
 use store::{Store, StoreConfig};
 
 use crate::hwrsrc::Kind;
+use crate::ipl::display::Command;
 use crate::ipl::menu::read_line;
 use crate::ipl::system::{System, now_unix};
 use crate::ipl::{Event, power, storage};
@@ -32,22 +33,71 @@ const MEDIA_UKI_A: &str = "QS400A.EFI";
 /// Slot B's UKI on the media.
 const MEDIA_UKI_B: &str = "QS400B.EFI";
 
+/// Title of every installer screen.
+const TITLE: &str = "Install the Operating System";
+
+/// The installer's text, kept for the console: every line goes to serial
+/// as it is produced and the console shows the whole page again.
+struct Page {
+    lines: Vec<String>,
+}
+
+impl Page {
+    /// Add a line, write it to serial and the kernel console.
+    fn line(&mut self, system: &mut System, text: &str) {
+        system.out.both(&format!("{text}\n"));
+        self.lines.push(text.to_string());
+    }
+
+    /// Show the page on the display, with a prompt field when asked.
+    fn show(&self, system: &mut System, prompt: Option<(&str, usize)>) {
+        system.show(Command::ShowDialog {
+            system: system.system_name(),
+            title: TITLE.to_string(),
+            lines: self.lines.clone(),
+            prompt: prompt.map(|(label, len)| (label.to_string(), len)),
+        });
+    }
+
+    /// Prompt on both outputs and wait for the answer.
+    fn ask(
+        &self,
+        system: &mut System,
+        rx: &Receiver<Event>,
+        label: &str,
+        len: usize,
+    ) -> Option<String> {
+        self.show(system, Some((label, len)));
+        system.out.both(&format!("\n{label}: "));
+        read_line(system, rx)
+    }
+
+    /// Show a final line and wait for Enter before going back.
+    fn notice(&mut self, system: &mut System, rx: &Receiver<Event>, text: &str) {
+        self.line(system, "");
+        self.line(system, text);
+        self.ask(system, rx, "Press Enter to return to the menu", 1);
+    }
+}
+
 /// Run the installer dialog. Returns when the user backs out; a
 /// finished installation powers the system down.
 pub fn run(system: &mut System, rx: &Receiver<Event>) {
-    system.out.both("\nInstall the Operating System\n\n");
+    let mut page = Page { lines: Vec::new() };
+    system.out.both(&format!("\n{TITLE}\n\n"));
     let disks = match diskimg::locate::whole_disks() {
         Ok(d) => d,
         Err(e) => {
-            system.out.both(&format!("Cannot list disk units: {e}\n"));
+            page.notice(system, rx, &format!("Cannot list disk units: {e}"));
             return;
         }
     };
     if disks.is_empty() {
-        system.out.both("No disk units found.\n");
+        page.notice(system, rx, "No disk units found.");
         return;
     }
-    system.out.both("Select the disk unit to install on:\n\n");
+    page.line(system, "Select the disk unit to install on:");
+    page.line(system, "");
     for (i, d) in disks.iter().enumerate() {
         let resource = system
             .hw
@@ -55,8 +105,8 @@ pub fn run(system: &mut System, rx: &Receiver<Event>) {
             .iter()
             .find(|r| r.kind == Kind::Disk && r.location == d.name)
             .map_or("-----", |r| r.name.as_str());
-        system.out.both(&format!(
-            "  {}. {:<6} {:<5} {:>8} MiB  {}{}\n",
+        let text = format!(
+            "  {}. {:<6} {:<5} {:>8} MiB  {}{}",
             i + 1,
             resource,
             d.name,
@@ -67,68 +117,90 @@ pub fn run(system: &mut System, rx: &Receiver<Event>) {
             } else {
                 ""
             }
-        ));
+        );
+        page.line(system, &text);
     }
-    system.out.both("\nSelection (0 to return): ");
-    let Some(choice) = read_line(system, rx) else {
+    let Some(choice) = page.ask(system, rx, "Selection (0 to return)", 2) else {
         return;
     };
     let Ok(n) = choice.trim().parse::<usize>() else {
-        system.out.both("\nSelection is not valid\n");
+        page.notice(system, rx, "Selection is not valid");
         return;
     };
     if n == 0 || n > disks.len() {
         if n != 0 {
-            system.out.both("\nSelection is not valid\n");
+            page.notice(system, rx, "Selection is not valid");
         }
         return;
     }
     let disk = disks[n - 1].clone();
-    system.out.both(&format!(
-        "\nInstall on {} ({} MiB)? All data on it will be lost.\nType YES to continue: ",
-        disk.dev.display(),
-        disk.bytes >> 20
-    ));
-    let Some(answer) = read_line(system, rx) else {
+    page.line(system, "");
+    page.line(
+        system,
+        &format!(
+            "Install on {} ({} MiB)? All data on it will be lost.",
+            disk.dev.display(),
+            disk.bytes >> 20
+        ),
+    );
+    let Some(answer) = page.ask(system, rx, "Type YES to continue", 3) else {
         return;
     };
     if answer.trim() != "YES" {
-        system.out.both("\nInstallation cancelled\n");
+        page.notice(system, rx, "Installation cancelled");
         return;
     }
-    match install(system, &disk) {
+    page.lines.clear();
+    page.show(system, None);
+    match install(system, &mut page, &disk) {
         Ok(()) => {
-            system.out.both(
-                "\nInstallation complete. Remove the installation media and press Enter to power down.\n",
+            page.line(system, "");
+            page.line(
+                system,
+                "Installation complete. Remove the installation media and press Enter to power down.",
             );
-            let _ = read_line(system, rx);
+            page.ask(system, rx, "Press Enter to power down", 1);
             power::down(system, false);
         }
-        Err(e) => system.out.both(&format!("\nInstallation failed: {e}\n")),
+        Err(e) => page.notice(system, rx, &format!("Installation failed: {e}")),
     }
 }
 
-/// Write the disk and initialize it.
-fn install(system: &mut System, disk: &DiskInfo) -> Result<(), String> {
+/// Write the disk and initialize it, reporting progress on `page`.
+fn install(system: &mut System, page: &mut Page, disk: &DiskInfo) -> Result<(), String> {
     let now = now_unix();
     let (uki_a, uki_b) = read_media_ukis(system)?;
-    system.out.both(&format!(
-        "Licensed Internal Code read from the media ({} and {} bytes)\n",
-        uki_a.len(),
-        uki_b.len()
-    ));
+    page.line(
+        system,
+        &format!(
+            "Licensed Internal Code read from the media ({} and {} bytes)",
+            uki_a.len(),
+            uki_b.len()
+        ),
+    );
+    page.show(system, None);
 
     let plan = Plan::for_bytes(disk.bytes).map_err(|e| e.to_string())?;
     let esp = fat::build(&fat::DISK_ESP, &[(SLOT_A, &uki_a), (SLOT_B, &uki_b)])
         .map_err(|e| e.to_string())?;
     let guids = Guids::from_random([random(), random(), random(), random()]);
-    system.out.both(&format!(
-        "Writing partition table and licensed internal code to {} (ESP {} MiB, LIC {} MiB, ASP 1 {} MiB)\n",
-        disk.dev.display(),
-        plan.esp.bytes() >> 20,
-        plan.lic.bytes() >> 20,
-        plan.asp1.bytes() >> 20
-    ));
+    page.line(
+        system,
+        &format!(
+            "Writing partition table and licensed internal code to {}",
+            disk.dev.display()
+        ),
+    );
+    page.line(
+        system,
+        &format!(
+            "  (ESP {} MiB, LIC {} MiB, ASP 1 {} MiB)",
+            plan.esp.bytes() >> 20,
+            plan.lic.bytes() >> 20,
+            plan.asp1.bytes() >> 20
+        ),
+    );
+    page.show(system, None);
     let mut file = OpenOptions::new()
         .read(true)
         .write(true)
@@ -154,7 +226,8 @@ fn install(system: &mut System, disk: &DiskInfo) -> Result<(), String> {
     }
 
     // LIC record with the current system values.
-    system.out.both("Initializing the LIC partition\n");
+    page.line(system, "Initializing the LIC partition");
+    page.show(system, None);
     let lic_dev: File = OpenOptions::new()
         .read(true)
         .write(true)
@@ -168,7 +241,8 @@ fn install(system: &mut System, disk: &DiskInfo) -> Result<(), String> {
     drop(part_lic);
 
     // ASP 1 with QSYS and the system libraries.
-    system.out.both("Initializing ASP 1\n");
+    page.line(system, "Initializing ASP 1");
+    page.show(system, None);
     let asp_dev = LinuxBlockDev::open(std::path::Path::new(&format!("/dev/{}", part(3))))
         .map_err(|e| e.to_string())?;
     let pages = asp_dev.blocks();
@@ -177,9 +251,10 @@ fn install(system: &mut System, disk: &DiskInfo) -> Result<(), String> {
         .map_err(|e| e.to_string())?;
     let qsys = storage::bootstrap(&mut store, now, "QS400").map_err(|e| e.to_string())?;
     store.close().map_err(|e| e.to_string())?;
-    system.out.both(&format!(
-        "ASP 1 initialized: {pages} pages, QSYS is {qsys}\n"
-    ));
+    page.line(
+        system,
+        &format!("ASP 1 initialized: {pages} pages, QSYS is {qsys}"),
+    );
     Ok(())
 }
 

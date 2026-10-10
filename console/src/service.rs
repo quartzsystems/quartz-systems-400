@@ -47,6 +47,18 @@ pub enum Command {
         /// Display name.
         display: String,
     },
+    /// Show a dialog: title, text lines, and a prompt with an input field
+    /// of the given length when one is wanted.
+    ShowDialog {
+        /// System name.
+        system: String,
+        /// Title, centered on row 1.
+        title: String,
+        /// Text lines from row 4.
+        lines: Vec<String>,
+        /// Prompt label and field length; `None` for a notice.
+        prompt: Option<(String, usize)>,
+    },
     /// Replace the message line.
     Message {
         /// Text.
@@ -63,7 +75,7 @@ pub enum Command {
 /// What the console reports back to slic.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Input {
-    /// Enter on the IPL menu, with the selection field.
+    /// Enter on the IPL menu or a dialog, with the input field.
     MenuSelection(String),
     /// A function key on any screen.
     Function(u8),
@@ -73,6 +85,7 @@ pub enum Input {
 enum Kind {
     Src,
     Menu,
+    Dialog,
     SignOn,
 }
 
@@ -161,6 +174,19 @@ impl Console {
                 self.locked = false;
                 editor::home(&mut self.screen);
             }
+            Command::ShowDialog {
+                system,
+                title,
+                lines,
+                prompt,
+            } => {
+                self.system = system;
+                let prompt = prompt.as_ref().map(|(label, len)| (label.as_str(), *len));
+                self.screen = screens::dialog(&self.system, &title, &lines, prompt);
+                self.kind = Kind::Dialog;
+                self.locked = false;
+                editor::home(&mut self.screen);
+            }
             Command::Message { text, error } => {
                 screens::set_message(&mut self.screen, &text, error);
             }
@@ -213,17 +239,15 @@ impl Console {
         }
     }
 
-    /// Enter: the menu selection goes to slic; sign-on locks the keyboard.
+    /// Enter: the menu or dialog field goes to slic; sign-on locks the
+    /// keyboard; a dialog without a field ignores Enter.
     fn enter(&mut self) -> bool {
         match self.kind {
-            Kind::Menu => {
-                let text = self
-                    .screen
-                    .fields
-                    .first()
-                    .map(|f| self.screen.field_text(f))
-                    .unwrap_or_default();
-                self.send(Input::MenuSelection(text));
+            Kind::Menu | Kind::Dialog => {
+                if let Some(f) = self.screen.fields.first() {
+                    let text = self.screen.field_text(f);
+                    self.send(Input::MenuSelection(text));
+                }
                 false
             }
             Kind::SignOn => {
@@ -320,6 +344,30 @@ mod tests {
         }));
         assert!(!c.locked());
         assert!(c.screen().dump().lines().nth(22).unwrap().trim().is_empty());
+    }
+
+    #[test]
+    fn dialog_enter_reports_the_field_or_nothing() {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let mut c = console();
+        c.out = Some(tx);
+        c.handle(Command::ShowDialog {
+            system: "QS400".into(),
+            title: "Install the Operating System".into(),
+            lines: vec!["Type YES to continue".into()],
+            prompt: Some(("Answer".into(), 3)),
+        });
+        press(&mut c, 21); // y
+        press(&mut c, 28);
+        assert_eq!(rx.try_recv(), Ok(Input::MenuSelection("y".into())));
+        c.handle(Command::ShowDialog {
+            system: "QS400".into(),
+            title: "Working".into(),
+            lines: Vec::new(),
+            prompt: None,
+        });
+        press(&mut c, 28);
+        assert!(rx.try_recv().is_err());
     }
 
     #[test]
