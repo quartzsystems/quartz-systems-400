@@ -50,7 +50,7 @@ pub fn handle(system: &mut System, line: &str) {
         ("lic", _) => lic_dump(system),
         ("sysval", rest) => sysval(system, rest),
         ("mode", [m]) => mode(system, m),
-        ("screen", _) => "Console screen not available yet\n".to_string(),
+        ("screen", _) => crate::ipl::display::dump(system),
         ("pwrdwn", []) => power::down(system, false),
         ("pwrdwn", ["restart"]) => power::down(system, true),
         _ => format!("Unknown command '{cmd}'. Type help.\n"),

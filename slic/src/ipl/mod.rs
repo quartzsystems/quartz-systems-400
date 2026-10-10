@@ -7,6 +7,7 @@
 
 pub mod clock;
 pub mod cmdline;
+pub mod display;
 pub mod lic;
 pub mod log;
 pub mod menu;
@@ -123,8 +124,7 @@ fn lic_phase(
     }
     system.emit(&src::CLOCK_SET);
 
-    // No local console yet: say so and carry on with serial.
-    system.emit(&src::CONSOLE_MISSING);
+    display::attach(system);
 
     if system.mode == IplMode::Manual {
         menu::run(system, rx);
@@ -157,6 +157,11 @@ fn os_phase(system: &mut System) {
     system.emit(&src::STRUP_SKIPPED);
     lic::complete(system);
     system.emit(&src::IPL_COMPLETE);
+    system.show(display::Command::ShowSignOn {
+        system: system.system_name(),
+        subsystem: "QINTER".to_string(),
+        display: "QSCONSOLE".to_string(),
+    });
     if system.boot.svc {
         svc::banner(system);
     }

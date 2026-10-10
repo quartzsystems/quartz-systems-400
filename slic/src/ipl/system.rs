@@ -5,10 +5,13 @@
 //! Everything the IPL and the service console share.
 
 use std::fs::File;
+use std::sync::mpsc::Sender;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use licpart::{IplMode, IplType, LicPart, Record, Slot};
 use sysval::SysVals;
+
+use console::Command;
 
 use crate::hwrsrc::Table;
 use crate::ipl::cmdline::Boot;
@@ -44,6 +47,8 @@ pub struct System {
     pub clock: Option<u64>,
     /// System values, once loaded in the OS phase.
     pub sysvals: Option<SysVals>,
+    /// The console thread, once attached.
+    pub console: Option<Sender<Command>>,
 }
 
 impl System {
@@ -63,6 +68,7 @@ impl System {
             links: Vec::new(),
             clock: None,
             sysvals: None,
+            console: None,
         }
     }
 
@@ -74,10 +80,30 @@ impl System {
         }
     }
 
-    /// Log a code and show it on serial and console.
+    /// Log a code and show it on serial, the text console and the display.
     pub fn emit(&mut self, src: &'static Src) {
         self.log.push(src);
         self.out.both(&src.line());
+        self.show(Command::ShowSrc {
+            system: self.system_name(),
+            code: src.code.to_string(),
+            text: src.text.to_string(),
+        });
+    }
+
+    /// Send a command to the console thread, if there is one.
+    pub fn show(&self, cmd: Command) {
+        if let Some(tx) = &self.console {
+            let _ = tx.send(cmd);
+        }
+    }
+
+    /// QSYSNAME, or the default before system values are loaded.
+    pub fn system_name(&self) -> String {
+        self.sysvals
+            .as_ref()
+            .and_then(|v| v.get("QSYSNAME").ok())
+            .map_or_else(|| "QS400".to_string(), |v| v.text())
     }
 
     /// Fatal: record the failure in the LIC and park forever.

@@ -40,6 +40,11 @@ impl IplLog {
         });
     }
 
+    /// Every entry, oldest first.
+    pub fn entries(&self) -> impl Iterator<Item = &Entry> {
+        self.entries.iter()
+    }
+
     /// Seconds since slic started.
     pub fn uptime(&self) -> f64 {
         self.started.elapsed().as_secs_f64()

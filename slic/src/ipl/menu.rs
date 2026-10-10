@@ -8,6 +8,7 @@
 use std::sync::mpsc::Receiver;
 
 use crate::ipl::Event;
+use crate::ipl::display::Command;
 use crate::ipl::system::System;
 use crate::platform::sys;
 
@@ -29,6 +30,9 @@ pub const NOT_AVAILABLE: &str = "Option not available in this release";
 
 /// Show the menu and block until option 1 is chosen.
 pub fn run(system: &mut System, rx: &Receiver<Event>) {
+    system.show(Command::ShowMenu {
+        system: system.system_name(),
+    });
     loop {
         system.out.both(MENU);
         system.out.both("Selection: ");
@@ -44,7 +48,13 @@ pub fn run(system: &mut System, rx: &Receiver<Event>) {
         };
         match choice.trim() {
             "1" => return,
-            "2" | "3" | "4" | "5" => system.out.both(&format!("\n{NOT_AVAILABLE}\n")),
+            "2" | "3" | "4" | "5" => {
+                system.show(Command::Message {
+                    text: NOT_AVAILABLE.to_string(),
+                    error: false,
+                });
+                system.out.both(&format!("\n{NOT_AVAILABLE}\n"));
+            }
             other => system
                 .out
                 .both(&format!("\nSelection '{other}' is not valid\n")),
