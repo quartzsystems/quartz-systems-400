@@ -23,10 +23,12 @@ pub fn test(ctx: &Ctx) -> Result<()> {
     );
     match test.run() {
         Ok(report) => {
+            for (code, at) in &report.seen {
+                info!("test:   {code} at {:.1}s", at.as_secs_f64());
+            }
             info!(
-                "test: PASS. IPL SRC after {:.1}s, {} heartbeats, {:.1}s total",
-                report.ipl_after.as_secs_f64(),
-                report.heartbeats,
+                "test: PASS. {} SRCs in order, {:.1}s total",
+                report.seen.len(),
                 report.elapsed.as_secs_f64()
             );
             Ok(())

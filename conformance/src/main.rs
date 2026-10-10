@@ -37,10 +37,12 @@ fn main() -> Result<ExitCode> {
     );
     match test.run() {
         Ok(r) => {
+            for (code, at) in &r.seen {
+                println!("  {code} at {:.1}s", at.as_secs_f64());
+            }
             println!(
-                "PASS: IPL SRC after {:.1}s, {} heartbeats, {:.1}s total",
-                r.ipl_after.as_secs_f64(),
-                r.heartbeats,
+                "PASS: {} SRCs in order, {:.1}s total",
+                r.seen.len(),
                 r.elapsed.as_secs_f64()
             );
             Ok(ExitCode::SUCCESS)

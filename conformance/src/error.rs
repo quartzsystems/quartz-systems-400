@@ -62,18 +62,6 @@ pub enum HarnessError {
         /// Serial log so far.
         log: String,
     },
-    /// Not enough heartbeat lines in the window.
-    #[error("only {seen} heartbeat line(s) within {window:?}, need {need}")]
-    TooFewHeartbeats {
-        /// Heartbeats seen.
-        seen: usize,
-        /// Heartbeats required.
-        need: usize,
-        /// Observation window.
-        window: Duration,
-        /// Serial log so far.
-        log: String,
-    },
     /// Any other I/O problem.
     #[error(transparent)]
     Io(#[from] io::Error),
@@ -83,9 +71,7 @@ impl HarnessError {
     /// The captured serial log, when the failure happened after boot started.
     pub fn log(&self) -> Option<&str> {
         match self {
-            HarnessError::QemuExited { log, .. }
-            | HarnessError::Timeout { log, .. }
-            | HarnessError::TooFewHeartbeats { log, .. } => Some(log),
+            HarnessError::QemuExited { log, .. } | HarnessError::Timeout { log, .. } => Some(log),
             _ => None,
         }
     }

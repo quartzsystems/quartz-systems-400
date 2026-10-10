@@ -11,8 +11,6 @@ use std::path::Path;
 use anyhow::{Context, Result, ensure};
 use tracing::info;
 
-use crate::kernel::CMDLINE;
-
 /// Symbols that must be `=y`.
 const REQUIRED_Y: &[&str] = &[
     "EFI",
@@ -99,9 +97,10 @@ pub fn parse(text: &str) -> HashMap<String, String> {
     map
 }
 
-/// Fail unless every required symbol has the required value. With `cpio`,
-/// also require the embedded initramfs settings.
-pub fn verify(config: &Path, cpio: Option<&Path>) -> Result<()> {
+/// Fail unless every required symbol has the required value and the
+/// command line is exactly `cmdline`. With `cpio`, also require the
+/// embedded initramfs settings.
+pub fn verify(config: &Path, cmdline: &str, cpio: Option<&Path>) -> Result<()> {
     let text =
         fs::read_to_string(config).with_context(|| format!("cannot read {}", config.display()))?;
     let map = parse(&text);
@@ -118,7 +117,7 @@ pub fn verify(config: &Path, cpio: Option<&Path>) -> Result<()> {
             problems.push(format!("CONFIG_{sym} must not be y"));
         }
     }
-    let want_cmdline = format!("\"{CMDLINE}\"");
+    let want_cmdline = format!("\"{cmdline}\"");
     if get("CMDLINE") != want_cmdline {
         problems.push(format!(
             "CONFIG_CMDLINE must be {want_cmdline}, is {}",

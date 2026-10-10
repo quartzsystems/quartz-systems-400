@@ -16,6 +16,7 @@ use gpt::disk::LogicalBlockSize;
 use gpt::mbr::ProtectiveMBR;
 use gpt::partition::Partition;
 use gpt::partition_types::{EFI, OperatingSystem, Type};
+use licpart::Slot;
 use tracing::info;
 use uuid::{Uuid, uuid};
 
@@ -51,13 +52,17 @@ const FAT_LABEL: [u8; 11] = *b"QS400 ESP  ";
 
 /// `build disk`.
 pub fn disk(ctx: &Ctx) -> Result<PathBuf> {
-    let uki = paths::read_pointer(&ctx.paths.uki_pointer()).context("no UKI; run `uki` first")?;
-    let uki_bytes = fs::read(&uki)?;
+    let uki_a = paths::read_pointer(&ctx.paths.uki_pointer(Slot::A))
+        .context("no slot A UKI; run `uki` first")?;
+    let uki_b = paths::read_pointer(&ctx.paths.uki_pointer(Slot::B))
+        .context("no slot B UKI; run `uki` first")?;
+    let a_bytes = fs::read(&uki_a)?;
+    let b_bytes = fs::read(&uki_b)?;
     let version = fetch::read_pin(&ctx.paths)?.version;
-    let hash = sha256_file(&uki)?;
+    let hash = sha256_file(&uki_a)?;
 
     info!("disk: formatting {} MiB ESP", ESP_BYTES / (1024 * 1024));
-    let esp = build_esp(&uki_bytes)?;
+    let esp = build_esp(&a_bytes, &b_bytes)?;
     let listing = list_esp(&esp)?;
     let expected = [
         "EFI/".to_string(),
@@ -84,7 +89,7 @@ pub fn disk(ctx: &Ctx) -> Result<PathBuf> {
 }
 
 /// Format a FAT32 volume in memory and place both slots.
-fn build_esp(uki: &[u8]) -> Result<Vec<u8>> {
+fn build_esp(uki_a: &[u8], uki_b: &[u8]) -> Result<Vec<u8>> {
     let size = usize::try_from(ESP_BYTES).context("ESP size")?;
     let mut cur = Cursor::new(vec![0u8; size]);
     // fatfs picks the FAT type from the cluster count: 256 MiB at 2 KiB per
@@ -108,12 +113,12 @@ fn build_esp(uki: &[u8]) -> Result<Vec<u8>> {
         let efi = fs.root_dir().create_dir("EFI")?;
         let boot = efi.create_dir("BOOT")?;
         let mut a = boot.create_file(SLOT_A)?;
-        a.write_all(uki)?;
+        a.write_all(uki_a)?;
         a.flush()?;
         drop(a);
         let qs = efi.create_dir("QS400")?;
         let mut b = qs.create_file(SLOT_B)?;
-        b.write_all(uki)?;
+        b.write_all(uki_b)?;
         b.flush()?;
     }
     fs.unmount()?;

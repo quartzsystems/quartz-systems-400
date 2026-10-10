@@ -10,6 +10,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail, ensure};
 use ed25519_dalek::{Signer, SigningKey, Verifier};
+use licpart::Slot;
 use serde::Serialize;
 use tracing::{info, warn};
 
@@ -36,7 +37,7 @@ struct Inputs {
     kernel_version: String,
     kernel_sha256: String,
     kernel_config_sha256: String,
-    cmdline: &'static str,
+    cmdline_base: &'static str,
     source_date_epoch: u64,
     rustc: String,
     clang: String,
@@ -75,8 +76,11 @@ pub fn manifest(ctx: &Ctx) -> Result<PathBuf> {
         });
         Ok(())
     };
-    if let Ok(p) = paths::read_pointer(&ctx.paths.uki_pointer()) {
-        add("uki", &p)?;
+    if let Ok(p) = paths::read_pointer(&ctx.paths.uki_pointer(Slot::A)) {
+        add("uki-a", &p)?;
+    }
+    if let Ok(p) = paths::read_pointer(&ctx.paths.uki_pointer(Slot::B)) {
+        add("uki-b", &p)?;
     }
     if let Ok(p) = paths::read_pointer(&ctx.paths.disk_pointer()) {
         add("disk", &p)?;
@@ -102,7 +106,7 @@ pub fn manifest(ctx: &Ctx) -> Result<PathBuf> {
             } else {
                 "absent".into()
             },
-            cmdline: CMDLINE,
+            cmdline_base: CMDLINE,
             source_date_epoch: kernel::SOURCE_DATE_EPOCH.parse()?,
             rustc: tool_version("rustc", &["-vV"]),
             clang: tool_version("clang", &["--version"]),

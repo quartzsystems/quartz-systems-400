@@ -27,8 +27,8 @@ impl Outputs {
     /// Open whatever exists.
     pub fn open() -> Self {
         Self {
-            console: open(CONSOLE),
-            serial: open(SERIAL),
+            console: open_write(CONSOLE),
+            serial: open_write(SERIAL),
         }
     }
 
@@ -46,13 +46,23 @@ impl Outputs {
 
 /// Fresh handles for the panic path, which owns nothing.
 pub fn emergency(text: &str) {
-    write(open(SERIAL).as_mut(), text);
-    write(open(CONSOLE).as_mut(), text);
+    write(open_write(SERIAL).as_mut(), text);
+    write(open_write(CONSOLE).as_mut(), text);
 }
 
-fn open(path: &str) -> Option<File> {
+/// Open a device for writing without taking it as controlling terminal.
+pub fn open_write(path: &str) -> Option<File> {
     OpenOptions::new()
         .write(true)
+        .custom_flags(O_NOCTTY)
+        .open(path)
+        .ok()
+}
+
+/// Open a device for reading without taking it as controlling terminal.
+pub fn open_read(path: &str) -> Option<File> {
+    OpenOptions::new()
+        .read(true)
         .custom_flags(O_NOCTTY)
         .open(path)
         .ok()

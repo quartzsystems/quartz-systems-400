@@ -1270,6 +1270,7 @@ name = "slic"
 version = "0.1.0"
 dependencies = [
  "libc",
+ "licpart",
  "rustix",
 ]
 

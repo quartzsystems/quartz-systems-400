@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! QS/400 conformance harness, Phase 0: boot a disk image under QEMU with
-//! OVMF and assert the IPL and heartbeat SRC codes on serial.
+//! OVMF and assert the IPL SRC sequence on serial.
 //!
 //! OVMF is test-only host firmware standing in for a machine's UEFI; it
 //! never ships in an image. QS/400 is `x86_64` only.
@@ -18,7 +18,7 @@ use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-pub use boot::{BootReport, BootTest, SRC_HEARTBEAT, SRC_IPL_STARTED};
+pub use boot::{BootReport, BootTest, SRC_IPL_COMPLETE, SRC_IPL_STARTED, SRC_SEQUENCE};
 pub use error::HarnessError;
 pub use qemu::firmware;
 

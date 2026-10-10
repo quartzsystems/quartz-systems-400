@@ -3,64 +3,56 @@
 // root directory of this project.
 
 //! Signal plumbing. The only module in slic that uses `unsafe` and `libc`.
-//! `SIGCHLD` is blocked and collected synchronously with `sigtimedwait`, so
-//! there is no asynchronous handler to reason about.
+//! Signals of interest are blocked in the main thread before any other
+//! thread exists (so all inherit the mask) and collected synchronously
+//! with `sigwaitinfo` on a dedicated thread.
 
 #![allow(unsafe_code)]
 
 use std::mem;
 use std::ptr;
-use std::time::Duration;
 
 use rustix::process::{WaitOptions, getpid, waitpid};
 
-/// Why `wait` returned.
-pub enum Wake {
-    /// A child changed state.
-    Child,
-    /// The timeout elapsed (or an unrelated interruption).
-    Timeout,
-}
+/// Signals slic handles.
+pub const HANDLED: [i32; 4] = [libc::SIGCHLD, libc::SIGUSR1, libc::SIGTERM, libc::SIGINT];
 
 /// Are we PID 1?
 pub fn is_init() -> bool {
     getpid().is_init()
 }
 
-fn sigchld_set() -> libc::sigset_t {
+fn handled_set() -> libc::sigset_t {
     // SAFETY: an all-zero sigset_t is a valid value to pass to sigemptyset.
     let mut set: libc::sigset_t = unsafe { mem::zeroed() };
     // SAFETY: `set` is a valid, writable sigset_t.
     unsafe {
         libc::sigemptyset(&raw mut set);
-        libc::sigaddset(&raw mut set, libc::SIGCHLD);
+        for s in HANDLED {
+            libc::sigaddset(&raw mut set, s);
+        }
     }
     set
 }
 
-/// Block `SIGCHLD` so `wait` can collect it.
-pub fn block_sigchld() {
-    let set = sigchld_set();
+/// Block the handled signals in the calling thread. Call before spawning.
+pub fn block_signals() {
+    let set = handled_set();
     // SAFETY: `set` is valid; a null old-set pointer is permitted.
     unsafe {
-        libc::sigprocmask(libc::SIG_BLOCK, &raw const set, ptr::null_mut());
+        libc::pthread_sigmask(libc::SIG_BLOCK, &raw const set, ptr::null_mut());
     }
 }
 
-/// Wait up to `timeout` for a blocked `SIGCHLD`.
-pub fn wait(timeout: Duration) -> Wake {
-    let set = sigchld_set();
-    // SAFETY: an all-zero timespec is valid; fields are set below.
-    let mut ts: libc::timespec = unsafe { mem::zeroed() };
-    // tv_sec and tv_nsec are both i64 on x86_64 musl.
-    ts.tv_sec = i64::try_from(timeout.as_secs()).unwrap_or(i64::MAX);
-    ts.tv_nsec = i64::from(timeout.subsec_nanos());
-    // SAFETY: `set` and `ts` are valid for the call; siginfo may be null.
-    let signo = unsafe { libc::sigtimedwait(&raw const set, ptr::null_mut(), &raw const ts) };
-    if signo == libc::SIGCHLD {
-        Wake::Child
-    } else {
-        Wake::Timeout
+/// Wait for one of the handled signals. Returns its number.
+pub fn wait_signal() -> i32 {
+    let set = handled_set();
+    loop {
+        // SAFETY: `set` is valid; siginfo may be null.
+        let signo = unsafe { libc::sigwaitinfo(&raw const set, ptr::null_mut()) };
+        if signo > 0 {
+            return signo;
+        }
     }
 }
 

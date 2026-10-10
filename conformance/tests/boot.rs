@@ -8,7 +8,7 @@
 use conformance::BootTest;
 
 #[test]
-fn boots_and_heartbeats() {
+fn boots_through_ipl_complete() {
     if std::env::var_os("QS400_QEMU").is_none() {
         eprintln!("QS400_QEMU not set; skipping boot test");
         return;
@@ -16,7 +16,7 @@ fn boots_and_heartbeats() {
     let image = conformance::default_image().expect("disk image from `build disk`");
     let test = BootTest::new(image).expect("qemu and OVMF present");
     match test.run() {
-        Ok(r) => assert!(r.heartbeats >= test.heartbeat_min),
+        Ok(r) => assert_eq!(r.seen.len(), test.expected.len()),
         Err(e) => {
             if let Some(log) = e.log() {
                 eprintln!("{log}");

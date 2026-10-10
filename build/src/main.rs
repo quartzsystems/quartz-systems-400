@@ -40,14 +40,23 @@ enum Command {
     Userland,
     /// Write the deterministic newc cpio.
     Initramfs,
-    /// Rebuild the kernel with the initramfs embedded and emit the UKI.
-    Uki,
+    /// Rebuild the kernel with the initramfs embedded; emit the slot A and
+    /// slot B UKIs.
+    Uki {
+        /// Omit the serial service console (`qs400.svc=1`).
+        #[arg(long)]
+        release: bool,
+    },
     /// Write the GPT disk image with the two-slot ESP.
     Disk,
     /// Write and sign the artifact manifest.
     Manifest,
     /// Run the whole pipeline.
-    All,
+    All {
+        /// Omit the serial service console (`qs400.svc=1`).
+        #[arg(long)]
+        release: bool,
+    },
     /// Boot the disk image under QEMU and check the SRC codes.
     Test,
     /// Check host prerequisites.
@@ -81,8 +90,8 @@ fn main() -> Result<()> {
         Command::Initramfs => {
             image::initramfs::initramfs(&ctx)?;
         }
-        Command::Uki => {
-            kernel::uki(&ctx)?;
+        Command::Uki { release } => {
+            kernel::uki(&ctx, release)?;
         }
         Command::Disk => {
             image::disk::disk(&ctx)?;
@@ -90,7 +99,7 @@ fn main() -> Result<()> {
         Command::Manifest => {
             image::manifest::manifest(&ctx)?;
         }
-        Command::All => all(&ctx)?,
+        Command::All { release } => all(&ctx, release)?,
         Command::Test => host::testrun::test(&ctx)?,
         Command::Doctor => host::doctor::doctor(&ctx)?,
         Command::Deny => host::deny::deny(&ctx)?,
@@ -99,12 +108,12 @@ fn main() -> Result<()> {
 }
 
 /// The full pipeline in order.
-fn all(ctx: &Ctx) -> Result<()> {
+fn all(ctx: &Ctx, release: bool) -> Result<()> {
     kernel::fetch::fetch(ctx)?;
     kernel::kernel(ctx)?;
     userland::userland(ctx)?;
     image::initramfs::initramfs(ctx)?;
-    kernel::uki(ctx)?;
+    kernel::uki(ctx, release)?;
     image::disk::disk(ctx)?;
     image::manifest::manifest(ctx)?;
     Ok(())
