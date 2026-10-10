@@ -362,6 +362,132 @@ previous checkpoint intact. The allocator keeps 1/64 of the ASP (at
 least 64 pages, at most 16384) back from ordinary allocation so a
 checkpoint on a full ASP can still write its tree.
 
-## 8. Object header
+## 8. Objects
 
-`TODO(phase2)`: written before the object layer.
+Every object has one header page (type 0x0020, owner the object's own
+ID) whose location the object directory gives. The header's fixed part
+is 1024 bytes; the type-specific attribute area is the 1024 bytes from
+body offset 1024; the rest of the body is reserved for later phases
+(database, journaling, more authority).
+
+Object IDs come from the ASP's serial counter and are never reused. A
+lookup of a serial below the counter that the directory no longer holds
+is a stale reference (MCH3402); a serial at or above it was never an
+object.
+
+### `ObjectHeader` (1024 bytes)
+
+At offset 0 of the body. Text fields are CP037, space padded.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | magic | `QS400OBJ` |
+| 8 | 4 | header_version | 1 |
+| 12 | 4 | flags | reserved, 0 |
+| 16 | 16 | id | `ObjectId` |
+| 32 | 16 | library | `ObjectId` of the containing library; QSYS contains itself |
+| 48 | 10 | name | |
+| 58 | 10 | attribute | `PF`, `RPGLE`, ... or blank |
+| 68 | 50 | text | description |
+| 118 | 10 | owner | user profile name |
+| 128 | 10 | primary_group | blank for none |
+| 138 | 10 | creator | |
+| 148 | 8 | system | created-on system name |
+| 156 | 1 | release_v | creating release |
+| 157 | 1 | release_r | |
+| 158 | 1 | release_m | |
+| 159 | 1 | reserved2 | 0 |
+| 160 | 8 | created | Unix seconds |
+| 168 | 8 | changed | |
+| 176 | 8 | last_saved | 0 for never |
+| 184 | 8 | last_restored | |
+| 192 | 8 | last_used | date, Unix seconds at midnight UTC |
+| 200 | 8 | reset_date | |
+| 208 | 4 | days_used | |
+| 212 | 4 | public_authority | bits, see below |
+| 216 | 10 | autl | authorization list name, blank for none |
+| 226 | 2 | private_count | entries used in `private_auths` |
+| 228 | 256 | private_auths | 16 × `PrivateAuth` |
+| 484 | 8 | private_overflow | page of more entries, 0 for none; `MIGRATE(phase6)` |
+| 492 | 8 | size_pages | pages in the extents |
+| 500 | 2 | extent_count | entries used in `extents` |
+| 502 | 1 | domain | 0 `*SYSTEM`, 1 `*USER` |
+| 503 | 1 | state | 0 system, 1 user |
+| 504 | 1 | damaged | |
+| 505 | 1 | temporary | |
+| 506 | 1 | compression | always 0 |
+| 507 | 1 | reserved3 | 0 |
+| 508 | 256 | extents | 16 × `ExtentRef` |
+| 764 | 8 | extent_overflow | page of more extents, 0 for none |
+| 772 | 10 | audit | object auditing value; `MIGRATE(phase6)` |
+| 782 | 2 | reserved4 | 0 |
+| 784 | 240 | reserved5 | 0 |
+
+Public authority bits: 0x0001 `*OBJOPR`, 0x0002 `*OBJMGT`, 0x0004
+`*OBJEXIST`, 0x0008 `*OBJALTER`, 0x0010 `*OBJREF`, 0x0020 `*READ`,
+0x0040 `*ADD`, 0x0080 `*UPD`, 0x0100 `*DLT`, 0x0200 `*EXECUTE`; 0 is
+`*EXCLUDE`; 0x8000_0000 means the public authority comes from the
+authorization list. Stored, not enforced, in Phase 2.
+
+### `PrivateAuth` (16 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | profile | user profile name |
+| 10 | 4 | bits | as public authority |
+| 14 | 2 | reserved | 0 |
+
+### `ExtentRef` (16 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | start | logical page |
+| 8 | 8 | len | pages |
+
+### `ExtentOverflowHeader` (16 bytes)
+
+At offset 0 of an extent overflow page (type 0x0022), followed by
+`count` × `ExtentRef`; at most 253 per page. Phase 2 uses one overflow
+page per object.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | count | |
+| 2 | 14 | reserved | 0 |
+
+### `LibAttr` (32 bytes)
+
+The attribute area of a `*LIB` object (body offset 1024).
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | dir_root | directory tree root, 0 for empty |
+| 8 | 1 | lib_type | 0 `*PROD`, 1 `*TEST` |
+| 9 | 1 | reserved | 0 |
+| 10 | 10 | create_authority | `*SYSVAL`, `*CHANGE`, `*ALL`, `*USE`, `*EXCLUDE` |
+| 20 | 2 | asp_number | |
+| 22 | 2 | reserved2 | 0 |
+| 24 | 8 | object_count | entries in the directory |
+
+**Object directory.** A B+tree per ASP keyed by `ObjectId` (its 16-byte
+encoding) with the header page number as the value; the root is in the
+superblock and is published by the WAL root entry with owner zero.
+
+**Library directory.** A B+tree per library, owned by the library,
+keyed by type code and name, valued by `ObjectId`. Its root lives in
+the library's attribute area and is updated in place. Because names
+are CP037 and keys sort byte-wise, a scan of one type lists objects in
+the order a display would.
+
+### `DirKey` (12 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | type_code | big-endian |
+| 2 | 10 | name | CP037 |
+
+## 9. Type registry
+
+Type codes are fixed by `store/src/obj/types.rs` and appear in IDs,
+directory keys and headers; see that table for the list. `*SYSVAL`
+(0x00FF) is internal: one instance, in QSYS, not user-creatable.

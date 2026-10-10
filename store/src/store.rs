@@ -13,6 +13,7 @@ use tracing::{info, warn};
 use crate::asp::{Asp, FormatParams};
 use crate::cache::{CacheStats, PageCache};
 use crate::obj::ObjectId;
+use crate::obj::lock::LockTable;
 use crate::page::pager::PageNo;
 use crate::page::{Page, PageType};
 use crate::txn::Txn;
@@ -84,6 +85,7 @@ pub struct Store {
     last_checkpoint_at: u64,
     broken: Option<&'static str>,
     stats: StoreStats,
+    locks: LockTable,
 }
 
 impl Store {
@@ -150,6 +152,7 @@ impl Store {
             last_checkpoint_at: 0,
             broken: None,
             stats: StoreStats::default(),
+            locks: LockTable::default(),
             asp,
         }
     }
@@ -351,6 +354,23 @@ impl Store {
     #[must_use]
     pub fn next_serial(&self) -> u64 {
         self.next_serial
+    }
+
+    /// The ASP number objects here belong to.
+    #[must_use]
+    pub fn asp_number(&self) -> u16 {
+        self.asp.superblock().asp_number
+    }
+
+    /// The object lock table.
+    #[must_use]
+    pub fn locks(&self) -> &LockTable {
+        &self.locks
+    }
+
+    /// The object lock table, to take and release locks.
+    pub fn locks_mut(&mut self) -> &mut LockTable {
+        &mut self.locks
     }
 
     /// The ASP.

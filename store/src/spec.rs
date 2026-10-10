@@ -58,5 +58,11 @@ pub fn layouts() -> Vec<&'static Layout> {
         &crate::wal::record::ROOT_LAYOUT,
         &crate::wal::record::IMAGE_LAYOUT,
         &crate::wal::record::PATCH_LAYOUT,
+        &crate::obj::header::LAYOUT,
+        &crate::obj::header::PRIVATE_AUTH_LAYOUT,
+        &crate::obj::header::EXTENT_REF_LAYOUT,
+        &crate::obj::header::OVERFLOW_HEADER_LAYOUT,
+        &crate::obj::library::LIB_ATTR_LAYOUT,
+        &crate::obj::dir::DIR_KEY_LAYOUT,
     ]
 }

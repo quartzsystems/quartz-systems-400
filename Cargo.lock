@@ -1355,7 +1355,9 @@ name = "store"
 version = "0.1.0"
 dependencies = [
  "blockdev",
+ "ccsid",
  "crc",
+ "qsname",
  "release",
  "thiserror",
  "tracing",

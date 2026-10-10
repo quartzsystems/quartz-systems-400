@@ -101,6 +101,12 @@ impl<'a> Txn<'a> {
             .map_or(self.store.objdir_root(), |(_, r)| *r)
     }
 
+    /// The next serial this transaction would hand out.
+    #[must_use]
+    pub fn peek_serial(&self) -> u64 {
+        self.next_serial
+    }
+
     /// Take the next object serial.
     pub fn take_serial(&mut self) -> u64 {
         let s = self.next_serial;
@@ -124,6 +130,13 @@ impl<'a> Txn<'a> {
         }
         let p = self.patched.get_mut(&page).expect("inserted");
         p.body_mut()[offset..offset + bytes.len()].copy_from_slice(bytes);
+        // Keep the private copy verifiable for this transaction's reads.
+        let t = p.trailer();
+        p.seal(
+            PageType::from_u16(t.page_type).unwrap_or(PageType::ObjectData),
+            t.owner,
+            self.id,
+        );
         self.patches.push(Patch {
             page,
             offset: u16::try_from(offset).expect("in body"),
