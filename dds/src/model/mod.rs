@@ -9,6 +9,7 @@
 pub mod field;
 pub mod format;
 pub mod key;
+pub mod lf;
 pub mod pf;
 
 use std::fmt;
@@ -21,6 +22,7 @@ pub use field::{
 };
 pub use format::RecordFormat;
 pub use key::{KeyField, KeyTransform};
+pub use lf::{Condition, FieldSource, Join, LfDefinition, LfFormat, SelectOmit};
 pub use pf::{DupOrder, NullKeys, PfDefinition};
 
 /// A file named in a keyword: `LIB/FILE` or `FILE` (`*LIBL`), with an

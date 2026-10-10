@@ -31,33 +31,51 @@ pub struct FieldContext<'a> {
 
 /// The field-level keywords of one specification, by name.
 #[derive(Default)]
-struct Kws<'a> {
-    reffld: Option<&'a Keyword>,
-    colhdg: Option<&'a Keyword>,
-    text: Option<&'a Keyword>,
-    alias: Option<&'a Keyword>,
-    ccsid: Option<&'a Keyword>,
-    varlen: Option<&'a Keyword>,
-    alwnull: Option<&'a Keyword>,
-    dft: Option<&'a Keyword>,
-    datfmt: Option<&'a Keyword>,
-    datsep: Option<&'a Keyword>,
-    timfmt: Option<&'a Keyword>,
-    timsep: Option<&'a Keyword>,
-    edtcde: Option<&'a Keyword>,
-    edtwrd: Option<&'a Keyword>,
-    check: Option<&'a Keyword>,
-    values: Option<&'a Keyword>,
-    range: Option<&'a Keyword>,
-    comp: Option<&'a Keyword>,
-    fltpcn: Option<&'a Keyword>,
+pub(crate) struct Kws<'a> {
+    pub(crate) reffld: Option<&'a Keyword>,
+    pub(crate) colhdg: Option<&'a Keyword>,
+    pub(crate) text: Option<&'a Keyword>,
+    pub(crate) alias: Option<&'a Keyword>,
+    pub(crate) ccsid: Option<&'a Keyword>,
+    pub(crate) varlen: Option<&'a Keyword>,
+    pub(crate) alwnull: Option<&'a Keyword>,
+    pub(crate) dft: Option<&'a Keyword>,
+    pub(crate) datfmt: Option<&'a Keyword>,
+    pub(crate) datsep: Option<&'a Keyword>,
+    pub(crate) timfmt: Option<&'a Keyword>,
+    pub(crate) timsep: Option<&'a Keyword>,
+    pub(crate) edtcde: Option<&'a Keyword>,
+    pub(crate) edtwrd: Option<&'a Keyword>,
+    pub(crate) check: Option<&'a Keyword>,
+    pub(crate) values: Option<&'a Keyword>,
+    pub(crate) range: Option<&'a Keyword>,
+    pub(crate) comp: Option<&'a Keyword>,
+    pub(crate) fltpcn: Option<&'a Keyword>,
+    /// Logical files only.
+    pub(crate) rename: Option<&'a Keyword>,
+    /// Logical files only.
+    pub(crate) concat: Option<&'a Keyword>,
+    /// Logical files only.
+    pub(crate) sst: Option<&'a Keyword>,
+    /// Join logical files only.
+    pub(crate) jref: Option<&'a Keyword>,
 }
 
-fn collect<'a>(spec: &'a Spec, kind: FileKind, diags: &mut Diagnostics) -> Kws<'a> {
+/// Sort a specification's keywords into their slots.
+pub(crate) fn collect<'a>(spec: &'a Spec, kind: FileKind, diags: &mut Diagnostics) -> Kws<'a> {
     let mut k = Kws::default();
     for kw in &spec.keywords {
+        let logical = kind == FileKind::Logical;
         let slot = match kw.name.as_str() {
+            "REFFLD" if logical => {
+                level_error(kw, "field", kind, diags);
+                continue;
+            }
             "REFFLD" => &mut k.reffld,
+            "RENAME" if logical => &mut k.rename,
+            "CONCAT" if logical => &mut k.concat,
+            "SST" if logical => &mut k.sst,
+            "JREF" if logical => &mut k.jref,
             "COLHDG" => &mut k.colhdg,
             "TEXT" => &mut k.text,
             "ALIAS" => &mut k.alias,
@@ -96,36 +114,73 @@ pub fn build_field(
     ctx: &FieldContext<'_>,
     diags: &mut Diagnostics,
 ) -> Option<FieldDef> {
-    let Some(text) = spec.name.as_deref() else {
-        diags.push(ids::field_name_missing(spec.line));
-        return None;
-    };
-    let name = match parse_name(text) {
-        Ok(n) => n,
-        Err(why) => {
-            diags.push(ids::bad_name(spec.line, text, why));
-            return None;
-        }
-    };
-    check_db_columns(spec, diags);
-    let usage = usage(spec, &name, diags);
+    let name = field_name(spec, diags)?;
     let kws = collect(spec, ctx.kind, diags);
-    let mut f = if spec.reference || kws.reffld.is_some() {
+    let f = if spec.reference || kws.reffld.is_some() {
         referenced(spec, &name, &kws, ctx, diags)?
     } else {
         fresh(spec, &name, diags)?
     };
+    finish(spec, f, name, &kws, diags)
+}
+
+/// The name in positions 19-28 of a field specification.
+pub(crate) fn field_name(spec: &Spec, diags: &mut Diagnostics) -> Option<Name> {
+    let Some(text) = spec.name.as_deref() else {
+        diags.push(ids::field_name_missing(spec.line));
+        return None;
+    };
+    match parse_name(text) {
+        Ok(n) => Some(n),
+        Err(why) => {
+            diags.push(ids::bad_name(spec.line, text, why));
+            None
+        }
+    }
+}
+
+/// Apply the keywords of `spec` to a field whose shape is settled.
+pub(crate) fn finish(
+    spec: &Spec,
+    mut f: FieldDef,
+    name: Name,
+    kws: &Kws<'_>,
+    diags: &mut Diagnostics,
+) -> Option<FieldDef> {
+    check_db_columns(spec, diags);
     f.name = name;
     f.line = spec.line;
-    f.usage = usage;
-    formats(spec, &mut f, &kws, diags);
-    attributes(&mut f, &kws, diags);
+    f.usage = usage(spec, &name, diags);
+    formats(spec, &mut f, kws, diags);
+    attributes(&mut f, kws, diags);
     check_shape(spec, &f, diags)?;
-    defaults(&mut f, &kws, diags);
-    editing(&mut f, &kws, diags);
-    validity(&mut f, &kws, diags);
+    defaults(&mut f, kws, diags);
+    editing(&mut f, kws, diags);
+    validity(&mut f, kws, diags);
     f.byte_len = f.data_len() + if f.varlen.is_some() { 2 } else { 0 };
     Some(f)
+}
+
+/// Positions 30-37 written on a field that already has a shape replace it.
+pub(crate) fn apply_overrides(spec: &Spec, f: &mut FieldDef, name: &Name, diags: &mut Diagnostics) {
+    f.offset = 0;
+    if let Some(ch) = spec.data_type {
+        match DataType::from_letter(ch) {
+            Some(t) => {
+                f.data_type = t;
+                if !t.is_numeric() {
+                    f.decimals = 0;
+                }
+            }
+            None => diags.push(ids::bad_data_type(spec.line, ch)),
+        }
+    }
+    if let Some(len) = spec.length {
+        f.length = len;
+    }
+    if spec.decimals.is_some() {
+        f.decimals = decimals(spec, name, f.data_type, diags);
+    }
 }
 
 fn usage(spec: &Spec, name: &Name, diags: &mut Diagnostics) -> Option<Usage> {
@@ -208,24 +263,7 @@ fn referenced(
         field,
         format,
     });
-    f.offset = 0;
-    if let Some(ch) = spec.data_type {
-        match DataType::from_letter(ch) {
-            Some(t) => {
-                f.data_type = t;
-                if !t.is_numeric() {
-                    f.decimals = 0;
-                }
-            }
-            None => diags.push(ids::bad_data_type(spec.line, ch)),
-        }
-    }
-    if let Some(len) = spec.length {
-        f.length = len;
-    }
-    if spec.decimals.is_some() {
-        f.decimals = decimals(spec, name, f.data_type, diags);
-    }
+    apply_overrides(spec, &mut f, name, diags);
     Some(f)
 }
 
@@ -833,7 +871,11 @@ fn validity(f: &mut FieldDef, kws: &Kws<'_>, diags: &mut Diagnostics) {
     }
 }
 
-fn literals(kw: &Keyword, numeric: bool, diags: &mut Diagnostics) -> Option<Vec<Literal>> {
+pub(crate) fn literals(
+    kw: &Keyword,
+    numeric: bool,
+    diags: &mut Diagnostics,
+) -> Option<Vec<Literal>> {
     kw.parms
         .iter()
         .map(|p| literal(kw, p, numeric, diags))
@@ -841,7 +883,12 @@ fn literals(kw: &Keyword, numeric: bool, diags: &mut Diagnostics) -> Option<Vec<
 }
 
 /// A literal that suits the field's type.
-fn literal(kw: &Keyword, p: &Parm, numeric: bool, diags: &mut Diagnostics) -> Option<Literal> {
+pub(crate) fn literal(
+    kw: &Keyword,
+    p: &Parm,
+    numeric: bool,
+    diags: &mut Diagnostics,
+) -> Option<Literal> {
     let lit = Literal::from_parm(p);
     let ok = match &lit {
         Some(Literal::Word(w)) => numeric && numeric_parts(w).is_some(),

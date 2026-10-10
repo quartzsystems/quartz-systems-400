@@ -11,7 +11,7 @@ use crate::compile::{self, Compilation, CompileOpts, FileKind, MAX_FIELDS, MAX_R
 use crate::diag::{Diagnostics, ids};
 use crate::lex::{self, NameType, Spec};
 use crate::listing;
-use crate::model::{FileRef, KeyField, PfDefinition, RecordFormat};
+use crate::model::{FileRef, PfDefinition, RecordFormat};
 use crate::refs::RefResolver;
 use crate::source::Source;
 
@@ -24,9 +24,10 @@ pub fn compile_pf(
     let mut diags = Diagnostics::default();
     let specs = lex::lex(source, &mut diags);
     let built = build(&specs, resolver, &mut diags);
+    let summary = built.as_ref().map(listing::summary::pf);
     let listing = listing::render(
         source,
-        built.as_ref(),
+        summary.as_ref(),
         diags.as_slice(),
         opts,
         "Physical file (PF)",
@@ -199,7 +200,7 @@ fn finish(
     diags: &mut Diagnostics,
 ) {
     if let Some((fr, line)) = &fk.refaccpth {
-        copy_keys(fmt, fr, *line, resolver, diags);
+        keys::copy_keys(fmt, fr, *line, resolver, diags);
     }
     fmt.lay_out();
     let name = fmt.name.to_string();
@@ -223,42 +224,6 @@ fn finish(
         }
         if let Some((order, line)) = fk.dup_order {
             diags.push(ids::needs_keys(line, order.name()));
-        }
-    }
-}
-
-/// `REFACCPTH`: the keys of another file's format, by field name.
-fn copy_keys(
-    fmt: &mut RecordFormat,
-    fr: &FileRef,
-    line: usize,
-    resolver: &dyn RefResolver,
-    diags: &mut Diagnostics,
-) {
-    let Some(formats) = field::resolve(line, fr, resolver, diags) else {
-        return;
-    };
-    let source = match &fr.format {
-        Some(n) => formats.iter().find(|r| r.name == *n),
-        None => formats.first(),
-    };
-    let Some(source) = source else {
-        let want = fr.format.map(|n| n.to_string()).unwrap_or_default();
-        diags.push(ids::ref_format_not_found(line, fr, &want));
-        return;
-    };
-    if source.keys.is_empty() {
-        diags.push(ids::refaccpth_no_keys(line, fr));
-        return;
-    }
-    for k in &source.keys {
-        match fmt.field(&k.name) {
-            Some((index, _)) => fmt.keys.push(KeyField {
-                field: index,
-                line,
-                ..k.clone()
-            }),
-            None => diags.push(ids::key_not_in_format(line, &k.name.to_string())),
         }
     }
 }

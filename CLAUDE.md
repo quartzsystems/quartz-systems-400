@@ -69,7 +69,8 @@ qsname/       object, library and member name rules; 10-byte CP037 Name
 svctools/     DST screens and the installer's: src/ui/ screen kit, panel.rs runner,
               src/dst/ (disk/, environment, tools, security), src/install/, src/users/
 dds/          DDS: src/source/ records, src/lex/ columns and keywords, src/compile/
-              field, key and file-keyword builders, src/pf/ compiler, src/listing/
+              field, key, select/omit and file-keyword builders, src/pf/ and src/lf/
+              compilers, src/listing/
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, STORE_FORMAT.md, DST.md,
               DB_OPEN_QUESTIONS.md, images/
 ```

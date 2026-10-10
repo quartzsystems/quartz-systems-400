@@ -561,3 +561,199 @@ pub fn refaccpth_no_keys(line: usize, file: impl Display) -> Diagnostic {
         format!("REFACCPTH: {file} has no access path to copy"),
     )
 }
+
+// Logical files.
+
+/// An `R` line without `PFILE` or `JFILE`.
+pub fn lf_needs_pfile(line: usize) -> Diagnostic {
+    err(
+        "DDS4001",
+        line,
+        "A record format of a logical file needs PFILE or JFILE".to_string(),
+    )
+}
+
+/// A field the based-on file does not have.
+pub fn base_field_not_found(line: usize, field: &str, file: impl Display) -> Diagnostic {
+    err("DDS4003", line, format!("Field {field} is not in {file}"))
+}
+
+/// `JFILE` with fewer than two files.
+pub fn jfile_count(line: usize) -> Diagnostic {
+    err(
+        "DDS4004",
+        line,
+        "JFILE names at least two files".to_string(),
+    )
+}
+
+/// A `J` line in a format without `JFILE`.
+pub fn join_spec_not_in_join(line: usize) -> Diagnostic {
+    err(
+        "DDS4005",
+        line,
+        "A join specification needs a record format with JFILE".to_string(),
+    )
+}
+
+/// `JREF` names no `JFILE` file.
+pub fn jref_unknown(line: usize, parm: impl Display) -> Diagnostic {
+    err(
+        "DDS4006",
+        line,
+        format!("JREF({parm}) names no file of JFILE"),
+    )
+}
+
+/// A field in several `JFILE` files without `JREF`.
+pub fn ambiguous_field(line: usize, field: &str) -> Diagnostic {
+    err(
+        "DDS4007",
+        line,
+        format!("Field {field} is in more than one JFILE file; specify JREF"),
+    )
+}
+
+/// A select/omit field that is not in the format.
+pub fn selomit_field_not_found(line: usize, field: &str) -> Diagnostic {
+    err(
+        "DDS4009",
+        line,
+        format!("Select/omit field {field} is not in the record format"),
+    )
+}
+
+/// An `S` or `O` line without a test.
+pub fn selomit_needs_test(line: usize) -> Diagnostic {
+    err(
+        "DDS4010",
+        line,
+        "A select/omit specification needs VALUES, RANGE, COMP or ALL".to_string(),
+    )
+}
+
+/// `ALL` with a field name or other keywords.
+pub fn all_alone(line: usize) -> Diagnostic {
+    err(
+        "DDS4011",
+        line,
+        "ALL takes no field name and no other keyword".to_string(),
+    )
+}
+
+/// An AND condition with no `S` or `O` before it.
+pub fn condition_without_group(line: usize) -> Diagnostic {
+    err(
+        "DDS4012",
+        line,
+        "An AND condition must follow a select or omit specification".to_string(),
+    )
+}
+
+/// A second `R` in a join logical file.
+pub fn join_one_format(line: usize) -> Diagnostic {
+    err(
+        "DDS4013",
+        line,
+        "A join logical file has one record format".to_string(),
+    )
+}
+
+/// `SST` positions outside the field.
+pub fn sst_range(line: usize, name: &str, field: &str, len: u32) -> Diagnostic {
+    err(
+        "DDS4015",
+        line,
+        format!("Field {name}: SST positions are outside {field}, which is {len} long"),
+    )
+}
+
+/// `CONCAT` of a field whose type cannot be concatenated.
+pub fn concat_type(line: usize, name: &str, field: &str, ty: char) -> Diagnostic {
+    err(
+        "DDS4016",
+        line,
+        format!("Field {name}: CONCAT cannot include {field} of type {ty}"),
+    )
+}
+
+/// Keyed and arrival formats in one file.
+pub fn keyed_mix(line: usize, fmt: &str) -> Diagnostic {
+    err(
+        "DDS4017",
+        line,
+        format!("Record format {fmt}: every format of a keyed logical file needs key fields"),
+    )
+}
+
+/// A join key not from the primary file.
+pub fn join_key_not_primary(line: usize, name: &str) -> Diagnostic {
+    err(
+        "DDS4018",
+        line,
+        format!("Key field {name} is not from the primary file of the join"),
+    )
+}
+
+/// `K *NONE` with other keys.
+pub fn none_with_keys(line: usize) -> Diagnostic {
+    err(
+        "DDS4019",
+        line,
+        "K *NONE cannot be combined with key fields".to_string(),
+    )
+}
+
+/// Wrong number of `J` lines for the `JFILE` list.
+pub fn join_count(line: usize, want: usize, got: usize) -> Diagnostic {
+    err(
+        "DDS4021",
+        line,
+        format!("{want} join specification(s) needed for the JFILE files; {got} given"),
+    )
+}
+
+/// A `K` line after `S` or `O`.
+pub fn key_after_selomit(line: usize) -> Diagnostic {
+    err(
+        "DDS4022",
+        line,
+        "Key specifications must come before select/omit specifications".to_string(),
+    )
+}
+
+/// `SST` of a field whose type cannot be substringed.
+pub fn sst_source_type(line: usize, name: &str, field: &str, ty: char) -> Diagnostic {
+    err(
+        "DDS4024",
+        line,
+        format!("Field {name}: SST cannot use {field} of type {ty}"),
+    )
+}
+
+/// `JOIN` missing with more than two files.
+pub fn join_required(line: usize) -> Diagnostic {
+    err(
+        "DDS4025",
+        line,
+        "JOIN is required when JFILE names more than two files".to_string(),
+    )
+}
+
+/// A `J` line without `JFLD`.
+pub fn jfld_required(line: usize) -> Diagnostic {
+    err(
+        "DDS4026",
+        line,
+        "A join specification needs JFLD".to_string(),
+    )
+}
+
+/// `JDFTVAL` in a file that is not a join logical file.
+pub fn jdftval_without_join(line: usize) -> Diagnostic {
+    err(
+        "DDS4027",
+        line,
+        "JDFTVAL requires a join logical file".to_string(),
+    )
+}

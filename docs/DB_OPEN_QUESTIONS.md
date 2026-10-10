@@ -44,3 +44,33 @@ field that has `RANGE` and add `CHECK(ME)`; `DSPFFD` shows what is kept.
 **A dangling continuation sign.** The text so far is parsed anyway, so
 `TEXT('x' +` followed by a new entry reports both DDS0103 and the
 unbalanced keyword. IBM may report only the first.
+
+## Logical files
+
+**Select/omit on a field outside the format.** Rejected (DDS4009): the
+`S`/`O` field must be a field of the logical file's format. Test: an LF
+with a field subset and `S CUSTYP COMP(EQ 'A')` where `CUSTYP` is not
+in the subset.
+
+**A join format with no field lines.** Takes every field of the primary
+file (file 1), as a `PFILE` format without field lines takes every
+field of its file. Test: `CRTLF` a join LF with `R`, `J` and `K` lines
+only, then `DSPFFD`.
+
+**CONCAT typing.** Zoned when every part is zoned (digits added, no
+decimals), else character over the parts' bytes; packed and binary
+parts are allowed as bytes, dates, times, timestamps, floats and
+graphic fields are not (DDS4016). Test: `CONCAT` of a packed and a
+character field, `DSPFFD` for type and length.
+
+**SST of a zoned field.** The result is character. Test: `SST(ZONED 1
+2)` and `DSPFFD`.
+
+**Key attributes across formats.** A keyed multi-format LF needs keys
+(or `K *NONE`) in every format, but the key fields' types and lengths
+are not required to match between formats. Test: two formats keyed on
+`P 7` and `A 10`; does `CRTLF` fail?
+
+**DATSEP/TIMSEP(*JOB) and REF in logical files.** `REF`, `REFFLD` and
+file-level `CCSID` are not meaningful in an LF; `REFFLD` is rejected
+(DDS0207), `REF` and `CCSID` are accepted and ignored.

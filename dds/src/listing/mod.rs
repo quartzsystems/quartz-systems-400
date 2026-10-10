@@ -3,34 +3,46 @@
 // root directory of this project.
 
 //! The compile listing: header, source with messages and reference
-//! expansions, field and key summary, message summary. Plain text, at
-//! most 132 columns, for the spool file of a later phase.
+//! expansions, field and key summary per format, message summary. Plain
+//! text, at most 132 columns, for the spool file of a later phase.
+
+pub mod summary;
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
+pub use summary::{FormatView, Summary};
+
 use crate::compile::CompileOpts;
 use crate::diag::{Diagnostic, Severity};
-use crate::model::{DefaultValue, FieldDef, PfDefinition};
+use crate::model::{DefaultValue, FieldDef, RefSource};
 use crate::source::{RECORD_LEN, Source, SourceLine};
 
 const RULER: &str =
     "....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8";
 
-/// Render the listing of a physical file compile.
+/// Render a listing.
 #[must_use]
 pub fn render(
     source: &Source,
-    def: Option<&PfDefinition>,
+    summary: Option<&Summary<'_>>,
     diags: &[Diagnostic],
     opts: &CompileOpts,
     kind: &str,
 ) -> String {
     let mut out = String::new();
     header(&mut out, opts, kind);
-    source_listing(&mut out, source, def, diags);
-    if let Some(def) = def {
-        format_summary(&mut out, def);
+    source_listing(&mut out, source, summary, diags);
+    if let Some(s) = summary {
+        for note in &s.notes {
+            let _ = writeln!(out, "  {note}");
+        }
+        if !s.notes.is_empty() {
+            out.push('\n');
+        }
+        for view in &s.formats {
+            format_summary(&mut out, view);
+        }
     }
     messages(&mut out, source, diags);
     out
@@ -59,7 +71,7 @@ fn header(out: &mut String, opts: &CompileOpts, kind: &str) {
 fn source_listing(
     out: &mut String,
     source: &Source,
-    def: Option<&PfDefinition>,
+    summary: Option<&Summary<'_>>,
     diags: &[Diagnostic],
 ) {
     let _ = writeln!(out, "  SEQNBR  {RULER}  DATE");
@@ -70,8 +82,8 @@ fn source_listing(
         }
     }
     let mut refs: BTreeMap<usize, &FieldDef> = BTreeMap::new();
-    if let Some(def) = def {
-        for f in def.format.fields.iter().filter(|f| f.reference.is_some()) {
+    for view in summary.map(|s| s.formats.as_slice()).unwrap_or_default() {
+        for f in view.format.fields.iter().filter(|f| f.reference.is_some()) {
             refs.insert(f.line, f);
         }
     }
@@ -103,10 +115,7 @@ fn source_listing(
 /// The field line with the referenced attributes filled in.
 fn expansion(line: &SourceLine, f: &FieldDef) -> String {
     let mut cols: Vec<char> = line.chars(1, RECORD_LEN);
-    for c in &mut cols[28..44] {
-        *c = ' ';
-    }
-    for c in &mut cols[44..] {
+    for c in &mut cols[28..] {
         *c = ' ';
     }
     let shape = format!(
@@ -123,10 +132,9 @@ fn expansion(line: &SourceLine, f: &FieldDef) -> String {
         cols[29 + i] = ch;
     }
     if let Some(r) = &f.reference {
-        let note = format!("{}", r.field);
         let src = match &r.source {
-            crate::model::RefSource::File(fr) => format!("REFFLD({note} {fr})"),
-            crate::model::RefSource::Source => format!("REFFLD({note} *SRC)"),
+            RefSource::File(fr) => format!("REFFLD({} {fr})", r.field),
+            RefSource::Source => format!("REFFLD({} *SRC)", r.field),
         };
         for (i, ch) in src.chars().take(36).enumerate() {
             cols[44 + i] = ch;
@@ -135,13 +143,16 @@ fn expansion(line: &SourceLine, f: &FieldDef) -> String {
     cols.into_iter().collect()
 }
 
-fn format_summary(out: &mut String, def: &PfDefinition) {
-    let fmt = &def.format;
+fn format_summary(out: &mut String, view: &FormatView<'_>) {
+    let fmt = view.format;
     let _ = write!(out, "  Record format {}", fmt.name);
     if let Some(t) = &fmt.text {
         let _ = write!(out, "    {t}");
     }
     out.push('\n');
+    for note in &view.notes {
+        let _ = writeln!(out, "  {note}");
+    }
     let _ = writeln!(
         out,
         "  {:<10}  Type  {:>6}  Dec  {:>5}  {:>6}  Attributes",
@@ -153,8 +164,7 @@ fn format_summary(out: &mut String, def: &PfDefinition) {
         } else {
             String::new()
         };
-        let _ = writeln!(
-            out,
+        let row = format!(
             "  {:<10}  {}     {:>6}  {:>3}  {:>5}  {:>6}  {}",
             f.name,
             f.data_type.letter(),
@@ -164,6 +174,7 @@ fn format_summary(out: &mut String, def: &PfDefinition) {
             f.offset,
             attributes(f)
         );
+        let _ = writeln!(out, "{}", row.trim_end());
     }
     let _ = writeln!(
         out,
@@ -171,9 +182,7 @@ fn format_summary(out: &mut String, def: &PfDefinition) {
         fmt.record_len,
         fmt.fields.len()
     );
-    if fmt.keys.is_empty() {
-        out.push_str("  Access path: arrival sequence\n");
-    } else {
+    if !fmt.keys.is_empty() {
         out.push_str("  Key fields\n");
         let _ = writeln!(
             out,
@@ -192,24 +201,8 @@ fn format_summary(out: &mut String, def: &PfDefinition) {
                 k.describe()
             );
         }
-        let mut path = match def.unique {
-            Some(n) => format!(
-                "UNIQUE ({})",
-                match n {
-                    crate::model::NullKeys::Include => "*INCNULL",
-                    crate::model::NullKeys::Exclude => "*EXCNULL",
-                }
-            ),
-            None => "duplicates allowed".to_string(),
-        };
-        if let Some(o) = def.dup_order {
-            let _ = write!(path, "; {}", o.name());
-        }
-        if let Some(a) = &def.altseq {
-            let _ = write!(path, "; ALTSEQ({a})");
-        }
-        let _ = writeln!(out, "  Access path: {path}; key length {}", fmt.key_len());
     }
+    let _ = writeln!(out, "  Access path: {}", view.access_path);
     out.push('\n');
 }
 

@@ -8,6 +8,7 @@
 pub mod field;
 pub mod filekw;
 pub mod keys;
+pub mod selomit;
 
 use qsname::Name;
 
