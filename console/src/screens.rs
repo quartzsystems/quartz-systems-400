@@ -7,10 +7,10 @@
 
 use crate::screen::{Attr, Screen};
 
-/// Bottom line on every screen.
+/// Bottom line of the SRC and sign-on displays, white, at the right.
 pub const COPYRIGHT: &str = "(C) COPYRIGHT QUARTZ SYSTEMS 2026.";
-/// Column of the copyright line.
-pub const COPYRIGHT_COL: usize = 25;
+/// Column of the copyright line: it ends at column 76.
+pub const COPYRIGHT_COL: usize = 43;
 /// Row of the message line.
 pub const MESSAGE_ROW: usize = 23;
 
@@ -28,17 +28,19 @@ pub fn src_screen(system: &str, current: &str, text: &str, recent: &[(String, St
     for (i, (code, t)) in recent[start..].iter().enumerate() {
         s.put(11 + i, 3, &format!("{code}  {t}"), Attr::GREEN);
     }
-    s.put(24, COPYRIGHT_COL, COPYRIGHT, Attr::GREEN);
+    s.put(24, COPYRIGHT_COL, COPYRIGHT, Attr::WHITE);
     s
 }
 
-/// The manual-mode IPL menu.
+/// The manual-mode IPL menu. Geometry follows the classic attended IPL
+/// display: title centered, options indented, the notice block left
+/// aligned above the bottom of the screen.
 pub fn ipl_menu(system: &str) -> Screen {
     let mut s = Screen::new();
-    s.put(1, 28, "IPL or Install the System", Attr::WHITE);
-    s.put(2, 48, "System  . . . . . :", Attr::GREEN);
-    s.put(2, 68, system, Attr::GREEN);
-    s.put(3, 1, "Select one of the following:", Attr::GREEN);
+    s.put(2, 28, "IPL or Install the System", Attr::WHITE);
+    s.put(3, 48, "System  . . . . . :", Attr::GREEN);
+    s.put(3, 68, system, Attr::GREEN);
+    s.put(4, 8, "Select one of the following:", Attr::GREEN);
     for (i, line) in [
         "1. Perform an IPL",
         "2. Install the operating system",
@@ -49,14 +51,23 @@ pub fn ipl_menu(system: &str) -> Screen {
     .iter()
     .enumerate()
     {
-        s.put(5 + i, 6, line, Attr::GREEN);
+        s.put(6 + i, 13, line, Attr::GREEN);
     }
-    s.put(20, 1, "Selection", Attr::GREEN);
-    s.field(21, 7, 2, false);
-    s.put(24, COPYRIGHT_COL, COPYRIGHT, Attr::GREEN);
-    s.cursor = (20, 6);
+    s.put(18, 8, "Selection", Attr::GREEN);
+    s.field(19, 11, 2, false);
+    for (i, line) in NOTICE.iter().enumerate() {
+        s.put(21 + i, 8, line, Attr::WHITE);
+    }
+    s.cursor = (18, 10);
     s
 }
+
+/// The licensed internal code notice on the IPL menu. Quartz wording.
+pub const NOTICE: [&str; 3] = [
+    "Licensed Internal Code - Quartz Systems QS/400.",
+    "(C) Copyright Quartz Systems 2026. Some rights reserved.",
+    "Licensed under the MIT license; see LICENSE on the installation media.",
+];
 
 /// The sign-on display. Geometry follows the classic layout; the words are
 /// Quartz's.
@@ -79,7 +90,7 @@ pub fn sign_on(system: &str, subsystem: &str, display: &str) -> Screen {
     s.field(9, 53, 10, false);
     s.put(10, 17, "Current library . . . . . . . . .", Attr::GREEN);
     s.field(10, 53, 10, false);
-    s.put(24, COPYRIGHT_COL, COPYRIGHT, Attr::GREEN);
+    s.put(24, COPYRIGHT_COL, COPYRIGHT, Attr::WHITE);
     s.cursor = (5, 52);
     s
 }
@@ -124,7 +135,7 @@ mod tests {
         at(4, 68, "QSCONSOLE");
         at(6, 17, "User  . . . . . . . . . . . . . .");
         at(10, 17, "Current library . . . . . . . . .");
-        at(24, 25, COPYRIGHT);
+        at(24, 43, COPYRIGHT);
         assert_eq!(s.fields.len(), 5);
         assert!(s.fields[1].nondisplay);
         assert!(s.fields.iter().all(|f| f.col == 53 && f.len == 10));

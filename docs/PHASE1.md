@@ -205,7 +205,9 @@ turquoise, pink and yellow.
 
 Screens: the SRC display (current code double width, last eight below),
 the IPL menu, and the sign-on display at the classic geometry with Quartz
-wording. `screen` on the service console returns the 24×80 grid as text,
+wording. The IPL menu carries the licensed internal code notice as a
+left-aligned block above the bottom; the SRC and sign-on displays carry
+the copyright line in white at the right of row 24. `screen` on the service console returns the 24×80 grid as text,
 which the harness compares.
 
 ### Keyboard
@@ -337,7 +339,7 @@ Under TCG: 4.1, 0.3, 0.0, 5.8, 0.3, 8.0 s.
 
 Media suite (`build test --media iso`): media IPL 1.6 s, ISO first 1.7 s,
 disk first 1.4 s under KVM; 4.2, 3.9, 3.8 s under TCG. Two `build iso` runs
-produced the same image (sha256 `504363f3�` on the build of 2026-10-10).
+produced the same image (sha256 `504363f3…` on the build of 2026-10-10).
 
 ## Deviations from the Phase 0 code and the Phase 1 text
 
