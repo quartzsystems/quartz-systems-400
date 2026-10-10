@@ -10,6 +10,8 @@ members = [
     "release",
     "blockdev",
     "store",
+    "ccsid",
+    "qsname",
 ]
 
 [workspace.package]

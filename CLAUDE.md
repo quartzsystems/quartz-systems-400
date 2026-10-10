@@ -59,6 +59,8 @@ release/      VxRyMz identity, build ID, PTF names (one source of truth)
 blockdev/     BlockDev trait, AlignedBuf, Linux O_DIRECT backend, MemBlockDev with faults
 store/        object store: src/page/, src/btree/, src/asp/ (units, superblock),
               src/alloc/ (bitmaps, free tree), src/wal/, txn.rs, store.rs, cache.rs, src/obj/
+ccsid/        CP037 <-> UTF-8 from cp037.csv (build.rs), EBCDIC collation
+qsname/       object, library and member name rules; 10-byte CP037 Name
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, STORE_FORMAT.md, images/
 ```
 
