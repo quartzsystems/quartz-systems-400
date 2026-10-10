@@ -211,16 +211,22 @@ impl Suite {
         Ok(reports)
     }
 
-    /// Media step 1: the D IPL sequence with C1001015, then the sign-on screen.
+    /// Media step 1: the D IPL sequence with C1001015, the attended IPL
+    /// menu (answered with option 1 over serial), then the sign-on screen.
     fn media_ipl(&self, s: &mut Session) -> Result<String, String> {
-        let seen = s.expect_in_order(SRC_SEQUENCE_MEDIA, self.boot_timeout)?;
+        s.expect_in_order(&SRC_SEQUENCE_MEDIA[..5], self.boot_timeout)?;
+        s.expect("Selection:", self.boot_timeout)?;
+        s.send("1")?;
+        let seen = s.expect_in_order(&SRC_SEQUENCE_MEDIA[5..], self.boot_timeout)?;
         s.expect(crate::PROMPT, CMD)?;
         let dump = s.command("screen", CMD)?;
         if !dump.contains("Sign On") {
             return Err("sign-on display is not showing".into());
         }
         let last = seen.last().map_or(0.0, |(_, t)| t.as_secs_f64());
-        Ok(format!("C1001015 seen, sign-on display at {last:.1}s"))
+        Ok(format!(
+            "C1001015 seen, IPL menu answered, sign-on display at {last:.1}s"
+        ))
     }
 
     /// Media step 2: with the disk attached and the CD-ROM first, the ISO

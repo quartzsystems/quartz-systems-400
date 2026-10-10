@@ -116,5 +116,6 @@ otherwise logs go to `target/logs/`.
   are the compatibility interface.
 - Persistence before the object store goes through `licpart` and is marked
   `MIGRATE(phase2)`.
-- Framebuffer writes: `pwrite` under a page plus `fsync`; `mmap` does not
-  flush under simpledrm's fbdev emulation.
+- Framebuffer writes: one `pwrite` per frame spanning every line, then
+  `fsync`. Partial-line writes lose damage at line ends and `mmap` never
+  flushes under simpledrm's fbdev emulation (see docs/PHASE1.md).

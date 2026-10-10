@@ -46,27 +46,21 @@ impl Renderer {
     }
 
     /// Draw the whole framebuffer: the grid in the middle, background in
-    /// the margins. Painting everything keeps anything the kernel console
-    /// drew before the mode switch from surviving.
+    /// the margins, as one frame write.
     pub fn draw(&self, screen: &Screen) -> io::Result<()> {
-        let blank = vec![palette::BACKGROUND; self.fb.width];
-        let grid_h = ROWS * GLYPH_H;
-        for y in 0..self.y0 {
-            self.fb.write_row(0, y, &blank)?;
-        }
-        for y in self.y0 + grid_h..self.fb.height {
-            self.fb.write_row(0, y, &blank)?;
-        }
-        let mut line = vec![palette::BACKGROUND; self.fb.width];
+        let (w, h) = (self.fb.width, self.fb.height);
+        let mut frame = vec![palette::BACKGROUND; w * h];
         for r in 0..ROWS {
             for y in 0..GLYPH_H {
-                line.fill(palette::BACKGROUND);
-                let grid = &mut line[self.x0..];
-                Self::cells_row(screen, r, y, grid);
-                self.fb.write_row(0, self.y0 + r * GLYPH_H + y, &line)?;
+                let fy = self.y0 + r * GLYPH_H + y;
+                if fy >= h {
+                    break;
+                }
+                let line = &mut frame[fy * w..(fy + 1) * w];
+                Self::cells_row(screen, r, y, &mut line[self.x0..]);
             }
         }
-        self.fb.flush()
+        self.fb.write_frame(&frame)
     }
 
     /// Pixels of scanline `y` of grid row `r` into `row_px`.

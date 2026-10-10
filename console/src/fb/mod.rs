@@ -71,39 +71,29 @@ impl Framebuffer {
         })
     }
 
-    /// Write one row of pixels at (x, y), clipped to the screen. Written
-    /// in pieces under a page: the fbdev deferred-I/O write path loses
-    /// damage for larger single writes. Call `flush` when a frame is done.
-    pub fn write_row(&self, x: usize, y: usize, pixels: &[u32]) -> io::Result<()> {
-        if y >= self.height || x >= self.width {
-            return Ok(());
+    /// Write a whole frame (`width * height` pixels, row-major) in one
+    /// `pwrite`, then `fsync` so the kernel's deferred I/O flushes it.
+    ///
+    /// One write per frame on purpose: the fbdev damage tracking turns a
+    /// write that stays within a single scanline and ends exactly at its
+    /// end into an empty clip (seen on a 1024-wide display with a 4096-byte
+    /// stride, where half of every row went missing). A write spanning
+    /// every line always damages the full width.
+    pub fn write_frame(&self, pixels: &[u32]) -> io::Result<()> {
+        let mut bytes = vec![0u8; self.height * self.stride];
+        for (y, row) in pixels.chunks(self.width).take(self.height).enumerate() {
+            let dst = &mut bytes[y * self.stride..y * self.stride + row.len() * 4];
+            for (d, p) in dst.as_chunks_mut::<4>().0.iter_mut().zip(row) {
+                *d = p.to_le_bytes();
+            }
         }
-        let n = pixels.len().min(self.width - x);
-        let mut bytes = Vec::with_capacity(n * 4);
-        for p in &pixels[..n] {
-            bytes.extend_from_slice(&p.to_le_bytes());
-        }
-        let mut offset = (y * self.stride + x * 4) as u64;
-        for chunk in bytes.chunks(2048) {
-            self.file.write_all_at(chunk, offset)?;
-            offset += chunk.len() as u64;
-        }
-        Ok(())
-    }
-
-    /// Push everything written so far to the display: `fsync` runs the
-    /// kernel's deferred I/O immediately.
-    pub fn flush(&self) -> io::Result<()> {
+        self.file.write_all_at(&bytes, 0)?;
         self.file.sync_all()
     }
 
     /// Fill the whole screen with one color.
     pub fn fill(&self, pixel: u32) -> io::Result<()> {
-        let row = vec![pixel; self.width];
-        for y in 0..self.height {
-            self.write_row(0, y, &row)?;
-        }
-        self.flush()
+        self.write_frame(&vec![pixel; self.width * self.height])
     }
 }
 
