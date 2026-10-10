@@ -1,0 +1,24 @@
+                       Confirm Start Mirrored Protection                        
+                                                                 System:  QS400 
+                                                                                
+ The following pairs will be formed. The second unit of each pair               
+ is copied from the first at the next IPL.                                      
+                                                                                
+      ASP Unit  Serial Number     Type Model    Resource  Status                
+     1    3  QM00002           QEMU HARDDISK DD003     Unprotected              
+      DD003     SP-vdd            QEMU HARDDISK        4096  /dev/vdd           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

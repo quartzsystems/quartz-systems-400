@@ -1,0 +1,24 @@
+                           Display Disk Configuration                           
+                                                                 System:  QS400 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Display disk configuration status                                      
+      2. Display disk configuration capacity                                    
+      3. Display disk configuration protection                                  
+      4. Display non-configured units                                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

@@ -1,0 +1,24 @@
+                            Stop Mirrored Protection                            
+                                                                 System:  QS400 
+                                                                                
+ Type 1 beside the half to keep, then press Enter. Its partner leaves the config
+                                                                                
+ Opt  ASP Unit  Serial Number     Type Model    Resource  Status                
+       1    1  QM00000           QEMU HARDDISK DD001     Active                 
+       1    2  QM00001           QEMU HARDDISK DD002     Suspended              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

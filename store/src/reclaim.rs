@@ -16,6 +16,7 @@ use tracing::info;
 
 use crate::alloc::{Extent, ReadOnly};
 use crate::asp::layout::RESERVED_HEAD;
+use crate::asp::unit::UnitState;
 use crate::btree::BTree;
 use crate::obj::dir::{DirKey, LibDir, ObjDir};
 use crate::obj::header::{self, ATTR_OFF, ObjectHeader, text};
@@ -260,6 +261,29 @@ impl Store {
         Ok(report)
     }
 
+    /// A run of pages, and the same run from the other half when the
+    /// span is an active pair: both must agree page for page.
+    fn read_both_halves(
+        &mut self,
+        span: &crate::asp::layout::UnitSpan,
+        start: PageNo,
+        count: u64,
+    ) -> Result<(blockdev::AlignedBuf, Option<blockdev::AlignedBuf>)> {
+        let both_active = span.partner.is_some_and(|p| {
+            self.asp().unit_state(span.primary) == UnitState::Active
+                && self.asp().unit_state(p) == UnitState::Active
+        });
+        let io = self.asp_mut().io();
+        if both_active {
+            let partner = span.partner.expect("checked");
+            if let Some(primary) = io.read_run_on(span.primary, start, count)? {
+                let other = io.read_run_on(partner, start, count)?;
+                return Ok((primary, other));
+            }
+        }
+        Ok((io.read_run(start, count)?, None))
+    }
+
     /// Read every page of every unit and classify the allocated ones.
     fn sweep(&mut self, report: &mut ReclaimReport) -> Result<Sweep> {
         let layout = self.asp().layout().clone();
@@ -275,7 +299,7 @@ impl Store {
             while lba < span.pages {
                 let count = (span.pages - lba).min(256);
                 let start = layout.logical(unit16, lba);
-                let buf = self.asp_mut().io().read_run(start, count)?;
+                let (buf, other) = self.read_both_halves(span, start, count)?;
                 for i in 0..count {
                     let pno = start + i;
                     let at = lba + i;
@@ -298,6 +322,21 @@ impl Store {
                         continue;
                     }
                     report.pages_allocated += 1;
+                    if let Some(o) = other.as_ref()
+                        && o[to_usize(i) * PAGE_SIZE..(to_usize(i) + 1) * PAGE_SIZE] != *bytes
+                    {
+                        report.bad_pages.push(BadPage {
+                            page: pno,
+                            owner: t.owner,
+                            what: "mirrored halves differ".into(),
+                        });
+                        tags[to_usize(pno)] = Some(Tag {
+                            kind: t.page_type,
+                            owner: t.owner,
+                            ok: false,
+                        });
+                        continue;
+                    }
                     if !crc_ok {
                         report.bad_pages.push(BadPage {
                             page: pno,

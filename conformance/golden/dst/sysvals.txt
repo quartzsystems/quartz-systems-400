@@ -1,0 +1,24 @@
+                            Work with System Values                             
+                                                                 System:  QS400 
+                                                                                
+ Type options, press Enter.  2=Change                                           
+                                                                                
+ Opt  Name        Value                                                         
+     (None)                                                                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

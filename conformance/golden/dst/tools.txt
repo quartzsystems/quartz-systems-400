@@ -1,0 +1,24 @@
+                              Start a Service Tool                              
+                                                                 System:  QS400 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Product activity log                                                   
+      2. Trace Licensed Internal Code                                           
+      3. Work with communications trace                                         
+      4. Display/Alter/Dump                                                     
+      5. Licensed Internal Code log                                             
+      6. Main storage dump manager                                              
+      7. Hardware service manager                                               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

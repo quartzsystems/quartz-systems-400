@@ -1,0 +1,24 @@
+                       Use Dedicated Service Tools (DST)                        
+                                                                 System:  QS400 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Perform an IPL                                                         
+      2. Install the operating system                                           
+      3. Work with Licensed Internal Code                                       
+      4. Work with disk units                                                   
+      5. Work with DST environment                                              
+      6. Select DST console mode                                                
+      7. Start a service tool                                                   
+      8. Perform automatic installation of the operating system                 
+      9. Work with save storage and restore storage                             
+     10. Work with remote service support                                       
+     11. Work with system partitions                                            
+     12. Work with system capacity                                              
+     13. Work with system security                                              
+     14. End batch restricted state                                             
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

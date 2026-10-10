@@ -10,6 +10,8 @@ use std::collections::HashSet;
 use blockdev::BlockDev;
 use tracing::{info, warn};
 
+use crate::asp::mirror::{Resume, ResumeJournal, ResumeProgress};
+use crate::asp::unit::UnitState;
 use crate::asp::{Asp, FormatParams, UnitEvent, UnitInfo};
 use crate::cache::{CacheStats, PageCache};
 use crate::obj::ObjectId;
@@ -167,6 +169,106 @@ impl Store {
     #[must_use]
     pub fn units(&self) -> Vec<UnitInfo> {
         self.asp.units()
+    }
+
+    /// Pair a unit with a new device and publish the pair; the new half
+    /// is resuming until [`resume_step`](Self::resume_step) finishes.
+    pub fn start_mirror(
+        &mut self,
+        unit: u16,
+        dev: Box<dyn BlockDev>,
+        unit_uuid: [u8; 16],
+        serial: &str,
+    ) -> Result<u16> {
+        self.check()?;
+        let new = self.asp.start_mirror(unit, dev, unit_uuid, serial)?;
+        self.checkpoint()?;
+        Ok(new)
+    }
+
+    /// Dissolve a pair, keeping `keep`.
+    pub fn stop_mirror(&mut self, keep: u16) -> Result<Option<Box<dyn BlockDev>>> {
+        self.check()?;
+        let dev = self.asp.stop_mirror(keep)?;
+        self.checkpoint()?;
+        Ok(dev)
+    }
+
+    /// Stop writing to a half.
+    pub fn suspend_unit(&mut self, unit: u16) -> Result<()> {
+        self.check()?;
+        self.asp.suspend(unit)?;
+        self.checkpoint()
+    }
+
+    /// Begin, or continue, bringing a half back in step.
+    pub fn resume_unit(&mut self, unit: u16, journal: &mut dyn ResumeJournal) -> Result<Resume> {
+        self.check()?;
+        let r = self.asp.resume(unit, journal)?;
+        self.checkpoint()?;
+        Ok(r)
+    }
+
+    /// Copy up to `budget` chunks for a resume; publishes the half as
+    /// active when the copy completes.
+    pub fn resume_step(
+        &mut self,
+        resume: &mut Resume,
+        journal: &mut dyn ResumeJournal,
+        budget: u64,
+    ) -> Result<ResumeProgress> {
+        self.check()?;
+        let progress = self.asp.resume_step(resume, journal, budget)?;
+        if progress.complete {
+            self.checkpoint()?;
+        }
+        Ok(progress)
+    }
+
+    /// Put a new device in the place of a missing or failed half.
+    pub fn replace_unit(
+        &mut self,
+        unit: u16,
+        dev: Box<dyn BlockDev>,
+        unit_uuid: [u8; 16],
+        serial: &str,
+    ) -> Result<()> {
+        self.check()?;
+        self.asp.replace_unit(unit, dev, unit_uuid, serial)?;
+        self.checkpoint()
+    }
+
+    /// A page of one physical unit, as it is on the device.
+    pub fn read_unit_page(&mut self, unit: u16, lba: u64) -> Result<Vec<u8>> {
+        if unit >= self.asp.io().unit_count() {
+            return Err(StoreError::UnitMissing {
+                unit,
+                what: "no such unit".into(),
+            });
+        }
+        let page = self.asp.io().read_unit_page(unit, lba)?;
+        Ok(page.bytes().to_vec())
+    }
+
+    /// An object's header page.
+    pub fn object_header_page(&mut self, id: ObjectId) -> Result<Vec<u8>> {
+        let mut t = self.begin()?;
+        let page = crate::obj::dir::header_page(&mut t, id)?;
+        let p = crate::page::pager::Pager::read(&mut t, page)?;
+        t.abort();
+        Ok(p.bytes().to_vec())
+    }
+
+    /// A unit's state now.
+    #[must_use]
+    pub fn unit_state(&self, unit: u16) -> UnitState {
+        self.asp.unit_state(unit)
+    }
+
+    /// Events the I/O layer logged since the last call: pages rewritten
+    /// from a mirror, halves taken out of service.
+    pub fn drain_io_events(&mut self) -> Vec<crate::asp::io::IoEvent> {
+        self.asp.io().drain_events()
     }
 
     fn from_asp(asp: Asp, config: StoreConfig) -> Self {

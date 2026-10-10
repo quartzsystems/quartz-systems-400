@@ -1,0 +1,24 @@
+                          Create Service Tools User ID                          
+                                                                 System:  QS400 
+                                                                                
+ User ID . . . . . . :                                                          
+ Password . . . . . . :                                                         
+ Password (to verify) :                                                         
+ Description . . . . :                                                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

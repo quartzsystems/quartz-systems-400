@@ -32,43 +32,6 @@ pub fn src_screen(system: &str, current: &str, text: &str, recent: &[(String, St
     s
 }
 
-/// The manual-mode IPL menu. Geometry follows the classic attended IPL
-/// display: title centered, options indented, the notice block left
-/// aligned above the bottom of the screen.
-pub fn ipl_menu(system: &str) -> Screen {
-    let mut s = Screen::new();
-    s.put(2, 28, "IPL or Install the System", Attr::WHITE);
-    s.put(3, 48, "System  . . . . . :", Attr::GREEN);
-    s.put(3, 68, system, Attr::GREEN);
-    s.put(4, 8, "Select one of the following:", Attr::GREEN);
-    for (i, line) in [
-        "1. Perform an IPL",
-        "2. Install the operating system",
-        "3. Use Dedicated Service Tools (DST)",
-        "4. Perform automatic installation",
-        "5. Save Licensed Internal Code",
-    ]
-    .iter()
-    .enumerate()
-    {
-        s.put(6 + i, 13, line, Attr::GREEN);
-    }
-    s.put(18, 8, "Selection", Attr::GREEN);
-    s.field(19, 11, 2, false);
-    for (i, line) in NOTICE.iter().enumerate() {
-        s.put(21 + i, 8, line, Attr::WHITE);
-    }
-    s.cursor = (18, 10);
-    s
-}
-
-/// The licensed internal code notice on the IPL menu. Quartz wording.
-pub const NOTICE: [&str; 3] = [
-    "Licensed Internal Code - Quartz Systems QS/400.",
-    "(C) Copyright Quartz Systems 2026. Some rights reserved.",
-    "Licensed under the MIT license; see LICENSE on the installation media.",
-];
-
 /// The sign-on display. Geometry follows the classic layout; the words are
 /// Quartz's.
 pub fn sign_on(system: &str, subsystem: &str, display: &str) -> Screen {
@@ -92,35 +55,6 @@ pub fn sign_on(system: &str, subsystem: &str, display: &str) -> Screen {
     s.field(10, 53, 10, false);
     s.put(24, COPYRIGHT_COL, COPYRIGHT, Attr::WHITE);
     s.cursor = (5, 52);
-    s
-}
-
-/// A dialog: title centered on row 1, the system name at the right of
-/// row 2, text lines from row 4, and an optional prompt with an input
-/// field of `len` cells below them. Used by the installer.
-pub fn dialog(
-    system: &str,
-    title: &str,
-    lines: &[String],
-    prompt: Option<(&str, usize)>,
-) -> Screen {
-    let mut s = Screen::new();
-    let col = (crate::screen::COLS.saturating_sub(title.len())) / 2 + 1;
-    s.put(1, col, title, Attr::WHITE);
-    s.put(2, 48, "System  . . . . . :", Attr::GREEN);
-    s.put(2, 68, system, Attr::GREEN);
-    let mut row = 4;
-    for line in lines.iter().take(MESSAGE_ROW - 6) {
-        s.put(row, 2, line, Attr::GREEN);
-        row += 1;
-    }
-    if let Some((label, len)) = prompt {
-        row += 1;
-        s.put(row, 2, label, Attr::GREEN);
-        s.field(row, label.len() + 4, len, false);
-        s.cursor = (row - 1, label.len() + 3);
-    }
-    s.put(24, COPYRIGHT_COL, COPYRIGHT, Attr::WHITE);
     s
 }
 
@@ -168,34 +102,6 @@ mod tests {
         assert_eq!(s.fields.len(), 5);
         assert!(s.fields[1].nondisplay);
         assert!(s.fields.iter().all(|f| f.col == 53 && f.len == 10));
-    }
-
-    #[test]
-    fn dialog_places_the_prompt_below_the_text() {
-        let lines = vec![
-            "Select the disk unit:".to_string(),
-            String::new(),
-            "  1. sda".to_string(),
-        ];
-        let s = dialog(
-            "QS400",
-            "Install the Operating System",
-            &lines,
-            Some(("Selection", 2)),
-        );
-        let d = s.dump();
-        let lines: Vec<&str> = d.lines().collect();
-        assert_eq!(lines[0].trim(), "Install the Operating System");
-        assert_eq!(&lines[1][67..72], "QS400");
-        assert!(lines[3].starts_with(" Select the disk unit:"));
-        assert!(lines[5].starts_with("   1. sda"));
-        assert!(lines[7].starts_with(" Selection"));
-        assert_eq!(s.fields.len(), 1);
-        assert_eq!(
-            (s.fields[0].row, s.fields[0].col, s.fields[0].len),
-            (8, 13, 2)
-        );
-        assert!(dialog("QS400", "Done", &[], None).fields.is_empty());
     }
 
     #[test]

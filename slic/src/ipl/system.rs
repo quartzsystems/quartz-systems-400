@@ -91,9 +91,25 @@ impl System {
     }
 
     /// Log a code and show it on serial, the text console and the display.
+    /// Attention and fatal codes also go into the product activity log.
     pub fn emit(&mut self, src: &'static Src) {
         self.log.push(src);
         self.out.both(&src.line());
+        let severity = match src.phase {
+            crate::src::Phase::Attention => Some(licpart::Severity::Attention),
+            crate::src::Phase::Fatal => Some(licpart::Severity::Fatal),
+            _ => None,
+        };
+        if let Some(severity) = severity
+            && let Some((part, record)) = self.lic.as_mut()
+        {
+            record.push_pal(licpart::PalEntry {
+                time: now_unix(),
+                code: src.bytes(),
+                severity,
+            });
+            let _ = part.write(record);
+        }
         self.show(Command::ShowSrc {
             system: self.system_name(),
             code: src.code.to_string(),

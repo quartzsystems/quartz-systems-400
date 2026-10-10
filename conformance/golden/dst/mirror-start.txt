@@ -1,0 +1,24 @@
+                    Select ASP to Start Mirrored Protection                     
+                                                                 System:  QS400 
+                                                                                
+ Type 1 beside the ASP, then press Enter.                                       
+                                                                                
+ Opt  ASP                                                                       
+       1  ASP 1 (system ASP)                                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

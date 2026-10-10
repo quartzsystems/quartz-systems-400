@@ -23,10 +23,11 @@ mod part;
 pub use error::LicError;
 pub use format::header::{Header, IplMode, IplType, Slot};
 pub use format::history::{IplHistory, Outcome};
+pub use format::pal::{PAL_MAX, PalEntry, Severity};
 pub use format::tlv::{TAG_USER_MIN, Tlv};
 pub use format::{FORMAT_VERSION, HISTORY_MAX, Record, SLOT_BYTES};
 pub use locate::{LIC_TYPE_GUID, PARTITION_NAME};
-pub use part::{Device, LicPart};
+pub use part::{Device, LicPart, RESUME_MAX, RESUME_OFFSET};
 
 #[cfg(target_os = "linux")]
 pub use locate::locate;

@@ -1,0 +1,24 @@
+                          Work with ASP Configuration                           
+                                                                 System:  QS400 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Display disk configuration capacity                                    
+      2. Add units to ASPs                                                      
+      3. Add units to ASPs and balance data                                     
+      4. Remove units from configuration                                        
+      6. Move units from one ASP to another                                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

@@ -13,10 +13,15 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use blockdev::{BlockDev, LinuxBlockDev, MemBlockDev};
+use licpart::{Device, LicPart};
 use qsname::Name;
+use store::asp::io::IoEvent;
 use store::asp::superblock::FLAG_RCLSTG_REQUIRED;
 use store::obj::{CreateParams, ObjectId, ops, types};
-use store::{FormatParams, Recovery, Store, StoreConfig, StoreError};
+use store::{
+    FormatParams, MemJournal, Recovery, Resume, ResumeJournal, ResumeState, Store, StoreConfig,
+    StoreError, UnitEvent,
+};
 
 use crate::ipl::system::{System, now_unix};
 use crate::src;
@@ -48,6 +53,60 @@ pub struct Storage {
     pub recovery: Recovery,
     /// The units' device nodes, in the order they were found.
     pub devices: Vec<PathBuf>,
+    /// A mirrored half being copied in the background.
+    pub resume: Option<Resume>,
+}
+
+/// Chunks (1 MiB each) copied per step of a background resume.
+const RESUME_BUDGET: u64 = 16;
+/// Chunks per step of the synchronization at IPL.
+const SYNC_BUDGET: u64 = 64;
+
+/// The resume journal in the LIC partition, or in memory without one.
+pub enum Journal<'a> {
+    /// On the LIC partition.
+    Lic(&'a mut LicPart<Box<dyn Device>>),
+    /// In memory: a crash starts the copy over.
+    Mem(MemJournal),
+}
+
+impl ResumeJournal for Journal<'_> {
+    fn load(&mut self, unit_uuid: [u8; 16]) -> Option<ResumeState> {
+        match self {
+            Journal::Lic(part) => part
+                .read_resume()
+                .and_then(|b| ResumeState::decode(&b))
+                .filter(|s| s.unit_uuid == unit_uuid),
+            Journal::Mem(m) => m.load(unit_uuid),
+        }
+    }
+    fn save(&mut self, state: &ResumeState) -> store::Result<()> {
+        match self {
+            Journal::Lic(part) => {
+                part.write_resume(&state.encode())
+                    .map_err(|e| StoreError::Journal {
+                        what: e.to_string(),
+                    })
+            }
+            Journal::Mem(m) => m.save(state),
+        }
+    }
+    fn clear(&mut self) -> store::Result<()> {
+        match self {
+            Journal::Lic(part) => part.clear_resume().map_err(|e| StoreError::Journal {
+                what: e.to_string(),
+            }),
+            Journal::Mem(m) => m.clear(),
+        }
+    }
+}
+
+/// The journal to use: the LIC partition when attached.
+fn journal(lic: &mut Option<(LicPart<Box<dyn Device>>, licpart::Record)>) -> Journal<'_> {
+    match lic.as_mut() {
+        Some((part, _)) => Journal::Lic(part),
+        None => Journal::Mem(MemJournal::default()),
+    }
 }
 
 /// The temporary ASP (ASP 0) and its root library QTEMP.
@@ -74,7 +133,7 @@ fn random_bytes<const N: usize>() -> [u8; N] {
 /// format a single blank one. Without a unit, a D IPL continues without
 /// a store; any other IPL halts.
 pub fn locate_and_open(system: &mut System) -> Result<(), &'static src::Src> {
-    let paths = diskimg::locate::partitions_of_type(diskimg::ASP1_TYPE_GUID).unwrap_or_default();
+    let paths = unit_candidates();
     if paths.is_empty() {
         if system.boot.ipl_d {
             system
@@ -155,10 +214,9 @@ pub fn locate_and_open(system: &mut System) -> Result<(), &'static src::Src> {
         recovery.replayed,
         store.asp().superblock().generation
     ));
-    for e in &recovery.events {
-        system.out.serial(&format!("slic: {e:?}\n"));
-    }
     system.emit(&src::RECOVERY);
+    let mut store = store;
+    report_events(system, &mut store, &recovery.events)?;
     let sb = store.asp().superblock();
     let qsys = (!fresh && !sb.qsys.is_none()).then_some(sb.qsys);
     system.storage = Some(Storage {
@@ -167,8 +225,157 @@ pub fn locate_and_open(system: &mut System) -> Result<(), &'static src::Src> {
         fresh,
         recovery,
         devices: opened,
+        resume: None,
     });
     Ok(())
+}
+
+/// What `open` found out about the units: a missing half is an
+/// attention code, a stale half a note, a resuming half a
+/// synchronization before the store is used.
+fn report_events(
+    system: &mut System,
+    store: &mut Store,
+    events: &[UnitEvent],
+) -> Result<(), &'static src::Src> {
+    for e in events {
+        match *e {
+            UnitEvent::Missing { unit } => {
+                system.out.serial(&format!(
+                    "slic: disk unit {unit} missing; its pair runs on one half
+"
+                ));
+                system.emit(&src::MIRROR_MISSING);
+            }
+            UnitEvent::Stale { unit } => system.out.serial(&format!(
+                "slic: disk unit {unit} is back with stale data; suspended until resumed
+"
+            )),
+            UnitEvent::Resuming { unit } => {
+                if let Err(e) = synchronize(system, store, unit) {
+                    system.out.serial(&format!(
+                        "slic: synchronizing unit {unit}: {e}
+"
+                    ));
+                    system.emit(&src::RECOVERY_FAILED);
+                    return Err(&src::ASP_UNUSABLE);
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+/// C1001075: copy a resuming half from its partner before the store is
+/// used, continuing from the journal after a crash.
+fn synchronize(system: &mut System, store: &mut Store, unit: u16) -> store::Result<()> {
+    system.emit(&src::MIRROR_SYNC);
+    let mut journal = journal(&mut system.lic);
+    let mut resume = store.resume_unit(unit, &mut journal)?;
+    let start = resume.progress();
+    system.out.serial(&format!(
+        "slic: synchronizing unit {unit}: {} of {} chunks already copied\n",
+        start.chunks_done, start.chunks
+    ));
+    let mut shown = start.percent / 10;
+    loop {
+        let p = store.resume_step(&mut resume, &mut journal, SYNC_BUDGET)?;
+        if p.percent / 10 > shown || p.complete {
+            shown = p.percent / 10;
+            system.out.serial(&format!(
+                "slic: synchronizing unit {unit}: {}%\n",
+                p.percent
+            ));
+        }
+        if p.complete {
+            return Ok(());
+        }
+    }
+}
+
+/// Start copying a half in the background; `tick` carries on.
+pub fn start_resume(system: &mut System, unit: u16) -> Result<String, String> {
+    let System { storage, lic, .. } = system;
+    let Some(s) = storage.as_mut() else {
+        return Err("object store not open".into());
+    };
+    if s.resume.is_some() {
+        return Err("a resume is already running".into());
+    }
+    let mut journal = journal(lic);
+    let resume = s
+        .store
+        .resume_unit(unit, &mut journal)
+        .map_err(|e| e.to_string())?;
+    let p = resume.progress();
+    s.resume = Some(resume);
+    Ok(format!(
+        "unit {unit} resuming in the background, {} of {} chunks done\n",
+        p.chunks_done, p.chunks
+    ))
+}
+
+/// Progress of the background resume, if one runs.
+pub fn resume_progress(system: &System) -> Option<store::ResumeProgress> {
+    system
+        .storage
+        .as_ref()?
+        .resume
+        .as_ref()
+        .map(Resume::progress)
+}
+
+/// One step of the background resume. Returns whether one is running.
+fn resume_step(system: &mut System) -> bool {
+    let System {
+        storage, lic, out, ..
+    } = system;
+    let Some(s) = storage.as_mut() else {
+        return false;
+    };
+    let Some(resume) = s.resume.as_mut() else {
+        return false;
+    };
+    let mut journal = journal(lic);
+    match s.store.resume_step(resume, &mut journal, RESUME_BUDGET) {
+        Ok(p) if p.complete => {
+            out.serial(&format!("slic: unit {} resumed\n", p.unit));
+            s.resume = None;
+            false
+        }
+        Ok(_) => true,
+        Err(e) => {
+            out.serial(&format!("slic: resume: {e}\n"));
+            s.resume = None;
+            false
+        }
+    }
+}
+
+/// Report what the I/O layer did on its own.
+fn report_io_events(system: &mut System) {
+    let events = match system.storage.as_mut() {
+        Some(s) => s.store.drain_io_events(),
+        None => return,
+    };
+    for e in events {
+        match e {
+            IoEvent::Healed { page, unit } => system.out.serial(&format!(
+                "slic: page {page} rewritten on unit {unit} from its mirror\n"
+            )),
+            IoEvent::UnitFailed { unit, what } => {
+                system.out.serial(&format!(
+                    "slic: disk unit {unit} taken out of service: {what}\n"
+                ));
+                system.emit(&src::MIRROR_FAILED);
+            }
+        }
+    }
+}
+
+/// Whether the run loop should come back soon: a resume is running.
+pub fn busy(system: &System) -> bool {
+    system.storage.as_ref().is_some_and(|s| s.resume.is_some())
 }
 
 /// C6001005, C6001007, C6001008: the object layer. On a fresh store,
@@ -229,6 +436,34 @@ pub fn open_objects(system: &mut System) -> Result<(), &'static src::Src> {
     }
     system.out.serial(&line);
     Ok(())
+}
+
+/// Device nodes that may be units: every ASP 1 partition, and every
+/// whole disk that starts with a unit header (a unit added as a whole
+/// disk through the service tools).
+pub fn unit_candidates() -> Vec<PathBuf> {
+    let mut paths =
+        diskimg::locate::partitions_of_type(diskimg::ASP1_TYPE_GUID).unwrap_or_default();
+    for disk in diskimg::locate::whole_disks().unwrap_or_default() {
+        if disk.has_qs400 {
+            continue; // its units are partitions, listed above
+        }
+        if has_unit_header(&disk.dev) {
+            paths.push(disk.dev);
+        }
+    }
+    paths
+}
+
+/// Whether a device's first page is a verifiable unit header.
+pub fn has_unit_header(path: &std::path::Path) -> bool {
+    let Ok(dev) = LinuxBlockDev::open(path) else {
+        return false;
+    };
+    let mut page = store::Page::zeroed();
+    dev.read(0, page.bytes_mut()).is_ok()
+        && page.verify_type(0, store::PageType::UnitHeader).is_ok()
+        && store::asp::unit::UnitHeader::decode(page.body(), 0).is_ok()
 }
 
 /// Format parameters for a new ASP 1 with one unit.
@@ -310,14 +545,22 @@ pub fn open_temp(system: &mut System) {
     }
 }
 
-/// Time-based checkpoints, from the run loop.
+/// From the run loop: a step of any background resume, the I/O layer's
+/// events, and time-based checkpoints.
 pub fn tick(system: &mut System) {
+    resume_step(system);
+    report_io_events(system);
     let now = now_unix();
     if let Some(s) = system.storage.as_mut()
         && let Err(e) = s.store.tick(now)
     {
         system.out.serial(&format!("slic: checkpoint: {e}\n"));
     }
+}
+
+/// Random bytes from the kernel, for new unit identities.
+pub fn fresh_uuid() -> [u8; 16] {
+    random_bytes()
 }
 
 /// D1001010: checkpoint and close the store, release the unit.

@@ -19,9 +19,10 @@ use diskimg::{Guids, Plan, fat, iso9660};
 use licpart::{Device, LicPart, SLOT_BYTES};
 use store::{Store, StoreConfig};
 
+use svctools::ui;
+
 use crate::hwrsrc::Kind;
-use crate::ipl::display::Command;
-use crate::ipl::menu::read_line;
+use crate::ipl::menu;
 use crate::ipl::system::{System, now_unix};
 use crate::ipl::{Event, power, storage};
 
@@ -52,12 +53,20 @@ impl Page {
 
     /// Show the page on the display, with a prompt field when asked.
     fn show(&self, system: &mut System, prompt: Option<(&str, usize)>) {
-        system.show(Command::ShowDialog {
-            system: system.system_name(),
-            title: TITLE.to_string(),
-            lines: self.lines.clone(),
-            prompt: prompt.map(|(label, len)| (label.to_string(), len)),
-        });
+        let mut lines = self.lines.clone();
+        let screen = match prompt {
+            Some((label, len)) => {
+                lines.push(String::new());
+                let mut s = ui::text(TITLE, &system.system_name(), &lines, None, "");
+                let row = ui::BODY_ROW + lines.len();
+                s.put(row, ui::BODY_COL, label, console::Attr::GREEN);
+                s.field(row, ui::BODY_COL + label.len() + 2, len, false);
+                s.cursor = (row - 1, ui::BODY_COL + label.len() + 1);
+                s
+            }
+            None => ui::text(TITLE, &system.system_name(), &lines, None, ""),
+        };
+        system.show(crate::ipl::display::Command::ShowScreen(screen));
     }
 
     /// Prompt on both outputs and wait for the answer.
@@ -70,7 +79,7 @@ impl Page {
     ) -> Option<String> {
         self.show(system, Some((label, len)));
         system.out.both(&format!("\n{label}: "));
-        read_line(system, rx)
+        menu::read(system, rx).map(|a| menu::first_field(&a))
     }
 
     /// Show a final line and wait for Enter before going back.

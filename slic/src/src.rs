@@ -56,6 +56,13 @@ pub const CONSOLE_ATTACHED: Src = src("C1001050", "Console attached", Phase::Lic
 pub const NET_ENUMERATED: Src = src("C1001060", "Network links enumerated", Phase::Lic);
 /// ASP 1 unit located.
 pub const ASP_LOCATED: Src = src("C1001070", "ASP units located", Phase::Lic);
+/// A mirrored half is being copied from its partner before the store
+/// is used.
+pub const MIRROR_SYNC: Src = src(
+    "C1001075",
+    "Mirrored protection synchronization",
+    Phase::Lic,
+);
 /// WAL replayed (or a blank unit formatted).
 pub const RECOVERY: Src = src("C1001080", "Storage management recovery", Phase::Lic);
 /// Neither superblock usable, or the store would not open.
@@ -84,6 +91,18 @@ pub const CONSOLE_MISSING: Src = src(
     "Console not found, continuing on serial",
     Phase::Attention,
 );
+/// Half of a mirrored pair was not found; the pair runs on one half.
+pub const MIRROR_MISSING: Src = src(
+    "A6001255",
+    "Mirrored unit missing, protection suspended",
+    Phase::Attention,
+);
+/// Half of a mirrored pair failed I/O and was taken out of service.
+pub const MIRROR_FAILED: Src = src(
+    "A6001256",
+    "Mirrored unit not operational, protection suspended",
+    Phase::Attention,
+);
 /// slic panicked.
 pub const PANIC: Src = src("B1001000", "slic panic", Phase::Fatal);
 /// LIC partition not found.
@@ -94,8 +113,9 @@ pub const LIC_UNREADABLE: Src = src(
     "LIC record unreadable, both copies",
     Phase::Fatal,
 );
-/// No ASP 1 partition on an A or B IPL.
-pub const ASP_NOT_FOUND: Src = src("B1001030", "ASP 1 unit not found", Phase::Fatal);
+/// A disk unit the ASP needs is not there: no ASP 1 partition at all,
+/// an unprotected unit, or both halves of a pair.
+pub const ASP_NOT_FOUND: Src = src("B1001030", "Disk unit missing", Phase::Fatal);
 /// The store could not be opened or initialized.
 pub const ASP_UNUSABLE: Src = src("B1001040", "Object store unusable", Phase::Fatal);
 /// The store belongs to another release.
@@ -122,6 +142,7 @@ pub const TABLE: &[Src] = &[
     CONSOLE_ATTACHED,
     NET_ENUMERATED,
     ASP_LOCATED,
+    MIRROR_SYNC,
     RECOVERY,
     RECOVERY_FAILED,
     RELEASE_MISMATCH,
@@ -134,6 +155,8 @@ pub const TABLE: &[Src] = &[
     STRUP_SKIPPED,
     IPL_COMPLETE,
     CONSOLE_MISSING,
+    MIRROR_MISSING,
+    MIRROR_FAILED,
     PANIC,
     LIC_NOT_FOUND,
     LIC_UNREADABLE,

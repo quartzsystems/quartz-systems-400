@@ -8,6 +8,7 @@
 pub mod clock;
 pub mod cmdline;
 pub mod display;
+pub mod dst;
 pub mod install;
 pub mod lic;
 pub mod log;
@@ -124,10 +125,13 @@ fn lic_phase(
     }
     system.emit(&src::HW_ENUMERATED);
 
+    // The display first, so a missing disk unit can be worked on in DST.
+    display::attach(system, tx.clone());
+
     // A D IPL may be about to install onto the disk, so its store opens
     // only after the menu.
     if !system.boot.ipl_d {
-        storage::locate_and_open(system)?;
+        open_or_service(system, rx)?;
     }
 
     match clock::set_from_rtc(system) {
@@ -140,8 +144,6 @@ fn lic_phase(
         Err(e) => system.out.serial(&format!("slic: clock not set: {e}\n")),
     }
     system.emit(&src::CLOCK_SET);
-
-    display::attach(system, tx.clone());
 
     if system.mode == IplMode::Manual {
         menu::run(system, rx);
@@ -169,6 +171,33 @@ fn lic_phase(
     Ok(())
 }
 
+/// Open the store; on a missing disk unit, B1001030 and the service
+/// tools, where option 1 re-IPLs once the operator has dealt with it.
+fn open_or_service(
+    system: &mut System,
+    rx: &mpsc::Receiver<Event>,
+) -> Result<(), &'static src::Src> {
+    match storage::locate_and_open(system) {
+        Ok(()) => Ok(()),
+        Err(code) if std::ptr::eq(code, &src::ASP_NOT_FOUND) => {
+            system.emit(&src::ASP_NOT_FOUND);
+            lic::fail(system, &src::ASP_NOT_FOUND);
+            system.mode = IplMode::Manual;
+            loop {
+                match dst::run(system, rx) {
+                    dst::Outcome::PerformIpl => power::down(system, true),
+                    dst::Outcome::Exit => {
+                        system.out.both("slic: IPL halted; disk unit missing\n");
+                        park();
+                    }
+                    _ => {}
+                }
+            }
+        }
+        Err(code) => Err(code),
+    }
+}
+
 /// C6001000 through C6001090.
 fn os_phase(system: &mut System) {
     system.emit(&src::OS_STARTED);
@@ -194,7 +223,12 @@ fn os_phase(system: &mut System) {
 /// Serve events forever. Power down leaves through `power::down`.
 fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>) -> ! {
     loop {
-        match rx.recv_timeout(Duration::from_secs(5)) {
+        let wait = if storage::busy(system) {
+            Duration::from_millis(20)
+        } else {
+            Duration::from_secs(5)
+        };
+        match rx.recv_timeout(wait) {
             Err(mpsc::RecvTimeoutError::Timeout) => storage::tick(system),
             Ok(Event::Signal(s)) if s == libc_sigchld() => {
                 sys::reap();

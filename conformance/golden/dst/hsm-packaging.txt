@@ -1,0 +1,24 @@
+                          Packaging Hardware Resources                          
+                                                                 System:  QS400 
+                                                                                
+ Resource  Type      Status        Location          Description                
+ CMB01     Bridge    Operational   0000:00:00.0      host bridge                
+ DD001     Disk      Operational   vda               vda 4096 MiB               
+ LIN01     Lan       NotDetected   0000:00:03.0      ethernet, port eth0        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+    Press Enter to continue.                                             Bottom 
+ F3=Exit   F7=Previous page   F8=Next page   F12=Cancel                         
+                                                                                

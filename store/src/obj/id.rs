@@ -72,6 +72,27 @@ impl ObjectId {
     }
 }
 
+impl std::str::FromStr for ObjectId {
+    type Err = String;
+
+    /// The display form: `AAAA-TTTT-SSSSSSSSSSSSSSSS-GGGGGGGG`, hex.
+    fn from_str(s: &str) -> Result<Self, String> {
+        let parts: Vec<&str> = s.trim().split('-').collect();
+        if parts.len() != 4 {
+            return Err(format!("object identifier {s:?} is not four hex fields"));
+        }
+        let field = |i: usize| {
+            u64::from_str_radix(parts[i], 16).map_err(|e| format!("field {} of {s:?}: {e}", i + 1))
+        };
+        Ok(Self {
+            asp: u16::try_from(field(0)?).map_err(|_| "asp".to_string())?,
+            type_code: u16::try_from(field(1)?).map_err(|_| "type".to_string())?,
+            serial: field(2)?,
+            generation: u32::try_from(field(3)?).map_err(|_| "generation".to_string())?,
+        })
+    }
+}
+
 impl fmt::Display for ObjectId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(

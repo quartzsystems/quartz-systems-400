@@ -132,7 +132,11 @@ impl IndexAttr {
 }
 
 /// Write the attribute area back.
-pub(crate) fn write_attr(txn: &mut Txn<'_>, page: crate::page::pager::PageNo, attr: &IndexAttr) -> Result<()> {
+pub(crate) fn write_attr(
+    txn: &mut Txn<'_>,
+    page: crate::page::pager::PageNo,
+    attr: &IndexAttr,
+) -> Result<()> {
     ops::write_attr(txn, page, 0, &attr.encode())
 }
 

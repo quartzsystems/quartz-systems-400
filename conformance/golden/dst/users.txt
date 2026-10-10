@@ -1,0 +1,24 @@
+                        Work with Service Tools User IDs                        
+                                                                 System:  QS400 
+                                                                                
+ Type options, press Enter.  2=Change privileges  3=Delete  4=Display  5=Enable 
+                                                                                
+ Opt  User ID     Status     Description                                        
+     QSECOFR     Expired    Security officer                                    
+     QSRV        Enabled    Service                                             
+     11111111    Enabled    Basic service                                       
+     22222222    Enabled    Operator                                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F6=Create   F12=Cancel                                               
+                                                                                

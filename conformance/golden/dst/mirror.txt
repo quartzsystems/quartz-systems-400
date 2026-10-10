@@ -1,0 +1,24 @@
+                         Work with Mirrored Protection                          
+                                                                 System:  QS400 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Display disk configuration                                             
+      2. Start mirrored protection                                              
+      3. Stop mirrored protection                                               
+      4. Enable remote load source mirroring                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

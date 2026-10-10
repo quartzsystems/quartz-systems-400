@@ -1,0 +1,24 @@
+                         Display Service Tools User ID                          
+                                                                 System:  QS400 
+                                                                                
+ User ID  . . . . . . . :  QSRV                                                 
+ Description  . . . . . :  Service                                              
+ Status . . . . . . . . :  Enabled                                              
+ Password expired . . . :  No                                                   
+ Wrong passwords  . . . :  0                                                    
+ Password changed . . . :  1767225600                                           
+                                                                                
+ Privileges:                                                                    
+   X  Disk units - administration                                               
+   X  Disk units - operations                                                   
+      Service tool security                                                     
+      Service tool user IDs                                                     
+   X  System values                                                             
+   X  Display/alter/dump                                                        
+   X  Licensed internal code log and product activity log                       
+   X  Hardware service manager                                                  
+                                                                                
+                                                                                
+    Press Enter to continue.                                            More... 
+ F3=Exit   F7=Previous page   F8=Next page   F12=Cancel                         
+                                                                                

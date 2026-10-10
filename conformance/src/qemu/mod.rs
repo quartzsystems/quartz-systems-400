@@ -42,6 +42,8 @@ pub struct Launch {
     /// properties on the devices (OVMF honours those through `fw_cfg`;
     /// `-boot order=` is not reliable with virtio disks).
     pub cdrom_first: bool,
+    /// Further disks, never booted: `/dev/vdb`, `/dev/vdc`, ... in the guest.
+    pub extra_disks: Vec<PathBuf>,
     /// QMP Unix socket path.
     pub qmp: PathBuf,
 }
@@ -98,6 +100,12 @@ pub fn args(l: &Launch) -> Vec<OsString> {
         a.push(OsString::from(format!(
             "virtio-blk-pci,drive=hd,bootindex={disk_index}"
         )));
+    }
+    for (i, disk) in l.extra_disks.iter().enumerate() {
+        a.push(OsString::from("-drive"));
+        a.push(join(&format!("if=none,id=extra{i},format=raw,file="), disk));
+        a.push(OsString::from("-device"));
+        a.push(OsString::from(format!("virtio-blk-pci,drive=extra{i}")));
     }
     if let Some(cdrom) = &l.cdrom {
         a.push(OsString::from("-drive"));

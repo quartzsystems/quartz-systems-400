@@ -103,7 +103,11 @@ fn three_units_make_one_page_space() {
     assert_eq!(units[2].entry.start, 1536);
     assert_eq!(units[2].entry.serial_text(), "SER2");
     assert!(units.iter().all(|u| u.entry.mirror_partner == NO_PARTNER));
-    assert!(units.iter().all(|u| u.entry.state == UnitState::Unprotected));
+    assert!(
+        units
+            .iter()
+            .all(|u| u.entry.state == UnitState::Unprotected)
+    );
     assert_eq!(store.asp().layout().total_pages(), 1792);
     store.close().unwrap();
     let sb = assert_tables_agree(&devs);
@@ -145,8 +149,14 @@ fn units_are_added_and_removed_through_the_table() {
     // new unit.
     for i in 0..12 {
         let mut t = store.begin().unwrap();
-        usrspc::create(&mut t, &create_params(qsys, &format!("S{i}")), 40 * 4064, false, 0)
-            .unwrap();
+        usrspc::create(
+            &mut t,
+            &create_params(qsys, &format!("S{i}")),
+            40 * 4064,
+            false,
+            0,
+        )
+        .unwrap();
         t.commit().unwrap();
     }
     assert!(store.units()[1].used_pages > 0);
@@ -162,7 +172,11 @@ fn units_are_added_and_removed_through_the_table() {
             .unwrap();
         let (_, h) = ops::read_header(&mut t, id).unwrap();
         let first = ops::all_extents(&mut t, &h).unwrap()[0].start;
-        assert_eq!(t.layout().locate(first).unwrap().0, 1, "S11 lives on unit 1");
+        assert_eq!(
+            t.layout().locate(first).unwrap().0,
+            1,
+            "S11 lives on unit 1"
+        );
         let mut page = store::Page::zeroed();
         page.body_mut()[100..119].copy_from_slice(b"moved with the unit");
         store::Pager::write(&mut t, first, &mut page, store::PageType::ObjectData, id).unwrap();
@@ -177,7 +191,11 @@ fn units_are_added_and_removed_through_the_table() {
         let mut t = store.begin().unwrap();
         let (_, h) = ops::read_header(&mut t, last).unwrap();
         let first = ops::all_extents(&mut t, &h).unwrap()[0].start;
-        assert_eq!(t.layout().locate(first).unwrap().0, 0, "S11 moved to unit 0");
+        assert_eq!(
+            t.layout().locate(first).unwrap().0,
+            0,
+            "S11 moved to unit 0"
+        );
         let page = store::Pager::read(&mut t, first).unwrap();
         assert_eq!(&page.body()[100..119], b"moved with the unit");
         let ids = ops::list(&mut t, qsys, Some(types::USRSPC)).unwrap();

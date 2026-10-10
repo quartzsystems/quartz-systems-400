@@ -1,0 +1,24 @@
+                       Work with Device Parity Protection                       
+                                                                 System:  QS400 
+                                                                                
+ Device parity protection needs a controller that provides it.                  
+                                                                                
+ No device parity capable controllers are attached to this system.              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+    Press Enter to continue.                                             Bottom 
+ F3=Exit   F7=Previous page   F8=Next page   F12=Cancel                         
+                                                                                

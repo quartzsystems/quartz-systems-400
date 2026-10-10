@@ -1,0 +1,24 @@
+                              Product Activity Log                              
+                                                                 System:  QS400 
+                                                                                
+ Time         Code      Description                                             
+ 39           A6000039  entry                                                   
+ 38           A6000038  entry                                                   
+ 37           A6000037  entry                                                   
+ 36           A6000036  entry                                                   
+ 35           A6000035  entry                                                   
+ 34           A6000034  entry                                                   
+ 33           A6000033  entry                                                   
+ 32           A6000032  entry                                                   
+ 31           A6000031  entry                                                   
+ 30           A6000030  entry                                                   
+ 29           A6000029  entry                                                   
+ 28           A6000028  entry                                                   
+ 27           A6000027  entry                                                   
+ 26           A6000026  entry                                                   
+ 25           A6000025  entry                                                   
+                                                                                
+                                                                                
+    Press Enter to continue.                                            More... 
+ F3=Exit   F7=Previous page   F8=Next page   F12=Cancel                         
+                                                                                

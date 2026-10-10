@@ -1,0 +1,24 @@
+                               Confirm Add Units                                
+                                                                 System:  QS400 
+                                                                                
+ These units will be added to ASP 1 as unprotected units:                       
+                                                                                
+   DD003     SP-vdd            QEMU HARDDISK        4096  /dev/vdd              
+                                                                                
+ Any data on them is lost.                                                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

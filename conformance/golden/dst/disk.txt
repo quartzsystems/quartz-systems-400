@@ -1,0 +1,24 @@
+                              Work with Disk Units                              
+                                                                 System:  QS400 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Work with disk configuration                                           
+      2. Work with disk unit recovery                                           
+      3. Work with disk unit problem recovery                                   
+      4. Work with disk unit tracing                                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

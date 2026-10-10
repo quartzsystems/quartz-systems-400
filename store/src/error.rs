@@ -187,6 +187,13 @@ pub enum StoreError {
         what: String,
     },
 
+    /// The resume journal outside the store could not be read or written.
+    #[error("resume journal: {what}")]
+    Journal {
+        /// What failed.
+        what: String,
+    },
+
     /// A device is too small to be a unit.
     #[error("device of {pages} pages is too small for a unit; {need} needed")]
     UnitTooSmall {

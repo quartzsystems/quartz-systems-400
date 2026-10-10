@@ -167,6 +167,46 @@ impl Allocator {
         Ok(())
     }
 
+    /// Replace the layout after units were paired or renumbered. Span
+    /// sizes must already agree with the bitmaps.
+    pub fn set_layout(&mut self, layout: Layout) {
+        debug_assert_eq!(layout.spans().len(), self.bitmaps.len());
+        self.layout = layout;
+    }
+
+    /// Shrink a span to `pages`: every page from `pages - 1` on must be
+    /// free, since `pages - 1` becomes the reserved last page.
+    pub fn truncate_span(&mut self, span: u16, pages: u64) -> Result<()> {
+        let bm = &self.bitmaps[usize::from(span)];
+        let old = bm.pages();
+        if pages >= old {
+            return Ok(());
+        }
+        let unit = self.layout.span(span).primary;
+        if pages < RESERVED_HEAD + 2 {
+            return Err(StoreError::UnitTooSmall {
+                pages,
+                need: RESERVED_HEAD + 2,
+            });
+        }
+        let in_use = (pages - 1..old - 1).filter(|&l| !bm.is_free(l)).count();
+        if in_use > 0 {
+            return Err(StoreError::UnitInUse {
+                unit,
+                what: format!("{in_use} page(s) beyond the partner's size are in use"),
+            });
+        }
+        let mut shrunk = Bitmap::new(pages);
+        for (lba, len) in bm.runs() {
+            if lba < pages - 1 {
+                shrunk.set(lba, len.min(pages - 1 - lba));
+            }
+        }
+        self.bitmaps[usize::from(span)] = shrunk;
+        self.reserve = (self.layout.total_pages() / 64).clamp(RESERVE_MIN, RESERVE_MAX);
+        Ok(())
+    }
+
     /// Keep `alloc` and checkpoints off a span, or let them back on.
     pub fn exclude(&mut self, span: u16, excluded: bool) {
         self.excluded[usize::from(span)] = excluded;

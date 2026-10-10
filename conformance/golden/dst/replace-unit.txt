@@ -1,0 +1,24 @@
+                            Replace Configured Unit                             
+                                                                 System:  QS400 
+                                                                                
+ Type 1 beside the unit to replace, then press Enter.                           
+                                                                                
+ Opt  ASP Unit  Serial Number     Type Model    Resource  Status                
+       1    2  QM00001           QEMU HARDDISK DD002     Suspended              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

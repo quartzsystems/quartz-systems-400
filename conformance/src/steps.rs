@@ -154,6 +154,7 @@ impl Suite {
                 image: work,
                 cdrom: None,
                 cdrom_first: false,
+                extra_disks: Vec::new(),
                 qmp: out_dir.join("qmp.sock"),
             },
             media,
@@ -232,7 +233,7 @@ impl Suite {
     /// Install step 3: the installed disk is listed as such and the
     /// installer writes over it while running from the media.
     fn reinstall_dialog(&self, s: &mut Session) -> Result<String, String> {
-        s.expect("Selection:", self.boot_timeout)?;
+        s.expect("Selection", self.boot_timeout)?;
         s.send("2")?;
         let listing = s.expect("Selection (0 to return):", CMD)?;
         if !listing.contains("(QS/400 partitions present)") {
@@ -251,7 +252,7 @@ impl Suite {
     /// Install step 1: option 2, the first disk, `YES`, Enter at the end.
     fn install_dialog(&self, s: &mut Session) -> Result<String, String> {
         s.expect_in_order(&SRC_SEQUENCE_MEDIA[..5], self.boot_timeout)?;
-        s.expect("Selection:", self.boot_timeout)?;
+        s.expect("Selection", self.boot_timeout)?;
         s.send("2")?;
         s.expect("Selection (0 to return):", CMD)?;
         s.send("1")?;
@@ -328,7 +329,7 @@ impl Suite {
     /// menu (answered with option 1 over serial), then the sign-on screen.
     fn media_ipl(&self, s: &mut Session) -> Result<String, String> {
         s.expect_in_order(&SRC_SEQUENCE_MEDIA[..5], self.boot_timeout)?;
-        s.expect("Selection:", self.boot_timeout)?;
+        s.expect("Selection", self.boot_timeout)?;
         s.send("1")?;
         let seen = s.expect_in_order(&SRC_SEQUENCE_MEDIA[5..], self.boot_timeout)?;
         s.expect(crate::PROMPT, CMD)?;
@@ -378,6 +379,8 @@ impl Suite {
         drop(s);
         reports.push(self.abnormal()?);
         reports.push(self.power_pulls()?);
+        reports.push(self.mirrored_pair()?);
+        reports.push(self.dst_signon()?);
         Ok(reports)
     }
 

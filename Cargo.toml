@@ -13,6 +13,7 @@ members = [
     "ccsid",
     "qsname",
     "diskimg",
+    "svctools",
 ]
 
 [workspace.package]

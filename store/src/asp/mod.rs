@@ -9,6 +9,7 @@
 
 pub mod io;
 pub mod layout;
+pub mod mirror;
 pub mod superblock;
 pub mod unit;
 
@@ -198,30 +199,7 @@ impl Asp {
             .max_by_key(|u| found.iter().filter(|(h, _)| h.asp_uuid == *u).count())
             .expect("not empty");
         found.retain(|(h, _)| h.asp_uuid == asp_uuid);
-        // Newest valid superblock across every unit and both slots.
-        let mut best: Option<Superblock> = None;
-        for (_, dev) in &found {
-            for slot in 1..=2u64 {
-                let mut page = Page::zeroed();
-                if dev.read(slot, page.bytes_mut()).is_err()
-                    || page.verify_type(slot, PageType::Superblock).is_err()
-                {
-                    continue;
-                }
-                let Ok(sb) = Superblock::decode(page.body(), slot) else {
-                    continue;
-                };
-                if best.as_ref().is_none_or(|b| sb.generation > b.generation) {
-                    best = Some(sb);
-                }
-            }
-        }
-        let Some(mut sb) = best else {
-            return Err(StoreError::Corrupt {
-                page: 1,
-                what: "no valid superblock on any unit".into(),
-            });
-        };
+        let mut sb = newest_superblock(found.iter().map(|(_, d)| d.as_ref()))?;
         if !release::RELEASE.is_compatible_store(sb.release) {
             return Err(StoreError::ReleaseMismatch {
                 store: sb.release.to_string(),
@@ -238,7 +216,9 @@ impl Asp {
         let mut units: Vec<UnitDev> = Vec::with_capacity(sb.units.len());
         for (i, entry) in sb.units.iter().enumerate() {
             let unit = u16::try_from(i).expect("table size");
-            let at = found.iter().position(|(h, _)| h.unit_uuid == entry.unit_uuid);
+            let at = found
+                .iter()
+                .position(|(h, _)| h.unit_uuid == entry.unit_uuid);
             let dev = match at {
                 Some(at) => {
                     let (h, dev) = found.remove(at);
@@ -258,7 +238,10 @@ impl Asp {
             });
         }
         for (h, _) in &found {
-            warn!("asp: unit {} is not in the unit table; ignored", h.unit_number);
+            warn!(
+                "asp: unit {} is not in the unit table; ignored",
+                h.unit_number
+            );
         }
         let layout = Layout::from_table(&sb.units)?;
         let events = resolve_states(&layout, &mut units, &mut sb)?;
@@ -312,7 +295,12 @@ impl Asp {
     }
 
     /// Append an unprotected unit as a new span. The caller checkpoints.
-    pub fn add_unit(&mut self, dev: Box<dyn BlockDev>, unit_uuid: [u8; 16], serial: &str) -> Result<u16> {
+    pub fn add_unit(
+        &mut self,
+        dev: Box<dyn BlockDev>,
+        unit_uuid: [u8; 16],
+        serial: &str,
+    ) -> Result<u16> {
         if self.sb.units.len() >= MAX_UNITS {
             return Err(StoreError::Corrupt {
                 page: 0,
@@ -346,7 +334,10 @@ impl Asp {
         self.sb
             .units
             .push(UnitEntry::unprotected(unit_uuid, pages, start, serial));
-        info!("asp {}: unit {unit} added, {pages} pages", self.sb.asp_number);
+        info!(
+            "asp {}: unit {unit} added, {pages} pages",
+            self.sb.asp_number
+        );
         Ok(unit)
     }
 
@@ -405,6 +396,12 @@ impl Asp {
         wipe_unit(dev.as_ref())?;
         info!("asp {}: unit {unit} removed", self.sb.asp_number);
         Ok(dev)
+    }
+
+    /// A unit's state now.
+    #[must_use]
+    pub fn unit_state(&self, unit: u16) -> UnitState {
+        self.io.unit_state(unit)
     }
 
     /// The span a unit backs.
@@ -545,7 +542,11 @@ fn resolve_states(
                 match here.as_slice() {
                     [] => return Err(missing(span.primary, sb)),
                     [only] => {
-                        let other = if *only == span.primary { partner } else { span.primary };
+                        let other = if *only == span.primary {
+                            partner
+                        } else {
+                            span.primary
+                        };
                         if units[usize::from(*only)].state != UnitState::Active {
                             // The half we have is the stale one.
                             return Err(missing(other, sb));
@@ -585,6 +586,31 @@ fn resolve_states(
         }
     }
     Ok(events)
+}
+
+/// The newest valid superblock across every unit and both slots.
+fn newest_superblock<'a>(devs: impl Iterator<Item = &'a dyn BlockDev>) -> Result<Superblock> {
+    let mut best: Option<Superblock> = None;
+    for dev in devs {
+        for slot in 1..=2u64 {
+            let mut page = Page::zeroed();
+            if dev.read(slot, page.bytes_mut()).is_err()
+                || page.verify_type(slot, PageType::Superblock).is_err()
+            {
+                continue;
+            }
+            let Ok(sb) = Superblock::decode(page.body(), slot) else {
+                continue;
+            };
+            if best.as_ref().is_none_or(|b| sb.generation > b.generation) {
+                best = Some(sb);
+            }
+        }
+    }
+    best.ok_or_else(|| StoreError::Corrupt {
+        page: 1,
+        what: "no valid superblock on any unit".into(),
+    })
 }
 
 /// The unit header from page 0, or from the backup at the last page.

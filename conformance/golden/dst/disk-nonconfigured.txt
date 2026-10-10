@@ -1,0 +1,24 @@
+                          Display Non-Configured Units                          
+                                                                 System:  QS400 
+                                                                                
+ Resource  Serial Number     Type Model     Size (MiB)  Device                  
+ DD003     SP-vdd            QEMU HARDDISK        4096  /dev/vdd                
+ DD003     SP-vde            QEMU HARDDISK        2048  /dev/vde                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+    Press Enter to continue.                                             Bottom 
+ F3=Exit   F7=Previous page   F8=Next page   F12=Cancel                         
+                                                                                

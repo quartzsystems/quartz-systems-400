@@ -1,0 +1,24 @@
+                      Change Service Tools User Privileges                      
+                                                                 System:  QS400 
+                                                                                
+ User ID . . . . . :  QSECOFR                                                   
+                                                                                
+ Type X beside each privilege to grant, blank to revoke, press Enter.           
+                                                                                
+  X  Disk units - administration                                                
+  X  Disk units - operations                                                    
+  X  Service tool security                                                      
+  X  Service tool user IDs                                                      
+  X  System values                                                              
+  X  Display/alter/dump                                                         
+  X  Licensed internal code log and product activity log                        
+  X  Hardware service manager                                                   
+  X  Install the operating system                                               
+  X  Perform an IPL                                                             
+  X  Main storage dumps and traces                                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

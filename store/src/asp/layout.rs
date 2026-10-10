@@ -75,7 +75,9 @@ impl Layout {
             if u.mirror_partner != NO_PARTNER {
                 let p = usize::from(u.mirror_partner);
                 let Some(partner) = units.get(p) else {
-                    return Err(bad(format!("unit {unit} pairs with a unit that is not in the table")));
+                    return Err(bad(format!(
+                        "unit {unit} pairs with a unit that is not in the table"
+                    )));
                 };
                 if partner.mirror_partner != unit
                     || partner.start != u.start
@@ -171,6 +173,21 @@ impl Layout {
     /// Drop the last span.
     pub fn pop(&mut self) -> Option<UnitSpan> {
         self.spans.pop()
+    }
+
+    /// Unit `unit` left the table: every member numbered above it moves
+    /// down by one.
+    pub fn renumber_after(&mut self, unit: u16) {
+        for s in &mut self.spans {
+            if s.primary > unit {
+                s.primary -= 1;
+            }
+            if let Some(p) = s.partner.as_mut()
+                && *p > unit
+            {
+                *p -= 1;
+            }
+        }
     }
 
     /// Set a span's partner (or clear it) and its size.

@@ -1,0 +1,24 @@
+                           Work with System Security                            
+                                                                 System:  QS400 
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   1. Allow a service tools user ID with a default and expired                  
+      password to change its own password                      Y=Yes, N=No  N   
+                                                                                
+   2. Allow new digital certificates                                            
+                                                               Y=Yes, N=No  N   
+                                                                                
+   3. Allow system value security changes                                       
+                                                               Y=Yes, N=No  N   
+                                                                                
+   4. Allow add of digital certificates                                         
+                                                               Y=Yes, N=No  N   
+                                                                                
+                                                                                
+ Only options 1 and 3 have an effect in this release; the others are kept.      
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

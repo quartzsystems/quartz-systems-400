@@ -1,0 +1,24 @@
+                     Disk Unit Problem Recovery Procedures                      
+                                                                 System:  QS400 
+                                                                                
+ A mirrored pair keeps running on one half when the other is missing or         
+ fails; the system shows A6001255 or A6001256 and the half is Suspended.        
+                                                                                
+ 1. If the unit is back, resume mirrored protection (option 8). The             
+    copy runs in the background and shows its percent here.                     
+ 2. If the unit is gone for good, attach a non-configured disk of at            
+    least the same size and replace the configured unit (option 3).             
+ 3. An unprotected unit that is missing stops the IPL with B1001030;            
+    attach it again and IPL.                                                    
+                                                                                
+ Every allocated page is checksummed. A page that fails on one half             
+ is read from the other and rewritten; chkstg compares both halves.             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+    Press Enter to continue.                                             Bottom 
+ F3=Exit   F7=Previous page   F8=Next page   F12=Cancel                         
+                                                                                

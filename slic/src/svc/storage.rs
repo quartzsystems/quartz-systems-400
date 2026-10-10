@@ -6,11 +6,116 @@
 //! `txn stats`.
 
 use std::fmt::Write as _;
+use std::path::Path;
 use std::time::Instant;
 
+use blockdev::{BlockDev, LinuxBlockDev};
 use store::ReclaimMode;
 
+use crate::ipl::storage;
 use crate::ipl::system::{System, now_unix};
+
+/// Open a device node for a new unit, with its serial from sysfs.
+fn open_unit(path: &str) -> Result<(Box<dyn BlockDev>, String), String> {
+    let p = Path::new(path);
+    let dev = LinuxBlockDev::open(p).map_err(|e| format!("open {path}: {e}"))?;
+    let (_, serial) = diskimg::locate::identity(p);
+    Ok((Box::new(dev), serial))
+}
+
+fn unit_number(s: &str) -> Result<u16, String> {
+    s.parse()
+        .map_err(|_| format!("unit number expected, got '{s}'"))
+}
+
+/// `unit add DEV` and `unit rmv N`.
+pub fn unit(system: &mut System, args: &[&str]) -> String {
+    let result = match args {
+        ["add", path] => {
+            let Some(s) = system.storage.as_mut() else {
+                return "object store not open\n".to_string();
+            };
+            open_unit(path).and_then(|(dev, serial)| {
+                s.store
+                    .add_unit(dev, storage::fresh_uuid(), &serial)
+                    .map(|n| format!("unit {n} added from {path} (serial {serial})\n"))
+                    .map_err(|e| e.to_string())
+            })
+        }
+        ["rmv", n] => {
+            let Some(s) = system.storage.as_mut() else {
+                return "object store not open\n".to_string();
+            };
+            unit_number(n).and_then(|n| {
+                s.store
+                    .remove_unit(n)
+                    .map(|d| format!("unit {n} removed ({} pages given back)\n", d.blocks()))
+                    .map_err(|e| e.to_string())
+            })
+        }
+        _ => Err("Usage: unit add DEV | unit rmv N".to_string()),
+    };
+    result.unwrap_or_else(|e| format!("{e}\n"))
+}
+
+/// `mirror start|stop|suspend|resume|replace|status`.
+pub fn mirror(system: &mut System, args: &[&str]) -> String {
+    if let ["status"] = args {
+        return match storage::resume_progress(system) {
+            Some(p) => format!(
+                "unit {} resuming: {} of {} chunks, {}%\n",
+                p.unit, p.chunks_done, p.chunks, p.percent
+            ),
+            None => "no resume running\n".to_string(),
+        };
+    }
+    if let ["resume", n] = args {
+        return match unit_number(n).and_then(|n| storage::start_resume(system, n)) {
+            Ok(line) => line,
+            Err(e) => format!("{e}\n"),
+        };
+    }
+    let Some(s) = system.storage.as_mut() else {
+        return "object store not open\n".to_string();
+    };
+    let result = match args {
+        ["start", n, path] => unit_number(n).and_then(|n| {
+            open_unit(path).and_then(|(dev, serial)| {
+                s.store
+                    .start_mirror(n, dev, storage::fresh_uuid(), &serial)
+                    .map(|new| {
+                        format!("unit {n} paired with new unit {new} from {path}; resume it to synchronize\n")
+                    })
+                    .map_err(|e| e.to_string())
+            })
+        }),
+        ["stop", n] => unit_number(n).and_then(|n| {
+            s.store
+                .stop_mirror(n)
+                .map(|_| format!("mirroring stopped; unit {n} kept\n"))
+                .map_err(|e| e.to_string())
+        }),
+        ["suspend", n] => unit_number(n).and_then(|n| {
+            s.store
+                .suspend_unit(n)
+                .map(|()| format!("unit {n} suspended\n"))
+                .map_err(|e| e.to_string())
+        }),
+        ["replace", n, path] => unit_number(n).and_then(|n| {
+            open_unit(path).and_then(|(dev, serial)| {
+                s.store
+                    .replace_unit(n, dev, storage::fresh_uuid(), &serial)
+                    .map(|()| format!("unit {n} replaced from {path}; resume it to synchronize\n"))
+                    .map_err(|e| e.to_string())
+            })
+        }),
+        _ => Err(
+            "Usage: mirror start N DEV | stop N | suspend N | resume N | replace N DEV | status"
+                .to_string(),
+        ),
+    };
+    result.unwrap_or_else(|e| format!("{e}\n"))
+}
 
 /// `asp`: units, free space, WAL fill, checkpoint generation, release.
 pub fn asp(system: &mut System) -> String {

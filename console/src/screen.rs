@@ -213,6 +213,8 @@ impl Screen {
 
     /// Define an input field: blank cells with the input attribute.
     pub fn field(&mut self, row: usize, col: usize, len: usize, nondisplay: bool) {
+        // A field ends at the row's last cell; cells never wrap.
+        let len = len.min(COLS + 1 - col.min(COLS));
         let attr = if nondisplay {
             Attr::INPUT_HIDDEN
         } else {
@@ -272,6 +274,14 @@ mod tests {
         assert_eq!(&lines[0][35..42], "Sign On");
         assert_eq!(&lines[6][52..53], " ", "nondisplay hides typed text");
         assert_eq!(s.field_text(&s.fields[0]), "x");
+    }
+
+    #[test]
+    fn a_field_stops_at_the_row_end() {
+        let mut s = Screen::new();
+        s.field(5, 70, 128, true);
+        assert_eq!(s.fields[0].len, 11);
+        assert_eq!(s.cell(5, 0).attr, Attr::GREEN, "nothing wrapped onto row 6");
     }
 
     #[test]

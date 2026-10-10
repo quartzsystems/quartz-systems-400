@@ -157,8 +157,14 @@ impl UnitEntry {
     /// The serial as text; the unit UUID in hex when none was recorded.
     #[must_use]
     pub fn serial_text(&self) -> String {
-        let end = self.serial.iter().position(|&b| b == 0).unwrap_or(SERIAL_LEN);
-        let s = String::from_utf8_lossy(&self.serial[..end]).trim().to_string();
+        let end = self
+            .serial
+            .iter()
+            .position(|&b| b == 0)
+            .unwrap_or(SERIAL_LEN);
+        let s = String::from_utf8_lossy(&self.serial[..end])
+            .trim()
+            .to_string();
         if s.is_empty() {
             use std::fmt::Write as _;
             self.unit_uuid.iter().fold(String::new(), |mut out, b| {
@@ -181,7 +187,10 @@ impl UnitEntry {
 #[must_use]
 pub fn serial_bytes(serial: &str) -> [u8; SERIAL_LEN] {
     let mut out = [0u8; SERIAL_LEN];
-    for (o, c) in out.iter_mut().zip(serial.bytes().filter(u8::is_ascii_graphic)) {
+    for (o, c) in out
+        .iter_mut()
+        .zip(serial.bytes().filter(u8::is_ascii_graphic))
+    {
         *o = c;
     }
     out

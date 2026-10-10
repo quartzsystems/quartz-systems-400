@@ -9,7 +9,10 @@
 use std::thread;
 use std::time::Duration;
 
+use std::fs;
+
 use crate::error::HarnessError;
+use crate::qemu::Launch;
 use crate::qemu::session::Session;
 use crate::steps::{SRC_SEQUENCE, StepReport, Suite};
 
@@ -57,6 +60,65 @@ fn whole_batches(counts: &[u64]) -> bool {
     counts.iter().all(|c| c.is_multiple_of(100))
         && counts.windows(2).all(|w| w[0] <= w[1])
         && counts.iter().filter(|&&c| c != 0 && c != last).count() <= 1
+}
+
+/// The console screen must equal `conformance/golden/dst/<name>.txt`,
+/// whitespace-exact after trailing blanks are dropped from every line.
+fn golden_matches(s: &mut Session, name: &str) -> Result<&'static str, String> {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("golden")
+        .join("dst")
+        .join(format!("{name}.txt"));
+    let want = fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let got = s.command("screen", CMD)?;
+    let norm = |t: &str| -> Vec<String> {
+        let mut lines: Vec<String> = t.lines().map(|l| l.trim_end().to_string()).collect();
+        while lines.last().is_some_and(String::is_empty) {
+            lines.pop();
+        }
+        lines
+    };
+    // Whatever the screen echo left in the buffer comes first; the dump
+    // is the last 24 lines before the prompt.
+    let raw: Vec<&str> = got.lines().collect();
+    let tail = raw[raw.len().saturating_sub(24)..].join("\n");
+    let (g, w) = (norm(&tail), norm(&want));
+    if g != w {
+        let first = g
+            .iter()
+            .zip(w.iter())
+            .position(|(a, b)| a != b)
+            .unwrap_or(g.len().min(w.len()));
+        return Err(format!(
+            "screen {name} differs from its golden file at line {}:\n  got:  {:?}\n  want: {:?}",
+            first + 1,
+            g.get(first),
+            w.get(first)
+        ));
+    }
+    Ok("ok")
+}
+
+/// Poll `mirror status` until the background resume ends. Returns the
+/// last progress line seen.
+fn wait_resume(s: &mut Session) -> Result<String, String> {
+    let deadline = std::time::Instant::now() + Duration::from_secs(600);
+    let mut last = String::new();
+    loop {
+        let out = s.command("mirror status", CMD)?;
+        if out.contains("no resume running") {
+            return Ok(if last.is_empty() {
+                "at once".into()
+            } else {
+                last
+            });
+        }
+        last = out.trim().to_string();
+        if std::time::Instant::now() > deadline {
+            return Err(format!("resume did not finish: {last}"));
+        }
+        thread::sleep(Duration::from_millis(500));
+    }
 }
 
 /// `QBENCHn` object counts from a `lib ls` listing, in library order.
@@ -142,6 +204,215 @@ impl Suite {
         s.expect(crate::PROMPT, CMD)?;
         Ok(format!(
             "{line}; reclaim check clean; clean restart replayed 0"
+        ))
+    }
+
+    /// Step 11: pair the unit with a second blank disk over the service
+    /// console, synchronize, restart; boot without the second disk
+    /// (A6001255, the pair runs on one half, writes still work); boot
+    /// with it again (stale, suspended), resume, and verify both halves.
+    pub(crate) fn mirrored_pair(&self) -> Result<StepReport, HarnessError> {
+        let name = "11 mirrored pair";
+        let start = std::time::Instant::now();
+        let second = self.out_dir.join("mirror.img");
+        let f = fs::File::create(&second)?;
+        f.set_len(4 * 1024 * 1024 * 1024)?;
+        drop(f);
+        let with = Launch {
+            extra_disks: vec![second.clone()],
+            ..self.launch.clone()
+        };
+        let fail = |s: &Session, reason: String| HarnessError::Failed {
+            step: name,
+            reason,
+            log: s.log.clone(),
+        };
+        // Pair and synchronize.
+        let mut s = Session::spawn(&with)?;
+        let synced = self.pair_and_sync(&mut s).map_err(|e| fail(&s, e))?;
+        s.command("pwrdwn", CMD).ok();
+        s.wait_exit(Duration::from_secs(15));
+        drop(s);
+        // Without the second disk.
+        let mut s = Session::spawn(&self.launch)?;
+        self.run_degraded(&mut s).map_err(|e| fail(&s, e))?;
+        s.command("pwrdwn", CMD).ok();
+        s.wait_exit(Duration::from_secs(15));
+        drop(s);
+        // Both again: the returned half is stale until resumed.
+        let mut s = Session::spawn(&with)?;
+        let resumed = self.resume_stale(&mut s).map_err(|e| fail(&s, e))?;
+        s.command("pwrdwn", CMD).ok();
+        s.wait_exit(Duration::from_secs(15));
+        Ok(StepReport {
+            name,
+            elapsed: start.elapsed(),
+            detail: format!(
+                "synchronized {synced}; ran on one half with A6001255; resumed {resumed}; halves agree"
+            ),
+        })
+    }
+
+    fn pair_and_sync(&self, s: &mut Session) -> Result<String, String> {
+        s.expect(crate::PROMPT, self.boot_timeout)?;
+        let out = s.command("mirror start 0 /dev/vdb", CMD)?;
+        if !out.contains("paired with new unit 1") {
+            return Err(format!("mirror start: {out}"));
+        }
+        let out = s.command("mirror resume 1", CMD)?;
+        if !out.contains("resuming in the background") {
+            return Err(format!("mirror resume: {out}"));
+        }
+        let sync = wait_resume(s)?;
+        let asp = s.command("asp", CMD)?;
+        if !asp.contains("protection: mirrored") || asp.matches("Active").count() != 2 {
+            return Err(format!(
+                "asp after the sync:
+{asp}"
+            ));
+        }
+        let chk = s.command("chkstg", Duration::from_secs(300))?;
+        if !chk.contains(": 0 bad") {
+            return Err(format!(
+                "chkstg after the sync:
+{chk}"
+            ));
+        }
+        s.send("pwrdwn restart")?;
+        s.expect("SRC D1001090", CMD)?;
+        s.expect_in_order(SRC_SEQUENCE, self.boot_timeout)?;
+        s.expect(crate::PROMPT, CMD)?;
+        let chk = s.command("chkstg", Duration::from_secs(300))?;
+        if !chk.contains(": 0 bad") {
+            return Err(format!(
+                "chkstg after the restart:
+{chk}"
+            ));
+        }
+        Ok(sync)
+    }
+
+    fn run_degraded(&self, s: &mut Session) -> Result<(), String> {
+        s.expect("SRC A6001255", self.boot_timeout)?;
+        s.expect(crate::PROMPT, self.boot_timeout)?;
+        let asp = s.command("asp", CMD)?;
+        if !asp.contains("Missing") {
+            return Err(format!(
+                "asp without the second disk:
+{asp}"
+            ));
+        }
+        let out = s.command("obj crt *DTAARA QGPL/MIRRTEST written on one half", CMD)?;
+        if !out.contains("created") {
+            return Err(format!("create while degraded: {out}"));
+        }
+        Ok(())
+    }
+
+    fn resume_stale(&self, s: &mut Session) -> Result<String, String> {
+        s.expect(crate::PROMPT, self.boot_timeout)?;
+        let asp = s.command("asp", CMD)?;
+        if !asp.contains("Suspended") {
+            return Err(format!(
+                "asp with the stale half:
+{asp}"
+            ));
+        }
+        s.command("mirror resume 1", CMD)?;
+        let sync = wait_resume(s)?;
+        let chk = s.command("chkstg", Duration::from_secs(300))?;
+        if !chk.contains(": 0 bad") {
+            return Err(format!(
+                "chkstg after the resume:
+{chk}"
+            ));
+        }
+        let rcl = s.command("rclstg *CHECK", Duration::from_secs(300))?;
+        if !rcl.contains("0 problem(s)") {
+            return Err(format!(
+                "rclstg after the resume:
+{rcl}"
+            ));
+        }
+        let dsp = s.command("obj dsp QGPL/MIRRTEST", CMD)?;
+        if !dsp.contains("written on one half") {
+            return Err(format!(
+                "object written while degraded is gone:
+{dsp}"
+            ));
+        }
+        Ok(sync)
+    }
+
+    /// Step 12: a manual IPL, option 3, DST sign-on with the shipped
+    /// QSECOFR password (expired: it must be changed), the main menu,
+    /// every screen compared with its golden file, then option 1 IPLs.
+    pub(crate) fn dst_signon(&self) -> Result<StepReport, HarnessError> {
+        let name = "12 DST sign-on";
+        let start = std::time::Instant::now();
+        let mut s = Session::spawn(&self.launch)?;
+        let fail = |s: &Session, reason: String| HarnessError::Failed {
+            step: name,
+            reason,
+            log: s.log.clone(),
+        };
+        let detail = self.dst_dialog(&mut s).map_err(|e| fail(&s, e))?;
+        s.command("pwrdwn", CMD).ok();
+        s.wait_exit(Duration::from_secs(15));
+        Ok(StepReport {
+            name,
+            elapsed: start.elapsed(),
+            detail,
+        })
+    }
+
+    fn dst_dialog(&self, s: &mut Session) -> Result<String, String> {
+        s.expect(crate::PROMPT, self.boot_timeout)?;
+        s.command("mode manual", CMD)?;
+        s.send("pwrdwn restart")?;
+        s.expect("SRC D1001090", CMD)?;
+        s.expect("IPL or Install the System", self.boot_timeout)?;
+        s.expect("Selection", CMD)?;
+        s.send("3")?;
+        s.expect("Dedicated Service Tools (DST) Sign On", CMD)?;
+        let mut compared = Vec::new();
+        compared.push(golden_matches(s, "signon")?);
+        // Wrong password once, then the shipped one, which is expired.
+        s.send("type QSECOFR")?;
+        s.send("key tab")?;
+        s.send("type WRONG")?;
+        s.send("key enter")?;
+        s.expect("User ID or password is not correct", CMD)?;
+        s.send("key home")?;
+        s.send("key fieldexit")?;
+        s.send("type QSECOFR")?;
+        s.send("key tab")?;
+        s.send("type QSECOFR")?;
+        s.send("key enter")?;
+        s.expect("Change Service Tools User Password", CMD)?;
+        compared.push(golden_matches(s, "change-password")?);
+        s.send("key tab")?;
+        s.send("type QSECOFR")?;
+        s.send("key tab")?;
+        s.send("type Quartz1")?;
+        s.send("key tab")?;
+        s.send("type Quartz1")?;
+        s.send("key enter")?;
+        s.expect("Use Dedicated Service Tools (DST)", CMD)?;
+        compared.push(golden_matches(s, "main")?);
+        // Option 1: perform an IPL.
+        s.send("1")?;
+        s.expect("slic: DST ended: PerformIpl", CMD)?;
+        s.expect(SRC_SEQUENCE[SRC_SEQUENCE.len() - 1], self.boot_timeout)?;
+        s.expect(crate::PROMPT, CMD)?;
+        // The new password persists and the activity log recorded nothing.
+        let lic = s.command("lic", CMD)?;
+        if !lic.contains("tlv 0x0102") {
+            return Err(format!("the LIC record has no service tools users:\n{lic}"));
+        }
+        Ok(format!(
+            "{} screens match their golden files; QSECOFR password changed and saved",
+            compared.len()
         ))
     }
 

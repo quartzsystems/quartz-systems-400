@@ -132,6 +132,22 @@ impl AspIo {
         self.units.pop()
     }
 
+    /// Take a unit out of the list, shifting the ones after it down.
+    pub fn remove_unit_slot(&mut self, unit: u16) -> Option<Box<dyn BlockDev>> {
+        self.units.remove(usize::from(unit)).dev
+    }
+
+    /// Write whole pages to one physical unit at a unit-relative page.
+    pub fn write_unit_bytes(&mut self, unit: u16, lba: u64, bytes: &[u8]) -> Result<()> {
+        match self.dev(unit) {
+            Some(d) => Ok(d.write(lba, bytes)?),
+            None => Err(StoreError::UnitMissing {
+                unit,
+                what: "unit is not attached".into(),
+            }),
+        }
+    }
+
     /// Attach a device to a unit (a replaced or returned half).
     pub fn attach(&mut self, unit: u16, dev: Box<dyn BlockDev>, state: UnitState) {
         let u = &mut self.units[usize::from(unit)];
@@ -227,7 +243,10 @@ impl AspIo {
                 .dev(unit)
                 .expect("reader is attached")
                 .read(lba, page.bytes_mut());
-            match read.map_err(StoreError::from).and_then(|()| page.verify(pno).map(|_| ())) {
+            match read
+                .map_err(StoreError::from)
+                .and_then(|()| page.verify(pno).map(|_| ()))
+            {
                 Ok(()) => {
                     if i > 0 {
                         self.heal(span, readers[0], lba, pno, &mut page);
@@ -276,7 +295,11 @@ impl AspIo {
         let mut first_err = None;
         for &unit in &readers {
             let mut buf = blockdev::AlignedBuf::new(usize::try_from(count).expect("count fits"));
-            match self.dev(unit).expect("reader is attached").read(lba, &mut buf) {
+            match self
+                .dev(unit)
+                .expect("reader is attached")
+                .read(lba, &mut buf)
+            {
                 Ok(()) => return Ok(buf),
                 Err(e) => {
                     let what = format!("read {count} pages at {pno}: {e}");
@@ -334,7 +357,11 @@ impl AspIo {
         }
         let mut failed = Vec::new();
         for &unit in &writers {
-            if let Err(e) = self.dev(unit).expect("writer is attached").write(lba, bytes) {
+            if let Err(e) = self
+                .dev(unit)
+                .expect("writer is attached")
+                .write(lba, bytes)
+            {
                 failed.push((unit, e));
             }
         }
@@ -413,7 +440,9 @@ impl AspIo {
     pub fn discard(&mut self, start: PageNo, len: u64) -> Result<()> {
         let (span, lba) = self.locate(start)?;
         for unit in self.writers(span) {
-            self.dev(unit).expect("writer is attached").discard(lba, len)?;
+            self.dev(unit)
+                .expect("writer is attached")
+                .discard(lba, len)?;
         }
         Ok(())
     }

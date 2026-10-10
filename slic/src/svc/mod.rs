@@ -29,9 +29,13 @@ lic                  LIC record header
 sysval NAME [VALUE]  show or set a system value
 mode manual|normal   keylock for the next IPL
 screen               dump the console screen as text
+key NAME             press a key on the console: enter f1..f24 tab backtab fieldexit home end left right up down backspace delete insert reset attn
+type TEXT            type text into the current console field
 pwrdwn [restart]     power down (or restart)
 release              version, release, modification and build
 asp                  ASP units, free space, WAL, checkpoint generation
+unit add DEV | rmv N          add a block device as an unprotected unit, or remove the last unit
+mirror start N DEV | stop N | suspend N | resume N | replace N DEV | status
 lib ls               every library, EBCDIC order
 obj ls LIB [TYPE]    objects of a library
 obj crt TYPE LIB/NAME [TEXT]   create (defaults for *DTAARA, *DTAQ, *USRSPC, *USRIDX)
@@ -71,9 +75,13 @@ pub fn handle(system: &mut System, line: &str) {
         ("sysval", rest) => sysval(system, rest),
         ("mode", [m]) => mode(system, m),
         ("screen", _) => crate::ipl::display::dump(system),
+        ("key", [name]) => key(system, name),
+        ("type", _) => type_text(system, line),
         ("pwrdwn", []) => power::down(system, false),
         ("pwrdwn", ["restart"]) => power::down(system, true),
         ("asp", _) => storage::asp(system),
+        ("unit", rest) => storage::unit(system, rest),
+        ("mirror", rest) => storage::mirror(system, rest),
         ("lib", ["ls"]) => objects::lib_ls(system),
         ("obj", rest) => objects::obj(system, rest),
         ("dtaara", rest) => objects::dtaara_cmd(system, rest),
@@ -86,6 +94,74 @@ pub fn handle(system: &mut System, line: &str) {
     };
     system.out.serial(&reply);
     system.out.serial(PROMPT);
+}
+
+/// Commands that work while a menu or DST owns the serial line; any
+/// other line is typed into the current field. Returns whether the
+/// line was a command.
+pub fn during_menu(system: &mut System, line: &str) -> bool {
+    let word = line.split_whitespace().next().unwrap_or("");
+    let is_command = matches!(
+        word,
+        "screen"
+            | "key"
+            | "type"
+            | "srcs"
+            | "hw"
+            | "lic"
+            | "hist"
+            | "help"
+            | "release"
+            | "asp"
+            | "unit"
+            | "mirror"
+    );
+    if is_command && system.boot.svc {
+        handle(system, line);
+    }
+    is_command && system.boot.svc
+}
+
+/// `key NAME`: a 5250 key on the console.
+fn key(system: &mut System, name: &str) -> String {
+    use console::Key;
+    let lower = name.to_ascii_lowercase();
+    let key = match lower.as_str() {
+        "enter" => Key::Enter,
+        "tab" => Key::FieldAdvance,
+        "backtab" => Key::FieldBackspace,
+        "fieldexit" => Key::FieldExit,
+        "home" => Key::Home,
+        "left" => Key::Left,
+        "right" => Key::Right,
+        "up" => Key::Up,
+        "down" => Key::Down,
+        "backspace" => Key::Backspace,
+        "delete" => Key::Delete,
+        "insert" => Key::Insert,
+        "reset" => Key::Reset,
+        "attn" => Key::Attention,
+        f if f.starts_with('f') => match f[1..].parse::<u8>() {
+            Ok(n) if (1..=24).contains(&n) => Key::Function(n),
+            _ => return format!("Unknown key '{name}'\n"),
+        },
+        _ => return format!("Unknown key '{name}'\n"),
+    };
+    system.show(console::Command::Virtual(key));
+    String::new()
+}
+
+/// `type TEXT`: the rest of the line into the current field.
+fn type_text(system: &mut System, line: &str) -> String {
+    let text = line
+        .trim_start()
+        .strip_prefix("type")
+        .unwrap_or("")
+        .trim_start();
+    for c in text.trim_end().chars() {
+        system.show(console::Command::Virtual(console::Key::Char(c)));
+    }
+    String::new()
 }
 
 fn hist(system: &mut System) -> String {

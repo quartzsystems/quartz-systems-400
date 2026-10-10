@@ -19,6 +19,7 @@
 
 pub mod header;
 pub mod history;
+pub mod pal;
 pub mod tlv;
 
 use crc::{CRC_32_ISCSI, Crc};
@@ -26,7 +27,8 @@ use crc::{CRC_32_ISCSI, Crc};
 use crate::error::LicError;
 use header::Header;
 use history::IplHistory;
-use tlv::{TAG_HISTORY, TAG_USER_MIN, Tlv};
+use pal::{PAL_MAX, PalEntry};
+use tlv::{TAG_HISTORY, TAG_PAL, TAG_USER_MIN, Tlv};
 
 /// Record magic.
 pub const MAGIC: [u8; 8] = *b"QS400LIC";
@@ -41,7 +43,7 @@ const CRC_OFFSET: usize = 16;
 const CRC_START: usize = 20;
 const FIXED_LEN: usize = 56;
 
-const CRC32C: Crc<u32> = Crc::<u32>::new(&CRC_32_ISCSI);
+pub(crate) const CRC32C: Crc<u32> = Crc::<u32>::new(&CRC_32_ISCSI);
 
 /// One decoded LIC record.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -52,6 +54,8 @@ pub struct Record {
     pub header: Header,
     /// Oldest first, at most `HISTORY_MAX`.
     pub history: Vec<IplHistory>,
+    /// The product activity log, oldest first, at most `PAL_MAX`.
+    pub pal: Vec<PalEntry>,
     /// Everything else, by tag. Tags below `TAG_USER_MIN` are reserved.
     pub tlvs: Vec<Tlv>,
 }
@@ -63,7 +67,17 @@ impl Record {
             sequence: 0,
             header: Header::new(install_time),
             history: Vec::new(),
+            pal: Vec::new(),
             tlvs: Vec::new(),
+        }
+    }
+
+    /// Append an activity log entry, dropping the oldest beyond `PAL_MAX`.
+    pub fn push_pal(&mut self, entry: PalEntry) {
+        self.pal.push(entry);
+        if self.pal.len() > PAL_MAX {
+            let excess = self.pal.len() - PAL_MAX;
+            self.pal.drain(..excess);
         }
     }
 
@@ -113,7 +127,7 @@ impl Record {
         put_u64(&mut out, self.sequence);
         self.header.encode(&mut out);
 
-        let count = self.history.len() + self.tlvs.len();
+        let count = self.history.len() + self.pal.len() + self.tlvs.len();
         put_u32(
             &mut out,
             u32::try_from(count).map_err(|_| LicError::TooLarge {
@@ -125,6 +139,13 @@ impl Record {
             Tlv {
                 tag: TAG_HISTORY,
                 data: h.encode(),
+            }
+            .encode(&mut out);
+        }
+        for e in &self.pal {
+            Tlv {
+                tag: TAG_PAL,
+                data: e.encode(),
             }
             .encode(&mut out);
         }
@@ -178,6 +199,7 @@ impl Record {
             sequence,
             header,
             history: Vec::new(),
+            pal: Vec::new(),
             tlvs: Vec::new(),
         };
         let mut r = Reader::new(&bytes[FIXED_LEN..len]);
@@ -185,6 +207,8 @@ impl Record {
             let t = Tlv::decode(&mut r)?;
             if t.tag == TAG_HISTORY {
                 rec.history.push(IplHistory::decode(&t.data)?);
+            } else if t.tag == TAG_PAL {
+                rec.pal.push(PalEntry::decode(&t.data)?);
             } else {
                 rec.tlvs.push(t);
             }
@@ -194,6 +218,9 @@ impl Record {
         }
         if rec.history.len() > HISTORY_MAX {
             return Err(LicError::Malformed("too many history records"));
+        }
+        if rec.pal.len() > PAL_MAX {
+            return Err(LicError::Malformed("too many activity log entries"));
         }
         Ok(rec)
     }
@@ -281,6 +308,11 @@ mod tests {
             outcome: Outcome::Normal,
         });
         r.set_tlv(0x0100, b"hello".to_vec()).unwrap();
+        r.push_pal(PalEntry {
+            time: 5,
+            code: *b"A6001255",
+            severity: pal::Severity::Attention,
+        });
         r
     }
 

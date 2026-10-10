@@ -9,7 +9,14 @@ use std::io::{self, Cursor, Read, Seek, SeekFrom, Write};
 
 use crate::error::LicError;
 use crate::format::header::Slot;
-use crate::format::{Record, SLOT_BYTES};
+use crate::format::{CRC32C, Record, SLOT_BYTES};
+
+/// Offset of the resume journal area: well past the two record copies.
+pub const RESUME_OFFSET: u64 = 1024 * 1024;
+/// Most bytes the resume journal area holds, header included.
+pub const RESUME_MAX: usize = 4 * 1024 * 1024;
+const RESUME_MAGIC: [u8; 8] = *b"QS400RSJ";
+const RESUME_HEADER: usize = 16;
 
 /// A block device or anything standing in for one.
 pub trait Device: Read + Write + Seek {
@@ -113,6 +120,52 @@ impl<D: Device> LicPart<D> {
         Ok(target)
     }
 
+    /// The resume journal, if a valid one is recorded: a mirrored half
+    /// being copied keeps its progress here across a crash.
+    pub fn read_resume(&mut self) -> Option<Vec<u8>> {
+        self.dev.seek(SeekFrom::Start(RESUME_OFFSET)).ok()?;
+        let mut header = [0u8; RESUME_HEADER];
+        self.dev.read_exact(&mut header).ok()?;
+        if header[..8] != RESUME_MAGIC {
+            return None;
+        }
+        let len = usize::try_from(u32::from_le_bytes(header[8..12].try_into().ok()?)).ok()?;
+        let crc = u32::from_le_bytes(header[12..16].try_into().ok()?);
+        if len == 0 || len > RESUME_MAX - RESUME_HEADER {
+            return None;
+        }
+        let mut data = vec![0u8; len];
+        self.dev.read_exact(&mut data).ok()?;
+        (CRC32C.checksum(&data) == crc).then_some(data)
+    }
+
+    /// Record the resume journal.
+    pub fn write_resume(&mut self, data: &[u8]) -> Result<(), LicError> {
+        if data.is_empty() || data.len() > RESUME_MAX - RESUME_HEADER {
+            return Err(LicError::TooLarge {
+                len: data.len(),
+                max: RESUME_MAX - RESUME_HEADER,
+            });
+        }
+        let mut out = Vec::with_capacity(RESUME_HEADER + data.len());
+        out.extend_from_slice(&RESUME_MAGIC);
+        out.extend_from_slice(&u32::try_from(data.len()).expect("checked").to_le_bytes());
+        out.extend_from_slice(&CRC32C.checksum(data).to_le_bytes());
+        out.extend_from_slice(data);
+        self.dev.seek(SeekFrom::Start(RESUME_OFFSET))?;
+        self.dev.write_all(&out)?;
+        self.dev.sync()?;
+        Ok(())
+    }
+
+    /// Forget the resume journal.
+    pub fn clear_resume(&mut self) -> Result<(), LicError> {
+        self.dev.seek(SeekFrom::Start(RESUME_OFFSET))?;
+        self.dev.write_all(&[0u8; RESUME_HEADER])?;
+        self.dev.sync()?;
+        Ok(())
+    }
+
     fn read_slot(&mut self, slot: Slot) -> Option<Record> {
         self.dev.seek(SeekFrom::Start(slot_offset(slot))).ok()?;
         let mut buf = vec![0u8; SLOT_BYTES];
@@ -126,5 +179,24 @@ impl<D: Device> LicPart<D> {
             }
         }
         Record::decode(&buf[..got]).ok()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn resume_area_round_trips_and_clears() {
+        let dev = Cursor::new(vec![0u8; usize::try_from(RESUME_OFFSET).unwrap() + 4096]);
+        let (mut part, _) = LicPart::init(dev, 7).unwrap();
+        assert!(part.read_resume().is_none());
+        part.write_resume(b"chunks done: 3").unwrap();
+        assert_eq!(part.read_resume().unwrap(), b"chunks done: 3");
+        // The records are untouched.
+        assert_eq!(part.read().unwrap().header.install_time, 7);
+        part.clear_resume().unwrap();
+        assert!(part.read_resume().is_none());
+        assert!(part.write_resume(&[]).is_err());
     }
 }

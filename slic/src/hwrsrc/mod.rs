@@ -95,6 +95,20 @@ pub struct Resource {
     pub status: Status,
 }
 
+/// Storage controllers that provide device parity protection. Nothing
+/// reports any in this release: hardware parity is a Phase 10+ item
+/// behind this trait, software RAID is out of scope.
+pub trait ParityCapable {
+    /// Resource names of parity-capable controllers.
+    fn parity_capable(&self) -> Vec<String>;
+}
+
+impl ParityCapable for Table {
+    fn parity_capable(&self) -> Vec<String> {
+        Vec::new()
+    }
+}
+
 /// The resource table.
 #[derive(Default)]
 pub struct Table {

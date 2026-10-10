@@ -15,7 +15,7 @@ use sysval::{HostInfo, SysVals, Value};
 
 use crate::ipl::system::{System, now_unix};
 
-fn host_info() -> HostInfo {
+pub(crate) fn host_info() -> HostInfo {
     // QEMU publishes no UUID unless given one, so fall back to the serials.
     HostInfo {
         product_uuid: [

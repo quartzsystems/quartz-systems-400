@@ -12,8 +12,8 @@ use crate::btree::BTree;
 use crate::obj::dir::{DirKey, LibDir, ObjDir, objdir_entries, objdir_update};
 use crate::obj::library::Library;
 use crate::obj::{ObjectId, ops, types, usridx};
-use crate::page::pager::{PageNo, Pager};
 use crate::page::PageType;
+use crate::page::pager::{PageNo, Pager};
 use crate::store::Store;
 use crate::txn::Txn;
 use crate::{Result, StoreError};
@@ -68,7 +68,8 @@ impl Store {
             let mut txn = self.begin()?;
             let dir = ObjDir::open(txn.objdir_root(), ObjectId::NONE);
             if any_on_span(&dir, &mut txn, span)? {
-                let items: Vec<(ObjectId, PageNo)> = dir.entries(&mut txn)?.collect::<Result<_>>()?;
+                let items: Vec<(ObjectId, PageNo)> =
+                    dir.entries(&mut txn)?.collect::<Result<_>>()?;
                 let new = ObjDir::bulk_load(&mut txn, ObjectId::NONE, items)?;
                 let mut old = dir;
                 old.free_all(&mut txn)?;
@@ -204,7 +205,8 @@ fn move_object(
         let mut attr = usridx::describe(txn, id)?;
         let tree: BTree<usridx::IdxKey, Vec<u8>> = BTree::open(attr.root, id);
         if any_on_span(&tree, txn, span)? {
-            let items: Vec<(usridx::IdxKey, Vec<u8>)> = tree.entries(txn)?.collect::<Result<_>>()?;
+            let items: Vec<(usridx::IdxKey, Vec<u8>)> =
+                tree.entries(txn)?.collect::<Result<_>>()?;
             let new = BTree::bulk_load(txn, id, items)?;
             let mut old = tree;
             old.free_all(txn)?;

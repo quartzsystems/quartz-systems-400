@@ -3,15 +3,16 @@
 // root directory of this project.
 
 //! The console service: owns the screen and the keyboard state, redraws
-//! on every command, answers `Dump`, and reports Enter on screens whose
-//! meaning belongs to slic. Runs on its own thread.
+//! on every command, answers `Dump`, and reports Enter and function
+//! keys on screens whose meaning belongs to slic. Runs on its own
+//! thread.
 
 use std::sync::mpsc::{Receiver, Sender};
 
 use crate::editor::{self, Outcome};
 use crate::fb::{FbError, Framebuffer};
 use crate::keyboard::KeyEvent;
-use crate::keyboard::map::{Modifiers, translate, update_modifiers};
+use crate::keyboard::map::{Key, Modifiers, translate, update_modifiers};
 use crate::render::Renderer;
 use crate::screen::{Attr, Screen};
 use crate::screens;
@@ -33,11 +34,8 @@ pub enum Command {
         /// Its text.
         text: String,
     },
-    /// Show the manual-mode IPL menu.
-    ShowMenu {
-        /// System name.
-        system: String,
-    },
+    /// Show a screen built elsewhere; Enter reports every field.
+    ShowScreen(Screen),
     /// Show the sign-on display.
     ShowSignOn {
         /// System name.
@@ -46,18 +44,6 @@ pub enum Command {
         subsystem: String,
         /// Display name.
         display: String,
-    },
-    /// Show a dialog: title, text lines, and a prompt with an input field
-    /// of the given length when one is wanted.
-    ShowDialog {
-        /// System name.
-        system: String,
-        /// Title, centered on row 1.
-        title: String,
-        /// Text lines from row 4.
-        lines: Vec<String>,
-        /// Prompt label and field length; `None` for a notice.
-        prompt: Option<(String, usize)>,
     },
     /// Replace the message line.
     Message {
@@ -68,6 +54,8 @@ pub enum Command {
     },
     /// A key from a keyboard reader.
     Key(KeyEvent),
+    /// A key from the service console (`key`, `type`), already a 5250 key.
+    Virtual(Key),
     /// Reply with the 24 lines of the grid.
     Dump(Sender<String>),
 }
@@ -75,8 +63,8 @@ pub enum Command {
 /// What the console reports back to slic.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Input {
-    /// Enter on the IPL menu or a dialog, with the input field.
-    MenuSelection(String),
+    /// Enter on an application screen, with every input field in order.
+    Enter(Vec<String>),
     /// A function key on any screen.
     Function(u8),
 }
@@ -84,8 +72,7 @@ pub enum Input {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Kind {
     Src,
-    Menu,
-    Dialog,
+    App,
     SignOn,
 }
 
@@ -156,12 +143,15 @@ impl Console {
                 self.kind = Kind::Src;
                 self.locked = false;
             }
-            Command::ShowMenu { system } => {
-                self.system = system;
-                self.screen = screens::ipl_menu(&self.system);
-                self.kind = Kind::Menu;
+            Command::ShowScreen(screen) => {
+                self.screen = screen;
+                self.kind = Kind::App;
                 self.locked = false;
-                editor::home(&mut self.screen);
+                if self.screen.fields.is_empty() {
+                    self.screen.cursor = (0, 0);
+                } else {
+                    editor::home(&mut self.screen);
+                }
             }
             Command::ShowSignOn {
                 system,
@@ -174,24 +164,16 @@ impl Console {
                 self.locked = false;
                 editor::home(&mut self.screen);
             }
-            Command::ShowDialog {
-                system,
-                title,
-                lines,
-                prompt,
-            } => {
-                self.system = system;
-                let prompt = prompt.as_ref().map(|(label, len)| (label.as_str(), *len));
-                self.screen = screens::dialog(&self.system, &title, &lines, prompt);
-                self.kind = Kind::Dialog;
-                self.locked = false;
-                editor::home(&mut self.screen);
-            }
             Command::Message { text, error } => {
                 screens::set_message(&mut self.screen, &text, error);
             }
             Command::Key(ev) => {
                 if !self.key(ev) {
+                    return;
+                }
+            }
+            Command::Virtual(key) => {
+                if !self.apply(key) {
                     return;
                 }
             }
@@ -221,6 +203,11 @@ impl Console {
         let Some(key) = translate(ev.code, self.mods) else {
             return false;
         };
+        self.apply(key)
+    }
+
+    /// Apply a 5250 key. Returns whether the screen changed.
+    fn apply(&mut self, key: Key) -> bool {
         if self.locked {
             if matches!(editor::apply(&mut self.screen.clone(), key), Outcome::Reset) {
                 self.unlock();
@@ -239,14 +226,19 @@ impl Console {
         }
     }
 
-    /// Enter: the menu or dialog field goes to slic; sign-on locks the
-    /// keyboard; a dialog without a field ignores Enter.
+    /// Enter: an application screen's fields go to slic; sign-on locks
+    /// the keyboard; a screen without fields ignores Enter.
     fn enter(&mut self) -> bool {
         match self.kind {
-            Kind::Menu | Kind::Dialog => {
-                if let Some(f) = self.screen.fields.first() {
-                    let text = self.screen.field_text(f);
-                    self.send(Input::MenuSelection(text));
+            Kind::App => {
+                if !self.screen.fields.is_empty() {
+                    let fields = self
+                        .screen
+                        .fields
+                        .iter()
+                        .map(|f| self.screen.field_text(f))
+                        .collect();
+                    self.send(Input::Enter(fields));
                 }
                 false
             }
@@ -347,39 +339,30 @@ mod tests {
     }
 
     #[test]
-    fn dialog_enter_reports_the_field_or_nothing() {
+    fn application_screens_report_every_field_and_virtual_keys_edit() {
         let (tx, rx) = std::sync::mpsc::channel();
         let mut c = console();
         c.out = Some(tx);
-        c.handle(Command::ShowDialog {
-            system: "QS400".into(),
-            title: "Install the Operating System".into(),
-            lines: vec!["Type YES to continue".into()],
-            prompt: Some(("Answer".into(), 3)),
-        });
-        press(&mut c, 21); // y
-        press(&mut c, 28);
-        assert_eq!(rx.try_recv(), Ok(Input::MenuSelection("y".into())));
-        c.handle(Command::ShowDialog {
-            system: "QS400".into(),
-            title: "Working".into(),
-            lines: Vec::new(),
-            prompt: None,
-        });
-        press(&mut c, 28);
-        assert!(rx.try_recv().is_err());
-    }
-
-    #[test]
-    fn menu_enter_reports_the_selection() {
-        let (tx, rx) = std::sync::mpsc::channel();
-        let mut c = console();
-        c.out = Some(tx);
-        c.handle(Command::ShowMenu {
-            system: "QS400".into(),
-        });
+        let mut s = Screen::new();
+        s.put(1, 1, "User", Attr::GREEN);
+        s.field(1, 10, 10, false);
+        s.field(2, 10, 10, true);
+        c.handle(Command::ShowScreen(s));
         press(&mut c, 2); // 1
-        press(&mut c, 28);
-        assert_eq!(rx.try_recv(), Ok(Input::MenuSelection("1".into())));
+        c.handle(Command::Virtual(Key::FieldAdvance));
+        for ch in "pw".chars() {
+            c.handle(Command::Virtual(Key::Char(ch)));
+        }
+        c.handle(Command::Virtual(Key::Enter));
+        assert_eq!(
+            rx.try_recv(),
+            Ok(Input::Enter(vec!["1".into(), "pw".into()]))
+        );
+        c.handle(Command::Virtual(Key::Function(12)));
+        assert_eq!(rx.try_recv(), Ok(Input::Function(12)));
+        // No fields: Enter reports nothing.
+        c.handle(Command::ShowScreen(Screen::new()));
+        c.handle(Command::Virtual(Key::Enter));
+        assert!(rx.try_recv().is_err());
     }
 }
