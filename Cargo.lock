@@ -101,6 +101,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "blockdev"
+version = "0.1.0"
+dependencies = [
+ "rustix",
+ "thiserror",
+]
+
+[[package]]
 name = "build"
 version = "0.1.0"
 dependencies = [

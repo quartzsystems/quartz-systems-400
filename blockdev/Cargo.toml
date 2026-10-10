@@ -1,0 +1,16 @@
+[package]
+name = "blockdev"
+description = "QS/400 block device abstraction: Linux O_DIRECT backend and a fault-injecting in-memory backend"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+rustix = { version = "1.1.5", features = ["fs"] }
+
+[lints]
+workspace = true

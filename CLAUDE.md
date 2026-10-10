@@ -56,6 +56,7 @@ slic/         PID 1: src/ipl/ state machine, src/hwrsrc/, src/net/, src/svc/,
               src/platform/ (console, mounts, power, rtc, serial, sys), src/src.rs
 conformance/  QEMU harness: src/qemu/ (session, qmp, serial, firmware), src/steps.rs
 release/      VxRyMz identity, build ID, PTF names (one source of truth)
+blockdev/     BlockDev trait, AlignedBuf, Linux O_DIRECT backend, MemBlockDev with faults
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, images/
 ```
 
@@ -102,7 +103,9 @@ otherwise logs go to `target/logs/`.
   `missing_docs` warn. Clippy must stay clean.
 - Every `unsafe` block has a `// SAFETY:` comment. `unsafe` lives only in
   `slic/src/platform/sys.rs` (signals), `slic/src/platform/rtc.rs` (one
-  ioctl) and `console/src/fb/raw.rs` (framebuffer ioctls).
+  ioctl), `console/src/fb/raw.rs` (framebuffer ioctls),
+  `blockdev/src/aligned.rs` (aligned buffer views) and
+  `blockdev/src/linux.rs` (BLKDISCARD).
 - Errors: `thiserror` enums in libraries, `anyhow` only in binaries.
 - Logs: `tracing`.
 - Small documented modules, one responsibility each. Private modules in
