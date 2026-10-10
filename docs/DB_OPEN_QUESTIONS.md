@@ -71,6 +71,30 @@ character field, `DSPFFD` for type and length.
 are not required to match between formats. Test: two formats keyed on
 `P 7` and `A 10`; does `CRTLF` fail?
 
+## Decimal arithmetic
+
+**`*RESDECPOS` semantics.** Implemented as a floor: when the 63-digit
+limit forces decimal positions to be dropped from an intermediate
+result, they are never dropped below the result field's decimals, and
+the integer digits shrink instead (size error if the value then does
+not fit). Test: `EVAL(R)` and plain `EVAL` of `A * B / C` with `A`, `B`
+40,20 into a 15,5 result, compare values; the qdecimal fuzzer covers
+this.
+
+**Nonzero pad nibble in an even-digit packed field.** Treated as a
+decimal data error (MCH1202). Test: write `X'1123C'` into a `P 2,0`
+field with `CHGPF`-free means (CPYF *NOCHK from a character file) and
+read it with RPG.
+
+**Zones before the sign byte of a zoned field.** Must be `F`; blanks
+are a decimal data error, as RPG reports without `FIXNBR(*ZONED)`.
+Test: a zoned field holding `X'40404040C1'` read by RPG and by SQL.
+
+**Binary field holding more than its digits.** Returned as held
+(`B 4,0` with 32767 reads as 32767). RPG truncates to the declared
+digits on read; `db` will decide which view record I/O exposes. Test:
+write 32767 through SQL into a `B 4,0` column and read it back in RPG.
+
 **DATSEP/TIMSEP(*JOB) and REF in logical files.** `REF`, `REFFLD` and
 file-level `CCSID` are not meaningful in an LF; `REFFLD` is rejected
 (DDS0207), `REF` and `CCSID` are accepted and ignored.

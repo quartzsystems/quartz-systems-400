@@ -15,6 +15,7 @@ members = [
     "diskimg",
     "svctools",
     "dds",
+    "qdecimal",
 ]
 
 [workspace.package]

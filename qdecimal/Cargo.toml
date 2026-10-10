@@ -1,0 +1,13 @@
+[package]
+name = "qdecimal"
+description = "QS/400 decimal arithmetic: packed, zoned, binary and float with IBM i semantics"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+
+[lints]
+workspace = true

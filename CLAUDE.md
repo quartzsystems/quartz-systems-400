@@ -71,8 +71,10 @@ svctools/     DST screens and the installer's: src/ui/ screen kit, panel.rs runn
 dds/          DDS: src/source/ records, src/lex/ columns and keywords, src/compile/
               field, key, select/omit and file-keyword builders, src/pf/ and src/lf/
               compilers, src/listing/
+qdecimal/     Decimal (63 digits), IBM intermediate precision rules (src/arith/),
+              packed, zoned, binary, integer and float encodings (src/encode/)
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, STORE_FORMAT.md, DST.md,
-              DB_OPEN_QUESTIONS.md, images/
+              DB_OPEN_QUESTIONS.md, DECIMAL.md, images/
 ```
 
 ## Commands

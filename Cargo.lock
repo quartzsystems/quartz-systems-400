@@ -1049,6 +1049,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "qdecimal"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+]
+
+[[package]]
 name = "qsname"
 version = "0.1.0"
 dependencies = [
