@@ -7,26 +7,26 @@
 
 use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions};
-use std::io::{Cursor, Seek, SeekFrom, Write};
+use std::io::{Seek, SeekFrom, Write};
 use std::path::PathBuf;
 
 use anyhow::{Context, Result, ensure};
-use fatfs::{Dir, FatType, FileSystem, FormatVolumeOptions, FsOptions, ReadWriteSeek};
 use gpt::disk::LogicalBlockSize;
 use gpt::mbr::ProtectiveMBR;
 use gpt::partition::Partition;
 use gpt::partition_types::{EFI, OperatingSystem, Type};
-use licpart::Slot;
 use tracing::info;
 use uuid::{Uuid, uuid};
 
 use crate::ctx::Ctx;
 use crate::host::hash::{sha256_file, short};
 use crate::host::paths;
+use crate::image::esp;
+use crate::kernel::UkiKind;
 
 const SECTOR: u64 = 512;
 const ESP_FIRST_LBA: u64 = 2048;
-const ESP_BYTES: u64 = 256 * 1024 * 1024;
+const ESP_BYTES: u64 = esp::DISK_ESP.bytes;
 const ESP_SECTORS: u64 = ESP_BYTES / SECTOR;
 /// Raw LIC partition right after the ESP. Zero-filled; slic initializes it
 /// on first boot.
@@ -46,22 +46,29 @@ const SLOT_B: &str = "B.EFI";
 const DISK_GUID: Uuid = uuid!("51533430-0000-4000-8000-000000000001");
 const ESP_GUID: Uuid = uuid!("51533430-0000-4000-8000-000000000002");
 const LIC_GUID: Uuid = uuid!("51533430-0000-4000-8000-000000000003");
-const FAT_VOLUME_ID: u32 = 0x5153_3430;
-const FAT_LABEL: [u8; 11] = *b"QS400 ESP  ";
 
 /// `build disk`.
 pub fn disk(ctx: &Ctx) -> Result<PathBuf> {
-    let uki_a = paths::read_pointer(&ctx.paths.uki_pointer(Slot::A))
+    let uki_a = paths::read_pointer(&ctx.paths.uki_pointer(UkiKind::SlotA))
         .context("no slot A UKI; run `uki` first")?;
-    let uki_b = paths::read_pointer(&ctx.paths.uki_pointer(Slot::B))
+    let uki_b = paths::read_pointer(&ctx.paths.uki_pointer(UkiKind::SlotB))
         .context("no slot B UKI; run `uki` first")?;
     let a_bytes = fs::read(&uki_a)?;
     let b_bytes = fs::read(&uki_b)?;
     let hash = sha256_file(&uki_a)?;
 
-    info!("disk: formatting {} MiB ESP", ESP_BYTES / (1024 * 1024));
-    let esp = build_esp(&a_bytes, &b_bytes)?;
-    let listing = list_esp(&esp)?;
+    info!(
+        "disk: formatting {} MiB FAT32 ESP",
+        ESP_BYTES / (1024 * 1024)
+    );
+    let esp = esp::build(
+        &esp::DISK_ESP,
+        &[
+            (&format!("EFI/BOOT/{SLOT_A}"), &a_bytes),
+            (&format!("EFI/QS400/{SLOT_B}"), &b_bytes),
+        ],
+    )?;
+    let listing = esp::list(&esp)?;
     let expected = [
         "EFI/".to_string(),
         "EFI/BOOT/".to_string(),
@@ -84,71 +91,6 @@ pub fn disk(ctx: &Ctx) -> Result<PathBuf> {
         sha256_file(&out)?
     );
     Ok(out)
-}
-
-/// Format a FAT32 volume in memory and place both slots.
-fn build_esp(uki_a: &[u8], uki_b: &[u8]) -> Result<Vec<u8>> {
-    let size = usize::try_from(ESP_BYTES).context("ESP size")?;
-    let mut cur = Cursor::new(vec![0u8; size]);
-    // fatfs picks the FAT type from the cluster count: 256 MiB at 2 KiB per
-    // cluster is 131072 clusters, which forces FAT32.
-    fatfs::format_volume(
-        &mut cur,
-        FormatVolumeOptions::new()
-            .fat_type(FatType::Fat32)
-            .bytes_per_cluster(2048)
-            .volume_id(FAT_VOLUME_ID)
-            .volume_label(FAT_LABEL),
-    )
-    .context("FAT32 format")?;
-    let fs = FileSystem::new(&mut cur, FsOptions::new()).context("FAT mount")?;
-    ensure!(
-        fs.fat_type() == FatType::Fat32,
-        "ESP formatted as {:?}, not FAT32",
-        fs.fat_type()
-    );
-    {
-        let efi = fs.root_dir().create_dir("EFI")?;
-        let boot = efi.create_dir("BOOT")?;
-        let mut a = boot.create_file(SLOT_A)?;
-        a.write_all(uki_a)?;
-        a.flush()?;
-        drop(a);
-        let qs = efi.create_dir("QS400")?;
-        let mut b = qs.create_file(SLOT_B)?;
-        b.write_all(uki_b)?;
-        b.flush()?;
-    }
-    fs.unmount()?;
-    Ok(cur.into_inner())
-}
-
-/// Every path on the volume, directories with a trailing slash, sorted.
-fn list_esp(esp: &[u8]) -> Result<Vec<String>> {
-    let mut cur = Cursor::new(esp.to_vec());
-    let fs = FileSystem::new(&mut cur, FsOptions::new()).context("FAT re-mount")?;
-    let mut out = Vec::new();
-    walk(&fs.root_dir(), "", &mut out)?;
-    out.sort();
-    Ok(out)
-}
-
-fn walk<T: ReadWriteSeek>(dir: &Dir<'_, T>, prefix: &str, out: &mut Vec<String>) -> Result<()> {
-    for entry in dir.iter() {
-        let entry = entry?;
-        let name = entry.file_name();
-        if name == "." || name == ".." {
-            continue;
-        }
-        let path = format!("{prefix}{name}");
-        if entry.is_dir() {
-            out.push(format!("{path}/"));
-            walk(&entry.to_dir(), &format!("{path}/"), out)?;
-        } else {
-            out.push(path);
-        }
-    }
-    Ok(())
 }
 
 /// Protective MBR, GPT with one ESP, then the volume bytes.

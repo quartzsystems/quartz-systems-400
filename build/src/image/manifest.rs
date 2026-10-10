@@ -10,7 +10,6 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail, ensure};
 use ed25519_dalek::{Signer, SigningKey, Verifier};
-use licpart::Slot;
 use serde::Serialize;
 use tracing::{info, warn};
 
@@ -18,7 +17,7 @@ use crate::ctx::Ctx;
 use crate::host::cmd::{Cmd, on_path};
 use crate::host::hash::{sha256_bytes, sha256_file};
 use crate::host::paths;
-use crate::kernel::{self, CMDLINE, fetch};
+use crate::kernel::{self, CMDLINE, UkiKind, fetch};
 use crate::userland::RUST_TARGET;
 
 const KEY_ENV: &str = "QS400_SIGNING_KEY";
@@ -78,11 +77,13 @@ pub fn manifest(ctx: &Ctx) -> Result<PathBuf> {
         });
         Ok(())
     };
-    if let Ok(p) = paths::read_pointer(&ctx.paths.uki_pointer(Slot::A)) {
-        add("uki-a", &p)?;
+    for kind in UkiKind::ALL {
+        if let Ok(p) = paths::read_pointer(&ctx.paths.uki_pointer(kind)) {
+            add(kind.manifest_kind(), &p)?;
+        }
     }
-    if let Ok(p) = paths::read_pointer(&ctx.paths.uki_pointer(Slot::B)) {
-        add("uki-b", &p)?;
+    if let Ok(p) = paths::read_pointer(&ctx.paths.iso_pointer()) {
+        add("iso", &p)?;
     }
     if let Ok(p) = paths::read_pointer(&ctx.paths.disk_pointer()) {
         add("disk", &p)?;

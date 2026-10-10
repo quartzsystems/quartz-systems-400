@@ -3,14 +3,13 @@
 // root directory of this project.
 
 //! Configure and compile the kernel. The UKI step is the same build with
-//! the initramfs embedded, once per boot slot (the slots differ only in
-//! `qs400.slot=` on the command line).
+//! the initramfs embedded, once per UKI kind: slot A, slot B (they differ
+//! only in `qs400.slot=`) and the installation media.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, ensure};
-use licpart::Slot;
 use tracing::info;
 
 use crate::ctx::Ctx;
@@ -18,7 +17,7 @@ use crate::host::cmd::Cmd;
 use crate::host::hash::{sha256_file, short};
 use crate::host::paths;
 use crate::kernel::{
-    CMDLINE, DEFCONFIG, FRAGMENT, KERNEL_ARCH, KERNEL_IMAGE, MAKE_TARGET, cmdline, config, fetch,
+    CMDLINE, DEFCONFIG, FRAGMENT, KERNEL_ARCH, KERNEL_IMAGE, MAKE_TARGET, UkiKind, config, fetch,
 };
 
 /// 2026-01-01T00:00:00Z. Fixed for reproducible builds.
@@ -36,7 +35,7 @@ pub fn kernel(ctx: &Ctx) -> Result<()> {
     Ok(())
 }
 
-/// `build uki`: same build with the cpio embedded, once per slot. With
+/// `build uki`: same build with the cpio embedded, once per kind. With
 /// `release` the service console flag is left off the command line.
 pub fn uki(ctx: &Ctx, release: bool) -> Result<Vec<PathBuf>> {
     let src = fetch::fetch(ctx)?;
@@ -51,8 +50,8 @@ pub fn uki(ctx: &Ctx, release: bool) -> Result<Vec<PathBuf>> {
     fs::create_dir_all(ctx.paths.kernel_build())?;
 
     let mut outs = Vec::new();
-    for slot in [Slot::A, Slot::B] {
-        let line = cmdline(slot, !release);
+    for kind in UkiKind::ALL {
+        let line = kind.cmdline(!release);
         let frag = ctx.paths.kernel_build().join("uki.config");
         fs::write(
             &frag,
@@ -71,24 +70,21 @@ pub fn uki(ctx: &Ctx, release: bool) -> Result<Vec<PathBuf>> {
         let image = build(ctx, &src.dir)?;
 
         let hash = sha256_file(&image)?;
-        let tag = match slot {
-            Slot::A => "a",
-            Slot::B => "b",
-        };
         let out = out_dir.join(format!(
-            "qs400-{}-{tag}-{}.efi",
+            "qs400-{}-{}-{}.efi",
             release::RELEASE,
+            kind.tag(),
             short(&hash)
         ));
         fs::copy(&image, &out).with_context(|| format!("cannot copy UKI to {}", out.display()))?;
-        paths::write_pointer(&ctx.paths.uki_pointer(slot), &out)?;
+        paths::write_pointer(&ctx.paths.uki_pointer(kind), &out)?;
         let size = fs::metadata(&out)?.len();
         info!(
-            "UKI {slot:?}: {} (kernel {}, {size} bytes, sha256 {hash})",
+            "UKI {kind:?}: {} (kernel {}, {size} bytes, sha256 {hash})",
             out.display(),
             src.version
         );
-        info!("UKI {slot:?}: cmdline \"{line}\"");
+        info!("UKI {kind:?}: cmdline \"{line}\"");
         outs.push(out);
     }
     Ok(outs)

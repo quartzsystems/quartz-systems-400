@@ -49,6 +49,8 @@ enum Command {
     },
     /// Write the GPT disk image with the two-slot ESP.
     Disk,
+    /// Write the UEFI-bootable installation ISO.
+    Iso,
     /// Write and sign the artifact manifest.
     Manifest,
     /// Run the whole pipeline.
@@ -96,6 +98,9 @@ fn main() -> Result<()> {
         Command::Disk => {
             image::disk::disk(&ctx)?;
         }
+        Command::Iso => {
+            image::media::iso(&ctx)?;
+        }
         Command::Manifest => {
             image::manifest::manifest(&ctx)?;
         }
@@ -116,6 +121,7 @@ fn all(ctx: &Ctx, release: bool) -> Result<()> {
     image::initramfs::initramfs(ctx)?;
     kernel::uki(ctx, release)?;
     image::disk::disk(ctx)?;
+    image::media::iso(ctx)?;
     image::manifest::manifest(ctx)?;
     Ok(())
 }

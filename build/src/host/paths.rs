@@ -10,8 +10,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 
-use licpart::Slot;
-
+use crate::kernel::UkiKind;
 use crate::userland::RUST_TARGET;
 
 /// Repository root and the target directory.
@@ -85,12 +84,14 @@ impl Paths {
         self.images().join("initramfs.cpio")
     }
 
-    /// Pointer file naming the current UKI for one slot.
-    pub fn uki_pointer(&self, slot: Slot) -> PathBuf {
-        self.images().join(match slot {
-            Slot::A => "uki-a.path",
-            Slot::B => "uki-b.path",
-        })
+    /// Pointer file naming the current UKI of one kind.
+    pub fn uki_pointer(&self, kind: UkiKind) -> PathBuf {
+        self.images().join(kind.pointer())
+    }
+
+    /// Pointer file naming the current ISO.
+    pub fn iso_pointer(&self) -> PathBuf {
+        self.images().join("iso.path")
     }
 
     /// Pointer file naming the current disk image.

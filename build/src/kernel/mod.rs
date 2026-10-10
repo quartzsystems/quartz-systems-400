@@ -8,8 +8,6 @@ pub mod build;
 pub mod config;
 pub mod fetch;
 
-use licpart::Slot;
-
 pub use build::{SOURCE_DATE_EPOCH, config_path, kernel, uki};
 
 /// Value of the kernel's `ARCH=` variable.
@@ -25,16 +23,60 @@ pub const KERNEL_IMAGE: &str = "arch/x86/boot/bzImage";
 /// Baked kernel command line, before the slot and service-console flags.
 pub const CMDLINE: &str = "console=ttyS0,115200 console=tty0 panic=-1 quiet";
 
-/// The full command line for one UKI slot. `svc` enables the serial
-/// service console (dev builds); release builds leave it out.
-pub fn cmdline(slot: Slot, svc: bool) -> String {
-    let slot = match slot {
-        Slot::A => "A",
-        Slot::B => "B",
-    };
-    let mut s = format!("{CMDLINE} qs400.slot={slot}");
-    if svc {
-        s.push_str(" qs400.svc=1");
+/// Which UKI is being built. Slots A and B differ only in `qs400.slot=`;
+/// the media UKI boots from the ISO as an IPL type D.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum UkiKind {
+    /// `EFI/BOOT/BOOTX64.EFI` on the disk.
+    SlotA,
+    /// `EFI/QS400/B.EFI` on the disk.
+    SlotB,
+    /// `EFI/BOOT/BOOTX64.EFI` on the ISO's boot image.
+    Media,
+}
+
+impl UkiKind {
+    /// All three, in build order.
+    pub const ALL: [UkiKind; 3] = [UkiKind::SlotA, UkiKind::SlotB, UkiKind::Media];
+
+    /// Letter used in file names.
+    pub fn tag(self) -> &'static str {
+        match self {
+            UkiKind::SlotA => "a",
+            UkiKind::SlotB => "b",
+            UkiKind::Media => "d",
+        }
     }
-    s
+
+    /// Pointer file name under `target/images/`.
+    pub fn pointer(self) -> &'static str {
+        match self {
+            UkiKind::SlotA => "uki-a.path",
+            UkiKind::SlotB => "uki-b.path",
+            UkiKind::Media => "uki-d.path",
+        }
+    }
+
+    /// Manifest kind.
+    pub fn manifest_kind(self) -> &'static str {
+        match self {
+            UkiKind::SlotA => "uki-a",
+            UkiKind::SlotB => "uki-b",
+            UkiKind::Media => "uki-d",
+        }
+    }
+
+    /// The full command line. `svc` enables the serial service console
+    /// (dev builds); release builds leave it out.
+    pub fn cmdline(self, svc: bool) -> String {
+        let mut s = match self {
+            UkiKind::SlotA => format!("{CMDLINE} qs400.slot=A"),
+            UkiKind::SlotB => format!("{CMDLINE} qs400.slot=B"),
+            UkiKind::Media => format!("{CMDLINE} qs400.ipl=D qs400.media=iso"),
+        };
+        if svc {
+            s.push_str(" qs400.svc=1");
+        }
+        s
+    }
 }
