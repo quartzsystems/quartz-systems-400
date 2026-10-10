@@ -67,8 +67,11 @@ pub fn args(test: &BootTest) -> Vec<OsString> {
     ));
     a.push(OsString::from("-drive"));
     a.push(join("if=virtio,format=raw,file=", &test.image));
+    // -snapshot: OVMF without a vars flash writes NvVars onto the ESP; keep
+    // each boot's writes in a temporary overlay so the image stays pristine.
     a.extend(
         [
+            "-snapshot",
             "-nic",
             "none",
             "-nographic",

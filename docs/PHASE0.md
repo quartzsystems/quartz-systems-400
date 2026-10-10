@@ -54,7 +54,7 @@ Checked by `cargo run -p build -- doctor`.
 | What | Why | Debian/Ubuntu package |
 |---|---|---|
 | rustup with `x86_64-unknown-linux-musl` | pinned by `rust-toolchain.toml` | `rustup target add x86_64-unknown-linux-musl` |
-| clang, lld, llvm (LLVM 20) | `LLVM=1` kernel build; clang is also the linker driver for the host tools | `clang-20 lld-20 llvm-20` (and `clang lld llvm` meta packages) |
+| clang, lld, llvm (LLVM 21) | `LLVM=1` kernel build; clang is also the linker driver for the host tools | `clang-21 lld-21 llvm-21` (and `clang lld llvm` meta packages) |
 | make, flex, bison, bc, perl | kernel build | `make flex bison bc perl` |
 | libelf headers | objtool | `libelf-dev` |
 | openssl headers (optional) | only if kernel signing options are enabled | `libssl-dev` |
@@ -100,49 +100,55 @@ logs are always in `target/logs/`.
 
 ## Acceptance evidence
 
-Status at the x86_64-only scope change. The build host does not yet have
-clang, QEMU or OVMF installed (no root), so the kernel-dependent items are
-open. Everything else was exercised.
+All measured on 2026-10-10 in WSL Ubuntu 26.04 (24 threads, KVM available),
+Rust 1.98.0, Ubuntu clang 21.1.8, QEMU 10.2.1, OVMF 2025.11, at commit
+`9aa28a9` plus this change.
 
-| # | Criterion | Status |
+| # | Criterion | Result |
 |---|---|---|
-| 1 | `build all` succeeds on a clean checkout | open: needs the LLVM toolchain on the host |
-| 2 | two runs give byte-identical UKIs and manifests | open: hashes recorded here once built |
-| 3 | `build test` passes under KVM and under TCG (time documented) | open: needs QEMU + OVMF |
-| 4 | `cargo deny check` passes; no `links`, no `cc` in the compiled graph | pass (see below) |
-| 5 | `slic` has no `PT_INTERP`, no `DT_NEEDED` (checked in Rust) | pass (see below) |
-| 6 | the ESP contains only the two `.efi` files | pass: enforced by `build disk`, confirmed by hand |
-| 7 | `cargo clippy --workspace --all-targets` is warning-free | pass, also for slic on the musl target |
+| 1 | `build all` succeeds on a clean checkout | pass: 5 m 54 s wall from nothing (fetch, kernel, slic, cpio, UKI relink, disk, manifest) |
+| 2 | two runs give byte-identical UKIs and manifests | pass: incremental second run and a clean third run (kernel build dir, images and slic deleted) match the first, hashes below |
+| 3 | `build test` passes under KVM and under TCG | pass: KVM IPL SRC after 1.5 s, 11.6 s total; TCG IPL SRC after 3.8 s, 13.8 s total |
+| 4 | `cargo deny check` passes; no `links`, no `cc` compiled | pass on Linux and Windows hosts; see note below |
+| 5 | `slic` has no `PT_INTERP`, no `DT_NEEDED` (checked in Rust) | pass; `file(1)` says static-pie, stripped |
+| 6 | the ESP contains only the two `.efi` files | pass; `build disk` re-reads the volume; boots run with `-snapshot` so the image stays pristine |
+| 7 | `cargo clippy --workspace --all-targets` is warning-free | pass, also `cargo clippy -p slic --target x86_64-unknown-linux-musl` |
 | 8 | CLAUDE.md, ARCHITECTURE.md, PHASE0.md written and accurate | this commit |
 
-Verified so far (2026-10-10):
+Artifact hashes, identical across run 1, run 2 (incremental) and run 3 (clean):
 
-- `build userland`: slic is `static-pie linked, stripped`, 410688 bytes,
-  sha256 `f8db97efcce3fc15837932cb5fbb1fce37a7949164ecbdf488d3ec1b3b57a188`.
-  The ELF check in `build/src/userland/elf.rs` reports no `PT_INTERP`, no
-  `DT_NEEDED`, no `.symtab`. `file(1)` agrees.
-- slic run as a plain process refuses ("not PID 1") and exits 1. Run as PID 1
-  in a user+pid namespace (`unshare -Urpf --mount-proc`) it mounts what it
-  may, then idles in the heartbeat loop until killed.
-- `build initramfs`: 411516 bytes. The newc headers were walked
-  independently: `dev` 40755, `dev/console` 20600 rdev 5,1, `init` 100755,
-  `proc`, `run`, `sys`, `TRAILER!!!`; every header 4-byte aligned, mtime 0,
-  uid/gid 0.
-- `build disk` with a stand-in UKI: `fdisk` sees a GPT with disk identifier
-  `51533430-0000-4000-8000-000000000001` and one 256 MiB "EFI System"
-  partition at LBA 2048; `file(1)` on the partition reports FAT32, serial
-  `0x51533430`, label `QS400 ESP`. Only `EFI/BOOT/BOOTX64.EFI` and
-  `EFI/QS400/B.EFI` exist on it.
-- `build deny`: `cargo deny check` passes (advisories, bans, licenses,
-  sources). The compiled graph is 143 crates on both the host and
-  `x86_64-unknown-linux-musl`, with no `links` keys and no `cc`, `cmake`,
-  `bindgen`, `pkg-config` or `vcpkg`. Note: `Cargo.lock` as a file still
-  names `ring` (an optional dependency of `rustls-webpki` that nothing
-  activates) and the wasm-bindgen crates (reqwest's wasm32-only
-  dependencies). Neither is downloaded or built for any QS/400 target.
-- `cargo clippy --workspace --all-targets` and
-  `cargo clippy -p slic --target x86_64-unknown-linux-musl`: no warnings.
-  `cargo test --workspace`: 5 tests pass (cpio layout, header fields,
-  determinism, config parsing, and the boot test's skip path).
+```
+5a54bdaca67757233a2fc66109d1bfde265cd5a4dc439f9a60bf01388013f5c2  images/qs400-6.18.55-5a54bdaca677.efi  (14349312 bytes)
+afa141794493d594e8b987acc7e12791098e86b38dc7be7512b6dd790a5d53fe  images/qs400-6.18.55-5a54bdaca677.img  (270532608 bytes)
+1bfde7b3a5997fd4c7ab518c7b70c76982c4dc1718d33897e3b7eda54d697904  images/initramfs.cpio                  (411348 bytes)
+cf7cea6e037d0f57b4b06e926ef2f71d6ef8ede5cf2b740335eb9980f1ad59df  x86_64-unknown-linux-musl/release/slic (410520 bytes)
+7e16ca050750f00dc79f1724ca821496635a913afecc1985a465dc5a42a28e96  kernel/build/.config
+43632d5504993b7c59b4011f9de9c57e92d25672e3575940baa57a49a5bb8523  images/manifest.json
+07b9d2003ab7ab551681c7c979ad56420dd54b7df45cb84a22b18caab320d9a3  images/manifest.sig
+```
 
-Results for items 1 to 3 are appended below once the host has the toolchain.
+Kernel pin: `linux-6.18.55.tar.xz`
+`f410638061a165c12f42ab871d2f3fcd525515359b5faeee80969cff84524df9`,
+recorded by the first `build fetch`; `sha256sums.asc` carried a good
+signature from `autosigner@kernel.org`.
+
+Notes:
+
+- The manifest embeds `git_rev` (with `-dirty`), so it is identical between
+  runs only at the same tree state. The UKI does not depend on git.
+- OVMF, lacking a variable-store flash, writes an `NvVars` file to the first
+  FAT volume it sees. The harness passes `-snapshot` so that write lands in a
+  temporary overlay; the image hash was checked before and after both the
+  KVM and TCG boots and did not change.
+- `build deny` scans the graph that is compiled (`cargo tree`, host and
+  image target): 143 crates, no `links` keys, no `cc`, `cmake`, `bindgen`,
+  `pkg-config` or `vcpkg`. `Cargo.lock` as a file also names `ring` (an
+  optional dependency of `rustls-webpki` that nothing activates) and the
+  wasm-bindgen crates (reqwest's wasm32-only dependencies); neither is
+  downloaded or built for any QS/400 target.
+- Timing: `make bzImage -j24 LLVM=1` from a clean build directory is about
+  4 minutes of wall time (60 CPU-minutes). The UKI relink after the cpio is
+  embedded takes seconds.
+- Unit tests: `cargo test --workspace` passes (cpio layout, header fields,
+  determinism, config parsing). `QS400_QEMU=1 cargo test -p conformance`
+  boots the image and passes in about 11 s.
