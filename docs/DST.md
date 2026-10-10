@@ -67,6 +67,13 @@ guest's own screens with the same files.
 | Start a Service Tool, Product Activity Log, Display/Alter/Dump, LIC Log, Hardware Service Manager | `tools.txt`, `pal.txt`, `dad.txt`, `lic-log.txt`, `hsm.txt`, `hsm-packaging.txt`, `hsm-failed.txt` |
 | Work with System Security | `security.txt` |
 
+The installer's screens have their own golden files under
+`conformance/golden/install/`, from `svctools/tests/install.rs`:
+`lic-menu`, `lic-options`, `load-source`, `lic-confirm`, `disk-status`,
+`lic-status`, `device-type`, `os-confirm`, `language`,
+`language-confirm`, `os-status`, `ipl-options` and `major-options`. The
+sequence they form is described in PHASE2.md.
+
 ## Menus
 
 ```

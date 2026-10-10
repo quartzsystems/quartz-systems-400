@@ -105,17 +105,18 @@ pub fn form(title: &str, system: &str, lines: &[FormLine], fkeys: &str) -> Scree
         .max()
         .unwrap_or(0)
         .max(20);
-    for (i, line) in lines.iter().enumerate() {
+    let labels: Vec<String> = lines.iter().map(|l| dotted(l.label, width)).collect();
+    let col = BODY_COL + labels.iter().map(String::len).max().unwrap_or(0) + 1;
+    for (i, (line, label)) in lines.iter().zip(&labels).enumerate() {
         let r = BODY_ROW + i;
-        s.put(r, BODY_COL, &dotted(line.label, width), Attr::GREEN);
-        let col = BODY_COL + width + 2;
+        s.put(r, BODY_COL, label, Attr::GREEN);
         s.field(r, col, line.len, line.hidden);
         if !line.value.is_empty() {
             s.put(r, col, &line.value, Attr::INPUT);
         }
     }
     keys(&mut s, fkeys);
-    s.cursor = (BODY_ROW - 1, BODY_COL + width + 1);
+    s.cursor = (BODY_ROW - 1, col - 1);
     s
 }
 

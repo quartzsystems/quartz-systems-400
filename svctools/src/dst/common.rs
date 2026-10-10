@@ -9,7 +9,7 @@ use console::Screen;
 
 use crate::dst::{INVALID_SELECTION, NOT_AVAILABLE, selection};
 use crate::env::DstEnv;
-use crate::panel::{Flow, Panel};
+use crate::panel::{Flow, Outcome, Panel};
 use crate::ui;
 
 /// What an option on a submenu does.
@@ -284,6 +284,9 @@ impl Panel for Options {
     }
 }
 
+/// What a confirmation goes on to after its action.
+pub type Next = Box<dyn Fn(&mut dyn DstEnv) -> Flow>;
+
 /// What a confirmation does on F10.
 pub type Confirmed = Box<dyn FnMut(&mut dyn DstEnv) -> Result<String, String>>;
 
@@ -296,6 +299,10 @@ pub struct Confirm {
     action: Confirmed,
     /// Panels to pop after the action, including this one.
     unwind: usize,
+    /// End the application with this outcome after the action.
+    exit: Option<Outcome>,
+    /// Go on to another panel after the action.
+    next: Option<Next>,
 }
 
 impl Confirm {
@@ -313,7 +320,23 @@ impl Confirm {
             lines,
             action,
             unwind: 1,
+            exit: None,
+            next: None,
         }
+    }
+
+    /// End the application with `outcome` once the action succeeds.
+    #[must_use]
+    pub fn exiting(mut self, outcome: Outcome) -> Self {
+        self.exit = Some(outcome);
+        self
+    }
+
+    /// Go on with `next` once the action succeeds.
+    #[must_use]
+    pub fn then(mut self, next: impl Fn(&mut dyn DstEnv) -> Flow + 'static) -> Self {
+        self.next = Some(Box::new(next));
+        self
     }
 
     /// Pop `n` panels after the action (the confirmation and the
@@ -341,6 +364,8 @@ impl Panel for Confirm {
     fn function(&mut self, key: u8, env: &mut dyn DstEnv) -> Flow {
         match key {
             10 => match (self.action)(env) {
+                Ok(_) if self.exit.is_some() => Flow::Exit(self.exit.expect("checked")),
+                Ok(_) if self.next.is_some() => (self.next.as_ref().expect("checked"))(env),
                 Ok(m) => Flow::Unwind(self.unwind, Some((m, false))),
                 Err(e) => Flow::Error(e),
             },

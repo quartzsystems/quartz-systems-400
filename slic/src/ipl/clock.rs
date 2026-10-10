@@ -10,6 +10,15 @@ use rustix::time::{ClockId, Timespec, clock_settime};
 use crate::ipl::system::System;
 use crate::platform::rtc;
 
+/// Set `CLOCK_REALTIME` to a Unix time (the IPL options screen).
+pub fn set(unix: u64) -> Result<(), String> {
+    let ts = Timespec {
+        tv_sec: i64::try_from(unix).unwrap_or(i64::MAX),
+        tv_nsec: 0,
+    };
+    clock_settime(ClockId::Realtime, ts).map_err(|e| format!("clock_settime: {e}"))
+}
+
 /// Set `CLOCK_REALTIME` from `/dev/rtc0` and re-stamp the IPL start time,
 /// which was taken before the clock was right. Returns the Unix time.
 pub fn set_from_rtc(system: &mut System) -> Result<u64, String> {

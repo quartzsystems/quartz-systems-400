@@ -23,6 +23,12 @@ pub enum Outcome {
     AutoInstall,
     /// F3 on the first panel: back to whoever started the application.
     Exit,
+    /// The installer wants DST.
+    Dst,
+    /// The LIC is installed: re-IPL from the load source.
+    Reboot,
+    /// The step is done: the IPL goes on.
+    Continue,
 }
 
 /// What a panel asks of the runner after a key.

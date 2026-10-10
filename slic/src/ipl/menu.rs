@@ -121,14 +121,16 @@ pub fn run(system: &mut System, rx: &Receiver<Event>) {
         let choice = first_field(&answer);
         match choice.as_str() {
             "1" => return,
-            "2" if system.boot.ipl_d => install::run(system, rx),
+            "2" if system.boot.ipl_d => install::run_lic(system, rx),
+            "4" if system.boot.ipl_d => install::run_auto(system),
             "3" => match dst::run(system, rx) {
                 dst::Outcome::PerformIpl => return,
-                dst::Outcome::InstallOs if system.boot.ipl_d => install::run(system, rx),
+                dst::Outcome::InstallOs if system.boot.ipl_d => install::run_lic(system, rx),
+                dst::Outcome::AutoInstall if system.boot.ipl_d => install::run_auto(system),
                 dst::Outcome::InstallOs | dst::Outcome::AutoInstall => {
                     message = Some((NOT_AVAILABLE.to_string(), false));
                 }
-                dst::Outcome::Exit => {}
+                _ => {}
             },
             "2" | "4" | "5" => message = Some((NOT_AVAILABLE.to_string(), false)),
             "" => {}

@@ -1,0 +1,24 @@
+                    Install Licensed Internal Code - Status                     
+                                                                 System:  QS400 
+                                                                                
+   X  Partition the load source device                                          
+   X  Initialize the LIC partition                                              
+      Copy the Licensed Internal Code to slot A                                 
+      Copy the Licensed Internal Code to slot B                                 
+      Write the LIC record                                                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                

@@ -1,0 +1,24 @@
+                       Confirm Language Feature Selection                       
+                                                                 System:  QS400 
+                                                                                
+ Language feature . . . :  2924  English                                        
+                                                                                
+ Press F10 to install the operating system with this language.                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

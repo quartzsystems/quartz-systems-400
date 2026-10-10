@@ -194,8 +194,8 @@ impl Suite {
         }
     }
 
-    /// Install from the ISO onto a blank disk, boot the disk alone, then
-    /// install over it again from the media.
+    /// Install from the ISO: automatically onto a blank disk, boot the
+    /// disk alone, then interactively over it through every screen.
     fn run_install(&self) -> Result<Vec<StepReport>, HarnessError> {
         let iso = self.iso.clone().expect("checked in new");
         let blank = self.out_dir.join("install.img");
@@ -210,7 +210,8 @@ impl Suite {
             ..self.launch.clone()
         };
         let mut s = Session::spawn(&media)?;
-        reports.push(self.step(&mut s, "1 install from media", Self::install_dialog)?);
+        reports.push(self.step(&mut s, "1 automatic install", Self::automatic_install)?);
+        s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(20));
         drop(s);
         let disk = Launch {
@@ -225,44 +226,97 @@ impl Suite {
         s.wait_exit(Duration::from_secs(15));
         drop(s);
         let mut s = Session::spawn(&media)?;
-        reports.push(self.step(&mut s, "3 reinstall over the disk", Self::reinstall_dialog)?);
+        reports.push(self.step(&mut s, "3 interactive install", Self::interactive_install)?);
+        s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(20));
         Ok(reports)
     }
 
-    /// Install step 3: the installed disk is listed as such and the
-    /// installer writes over it while running from the media.
-    fn reinstall_dialog(&self, s: &mut Session) -> Result<String, String> {
-        s.expect("Selection", self.boot_timeout)?;
-        s.send("2")?;
-        let listing = s.expect("Selection (0 to return):", CMD)?;
-        if !listing.contains("(QS/400 partitions present)") {
-            return Err(format!("the installed disk is not marked:\n{listing}"));
-        }
-        s.send("1")?;
-        s.expect("Type YES to continue:", CMD)?;
-        s.send("YES")?;
-        s.expect("ASP 1 initialized", Duration::from_secs(120))?;
-        s.expect("press Enter to power down", CMD)?;
-        s.send("")?;
-        s.expect("SRC D1001090", CMD)?;
-        Ok("installed disk recognized and written again".into())
-    }
-
-    /// Install step 1: option 2, the first disk, `YES`, Enter at the end.
-    fn install_dialog(&self, s: &mut Session) -> Result<String, String> {
+    /// Install step 1: option 4 writes the LIC onto the first disk and
+    /// re-IPLs; the second boot from the media installs the operating
+    /// system without prompts and reaches sign-on.
+    fn automatic_install(&self, s: &mut Session) -> Result<String, String> {
         s.expect_in_order(&SRC_SEQUENCE_MEDIA[..5], self.boot_timeout)?;
         s.expect("Selection", self.boot_timeout)?;
-        s.send("2")?;
-        s.expect("Selection (0 to return):", CMD)?;
-        s.send("1")?;
-        s.expect("Type YES to continue:", CMD)?;
-        s.send("YES")?;
-        s.expect("ASP 1 initialized", Duration::from_secs(120))?;
-        s.expect("press Enter to power down", CMD)?;
-        s.send("")?;
+        s.send("4")?;
+        s.expect("SRC C6004090", Duration::from_secs(120))?;
         s.expect("SRC D1001090", CMD)?;
-        Ok("disk written, LIC and ASP 1 initialized, powered down".into())
+        s.expect("SRC C6004100", self.boot_timeout)?;
+        s.expect("SRC C6004190", Duration::from_secs(120))?;
+        s.expect(SRC_IPL_COMPLETE, self.boot_timeout)?;
+        s.expect(crate::PROMPT, CMD)?;
+        let dump = s.command("screen", CMD)?;
+        if !dump.contains("Sign On") {
+            return Err("sign-on display is not showing".into());
+        }
+        let asp = s.command("asp", CMD)?;
+        if !asp.contains("created by V1R0M0") {
+            return Err(format!("asp did not report the store: {asp}"));
+        }
+        Ok("LIC written by option 4, re-IPL, operating system installed, sign-on".into())
+    }
+
+    /// Install step 3: option 2 through every screen, over the disk
+    /// installed in step 1: the LIC menus, the load source, F10, the
+    /// re-IPL into DST, sign-on, the operating system screens, the IPL
+    /// options, sign-on.
+    fn interactive_install(&self, s: &mut Session) -> Result<String, String> {
+        s.expect("Selection", self.boot_timeout)?;
+        s.send("2")?;
+        s.expect("Install Licensed Internal Code", CMD)?;
+        s.send("1")?;
+        s.expect("Install Licensed Internal Code (LIC)", CMD)?;
+        s.send("2")?;
+        let listing = s.expect("Opt  Resource", CMD)?;
+        let _ = listing;
+        s.expect("(has data)", CMD)?;
+        s.send("1")?;
+        s.expect("Install LIC and Initialize System - Confirmation", CMD)?;
+        s.send("key f10")?;
+        s.expect("SRC C6004090", Duration::from_secs(120))?;
+        s.expect("SRC D1001090", CMD)?;
+        // The re-IPL from the media lands in DST.
+        s.expect("SRC C6004100", self.boot_timeout)?;
+        s.expect("Dedicated Service Tools (DST) Sign On", self.boot_timeout)?;
+        s.send("type QSECOFR")?;
+        s.send("key tab")?;
+        s.send("type QSECOFR")?;
+        s.send("key enter")?;
+        s.expect("Change Service Tools User Password", CMD)?;
+        s.send("key tab")?;
+        s.send("type QSECOFR")?;
+        s.send("key tab")?;
+        s.send("type Quartz1")?;
+        s.send("key tab")?;
+        s.send("type Quartz1")?;
+        s.send("key enter")?;
+        s.expect("Use Dedicated Service Tools (DST)", CMD)?;
+        s.send("2")?;
+        s.expect("Install Device Type Selection", CMD)?;
+        s.send("2")?;
+        s.expect("Confirm Install of the Operating System", CMD)?;
+        s.send("key f10")?;
+        s.expect("Select a Language Group", CMD)?;
+        s.send("1")?;
+        s.expect("Confirm Language Feature Selection", CMD)?;
+        s.send("key f10")?;
+        s.expect("SRC C6004120", Duration::from_secs(120))?;
+        s.expect("IPL Options", self.boot_timeout)?;
+        s.send("key enter")?;
+        s.expect("Set Major System Options", CMD)?;
+        s.send("key enter")?;
+        s.expect("SRC C6004190", CMD)?;
+        s.expect(SRC_IPL_COMPLETE, self.boot_timeout)?;
+        s.expect(crate::PROMPT, CMD)?;
+        let dump = s.command("screen", CMD)?;
+        if !dump.contains("Sign On") {
+            return Err("sign-on display is not showing".into());
+        }
+        let vals = s.command("sysval QAUTOCFG", CMD)?;
+        if !vals.contains("QAUTOCFG: 1") {
+            return Err(format!("major options not applied: {vals}"));
+        }
+        Ok("every install screen walked over serial; options applied; sign-on".into())
     }
 
     /// Install step 2: the disk IPLs on its own and reaches sign-on.

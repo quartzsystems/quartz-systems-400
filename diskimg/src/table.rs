@@ -27,6 +27,20 @@ pub fn write_image<D>(dev: &mut D, plan: &Plan, guids: &Guids, esp: &[u8]) -> Re
 where
     D: Read + Write + Seek + Debug,
 {
+    write_image_with(dev, plan, guids, esp, &mut |_, _| {})
+}
+
+/// [`write_image`] reporting `(bytes written, bytes in all)` as it goes.
+pub fn write_image_with<D>(
+    dev: &mut D,
+    plan: &Plan,
+    guids: &Guids,
+    esp: &[u8],
+    progress: &mut dyn FnMut(u64, u64),
+) -> Result<(), Error>
+where
+    D: Read + Write + Seek + Debug,
+{
     assert_eq!(
         esp.len() as u64,
         plan.esp.bytes(),
@@ -80,13 +94,22 @@ where
 
     dev.seek(SeekFrom::Start(plan.esp.offset()))
         .map_err(Error::io("seek to ESP"))?;
-    dev.write_all(esp).map_err(Error::io("write ESP"))?;
+    let total = esp.len() as u64 + 2 * WIPE_BYTES;
+    let mut written = 0u64;
+    progress(0, total);
+    for chunk in esp.chunks(4 * 1024 * 1024) {
+        dev.write_all(chunk).map_err(Error::io("write ESP"))?;
+        written += chunk.len() as u64;
+        progress(written, total);
+    }
     let zeros = vec![0u8; usize::try_from(WIPE_BYTES).expect("1 MiB")];
     for p in [plan.lic, plan.asp1] {
         dev.seek(SeekFrom::Start(p.offset()))
             .map_err(Error::io("seek to partition"))?;
         dev.write_all(&zeros)
             .map_err(Error::io("wipe partition head"))?;
+        written += WIPE_BYTES;
+        progress(written, total);
     }
     dev.flush().map_err(Error::io("flush"))?;
     Ok(())

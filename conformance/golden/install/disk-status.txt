@@ -1,0 +1,24 @@
+                          Initialize the Disk - Status                          
+                                                                 System:  QS400 
+                                                                                
+ Load source device . . . :  /dev/vdb                                           
+                                                                                
+ Writing the partition table and the licensed internal code.                    
+                                                                                
+  40%  ####################------------------------------                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                

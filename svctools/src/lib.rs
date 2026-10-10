@@ -16,6 +16,7 @@
 
 pub mod dst;
 pub mod env;
+pub mod install;
 pub mod panel;
 pub mod ui;
 pub mod users;

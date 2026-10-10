@@ -24,4 +24,4 @@ pub use plan::{
     ASP1_NAME, ASP1_TYPE_GUID, DEFAULT_DISK_BYTES, ESP_NAME, Guids, LIC_NAME, LIC_TYPE_GUID,
     MIN_DISK_BYTES, Part, Plan, SECTOR,
 };
-pub use table::{read_table, write_image};
+pub use table::{read_table, write_image, write_image_with};

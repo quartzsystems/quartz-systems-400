@@ -1,0 +1,24 @@
+                      Install Licensed Internal Code (LIC)                      
+                                                                 System:  QS400 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Restore Licensed Internal Code                                         
+      2. Install Licensed Internal Code and Initialize System                   
+      3. Install Licensed Internal Code and Recover Configuration               
+      4. Install Licensed Internal Code and Restore Disk Unit Data              
+      5. Install Licensed Internal Code and Upgrade Load Source                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

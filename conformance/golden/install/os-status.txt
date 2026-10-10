@@ -1,0 +1,24 @@
+                     Install the Operating System - Status                      
+                                                                 System:  QS400 
+                                                                                
+   X  Initialize ASP 1                                                          
+      Create the system libraries                                               
+      Create the system values                                                  
+                                                                                
+ Language feature 2924                                                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                

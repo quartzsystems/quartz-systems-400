@@ -10,6 +10,8 @@ use std::sync::mpsc::Receiver;
 pub use svctools::Outcome;
 use svctools::dst::security::{TAG_SECURITY, decode as decode_flags, encode as encode_flags};
 use svctools::env::{DiskUnit, LogEntry, NonConfigured, ResourceRow, SecurityFlags};
+use svctools::install::lic::LicEvent;
+use svctools::install::options::{IplOptions, MajorOptions, TAG_IPL_OPTIONS};
 use svctools::{DstEnv, UserDb};
 use sysval::{IPL_NAMES, SysVals};
 
@@ -21,7 +23,7 @@ use crate::src;
 
 /// The service tools' view of this system.
 pub struct Env<'a> {
-    system: &'a mut System,
+    pub(crate) system: &'a mut System,
     users: UserDb,
 }
 
@@ -237,6 +239,143 @@ impl DstEnv for Env<'_> {
 
     fn parity_capable(&mut self) -> Vec<String> {
         self.system.hw.parity_capable()
+    }
+
+    fn show(&mut self, screen: console::Screen) {
+        menu::show(self.system, screen);
+    }
+
+    fn disks(&mut self) -> Vec<NonConfigured> {
+        let mut out = Vec::new();
+        for disk in diskimg::locate::whole_disks().unwrap_or_default() {
+            let device = disk.dev.display().to_string();
+            let (type_model, serial) = diskimg::locate::identity(&disk.dev);
+            out.push(NonConfigured {
+                resource: self.resource_for(&device),
+                serial,
+                type_model: if type_model.is_empty() {
+                    disk.model.clone()
+                } else {
+                    type_model
+                },
+                size_mib: disk.bytes >> 20,
+                has_data: disk.has_qs400 || storage::has_unit_header(&disk.dev),
+                device,
+            });
+        }
+        out
+    }
+
+    fn install_lic(
+        &mut self,
+        device: &str,
+        auto: bool,
+        report: &mut dyn FnMut(LicEvent, &mut dyn DstEnv),
+    ) -> Result<(), String> {
+        self.write_lic(device, auto, report)
+    }
+
+    fn install_os(&mut self, report: &mut dyn FnMut(usize, &mut dyn DstEnv)) -> Result<(), String> {
+        self.write_os(report)
+    }
+
+    fn clock(&mut self) -> (String, String) {
+        let (y, mo, d, h, mi, s) = crate::platform::rtc::unix_to_civil(now_unix());
+        (
+            format!("{y:04}-{mo:02}-{d:02}"),
+            format!("{h:02}:{mi:02}:{s:02}"),
+        )
+    }
+
+    fn set_clock(&mut self, date: &str, time: &str) -> Result<(), String> {
+        let (now_date, now_time) = self.clock();
+        if date == now_date && time == now_time {
+            return Ok(());
+        }
+        let num = |s: &str, what: &str| {
+            s.parse::<u32>()
+                .map_err(|_| format!("{what} is not valid: {s}"))
+        };
+        let d: Vec<&str> = date.split('-').collect();
+        let t: Vec<&str> = time.split(':').collect();
+        if d.len() != 3 || t.len() != 3 {
+            return Err("Date must be YYYY-MM-DD and time HH:MM:SS".into());
+        }
+        let year = i64::from(num(d[0], "year")?);
+        let (month, day) = (num(d[1], "month")?, num(d[2], "day")?);
+        let (hour, min, sec) = (
+            num(t[0], "hour")?,
+            num(t[1], "minute")?,
+            num(t[2], "second")?,
+        );
+        if !(1..=12).contains(&month)
+            || !(1..=31).contains(&day)
+            || hour > 23
+            || min > 59
+            || sec > 59
+        {
+            return Err("Date or time is out of range".into());
+        }
+        let unix = crate::platform::rtc::civil_to_unix(year, month, day, hour, min, sec);
+        crate::ipl::clock::set(unix)?;
+        self.system
+            .out
+            .serial(&format!("slic: clock set to {unix} UTC by the operator\n"));
+        Ok(())
+    }
+
+    fn ipl_options(&mut self) -> IplOptions {
+        self.system
+            .lic
+            .as_ref()
+            .and_then(|(_, r)| r.tlv(TAG_IPL_OPTIONS))
+            .and_then(IplOptions::decode)
+            .unwrap_or_default()
+    }
+
+    fn set_ipl_options(&mut self, options: &IplOptions) -> Result<(), String> {
+        if let Some((part, record)) = self.system.lic.as_mut() {
+            record
+                .set_tlv(TAG_IPL_OPTIONS, options.encode())
+                .map_err(|e| e.to_string())?;
+            part.write(record).map_err(|e| e.to_string())?;
+        }
+        if let Some(vals) = self.system.sysvals.as_mut() {
+            let writers = if options.start_print_writers {
+                "1"
+            } else {
+                "0"
+            };
+            vals.set_text("QSTRPRTWTR", writers)
+                .map_err(|e| e.to_string())?;
+            crate::ipl::sysvals::save(self.system)?;
+        }
+        Ok(())
+    }
+
+    fn major_options(&mut self) -> MajorOptions {
+        let Some(vals) = self.system.sysvals.as_ref() else {
+            return MajorOptions::default();
+        };
+        let get = |n: &str| vals.get(n).map(|v| v.text()).unwrap_or_default();
+        MajorOptions {
+            auto_configure: get("QAUTOCFG") != "0",
+            device_naming: get("QDEVNAMING"),
+            special_environment: get("QSPCENV"),
+        }
+    }
+
+    fn set_major_options(&mut self, options: &MajorOptions) -> Result<(), String> {
+        let Some(vals) = self.system.sysvals.as_mut() else {
+            return Err("System values are not loaded yet".into());
+        };
+        let auto = if options.auto_configure { "1" } else { "0" };
+        vals.set_text("QAUTOCFG", auto).map_err(|e| e.to_string())?;
+        vals.set_text("QDEVNAMING", &options.device_naming)
+            .map_err(|e| e.to_string())?;
+        vals.set_text("QSPCENV", &options.special_environment)
+            .map_err(|e| e.to_string())?;
+        crate::ipl::sysvals::save(self.system)
     }
 
     fn lic_sysvals(&mut self) -> Vec<(String, String)> {

@@ -7,8 +7,9 @@ Phase 0 built the build system and a booting kernel with a Rust PID 1
 values and a local 5250-style console. Phase 2 added the object store
 (`store`), the disk layout with an ASP partition, system values in the
 `QSYSVAL` object, RCLSTG, the service console's object commands and the
-ISO installer. Code waiting for a later phase is marked `MIGRATE(phaseN)`
-or `TODO(phaseN)`.
+ISO installer. Addendum 2.5 added mirrored protection, Dedicated Service
+Tools (`svctools`) and the IBM-style install flow. Code waiting for a
+later phase is marked `MIGRATE(phaseN)` or `TODO(phaseN)`.
 
 ## Ground rules
 
@@ -65,7 +66,9 @@ store/        object store: src/page/, src/btree/, src/asp/ (units, superblock),
 diskimg/      GPT layout (ESP, LIC, ASP1), FAT volumes, partition lookup; build + installer
 ccsid/        CP037 <-> UTF-8 from cp037.csv (build.rs), EBCDIC collation
 qsname/       object, library and member name rules; 10-byte CP037 Name
-docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, STORE_FORMAT.md, images/
+svctools/     DST screens and the installer's: src/ui/ screen kit, panel.rs runner,
+              src/dst/ (disk/, environment, tools, security), src/install/, src/users/
+docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, STORE_FORMAT.md, DST.md, images/
 ```
 
 ## Commands
@@ -86,7 +89,7 @@ cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media
 cargo run -p build -- test        # the six-step Phase 1 suite under QEMU
 cargo run -p build -- test --media iso    # the media steps
-cargo run -p build -- test --media iso --install   # install, boot the disk, reinstall
+cargo run -p build -- test --media iso --install   # automatic install, boot, interactive reinstall
 cargo run -p build -- deny        # cargo-deny + links/cc lockfile check
 cargo clippy --workspace --all-targets    # must be warning-free
 cargo clippy -p slic -p console --all-targets --target x86_64-unknown-linux-musl
@@ -100,7 +103,8 @@ Service console (serial, dev builds): `help`, `srcs [table]`, `hist`, `hw`,
 `lic`, `sysval NAME [VALUE]`, `mode manual|normal`, `screen`, `pwrdwn
 [restart]`, `release`; store: `asp`, `lib ls`, `obj ls|crt|dlt|rnm|mov|dsp|bench`,
 `dtaara get|set`, `dtaq snd|rcv`, `usrspc rd|wr`, `rclstg [*CHECK]`, `chkstg`,
-`txn stats` (`QTEMP/NAME` addresses the temporary ASP). Boot parameters: `qs400.slot=A|B`, `qs400.mode=normal|manual`,
+`txn stats`, `unit add|rmv`, `mirror start|stop|suspend|resume|replace|status`,
+`key NAME`, `type TEXT` (`QTEMP/NAME` addresses the temporary ASP). Boot parameters: `qs400.slot=A|B`, `qs400.mode=normal|manual`,
 `qs400.svc=1`, `qs400.ipl=D`, `qs400.media=iso`.
 
 `QS400_TARGET_DIR` relocates `target/` (use an ext4 path when the repo is on
@@ -126,8 +130,11 @@ otherwise logs go to `target/logs/`.
   always invoked with explicit paths.
 - SRC codes live in one table, `slic/src/src.rs`; see docs/PHASE1.md.
 - Every string a user sees is Quartz-written; never reproduce IBM message
-  or help text. IBM names (system values, SRC families, screen geometry)
-  are the compatibility interface.
+  or help text. IBM names (system values, SRC families, screen geometry,
+  DST menu titles and option numbers) are the compatibility interface.
+- Every DST and installer screen has a golden file under
+  `conformance/golden/`; `QS400_UPDATE_GOLDEN=1 cargo test -p svctools`
+  rewrites them after a deliberate change.
 - IPL state (slots, history, keylock, the IPL subset of the system
   values) stays in `licpart`; everything else persists in the object
   store.

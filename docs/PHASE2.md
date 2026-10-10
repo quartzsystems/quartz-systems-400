@@ -143,13 +143,19 @@ New codes, in the order they appear:
 
 | Code | Phase | Meaning |
 |---|---|---|
-| C1001070 | LIC | ASP units located (`/dev/...3`, size, O_DIRECT or buffered) |
+| C1001070 | LIC | ASP units located (every ASP 1 partition and every whole disk with a unit header) |
+| C1001075 | LIC | Mirrored protection synchronization: a resuming half is copied before the store is used |
 | C1001080 | LIC | Storage management recovery: WAL replayed, count on serial; a blank unit is formatted here |
 | C1001085 | LIC | Storage management recovery failed; followed by B1001040 |
 | C1001087 | LIC | Store release mismatch, both releases on serial; followed by B1001050 |
 | C6001005 | OS | Object store opened |
 | C6001007 | OS | ASP 1 initialized: QSYS, QGPL, QUSRSYS, QSYS2, QRECOVERY, QSPL, QRCL, QHLPSYS (first boot only) |
 | C6001008 | OS | Reclaim storage required (`rclstg_required` set) |
+| C6004001..C6004090 | OS | The LIC install: started, load source partitioned, LIC partition initialized, slot A, slot B, LIC record written, installed |
+| C6004100..C6004190 | OS | The operating system install: pending, ASP 1 initialized, system libraries created, installed |
+| A6001255 | attention | Mirrored unit missing, protection suspended |
+| A6001256 | attention | Mirrored unit not operational, protection suspended |
+| A6001260 | attention | Disk unit not configured (disks beyond the load source at a pending install) |
 | B1001030 | fatal | ASP 1 unit not found on an A or B IPL |
 | B1001040 | fatal | Object store unusable |
 | B1001050 | fatal | Object store created by another release |
@@ -185,46 +191,72 @@ and `build manifest` read the whole 4 GiB.
 
 `build iso` puts the media UKI in the El Torito boot image and the slot
 A and B UKIs beside it as `QS400A.EFI` and `QS400B.EFI`, since the media
-UKI's command line is the D-IPL one. On a D IPL, option 2 of the
-attended menu runs the installer. The display shows it as one dialog
-screen (title, text lines, a prompt field; a notice waits for Enter
-before returning to the menu) and the serial port gets the same text,
-so either keyboard answers it:
+UKI's command line is the D-IPL one. The installer follows the IBM
+sequence; its screens are `svctools::install`'s (golden files under
+`conformance/golden/install/`), the work is `slic/src/ipl/install.rs`.
 
-```
-Install the Operating System
+**Licensed Internal Code.** On a D IPL, option 2 of the attended menu:
+`Install Licensed Internal Code` (1 install, 2 DST, 3 not available),
+`Install Licensed Internal Code (LIC)` (only 2, install and initialize
+the system, works), `Select Load Source Device` (every whole disk, with
+resource name, serial, type and size; disks that carry QS/400 data are
+marked), `Install LIC and Initialize System - Confirmation` (F10), then
+`Initialize the Disk - Status` with a percent bar while the partition
+table and the ESP are written, and `Install Licensed Internal Code -
+Status` ticking off the partitioning, the LIC partition, the two slots
+and the LIC record. Serial sees the same steps as C6004001 to C6004090.
+The LIC record is written with the operating system install pending,
+and the system re-IPLs. Option 4 does the same onto the first disk with
+no prompts and marks the pending install automatic.
 
-Select the disk unit to install on:
+**The operating system.** The next IPL, from the media or from the disk
+alike, finds the pending install (C6004100). An automatic one runs at
+once. Otherwise the IPL lands in DST (sign-on; `A6001260 Disk unit not
+configured` when disks beyond the load source are present), where
+option 2 runs `Install Device Type Selection` (only optical), `Confirm
+Install of the Operating System` (F10), `Select a Language Group` (2924
+English; the table takes more), `Confirm Language Feature Selection`
+(F10) and `Install the Operating System - Status`: ASP 1 is formatted,
+QSYS and the system libraries created (C6004110, C6004120). The IPL
+goes on; once the system values exist, `IPL Options` (date, time and the
+seven choices, kept in the LIC record under TLV 0x0104; only `Start
+print writers` acts, through `QSTRPRTWTR`) and, when asked, `Set Major
+System Options` (`QAUTOCFG`, `QDEVNAMING`, `QSPCENV`). C6004190 clears
+the pending stage and the IPL reaches sign-on. An automatic install
+takes every default and asks nothing.
 
-  1. DD001  vda       4096 MiB  (QS/400 partitions present)
+The disks come from `/sys/class/block`; the UKIs are read from the first
+optical device whose ISO 9660 volume id starts with `QS400`. The
+partition table is written with `diskimg::write_image_with` (random
+GUIDs, progress per chunk), the kernel re-reads it (`BLKRRPART`), and a
+D IPL that had the target disk's LIC partition open first swaps that
+handle for an in-memory copy of the record, since the kernel refuses
+`BLKRRPART` while a partition on the disk is open.
 
-Selection (0 to return): 1
+## Mirrored protection and Dedicated Service Tools
 
-Install on /dev/vda (4096 MiB)? All data on it will be lost.
-Type YES to continue: YES
-Licensed Internal Code read from the media (... and ... bytes)
-Writing partition table and licensed internal code to /dev/vda (ESP 256 MiB, LIC 64 MiB, ASP 1 3774 MiB)
-Initializing the LIC partition
-Initializing ASP 1
-ASP 1 initialized: 966144 pages, QSYS is 0001-0001-0000000000000001-00000000
+Addendum 2.5 added mirrored pairs to the store, Dedicated Service Tools,
+and the install flow above. The unit table is version 2 (every unit
+carries its state, usable size, partner and serial; see
+STORE_FORMAT.md §4 and §5); DST and the service tools user IDs are
+described in DST.md. In short:
 
-Installation complete. Remove the installation media and press Enter to power down.
-```
-
-The disks come from `/sys/class/block` (whole disks, no loop, RAM or
-optical devices), the resource name from the hardware table. The UKIs
-are read from the first optical device whose ISO 9660 volume id starts
-with `QS400`. The partition table is written with `diskimg::write_image`
-(random GUIDs), the kernel re-reads it (`BLKRRPART`), the LIC record is
-initialized with the current system values, and ASP 1 is formatted and
-bootstrapped exactly as a first boot would. Then power down; the next
-IPL from the disk opens the store (C1001080, C6001005) and reaches
-sign-on. No dedicated service tools yet.
-
-Installing over an installed disk works too: a D IPL attaches the
-disk's LIC partition at C1001010, and the kernel refuses `BLKRRPART`
-while a partition on the disk is open, so the installer first swaps
-that handle for an in-memory copy of the record.
+- A span is one unprotected unit or a mirrored pair. Writes go to both
+  halves and `flush` waits for both; reads alternate; a page that fails
+  verification on one half is read from the other and rewritten;
+  `chkstg` compares the halves. A half that fails I/O is taken out of
+  service (A6001256); a half not found at IPL leaves the pair running on
+  one half (A6001255); a missing unprotected unit stops the IPL with
+  B1001030 and the service tools.
+- A suspended or returned half is resumed in 1 MiB chunks, in the
+  background from the run loop, with the chunk bitmap journaled in the
+  LIC partition (offset 1 MiB) so a crash continues where it stopped; a
+  half found resuming at IPL is synchronized before the store is used
+  (C1001075).
+- Units are added, removed (their data moved off first), paired and
+  dissolved through DST; the service console has `unit` and `mirror`
+  commands for the same operations, and `key`, `type` and `screen` to
+  drive any screen over serial.
 
 ## Service console
 
@@ -269,11 +301,15 @@ Harness level (`build test`), after the Phase 1 steps:
 | 8 sysval in store | QSECURITY is 50 from `*SYSVAL`; `lic` shows tag 0x0101 and no 0x0100 |
 | 9 object bench | `obj bench N`, `rclstg *CHECK` clean, `pwrdwn restart`, the next IPL replays 0 |
 | 10 power pulls | per seed: boot, `obj bench 200000`, kill QEMU after 1.5 to 7.5 s, boot, C1001080, `chkstg` 0 bad, `rclstg *CHECK` 0 problems, the QBENCH counts are a state only whole committed batches leave (equal, or emptied in library order by the leftover delete), at most 200000 in all |
+| 11 mirrored pair | `mirror start 0 /dev/vdb` with a second blank disk, `mirror resume 1` to completion, `asp` shows two Active halves and `protection: mirrored`, `chkstg` clean across a restart; boot without the second disk: A6001255, `asp` shows Missing, an object is created on one half; boot with it again: Suspended, `mirror resume 1`, `chkstg` and `rclstg *CHECK` clean, the object is there |
+| 12 DST sign-on | `mode manual`, restart, option 3, a wrong password, QSECOFR's expired default, the forced change, the main menu, each screen equal to its golden file, option 1 IPLs, the LIC record holds the user IDs (tag 0x0102) |
 
 `build test` runs the bench with 20,000 objects and 3 pulls;
 `--bench 1000000 --pulls 10` is the CI size and `--pulls 100` the local
-one. `build test --media iso --install` installs onto a blank 4 GiB disk,
-boots it, then installs over it again from the media.
+one. `build test --media iso --install` installs onto a blank 4 GiB disk
+with option 4 (automatic), boots it alone, then installs over it again
+interactively through every screen over serial, including the DST
+sign-on the re-IPL lands in and the IPL options.
 
 ## Numbers
 
@@ -309,8 +345,16 @@ cargo test -p store                       # unit, property and crash tests
   nothing adds a unit or mirrors (`mirror_of` is stored and ignored).
 - No journaling, no authority enforcement, no jobs: headers carry the
   fields; nothing acts on them (`MIGRATE(phase6)`, `MIGRATE(phase5)`).
-- No DST menus; the installer is one dialog screen on the display and
-  the same text on serial.
+- DST implements the disk, environment, service tool and security
+  menus; `Work with Licensed Internal Code`, console mode, save and
+  restore storage, remote service, partitions, capacity and batch
+  restricted state are not available. Display/alter/dump displays only.
+- One ASP; units are mirrored in pairs or unprotected. Device parity is
+  a trait with no implementation (no capable controllers); software
+  RAID is out of scope. Only the last unit can leave the configuration.
+- The installer offers optical media only and the English language
+  group; the IPL options other than `Start print writers` are kept for
+  Phase 5.
 - `*USRIDX` entries are at most the key plus 1024 bytes; user spaces at
   most 16 MiB; a queue reclaims space only when it empties.
 - Locks are in-process and per caller-supplied job handle.

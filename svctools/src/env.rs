@@ -8,6 +8,10 @@
 //! have defaults that report nothing, so panels can land before their
 //! data does.
 
+use console::Screen;
+
+use crate::install::lic::LicEvent;
+use crate::install::options::{IplOptions, MajorOptions};
 use crate::users::UserDb;
 
 /// A configured disk unit, as the disk configuration displays show it.
@@ -153,6 +157,60 @@ pub trait DstEnv {
         let _ = (unit, device);
         Err("not available".into())
     }
+    /// Show a screen while a long action runs.
+    fn show(&mut self, screen: Screen) {
+        let _ = screen;
+    }
+    /// Every whole disk, configured or not, for the load source choice.
+    fn disks(&mut self) -> Vec<NonConfigured> {
+        self.nonconfigured()
+    }
+    /// Install the Licensed Internal Code on `device`: partition it,
+    /// initialize the LIC partition, copy both slots, write the record
+    /// marking the operating system install pending (automatic when
+    /// `auto`). `report` is called as the work proceeds.
+    fn install_lic(
+        &mut self,
+        device: &str,
+        auto: bool,
+        report: &mut dyn FnMut(LicEvent, &mut dyn DstEnv),
+    ) -> Result<(), String> {
+        let _ = (device, auto, report);
+        Err("not available".into())
+    }
+    /// Initialize ASP 1 and create the system libraries and values;
+    /// `report` is called with each step of `OS_STEPS` as it completes.
+    fn install_os(&mut self, report: &mut dyn FnMut(usize, &mut dyn DstEnv)) -> Result<(), String> {
+        let _ = report;
+        Err("not available".into())
+    }
+    /// The clock as `YYYY-MM-DD` and `HH:MM:SS`.
+    fn clock(&mut self) -> (String, String) {
+        ("2026-01-01".into(), "00:00:00".into())
+    }
+    /// Set the clock from `YYYY-MM-DD` and `HH:MM:SS`.
+    fn set_clock(&mut self, date: &str, time: &str) -> Result<(), String> {
+        let _ = (date, time);
+        Ok(())
+    }
+    /// The IPL options.
+    fn ipl_options(&mut self) -> IplOptions {
+        IplOptions::default()
+    }
+    /// Record the IPL options.
+    fn set_ipl_options(&mut self, options: &IplOptions) -> Result<(), String> {
+        let _ = options;
+        Ok(())
+    }
+    /// The major system options.
+    fn major_options(&mut self) -> MajorOptions {
+        MajorOptions::default()
+    }
+    /// Record the major system options.
+    fn set_major_options(&mut self, options: &MajorOptions) -> Result<(), String> {
+        let _ = options;
+        Ok(())
+    }
     /// Controllers that provide device parity protection, one line
     /// each. None in this release: hardware parity waits on a later
     /// phase, software parity is out of scope.
@@ -238,6 +296,8 @@ pub struct MemEnv {
     pub flags: SecurityFlags,
     /// Actions taken, for assertions.
     pub actions: Vec<String>,
+    /// Screens shown during long actions, as dumps.
+    pub shown: Vec<String>,
     seed: u64,
 }
 
@@ -321,6 +381,50 @@ impl DstEnv for MemEnv {
     }
     fn set_asp_threshold(&mut self, percent: u8) -> Result<(), String> {
         self.actions.push(format!("threshold {percent}"));
+        Ok(())
+    }
+    fn show(&mut self, screen: Screen) {
+        self.shown.push(screen.dump());
+    }
+    fn install_lic(
+        &mut self,
+        device: &str,
+        auto: bool,
+        report: &mut dyn FnMut(LicEvent, &mut dyn DstEnv),
+    ) -> Result<(), String> {
+        self.actions
+            .push(format!("install-lic {device} auto={auto}"));
+        for p in [0, 50, 100] {
+            report(LicEvent::DiskPercent(p), self);
+        }
+        for i in 0..crate::install::LIC_STEPS.len() {
+            report(LicEvent::StepDone(i), self);
+        }
+        Ok(())
+    }
+    fn install_os(&mut self, report: &mut dyn FnMut(usize, &mut dyn DstEnv)) -> Result<(), String> {
+        self.actions.push("install-os".into());
+        for i in 0..crate::install::OS_STEPS.len() {
+            report(i, self);
+        }
+        Ok(())
+    }
+    fn set_clock(&mut self, date: &str, time: &str) -> Result<(), String> {
+        self.actions.push(format!("clock {date} {time}"));
+        Ok(())
+    }
+    fn set_ipl_options(&mut self, options: &IplOptions) -> Result<(), String> {
+        self.actions
+            .push(format!("ipl-options {:?}", options.encode()));
+        Ok(())
+    }
+    fn set_major_options(&mut self, options: &MajorOptions) -> Result<(), String> {
+        self.actions.push(format!(
+            "major {} {} {}",
+            if options.auto_configure { "Y" } else { "N" },
+            options.device_naming,
+            options.special_environment
+        ));
         Ok(())
     }
     fn activity_log(&mut self) -> Vec<LogEntry> {

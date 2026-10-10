@@ -2,29 +2,29 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Option 2 of the attended IPL menu on installation media: pick a disk,
-//! confirm, write the QS/400 layout (ESP with both slots, LIC partition,
-//! ASP 1), initialize the LIC record and ASP 1, and power down so the
-//! system can IPL from the disk. The minimum working installer; no
-//! dedicated service tools yet.
+//! The installer: the Licensed Internal Code onto a load source (menu
+//! option 2 on installation media, or option 4 without prompts), a
+//! re-IPL, then the operating system (ASP 1, the system libraries, the
+//! system values) and the IPL options. The screens are `svctools`'s;
+//! the work is here.
 
 use std::fs::{File, OpenOptions};
-use std::io::Cursor;
 use std::sync::mpsc::Receiver;
 use std::time::Duration;
 
 use blockdev::{BlockDev, LinuxBlockDev};
-use diskimg::locate::DiskInfo;
 use diskimg::{Guids, Plan, fat, iso9660};
-use licpart::{Device, LicPart, SLOT_BYTES};
+use licpart::LicPart;
 use store::{Store, StoreConfig};
-
-use svctools::ui;
+use svctools::install::lic::LicEvent;
+use svctools::{DstEnv, Outcome};
 
 use crate::hwrsrc::Kind;
-use crate::ipl::menu;
+use crate::ipl::dst::Env;
+use crate::ipl::menu::{self, Answer};
 use crate::ipl::system::{System, now_unix};
-use crate::ipl::{Event, power, storage};
+use crate::ipl::{Event, dst, power, storage};
+use crate::src;
 
 /// Slot A's path on the ESP.
 const SLOT_A: &str = "EFI/BOOT/BOOTX64.EFI";
@@ -35,263 +35,241 @@ const MEDIA_UKI_A: &str = "QS400A.EFI";
 /// Slot B's UKI on the media.
 const MEDIA_UKI_B: &str = "QS400B.EFI";
 
-/// Title of every installer screen.
-const TITLE: &str = "Install the Operating System";
-
-/// The installer's text, kept for the console: every line goes to serial
-/// as it is produced and the console shows the whole page again.
-struct Page {
-    lines: Vec<String>,
-}
-
-impl Page {
-    /// Add a line, write it to serial and the kernel console.
-    fn line(&mut self, system: &mut System, text: &str) {
-        system.out.both(&format!("{text}\n"));
-        self.lines.push(text.to_string());
-    }
-
-    /// Show the page on the display, with a prompt field when asked.
-    fn show(&self, system: &mut System, prompt: Option<(&str, usize)>) {
-        let mut lines = self.lines.clone();
-        let screen = match prompt {
-            Some((label, len)) => {
-                lines.push(String::new());
-                let mut s = ui::text(TITLE, &system.system_name(), &lines, None, "");
-                let row = ui::BODY_ROW + lines.len();
-                s.put(row, ui::BODY_COL, label, console::Attr::GREEN);
-                s.field(row, ui::BODY_COL + label.len() + 2, len, false);
-                s.cursor = (row - 1, ui::BODY_COL + label.len() + 1);
-                s
-            }
-            None => ui::text(TITLE, &system.system_name(), &lines, None, ""),
+/// Drive a `svctools` runner until it ends.
+fn drive(env: &mut Env<'_>, mut runner: svctools::Runner, rx: &Receiver<Event>) -> Outcome {
+    loop {
+        let screen = runner.screen(env);
+        menu::show(env.system, screen);
+        let Some(answer) = menu::read(env.system, rx) else {
+            return Outcome::Exit;
         };
-        system.show(crate::ipl::display::Command::ShowScreen(screen));
-    }
-
-    /// Prompt on both outputs and wait for the answer.
-    fn ask(
-        &self,
-        system: &mut System,
-        rx: &Receiver<Event>,
-        label: &str,
-        len: usize,
-    ) -> Option<String> {
-        self.show(system, Some((label, len)));
-        system.out.both(&format!("\n{label}: "));
-        menu::read(system, rx).map(|a| menu::first_field(&a))
-    }
-
-    /// Show a final line and wait for Enter before going back.
-    fn notice(&mut self, system: &mut System, rx: &Receiver<Event>, text: &str) {
-        self.line(system, "");
-        self.line(system, text);
-        self.ask(system, rx, "Press Enter to return to the menu", 1);
+        let outcome = match answer {
+            Answer::Enter(fields) => runner.enter(&fields, env),
+            Answer::Function(n) => runner.function(n, env),
+        };
+        if let Some(o) = outcome {
+            return o;
+        }
     }
 }
 
-/// Run the installer dialog. Returns when the user backs out; a
-/// finished installation powers the system down.
-pub fn run(system: &mut System, rx: &Receiver<Event>) {
-    let mut page = Page { lines: Vec::new() };
-    system.out.both(&format!("\n{TITLE}\n\n"));
-    let disks = match diskimg::locate::whole_disks() {
-        Ok(d) => d,
-        Err(e) => {
-            page.notice(system, rx, &format!("Cannot list disk units: {e}"));
-            return;
+/// Option 2: the LIC install screens. A finished install re-IPLs.
+pub fn run_lic(system: &mut System, rx: &Receiver<Event>) {
+    let mut env = Env::new(system);
+    loop {
+        match drive(&mut env, svctools::install::lic::start(), rx) {
+            Outcome::Reboot => {
+                env.system
+                    .out
+                    .serial("slic: install: re-IPL from the load source\n");
+                power::down(env.system, true);
+            }
+            Outcome::Dst => match dst::run(env.system, rx) {
+                Outcome::PerformIpl => power::down(env.system, true),
+                Outcome::AutoInstall => run_auto(env.system),
+                _ => {}
+            },
+            _ => return,
         }
-    };
-    if disks.is_empty() {
-        page.notice(system, rx, "No disk units found.");
-        return;
     }
-    page.line(system, "Select the disk unit to install on:");
-    page.line(system, "");
-    for (i, d) in disks.iter().enumerate() {
-        let resource = system
-            .hw
-            .resources
-            .iter()
-            .find(|r| r.kind == Kind::Disk && r.location == d.name)
-            .map_or("-----", |r| r.name.as_str());
-        let text = format!(
-            "  {}. {:<6} {:<5} {:>8} MiB  {}{}",
-            i + 1,
-            resource,
-            d.name,
-            d.bytes >> 20,
-            d.model,
-            if d.has_qs400 {
-                "  (QS/400 partitions present)"
+}
+
+/// Option 4: the LIC onto the first disk, no prompts, then re-IPL. On
+/// failure the message goes to serial and the caller's menu returns.
+pub fn run_auto(system: &mut System) {
+    let mut env = Env::new(system);
+    match svctools::install::lic::auto(&mut env) {
+        Ok(()) => {
+            env.system
+                .out
+                .serial("slic: automatic install: LIC written; re-IPL from the load source\n");
+            power::down(env.system, true);
+        }
+        Err(e) => env
+            .system
+            .out
+            .serial(&format!("slic: automatic install: {e}\n")),
+    }
+}
+
+/// The operating system install screens, from DST or the menu. Returns
+/// whether the system was installed.
+pub fn run_os(system: &mut System, rx: &Receiver<Event>) -> bool {
+    let mut env = Env::new(system);
+    matches!(
+        drive(&mut env, svctools::install::os::start(), rx),
+        Outcome::Continue
+    )
+}
+
+/// The operating system without prompts.
+pub fn run_os_auto(system: &mut System) -> Result<(), String> {
+    let mut env = Env::new(system);
+    svctools::install::os::run_install(&mut env, "2924")
+}
+
+/// The IPL options screens, once the system values are loaded.
+pub fn run_options(system: &mut System, rx: &Receiver<Event>) {
+    let mut env = Env::new(system);
+    let _ = drive(&mut env, svctools::install::options::start(), rx);
+}
+
+/// The installation stage recorded on the load source: `Some(auto)`
+/// when the LIC is installed and the operating system is still to come.
+pub fn pending(system: &System) -> Option<bool> {
+    system
+        .lic
+        .as_ref()
+        .map(|(_, r)| &r.header)
+        .filter(|h| h.install_stage == 1)
+        .map(|h| h.auto_install)
+}
+
+/// The operating system is installed: clear the stage.
+pub fn finish(system: &mut System) {
+    let cleared = match system.lic.as_mut() {
+        Some((part, record)) if record.header.install_stage != 0 => {
+            record.header.install_stage = 0;
+            record.header.auto_install = false;
+            part.write(record).map(|_| true).map_err(|e| e.to_string())
+        }
+        _ => Ok(false),
+    };
+    match cleared {
+        Ok(true) => system.emit(&src::INSTALL_OS_COMPLETE),
+        Ok(false) => {}
+        Err(e) => system.out.serial(&format!("slic: LIC write: {e}\n")),
+    }
+}
+
+impl Env<'_> {
+    /// Write the LIC onto `device`, reporting each step.
+    pub(crate) fn write_lic(
+        &mut self,
+        device: &str,
+        auto: bool,
+        report: &mut dyn FnMut(LicEvent, &mut dyn DstEnv),
+    ) -> Result<(), String> {
+        let now = now_unix();
+        let name = device.rsplit('/').next().unwrap_or(device).to_string();
+        self.system.emit(&src::INSTALL_STARTED);
+        let (uki_a, uki_b) = read_media_ukis(self.system)?;
+        let bytes = {
+            let dev = LinuxBlockDev::open(std::path::Path::new(device))
+                .map_err(|e| format!("open {device}: {e}"))?;
+            dev.blocks() * 4096
+        };
+        let plan = Plan::for_bytes(bytes).map_err(|e| e.to_string())?;
+        let esp = fat::build(&fat::DISK_ESP, &[(SLOT_A, &uki_a), (SLOT_B, &uki_b)])
+            .map_err(|e| e.to_string())?;
+        let guids = Guids::from_random([
+            storage::fresh_uuid(),
+            storage::fresh_uuid(),
+            storage::fresh_uuid(),
+            storage::fresh_uuid(),
+        ]);
+        storage::close(self.system);
+        storage::release_lic_on(self.system, &name);
+        let mut file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(device)
+            .map_err(|e| format!("open {device}: {e}"))?;
+        let mut last = 0u8;
+        report(LicEvent::DiskPercent(0), self);
+        diskimg::write_image_with(&mut file, &plan, &guids, &esp, &mut |done, total| {
+            let p = u8::try_from(done * 100 / total.max(1)).unwrap_or(100);
+            if p / 5 != last / 5 {
+                last = p;
+                report(LicEvent::DiskPercent(p), self);
+            }
+        })
+        .map_err(|e| e.to_string())?;
+        file.sync_all().map_err(|e| e.to_string())?;
+        crate::platform::blk::reread_partitions(&file)
+            .map_err(|e| format!("re-read partitions: {e}"))?;
+        drop(file);
+        self.system.emit(&src::INSTALL_PARTITIONED);
+        report(LicEvent::StepDone(0), self);
+        let part = |n: u32| {
+            let sep = if name.ends_with(|c: char| c.is_ascii_digit()) {
+                "p"
             } else {
                 ""
-            }
-        );
-        page.line(system, &text);
-    }
-    let Some(choice) = page.ask(system, rx, "Selection (0 to return)", 2) else {
-        return;
-    };
-    let Ok(n) = choice.trim().parse::<usize>() else {
-        page.notice(system, rx, "Selection is not valid");
-        return;
-    };
-    if n == 0 || n > disks.len() {
-        if n != 0 {
-            page.notice(system, rx, "Selection is not valid");
-        }
-        return;
-    }
-    let disk = disks[n - 1].clone();
-    page.line(system, "");
-    page.line(
-        system,
-        &format!(
-            "Install on {} ({} MiB)? All data on it will be lost.",
-            disk.dev.display(),
-            disk.bytes >> 20
-        ),
-    );
-    let Some(answer) = page.ask(system, rx, "Type YES to continue", 3) else {
-        return;
-    };
-    if answer.trim() != "YES" {
-        page.notice(system, rx, "Installation cancelled");
-        return;
-    }
-    page.lines.clear();
-    page.show(system, None);
-    match install(system, &mut page, &disk) {
-        Ok(()) => {
-            page.line(system, "");
-            page.line(
-                system,
-                "Installation complete. Remove the installation media and press Enter to power down.",
-            );
-            page.ask(system, rx, "Press Enter to power down", 1);
-            power::down(system, false);
-        }
-        Err(e) => page.notice(system, rx, &format!("Installation failed: {e}")),
-    }
-}
-
-/// Write the disk and initialize it, reporting progress on `page`.
-fn install(system: &mut System, page: &mut Page, disk: &DiskInfo) -> Result<(), String> {
-    let now = now_unix();
-    let (uki_a, uki_b) = read_media_ukis(system)?;
-    page.line(
-        system,
-        &format!(
-            "Licensed Internal Code read from the media ({} and {} bytes)",
-            uki_a.len(),
-            uki_b.len()
-        ),
-    );
-    page.show(system, None);
-
-    let plan = Plan::for_bytes(disk.bytes).map_err(|e| e.to_string())?;
-    let esp = fat::build(&fat::DISK_ESP, &[(SLOT_A, &uki_a), (SLOT_B, &uki_b)])
-        .map_err(|e| e.to_string())?;
-    let guids = Guids::from_random([random(), random(), random(), random()]);
-    page.line(
-        system,
-        &format!(
-            "Writing partition table and licensed internal code to {}",
-            disk.dev.display()
-        ),
-    );
-    page.line(
-        system,
-        &format!(
-            "  (ESP {} MiB, LIC {} MiB, ASP 1 {} MiB)",
-            plan.esp.bytes() >> 20,
-            plan.lic.bytes() >> 20,
-            plan.asp1.bytes() >> 20
-        ),
-    );
-    page.show(system, None);
-    release_lic_on(system, disk);
-    let mut file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open(&disk.dev)
-        .map_err(|e| format!("open {}: {e}", disk.dev.display()))?;
-    diskimg::write_image(&mut file, &plan, &guids, &esp).map_err(|e| e.to_string())?;
-    file.sync_all().map_err(|e| e.to_string())?;
-    crate::platform::blk::reread_partitions(&file)
-        .map_err(|e| format!("re-read partitions: {e}"))?;
-    drop(file);
-    let part = |n: u32| {
-        let sep = if disk.name.ends_with(|c: char| c.is_ascii_digit()) {
-            "p"
-        } else {
-            ""
+            };
+            format!("{name}{sep}{n}")
         };
-        format!("{}{sep}{n}", disk.name)
-    };
-    for n in [2, 3] {
-        if !crate::platform::blk::wait_for_block(&part(n), Duration::from_secs(10)) {
-            return Err(format!("partition {} did not appear", part(n)));
+        for n in [2, 3] {
+            if !crate::platform::blk::wait_for_block(&part(n), Duration::from_secs(10)) {
+                return Err(format!("partition {} did not appear", part(n)));
+            }
         }
+        // The LIC partition: a fresh record with the install pending.
+        let lic_dev: File = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(format!("/dev/{}", part(2)))
+            .map_err(|e| e.to_string())?;
+        let (mut part_lic, mut record) = LicPart::init(lic_dev, now).map_err(|e| e.to_string())?;
+        self.system.emit(&src::INSTALL_LIC_PART);
+        report(LicEvent::StepDone(1), self);
+        // Both slots went onto the ESP with the image; the steps are
+        // reported in order for the display.
+        self.system.emit(&src::INSTALL_SLOT_A);
+        report(LicEvent::StepDone(2), self);
+        self.system.emit(&src::INSTALL_SLOT_B);
+        report(LicEvent::StepDone(3), self);
+        if let Some(vals) = self.system.sysvals.as_ref() {
+            vals.store(&mut record).map_err(|e| e.to_string())?;
+        }
+        record.header.install_stage = 1;
+        record.header.auto_install = auto;
+        part_lic.write(&mut record).map_err(|e| e.to_string())?;
+        drop(part_lic);
+        self.system.emit(&src::INSTALL_LIC_RECORD);
+        report(LicEvent::StepDone(4), self);
+        self.system.emit(&src::INSTALL_LIC_COMPLETE);
+        Ok(())
     }
 
-    // LIC record with the current system values.
-    page.line(system, "Initializing the LIC partition");
-    page.show(system, None);
-    let lic_dev: File = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open(format!("/dev/{}", part(2)))
+    /// Initialize ASP 1 on the load source and create the system
+    /// libraries; the system values follow in the OS phase.
+    pub(crate) fn write_os(
+        &mut self,
+        report: &mut dyn FnMut(usize, &mut dyn DstEnv),
+    ) -> Result<(), String> {
+        let now = now_unix();
+        let paths = storage::unit_candidates();
+        let Some(path) = paths.into_iter().next() else {
+            return Err("no ASP 1 partition on the load source".into());
+        };
+        storage::close(self.system);
+        let dev =
+            LinuxBlockDev::open(&path).map_err(|e| format!("open {}: {e}", path.display()))?;
+        let (_, serial) = diskimg::locate::identity(&path);
+        let devs: Vec<Box<dyn BlockDev>> = vec![Box::new(dev)];
+        let mut store = Store::format(
+            devs,
+            &storage::format_params(now, &serial),
+            StoreConfig::default(),
+        )
         .map_err(|e| e.to_string())?;
-    let (mut part_lic, mut record) = LicPart::init(lic_dev, now).map_err(|e| e.to_string())?;
-    if let Some(vals) = system.sysvals.as_ref() {
-        vals.store(&mut record).map_err(|e| e.to_string())?;
-    }
-    part_lic.write(&mut record).map_err(|e| e.to_string())?;
-    drop(part_lic);
-
-    // ASP 1 with QSYS and the system libraries.
-    page.line(system, "Initializing ASP 1");
-    page.show(system, None);
-    let asp_path = std::path::PathBuf::from(format!("/dev/{}", part(3)));
-    let asp_dev = LinuxBlockDev::open(&asp_path).map_err(|e| e.to_string())?;
-    let pages = asp_dev.blocks();
-    let (_, serial) = diskimg::locate::identity(&asp_path);
-    let devs: Vec<Box<dyn BlockDev>> = vec![Box::new(asp_dev)];
-    let mut store = Store::format(
-        devs,
-        &storage::format_params(now, &serial),
-        StoreConfig::default(),
-    )
-    .map_err(|e| e.to_string())?;
-    let qsys = storage::bootstrap(&mut store, now, "QS400").map_err(|e| e.to_string())?;
-    store.close().map_err(|e| e.to_string())?;
-    page.line(
-        system,
-        &format!("ASP 1 initialized: {pages} pages, QSYS is {qsys}"),
-    );
-    Ok(())
-}
-
-/// A D IPL next to an installed disk has that disk's LIC partition open,
-/// and the kernel will not re-read a partition table while a partition
-/// on the disk is open. Keep the record in memory instead.
-fn release_lic_on(system: &mut System, disk: &DiskInfo) {
-    let on_disk = licpart::locate()
-        .ok()
-        .and_then(|p| diskimg::locate::disk_of(&p))
-        .is_some_and(|d| d == disk.name);
-    if !on_disk {
-        return;
-    }
-    if let Some((part, record)) = system.lic.take() {
-        drop(part);
-        let memory: Box<dyn Device> = Box::new(Cursor::new(vec![0u8; 2 * SLOT_BYTES]));
-        system.lic = Some((LicPart::open(memory), record));
-        system
-            .out
-            .serial("slic: LIC partition on the target disk released\n");
+        self.system.emit(&src::INSTALL_ASP);
+        report(0, self);
+        let qsys = storage::bootstrap(&mut store, now, "QS400").map_err(|e| e.to_string())?;
+        self.system.emit(&src::INSTALL_LIBRARIES);
+        report(1, self);
+        self.system.storage = Some(storage::Storage {
+            store,
+            qsys: Some(qsys),
+            fresh: false,
+            recovery: store::Recovery::default(),
+            devices: vec![path],
+            resume: None,
+        });
+        // The *SYSVAL object is created when the values load.
+        report(2, self);
+        Ok(())
     }
 }
 
@@ -330,13 +308,4 @@ fn read_media_ukis(system: &mut System) -> Result<(Vec<u8>, Vec<u8>), String> {
             tried.join("; ")
         }
     ))
-}
-
-fn random() -> [u8; 16] {
-    use std::io::Read as _;
-    let mut b = [0u8; 16];
-    if let Ok(mut f) = File::open("/dev/urandom") {
-        let _ = f.read_exact(&mut b);
-    }
-    b
 }

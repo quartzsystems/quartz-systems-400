@@ -1,7 +1,7 @@
                             Work with ASP Threshold                             
                                                                  System:  QS400 
                                                                                 
- ASP 1 threshold (percent) :90                                                  
+ ASP 1 threshold (percent) : 90                                                 
                                                                                 
  An attention code is raised when ASP 1 is fuller than this.                    
                                                                                 

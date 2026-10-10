@@ -1,0 +1,24 @@
+                            Set Major System Options                            
+                                                                 System:  QS400 
+                                                                                
+ Enable automatic configuration : Y                                             
+ Device configuration naming . :  *NORMAL                                       
+ Default special environment . :  *NONE                                         
+                                                                                
+                                                                                
+ Type choices, press Enter.  Y or N; *NORMAL, *S36 or *DEVADR; *NONE or *S36.   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

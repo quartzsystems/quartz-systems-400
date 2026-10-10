@@ -1,0 +1,24 @@
+                            Select a Language Group                             
+                                                                 System:  QS400 
+                                                                                
+ Type 1 beside the language feature to install, then press Enter.               
+                                                                                
+ Opt  Feature  Language                                                         
+     2924   English                                                             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

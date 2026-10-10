@@ -85,6 +85,37 @@ pub const SYSVALS_LOADED: Src = src("C6001010", "System values loaded", Phase::O
 pub const STRUP_SKIPPED: Src = src("C6001020", "Startup program skipped", Phase::Os);
 /// IPL complete.
 pub const IPL_COMPLETE: Src = src("C6001090", "IPL complete", Phase::Os);
+/// The installer started writing the load source.
+pub const INSTALL_STARTED: Src = src("C6004001", "Install started", Phase::Os);
+/// Partition table and ESP written.
+pub const INSTALL_PARTITIONED: Src = src("C6004010", "Load source partitioned", Phase::Os);
+/// LIC partition initialized.
+pub const INSTALL_LIC_PART: Src = src("C6004020", "LIC partition initialized", Phase::Os);
+/// Slot A holds the Licensed Internal Code.
+pub const INSTALL_SLOT_A: Src = src(
+    "C6004030",
+    "Licensed Internal Code copied to slot A",
+    Phase::Os,
+);
+/// Slot B holds the Licensed Internal Code.
+pub const INSTALL_SLOT_B: Src = src(
+    "C6004040",
+    "Licensed Internal Code copied to slot B",
+    Phase::Os,
+);
+/// LIC record written with the install pending.
+pub const INSTALL_LIC_RECORD: Src = src("C6004050", "LIC record written", Phase::Os);
+/// The LIC install is done; re-IPL.
+pub const INSTALL_LIC_COMPLETE: Src =
+    src("C6004090", "Licensed Internal Code installed", Phase::Os);
+/// The load source has the LIC and waits for the operating system.
+pub const INSTALL_OS_PENDING: Src = src("C6004100", "Operating system install pending", Phase::Os);
+/// ASP 1 formatted by the installer.
+pub const INSTALL_ASP: Src = src("C6004110", "ASP 1 initialized by the installer", Phase::Os);
+/// QSYS and the system libraries created by the installer.
+pub const INSTALL_LIBRARIES: Src = src("C6004120", "System libraries created", Phase::Os);
+/// The operating system install is done.
+pub const INSTALL_OS_COMPLETE: Src = src("C6004190", "Operating system installed", Phase::Os);
 /// Console not found; continuing on serial.
 pub const CONSOLE_MISSING: Src = src(
     "A6005008",
@@ -103,6 +134,8 @@ pub const MIRROR_FAILED: Src = src(
     "Mirrored unit not operational, protection suspended",
     Phase::Attention,
 );
+/// Disks beyond the load source belong to no ASP yet.
+pub const DISK_NOT_CONFIGURED: Src = src("A6001260", "Disk unit not configured", Phase::Attention);
 /// slic panicked.
 pub const PANIC: Src = src("B1001000", "slic panic", Phase::Fatal);
 /// LIC partition not found.
@@ -154,7 +187,19 @@ pub const TABLE: &[Src] = &[
     SYSVALS_LOADED,
     STRUP_SKIPPED,
     IPL_COMPLETE,
+    INSTALL_STARTED,
+    INSTALL_PARTITIONED,
+    INSTALL_LIC_PART,
+    INSTALL_SLOT_A,
+    INSTALL_SLOT_B,
+    INSTALL_LIC_RECORD,
+    INSTALL_LIC_COMPLETE,
+    INSTALL_OS_PENDING,
+    INSTALL_ASP,
+    INSTALL_LIBRARIES,
+    INSTALL_OS_COMPLETE,
     CONSOLE_MISSING,
+    DISK_NOT_CONFIGURED,
     MIRROR_MISSING,
     MIRROR_FAILED,
     PANIC,

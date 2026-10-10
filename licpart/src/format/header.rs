@@ -116,6 +116,11 @@ pub struct Header {
     pub abnormal_count: u32,
     /// Unix time of first initialization.
     pub install_time: u64,
+    /// 0 when the system is installed; 1 when the LIC is installed and
+    /// the operating system install is still to come.
+    pub install_stage: u8,
+    /// The pending operating system install runs without prompts.
+    pub auto_install: bool,
 }
 
 impl Header {
@@ -131,6 +136,8 @@ impl Header {
             ipl_count: 0,
             abnormal_count: 0,
             install_time,
+            install_stage: 0,
+            auto_install: false,
         }
     }
 
@@ -141,7 +148,8 @@ impl Header {
         out.push(self.last_slot.as_u8());
         out.push(self.last_good_slot.as_u8());
         out.push(self.next_mode.map_or(0, |m| m.as_u8() + 1));
-        out.extend_from_slice(&[0, 0]); // reserved
+        out.push(self.install_stage);
+        out.push(u8::from(self.auto_install));
         put_u32(out, self.ipl_count);
         put_u32(out, self.abnormal_count);
         put_u64(out, self.install_time);
@@ -161,7 +169,8 @@ impl Header {
             0 => None,
             v => Some(IplMode::from_u8(v - 1)?),
         };
-        r.bytes(2)?; // reserved
+        let install_stage = r.u8()?;
+        let auto_install = r.u8()? & 1 != 0;
         Ok(Self {
             ipl_in_progress,
             last_ipl_type,
@@ -172,6 +181,8 @@ impl Header {
             ipl_count: r.u32()?,
             abnormal_count: r.u32()?,
             install_time: r.u64()?,
+            install_stage,
+            auto_install,
         })
     }
 }

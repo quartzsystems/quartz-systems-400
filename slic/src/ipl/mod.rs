@@ -101,7 +101,7 @@ pub fn run() -> ! {
     if let Err(fatal) = lic_phase(&mut system, &rx, &tx) {
         system.fatal(fatal);
     }
-    os_phase(&mut system);
+    os_phase(&mut system, &rx);
     run_loop(&mut system, &rx)
 }
 
@@ -128,9 +128,16 @@ fn lic_phase(
     // The display first, so a missing disk unit can be worked on in DST.
     display::attach(system, tx.clone());
 
+    // A load source with the LIC but no operating system yet: install
+    // it now, from the media or the disk alike.
+    let installing = install::pending(system).is_some();
+    if installing {
+        pending_install(system, rx)?;
+    }
+
     // A D IPL may be about to install onto the disk, so its store opens
     // only after the menu.
-    if !system.boot.ipl_d {
+    if !system.boot.ipl_d && !installing {
         open_or_service(system, rx)?;
     }
 
@@ -145,10 +152,10 @@ fn lic_phase(
     }
     system.emit(&src::CLOCK_SET);
 
-    if system.mode == IplMode::Manual {
+    if system.mode == IplMode::Manual && !installing {
         menu::run(system, rx);
     }
-    if system.boot.ipl_d {
+    if system.boot.ipl_d && system.storage.is_none() {
         storage::locate_and_open(system)?;
     }
 
@@ -169,6 +176,54 @@ fn lic_phase(
     }
     system.emit(&src::NET_ENUMERATED);
     Ok(())
+}
+
+/// C6004100: the operating system install the LIC install left
+/// pending. Without prompts when the LIC install was automatic;
+/// otherwise through DST, where option 2 installs and option 1 IPLs.
+fn pending_install(
+    system: &mut System,
+    rx: &mpsc::Receiver<Event>,
+) -> Result<(), &'static src::Src> {
+    let mut auto = install::pending(system).unwrap_or(false);
+    system.emit(&src::INSTALL_OS_PENDING);
+    if !auto {
+        let spare = diskimg::locate::whole_disks()
+            .unwrap_or_default()
+            .iter()
+            .filter(|d| !d.has_qs400)
+            .count();
+        if spare > 0 {
+            system.emit(&src::DISK_NOT_CONFIGURED);
+        }
+    }
+    loop {
+        if auto {
+            return match install::run_os_auto(system) {
+                Ok(()) => Ok(()),
+                Err(e) => {
+                    system.out.serial(&format!("slic: install: {e}\n"));
+                    Err(&src::ASP_UNUSABLE)
+                }
+            };
+        }
+        match dst::run(system, rx) {
+            dst::Outcome::InstallOs => {
+                if install::run_os(system, rx) {
+                    return Ok(());
+                }
+            }
+            dst::Outcome::AutoInstall => auto = true,
+            dst::Outcome::PerformIpl => power::down(system, true),
+            dst::Outcome::Exit => {
+                system
+                    .out
+                    .both("slic: IPL halted; the operating system is not installed\n");
+                park();
+            }
+            _ => {}
+        }
+    }
 }
 
 /// Open the store; on a missing disk unit, B1001030 and the service
@@ -198,8 +253,9 @@ fn open_or_service(
     }
 }
 
-/// C6001000 through C6001090.
-fn os_phase(system: &mut System) {
+/// C6001000 through C6001090. A fresh install asks for the IPL options
+/// once the system values exist.
+fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>) {
     system.emit(&src::OS_STARTED);
     if let Err(fatal) = storage::open_objects(system) {
         system.fatal(fatal);
@@ -207,6 +263,12 @@ fn os_phase(system: &mut System) {
     storage::open_temp(system);
     sysvals::load(system);
     system.emit(&src::SYSVALS_LOADED);
+    if let Some(auto) = install::pending(system) {
+        if !auto {
+            install::run_options(system, rx);
+        }
+        install::finish(system);
+    }
     system.emit(&src::STRUP_SKIPPED);
     lic::complete(system);
     system.emit(&src::IPL_COMPLETE);

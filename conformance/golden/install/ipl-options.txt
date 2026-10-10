@@ -1,0 +1,24 @@
+                                  IPL Options                                   
+                                                                 System:  QS400 
+                                                                                
+ System date . . . . . . . . . . . :  2026-01-01                                
+ System time . . . . . . . . . . . :  00:00:00                                  
+ Set major system options . . . . . : Y                                         
+ Define or change the system at IPL : N                                         
+ Clear job queues . . . . . . . . . : N                                         
+ Clear output queues . . . . . . . :  N                                         
+ Clear incomplete job logs . . . . :  N                                         
+ Start print writers . . . . . . . :  Y                                         
+ Start system to restricted state . : N                                         
+                                                                                
+ Type choices, press Enter.  Date YYYY-MM-DD, time HH:MM:SS, options Y or N.    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

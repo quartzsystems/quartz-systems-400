@@ -563,6 +563,28 @@ pub fn fresh_uuid() -> [u8; 16] {
     random_bytes()
 }
 
+/// A D IPL next to an installed disk has that disk's LIC partition open,
+/// and the kernel will not re-read a partition table while a partition
+/// on the disk is open. Keep the record in memory instead.
+pub fn release_lic_on(system: &mut System, disk: &str) {
+    let on_disk = licpart::locate()
+        .ok()
+        .and_then(|p| diskimg::locate::disk_of(&p))
+        .is_some_and(|d| d == disk);
+    if !on_disk {
+        return;
+    }
+    if let Some((part, record)) = system.lic.take() {
+        drop(part);
+        let memory: Box<dyn Device> =
+            Box::new(std::io::Cursor::new(vec![0u8; 2 * licpart::SLOT_BYTES]));
+        system.lic = Some((LicPart::open(memory), record));
+        system
+            .out
+            .serial("slic: LIC partition on the target disk released\n");
+    }
+}
+
 /// D1001010: checkpoint and close the store, release the unit.
 pub fn close(system: &mut System) {
     if let Some(storage) = system.storage.take() {
