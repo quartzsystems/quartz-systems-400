@@ -17,12 +17,18 @@ pub mod alloc;
 pub mod asp;
 pub mod btree;
 mod bytes;
+pub mod cache;
 mod error;
 pub mod obj;
 pub mod page;
 pub mod spec;
+mod store;
+pub mod txn;
+pub mod wal;
 
 pub use asp::{Asp, FormatParams};
 pub use error::{Result, StoreError};
 pub use page::pager::{MemPager, PageNo, Pager};
 pub use page::{BODY_SIZE, PAGE_SIZE, Page, PageType};
+pub use store::{Recovery, Store, StoreConfig, StoreStats};
+pub use txn::Txn;

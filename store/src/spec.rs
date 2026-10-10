@@ -53,5 +53,10 @@ pub fn layouts() -> Vec<&'static Layout> {
         &crate::alloc::tree::LEN_LAYOUT,
         &crate::alloc::freelog::HEADER_LAYOUT,
         &crate::alloc::freelog::ENTRY_LAYOUT,
+        &crate::wal::PAGE_HEADER_LAYOUT,
+        &crate::wal::record::RECORD_LAYOUT,
+        &crate::wal::record::ROOT_LAYOUT,
+        &crate::wal::record::IMAGE_LAYOUT,
+        &crate::wal::record::PATCH_LAYOUT,
     ]
 }

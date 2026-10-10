@@ -70,6 +70,12 @@ impl AspIo {
         Ok(())
     }
 
+    /// Flush one unit.
+    pub fn flush_unit(&mut self, unit: u16) -> Result<()> {
+        self.devs[usize::from(unit)].flush()?;
+        Ok(())
+    }
+
     /// Flush every unit.
     pub fn flush(&mut self) -> Result<()> {
         for d in &self.devs {

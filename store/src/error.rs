@@ -78,6 +78,23 @@ pub enum StoreError {
         what: String,
     },
 
+    /// A transaction's WAL record does not fit the ring.
+    #[error("transaction of {bytes} bytes exceeds the {ring_bytes}-byte WAL")]
+    TxnTooLarge {
+        /// Record size.
+        bytes: usize,
+        /// Ring capacity.
+        ring_bytes: usize,
+    },
+
+    /// A write failed after the store changed its mind: the store is
+    /// closed to further use.
+    #[error("store is unusable after a failed {op}")]
+    Broken {
+        /// What failed.
+        op: &'static str,
+    },
+
     /// The ASP has no free pages.
     #[error("no space left in ASP {asp}")]
     NoSpace {

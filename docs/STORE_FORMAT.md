@@ -206,7 +206,96 @@ The unit table follows at body offset 256: `unit_count` entries.
 
 ## 6. WAL
 
-`TODO(phase2)`: written before transactions.
+A ring of `wal_pages` pages on unit 0 from `wal_start`, reserved at
+format. Every transaction appends one record and flushes; the record is
+committed when its last page is intact. Pages are numbered by a sequence
+`seq` that never wraps; page `seq` lives at ring index `seq mod
+wal_pages`. `wal_tail` in the superblock is the sequence of the first
+page recovery reads; `wal_head` is the next sequence to write at the
+time of the checkpoint.
+
+A record is `total_len` payload bytes split over consecutive pages,
+4032 bytes each. Commit order: the transaction's copy-on-write pages
+and every record page but the last are written and every unit flushed;
+then the last page is written and unit 0 flushed. So a valid last page
+(page CRC, `seq`, `last` flag, `record_crc` over the payload) proves
+the whole transaction is durable.
+
+Recovery reads from `wal_tail`: a page whose CRC fails or whose `seq`
+is not the expected one (a page from an earlier lap of the ring, or
+never written) ends the log, as does a record with no valid last page.
+Every complete record before that point is replayed in order, then a
+checkpoint is taken.
+
+### `WalPageHeader` (32 bytes)
+
+At offset 0 of the body; payload from offset 32.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | seq | page sequence number |
+| 8 | 8 | txn | transaction ID |
+| 16 | 4 | total_len | payload bytes of the record |
+| 20 | 4 | offset | this page's position in the payload |
+| 24 | 2 | len | payload bytes in this page, at most 4032 |
+| 26 | 2 | flags | bit 0 first page, bit 1 last page |
+| 28 | 4 | record_crc | CRC32C of the whole payload, checked on the last page |
+
+### `WalRecord` (32 bytes)
+
+At offset 0 of the payload, followed by the entries in this order:
+`root_count` roots, `alloc_count` allocations and `free_count` frees
+(both in the `FreeLogEntry` layout), `image_count` page images and
+`patch_count` patches.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | txn | repeated |
+| 8 | 8 | next_serial | object serial counter after this transaction |
+| 16 | 2 | root_count | |
+| 18 | 2 | alloc_count | |
+| 20 | 2 | free_count | |
+| 22 | 2 | image_count | |
+| 24 | 4 | patch_count | |
+| 28 | 4 | reserved | 0 |
+
+### `RootEntry` (24 bytes)
+
+A tree root published by the transaction. Owner zero is the object
+directory; a library's directory root is published through its header
+page instead (a patch).
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 16 | owner | `ObjectId` |
+| 16 | 8 | root | page, 0 for empty |
+
+### `ImageEntry` (4104 bytes)
+
+The whole page as written, for the first in-place change of a page
+since the last checkpoint. Recovery writes it back as is, so a torn
+in-place write is repaired.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | page | |
+| 8 | 4096 | image | the page, trailer included |
+
+### `PatchEntry` (variable)
+
+An in-place change to a page already imaged since the last checkpoint.
+Recovery applies the bytes to the body and reseals the page.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | page | |
+| 8 | 2 | offset | body offset |
+| 10 | 2 | len | bytes |
+| 12 | len | bytes | |
+
+In-place changes are for the objects where rewriting a page per update
+is wrong (data areas, data queues, user spaces). A page is imaged on its
+first in-place change after a checkpoint, then patched.
 
 ## 7. Free space
 

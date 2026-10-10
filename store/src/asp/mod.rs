@@ -253,6 +253,9 @@ impl Asp {
     pub fn checkpoint(&mut self) -> Result<()> {
         let generation = self.sb.generation + 1;
         let roots = self.alloc.prepare_checkpoint(&mut self.io, generation)?;
+        // Everything the superblock will point at, and every in-place
+        // write the WAL tail will no longer cover, must be durable first.
+        self.io.flush()?;
         self.sb.generation = generation;
         self.sb.alloc_root = roots.alloc_root;
         self.sb.free_log_head = roots.free_log_head;
@@ -309,6 +312,11 @@ impl Asp {
     /// Free a run. See [`Allocator::free`].
     pub fn free(&mut self, start: PageNo, len: u64) -> Result<()> {
         self.alloc.free(start, len)
+    }
+
+    /// The allocator, for the transaction layer.
+    pub fn allocator_mut(&mut self) -> &mut Allocator {
+        &mut self.alloc
     }
 
     /// Free pages now, the checkpoint reserve included.

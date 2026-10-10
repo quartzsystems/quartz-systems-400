@@ -268,6 +268,56 @@ impl Allocator {
         Ok(())
     }
 
+    /// Redo an allocation from the WAL: the pages must be free.
+    pub fn replay_alloc(&mut self, e: Extent) -> Result<()> {
+        let bm = self
+            .bitmaps
+            .get_mut(usize::from(e.unit))
+            .ok_or_else(|| StoreError::Corrupt {
+                page: 0,
+                what: format!("WAL allocation on unit {}", e.unit),
+            })?;
+        if e.len == 0 || e.end() > bm.pages() || (e.lba..e.end()).any(|p| !bm.is_free(p)) {
+            return Err(StoreError::Corrupt {
+                page: self.layout.logical(e.unit, e.lba),
+                what: format!("WAL allocation {e:?} of pages that are not free"),
+            });
+        }
+        bm.clear(e.lba, e.len);
+        self.allocs.insert(e);
+        Ok(())
+    }
+
+    /// Redo a free from the WAL.
+    pub fn replay_free(&mut self, e: Extent) -> Result<()> {
+        self.free(self.layout.logical(e.unit, e.lba), e.len)
+    }
+
+    /// Undo an allocation of an aborted transaction: nothing durable
+    /// refers to the pages, so they are free at once.
+    pub fn rollback_alloc(&mut self, start: PageNo, len: u64) {
+        let (unit, lba) = self.layout.locate(start).expect("own run");
+        self.bitmaps[usize::from(unit)].set(lba, len);
+        self.allocs.remove(Extent { unit, lba, len });
+    }
+
+    /// Undo a free of an aborted transaction.
+    pub fn rollback_free(&mut self, start: PageNo, len: u64) {
+        let (unit, lba) = self.layout.locate(start).expect("own run");
+        self.pending.remove(Extent { unit, lba, len });
+    }
+
+    /// Unit coordinates of a logical run.
+    #[must_use]
+    pub fn extent_of(&self, run: Run) -> Extent {
+        let (unit, lba) = self.layout.locate(run.start).expect("own run");
+        Extent {
+            unit,
+            lba,
+            len: run.len,
+        }
+    }
+
     /// Free pages now, all units, the checkpoint reserve included.
     #[must_use]
     pub fn total_free(&self) -> u64 {

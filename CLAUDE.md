@@ -57,7 +57,8 @@ slic/         PID 1: src/ipl/ state machine, src/hwrsrc/, src/net/, src/svc/,
 conformance/  QEMU harness: src/qemu/ (session, qmp, serial, firmware), src/steps.rs
 release/      VxRyMz identity, build ID, PTF names (one source of truth)
 blockdev/     BlockDev trait, AlignedBuf, Linux O_DIRECT backend, MemBlockDev with faults
-store/        object store: src/page/ (trailer, pager), src/btree/ (CoW tree), src/obj/
+store/        object store: src/page/, src/btree/, src/asp/ (units, superblock),
+              src/alloc/ (bitmaps, free tree), src/wal/, txn.rs, store.rs, cache.rs, src/obj/
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, STORE_FORMAT.md, images/
 ```
 

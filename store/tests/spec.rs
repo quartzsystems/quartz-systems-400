@@ -24,12 +24,9 @@ fn parse_size(s: &str) -> Option<usize> {
 }
 
 fn parse_offset_or_size(s: &str) -> Option<usize> {
-    // "key_len" and "key_len + 2" are key-relative; the test only checks
-    // that the code also treats them as such.
-    if s.starts_with("key_len") {
-        return None;
-    }
-    Some(s.parse().expect("number"))
+    // Anything that is not a number ("key_len", "key_len + 2", "len")
+    // is variable; the test only checks that the code agrees.
+    s.parse().ok()
 }
 
 fn parse(md: &str) -> BTreeMap<String, SpecTable> {
