@@ -144,7 +144,7 @@ impl Wal {
                 txn,
             )?;
         }
-        io.flush_unit(0)?;
+        io.flush_span(0)?;
         self.head += n;
         Ok(())
     }

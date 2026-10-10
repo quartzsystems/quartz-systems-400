@@ -49,6 +49,7 @@ fn fixture() -> Fixture {
         asp_number: 1,
         asp_uuid: [3; 16],
         unit_uuids: vec![[4; 16]],
+        unit_serials: Vec::new(),
         wal_pages: 256,
         now: 1_767_225_600,
     };

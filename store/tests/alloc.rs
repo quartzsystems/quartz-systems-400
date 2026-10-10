@@ -37,6 +37,7 @@ fn params(units: usize) -> FormatParams {
         unit_uuids: (0..units)
             .map(|i| [u8::try_from(i + 1).unwrap(); 16])
             .collect(),
+        unit_serials: Vec::new(),
         wal_pages: WAL,
         now: 1_767_225_600,
     }
@@ -80,7 +81,7 @@ fn format_and_reopen() {
     // Reopen with the units in the other order.
     let mut rev = devs.clone();
     rev.reverse();
-    let asp = Asp::open(boxed(&rev)).unwrap();
+    let (asp, _) = Asp::open(boxed(&rev)).unwrap();
     assert_eq!(asp.total_free(), free);
     assert_eq!(asp.layout().unit_count(), 2);
     assert_eq!(asp.layout().span(1).start, 2048);
@@ -201,7 +202,7 @@ fn random_allocations_never_overlap_and_reconcile() {
                 }
                 let before = free_set(&asp);
                 drop(asp);
-                asp = Asp::open(boxed(&devs)).unwrap();
+                asp = Asp::open(boxed(&devs)).unwrap().0;
                 assert_eq!(
                     free_set(&asp),
                     before,
@@ -312,7 +313,7 @@ fn torn_or_dropped_writes_during_checkpoint_keep_a_valid_state() {
             d.tear_at(None);
             d.fail_after(None);
         }
-        let asp = Asp::open(boxed(&devs))
+        let (asp, _) = Asp::open(boxed(&devs))
             .unwrap_or_else(|e| panic!("reopen after tear at write {k}: {e}"));
         match asp.superblock().generation {
             1 => assert_eq!(
@@ -357,7 +358,7 @@ fn torn_superblock_falls_back_to_the_other_copy() {
         d.write(2, &buf).unwrap();
         d.flush().unwrap();
     }
-    let asp = Asp::open(boxed(&devs)).unwrap();
+    let asp = Asp::open(boxed(&devs)).unwrap().0;
     assert_eq!(asp.superblock().generation, 2);
     assert_eq!(free_set(&asp), after_two);
 }

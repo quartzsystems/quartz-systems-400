@@ -245,12 +245,17 @@ fn install(system: &mut System, page: &mut Page, disk: &DiskInfo) -> Result<(), 
     // ASP 1 with QSYS and the system libraries.
     page.line(system, "Initializing ASP 1");
     page.show(system, None);
-    let asp_dev = LinuxBlockDev::open(std::path::Path::new(&format!("/dev/{}", part(3))))
-        .map_err(|e| e.to_string())?;
+    let asp_path = std::path::PathBuf::from(format!("/dev/{}", part(3)));
+    let asp_dev = LinuxBlockDev::open(&asp_path).map_err(|e| e.to_string())?;
     let pages = asp_dev.blocks();
+    let (_, serial) = diskimg::locate::identity(&asp_path);
     let devs: Vec<Box<dyn BlockDev>> = vec![Box::new(asp_dev)];
-    let mut store = Store::format(devs, &storage::format_params(now), StoreConfig::default())
-        .map_err(|e| e.to_string())?;
+    let mut store = Store::format(
+        devs,
+        &storage::format_params(now, &serial),
+        StoreConfig::default(),
+    )
+    .map_err(|e| e.to_string())?;
     let qsys = storage::bootstrap(&mut store, now, "QS400").map_err(|e| e.to_string())?;
     store.close().map_err(|e| e.to_string())?;
     page.line(

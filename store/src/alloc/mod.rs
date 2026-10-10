@@ -98,6 +98,8 @@ pub struct Allocator {
     alloc_root: Option<PageNo>,
     /// Pages only a checkpoint may take.
     reserve: u64,
+    /// Spans `alloc` and checkpoints keep off (a unit being removed).
+    excluded: Vec<bool>,
     /// In the middle of a checkpoint: the state to publish at the end.
     staged: Option<Staged>,
 }
@@ -121,6 +123,7 @@ impl Allocator {
         let reserve = (layout.total_pages() / 64).clamp(RESERVE_MIN, RESERVE_MAX);
         Self {
             reserve,
+            excluded: vec![false; layout.spans().len()],
             layout,
             bitmaps,
             allocs: RangeSet::default(),
@@ -130,6 +133,59 @@ impl Allocator {
             alloc_root: None,
             staged: None,
         }
+    }
+
+    /// A new span at the end: every non-reserved page free. `layout`
+    /// already includes it.
+    pub fn add_unit(&mut self, layout: Layout, pages: u64) {
+        let mut bm = Bitmap::new(pages);
+        bm.set(RESERVED_HEAD, pages - 1 - RESERVED_HEAD);
+        self.bitmaps.push(bm);
+        self.excluded.push(false);
+        self.layout = layout;
+        self.reserve = (self.layout.total_pages() / 64).clamp(RESERVE_MIN, RESERVE_MAX);
+    }
+
+    /// Drop the last span, which must hold nothing.
+    pub fn pop_unit(&mut self) -> Result<()> {
+        let span = u16::try_from(self.bitmaps.len() - 1).expect("span index");
+        let used = self.span_used(span);
+        if used > 0 {
+            return Err(StoreError::UnitInUse {
+                unit: span,
+                what: format!("{used} page(s) are in use"),
+            });
+        }
+        self.bitmaps.pop();
+        self.excluded.pop();
+        let sizes: Vec<u64> = self.bitmaps.iter().map(Bitmap::pages).collect();
+        let mut layout = self.layout.clone();
+        layout.pop();
+        debug_assert_eq!(layout.spans().len(), sizes.len());
+        self.layout = layout;
+        self.reserve = (self.layout.total_pages() / 64).clamp(RESERVE_MIN, RESERVE_MAX);
+        Ok(())
+    }
+
+    /// Keep `alloc` and checkpoints off a span, or let them back on.
+    pub fn exclude(&mut self, span: u16, excluded: bool) {
+        self.excluded[usize::from(span)] = excluded;
+    }
+
+    /// Pages of a span in use: allocated, pending free, or held by the
+    /// allocator's own tree and log (all of which the bitmap counts as
+    /// allocated).
+    #[must_use]
+    pub fn span_used(&self, span: u16) -> u64 {
+        let bm = &self.bitmaps[usize::from(span)];
+        bm.pages() - 1 - RESERVED_HEAD - bm.free()
+    }
+
+    /// The span with the most free pages among those `alloc` may use.
+    fn pick_span(&self) -> Option<usize> {
+        (0..self.bitmaps.len())
+            .filter(|&u| !self.excluded[u])
+            .max_by_key(|&u| self.bitmaps[u].free())
     }
 
     /// For a fresh ASP: every non-reserved page is free; the first
@@ -197,9 +253,9 @@ impl Allocator {
             return Err(StoreError::NoSpace { asp: 0 });
         }
         let pages = pages.clamp(1, available);
-        let unit = (0..self.bitmaps.len())
-            .max_by_key(|&u| self.bitmaps[u].free())
-            .expect("at least one unit");
+        let Some(unit) = self.pick_span() else {
+            return Err(StoreError::NoSpace { asp: 0 });
+        };
         let bm = &mut self.bitmaps[unit];
         if bm.free() == 0 {
             return Err(StoreError::NoSpace { asp: 0 });
@@ -228,6 +284,9 @@ impl Allocator {
         let Some((unit, lba)) = self.layout.locate(end) else {
             return 0;
         };
+        if self.excluded[usize::from(unit)] {
+            return 0;
+        }
         let want = want.min(self.available());
         let bm = &mut self.bitmaps[usize::from(unit)];
         let got = bm.free_run_from(lba, want);
@@ -529,7 +588,7 @@ impl Allocator {
     /// Take up to `want` contiguous pages from the unit with the most
     /// free space, for a checkpoint.
     fn take_chunk(&mut self, want: u64) -> Option<Extent> {
-        let unit = (0..self.bitmaps.len()).max_by_key(|&u| self.bitmaps[u].free())?;
+        let unit = self.pick_span()?;
         let (lba, len) = self.bitmaps[unit].largest_run(want)?;
         self.bitmaps[unit].clear(lba, len);
         Some(Extent {

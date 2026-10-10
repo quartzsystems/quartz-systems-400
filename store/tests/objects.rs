@@ -25,6 +25,7 @@ fn open_new() -> (Arc<MemBlockDev>, Store, ObjectId) {
         asp_number: 1,
         asp_uuid: [4; 16],
         unit_uuids: vec![[5; 16]],
+        unit_serials: Vec::new(),
         wal_pages: 64,
         now: 1_767_225_600,
     };

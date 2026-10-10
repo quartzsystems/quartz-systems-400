@@ -41,6 +41,43 @@ pub fn disk_of(part: &Path) -> Option<String> {
     (parent != "block").then(|| parent.to_string())
 }
 
+/// What the disk behind a node calls itself: a type/model string and a
+/// serial number, from sysfs. Either is empty when sysfs has nothing.
+#[must_use]
+pub fn identity(node: &Path) -> (String, String) {
+    let name = node
+        .file_name()
+        .and_then(|n| n.to_str())
+        .map(ToString::to_string)
+        .unwrap_or_default();
+    let disk = disk_of(node).unwrap_or(name);
+    let sys = Path::new(SYS_BLOCK).join(&disk);
+    let read = |rel: &str| {
+        fs::read_to_string(sys.join(rel))
+            .map(|s| s.trim().to_string())
+            .unwrap_or_default()
+    };
+    let vendor = read("device/vendor");
+    let model = read("device/model");
+    let model = if model.is_empty() {
+        if disk.starts_with("vd") {
+            "virtio".to_string()
+        } else {
+            String::new()
+        }
+    } else if vendor.is_empty() || model.starts_with(&vendor) {
+        model
+    } else {
+        format!("{vendor} {model}")
+    };
+    let serial = ["device/serial", "serial", "device/wwid"]
+        .iter()
+        .map(|rel| read(rel))
+        .find(|s| !s.is_empty())
+        .unwrap_or_default();
+    (model, serial)
+}
+
 /// Whole disks under `/sys/class/block` in name order, without
 /// removable media and loop or RAM devices.
 pub fn whole_disks() -> Result<Vec<DiskInfo>, Error> {

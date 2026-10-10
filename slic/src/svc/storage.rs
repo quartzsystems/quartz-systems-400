@@ -33,17 +33,45 @@ pub fn asp(system: &mut System) -> String {
             sb.next_serial,
             sb.install_time
         );
+        let _ = writeln!(
+            out,
+            "  protection: {}; recovery replayed {} transaction(s) at IPL",
+            if sb.protection == store::asp::superblock::PROTECTION_MIRRORED {
+                "mirrored"
+            } else {
+                "none"
+            },
+            s.recovery.replayed
+        );
+        for u in st.units() {
+            let e = &u.entry;
+            let partner = if e.mirrored() {
+                format!(" partner {}", e.mirror_partner)
+            } else {
+                String::new()
+            };
+            let _ = writeln!(
+                out,
+                "  unit {} {:<15} {} pages ({} usable), {} used, serial {}{}{}",
+                u.unit,
+                e.state,
+                e.pages,
+                e.usable_pages,
+                u.used_pages,
+                e.serial_text(),
+                partner,
+                if u.attached { "" } else { " (not attached)" }
+            );
+        }
         for u in a.unit_stats() {
             let _ = writeln!(
                 out,
-                "  unit {} {}: {} pages, {} free, {} pending; recovery replayed {} transaction(s) at IPL",
-                u.unit,
-                s.device.display(),
-                u.pages,
-                u.free,
-                u.pending,
-                s.recovery.replayed
+                "  span {}: {} pages, {} free, {} pending",
+                u.unit, u.pages, u.free, u.pending
             );
+        }
+        for (i, d) in s.devices.iter().enumerate() {
+            let _ = writeln!(out, "  device {}: {}", i, d.display());
         }
         let w = st.wal();
         let _ = writeln!(

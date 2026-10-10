@@ -35,6 +35,7 @@ fn params(wal_pages: u64) -> FormatParams {
         asp_number: 1,
         asp_uuid: [9; 16],
         unit_uuids: vec![[1; 16]],
+        unit_serials: Vec::new(),
         wal_pages,
         now: 1_767_225_600,
     }

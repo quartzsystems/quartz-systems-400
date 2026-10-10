@@ -10,7 +10,7 @@ use std::collections::HashSet;
 use blockdev::BlockDev;
 use tracing::{info, warn};
 
-use crate::asp::{Asp, FormatParams};
+use crate::asp::{Asp, FormatParams, UnitEvent, UnitInfo};
 use crate::cache::{CacheStats, PageCache};
 use crate::obj::ObjectId;
 use crate::obj::lock::LockTable;
@@ -43,12 +43,14 @@ impl Default for StoreConfig {
 }
 
 /// What recovery did at open.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Recovery {
     /// Transactions replayed from the WAL.
     pub replayed: u64,
     /// Superblock generation found.
     pub generation: u64,
+    /// What `open` found out about the units.
+    pub events: Vec<UnitEvent>,
 }
 
 /// Counters since open.
@@ -103,7 +105,7 @@ impl Store {
 
     /// Open the units, replay the WAL, checkpoint.
     pub fn open(devs: Vec<Box<dyn BlockDev>>, config: StoreConfig) -> Result<(Self, Recovery)> {
-        let asp = Asp::open(devs)?;
+        let (asp, events) = Asp::open(devs)?;
         let mut s = Self::from_asp(asp, config);
         let generation = s.asp.superblock().generation;
         let records = s.wal.scan(s.asp.io())?;
@@ -128,8 +130,43 @@ impl Store {
             Recovery {
                 replayed,
                 generation,
+                events,
             },
         ))
+    }
+
+    /// Add an unprotected unit to the ASP and publish it.
+    pub fn add_unit(
+        &mut self,
+        dev: Box<dyn BlockDev>,
+        unit_uuid: [u8; 16],
+        serial: &str,
+    ) -> Result<u16> {
+        self.check()?;
+        let unit = self.asp.add_unit(dev, unit_uuid, serial)?;
+        self.checkpoint()?;
+        Ok(unit)
+    }
+
+    /// Remove the last unit, which must be unprotected: everything on it
+    /// is moved to the other units first.
+    pub fn remove_unit(&mut self, unit: u16) -> Result<Box<dyn BlockDev>> {
+        self.check()?;
+        self.asp.check_removable(unit)?;
+        self.drain_unit(unit)?;
+        let removed = self.asp.remove_unit(unit);
+        if removed.is_err() {
+            let _ = self.asp.exclude_unit(unit, false);
+        }
+        let dev = removed?;
+        self.checkpoint()?;
+        Ok(dev)
+    }
+
+    /// The unit table with usage and attachment.
+    #[must_use]
+    pub fn units(&self) -> Vec<UnitInfo> {
+        self.asp.units()
     }
 
     fn from_asp(asp: Asp, config: StoreConfig) -> Self {

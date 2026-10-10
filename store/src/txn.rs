@@ -56,6 +56,11 @@ impl<'a> Txn<'a> {
     }
 
     /// The store.
+    pub fn layout(&self) -> &crate::asp::layout::Layout {
+        self.store.asp().layout()
+    }
+
+    /// The store, for callers that need more than a transaction.
     pub fn store(&mut self) -> &mut Store {
         self.store
     }

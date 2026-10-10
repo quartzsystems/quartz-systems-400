@@ -1,6 +1,7 @@
 # QS/400 object store: on-disk format
 
-Format version 1. This document is written before the code that
+Format version 2 (version 1 stores are not opened; V1R0M0 test installs
+are reinstalled). This document is written before the code that
 implements each structure, and the code's constants are checked against
 the tables here by `store/tests/spec.rs`. Every table under a heading of
 the form `### \`Name\` (N bytes)` is parsed by that test: the heading name
@@ -9,9 +10,10 @@ columns must match its fields exactly. Prose and `Notes` are free.
 
 ## 0. Conventions
 
-- A page is 4096 bytes. A unit is addressed in pages; an ASP is the
-  concatenation of its units into one logical page space. `PageNo` is a
-  logical page number in that space (`u64`).
+- A page is 4096 bytes. A unit is addressed in pages. An ASP is the
+  concatenation of its spans into one logical page space, where a span
+  is one unprotected unit or one mirrored pair of units holding the same
+  pages. `PageNo` is a logical page number in that space (`u64`).
 - Multi-byte fields inside page structures are little-endian.
 - B+tree keys are big-endian so that byte order equals key order.
 - CRC32C (Castagnoli) everywhere.
@@ -130,7 +132,10 @@ the leaves' first keys; input must be strictly ascending.
 
 Every unit begins with a unit header at page 0 and carries a backup at
 its last page. Both are ordinary pages (type 0x0001, owner zero) so the
-trailer CRC covers them. Neither page is ever allocated.
+trailer CRC covers them. Neither page is ever allocated. The header is
+the unit's own: the halves of a mirrored pair have different headers
+(their own UUID and unit number, each naming the other in `mirror_of`)
+and are never copied over each other.
 
 ### `UnitHeader` (80 bytes)
 
@@ -139,28 +144,67 @@ At offset 0 of the body.
 | Offset | Size | Field | Notes |
 |---|---|---|---|
 | 0 | 8 | magic | `QS400ASP` |
-| 8 | 4 | format_version | 1 |
+| 8 | 4 | format_version | 2 |
 | 12 | 4 | flags | reserved, 0 |
 | 16 | 16 | unit_uuid | |
 | 32 | 16 | asp_uuid | |
 | 48 | 2 | asp_number | 1 for SYSBAS |
-| 50 | 2 | unit_number | position in the ASP, from 0 |
+| 50 | 2 | unit_number | position in the unit table, from 0 |
 | 52 | 4 | reserved | 0 |
-| 56 | 8 | pages | unit size in pages |
-| 64 | 16 | mirror_of | unit UUID of the mirror source, zero for none; mirroring is not implemented |
+| 56 | 8 | pages | unit size in pages (the device size) |
+| 64 | 16 | mirror_of | unit UUID of the other half of the pair, zero when unprotected |
+
+### Unit states
+
+The unit table (§5) records a state per unit, with the names the disk
+configuration displays use:
+
+| Value | State | Meaning |
+|---|---|---|
+| 0 | Unprotected | not mirrored; the only copy of its span |
+| 1 | Active | half of a pair, in step with its partner; reads and writes |
+| 2 | Suspended | half of a pair, not written; its data is stale |
+| 3 | Resuming | half of a pair being copied from its partner; written, not read |
+| 4 | Not operational | attached but failing I/O; treated as suspended |
+| 5 | Missing | not found at IPL; treated as suspended |
+
+Every write to a span goes to each half that is Active or Resuming and
+`flush` waits for all of them. Reads alternate between Active halves; a
+page that fails verification on one half is read from the other and,
+when that copy verifies, rewritten on the first. A half that fails I/O
+while the other half works becomes Not operational and the pair goes on
+with one half.
+
+At open, a pair with one half absent runs on the present half if that
+half is Active, and the absent half is recorded Missing. A half found
+again after being Missing or Not operational is Suspended: its data is
+stale until a resume copies every allocated page of the span onto it,
+after which it is Active again. An absent unprotected unit, both halves
+absent, or only a stale half present stops the open (disk unit missing).
+
+The resume copies the span in chunks of 256 pages in ascending order.
+Which chunks are done is a bitmap the caller persists outside the
+store (the LIC partition keeps it, see docs/PHASE1.md) so that a crash
+in the middle continues where it stopped. Writes during a resume go to
+both halves, so a chunk once copied stays current.
 
 ## 5. Superblock
 
 Two copies per unit, at pages 1 and 2. A checkpoint with generation `g`
-writes copy `g mod 2` on every unit, so a torn write can only damage the
-copy that was already stale. On open the newest copy whose page verifies,
-across all units, wins. Opening a store whose creating release differs
-in V or R from the running build is refused (CPF3294); M may differ.
+writes copy `g mod 2` on every attached unit, the halves of a pair and
+suspended halves included, so a torn write can only damage the copy
+that was already stale and every unit carries the same table. On open
+the newest copy whose page verifies, across all units, wins. Opening a
+store whose creating release differs in V or R from the running build
+is refused (CPF3294); M may differ.
 
-Logical page numbers: unit 0 is pages `0..pages_0`, unit 1 continues at
-`pages_0`, and so on (`start` in the unit table). Pages 0, 1, 2 and the
-last page of every unit are reserved; the WAL ring is `wal_pages` pages
-of unit 0 from page `wal_start` (3).
+Logical page numbers: the first span is pages `0..usable_0`, the next
+continues at `usable_0`, and so on (`start` in the unit table; both
+halves of a pair have the same `start` and `usable_pages`). Pages 0, 1,
+2 and the last page of every span are reserved; the WAL ring is
+`wal_pages` pages of span 0 from page `wal_start` (3). A unit's own
+backup header sits at its physical last page, which for the larger half
+of a pair is beyond the span.
 
 ### `Superblock` (256 bytes)
 
@@ -169,16 +213,16 @@ At offset 0 of the body.
 | Offset | Size | Field | Notes |
 |---|---|---|---|
 | 0 | 8 | magic | `QS400SUP` |
-| 8 | 4 | format_version | 1 |
+| 8 | 4 | format_version | 2 |
 | 12 | 4 | flags | bit 0 `needs_recovery`, bit 1 `rclstg_required` |
 | 16 | 8 | generation | checkpoint number; newest valid copy wins |
 | 24 | 16 | asp_uuid | |
 | 40 | 2 | asp_number | |
-| 42 | 2 | unit_count | 1..119 |
+| 42 | 2 | unit_count | 1..47 |
 | 44 | 1 | release_v | creating release |
 | 45 | 1 | release_r | |
 | 46 | 1 | release_m | |
-| 47 | 1 | reserved | 0 |
+| 47 | 1 | protection | 0 no unit mirrored, 1 at least one pair |
 | 48 | 8 | alloc_root | free-space tree root, 0 for empty |
 | 56 | 8 | free_log_head | first free-log page, 0 for none |
 | 64 | 8 | objdir_root | object directory tree root, 0 for empty |
@@ -194,15 +238,22 @@ At offset 0 of the body.
 | 152 | 16 | sysval | `ObjectId` of the `*SYSVAL` object, zero before it exists |
 | 168 | 88 | reserved2 | 0 |
 
-The unit table follows at body offset 256: `unit_count` entries.
+The unit table follows at body offset 256: `unit_count` entries, one
+per unit in unit-number order. Units are added, removed and paired only
+through the service tools; the table never changes on its own.
 
-### `UnitEntry` (32 bytes)
+### `UnitEntry` (80 bytes)
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
 | 0 | 16 | unit_uuid | must match the unit header |
-| 16 | 8 | pages | unit size in pages |
-| 24 | 8 | start | logical page number of the unit's page 0 |
+| 16 | 8 | pages | unit size in pages (the device size) |
+| 24 | 8 | start | logical page number of the span's page 0 |
+| 32 | 8 | usable_pages | pages of the span: `pages`, or the smaller of a pair |
+| 40 | 2 | mirror_partner | unit number of the other half, 0xFFFF when unprotected |
+| 42 | 1 | state | see §4, unit states |
+| 43 | 5 | reserved | 0 |
+| 48 | 32 | serial | the device's serial number, ASCII, zero padded; blank means use the unit UUID |
 
 ## 6. WAL
 

@@ -2,8 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The object store at IPL: locate the ASP 1 unit (C1001070), open it
-//! with WAL recovery or format a blank one (C1001080), bootstrap the
+//! The object store at IPL: locate the ASP 1 units (C1001070), open
+//! them with WAL recovery or format a blank one (C1001080), bootstrap the
 //! system libraries on first boot (C6001007), run the temporary ASP for
 //! QTEMP, checkpoint on a timer, and close at power down (D1001010).
 
@@ -46,8 +46,8 @@ pub struct Storage {
     pub fresh: bool,
     /// What recovery did.
     pub recovery: Recovery,
-    /// The unit's device node.
-    pub device: PathBuf,
+    /// The units' device nodes, in the order they were found.
+    pub devices: Vec<PathBuf>,
 }
 
 /// The temporary ASP (ASP 0) and its root library QTEMP.
@@ -70,12 +70,12 @@ fn random_bytes<const N: usize>() -> [u8; N] {
     b
 }
 
-/// C1001070 and C1001080: find the ASP 1 partition, open it or format
-/// it when blank. Without a unit, a D IPL continues without a store;
-/// any other IPL halts.
+/// C1001070 and C1001080: find the ASP 1 partitions, open them, or
+/// format a single blank one. Without a unit, a D IPL continues without
+/// a store; any other IPL halts.
 pub fn locate_and_open(system: &mut System) -> Result<(), &'static src::Src> {
-    let units = diskimg::locate::partitions_of_type(diskimg::ASP1_TYPE_GUID).unwrap_or_default();
-    let Some(path) = units.into_iter().next() else {
+    let paths = diskimg::locate::partitions_of_type(diskimg::ASP1_TYPE_GUID).unwrap_or_default();
+    if paths.is_empty() {
         if system.boot.ipl_d {
             system
                 .out
@@ -84,32 +84,42 @@ pub fn locate_and_open(system: &mut System) -> Result<(), &'static src::Src> {
         }
         system.out.serial("slic: no ASP 1 unit found\n");
         return Err(&src::ASP_NOT_FOUND);
-    };
-    let dev = match LinuxBlockDev::open(&path) {
-        Ok(d) => d,
-        Err(e) => {
-            system
+    }
+    let mut devs: Vec<Box<dyn BlockDev>> = Vec::new();
+    let mut opened: Vec<PathBuf> = Vec::new();
+    for path in &paths {
+        match LinuxBlockDev::open(path) {
+            Ok(d) => {
+                system.out.serial(&format!(
+                    "slic: ASP 1 unit {} ({} MiB{})\n",
+                    path.display(),
+                    d.blocks() * 4096 / (1024 * 1024),
+                    if d.is_direct() { "" } else { ", buffered" }
+                ));
+                devs.push(Box::new(d));
+                opened.push(path.clone());
+            }
+            Err(e) => system
                 .out
-                .serial(&format!("slic: open {}: {e}\n", path.display()));
-            return Err(&src::ASP_NOT_FOUND);
+                .serial(&format!("slic: open {}: {e}\n", path.display())),
         }
-    };
-    system.out.serial(&format!(
-        "slic: ASP 1 unit {} ({} MiB{})\n",
-        path.display(),
-        dev.blocks() * 4096 / (1024 * 1024),
-        if dev.is_direct() { "" } else { ", buffered" }
-    ));
+    }
+    if devs.is_empty() {
+        return Err(&src::ASP_NOT_FOUND);
+    }
     system.emit(&src::ASP_LOCATED);
 
-    let blank = {
+    let blank = devs.len() == 1 && {
         let mut page = blockdev::AlignedBuf::new(1);
-        dev.read(0, &mut page).is_ok() && page.iter().all(|&b| b == 0)
+        devs[0].read(0, &mut page).is_ok() && page.iter().all(|&b| b == 0)
     };
-    let devs: Vec<Box<dyn BlockDev>> = vec![Box::new(dev)];
     let (store, recovery, fresh) = if blank {
         system.out.serial("slic: ASP 1 unit is blank; formatting\n");
-        match Store::format(devs, &format_params(now_unix()), config()) {
+        let (model, serial) = diskimg::locate::identity(&opened[0]);
+        system
+            .out
+            .serial(&format!("slic: unit 0 is {model} serial {serial}\n"));
+        match Store::format(devs, &format_params(now_unix(), &serial), config()) {
             Ok(s) => (s, Recovery::default(), true),
             Err(e) => {
                 system.out.serial(&format!("slic: format ASP 1: {e}\n"));
@@ -127,6 +137,12 @@ pub fn locate_and_open(system: &mut System) -> Result<(), &'static src::Src> {
                 system.emit(&src::RELEASE_MISMATCH);
                 return Err(&src::ASP_WRONG_RELEASE);
             }
+            Err(StoreError::UnitMissing { unit, what }) => {
+                system.out.serial(&format!(
+                    "slic: ASP 1 disk unit {unit} is missing: {what}\n"
+                ));
+                return Err(&src::ASP_NOT_FOUND);
+            }
             Err(e) => {
                 system.out.serial(&format!("slic: ASP 1 recovery: {e}\n"));
                 system.emit(&src::RECOVERY_FAILED);
@@ -139,6 +155,9 @@ pub fn locate_and_open(system: &mut System) -> Result<(), &'static src::Src> {
         recovery.replayed,
         store.asp().superblock().generation
     ));
+    for e in &recovery.events {
+        system.out.serial(&format!("slic: {e:?}\n"));
+    }
     system.emit(&src::RECOVERY);
     let sb = store.asp().superblock();
     let qsys = (!fresh && !sb.qsys.is_none()).then_some(sb.qsys);
@@ -147,7 +166,7 @@ pub fn locate_and_open(system: &mut System) -> Result<(), &'static src::Src> {
         qsys,
         fresh,
         recovery,
-        device: path,
+        devices: opened,
     });
     Ok(())
 }
@@ -212,12 +231,13 @@ pub fn open_objects(system: &mut System) -> Result<(), &'static src::Src> {
     Ok(())
 }
 
-/// Format parameters for a new ASP 1.
-pub fn format_params(now: u64) -> FormatParams {
+/// Format parameters for a new ASP 1 with one unit.
+pub fn format_params(now: u64, serial: &str) -> FormatParams {
     FormatParams {
         asp_number: 1,
         asp_uuid: random_bytes(),
         unit_uuids: vec![random_bytes()],
+        unit_serials: vec![serial.to_string()],
         wal_pages: WAL_PAGES,
         now,
     }
@@ -260,6 +280,7 @@ pub fn open_temp(system: &mut System) {
         asp_number: 0,
         asp_uuid: random_bytes(),
         unit_uuids: vec![random_bytes()],
+        unit_serials: Vec::new(),
         wal_pages: 256,
         now: now_unix(),
     };

@@ -18,6 +18,7 @@ pub mod asp;
 pub mod btree;
 mod bytes;
 pub mod cache;
+mod drain;
 mod error;
 pub mod obj;
 pub mod page;
@@ -27,7 +28,8 @@ mod store;
 pub mod txn;
 pub mod wal;
 
-pub use asp::{Asp, FormatParams};
+pub use asp::{Asp, FormatParams, UnitEvent, UnitInfo};
+pub use drain::DrainReport;
 pub use error::{Result, StoreError};
 pub use page::pager::{MemPager, PageNo, Pager};
 pub use page::{BODY_SIZE, PAGE_SIZE, Page, PageType};

@@ -2,11 +2,12 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The superblock. See `docs/STORE_FORMAT.md` §5.
+//! The superblock and the unit table. See `docs/STORE_FORMAT.md` §5.
 
 use release::Release;
 
 use crate::asp::layout::MAX_UNITS;
+use crate::asp::unit::UnitState;
 use crate::bytes::{get_u16, get_u32, get_u64, put_u16, put_u32, put_u64, u16_of};
 use crate::obj::ObjectId;
 use crate::page::BODY_SIZE;
@@ -17,16 +18,25 @@ use crate::{Result, StoreError};
 /// Magic at offset 0.
 pub const MAGIC: &[u8; 8] = b"QS400SUP";
 /// Format version this code writes and reads.
-pub const FORMAT_VERSION: u32 = 1;
+pub const FORMAT_VERSION: u32 = 2;
 /// Fixed part size; the unit table follows.
 pub const HEADER_LEN: usize = 256;
 /// Bytes per unit table entry.
-pub const UNIT_ENTRY_LEN: usize = 32;
+pub const UNIT_ENTRY_LEN: usize = 80;
+/// Bytes of a unit's serial number.
+pub const SERIAL_LEN: usize = 32;
+/// `mirror_partner` of an unprotected unit.
+pub const NO_PARTNER: u16 = 0xFFFF;
 
 /// `flags` bit: the WAL must be replayed.
 pub const FLAG_NEEDS_RECOVERY: u32 = 1;
 /// `flags` bit: RCLSTG should run.
 pub const FLAG_RCLSTG_REQUIRED: u32 = 2;
+
+/// `protection`: no unit is mirrored.
+pub const PROTECTION_NONE: u8 = 0;
+/// `protection`: at least one pair exists.
+pub const PROTECTION_MIRRORED: u8 = 1;
 
 const OFF_MAGIC: usize = 0;
 const OFF_VERSION: usize = 8;
@@ -38,6 +48,7 @@ const OFF_UNIT_COUNT: usize = 42;
 const OFF_RELEASE_V: usize = 44;
 const OFF_RELEASE_R: usize = 45;
 const OFF_RELEASE_M: usize = 46;
+const OFF_PROTECTION: usize = 47;
 const OFF_ALLOC_ROOT: usize = 48;
 const OFF_FREE_LOG_HEAD: usize = 56;
 const OFF_OBJDIR_ROOT: usize = 64;
@@ -55,6 +66,10 @@ const OFF_SYSVAL: usize = 152;
 const ENTRY_UUID: usize = 0;
 const ENTRY_PAGES: usize = 16;
 const ENTRY_START: usize = 24;
+const ENTRY_USABLE: usize = 32;
+const ENTRY_PARTNER: usize = 40;
+const ENTRY_STATE: usize = 42;
+const ENTRY_SERIAL: usize = 48;
 
 /// The spec layout of the fixed part.
 pub static LAYOUT: Layout = Layout {
@@ -71,7 +86,7 @@ pub static LAYOUT: Layout = Layout {
         field("release_v", OFF_RELEASE_V, 1),
         field("release_r", OFF_RELEASE_R, 1),
         field("release_m", OFF_RELEASE_M, 1),
-        field("reserved", 47, 1),
+        field("protection", OFF_PROTECTION, 1),
         field("alloc_root", OFF_ALLOC_ROOT, 8),
         field("free_log_head", OFF_FREE_LOG_HEAD, 8),
         field("objdir_root", OFF_OBJDIR_ROOT, 8),
@@ -97,6 +112,11 @@ pub static UNIT_ENTRY_LAYOUT: Layout = Layout {
         field("unit_uuid", ENTRY_UUID, 16),
         field("pages", ENTRY_PAGES, 8),
         field("start", ENTRY_START, 8),
+        field("usable_pages", ENTRY_USABLE, 8),
+        field("mirror_partner", ENTRY_PARTNER, 2),
+        field("state", ENTRY_STATE, 1),
+        field("reserved", 43, 5),
+        field("serial", ENTRY_SERIAL, SERIAL_LEN),
     ],
 };
 
@@ -107,8 +127,64 @@ pub struct UnitEntry {
     pub unit_uuid: [u8; 16],
     /// Unit size in pages.
     pub pages: u64,
-    /// Logical page of the unit's page 0.
+    /// Logical page of the unit's page 0; both halves of a pair share it.
     pub start: PageNo,
+    /// Pages of the span the unit backs: `pages`, or the smaller of a pair.
+    pub usable_pages: u64,
+    /// The other half of the pair, or [`NO_PARTNER`].
+    pub mirror_partner: u16,
+    /// Protection state.
+    pub state: UnitState,
+    /// The block device's serial number, ASCII, zero padded.
+    pub serial: [u8; SERIAL_LEN],
+}
+
+impl UnitEntry {
+    /// An unprotected unit.
+    #[must_use]
+    pub fn unprotected(unit_uuid: [u8; 16], pages: u64, start: PageNo, serial: &str) -> Self {
+        Self {
+            unit_uuid,
+            pages,
+            start,
+            usable_pages: pages,
+            mirror_partner: NO_PARTNER,
+            state: UnitState::Unprotected,
+            serial: serial_bytes(serial),
+        }
+    }
+
+    /// The serial as text; the unit UUID in hex when none was recorded.
+    #[must_use]
+    pub fn serial_text(&self) -> String {
+        let end = self.serial.iter().position(|&b| b == 0).unwrap_or(SERIAL_LEN);
+        let s = String::from_utf8_lossy(&self.serial[..end]).trim().to_string();
+        if s.is_empty() {
+            use std::fmt::Write as _;
+            self.unit_uuid.iter().fold(String::new(), |mut out, b| {
+                let _ = write!(out, "{b:02X}");
+                out
+            })
+        } else {
+            s
+        }
+    }
+
+    /// Whether the unit is half of a pair.
+    #[must_use]
+    pub fn mirrored(&self) -> bool {
+        self.mirror_partner != NO_PARTNER
+    }
+}
+
+/// A serial as the table stores it: ASCII, truncated, zero padded.
+#[must_use]
+pub fn serial_bytes(serial: &str) -> [u8; SERIAL_LEN] {
+    let mut out = [0u8; SERIAL_LEN];
+    for (o, c) in out.iter_mut().zip(serial.bytes().filter(u8::is_ascii_graphic)) {
+        *o = c;
+    }
+    out
 }
 
 /// The superblock contents.
@@ -124,6 +200,8 @@ pub struct Superblock {
     pub asp_number: u16,
     /// Creating release.
     pub release: Release,
+    /// `PROTECTION_*`: whether any unit is mirrored.
+    pub protection: u8,
     /// Free-space tree root.
     pub alloc_root: Option<PageNo>,
     /// First free-log page.
@@ -165,6 +243,15 @@ impl Superblock {
         self.flags & bit != 0
     }
 
+    /// Recompute `protection` from the unit table.
+    pub fn update_protection(&mut self) {
+        self.protection = if self.units.iter().any(UnitEntry::mirrored) {
+            PROTECTION_MIRRORED
+        } else {
+            PROTECTION_NONE
+        };
+    }
+
     /// Encode into a page body.
     pub fn encode(&self, body: &mut [u8]) {
         assert!(self.units.len() <= MAX_UNITS, "too many units");
@@ -179,6 +266,7 @@ impl Superblock {
         body[OFF_RELEASE_V] = self.release.v;
         body[OFF_RELEASE_R] = self.release.r;
         body[OFF_RELEASE_M] = self.release.m;
+        body[OFF_PROTECTION] = self.protection;
         put_u64(body, OFF_ALLOC_ROOT, self.alloc_root.unwrap_or(0));
         put_u64(body, OFF_FREE_LOG_HEAD, self.free_log_head.unwrap_or(0));
         put_u64(body, OFF_OBJDIR_ROOT, self.objdir_root.unwrap_or(0));
@@ -197,6 +285,10 @@ impl Superblock {
             body[at + ENTRY_UUID..at + ENTRY_UUID + 16].copy_from_slice(&u.unit_uuid);
             put_u64(body, at + ENTRY_PAGES, u.pages);
             put_u64(body, at + ENTRY_START, u.start);
+            put_u64(body, at + ENTRY_USABLE, u.usable_pages);
+            put_u16(body, at + ENTRY_PARTNER, u.mirror_partner);
+            body[at + ENTRY_STATE] = u.state.as_u8();
+            body[at + ENTRY_SERIAL..at + ENTRY_SERIAL + SERIAL_LEN].copy_from_slice(&u.serial);
         }
     }
 
@@ -214,18 +306,25 @@ impl Superblock {
         if unit_count == 0 || unit_count > MAX_UNITS {
             return Err(corrupt(format!("{unit_count} units")));
         }
-        let units = (0..unit_count)
-            .map(|i| {
-                let at = HEADER_LEN + i * UNIT_ENTRY_LEN;
-                UnitEntry {
-                    unit_uuid: body[at + ENTRY_UUID..at + ENTRY_UUID + 16]
-                        .try_into()
-                        .expect("16"),
-                    pages: get_u64(body, at + ENTRY_PAGES),
-                    start: get_u64(body, at + ENTRY_START),
-                }
-            })
-            .collect();
+        let mut units = Vec::with_capacity(unit_count);
+        for i in 0..unit_count {
+            let at = HEADER_LEN + i * UNIT_ENTRY_LEN;
+            let state = UnitState::from_u8(body[at + ENTRY_STATE])
+                .ok_or_else(|| corrupt(format!("unit {i} state {}", body[at + ENTRY_STATE])))?;
+            units.push(UnitEntry {
+                unit_uuid: body[at + ENTRY_UUID..at + ENTRY_UUID + 16]
+                    .try_into()
+                    .expect("16"),
+                pages: get_u64(body, at + ENTRY_PAGES),
+                start: get_u64(body, at + ENTRY_START),
+                usable_pages: get_u64(body, at + ENTRY_USABLE),
+                mirror_partner: get_u16(body, at + ENTRY_PARTNER),
+                state,
+                serial: body[at + ENTRY_SERIAL..at + ENTRY_SERIAL + SERIAL_LEN]
+                    .try_into()
+                    .expect("32"),
+            });
+        }
         Ok(Self {
             flags: get_u32(body, OFF_FLAGS),
             generation: get_u64(body, OFF_GENERATION),
@@ -238,6 +337,7 @@ impl Superblock {
                 r: body[OFF_RELEASE_R],
                 m: body[OFF_RELEASE_M],
             },
+            protection: body[OFF_PROTECTION],
             alloc_root: opt(get_u64(body, OFF_ALLOC_ROOT)),
             free_log_head: opt(get_u64(body, OFF_FREE_LOG_HEAD)),
             objdir_root: opt(get_u64(body, OFF_OBJDIR_ROOT)),
@@ -262,12 +362,13 @@ mod tests {
 
     #[test]
     fn round_trip() {
-        let sb = Superblock {
+        let mut sb = Superblock {
             flags: FLAG_RCLSTG_REQUIRED,
             generation: 9,
             asp_uuid: [7; 16],
             asp_number: 1,
             release: release::RELEASE,
+            protection: 0,
             alloc_root: Some(44),
             free_log_head: None,
             objdir_root: Some(45),
@@ -287,24 +388,37 @@ mod tests {
                 generation: 0,
             },
             units: vec![
-                UnitEntry {
-                    unit_uuid: [1; 16],
-                    pages: 1000,
-                    start: 0,
-                },
+                UnitEntry::unprotected([1; 16], 1000, 0, "QM00001"),
                 UnitEntry {
                     unit_uuid: [2; 16],
+                    pages: 600,
+                    start: 1000,
+                    usable_pages: 500,
+                    mirror_partner: 2,
+                    state: UnitState::Active,
+                    serial: serial_bytes("S2"),
+                },
+                UnitEntry {
+                    unit_uuid: [3; 16],
                     pages: 500,
                     start: 1000,
+                    usable_pages: 500,
+                    mirror_partner: 1,
+                    state: UnitState::Resuming,
+                    serial: serial_bytes(""),
                 },
             ],
         };
+        sb.update_protection();
+        assert_eq!(sb.protection, PROTECTION_MIRRORED);
         let mut body = vec![0u8; BODY_SIZE];
         sb.encode(&mut body);
         let back = Superblock::decode(&body, 1).unwrap();
         assert_eq!(back, sb);
         assert!(back.flag(FLAG_RCLSTG_REQUIRED));
         assert!(!back.flag(FLAG_NEEDS_RECOVERY));
+        assert_eq!(back.units[0].serial_text(), "QM00001");
+        assert_eq!(back.units[2].serial_text(), "03".repeat(16));
         put_u16(&mut body, OFF_UNIT_COUNT, 0);
         assert!(matches!(
             Superblock::decode(&body, 1),

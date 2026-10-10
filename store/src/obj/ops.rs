@@ -430,7 +430,7 @@ pub fn shrink(txn: &mut Txn<'_>, id: ObjectId, pages: u64) -> Result<()> {
 }
 
 /// Store an extent list: inline, then one overflow page.
-fn save_extents(
+pub(crate) fn save_extents(
     txn: &mut Txn<'_>,
     page: PageNo,
     h: &mut ObjectHeader,

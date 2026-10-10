@@ -105,6 +105,16 @@ pub fn objdir_insert(txn: &mut Txn<'_>, id: ObjectId, page: PageNo) -> Result<()
     Ok(())
 }
 
+/// Point an existing `id` at a new header page.
+pub fn objdir_update(txn: &mut Txn<'_>, id: ObjectId, page: PageNo) -> Result<()> {
+    let mut dir = objdir(txn);
+    if dir.insert(txn, id, &page)?.is_none() {
+        return Err(StoreError::StaleReference { id });
+    }
+    txn.set_root(ObjectId::NONE, dir.root());
+    Ok(())
+}
+
 /// Remove `id` from the object directory.
 pub fn objdir_remove(txn: &mut Txn<'_>, id: ObjectId) -> Result<()> {
     let mut dir = objdir(txn);

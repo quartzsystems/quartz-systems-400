@@ -168,6 +168,34 @@ pub enum StoreError {
         name: String,
     },
 
+    /// A unit the ASP needs is not attached, or is the stale half of a
+    /// pair whose other half is gone.
+    #[error("disk unit {unit} is missing: {what}")]
+    UnitMissing {
+        /// Unit number.
+        unit: u16,
+        /// Detail for the operator.
+        what: String,
+    },
+
+    /// A unit cannot be removed or paired as asked.
+    #[error("disk unit {unit} is in use: {what}")]
+    UnitInUse {
+        /// Unit number.
+        unit: u16,
+        /// Why.
+        what: String,
+    },
+
+    /// A device is too small to be a unit.
+    #[error("device of {pages} pages is too small for a unit; {need} needed")]
+    UnitTooSmall {
+        /// Device size in pages.
+        pages: u64,
+        /// Least acceptable size.
+        need: u64,
+    },
+
     /// The store was created by a different release.
     #[error("store created by {store} cannot be opened by {running}")]
     ReleaseMismatch {
