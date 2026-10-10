@@ -68,7 +68,10 @@ ccsid/        CP037 <-> UTF-8 from cp037.csv (build.rs), EBCDIC collation
 qsname/       object, library and member name rules; 10-byte CP037 Name
 svctools/     DST screens and the installer's: src/ui/ screen kit, panel.rs runner,
               src/dst/ (disk/, environment, tools, security), src/install/, src/users/
-docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, STORE_FORMAT.md, DST.md, images/
+dds/          DDS: src/source/ records, src/lex/ columns and keywords, src/compile/
+              field, key and file-keyword builders, src/pf/ compiler, src/listing/
+docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, STORE_FORMAT.md, DST.md,
+              DB_OPEN_QUESTIONS.md, images/
 ```
 
 ## Commands
