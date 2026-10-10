@@ -128,16 +128,151 @@ the leaves' first keys; input must be strictly ascending.
 
 ## 4. Unit header
 
-`TODO(phase2)`: written before the allocator.
+Every unit begins with a unit header at page 0 and carries a backup at
+its last page. Both are ordinary pages (type 0x0001, owner zero) so the
+trailer CRC covers them. Neither page is ever allocated.
+
+### `UnitHeader` (80 bytes)
+
+At offset 0 of the body.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | magic | `QS400ASP` |
+| 8 | 4 | format_version | 1 |
+| 12 | 4 | flags | reserved, 0 |
+| 16 | 16 | unit_uuid | |
+| 32 | 16 | asp_uuid | |
+| 48 | 2 | asp_number | 1 for SYSBAS |
+| 50 | 2 | unit_number | position in the ASP, from 0 |
+| 52 | 4 | reserved | 0 |
+| 56 | 8 | pages | unit size in pages |
+| 64 | 16 | mirror_of | unit UUID of the mirror source, zero for none; mirroring is not implemented |
 
 ## 5. Superblock
 
-`TODO(phase2)`: written before the allocator.
+Two copies per unit, at pages 1 and 2. A checkpoint with generation `g`
+writes copy `g mod 2` on every unit, so a torn write can only damage the
+copy that was already stale. On open the newest copy whose page verifies,
+across all units, wins. Opening a store whose creating release differs
+in V or R from the running build is refused (CPF3294); M may differ.
+
+Logical page numbers: unit 0 is pages `0..pages_0`, unit 1 continues at
+`pages_0`, and so on (`start` in the unit table). Pages 0, 1, 2 and the
+last page of every unit are reserved; the WAL ring is `wal_pages` pages
+of unit 0 from page `wal_start` (3).
+
+### `Superblock` (256 bytes)
+
+At offset 0 of the body.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | magic | `QS400SUP` |
+| 8 | 4 | format_version | 1 |
+| 12 | 4 | flags | bit 0 `needs_recovery`, bit 1 `rclstg_required` |
+| 16 | 8 | generation | checkpoint number; newest valid copy wins |
+| 24 | 16 | asp_uuid | |
+| 40 | 2 | asp_number | |
+| 42 | 2 | unit_count | 1..119 |
+| 44 | 1 | release_v | creating release |
+| 45 | 1 | release_r | |
+| 46 | 1 | release_m | |
+| 47 | 1 | reserved | 0 |
+| 48 | 8 | alloc_root | free-space tree root, 0 for empty |
+| 56 | 8 | free_log_head | first free-log page, 0 for none |
+| 64 | 8 | objdir_root | object directory tree root, 0 for empty |
+| 72 | 8 | next_serial | next object serial |
+| 80 | 8 | wal_start | first page of the WAL ring (unit 0) |
+| 88 | 8 | wal_pages | ring length |
+| 96 | 8 | wal_head | see §6 |
+| 104 | 8 | wal_tail | see §6 |
+| 112 | 8 | last_txn | newest committed transaction at this checkpoint |
+| 120 | 8 | install_time | Unix seconds |
+| 128 | 8 | last_rclstg_time | Unix seconds, 0 for never |
+| 136 | 16 | qsys | `ObjectId` of QSYS, zero before the object layer initializes |
+| 152 | 16 | sysval | `ObjectId` of the `*SYSVAL` object, zero before it exists |
+| 168 | 88 | reserved2 | 0 |
+
+The unit table follows at body offset 256: `unit_count` entries.
+
+### `UnitEntry` (32 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 16 | unit_uuid | must match the unit header |
+| 16 | 8 | pages | unit size in pages |
+| 24 | 8 | start | logical page number of the unit's page 0 |
 
 ## 6. WAL
 
 `TODO(phase2)`: written before transactions.
 
-## 7. Object header
+## 7. Free space
+
+A page is free when it lies in a run of the free-space tree or of the
+free log, and was not allocated by a transaction committed since the
+last checkpoint (those allocations are in the WAL, §6). The tree is a
+B+tree (§3) keyed by unit and page, valued by run length, written fresh
+at every checkpoint; between checkpoints the in-memory bitmap is the
+truth.
+
+### `FreeKey` (10 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | unit | big-endian |
+| 2 | 8 | lba | first free page, unit-relative, big-endian |
+
+### `FreeLen` (8 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | len | run length in pages |
+
+Runs in the tree never touch: a run that would be adjacent to another is
+merged into it.
+
+**Free log.** A checkpoint writes the tree to pages taken from the free
+runs in one or more chunks; the unused tail of each chunk cannot be in
+the tree (the tree was written before the tail was known), so the
+checkpoint lists the tails in one free-log page (type 0x0011). On open
+the log's runs are free, like the tree's. The next checkpoint lists the
+old tree and log pages as free again.
+
+### `FreeLogHeader` (16 bytes)
+
+At offset 0 of the body.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | next | next log page, 0 for the last |
+| 8 | 2 | count | entries in this page, at most 168 |
+| 10 | 6 | reserved | 0 |
+
+### `FreeLogEntry` (24 bytes)
+
+From body offset 16, `count` entries.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | unit | |
+| 2 | 6 | reserved | 0 |
+| 8 | 8 | lba | unit-relative |
+| 16 | 8 | len | pages |
+
+**Checkpoint.** The new tree is bulk-loaded from the set that will be
+free once the checkpoint is durable: the free runs now, the runs freed
+since the last checkpoint, and the pages of the previous tree and log.
+The tree's own pages come from chunks taken from the free runs first
+and removed from that set; the number of pages a bulk load needs is
+known from the entry count, so the chunks are sized exactly (one page
+over, for the log). Everything the checkpoint writes lands on pages the
+previous superblock considers free, so a crash at any point leaves the
+previous checkpoint intact. The allocator keeps 1/64 of the ASP (at
+least 64 pages, at most 16384) back from ordinary allocation so a
+checkpoint on a full ASP can still write its tree.
+
+## 8. Object header
 
 `TODO(phase2)`: written before the object layer.

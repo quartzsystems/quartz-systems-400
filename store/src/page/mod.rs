@@ -36,6 +36,8 @@ pub enum PageType {
     Wal = 0x0003,
     /// B+tree node, leaf or internal.
     BTreeNode = 0x0010,
+    /// Free-log page (see the format spec, free space).
+    FreeLog = 0x0011,
     /// Object header.
     ObjectHeader = 0x0020,
     /// Object data.
@@ -54,6 +56,7 @@ impl PageType {
             0x0002 => Self::Superblock,
             0x0003 => Self::Wal,
             0x0010 => Self::BTreeNode,
+            0x0011 => Self::FreeLog,
             0x0020 => Self::ObjectHeader,
             0x0021 => Self::ObjectData,
             0x0022 => Self::ExtentOverflow,
@@ -214,9 +217,9 @@ mod tests {
 
     #[test]
     fn page_types_round_trip() {
-        for v in [0, 1, 2, 3, 0x10, 0x20, 0x21, 0x22] {
+        for v in [0, 1, 2, 3, 0x10, 0x11, 0x20, 0x21, 0x22] {
             assert_eq!(PageType::from_u16(v).unwrap().as_u16(), v);
         }
-        assert!(PageType::from_u16(0x11).is_none());
+        assert!(PageType::from_u16(0x12).is_none());
     }
 }

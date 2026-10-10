@@ -46,5 +46,12 @@ pub fn layouts() -> Vec<&'static Layout> {
         &crate::btree::node::HEADER_LAYOUT,
         &crate::btree::node::INTERNAL_ENTRY_LAYOUT,
         &crate::btree::node::LEAF_SLOT_LAYOUT,
+        &crate::asp::unit::LAYOUT,
+        &crate::asp::superblock::LAYOUT,
+        &crate::asp::superblock::UNIT_ENTRY_LAYOUT,
+        &crate::alloc::tree::KEY_LAYOUT,
+        &crate::alloc::tree::LEN_LAYOUT,
+        &crate::alloc::freelog::HEADER_LAYOUT,
+        &crate::alloc::freelog::ENTRY_LAYOUT,
     ]
 }

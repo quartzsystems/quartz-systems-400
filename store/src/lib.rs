@@ -5,13 +5,16 @@
 //! The QS/400 object store.
 //!
 //! Layers, bottom up: checksummed pages ([`page`]), a copy-on-write
-//! B+tree ([`btree`]) over a [`Pager`], and the object layer ([`obj`]).
+//! B+tree ([`btree`]) over a [`Pager`], the ASP format and free-space
+//! allocator ([`asp`], [`alloc`]), and the object layer ([`obj`]).
 //! The on-disk format is specified in `docs/STORE_FORMAT.md`, and
 //! `tests/spec.rs` checks the constants here against it.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod alloc;
+pub mod asp;
 pub mod btree;
 mod bytes;
 mod error;
@@ -19,6 +22,7 @@ pub mod obj;
 pub mod page;
 pub mod spec;
 
+pub use asp::{Asp, FormatParams};
 pub use error::{Result, StoreError};
 pub use page::pager::{MemPager, PageNo, Pager};
 pub use page::{BODY_SIZE, PAGE_SIZE, Page, PageType};

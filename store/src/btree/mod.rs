@@ -41,6 +41,10 @@ enum Put<K> {
     Split(PageNo, K, PageNo),
 }
 
+/// One level of a root-to-leaf path: the node's first child, its
+/// entries, and the child index taken.
+type PathLevel<K> = (PageNo, Vec<(K, PageNo)>, usize);
+
 /// Result of deleting from a subtree.
 struct Took {
     /// The subtree's new page.
@@ -104,6 +108,55 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
                 }
             }
         }
+    }
+
+    /// The entry with the greatest key `<= key`.
+    pub fn floor(&self, p: &mut dyn Pager, key: &K) -> Result<Option<(K, V)>> {
+        let Some(mut pno) = self.root else {
+            return Ok(None);
+        };
+        // Path of (first, entries, chosen child index) down to the leaf.
+        let mut path: Vec<PathLevel<K>> = Vec::new();
+        loop {
+            match self.load(p, pno)? {
+                Node::Leaf(entries) => {
+                    let i = entries.partition_point(|(k, _)| k <= key);
+                    if i > 0 {
+                        let (k, v) = &entries[i - 1];
+                        return Ok(Some((k.clone(), V::from_bytes(v)?)));
+                    }
+                    break;
+                }
+                Node::Internal { first, entries } => {
+                    let i = child_index(&entries, key);
+                    pno = if i == 0 { first } else { entries[i - 1].1 };
+                    path.push((first, entries, i));
+                }
+            }
+        }
+        // The leaf holds nothing <= key: the answer is the last entry of
+        // the nearest subtree to the left, if there is one.
+        while let Some((first, entries, i)) = path.pop() {
+            if i == 0 {
+                continue;
+            }
+            let mut pno = if i == 1 { first } else { entries[i - 2].1 };
+            loop {
+                match self.load(p, pno)? {
+                    Node::Leaf(entries) => {
+                        let (k, v) = entries.last().ok_or_else(|| StoreError::Corrupt {
+                            page: pno,
+                            what: "empty leaf below an internal node".into(),
+                        })?;
+                        return Ok(Some((k.clone(), V::from_bytes(v)?)));
+                    }
+                    Node::Internal { first, entries } => {
+                        pno = entries.last().map_or(first, |e| e.1);
+                    }
+                }
+            }
+        }
+        Ok(None)
     }
 
     /// Insert or replace. Returns the previous value.
@@ -246,6 +299,43 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
             p.free(pno)?;
         }
         Ok(())
+    }
+
+    /// Every page of the tree.
+    pub fn pages(&self, p: &mut dyn Pager) -> Result<Vec<PageNo>> {
+        let Some(root) = self.root else {
+            return Ok(Vec::new());
+        };
+        let mut out = Vec::new();
+        let mut stack = vec![root];
+        while let Some(pno) = stack.pop() {
+            out.push(pno);
+            if let Node::Internal { first, entries } = self.load(p, pno)? {
+                stack.push(first);
+                stack.extend(entries.iter().map(|(_, c)| *c));
+            }
+        }
+        Ok(out)
+    }
+
+    /// Pages `bulk_load` writes for `n` entries whose values are all
+    /// `value_len` bytes. Exact: it mirrors the packing in `bulk_load`.
+    #[must_use]
+    pub fn bulk_load_pages(n: usize, value_len: usize) -> u64 {
+        if n == 0 {
+            return 0;
+        }
+        let per_leaf =
+            (node::BULK_FILL - node::HEADER_LEN) / (K::LEN + node::SLOT_EXTRA + value_len);
+        let mut level = n.div_ceil(per_leaf.max(1));
+        let mut pages = level;
+        let per_node =
+            ((node::BULK_FILL - node::HEADER_LEN - 8) / (K::LEN + node::ENTRY_EXTRA)).max(1) + 1;
+        while level > 1 {
+            level = level.div_ceil(per_node);
+            pages += level;
+        }
+        pages as u64
     }
 
     /// Number of entries, by walking every leaf.
@@ -563,6 +653,38 @@ mod tests {
         t.free_all(&mut p).unwrap();
         p.commit().unwrap();
         assert_eq!(p.in_use(), 0);
+    }
+
+    #[test]
+    fn floor_finds_predecessors_across_leaves() {
+        let mut p = MemPager::new(4096);
+        let mut t: BTree<u64, u64> = BTree::new(ObjectId::NONE);
+        assert_eq!(t.floor(&mut p, &5).unwrap(), None);
+        for i in 0..2000u64 {
+            t.insert(&mut p, i * 10, &i).unwrap();
+        }
+        assert_eq!(t.floor(&mut p, &5).unwrap(), Some((0, 0)));
+        assert_eq!(t.floor(&mut p, &0).unwrap(), Some((0, 0)));
+        assert_eq!(t.floor(&mut p, &19_995).unwrap(), Some((19_990, 1999)));
+        assert_eq!(t.floor(&mut p, &u64::MAX).unwrap(), Some((19_990, 1999)));
+        // Every key, exact and one past, including leaf boundaries.
+        for i in 0..2000u64 {
+            assert_eq!(t.floor(&mut p, &(i * 10)).unwrap(), Some((i * 10, i)));
+            assert_eq!(t.floor(&mut p, &(i * 10 + 1)).unwrap(), Some((i * 10, i)));
+        }
+        t.delete(&mut p, &0).unwrap();
+        assert_eq!(t.floor(&mut p, &5).unwrap(), None);
+    }
+
+    #[test]
+    fn bulk_load_page_estimate_is_exact() {
+        for n in [0usize, 1, 100, 200, 201, 5000, 50_000] {
+            let mut p = MemPager::new(1 << 16);
+            let items = (0..n as u64).map(|i| (i, i));
+            let t: BTree<u64, u64> = BTree::bulk_load(&mut p, ObjectId::NONE, items).unwrap();
+            let got = t.pages(&mut p).unwrap().len() as u64;
+            assert_eq!(got, BTree::<u64, u64>::bulk_load_pages(n, 8), "{n} entries");
+        }
     }
 
     #[test]
