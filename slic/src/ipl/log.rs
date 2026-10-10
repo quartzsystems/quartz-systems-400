@@ -40,6 +40,11 @@ impl IplLog {
         });
     }
 
+    /// Seconds since slic started.
+    pub fn uptime(&self) -> f64 {
+        self.started.elapsed().as_secs_f64()
+    }
+
     /// One line per entry.
     pub fn dump(&self) -> String {
         let mut s = String::new();

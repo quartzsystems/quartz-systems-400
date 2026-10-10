@@ -56,14 +56,18 @@ const REQUIRED_Y: &[&str] = &[
     "FB",
     "FRAMEBUFFER_CONSOLE",
     "DRM_SIMPLEDRM",
+    "DRM_FBDEV_EMULATION",
     "VT",
     "VT_CONSOLE",
     "SERIAL_8250",
     "SERIAL_8250_CONSOLE",
     "KEYBOARD_ATKBD",
+    "INPUT_EVDEV",
     "HID",
     "USB_HID",
     "HW_RANDOM",
+    "RTC_CLASS",
+    "RTC_DRV_CMOS",
 ];
 
 /// Symbols that must not be `=y`.
@@ -78,6 +82,7 @@ const REQUIRED_N: &[&str] = &[
     "SOUND",
     "SND",
     "MEDIA_SUPPORT",
+    "RTC_HCTOSYS",
 ];
 
 /// Parse a `.config` into symbol -> value (`y`, `m`, `n`, numbers, quoted strings).

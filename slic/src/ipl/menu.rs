@@ -38,7 +38,7 @@ pub fn run(system: &mut System, rx: &Receiver<Event>) {
                 Ok(Event::Signal(s)) if s == sys::HANDLED[0] => {
                     sys::reap();
                 }
-                Ok(Event::Signal(_)) => {}
+                Ok(Event::Signal(_) | Event::Uevent(_)) => {}
                 Err(_) => return,
             }
         };

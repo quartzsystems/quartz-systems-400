@@ -5,6 +5,7 @@
 //! The IPL state machine: LIC phase, OS phase, then the run loop that
 //! serves signals and the service console until power down.
 
+pub mod clock;
 pub mod cmdline;
 pub mod lic;
 pub mod log;
@@ -19,6 +20,8 @@ use std::time::Duration;
 
 use licpart::IplMode;
 
+use crate::hwrsrc;
+use crate::net;
 use crate::platform::{console, mounts, serial, sys};
 use crate::src;
 use crate::svc;
@@ -31,6 +34,8 @@ pub enum Event {
     Signal(i32),
     /// A line was typed on the serial port.
     Line(String),
+    /// A kernel hotplug event.
+    Uevent(hwrsrc::uevent::Uevent),
 }
 
 /// Run as PID 1. Never returns.
@@ -73,13 +78,13 @@ pub fn run() -> ! {
 
     let (tx, rx) = mpsc::channel();
     spawn_signal_thread(tx.clone());
-    if !serial::spawn_reader(tx) {
+    if !serial::spawn_reader(tx.clone()) {
         system
             .out
             .serial("slic: serial port not readable; no service console\n");
     }
 
-    if let Err(fatal) = lic_phase(&mut system, &rx) {
+    if let Err(fatal) = lic_phase(&mut system, &rx, tx) {
         system.fatal(fatal);
     }
     os_phase(&mut system);
@@ -87,12 +92,34 @@ pub fn run() -> ! {
 }
 
 /// C1001000 through C1001060, plus the manual-mode menu.
-fn lic_phase(system: &mut System, rx: &mpsc::Receiver<Event>) -> Result<(), &'static src::Src> {
+fn lic_phase(
+    system: &mut System,
+    rx: &mpsc::Receiver<Event>,
+    tx: mpsc::Sender<Event>,
+) -> Result<(), &'static src::Src> {
     lic::attach(system)?;
 
-    // Hardware, clock and network come in later commits; the phases
-    // already exist so the SRC sequence is complete.
+    system.hw = hwrsrc::Table::coldplug();
+    system.out.serial(&format!(
+        "slic: {} hardware resources\n",
+        system.hw.resources.len()
+    ));
+    if !hwrsrc::uevent::spawn_listener(tx) {
+        system
+            .out
+            .serial("slic: uevent socket unavailable; no hotplug\n");
+    }
     system.emit(&src::HW_ENUMERATED);
+
+    match clock::set_from_rtc(system) {
+        Ok(now) => {
+            system.clock = Some(now);
+            system
+                .out
+                .serial(&format!("slic: clock set to {now} UTC from RTC\n"));
+        }
+        Err(e) => system.out.serial(&format!("slic: clock not set: {e}\n")),
+    }
     system.emit(&src::CLOCK_SET);
 
     // No local console yet: say so and carry on with serial.
@@ -100,6 +127,22 @@ fn lic_phase(system: &mut System, rx: &mpsc::Receiver<Event>) -> Result<(), &'st
 
     if system.mode == IplMode::Manual {
         menu::run(system, rx);
+    }
+
+    match net::links() {
+        Ok(links) => {
+            if let Some(lo) = links.iter().find(|l| l.name == "lo")
+                && !lo.is_up()
+                && let Err(e) = net::set_up(lo.index)
+            {
+                system.out.serial(&format!("slic: lo up: {e}\n"));
+            }
+            system.links = net::links().unwrap_or(links);
+            system
+                .out
+                .serial(&format!("slic: {} network links\n", system.links.len()));
+        }
+        Err(e) => system.out.serial(&format!("slic: rtnetlink: {e}\n")),
     }
     system.emit(&src::NET_ENUMERATED);
     Ok(())
@@ -129,6 +172,11 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>) -> ! {
             Ok(Event::Line(line)) => {
                 if system.boot.svc {
                     svc::handle(system, &line);
+                }
+            }
+            Ok(Event::Uevent(ev)) => {
+                if let Some(msg) = system.hw.apply_uevent(&ev) {
+                    system.out.serial(&format!("{msg}\n"));
                 }
             }
             Err(_) => park(),

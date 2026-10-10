@@ -72,6 +72,8 @@ pub fn args(test: &BootTest) -> Vec<OsString> {
     a.extend(
         [
             "-snapshot",
+            "-rtc",
+            "base=utc",
             "-nic",
             "none",
             "-nographic",

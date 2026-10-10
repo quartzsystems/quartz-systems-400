@@ -46,7 +46,7 @@ pub fn handle(system: &mut System, line: &str) {
         ("srcs", []) => system.log.dump(),
         ("srcs", ["table"]) => src_table(),
         ("hist", _) => hist(system),
-        ("hw", _) => "Hardware resource table not available yet\n".to_string(),
+        ("hw", _) => format!("{}\n{}", system.hw.dump(), crate::net::dump(&system.links)),
         ("lic", _) => lic_dump(system),
         ("sysval", _) => "System values not available yet\n".to_string(),
         ("mode", [m]) => mode(system, m),

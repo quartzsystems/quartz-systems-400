@@ -9,9 +9,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use licpart::{IplMode, IplType, LicPart, Record, Slot};
 
+use crate::hwrsrc::Table;
 use crate::ipl::cmdline::Boot;
 use crate::ipl::log::IplLog;
 use crate::ipl::{lic, park};
+use crate::net::Link;
 use crate::platform::console::Outputs;
 use crate::src::Src;
 
@@ -33,6 +35,12 @@ pub struct System {
     pub abnormal: bool,
     /// Set once C6001090 has been written.
     pub complete: bool,
+    /// Hardware resource table.
+    pub hw: Table,
+    /// Network links as enumerated at IPL.
+    pub links: Vec<Link>,
+    /// Unix time the clock was set to from the RTC, if it was.
+    pub clock: Option<u64>,
 }
 
 impl System {
@@ -48,6 +56,9 @@ impl System {
             start_time: now_unix(),
             abnormal: false,
             complete: false,
+            hw: Table::default(),
+            links: Vec::new(),
+            clock: None,
         }
     }
 

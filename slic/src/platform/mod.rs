@@ -7,5 +7,6 @@
 pub mod console;
 pub mod mounts;
 pub mod power;
+pub mod rtc;
 pub mod serial;
 pub mod sys;
