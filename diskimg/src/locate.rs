@@ -31,6 +31,16 @@ pub struct DiskInfo {
     pub has_qs400: bool,
 }
 
+/// The whole disk a partition node belongs to, `nvme0n1` for
+/// `/dev/nvme0n1p2`, from its sysfs path. `None` for a whole disk.
+#[must_use]
+pub fn disk_of(part: &Path) -> Option<String> {
+    let name = part.file_name()?.to_str()?;
+    let real = fs::canonicalize(Path::new(SYS_BLOCK).join(name)).ok()?;
+    let parent = real.parent()?.file_name()?.to_str()?;
+    (parent != "block").then(|| parent.to_string())
+}
+
 /// Whole disks under `/sys/class/block` in name order, without
 /// removable media and loop or RAM devices.
 pub fn whole_disks() -> Result<Vec<DiskInfo>, Error> {

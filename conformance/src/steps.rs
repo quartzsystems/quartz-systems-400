@@ -193,7 +193,8 @@ impl Suite {
         }
     }
 
-    /// Install from the ISO onto a blank disk, then boot the disk alone.
+    /// Install from the ISO onto a blank disk, boot the disk alone, then
+    /// install over it again from the media.
     fn run_install(&self) -> Result<Vec<StepReport>, HarnessError> {
         let iso = self.iso.clone().expect("checked in new");
         let blank = self.out_dir.join("install.img");
@@ -221,7 +222,30 @@ impl Suite {
         reports.push(self.step(&mut s, "2 boot installed disk", Self::installed_boot)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
+        drop(s);
+        let mut s = Session::spawn(&media)?;
+        reports.push(self.step(&mut s, "3 reinstall over the disk", Self::reinstall_dialog)?);
+        s.wait_exit(Duration::from_secs(20));
         Ok(reports)
+    }
+
+    /// Install step 3: the installed disk is listed as such and the
+    /// installer writes over it while running from the media.
+    fn reinstall_dialog(&self, s: &mut Session) -> Result<String, String> {
+        s.expect("Selection:", self.boot_timeout)?;
+        s.send("2")?;
+        let listing = s.expect("Selection (0 to return):", CMD)?;
+        if !listing.contains("(QS/400 partitions present)") {
+            return Err(format!("the installed disk is not marked:\n{listing}"));
+        }
+        s.send("1")?;
+        s.expect("Type YES to continue:", CMD)?;
+        s.send("YES")?;
+        s.expect("ASP 1 initialized", Duration::from_secs(120))?;
+        s.expect("press Enter to power down", CMD)?;
+        s.send("")?;
+        s.expect("SRC D1001090", CMD)?;
+        Ok("installed disk recognized and written again".into())
     }
 
     /// Install step 1: option 2, the first disk, `YES`, Enter at the end.

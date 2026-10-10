@@ -44,6 +44,21 @@ impl Rng {
     }
 }
 
+/// Whether the counts are a state only whole committed batches leave.
+/// Creation spreads every batch of 1000 over the ten libraries, so the
+/// counts rise together; the leftover delete that precedes it empties
+/// the libraries in order, 1000 at a time. So counts are multiples of
+/// 100, never decrease along the list, and at most one library is
+/// partway between empty and the last one.
+fn whole_batches(counts: &[u64]) -> bool {
+    let Some(&last) = counts.last() else {
+        return false;
+    };
+    counts.iter().all(|c| c.is_multiple_of(100))
+        && counts.windows(2).all(|w| w[0] <= w[1])
+        && counts.iter().filter(|&&c| c != 0 && c != last).count() <= 1
+}
+
 /// `QBENCHn` object counts from a `lib ls` listing, in library order.
 fn bench_counts(listing: &str) -> Vec<u64> {
     let mut counts = Vec::new();
@@ -189,11 +204,7 @@ impl Suite {
             let listing = s.command("lib ls", CMD).map_err(|e| fail(&s, e))?;
             let counts = bench_counts(&listing);
             let total: u64 = counts.iter().sum();
-            let per_lib = counts[0];
-            if counts.iter().any(|&c| c != per_lib)
-                || !per_lib.is_multiple_of(100)
-                || total > PULL_BENCH
-            {
+            if !whole_batches(&counts) || total > PULL_BENCH {
                 return Err(fail(
                     &s,
                     format!("bench object counts are not whole committed batches: {counts:?}"),
@@ -215,5 +226,27 @@ impl Suite {
                 details.join("; ")
             },
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::whole_batches;
+
+    #[test]
+    fn committed_batches_are_recognized() {
+        assert!(whole_batches(&[1100; 10]));
+        assert!(whole_batches(&[0; 10]));
+        assert!(whole_batches(&[0, 0, 0, 0, 0, 0, 0, 0, 0, 1400]));
+        assert!(whole_batches(&[
+            0, 0, 400, 1400, 1400, 1400, 1400, 1400, 1400, 1400
+        ]));
+        assert!(!whole_batches(&[
+            1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1100, 1050
+        ]));
+        assert!(!whole_batches(&[
+            0, 400, 300, 1400, 1400, 1400, 1400, 1400, 1400, 1400
+        ]));
+        assert!(!whole_batches(&[1400, 0, 0, 0, 0, 0, 0, 0, 0, 0]));
     }
 }

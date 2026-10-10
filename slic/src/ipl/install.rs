@@ -9,13 +9,14 @@
 //! dedicated service tools yet.
 
 use std::fs::{File, OpenOptions};
+use std::io::Cursor;
 use std::sync::mpsc::Receiver;
 use std::time::Duration;
 
 use blockdev::{BlockDev, LinuxBlockDev};
 use diskimg::locate::DiskInfo;
 use diskimg::{Guids, Plan, fat, iso9660};
-use licpart::LicPart;
+use licpart::{Device, LicPart, SLOT_BYTES};
 use store::{Store, StoreConfig};
 
 use crate::hwrsrc::Kind;
@@ -201,6 +202,7 @@ fn install(system: &mut System, page: &mut Page, disk: &DiskInfo) -> Result<(), 
         ),
     );
     page.show(system, None);
+    release_lic_on(system, disk);
     let mut file = OpenOptions::new()
         .read(true)
         .write(true)
@@ -256,6 +258,27 @@ fn install(system: &mut System, page: &mut Page, disk: &DiskInfo) -> Result<(), 
         &format!("ASP 1 initialized: {pages} pages, QSYS is {qsys}"),
     );
     Ok(())
+}
+
+/// A D IPL next to an installed disk has that disk's LIC partition open,
+/// and the kernel will not re-read a partition table while a partition
+/// on the disk is open. Keep the record in memory instead.
+fn release_lic_on(system: &mut System, disk: &DiskInfo) {
+    let on_disk = licpart::locate()
+        .ok()
+        .and_then(|p| diskimg::locate::disk_of(&p))
+        .is_some_and(|d| d == disk.name);
+    if !on_disk {
+        return;
+    }
+    if let Some((part, record)) = system.lic.take() {
+        drop(part);
+        let memory: Box<dyn Device> = Box::new(Cursor::new(vec![0u8; 2 * SLOT_BYTES]));
+        system.lic = Some((LicPart::open(memory), record));
+        system
+            .out
+            .serial("slic: LIC partition on the target disk released\n");
+    }
 }
 
 /// The two slot UKIs from the installation media: the first optical

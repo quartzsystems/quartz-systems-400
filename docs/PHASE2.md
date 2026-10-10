@@ -221,6 +221,11 @@ bootstrapped exactly as a first boot would. Then power down; the next
 IPL from the disk opens the store (C1001080, C6001005) and reaches
 sign-on. No dedicated service tools yet.
 
+Installing over an installed disk works too: a D IPL attaches the
+disk's LIC partition at C1001010, and the kernel refuses `BLKRRPART`
+while a partition on the disk is open, so the installer first swaps
+that handle for an in-memory copy of the record.
+
 ## Service console
 
 ```
@@ -263,12 +268,12 @@ Harness level (`build test`), after the Phase 1 steps:
 | 7 libraries | C6001007 on the first boot; `lib ls` shows the eight system libraries in EBCDIC order |
 | 8 sysval in store | QSECURITY is 50 from `*SYSVAL`; `lic` shows tag 0x0101 and no 0x0100 |
 | 9 object bench | `obj bench N`, `rclstg *CHECK` clean, `pwrdwn restart`, the next IPL replays 0 |
-| 10 power pulls | per seed: boot, `obj bench 200000`, kill QEMU after 1.5 to 7.5 s, boot, C1001080, `chkstg` 0 bad, `rclstg *CHECK` 0 problems, every QBENCH library holds the same multiple of 100 objects, at most 200000 in all |
+| 10 power pulls | per seed: boot, `obj bench 200000`, kill QEMU after 1.5 to 7.5 s, boot, C1001080, `chkstg` 0 bad, `rclstg *CHECK` 0 problems, the QBENCH counts are a state only whole committed batches leave (equal, or emptied in library order by the leftover delete), at most 200000 in all |
 
 `build test` runs the bench with 20,000 objects and 3 pulls;
 `--bench 1000000 --pulls 10` is the CI size and `--pulls 100` the local
-one. `build test --media iso --install` installs onto a blank 4 GiB disk
-and boots it.
+one. `build test --media iso --install` installs onto a blank 4 GiB disk,
+boots it, then installs over it again from the media.
 
 ## Numbers
 
@@ -345,7 +350,7 @@ same multiple of 100 objects: only whole committed batches survive.
 
 The same day on the 4 GiB default image: `build test` (bench 20,000,
 3 pulls) PASS 10 steps; `build test --media iso` PASS 3 steps; `build
-test --media iso --install` PASS 2 steps; `cargo test --workspace` 32
+test --media iso --install` PASS 3 steps; `cargo test --workspace` 32
 suites green on Windows and Linux; `build deny` clean on both targets
 with 157 crates; clippy clean for the host and for musl; `build
 userland` verifies `slic` is a static ELF on every build. Unit-level

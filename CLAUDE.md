@@ -86,7 +86,7 @@ cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media
 cargo run -p build -- test        # the six-step Phase 1 suite under QEMU
 cargo run -p build -- test --media iso    # the media steps
-cargo run -p build -- test --media iso --install   # install onto a blank disk, boot it
+cargo run -p build -- test --media iso --install   # install, boot the disk, reinstall
 cargo run -p build -- deny        # cargo-deny + links/cc lockfile check
 cargo clippy --workspace --all-targets    # must be warning-free
 cargo clippy -p slic -p console --all-targets --target x86_64-unknown-linux-musl
