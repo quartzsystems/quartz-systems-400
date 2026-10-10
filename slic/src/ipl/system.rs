@@ -15,6 +15,7 @@ use console::Command;
 use crate::hwrsrc::Table;
 use crate::ipl::cmdline::Boot;
 use crate::ipl::log::IplLog;
+use crate::ipl::storage::{Storage, Temp};
 use crate::ipl::{lic, park};
 use crate::net::Link;
 use crate::platform::console::Outputs;
@@ -48,6 +49,10 @@ pub struct System {
     pub sysvals: Option<SysVals>,
     /// The console thread, once attached.
     pub console: Option<Sender<Command>>,
+    /// ASP 1 and its store, once opened.
+    pub storage: Option<Storage>,
+    /// The temporary ASP with QTEMP, once created.
+    pub temp: Option<Temp>,
 }
 
 impl System {
@@ -68,6 +73,8 @@ impl System {
             clock: None,
             sysvals: None,
             console: None,
+            storage: None,
+            temp: None,
         }
     }
 

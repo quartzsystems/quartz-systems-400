@@ -54,18 +54,28 @@ pub const CLOCK_SET: Src = src("C1001040", "Clock set from RTC", Phase::Lic);
 pub const CONSOLE_ATTACHED: Src = src("C1001050", "Console attached", Phase::Lic);
 /// Network links enumerated.
 pub const NET_ENUMERATED: Src = src("C1001060", "Network links enumerated", Phase::Lic);
+/// ASP 1 unit located.
+pub const ASP_LOCATED: Src = src("C1001070", "ASP units located", Phase::Lic);
+/// WAL replayed (or a blank unit formatted).
+pub const RECOVERY: Src = src("C1001080", "Storage management recovery", Phase::Lic);
+/// Neither superblock usable, or the store would not open.
+pub const RECOVERY_FAILED: Src = src("C1001085", "Storage management recovery failed", Phase::Lic);
+/// The store was created by another release.
+pub const RELEASE_MISMATCH: Src = src("C1001087", "Store release mismatch", Phase::Lic);
 /// Previous IPL was abnormal. Informational, continues.
 pub const PREV_ABNORMAL: Src = src("C1002000", "Previous IPL was abnormal", Phase::Lic);
 /// OS phase started.
 pub const OS_STARTED: Src = src("C6001000", "OS phase started", Phase::Os);
+/// Object store opened.
+pub const STORE_OPENED: Src = src("C6001005", "Object store opened", Phase::Os);
+/// First boot: QSYS and the system libraries created.
+pub const ASP_INITIALIZED: Src = src("C6001007", "ASP 1 initialized", Phase::Os);
+/// The superblock asks for a reclaim.
+pub const RCLSTG_REQUIRED: Src = src("C6001008", "Reclaim storage required", Phase::Os);
 /// System values loaded.
 pub const SYSVALS_LOADED: Src = src("C6001010", "System values loaded", Phase::Os);
 /// Startup program skipped. MIGRATE(phase5): run QSTRUPPGM.
-pub const STRUP_SKIPPED: Src = src(
-    "C6001020",
-    "Startup program skipped, no object store",
-    Phase::Os,
-);
+pub const STRUP_SKIPPED: Src = src("C6001020", "Startup program skipped", Phase::Os);
 /// IPL complete.
 pub const IPL_COMPLETE: Src = src("C6001090", "IPL complete", Phase::Os);
 /// Console not found; continuing on serial.
@@ -84,8 +94,20 @@ pub const LIC_UNREADABLE: Src = src(
     "LIC record unreadable, both copies",
     Phase::Fatal,
 );
+/// No ASP 1 partition on an A or B IPL.
+pub const ASP_NOT_FOUND: Src = src("B1001030", "ASP 1 unit not found", Phase::Fatal);
+/// The store could not be opened or initialized.
+pub const ASP_UNUSABLE: Src = src("B1001040", "Object store unusable", Phase::Fatal);
+/// The store belongs to another release.
+pub const ASP_WRONG_RELEASE: Src = src(
+    "B1001050",
+    "Object store created by another release",
+    Phase::Fatal,
+);
 /// Power down started.
 pub const PWRDWN_STARTED: Src = src("D1001000", "Power down started", Phase::PowerDown);
+/// Store checkpointed and closed.
+pub const STORE_CLOSED: Src = src("D1001010", "Object store closed", Phase::PowerDown);
 /// Power down complete.
 pub const PWRDWN_COMPLETE: Src = src("D1001090", "Power down complete", Phase::PowerDown);
 
@@ -99,8 +121,15 @@ pub const TABLE: &[Src] = &[
     CLOCK_SET,
     CONSOLE_ATTACHED,
     NET_ENUMERATED,
+    ASP_LOCATED,
+    RECOVERY,
+    RECOVERY_FAILED,
+    RELEASE_MISMATCH,
     PREV_ABNORMAL,
     OS_STARTED,
+    STORE_OPENED,
+    ASP_INITIALIZED,
+    RCLSTG_REQUIRED,
     SYSVALS_LOADED,
     STRUP_SKIPPED,
     IPL_COMPLETE,
@@ -108,7 +137,11 @@ pub const TABLE: &[Src] = &[
     PANIC,
     LIC_NOT_FOUND,
     LIC_UNREADABLE,
+    ASP_NOT_FOUND,
+    ASP_UNUSABLE,
+    ASP_WRONG_RELEASE,
     PWRDWN_STARTED,
+    STORE_CLOSED,
     PWRDWN_COMPLETE,
 ];
 

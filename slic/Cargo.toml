@@ -11,6 +11,10 @@ licpart = { path = "../licpart", version = "0.1.0" }
 sysval = { path = "../sysval", version = "0.1.0" }
 console = { path = "../console", version = "0.1.0" }
 release = { path = "../release", version = "0.1.0" }
+store = { path = "../store", version = "0.1.0" }
+blockdev = { path = "../blockdev", version = "0.1.0" }
+diskimg = { path = "../diskimg", version = "0.1.0" }
+qsname = { path = "../qsname", version = "0.1.0" }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 rustix = { version = "1.1.5", features = ["fs", "mount", "net", "process", "system", "time"] }

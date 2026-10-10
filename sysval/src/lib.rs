@@ -6,7 +6,7 @@
 //! defaults and text, validation, time zones with coded DST rules, and
 //! storage of changed values in the LIC partition.
 //!
-//! MIGRATE(phase2): storage moves into the object store.
+//! Storage is the `*SYSVAL` object; the LIC record keeps the IPL subset.
 
 #![forbid(unsafe_code)]
 
@@ -20,7 +20,7 @@ mod value;
 pub use catalog::{Catalog, Entry, Group, Kind};
 pub use clock::{LocalTime, civil_from_days, civil_to_unix, days_from_civil};
 pub use error::SysValError;
-pub use store::{Effect, HostInfo, SysVals, TAG_SYSVALS};
+pub use store::{Effect, HostInfo, IPL_NAMES, SysVals, TAG_IPL_SYSVALS, TAG_SYSVALS};
 pub use value::Value;
 
 /// The catalog source, compiled in.

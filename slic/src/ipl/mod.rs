@@ -12,6 +12,7 @@ pub mod lic;
 pub mod log;
 pub mod menu;
 pub mod power;
+pub mod storage;
 pub mod system;
 pub mod sysvals;
 
@@ -122,6 +123,12 @@ fn lic_phase(
     }
     system.emit(&src::HW_ENUMERATED);
 
+    // A D IPL may be about to install onto the disk, so its store opens
+    // only after the menu.
+    if !system.boot.ipl_d {
+        storage::locate_and_open(system)?;
+    }
+
     match clock::set_from_rtc(system) {
         Ok(now) => {
             system.clock = Some(now);
@@ -137,6 +144,9 @@ fn lic_phase(
 
     if system.mode == IplMode::Manual {
         menu::run(system, rx);
+    }
+    if system.boot.ipl_d {
+        storage::locate_and_open(system)?;
     }
 
     match net::links() {
@@ -161,6 +171,10 @@ fn lic_phase(
 /// C6001000 through C6001090.
 fn os_phase(system: &mut System) {
     system.emit(&src::OS_STARTED);
+    if let Err(fatal) = storage::open_objects(system) {
+        system.fatal(fatal);
+    }
+    storage::open_temp(system);
     sysvals::load(system);
     system.emit(&src::SYSVALS_LOADED);
     system.emit(&src::STRUP_SKIPPED);
@@ -179,7 +193,8 @@ fn os_phase(system: &mut System) {
 /// Serve events forever. Power down leaves through `power::down`.
 fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>) -> ! {
     loop {
-        match rx.recv() {
+        match rx.recv_timeout(Duration::from_secs(5)) {
+            Err(mpsc::RecvTimeoutError::Timeout) => storage::tick(system),
             Ok(Event::Signal(s)) if s == libc_sigchld() => {
                 sys::reap();
             }

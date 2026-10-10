@@ -130,8 +130,7 @@ fn lic_dump(system: &mut System) -> String {
 }
 
 fn sysval(system: &mut System, args: &[&str]) -> String {
-    let System { sysvals, lic, .. } = system;
-    let Some(vals) = sysvals.as_mut() else {
+    let Some(vals) = system.sysvals.as_mut() else {
         return "System values not loaded\n".to_string();
     };
     match args {
@@ -150,11 +149,8 @@ fn sysval(system: &mut System, args: &[&str]) -> String {
             let name = name.to_ascii_uppercase();
             match vals.set_text(&name, &rest.join(" ")) {
                 Ok(effect) => {
-                    let saved = match lic.as_mut() {
-                        Some((part, record)) => vals.save(part, record).map_err(|e| e.to_string()),
-                        None => Err("LIC partition not attached".to_string()),
-                    };
                     let now = vals.get(&name).map(|v| v.text()).unwrap_or_default();
+                    let saved = crate::ipl::sysvals::save(system);
                     let when = match effect {
                         sysval::Effect::Immediate => "",
                         sysval::Effect::NextIpl => " (takes effect at the next IPL)",

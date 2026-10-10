@@ -6,6 +6,7 @@
 
 use crate::ipl::lic;
 use crate::ipl::park;
+use crate::ipl::storage;
 use crate::ipl::system::System;
 use crate::platform::power;
 use crate::src;
@@ -13,6 +14,7 @@ use crate::src;
 /// Power off, or restart. Never returns.
 pub fn down(system: &mut System, restart: bool) -> ! {
     system.emit(&src::PWRDWN_STARTED);
+    storage::close(system);
     lic::shutdown(system, &src::PWRDWN_STARTED);
     if let Some((part, _)) = system.lic.take() {
         drop(part); // closes the partition before unmounting /dev

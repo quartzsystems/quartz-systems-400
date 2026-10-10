@@ -106,6 +106,12 @@ fn library_name(txn: &mut Txn<'_>, id: ObjectId) -> String {
 
 /// Create the root library QSYS: the first object, serial 1, in itself.
 pub fn bootstrap(txn: &mut Txn<'_>, now: u64, system: &str) -> Result<ObjectId> {
+    bootstrap_root(txn, now, system, qsys_name())
+}
+
+/// Create a root library called `name` (QSYS, or QTEMP in the
+/// temporary ASP): the first object, serial 1, in itself.
+pub fn bootstrap_root(txn: &mut Txn<'_>, now: u64, system: &str, name: Name) -> Result<ObjectId> {
     if txn.objdir_root().is_some() {
         return Err(StoreError::Corrupt {
             page: 0,
@@ -121,7 +127,7 @@ pub fn bootstrap(txn: &mut Txn<'_>, now: u64, system: &str) -> Result<ObjectId> 
         generation: 0,
     };
     let page = txn.alloc()?;
-    let mut h = ObjectHeader::new(id, id, qsys_name(), now);
+    let mut h = ObjectHeader::new(id, id, name, now);
     h.text = text("System library")?;
     h.owner = text("QSYS")?;
     h.creator = text("QSYS")?;
@@ -135,8 +141,8 @@ pub fn bootstrap(txn: &mut Txn<'_>, now: u64, system: &str) -> Result<ObjectId> 
     txn.write(page, &mut p, PageType::ObjectHeader, id)?;
     dir::objdir_insert(txn, id, page)?;
     let mut lib = Library::load(txn, id)?;
-    lib.add(txn, types::LIB, qsys_name(), id)?;
-    debug!("objects: QSYS is {id} at page {page}");
+    lib.add(txn, types::LIB, name, id)?;
+    debug!("objects: root library {name} is {id} at page {page}");
     Ok(id)
 }
 

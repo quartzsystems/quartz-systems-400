@@ -356,6 +356,16 @@ impl Store {
         self.next_serial
     }
 
+    /// Record QSYS in the superblock (published at the next checkpoint).
+    pub fn asp_superblock_set_qsys(&mut self, qsys: ObjectId) {
+        self.asp.superblock_mut().qsys = qsys;
+    }
+
+    /// Record the `*SYSVAL` object in the superblock.
+    pub fn asp_superblock_set_sysval(&mut self, id: ObjectId) {
+        self.asp.superblock_mut().sysval = id;
+    }
+
     /// The ASP number objects here belong to.
     #[must_use]
     pub fn asp_number(&self) -> u16 {

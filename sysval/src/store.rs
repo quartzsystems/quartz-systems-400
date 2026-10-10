@@ -16,8 +16,22 @@ use crate::error::SysValError;
 use crate::tz;
 use crate::value::Value;
 
-/// TLV tag holding the overrides. MIGRATE(phase2).
+/// TLV tag that held every override before the object store existed.
+/// Read for migration, never written again.
 pub const TAG_SYSVALS: u16 = 0x0100;
+/// TLV tag holding the overrides of the values needed before the store
+/// opens (`IPL_NAMES`): a write-through copy of the `*SYSVAL` object.
+pub const TAG_IPL_SYSVALS: u16 = 0x0101;
+/// The values the IPL reads before the object store is open.
+pub const IPL_NAMES: &[&str] = &[
+    "QIPLTYPE",
+    "QPWRRSTIPL",
+    "QRMTIPL",
+    "QABNORMSW",
+    "QIPLSTS",
+    "QCONSOLE",
+    "QAUTOCFG",
+];
 
 /// What a successful `set` means.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -45,22 +59,66 @@ pub struct SysVals {
 }
 
 impl SysVals {
-    /// Catalog defaults plus whatever the record stores.
-    pub fn from_record(record: &Record, host: &HostInfo) -> Result<Self, SysValError> {
+    /// Catalog defaults only, plus the host-derived values.
+    pub fn empty(host: &HostInfo) -> Result<Self, SysValError> {
         let catalog = Catalog::builtin()?;
         let mut vals = Self {
             catalog,
             overrides: BTreeMap::new(),
             system: BTreeMap::new(),
         };
-        if let Some(data) = record.tlv(TAG_SYSVALS) {
-            vals.overrides = decode(data, &vals.catalog)?;
-        }
         if let Some(uuid) = &host.product_uuid {
             vals.system
                 .insert("QSRLNBR".into(), Value::Char(serial_from_uuid(uuid)));
         }
         Ok(vals)
+    }
+
+    /// Catalog defaults plus whatever the record stores: the full set
+    /// from before the object store existed, else the IPL subset.
+    pub fn from_record(record: &Record, host: &HostInfo) -> Result<Self, SysValError> {
+        let mut vals = Self::empty(host)?;
+        if let Some(data) = record
+            .tlv(TAG_SYSVALS)
+            .or_else(|| record.tlv(TAG_IPL_SYSVALS))
+        {
+            vals.overrides = decode(data, &vals.catalog)?;
+        }
+        Ok(vals)
+    }
+
+    /// Catalog defaults plus the overrides in a `*SYSVAL` blob.
+    pub fn from_blob(blob: &[u8], host: &HostInfo) -> Result<Self, SysValError> {
+        let mut vals = Self::empty(host)?;
+        if !blob.is_empty() {
+            vals.overrides = decode(blob, &vals.catalog)?;
+        }
+        Ok(vals)
+    }
+
+    /// Every override, as the `*SYSVAL` object stores it.
+    pub fn to_blob(&self) -> Vec<u8> {
+        encode(&self.overrides)
+    }
+
+    /// The overrides of `IPL_NAMES` only.
+    pub fn ipl_blob(&self) -> Vec<u8> {
+        let subset: BTreeMap<String, Value> = self
+            .overrides
+            .iter()
+            .filter(|(n, _)| IPL_NAMES.contains(&n.as_str()))
+            .map(|(n, v)| (n.clone(), v.clone()))
+            .collect();
+        encode(&subset)
+    }
+
+    /// Put the IPL subset into the record and drop the pre-store copy.
+    /// Write the record afterwards.
+    pub fn store_ipl(&self, record: &mut Record) -> Result<(), SysValError> {
+        record.remove_tlv(TAG_SYSVALS);
+        record
+            .set_tlv(TAG_IPL_SYSVALS, self.ipl_blob())
+            .map_err(|e| SysValError::Lic(e.to_string()))
     }
 
     /// Read the newest record from the partition and load from it.
