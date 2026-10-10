@@ -57,7 +57,8 @@ slic/         PID 1: src/ipl/ state machine, src/hwrsrc/, src/net/, src/svc/,
 conformance/  QEMU harness: src/qemu/ (session, qmp, serial, firmware), src/steps.rs
 release/      VxRyMz identity, build ID, PTF names (one source of truth)
 blockdev/     BlockDev trait, AlignedBuf, Linux O_DIRECT backend, MemBlockDev with faults
-docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, images/
+store/        object store: src/page/ (trailer, pager), src/btree/ (CoW tree), src/obj/
+docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, STORE_FORMAT.md, images/
 ```
 
 ## Commands
@@ -119,6 +120,9 @@ otherwise logs go to `target/logs/`.
   are the compatibility interface.
 - Persistence before the object store goes through `licpart` and is marked
   `MIGRATE(phase2)`.
+- On-disk store structures are specified in `docs/STORE_FORMAT.md` before
+  they are coded; `store/tests/spec.rs` compares the code's `Layout`s with
+  the spec tables, so both change together.
 - Framebuffer writes: one `pwrite` per frame spanning every line, then
   `fsync`. Partial-line writes lose damage at line ends and `mmap` never
   flushes under simpledrm's fbdev emulation (see docs/PHASE1.md).

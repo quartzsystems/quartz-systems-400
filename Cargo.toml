@@ -9,6 +9,7 @@ members = [
     "console",
     "release",
     "blockdev",
+    "store",
 ]
 
 [workspace.package]
@@ -42,6 +43,11 @@ missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 module_name_repetitions = "allow"
 must_use_candidate = "allow"
+
+# The store's property tests do hundreds of thousands of tree operations;
+# unoptimized they take minutes.
+[profile.test.package.store]
+opt-level = 2
 
 # Release profile is shared by the image binaries and the host tools.
 [profile.release]
