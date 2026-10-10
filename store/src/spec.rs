@@ -64,5 +64,12 @@ pub fn layouts() -> Vec<&'static Layout> {
         &crate::obj::header::OVERFLOW_HEADER_LAYOUT,
         &crate::obj::library::LIB_ATTR_LAYOUT,
         &crate::obj::dir::DIR_KEY_LAYOUT,
+        &crate::obj::dtaara::LAYOUT,
+        &crate::obj::dtaq::ATTR_LAYOUT,
+        &crate::obj::dtaq::ENTRY_LAYOUT,
+        &crate::obj::usrspc::LAYOUT,
+        &crate::obj::usridx::LAYOUT,
+        &crate::obj::usridx::KEY_LAYOUT,
+        &crate::obj::sysval::LAYOUT,
     ]
 }

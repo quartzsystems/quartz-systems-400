@@ -491,3 +491,104 @@ the order a display would.
 Type codes are fixed by `store/src/obj/types.rs` and appear in IDs,
 directory keys and headers; see that table for the list. `*SYSVAL`
 (0x00FF) is internal: one instance, in QSYS, not user-creatable.
+
+## 10. Payload types
+
+An object's payload lives in its extents. For the types below the
+extents form one byte space: page `i` of the concatenated extents holds
+bytes `i * 4064 ..` of the space (the body of a data page, type
+0x0021, owned by the object). Changes to the payload are in-place
+changes logged as WAL images and patches (§6); they never move a page,
+so the extent list stays put. `TODO(perf)`: user space writes that
+cover whole pages could skip the patch and image the page directly.
+
+### `DtaaraAttr` (16 bytes)
+
+The value is the first bytes of the byte space: `*CHAR` the `length`
+CP037 bytes; `*DEC` a 16-byte two's complement little-endian integer
+scaled by `10^decimals`; `*LGL` one byte, 0 or 1.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | kind | 0 `*CHAR`, 1 `*DEC`, 2 `*LGL` |
+| 1 | 1 | decimals | `*DEC` only, 0..9 |
+| 2 | 2 | length | `*CHAR` 1..2000, `*DEC` digits 1..24, `*LGL` 1 |
+| 4 | 1 | locked | lock flag for a later phase |
+| 5 | 3 | reserved | 0 |
+| 8 | 8 | reserved2 | 0 |
+
+### `DtaqAttr` (48 bytes)
+
+Entries are appended at `tail`; `head` is the first live entry. A
+receive marks an entry dead; when the queue empties both offsets reset
+to 0, which is how space is reclaimed. `*USRQ` is a `*DTAQ` without a
+sender ID.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | order | 0 `*FIFO`, 1 `*LIFO`, 2 `*KEYED` |
+| 1 | 1 | sender_id | 1 when entries carry a sender |
+| 2 | 2 | key_len | 0 unless keyed, else 1..256 |
+| 4 | 4 | max_entry_len | 1..64512 |
+| 8 | 8 | head | byte offset of the first live entry |
+| 16 | 8 | tail | byte offset for the next entry |
+| 24 | 8 | entry_count | live entries |
+| 32 | 8 | next_seq | sequence of the next entry |
+| 40 | 8 | space_bytes | bytes allocated to the byte space |
+
+### `DtaqEntry` (48 bytes)
+
+Followed by `key_len` key bytes, `len` data bytes, and padding to a
+multiple of 8.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | seq | |
+| 8 | 4 | len | data bytes |
+| 12 | 2 | key_len | |
+| 14 | 2 | flags | bit 0 live |
+| 16 | 26 | sender | job name, user, number (10, 10, 6), CP037; blank without sender ID |
+| 42 | 6 | reserved | 0 |
+
+### `UsrspcAttr` (16 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | size | bytes |
+| 8 | 1 | extendable | 1 when writes past the end grow the space |
+| 9 | 1 | initial_value | byte new space is filled with |
+| 10 | 6 | reserved | 0 |
+
+### `UsridxAttr` (32 bytes)
+
+Entries live in a B+tree owned by the index, keyed by `IdxKey`, whose
+value is the entry's bytes after the key (at most 1024, so
+`entry_len` is at most `key_len + 1024`; `TODO(phase2)`: longer
+entries).
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | entry_kind | 0 fixed, 1 variable |
+| 1 | 1 | reserved | 0 |
+| 2 | 2 | key_len | 1..120 |
+| 4 | 2 | entry_len | fixed length, or the maximum |
+| 6 | 2 | reserved2 | 0 |
+| 8 | 8 | root | tree root, 0 for empty |
+| 16 | 8 | entry_count | |
+| 24 | 8 | next_seq | |
+
+### `IdxKey` (128 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 120 | key | the entry's first `key_len` bytes, zero padded |
+| 120 | 8 | seq | insertion sequence, so equal keys sort by age |
+
+### `SysvalAttr` (16 bytes)
+
+The byte space holds the `sysval` crate's TLV blob.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | blob_len | bytes |
+| 8 | 8 | reserved | 0 |

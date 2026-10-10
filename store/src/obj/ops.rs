@@ -404,6 +404,25 @@ pub fn grow(txn: &mut Txn<'_>, id: ObjectId, pages: u64) -> Result<Vec<Run>> {
     Ok(added)
 }
 
+/// Give back the last `pages` pages of an object's storage.
+pub fn shrink(txn: &mut Txn<'_>, id: ObjectId, pages: u64) -> Result<()> {
+    let (page, mut h) = read_header(txn, id)?;
+    let mut extents = all_extents(txn, &h)?;
+    let mut left = pages.min(h.size_pages);
+    while left > 0 {
+        let last = extents.last_mut().expect("size_pages counts extents");
+        let cut = left.min(last.len);
+        txn.free_run(last.start + last.len - cut, cut)?;
+        last.len -= cut;
+        left -= cut;
+        if last.len == 0 {
+            extents.pop();
+        }
+    }
+    h.size_pages -= pages.min(h.size_pages);
+    save_extents(txn, page, &mut h, &extents)
+}
+
 /// Store an extent list: inline, then one overflow page.
 fn save_extents(
     txn: &mut Txn<'_>,

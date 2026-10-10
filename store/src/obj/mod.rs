@@ -7,12 +7,18 @@
 //! operations every type gets. See `docs/STORE_FORMAT.md` §8 and §9.
 
 pub mod dir;
+pub mod dtaara;
+pub mod dtaq;
 pub mod header;
 pub mod id;
 pub mod library;
 pub mod lock;
 pub mod ops;
+pub mod space;
+pub mod sysval;
 pub mod types;
+pub mod usridx;
+pub mod usrspc;
 
 pub use dir::DirKey;
 pub use header::{Authority, ObjectHeader};
