@@ -172,7 +172,7 @@ fn signing_key(ctx: &Ctx) -> Result<SigningKey> {
     let mut seed = [0u8; 32];
     getrandom::fill(&mut seed).context("getrandom")?;
     fs::create_dir_all(path.parent().context("no parent")?)?;
-    write_private(&path, format!("{}\n", hex::encode(seed)))?;
+    write_private(&path, &format!("{}\n", hex::encode(seed)))?;
     warn!(
         "no signing key found: generated a DEV key at {} (not for release)",
         path.display()
@@ -181,7 +181,7 @@ fn signing_key(ctx: &Ctx) -> Result<SigningKey> {
 }
 
 #[cfg(unix)]
-fn write_private(path: &Path, contents: String) -> Result<()> {
+fn write_private(path: &Path, contents: &str) -> Result<()> {
     use std::io::Write;
     use std::os::unix::fs::OpenOptionsExt;
     let mut f = fs::OpenOptions::new()
@@ -194,7 +194,7 @@ fn write_private(path: &Path, contents: String) -> Result<()> {
 }
 
 #[cfg(not(unix))]
-fn write_private(path: &Path, contents: String) -> Result<()> {
+fn write_private(path: &Path, contents: &str) -> Result<()> {
     fs::write(path, contents)?;
     Ok(())
 }

@@ -2,7 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! GPT disk image with one FAT32 ESP holding slot A and slot B.
+//! GPT disk image: a FAT32 ESP holding slot A and slot B, then the raw
+//! LIC partition.
 
 use std::collections::BTreeMap;
 use std::fs::{self, File, OpenOptions};
@@ -14,7 +15,7 @@ use fatfs::{Dir, FatType, FileSystem, FormatVolumeOptions, FsOptions, ReadWriteS
 use gpt::disk::LogicalBlockSize;
 use gpt::mbr::ProtectiveMBR;
 use gpt::partition::Partition;
-use gpt::partition_types::EFI;
+use gpt::partition_types::{EFI, OperatingSystem, Type};
 use tracing::info;
 use uuid::{Uuid, uuid};
 
@@ -27,9 +28,14 @@ const SECTOR: u64 = 512;
 const ESP_FIRST_LBA: u64 = 2048;
 const ESP_BYTES: u64 = 256 * 1024 * 1024;
 const ESP_SECTORS: u64 = ESP_BYTES / SECTOR;
-/// Room for the backup GPT after the partition.
+/// Raw LIC partition right after the ESP. Zero-filled; slic initializes it
+/// on first boot.
+const LIC_FIRST_LBA: u64 = ESP_FIRST_LBA + ESP_SECTORS;
+const LIC_BYTES: u64 = 64 * 1024 * 1024;
+const LIC_SECTORS: u64 = LIC_BYTES / SECTOR;
+/// Room for the backup GPT after the last partition.
 const TAIL_SECTORS: u64 = 2048;
-const TOTAL_SECTORS: u64 = ESP_FIRST_LBA + ESP_SECTORS + TAIL_SECTORS;
+const TOTAL_SECTORS: u64 = LIC_FIRST_LBA + LIC_SECTORS + TAIL_SECTORS;
 
 /// Slot A: the removable-media default boot path.
 const SLOT_A: &str = "BOOTX64.EFI";
@@ -39,6 +45,7 @@ const SLOT_B: &str = "B.EFI";
 /// Fixed GUIDs keep the image byte-identical between builds.
 const DISK_GUID: Uuid = uuid!("51533430-0000-4000-8000-000000000001");
 const ESP_GUID: Uuid = uuid!("51533430-0000-4000-8000-000000000002");
+const LIC_GUID: Uuid = uuid!("51533430-0000-4000-8000-000000000003");
 const FAT_VOLUME_ID: u32 = 0x5153_3430;
 const FAT_LABEL: [u8; 11] = *b"QS400 ESP  ";
 
@@ -171,6 +178,20 @@ fn write_image(out: &PathBuf, esp: &[u8]) -> Result<()> {
             last_lba: ESP_FIRST_LBA + ESP_SECTORS - 1,
             flags: 0,
             name: "QS400 ESP".to_string(),
+        },
+    );
+    parts.insert(
+        2,
+        Partition {
+            part_type_guid: Type {
+                guid: licpart::LIC_TYPE_GUID,
+                os: OperatingSystem::None,
+            },
+            part_guid: LIC_GUID,
+            first_lba: LIC_FIRST_LBA,
+            last_lba: LIC_FIRST_LBA + LIC_SECTORS - 1,
+            flags: 0,
+            name: licpart::PARTITION_NAME.to_string(),
         },
     );
     gdisk.update_partitions(parts).context("GPT partitions")?;
