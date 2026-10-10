@@ -8,8 +8,9 @@
 
 use std::io::{Cursor, Write};
 
-use anyhow::{Context, Result, ensure};
 use fatfs::{Dir, FatType, FileSystem, FormatVolumeOptions, FsOptions, ReadWriteSeek};
+
+use crate::Error;
 
 /// Volume label shared by every QS/400 FAT image.
 pub const LABEL: [u8; 11] = *b"QS400 ESP  ";
@@ -30,7 +31,7 @@ pub struct Spec {
 
 /// The disk ESP: 256 MiB FAT32 at 2 KiB clusters (131072 clusters).
 pub const DISK_ESP: Spec = Spec {
-    bytes: 256 * 1024 * 1024,
+    bytes: crate::plan::ESP_BYTES,
     fat: FatType::Fat32,
     bytes_per_cluster: 2048,
 };
@@ -44,10 +45,17 @@ pub const MEDIA_ESP: Spec = Spec {
     bytes_per_cluster: 4096,
 };
 
+fn fat_err(what: &'static str) -> impl FnOnce(std::io::Error) -> Error {
+    move |e| Error::Fat {
+        what,
+        detail: e.to_string(),
+    }
+}
+
 /// Format a volume and write `files` (`"EFI/BOOT/BOOTX64.EFI"` style
 /// paths; directories are created as needed).
-pub fn build(spec: &Spec, files: &[(&str, &[u8])]) -> Result<Vec<u8>> {
-    let size = usize::try_from(spec.bytes).context("volume size")?;
+pub fn build(spec: &Spec, files: &[(&str, &[u8])]) -> Result<Vec<u8>, Error> {
+    let size = usize::try_from(spec.bytes).expect("volume fits in memory");
     let mut cur = Cursor::new(vec![0u8; size]);
     fatfs::format_volume(
         &mut cur,
@@ -57,45 +65,49 @@ pub fn build(spec: &Spec, files: &[(&str, &[u8])]) -> Result<Vec<u8>> {
             .volume_id(VOLUME_ID)
             .volume_label(LABEL),
     )
-    .context("FAT format")?;
-    let fs = FileSystem::new(&mut cur, FsOptions::new()).context("FAT mount")?;
-    ensure!(
-        fs.fat_type() == spec.fat,
-        "volume formatted as {:?}, wanted {:?}",
-        fs.fat_type(),
-        spec.fat
-    );
+    .map_err(fat_err("format"))?;
+    let fs = FileSystem::new(&mut cur, FsOptions::new()).map_err(fat_err("mount"))?;
+    if fs.fat_type() != spec.fat {
+        return Err(Error::Fat {
+            what: "format",
+            detail: format!(
+                "volume came out as {:?}, wanted {:?}",
+                fs.fat_type(),
+                spec.fat
+            ),
+        });
+    }
     for (path, data) in files {
         let (dirs, name) = path.rsplit_once('/').unwrap_or(("", path));
         let mut dir = fs.root_dir();
         for part in dirs.split('/').filter(|p| !p.is_empty()) {
-            dir = dir
-                .create_dir(part)
-                .with_context(|| format!("mkdir {part}"))?;
+            dir = dir.create_dir(part).map_err(fat_err("mkdir"))?;
         }
-        let mut f = dir
-            .create_file(name)
-            .with_context(|| format!("create {path}"))?;
-        f.write_all(data)?;
-        f.flush()?;
+        let mut f = dir.create_file(name).map_err(fat_err("create"))?;
+        f.write_all(data).map_err(Error::io("write file"))?;
+        f.flush().map_err(Error::io("flush file"))?;
     }
-    fs.unmount()?;
+    fs.unmount().map_err(fat_err("unmount"))?;
     Ok(cur.into_inner())
 }
 
 /// Every path on a volume, directories with a trailing slash, sorted.
-pub fn list(image: &[u8]) -> Result<Vec<String>> {
+pub fn list(image: &[u8]) -> Result<Vec<String>, Error> {
     let mut cur = Cursor::new(image.to_vec());
-    let fs = FileSystem::new(&mut cur, FsOptions::new()).context("FAT re-mount")?;
+    let fs = FileSystem::new(&mut cur, FsOptions::new()).map_err(fat_err("re-mount"))?;
     let mut out = Vec::new();
     walk(&fs.root_dir(), "", &mut out)?;
     out.sort();
     Ok(out)
 }
 
-fn walk<T: ReadWriteSeek>(dir: &Dir<'_, T>, prefix: &str, out: &mut Vec<String>) -> Result<()> {
+fn walk<T: ReadWriteSeek>(
+    dir: &Dir<'_, T>,
+    prefix: &str,
+    out: &mut Vec<String>,
+) -> Result<(), Error> {
     for entry in dir.iter() {
-        let entry = entry?;
+        let entry = entry.map_err(fat_err("read directory"))?;
         let name = entry.file_name();
         if name == "." || name == ".." {
             continue;

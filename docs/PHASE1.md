@@ -112,7 +112,9 @@ filesystem commands.
 
 ## LIC partition
 
-`QS400-LIC`, 64 MiB, raw, right after the ESP. GPT type GUID
+`QS400-LIC`, 64 MiB, raw, right after the ESP. (Phase 2 added the
+`QS400-ASP1` partition after it, filling the rest of a 4 GiB default
+image; the layout lives in the `diskimg` crate.) GPT type GUID
 `a0b7c2f4-5e13-4d9a-9f31-515334304c49`, located by scanning the GPT of
 every whole disk under `/sys/class/block` and resolving the partition by its
 sysfs `partition` index. Device names are never assumed.

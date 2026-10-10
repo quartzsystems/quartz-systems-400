@@ -6,7 +6,6 @@
 
 pub mod cpio;
 pub mod disk;
-pub mod esp;
 pub mod initramfs;
 pub mod iso;
 pub mod manifest;

@@ -1,0 +1,16 @@
+[package]
+name = "diskimg"
+description = "QS/400 disk layout: GPT with ESP, LIC and ASP1 partitions, FAT volumes, partition lookup"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+uuid.workspace = true
+gpt = "4.1.0"
+fatfs = { version = "0.3.6", default-features = false, features = ["std", "alloc"] }
+
+[lints]
+workspace = true

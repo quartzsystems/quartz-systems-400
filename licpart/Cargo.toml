@@ -10,6 +10,7 @@ publish.workspace = true
 thiserror.workspace = true
 crc.workspace = true
 uuid.workspace = true
+diskimg = { path = "../diskimg", version = "0.1.0" }
 
 [lints]
 workspace = true

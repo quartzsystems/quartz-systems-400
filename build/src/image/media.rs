@@ -13,8 +13,9 @@ use tracing::info;
 use crate::ctx::Ctx;
 use crate::host::hash::{sha256_bytes, sha256_file, short};
 use crate::host::paths;
-use crate::image::{esp, iso};
+use crate::image::iso;
 use crate::kernel::{SOURCE_DATE_EPOCH, UkiKind};
+use diskimg::fat;
 
 /// The media UKI's path inside the boot image.
 pub const BOOT_FILE: &str = "EFI/BOOT/BOOTX64.EFI";
@@ -28,10 +29,10 @@ pub fn iso(ctx: &Ctx) -> Result<PathBuf> {
 
     info!(
         "iso: building {} MiB FAT16 boot image",
-        esp::MEDIA_ESP.bytes / (1024 * 1024)
+        fat::MEDIA_ESP.bytes / (1024 * 1024)
     );
-    let efi = esp::build(&esp::MEDIA_ESP, &[(BOOT_FILE, &uki_bytes)])?;
-    let listing = esp::list(&efi)?;
+    let efi = fat::build(&fat::MEDIA_ESP, &[(BOOT_FILE, &uki_bytes)])?;
+    let listing = fat::list(&efi)?;
     ensure!(
         listing == ["EFI/", "EFI/BOOT/", BOOT_FILE],
         "boot image contents unexpected: {listing:?}"

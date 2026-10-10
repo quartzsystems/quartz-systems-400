@@ -22,13 +22,10 @@ serde_json.workspace = true
 sha2.workspace = true
 hex.workspace = true
 conformance = { path = "../conformance", version = "0.1.0" }
-licpart = { path = "../licpart", version = "0.1.0" }
+diskimg = { path = "../diskimg", version = "0.1.0" }
 release = { path = "../release", version = "0.1.0" }
 reqwest = { version = "0.13.5", default-features = false, features = ["blocking", "rustls-no-provider"] }
 rustls-graviola = "0.4.0"
-gpt = "4.1.0"
-uuid.workspace = true
-fatfs = { version = "0.3.6", default-features = false, features = ["std", "alloc"] }
 ed25519-dalek = "3.0.0"
 getrandom = "0.4.3"
 

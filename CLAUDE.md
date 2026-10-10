@@ -47,7 +47,7 @@ build/        orchestrator: cargo run -p build -- <cmd>
   src/host/     cmd, paths, hash, doctor, deny, testrun
   src/kernel/   fetch, config, build (slot A and B UKIs)
   src/userland/ slic build + ELF check
-  src/image/    cpio, initramfs, esp (FAT), disk (ESP + LIC), iso (ISO 9660), media, manifest
+  src/image/    cpio, initramfs, disk (via diskimg), iso (ISO 9660), media, manifest
 kernel/       VERSION, SHA256, config/qs400.config
 licpart/      LIC partition: A/B record (src/format/), locate by GPT type GUID
 sysval/       catalog.toml, validation, src/tz/ time zones, LIC storage
@@ -59,6 +59,7 @@ release/      VxRyMz identity, build ID, PTF names (one source of truth)
 blockdev/     BlockDev trait, AlignedBuf, Linux O_DIRECT backend, MemBlockDev with faults
 store/        object store: src/page/, src/btree/, src/asp/ (units, superblock),
               src/alloc/ (bitmaps, free tree), src/wal/, txn.rs, store.rs, cache.rs, src/obj/
+diskimg/      GPT layout (ESP, LIC, ASP1), FAT volumes, partition lookup; build + installer
 ccsid/        CP037 <-> UTF-8 from cp037.csv (build.rs), EBCDIC collation
 qsname/       object, library and member name rules; 10-byte CP037 Name
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, STORE_FORMAT.md, images/

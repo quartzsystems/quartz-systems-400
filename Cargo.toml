@@ -12,6 +12,7 @@ members = [
     "store",
     "ccsid",
     "qsname",
+    "diskimg",
 ]
 
 [workspace.package]

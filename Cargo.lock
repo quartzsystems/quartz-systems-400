@@ -115,12 +115,10 @@ dependencies = [
  "anyhow",
  "clap",
  "conformance",
+ "diskimg",
  "ed25519-dalek",
- "fatfs",
  "getrandom 0.4.3",
- "gpt",
  "hex",
- "licpart",
  "release",
  "reqwest",
  "rustls-graviola",
@@ -129,7 +127,6 @@ dependencies = [
  "sha2",
  "tracing",
  "tracing-subscriber",
- "uuid",
 ]
 
 [[package]]
@@ -340,6 +337,16 @@ dependencies = [
  "block-buffer",
  "const-oid",
  "crypto-common",
+]
+
+[[package]]
+name = "diskimg"
+version = "0.1.0"
+dependencies = [
+ "fatfs",
+ "gpt",
+ "thiserror",
+ "uuid",
 ]
 
 [[package]]
@@ -839,6 +846,7 @@ name = "licpart"
 version = "0.1.0"
 dependencies = [
  "crc",
+ "diskimg",
  "thiserror",
  "uuid",
 ]

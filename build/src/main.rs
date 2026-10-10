@@ -47,8 +47,12 @@ enum Command {
         #[arg(long)]
         release: bool,
     },
-    /// Write the GPT disk image with the two-slot ESP.
-    Disk,
+    /// Write the GPT disk image: two-slot ESP, LIC and ASP1 partitions.
+    Disk {
+        /// Image size in bytes (default 4 GiB).
+        #[arg(long)]
+        size: Option<u64>,
+    },
     /// Write the UEFI-bootable installation ISO.
     Iso,
     /// Write and sign the artifact manifest.
@@ -99,8 +103,8 @@ fn main() -> Result<()> {
         Command::Uki { release } => {
             kernel::uki(&ctx, release)?;
         }
-        Command::Disk => {
-            image::disk::disk(&ctx)?;
+        Command::Disk { size } => {
+            image::disk::disk(&ctx, size)?;
         }
         Command::Iso => {
             image::media::iso(&ctx)?;
@@ -124,7 +128,7 @@ fn all(ctx: &Ctx, release: bool) -> Result<()> {
     userland::userland(ctx)?;
     image::initramfs::initramfs(ctx)?;
     kernel::uki(ctx, release)?;
-    image::disk::disk(ctx)?;
+    image::disk::disk(ctx, None)?;
     image::media::iso(ctx)?;
     image::manifest::manifest(ctx)?;
     Ok(())
