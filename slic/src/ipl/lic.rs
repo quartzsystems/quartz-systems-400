@@ -6,8 +6,9 @@
 //! MIGRATE(phase2): the record contents move into the object store.
 
 use std::fs::OpenOptions;
+use std::io::Cursor;
 
-use licpart::{IplHistory, IplMode, LicError, LicPart, Outcome};
+use licpart::{Device, IplHistory, IplMode, LicError, LicPart, Outcome, SLOT_BYTES};
 
 use crate::ipl::system::{System, now_unix};
 use crate::src;
@@ -15,28 +16,37 @@ use crate::src;
 /// C1001010 and C1001020: locate, open, read or initialize, detect an
 /// abnormal previous IPL, mark this one in progress.
 pub fn attach(system: &mut System) -> Result<(), &'static src::Src> {
-    let path = match licpart::locate() {
-        Ok(p) => p,
+    // On a D IPL (installation media) a missing partition is normal: run
+    // with an in-memory record. Everything else needs the partition.
+    let device: Box<dyn Device> = match licpart::locate() {
+        Ok(path) => {
+            system
+                .out
+                .serial(&format!("slic: LIC partition at {}\n", path.display()));
+            system.emit(&src::LIC_LOCATED);
+            match OpenOptions::new().read(true).write(true).open(&path) {
+                Ok(f) => Box::new(f),
+                Err(e) => {
+                    system
+                        .out
+                        .serial(&format!("slic: open {}: {e}\n", path.display()));
+                    return Err(&src::LIC_NOT_FOUND);
+                }
+            }
+        }
+        Err(e) if system.boot.ipl_d => {
+            system
+                .out
+                .serial(&format!("slic: {e}; IPL type D continues\n"));
+            system.emit(&src::MEDIA_IPL);
+            Box::new(Cursor::new(vec![0u8; 2 * SLOT_BYTES]))
+        }
         Err(e) => {
             system.out.serial(&format!("slic: {e}\n"));
             return Err(&src::LIC_NOT_FOUND);
         }
     };
-    system
-        .out
-        .serial(&format!("slic: LIC partition at {}\n", path.display()));
-    system.emit(&src::LIC_LOCATED);
-
-    let file = match OpenOptions::new().read(true).write(true).open(&path) {
-        Ok(f) => f,
-        Err(e) => {
-            system
-                .out
-                .serial(&format!("slic: open {}: {e}\n", path.display()));
-            return Err(&src::LIC_NOT_FOUND);
-        }
-    };
-    let mut part = LicPart::open(file);
+    let mut part = LicPart::open(device);
     let mut record = match part.read() {
         Ok(r) => r,
         Err(LicError::NoValidCopy) => {

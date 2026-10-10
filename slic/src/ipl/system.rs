@@ -4,11 +4,10 @@
 
 //! Everything the IPL and the service console share.
 
-use std::fs::File;
 use std::sync::mpsc::Sender;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use licpart::{IplMode, IplType, LicPart, Record, Slot};
+use licpart::{Device, IplMode, IplType, LicPart, Record, Slot};
 use sysval::SysVals;
 
 use console::Command;
@@ -32,7 +31,7 @@ pub struct System {
     /// Every SRC so far.
     pub log: IplLog,
     /// The LIC partition and its current record, once attached.
-    pub lic: Option<(LicPart<File>, Record)>,
+    pub lic: Option<(LicPart<Box<dyn Device>>, Record)>,
     /// Unix time this IPL started.
     pub start_time: u64,
     /// The previous IPL was found in progress.
@@ -72,8 +71,12 @@ impl System {
         }
     }
 
-    /// The IPL type for this boot. Slots map to A and B.
+    /// The IPL type for this boot: D from installation media, else the
+    /// slot's letter.
     pub fn ipl_type(&self) -> IplType {
+        if self.boot.ipl_d {
+            return IplType::D;
+        }
         match self.boot.slot {
             Slot::A => IplType::A,
             Slot::B => IplType::B,

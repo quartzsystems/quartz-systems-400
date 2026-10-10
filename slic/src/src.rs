@@ -41,6 +41,8 @@ const fn src(code: &'static str, text: &'static str, phase: Phase) -> Src {
 pub const IPL_STARTED: Src = src("C1001000", "IPL started", Phase::Lic);
 /// LIC partition located.
 pub const LIC_LOCATED: Src = src("C1001010", "LIC partition located", Phase::Lic);
+/// Running from installation media: no LIC partition, in-memory record.
+pub const MEDIA_IPL: Src = src("C1001015", "Running from installation media", Phase::Lic);
 /// LIC record read (or initialized).
 pub const LIC_READ: Src = src("C1001020", "LIC record read", Phase::Lic);
 /// Hardware resources enumerated.
@@ -91,6 +93,7 @@ pub const PWRDWN_COMPLETE: Src = src("D1001090", "Power down complete", Phase::P
 pub const TABLE: &[Src] = &[
     IPL_STARTED,
     LIC_LOCATED,
+    MEDIA_IPL,
     LIC_READ,
     HW_ENUMERATED,
     CLOCK_SET,

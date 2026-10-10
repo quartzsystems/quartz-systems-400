@@ -59,8 +59,12 @@ enum Command {
         #[arg(long)]
         release: bool,
     },
-    /// Boot the disk image under QEMU and check the SRC codes.
-    Test,
+    /// Boot under QEMU and run the suite: `--media disk` (default) or `iso`.
+    Test {
+        /// What to boot.
+        #[arg(long, default_value = "disk")]
+        media: conformance::Media,
+    },
     /// Check host prerequisites.
     Doctor,
     /// Run cargo-deny plus the C-linkage lockfile check.
@@ -105,7 +109,7 @@ fn main() -> Result<()> {
             image::manifest::manifest(&ctx)?;
         }
         Command::All { release } => all(&ctx, release)?,
-        Command::Test => host::testrun::test(&ctx)?,
+        Command::Test { media } => host::testrun::test(&ctx, media)?,
         Command::Doctor => host::doctor::doctor(&ctx)?,
         Command::Deny => host::deny::deny(&ctx)?,
     }

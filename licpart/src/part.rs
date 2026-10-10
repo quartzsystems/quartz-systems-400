@@ -27,6 +27,12 @@ impl Device for File {
 
 impl Device for Cursor<Vec<u8>> {}
 
+impl<D: Device + ?Sized> Device for Box<D> {
+    fn sync(&mut self) -> io::Result<()> {
+        (**self).sync()
+    }
+}
+
 impl<D: Device> Device for &mut D {
     fn sync(&mut self) -> io::Result<()> {
         (**self).sync()

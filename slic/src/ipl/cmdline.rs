@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! Boot parameters from `/proc/cmdline`: `qs400.slot=A|B`,
-//! `qs400.mode=normal|manual`, `qs400.svc=1`.
+//! `qs400.mode=normal|manual`, `qs400.svc=1`, `qs400.ipl=D`, `qs400.media=iso`.
 
 use std::fs;
 
@@ -20,6 +20,10 @@ pub struct Boot {
     pub mode: Option<IplMode>,
     /// Serial service console enabled.
     pub svc: bool,
+    /// IPL type D: booted from installation media; no LIC partition required.
+    pub ipl_d: bool,
+    /// The media kind named on the command line (`iso`).
+    pub media: Option<String>,
 }
 
 impl Boot {
@@ -36,6 +40,8 @@ impl Boot {
             slot_from_cmdline: false,
             mode: None,
             svc: false,
+            ipl_d: false,
+            media: None,
         };
         for word in text.split_whitespace() {
             let Some((key, value)) = word.split_once('=') else {
@@ -59,6 +65,8 @@ impl Boot {
                     _ => {}
                 },
                 "qs400.svc" => boot.svc = value == "1",
+                "qs400.ipl" => boot.ipl_d = value.eq_ignore_ascii_case("d"),
+                "qs400.media" => boot.media = Some(value.to_string()),
                 _ => {}
             }
         }
@@ -82,5 +90,9 @@ mod tests {
         assert!(!d.slot_from_cmdline);
         assert_eq!(d.mode, None);
         assert!(!d.svc);
+        assert!(!d.ipl_d);
+        let m = Boot::parse("qs400.ipl=D qs400.media=iso");
+        assert!(m.ipl_d);
+        assert_eq!(m.media.as_deref(), Some("iso"));
     }
 }

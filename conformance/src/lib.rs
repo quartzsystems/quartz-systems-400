@@ -23,7 +23,7 @@ use std::path::{Path, PathBuf};
 pub use error::HarnessError;
 pub use qemu::firmware;
 pub use qemu::session::{PROMPT, Session};
-pub use steps::{SRC_SEQUENCE, StepReport, Suite};
+pub use steps::{Media, SRC_SEQUENCE, SRC_SEQUENCE_MEDIA, StepReport, Suite};
 
 /// The target directory: `QS400_TARGET_DIR` or the workspace `target/`.
 pub fn target_dir() -> PathBuf {
@@ -37,9 +37,18 @@ pub fn target_dir() -> PathBuf {
     )
 }
 
+/// The ISO the orchestrator last wrote.
+pub fn default_iso() -> Result<PathBuf, HarnessError> {
+    pointed("iso.path")
+}
+
 /// The disk image the orchestrator last wrote.
 pub fn default_image() -> Result<PathBuf, HarnessError> {
-    let pointer = target_dir().join("images").join("disk.path");
+    pointed("disk.path")
+}
+
+fn pointed(name: &str) -> Result<PathBuf, HarnessError> {
+    let pointer = target_dir().join("images").join(name);
     let text = fs::read_to_string(&pointer).map_err(|_| HarnessError::ImageMissing(pointer))?;
     let image = PathBuf::from(text.trim());
     if image.is_file() {

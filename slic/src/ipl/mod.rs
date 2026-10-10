@@ -80,6 +80,13 @@ pub fn run() -> ! {
         if system.boot.svc { "on" } else { "off" }
     ));
 
+    if system.boot.ipl_d {
+        system.out.serial(&format!(
+            "slic: IPL type D from installation media ({})\n",
+            system.boot.media.as_deref().unwrap_or("unknown")
+        ));
+    }
+
     let (tx, rx) = mpsc::channel();
     spawn_signal_thread(tx.clone());
     if !serial::spawn_reader(tx.clone()) {

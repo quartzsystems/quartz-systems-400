@@ -34,6 +34,7 @@ used once, else normal.
 |---|---|---|
 | C1001000 | LIC | IPL started |
 | C1001010 | LIC | LIC partition located |
+| C1001015 | LIC | Running from installation media (D IPL, no LIC partition) |
 | C1001020 | LIC | LIC record read (or initialized on first boot) |
 | C1001030 | LIC | Hardware resources enumerated |
 | C1001040 | LIC | Clock set from RTC |
@@ -233,10 +234,56 @@ fields keep their text but show nothing. Enter on the sign-on display shows
 
 ![Sign-on display](images/signon.png)
 
+## Install media
+
+`build iso` writes `target/images/qs400-V1R0M0-<hash>.iso`, a UEFI-bootable
+ISO 9660 image written entirely in Rust (no `xorriso`, `mkisofs` or
+`genisoimage`): level 2, no Joliet, no Rock Ridge, an El Torito boot
+catalog with one EFI (platform `EF`) no-emulation entry whose boot image is
+`EFI.IMG`, a 24 MiB FAT16 volume holding `EFI/BOOT/BOOTX64.EFI`. The
+volume ID is `QS400_V1R0M0`; publisher and preparer are Quartz strings.
+Timestamps come from `SOURCE_DATE_EPOCH` and directory records are sorted,
+so two builds give identical images.
+
+The UKI on the ISO is the third one `build uki` produces, with
+`qs400.ipl=D qs400.media=iso` added to the command line. On a D IPL `slic`
+records IPL type D for this IPL, and when no LIC partition is found it
+emits `C1001015 Running from installation media` instead of halting with
+B1001010, runs with an in-memory LIC record, and continues to the console.
+In Phase 1 that ends at the sign-on display. `TODO(phase2)`: first-boot
+ASP initialization against a chosen disk (manual-mode menu option 2).
+
+Write it to a USB stick (replace `sdX` with the stick, everything on it is
+lost):
+
+```
+sudo dd if=target/images/qs400-V1R0M0-<hash>.iso of=/dev/sdX bs=4M status=progress conv=fsync
+```
+
+Any UEFI machine that boots removable media will start it; legacy BIOS
+boot is not provided. What does not work yet: nothing is installed, there
+is no disk chooser, and the in-memory LIC record is lost at power down.
+
+Why FAT16: El Torito's sector count is a 16-bit count of 512-byte sectors,
+32 MiB at most, and a FAT32 volume cannot be made that small. The disk ESP
+stays FAT32.
+
+Testing: `build test --media iso` runs three steps. The ISO alone must
+show the D sequence with C1001015 and reach the sign-on display. With the
+disk image attached and the CD-ROM first, the ISO must boot: slic prints
+`IPL type D from installation media`, then finds the disk's LIC partition
+(C1001010), because a D IPL uses a partition when one exists. With the disk
+first, the disk must boot: C1001010 without the media line. The harness
+chooses the order with `bootindex` properties on the virtio disk and the
+SATA CD-ROM (`-device virtio-blk-pci,...,bootindex=N` and `-device
+ide-cd,...,bootindex=M`), which OVMF honours through fw_cfg; `-boot
+order=c` was found not to override a bootable CD-ROM with a virtio disk.
+
 ## Build changes
 
-- `build disk` adds the LIC partition; `build uki` builds both slots;
-  `--release` on `uki` and `all`.
+- `build disk` adds the LIC partition; `build uki` builds slot A, slot B
+  and the media UKI; `build iso` writes the installation media; `--release`
+  on `uki` and `all`. `build all` builds the disk and the ISO.
 - Kernel fragment and the enforced list gained `DRM_FBDEV_EMULATION`,
   `INPUT_EVDEV`, `RTC_CLASS`, `RTC_DRV_CMOS`, `DMIID`, and `RTC_HCTOSYS=n`
   (68 symbols checked).
@@ -248,8 +295,9 @@ fields keep their text but show nothing. Enter on the sign-on display shows
 ## Running
 
 ```
-cargo run -p build -- all          # dev build, service console on
+cargo run -p build -- all          # dev build, service console on; disk and ISO
 cargo run -p build -- test         # the six-step suite
+cargo run -p build -- test --media iso   # the three media steps
 cargo run -p build -- all --release
 QS400_QEMU=1 cargo test -p conformance
 ```
@@ -283,6 +331,10 @@ green under KVM.
 Step timings from `build test` under KVM: sequence 1.6 s, screen 0.1 s,
 system values 0.0 s, restart 1.3 s, screenshot 0.1 s, abnormal 3.0 s.
 Under TCG: 4.1, 0.3, 0.0, 5.8, 0.3, 8.0 s.
+
+Media suite (`build test --media iso`): media IPL 1.6 s, ISO first 1.7 s,
+disk first 1.4 s under KVM; 4.2, 3.9, 3.8 s under TCG. Two `build iso` runs
+produced the same image (sha256 `504363f3…` on the build of 2026-10-10).
 
 ## Deviations from the Phase 0 code and the Phase 1 text
 

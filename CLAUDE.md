@@ -35,6 +35,7 @@ See `docs/ARCHITECTURE.md`. Short form:
 - Kernel 6.18.y, LTS, built with `LLVM=1`, monolithic (`MODULES=n`), EFI stub,
   initramfs embedded. The bzImage is the UKI. Two ESP slots, A and B.
 - Pin lives in `kernel/VERSION` and `kernel/SHA256`. Bumps are their own commit.
+- Release identity is `V1R0M0` from the `release` crate; see ARCHITECTURE.md.
 - Command line is baked: `console=ttyS0,115200 console=tty0 panic=-1 quiet`.
 - Reproducible: fixed `SOURCE_DATE_EPOCH`/`KBUILD_BUILD_*`, deterministic cpio,
   deterministic GPT/FAT, signed content-hash manifest.
@@ -46,7 +47,7 @@ build/        orchestrator: cargo run -p build -- <cmd>
   src/host/     cmd, paths, hash, doctor, deny, testrun
   src/kernel/   fetch, config, build (slot A and B UKIs)
   src/userland/ slic build + ELF check
-  src/image/    cpio, initramfs, disk (ESP + LIC partition), manifest
+  src/image/    cpio, initramfs, esp (FAT), disk (ESP + LIC), iso (ISO 9660), media, manifest
 kernel/       VERSION, SHA256, config/qs400.config
 licpart/      LIC partition: A/B record (src/format/), locate by GPT type GUID
 sysval/       catalog.toml, validation, src/tz/ time zones, LIC storage
@@ -54,6 +55,7 @@ console/      font/qs400-9x16.txt, src/fb/ framebuffer, src/keyboard/, screens
 slic/         PID 1: src/ipl/ state machine, src/hwrsrc/, src/net/, src/svc/,
               src/platform/ (console, mounts, power, rtc, serial, sys), src/src.rs
 conformance/  QEMU harness: src/qemu/ (session, qmp, serial, firmware), src/steps.rs
+release/      VxRyMz identity, build ID, PTF names (one source of truth)
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, images/
 ```
 
@@ -72,7 +74,9 @@ cargo run -p build -- disk
 cargo run -p build -- manifest
 cargo run -p build -- all         # the whole pipeline (dev: service console on)
 cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
+cargo run -p build -- iso         # UEFI-bootable installation media
 cargo run -p build -- test        # the six-step Phase 1 suite under QEMU
+cargo run -p build -- test --media iso    # the media steps
 cargo run -p build -- deny        # cargo-deny + links/cc lockfile check
 cargo clippy --workspace --all-targets    # must be warning-free
 cargo clippy -p slic -p console --all-targets --target x86_64-unknown-linux-musl
@@ -85,7 +89,7 @@ Lint the Linux-only crates for the musl target too: their real code is
 Service console (serial, dev builds): `help`, `srcs [table]`, `hist`, `hw`,
 `lic`, `sysval NAME [VALUE]`, `mode manual|normal`, `screen`, `pwrdwn
 [restart]`. Boot parameters: `qs400.slot=A|B`, `qs400.mode=normal|manual`,
-`qs400.svc=1`.
+`qs400.svc=1`, `qs400.ipl=D`, `qs400.media=iso`.
 
 `QS400_TARGET_DIR` relocates `target/` (use an ext4 path when the repo is on
 `/mnt/c`; drvfs is far too slow for a kernel build). `-v` streams tool output;

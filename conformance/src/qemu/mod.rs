@@ -34,8 +34,14 @@ pub struct Launch {
     pub firmware: PathBuf,
     /// Use KVM.
     pub kvm: bool,
-    /// Disk image (a working copy; boots write to it).
-    pub image: PathBuf,
+    /// Disk image (a working copy; boots write to it), if attached.
+    pub image: Option<PathBuf>,
+    /// ISO attached as a CD-ROM, if any.
+    pub cdrom: Option<PathBuf>,
+    /// Boot the CD-ROM before the disk. Expressed as `bootindex`
+    /// properties on the devices (OVMF honours those through `fw_cfg`;
+    /// `-boot order=` is not reliable with virtio disks).
+    pub cdrom_first: bool,
     /// QMP Unix socket path.
     pub qmp: PathBuf,
 }
@@ -84,8 +90,23 @@ pub fn args(l: &Launch) -> Vec<OsString> {
             .map(OsString::from),
     );
     a.push(join("if=pflash,format=raw,readonly=on,file=", &l.firmware));
-    a.push(OsString::from("-drive"));
-    a.push(join("if=virtio,format=raw,file=", &l.image));
+    let (disk_index, cd_index) = if l.cdrom_first { (1, 0) } else { (0, 1) };
+    if let Some(image) = &l.image {
+        a.push(OsString::from("-drive"));
+        a.push(join("if=none,id=hd,format=raw,file=", image));
+        a.push(OsString::from("-device"));
+        a.push(OsString::from(format!(
+            "virtio-blk-pci,drive=hd,bootindex={disk_index}"
+        )));
+    }
+    if let Some(cdrom) = &l.cdrom {
+        a.push(OsString::from("-drive"));
+        a.push(join("if=none,id=cd,media=cdrom,format=raw,file=", cdrom));
+        a.push(OsString::from("-device"));
+        a.push(OsString::from(format!(
+            "ide-cd,drive=cd,bus=ide.0,bootindex={cd_index}"
+        )));
+    }
     a.extend(
         [
             "-rtc",

@@ -20,6 +20,12 @@ pub const SRC_IPL_STARTED: &str = "SRC C1001000";
 /// Last line of a successful IPL.
 pub const SRC_IPL_COMPLETE: &str = "SRC C6001090";
 
+/// Emitted instead of C1001010 when booting from installation media
+/// without a LIC partition.
+pub const SRC_MEDIA_IPL: &str = "SRC C1001015";
+/// The line slic prints on every D IPL, with or without a LIC partition.
+pub const MEDIA_LINE: &str = "slic: IPL type D from installation media";
+
 /// Codes that must appear in this order on every normal IPL. Codes not
 /// listed (attention codes, the abnormal notice) may appear in between.
 pub const SRC_SEQUENCE: &[&str] = &[
@@ -35,7 +41,43 @@ pub const SRC_SEQUENCE: &[&str] = &[
     SRC_IPL_COMPLETE,
 ];
 
+/// The sequence of a D IPL from media with no LIC partition.
+pub const SRC_SEQUENCE_MEDIA: &[&str] = &[
+    SRC_IPL_STARTED,
+    SRC_MEDIA_IPL,
+    "SRC C1001020",
+    "SRC C1001030",
+    "SRC C1001040",
+    "SRC C1001060",
+    "SRC C6001000",
+    "SRC C6001010",
+    "SRC C6001020",
+    SRC_IPL_COMPLETE,
+];
+
 const CMD: Duration = Duration::from_secs(10);
+
+/// What the suite boots.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Media {
+    /// The disk image: the six Phase 1 steps.
+    Disk,
+    /// The installation ISO: media IPL alone, then with the disk attached
+    /// under both boot orders.
+    Iso,
+}
+
+impl std::str::FromStr for Media {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "disk" => Ok(Media::Disk),
+            "iso" => Ok(Media::Iso),
+            other => Err(format!("unknown media `{other}` (disk or iso)")),
+        }
+    }
+}
 
 /// What one step observed.
 #[derive(Debug)]
@@ -51,6 +93,8 @@ pub struct StepReport {
 /// The suite: launch settings and output locations.
 pub struct Suite {
     launch: Launch,
+    media: Media,
+    iso: Option<PathBuf>,
     /// Directory for the working image, the QMP socket and screenshots.
     pub out_dir: PathBuf,
     /// Time allowed for an IPL to reach completion.
@@ -61,14 +105,34 @@ pub struct Suite {
 #[allow(clippy::unused_self)]
 impl Suite {
     /// Resolve QEMU and firmware; copy `image` into `out_dir` as the
-    /// working disk.
-    pub fn new(image: &Path, out_dir: PathBuf) -> Result<Self, HarnessError> {
-        if !image.is_file() {
-            return Err(HarnessError::ImageMissing(image.to_path_buf()));
-        }
+    /// working disk. The ISO suite needs `iso` and uses `image` for the
+    /// boot-order steps.
+    pub fn new(
+        image: Option<&Path>,
+        iso: Option<&Path>,
+        media: Media,
+        out_dir: PathBuf,
+    ) -> Result<Self, HarnessError> {
         fs::create_dir_all(&out_dir)?;
-        let work = out_dir.join("work.img");
-        fs::copy(image, &work)?;
+        let work = match image {
+            Some(image) if image.is_file() => {
+                let work = out_dir.join("work.img");
+                fs::copy(image, &work)?;
+                Some(work)
+            }
+            Some(image) => return Err(HarnessError::ImageMissing(image.to_path_buf())),
+            None => None,
+        };
+        match (media, iso) {
+            (Media::Iso, None) => return Err(HarnessError::ImageMissing(out_dir.join("iso.path"))),
+            (Media::Iso, Some(iso)) if !iso.is_file() => {
+                return Err(HarnessError::ImageMissing(iso.to_path_buf()));
+            }
+            (Media::Disk, _) if work.is_none() => {
+                return Err(HarnessError::ImageMissing(out_dir.join("disk.path")));
+            }
+            _ => {}
+        }
         let boot_timeout = std::env::var("QS400_BOOT_TIMEOUT")
             .ok()
             .and_then(|s| s.parse().ok())
@@ -79,8 +143,12 @@ impl Suite {
                 firmware: qemu::firmware::locate()?,
                 kvm: qemu::kvm_available(),
                 image: work,
+                cdrom: None,
+                cdrom_first: false,
                 qmp: out_dir.join("qmp.sock"),
             },
+            media,
+            iso: iso.map(Path::to_path_buf),
             out_dir,
             boot_timeout,
         })
@@ -93,6 +161,89 @@ impl Suite {
 
     /// Run every step in order. Stops at the first failure.
     pub fn run_all(&self) -> Result<Vec<StepReport>, HarnessError> {
+        match self.media {
+            Media::Disk => self.run_disk(),
+            Media::Iso => self.run_iso(),
+        }
+    }
+
+    /// The installation media steps, each in its own guest.
+    fn run_iso(&self) -> Result<Vec<StepReport>, HarnessError> {
+        let iso = self.iso.clone().expect("checked in new");
+        let mut reports = Vec::new();
+
+        // 1. The ISO alone: a D IPL without a LIC partition reaches sign-on.
+        let alone = Launch {
+            image: None,
+            cdrom: Some(iso.clone()),
+            cdrom_first: true,
+            ..self.launch.clone()
+        };
+        let mut s = Session::spawn(&alone)?;
+        reports.push(self.step(&mut s, "1 media IPL", Self::media_ipl)?);
+        s.command("pwrdwn", CMD).ok();
+        s.wait_exit(Duration::from_secs(15));
+        drop(s);
+
+        if self.launch.image.is_none() {
+            return Ok(reports);
+        }
+
+        // 2. ISO and disk, firmware told to boot the CD-ROM first.
+        let cd_first = Launch {
+            cdrom: Some(iso.clone()),
+            cdrom_first: true,
+            ..self.launch.clone()
+        };
+        let mut s = Session::spawn(&cd_first)?;
+        reports.push(self.step(&mut s, "2 ISO first", Self::media_chosen)?);
+        s.kill();
+
+        // 3. ISO and disk, disk first: the disk must win.
+        let disk_first = Launch {
+            cdrom: Some(iso),
+            cdrom_first: false,
+            ..self.launch.clone()
+        };
+        let mut s = Session::spawn(&disk_first)?;
+        reports.push(self.step(&mut s, "3 disk first", Self::disk_chosen)?);
+        s.kill();
+        Ok(reports)
+    }
+
+    /// Media step 1: the D IPL sequence with C1001015, then the sign-on screen.
+    fn media_ipl(&self, s: &mut Session) -> Result<String, String> {
+        let seen = s.expect_in_order(SRC_SEQUENCE_MEDIA, self.boot_timeout)?;
+        s.expect(crate::PROMPT, CMD)?;
+        let dump = s.command("screen", CMD)?;
+        if !dump.contains("Sign On") {
+            return Err("sign-on display is not showing".into());
+        }
+        let last = seen.last().map_or(0.0, |(_, t)| t.as_secs_f64());
+        Ok(format!("C1001015 seen, sign-on display at {last:.1}s"))
+    }
+
+    /// Media step 2: with the disk attached and the CD-ROM first, the ISO
+    /// boots. Its D IPL then finds the disk's LIC partition, so the signal
+    /// is the media line slic prints, not C1001015.
+    fn media_chosen(&self, s: &mut Session) -> Result<String, String> {
+        s.expect(MEDIA_LINE, self.boot_timeout)?;
+        s.expect("SRC C1001010", self.boot_timeout)?;
+        Ok("ISO booted (IPL type D) and used the disk's LIC partition".into())
+    }
+
+    /// Media step 3: with the disk first, the disk boots: C1001010 arrives
+    /// without the media line before it.
+    fn disk_chosen(&self, s: &mut Session) -> Result<String, String> {
+        let before = s.expect("SRC C1001010", self.boot_timeout)?;
+        if before.contains(MEDIA_LINE) {
+            return Err("ISO was booted despite the disk being first".into());
+        }
+        Ok("disk booted: C1001010 without a media IPL".into())
+    }
+
+    /// The six Phase 1 steps against the disk image.
+    fn run_disk(&self) -> Result<Vec<StepReport>, HarnessError> {
         let mut reports = Vec::new();
         let mut s = Session::spawn(&self.launch)?;
         reports.push(self.step(&mut s, "1 SRC sequence", Self::src_sequence)?);

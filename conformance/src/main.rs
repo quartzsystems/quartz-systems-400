@@ -9,7 +9,7 @@ use std::process::ExitCode;
 
 use anyhow::Result;
 use clap::Parser;
-use conformance::Suite;
+use conformance::{Media, Suite};
 
 #[derive(Parser)]
 #[command(
@@ -20,15 +20,24 @@ struct Cli {
     /// Disk image. Defaults to the orchestrator's latest.
     #[arg(long)]
     image: Option<PathBuf>,
+    /// Installation ISO. Defaults to the orchestrator's latest.
+    #[arg(long)]
+    iso: Option<PathBuf>,
+    /// What to boot: `disk` (the six steps) or `iso` (the media steps).
+    #[arg(long, default_value = "disk")]
+    media: Media,
 }
 
 fn main() -> Result<ExitCode> {
     let cli = Cli::parse();
-    let image = match cli.image {
-        Some(p) => p,
-        None => conformance::default_image()?,
-    };
-    let suite = Suite::new(&image, conformance::target_dir().join("conformance"))?;
+    let image = cli.image.or_else(|| conformance::default_image().ok());
+    let iso = cli.iso.or_else(|| conformance::default_iso().ok());
+    let suite = Suite::new(
+        image.as_deref(),
+        iso.as_deref(),
+        cli.media,
+        conformance::target_dir().join("conformance"),
+    )?;
     let l = suite.launch();
     println!(
         "{} + {} ({})",
