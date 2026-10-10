@@ -129,6 +129,17 @@ fn disk_menus_match_their_golden_files() {
 }
 
 #[test]
+fn add_units_needs_a_load_source() {
+    let mut e = env();
+    e.units.clear();
+    let mut r = walk(&mut e, &["4", "1", "3"], "asp-config");
+    r.enter(&f(&["2"]), &mut e);
+    assert_eq!(r.top(), "dst-asp-config");
+    assert!(r.screen(&mut e).dump().contains("no load source unit"));
+    assert!(e.actions.is_empty());
+}
+
+#[test]
 fn actions_reach_the_environment() {
     let mut e = env();
     // Add the first spare disk.

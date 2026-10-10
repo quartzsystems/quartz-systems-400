@@ -266,7 +266,7 @@ pub fn asp_configuration() -> Submenu {
             (
                 2,
                 "Add units to ASPs",
-                Some(Box::new(|env| Flow::Push(Box::new(add_units(env))))),
+                Some(Box::new(add_units)),
             ),
             (3, "Add units to ASPs and balance data", None),
             (
@@ -279,11 +279,18 @@ pub fn asp_configuration() -> Submenu {
     )
 }
 
+/// Units join ASP 1 only once it has a load source.
+pub const NO_LOAD_SOURCE: &str =
+    "ASP 1 has no load source unit; install the Licensed Internal Code first";
+
 /// Pick non-configured disks to add to ASP 1.
-fn add_units(env: &mut dyn DstEnv) -> Select {
+fn add_units(env: &mut dyn DstEnv) -> Flow {
+    if env.disk_units().is_empty() {
+        return Flow::Error(NO_LOAD_SOURCE.into());
+    }
     let disks = env.nonconfigured();
     let rows: Vec<String> = disks.iter().map(nonconfigured_row).collect();
-    Select::new(
+    Flow::Push(Box::new(Select::new(
         "dst-add-units",
         "Add Units to ASP 1",
         "Type 1 beside the units to add, then press Enter.",
@@ -318,7 +325,7 @@ fn add_units(env: &mut dyn DstEnv) -> Select {
                 .unwinding(2),
             ))
         }),
-    )
+    )))
 }
 
 /// Pick configured units to remove.

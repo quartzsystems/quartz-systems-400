@@ -63,7 +63,7 @@ impl<'a> Env<'a> {
             .storage
             .as_mut()
             .map(|s| &mut s.store)
-            .ok_or_else(|| "no ASP 1 unit".to_string())
+            .ok_or_else(|| svctools::dst::disk::config::NO_LOAD_SOURCE.to_string())
     }
 
     fn resource_for(&self, device: &str) -> String {

@@ -134,6 +134,9 @@ Unit numbers on the displays start at 1; the store numbers units from
 
 - Add units: pick non-configured disks (whole disks with no QS/400
   partitions and no unit header); each becomes an unprotected unit.
+  ASP 1 must already have its load source, which only the Licensed
+  Internal Code install creates: from the media's DST before that
+  install the option answers `ASP 1 has no load source unit`.
 - Remove units: data on the unit moves to the other units, then it
   leaves the configuration (only the last unit can leave).
 - Start mirrored protection: each unprotected unit is paired with the
