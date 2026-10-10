@@ -111,7 +111,29 @@ are listed in `docs/PHASE0.md` and checked by `build doctor`. QEMU with OVMF
 is test-only host firmware standing in for a machine's UEFI; it never ships
 in the image.
 
-## 10. Repository conventions
+## 10. Release identity
+
+QS/400 uses IBM-style version identifiers: `VxRyMz` (version, release,
+modification). The current development stream is **V1R0M0**. Rules:
+
+- `V` changes only for a new generation of the OS.
+- `R` changes for a release that adds function (new commands, formats,
+  on-disk changes). R0 is the initial development release; the first
+  release intended for use outside development will be V1R1M0.
+- `M` changes for maintenance releases with no new function.
+- Pre-release builds carry the stream identifier plus a build ID:
+  `V1R0M0 build <git-short-rev>[-dirty]`. No "alpha/beta/rc" words anywhere.
+- PTFs (later) are named `QS` + 5 digits (`QS00001`); cumulative packages
+  `C` + `yyddd` (Julian) + `110`.
+
+Same V and R means a compatible on-disk format; M never changes formats.
+While on R0, on-disk formats may change without an R bump; the store must
+still record the creating release and refuse to open a store from a
+different V/R (`TODO(phase2)`). The `release` crate is the one source of
+truth; every crate that prints a version uses it. Later consumers:
+DSPSFWRSC, GO LICPGM option 10, DSPPTF, API QSZRTVPR (`TODO(phase11)`).
+
+## 11. Repository conventions
 
 Cargo workspace, edition 2024, pinned toolchain, committed `Cargo.lock`.
 Lints: `unsafe_op_in_unsafe_fn = deny`, clippy `pedantic` warn, `missing_docs`

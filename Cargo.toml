@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["build", "slic", "conformance", "licpart", "sysval", "console"]
+members = ["build", "slic", "conformance", "licpart", "sysval", "console", "release"]
 
 [workspace.package]
 version = "0.1.0"

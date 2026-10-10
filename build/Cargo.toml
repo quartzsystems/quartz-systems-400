@@ -23,6 +23,7 @@ sha2.workspace = true
 hex.workspace = true
 conformance = { path = "../conformance", version = "0.1.0" }
 licpart = { path = "../licpart", version = "0.1.0" }
+release = { path = "../release", version = "0.1.0" }
 reqwest = { version = "0.13.5", default-features = false, features = ["blocking", "rustls-no-provider"] }
 rustls-graviola = "0.4.0"
 gpt = "4.1.0"

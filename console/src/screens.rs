@@ -18,8 +18,8 @@ pub const MESSAGE_ROW: usize = 23;
 /// last eight codes below it.
 pub fn src_screen(system: &str, current: &str, text: &str, recent: &[(String, String)]) -> Screen {
     let mut s = Screen::new();
-    s.put(1, 1, system, Attr::WHITE);
-    s.put(1, 70, "QS/400 IPL", Attr::GREEN);
+    s.put(1, 1, &release::banner(), Attr::WHITE);
+    s.put(1, 70, system, Attr::GREEN);
     s.put(3, 1, "System reference code", Attr::GREEN);
     s.put_double(5, 24, current, Attr::WHITE);
     s.put(7, 24, text, Attr::GREEN);

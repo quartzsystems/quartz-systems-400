@@ -23,7 +23,6 @@ use uuid::{Uuid, uuid};
 use crate::ctx::Ctx;
 use crate::host::hash::{sha256_file, short};
 use crate::host::paths;
-use crate::kernel::fetch;
 
 const SECTOR: u64 = 512;
 const ESP_FIRST_LBA: u64 = 2048;
@@ -58,7 +57,6 @@ pub fn disk(ctx: &Ctx) -> Result<PathBuf> {
         .context("no slot B UKI; run `uki` first")?;
     let a_bytes = fs::read(&uki_a)?;
     let b_bytes = fs::read(&uki_b)?;
-    let version = fetch::read_pin(&ctx.paths)?.version;
     let hash = sha256_file(&uki_a)?;
 
     info!("disk: formatting {} MiB ESP", ESP_BYTES / (1024 * 1024));
@@ -76,7 +74,7 @@ pub fn disk(ctx: &Ctx) -> Result<PathBuf> {
     let out = ctx
         .paths
         .images()
-        .join(format!("qs400-{version}-{}.img", short(&hash)));
+        .join(format!("qs400-{}-{}.img", release::RELEASE, short(&hash)));
     write_image(&out, &esp)?;
     paths::write_pointer(&ctx.paths.disk_pointer(), &out)?;
     info!(

@@ -33,6 +33,8 @@ struct Manifest {
 
 #[derive(Serialize)]
 struct Inputs {
+    release: String,
+    build_id: &'static str,
     target: &'static str,
     kernel_version: String,
     kernel_sha256: String,
@@ -98,6 +100,8 @@ pub fn manifest(ctx: &Ctx) -> Result<PathBuf> {
         schema: 1,
         product: "QS/400 phase 0",
         inputs: Inputs {
+            release: release::RELEASE.to_string(),
+            build_id: release::build_id(),
             target: RUST_TARGET,
             kernel_version: pin.version,
             kernel_sha256: pin.sha256.unwrap_or_else(|| "unpinned".into()),

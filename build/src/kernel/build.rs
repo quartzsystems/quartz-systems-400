@@ -75,13 +75,18 @@ pub fn uki(ctx: &Ctx, release: bool) -> Result<Vec<PathBuf>> {
             Slot::A => "a",
             Slot::B => "b",
         };
-        let out = out_dir.join(format!("qs400-{}-{tag}-{}.efi", src.version, short(&hash)));
+        let out = out_dir.join(format!(
+            "qs400-{}-{tag}-{}.efi",
+            release::RELEASE,
+            short(&hash)
+        ));
         fs::copy(&image, &out).with_context(|| format!("cannot copy UKI to {}", out.display()))?;
         paths::write_pointer(&ctx.paths.uki_pointer(slot), &out)?;
         let size = fs::metadata(&out)?.len();
         info!(
-            "UKI {slot:?}: {} ({size} bytes, sha256 {hash})",
-            out.display()
+            "UKI {slot:?}: {} (kernel {}, {size} bytes, sha256 {hash})",
+            out.display(),
+            src.version
         );
         info!("UKI {slot:?}: cmdline \"{line}\"");
         outs.push(out);

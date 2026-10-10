@@ -109,6 +109,7 @@ fn main() -> Result<()> {
 
 /// The full pipeline in order.
 fn all(ctx: &Ctx, release: bool) -> Result<()> {
+    tracing::info!("building {}", ::release::full());
     kernel::fetch::fetch(ctx)?;
     kernel::kernel(ctx)?;
     userland::userland(ctx)?;

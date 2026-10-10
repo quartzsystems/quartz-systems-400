@@ -113,6 +113,7 @@ dependencies = [
  "gpt",
  "hex",
  "licpart",
+ "release",
  "reqwest",
  "rustls-graviola",
  "serde",
@@ -228,6 +229,7 @@ dependencies = [
 name = "console"
 version = "0.1.0"
 dependencies = [
+ "release",
  "rustix",
  "thiserror",
 ]
@@ -966,6 +968,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
+name = "release"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+]
+
+[[package]]
 name = "reqwest"
 version = "0.13.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1291,6 +1300,7 @@ dependencies = [
  "console",
  "libc",
  "licpart",
+ "release",
  "rustix",
  "sysval",
 ]

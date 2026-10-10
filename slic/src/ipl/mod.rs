@@ -54,7 +54,7 @@ pub fn run() -> ! {
 
     let mut system = System::new(console::Outputs::open(), cmdline::Boot::read());
     system.emit(&src::IPL_STARTED);
-    system.out.both("QS/400 IPL - phase 1\n");
+    system.out.both(&format!("{}\n", release::banner()));
     for (target, result) in mounted {
         match result {
             Ok(mounts::Outcome::Mounted) => system.out.serial(&format!("slic: mounted {target}\n")),

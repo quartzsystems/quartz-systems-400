@@ -27,6 +27,7 @@ sysval NAME [VALUE]  show or set a system value
 mode manual|normal   keylock for the next IPL
 screen               dump the console screen as text
 pwrdwn [restart]     power down (or restart)
+release              version, release, modification and build
 ";
 
 /// Announce the console after IPL complete.
@@ -43,6 +44,7 @@ pub fn handle(system: &mut System, line: &str) {
     let reply = match (cmd, args.as_slice()) {
         ("", _) => String::new(),
         ("help", _) => HELP.to_string(),
+        ("release", _) => format!("{}\n", release::full()),
         ("srcs", []) => system.log.dump(),
         ("srcs", ["table"]) => src_table(),
         ("hist", _) => hist(system),
