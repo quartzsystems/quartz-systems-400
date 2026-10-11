@@ -3,15 +3,17 @@
 // root directory of this project.
 
 //! `*FILE` objects: creation from a compiled definition, description,
-//! the member table and deletion.
+//! the member and dependents tables, and deletion.
 
 pub mod attr;
+pub mod dependents;
 pub mod members;
 
 pub use attr::{FileAttr, FileKind, Maint, Recover, Size, Wait};
+pub use dependents::DependentEntry;
 pub use members::MemberEntry;
 
-use dds::{DataType, FieldDef, PfDefinition, RecordFormat};
+use dds::{DataType, FieldDef, FieldSource, FileRef, LfDefinition, PfDefinition, RecordFormat};
 use qsname::{MemberSpec, Name};
 use store::obj::header::{self, ObjectHeader, text_of};
 use store::obj::ops::{self, CreateParams};
@@ -21,7 +23,8 @@ use store::txn::Txn;
 
 use crate::error::{DbError, Result};
 use crate::format::{FormatDef, sections};
-use crate::member;
+use crate::lf::{JoinDef, LogicalDef};
+use crate::member::{self, Member};
 
 /// Which member a new file starts with.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -123,6 +126,8 @@ pub struct FileDesc {
     pub formats: Vec<FormatDef>,
     /// The members, in creation order.
     pub members: Vec<MemberEntry>,
+    /// Physical file: the logical members its members maintain.
+    pub dependents: Vec<DependentEntry>,
 }
 
 impl FileDesc {
@@ -174,7 +179,15 @@ pub fn create_pf(
     opts: &CreateFileOpts,
 ) -> Result<ObjectId> {
     let format = FormatDef::new(def.format.clone(), def.unique, def.dup_order)?;
-    create_file(txn, library, name, FileKind::Physical, &[format], opts)
+    create_file(
+        txn,
+        library,
+        name,
+        FileKind::Physical,
+        &[format],
+        opts,
+        (false, false),
+    )
 }
 
 /// `CRTPF RCDLEN(n)`: one character field.
@@ -189,7 +202,15 @@ pub fn create_pf_rcdlen(
     f.fields = vec![FieldDef::new(name, DataType::Char, rcdlen, 0)];
     f.lay_out();
     let format = FormatDef::new(f, None, None)?;
-    create_file(txn, library, name, FileKind::Physical, &[format], opts)
+    create_file(
+        txn,
+        library,
+        name,
+        FileKind::Physical,
+        &[format],
+        opts,
+        (false, false),
+    )
 }
 
 /// `CRTSRCPF`.
@@ -201,7 +222,108 @@ pub fn create_srcpf(
     opts: &CreateFileOpts,
 ) -> Result<ObjectId> {
     let format = FormatDef::new(source_format(rcdlen), None, None)?;
-    create_file(txn, library, name, FileKind::Source, &[format], opts)
+    create_file(
+        txn,
+        library,
+        name,
+        FileKind::Source,
+        &[format],
+        opts,
+        (false, false),
+    )
+}
+
+/// Resolves a `LIB/FILE` reference of a logical file's DDS to the
+/// physical file object. `MIGRATE(phase5)`: the job's library list.
+pub type Resolve<'a> = &'a mut dyn FnMut(&FileRef) -> Result<ObjectId>;
+
+fn definition(what: String) -> DbError {
+    DbError::Definition { what }
+}
+
+/// `CRTLF` from a compiled definition.
+pub fn create_lf(
+    txn: &mut Txn<'_>,
+    library: ObjectId,
+    name: Name,
+    def: &LfDefinition,
+    resolve: Resolve<'_>,
+    opts: &CreateFileOpts,
+) -> Result<ObjectId> {
+    let mut formats = Vec::new();
+    for lf in &def.formats {
+        let mut based_on = Vec::new();
+        let mut base_formats = Vec::new();
+        for (i, fr) in lf.based_on.iter().enumerate() {
+            let id = resolve(fr)?;
+            let desc = describe(txn, id)?;
+            if desc.attr.kind == FileKind::Logical {
+                return Err(definition(format!("{fr} is a logical file")));
+            }
+            let want = lf.base_formats.get(i).copied();
+            let base = desc
+                .formats
+                .iter()
+                .find(|f| Some(f.format.name) == want)
+                .or_else(|| desc.formats.first())
+                .ok_or_else(|| definition(format!("{fr} has no record format")))?;
+            based_on.push((id, base.format.name));
+            base_formats.push(base.clone());
+        }
+        check_sources(lf, &base_formats)?;
+        let joins = lf
+            .joins
+            .iter()
+            .map(|j| JoinDef {
+                from: u8::try_from(j.from).expect("few"),
+                to: u8::try_from(j.to).expect("few"),
+                fields: j.fields.clone(),
+                dupseq: j.dupseq,
+            })
+            .collect();
+        let mut fd = FormatDef::new(lf.format.clone(), def.unique, def.dup_order)?;
+        fd.logical = Some(LogicalDef {
+            based_on,
+            sources: lf.sources.clone(),
+            select_omit: lf.select_omit.clone(),
+            joins,
+            join: lf.join,
+        });
+        formats.push(fd);
+    }
+    create_file(
+        txn,
+        library,
+        name,
+        FileKind::Logical,
+        &formats,
+        opts,
+        (def.dynslt, def.jdftval),
+    )
+}
+
+/// Every field source must name a field the based-on format has.
+fn check_sources(lf: &dds::LfFormat, bases: &[FormatDef]) -> Result<()> {
+    let has = |file: usize, name: &Name| {
+        bases
+            .get(file)
+            .is_some_and(|b| b.format.field(name).is_some())
+    };
+    for (f, src) in lf.format.fields.iter().zip(&lf.sources) {
+        let ok = match src {
+            FieldSource::Base { file, field } | FieldSource::Substring { file, field, .. } => {
+                has(*file, field)
+            }
+            FieldSource::Concat { file, fields } => fields.iter().all(|n| has(*file, n)),
+        };
+        if !ok {
+            return Err(definition(format!(
+                "field {} of format {} is not in its based-on file",
+                f.name, lf.format.name
+            )));
+        }
+    }
+    Ok(())
 }
 
 fn create_file(
@@ -211,6 +333,7 @@ fn create_file(
     kind: FileKind,
     formats: &[FormatDef],
     opts: &CreateFileOpts,
+    (dynslt, jdftval): (bool, bool),
 ) -> Result<ObjectId> {
     let attribute = match kind {
         FileKind::Physical | FileKind::Source => "PF",
@@ -245,6 +368,8 @@ fn create_file(
         alwupd: opts.alwupd,
         alwdlt: opts.alwdlt,
         allocate: opts.allocate,
+        dynslt,
+        jdftval,
         record_len: formats
             .iter()
             .map(|f| f.format.record_len)
@@ -264,15 +389,21 @@ fn create_file(
         formats_len: u64::try_from(blob.len()).expect("fits"),
         members_off: u64::try_from(blob.len()).expect("fits"),
         member_cap: members::INITIAL_CAP,
+        dependent_count: 0,
+        dependents_off: 0,
+        dependent_cap: 0,
     };
     let (page, _) = ops::read_header(txn, id)?;
     ops::write_attr(txn, page, 0, &attr.encode())?;
-    match opts.member {
-        MemberOpt::None => {}
-        MemberOpt::File => {
-            add_member(txn, id, name, &opts.text, None, opts.now)?;
-        }
-        MemberOpt::Named(m) => {
+    let first = match opts.member {
+        MemberOpt::None => None,
+        MemberOpt::File => Some(name),
+        MemberOpt::Named(m) => Some(m),
+    };
+    if let Some(m) = first {
+        if kind == FileKind::Logical {
+            add_lf_member(txn, id, m, &opts.text, None, opts.now)?;
+        } else {
             add_member(txn, id, m, &opts.text, None, opts.now)?;
         }
     }
@@ -303,6 +434,16 @@ pub fn describe(txn: &mut Txn<'_>, id: ObjectId) -> Result<FileDesc> {
         usize::from(attr.member_count) * members::ENTRY_LEN,
     )?;
     let members = members::decode_table(&table, attr.member_count);
+    let dependents = if attr.dependent_count > 0 {
+        let t = space.read(
+            txn,
+            attr.dependents_off,
+            usize::try_from(attr.dependent_count).expect("fits") * dependents::ENTRY_LEN,
+        )?;
+        dependents::decode_table(&t, attr.dependent_count)
+    } else {
+        Vec::new()
+    };
     Ok(FileDesc {
         id,
         page,
@@ -310,6 +451,7 @@ pub fn describe(txn: &mut Txn<'_>, id: ObjectId) -> Result<FileDesc> {
         attr,
         formats,
         members,
+        dependents,
     })
 }
 
@@ -319,6 +461,36 @@ fn library_name(txn: &mut Txn<'_>, id: ObjectId) -> String {
 
 fn save_attr(txn: &mut Txn<'_>, desc: &FileDesc) -> Result<()> {
     ops::write_attr(txn, desc.page, 0, &desc.attr.encode())?;
+    Ok(())
+}
+
+fn member_params(desc: &FileDesc, name: Name, text: &str, now: u64) -> CreateParams {
+    CreateParams {
+        library: desc.header.library,
+        name,
+        type_code: types::MBR,
+        attribute: String::new(),
+        text: text.to_string(),
+        owner: text_of(&desc.header.owner),
+        system: text_of(&desc.header.system),
+        now,
+        by_system: true,
+    }
+}
+
+fn check_new_member(desc: &FileDesc, name: Name) -> Result<()> {
+    if desc.members.iter().any(|m| m.name == name) {
+        return Err(DbError::MemberExists {
+            file: desc.name().to_string(),
+            member: name.to_string(),
+        });
+    }
+    if desc.attr.max_members > 0 && u32::from(desc.attr.member_count) >= desc.attr.max_members {
+        return Err(DbError::TooManyMembers {
+            file: desc.name().to_string(),
+            max: desc.attr.max_members,
+        });
+    }
     Ok(())
 }
 
@@ -332,32 +504,14 @@ pub fn add_member(
     now: u64,
 ) -> Result<ObjectId> {
     let mut desc = describe(txn, file)?;
-    if desc.members.iter().any(|m| m.name == name) {
-        return Err(DbError::MemberExists {
-            file: desc.name().to_string(),
-            member: name.to_string(),
-        });
+    if desc.attr.kind == FileKind::Logical {
+        return add_lf_member(txn, file, name, text, None, now);
     }
-    if desc.attr.max_members > 0 && u32::from(desc.attr.member_count) >= desc.attr.max_members {
-        return Err(DbError::TooManyMembers {
-            file: desc.name().to_string(),
-            max: desc.attr.max_members,
-        });
-    }
+    check_new_member(&desc, name)?;
     let format = desc.formats.first().ok_or_else(|| DbError::Corrupt {
         what: format!("file {} has no record format", desc.name()),
     })?;
-    let params = CreateParams {
-        library: desc.header.library,
-        name,
-        type_code: types::MBR,
-        attribute: String::new(),
-        text: text.to_string(),
-        owner: text_of(&desc.header.owner),
-        system: text_of(&desc.header.system),
-        now,
-        by_system: true,
-    };
+    let params = member_params(&desc, name, text, now);
     let object = member::create(
         txn,
         file,
@@ -370,13 +524,78 @@ pub fn add_member(
         },
         &params,
     )?;
-    let entry = MemberEntry {
+    desc.members.push(MemberEntry {
         name,
         srctype,
+        object,
+    });
+    write_members(txn, &mut desc)?;
+    Ok(object)
+}
+
+/// `ADDLFM`: a logical member over `bases`, one physical member per
+/// format, or each based-on file's first member.
+pub fn add_lf_member(
+    txn: &mut Txn<'_>,
+    file: ObjectId,
+    name: Name,
+    text: &str,
+    bases: Option<&[ObjectId]>,
+    now: u64,
+) -> Result<ObjectId> {
+    let mut desc = describe(txn, file)?;
+    check_new_member(&desc, name)?;
+    let mut base_members = Vec::new();
+    let mut base_files = Vec::new();
+    for (fi, f) in desc.formats.iter().enumerate() {
+        let log = f.logical.as_ref().ok_or_else(|| DbError::Corrupt {
+            what: format!("format {fi} of {} is not logical", desc.name()),
+        })?;
+        let base_file = log
+            .based_on
+            .first()
+            .map(|b| b.0)
+            .ok_or_else(|| DbError::Corrupt {
+                what: format!("format {fi} of {} has no based-on file", desc.name()),
+            })?;
+        let member = if let Some(m) = bases.and_then(|b| b.get(fi)) {
+            *m
+        } else {
+            let base = describe(txn, base_file)?;
+            base.members
+                .first()
+                .map(|m| m.object)
+                .ok_or_else(|| DbError::MemberNotFound {
+                    file: base.name().to_string(),
+                    member: "*FIRST".into(),
+                })?
+        };
+        base_members.push(member);
+        base_files.push(base_file);
+    }
+    let params = member_params(&desc, name, text, now);
+    let object = member::create_logical(txn, file, &desc.formats, &base_members, &params)?;
+    for (base_file, base_member) in base_files.iter().zip(&base_members) {
+        add_dependent(
+            txn,
+            *base_file,
+            DependentEntry {
+                lf_file: file,
+                lf_member: object,
+                base_member: *base_member,
+            },
+        )?;
+    }
+    let entry = MemberEntry {
+        name,
+        srctype: None,
         object,
     };
     desc.members.push(entry);
     write_members(txn, &mut desc)?;
+    let desc = describe(txn, file)?;
+    let mut m = Member::open(txn, &desc, &entry)?;
+    m.rebuild_path(txn, &mut |_, _| {})?;
     Ok(object)
 }
 
@@ -396,6 +615,80 @@ fn write_members(txn: &mut Txn<'_>, desc: &mut FileDesc) -> Result<()> {
     save_attr(txn, desc)
 }
 
+/// Write the dependents table back, growing it when full.
+fn write_dependents(txn: &mut Txn<'_>, desc: &mut FileDesc) -> Result<()> {
+    let count = u32::try_from(desc.dependents.len()).expect("fits");
+    if count > desc.attr.dependent_cap {
+        let cap = (desc.attr.dependent_cap * 2)
+            .max(count)
+            .max(dependents::INITIAL_CAP);
+        desc.attr.dependents_off = desc.attr.def_len;
+        desc.attr.dependent_cap = cap;
+        desc.attr.def_len += u64::from(cap) * dependents::ENTRY_LEN as u64;
+    }
+    if desc.attr.dependent_cap > 0 {
+        let table = dependents::encode_table(&desc.dependents, desc.attr.dependent_cap);
+        let space = Space::ensure(txn, desc.id, desc.attr.def_len, 0)?;
+        space.write(txn, desc.attr.dependents_off, &table)?;
+    }
+    desc.attr.dependent_count = count;
+    save_attr(txn, desc)
+}
+
+/// Register a dependent logical member with a physical file.
+pub fn add_dependent(txn: &mut Txn<'_>, base_file: ObjectId, entry: DependentEntry) -> Result<()> {
+    let mut desc = describe(txn, base_file)?;
+    if desc.dependents.contains(&entry) {
+        return Ok(());
+    }
+    desc.dependents.push(entry);
+    write_dependents(txn, &mut desc)
+}
+
+/// Forget a logical member in every based-on file.
+fn remove_dependents(
+    txn: &mut Txn<'_>,
+    lf_member: ObjectId,
+    base_files: &[ObjectId],
+) -> Result<()> {
+    for base in base_files {
+        let mut desc = describe(txn, *base)?;
+        let before = desc.dependents.len();
+        desc.dependents.retain(|d| d.lf_member != lf_member);
+        if desc.dependents.len() != before {
+            write_dependents(txn, &mut desc)?;
+        }
+    }
+    Ok(())
+}
+
+/// The based-on files of a logical file, one per format.
+fn base_files(desc: &FileDesc) -> Vec<ObjectId> {
+    desc.formats
+        .iter()
+        .filter_map(|f| {
+            f.logical
+                .as_ref()
+                .and_then(|l| l.based_on.first())
+                .map(|b| b.0)
+        })
+        .collect()
+}
+
+fn has_dependents(desc: &FileDesc, member: Option<ObjectId>) -> Result<()> {
+    let dependent = desc
+        .dependents
+        .iter()
+        .find(|d| member.is_none_or(|m| d.base_member == m));
+    if let Some(d) = dependent {
+        return Err(DbError::HasDependents {
+            file: desc.name().to_string(),
+            dependent: d.lf_file.to_string(),
+        });
+    }
+    Ok(())
+}
+
 /// `RMVM`.
 pub fn remove_member(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId, name: Name) -> Result<()> {
     let mut desc = describe(txn, file)?;
@@ -407,7 +700,13 @@ pub fn remove_member(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId, name: Na
             file: desc.name().to_string(),
             member: name.to_string(),
         })?;
-    let entry = desc.members.remove(at);
+    let entry = desc.members[at];
+    if desc.attr.kind == FileKind::Logical {
+        remove_dependents(txn, entry.object, &base_files(&desc))?;
+    } else {
+        has_dependents(&desc, Some(entry.object))?;
+    }
+    desc.members.remove(at);
     member::destroy(txn, job, entry.object)?;
     write_members(txn, &mut desc)
 }
@@ -444,9 +743,17 @@ pub fn rename_member(
     write_members(txn, &mut desc)
 }
 
-/// `DLTF`: the members, then the file.
+/// `DLTF`: the members, then the file. A physical file with dependent
+/// logical members is refused.
 pub fn delete_file(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId) -> Result<()> {
     let desc = describe(txn, file)?;
+    if desc.attr.kind == FileKind::Logical {
+        for m in &desc.members {
+            remove_dependents(txn, m.object, &base_files(&desc))?;
+        }
+    } else {
+        has_dependents(&desc, None)?;
+    }
     for m in &desc.members {
         member::destroy(txn, job, m.object)?;
     }

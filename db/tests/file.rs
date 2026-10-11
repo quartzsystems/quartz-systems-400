@@ -12,8 +12,7 @@ use std::sync::Arc;
 
 use blockdev::{BlockDev, MemBlockDev};
 use db::file::{self, CreateFileOpts, MemberOpt};
-use db::member::Member;
-use db::{DbError, FileKind, Size};
+use db::{DbError, FileKind, Member, Size};
 use dds::{CompileOpts, NoRefs, PfDefinition, Source, compile_pf};
 use qsname::{MemberSpec, Name};
 use store::obj::{CreateParams, JobHandle, ObjectId, ops, types};
@@ -296,11 +295,11 @@ fn records_in_a_member() {
         (id, mbr)
     };
     let mut t = store.begin().unwrap();
-    let mut m = Member::load(&mut t, mbr).unwrap();
-    assert_eq!(m.record_len(), 151);
-    assert_eq!(m.null_map_len(), 1);
-    assert_eq!(m.attr.max_records, 7);
-    assert!(m.attr.reuse_deleted);
+    let mut m = Member::open_by(&mut t, file, MemberSpec::First).unwrap();
+    assert_eq!(m.core.record_len(), 151);
+    assert_eq!(m.core.null_map_len(), 1);
+    assert_eq!(m.attr().max_records, 7);
+    assert!(m.attr().reuse_deleted);
     assert_eq!(m.read(&mut t, 1).unwrap(), None);
     for i in 1..=5u32 {
         let rrn = m
@@ -308,8 +307,8 @@ fn records_in_a_member() {
             .unwrap();
         assert_eq!(rrn, u64::from(i));
     }
-    assert_eq!(m.attr.record_count, 5);
-    assert_eq!(m.attr.slots, 5);
+    assert_eq!(m.attr().record_count, 5);
+    assert_eq!(m.attr().slots, 5);
     let s3 = m.read(&mut t, 3).unwrap().unwrap();
     assert_eq!(s3.record, record(3, "Customer 3"));
     assert!(!s3.deleted);
@@ -333,8 +332,8 @@ fn records_in_a_member() {
     // Delete and reuse.
     m.delete(&mut t, 2).unwrap();
     m.delete(&mut t, 4).unwrap();
-    assert_eq!(m.attr.record_count, 3);
-    assert_eq!(m.attr.deleted_count, 2);
+    assert_eq!(m.attr().record_count, 3);
+    assert_eq!(m.attr().deleted_count, 2);
     assert!(m.read(&mut t, 2).unwrap().unwrap().deleted);
     assert!(matches!(
         m.delete(&mut t, 2),
@@ -356,8 +355,8 @@ fn records_in_a_member() {
         m.write_new(&mut t, &record(7, "Reused 4"), &[0]).unwrap(),
         4
     );
-    assert_eq!(m.attr.deleted_count, 0);
-    assert_eq!(m.attr.slots, 5);
+    assert_eq!(m.attr().deleted_count, 0);
+    assert_eq!(m.attr().slots, 5);
     // The scan skips nothing now; after deletes it skips the holes.
     let all = m.scan(&mut t, 1, 100).unwrap();
     assert_eq!(
@@ -379,14 +378,14 @@ fn records_in_a_member() {
     drop(store);
     let mut store = reopen(&d);
     let mut t = store.begin().unwrap();
-    let mut m = Member::load(&mut t, mbr).unwrap();
-    assert_eq!(m.attr.record_count, 7);
+    let mut m = Member::open_by(&mut t, file, MemberSpec::First).unwrap();
+    assert_eq!(m.attr().record_count, 7);
     assert_eq!(
         m.read(&mut t, 7).unwrap().unwrap().record,
         record(10, "Eight")
     );
     m.clear(&mut t).unwrap();
-    assert_eq!(m.attr.slots, 0);
+    assert_eq!(m.attr().slots, 0);
     assert_eq!(m.read(&mut t, 1).unwrap(), None);
     assert_eq!(m.write_new(&mut t, &record(1, "Fresh"), &[0]).unwrap(), 1);
     t.commit().unwrap();

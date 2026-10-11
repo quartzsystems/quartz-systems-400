@@ -3,9 +3,9 @@
 // root directory of this project.
 
 //! The QS/400 database on the object store: `*FILE` objects with their
-//! record formats and members, record slots and access paths. The
-//! on-disk format is `docs/DB_FORMAT.md`; `tests/spec.rs` checks the
-//! layouts here against it.
+//! record formats and members, record slots, field values and access
+//! paths. The on-disk format is `docs/DB_FORMAT.md`; `tests/spec.rs`
+//! checks the layouts here against it.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -13,10 +13,15 @@
 mod error;
 pub mod file;
 pub mod format;
+pub mod lf;
 pub mod member;
+pub mod path;
+pub mod record;
 pub mod spec;
 
 pub use error::{DbError, Result};
 pub use file::{CreateFileOpts, FileDesc, FileKind, Maint, Recover, Size, Wait};
 pub use format::{FormatDef, fmt_level_id};
-pub use member::{MbrAttr, Slot};
+pub use member::{MbrAttr, Member, Slot};
+pub use path::{Path, PathKey};
+pub use record::Value;

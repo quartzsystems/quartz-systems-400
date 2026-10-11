@@ -85,6 +85,44 @@ pub enum DbError {
         got: usize,
     },
 
+    /// A key already in a `UNIQUE` access path.
+    #[error("duplicate key {key} in member {member} of file {file}")]
+    DuplicateKey {
+        /// File name.
+        file: String,
+        /// Member name.
+        member: String,
+        /// The encoded key, hexadecimal.
+        key: String,
+    },
+
+    /// A field's bytes are not valid for its type.
+    #[error("field {field}: {what}")]
+    DataMapping {
+        /// Field name.
+        field: String,
+        /// What was wrong.
+        what: String,
+    },
+
+    /// A keyed operation on a path that must be rebuilt first.
+    #[error("access path of member {member} in file {file} is not valid")]
+    PathInvalid {
+        /// File name.
+        file: String,
+        /// Member name.
+        member: String,
+    },
+
+    /// A physical file or member that logical members depend on.
+    #[error("file {file} has dependent logical file {dependent}")]
+    HasDependents {
+        /// File name.
+        file: String,
+        /// A dependent logical file.
+        dependent: String,
+    },
+
     /// A definition the file cannot hold.
     #[error("file definition: {what}")]
     Definition {
@@ -111,10 +149,14 @@ impl DbError {
             Self::MemberExists { .. } => "CPF5812",
             Self::TooManyMembers { .. } => "CPF7306",
             Self::RecordNotFound { .. } | Self::RecordDeleted { .. } => "CPF5006",
+            Self::DuplicateKey { .. } => "CPF5009",
+            Self::DataMapping { .. } => "CPF5029",
+            Self::PathInvalid { .. } => "CPF5090",
             Self::Corrupt { .. } => "CPF3113",
-            Self::MemberFull { .. } | Self::RecordLength { .. } | Self::Definition { .. } => {
-                return None;
-            }
+            Self::MemberFull { .. }
+            | Self::RecordLength { .. }
+            | Self::HasDependents { .. }
+            | Self::Definition { .. } => return None,
         })
     }
 }

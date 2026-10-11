@@ -3,8 +3,9 @@
 // root directory of this project.
 
 //! Record formats as the file keeps them: the DDS model plus what the
-//! database adds (level ID, null map, key encoding sizes), and their
-//! section encoding. See `docs/DB_FORMAT.md` §3, §5 and §6.
+//! database adds (level ID, null map, key encoding sizes, the logical
+//! definition), and their section encoding. See `docs/DB_FORMAT.md` §3,
+//! §5 and §6.
 
 pub mod keys;
 mod level_id;
@@ -15,9 +16,10 @@ pub use level_id::fmt_level_id;
 use dds::{DataType, DupOrder, NullKeys, RecordFormat};
 
 use crate::error::{DbError, Result};
+use crate::lf::LogicalDef;
 
-/// Longest encoded key: the store's key less the RRN tail.
-pub const MAX_KEY_LEN: usize = 1016;
+/// Longest encoded key: the store's key less the format tag and RRN.
+pub const MAX_KEY_LEN: usize = 1014;
 
 /// A record format with the database's view of it.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -34,6 +36,8 @@ pub struct FormatDef {
     pub dup_order: Option<DupOrder>,
     /// Bytes of the encoded key, 0 for arrival sequence.
     pub key_len: u16,
+    /// Set for a format of a logical file.
+    pub logical: Option<LogicalDef>,
 }
 
 impl FormatDef {
@@ -70,6 +74,7 @@ impl FormatDef {
             dup_order,
             key_len: u16::try_from(key_len).expect("checked"),
             format,
+            logical: None,
         })
     }
 

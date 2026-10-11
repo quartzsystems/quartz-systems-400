@@ -5,14 +5,17 @@
 //! The section encoding of record formats. See `docs/DB_FORMAT.md` §3.
 
 use dds::{
-    DataType, DateFmt, DefaultValue, DupOrder, FieldDef, FloatPrecision, KeyField, KeyTransform,
-    NullKeys, RecordFormat, TimeFmt, Usage, VarLen,
+    CompOp, Condition, DataType, DateFmt, DefaultValue, DupOrder, FieldDef, FieldSource,
+    FloatPrecision, KeyField, KeyTransform, Literal, NullKeys, RecordFormat, SelectOmit, TimeFmt,
+    Usage, Validity, VarLen,
 };
 use qsname::Name;
+use store::obj::ObjectId;
 
 use super::{FormatDef, keys};
 use crate::error::{DbError, Result};
-use crate::spec::{Layout, field};
+use crate::lf::{JoinDef, LogicalDef};
+use crate::spec::{Field, Layout, field};
 
 /// Bytes of a section header.
 pub const SECTION_LEN: usize = 8;
@@ -22,15 +25,35 @@ pub const FORMAT_LEN: usize = 96;
 pub const FIELD_LEN: usize = 256;
 /// Bytes of a `KeyEntry`.
 pub const KEY_LEN: usize = 16;
+/// Bytes of a `BasedOnEntry`.
+pub const BASEDON_LEN: usize = 32;
+/// Bytes of a `SourceEntry` before its names.
+pub const SOURCE_HEAD: usize = 8;
+/// Bytes of a `SelOmitGroup`.
+pub const GROUP_LEN: usize = 8;
+/// Bytes of a `SelOmitCondition`.
+pub const CONDITION_LEN: usize = 8;
+/// Bytes of a `SelOmitValue` before its bytes.
+pub const VALUE_HEAD: usize = 4;
+/// Bytes of a `JoinEntry` before its pairs.
+pub const JOIN_HEAD: usize = 18;
 /// Bytes of `dft` kept.
 pub const DFT_MAX: usize = 64;
 
-/// Section tags.
+/// A record format.
 pub const TAG_FORMAT: u16 = 1;
 /// A field.
 pub const TAG_FIELD: u16 = 2;
 /// A key field.
 pub const TAG_KEY: u16 = 3;
+/// A based-on file.
+pub const TAG_BASEDON: u16 = 4;
+/// A field source.
+pub const TAG_SOURCE: u16 = 5;
+/// A select/omit group.
+pub const TAG_SELOMIT: u16 = 6;
+/// A join.
+pub const TAG_JOIN: u16 = 7;
 
 /// The spec layout of a section header.
 pub static SECTION_LAYOUT: Layout = Layout {
@@ -106,6 +129,97 @@ pub static KEY_LAYOUT: Layout = Layout {
     ],
 };
 
+/// The spec layout of a based-on entry.
+pub static BASEDON_LAYOUT: Layout = Layout {
+    name: "BasedOnEntry",
+    size: Some(BASEDON_LEN),
+    fields: &[
+        field("file", 0, 16),
+        field("format", 16, 10),
+        field("index", 26, 2),
+        field("reserved", 28, 4),
+    ],
+};
+
+/// The spec layout of a source entry.
+pub static SOURCE_LAYOUT: Layout = Layout {
+    name: "SourceEntry",
+    size: None,
+    fields: &[
+        field("kind", 0, 1),
+        field("file", 1, 1),
+        field("count", 2, 2),
+        field("start", 4, 2),
+        field("length", 6, 2),
+        Field {
+            name: "names",
+            offset: Some(8),
+            size: None,
+        },
+    ],
+};
+
+/// The spec layout of a select/omit group header.
+pub static GROUP_LAYOUT: Layout = Layout {
+    name: "SelOmitGroup",
+    size: Some(GROUP_LEN),
+    fields: &[
+        field("select", 0, 1),
+        field("all", 1, 1),
+        field("cond_count", 2, 2),
+        field("reserved", 4, 4),
+    ],
+};
+
+/// The spec layout of a select/omit condition header.
+pub static CONDITION_LAYOUT: Layout = Layout {
+    name: "SelOmitCondition",
+    size: Some(CONDITION_LEN),
+    fields: &[
+        field("field", 0, 2),
+        field("test", 2, 1),
+        field("op", 3, 1),
+        field("value_count", 4, 2),
+        field("reserved", 6, 2),
+    ],
+};
+
+/// The spec layout of a select/omit value.
+pub static VALUE_LAYOUT: Layout = Layout {
+    name: "SelOmitValue",
+    size: None,
+    fields: &[
+        field("kind", 0, 1),
+        field("reserved", 1, 1),
+        field("len", 2, 2),
+        Field {
+            name: "bytes",
+            offset: Some(4),
+            size: None,
+        },
+    ],
+};
+
+/// The spec layout of a join entry.
+pub static JOIN_LAYOUT: Layout = Layout {
+    name: "JoinEntry",
+    size: None,
+    fields: &[
+        field("from", 0, 1),
+        field("to", 1, 1),
+        field("pair_count", 2, 2),
+        field("dupseq", 4, 1),
+        field("dupseq_descend", 5, 1),
+        field("reserved", 6, 2),
+        field("dupseq_field", 8, 10),
+        Field {
+            name: "pairs",
+            offset: Some(18),
+            size: None,
+        },
+    ],
+};
+
 // Little-endian helpers.
 fn put_u16(b: &mut [u8], off: usize, v: u16) {
     b[off..off + 2].copy_from_slice(&v.to_le_bytes());
@@ -123,6 +237,10 @@ fn get_u32(b: &[u8], off: usize) -> u32 {
     u32::from_le_bytes(b[off..off + 4].try_into().expect("4"))
 }
 
+fn u16_of(n: usize) -> u16 {
+    u16::try_from(n).expect("fits in a section")
+}
+
 /// CP037 text into a fixed field, cut to fit.
 fn put_text(b: &mut [u8], off: usize, len: usize, s: &str) {
     let out = &mut b[off..off + len];
@@ -135,6 +253,10 @@ fn put_text(b: &mut [u8], off: usize, len: usize, s: &str) {
 fn get_text(b: &[u8], off: usize, len: usize) -> Option<String> {
     let s = ccsid::decode_trimmed(&b[off..off + len]);
     (!s.is_empty()).then_some(s)
+}
+
+fn name_of(b: &[u8]) -> Name {
+    Name::from_bytes(b[..10].try_into().expect("10"))
 }
 
 fn corrupt(what: impl Into<String>) -> DbError {
@@ -166,24 +288,154 @@ pub fn encode(formats: &[FormatDef]) -> Vec<u8> {
             section(&mut out, TAG_KEY, &encode_key(k, key_off, len));
             key_off += len;
         }
+        if let Some(log) = &def.logical {
+            encode_logical(&mut out, def, log);
+        }
     }
     out
+}
+
+fn encode_logical(out: &mut Vec<u8>, def: &FormatDef, log: &LogicalDef) {
+    for (i, (file, format)) in log.based_on.iter().enumerate() {
+        let mut b = [0u8; BASEDON_LEN];
+        b[..16].copy_from_slice(&file.to_bytes());
+        b[16..26].copy_from_slice(format.as_bytes());
+        put_u16(&mut b, 26, u16_of(i));
+        section(out, TAG_BASEDON, &b);
+    }
+    for src in &log.sources {
+        section(out, TAG_SOURCE, &encode_source(src));
+    }
+    for g in &log.select_omit {
+        section(out, TAG_SELOMIT, &encode_group(def, g));
+    }
+    for j in &log.joins {
+        section(out, TAG_JOIN, &encode_join(j));
+    }
+}
+
+fn encode_source(src: &FieldSource) -> Vec<u8> {
+    let (kind, file, names, start, length): (u8, usize, Vec<Name>, u32, u32) = match src {
+        FieldSource::Base { file, field } => (0, *file, vec![*field], 0, 0),
+        FieldSource::Concat { file, fields } => (1, *file, fields.clone(), 0, 0),
+        FieldSource::Substring {
+            file,
+            field,
+            start,
+            length,
+        } => (2, *file, vec![*field], *start, *length),
+    };
+    let mut b = vec![0u8; SOURCE_HEAD + names.len() * 10];
+    b[0] = kind;
+    b[1] = u8::try_from(file).expect("at most 32 files");
+    put_u16(&mut b, 2, u16_of(names.len()));
+    put_u16(&mut b, 4, u16::try_from(start).unwrap_or(u16::MAX));
+    put_u16(&mut b, 6, u16::try_from(length).unwrap_or(u16::MAX));
+    for (i, n) in names.iter().enumerate() {
+        b[SOURCE_HEAD + i * 10..SOURCE_HEAD + i * 10 + 10].copy_from_slice(n.as_bytes());
+    }
+    b
+}
+
+fn encode_value(out: &mut Vec<u8>, lit: &Literal) {
+    let (kind, bytes): (u8, Vec<u8>) = match lit {
+        Literal::Word(w) => (0, w.as_bytes().to_vec()),
+        Literal::Quoted(q) => (
+            1,
+            q.chars()
+                .map(|c| ccsid::byte_of(c).unwrap_or(ccsid::SPACE))
+                .collect(),
+        ),
+        Literal::Hex(h) => (2, h.clone()),
+    };
+    let mut h = [0u8; VALUE_HEAD];
+    h[0] = kind;
+    put_u16(&mut h, 2, u16_of(bytes.len()));
+    out.extend_from_slice(&h);
+    out.extend_from_slice(&bytes);
+}
+
+fn encode_group(def: &FormatDef, g: &SelectOmit) -> Vec<u8> {
+    let mut b = vec![0u8; GROUP_LEN];
+    b[0] = u8::from(g.select);
+    b[1] = u8::from(g.all);
+    put_u16(&mut b, 2, u16_of(g.conditions.len()));
+    for c in &g.conditions {
+        let mut h = [0u8; CONDITION_LEN];
+        let index = def
+            .format
+            .field(&c.field)
+            .map_or(u16::MAX, |(i, _)| u16_of(i));
+        put_u16(&mut h, 0, index);
+        let (test, op, values): (u8, u8, Vec<&Literal>) = match &c.test {
+            Validity::Values(v) => (0, 0, v.iter().collect()),
+            Validity::Range(lo, hi) => (1, 0, vec![lo, hi]),
+            Validity::Comp(op, v) => (2, op_code(*op), vec![v]),
+            Validity::Check(_) => (0, 0, Vec::new()),
+        };
+        h[2] = test;
+        h[3] = op;
+        put_u16(&mut h, 4, u16_of(values.len()));
+        b.extend_from_slice(&h);
+        for v in values {
+            encode_value(&mut b, v);
+        }
+    }
+    b
+}
+
+fn op_code(op: CompOp) -> u8 {
+    match op {
+        CompOp::Eq => 0,
+        CompOp::Ne => 1,
+        CompOp::Lt => 2,
+        CompOp::Nl => 3,
+        CompOp::Gt => 4,
+        CompOp::Ng => 5,
+        CompOp::Le => 6,
+        CompOp::Ge => 7,
+    }
+}
+
+fn op_of(code: u8) -> Option<CompOp> {
+    Some(match code {
+        0 => CompOp::Eq,
+        1 => CompOp::Ne,
+        2 => CompOp::Lt,
+        3 => CompOp::Nl,
+        4 => CompOp::Gt,
+        5 => CompOp::Ng,
+        6 => CompOp::Le,
+        7 => CompOp::Ge,
+        _ => return None,
+    })
+}
+
+fn encode_join(j: &JoinDef) -> Vec<u8> {
+    let mut b = vec![0u8; JOIN_HEAD + j.fields.len() * 20];
+    b[0] = j.from;
+    b[1] = j.to;
+    put_u16(&mut b, 2, u16_of(j.fields.len()));
+    b[8..18].fill(ccsid::SPACE);
+    if let Some((name, desc)) = &j.dupseq {
+        b[4] = 1;
+        b[5] = u8::from(*desc);
+        b[8..18].copy_from_slice(name.as_bytes());
+    }
+    for (i, (from, to)) in j.fields.iter().enumerate() {
+        let at = JOIN_HEAD + i * 20;
+        b[at..at + 10].copy_from_slice(from.as_bytes());
+        b[at + 10..at + 20].copy_from_slice(to.as_bytes());
+    }
+    b
 }
 
 fn encode_format(def: &FormatDef) -> [u8; FORMAT_LEN] {
     let mut b = [0u8; FORMAT_LEN];
     b[..10].copy_from_slice(def.format.name.as_bytes());
     b[10..23].copy_from_slice(def.level_id.as_bytes());
-    put_u16(
-        &mut b,
-        24,
-        u16::try_from(def.format.fields.len()).expect("at most 8000"),
-    );
-    put_u16(
-        &mut b,
-        26,
-        u16::try_from(def.format.keys.len()).expect("at most 120"),
-    );
+    put_u16(&mut b, 24, u16_of(def.format.fields.len()));
+    put_u16(&mut b, 26, u16_of(def.format.keys.len()));
     put_u32(&mut b, 28, def.format.record_len);
     put_u16(&mut b, 32, def.null_map_len);
     let mut flags = 0u16;
@@ -199,6 +451,9 @@ fn encode_format(def: &FormatDef) -> [u8; FORMAT_LEN] {
         Some(DupOrder::Lifo) => 2 << 2,
         Some(DupOrder::Fcfo) => 3 << 2,
     };
+    if def.logical.as_ref().is_some_and(|l| l.join) {
+        flags |= 1 << 4;
+    }
     put_u16(&mut b, 34, flags);
     put_u16(&mut b, 36, def.key_len);
     put_text(&mut b, 46, 50, def.format.text.as_deref().unwrap_or(""));
@@ -294,11 +549,13 @@ fn encode_field(f: &FieldDef, null_index: Option<u16>) -> [u8; FIELD_LEN] {
     put_u16(&mut b, 36, null_index.unwrap_or(0xFFFF));
     put_text(&mut b, 38, 50, f.text.as_deref().unwrap_or(""));
     put_text(&mut b, 88, 30, f.alias.as_deref().unwrap_or(""));
-    for (i, line) in f.colhdg.iter().take(3).enumerate() {
-        put_text(&mut b, 118 + i * 20, 20, line);
-    }
-    for i in f.colhdg.len()..3 {
-        put_text(&mut b, 118 + i * 20, 20, "");
+    for i in 0..3 {
+        put_text(
+            &mut b,
+            118 + i * 20,
+            20,
+            f.colhdg.get(i).map_or("", String::as_str),
+        );
     }
     let (kind, bytes): (u8, Vec<u8>) = match &f.default {
         None => (0, Vec::new()),
@@ -321,7 +578,7 @@ fn encode_field(f: &FieldDef, null_index: Option<u16>) -> [u8; FIELD_LEN] {
 
 fn encode_key(k: &KeyField, key_off: u16, key_len: u16) -> [u8; KEY_LEN] {
     let mut b = [0u8; KEY_LEN];
-    put_u16(&mut b, 0, u16::try_from(k.field).expect("at most 8000"));
+    put_u16(&mut b, 0, u16_of(k.field));
     let transform: u16 = match k.transform {
         KeyTransform::Signed => 0,
         KeyTransform::Unsigned => 1,
@@ -354,18 +611,23 @@ pub fn decode(bytes: &[u8]) -> Result<Vec<FormatDef>> {
         }
         let body = &bytes[at..at + len];
         at += len;
+        if tag == TAG_FORMAT {
+            out.push(decode_format(body)?);
+            continue;
+        }
+        let def = out
+            .last_mut()
+            .ok_or_else(|| corrupt("section before format"))?;
         match tag {
-            TAG_FORMAT => out.push(decode_format(body)?),
-            TAG_FIELD => {
-                let def = out
-                    .last_mut()
-                    .ok_or_else(|| corrupt("field before format"))?;
-                def.format.fields.push(decode_field(body)?);
+            TAG_FIELD => def.format.fields.push(decode_field(body)?),
+            TAG_KEY => def.format.keys.push(decode_key(body, &def.format.fields)?),
+            TAG_BASEDON => logical_of(def).based_on.push(decode_basedon(body)?),
+            TAG_SOURCE => logical_of(def).sources.push(decode_source(body)?),
+            TAG_SELOMIT => {
+                let g = decode_group(&def.format, body)?;
+                logical_of(def).select_omit.push(g);
             }
-            TAG_KEY => {
-                let def = out.last_mut().ok_or_else(|| corrupt("key before format"))?;
-                def.format.keys.push(decode_key(body, &def.format.fields)?);
-            }
+            TAG_JOIN => logical_of(def).joins.push(decode_join(body)?),
             other => return Err(corrupt(format!("format section tag {other}"))),
         }
     }
@@ -377,11 +639,21 @@ pub fn decode(bytes: &[u8]) -> Result<Vec<FormatDef>> {
     Ok(out)
 }
 
+fn logical_of(def: &mut FormatDef) -> &mut LogicalDef {
+    def.logical.get_or_insert_with(|| LogicalDef {
+        based_on: Vec::new(),
+        sources: Vec::new(),
+        select_omit: Vec::new(),
+        joins: Vec::new(),
+        join: false,
+    })
+}
+
 fn decode_format(b: &[u8]) -> Result<FormatDef> {
     if b.len() != FORMAT_LEN {
         return Err(corrupt("format entry size"));
     }
-    let name = Name::from_bytes(b[..10].try_into().expect("10"));
+    let name = name_of(b);
     let level_id = std::str::from_utf8(&b[10..23])
         .map_err(|_| corrupt("level id"))?
         .to_string();
@@ -400,21 +672,26 @@ fn decode_format(b: &[u8]) -> Result<FormatDef> {
     let mut format = RecordFormat::new(name);
     format.record_len = get_u32(b, 28);
     format.text = get_text(b, 46, 50);
-    Ok(FormatDef {
+    let mut def = FormatDef {
         format,
         level_id,
         null_map_len: get_u16(b, 32),
         unique,
         dup_order,
         key_len: get_u16(b, 36),
-    })
+        logical: None,
+    };
+    if flags & 16 != 0 {
+        logical_of(&mut def).join = true;
+    }
+    Ok(def)
 }
 
 fn decode_field(b: &[u8]) -> Result<FieldDef> {
     if b.len() != FIELD_LEN {
         return Err(corrupt("field entry size"));
     }
-    let name = Name::from_bytes(b[..10].try_into().expect("10"));
+    let name = name_of(b);
     let data_type = DataType::from_letter(char::from(b[10]))
         .ok_or_else(|| corrupt(format!("field {name} type {:#04x}", b[10])))?;
     let flags = get_u16(b, 12);
@@ -496,6 +773,138 @@ fn decode_key(b: &[u8], fields: &[FieldDef]) -> Result<KeyField> {
     })
 }
 
+fn decode_basedon(b: &[u8]) -> Result<(ObjectId, Name)> {
+    if b.len() != BASEDON_LEN {
+        return Err(corrupt("based-on entry size"));
+    }
+    Ok((ObjectId::from_bytes(&b[..16]), name_of(&b[16..26])))
+}
+
+fn decode_source(b: &[u8]) -> Result<FieldSource> {
+    if b.len() < SOURCE_HEAD {
+        return Err(corrupt("source entry size"));
+    }
+    let count = usize::from(get_u16(b, 2));
+    if b.len() != SOURCE_HEAD + count * 10 || count == 0 {
+        return Err(corrupt("source entry names"));
+    }
+    let names: Vec<Name> = (0..count)
+        .map(|i| name_of(&b[SOURCE_HEAD + i * 10..]))
+        .collect();
+    let file = usize::from(b[1]);
+    Ok(match b[0] {
+        0 => FieldSource::Base {
+            file,
+            field: names[0],
+        },
+        1 => FieldSource::Concat {
+            file,
+            fields: names,
+        },
+        2 => FieldSource::Substring {
+            file,
+            field: names[0],
+            start: u32::from(get_u16(b, 4)),
+            length: u32::from(get_u16(b, 6)),
+        },
+        k => return Err(corrupt(format!("source kind {k}"))),
+    })
+}
+
+fn decode_value(b: &[u8], at: &mut usize) -> Result<Literal> {
+    if *at + VALUE_HEAD > b.len() {
+        return Err(corrupt("select/omit value cut short"));
+    }
+    let kind = b[*at];
+    let len = usize::from(get_u16(b, *at + 2));
+    *at += VALUE_HEAD;
+    if *at + len > b.len() {
+        return Err(corrupt("select/omit value bytes cut short"));
+    }
+    let bytes = &b[*at..*at + len];
+    *at += len;
+    Ok(match kind {
+        0 => Literal::Word(String::from_utf8_lossy(bytes).into_owned()),
+        1 => Literal::Quoted(ccsid::from_ebcdic(bytes)),
+        2 => Literal::Hex(bytes.to_vec()),
+        k => return Err(corrupt(format!("select/omit value kind {k}"))),
+    })
+}
+
+fn decode_group(format: &RecordFormat, b: &[u8]) -> Result<SelectOmit> {
+    if b.len() < GROUP_LEN {
+        return Err(corrupt("select/omit group size"));
+    }
+    let count = usize::from(get_u16(b, 2));
+    let mut at = GROUP_LEN;
+    let mut conditions = Vec::with_capacity(count);
+    for _ in 0..count {
+        if at + CONDITION_LEN > b.len() {
+            return Err(corrupt("select/omit condition cut short"));
+        }
+        let index = usize::from(get_u16(b, at));
+        let field = format
+            .fields
+            .get(index)
+            .ok_or_else(|| corrupt(format!("select/omit field index {index}")))?;
+        let test = b[at + 2];
+        let op = b[at + 3];
+        let values = usize::from(get_u16(b, at + 4));
+        at += CONDITION_LEN;
+        let mut lits = Vec::with_capacity(values);
+        for _ in 0..values {
+            lits.push(decode_value(b, &mut at)?);
+        }
+        let test = match (test, lits.len()) {
+            (0, _) => Validity::Values(lits),
+            (1, 2) => {
+                let hi = lits.pop().expect("two");
+                let lo = lits.pop().expect("two");
+                Validity::Range(lo, hi)
+            }
+            (2, 1) => Validity::Comp(
+                op_of(op).ok_or_else(|| corrupt("select/omit operator"))?,
+                lits.pop().expect("one"),
+            ),
+            _ => return Err(corrupt("select/omit test")),
+        };
+        conditions.push(Condition {
+            field: field.name,
+            test,
+            line: 0,
+        });
+    }
+    Ok(SelectOmit {
+        select: b[0] != 0,
+        all: b[1] != 0,
+        conditions,
+        line: 0,
+    })
+}
+
+fn decode_join(b: &[u8]) -> Result<JoinDef> {
+    if b.len() < JOIN_HEAD {
+        return Err(corrupt("join entry size"));
+    }
+    let pairs = usize::from(get_u16(b, 2));
+    if b.len() != JOIN_HEAD + pairs * 20 {
+        return Err(corrupt("join entry pairs"));
+    }
+    let dupseq = (b[4] != 0).then(|| (name_of(&b[8..18]), b[5] != 0));
+    let fields = (0..pairs)
+        .map(|i| {
+            let at = JOIN_HEAD + i * 20;
+            (name_of(&b[at..at + 10]), name_of(&b[at + 10..at + 20]))
+        })
+        .collect();
+    Ok(JoinDef {
+        from: b[0],
+        to: b[1],
+        fields,
+        dupseq,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -505,5 +914,6 @@ mod tests {
         assert_eq!(FORMAT_LAYOUT.size, Some(FORMAT_LEN));
         assert_eq!(FIELD_LAYOUT.size, Some(FIELD_LEN));
         assert_eq!(KEY_LAYOUT.size, Some(KEY_LEN));
+        assert_eq!(BASEDON_LAYOUT.size, Some(BASEDON_LEN));
     }
 }

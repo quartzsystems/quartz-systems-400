@@ -97,9 +97,10 @@ write 32767 through SQL into a `B 4,0` column and read it back in RPG.
 
 ## Files and members
 
-**Keys longer than 1016 bytes.** The store's B+tree key is at most 1024
-bytes and the access path key ends in the 8-byte RRN, so a file whose
-encoded key exceeds 1016 bytes is refused at create; DDS allows 2000.
+**Keys longer than 1014 bytes.** The store's B+tree key is at most 1024
+bytes and the access path key ends in a 2-byte format tag and the 8-byte
+RRN, so a file whose encoded key exceeds 1014 bytes is refused at create;
+DDS allows 2000.
 Test: `CRTPF` with two `A 1000` key fields on the real machine works;
 here it fails. A raise needs the tree to accept keys over a quarter of
 the page.
@@ -115,6 +116,38 @@ RRNs.
 **Varlen storage.** A `VARLEN` field is stored at its maximum length in
 the slot; the `ALLOCATE` length and overflow are not implemented, so
 `DSPFD` size figures differ from the machine's for such files.
+
+## Access paths
+
+**`ALTSEQ`.** Not applied to key bytes; the table name is kept. Test: a
+keyed PF with `ALTSEQ` and mixed-case data, read in key order.
+
+**Null key fields under `DESCEND`.** The null byte is complemented with
+the rest of the part, so a null sorts low in a descending key. The
+machine may still sort nulls high. Test: a `DESCEND` key over an
+`ALWNULL` field with null and non-null records.
+
+**Two-digit years in date keys.** `*MDY`, `*DMY`, `*YMD` and `*JUL`
+keys read 40 to 99 as 1940 to 1999 and 00 to 39 as 2000 to 2039. Test:
+a date key over `DATFMT(*MDY)` with 12/31/39 and 01/01/40, read in key
+order.
+
+**`CONCAT` of zoned fields.** Interior parts have their sign zones
+forced to `F`; the last part keeps its sign; the result is zoned when
+every part is zoned. Test: `CONCAT` of two `S` fields holding -1 and 2.
+
+**Select/omit default.** Records no statement applies to are selected
+when the last statement is an omit and omitted when it is a select.
+Test: `S A COMP(EQ 'X')` alone, and `O A COMP(EQ 'X')` alone, with
+records of both kinds.
+
+**Join logical files.** The path and key come from the primary file;
+the record is derived from the primary record with secondary fields
+blank. Secondary lookups come with the open data path. Test: none yet.
+
+**Message for a keyed read of an invalid path.** `PathInvalid` carries
+CPF5090 as a placeholder. Test: open a `MAINT(*REBLD)` LF for keyed
+input after a write and note the message.
 
 ## Editing
 

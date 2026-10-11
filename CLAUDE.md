@@ -75,8 +75,10 @@ qdecimal/     Decimal (63 digits), IBM intermediate precision rules (src/arith/)
               packed, zoned, binary, integer and float encodings (src/encode/),
               edit codes and words (src/edit/), the IBM i oracle kit (src/fuzz/,
               src/bin/qdfuzz.rs; files under conformance/oracle/qdecimal/)
-db/           database: src/file/ *FILE attributes and member table, src/format/
-              sections and level IDs, src/member/ *MBR objects and record slots
+db/           database: src/file/ *FILE attributes, member and dependents tables, LF
+              creation; src/format/ sections and level IDs; src/record/ field values;
+              src/path/ key encoding and path trees; src/lf/ derivation and select/omit;
+              src/member/ *MBR objects, record slots, path maintenance and rebuild
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, STORE_FORMAT.md, DST.md,
               DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, images/
 ```

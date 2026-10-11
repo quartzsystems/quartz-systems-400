@@ -13,19 +13,21 @@ keys, CP037 text.
 
 A database file is one `*FILE` object (type 0x0013) in a library. Its
 attribute area holds `FileAttr`; its byte space holds the definition
-area: the record formats as sections, then the member table.
+area: the record formats as sections, the member table, and for a
+physical file the dependents table.
 
 Each member is one `*MBR` object (type 0x00FE) owned by the file: its
 header's `library` field is the file's ID and it has no library
-directory entry (STORE_FORMAT.md §9, owned objects). The member's byte
-space holds the record slots; its header tree roots hold the access
+directory entry (STORE_FORMAT.md §9, owned objects). A physical member's
+byte space holds the record slots; its header tree roots hold the access
 path (slot 0) and the free-slot tree (slot 1). Deleting a file deletes
 its members first.
 
-Logical files have no members of their own data: an LF member's `*MBR`
-object has an empty byte space and an access path over the based-on
-members. `TODO(phase3)`: the based-on, source and select/omit sections
-are reserved below and specified with the access path checkpoint.
+A logical member holds no records: its byte space is empty and its
+access path (header tree root slot 0) is over the records of the
+based-on physical members named in its attribute area. Every physical
+member keeps, in its file's dependents table, the logical members whose
+paths it must maintain.
 
 ## 2. The file
 
@@ -41,7 +43,7 @@ At offset 0 of the attribute area (body offset 1024) of a `*FILE`.
 | 11 | 1 | maint | `MAINT`: 0 `*IMMED`, 1 `*DLY`, 2 `*REBLD` |
 | 12 | 1 | recover | `RECOVER`: 0 `*NO`, 1 `*AFTIPL`, 2 `*IPL` |
 | 13 | 1 | share | `SHARE`: 0 `*NO`, 1 `*YES` |
-| 14 | 2 | flags | bit 0 `REUSEDLT(*YES)`, bit 1 `FRCACCPTH(*YES)`, bit 2 `LVLCHK(*NO)`, bit 3 `ALWUPD(*NO)`, bit 4 `ALWDLT(*NO)`, bit 5 `ALLOCATE(*YES)` |
+| 14 | 2 | flags | bit 0 `REUSEDLT(*YES)`, bit 1 `FRCACCPTH(*YES)`, bit 2 `LVLCHK(*NO)`, bit 3 `ALWUPD(*NO)`, bit 4 `ALWDLT(*NO)`, bit 5 `ALLOCATE(*YES)`, bit 6 `DYNSLT`, bit 7 `JDFTVAL` |
 | 16 | 4 | record_len | bytes of the longest record format |
 | 20 | 2 | format_count | |
 | 22 | 2 | member_count | entries used in the member table |
@@ -59,13 +61,16 @@ At offset 0 of the attribute area (body offset 1024) of a `*FILE`.
 | 72 | 8 | formats_len | bytes of the format sections |
 | 80 | 8 | members_off | byte space offset of the member table |
 | 88 | 4 | member_cap | entries the member table has room for |
-| 92 | 4 | reserved | 0 |
-| 96 | 32 | reserved2 | 0 |
+| 92 | 4 | dependent_count | entries used in the dependents table |
+| 96 | 8 | dependents_off | byte space offset of the dependents table, 0 for none |
+| 104 | 4 | dependent_cap | entries the dependents table has room for |
+| 108 | 20 | reserved | 0 |
 
 The member table is `member_cap` × `MemberEntry` at `members_off`, the
 first `member_count` in use, in creation order: `*FIRST` is entry 0 and
 `*LAST` entry `member_count - 1`. A table that is full is rewritten at
-`def_len` with twice the capacity; the old table's bytes are left.
+`def_len` with twice the capacity; the old table's bytes are left. The
+dependents table at `dependents_off` works the same way.
 
 ### `MemberEntry` (48 bytes)
 
@@ -77,12 +82,26 @@ first `member_count` in use, in creation order: `*FIRST` is entry 0 and
 | 22 | 10 | reserved | 0 |
 | 32 | 16 | object | `ObjectId` of the `*MBR` |
 
+### `DependentEntry` (48 bytes)
+
+A logical member whose access path a physical member of this file
+maintains. Added by `ADDLFM` (and `CRTLF` with a member), removed by
+`RMVM` and `DLTF` of the logical file.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 16 | lf_file | `ObjectId` of the logical file |
+| 16 | 16 | lf_member | `ObjectId` of its member |
+| 32 | 16 | base_member | `ObjectId` of the physical member it depends on |
+
 ## 3. Record formats
 
 The format sections are a sequence of `Section` headers each followed by
 its body. A `FORMAT` section is followed by its `FIELD` sections in
-buffer order and then its `KEY` sections in key order; the next `FORMAT`
-section starts the next format.
+buffer order, its `KEY` sections in key order, and for a logical format
+its `BASEDON` sections in file order, one `SOURCE` per field in buffer
+order, its `SELOMIT` groups in source order and its `JOIN` sections in
+source order; the next `FORMAT` section starts the next format.
 
 ### `Section` (8 bytes)
 
@@ -97,10 +116,10 @@ section starts the next format.
 | 1 | `FormatEntry` | a record format |
 | 2 | `FieldEntry` | a field of the preceding format |
 | 3 | `KeyEntry` | a key field of the preceding format |
-| 4 | reserved | `TODO(phase3)` based-on file of a logical format |
-| 5 | reserved | `TODO(phase3)` field source of a logical field |
-| 6 | reserved | `TODO(phase3)` select/omit |
-| 7 | reserved | `TODO(phase3)` join |
+| 4 | `BasedOnEntry` | a based-on file of a logical format |
+| 5 | `SourceEntry` | where a logical field's value comes from |
+| 6 | `SelOmitGroup` | a select or omit group of a logical format |
+| 7 | `JoinEntry` | a join specification of a join logical format |
 
 ### `FormatEntry` (96 bytes)
 
@@ -113,7 +132,7 @@ section starts the next format.
 | 26 | 2 | key_count | 0 for arrival sequence |
 | 28 | 4 | record_len | bytes of data per record |
 | 32 | 2 | null_map_len | bytes of the null map per record, 0 when no field is null-capable |
-| 34 | 2 | flags | bit 0 `UNIQUE`, bit 1 `*EXCNULL`, bits 2-3 duplicate order: 0 none, 1 `FIFO`, 2 `LIFO`, 3 `FCFO` |
+| 34 | 2 | flags | bit 0 `UNIQUE`, bit 1 `*EXCNULL`, bits 2-3 duplicate order: 0 none, 1 `FIFO`, 2 `LIFO`, 3 `FCFO`; bit 4 join format |
 | 36 | 2 | key_len | bytes of the encoded key, §6 |
 | 38 | 8 | reserved2 | 0 |
 | 46 | 50 | text | `TEXT`, CP037 |
@@ -159,6 +178,78 @@ not kept in the file. `TODO(phase3)`: DSPFFD shows them when kept.
 | 6 | 2 | key_len | bytes of this field's part, §6 |
 | 8 | 8 | reserved | 0 |
 
+### `BasedOnEntry` (32 bytes)
+
+`PFILE` or `JFILE` file `index` of a logical format.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 16 | file | `ObjectId` of the physical file |
+| 16 | 10 | format | its record format used, CP037 |
+| 26 | 2 | index | position in the `PFILE`/`JFILE` list, from 0 |
+| 28 | 4 | reserved | 0 |
+
+### `SourceEntry` (variable)
+
+One per field of a logical format, in buffer order. `names` are the
+based-on fields: one for a plain or renamed field or an `SST`, the parts
+in order for a `CONCAT`.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | kind | 0 based-on field, 1 `CONCAT`, 2 `SST` |
+| 1 | 1 | file | based-on file index |
+| 2 | 2 | count | names that follow, 1 unless `CONCAT` |
+| 4 | 2 | start | `SST` first position, 1-based; 0 otherwise |
+| 6 | 2 | length | `SST` length; 0 otherwise |
+| 8 | count × 10 | names | CP037 field names |
+
+### `SelOmitGroup` (8 bytes)
+
+An `S` or `O` statement and its AND conditions; `cond_count` ×
+`SelOmitCondition` follow in the same section body.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | select | 1 select, 0 omit |
+| 1 | 1 | all | 1 for `ALL` |
+| 2 | 2 | cond_count | |
+| 4 | 4 | reserved | 0 |
+
+### `SelOmitCondition` (8 bytes)
+
+Followed by `value_count` × `SelOmitValue`.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | field | index of the field in the logical format |
+| 2 | 1 | test | 0 `VALUES`, 1 `RANGE`, 2 `COMP` |
+| 3 | 1 | op | `COMP` operator: 0 `EQ`, 1 `NE`, 2 `LT`, 3 `NL`, 4 `GT`, 5 `NG`, 6 `LE`, 7 `GE`; 0 otherwise |
+| 4 | 2 | value_count | `RANGE` has 2, `COMP` 1 |
+| 6 | 2 | reserved | 0 |
+
+### `SelOmitValue` (variable)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | kind | 0 unquoted (a number or special value, ASCII), 1 quoted (CP037), 2 hexadecimal |
+| 1 | 1 | reserved | 0 |
+| 2 | 2 | len | bytes that follow |
+| 4 | len | bytes | the literal as written |
+
+### `JoinEntry` (variable)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | from | based-on file index |
+| 1 | 1 | to | based-on file index |
+| 2 | 2 | pair_count | `JFLD` pairs that follow |
+| 4 | 1 | dupseq | 1 when `JDUPSEQ` is given |
+| 5 | 1 | dupseq_descend | 1 for `*DESCEND` |
+| 6 | 2 | reserved | 0 |
+| 8 | 10 | dupseq_field | CP037, blank without `JDUPSEQ` |
+| 18 | pair_count × 20 | pairs | from-file field name then to-file field name, CP037 |
+
 ## 4. The member
 
 ### `MbrAttr` (128 bytes)
@@ -177,17 +268,21 @@ At offset 0 of the attribute area of a `*MBR`.
 | 40 | 8 | max_records | from `SIZE`, 0 for `*NOMAX` |
 | 48 | 8 | increment_slots | slots added when the space grows |
 | 56 | 8 | path_entries | entries in the access path |
-| 64 | 2 | key_len | encoded key bytes without the RRN tail, 0 for arrival sequence |
-| 66 | 2 | format | index of the format the access path serves |
+| 64 | 2 | key_len | encoded key bytes without the format tag and RRN tail, 0 for arrival sequence |
+| 66 | 2 | format | index of the format the access path serves, 0xFFFF for a multi-format path |
 | 68 | 2 | null_map_len | bytes of null map per record |
-| 70 | 2 | reserved | 0 |
+| 70 | 2 | base_count | logical member: based-on members that follow the attributes |
 | 72 | 16 | file | `ObjectId` of the owning file |
 | 88 | 8 | last_save | Unix seconds, 0 for never |
 | 96 | 8 | last_restore | Unix seconds, 0 for never |
 | 104 | 24 | reserved2 | 0 |
 
-Header tree roots: slot 0 the access path (§6), slot 1 the free-slot tree
-(`REUSEDLT(*YES)`): keys are RRNs of deleted slots, values empty.
+A logical member's based-on physical members follow at offset 128 of
+the attribute area, `base_count` × `ObjectId`, one per format of the
+logical file in format order (every format of a `PFILE` list uses its
+first file). Header tree roots: slot 0 the access path (§6), slot 1 the
+free-slot tree (`REUSEDLT(*YES)`): keys are RRNs of deleted slots, values
+empty.
 
 ### `RecordSlot` (variable)
 
@@ -216,17 +311,27 @@ text are not part of it. Every path that makes a format (DDS, SQL DDL,
 later RPG) calls the one function; the algorithm does not change within
 V1R.
 
-## 6. Access path keys
+## 6. Access paths
 
-An access path is a B+tree owned by the member with `key_len + 8`-byte
-keys and empty values: the encoded key followed by the RRN, big-endian,
-so equal keys keep arrival order and every key is unique in the tree.
+An access path is a B+tree owned by the member with `PathKey` keys and
+empty values: the encoded key, for a multi-format path the format
+number, then the RRN, big-endian, so equal keys keep arrival order and
+every entry is unique in the tree.
+
+### `PathKey` (variable)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | key_len | key | the encoded key, a shorter format's key padded with 0x00 in a multi-format path |
+| key_len | 2 | format | format number in a multi-format path; absent in a single-format path |
+| key_len + 2 | 8 | rrn | relative record number in the based-on member |
+
 Byte order of the encoded key is the key order DDS asks for:
 
 - Character, hexadecimal, graphic and DBCS-open fields: the bytes as
-  stored, a `VARLEN` field at its maximum length. `ZONE` keeps the high
-  nibble of each byte and `DIGIT` the low one; `ALTSEQ` is applied
-  before the comparison (`TODO(phase3)`).
+  stored, a `VARLEN` field at its maximum length blank padded. `ZONE`
+  keeps the high nibble of each byte and `DIGIT` the low one. `ALTSEQ`
+  is not applied (`DB_OPEN_QUESTIONS.md`).
 - Zoned, packed and binary fields: 1 byte of sign then `length` digit
   bytes. `SIGNED` (the default): 0x01 for negative, 0x02 for positive or
   zero; positive digits as `0x30 + d`, negative digits complemented as
@@ -234,17 +339,39 @@ Byte order of the encoded key is the key order DDS asks for:
   sign byte 0x02 and the digits of the magnitude.
 - Float: 8 bytes, the IEEE double with the sign bit flipped when
   positive and every bit flipped when negative.
-- Date: 8 bytes `yyyymmdd`; time: 6 bytes `hhmmss`; timestamp: its 26
-  stored bytes.
+- Date: 8 ASCII digits `yyyymmdd` (`*JUL` as `yyyy0ddd`), a two-digit
+  year read as 1940 to 2039; time: 6 ASCII digits `hhmmss` on the
+  24-hour clock; timestamp: its 26 stored bytes.
 - A null-capable field is preceded by one byte: 0x00 when it holds a
-  value, 0xFF when null, so null sorts high.
-- `DESCEND`: every byte of the field's part is complemented.
+  value, 0xFF when null, so null sorts high; a null field's digits or
+  bytes are zeros.
+- `DESCEND`: every byte of the field's part, the null byte included, is
+  complemented.
 
 `KeyEntry.key_len` is the part's length by these rules; `key_len` of the
-format and member is their sum. The sum is at most 1016 bytes (the
-store's 1024-byte key less the RRN); DDS allows 2000 and the compiler
-still says so, so a file whose key is longer than 1016 bytes is refused
-at create (`DB_OPEN_QUESTIONS.md`).
+format is their sum, and of a multi-format member the largest format's.
+The sum is at most 1014 bytes (the store's 1024-byte key less the tail);
+DDS allows 2000 and the compiler still says so, so a file whose key is
+longer than 1016 bytes is refused at create.
 
-`TODO(phase3)`: multi-format and join paths, select/omit, `MAINT`
-states and rebuilds are specified with the access path checkpoint.
+**Maintenance.** With `MAINT(*IMMED)` every write, update and delete of
+a physical record changes the member's own path and every dependent
+logical member's path in the same transaction, after `UNIQUE` is
+checked on each path that asks for it (`*INCNULL` compares nulls equal;
+`*EXCNULL` never counts a key with a null field as a duplicate). With
+`*DLY` or `*REBLD` the dependent path is marked invalid instead (flag
+bit 0 of its `MbrAttr`) and is rebuilt by bulk load at the next open
+(`*DLY`) or when a keyed open asks for it (`*REBLD`); a rebuild reports
+progress per based-on record.
+
+**Logical records.** A logical format's record is derived from the
+based-on record field by field: a based-on field's value converted to
+the logical field's type and length, a `CONCAT` as the parts' bytes in
+order (zoned parts keep the sign of the last), an `SST` as the slice;
+a null based-on field makes a null logical field. Select/omit groups are
+tried in order: a group whose conditions all hold (or `ALL`) decides;
+when none applies the record is selected if the last group is an omit
+and omitted if it is a select. Without `DYNSLT` only selected records
+enter the path; with it every record does and the test is applied on
+read. Join formats take their key and their path from the primary file;
+the secondary files are read at open time (`TODO(phase3)`).

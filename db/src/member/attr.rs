@@ -38,7 +38,7 @@ pub static LAYOUT: Layout = Layout {
         field("key_len", 64, 2),
         field("format", 66, 2),
         field("null_map_len", 68, 2),
-        field("reserved", 70, 2),
+        field("base_count", 70, 2),
         field("file", 72, 16),
         field("last_save", 88, 8),
         field("last_restore", 96, 8),
@@ -73,6 +73,8 @@ pub struct MbrAttr {
     pub format: u16,
     /// Bytes of null map per record.
     pub null_map_len: u16,
+    /// Logical member: based-on members after the attributes.
+    pub base_count: u16,
     /// The owning file.
     pub file: ObjectId,
     /// Unix seconds, 0 for never.
@@ -100,6 +102,7 @@ impl MbrAttr {
         b[64..66].copy_from_slice(&self.key_len.to_le_bytes());
         b[66..68].copy_from_slice(&self.format.to_le_bytes());
         b[68..70].copy_from_slice(&self.null_map_len.to_le_bytes());
+        b[70..72].copy_from_slice(&self.base_count.to_le_bytes());
         b[72..88].copy_from_slice(&self.file.to_bytes());
         b[88..96].copy_from_slice(&self.last_save.to_le_bytes());
         b[96..104].copy_from_slice(&self.last_restore.to_le_bytes());
@@ -133,6 +136,7 @@ impl MbrAttr {
             key_len: u16_at(64),
             format: u16_at(66),
             null_map_len: u16_at(68),
+            base_count: u16_at(70),
             file: ObjectId::from_bytes(&b[72..88]),
             last_save: u64_at(88),
             last_restore: u64_at(96),
@@ -159,6 +163,7 @@ mod tests {
             key_len: 8,
             format: 0,
             null_map_len: 1,
+            base_count: 0,
             file: ObjectId {
                 asp: 1,
                 type_code: 0x13,

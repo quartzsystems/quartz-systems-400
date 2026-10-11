@@ -43,8 +43,10 @@ pub static LAYOUT: Layout = Layout {
         field("formats_len", 72, 8),
         field("members_off", 80, 8),
         field("member_cap", 88, 4),
-        field("reserved", 92, 4),
-        field("reserved2", 96, 32),
+        field("dependent_count", 92, 4),
+        field("dependents_off", 96, 8),
+        field("dependent_cap", 104, 4),
+        field("reserved", 108, 20),
     ],
 };
 
@@ -177,6 +179,10 @@ pub struct FileAttr {
     pub alwdlt: bool,
     /// `ALLOCATE(*YES)`.
     pub allocate: bool,
+    /// `DYNSLT`.
+    pub dynslt: bool,
+    /// `JDFTVAL`.
+    pub jdftval: bool,
     /// Bytes of the longest format.
     pub record_len: u32,
     /// Formats.
@@ -207,6 +213,12 @@ pub struct FileAttr {
     pub members_off: u64,
     /// Capacity of the member table.
     pub member_cap: u32,
+    /// Dependents.
+    pub dependent_count: u32,
+    /// Offset of the dependents table, 0 for none.
+    pub dependents_off: u64,
+    /// Capacity of the dependents table.
+    pub dependent_cap: u32,
 }
 
 impl FileAttr {
@@ -237,7 +249,9 @@ impl FileAttr {
             | u16::from(!self.lvlchk) << 2
             | u16::from(!self.alwupd) << 3
             | u16::from(!self.alwdlt) << 4
-            | u16::from(self.allocate) << 5;
+            | u16::from(self.allocate) << 5
+            | u16::from(self.dynslt) << 6
+            | u16::from(self.jdftval) << 7;
         b[14..16].copy_from_slice(&flags.to_le_bytes());
         b[16..20].copy_from_slice(&self.record_len.to_le_bytes());
         b[20..22].copy_from_slice(&self.format_count.to_le_bytes());
@@ -256,6 +270,9 @@ impl FileAttr {
         b[72..80].copy_from_slice(&self.formats_len.to_le_bytes());
         b[80..88].copy_from_slice(&self.members_off.to_le_bytes());
         b[88..92].copy_from_slice(&self.member_cap.to_le_bytes());
+        b[92..96].copy_from_slice(&self.dependent_count.to_le_bytes());
+        b[96..104].copy_from_slice(&self.dependents_off.to_le_bytes());
+        b[104..108].copy_from_slice(&self.dependent_cap.to_le_bytes());
         b
     }
 
@@ -303,6 +320,8 @@ impl FileAttr {
             alwupd: flags & 8 == 0,
             alwdlt: flags & 16 == 0,
             allocate: flags & 32 != 0,
+            dynslt: flags & 64 != 0,
+            jdftval: flags & 128 != 0,
             record_len: u32_at(16),
             format_count: u16_at(20),
             member_count: u16_at(22),
@@ -322,6 +341,9 @@ impl FileAttr {
             formats_len: u64_at(72),
             members_off: u64_at(80),
             member_cap: u32_at(88),
+            dependent_count: u32_at(92),
+            dependents_off: u64_at(96),
+            dependent_cap: u32_at(104),
         })
     }
 }
@@ -343,6 +365,8 @@ mod tests {
             alwupd: true,
             alwdlt: false,
             allocate: true,
+            dynslt: true,
+            jdftval: false,
             record_len: 112,
             format_count: 1,
             member_count: 3,
@@ -358,6 +382,9 @@ mod tests {
             formats_len: 1000,
             members_off: 1000,
             member_cap: 8,
+            dependent_count: 2,
+            dependents_off: 2000,
+            dependent_cap: 4,
         };
         assert_eq!(FileAttr::decode(&a.encode()).unwrap(), a);
         assert_eq!(Size::default().max_records(), 13_000);
