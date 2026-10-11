@@ -267,9 +267,18 @@ name = "conformance"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "blockdev",
+ "ccsid",
  "clap",
  "crc",
+ "db",
+ "dds",
+ "jrn",
+ "qdecimal",
+ "qsname",
  "serde_json",
+ "sql",
+ "store",
  "thiserror",
 ]
 

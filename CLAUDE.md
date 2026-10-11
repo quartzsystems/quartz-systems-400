@@ -59,7 +59,9 @@ console/      font/qs400-9x16.txt, src/fb/ framebuffer, src/keyboard/, screens
 slic/         PID 1: src/ipl/ state machine, src/hwrsrc/, src/net/, src/svc/ (db/ holds
               the database, journal, SQL, rla and dbbench console commands),
               src/platform/ (console, mounts, power, rtc, serial, sys), src/src.rs
-conformance/  QEMU harness: src/qemu/ (session, qmp, serial, firmware), src/steps.rs
+conformance/  QEMU harness: src/qemu/ (session, qmp, serial, firmware), src/steps.rs;
+              src/db/ the database kit (kit, local run, compare, oracle RPG, QEMU steps);
+              db/ the QSTEST kit: dds/, data/, rla/, sql/, oracle/, expected/
 release/      VxRyMz identity, build ID, PTF names (one source of truth)
 blockdev/     BlockDev trait, AlignedBuf, Linux O_DIRECT backend, MemBlockDev with faults
 store/        object store: src/page/, src/btree/, src/asp/ (units, superblock),
@@ -125,6 +127,8 @@ cargo clippy --workspace --all-targets    # must be warning-free
 cargo clippy -p slic -p console --all-targets --target x86_64-unknown-linux-musl
 QS400_QEMU=1 cargo test -p conformance    # the suite as a cargo test
 cargo run -p qdecimal --bin qdfuzz -- kit conformance/oracle/qdecimal   # regenerate the oracle kit
+cargo test -p conformance --test db_kit   # QSTEST in memory; outputs under target/conformance-db/ours/
+QS400_UPDATE_ORACLE=1 cargo test -p conformance --test db_kit   # regenerate RLATEST.RPGLE and QRESULTS.SQL
 ```
 
 Lint the Linux-only crates for the musl target too: their real code is

@@ -1,0 +1,9 @@
+     A                                      UNIQUE
+     A          R ORDREC                    TEXT('Orders')
+     A            ORDNO          9B 0       COLHDG('Order')
+     A            CUSNO          7P 0
+     A            ORDDATE         L         DATFMT(*ISO)
+     A            ORDTIME         T         TIMFMT(*ISO)
+     A            PLACED          Z         ALWNULL
+     A            AMOUNT        11P 2
+     A          K ORDNO

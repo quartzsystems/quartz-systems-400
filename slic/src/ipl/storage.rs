@@ -227,7 +227,53 @@ pub fn locate_and_open(system: &mut System) -> Result<(), &'static src::Src> {
         devices: opened,
         resume: None,
     });
+    database_recovery(system);
     Ok(())
+}
+
+/// C1001082: commit cycles an abnormal end left open in any journal are
+/// rolled back from their before images.
+fn database_recovery(system: &mut System) {
+    let Some(s) = system.storage.as_mut() else {
+        return;
+    };
+    let Some(qsys) = s.qsys else {
+        return;
+    };
+    let now = crate::ipl::system::now_unix();
+    let result =
+        s.store.begin().map_err(|e| e.to_string()).and_then(
+            |mut txn| match db::journal::recover_all(&mut txn, qsys, now) {
+                Ok(r) => txn.commit().map(|()| r).map_err(|e| e.to_string()),
+                Err(e) => {
+                    txn.abort();
+                    Err(e.to_string())
+                }
+            },
+        );
+    match result {
+        Ok(r) if r.cycles_rolled_back > 0 => {
+            system.out.serial(&format!(
+                "slic: database recovery: {} cycle(s) rolled back, {} record change(s) undone in {} journal(s)\n",
+                r.cycles_rolled_back, r.records_undone, r.journals
+            ));
+            system.emit(&src::DB_RECOVERY);
+        }
+        Ok(r) => {
+            if r.journals > 0 {
+                system.out.serial(&format!(
+                    "slic: database recovery: {} journal(s), no open cycles\n",
+                    r.journals
+                ));
+            }
+        }
+        Err(e) => {
+            system
+                .out
+                .serial(&format!("slic: database recovery: {e}\n"));
+            system.emit(&src::RECOVERY_FAILED);
+        }
+    }
 }
 
 /// What `open` found out about the units: a missing half is an

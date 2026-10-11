@@ -67,6 +67,8 @@ pub const MIRROR_SYNC: Src = src(
 pub const RECOVERY: Src = src("C1001080", "Storage management recovery", Phase::Lic);
 /// Neither superblock usable, or the store would not open.
 pub const RECOVERY_FAILED: Src = src("C1001085", "Storage management recovery failed", Phase::Lic);
+/// Commit cycles a crash left open were rolled back from the journals.
+pub const DB_RECOVERY: Src = src("C1001082", "Database recovery", Phase::Lic);
 /// The store was created by another release.
 pub const RELEASE_MISMATCH: Src = src("C1001087", "Store release mismatch", Phase::Lic);
 /// Previous IPL was abnormal. Informational, continues.
@@ -177,6 +179,7 @@ pub const TABLE: &[Src] = &[
     ASP_LOCATED,
     MIRROR_SYNC,
     RECOVERY,
+    DB_RECOVERY,
     RECOVERY_FAILED,
     RELEASE_MISMATCH,
     PREV_ABNORMAL,

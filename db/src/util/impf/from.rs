@@ -139,7 +139,17 @@ fn bad(f: &FieldDef, text: &str) -> DbError {
 fn field_value(f: &FieldDef, text: &str, opts: &ImpfOpts) -> Result<Value> {
     if f.data_type.is_numeric() {
         let t = text.trim().replace(opts.decpnt, ".");
-        return Decimal::parse(&t).map(Value::Num).map_err(|_| bad(f, text));
+        return Decimal::parse(&t)
+            .or_else(|e| match f.data_type {
+                // A float field also takes exponent notation.
+                DataType::Float => t
+                    .parse::<f64>()
+                    .map_err(|_| e)
+                    .and_then(|v| Decimal::parse(&format!("{v}"))),
+                _ => Err(e),
+            })
+            .map(Value::Num)
+            .map_err(|_| bad(f, text));
     }
     let s = match f.data_type {
         DataType::Date => {

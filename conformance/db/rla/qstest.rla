@@ -1,0 +1,55 @@
+# QSTEST record-level access script: status codes, flags and fields.
+# A line is  OPERATION [args] => STATUS [FOUND|NOFOUND] [EQUAL|NOTEQUAL] [EOF|NOEOF] [FIELD=value ...]
+OPEN QSTEST/CUSTOMER ALL KEYED         => 00000
+SETLL 3                                => 00000 FOUND EQUAL
+READ                                   => 00000 CUSNO=3 NAME='Carol'
+READ                                   => 00000 CUSNO=4
+SETGT 4                                => 00000 FOUND
+READ                                   => 00000 CUSNO=5
+CHAIN 42                               => 00012 NOFOUND
+CHAIN 6                                => 00000 CUSNO=6 NAME='Frank' BAL=1500.00
+READP                                  => 00000 CUSNO=5
+SETLL *END                             => 00000
+READP                                  => 00000 CUSNO=6
+READ                                   => 00011 EOF
+SETLL 5                                => 00000 FOUND EQUAL
+READE 5                                => 00000 CUSNO=5
+READE 5                                => 00011 EOF
+READ                                   => 00000 CUSNO=6
+WRITE CUSNO=7 NAME='Grace' STATUS='A' BAL=5 => 00000
+CHAIN 7                                => 00000 NAME='Grace' SINCE=*NULL
+UPDATE BAL=6.5 NOTE='updated'          => 00000
+CHAINN 7                               => 00000 BAL=6.50 NOTE='updated'
+UPDATE BAL=1                           => 01221
+CHAIN 7                                => 00000
+DELETE                                 => 00000
+CHAIN 7                                => 00012 NOFOUND
+WRITE CUSNO=1 NAME='dup' STATUS='A'    => 01021
+UNLOCK                                 => 00000
+CLOSE                                  => 00000
+OPEN QSTEST/CUSBYNAME INPUT KEYED      => 00000
+READ                                   => 00000 NAME='Alice' CUSNO=1
+READE 'Alice'                          => 00011 EOF
+SETLL 'Carol'                          => 00000 FOUND EQUAL
+READE 'Carol'                          => 00000 CUSNO=3
+READE 'Carol'                          => 00011 EOF
+SETGT 'Dave'                           => 00000 FOUND
+READ                                   => 00000 NAME='Erin'
+CLOSE                                  => 00000
+OPEN QSTEST/ORDERS INPUT ARRIVAL       => 00000
+CHAIN #3                               => 00000 ORDNO=1003 AMOUNT=1000.00
+READ                                   => 00000 ORDNO=1004
+CHAIN #9                               => 00012 NOFOUND
+CLOSE                                  => 00000
+OPEN QSTEST/ACTIVE INPUT KEYED         => 00000
+READ                                   => 00000 CUSNO=1
+READ                                   => 00000 CUSNO=3
+READ                                   => 00000 CUSNO=4
+READ                                   => 00000 CUSNO=6
+READ                                   => 00011 EOF
+CLOSE                                  => 00000
+OPEN QSTEST/BIGORD INPUT KEYED         => 00000
+READ                                   => 00000 ORDNO=1003
+READ                                   => 00000 ORDNO=1004
+READ                                   => 00011 EOF
+CLOSE                                  => 00000

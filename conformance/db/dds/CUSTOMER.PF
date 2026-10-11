@@ -1,0 +1,12 @@
+     A                                      UNIQUE
+     A          R CUSREC                    TEXT('Customer master')
+     A            CUSNO          7P 0       COLHDG('Customer' 'number')
+     A            NAME          30A         TEXT('Customer name')
+     A            STATUS         1A         DFT('A')
+     A            BAL            9P 2       DFT(0)
+     A            SINCE           L         DATFMT(*ISO)
+     A                                      ALWNULL
+     A            CREDIT         7S 0       DFT(0)
+     A            NOTE         100A         VARLEN(20)
+     A                                      ALWNULL
+     A          K CUSNO

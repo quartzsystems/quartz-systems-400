@@ -19,6 +19,15 @@ clap.workspace = true
 thiserror.workspace = true
 serde_json.workspace = true
 crc.workspace = true
+store = { path = "../store", version = "0.1.0" }
+blockdev = { path = "../blockdev", version = "0.1.0" }
+db = { path = "../db", version = "0.1.0" }
+jrn = { path = "../jrn", version = "0.1.0" }
+sql = { path = "../sql", version = "0.1.0" }
+dds = { path = "../dds", version = "0.1.0" }
+qsname = { path = "../qsname", version = "0.1.0" }
+ccsid = { path = "../ccsid", version = "0.1.0" }
+qdecimal = { path = "../qdecimal", version = "0.1.0" }
 
 [lints]
 workspace = true

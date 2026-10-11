@@ -6,11 +6,13 @@
 //! `CPYF`, `CPYTOIMPF` and `CPYFRMIMPF`. Each allocates what it touches
 //! as the command would and runs in the caller's transaction.
 
+pub mod chkpath;
 pub mod clrpfm;
 pub mod cpyf;
 pub mod impf;
 pub mod rgzpfm;
 
+pub use chkpath::{PathReport, verify_all, verify_file};
 pub use clrpfm::clrpfm;
 pub use cpyf::{CpyfOpts, CpyfReport, FmtOpt, MbrOpt, Target, ToMember, cpyf};
 pub use impf::{DtaFmt, ImpfOpts, ImpfReport, RcdDlm, RmvBlank, cpyfrmimpf, cpytoimpf};

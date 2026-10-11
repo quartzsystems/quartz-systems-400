@@ -2,8 +2,9 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The six Phase 1 steps. They run against a working copy of the image so
+//! The disk suite's steps. They run against a working copy of the image so
 //! state persists across guest restarts and the built image stays pristine.
+//! Phase 2 steps live in `phase2`, the database steps in `db::qemu`.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -431,9 +432,11 @@ impl Suite {
         reports.push(self.step(&mut s, "7 libraries", Self::libraries)?);
         reports.push(self.step(&mut s, "8 sysval in store", Self::sysval_in_store)?);
         reports.push(self.step(&mut s, "9 object bench", Self::object_bench)?);
+        reports.push(self.step(&mut s, "13 database kit", Self::db_kit)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);
+        reports.push(self.db_crash()?);
         reports.push(self.abnormal()?);
         reports.push(self.power_pulls()?);
         reports.push(self.mirrored_pair()?);

@@ -20,6 +20,34 @@ use store::obj::{CreateParams, ObjectId, ops, types};
 use store::txn::Txn;
 
 use super::{JOB, db, db_err, now, with_txn};
+
+/// Open for the bench, under the job's commit definition when there is one.
+fn open(txn: &mut Txn<'_>, ctx: &SqlContext, id: ObjectId, usage: Usage) -> Result<Odp, String> {
+    let mut o = Odp::open(
+        txn,
+        ctx.locks.clone(),
+        id,
+        OpenOpts {
+            usage,
+            keyed: usage != Usage::OUTPUT,
+            commit: ctx.session.commit_def().is_some(),
+            ..OpenOpts::input(JOB)
+        },
+    )
+    .map_err(|e| db_err(&e))?;
+    if let Some(c) = ctx.session.commit_def() {
+        o.set_commit(c.clone());
+    }
+    Ok(o)
+}
+
+/// Commit the batch when under commitment control.
+fn commit_batch(txn: &mut Txn<'_>, ctx: &mut SqlContext) -> Result<(), String> {
+    if ctx.session.commit_def().is_some() {
+        ctx.session.commit(txn, None).map_err(|e| db_err(&e))?;
+    }
+    Ok(())
+}
 use crate::ipl::system::System;
 
 const LIB: &str = "QDBBENCH";
@@ -164,23 +192,13 @@ pub fn dbbench(system: &mut System, args: &[&str]) -> Result<String, String> {
     while i <= n {
         let end = (i + BATCH - 1).min(n);
         with_txn(store, |txn| {
-            let mut o = Odp::open(
-                txn,
-                ctx.locks.clone(),
-                id,
-                OpenOpts {
-                    usage: Usage::OUTPUT,
-                    keyed: false,
-                    ..OpenOpts::input(JOB)
-                },
-            )
-            .map_err(|e| db_err(&e))?;
+            let mut o = open(txn, ctx, id, Usage::OUTPUT)?;
             for k in i..=end {
                 let (rec, nulls) = record(o.member(), k, "inserted");
                 o.write(txn, &rec, &nulls).map_err(|e| db_err(&e))?;
             }
             o.close(txn);
-            Ok(())
+            commit_batch(txn, ctx)
         })?;
         i = end + 1;
     }
@@ -188,8 +206,7 @@ pub fn dbbench(system: &mut System, args: &[&str]) -> Result<String, String> {
     // Read every row by key.
     let start = Instant::now();
     with_txn(store, |txn| {
-        let mut o =
-            Odp::open(txn, ctx.locks.clone(), id, OpenOpts::input(JOB)).map_err(|e| db_err(&e))?;
+        let mut o = open(txn, ctx, id, Usage::INPUT)?;
         let mut missing = 0u64;
         for k in 1..=n {
             let key = KeyArg::one(DbValue::Num(Decimal::new(i128::from(k), 0).expect("fits")));
@@ -201,7 +218,7 @@ pub fn dbbench(system: &mut System, args: &[&str]) -> Result<String, String> {
         if missing > 0 {
             return Err(format!("{missing} rows not found by key"));
         }
-        Ok(())
+        commit_batch(txn, ctx)
     })?;
     let _ = writeln!(out, "read    {}", rate(n, start));
     // Update every row, BATCH per transaction.
@@ -210,16 +227,7 @@ pub fn dbbench(system: &mut System, args: &[&str]) -> Result<String, String> {
     while i <= n {
         let end = (i + BATCH - 1).min(n);
         with_txn(store, |txn| {
-            let mut o = Odp::open(
-                txn,
-                ctx.locks.clone(),
-                id,
-                OpenOpts {
-                    usage: Usage::UPDATE,
-                    ..OpenOpts::input(JOB)
-                },
-            )
-            .map_err(|e| db_err(&e))?;
+            let mut o = open(txn, ctx, id, Usage::UPDATE)?;
             for k in i..=end {
                 let key = KeyArg::one(DbValue::Num(Decimal::new(i128::from(k), 0).expect("fits")));
                 if o.chain(txn, &key, true).map_err(|e| db_err(&e))?.is_some() {
@@ -228,7 +236,7 @@ pub fn dbbench(system: &mut System, args: &[&str]) -> Result<String, String> {
                 }
             }
             o.close(txn);
-            Ok(())
+            commit_batch(txn, ctx)
         })?;
         i = end + 1;
     }

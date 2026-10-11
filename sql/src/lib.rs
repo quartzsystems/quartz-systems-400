@@ -14,6 +14,7 @@ pub mod ast;
 pub mod exec;
 pub mod lex;
 pub mod parse;
+pub mod rla;
 pub mod run;
 pub mod sqlca;
 pub mod value;

@@ -1,0 +1,5 @@
+     A          R LOGREC                    TEXT('RLA script log')
+     A            LINE           4S 0
+     A            STATUS         5A
+     A            FLAGS          3A
+     A            DETAIL       200A

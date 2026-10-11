@@ -1,0 +1,4 @@
+     A                                      DYNSLT
+     A          R ORDREC                    PFILE(QSTEST/ORDERS)
+     A          K ORDNO
+     A          S AMOUNT                    COMP(GT 100)

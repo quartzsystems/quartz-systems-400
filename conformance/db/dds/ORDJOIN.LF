@@ -1,0 +1,8 @@
+     A          R JOINREC                   JFILE(QSTEST/ORDERS QSTEST/CUSTOMER)
+     A          J                           JOIN(1 2)
+     A                                      JFLD(CUSNO CUSNO)
+     A            ORDNO
+     A            CUSNO                     JREF(1)
+     A            NAME
+     A            AMOUNT
+     A          K ORDNO

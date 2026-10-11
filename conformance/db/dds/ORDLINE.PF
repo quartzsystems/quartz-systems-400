@@ -1,0 +1,9 @@
+     A                                      UNIQUE
+     A          R LINREC                    TEXT('Order lines')
+     A            ORDNO          9B 0
+     A            LINE           3P 0
+     A            PRODID        10A
+     A            QTY            5P 0
+     A            PRICE          9P 2
+     A          K ORDNO
+     A          K LINE

@@ -1,0 +1,12 @@
+     A          R EVTREC                    TEXT('Every date and time format')
+     A            EVTID          5S 0
+     A            DMDY            L         DATFMT(*MDY) DATSEP('/')
+     A            DDMY            L         DATFMT(*DMY) DATSEP('-')
+     A            DYMD            L         DATFMT(*YMD)
+     A            DJUL            L         DATFMT(*JUL)
+     A            DUSA            L         DATFMT(*USA)
+     A            DEUR            L         DATFMT(*EUR)
+     A            DJIS            L         DATFMT(*JIS)
+     A            THMS            T         TIMFMT(*HMS)
+     A            TUSA            T         TIMFMT(*USA)
+     A          K EVTID

@@ -141,9 +141,19 @@ when the last statement is an omit and omitted when it is a select.
 Test: `S A COMP(EQ 'X')` alone, and `O A COMP(EQ 'X')` alone, with
 records of both kinds.
 
-**Join logical files.** The path and key come from the primary file;
-the record is derived from the primary record with secondary fields
-blank. Secondary lookups come with the open data path. Test: none yet.
+**Join logical files.** The path and key come from the primary file.
+A read joins each secondary by its `JFLD` pairs, scanning the secondary
+in arrival order and taking the first match; a primary record with no
+match is omitted (`JDFTVAL` is not kept by the compiled definition, so
+the default-value join is not available) and a second match is never
+returned. IBM returns one record per matching secondary record. Test:
+`ORDJOIN` in the kit against a customer with two orders, and a
+`JDFTVAL` join over an order with no customer.
+
+**Select/omit on secondary fields.** Static select/omit is evaluated
+when the path is built, from the primary record alone, so a statement
+on a secondary field never selects. Test: a join LF with `S` on a
+secondary field.
 
 **Message for a keyed read of an invalid path.** `PathInvalid` carries
 CPF5090 as a placeholder. Test: open a `MAINT(*REBLD)` LF for keyed
@@ -421,6 +431,26 @@ one table plainly. Test: `FETCH PRIOR` on a non-scroll cursor and
 under `COMMIT(*CHG|*CS|*ALL)` the run ends with `COMMIT`, or `ROLLBACK`
 when an error exceeded `ERRLVL`. The machine's spooled listing is laid
 out differently. Test: none.
+
+## Conformance kit
+
+**Compared outputs.** `conformance/db/expected/` is empty until the kit
+has run on a machine; the comparer skips a missing file. Journal entries
+compare on the record entries (`R`) only, by type, object and count,
+since the machine's sequence numbers and its `J` entries are its own.
+Field descriptions compare on name, type, digits, decimals, bytes,
+position and null capability through the `QADSPFFD` columns.
+
+**The oracle program.** `RLATEST.RPGLE` is generated from the script. A
+file the script opens for `UPDATE` is declared with `*delete` too, every
+file with `alwnull(*usrctl)`, and a `WRITE` sets the null indicator of
+every null-capable field it does not assign. `%status`, `%found`,
+`%equal` and `%eof` are logged after every operation; whether `%equal`
+is reset by a `READ` on the machine is to be seen from `rla.csv`.
+
+**Dates in the exports.** The machine's `CPYTOIMPF` writes dates in the
+field's format unless `DATFMT` is given; the CL gives `*ISO` on every
+file with a date or time, and the comparer compares dates as digits.
 
 ## Service console
 

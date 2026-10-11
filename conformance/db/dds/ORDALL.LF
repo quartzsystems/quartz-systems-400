@@ -1,0 +1,5 @@
+     A          R ORDREC                    PFILE(QSTEST/ORDERS)
+     A          K ORDNO
+     A          R LINREC                    PFILE(QSTEST/ORDLINE)
+     A          K ORDNO
+     A          K LINE

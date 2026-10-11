@@ -33,13 +33,13 @@ pub const JOB: JobHandle = JobHandle(1);
 pub const HELP: &str = "\
 xfer put NAME N      store the next N lines as NAME; xfer get NAME | ls | rm NAME
 crtpf LIB/FILE SRCFILE(LIB/SRC) [SRCMBR(M)] | RCDLEN(n)  [MAXMBRS(n) REUSEDLT(*YES) TEXT('..')]
-crtlf LIB/FILE SRCFILE(LIB/SRC) [SRCMBR(M)]
+crtlf LIB/FILE SRCFILE(LIB/SRC) [SRCMBR(M)] | crtsrcpf LIB/FILE [RCDLEN(n)]
 dltf LIB/FILE | addpfm LIB/FILE MBR [TEXT('..') SRCTYPE(T)] | rmvm LIB/FILE MBR
 clrpfm LIB/FILE [MBR(M)] | rgzpfm LIB/FILE [MBR(M)] [KEYFILE(*FILE|LIB/LF)]
 cpyf FROMFILE(LIB/F) TOFILE(LIB/F) [FROMMBR TOMBR MBROPT(*ADD|*REPLACE|*UPDADD) CRTFILE(*YES)
      FMTOPT(*MAP|*DROP|*MAP *DROP|*NOCHK|*CVTSRC) FROMRCD TORCD NBRRCDS ERRLVL(n|*NOMAX)]
 cpytoimpf FROMFILE(LIB/F) [TOSTMF(NAME) FROMMBR DTAFMT(*DLM|*FIXED) RCDDLM(*LF) RMVBLANK(*TRAILING)
-          STRDLM(*NONE) FLDDLM(;) DATFMT(*USA) NULLS(*YES)]
+          STRDLM(*NONE) FLDDLM(;) DATFMT(*USA) TIMFMT(*ISO) NULLS(*YES)]
 cpyfrmimpf FROMSTMF(NAME) TOFILE(LIB/F) [TOMBR same options ERRLVL(n)]
 dspfd LIB/FILE [TYPE(*ALL|*BASATR|*ATR|*ACCPTH|*MBRLIST|*RCDFMT|*SELECT|*JOIN)]
 dspffd LIB/FILE | dspdbr LIB/FILE [MBR(M)]
@@ -165,6 +165,7 @@ pub fn command(system: &mut System, cmd: &str, args: &[&str], line: &str) -> Opt
     let r = match cmd {
         "xfer" => xfer(system, args),
         "crtpf" => files::crtpf(system, &p),
+        "crtsrcpf" => files::crtsrcpf(system, &p),
         "crtlf" => files::crtlf(system, &p),
         "dltf" => files::dltf(system, &p),
         "addpfm" => files::addpfm(system, &p),

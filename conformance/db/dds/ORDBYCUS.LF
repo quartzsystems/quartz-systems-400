@@ -1,0 +1,4 @@
+     A          R ORDREC                    PFILE(QSTEST/ORDERS)
+     A          K CUSNO
+     A          K ORDDATE                   DESCEND
+     A          K ORDNO

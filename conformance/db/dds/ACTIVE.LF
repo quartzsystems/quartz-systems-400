@@ -1,0 +1,3 @@
+     A          R CUSREC                    PFILE(QSTEST/CUSTOMER)
+     A          K CUSNO
+     A          S STATUS                    COMP(EQ 'A')

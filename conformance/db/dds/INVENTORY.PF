@@ -1,0 +1,6 @@
+     A          R INVREC                    TEXT('Stock on hand, arrival')
+     A            PRODID        10A
+     A            WHSE           3A
+     A            ONHAND         7P 0
+     A            LASTCNT         L         DATFMT(*ISO)
+     A                                      ALWNULL

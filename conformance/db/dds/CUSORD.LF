@@ -1,0 +1,5 @@
+     A          R CUSREC                    PFILE(QSTEST/CUSTOMER)
+     A          K CUSNO
+     A          R ORDREC                    PFILE(QSTEST/ORDERS)
+     A          K CUSNO
+     A          K ORDNO

@@ -1,0 +1,7 @@
+     A                                      UNIQUE
+     A          R NOTREC                    TEXT('Long variable text')
+     A            NOTEID         7P 0
+     A            SUBJECT       60A         ALWNULL
+     A            BODY        2000A         VARLEN(100)
+     A                                      ALWNULL
+     A          K NOTEID

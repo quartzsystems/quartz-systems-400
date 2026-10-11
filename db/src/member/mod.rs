@@ -178,6 +178,9 @@ pub struct Base {
     pub format: FormatDef,
 }
 
+/// A secondary record a join read found: its format, record and null map.
+type JoinedRecord = (FormatDef, Vec<u8>, Vec<u8>);
+
 /// A member opened with its file: the physical records and access path,
 /// or the logical view over its based-on members.
 #[derive(Clone, Debug)]
@@ -966,8 +969,19 @@ impl Member {
         }
         let lf_fmt = &self.file.formats[fi];
         let log = self.logical(fi)?;
-        let (record, null_map) =
-            lf::derive(lf_fmt, log, &base.format, &slot.record, &slot.null_map)?;
+        let (record, null_map) = if log.join && !log.joins.is_empty() {
+            let Some(found) = Self::join_records(txn, log, &base.format, &slot)? else {
+                return Ok(None);
+            };
+            let mut bases: Vec<Option<lf::BaseRecord<'_>>> = found
+                .iter()
+                .map(|b| b.as_ref().map(|(f, r, n)| (f, r.as_slice(), n.as_slice())))
+                .collect();
+            bases[0] = Some((&base.format, &slot.record, &slot.null_map));
+            lf::derive_join(lf_fmt, log, &bases)?
+        } else {
+            lf::derive(lf_fmt, log, &base.format, &slot.record, &slot.null_map)?
+        };
         // Path entries passed static select/omit when they were built; an
         // entry without a key is an arrival-sequence read and is checked here.
         let check = self.file.attr.dynslt || entry.key.is_empty();
@@ -980,6 +994,72 @@ impl Member {
             null_map,
             deleted: false,
         }))
+    }
+
+    /// The secondary records a join format's primary record joins to, by
+    /// file index (index 0 stays `None`); `None` when a join finds no
+    /// match, since the record is then omitted (`JDFTVAL` is not kept).
+    /// Each secondary is scanned in arrival order and the first match
+    /// wins. MIGRATE(phase4): an access path on the secondary and more
+    /// than one match per primary record.
+    fn join_records(
+        txn: &mut Txn<'_>,
+        log: &lf::LogicalDef,
+        primary: &FormatDef,
+        slot: &Slot,
+    ) -> Result<Option<Vec<Option<JoinedRecord>>>> {
+        let corrupt = |what: String| DbError::Corrupt { what };
+        let mut found: Vec<Option<JoinedRecord>> = vec![None; log.based_on.len()];
+        for j in &log.joins {
+            let from = usize::from(j.from);
+            let to = usize::from(j.to);
+            let from_rec: lf::BaseRecord<'_> = if from == 0 {
+                (primary, &slot.record, &slot.null_map)
+            } else {
+                match found.get(from).and_then(Option::as_ref) {
+                    Some((f, r, n)) => (f, r.as_slice(), n.as_slice()),
+                    None => return Ok(None),
+                }
+            };
+            let (file, fmt_name) = log
+                .based_on
+                .get(to)
+                .ok_or_else(|| corrupt(format!("join to file {to} not based on")))?;
+            let desc = file::describe(txn, *file)?;
+            let entry = desc
+                .member(MemberSpec::First)
+                .ok_or_else(|| DbError::MemberNotFound {
+                    file: desc.name().to_string(),
+                    member: "*FIRST".into(),
+                })?;
+            let fmt = desc
+                .formats
+                .iter()
+                .find(|f| f.format.name == *fmt_name)
+                .cloned()
+                .ok_or_else(|| {
+                    corrupt(format!("format {fmt_name} missing from {}", desc.name()))
+                })?;
+            let core = Core::load(txn, entry.object)?;
+            let mut hit = None;
+            for rrn in 1..=core.attr.slots {
+                let Some(s) = core.read_slot(txn, rrn)? else {
+                    continue;
+                };
+                if s.deleted {
+                    continue;
+                }
+                if lf::join_matches(j, from_rec, (&fmt, &s.record, &s.null_map))? {
+                    hit = Some(s);
+                    break;
+                }
+            }
+            match hit {
+                Some(s) => found[to] = Some((fmt, s.record, s.null_map)),
+                None => return Ok(None),
+            }
+        }
+        Ok(Some(found))
     }
 
     /// Rebuild the path when it is invalid; true when it was.

@@ -48,6 +48,9 @@ fn base_field<'a>(base: &'a FormatDef, name: &Name) -> Result<(usize, &'a dds::F
     })
 }
 
+/// A based-on record: its format, record bytes and null map.
+pub type BaseRecord<'a> = (&'a FormatDef, &'a [u8], &'a [u8]);
+
 /// Derive the logical record from a based-on record of file 0 of the
 /// format. Fields of other files of a join format are blank or zero.
 pub fn derive(
@@ -57,62 +60,77 @@ pub fn derive(
     record: &[u8],
     null_map: &[u8],
 ) -> Result<(Vec<u8>, Vec<u8>)> {
+    derive_join(lf, log, &[Some((base, record, null_map))])
+}
+
+/// Derive the logical record from the based-on records by file index.
+/// A file without a record gives blank or zero fields.
+pub fn derive_join(
+    lf: &FormatDef,
+    log: &LogicalDef,
+    bases: &[Option<BaseRecord<'_>>],
+) -> Result<(Vec<u8>, Vec<u8>)> {
     let mut out = vec![0u8; usize::try_from(lf.format.record_len).expect("fits")];
     let mut nulls = vec![0u8; usize::from(lf.null_map_len)];
+    let at = |file: usize| bases.get(file).copied().flatten();
     for (i, f) in lf.format.fields.iter().enumerate() {
         let source = log.sources.get(i).ok_or_else(|| DbError::Corrupt {
             what: format!("field {} of {} has no source", f.name, lf.format.name),
         })?;
         let value = match source {
-            FieldSource::Base { file, field } => {
-                if *file != 0 {
-                    Value::Char(Vec::new())
-                } else {
+            FieldSource::Base { file, field } => match at(*file) {
+                Some((base, record, null_map)) => {
                     let (bi, bf) = base_field(base, field)?;
                     record::read_field(bf, record, null_map, base.null_index(bi))?
                 }
-            }
-            FieldSource::Concat { file, fields } if *file == 0 => {
-                let mut bytes = Vec::new();
-                let last = fields.len() - 1;
-                for (n, name) in fields.iter().enumerate() {
-                    let (bi, bf) = base_field(base, name)?;
-                    if record::is_null(null_map, base.null_index(bi)) {
-                        bytes.clear();
-                        break;
-                    }
-                    let mut part = record::field_bytes(bf, record).to_vec();
-                    if bf.data_type == dds::DataType::Zoned && n != last {
-                        // Interior parts carry no sign: zone F throughout.
-                        for b in &mut part {
-                            *b |= 0xF0;
+                None => Value::Char(Vec::new()),
+            },
+            FieldSource::Concat { file, fields } => match at(*file) {
+                Some((base, record, null_map)) => {
+                    let mut bytes = Vec::new();
+                    let last = fields.len() - 1;
+                    for (n, name) in fields.iter().enumerate() {
+                        let (bi, bf) = base_field(base, name)?;
+                        if record::is_null(null_map, base.null_index(bi)) {
+                            bytes.clear();
+                            break;
                         }
+                        let mut part = record::field_bytes(bf, record).to_vec();
+                        if bf.data_type == dds::DataType::Zoned && n != last {
+                            // Interior parts carry no sign: zone F throughout.
+                            for b in &mut part {
+                                *b |= 0xF0;
+                            }
+                        }
+                        bytes.extend(part);
                     }
-                    bytes.extend(part);
+                    if bytes.is_empty() {
+                        Value::Null
+                    } else {
+                        Value::Char(bytes)
+                    }
                 }
-                if bytes.is_empty() {
-                    Value::Null
-                } else {
-                    Value::Char(bytes)
-                }
-            }
+                None => Value::Char(Vec::new()),
+            },
             FieldSource::Substring {
                 file,
                 field,
                 start,
                 length,
-            } if *file == 0 => {
-                let (bi, bf) = base_field(base, field)?;
-                if record::is_null(null_map, base.null_index(bi)) {
-                    Value::Null
-                } else {
-                    let data = record::field_bytes(bf, record);
-                    let from = usize::try_from(*start - 1).expect("fits");
-                    let to = (from + usize::try_from(*length).expect("fits")).min(data.len());
-                    Value::Char(data[from.min(to)..to].to_vec())
+            } => match at(*file) {
+                Some((base, record, null_map)) => {
+                    let (bi, bf) = base_field(base, field)?;
+                    if record::is_null(null_map, base.null_index(bi)) {
+                        Value::Null
+                    } else {
+                        let data = record::field_bytes(bf, record);
+                        let from = usize::try_from(*start - 1).expect("fits");
+                        let to = (from + usize::try_from(*length).expect("fits")).min(data.len());
+                        Value::Char(data[from.min(to)..to].to_vec())
+                    }
                 }
-            }
-            FieldSource::Concat { .. } | FieldSource::Substring { .. } => Value::Char(Vec::new()),
+                None => Value::Char(Vec::new()),
+            },
         };
         if value == Value::Null {
             match lf.null_index(i) {
@@ -129,6 +147,32 @@ pub fn derive(
         record::write_field(f, &mut out, &value)?;
     }
     Ok((out, nulls))
+}
+
+/// Whether every `JFLD` pair of `j` matches between the from-record and
+/// the to-record: numbers by value, text without trailing blanks, a null
+/// never.
+pub fn join_matches(join: &JoinDef, from: BaseRecord<'_>, to: BaseRecord<'_>) -> Result<bool> {
+    for (from_name, to_name) in &join.fields {
+        let (from_index, from_field) = base_field(from.0, from_name)?;
+        let (to_index, to_field) = base_field(to.0, to_name)?;
+        let left = record::read_field(from_field, from.1, from.2, from.0.null_index(from_index))?;
+        let right = record::read_field(to_field, to.1, to.2, to.0.null_index(to_index))?;
+        let same = match (&left, &right) {
+            (Value::Num(left), Value::Num(right)) => left == right,
+            (Value::Char(left), Value::Char(right)) => trim_blanks(left) == trim_blanks(right),
+            _ => false,
+        };
+        if !same {
+            return Ok(false);
+        }
+    }
+    Ok(true)
+}
+
+fn trim_blanks(b: &[u8]) -> &[u8] {
+    let end = b.iter().rposition(|&c| c != 0x40).map_or(0, |p| p + 1);
+    &b[..end]
 }
 
 fn op_holds(op: CompOp, ord: std::cmp::Ordering) -> bool {

@@ -1,0 +1,15 @@
+     A          R TYPREC                    TEXT('Every type, null capable')
+     A            TID            3P 0
+     A            FA            10A         ALWNULL
+     A            FH             4H         ALWNULL
+     A            FS             7S 2       ALWNULL
+     A            FP             9P 3       ALWNULL
+     A            FB             4B 0       ALWNULL
+     A            FB9            9B 0
+     A            FB18          18B 0
+     A            FF             9F 0       FLTPCN(*SINGLE)
+     A            FD            17F 0       FLTPCN(*DOUBLE)
+     A            FL              L         DATFMT(*ISO)
+     A            FT              T         TIMFMT(*ISO)
+     A            FZ              Z         ALWNULL
+     A          K TID

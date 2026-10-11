@@ -257,9 +257,30 @@ pub fn chkstg(system: &mut System) -> String {
             for b in r.bad_pages.iter().take(50) {
                 let _ = writeln!(out, "  page {} owner {}: {}", b.page, b.owner, b.what);
             }
+            out.push_str(&check_paths(system));
             out
         }
         Err(e) => format!("chkstg failed: {e}\n"),
+    }
+}
+
+/// Every keyed member's access path against its records.
+fn check_paths(system: &mut System) -> String {
+    let Some(s) = system.storage.as_mut() else {
+        return String::new();
+    };
+    let Some(qsys) = s.qsys else {
+        return String::new();
+    };
+    let mut txn = match s.store.begin() {
+        Ok(t) => t,
+        Err(e) => return format!("access paths not checked: {e}\n"),
+    };
+    let r = db::util::verify_all(&mut txn, qsys);
+    txn.abort();
+    match r {
+        Ok(report) => report.render(),
+        Err(e) => format!("access paths not checked: {e}\n"),
     }
 }
 

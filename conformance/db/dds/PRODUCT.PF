@@ -1,0 +1,8 @@
+     A                                      UNIQUE
+     A          R PRDREC                    TEXT('Products')
+     A            PRODID        10A
+     A            PRDDESC       40A
+     A            WEIGHT         9F 0       FLTPCN(*SINGLE)
+     A            VOLUME        17F 0       FLTPCN(*DOUBLE)
+     A            UNITPRC        9P 2       DFT(1.00)
+     A          K PRODID

@@ -12,7 +12,7 @@ use db::util::{
     self, CpyfOpts, DtaFmt, ErrLvl, FmtOpt, ImpfOpts, KeyFile, MbrOpt, RcdDlm, RmvBlank, Target,
     ToMember,
 };
-use dds::{CompileOpts, DateFmt, FileRef, MapRefs, RefResolver, compile_lf, compile_pf};
+use dds::{CompileOpts, DateFmt, FileRef, MapRefs, RefResolver, TimeFmt, compile_lf, compile_pf};
 use qsname::{LibSpec, MemberSpec, Name};
 use sql::SqlContext;
 use store::obj::ObjectId;
@@ -171,6 +171,26 @@ pub fn crtpf(system: &mut System, p: &Params) -> Result<String, String> {
             def.format.fields.len(),
             def.format.keys.len(),
             comp.diagnostics.len()
+        ))
+    })
+}
+
+/// `crtsrcpf LIB/FILE [RCDLEN(n)] [TEXT('..')]`: a source physical file
+/// with no members (`MAXMBRS(*NOMAX)`).
+pub fn crtsrcpf(system: &mut System, p: &Params) -> Result<String, String> {
+    let qual = p.pos_or(0, "FILE")?;
+    let name = object_name(&qual)?;
+    let rcdlen: u32 = p.num("RCDLEN")?.unwrap_or(112);
+    let mut opts = create_opts(p)?;
+    opts.max_members = 0;
+    opts.member = MemberOpt::None;
+    let (store, ctx) = db(system)?;
+    with_txn(store, |txn| {
+        let lib = ctx.library_for(txn, &name).map_err(|e| e.to_string())?;
+        let fname = SqlContext::sys_name(&name.name).map_err(|e| e.to_string())?;
+        file::create_srcpf(txn, lib, fname, rcdlen, &opts).map_err(|e| db_err(&e))?;
+        Ok(format!(
+            "Source file {qual} created with record length {rcdlen}."
         ))
     })
 }
@@ -425,6 +445,11 @@ fn impf_opts(p: &Params) -> Result<ImpfOpts, String> {
     if let Some(f) = p.upper("DATFMT") {
         o.datfmt = Some(
             DateFmt::from_word(&f).ok_or_else(|| format!("DATFMT({f}) is not a date format"))?,
+        );
+    }
+    if let Some(f) = p.upper("TIMFMT") {
+        o.timfmt = Some(
+            TimeFmt::from_word(&f).ok_or_else(|| format!("TIMFMT({f}) is not a time format"))?,
         );
     }
     o.nulls = p.yes("NULLS");
