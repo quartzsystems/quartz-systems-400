@@ -6,10 +6,12 @@
 //! the member and dependents tables, and deletion.
 
 pub mod attr;
+mod change;
 pub mod dependents;
 pub mod members;
 
 pub use attr::{FileAttr, FileKind, Maint, Recover, Size, Wait};
+pub use change::{change_attr, chgpfm, replace_formats};
 pub use dependents::DependentEntry;
 pub use members::MemberEntry;
 

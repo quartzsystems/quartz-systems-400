@@ -63,6 +63,26 @@ pub fn days_in_month(year: u16, month: u8) -> u8 {
 }
 
 impl Date {
+    /// The civil date of a Unix time (UTC).
+    #[must_use]
+    pub fn from_unix(secs: u64) -> Self {
+        // Days since 1970-01-01 to a proleptic Gregorian date.
+        let z = i64::try_from(secs / 86_400).expect("fits") + 719_468;
+        let era = z.div_euclid(146_097);
+        let doe = z.rem_euclid(146_097);
+        let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+        let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+        let mp = (5 * doy + 2) / 153;
+        let day = u8::try_from(doy - (153 * mp + 2) / 5 + 1).expect("day");
+        let month = u8::try_from(if mp < 10 { mp + 3 } else { mp - 9 }).expect("month");
+        let year = yoe + era * 400 + i64::from(month <= 2);
+        Self {
+            year: u16::try_from(year).expect("year"),
+            month,
+            day,
+        }
+    }
+
     /// A date, checked.
     #[must_use]
     pub fn new(year: u16, month: u8, day: u8) -> Option<Self> {
@@ -157,6 +177,17 @@ impl Date {
 }
 
 impl Time {
+    /// The time of day of a Unix time (UTC).
+    #[must_use]
+    pub fn from_unix(secs: u64) -> Self {
+        let s = secs % 86_400;
+        Self {
+            hour: u8::try_from(s / 3600).expect("hour"),
+            minute: u8::try_from(s % 3600 / 60).expect("minute"),
+            second: u8::try_from(s % 60).expect("second"),
+        }
+    }
+
     /// A time, checked.
     #[must_use]
     pub fn new(hour: u8, minute: u8, second: u8) -> Option<Self> {
@@ -244,6 +275,23 @@ mod tests {
                 .unwrap()
                 .day_of_year(),
             60
+        );
+    }
+
+    #[test]
+    fn unix_times() {
+        assert_eq!(Date::from_unix(0), Date::new(1970, 1, 1).unwrap());
+        assert_eq!(
+            Date::from_unix(1_767_225_600),
+            Date::new(2026, 1, 1).unwrap()
+        );
+        assert_eq!(
+            Date::from_unix(951_782_400),
+            Date::new(2000, 2, 29).unwrap()
+        );
+        assert_eq!(
+            Time::from_unix(1_767_225_600 + 3661),
+            Time::new(1, 1, 1).unwrap()
         );
     }
 

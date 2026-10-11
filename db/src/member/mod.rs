@@ -635,6 +635,40 @@ impl Member {
         Ok(())
     }
 
+    /// `REUSEDLT`: build the free-slot tree from the deleted slots, or drop it.
+    pub fn set_reuse_deleted(&mut self, txn: &mut Txn<'_>, yes: bool) -> Result<()> {
+        self.physical_only()?;
+        if let Some(root) = self.core.roots[attr::FREE_ROOT] {
+            btree::free_tree(txn, root)?;
+            self.core.set_root(txn, attr::FREE_ROOT, None)?;
+        }
+        if yes {
+            let mut tree: FreeTree = BTree::open(None, self.core.id);
+            for rrn in 1..=self.core.attr.slots {
+                if self.core.read_slot(txn, rrn)?.is_some_and(|s| s.deleted) {
+                    tree.insert(txn, rrn, &())?;
+                }
+            }
+            self.core.set_root(txn, attr::FREE_ROOT, tree.root())?;
+        }
+        self.core.attr.reuse_deleted = yes;
+        self.core.save(txn)
+    }
+
+    /// `SIZE`: the record limit and growth of this member.
+    pub fn set_limits(
+        &mut self,
+        txn: &mut Txn<'_>,
+        max_records: u64,
+        increment: u32,
+    ) -> Result<()> {
+        self.core.attr.max_records = max_records;
+        if increment > 0 {
+            self.core.attr.increment_slots = u64::from(increment);
+        }
+        self.core.save(txn)
+    }
+
     /// Reload the stored part: another handle may have written records
     /// in this transaction.
     pub fn refresh(&mut self, txn: &mut Txn<'_>) -> Result<()> {
@@ -855,7 +889,10 @@ impl Member {
         let log = self.logical(fi)?;
         let (record, null_map) =
             lf::derive(lf_fmt, log, &base.format, &slot.record, &slot.null_map)?;
-        if self.file.attr.dynslt && !lf::selected(lf_fmt, log, &record, &null_map)? {
+        // Path entries passed static select/omit when they were built; an
+        // entry without a key is an arrival-sequence read and is checked here.
+        let check = self.file.attr.dynslt || entry.key.is_empty();
+        if check && !lf::selected(lf_fmt, log, &record, &null_map)? {
             return Ok(None);
         }
         Ok(Some(Slot {

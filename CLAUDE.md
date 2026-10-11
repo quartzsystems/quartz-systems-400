@@ -81,7 +81,9 @@ db/           database: src/file/ *FILE attributes, member and dependents tables
               src/member/ *MBR objects, record slots, path maintenance and rebuild;
               src/odp/ open data paths, RLA operations, record locks, INFDS feedback,
               OVRDBF overrides and the per-job session with shared paths;
-              src/util/ CLRPFM, RGZPFM, CPYF (select, map), CPYTOIMPF/CPYFRMIMPF (impf)
+              src/util/ CLRPFM, RGZPFM, CPYF (select, map), CPYTOIMPF/CPYFRMIMPF (impf);
+              src/dsp/ DSPFD, DSPFFD, DSPPFM, DSPDBR; src/chg/ CHGPF, CHGLF, CHGPF SRCFILE;
+              src/source/ source members (srcput, srcget, DDS source of a member)
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, STORE_FORMAT.md, DST.md,
               DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, images/
 ```

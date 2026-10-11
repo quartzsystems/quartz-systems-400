@@ -73,6 +73,18 @@ pub enum Maint {
     Rebld,
 }
 
+impl Maint {
+    /// The parameter value.
+    #[must_use]
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Immed => "*IMMED",
+            Self::Dly => "*DLY",
+            Self::Rebld => "*REBLD",
+        }
+    }
+}
+
 /// `RECOVER`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum Recover {
@@ -83,6 +95,18 @@ pub enum Recover {
     AftIpl,
     /// `*IPL`.
     Ipl,
+}
+
+impl Recover {
+    /// The parameter value.
+    #[must_use]
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::No => "*NO",
+            Self::AftIpl => "*AFTIPL",
+            Self::Ipl => "*IPL",
+        }
+    }
 }
 
 /// `WAITFILE` and `WAITRCD`.

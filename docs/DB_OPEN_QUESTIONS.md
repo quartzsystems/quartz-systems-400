@@ -253,6 +253,26 @@ error carries CPF4128 like every allocation failure here; the machine
 reports CPF3156 for `CLRPFM`. Test: `CLRPFM` while a program has the
 member open.
 
+**`CHGPF SRCFILE` with a changed record format.** Refused when the
+level identifier, the keys, `UNIQUE` or the duplicate order changed; the
+machine converts the data through a temporary copy. Only text, headings,
+edit words, defaults and the like change in place here. Test: `CHGPF
+SRCFILE` adding a field; the data survives on the machine, here the
+command fails.
+
+**`DSPDBR` based-on members.** The relations come from each logical
+member's based-on members, so an LF member over a named PF member shows
+that member; `DSPFD TYPE(*JOIN)` shows the based-on files with the record
+format they supply. Test: `DSPDBR` of an LF over `PF MBR(ARCH)`.
+
+**`DSPPFM` of a logical member.** Shows the derived records in arrival
+sequence of the first based-on member, select/omit applied, no deleted
+slots. Test: `DSPPFM` of a select/omit LF on the machine.
+
+**Source member dates.** `srcput` dates every record with the current
+day as `yymmdd` and numbers from 1.00 in steps of 1.00. Test: `SEU` or
+`CPYFRMSTMF` on the machine and `DSPPFM` the sequence column.
+
 ## Editing
 
 Every item here is covered by the qdecimal oracle kit

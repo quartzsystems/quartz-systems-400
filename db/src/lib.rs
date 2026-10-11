@@ -10,6 +10,8 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod chg;
+pub mod dsp;
 mod error;
 pub mod file;
 pub mod format;
@@ -18,6 +20,7 @@ pub mod member;
 pub mod odp;
 pub mod path;
 pub mod record;
+pub mod source;
 pub mod spec;
 pub mod util;
 
