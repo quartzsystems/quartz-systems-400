@@ -101,8 +101,11 @@ sql/          SQL: src/lex/ tokens, src/ast/ statements (ddl, query, expr), src/
               UPDATE/DELETE/MERGE through the ODP (dml.rs), CREATE TABLE/INDEX/VIEW and
               labels as DDS (ddl.rs), cursors (cursor.rs), QSYS2 catalog views computed
               from the store (catalog.rs); src/sqlca.rs the SQLCA; src/run.rs RUNSQLSTM
+qir/          the IR: src/types/ layouts, src/module/ units, vars, procs, src/inst/ the
+              instruction set and literal encoding, src/text/ lexer, parser, printer,
+              src/verify/ places, typing, flow, per-instruction checks
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
-              DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, images/
+              DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, images/
 ```
 
 ## Commands

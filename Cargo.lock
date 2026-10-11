@@ -1093,6 +1093,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "qir"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "dds",
+ "qdecimal",
+ "thiserror",
+]
+
+[[package]]
 name = "qsname"
 version = "0.1.0"
 dependencies = [
