@@ -7,9 +7,11 @@
 //! is used on every path, blocks that end in one terminator, and
 //! instructions whose operands fit.
 
+pub mod monitor;
 pub mod place;
 pub mod typing;
 
+mod ext;
 mod flow;
 mod inst;
 
@@ -269,7 +271,7 @@ fn proc_level(m: &Module, p: &Proc) -> Result<()> {
             if i.is_terminator() && ii + 1 != b.insts.len() {
                 return Err(err(&at_i, "terminator before the end of the block"));
             }
-            for l in i.targets() {
+            for l in i.targets().into_iter().chain(i.handler_targets()) {
                 if l.0 as usize >= p.blocks.len() {
                     return Err(err(&at_i, "branch to a label that does not exist"));
                 }
@@ -277,6 +279,9 @@ fn proc_level(m: &Module, p: &Proc) -> Result<()> {
             inst::check(m, p, i).map_err(|msg| err(&at_i, msg))?;
         }
     }
-    flow::check_assigned(p).map_err(|(b, i, msg)| err(format!("{at} block {b} inst {i}"), msg))?;
+    let regions = monitor::regions(p).map_err(|msg| err(&at, msg))?;
+    monitor::check_entries(p, &regions).map_err(|msg| err(&at, msg))?;
+    flow::check_assigned(p, &regions)
+        .map_err(|(b, i, msg)| err(format!("{at} block {b} inst {i}"), msg))?;
     Ok(())
 }

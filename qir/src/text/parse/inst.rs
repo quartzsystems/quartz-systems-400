@@ -140,7 +140,9 @@ impl Parser {
                 self.call(op, Some(dst))?
             }
             _ => {
-                if let Some(bin) = BinOp::from_name(op) {
+                if let Some(i) = self.ext_def(dst, op, suffix)? {
+                    i
+                } else if let Some(bin) = BinOp::from_name(op) {
                     let chk = match suffix.first().map(String::as_str) {
                         None => false,
                         Some("chk") => true,
@@ -256,11 +258,14 @@ impl Parser {
                 self.no_suffix(op, suffix)?;
                 Inst::Unreachable
             }
-            _ => {
-                return Err(self.err(format!(
-                    "{op} is not an instruction, or it defines a register"
-                )));
-            }
+            _ => match self.ext_plain(op, suffix)? {
+                Some(i) => i,
+                None => {
+                    return Err(self.err(format!(
+                        "{op} is not an instruction, or it defines a register"
+                    )));
+                }
+            },
         })
     }
 

@@ -34,9 +34,9 @@ pub fn print_type(m: &Module, ty: &Type) -> String {
     .ty(ty)
 }
 
-struct Printer<'a> {
-    m: &'a Module,
-    out: String,
+pub(super) struct Printer<'a> {
+    pub(super) m: &'a Module,
+    pub(super) out: String,
 }
 
 impl Printer<'_> {
@@ -97,6 +97,9 @@ impl Printer<'_> {
                     f.lib,
                     f.usage.name()
                 );
+                if f.dev != crate::module::FileDev::Db {
+                    let _ = write!(self.out, " dev({})", f.dev.name());
+                }
                 if f.keyed {
                     self.out.push_str(" keyed");
                 }
@@ -257,11 +260,11 @@ impl Printer<'_> {
         self.out.push_str("}\n");
     }
 
-    fn reg(p: &Proc, r: crate::module::Reg) -> String {
+    pub(super) fn reg(p: &Proc, r: crate::module::Reg) -> String {
         format!("%{}", p.reg_name(r))
     }
 
-    fn place(&self, p: &Proc, pl: &Place) -> String {
+    pub(super) fn place(&self, p: &Proc, pl: &Place) -> String {
         let mut out = match &pl.base {
             PlaceBase::Var(r) => {
                 format!(
@@ -306,7 +309,7 @@ impl Printer<'_> {
         }
     }
 
-    fn operand(&self, p: &Proc, o: &Operand) -> String {
+    pub(super) fn operand(&self, p: &Proc, o: &Operand) -> String {
         match o {
             Operand::Reg(r) => Self::reg(p, *r),
             Operand::Place(pl) => self.place(p, pl),
@@ -392,6 +395,7 @@ impl Printer<'_> {
             Inst::Debug(Debug::ScopeBegin) => "debug.scope begin".into(),
             Inst::Debug(Debug::ScopeEnd) => "debug.scope end".into(),
             Inst::Unreachable => "unreachable".into(),
+            _ => self.ext_inst(p, i),
         }
     }
 

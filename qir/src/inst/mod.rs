@@ -7,13 +7,18 @@
 //! Instructions that work on decimals, strings, dates and pointers take
 //! places and lower to runtime calls.
 
+mod ext;
 pub mod literal;
 mod ops;
 
+pub use ext::{
+    Callee, CvtOpts, DbOp, DecOp, DecUn, DevOp, DtInst, DtUnit, DtaaraOp, DtaqInst, Handler,
+    IoInst, MsgInst, MsgQueue, MsgType, PtrInst, Selector, StrInst, TrimSide,
+};
 pub use ops::{BinOp, Cond, UnOp};
 
 use crate::module::{Label, ProcRef, ProtoRef, Reg, VarRef};
-use crate::types::Type;
+use crate::types::{Shape, Type};
 
 /// A literal.
 #[derive(Clone, Debug, PartialEq)]
@@ -316,6 +321,99 @@ pub enum Inst {
     Debug(Debug),
     /// `unreachable`: a trap; control never arrives here.
     Unreachable,
+    /// `dec.op dst, a, b prec(d,s) [halfadj] [resdecpos]`: the exact
+    /// result truncated to the stated precision (`MCH1210` when its
+    /// integer part does not fit), then assigned to `dst`.
+    DecBin {
+        /// Destination, numeric.
+        dst: Place,
+        /// Operator.
+        op: DecOp,
+        /// Left operand.
+        a: Operand,
+        /// Right operand.
+        b: Operand,
+        /// Intermediate precision.
+        prec: Shape,
+        /// Half-adjust on assignment.
+        halfadj: bool,
+        /// `*RESDECPOS`: the intermediate keeps at least `dst`'s decimals.
+        resdecpos: bool,
+    },
+    /// `dec.mov|neg|abs dst, src [halfadj]`: numeric assignment between
+    /// any numeric types, a register or a literal.
+    DecUn {
+        /// Destination, numeric.
+        dst: Place,
+        /// Variant.
+        op: DecUn,
+        /// Source.
+        src: Operand,
+        /// Half-adjust.
+        halfadj: bool,
+    },
+    /// `%d = dec.cmp.cond a, b`: numeric comparison by value.
+    DecCmp {
+        /// Destination, an `ind`.
+        dst: Reg,
+        /// Condition.
+        cond: Cond,
+        /// Left.
+        a: Operand,
+        /// Right.
+        b: Operand,
+    },
+    /// `cvt dst, src [halfadj] [datfmt(*X)] [timfmt(*X)] [ccsid(n)]`:
+    /// conversion between storage types of different classes.
+    Convert {
+        /// Destination.
+        dst: Place,
+        /// Source.
+        src: Operand,
+        /// Options.
+        opts: CvtOpts,
+    },
+    /// `str.*`.
+    Str(StrInst),
+    /// `dt.*`.
+    Dt(DtInst),
+    /// Pointer instructions.
+    Ptr(PtrInst),
+    /// `monitor NAME [*SEL -> L]...`: opens a region that `endmon NAME`
+    /// closes; an exception raised inside goes to the first matching
+    /// handler.
+    Monitor {
+        /// Region name.
+        name: String,
+        /// Handlers in order.
+        handlers: Vec<Handler>,
+    },
+    /// `endmon NAME`.
+    EndMon(String),
+    /// Database, display and printer I/O.
+    Io(IoInst),
+    /// Program messages.
+    Msg(MsgInst),
+    /// `dsply src [reply(place)]`: console echo, a reply when asked.
+    Dsply {
+        /// What to show.
+        src: Operand,
+        /// Receives the reply.
+        reply: Option<Place>,
+    },
+    /// `dtaara.op name, lib [, place]`.
+    Dtaara {
+        /// Operation.
+        op: DtaaraOp,
+        /// Data area name, `char(10)`.
+        name: Operand,
+        /// Library, `char(10)`.
+        lib: Operand,
+        /// The data read or written.
+        data: Option<Place>,
+    },
+    /// Data queues.
+    Dtaq(DtaqInst),
 }
 
 impl Inst {
@@ -345,12 +443,46 @@ impl Inst {
             | Self::Cvt { dst, .. }
             | Self::Parms { dst }
             | Self::Passed { dst, .. }
-            | Self::Omitted { dst, .. } => Some(*dst),
+            | Self::Omitted { dst, .. }
+            | Self::DecCmp { dst, .. }
+            | Self::Str(
+                StrInst::Scan { dst, .. }
+                | StrInst::Check { dst, .. }
+                | StrInst::Cmp { dst, .. }
+                | StrInst::Len { dst, .. },
+            )
+            | Self::Dt(
+                DtInst::Diff { dst, .. } | DtInst::Extract { dst, .. } | DtInst::Test { dst, .. },
+            )
+            | Self::Ptr(
+                PtrInst::Addr { dst, .. }
+                | PtrInst::PtrAdd { dst, .. }
+                | PtrInst::PtrDiff { dst, .. }
+                | PtrInst::ProcAddr { dst, .. }
+                | PtrInst::Rslvsp { dst, .. },
+            )
+            | Self::Io(
+                IoInst::DbOpen { dst, .. }
+                | IoInst::DbClose { dst, .. }
+                | IoInst::DbIo { dst, .. }
+                | IoInst::DevIo { dst, .. },
+            )
+            | Self::Msg(MsgInst::Rcv { dst, .. })
+            | Self::Dtaq(DtaqInst::Rcv { dst, .. }) => Some(*dst),
             Self::Call {
                 ret: Some(CallRet::Reg(r)),
                 ..
             } => Some(*r),
             _ => None,
+        }
+    }
+
+    /// The labels a `monitor` hands control to.
+    #[must_use]
+    pub fn handler_targets(&self) -> Vec<Label> {
+        match self {
+            Self::Monitor { handlers, .. } => handlers.iter().map(|h| h.target).collect(),
+            _ => Vec::new(),
         }
     }
 

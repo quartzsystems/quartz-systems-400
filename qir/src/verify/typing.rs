@@ -6,7 +6,10 @@
 //! at their first definition; the verifier uses them to check every use.
 
 use super::place::place_type;
-use crate::inst::{BinOp, CallRet, CallTarget, Const, Inst, Operand, UnOp};
+use crate::inst::{
+    BinOp, CallRet, CallTarget, Const, DtInst, DtaqInst, Inst, MsgInst, Operand, PtrInst, StrInst,
+    UnOp,
+};
 use crate::module::{Module, Proc, Reg};
 use crate::types::{Type, TypeClass};
 
@@ -137,9 +140,24 @@ pub fn def_type(module: &Module, proc: &Proc, inst: &Inst) -> Result<Option<Type
             }
             t
         }
-        Inst::Cmp { .. } | Inst::Passed { .. } | Inst::Omitted { .. } => Type::Ind,
         Inst::Select { a, b, .. } => pair_type(module, proc, a, b)?,
-        Inst::Parms { .. } => Type::I32,
+        Inst::Cmp { .. }
+        | Inst::Passed { .. }
+        | Inst::Omitted { .. }
+        | Inst::DecCmp { .. }
+        | Inst::Str(StrInst::Cmp { .. })
+        | Inst::Dt(DtInst::Test { .. })
+        | Inst::Msg(MsgInst::Rcv { .. }) => Type::Ind,
+        Inst::Parms { .. }
+        | Inst::Str(StrInst::Scan { .. } | StrInst::Check { .. } | StrInst::Len { .. })
+        | Inst::Dt(DtInst::Extract { .. })
+        | Inst::Io(_)
+        | Inst::Dtaq(DtaqInst::Rcv { .. }) => Type::I32,
+        Inst::Dt(DtInst::Diff { .. }) | Inst::Ptr(PtrInst::PtrDiff { .. }) => Type::I64,
+        Inst::Ptr(PtrInst::Addr { .. } | PtrInst::PtrAdd { .. } | PtrInst::Rslvsp { .. }) => {
+            Type::Ptr
+        }
+        Inst::Ptr(PtrInst::ProcAddr { .. }) => Type::ProcPtr,
         Inst::Call {
             target,
             ret: Some(CallRet::Reg(_)),

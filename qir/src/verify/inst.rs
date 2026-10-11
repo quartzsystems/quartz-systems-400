@@ -107,7 +107,8 @@ pub fn check(m: &Module, p: &Proc, i: &Inst) -> Result<(), String> {
             let u = operand_type(m, p, src, Some(&t))?;
             let numeric =
                 |x: &Type| x.is_integer() || x.class() == TypeClass::Float || *x == Type::Ind;
-            if !(numeric(&t) && numeric(&u)) {
+            let from_storage = matches!(src, Operand::Place(_)) && u.is_numeric();
+            if !(numeric(&t) && (numeric(&u) || from_storage)) {
                 return Err(format!("cvt of a {u} to a {t}"));
             }
             if *chk && !t.is_integer() {
@@ -149,6 +150,7 @@ pub fn check(m: &Module, p: &Proc, i: &Inst) -> Result<(), String> {
             Ok(())
         }
         Inst::Debug(Debug::Var { place, .. }) => place_type(m, p, place).map(|_| ()),
+        _ => super::ext::check(m, p, i),
     }
 }
 

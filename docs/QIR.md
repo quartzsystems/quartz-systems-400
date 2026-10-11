@@ -89,8 +89,8 @@ stores the bytes, so a disassembled module prints them as `x"…"`.
 **Files** declare what the module opens:
 
 ```
-file NAME file(OBJECT) lib(*LIBL) usage(*INPUT|*OUTPUT|*UPDATE|*ALL) [keyed] [nolvlchk]
-     fmt(FORMAT:"LEVELID")…
+file NAME file(OBJECT) lib(*LIBL) [dev(*DB|*DSP|*PRT)] usage(*INPUT|*OUTPUT|*UPDATE|*ALL)
+     [keyed] [nolvlchk] fmt(FORMAT:"LEVELID")…
 ```
 
 The level identifier is the 13-digit value from `DB_FORMAT.md`; the
@@ -201,10 +201,121 @@ reference and return nothing.
 **Debug** pseudo-instructions carry the maps the debugger uses:
 `debug.stmt n`, `debug.var "NAME", place`, `debug.scope begin|end`.
 
-*Phase 4, pending*: decimal arithmetic (`dec.*`), conversions (`cvt`
-between storage types), strings (`str.*`), pointers (`addr`, `ptradd`,
-`ptrcmp`, `nullptr`, `procaddr`), dates (`dt.*`), `monitor`, database
-and display I/O, messages, `dsply`, data areas, data queues.
+**Decimal arithmetic.** Operands are numeric places (packed, zoned,
+integer or float), integer or float registers, or numeric literals;
+the result is assigned to a numeric place. Every operation states the
+precision of its intermediate result, which the front end derives from
+`DECIMAL.md` §4; the exact result is truncated to it, and an integer
+part that does not fit is `MCH1210`.
+
+| Instruction | Meaning |
+|---|---|
+| `dec.add\|sub\|mul\|div\|rem dst, a, b prec(d,s) [halfadj] [resdecpos]` | the operation at `prec`, then assignment to `dst`, half-adjusted when flagged; `resdecpos` keeps at least `dst`'s decimal positions in the intermediate; `div` and `rem` by zero are `MCH1211` |
+| `dec.mov\|neg\|abs dst, src [halfadj]` | numeric assignment across any numeric types; `MCH1210` when the integer part does not fit; `MCH1202` for invalid packed or zoned data |
+| `%d = dec.cmp.cond a, b` | numeric comparison by value, an `ind` |
+| `%d = cvt.T place` | a numeric place into an integer or float register, truncating decimals toward zero; `.chk` raises `MCH1210` when out of range |
+
+**Conversions** between storage classes: `cvt dst, src [halfadj]
+[datfmt(*X)] [timfmt(*X)] [ccsid(n)]`. Pairs: character to numeric with
+the machine's blank and sign rules (`%DEC`, `%INT`) and numeric to
+character (`%CHAR`); character to and from date, time and timestamp in
+the format named by `datfmt`/`timfmt` (the character side's format; the
+date side knows its own); numeric to and from date, time and timestamp
+(`%DEC(d:*ISO)` gives `yyyymmdd`); date to timestamp, timestamp to date
+or time; `char` to and from `ucs2`/`graphic` through `ccsid`; `ind` to
+and from `char`. Invalid data is `MCH1202` for numbers and a date error
+for dates. Same-class copies use `mov` and `dec.mov`.
+
+**Strings.** Operands are string places or string literals; both sides
+of an operation are the same class (`char`, `ucs2` or `graphic`).
+Positions are 1-based; a position or length outside the source is
+`MCH0603`.
+
+| Instruction | Meaning |
+|---|---|
+| `str.cat dst, a, b` | `a` then `b`, padded or truncated to `dst` |
+| `str.subst dst, src, start, len` | `%SUBST` |
+| `%d = str.scan needle, hay [, start]` | 1-based position, 0 when absent (`i32`) |
+| `%d = str.check\|checkr set, src [, start]` | first (last) position of a character not in `set` |
+| `str.xlate dst, from, to, src [, start]` | `%XLATE` |
+| `str.trim\|triml\|trimr dst, src [, chars]` | `%TRIM` family |
+| `%d = str.cmp.cond a, b` | blank-padded, EBCDIC collation for `char`, an `ind` |
+| `%d = str.len src` | current length of a varying string, declared length otherwise |
+| `str.setlen dst, n` | `%LEN(v) = n` on a varying string |
+| `str.replace dst, src, repl, start [, len]` | `%REPLACE` |
+
+**Dates, times and timestamps.** Units are `*YEARS *MONTHS *DAYS`
+for dates, `*HOURS *MINUTES *SECONDS` for times, all seven with
+`*MSECONDS` for timestamps.
+
+| Instruction | Meaning |
+|---|---|
+| `dt.add dst, src, n, unit` | `src + n` units, `n` an integer and may be negative; `dst` has `src`'s type |
+| `%d = dt.diff a, b, unit` | `a - b` in whole units (`i64`); both dates/timestamps or both times |
+| `%d = dt.extract src, unit` | `%SUBDT` (`i32`) |
+| `%d = dt.test src [datfmt(*X)] [timfmt(*X)]` | whether character or numeric data is a valid value (`ind`) |
+| `dt.now dst` | the current value in `dst`'s type |
+
+**Pointers.** `[%p +n]:T` derefs; the runtime rules for a bad pointer
+are in `ILE.md`.
+
+| Instruction | Meaning |
+|---|---|
+| `%d = addr place` | a space pointer to the place |
+| `%d = ptradd p, n` | `n` bytes on; leaving the region is `MCH0601` |
+| `%d = ptrdiff p, q` | `p - q` in bytes (`i64`); different regions are `MCH0601` |
+| `%d = cmp.cond p, q` | pointers compare for equality, and for order within one region |
+| `%d = procaddr NAME` | a procedure pointer to a procedure of this module or an `extern proc` |
+| `%d = rslvsp *TYPE, name, lib` | a system pointer to an object; `MCH3401` when absent |
+| `%d = const.ptr *NULL` | a null pointer |
+
+**Monitors.** `monitor NAME, sel -> L, sel -> L, …` opens a region
+that `endmon NAME` closes; regions nest and are lexical over the
+block list. Selectors, tried in order: `*ALL`; `*PROGRAM` (anything
+but file errors); `*FILE`; a status code or range `100..999` in the
+RPG numbering the runtime maps message identifiers to; a message
+identifier `MCH1211`; a prefix `"MCH*"`. Control may leave a region
+by any branch; it may enter only through the `monitor` instruction
+and the handlers lie outside their region. An exception raised inside
+goes to the first matching handler of the innermost region, with the
+condition's message on the entry's queue (`ILE.md` has the model).
+
+**I/O.** Every operation yields the status of its `IoFeedback` as an
+`i32`: 0, or the five-digit RPG status (`00011` end of file, `00012` not
+found, `01021` duplicate key, `01218` record locked, ...; `PHASE3.md`).
+Level checks happen at `dbopen` (`CPF4131` as an escape message).
+
+| Instruction | Meaning |
+|---|---|
+| `%d = dbopen FILE [infds(place)]` | open the declared file; the runtime keeps `infds` current |
+| `%d = dbclose FILE` | |
+| `%d = dbio FILE OP [rec(place)] [key(x)] [rrn(x)] [fmt(NAME)] [nolock]` | `READ READP READE READPE CHAIN SETLL SETGT WRITE UPDATE DELETE UNLOCK FEOD`; reads and writes need `rec`, positioning needs `key` or `rrn` |
+| `%d = dspio FILE OP fmt(NAME) [rec(place)]` | `WRITE READ EXFMT` on a `dev(*DSP)` file; `TODO(phase8)` |
+| `%d = prtio FILE WRITE fmt(NAME) [rec(place)]` | on a `dev(*PRT)` file; `TODO(phase8)` |
+
+**Messages.** Queues are `*SAME` (this call-stack entry), `*PRV`,
+`*CTLBDY`, `*EXT`, `*SYSOPR`, or a count of entries up the stack.
+
+| Instruction | Meaning |
+|---|---|
+| `sndpgmmsg msgid(x) msgf(x [, lib]) [data(x)] type(*T) to(*Q) [key(place)]` | send; `msgid` is a `char(7)`, `msgf` a `char(10)`, `key` receives the `char(4)` key |
+| `%d = rcvmsg pgmq(*Q) [type(*T)] [key(x)] [rmv] [msg(p)] [msgid(p)] [data(p)] [keyout(p)] [sev(p)]` | receive the oldest message of the type (or the keyed one); an `ind` saying whether one was there |
+| `rmvmsg pgmq(*Q) [key(x)] [clear(*ALL\|*OLD\|*NEW\|*KEEPUNANS)]` | remove one or clear |
+
+Message types: `*INFO *COMP *DIAG *ESCAPE *STATUS *NOTIFY *RQS *INQ
+*RPY *SCOPE`, plus `*ANY` to receive.
+
+**Console, data areas, data queues.**
+
+| Instruction | Meaning |
+|---|---|
+| `dsply src [reply(place)]` | echo on the console; wait for a reply into the place |
+| `dtaara.lock\|unlock name, lib` | allocate or release a data area |
+| `dtaara.read\|write name, lib, place` | the whole data area to or from the place |
+| `dtaq.snd name, lib, data, len` | send an entry |
+| `%d = dtaq.rcv name, lib, place, len, wait` | receive into the place; the length received (`i32`), 0 after `wait` seconds (negative waits forever) |
+
+Names are `char(10)` places or literals; `"*LIBL"` is a library.
 
 ## 6. The verifier
 
@@ -215,9 +326,13 @@ followed by one that is not; an entry procedure is by value or returns;
 a register holds a storage-only type, or is assigned two types; a block
 lacks a terminator or has one before its end; a branch names no block;
 a register may be read before it is assigned on some path (a forward
-dataflow over the block graph); an operand's type does not fit the
-instruction (§5); a call passes the wrong count, `*OMIT` where not
-allowed, a register by reference, or a type the parameter is not.
+dataflow over the block graph, in which a handler sees the
+intersection of the entry states of the blocks its region overlaps);
+an operand's type does not fit the instruction (§5); a call passes the
+wrong count, `*OMIT` where not allowed, a register by reference, or a
+type the parameter is not; a decimal operation omits its precision;
+monitors do not nest, a branch enters one, or a handler lies inside
+its own region; `dbio` lacks the record or key its operation needs.
 
 ## 7. Literal encoding
 
@@ -233,6 +348,6 @@ and smallest values (`FF`/`00` for text), `*NULL` sixteen zero bytes,
 
 ## 8. Format version
 
-`FORMAT_VERSION` is 1. `*MODULE` objects store the binary IR (*Phase 4,
-pending*: `qirc`); within V1R the format may only grow, so a reader of
-version *n* reads every version up to *n*.
+`FORMAT_VERSION` is 1. `*MODULE` objects store the binary IR that
+`qirc` writes (*Phase 4, pending*); within V1R the format may only
+grow, so a reader of version *n* reads every version up to *n*.

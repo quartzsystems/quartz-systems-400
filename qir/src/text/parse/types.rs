@@ -47,14 +47,14 @@ impl Parser {
                 Type::Timestamp(u8::try_from(p).map_err(|_| self.err("precision is 0 to 12"))?)
             }
             "date" => {
-                let w = self.paren(Self::special)?;
+                let w = self.paren(Self::special_word)?;
                 Type::Date(
                     DateFmt::from_word(&format!("*{w}"))
                         .ok_or_else(|| self.err(format!("*{w} is not a date format")))?,
                 )
             }
             "time" => {
-                let w = self.paren(Self::special)?;
+                let w = self.paren(Self::special_word)?;
                 Type::Time(
                     TimeFmt::from_word(&format!("*{w}"))
                         .ok_or_else(|| self.err(format!("*{w} is not a time format")))?,
@@ -94,7 +94,8 @@ impl Parser {
         Ok((t, rest))
     }
 
-    fn special(&mut self) -> Result<String> {
+    /// A `*WORD` without its star.
+    pub(crate) fn special_word(&mut self) -> Result<String> {
         match self.peek() {
             Tok::Special(s) => {
                 let s = s.clone();

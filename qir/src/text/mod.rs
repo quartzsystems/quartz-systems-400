@@ -8,6 +8,7 @@
 pub mod lex;
 mod parse;
 mod print;
+mod print_ext;
 
 pub use parse::parse;
 pub use print::{print, print_type};

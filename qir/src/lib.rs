@@ -21,11 +21,15 @@ pub mod types;
 pub mod verify;
 
 pub use error::{QirError, Result};
-pub use inst::{Arg, CallRet, CallTarget, Const, Inst, Operand, Place, PlaceBase, Step};
+pub use inst::{
+    Arg, CallRet, CallTarget, Callee, Const, CvtOpts, DbOp, DecOp, DecUn, DevOp, DtInst, DtUnit,
+    DtaaraOp, DtaqInst, Handler, Inst, IoInst, MsgInst, MsgQueue, MsgType, Operand, Place,
+    PlaceBase, PtrInst, Selector, Step, StrInst, TrimSide,
+};
 pub use module::{
-    ActGrp, Block, DbgView, FORMAT_VERSION, FileRef, FileUsage, FormatRef, Label, Lang, Linkage,
-    Module, Options, Param, Proc, ProcRef, Proto, ProtoRef, Reg, RegInfo, Scope, StorageClass,
-    TypeDef, Var, VarRef,
+    ActGrp, Block, DbgView, FORMAT_VERSION, FileDev, FileRef, FileUsage, FormatRef, Label, Lang,
+    Linkage, Module, Options, Param, Proc, ProcRef, Proto, ProtoRef, Reg, RegInfo, Scope,
+    StorageClass, TypeDef, Var, VarRef,
 };
 pub use text::{parse, print};
 pub use types::{DateFmt, Field, Shape, StructType, TimeFmt, Type, TypeClass};

@@ -183,6 +183,41 @@ impl FileUsage {
     }
 }
 
+/// The device a file is.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum FileDev {
+    /// `*DB`: a database file.
+    #[default]
+    Db,
+    /// `*DSP`: a display file; `TODO(phase8)`.
+    Display,
+    /// `*PRT`: a printer file; `TODO(phase8)`.
+    Printer,
+}
+
+impl FileDev {
+    /// The name as written.
+    #[must_use]
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Db => "*DB",
+            Self::Display => "*DSP",
+            Self::Printer => "*PRT",
+        }
+    }
+
+    /// From the text form.
+    #[must_use]
+    pub fn from_name(s: &str) -> Option<Self> {
+        Some(match s {
+            "*DB" => Self::Db,
+            "*DSP" => Self::Display,
+            "*PRT" => Self::Printer,
+            _ => return None,
+        })
+    }
+}
+
 /// A record format the module expects, with the level identifier it
 /// was compiled against.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -202,6 +237,8 @@ pub struct FileRef {
     pub file: String,
     /// Library, `*LIBL` by default.
     pub lib: String,
+    /// Device.
+    pub dev: FileDev,
     /// Usage.
     pub usage: FileUsage,
     /// Opened for keyed access.

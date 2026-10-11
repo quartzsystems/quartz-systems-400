@@ -9,8 +9,8 @@ use super::Parser;
 use crate::error::Result;
 use crate::inst::{Const, literal};
 use crate::module::{
-    ActGrp, Block, DbgView, FileRef, FileUsage, FormatRef, Lang, Linkage, Param, Proc, Proto,
-    StorageClass, TypeDef, Var, index32,
+    ActGrp, Block, DbgView, FileDev, FileRef, FileUsage, FormatRef, Lang, Linkage, Param, Proc,
+    Proto, StorageClass, TypeDef, Var, index32,
 };
 use crate::text::lex::Tok;
 use crate::types::Type;
@@ -165,6 +165,7 @@ impl Parser {
             usage: FileUsage::Input,
             keyed: false,
             lvlchk: true,
+            dev: FileDev::Db,
             formats: Vec::new(),
         };
         while let Tok::Ident(w) = self.peek().clone() {
@@ -188,6 +189,14 @@ impl Parser {
                 }
                 "keyed" => f.keyed = true,
                 "nolvlchk" => f.lvlchk = false,
+                "dev" => {
+                    let s = self.paren(|p| match p.bump() {
+                        Tok::Special(s) => Ok(format!("*{s}")),
+                        _ => Err(p.err("dev is *DB, *DSP or *PRT")),
+                    })?;
+                    f.dev = FileDev::from_name(&s)
+                        .ok_or_else(|| self.err(format!("{s} is not a device")))?;
+                }
                 "fmt" => {
                     let r = self.paren(|p| {
                         let name = p.ident()?;

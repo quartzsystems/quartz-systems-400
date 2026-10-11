@@ -7,6 +7,7 @@
 //! their type at their first definition.
 
 mod decl;
+mod ext;
 mod inst;
 mod types;
 
