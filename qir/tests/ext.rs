@@ -8,135 +8,7 @@
 
 use qir::{Inst, Selector, Type, parse, print, verify};
 
-const SAMPLE: &str = r#"
-module STOR lang(RPGLE) ccsid(37) actgrp(QILE) dbgview(*ALL)
-
-type Cust = struct { id: packed(7,0), name: char(30), bal: packed(11,2), since: date(*ISO) }
-type Infds = struct { status: zoned(5,0) @10, rrn: i32 @397 }
-
-static $cust: Cust
-static $ds: Infds
-static $key: packed(7,0)
-static $msgkey: char(4)
-static $txt: varchar(80)
-static $u: ucs2(10)
-static $ts: timestamp(6)
-static $tm: time(*HMS)
-static $n: i32
-static $amt: packed(15,5)
-static $big: packed(63,0)
-static $pp: ptr
-based $view: Cust on $pp
-static $dq: char(100)
-static $pgmname: char(10) inz("MYPGM")
-
-file CUST file(CUSTOMER) lib(QSTEST) usage(*UPDATE) keyed fmt(CUSTREC)
-file SCREEN file(MYDSPF) dev(*DSP)
-file REPORT file(QSYSPRT) dev(*PRT)
-
-extern proc HELPER($c: Cust)
-extern proc CEEDOD(byval $n: i32)
-
-proc MAIN() entry {
-  auto $tmp: char(30)
-  auto $p: packed(9,2)
-  auto $z: zoned(5,0)
-  auto $d: date(*ISO)
-  auto $name10: char(10)
-  auto $id7: char(7)
-L0:
-  dec.add $p, $cust.bal, 12.50 prec(12,2) halfadj
-  dec.mul $amt, $p, $n prec(63,23) resdecpos
-  dec.div $amt, $amt, 3 prec(63,30)
-  dec.sub $z, $p, $p prec(12,2)
-  dec.rem $z, $cust.id, 7 prec(7,0)
-  dec.mov $cust.bal, $p halfadj
-  dec.neg $p, $p
-  dec.abs $amt, $cust.bal
-  %i = const.i32 5
-  dec.mov $z, %i
-  %f = cvt.i64 $cust.id
-  %neg = dec.cmp.lt $p, 0
-  cvt $tmp, $p
-  cvt $p, $tmp halfadj
-  cvt $tmp, $cust.since datfmt(*USA)
-  cvt $d, "2026-03-01"
-  cvt $z, $d datfmt(*YMD)
-  cvt $u, $tmp ccsid(37)
-  cvt $ts, $d
-  str.cat $tmp, $cust.name, " LTD"
-  str.subst $name10, $cust.name, 1, 10
-  %pos = str.scan "A", $cust.name
-  %pos2 = str.scan "A", $cust.name, %pos
-  %bad = str.check "0123456789", $name10
-  %badr = str.checkr "0123456789", $name10, 10
-  str.xlate $tmp, "abc", "ABC", $cust.name
-  str.trim $txt, $cust.name
-  str.triml $txt, $cust.name, " *"
-  str.trimr $tmp, $tmp
-  %same = str.cmp.eq $tmp, $cust.name
-  %len = str.len $txt
-  str.setlen $txt, 5
-  str.replace $tmp, $cust.name, "X", 3
-  str.replace $tmp, $cust.name, "XY", 3, 1
-  dt.add $d, $cust.since, 30, *DAYS
-  dt.add $ts, $ts, -1, *HOURS
-  %days = dt.diff $d, $cust.since, *DAYS
-  %yr = dt.extract $cust.since, *YEARS
-  %ok = dt.test $tmp datfmt(*ISO)
-  %ok2 = dt.test $d
-  dt.now $tm
-  %a = addr $cust
-  %b = ptradd %a, 7
-  %diff = ptrdiff %b, %a
-  %fp = procaddr HELPER
-  %fp2 = procaddr MAIN
-  %sp = rslvsp *PGM, $pgmname, "QGPL"
-  store $pp, %a
-  mov $tmp, $view.name
-  monitor M1, MCH1211 -> DIV0, 100..199 -> STAT, "MCH*" -> ANYMCH, *FILE -> FILEERR, *ALL -> ALL
-  dec.div $amt, $amt, $n prec(63,20)
-  monitor M2, *PROGRAM -> ALL
-  %st = dbopen CUST infds($ds)
-  %st2 = dbio CUST CHAIN rec($cust) key($key)
-  %st3 = dbio CUST READ rec($cust) nolock
-  %st4 = dbio CUST SETLL rrn(%i)
-  %st5 = dbio CUST UPDATE rec($cust) fmt(CUSTREC)
-  %st6 = dbio CUST UNLOCK
-  %st7 = dbclose CUST
-  %st8 = dspio SCREEN EXFMT fmt(PROMPT) rec($tmp)
-  %st9 = prtio REPORT WRITE fmt(LINE)
-  endmon M2
-  endmon M1
-  br DONE
-DIV0:
-  sndpgmmsg msgid("CPF9898") msgf("QCPFMSG", "QSYS") data($tmp) type(*ESCAPE) to(*PRV) key($msgkey)
-  br DONE
-STAT:
-  sndpgmmsg msgid("CPF9897") msgf("QCPFMSG") type(*INFO) to(*EXT)
-  %got = rcvmsg pgmq(*SAME) type(*ANY) key($msgkey) rmv msg($tmp) msgid($id7) data($txt) keyout($msgkey) sev($n)
-  %got2 = rcvmsg pgmq(2) key(x"00000001")
-  rmvmsg pgmq(*SAME) key($msgkey)
-  rmvmsg pgmq(*CTLBDY) clear(*ALL)
-  br DONE
-ANYMCH:
-  dsply $tmp reply($name10)
-  dsply "done"
-  br DONE
-FILEERR:
-  dtaara.lock "MYDTA", "*LIBL"
-  dtaara.read "MYDTA", "*LIBL", $tmp
-  dtaara.write $name10, "QGPL", $tmp
-  dtaara.unlock "MYDTA", "*LIBL"
-  br DONE
-ALL:
-  dtaq.snd "MYQ", "QGPL", $dq, 100
-  %rl = dtaq.rcv "MYQ", "QGPL", $dq, 100, -1
-  br DONE
-DONE:
-  ret
-}
-"#;
+const SAMPLE: &str = include_str!("programs/stor.qir");
 
 #[test]
 fn storage_sample_parses_verifies_and_round_trips() {
@@ -315,4 +187,20 @@ fn verifier_rejects_storage_mistakes() {
         "proc P() {\nL0:\n  %x = procaddr NOPE\n  ret\n}",
         "not a procedure",
     );
+}
+
+#[test]
+fn binary_round_trips_storage_instructions() {
+    let m = parse(SAMPLE).unwrap();
+    let bytes = qir::binary::write(&m);
+    let again = qir::binary::read(&bytes).unwrap_or_else(|e| panic!("{e}"));
+    assert_eq!(m, again);
+    // Every byte matters: flipping any tag or count must fail or change the module.
+    for i in 8..bytes.len().min(400) {
+        let mut b = bytes.clone();
+        b[i] ^= 0x40;
+        if let Ok(other) = qir::binary::read(&b) {
+            assert_ne!(other, m, "byte {i} did not matter");
+        }
+    }
 }

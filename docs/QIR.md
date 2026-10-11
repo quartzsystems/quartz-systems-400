@@ -349,5 +349,25 @@ and smallest values (`FF`/`00` for text), `*NULL` sixteen zero bytes,
 ## 8. Format version
 
 `FORMAT_VERSION` is 1. `*MODULE` objects store the binary IR that
-`qirc` writes (*Phase 4, pending*); within V1R the format may only
-grow, so a reader of version *n* reads every version up to *n*.
+`qir::binary::write` produces: the magic `QIRM`, a `u16` version, a
+`u16` of zero, then the module as tagged fields in a fixed order
+(little-endian integers, `u32`-prefixed strings and byte arrays,
+`u32`-counted lists, `u8` presence flags and enumeration tags; the
+tag tables are in `qir/src/binary/`). Within V1R the format only
+grows: a new instruction or type takes a new tag, a new field goes at
+the end of its record behind a version bump, and a reader accepts
+every version up to its own and refuses a later one.
+
+## 9. `qirc`
+
+```
+cargo run -p qir --bin qirc -- asm IN.qir [-o OUT.qirm] [--no-verify]
+cargo run -p qir --bin qirc -- dis IN.qirm [-o OUT.qir]
+cargo run -p qir --bin qirc -- check IN.qir|IN.qirm
+cargo run -p qir --bin qirc -- fmt IN.qir [-o OUT.qir]
+```
+
+`asm` verifies before writing; `dis` prints the canonical text, which
+is what `fmt` prints for the source, so `fmt` is the normal form and a
+module survives text → binary → text unchanged. The service console
+gets the same functions as `qir asm` in a later checkpoint.

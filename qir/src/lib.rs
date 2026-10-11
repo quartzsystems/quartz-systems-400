@@ -14,6 +14,7 @@
 
 mod error;
 
+pub mod binary;
 pub mod inst;
 pub mod module;
 pub mod text;

@@ -1096,7 +1096,9 @@ dependencies = [
 name = "qir"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "ccsid",
+ "clap",
  "dds",
  "qdecimal",
  "thiserror",

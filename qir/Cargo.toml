@@ -11,6 +11,8 @@ qdecimal = { path = "../qdecimal", version = "0.1.0" }
 dds = { path = "../dds", version = "0.1.0" }
 ccsid = { path = "../ccsid", version = "0.1.0" }
 thiserror.workspace = true
+clap.workspace = true
+anyhow.workspace = true
 
 [lints]
 workspace = true

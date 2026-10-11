@@ -103,7 +103,8 @@ sql/          SQL: src/lex/ tokens, src/ast/ statements (ddl, query, expr), src/
               from the store (catalog.rs); src/sqlca.rs the SQLCA; src/run.rs RUNSQLSTM
 qir/          the IR: src/types/ layouts, src/module/ units, vars, procs, src/inst/ the
               instruction set and literal encoding, src/text/ lexer, parser, printer,
-              src/verify/ places, typing, flow, per-instruction checks
+              src/verify/ places, typing, flow, monitors, per-instruction checks,
+              src/binary/ the versioned module format, src/bin/qirc.rs; tests/programs/
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
               DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, images/
 ```
@@ -135,6 +136,7 @@ cargo run -p qdecimal --bin qdfuzz -- kit conformance/oracle/qdecimal   # regene
 cargo test -p conformance --test db_kit   # QSTEST in memory; outputs under target/conformance-db/ours/
 QS400_UPDATE_ORACLE=1 cargo test -p conformance --test db_kit   # regenerate RLATEST.RPGLE and QRESULTS.SQL
 cargo test --release -p conformance --test db_bench -- --ignored --nocapture   # dbbench in memory
+cargo run -p qir --bin qirc -- asm|dis|check|fmt FILE   # IR assembler, disassembler, verifier
 ```
 
 Lint the Linux-only crates for the musl target too: their real code is
