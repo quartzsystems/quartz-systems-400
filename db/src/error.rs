@@ -160,6 +160,15 @@ pub enum DbError {
     #[error("the file is closed")]
     Closed,
 
+    /// `SHARE(*YES)` open whose usage the shared path does not cover.
+    #[error("shared open of {file} member {member} needs more than the open path allows")]
+    ShareMismatch {
+        /// File name.
+        file: String,
+        /// Member name.
+        member: String,
+    },
+
     /// A physical file or member that logical members depend on.
     #[error("file {file} has dependent logical file {dependent}")]
     HasDependents {
@@ -202,6 +211,7 @@ impl DbError {
             Self::RecordLocked { .. } => "CPF5027",
             Self::FileLocked { .. } => "CPF4128",
             Self::NoLockedRecord { .. } => "CPF5035",
+            Self::ShareMismatch { .. } => "CPF4123",
             Self::Corrupt { .. } => "CPF3113",
             Self::MemberFull { .. }
             | Self::RecordLength { .. }

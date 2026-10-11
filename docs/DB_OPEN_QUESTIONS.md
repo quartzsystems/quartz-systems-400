@@ -179,6 +179,35 @@ allows them when every based-on field is mapped. Test: none yet.
 **Messages.** `NoLockedRecord` carries CPF5035 as a placeholder for the
 condition RPG reports as 01221 (RNX1221); `FileLocked` carries CPF4128.
 
+**Shared open data path with other usage.** A `SHARE(*YES)` open that
+needs input, output, update or delete the existing path was not opened
+for fails with `ShareMismatch` (CPF4123 as a placeholder). The machine
+may instead open the path with the union of usages when the first open
+has not read yet. Test: `OVRDBF SHARE(*YES)`, `OPNDBF OPTION(*INP)`,
+then call an RPG program that updates the file.
+
+**Position of a shared path on a later open.** The second program sees
+the path where the first left it, and its `POSITION` override is not
+applied. Test: two programs sharing a file, the first reads two records,
+the second reads one.
+
+**`POSITION(*KEYB)` before the first record.** When no record is below
+the key the first read returns the first record of the file. Test:
+`OVRDBF POSITION(*KEYB 1 CUSREC 0)` on a file whose lowest key is 1,
+then `READ`.
+
+**`POSITION(*RRN n)` on a keyed logical file.** Refused; on a keyed
+physical file the reads go on in key order from that record. Test:
+`OVRDBF POSITION(*RRN 4)` over a keyed LF, read twice.
+
+**`WAITRCD`.** Kept in the open options; a locked record fails at once
+with CPF5027 whatever the wait, since one store transaction runs at a
+time (`MIGRATE(phase5)`: wait on the lock table when jobs exist). Test:
+none until then.
+
+**`SEQONLY` and `NBRRCDS`.** Kept and ignored: records are never
+blocked, so no read ever misses another job's write. Test: none.
+
 ## Editing
 
 Every item here is covered by the qdecimal oracle kit

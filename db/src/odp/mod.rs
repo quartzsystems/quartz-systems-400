@@ -10,10 +10,14 @@
 pub mod feedback;
 pub mod keyarg;
 pub mod locks;
+pub mod ovrdbf;
+pub mod session;
 
 pub use feedback::{IoFeedback, status};
 pub use keyarg::KeyArg;
 pub use locks::{RecordLocks, SharedLocks, new_shared};
+pub use ovrdbf::{Override, Position};
+pub use session::{OdpRef, Session};
 
 use std::ops::Bound;
 
@@ -22,7 +26,7 @@ use store::obj::{JobHandle, LockState, ObjectId};
 use store::txn::Txn;
 
 use crate::error::{DbError, Result};
-use crate::file::{self, FileKind};
+use crate::file::{self, FileKind, Wait};
 use crate::member::{Core, Member};
 use crate::path::{self, PathKey};
 use crate::record::Value;
@@ -78,6 +82,7 @@ impl Usage {
 
 /// What an open takes.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct OpenOpts {
     /// `MBR`.
     pub member: MemberSpec,
@@ -93,6 +98,14 @@ pub struct OpenOpts {
     pub record_format: Option<Name>,
     /// The job.
     pub job: JobHandle,
+    /// `SHARE(*YES)`: the session shares this open data path.
+    pub share: bool,
+    /// `SEQONLY(*YES n)`: records per block; kept, nothing is blocked yet.
+    pub seqonly: Option<u32>,
+    /// `INHWRT(*YES)`: writes, updates and deletes succeed without changing anything.
+    pub inhwrt: bool,
+    /// `WAITRCD` in effect; the lock is not waited for yet (`MIGRATE(phase5)`).
+    pub wait_rcd: Option<Wait>,
 }
 
 impl OpenOpts {
@@ -107,6 +120,10 @@ impl OpenOpts {
             lvlchk: None,
             record_format: None,
             job,
+            share: false,
+            seqonly: None,
+            inhwrt: false,
+            wait_rcd: None,
         }
     }
 }
@@ -160,8 +177,32 @@ pub struct Odp {
     open: bool,
 }
 
+/// Allocate an object for a job, as `ALCOBJ` would; `file` names the
+/// error.
+pub fn allocate(
+    txn: &mut Txn<'_>,
+    job: JobHandle,
+    id: ObjectId,
+    state: LockState,
+    file: &str,
+) -> Result<()> {
+    txn.store()
+        .locks_mut()
+        .lock(job, id, state)
+        .map_err(|held| DbError::FileLocked {
+            file: file.to_string(),
+            holder: held.job.0,
+        })
+}
+
+/// Release an allocation taken with [`allocate`].
+pub fn deallocate(txn: &mut Txn<'_>, job: JobHandle, id: ObjectId, state: LockState) {
+    txn.store().locks_mut().unlock(job, id, state);
+}
+
 impl Odp {
-    /// Open a file: allocate it, check levels, position at the start.
+    /// Open a file: allocate it and the member, check levels, position
+    /// at the start.
     pub fn open(
         txn: &mut Txn<'_>,
         locks: SharedLocks,
@@ -207,16 +248,26 @@ impl Odp {
         } else {
             LockState::SharedRead
         };
-        if let Err(held) = txn.store().locks_mut().lock(opts.job, file, file_lock) {
-            return Err(DbError::FileLocked {
-                file: desc.name().to_string(),
-                holder: held.job.0,
-            });
-        }
-        let mut member = Member::open(txn, &desc, &entry)?;
-        if opts.keyed && member.attr().key_len > 0 {
-            member.ensure_path(txn, &mut |_, _| {})?;
-        }
+        let fname = desc.name().to_string();
+        allocate(txn, opts.job, file, file_lock, &fname)?;
+        let opened = Member::open(txn, &desc, &entry).and_then(|mut m| {
+            allocate(txn, opts.job, m.id(), file_lock, &fname)?;
+            if opts.keyed
+                && m.attr().key_len > 0
+                && let Err(e) = m.ensure_path(txn, &mut |_, _| {})
+            {
+                txn.store().locks_mut().unlock(opts.job, m.id(), file_lock);
+                return Err(e);
+            }
+            Ok(m)
+        });
+        let member = match opened {
+            Ok(m) => m,
+            Err(e) => {
+                txn.store().locks_mut().unlock(opts.job, file, file_lock);
+                return Err(e);
+            }
+        };
         let fb = IoFeedback::new(member.format().format.name, member.name());
         Ok(Self {
             file,
@@ -232,13 +283,27 @@ impl Odp {
         })
     }
 
-    /// Close: release the record lock and the file.
+    /// Close: release the record lock, the member and the file.
     pub fn close(mut self, txn: &mut Txn<'_>) {
+        self.release(txn);
+    }
+
+    /// Release every lock the path holds; it is closed afterwards.
+    pub(crate) fn release(&mut self, txn: &mut Txn<'_>) {
+        if !self.open {
+            return;
+        }
         self.unlock();
-        txn.store()
-            .locks_mut()
-            .unlock(self.opts.job, self.file, self.file_lock);
+        let locks = txn.store().locks_mut();
+        locks.unlock(self.opts.job, self.member.id(), self.file_lock);
+        locks.unlock(self.opts.job, self.file, self.file_lock);
         self.open = false;
+    }
+
+    /// Whether the path is open.
+    #[must_use]
+    pub fn is_open(&self) -> bool {
+        self.open
     }
 
     /// The member.
@@ -527,8 +592,8 @@ impl Odp {
                 self.pos = Pos::End;
                 self.fb.found = self.peek(txn, false)?.is_some();
             }
+            KeyArg::Rrn(n) if self.keyed() => self.setll_rrn_keyed(txn, *n)?,
             KeyArg::Rrn(n) => {
-                self.need(!self.keyed(), "arrival sequence")?;
                 self.pos = Pos::At(PathKey {
                     key: Vec::new(),
                     format: 0,
@@ -547,6 +612,36 @@ impl Odp {
                 self.fb.equal = next.is_some_and(|(k, _)| k.key.starts_with(&prefix));
             }
         }
+        Ok(())
+    }
+
+    /// `SETLL` by RRN on a keyed open: before the record's own entry, so
+    /// the next read returns it and reads go on in key order.
+    fn setll_rrn_keyed(&mut self, txn: &mut Txn<'_>, rrn: u64) -> Result<()> {
+        if self.member.is_logical() {
+            let e = DbError::Definition {
+                what: "RRN positioning on a keyed logical file".into(),
+            };
+            self.fb.fail(&e);
+            return Err(e);
+        }
+        let Some(slot) = self.member.read(txn, rrn)?.filter(|s| !s.deleted) else {
+            self.fb.found = false;
+            self.fb.equal = false;
+            return Ok(());
+        };
+        let entry = PathKey {
+            key: self.member.key_of(&slot.record, &slot.null_map)?,
+            format: 0,
+            rrn,
+        };
+        self.pos = Pos::At(entry);
+        self.pos = match self.step(txn, false)? {
+            Some((k, _)) => Pos::At(k),
+            None => Pos::Start,
+        };
+        self.fb.found = true;
+        self.fb.equal = true;
         Ok(())
     }
 
@@ -709,6 +804,9 @@ impl Odp {
     pub fn write(&mut self, txn: &mut Txn<'_>, data: &[u8], null_map: &[u8]) -> Result<u64> {
         self.begin(txn, "WRITE")?;
         self.need(self.opts.usage.output, "output")?;
+        if self.opts.inhwrt {
+            return Ok(0);
+        }
         if self.member.is_logical() {
             let e = DbError::Definition {
                 what: "writing through a logical file is not supported yet".into(),
@@ -745,6 +843,11 @@ impl Odp {
         self.begin(txn, "UPDATE")?;
         self.need(self.opts.usage.update, "update")?;
         let (_, k) = self.current()?;
+        if self.opts.inhwrt {
+            self.unlock();
+            self.fb.rrn = k.rrn;
+            return Ok(());
+        }
         if self.member.is_logical() {
             let e = DbError::Definition {
                 what: "updating through a logical file is not supported yet".into(),
@@ -763,6 +866,11 @@ impl Odp {
         self.begin(txn, "DELETE")?;
         self.need(self.opts.usage.delete, "delete")?;
         let (_, k) = self.current()?;
+        if self.opts.inhwrt {
+            self.unlock();
+            self.fb.rrn = k.rrn;
+            return Ok(());
+        }
         if self.member.is_logical() {
             let e = DbError::Definition {
                 what: "deleting through a logical file is not supported yet".into(),

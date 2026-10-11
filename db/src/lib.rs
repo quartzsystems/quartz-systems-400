@@ -24,6 +24,9 @@ pub use error::{DbError, Result};
 pub use file::{CreateFileOpts, FileDesc, FileKind, Maint, Recover, Size, Wait};
 pub use format::{FormatDef, fmt_level_id};
 pub use member::{MbrAttr, Member, Slot};
-pub use odp::{IoFeedback, KeyArg, Odp, OpenOpts, Record, SharedLocks, Usage};
+pub use odp::{
+    IoFeedback, KeyArg, Odp, OdpRef, OpenOpts, Override, Position, Record, Session, SharedLocks,
+    Usage,
+};
 pub use path::{Path, PathKey};
 pub use record::Value;
