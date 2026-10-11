@@ -13,10 +13,13 @@
 
 pub mod arith;
 pub mod decimal;
+pub mod edit;
 pub mod encode;
 mod error;
+pub mod fuzz;
 
 pub use arith::{Mode, Typed};
 pub use decimal::{Decimal, MAX_DIGITS, Rounding, Shape};
+pub use edit::{DateEditFmt, EditOpts, Fill, code_width, edit_code, edit_word};
 pub use encode::{Binary, Float, Integer, Packed, Zoned};
 pub use error::{DecimalError, Result};

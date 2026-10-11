@@ -51,6 +51,13 @@ pub enum DecimalError {
         text: String,
     },
 
+    /// An edit code or edit word that cannot be applied.
+    #[error("edit: {what}")]
+    Edit {
+        /// What is wrong.
+        what: String,
+    },
+
     /// A float that has no decimal value (NaN, infinity).
     #[error("float {what} has no decimal value")]
     NotFinite {
@@ -67,7 +74,10 @@ impl DecimalError {
             Self::DecimalData { .. } => "MCH1202",
             Self::SizeOverflow { .. } => "MCH1210",
             Self::DivideByZero => "MCH1211",
-            Self::Precision { .. } | Self::Parse { .. } | Self::NotFinite { .. } => return None,
+            Self::Precision { .. }
+            | Self::Parse { .. }
+            | Self::NotFinite { .. }
+            | Self::Edit { .. } => return None,
         })
     }
 }

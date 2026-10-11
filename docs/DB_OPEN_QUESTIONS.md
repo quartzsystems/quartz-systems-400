@@ -95,6 +95,36 @@ Test: a zoned field holding `X'40404040C1'` read by RPG and by SQL.
 digits on read; `db` will decide which view record I/O exposes. Test:
 write 32767 through SQL into a `B 4,0` column and read it back in RPG.
 
+## Editing
+
+Every item here is covered by the qdecimal oracle kit
+(`conformance/oracle/qdecimal`); the machine's `results.csv` settles it.
+
+**Leading zero before the point in edit codes.** Suppressed: `%EDITC` of
+0.05 with `J` gives `.05`, a zero balance `.00`.
+
+**The stop position of an edit word.** The digit at the `0` stop prints
+even when zero, so `'  0.  '` gives `0.56` for 0.56 and `'   .  '` gives
+`   56` (the point is an insertion character in the suppressed region).
+
+**Asterisks in an edit word.** Any `*` among the digit positions makes
+asterisks the fill but does not stop suppression; `'**   '` with 12
+gives `***12`.
+
+**Floating currency in an edit word.** The `$` left of the stop gives its
+position to the digits and lands just left of the first printed digit:
+`'  ,  $0.  '` with 12345.67 gives `$12,345.67`.
+
+**Floating minus (codes `N`-`Q`) with `*CURSYM`.** The minus goes left
+of the symbol: `-$12.34`.
+
+**`Z` of zero and `*ASTFILL` with a blank-balance code.** Both print
+blanks.
+
+**Edit code `Y` groups.** 7 digits is `nnn/nn/nn`; 8 digits is
+`nn/nn/nnnn`, or `nnnn/nn/nn` under `DATEDIT(*YMD)`; 9 digits is
+`nnn/nn/nnnn`, or `nnnnn/nn/nn` under `*YMD`.
+
 **DATSEP/TIMSEP(*JOB) and REF in logical files.** `REF`, `REFFLD` and
 file-level `CCSID` are not meaningful in an LF; `REFFLD` is rejected
 (DDS0207), `REF` and `CCSID` are accepted and ignored.

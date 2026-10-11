@@ -72,7 +72,9 @@ dds/          DDS: src/source/ records, src/lex/ columns and keywords, src/compi
               field, key, select/omit and file-keyword builders, src/pf/ and src/lf/
               compilers, src/listing/
 qdecimal/     Decimal (63 digits), IBM intermediate precision rules (src/arith/),
-              packed, zoned, binary, integer and float encodings (src/encode/)
+              packed, zoned, binary, integer and float encodings (src/encode/),
+              edit codes and words (src/edit/), the IBM i oracle kit (src/fuzz/,
+              src/bin/qdfuzz.rs; files under conformance/oracle/qdecimal/)
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, STORE_FORMAT.md, DST.md,
               DB_OPEN_QUESTIONS.md, DECIMAL.md, images/
 ```
@@ -100,6 +102,7 @@ cargo run -p build -- deny        # cargo-deny + links/cc lockfile check
 cargo clippy --workspace --all-targets    # must be warning-free
 cargo clippy -p slic -p console --all-targets --target x86_64-unknown-linux-musl
 QS400_QEMU=1 cargo test -p conformance    # the suite as a cargo test
+cargo run -p qdecimal --bin qdfuzz -- kit conformance/oracle/qdecimal   # regenerate the oracle kit
 ```
 
 Lint the Linux-only crates for the musl target too: their real code is
