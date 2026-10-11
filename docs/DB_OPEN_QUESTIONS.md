@@ -343,6 +343,26 @@ its record entries and closed with `C RB`. `CMTBDY(*YES)` for
 that reached `C CM` or `C RB` within the range. Test: pull the power
 mid-cycle, IPL, `DSPJRN`.
 
+## SQL
+
+**Reserved words as names.** A word in the parser's reserved list cannot
+be an implicit correlation name or a bare column (`SELECT FROM` is a
+syntax error); any word is accepted after `AS` or in double quotes. The
+machine's list is longer. Test: `SELECT * FROM t order` on the machine.
+
+**`IN` without a parenthesis.** `IN` starts a predicate only when `(`
+follows, so `POSITION('a' IN name)` parses as the function's keyword
+form. Test: none needed.
+
+**`||` precedence.** `CONCAT` and `||` bind like `*` and `/`, above `+`
+and `-`, as the DB2 reference orders them. Test: `SELECT 1 + 2 || '3'`
+on the machine (a conversion error there confirms the grouping).
+
+**Unsupported statements.** Common table expressions, `EXCEPT`,
+`INTERSECT`, `CALL`, `SET TRANSACTION`, `CREATE SCHEMA`, LOB types,
+hidden columns and derived indexes answer SQLCODE -84 (SQLSTATE 42612).
+The machine would run them. Test: none.
+
 ## Editing
 
 Every item here is covered by the qdecimal oracle kit

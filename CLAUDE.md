@@ -89,6 +89,8 @@ db/           database: src/file/ *FILE attributes, member and dependents tables
               commitment control (STRCMTCTL, COMMIT, ROLLBCK, lock levels)
 jrn/          journaling: *JRN (src/journal/) and *JRNRCV (src/rcv/) objects, the entry
               layout (src/entry/), DSPJRN filters and the receiver chain cursor (src/dsp/)
+sql/          SQL: src/lex/ tokens, src/ast/ statements (ddl, query, expr), src/parse/
+              recursive descent (ddl, dml, query, expr); SQLCODE/SQLSTATE on SqlError
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, STORE_FORMAT.md, DST.md,
               DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, images/
 ```

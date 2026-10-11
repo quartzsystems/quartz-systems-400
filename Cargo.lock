@@ -1495,6 +1495,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "sql"
+version = "0.1.0"
+dependencies = [
+ "blockdev",
+ "ccsid",
+ "db",
+ "dds",
+ "jrn",
+ "qdecimal",
+ "qsname",
+ "store",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "stable_deref_trait"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

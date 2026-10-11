@@ -1,0 +1,24 @@
+[package]
+name = "sql"
+description = "QS/400 SQL: the DB2 for i dialect subset, planner and executor over the database"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+db = { path = "../db", version = "0.1.0" }
+jrn = { path = "../jrn", version = "0.1.0" }
+store = { path = "../store", version = "0.1.0" }
+dds = { path = "../dds", version = "0.1.0" }
+qdecimal = { path = "../qdecimal", version = "0.1.0" }
+qsname = { path = "../qsname", version = "0.1.0" }
+ccsid = { path = "../ccsid", version = "0.1.0" }
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+blockdev = { path = "../blockdev", version = "0.1.0" }
+
+[lints]
+workspace = true
