@@ -80,7 +80,8 @@ db/           database: src/file/ *FILE attributes, member and dependents tables
               src/path/ key encoding and path trees; src/lf/ derivation and select/omit;
               src/member/ *MBR objects, record slots, path maintenance and rebuild;
               src/odp/ open data paths, RLA operations, record locks, INFDS feedback,
-              OVRDBF overrides and the per-job session with shared paths
+              OVRDBF overrides and the per-job session with shared paths;
+              src/util/ CLRPFM, RGZPFM, CPYF (select, map), CPYTOIMPF/CPYFRMIMPF (impf)
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, STORE_FORMAT.md, DST.md,
               DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, images/
 ```

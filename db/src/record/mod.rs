@@ -12,6 +12,8 @@ use qdecimal::{Binary, Decimal, Float, Packed, Rounding, Zoned};
 
 use crate::error::{DbError, Result};
 
+pub mod datetime;
+
 /// A field's value.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {

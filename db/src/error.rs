@@ -178,6 +178,13 @@ pub enum DbError {
         dependent: String,
     },
 
+    /// A copy or utility that cannot go on.
+    #[error("copy: {what}")]
+    Copy {
+        /// What stopped it.
+        what: String,
+    },
+
     /// A definition the file cannot hold.
     #[error("file definition: {what}")]
     Definition {
@@ -212,6 +219,7 @@ impl DbError {
             Self::FileLocked { .. } => "CPF4128",
             Self::NoLockedRecord { .. } => "CPF5035",
             Self::ShareMismatch { .. } => "CPF4123",
+            Self::Copy { .. } => "CPF2817",
             Self::Corrupt { .. } => "CPF3113",
             Self::MemberFull { .. }
             | Self::RecordLength { .. }

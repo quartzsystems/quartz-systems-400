@@ -19,6 +19,7 @@ pub mod odp;
 pub mod path;
 pub mod record;
 pub mod spec;
+pub mod util;
 
 pub use error::{DbError, Result};
 pub use file::{CreateFileOpts, FileDesc, FileKind, Maint, Recover, Size, Wait};

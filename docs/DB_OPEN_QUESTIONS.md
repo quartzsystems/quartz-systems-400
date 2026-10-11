@@ -208,6 +208,51 @@ none until then.
 **`SEQONLY` and `NBRRCDS`.** Kept and ignored: records are never
 blocked, so no read ever misses another job's write. Test: none.
 
+## Utilities
+
+**`RGZPFM KEYFILE` with a select/omit logical file.** Records the
+logical file leaves out follow the selected ones in arrival sequence.
+Test: `RGZPFM KEYFILE(lib/lf mbr)` over an LF with `S` statements; does
+the command fail, or where do the omitted records land?
+
+**`CPYF FMTOPT(*MAP)` with extra from-fields.** Refused: `*DROP` must
+be given too. `*DROP` alone is refused when a to-field has no source.
+Test: `CPYF FMTOPT(*MAP)` between files where each has a field the
+other lacks.
+
+**`CPYF MBROPT(*UPDADD)` on a non-unique to-member.** Behaves as `*ADD`;
+with a `UNIQUE` path the record with the same key is updated in place.
+Test: `*UPDADD` into a keyed file without `UNIQUE`.
+
+**`CPYF` duplicate keys and `ERRLVL`.** A duplicate key, a mapping
+error and a wrong record length each count as one recoverable error;
+the copy stops when the count exceeds `ERRLVL` and the records written
+so far stay (the caller's transaction decides). Test: `CPYF ERRLVL(1)`
+with two duplicates and note the completion message counts.
+
+**`CPYF FMTOPT(*CVTSRC)` sequence numbers.** Records are numbered
+1.00, 2.00, ... and dated 0. Test: `CPYF` from a data file into a source
+file and `DSPPFM` the sequence and date columns.
+
+**`CPYTOIMPF` defaults.** `RCDDLM(*EOR)` writes CR LF; `RMVBLANK(*NONE)`
+keeps a character field at its full length; a null field under
+`NULLS(*NO)` is written as its stored bytes (blanks, zero, an empty
+`VARLEN`); under `NULLS(*YES)` it is empty and unquoted. Dates and
+times are written as stored unless `DATFMT`/`TIMFMT` convert them.
+Test: `CPYTOIMPF` of a file with a null date and compare the stream file.
+
+**`CPYFRMIMPF` and `VARLEN`.** Trailing blanks of a `VARLEN` field are
+dropped, so a `*FIXED` import gives the data length, not the column
+width. An empty field is null when the field allows it, else zero or
+blanks. Test: `*FIXED` import into a `VARLEN(20)` field, `DSPPFM` in hex.
+
+**`CLRPFM` and `RGZPFM` allocation.** The member is allocated `*EXCL`
+and the file `*SHRUPD`; `CPYF` holds the from-member `*SHRRD` and the
+to-member `*SHRUPD` (`*EXCL` under `MBROPT(*REPLACE)`). The in-use
+error carries CPF4128 like every allocation failure here; the machine
+reports CPF3156 for `CLRPFM`. Test: `CLRPFM` while a program has the
+member open.
+
 ## Editing
 
 Every item here is covered by the qdecimal oracle kit
