@@ -46,6 +46,102 @@ pub enum SqlError {
         /// What is wrong.
         what: String,
     },
+
+    /// A table, index, schema or other object that does not exist.
+    #[error("{kind} {name} not found")]
+    ObjectNotFound {
+        /// The name as written.
+        name: String,
+        /// What kind of object.
+        kind: &'static str,
+    },
+
+    /// A column that no table in scope has.
+    #[error("column {name} not found")]
+    ColumnNotFound {
+        /// The name.
+        name: String,
+    },
+
+    /// A column more than one table in scope has.
+    #[error("column {name} is ambiguous")]
+    AmbiguousColumn {
+        /// The name.
+        name: String,
+    },
+
+    /// A value that cannot become the type needed.
+    #[error("conversion: {what}")]
+    Conversion {
+        /// What failed.
+        what: String,
+    },
+
+    /// Operands of types that do not go together.
+    #[error("incompatible types: {what}")]
+    TypeMismatch {
+        /// Which.
+        what: String,
+    },
+
+    /// A value too large for its target.
+    #[error("overflow: {what}")]
+    Overflow {
+        /// What failed.
+        what: String,
+    },
+
+    /// Null into a column that does not allow it.
+    #[error("column {column} does not allow null")]
+    NullNotAllowed {
+        /// The column.
+        column: String,
+    },
+
+    /// A duplicate key.
+    #[error("duplicate key: {what}")]
+    DuplicateKey {
+        /// Which.
+        what: String,
+    },
+
+    /// A row or object another job holds.
+    #[error("locked: {what}")]
+    Locked {
+        /// Which.
+        what: String,
+    },
+
+    /// A change under commitment control to an unjournaled table.
+    #[error("{what}")]
+    NotJournaled {
+        /// Which.
+        what: String,
+    },
+
+    /// A scalar subquery with more than one row.
+    #[error("the subquery returned more than one row")]
+    TooManyRows,
+
+    /// A division by zero.
+    #[error("division by zero")]
+    DivideByZero,
+
+    /// Wrong number of values for the columns.
+    #[error("{what}")]
+    ValueCount {
+        /// Which.
+        what: String,
+    },
+
+    /// The database failed in a way SQL has no code for.
+    #[error("database error: {what}")]
+    Database {
+        /// Which.
+        what: String,
+        /// The CPF message, when there is one.
+        msgid: Option<String>,
+    },
 }
 
 impl SqlError {
@@ -55,7 +151,19 @@ impl SqlError {
         match self {
             Self::Syntax { .. } | Self::ThreePartName { .. } => -104,
             Self::Unsupported { .. } => -84,
-            Self::Literal { .. } => -302,
+            Self::Literal { .. } | Self::Conversion { .. } => -302,
+            Self::ObjectNotFound { .. } => -204,
+            Self::ColumnNotFound { .. } => -206,
+            Self::AmbiguousColumn { .. } => -203,
+            Self::TypeMismatch { .. } => -401,
+            Self::NullNotAllowed { .. } => -407,
+            Self::DuplicateKey { .. } => -803,
+            Self::Locked { .. } => -913,
+            Self::NotJournaled { .. } => -7008,
+            Self::TooManyRows => -811,
+            Self::Overflow { .. } | Self::DivideByZero => -802,
+            Self::ValueCount { .. } => -117,
+            Self::Database { .. } => -901,
         }
     }
 
@@ -65,7 +173,19 @@ impl SqlError {
         match self {
             Self::Syntax { .. } | Self::ThreePartName { .. } => "42601",
             Self::Unsupported { .. } => "42612",
-            Self::Literal { .. } => "22001",
+            Self::Literal { .. } | Self::Conversion { .. } => "22018",
+            Self::ObjectNotFound { .. } => "42704",
+            Self::ColumnNotFound { .. } => "42703",
+            Self::AmbiguousColumn { .. } => "42702",
+            Self::TypeMismatch { .. } => "42818",
+            Self::Overflow { .. } | Self::DivideByZero => "22003",
+            Self::NullNotAllowed { .. } => "23502",
+            Self::DuplicateKey { .. } => "23505",
+            Self::Locked { .. } => "57033",
+            Self::NotJournaled { .. } => "55019",
+            Self::TooManyRows => "21000",
+            Self::ValueCount { .. } => "42802",
+            Self::Database { .. } => "58004",
         }
     }
 

@@ -11,9 +11,13 @@
 mod error;
 
 pub mod ast;
+pub mod exec;
 pub mod lex;
 pub mod parse;
+pub mod value;
 
 pub use ast::{Naming, Statement};
 pub use error::{Result, SqlError};
+pub use exec::{ColumnDesc, Outcome, Prepared, ResultSet, SqlContext, prepare};
 pub use parse::{parse, parse_all};
+pub use value::Value;

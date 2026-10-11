@@ -363,6 +363,38 @@ on the machine (a conversion error there confirms the grouping).
 hidden columns and derived indexes answer SQLCODE -84 (SQLSTATE 42612).
 The machine would run them. Test: none.
 
+**Division and `AVG` scale.** The quotient keeps the larger operand
+scale plus six decimals (at most 31), so `7 / 2` is `3.500000` and the
+average of a `(9,2)` column has eight decimals. DB2 derives the scale
+from the operand precisions. Test: `SELECT 7 / 2, AVG(bal)` on the
+machine and compare the decimals.
+
+**`date - date` with a short month.** The `yyyymmdd` duration borrows
+from the months before the first date until the days are not negative,
+so `2026-03-01 - 2025-12-31` is `129` (one month, 29 days). Test: the
+same subtraction on the machine.
+
+**`WITH DEFAULT` on dates and times.** The DDS gets `DFT('0001-01-01')`,
+`DFT('00.00.00')` and the matching timestamp; DB2 uses the current
+date and time. A `NOT NULL` column without any default refuses an
+absent value with -407. Test: `CREATE TABLE t (d DATE NOT NULL WITH
+DEFAULT)`, `INSERT INTO t DEFAULT VALUES`, `SELECT * FROM t`.
+
+**Tables from SQL.** `CREATE TABLE` becomes DDS: `SMALLINT` is `B 4 0`,
+`INTEGER` `B 9 0`, `BIGINT` `B 18 0`, `REAL` `F 9`, `DOUBLE` `F 17`,
+`VARCHAR` is `VARLEN`, the record format is the table name plus `R`
+(cut to 10) unless `RCDFMT` says otherwise, a name over 10 characters
+needs `FOR SYSTEM NAME` or `FOR COLUMN`. `UNIQUE` constraints and
+identity columns are refused with -84 for now. Test: `DSPFFD` of a table
+created by SQL on the machine.
+
+**Access path choice.** A dependent logical file serves a query when it
+has one format, no select/omit, no `DYNSLT`, and every key field is a
+base field of the same name and type; equality on leading keys scores
+10, a range 5, a matching `ORDER BY` 3; the best candidate above zero
+wins, else the table is read in arrival sequence. `EXPLAIN` shows the
+choice. Test: none; the machine's optimizer is its own.
+
 ## Editing
 
 Every item here is covered by the qdecimal oracle kit
