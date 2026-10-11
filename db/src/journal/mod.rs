@@ -16,6 +16,12 @@ use crate::file::{self, FileDesc, FileKind};
 use crate::member::Member;
 use crate::util::Hold;
 
+pub mod recover;
+pub mod undo;
+
+pub use recover::{RecoveryReport, recover_all, recover_journal};
+pub use undo::{ChangeReport, JrnRange, MemberMap, apyjrnchg, resolve_members, rmvjrnchg};
+
 /// Who is changing a member and under which commit cycle; carried by
 /// every `Member` so its entries say so.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -26,6 +32,10 @@ pub struct JrnCtx {
     pub commit_cycle: u64,
     /// The time to stamp entries with; the clock when `None`.
     pub now: Option<u64>,
+    /// The change undoes an earlier one: entries take the rollback kinds.
+    pub rollback: bool,
+    /// The change replays a journal: entries are flagged, not replayed again.
+    pub applied: bool,
 }
 
 impl Default for JrnCtx {
@@ -34,6 +44,8 @@ impl Default for JrnCtx {
             job: JobHandle(0),
             commit_cycle: 0,
             now: None,
+            rollback: false,
+            applied: false,
         }
     }
 }
@@ -56,6 +68,12 @@ fn draft(desc: &FileDesc, member: Option<Name>, code: u8, kind: &str, ctx: JrnCt
     if let Some(t) = ctx.now {
         d = d.at(t);
     }
+    if ctx.rollback {
+        d.flags |= jrn::entry::flags::ROLLBACK;
+    }
+    if ctx.applied {
+        d.flags |= jrn::entry::flags::APPLIED;
+    }
     d
 }
 
@@ -66,6 +84,23 @@ fn append(txn: &mut Txn<'_>, desc: &FileDesc, d: Draft) -> Result<Option<u64>> {
     }
     let mut j = Journal::load(txn, desc.attr.journal)?;
     Ok(Some(j.append(txn, d)?))
+}
+
+/// A commit-cycle entry (`C BC`, `C CM`, `C RB`, `C SC`) in `journal`; the
+/// sequence number it took.
+pub fn cycle_entry(
+    txn: &mut Txn<'_>,
+    journal: ObjectId,
+    kind: &str,
+    cycle: u64,
+    ctx: JrnCtx,
+) -> Result<u64> {
+    let mut d = Draft::new(code::COMMIT, kind, ctx.job).cycle(cycle);
+    if let Some(t) = ctx.now {
+        d = d.at(t);
+    }
+    let mut j = Journal::load(txn, journal)?;
+    Ok(j.append(txn, d)?)
 }
 
 /// A record-level entry (`R PT`, `R UB`, `R UP`, `R DL`) for `rrn`.
@@ -167,8 +202,8 @@ pub fn strjrnpf(
         })?;
         let ctx = JrnCtx {
             job,
-            commit_cycle: 0,
             now: Some(now),
+            ..JrnCtx::default()
         };
         for m in &desc.members {
             member_entry(txn, &desc, m.name, "JM", ctx)?;
@@ -197,8 +232,8 @@ pub fn endjrnpf(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId, now: u64) -> 
     let r = (|| {
         let ctx = JrnCtx {
             job,
-            commit_cycle: 0,
             now: Some(now),
+            ..JrnCtx::default()
         };
         for m in &desc.members {
             member_entry(txn, &desc, m.name, "EJ", ctx)?;

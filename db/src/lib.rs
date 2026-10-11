@@ -11,6 +11,7 @@
 #![deny(missing_docs)]
 
 pub mod chg;
+pub mod cmt;
 pub mod dsp;
 mod error;
 pub mod file;

@@ -548,6 +548,73 @@ impl Member {
         Ok(rrn)
     }
 
+    /// Put a record at `rrn`: a deleted slot comes back, the slot after the
+    /// last is added, a gap is filled with deleted slots. For the journal's
+    /// apply and undo.
+    pub fn write_at(
+        &mut self,
+        txn: &mut Txn<'_>,
+        rrn: u64,
+        record: &[u8],
+        null_map: &[u8],
+    ) -> Result<()> {
+        self.physical_only()?;
+        self.check(record, null_map)?;
+        if rrn == 0 {
+            return Err(DbError::RecordNotFound { rrn });
+        }
+        let slot_len = self.core.attr.slot_len;
+        if rrn <= self.core.attr.slots {
+            match self.core.read_slot(txn, rrn)? {
+                Some(s) if !s.deleted => {
+                    return Err(DbError::Definition {
+                        what: format!("record {rrn} of {} is active", self.core.name),
+                    });
+                }
+                Some(_) => {
+                    self.core.attr.deleted_count -= 1;
+                    if self.core.attr.reuse_deleted
+                        && let Some(root) = self.core.roots[attr::FREE_ROOT]
+                    {
+                        let mut tree: FreeTree = BTree::open(Some(root), self.core.id);
+                        tree.delete(txn, &rrn)?;
+                        self.core.set_root(txn, attr::FREE_ROOT, tree.root())?;
+                    }
+                }
+                None => {}
+            }
+        } else {
+            let need = rrn * u64::from(slot_len);
+            let (mut space, _) = Space::load(txn, self.core.id)?;
+            if space.bytes() < need {
+                let grow =
+                    (self.core.attr.slots + self.core.attr.increment_slots) * u64::from(slot_len);
+                space = Space::ensure(txn, self.core.id, need.max(grow), 0)?;
+            }
+            for gap in self.core.attr.slots + 1..rrn {
+                space.write(txn, slots::offset(gap, slot_len), &[slots::STATUS_DELETED])?;
+                self.core.attr.deleted_count += 1;
+                if self.core.attr.reuse_deleted {
+                    let mut tree: FreeTree =
+                        BTree::open(self.core.roots[attr::FREE_ROOT], self.core.id);
+                    tree.insert(txn, gap, &())?;
+                    self.core.set_root(txn, attr::FREE_ROOT, tree.root())?;
+                }
+            }
+            self.core.attr.slots = rrn;
+        }
+        self.link(txn, rrn, record, null_map)?;
+        let (space, _) = Space::load(txn, self.core.id)?;
+        space.write(
+            txn,
+            slots::offset(rrn, slot_len),
+            &self.slot_bytes(slots::STATUS_ACTIVE, record, null_map),
+        )?;
+        self.core.attr.record_count += 1;
+        self.core.save(txn)?;
+        crate::journal::record(txn, self, "PT", rrn, record, null_map)
+    }
+
     /// Replace the record at `rrn`, which must be active.
     pub fn update(
         &mut self,
@@ -567,10 +634,13 @@ impl Member {
             slots::offset(rrn, self.core.attr.slot_len),
             &self.slot_bytes(slots::STATUS_ACTIVE, record, null_map),
         )?;
-        if self.file.attr.jrn_both_images {
-            crate::journal::record(txn, self, "UB", rrn, &old.record, &old.null_map)?;
+        // Under commitment control the before image is kept whatever `IMAGES` says.
+        if self.file.attr.jrn_both_images || self.jrn.commit_cycle != 0 {
+            let before = if self.jrn.rollback { "BR" } else { "UB" };
+            crate::journal::record(txn, self, before, rrn, &old.record, &old.null_map)?;
         }
-        crate::journal::record(txn, self, "UP", rrn, record, null_map)
+        let after = if self.jrn.rollback { "UR" } else { "UP" };
+        crate::journal::record(txn, self, after, rrn, record, null_map)
     }
 
     /// Delete the record at `rrn`, which must be active.
@@ -592,7 +662,8 @@ impl Member {
             self.core.set_root(txn, attr::FREE_ROOT, tree.root())?;
         }
         self.core.save(txn)?;
-        crate::journal::record(txn, self, "DL", rrn, &old.record, &old.null_map)
+        let kind = if self.jrn.rollback { "DR" } else { "DL" };
+        crate::journal::record(txn, self, kind, rrn, &old.record, &old.null_map)
     }
 
     fn active(&self, txn: &mut Txn<'_>, rrn: u64) -> Result<Slot> {

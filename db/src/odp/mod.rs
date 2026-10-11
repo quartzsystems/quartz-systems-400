@@ -25,6 +25,7 @@ use qsname::{MemberSpec, Name};
 use store::obj::{JobHandle, LockState, ObjectId};
 use store::txn::Txn;
 
+use crate::cmt::{CommitRef, LckLvl};
 use crate::error::{DbError, Result};
 use crate::file::{self, FileKind, Wait};
 use crate::member::{Core, Member};
@@ -175,6 +176,7 @@ pub struct Odp {
     locks: SharedLocks,
     file_lock: LockState,
     open: bool,
+    cmt: Option<CommitRef>,
 }
 
 /// Allocate an object for a job, as `ALCOBJ` would; `file` names the
@@ -287,6 +289,7 @@ impl Odp {
             locks,
             file_lock,
             open: true,
+            cmt: None,
         })
     }
 
@@ -320,6 +323,85 @@ impl Odp {
     #[must_use]
     pub fn member(&self) -> &Member {
         &self.member
+    }
+
+    /// Put the path under the job's commit definition (`COMMIT(*YES)`).
+    pub fn set_commit(&mut self, cmt: CommitRef) {
+        self.cmt = Some(cmt);
+    }
+
+    /// Whether the path is under commitment control.
+    #[must_use]
+    pub fn has_commit(&self) -> bool {
+        self.cmt.is_some()
+    }
+
+    /// The lock level in force, when under commitment control.
+    fn lcklvl(&self) -> Option<LckLvl> {
+        self.cmt.as_ref().map(|c| c.borrow().lcklvl())
+    }
+
+    /// Before a change: under commitment control the cycle is opened and
+    /// the member journals under it.
+    fn begin_change(&mut self, txn: &mut Txn<'_>) -> Result<()> {
+        let Some(c) = &self.cmt else {
+            return Ok(());
+        };
+        let r = c.borrow_mut().begin_change(txn, &self.member);
+        match r {
+            Ok(cycle) => {
+                self.member.jrn.commit_cycle = cycle;
+                Ok(())
+            }
+            Err(e) => {
+                self.fb.fail(&e);
+                Err(e)
+            }
+        }
+    }
+
+    /// After a change: the record lock goes to the commit definition, or
+    /// is released.
+    fn keep_or_unlock(&mut self) {
+        let Some((member, k)) = self.locked.take() else {
+            return;
+        };
+        match &self.cmt {
+            Some(c) => c.borrow_mut().hold(member, k.rrn),
+            None => {
+                self.locks
+                    .lock()
+                    .expect("lock table")
+                    .unlock(member, k.rrn, self.opts.job);
+            }
+        }
+    }
+
+    /// A record just written stays locked until the cycle ends.
+    fn hold_new(&mut self, rrn: u64) {
+        let Some(c) = &self.cmt else {
+            return;
+        };
+        let member = self.member.id();
+        let _ = self
+            .locks
+            .lock()
+            .expect("lock table")
+            .lock(member, rrn, self.opts.job);
+        c.borrow_mut().hold(member, rrn);
+    }
+
+    /// After a commit or rollback: the member is reread, no record is
+    /// held, the position stays.
+    pub fn after_commit(&mut self, txn: &mut Txn<'_>) -> Result<()> {
+        if let Some((member, k)) = self.locked.take() {
+            self.locks
+                .lock()
+                .expect("lock table")
+                .unlock(member, k.rrn, self.opts.job);
+        }
+        self.member.jrn.commit_cycle = 0;
+        self.member.refresh(txn)
     }
 
     /// The options.
@@ -531,6 +613,7 @@ impl Odp {
     /// Take the record lock when the open allows changes.
     fn take_lock(&mut self, k: &PathKey, lock: bool) -> Result<()> {
         self.unlock();
+        let lock = lock || matches!(self.lcklvl(), Some(LckLvl::Cs | LckLvl::All));
         if !(lock && (self.opts.usage.update || self.opts.usage.delete)) {
             return Ok(());
         }
@@ -548,8 +631,13 @@ impl Odp {
         Ok(())
     }
 
-    /// Release the record lock held, if any.
+    /// Release the record lock held, if any; under `LCKLVL(*ALL)` the
+    /// commit definition keeps it instead.
     pub fn unlock(&mut self) {
+        if self.lcklvl() == Some(LckLvl::All) {
+            self.keep_or_unlock();
+            return;
+        }
         if let Some((member, k)) = self.locked.take() {
             self.locks
                 .lock()
@@ -824,9 +912,11 @@ impl Odp {
             self.fb.fail(&e);
             return Err(e);
         }
+        self.begin_change(txn)?;
         match self.member.write_new(txn, data, null_map) {
             Ok(rrn) => {
                 self.fb.rrn = rrn;
+                self.hold_new(rrn);
                 Ok(rrn)
             }
             Err(e) => {
@@ -865,8 +955,9 @@ impl Odp {
             self.fb.fail(&e);
             return Err(e);
         }
+        self.begin_change(txn)?;
         let result = self.member.update(txn, k.rrn, data, null_map);
-        self.unlock();
+        self.keep_or_unlock();
         self.fb.rrn = k.rrn;
         result.inspect_err(|e| self.fb.fail(e))
     }
@@ -888,8 +979,9 @@ impl Odp {
             self.fb.fail(&e);
             return Err(e);
         }
+        self.begin_change(txn)?;
         let result = self.member.delete(txn, k.rrn);
-        self.unlock();
+        self.keep_or_unlock();
         self.fb.rrn = k.rrn;
         result.inspect_err(|e| self.fb.fail(e))
     }

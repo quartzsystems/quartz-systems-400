@@ -67,6 +67,8 @@ pub mod flags {
     pub const MINIMIZED: u8 = 2;
     /// The entry was written for a rollback.
     pub const ROLLBACK: u8 = 4;
+    /// The entry was written by `APYJRNCHG` or `RMVJRNCHG`.
+    pub const APPLIED: u8 = 8;
 }
 
 /// The job an entry came from.

@@ -182,6 +182,29 @@ pub enum DbError {
         dependent: String,
     },
 
+    /// A change under commitment control to a file that is not journaled.
+    #[error("file {file} is not journaled; commitment control needs a journal")]
+    CommitNeedsJournal {
+        /// File name.
+        file: String,
+    },
+
+    /// `COMMIT(*YES)` open without commitment control started.
+    #[error("commitment control is not active for the job")]
+    CommitOpen,
+
+    /// `COMMIT`, `ROLLBCK` or `ENDCMTCTL` without `STRCMTCTL`.
+    #[error("commitment control is not active")]
+    CommitNotActive,
+
+    /// `ENDCMTCTL` while files are open under commitment control.
+    #[error("files are open under commitment control")]
+    CommitFilesOpen,
+
+    /// `STRCMTCTL` twice.
+    #[error("commitment control is already active")]
+    CommitActive,
+
     /// A copy or utility that cannot go on.
     #[error("copy: {what}")]
     Copy {
@@ -225,6 +248,11 @@ impl DbError {
             Self::NoLockedRecord { .. } => "CPF5035",
             Self::ShareMismatch { .. } => "CPF4123",
             Self::Copy { .. } => "CPF2817",
+            Self::CommitNeedsJournal { .. } => "CPF8351",
+            Self::CommitOpen => "CPF4293",
+            Self::CommitNotActive => "CPF8350",
+            Self::CommitActive => "CPF8355",
+            Self::CommitFilesOpen => "CPF8356",
             Self::Corrupt { .. } => "CPF3113",
             Self::MemberFull { .. }
             | Self::RecordLength { .. }

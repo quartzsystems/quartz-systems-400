@@ -472,7 +472,7 @@ those IBM's `QjoRetrieveJournalEntries` returns; names in CP037.
 | 4 | 8 | seq | sequence number |
 | 12 | 1 | code | journal code: `J`, `F`, `R`, `C`, `U`, `T` |
 | 13 | 2 | type | entry type, two letters |
-| 15 | 1 | flags | bit 0 in a commit cycle, bit 1 minimized image, bit 2 written for a rollback |
+| 15 | 1 | flags | bit 0 in a commit cycle, bit 1 minimized image, bit 2 written for a rollback, bit 3 written by `APYJRNCHG`/`RMVJRNCHG` |
 | 16 | 8 | time | Unix seconds |
 | 24 | 4 | micros | microseconds within the second |
 | 28 | 4 | job_number | |

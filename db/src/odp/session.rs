@@ -8,7 +8,7 @@
 
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 use std::sync::Arc;
 
 use dds::FileRef;
@@ -18,8 +18,10 @@ use store::txn::Txn;
 
 use super::ovrdbf::{Override, Position};
 use super::{KeyArg, Odp, OpenOpts, SharedLocks, Usage, status};
+use crate::cmt::{CommitDef, CommitRef, LckLvl};
 use crate::error::{DbError, Result};
 use crate::file::{self, Resolve};
+use crate::journal::ChangeReport;
 use crate::record::Value;
 
 /// An open data path handed out by a session; shared ones are the same
@@ -40,6 +42,8 @@ pub struct Session {
     locks: SharedLocks,
     overrides: Vec<Override>,
     shared: HashMap<(ObjectId, Name), Shared>,
+    cmt: Option<CommitRef>,
+    odps: Vec<Weak<RefCell<Odp>>>,
 }
 
 impl Session {
@@ -51,6 +55,8 @@ impl Session {
             locks,
             overrides: Vec::new(),
             shared: HashMap::new(),
+            cmt: None,
+            odps: Vec::new(),
         }
     }
 
@@ -132,6 +138,9 @@ impl Session {
             s.uses += 1;
             return Ok(Rc::clone(&s.odp));
         }
+        if opts.commit && self.cmt.is_none() {
+            return Err(DbError::CommitOpen);
+        }
         let share = opts.share;
         let usage = opts.usage;
         let position = ovr.and_then(|o| o.position);
@@ -142,7 +151,13 @@ impl Session {
             odp.close(txn);
             return Err(e);
         }
+        if let Some(c) = &self.cmt
+            && odp.opts().commit
+        {
+            odp.set_commit(Rc::clone(c));
+        }
         let odp = Rc::new(RefCell::new(odp));
+        self.odps.push(Rc::downgrade(&odp));
         if share {
             self.shared.insert(
                 (id, member_name),
@@ -203,9 +218,87 @@ impl Session {
         self.shared.get(&(file, member)).map_or(0, |s| s.uses)
     }
 
-    /// Release everything the job holds: shared paths, overrides, record
-    /// and object locks.
+    /// `STRCMTCTL`.
+    pub fn strcmtctl(
+        &mut self,
+        txn: &mut Txn<'_>,
+        lcklvl: LckLvl,
+        dft_jrn: Option<ObjectId>,
+        now: u64,
+    ) -> Result<()> {
+        if self.cmt.is_some() {
+            return Err(DbError::CommitActive);
+        }
+        self.cmt = Some(CommitDef::start(
+            txn,
+            self.job,
+            lcklvl,
+            Arc::clone(&self.locks),
+            dft_jrn,
+            now,
+        )?);
+        Ok(())
+    }
+
+    /// The commit definition, when `STRCMTCTL` ran.
+    #[must_use]
+    pub fn commit_def(&self) -> Option<&CommitRef> {
+        self.cmt.as_ref()
+    }
+
+    fn refresh_odps(&mut self, txn: &mut Txn<'_>) -> Result<()> {
+        self.odps.retain(|w| w.strong_count() > 0);
+        for w in &self.odps {
+            if let Some(o) = w.upgrade() {
+                o.borrow_mut().after_commit(txn)?;
+            }
+        }
+        Ok(())
+    }
+
+    /// `COMMIT`: the cycle committed, 0 when none was open.
+    pub fn commit(&mut self, txn: &mut Txn<'_>, now: Option<u64>) -> Result<u64> {
+        let c = Rc::clone(self.cmt.as_ref().ok_or(DbError::CommitNotActive)?);
+        let cycle = c.borrow_mut().commit(txn, now)?;
+        self.refresh_odps(txn)?;
+        Ok(cycle)
+    }
+
+    /// `ROLLBCK`.
+    pub fn rollbck(&mut self, txn: &mut Txn<'_>, now: Option<u64>) -> Result<ChangeReport> {
+        let c = Rc::clone(self.cmt.as_ref().ok_or(DbError::CommitNotActive)?);
+        let r = c.borrow_mut().rollback(txn, now)?;
+        self.refresh_odps(txn)?;
+        Ok(r)
+    }
+
+    /// `ENDCMTCTL`: an open cycle is rolled back.
+    pub fn endcmtctl(&mut self, txn: &mut Txn<'_>, now: Option<u64>) -> Result<ChangeReport> {
+        if self.cmt.is_none() {
+            return Err(DbError::CommitNotActive);
+        }
+        self.odps.retain(|w| w.strong_count() > 0);
+        let open = self.odps.iter().filter_map(Weak::upgrade).any(|o| {
+            let o = o.borrow();
+            o.is_open() && o.has_commit()
+        });
+        if open {
+            return Err(DbError::CommitFilesOpen);
+        }
+        let c = self.cmt.take().ok_or(DbError::CommitNotActive)?;
+        let r = c.borrow_mut().end(txn, now)?;
+        self.refresh_odps(txn)?;
+        Ok(r)
+    }
+
+    /// Release everything the job holds: an open commit cycle (rolled
+    /// back), shared paths, overrides, record and object locks.
     pub fn end(&mut self, txn: &mut Txn<'_>) {
+        if let Some(c) = self.cmt.take()
+            && let Err(e) = c.borrow_mut().end(txn, None)
+        {
+            tracing::warn!("rollback at the end of the job: {e}");
+        }
         for s in self.shared.values() {
             s.odp.borrow_mut().release(txn);
         }

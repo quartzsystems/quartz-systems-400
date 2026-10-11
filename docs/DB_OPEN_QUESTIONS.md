@@ -306,6 +306,43 @@ Test: `CHGJRN JRNRCV(*GEN)` name generation on the machine with `RCV9999`.
 directory entry; `DSPJRN` skips receivers that are gone. Test: `WRKJRNA`
 after deleting the oldest receiver.
 
+## Commitment control
+
+**Cycle identifier.** The sequence number the first `C BC` of the cycle
+takes in the first journal touched; a second journal joining the cycle
+writes its own `C BC` with the same identifier. Test: a cycle over files
+in two journals, `DSPJRN` both.
+
+**Before images under commitment control.** An update under a cycle
+journals `R UB` even for `IMAGES(*AFTER)`, so a rollback can undo it;
+outside a cycle `*AFTER` files get no before image and `RMVJRNCHG` skips
+their updates. Test: `DSPJRN` of an update under commitment control on
+an `IMAGES(*AFTER)` file.
+
+**Rollback entries.** Undoing a write deletes the record with `R DR`,
+undoing an update writes `R BR` and `R UR`, undoing a delete writes
+`R PT` with the rollback flag; then `C RB`. `APYJRNCHG` and `RMVJRNCHG`
+flag what they write (bit 3) and skip flagged entries when run again.
+Test: `DSPJRN` after `ROLLBCK` and after `RMVJRNCHG` on the machine.
+
+**`ENDCMTCTL` with files open.** Refused with CPF8356 while a path opened
+with `COMMIT(*YES)` is open; with nothing open an unfinished cycle is
+rolled back first. Test: `ENDCMTCTL` from a program with the file open.
+
+**Lock levels.** `*CHG` locks records read for update and keeps changed
+ones to the boundary; `*CS` locks every record read until the next read
+and changed ones to the boundary; `*ALL` keeps every record read. The
+record a path still holds at `COMMIT` is released too. Message IDs
+CPF4293, CPF8350, CPF8351 and CPF8355 are placeholders. Test: `*CS` with
+two jobs reading the same record.
+
+**Recovery.** After an abnormal end every journal in every library is
+scanned; a cycle with `C BC` and no `C CM` or `C RB` is rolled back from
+its record entries and closed with `C RB`. `CMTBDY(*YES)` for
+`APYJRNCHG`/`RMVJRNCHG` keeps only entries outside a cycle or in a cycle
+that reached `C CM` or `C RB` within the range. Test: pull the power
+mid-cycle, IPL, `DSPJRN`.
+
 ## Editing
 
 Every item here is covered by the qdecimal oracle kit
