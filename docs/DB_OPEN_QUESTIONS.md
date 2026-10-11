@@ -149,6 +149,36 @@ blank. Secondary lookups come with the open data path. Test: none yet.
 CPF5090 as a placeholder. Test: open a `MAINT(*REBLD)` LF for keyed
 input after a write and note the message.
 
+## Record-level access
+
+**Lock release on a failed read.** Every read operation first releases
+the record held for update, so a `CHAIN` that finds nothing or a `READ`
+at end of file leaves no lock. Test: `CHAIN` with lock, then a `CHAIN`
+to a missing key, then `UPDATE`: 01221 here.
+
+**Position after a not-found `CHAIN` by key.** The file is positioned
+before the first record with a key above the argument, so a `READ` gives
+that record. Test: `CHAIN` to a key between two records, then `READ`.
+
+**Position after an `UPDATE` that changes the key.** The next `READ`
+continues after the record's old key, so a record whose key moved up may
+be read again. Test: update a key field to a higher value, then `READ`.
+
+**`READE` with a mismatch.** `%EOF` comes on and the position does not
+move, so a following `READ` returns the record that did not match.
+Test: `SETLL` on a prefix, `READE` past its last record, then `READ`.
+
+**`SETLL` with no record.** `%FOUND` is off and the status stays 00000;
+`CHAIN` not found is 00012. Test: `SETLL` beyond the last key and check
+`*STATUS`.
+
+**Writes through logical files.** `WRITE`, `UPDATE` and `DELETE` on an
+open data path over a logical file are refused for now; the machine
+allows them when every based-on field is mapped. Test: none yet.
+
+**Messages.** `NoLockedRecord` carries CPF5035 as a placeholder for the
+condition RPG reports as 01221 (RNX1221); `FileLocked` carries CPF4128.
+
 ## Editing
 
 Every item here is covered by the qdecimal oracle kit

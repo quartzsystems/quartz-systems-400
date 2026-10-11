@@ -78,7 +78,8 @@ qdecimal/     Decimal (63 digits), IBM intermediate precision rules (src/arith/)
 db/           database: src/file/ *FILE attributes, member and dependents tables, LF
               creation; src/format/ sections and level IDs; src/record/ field values;
               src/path/ key encoding and path trees; src/lf/ derivation and select/omit;
-              src/member/ *MBR objects, record slots, path maintenance and rebuild
+              src/member/ *MBR objects, record slots, path maintenance and rebuild;
+              src/odp/ open data paths, RLA operations, record locks, INFDS feedback
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, STORE_FORMAT.md, DST.md,
               DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, images/
 ```

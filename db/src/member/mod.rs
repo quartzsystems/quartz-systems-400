@@ -635,6 +635,13 @@ impl Member {
         Ok(())
     }
 
+    /// Reload the stored part: another handle may have written records
+    /// in this transaction.
+    pub fn refresh(&mut self, txn: &mut Txn<'_>) -> Result<()> {
+        self.core = Core::load(txn, self.core.id)?;
+        Ok(())
+    }
+
     /// Reload what the dependents hold on disk: another handle may have
     /// rebuilt or invalidated a path in this transaction.
     fn refresh_dependents(&mut self, txn: &mut Txn<'_>) -> Result<()> {

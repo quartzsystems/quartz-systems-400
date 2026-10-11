@@ -114,6 +114,52 @@ pub enum DbError {
         member: String,
     },
 
+    /// The program was compiled against another level of the format.
+    #[error("level check: format {format} of file {file} is {actual}, program expects {expected}")]
+    LevelCheck {
+        /// File name.
+        file: String,
+        /// Format name.
+        format: String,
+        /// Level ID the program expects.
+        expected: String,
+        /// Level ID the file has.
+        actual: String,
+    },
+
+    /// Another job holds the record.
+    #[error("record {rrn} of member {member} in file {file} is locked by job {holder}")]
+    RecordLocked {
+        /// File name.
+        file: String,
+        /// Member name.
+        member: String,
+        /// The record.
+        rrn: u64,
+        /// The holding job.
+        holder: u64,
+    },
+
+    /// Another job holds the file in a conflicting state.
+    #[error("file {file} is in use by job {holder}")]
+    FileLocked {
+        /// File name.
+        file: String,
+        /// The holding job.
+        holder: u64,
+    },
+
+    /// An update or delete with no record read for update.
+    #[error("no record of file {file} was read for update")]
+    NoLockedRecord {
+        /// File name.
+        file: String,
+    },
+
+    /// An operation on a closed open data path.
+    #[error("the file is closed")]
+    Closed,
+
     /// A physical file or member that logical members depend on.
     #[error("file {file} has dependent logical file {dependent}")]
     HasDependents {
@@ -152,10 +198,15 @@ impl DbError {
             Self::DuplicateKey { .. } => "CPF5009",
             Self::DataMapping { .. } => "CPF5029",
             Self::PathInvalid { .. } => "CPF5090",
+            Self::LevelCheck { .. } => "CPF4131",
+            Self::RecordLocked { .. } => "CPF5027",
+            Self::FileLocked { .. } => "CPF4128",
+            Self::NoLockedRecord { .. } => "CPF5035",
             Self::Corrupt { .. } => "CPF3113",
             Self::MemberFull { .. }
             | Self::RecordLength { .. }
             | Self::HasDependents { .. }
+            | Self::Closed
             | Self::Definition { .. } => return None,
         })
     }

@@ -205,6 +205,52 @@ impl Path {
         Ok(out)
     }
 
+    /// Entries after (or from) one exact entry, ascending, at most `max`.
+    pub fn scan_from(
+        &self,
+        p: &mut dyn Pager,
+        start: Bound<&PathKey>,
+        max: usize,
+    ) -> Result<Vec<PathKey>> {
+        let start = match start {
+            Bound::Unbounded => Bound::Unbounded,
+            Bound::Included(k) => Bound::Included(self.encode(k)),
+            Bound::Excluded(k) => Bound::Excluded(self.encode(k)),
+        };
+        let tree = self.tree();
+        let mut out = Vec::new();
+        for r in tree.range(p, (start, Bound::Unbounded))?.take(max) {
+            let (k, ()) = r?;
+            out.push(self.decode(&k));
+        }
+        Ok(out)
+    }
+
+    /// Entries before (or from) one exact entry, descending, at most `max`.
+    pub fn scan_back_from(
+        &self,
+        p: &mut dyn Pager,
+        end: Bound<&PathKey>,
+        max: usize,
+    ) -> Result<Vec<PathKey>> {
+        let tree = self.tree();
+        let mut probe = match end {
+            Bound::Unbounded => Some(DynKey(vec![0xFF; self.tree_key_len()])),
+            Bound::Included(k) => Some(self.encode(k)),
+            Bound::Excluded(k) => pred(&self.encode(k)),
+        };
+        let mut out = Vec::new();
+        while out.len() < max {
+            let Some(pr) = probe else { break };
+            let Some((k, ())) = tree.floor(p, &pr)? else {
+                break;
+            };
+            probe = pred(&k);
+            out.push(self.decode(&k));
+        }
+        Ok(out)
+    }
+
     /// Every entry, ascending.
     pub fn all(&self, p: &mut dyn Pager) -> Result<Vec<PathKey>> {
         self.scan(p, Bound::Unbounded, Bound::Unbounded, usize::MAX)
