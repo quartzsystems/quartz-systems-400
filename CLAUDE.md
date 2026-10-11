@@ -8,7 +8,9 @@ values and a local 5250-style console. Phase 2 added the object store
 (`store`), the disk layout with an ASP partition, system values in the
 `QSYSVAL` object, RCLSTG, the service console's object commands and the
 ISO installer. Addendum 2.5 added mirrored protection, Dedicated Service
-Tools (`svctools`) and the IBM-style install flow. Code waiting for a
+Tools (`svctools`) and the IBM-style install flow. Phase 3 added the
+database: DDS, decimal arithmetic, files and access paths, record-level
+access, journaling, commitment control, SQL and the QSTEST conformance kit. Code waiting for a
 later phase is marked `MIGRATE(phaseN)` or `TODO(phaseN)`.
 
 ## Ground rules
@@ -99,8 +101,8 @@ sql/          SQL: src/lex/ tokens, src/ast/ statements (ddl, query, expr), src/
               UPDATE/DELETE/MERGE through the ODP (dml.rs), CREATE TABLE/INDEX/VIEW and
               labels as DDS (ddl.rs), cursors (cursor.rs), QSYS2 catalog views computed
               from the store (catalog.rs); src/sqlca.rs the SQLCA; src/run.rs RUNSQLSTM
-docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, STORE_FORMAT.md, DST.md,
-              DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, images/
+docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
+              DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, images/
 ```
 
 ## Commands
@@ -129,6 +131,7 @@ QS400_QEMU=1 cargo test -p conformance    # the suite as a cargo test
 cargo run -p qdecimal --bin qdfuzz -- kit conformance/oracle/qdecimal   # regenerate the oracle kit
 cargo test -p conformance --test db_kit   # QSTEST in memory; outputs under target/conformance-db/ours/
 QS400_UPDATE_ORACLE=1 cargo test -p conformance --test db_kit   # regenerate RLATEST.RPGLE and QRESULTS.SQL
+cargo test --release -p conformance --test db_bench -- --ignored --nocapture   # dbbench in memory
 ```
 
 Lint the Linux-only crates for the musl target too: their real code is

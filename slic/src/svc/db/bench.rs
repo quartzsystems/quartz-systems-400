@@ -8,7 +8,7 @@
 use std::fmt::Write as _;
 use std::time::Instant;
 
-use db::file::{self, CreateFileOpts};
+use db::file::{self, CreateFileOpts, Size};
 use db::odp::{KeyArg, Odp, OpenOpts, Usage};
 use db::{Member, Value as DbValue};
 use dds::{CompileOpts, MapRefs, NoRefs, Source, compile_lf, compile_pf};
@@ -20,6 +20,7 @@ use store::obj::{CreateParams, ObjectId, ops, types};
 use store::txn::Txn;
 
 use super::{JOB, db, db_err, now, with_txn};
+use crate::ipl::system::System;
 
 /// Open for the bench, under the job's commit definition when there is one.
 fn open(txn: &mut Txn<'_>, ctx: &SqlContext, id: ObjectId, usage: Usage) -> Result<Odp, String> {
@@ -48,27 +49,31 @@ fn commit_batch(txn: &mut Txn<'_>, ctx: &mut SqlContext) -> Result<(), String> {
     }
     Ok(())
 }
-use crate::ipl::system::System;
 
 const LIB: &str = "QDBBENCH";
 /// Rows per transaction.
 const BATCH: u64 = 1000;
 
-const PF: &str = "\
-     A          R BENCHR
-     A            ID             9P 0
-     A            CODE          10A
-     A            AMT           11P 2
-     A            WHEN            L         ALWNULL
-     A            NOTE          50A
-     A          K ID
-     A                                      UNIQUE";
-const LF_CODE: &str = "\
-     A          R BENCHR                    PFILE(QDBBENCH/BENCH)
-     A          K CODE";
-const LF_AMT: &str = "\
-     A          R BENCHR                    PFILE(QDBBENCH/BENCH)
-     A          K AMT";
+// One line per DDS record: a string continuation would strip the
+// leading blanks of the first line.
+const PF: &[&str] = &[
+    "     A                                      UNIQUE",
+    "     A          R BENCHR",
+    "     A            ID             9P 0",
+    "     A            CODE          10A",
+    "     A            AMT           11P 2",
+    "     A            WHEN            L         ALWNULL",
+    "     A            NOTE          50A",
+    "     A          K ID",
+];
+const LF_CODE: &[&str] = &[
+    "     A          R BENCHR                    PFILE(QDBBENCH/BENCH)",
+    "     A          K CODE",
+];
+const LF_AMT: &[&str] = &[
+    "     A          R BENCHR                    PFILE(QDBBENCH/BENCH)",
+    "     A          K AMT",
+];
 
 /// The bench library and files, created on first use, the data cleared.
 fn prepare(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<ObjectId, String> {
@@ -94,18 +99,14 @@ fn prepare(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<ObjectId, String> {
     let bench = ObjectName::qualified(LIB, "BENCH");
     let opts = CreateFileOpts {
         now: now(),
+        size: Size::NOMAX,
         ..CreateFileOpts::default()
     };
     let id = if let Ok(id) = ctx.resolve_file(txn, &bench) {
         db::util::clrpfm(txn, JOB, id, MemberSpec::First).map_err(|e| db_err(&e))?;
         id
     } else {
-        // The UNIQUE line must come first in DDS; the source above puts
-        // it last for readability, so it is moved here.
-        let mut lines: Vec<&str> = PF.lines().collect();
-        let unique = lines.pop().expect("line");
-        lines.insert(0, unique);
-        let (src, _) = Source::from_text(&lines.join("\n"));
+        let (src, _) = Source::from_text(&PF.join("\n"));
         let comp = compile_pf(&src, &NoRefs, &CompileOpts::default());
         let def = comp
             .definition
@@ -115,7 +116,7 @@ fn prepare(txn: &mut Txn<'_>, ctx: &SqlContext) -> Result<ObjectId, String> {
         let mut refs = MapRefs::default();
         refs.insert_pf(LIB, "BENCH", &def);
         for (name, text) in [("BENCHCODE", LF_CODE), ("BENCHAMT", LF_AMT)] {
-            let (src, _) = Source::from_text(text);
+            let (src, _) = Source::from_text(&text.join("\n"));
             let comp = compile_lf(&src, &refs, &CompileOpts::default());
             let lf = comp
                 .definition
