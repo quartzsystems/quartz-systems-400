@@ -6,6 +6,8 @@
 //! and `Prepared::execute`. Queries are planned in `query`, data
 //! changes in `dml`, definitions in `ddl`, expressions in `eval`.
 
+pub mod catalog;
+pub mod cursor;
 pub mod ddl;
 pub mod dml;
 pub mod eval;
@@ -71,6 +73,8 @@ pub struct SqlContext {
     pub now: Option<u64>,
     /// Lines the last `EXPLAIN` produced.
     pub explain: Vec<String>,
+    /// Declared cursors by name.
+    pub cursors: std::collections::HashMap<String, cursor::Cursor>,
 }
 
 impl SqlContext {
@@ -89,6 +93,7 @@ impl SqlContext {
             user: "QSECOFR".into(),
             now: None,
             explain: Vec::new(),
+            cursors: std::collections::HashMap::new(),
         }
     }
 
@@ -338,18 +343,45 @@ impl Prepared {
             Statement::DropIndex(name) | Statement::DropView(name) => {
                 ddl::drop(txn, ctx, name, false).map(|()| Outcome::Done)
             }
-            Statement::Commit { .. } => {
+            Statement::Commit { hold } => {
                 if ctx.session.commit_def().is_some() {
                     ctx.session.commit(txn, ctx.now)?;
                 }
-                Ok(Outcome::Done)
-            }
-            Statement::Rollback { .. } => {
-                if ctx.session.commit_def().is_some() {
-                    ctx.session.rollbck(txn, ctx.now)?;
+                if !hold {
+                    cursor::end_of_unit(ctx);
                 }
                 Ok(Outcome::Done)
             }
+            Statement::Rollback { hold } => {
+                if ctx.session.commit_def().is_some() {
+                    ctx.session.rollbck(txn, ctx.now)?;
+                }
+                if !hold {
+                    cursor::end_of_unit(ctx);
+                }
+                Ok(Outcome::Done)
+            }
+            Statement::DeclareCursor(d) => Ok(cursor::declare(ctx, d)),
+            Statement::Open { cursor: c, using } => {
+                let mut values = Vec::with_capacity(using.len());
+                let mut ev = eval::Evaluator { ctx, params };
+                for u in using {
+                    values.push(ev.eval(txn, u, &eval::Env::default())?);
+                }
+                let p: Vec<Value> = if values.is_empty() {
+                    params.to_vec()
+                } else {
+                    values
+                };
+                cursor::open(txn, ctx, &c.value, &p)
+            }
+            Statement::Fetch(f) => cursor::fetch(ctx, f, params),
+            Statement::Close(c) => cursor::close(ctx, &c.value),
+            Statement::CreateView(v) => ddl::create_view(txn, ctx, v).map(|()| Outcome::Done),
+            Statement::LabelOn(l) | Statement::CommentOn(l) => {
+                ddl::label(txn, ctx, l).map(|()| Outcome::Done)
+            }
+            Statement::Merge(m) => dml::merge(txn, ctx, params, m).map(Outcome::Count),
             Statement::SetSchema(target) => {
                 ctx.current_schema = match target {
                     crate::ast::SchemaTarget::Name(n) => Some(SqlContext::sys_name(n)?),
@@ -389,6 +421,21 @@ impl Prepared {
     }
 }
 
+impl Prepared {
+    /// Run and report through an SQLCA, as a program would see it.
+    pub fn run(
+        &self,
+        txn: &mut Txn<'_>,
+        ctx: &mut SqlContext,
+        params: &[Value],
+    ) -> (crate::sqlca::Sqlca, Option<Outcome>) {
+        match self.execute(txn, ctx, params) {
+            Ok(o) => (crate::sqlca::Sqlca::from_outcome(&o), Some(o)),
+            Err(e) => (crate::sqlca::Sqlca::from_error(&e), None),
+        }
+    }
+}
+
 /// The statement's name, for messages.
 #[must_use]
 pub fn statement_name(s: &Statement) -> &'static str {
@@ -420,6 +467,16 @@ pub fn statement_name(s: &Statement) -> &'static str {
         Statement::SetPath(_) => "SET PATH",
         Statement::SetCurrentDegree => "SET CURRENT DEGREE",
         Statement::Explain(_) => "EXPLAIN",
+    }
+}
+
+/// A store failure is a system error to SQL.
+impl From<store::StoreError> for SqlError {
+    fn from(e: store::StoreError) -> Self {
+        Self::Database {
+            what: e.to_string(),
+            msgid: e.msgid().map(str::to_string),
+        }
     }
 }
 

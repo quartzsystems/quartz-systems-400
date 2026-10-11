@@ -14,10 +14,14 @@ pub mod ast;
 pub mod exec;
 pub mod lex;
 pub mod parse;
+pub mod run;
+pub mod sqlca;
 pub mod value;
 
 pub use ast::{Naming, Statement};
 pub use error::{Result, SqlError};
 pub use exec::{ColumnDesc, Outcome, Prepared, ResultSet, SqlContext, prepare};
 pub use parse::{parse, parse_all};
+pub use run::{CommitOpt, RunOpts, RunReport, runsqlstm};
+pub use sqlca::Sqlca;
 pub use value::Value;

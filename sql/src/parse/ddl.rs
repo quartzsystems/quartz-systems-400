@@ -497,12 +497,10 @@ impl Parser {
         if self.eat_sym("(") {
             loop {
                 let col = self.ident()?;
-                if self.eat_word("TEXT") {
-                    l.is_text = true;
-                }
+                let is_text = comment || self.eat_word("TEXT");
                 self.expect_word("IS")?;
                 let text = self.string()?;
-                l.columns.push((col, text));
+                l.columns.push((col, text, is_text));
                 if !self.eat_sym(",") {
                     break;
                 }

@@ -395,6 +395,33 @@ base field of the same name and type; equality on leading keys scores
 wins, else the table is read in arrival sequence. `EXPLAIN` shows the
 choice. Test: none; the machine's optimizer is its own.
 
+**Catalog classification.** `SYSTABLES.TABLE_TYPE` is `T` for a file
+created by `CREATE TABLE`, `P` for a DDS physical file, `V` for a
+`CREATE VIEW` file, `I` for a `CREATE INDEX` file and `L` for a DDS
+logical file, told apart by the object text the SQL statements leave
+(`SQL table`, `SQL view`, `SQL index`). A DDS keyed LF counts as an index
+in `SYSINDEXES`. Primary keys appear as constraints named
+`Q_<schema>_<table>_<column>_00001`. Test: `SELECT * FROM QSYS2.SYSTABLES`
+on the machine for a DDS PF and an SQL table.
+
+**Views.** `CREATE VIEW` builds a logical file with `RENAME` fields and
+`S` lines for `AND`ed comparisons, `BETWEEN` and `IN` of a column
+against a literal; a condition on a column the view does not select,
+and anything else, is -84 because DDS cannot test a field outside the
+format. `VIEW_DEFINITION` is null. Test: none.
+
+**Cursors.** A cursor materializes its rows at `OPEN`; a non-`SCROLL`
+cursor allows `FETCH NEXT` only, every other orientation is -501, and
+so is a cursor used in the wrong state (the machine distinguishes -501,
+-502, -504, -507 and -508). `WHERE CURRENT OF` works when the cursor reads
+one table plainly. Test: `FETCH PRIOR` on a non-scroll cursor and
+`UPDATE WHERE CURRENT OF` on a join cursor, note the codes.
+
+**`RUNSQLSTM` listing.** Each statement prints its name and SQLCA line;
+under `COMMIT(*CHG|*CS|*ALL)` the run ends with `COMMIT`, or `ROLLBACK`
+when an error exceeded `ERRLVL`. The machine's spooled listing is laid
+out differently. Test: none.
+
 ## Editing
 
 Every item here is covered by the qdecimal oracle kit

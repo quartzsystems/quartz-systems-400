@@ -119,6 +119,15 @@ pub enum SqlError {
         what: String,
     },
 
+    /// A cursor used in the wrong state.
+    #[error("cursor {cursor} {what}")]
+    CursorState {
+        /// The cursor.
+        cursor: String,
+        /// What is wrong.
+        what: String,
+    },
+
     /// A scalar subquery with more than one row.
     #[error("the subquery returned more than one row")]
     TooManyRows,
@@ -161,6 +170,7 @@ impl SqlError {
             Self::Locked { .. } => -913,
             Self::NotJournaled { .. } => -7008,
             Self::TooManyRows => -811,
+            Self::CursorState { .. } => -501,
             Self::Overflow { .. } | Self::DivideByZero => -802,
             Self::ValueCount { .. } => -117,
             Self::Database { .. } => -901,
@@ -184,6 +194,7 @@ impl SqlError {
             Self::Locked { .. } => "57033",
             Self::NotJournaled { .. } => "55019",
             Self::TooManyRows => "21000",
+            Self::CursorState { .. } => "24501",
             Self::ValueCount { .. } => "42802",
             Self::Database { .. } => "58004",
         }

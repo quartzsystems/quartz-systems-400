@@ -345,7 +345,7 @@ fn ddl_and_dml_shapes() {
         panic!()
     };
     assert_eq!(l.columns.len(), 2);
-    assert!(l.is_text);
+    assert!(!l.columns[0].2 && l.columns[1].2);
 }
 
 #[test]

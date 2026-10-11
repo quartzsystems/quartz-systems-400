@@ -222,16 +222,11 @@ pub fn update(
         .alias
         .as_ref()
         .map_or_else(|| u.table.name.value.clone(), |a| a.value.clone());
-    let cond = match &u.where_clause {
-        Where::All => None,
-        Where::Cond(c) => Some(c),
-        Where::CurrentOf(_) => {
-            return Err(SqlError::Unsupported {
-                what: "UPDATE WHERE CURRENT OF outside a cursor".into(),
-            });
-        }
+    let (schema, rows) = match &u.where_clause {
+        Where::All => matching_rows(txn, ctx, params, &t, &alias, None, &Env::default())?,
+        Where::Cond(c) => matching_rows(txn, ctx, params, &t, &alias, Some(c), &Env::default())?,
+        Where::CurrentOf(c) => current_row(txn, ctx, &t, &alias, &c.value)?,
     };
-    let (schema, rows) = matching_rows(txn, ctx, params, &t, &alias, cond)?;
     let mut o = ctx.open(txn, &t, Usage::UPDATE)?;
     let result = change_rows(txn, ctx, params, &t, &schema, rows, &mut o, Some(&u.set));
     o.close(txn);
@@ -250,20 +245,46 @@ pub fn delete(
         .alias
         .as_ref()
         .map_or_else(|| d.table.name.value.clone(), |a| a.value.clone());
-    let cond = match &d.where_clause {
-        Where::All => None,
-        Where::Cond(c) => Some(c),
-        Where::CurrentOf(_) => {
-            return Err(SqlError::Unsupported {
-                what: "DELETE WHERE CURRENT OF outside a cursor".into(),
-            });
-        }
+    let (schema, rows) = match &d.where_clause {
+        Where::All => matching_rows(txn, ctx, params, &t, &alias, None, &Env::default())?,
+        Where::Cond(c) => matching_rows(txn, ctx, params, &t, &alias, Some(c), &Env::default())?,
+        Where::CurrentOf(c) => current_row(txn, ctx, &t, &alias, &c.value)?,
     };
-    let (schema, rows) = matching_rows(txn, ctx, params, &t, &alias, cond)?;
     let mut o = ctx.open(txn, &t, Usage::UPDATE)?;
     let result = change_rows(txn, ctx, params, &t, &schema, rows, &mut o, None);
     o.close(txn);
     result
+}
+
+/// The row a cursor stands on, for `WHERE CURRENT OF`.
+fn current_row(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    t: &TableInfo,
+    alias: &str,
+    cursor: &str,
+) -> Result<(Rc<Schema>, Vec<Row>)> {
+    let c = ctx
+        .cursors
+        .get(cursor)
+        .ok_or_else(|| SqlError::CursorState {
+            cursor: cursor.into(),
+            what: "is not declared".into(),
+        })?;
+    let (table, rrn) = c.current(cursor)?;
+    if table.id != t.id {
+        return Err(SqlError::CursorState {
+            cursor: cursor.into(),
+            what: format!("reads {}, not {}", table.desc.name(), t.desc.name()),
+        });
+    }
+    let schema = Rc::new(super::query::table_schema(t, alias));
+    let m = db::Member::open(txn, &t.desc, &t.member)?;
+    let rows = match m.read(txn, rrn)? {
+        Some(s) if !s.deleted => vec![row_of(&t.format, &s)?],
+        _ => Vec::new(),
+    };
+    Ok((schema, rows))
 }
 
 /// Update (with `set`) or delete each row by RRN through the path.
@@ -312,4 +333,151 @@ fn change_rows(
         n += 1;
     }
     Ok(n)
+}
+
+/// `MERGE`: for each source row, the matching target rows take the
+/// first `WHEN MATCHED` whose condition holds; a row without a match
+/// takes the first `WHEN NOT MATCHED`. Returns rows changed.
+#[allow(clippy::too_many_lines, clippy::many_single_char_names)]
+pub fn merge(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    params: &[Value],
+    m: &crate::ast::Merge,
+) -> Result<u64> {
+    use crate::ast::{MergeAction, Query, QueryBody, Select, SelectItem};
+    let t = ctx.resolve_table(txn, &m.target)?;
+    let alias = m
+        .alias
+        .as_ref()
+        .map_or_else(|| m.target.name.value.clone(), |a| a.value.clone());
+    // The source as a query of its own.
+    let src_alias = match &m.source {
+        crate::ast::TableRef::Table { name, alias, .. } => alias
+            .as_ref()
+            .map_or_else(|| name.name.value.clone(), |a| a.value.clone()),
+        crate::ast::TableRef::Subquery { alias, .. } => alias.value.clone(),
+        crate::ast::TableRef::Join { .. } => {
+            return Err(SqlError::Unsupported {
+                what: "a join as the MERGE source".into(),
+            });
+        }
+    };
+    let src_query = Query::of(QueryBody::Select(Box::new(Select {
+        distinct: false,
+        items: vec![SelectItem::Star],
+        from: vec![m.source.clone()],
+        where_clause: None,
+        group_by: Vec::new(),
+        having: None,
+    })));
+    let src = run_query(txn, ctx, params, &src_query, &Env::default())?;
+    let src_schema = Rc::new(Schema {
+        cols: src
+            .columns
+            .iter()
+            .map(|c| super::eval::ColInfo {
+                name: c.name.clone(),
+                table: Some(src_alias.clone()),
+                field: None,
+                nullable: c.nullable,
+                hidden: false,
+            })
+            .collect(),
+    });
+    let mut o = ctx.open(txn, &t, Usage::ALL)?;
+    let mut n = 0u64;
+    let result = (|| {
+        for srow in src.rows {
+            let outer = Env::default().with(src_schema.clone(), srow);
+            let (tschema, matches) =
+                matching_rows(txn, ctx, params, &t, &alias, Some(&m.on), &outer)?;
+            if matches.is_empty() {
+                for a in &m.actions {
+                    let MergeAction::Insert {
+                        cond,
+                        columns,
+                        values,
+                    } = a
+                    else {
+                        continue;
+                    };
+                    let mut ev = Evaluator { ctx, params };
+                    if let Some(c) = cond
+                        && ev.truth(txn, c, &outer)? != Some(true)
+                    {
+                        continue;
+                    }
+                    let idx = column_indexes(&t, columns)?;
+                    if values.len() != idx.len() {
+                        return Err(SqlError::ValueCount {
+                            what: format!("{} values for {} columns", values.len(), idx.len()),
+                        });
+                    }
+                    let mut per_field: Vec<Option<Value>> =
+                        vec![None; t.format.format.fields.len()];
+                    for (k, &fi) in idx.iter().enumerate() {
+                        per_field[fi] = match &values[k] {
+                            Expr::Default => None,
+                            e => Some(ev.eval(txn, e, &outer)?),
+                        };
+                    }
+                    let (rec, nulls) = build_record(&t, &per_field, None)?;
+                    o.write(txn, &rec, &nulls)?;
+                    n += 1;
+                    break;
+                }
+                continue;
+            }
+            for trow in matches {
+                let rrn = u64::try_from(trow[0].as_i64()?).expect("positive");
+                let env = outer.with(tschema.clone(), trow);
+                for a in &m.actions {
+                    let mut ev = Evaluator { ctx, params };
+                    match a {
+                        MergeAction::Update { cond, set } => {
+                            if let Some(c) = cond
+                                && ev.truth(txn, c, &env)? != Some(true)
+                            {
+                                continue;
+                            }
+                            let Some(current) = o.chain(txn, &KeyArg::Rrn(rrn), true)? else {
+                                break;
+                            };
+                            let assigned = assignments(txn, &mut ev, &t, set, &env)?;
+                            let mut per_field: Vec<Option<Value>> =
+                                vec![None; t.format.format.fields.len()];
+                            for (i, v) in assigned {
+                                per_field[i] = v;
+                            }
+                            let (rec, nulls) = build_record(
+                                &t,
+                                &per_field,
+                                Some((&current.data, &current.null_map)),
+                            )?;
+                            o.update(txn, &rec, &nulls)?;
+                            n += 1;
+                            break;
+                        }
+                        MergeAction::Delete { cond } => {
+                            if let Some(c) = cond
+                                && ev.truth(txn, c, &env)? != Some(true)
+                            {
+                                continue;
+                            }
+                            if o.chain(txn, &KeyArg::Rrn(rrn), true)?.is_some() {
+                                o.delete(txn)?;
+                                n += 1;
+                            }
+                            break;
+                        }
+                        MergeAction::Insert { .. } => {}
+                    }
+                }
+            }
+        }
+        Ok(n)
+    })();
+    o.close(txn);
+    result
 }

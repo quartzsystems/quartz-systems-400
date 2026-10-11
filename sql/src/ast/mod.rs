@@ -273,8 +273,9 @@ pub struct Fetch {
 pub struct Label {
     /// What is labelled.
     pub target: LabelTarget,
-    /// Per column when the statement labels columns.
-    pub columns: Vec<(Ident, String)>,
+    /// Per column when the statement labels columns: the column, the
+    /// text, and whether it is `TEXT IS` (else a heading).
+    pub columns: Vec<(Ident, String, bool)>,
     /// The text, for a table or a single column.
     pub text: Option<String>,
     /// `TEXT IS` (column heading otherwise).

@@ -30,7 +30,10 @@ use crate::value::Value;
 
 /// A table in `FROM`, with its schema and the predicates pushed to it.
 struct Scan {
-    info: TableInfo,
+    /// The file, or `None` for a catalog table.
+    info: Option<TableInfo>,
+    /// Rows of a catalog table.
+    rows: Option<Rc<Vec<Row>>>,
     alias: String,
     schema: Rc<Schema>,
     preds: Vec<Expr>,
@@ -39,7 +42,7 @@ struct Scan {
 }
 
 /// The schema of a table's rows: the hidden RRN, then every field.
-fn table_schema(t: &TableInfo, alias: &str) -> Schema {
+pub(crate) fn table_schema(t: &TableInfo, alias: &str) -> Schema {
     let mut cols = vec![ColInfo {
         name: "*RRN".into(),
         table: Some(alias.to_string()),
@@ -81,22 +84,8 @@ pub fn run_query(
     q: &Query,
     outer: &Env,
 ) -> Result<ResultSet> {
-    let (schema, rows) = run_body(txn, ctx, params, q, outer, false)?;
-    let mut out = Vec::with_capacity(rows.len());
-    let visible: Vec<usize> = schema
-        .cols
-        .iter()
-        .enumerate()
-        .filter(|(_, c)| !c.hidden)
-        .map(|(i, _)| i)
-        .collect();
-    for r in rows {
-        out.push(visible.iter().map(|&i| r[i].clone()).collect());
-    }
-    Ok(ResultSet {
-        columns: schema.describe(),
-        rows: out,
-    })
+    let (schema, produced) = run_body(txn, ctx, params, q, outer, false)?;
+    Ok(result_set(&schema, &produced))
 }
 
 /// Plan a query and leave the plan text in `ctx.explain`.
@@ -105,9 +94,9 @@ pub fn explain(txn: &mut Txn<'_>, ctx: &mut SqlContext, params: &[Value], q: &Qu
 }
 
 /// An output row with the source row it came from, for `ORDER BY`.
-struct Produced {
-    out: Row,
-    source: Env,
+pub(crate) struct Produced {
+    pub(crate) out: Row,
+    pub(crate) source: Env,
 }
 
 fn run_body(
@@ -117,7 +106,7 @@ fn run_body(
     q: &Query,
     outer: &Env,
     explain_only: bool,
-) -> Result<(Rc<Schema>, Vec<Row>)> {
+) -> Result<(Rc<Schema>, Vec<Produced>)> {
     let (schema, mut produced) = body(txn, ctx, params, &q.body, outer, q, explain_only)?;
     if !q.order_by.is_empty() && !matches!(q.body, QueryBody::Select(_)) {
         order_rows(txn, ctx, params, &schema, &mut produced, &q.order_by)?;
@@ -125,7 +114,6 @@ fn run_body(
             ctx.explain.push("SORT".into());
         }
     }
-    let mut rows: Vec<Row> = produced.into_iter().map(|p| p.out).collect();
     if q.offset.is_some() || q.fetch_first.is_some() {
         let mut ev = Evaluator { ctx, params };
         let env = Env::default();
@@ -139,7 +127,7 @@ fn run_body(
             }
             None => None,
         };
-        rows = rows
+        produced = produced
             .into_iter()
             .skip(offset)
             .take(first.unwrap_or(usize::MAX))
@@ -149,7 +137,72 @@ fn run_body(
                 .push(format!("LIMIT offset {offset} first {first:?}"));
         }
     }
-    Ok((schema, rows))
+    Ok((schema, produced))
+}
+
+/// The visible columns of produced rows as a result set.
+fn result_set(schema: &Schema, produced: &[Produced]) -> ResultSet {
+    let visible: Vec<usize> = schema
+        .cols
+        .iter()
+        .enumerate()
+        .filter(|(_, c)| !c.hidden)
+        .map(|(i, _)| i)
+        .collect();
+    ResultSet {
+        columns: schema.describe(),
+        rows: produced
+            .iter()
+            .map(|p| visible.iter().map(|&i| p.out[i].clone()).collect())
+            .collect(),
+    }
+}
+
+/// Run a query for a cursor: the rows, and when the query reads one
+/// table plainly, that table and each row's relative record number for
+/// `WHERE CURRENT OF`.
+pub fn run_cursor_query(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    params: &[Value],
+    q: &Query,
+) -> Result<(ResultSet, Option<TableInfo>, Vec<Option<u64>>)> {
+    let (schema, produced) = run_body(txn, ctx, params, q, &Env::default(), false)?;
+    let rs = result_set(&schema, &produced);
+    let single = match &q.body {
+        QueryBody::Select(sel)
+            if sel.from.len() == 1 && sel.group_by.is_empty() && !sel.distinct =>
+        {
+            match &sel.from[0] {
+                TableRef::Table { name, alias, .. } => Some((
+                    ctx.resolve_table(txn, name)?,
+                    alias
+                        .as_ref()
+                        .map_or_else(|| name.name.value.clone(), |a| a.value.clone()),
+                )),
+                _ => None,
+            }
+        }
+        _ => None,
+    };
+    let Some((table, alias)) = single else {
+        let n = produced.len();
+        return Ok((rs, None, vec![None; n]));
+    };
+    let rrns = produced
+        .iter()
+        .map(|p| {
+            p.source.frames.iter().rev().find_map(|(schema, row)| {
+                schema
+                    .cols
+                    .iter()
+                    .position(|c| c.hidden && c.table.as_deref() == Some(alias.as_str()))
+                    .and_then(|i| row[i].as_i64().ok())
+                    .and_then(|n| u64::try_from(n).ok())
+            })
+        })
+        .collect();
+    Ok((rs, Some(table), rrns))
 }
 
 fn body(
@@ -240,18 +293,7 @@ fn body(
             }
             Ok((schema, all_rows))
         }
-        QueryBody::Nested(inner) => {
-            let (schema, rows) = run_body(txn, ctx, params, inner, outer, explain_only)?;
-            Ok((
-                schema.clone(),
-                rows.into_iter()
-                    .map(|r| Produced {
-                        source: outer.with(schema.clone(), r.clone()),
-                        out: r,
-                    })
-                    .collect(),
-            ))
-        }
+        QueryBody::Nested(inner) => run_body(txn, ctx, params, inner, outer, explain_only),
     }
 }
 
@@ -355,18 +397,37 @@ fn collect_scans(
 ) -> Result<()> {
     match t {
         TableRef::Table { name, alias, .. } => {
-            let info = ctx.resolve_table(txn, name)?;
             let alias = alias
                 .as_ref()
                 .map_or_else(|| name.name.value.clone(), |a| a.value.clone());
-            let schema = Rc::new(table_schema(&info, &alias));
-            out.push(Scan {
-                info,
-                alias,
-                schema,
-                preds: Vec::new(),
-                pushable,
-            });
+            match ctx.resolve_table(txn, name) {
+                Ok(info) => {
+                    let schema = Rc::new(table_schema(&info, &alias));
+                    out.push(Scan {
+                        info: Some(info),
+                        rows: None,
+                        alias,
+                        schema,
+                        preds: Vec::new(),
+                        pushable,
+                    });
+                }
+                Err(e) => {
+                    let Some((schema, rows)) =
+                        super::catalog::virtual_table(txn, ctx, name, &alias)?
+                    else {
+                        return Err(e);
+                    };
+                    out.push(Scan {
+                        info: None,
+                        rows: Some(Rc::new(rows)),
+                        alias,
+                        schema: Rc::new(schema),
+                        preds: Vec::new(),
+                        pushable,
+                    });
+                }
+            }
         }
         TableRef::Subquery { .. } => {}
         TableRef::Join {
@@ -598,13 +659,27 @@ fn scan_table(
     order: &[OrderItem],
     explain_only: bool,
 ) -> Result<(Vec<Row>, bool)> {
-    let t = &scan.info;
-    let cands = candidates(txn, t);
-    let choice = choose(&cands, &scan.preds, order, &scan.alias);
-    let label = format!("{}/{} ({})", t.desc.library_name, t.desc.name(), scan.alias);
     let mut ev = Evaluator { ctx, params };
     let mut rows = Vec::new();
     let mut ordered = false;
+    let Some(t) = &scan.info else {
+        if explain_only {
+            ev.ctx
+                .explain
+                .push(format!("SCAN QSYS2 catalog ({})", scan.alias));
+            return Ok((Vec::new(), false));
+        }
+        let all = scan
+            .rows
+            .as_ref()
+            .map(|r| r.as_ref().clone())
+            .unwrap_or_default();
+        let kept = filter_rows(txn, &mut ev, scan, outer, all)?;
+        return Ok((kept, false));
+    };
+    let cands = candidates(txn, t);
+    let choice = choose(&cands, &scan.preds, order, &scan.alias);
+    let label = format!("{}/{} ({})", t.desc.library_name, t.desc.name(), scan.alias);
     let base_pf: Option<Member> = if t.desc.attr.kind == FileKind::Logical {
         None
     } else {
@@ -702,24 +777,36 @@ fn scan_table(
         }
     }
     // The pushed predicates, all of them: bounds may be loose.
-    if !scan.preds.is_empty() {
-        let mut kept = Vec::with_capacity(rows.len());
-        for r in rows {
-            let env = outer.with(scan.schema.clone(), r);
-            let mut ok = true;
-            for p in &scan.preds {
-                if ev.truth(txn, p, &env)? != Some(true) {
-                    ok = false;
-                    break;
-                }
-            }
-            if ok {
-                kept.push(env.frames.last().expect("pushed").1.clone());
+    let rows = filter_rows(txn, &mut ev, scan, outer, rows)?;
+    Ok((rows, ordered))
+}
+
+/// Keep the rows that pass every pushed predicate.
+fn filter_rows(
+    txn: &mut Txn<'_>,
+    ev: &mut Evaluator<'_>,
+    scan: &Scan,
+    outer: &Env,
+    rows: Vec<Row>,
+) -> Result<Vec<Row>> {
+    if scan.preds.is_empty() {
+        return Ok(rows);
+    }
+    let mut kept = Vec::with_capacity(rows.len());
+    for r in rows {
+        let env = outer.with(scan.schema.clone(), r);
+        let mut ok = true;
+        for p in &scan.preds {
+            if ev.truth(txn, p, &env)? != Some(true) {
+                ok = false;
+                break;
             }
         }
-        rows = kept;
+        if ok {
+            kept.push(env.frames.last().expect("pushed").1.clone());
+        }
     }
-    Ok((rows, ordered))
+    Ok(kept)
 }
 
 /// Rows of a `FROM` item: (schema, rows, ordered by the ORDER BY).
@@ -748,7 +835,8 @@ fn from_rows(
             alias,
             columns,
         } => {
-            let (inner, rows) = run_body(txn, ctx, params, query, outer, explain_only)?;
+            let (inner, produced) = run_body(txn, ctx, params, query, outer, explain_only)?;
+            let rows: Vec<Row> = produced.into_iter().map(|p| p.out).collect();
             let visible: Vec<usize> = inner
                 .cols
                 .iter()
@@ -1261,10 +1349,12 @@ pub fn matching_rows(
     t: &TableInfo,
     alias: &str,
     cond: Option<&Expr>,
+    outer: &Env,
 ) -> Result<(Rc<Schema>, Vec<Row>)> {
     let schema = Rc::new(table_schema(t, alias));
     let mut scans = vec![Scan {
-        info: t.clone(),
+        info: Some(t.clone()),
+        rows: None,
         alias: alias.to_string(),
         schema: schema.clone(),
         preds: Vec::new(),
@@ -1282,8 +1372,7 @@ pub fn matching_rows(
             }
         }
     }
-    let outer = Env::default();
-    let (mut rows, _) = scan_table(txn, ctx, params, &scans[0], &outer, &[], false)?;
+    let (mut rows, _) = scan_table(txn, ctx, params, &scans[0], outer, &[], false)?;
     if !rest.is_empty() {
         let mut ev = Evaluator { ctx, params };
         let mut kept = Vec::new();

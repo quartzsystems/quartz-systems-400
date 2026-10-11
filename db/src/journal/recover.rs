@@ -69,9 +69,12 @@ pub fn recover_journal(txn: &mut Txn<'_>, journal: ObjectId, now: u64) -> Result
 
 /// Recover every journal in every library.
 pub fn recover_all(txn: &mut Txn<'_>, qsys: ObjectId, now: u64) -> Result<RecoveryReport> {
-    let mut libraries = vec![qsys];
-    for (_, id) in ops::list(txn, qsys, Some(types::LIB))? {
-        libraries.push(id);
+    let mut libraries: Vec<ObjectId> = ops::list(txn, qsys, Some(types::LIB))?
+        .into_iter()
+        .map(|(_, id)| id)
+        .collect();
+    if !libraries.contains(&qsys) {
+        libraries.insert(0, qsys);
     }
     let mut total = RecoveryReport::default();
     for lib in libraries {
