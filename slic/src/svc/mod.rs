@@ -5,6 +5,7 @@
 //! The serial service console: a line prompt on the serial port, enabled
 //! by `qs400.svc=1`. No shell, no filesystem.
 
+pub(crate) mod db;
 mod objects;
 mod storage;
 
@@ -52,6 +53,9 @@ chkstg               checksum sweep of every allocated page
 txn stats            transaction, WAL and cache counters
 ";
 
+/// Help for the database commands, after the general list.
+const HELP_DB: &str = db::HELP;
+
 /// Announce the console after IPL complete.
 pub fn banner(system: &mut System) {
     system.out.serial("Service console ready. Type help.\n");
@@ -60,12 +64,17 @@ pub fn banner(system: &mut System) {
 
 /// Execute one command line and reprint the prompt.
 pub fn handle(system: &mut System, line: &str) {
+    if let Some(reply) = db::intercept(system, line) {
+        system.out.serial(&reply);
+        system.out.serial(db::prompt(system));
+        return;
+    }
     let mut words = line.split_whitespace();
     let cmd = words.next().unwrap_or("");
     let args: Vec<&str> = words.collect();
     let reply = match (cmd, args.as_slice()) {
         ("", _) => String::new(),
-        ("help", _) => HELP.to_string(),
+        ("help", _) => format!("{HELP}{HELP_DB}"),
         ("release", _) => format!("{}\n", release::full()),
         ("srcs", []) => system.log.dump(),
         ("srcs", ["table"]) => src_table(),
@@ -90,10 +99,16 @@ pub fn handle(system: &mut System, line: &str) {
         ("rclstg", rest) => storage::rclstg(system, rest),
         ("chkstg", _) => storage::chkstg(system),
         ("txn", ["stats"]) => storage::txn_stats(system),
-        _ => format!("Unknown command '{cmd}'. Type help.\n"),
+        _ => match db::command(system, cmd, &args, line) {
+            Some(reply) => reply,
+            None => format!(
+                "Unknown command '{cmd}'. Type help.
+"
+            ),
+        },
     };
     system.out.serial(&reply);
-    system.out.serial(PROMPT);
+    system.out.serial(db::prompt(system));
 }
 
 /// Commands that work while a menu or DST owns the serial line; any

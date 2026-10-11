@@ -53,6 +53,8 @@ pub struct System {
     pub storage: Option<Storage>,
     /// The temporary ASP with QTEMP, once created.
     pub temp: Option<Temp>,
+    /// The service console's database state: modes, xfer buffers, SQL.
+    pub svc: crate::svc::db::State,
 }
 
 impl System {
@@ -75,6 +77,7 @@ impl System {
             console: None,
             storage: None,
             temp: None,
+            svc: crate::svc::db::State::default(),
         }
     }
 

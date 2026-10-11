@@ -56,7 +56,8 @@ kernel/       VERSION, SHA256, config/qs400.config
 licpart/      LIC partition: A/B record (src/format/), locate by GPT type GUID
 sysval/       catalog.toml, validation, src/tz/ time zones, LIC storage
 console/      font/qs400-9x16.txt, src/fb/ framebuffer, src/keyboard/, screens
-slic/         PID 1: src/ipl/ state machine, src/hwrsrc/, src/net/, src/svc/,
+slic/         PID 1: src/ipl/ state machine, src/hwrsrc/, src/net/, src/svc/ (db/ holds
+              the database, journal, SQL, rla and dbbench console commands),
               src/platform/ (console, mounts, power, rtc, serial, sys), src/src.rs
 conformance/  QEMU harness: src/qemu/ (session, qmp, serial, firmware), src/steps.rs
 release/      VxRyMz identity, build ID, PTF names (one source of truth)
@@ -134,7 +135,15 @@ Service console (serial, dev builds): `help`, `srcs [table]`, `hist`, `hw`,
 [restart]`, `release`; store: `asp`, `lib ls`, `obj ls|crt|dlt|rnm|mov|dsp|bench`,
 `dtaara get|set`, `dtaq snd|rcv`, `usrspc rd|wr`, `rclstg [*CHECK]`, `chkstg`,
 `txn stats`, `unit add|rmv`, `mirror start|stop|suspend|resume|replace|status`,
-`key NAME`, `type TEXT` (`QTEMP/NAME` addresses the temporary ASP). Boot parameters: `qs400.slot=A|B`, `qs400.mode=normal|manual`,
+`key NAME`, `type TEXT` (`QTEMP/NAME` addresses the temporary ASP); database:
+`xfer put|get|ls|rm` (named line buffers pushed over serial), `crtpf`, `crtlf`,
+`dltf`, `addpfm`, `rmvm`, `clrpfm`, `rgzpfm`, `cpyf`, `cpytoimpf`, `cpyfrmimpf`,
+`dspfd`, `dspffd`, `dsppfm`, `dspdbr`, `srcput`, `srcget`, `crtjrnrcv`, `crtjrn`,
+`chgjrn`, `dltjrn`, `dltjrnrcv`, `dspjrnrcva`, `strjrnpf`, `endjrnpf`, `dspjrn`,
+`apyjrnchg`, `rmvjrnchg`, `strcmtctl`, `commit`, `rollbck`, `endcmtctl`, `ovrdbf`,
+`dltovr`, `sql` (line mode, `;` ends a statement, `quit` leaves), `sqlrun NAME`
+(RUNSQLSTM over an xfer buffer), `naming`, `curlib`, `rla [NAME]` (scripted RLA
+with expected status codes), `dbbench N`. Parameters are IBM-style `KEYWORD(value)`. Boot parameters: `qs400.slot=A|B`, `qs400.mode=normal|manual`,
 `qs400.svc=1`, `qs400.ipl=D`, `qs400.media=iso`.
 
 `QS400_TARGET_DIR` relocates `target/` (use an ext4 path when the repo is on

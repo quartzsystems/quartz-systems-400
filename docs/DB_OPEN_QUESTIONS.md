@@ -422,6 +422,18 @@ under `COMMIT(*CHG|*CS|*ALL)` the run ends with `COMMIT`, or `ROLLBACK`
 when an error exceeded `ERRLVL`. The machine's spooled listing is laid
 out differently. Test: none.
 
+## Service console
+
+**Stream files.** `CPYTOIMPF`, `CPYFRMIMPF`, `srcput`, `srcget`, `sqlrun`
+and `rla` take a named `xfer` buffer in place of a stream file: text pushed
+as a counted run of lines over the serial console (`xfer put NAME N`),
+not the length-prefixed byte protocol first planned, because the serial
+reader hands slic whole lines. Binary data has no path until the IFS
+(`MIGRATE(phase10)`). Test: none.
+
+**`OPNQRYF`.** Not on the console yet; the `QRYSLT` grammar maps onto the
+SQL executor and will be added with the conformance kit. Test: none.
+
 ## Editing
 
 Every item here is covered by the qdecimal oracle kit
