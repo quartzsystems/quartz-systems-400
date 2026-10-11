@@ -64,7 +64,9 @@ At offset 0 of the attribute area (body offset 1024) of a `*FILE`.
 | 92 | 4 | dependent_count | entries used in the dependents table |
 | 96 | 8 | dependents_off | byte space offset of the dependents table, 0 for none |
 | 104 | 4 | dependent_cap | entries the dependents table has room for |
-| 108 | 20 | reserved | 0 |
+| 108 | 16 | journal | `ObjectId` of the journal the file is journaled to, none when zero |
+| 124 | 2 | jrn_flags | bit 0 `IMAGES(*BOTH)`, bit 1 `OMTJRNE(*OPNCLO)` |
+| 126 | 2 | reserved | 0 |
 
 The member table is `member_cap` × `MemberEntry` at `members_off`, the
 first `member_count` in use, in creation order: `*FIRST` is entry 0 and
@@ -375,3 +377,121 @@ and omitted if it is a select. Without `DYNSLT` only selected records
 enter the path; with it every record does and the test is applied on
 read. Join formats take their key and their path from the primary file;
 the secondary files are read at open time (`TODO(phase3)`).
+
+## 7. Journals
+
+A journal is a `*JRN` object (type 0x0018) and a receiver a `*JRNRCV`
+(type 0x0019), both ordinary library objects in the ASP of the data they
+journal. The journal's attribute area holds `JrnAttr`; its byte space
+holds the receiver directory (`receiver_cap` × `RcvDirEntry` at
+`dir_off`) and the journaled objects (`object_cap` × `JrnObjEntry` at
+`obj_off`). Both tables grow like the member table: rewritten at
+`def_len` with twice the capacity.
+
+A receiver's attribute area holds `RcvAttr`; its byte space is the
+entries, back to back, `bytes_used` of it in use. An entry is never
+changed once written. Receivers form a chain through `prev` and `next`;
+the directory lists them oldest first. Entries are numbered once per
+journal (`next_seq`) and a receiver holds a contiguous range
+(`first_seq` to `last_seq`).
+
+Every entry is written in the transaction that made the change it
+describes, so the journal and the data commit together.
+
+### `JrnAttr` (128 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | magic | `QS400JRN` |
+| 8 | 2 | version | 1 |
+| 10 | 2 | flags | bit 0 `MNGRCV(*SYSTEM)`, bit 1 `DLTRCV(*YES)`, bit 2 `MINENTDTA`, bit 3 `FIXLENDTA` |
+| 12 | 2 | rcvsizopt | `RCVSIZOPT` flags, kept |
+| 14 | 2 | reserved | 0 |
+| 16 | 8 | next_seq | sequence number of the next entry |
+| 24 | 16 | attached | `ObjectId` of the attached receiver, none when zero |
+| 40 | 4 | receiver_count | entries used in the receiver directory |
+| 44 | 4 | receiver_cap | entries the directory has room for |
+| 48 | 8 | dir_off | byte space offset of the directory |
+| 56 | 4 | object_count | journaled objects |
+| 60 | 4 | object_cap | entries the object table has room for |
+| 64 | 8 | obj_off | byte space offset of the object table |
+| 72 | 8 | def_len | bytes of the byte space in use |
+| 80 | 48 | reserved2 | 0 |
+
+### `RcvDirEntry` (32 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 16 | receiver | `ObjectId` of the `*JRNRCV` |
+| 16 | 1 | status | 0 empty, 1 attached, 2 online, 3 saved |
+| 17 | 1 | flags | bit 0 `*PARTIAL`: the chain is broken before this receiver |
+| 18 | 6 | reserved | 0 |
+| 24 | 8 | attached | Unix seconds |
+
+### `JrnObjEntry` (32 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 16 | object | `ObjectId` of the journaled object |
+| 16 | 2 | object_type | its type code |
+| 18 | 1 | images | 1 `IMAGES(*AFTER)`, 2 `IMAGES(*BOTH)` |
+| 19 | 1 | flags | bit 0 `OMTJRNE(*OPNCLO)` |
+| 20 | 4 | reserved | 0 |
+| 24 | 8 | started | journaling started, Unix seconds |
+
+### `RcvAttr` (128 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | magic | `QS400RCV` |
+| 8 | 2 | version | 1 |
+| 10 | 1 | status | 0 empty, 1 attached, 2 online, 3 saved |
+| 11 | 1 | flags | reserved, 0 |
+| 12 | 4 | reserved | 0 |
+| 16 | 16 | journal | `ObjectId` of the journal, none before the first attach |
+| 32 | 8 | first_seq | first sequence number held, 0 when empty |
+| 40 | 8 | last_seq | last sequence number held |
+| 48 | 8 | entry_count | entries held |
+| 56 | 8 | bytes_used | bytes of entries |
+| 64 | 4 | threshold_kb | `THRESHOLD` in KiB, 0 for `*NONE` |
+| 68 | 4 | reserved2 | 0 |
+| 72 | 8 | attached | Unix seconds |
+| 80 | 8 | detached | Unix seconds, 0 while attached |
+| 88 | 16 | prev | previous receiver in the chain, none when zero |
+| 104 | 16 | next | next receiver in the chain |
+| 120 | 8 | reserved3 | 0 |
+
+### `EntryHeader` (128 bytes)
+
+Followed by `data_len` bytes of entry-specific data. The fields are
+those IBM's `QjoRetrieveJournalEntries` returns; names in CP037.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 4 | len | bytes of the whole entry, header included |
+| 4 | 8 | seq | sequence number |
+| 12 | 1 | code | journal code: `J`, `F`, `R`, `C`, `U`, `T` |
+| 13 | 2 | type | entry type, two letters |
+| 15 | 1 | flags | bit 0 in a commit cycle, bit 1 minimized image, bit 2 written for a rollback |
+| 16 | 8 | time | Unix seconds |
+| 24 | 4 | micros | microseconds within the second |
+| 28 | 4 | job_number | |
+| 32 | 10 | job_name | |
+| 42 | 10 | job_user | |
+| 52 | 10 | program | |
+| 62 | 10 | library | of the object, blank when none |
+| 72 | 10 | object | |
+| 82 | 10 | member | blank when none |
+| 92 | 2 | object_type | type code |
+| 94 | 2 | reserved | 0 |
+| 96 | 8 | count | count or relative record number |
+| 104 | 8 | commit_cycle | 0 outside commitment control |
+| 112 | 4 | data_len | |
+| 116 | 12 | reserved2 | 0 |
+
+Record-level entries (`R`) carry a record image: a 4-byte record length,
+a 2-byte null map length, the record, the null map. `R PT` holds the
+record written, `R UB` the record before an update (under
+`IMAGES(*BOTH)`), `R UP` the record after, `R DL` the record deleted.
+`J PR` and `J NR` name the previous and next receiver in `object`.
+File-level entries (`F`) carry no data.

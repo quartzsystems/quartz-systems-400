@@ -34,6 +34,7 @@ pub fn clrpfm(
         &desc.name().to_string(),
     )?;
     let result = Member::open(txn, &desc, &entry).and_then(|mut m| {
+        m.jrn.job = job;
         let n = m.attr().record_count;
         m.clear(txn)?;
         Ok(n)

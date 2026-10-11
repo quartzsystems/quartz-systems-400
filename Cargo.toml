@@ -17,6 +17,7 @@ members = [
     "dds",
     "qdecimal",
     "db",
+    "jrn",
 ]
 
 [workspace.package]

@@ -83,7 +83,10 @@ db/           database: src/file/ *FILE attributes, member and dependents tables
               OVRDBF overrides and the per-job session with shared paths;
               src/util/ CLRPFM, RGZPFM, CPYF (select, map), CPYTOIMPF/CPYFRMIMPF (impf);
               src/dsp/ DSPFD, DSPFFD, DSPPFM, DSPDBR; src/chg/ CHGPF, CHGLF, CHGPF SRCFILE;
-              src/source/ source members (srcput, srcget, DDS source of a member)
+              src/source/ source members (srcput, srcget, DDS source of a member);
+              src/journal/ STRJRNPF/ENDJRNPF and the entries members and paths write
+jrn/          journaling: *JRN (src/journal/) and *JRNRCV (src/rcv/) objects, the entry
+              layout (src/entry/), DSPJRN filters and the receiver chain cursor (src/dsp/)
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, STORE_FORMAT.md, DST.md,
               DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, images/
 ```

@@ -15,6 +15,7 @@ pub mod dsp;
 mod error;
 pub mod file;
 pub mod format;
+pub mod journal;
 pub mod lf;
 pub mod member;
 pub mod odp;

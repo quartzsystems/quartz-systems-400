@@ -56,6 +56,7 @@ pub fn srcput(
         &desc.name().to_string(),
     )?;
     let result = Member::open(txn, &desc, &entry).and_then(|mut m| {
+        m.jrn.job = job;
         m.clear(txn)?;
         let fmt = m.format().clone();
         let f = &fmt.format.fields;

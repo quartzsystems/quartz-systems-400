@@ -273,6 +273,39 @@ slots. Test: `DSPPFM` of a select/omit LF on the machine.
 day as `yymmdd` and numbers from 1.00 in steps of 1.00. Test: `SEU` or
 `CPYFRMSTMF` on the machine and `DSPPFM` the sequence column.
 
+## Journaling
+
+**Entry message IDs.** `ReceiverUsed` carries CPF7010, `ReceiverAttached`
+CPF7022, `AlreadyJournaled` CPF7030, `NotJournaled` CPF7032,
+`ObjectsJournaled` CPF7021, `NoReceiver` CPF7006 and a bad range CPF7054,
+all as placeholders. Test: provoke each on the machine and note the
+escape message.
+
+**Job names in entries.** Every entry says job `QS400`, user `QSECOFR`
+and the job handle as the number until jobs exist (`MIGRATE(phase5)`).
+The conformance diff masks these columns.
+
+**`R DL` carries the deleted record.** The delete entry holds the image
+of the record as it was, whatever `IMAGES` says, so a rollback can put it
+back. Test: `DSPJRN` of a delete under `IMAGES(*AFTER)` and check the
+entry-specific data length.
+
+**`F MC` from a copy.** `CPYF MBROPT(*REPLACE)` clears the to-member
+through the same path as `CLRPFM`, so it writes `F MC`; `RGZPFM` writes
+`F MC`, one `R PT` per surviving record, then `F MR`. The machine writes
+`F MR` alone. Test: `RGZPFM` of a journaled member, `DSPJRN`.
+
+**Receiver swap at the threshold.** The threshold is checked before an
+entry is written: when the attached receiver already holds at least
+`THRESHOLD` KiB, `J NR` closes it, a receiver named by the trailing
+digits plus one is created in its library and `J PR` opens it, and the
+entry follows. `DLTRCV(*YES)` is kept but nothing deletes receivers yet.
+Test: `CHGJRN JRNRCV(*GEN)` name generation on the machine with `RCV9999`.
+
+**Deleted receivers in the directory.** `DLTJRNRCV` leaves the journal's
+directory entry; `DSPJRN` skips receivers that are gone. Test: `WRKJRNA`
+after deleting the oldest receiver.
+
 ## Editing
 
 Every item here is covered by the qdecimal oracle kit

@@ -28,4 +28,7 @@ pub fn layouts() -> Vec<&'static Layout> {
         &crate::member::slots::LAYOUT,
         &crate::path::LAYOUT,
     ]
+    .into_iter()
+    .chain(jrn::spec::layouts())
+    .collect()
 }

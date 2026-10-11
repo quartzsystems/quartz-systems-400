@@ -42,7 +42,10 @@ pub fn cpyfrmimpf(
         &desc.name().to_string(),
     )?;
     let text = String::from_utf8_lossy(text);
-    let result = Member::open(txn, &desc, &entry).and_then(|mut m| load(txn, &mut m, &text, opts));
+    let result = Member::open(txn, &desc, &entry).and_then(|mut m| {
+        m.jrn.job = job;
+        load(txn, &mut m, &text, opts)
+    });
     hold.release(txn);
     result
 }

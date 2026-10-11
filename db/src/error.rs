@@ -17,6 +17,10 @@ pub enum DbError {
     #[error(transparent)]
     Store(#[from] StoreError),
 
+    /// The journal failed.
+    #[error(transparent)]
+    Journal(#[from] jrn::JrnError),
+
     /// The object is not a database file.
     #[error("{name} in library {library} is not a database file")]
     NotAFile {
@@ -206,6 +210,7 @@ impl DbError {
     pub fn msgid(&self) -> Option<&'static str> {
         Some(match self {
             Self::Store(e) => return e.msgid(),
+            Self::Journal(e) => return e.msgid(),
             Self::NotAFile { .. } => "CPF9812",
             Self::MemberNotFound { .. } => "CPF9815",
             Self::MemberExists { .. } => "CPF5812",

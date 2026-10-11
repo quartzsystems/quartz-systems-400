@@ -130,6 +130,8 @@ pub struct FileDesc {
     pub members: Vec<MemberEntry>,
     /// Physical file: the logical members its members maintain.
     pub dependents: Vec<DependentEntry>,
+    /// The library's name.
+    pub library_name: Name,
 }
 
 impl FileDesc {
@@ -394,6 +396,9 @@ fn create_file(
         dependent_count: 0,
         dependents_off: 0,
         dependent_cap: 0,
+        journal: ObjectId::NONE,
+        jrn_both_images: false,
+        jrn_omit_opnclo: false,
     };
     let (page, _) = ops::read_header(txn, id)?;
     ops::write_attr(txn, page, 0, &attr.encode())?;
@@ -446,6 +451,7 @@ pub fn describe(txn: &mut Txn<'_>, id: ObjectId) -> Result<FileDesc> {
     } else {
         Vec::new()
     };
+    let library_name = ops::read_header(txn, h.library).map_or(h.name, |(_, l)| l.name);
     Ok(FileDesc {
         id,
         page,
@@ -454,6 +460,7 @@ pub fn describe(txn: &mut Txn<'_>, id: ObjectId) -> Result<FileDesc> {
         formats,
         members,
         dependents,
+        library_name,
     })
 }
 
@@ -532,6 +539,11 @@ pub fn add_member(
         object,
     });
     write_members(txn, &mut desc)?;
+    let ctx = crate::journal::JrnCtx {
+        now: Some(now),
+        ..Default::default()
+    };
+    crate::journal::member_entry(txn, &desc, name, "MA", ctx)?;
     Ok(object)
 }
 
@@ -708,6 +720,11 @@ pub fn remove_member(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId, name: Na
     } else {
         has_dependents(&desc, Some(entry.object))?;
     }
+    let ctx = crate::journal::JrnCtx {
+        job,
+        ..Default::default()
+    };
+    crate::journal::member_entry(txn, &desc, name, "MD", ctx)?;
     desc.members.remove(at);
     member::destroy(txn, job, entry.object)?;
     write_members(txn, &mut desc)

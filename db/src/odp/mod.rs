@@ -261,13 +261,20 @@ impl Odp {
             }
             Ok(m)
         });
-        let member = match opened {
+        let mut member = match opened {
             Ok(m) => m,
             Err(e) => {
                 txn.store().locks_mut().unlock(opts.job, file, file_lock);
                 return Err(e);
             }
         };
+        member.jrn.job = opts.job;
+        if let Err(e) = crate::journal::member_event(txn, &member, "OP") {
+            let locks = txn.store().locks_mut();
+            locks.unlock(opts.job, member.id(), file_lock);
+            locks.unlock(opts.job, file, file_lock);
+            return Err(e);
+        }
         let fb = IoFeedback::new(member.format().format.name, member.name());
         Ok(Self {
             file,
@@ -294,6 +301,9 @@ impl Odp {
             return;
         }
         self.unlock();
+        if let Err(e) = crate::journal::member_event(txn, &self.member, "CL") {
+            tracing::warn!("journal close entry for {}: {e}", self.member.name());
+        }
         let locks = txn.store().locks_mut();
         locks.unlock(self.opts.job, self.member.id(), self.file_lock);
         locks.unlock(self.opts.job, self.file, self.file_lock);

@@ -62,8 +62,12 @@ pub fn rgzpfm(
         ],
         &desc.name().to_string(),
     )?;
-    let result =
-        Member::open(txn, &desc, &entry).and_then(|mut m| reorganize(txn, &mut m, keyfile));
+    let result = Member::open(txn, &desc, &entry).and_then(|mut m| {
+        m.jrn.job = job;
+        let r = reorganize(txn, &mut m, keyfile)?;
+        crate::journal::member_event(txn, &m, "MR")?;
+        Ok(r)
+    });
     hold.release(txn);
     result
 }

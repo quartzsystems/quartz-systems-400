@@ -232,8 +232,10 @@ pub fn cpyf(
         ],
         &to_desc.name().to_string(),
     )?;
-    let result = Member::open(txn, &to_desc, &to_entry)
-        .and_then(|mut to_m| run(txn, &mut from_m, &mut to_m, opts));
+    let result = Member::open(txn, &to_desc, &to_entry).and_then(|mut to_m| {
+        to_m.jrn.job = job;
+        run(txn, &mut from_m, &mut to_m, opts)
+    });
     hold.release(txn);
     let (copied, excluded, errors) = result?;
     Ok(CpyfReport {

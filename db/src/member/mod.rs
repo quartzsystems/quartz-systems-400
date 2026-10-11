@@ -190,6 +190,8 @@ pub struct Member {
     pub bases: Vec<Base>,
     /// Physical member: logical members depending on it.
     pub dependents: Vec<Dependent>,
+    /// Who changes it, for the journal.
+    pub jrn: crate::journal::JrnCtx,
 }
 
 /// What a new physical member takes from its file.
@@ -322,6 +324,7 @@ impl Member {
             file: file.clone(),
             bases: Vec::new(),
             dependents: Vec::new(),
+            jrn: crate::journal::JrnCtx::default(),
         };
         if file.attr.kind == file::FileKind::Logical {
             let members = m.core.base_members(txn)?;
@@ -541,6 +544,7 @@ impl Member {
         }
         self.core.attr.record_count += 1;
         self.core.save(txn)?;
+        crate::journal::record(txn, self, "PT", rrn, record, null_map)?;
         Ok(rrn)
     }
 
@@ -563,7 +567,10 @@ impl Member {
             slots::offset(rrn, self.core.attr.slot_len),
             &self.slot_bytes(slots::STATUS_ACTIVE, record, null_map),
         )?;
-        Ok(())
+        if self.file.attr.jrn_both_images {
+            crate::journal::record(txn, self, "UB", rrn, &old.record, &old.null_map)?;
+        }
+        crate::journal::record(txn, self, "UP", rrn, record, null_map)
     }
 
     /// Delete the record at `rrn`, which must be active.
@@ -584,7 +591,8 @@ impl Member {
             tree.insert(txn, rrn, &())?;
             self.core.set_root(txn, attr::FREE_ROOT, tree.root())?;
         }
-        self.core.save(txn)
+        self.core.save(txn)?;
+        crate::journal::record(txn, self, "DL", rrn, &old.record, &old.null_map)
     }
 
     fn active(&self, txn: &mut Txn<'_>, rrn: u64) -> Result<Slot> {
@@ -632,7 +640,7 @@ impl Member {
             }
             self.dependents[di] = d;
         }
-        Ok(())
+        crate::journal::member_event(txn, self, "MC")
     }
 
     /// `REUSEDLT`: build the free-slot tree from the deleted slots, or drop it.

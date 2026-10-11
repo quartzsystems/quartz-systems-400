@@ -4,6 +4,8 @@
 
 //! `FileAttr`: the attribute area of a `*FILE`. See `docs/DB_FORMAT.md` §2.
 
+use store::obj::ObjectId;
+
 use crate::error::{DbError, Result};
 use crate::spec::{Layout, field};
 
@@ -46,7 +48,9 @@ pub static LAYOUT: Layout = Layout {
         field("dependent_count", 92, 4),
         field("dependents_off", 96, 8),
         field("dependent_cap", 104, 4),
-        field("reserved", 108, 20),
+        field("journal", 108, 16),
+        field("jrn_flags", 124, 2),
+        field("reserved", 126, 2),
     ],
 };
 
@@ -243,6 +247,12 @@ pub struct FileAttr {
     pub dependents_off: u64,
     /// Capacity of the dependents table.
     pub dependent_cap: u32,
+    /// The journal the file is journaled to, `NONE` when none.
+    pub journal: ObjectId,
+    /// `IMAGES(*BOTH)`.
+    pub jrn_both_images: bool,
+    /// `OMTJRNE(*OPNCLO)`.
+    pub jrn_omit_opnclo: bool,
 }
 
 impl FileAttr {
@@ -297,6 +307,9 @@ impl FileAttr {
         b[92..96].copy_from_slice(&self.dependent_count.to_le_bytes());
         b[96..104].copy_from_slice(&self.dependents_off.to_le_bytes());
         b[104..108].copy_from_slice(&self.dependent_cap.to_le_bytes());
+        b[108..124].copy_from_slice(&self.journal.to_bytes());
+        let jf = u16::from(self.jrn_both_images) | u16::from(self.jrn_omit_opnclo) << 1;
+        b[124..126].copy_from_slice(&jf.to_le_bytes());
         b
     }
 
@@ -368,6 +381,9 @@ impl FileAttr {
             dependent_count: u32_at(92),
             dependents_off: u64_at(96),
             dependent_cap: u32_at(104),
+            journal: ObjectId::from_bytes(&b[108..124]),
+            jrn_both_images: u16_at(124) & 1 != 0,
+            jrn_omit_opnclo: u16_at(124) & 2 != 0,
         })
     }
 }
@@ -409,6 +425,14 @@ mod tests {
             dependent_count: 2,
             dependents_off: 2000,
             dependent_cap: 4,
+            journal: ObjectId {
+                asp: 1,
+                type_code: 0x0018,
+                serial: 77,
+                generation: 1,
+            },
+            jrn_both_images: true,
+            jrn_omit_opnclo: false,
         };
         assert_eq!(FileAttr::decode(&a.encode()).unwrap(), a);
         assert_eq!(Size::default().max_records(), 13_000);

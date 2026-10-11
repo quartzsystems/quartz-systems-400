@@ -15,6 +15,7 @@ ccsid = { path = "../ccsid", version = "0.1.0" }
 thiserror.workspace = true
 tracing.workspace = true
 sha2.workspace = true
+jrn = { path = "../jrn", version = "0.1.0" }
 
 [dev-dependencies]
 blockdev = { path = "../blockdev", version = "0.1.0" }
