@@ -69,6 +69,8 @@ pub struct ReclaimReport {
     pub damaged: usize,
     /// Objects moved to QRCL.
     pub moved_to_qrcl: usize,
+    /// Owned objects (file members) removed because their owner is gone.
+    pub owned_removed: usize,
     /// Headers missing from the object directory, or at the wrong page.
     pub objdir_missing: usize,
     /// Object directory entries with no header.
@@ -96,6 +98,7 @@ impl ReclaimReport {
         self.bad_pages.len()
             + self.damaged
             + self.moved_to_qrcl
+            + self.owned_removed
             + self.objdir_missing
             + self.objdir_extra
             + self.libdir_missing
@@ -448,6 +451,20 @@ impl Store {
                 Err(e) => note(format!("index tree: {e}")),
             }
         }
+        for root in h.tree_roots.into_iter().flatten() {
+            let mut ro = ReadOnly(self.asp_mut().io());
+            match crate::btree::walk_pages(&mut ro, root) {
+                Ok(pages) => {
+                    for p in pages {
+                        if let Some(w) = check_page(sweep, h.id, referenced, p, PageType::BTreeNode)
+                        {
+                            note(w);
+                        }
+                    }
+                }
+                Err(e) => note(format!("tree at {root}: {e}")),
+            }
+        }
         Ok(why)
     }
 
@@ -549,11 +566,26 @@ impl Store {
             .collect();
         // QRCL: an existing library of that name, else a new one.
         let qrcl_name = Name::parse("QRCL").expect("valid");
+        // An object whose `library` is another live object is owned by
+        // it (a file member) and belongs to no library.
         let orphans: Vec<ObjectId> = headers
             .values()
-            .filter(|(_, h)| h.id != h.library && !libraries.contains(&h.library))
+            .filter(|(_, h)| {
+                h.id != h.library
+                    && !libraries.contains(&h.library)
+                    && !(h.library.type_code != types::LIB && headers.contains_key(&h.library))
+            })
             .map(|(_, h)| h.id)
             .collect();
+        // Owned objects whose owner is gone are removed, not moved.
+        let (lost_owned, orphans): (Vec<ObjectId>, Vec<ObjectId>) = orphans
+            .into_iter()
+            .partition(|id| id.type_code == types::MBR);
+        for id in lost_owned {
+            let (pno, h) = headers.remove(&id).expect("listed");
+            remove_owned(&mut txn, pno, &h)?;
+            report.owned_removed += 1;
+        }
         let mut moved = 0;
         if !orphans.is_empty() {
             let existing = headers
@@ -625,6 +657,27 @@ impl Store {
         txn.commit()?;
         Ok(moved)
     }
+}
+
+/// Free everything an owned object holds: its pages, trees and header.
+fn remove_owned(txn: &mut crate::txn::Txn<'_>, pno: PageNo, h: &ObjectHeader) -> Result<()> {
+    info!(
+        "rclstg: member {} ({}) of a missing file removed",
+        h.name, h.id
+    );
+    for run in &h.extents {
+        txn.free_run(run.start, run.len)?;
+    }
+    for p in [h.extent_overflow, h.private_overflow]
+        .into_iter()
+        .flatten()
+    {
+        txn.free_run(p, 1)?;
+    }
+    for root in h.tree_roots.into_iter().flatten() {
+        crate::btree::free_tree(txn, root)?;
+    }
+    txn.free_run(pno, 1)
 }
 
 /// Whether `pno` is a sound `kind` page of `owner`; the page is marked

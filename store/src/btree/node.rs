@@ -5,7 +5,8 @@
 //! Node page encoding. See `docs/STORE_FORMAT.md` §3. A node is decoded
 //! into vectors, changed there, and encoded into a fresh page: with
 //! copy-on-write every modified node is rewritten anyway, so there is no
-//! in-place slot management.
+//! in-place slot management. The key length is the tree's, passed in,
+//! so one code path serves compile-time and runtime key sizes.
 
 use crate::bytes::{get_u16, get_u64, put_u16, put_u64, u16_of};
 use crate::page::BODY_SIZE;
@@ -18,7 +19,7 @@ use super::codec::FixedKey;
 /// Bytes of node header.
 pub const HEADER_LEN: usize = 16;
 /// Longest key.
-pub const MAX_KEY_LEN: usize = 256;
+pub const MAX_KEY_LEN: usize = 1024;
 /// Longest value.
 pub const MAX_VALUE_LEN: usize = 1024;
 /// Bytes per leaf slot beyond the key.
@@ -113,29 +114,56 @@ fn corrupt(page: PageNo, what: impl Into<String>) -> StoreError {
     }
 }
 
+/// The child pages of a node, whatever its key type: empty for a leaf.
+/// For walks that only need the shape of a tree.
+pub fn children(body: &[u8], page: PageNo) -> Result<Vec<PageNo>> {
+    let key_len = usize::from(get_u16(body, OFF_KEY_LEN));
+    if key_len == 0 || key_len > MAX_KEY_LEN {
+        return Err(corrupt(page, format!("key length {key_len}")));
+    }
+    let count = usize::from(get_u16(body, OFF_COUNT));
+    match body[OFF_LEVEL] {
+        0 => Ok(Vec::new()),
+        1 => {
+            if HEADER_LEN + 8 + count * (key_len + ENTRY_EXTRA) > BODY_SIZE {
+                return Err(corrupt(page, format!("{count} entries do not fit")));
+            }
+            let mut out = Vec::with_capacity(count + 1);
+            out.push(get_u64(body, OFF_FIRST_CHILD));
+            let mut at = OFF_FIRST_CHILD + 8;
+            for _ in 0..count {
+                out.push(get_u64(body, at + key_len));
+                at += key_len + ENTRY_EXTRA;
+            }
+            Ok(out)
+        }
+        l => Err(corrupt(page, format!("node level {l}"))),
+    }
+}
+
 impl<K: FixedKey> Node<K> {
-    /// Bytes this node occupies when encoded.
-    pub fn used(&self) -> usize {
+    /// Bytes this node occupies when encoded with `key_len`-byte keys.
+    pub fn used(&self, key_len: usize) -> usize {
         match self {
             Self::Leaf(e) => {
                 HEADER_LEN
-                    + e.len() * (K::LEN + SLOT_EXTRA)
+                    + e.len() * (key_len + SLOT_EXTRA)
                     + e.iter().map(|(_, v)| v.len()).sum::<usize>()
             }
             Self::Internal { entries, .. } => {
-                HEADER_LEN + 8 + entries.len() * (K::LEN + ENTRY_EXTRA)
+                HEADER_LEN + 8 + entries.len() * (key_len + ENTRY_EXTRA)
             }
         }
     }
 
     /// Whether the node fits in a page.
-    pub fn fits(&self) -> bool {
-        self.used() <= BODY_SIZE
+    pub fn fits(&self, key_len: usize) -> bool {
+        self.used(key_len) <= BODY_SIZE
     }
 
     /// Whether the node is small enough to merge.
-    pub fn underfull(&self) -> bool {
-        self.used() < MIN_USED
+    pub fn underfull(&self, key_len: usize) -> bool {
+        self.used(key_len) < MIN_USED
     }
 
     /// Number of keys.
@@ -155,10 +183,10 @@ impl<K: FixedKey> Node<K> {
     }
 
     /// Encode into a page body. The node must fit.
-    pub fn encode(&self, body: &mut [u8]) {
-        debug_assert!(self.fits(), "node does not fit");
+    pub fn encode(&self, body: &mut [u8], key_len: usize) {
+        debug_assert!(self.fits(key_len), "node does not fit");
         body.fill(0);
-        put_u16(body, OFF_KEY_LEN, u16_of(K::LEN));
+        put_u16(body, OFF_KEY_LEN, u16_of(key_len));
         match self {
             Self::Leaf(entries) => {
                 body[OFF_LEVEL] = 0;
@@ -168,10 +196,10 @@ impl<K: FixedKey> Node<K> {
                 for (k, v) in entries {
                     end -= v.len();
                     body[end..end + v.len()].copy_from_slice(v);
-                    k.write(&mut body[slot..slot + K::LEN]);
-                    put_u16(body, slot + K::LEN, u16_of(end));
-                    put_u16(body, slot + K::LEN + 2, u16_of(v.len()));
-                    slot += K::LEN + SLOT_EXTRA;
+                    k.write(&mut body[slot..slot + key_len]);
+                    put_u16(body, slot + key_len, u16_of(end));
+                    put_u16(body, slot + key_len + 2, u16_of(v.len()));
+                    slot += key_len + SLOT_EXTRA;
                 }
             }
             Self::Internal { first, entries } => {
@@ -180,39 +208,39 @@ impl<K: FixedKey> Node<K> {
                 put_u64(body, OFF_FIRST_CHILD, *first);
                 let mut at = OFF_FIRST_CHILD + 8;
                 for (k, child) in entries {
-                    k.write(&mut body[at..at + K::LEN]);
-                    put_u64(body, at + K::LEN, *child);
-                    at += K::LEN + ENTRY_EXTRA;
+                    k.write(&mut body[at..at + key_len]);
+                    put_u64(body, at + key_len, *child);
+                    at += key_len + ENTRY_EXTRA;
                 }
             }
         }
     }
 
     /// Decode a page body. `page` is for error messages only.
-    pub fn decode(body: &[u8], page: PageNo) -> Result<Self> {
-        let key_len = usize::from(get_u16(body, OFF_KEY_LEN));
-        if key_len != K::LEN {
+    pub fn decode(body: &[u8], page: PageNo, key_len: usize) -> Result<Self> {
+        let stored = usize::from(get_u16(body, OFF_KEY_LEN));
+        if stored != key_len {
             return Err(corrupt(
                 page,
-                format!("key length {key_len}, tree uses {}", K::LEN),
+                format!("key length {stored}, tree uses {key_len}"),
             ));
         }
         let count = usize::from(get_u16(body, OFF_COUNT));
         match body[OFF_LEVEL] {
             0 => {
-                if HEADER_LEN + count * (K::LEN + SLOT_EXTRA) > BODY_SIZE {
+                if HEADER_LEN + count * (key_len + SLOT_EXTRA) > BODY_SIZE {
                     return Err(corrupt(page, format!("{count} slots do not fit")));
                 }
                 let mut entries = Vec::with_capacity(count);
                 let mut slot = HEADER_LEN;
                 let mut prev: Option<K> = None;
                 for _ in 0..count {
-                    let k = K::read(&body[slot..slot + K::LEN]);
-                    let off = usize::from(get_u16(body, slot + K::LEN));
-                    let len = usize::from(get_u16(body, slot + K::LEN + 2));
+                    let k = K::read(&body[slot..slot + key_len]);
+                    let off = usize::from(get_u16(body, slot + key_len));
+                    let len = usize::from(get_u16(body, slot + key_len + 2));
                     if len > MAX_VALUE_LEN
                         || off + len > BODY_SIZE
-                        || off < HEADER_LEN + count * (K::LEN + SLOT_EXTRA)
+                        || off < HEADER_LEN + count * (key_len + SLOT_EXTRA)
                     {
                         return Err(corrupt(page, format!("value at {off}+{len} out of bounds")));
                     }
@@ -221,12 +249,12 @@ impl<K: FixedKey> Node<K> {
                     }
                     entries.push((k.clone(), body[off..off + len].to_vec()));
                     prev = Some(k);
-                    slot += K::LEN + SLOT_EXTRA;
+                    slot += key_len + SLOT_EXTRA;
                 }
                 Ok(Self::Leaf(entries))
             }
             1 => {
-                if HEADER_LEN + 8 + count * (K::LEN + ENTRY_EXTRA) > BODY_SIZE {
+                if HEADER_LEN + 8 + count * (key_len + ENTRY_EXTRA) > BODY_SIZE {
                     return Err(corrupt(page, format!("{count} entries do not fit")));
                 }
                 let first = get_u64(body, OFF_FIRST_CHILD);
@@ -234,13 +262,13 @@ impl<K: FixedKey> Node<K> {
                 let mut at = OFF_FIRST_CHILD + 8;
                 let mut prev: Option<K> = None;
                 for _ in 0..count {
-                    let k = K::read(&body[at..at + K::LEN]);
+                    let k = K::read(&body[at..at + key_len]);
                     if prev.as_ref().is_some_and(|p| p >= &k) {
                         return Err(corrupt(page, "internal keys not ascending"));
                     }
-                    entries.push((k.clone(), get_u64(body, at + K::LEN)));
+                    entries.push((k.clone(), get_u64(body, at + key_len)));
                     prev = Some(k);
-                    at += K::LEN + ENTRY_EXTRA;
+                    at += key_len + ENTRY_EXTRA;
                 }
                 Ok(Self::Internal { first, entries })
             }
@@ -251,17 +279,17 @@ impl<K: FixedKey> Node<K> {
     /// Split a node that no longer fits into two of roughly equal size.
     /// Returns the right half; `self` keeps the left. For an internal
     /// node the middle key is returned separately: it moves up.
-    pub fn split(&mut self) -> (Option<K>, Self) {
+    pub fn split(&mut self, key_len: usize) -> (Option<K>, Self) {
         match self {
             Self::Leaf(entries) => {
                 let total: usize = entries
                     .iter()
-                    .map(|(_, v)| K::LEN + SLOT_EXTRA + v.len())
+                    .map(|(_, v)| key_len + SLOT_EXTRA + v.len())
                     .sum();
                 let mut acc = 0;
                 let mut at = 0;
                 for (i, (_, v)) in entries.iter().enumerate() {
-                    acc += K::LEN + SLOT_EXTRA + v.len();
+                    acc += key_len + SLOT_EXTRA + v.len();
                     if acc * 2 >= total {
                         at = i + 1;
                         break;
@@ -295,19 +323,20 @@ mod tests {
     fn leaf_round_trip_and_bounds() {
         let n: Node<u64> = Node::Leaf(vec![(1, vec![9; 3]), (2, vec![]), (7, vec![1, 2])]);
         let mut body = vec![0u8; BODY_SIZE];
-        n.encode(&mut body);
-        assert_eq!(Node::<u64>::decode(&body, 3).unwrap(), n);
-        assert_eq!(n.used(), HEADER_LEN + 3 * 12 + 5);
+        n.encode(&mut body, 8);
+        assert_eq!(Node::<u64>::decode(&body, 3, 8).unwrap(), n);
+        assert_eq!(n.used(8), HEADER_LEN + 3 * 12 + 5);
+        assert!(children(&body, 3).unwrap().is_empty());
         // A tampered slot offset is caught.
         put_u16(&mut body, HEADER_LEN + 8, 5000);
         assert!(matches!(
-            Node::<u64>::decode(&body, 3),
+            Node::<u64>::decode(&body, 3, 8),
             Err(StoreError::Corrupt { page: 3, .. })
         ));
         // Wrong key size for this tree.
-        n.encode(&mut body);
+        n.encode(&mut body, 8);
         assert!(matches!(
-            Node::<ObjectIdKey>::decode(&body, 4),
+            Node::<ObjectIdKey>::decode(&body, 4, 16),
             Err(StoreError::Corrupt { .. })
         ));
     }
@@ -319,10 +348,14 @@ mod tests {
         let entries: Vec<(u64, PageNo)> = (1..=9).map(|i| (i * 10, 100 + i)).collect();
         let n = Node::Internal { first: 99, entries };
         let mut body = vec![0u8; BODY_SIZE];
-        n.encode(&mut body);
-        assert_eq!(Node::<u64>::decode(&body, 1).unwrap(), n);
+        n.encode(&mut body, 8);
+        assert_eq!(Node::<u64>::decode(&body, 1, 8).unwrap(), n);
+        let kids = children(&body, 1).unwrap();
+        assert_eq!(kids.len(), 10);
+        assert_eq!(kids[0], 99);
+        assert_eq!(kids[9], 109);
         let mut left = n;
-        let (up, right) = left.split();
+        let (up, right) = left.split(8);
         assert_eq!(up, Some(50));
         assert_eq!(
             left,
@@ -348,7 +381,7 @@ mod tests {
             (3, vec![0; 10]),
             (4, vec![0; 10]),
         ]);
-        let (up, right) = big.split();
+        let (up, right) = big.split(8);
         assert!(up.is_none());
         assert_eq!(big.count(), 1);
         assert_eq!(right.count(), 3);

@@ -75,8 +75,10 @@ qdecimal/     Decimal (63 digits), IBM intermediate precision rules (src/arith/)
               packed, zoned, binary, integer and float encodings (src/encode/),
               edit codes and words (src/edit/), the IBM i oracle kit (src/fuzz/,
               src/bin/qdfuzz.rs; files under conformance/oracle/qdecimal/)
+db/           database: src/file/ *FILE attributes and member table, src/format/
+              sections and level IDs, src/member/ *MBR objects and record slots
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, STORE_FORMAT.md, DST.md,
-              DB_OPEN_QUESTIONS.md, DECIMAL.md, images/
+              DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, images/
 ```
 
 ## Commands
@@ -149,7 +151,8 @@ otherwise logs go to `target/logs/`.
   store.
 - On-disk store structures are specified in `docs/STORE_FORMAT.md` before
   they are coded; `store/tests/spec.rs` compares the code's `Layout`s with
-  the spec tables, so both change together.
+  the spec tables, so both change together. `docs/DB_FORMAT.md` and
+  `db/tests/spec.rs` do the same for the database layouts.
 - Framebuffer writes: one `pwrite` per frame spanning every line, then
   `fsync`. Partial-line writes lose damage at line ends and `mmap` never
   flushes under simpledrm's fbdev emulation (see docs/PHASE1.md).

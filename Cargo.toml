@@ -16,6 +16,7 @@ members = [
     "svctools",
     "dds",
     "qdecimal",
+    "db",
 ]
 
 [workspace.package]

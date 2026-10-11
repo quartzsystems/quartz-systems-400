@@ -74,7 +74,7 @@ The all-zero ID means "no object" and marks metadata pages.
 ## 3. B+tree nodes
 
 One page per node, page type 0x0010. Keys are fixed size per tree
-(at most 256 bytes); values are variable (at most 1024 bytes). Nodes are
+(at most 1024 bytes); values are variable (at most 1024 bytes). A tree may fix its key size at run time (file access paths do). Nodes are
 never modified in place: a change rewrites the node to a fresh page, and
 its parent, up to the root, whose new page number is published through
 the transaction. There are no sibling pointers; range scans keep a stack
@@ -472,7 +472,8 @@ At offset 0 of the body. Text fields are CP037, space padded.
 | 764 | 8 | extent_overflow | page of more extents, 0 for none |
 | 772 | 10 | audit | object auditing value; `MIGRATE(phase6)` |
 | 782 | 2 | reserved4 | 0 |
-| 784 | 240 | reserved5 | 0 |
+| 784 | 32 | tree_roots | 4 × page: roots of B+trees the payload owns, 0 for none; RCLSTG walks them, delete frees them |
+| 816 | 208 | reserved5 | 0 |
 
 Public authority bits: 0x0001 `*OBJOPR`, 0x0002 `*OBJMGT`, 0x0004
 `*OBJEXIST`, 0x0008 `*OBJALTER`, 0x0010 `*OBJREF`, 0x0020 `*READ`,
@@ -542,6 +543,15 @@ the order a display would.
 Type codes are fixed by `store/src/obj/types.rs` and appear in IDs,
 directory keys and headers; see that table for the list. `*SYSVAL`
 (0x00FF) is internal: one instance, in QSYS, not user-creatable.
+
+`*MBR` (0x00FE) is internal too: a database file member, created only by
+the database layer and owned by its `*FILE`.
+
+**Owned objects.** An object whose `library` field names an object that
+is not a library belongs to that object and has no library directory
+entry; it is reached through its owner and listed only in the object
+directory. RCLSTG keeps it while the owner exists and removes it, pages
+and trees included, when the owner is gone.
 
 ## 10. Payload types
 

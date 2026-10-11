@@ -384,6 +384,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "db"
+version = "0.1.0"
+dependencies = [
+ "blockdev",
+ "ccsid",
+ "dds",
+ "qdecimal",
+ "qsname",
+ "sha2",
+ "store",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "dds"
 version = "0.1.0"
 dependencies = [

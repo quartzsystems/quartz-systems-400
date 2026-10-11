@@ -67,6 +67,11 @@ const OFF_COMPRESSION: usize = 506;
 const OFF_EXTENTS: usize = 508;
 const OFF_EXTENT_OVERFLOW: usize = 764;
 const OFF_AUDIT: usize = 772;
+/// Body offset of the tree root slots.
+pub const OFF_TREE_ROOTS: usize = 784;
+
+/// Tree roots any type may use; RCLSTG walks and delete frees them.
+pub const TREE_ROOT_SLOTS: usize = 4;
 
 /// The spec layout of the fixed part.
 pub static LAYOUT: Layout = Layout {
@@ -113,7 +118,8 @@ pub static LAYOUT: Layout = Layout {
         field("extent_overflow", OFF_EXTENT_OVERFLOW, 8),
         field("audit", OFF_AUDIT, 10),
         field("reserved4", 782, 2),
-        field("reserved5", 784, 240),
+        field("tree_roots", OFF_TREE_ROOTS, 32),
+        field("reserved5", 816, 208),
     ],
 };
 
@@ -273,6 +279,8 @@ pub struct ObjectHeader {
     pub extent_overflow: Option<PageNo>,
     /// Object auditing value.
     pub audit: [u8; 10],
+    /// Roots of B+trees the payload owns, `None` for empty or unused.
+    pub tree_roots: [Option<PageNo>; TREE_ROOT_SLOTS],
 }
 
 /// Blank CP037 text of a fixed size.
@@ -332,6 +340,7 @@ impl ObjectHeader {
             extents: Vec::new(),
             extent_overflow: None,
             audit: blank(),
+            tree_roots: [None; TREE_ROOT_SLOTS],
         }
     }
 
@@ -387,6 +396,9 @@ impl ObjectHeader {
         }
         put_u64(b, OFF_EXTENT_OVERFLOW, self.extent_overflow.unwrap_or(0));
         b[OFF_AUDIT..OFF_AUDIT + 10].copy_from_slice(&self.audit);
+        for (i, r) in self.tree_roots.iter().enumerate() {
+            put_u64(b, OFF_TREE_ROOTS + i * 8, r.unwrap_or(0));
+        }
     }
 
     /// Decode the fixed part of a page body. `page` is for errors.
@@ -464,6 +476,7 @@ impl ObjectHeader {
             extents,
             extent_overflow: opt(get_u64(body, OFF_EXTENT_OVERFLOW)),
             audit: body[OFF_AUDIT..OFF_AUDIT + 10].try_into().expect("10"),
+            tree_roots: std::array::from_fn(|i| opt(get_u64(body, OFF_TREE_ROOTS + i * 8))),
         })
     }
 }

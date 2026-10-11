@@ -95,6 +95,27 @@ Test: a zoned field holding `X'40404040C1'` read by RPG and by SQL.
 digits on read; `db` will decide which view record I/O exposes. Test:
 write 32767 through SQL into a `B 4,0` column and read it back in RPG.
 
+## Files and members
+
+**Keys longer than 1016 bytes.** The store's B+tree key is at most 1024
+bytes and the access path key ends in the 8-byte RRN, so a file whose
+encoded key exceeds 1016 bytes is refused at create; DDS allows 2000.
+Test: `CRTPF` with two `A 1000` key fields on the real machine works;
+here it fails. A raise needs the tree to accept keys over a quarter of
+the page.
+
+**Message for a full member.** `SIZE` reached is a typed error without a
+message ID. Test: fill a `SIZE(5 0 0)` member on the machine and note
+the CPF message the write fails with.
+
+**Order of reused slots.** With `REUSEDLT(*YES)` the lowest free RRN is
+reused first. Test: delete RRNs 4 and 2, write twice, `DSPPFM` the
+RRNs.
+
+**Varlen storage.** A `VARLEN` field is stored at its maximum length in
+the slot; the `ALLOCATE` length and overflow are not implemented, so
+`DSPFD` size figures differ from the machine's for such files.
+
 ## Editing
 
 Every item here is covered by the qdecimal oracle kit

@@ -145,3 +145,19 @@ mod tests {
         );
     }
 }
+
+/// A key whose length is fixed per tree but known only at run time:
+/// the raw big-endian bytes. Open the tree with `with_key_len`; `LEN`
+/// is 0 and never used for layout.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct DynKey(pub Vec<u8>);
+
+impl FixedKey for DynKey {
+    const LEN: usize = 0;
+    fn write(&self, out: &mut [u8]) {
+        out[..self.0.len()].copy_from_slice(&self.0);
+    }
+    fn read(bytes: &[u8]) -> Self {
+        Self(bytes.to_vec())
+    }
+}

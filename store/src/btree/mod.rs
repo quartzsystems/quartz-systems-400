@@ -20,7 +20,7 @@ use crate::page::pager::{PageNo, Pager};
 use crate::page::{Page, PageType};
 use crate::{Result, StoreError};
 
-pub use codec::{FixedKey, Value};
+pub use codec::{DynKey, FixedKey, Value};
 pub use iter::Iter;
 use node::{MAX_KEY_LEN, MAX_VALUE_LEN, Node};
 
@@ -30,6 +30,7 @@ use node::{MAX_KEY_LEN, MAX_VALUE_LEN, Node};
 pub struct BTree<K, V> {
     root: Option<PageNo>,
     owner: ObjectId,
+    key_len: usize,
     _marker: PhantomData<(K, V)>,
 }
 
@@ -59,23 +60,35 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
     /// An empty tree owned by `owner` (`ObjectId::NONE` for metadata).
     #[must_use]
     pub fn new(owner: ObjectId) -> Self {
-        const {
-            assert!(K::LEN <= MAX_KEY_LEN, "key too long");
-            assert!(K::LEN > 0, "key empty");
-        }
-        Self {
-            root: None,
-            owner,
-            _marker: PhantomData,
-        }
+        Self::with_key_len(None, owner, K::LEN)
     }
 
     /// A tree whose root was published earlier.
     #[must_use]
     pub fn open(root: Option<PageNo>, owner: ObjectId) -> Self {
-        let mut t = Self::new(owner);
-        t.root = root;
-        t
+        Self::with_key_len(root, owner, K::LEN)
+    }
+
+    /// A tree whose keys are `key_len` bytes, decided at run time (for
+    /// [`DynKey`]); `root` was published earlier or is `None`.
+    #[must_use]
+    pub fn with_key_len(root: Option<PageNo>, owner: ObjectId, key_len: usize) -> Self {
+        assert!(
+            key_len > 0 && key_len <= MAX_KEY_LEN,
+            "key length {key_len}"
+        );
+        Self {
+            root,
+            owner,
+            key_len,
+            _marker: PhantomData,
+        }
+    }
+
+    /// Bytes per key.
+    #[must_use]
+    pub fn key_len(&self) -> usize {
+        self.key_len
     }
 
     /// The root page, to publish after a change. `None` is empty.
@@ -218,7 +231,7 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
     ) -> Result<Iter<'p, K, V>> {
         let start = clone_bound(range.start_bound());
         let end = clone_bound(range.end_bound());
-        Iter::new(p, self.root, &start, end)
+        Iter::new(p, self.root, self.key_len, &start, end)
     }
 
     /// Every entry, ascending.
@@ -232,7 +245,20 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
     where
         I: IntoIterator<Item = (K, V)>,
     {
-        let mut tree = Self::new(owner);
+        Self::bulk_load_with_key_len(p, owner, K::LEN, items)
+    }
+
+    /// [`bulk_load`](Self::bulk_load) with a run-time key length.
+    pub fn bulk_load_with_key_len<I>(
+        p: &mut dyn Pager,
+        owner: ObjectId,
+        key_len: usize,
+        items: I,
+    ) -> Result<Self>
+    where
+        I: IntoIterator<Item = (K, V)>,
+    {
+        let mut tree = Self::with_key_len(None, owner, key_len);
         // Leaves.
         let mut level: Vec<(K, PageNo)> = Vec::new();
         let mut leaf: Vec<(K, Vec<u8>)> = Vec::new();
@@ -247,7 +273,7 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
             if bytes.len() > MAX_VALUE_LEN {
                 return Err(StoreError::ValueTooLong { len: bytes.len() });
             }
-            let cost = K::LEN + node::SLOT_EXTRA + bytes.len();
+            let cost = key_len + node::SLOT_EXTRA + bytes.len();
             if !leaf.is_empty() && used + cost > node::BULK_FILL {
                 let node = Node::Leaf(std::mem::take(&mut leaf));
                 level.push((
@@ -269,7 +295,7 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
         ));
         // Internal levels until one node remains.
         let per_node =
-            ((node::BULK_FILL - node::HEADER_LEN - 8) / (K::LEN + node::ENTRY_EXTRA)).max(1) + 1;
+            ((node::BULK_FILL - node::HEADER_LEN - 8) / (key_len + node::ENTRY_EXTRA)).max(1) + 1;
         while level.len() > 1 {
             let mut next = Vec::new();
             for group in level.chunks(per_node) {
@@ -300,7 +326,31 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
         }
         Ok(())
     }
+}
 
+/// Every page of the tree rooted at `root`, whatever its key type:
+/// only the node shape is read.
+pub fn walk_pages(p: &mut dyn Pager, root: PageNo) -> Result<Vec<PageNo>> {
+    let mut out = Vec::new();
+    let mut stack = vec![root];
+    while let Some(pno) = stack.pop() {
+        out.push(pno);
+        let page = p.read(pno)?;
+        page.verify_type(pno, PageType::BTreeNode)?;
+        stack.extend(node::children(page.body(), pno)?);
+    }
+    Ok(out)
+}
+
+/// Free every page of the tree rooted at `root`, whatever its key type.
+pub fn free_tree(p: &mut dyn Pager, root: PageNo) -> Result<()> {
+    for pno in walk_pages(p, root)? {
+        p.free(pno)?;
+    }
+    Ok(())
+}
+
+impl<K: FixedKey, V: Value> BTree<K, V> {
     /// Every page of the tree.
     pub fn pages(&self, p: &mut dyn Pager) -> Result<Vec<PageNo>> {
         let Some(root) = self.root else {
@@ -322,15 +372,21 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
     /// `value_len` bytes. Exact: it mirrors the packing in `bulk_load`.
     #[must_use]
     pub fn bulk_load_pages(n: usize, value_len: usize) -> u64 {
+        Self::bulk_load_pages_with(K::LEN, n, value_len)
+    }
+
+    /// [`bulk_load_pages`](Self::bulk_load_pages) for `key_len`-byte keys.
+    #[must_use]
+    pub fn bulk_load_pages_with(key_len: usize, n: usize, value_len: usize) -> u64 {
         if n == 0 {
             return 0;
         }
         let per_leaf =
-            (node::BULK_FILL - node::HEADER_LEN) / (K::LEN + node::SLOT_EXTRA + value_len);
+            (node::BULK_FILL - node::HEADER_LEN) / (key_len + node::SLOT_EXTRA + value_len);
         let mut level = n.div_ceil(per_leaf.max(1));
         let mut pages = level;
         let per_node =
-            ((node::BULK_FILL - node::HEADER_LEN - 8) / (K::LEN + node::ENTRY_EXTRA)).max(1) + 1;
+            ((node::BULK_FILL - node::HEADER_LEN - 8) / (key_len + node::ENTRY_EXTRA)).max(1) + 1;
         while level > 1 {
             level = level.div_ceil(per_node);
             pages += level;
@@ -367,14 +423,14 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
                 what: format!("node owned by {} in a tree of {}", t.owner, self.owner),
             });
         }
-        Node::decode(page.body(), pno)
+        Node::decode(page.body(), pno, self.key_len)
     }
 
     /// Write a node to a fresh page.
     fn store(&self, p: &mut dyn Pager, node: &Node<K>) -> Result<PageNo> {
         let pno = p.alloc()?;
         let mut page = Page::zeroed();
-        node.encode(page.body_mut());
+        node.encode(page.body_mut(), self.key_len);
         p.write(pno, &mut page, PageType::BTreeNode, self.owner)?;
         Ok(pno)
     }
@@ -384,7 +440,7 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
     fn rewrite(&self, p: &mut dyn Pager, old: PageNo, node: &Node<K>) -> Result<PageNo> {
         if p.owns(old) {
             let mut page = Page::zeroed();
-            node.encode(page.body_mut());
+            node.encode(page.body_mut(), self.key_len);
             p.write(old, &mut page, PageType::BTreeNode, self.owner)?;
             return Ok(old);
         }
@@ -394,10 +450,10 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
 
     /// Write `node` in place of `old`, splitting first if it does not fit.
     fn replace(&self, p: &mut dyn Pager, old: PageNo, mut node: Node<K>) -> Result<Put<K>> {
-        if node.fits() {
+        if node.fits(self.key_len) {
             return Ok(Put::One(self.rewrite(p, old, &node)?));
         }
-        let (up, right) = node.split();
+        let (up, right) = node.split(self.key_len);
         let sep = match up {
             Some(k) => k,
             None => right.first_key().expect("right half non-empty").clone(),
@@ -459,7 +515,7 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
                 };
                 let (_, old) = entries.remove(i);
                 let node = Node::Leaf(entries);
-                let underfull = node.underfull();
+                let underfull = node.underfull(self.key_len);
                 Ok(Took {
                     page: self.rewrite(p, pno, &node)?,
                     old: Some(old),
@@ -485,7 +541,7 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
                     self.rebalance(p, &mut first, &mut entries, i)?;
                 }
                 let node = Node::Internal { first, entries };
-                let underfull = node.underfull();
+                let underfull = node.underfull(self.key_len);
                 Ok(Took {
                     page: self.rewrite(p, pno, &node)?,
                     old: took.old,
@@ -544,14 +600,14 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
                 });
             }
         };
-        if merged.fits() {
+        if merged.fits(self.key_len) {
             p.free(right_pno)?;
             let pno = self.rewrite(p, left_pno, &merged)?;
             entries.remove(pair);
             set_child(first, entries, pair, pno);
         } else {
             let mut left = merged;
-            let (up, right) = left.split();
+            let (up, right) = left.split(self.key_len);
             let sep = match up {
                 Some(k) => k,
                 None => right.first_key().expect("non-empty").clone(),

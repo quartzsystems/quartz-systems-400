@@ -218,6 +218,59 @@ pub fn create(txn: &mut Txn<'_>, params: &CreateParams) -> Result<ObjectId> {
     Ok(id)
 }
 
+/// Create an object owned by another object rather than by a library
+/// (a file member): its `library` field names the owner and it has no
+/// library directory entry. Only the owner's type reaches it.
+pub fn create_owned(txn: &mut Txn<'_>, params: &CreateParams, owner: ObjectId) -> Result<ObjectId> {
+    let info = type_by_code(params.type_code).ok_or_else(|| StoreError::Corrupt {
+        page: 0,
+        what: format!("unknown type code {:#06x}", params.type_code),
+    })?;
+    let owner_header = read_header(txn, owner)?.1;
+    if owner_header.id.type_code == types::LIB || info.user_creatable {
+        return Err(StoreError::BadValue {
+            what: format!("{} cannot be owned by {}", info.name, owner_header.name),
+        });
+    }
+    let id = ObjectId {
+        asp: txn.store().asp_number(),
+        type_code: params.type_code,
+        serial: txn.take_serial(),
+        generation: 0,
+    };
+    let page = txn.alloc()?;
+    let mut h = ObjectHeader::new(id, owner, params.name, params.now);
+    h.attribute = text(&params.attribute)?;
+    h.text = text(&params.text)?;
+    h.owner = text(&params.owner)?;
+    h.creator = text(&params.owner)?;
+    h.system = text(&params.system)?;
+    h.temporary = owner_header.temporary;
+    let mut p = Page::zeroed();
+    h.encode(p.body_mut());
+    txn.write(page, &mut p, PageType::ObjectHeader, id)?;
+    dir::objdir_insert(txn, id, page)?;
+    Ok(id)
+}
+
+/// Whether `id` is a library (an owned object's `library` is not).
+#[must_use]
+pub fn is_library(id: ObjectId) -> bool {
+    id.type_code == types::LIB
+}
+
+/// Publish one of an object's tree roots in place (8 bytes patched).
+pub fn set_tree_root(
+    txn: &mut Txn<'_>,
+    page: PageNo,
+    slot: usize,
+    root: Option<PageNo>,
+) -> Result<()> {
+    assert!(slot < header::TREE_ROOT_SLOTS, "tree root slot {slot}");
+    let at = header::OFF_TREE_ROOTS + slot * 8;
+    txn.patch(page, at, &root.unwrap_or(0).to_le_bytes())
+}
+
 /// Delete an object: its payload pages, its header and its directory
 /// entries. Needs `*EXCL`, which is taken for `job` for the duration.
 /// A library must be empty.
@@ -263,7 +316,10 @@ fn delete_locked(txn: &mut Txn<'_>, id: ObjectId, page: PageNo, h: &ObjectHeader
     if let Some(p) = h.private_overflow {
         txn.free_run(p, 1)?;
     }
-    if id != h.library {
+    for root in h.tree_roots.into_iter().flatten() {
+        crate::btree::free_tree(txn, root)?;
+    }
+    if id != h.library && is_library(h.library) {
         let mut lib = Library::load(txn, h.library)?;
         lib.remove(txn, h.id.type_code, h.name)?;
     }

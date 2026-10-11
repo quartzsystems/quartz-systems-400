@@ -82,6 +82,11 @@ pub const USRQ: u16 = 0x0006;
 pub const USRPRF: u16 = 0x000E;
 /// Code of `*AUTL`.
 pub const AUTL: u16 = 0x000F;
+/// Code of `*FILE`.
+pub const FILE: u16 = 0x0013;
+/// Code of `*MBR`: a database file member, owned by its file and listed
+/// in no library.
+pub const MBR: u16 = 0x00FE;
 /// Code of `*SYSVAL`.
 pub const SYSVAL: u16 = 0x00FF;
 
@@ -129,7 +134,7 @@ pub static TYPES: &[TypeInfo] = &[
     t(0x0010, "*CMD", true, true, false, false, Module::Opaque),
     t(0x0011, "*MENU", true, true, false, false, Module::Opaque),
     t(0x0012, "*PNLGRP", true, true, false, false, Module::Opaque),
-    t(0x0013, "*FILE", true, true, false, false, Module::Opaque),
+    t(FILE, "*FILE", true, true, false, false, Module::Opaque),
     t(0x0014, "*MODULE", true, true, false, false, Module::Opaque),
     t(0x0015, "*PGM", true, true, false, false, Module::Opaque),
     t(0x0016, "*SRVPGM", true, true, false, false, Module::Opaque),
@@ -143,6 +148,7 @@ pub static TYPES: &[TypeInfo] = &[
     t(0x001E, "*SQLPKG", true, true, false, false, Module::Opaque),
     t(0x001F, "*LOCALE", true, true, false, false, Module::Opaque),
     t(0x0020, "*IMGCLG", true, false, false, false, Module::Opaque),
+    t(MBR, "*MBR", false, true, false, false, Module::Opaque),
     t(SYSVAL, "*SYSVAL", false, false, true, true, Module::SysVal),
 ];
 
@@ -168,7 +174,7 @@ mod tests {
         codes.sort_unstable();
         codes.dedup();
         assert_eq!(codes.len(), TYPES.len(), "codes unique");
-        assert_eq!(TYPES.len(), 33);
+        assert_eq!(TYPES.len(), 34);
         assert!(TYPES.iter().all(|t| t.name.starts_with('*')));
         assert_eq!(type_by_name("*dtaara").unwrap().code, DTAARA);
         assert_eq!(type_by_code(SYSVAL).unwrap().module, Module::SysVal);

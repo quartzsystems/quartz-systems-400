@@ -18,6 +18,7 @@ use super::node::Node;
 /// Entries of a tree in key order, within bounds.
 pub struct Iter<'p, K, V> {
     pager: &'p mut dyn Pager,
+    key_len: usize,
     /// Path from the root; the index is the next child or slot to visit.
     stack: Vec<(Node<K>, usize)>,
     end: Bound<K>,
@@ -30,11 +31,13 @@ impl<'p, K: FixedKey, V: Value> Iter<'p, K, V> {
     pub(super) fn new(
         pager: &'p mut dyn Pager,
         root: Option<PageNo>,
+        key_len: usize,
         start: &Bound<K>,
         end: Bound<K>,
     ) -> Result<Self> {
         let mut it = Self {
             pager,
+            key_len,
             stack: Vec::new(),
             end,
             done: root.is_none(),
@@ -73,7 +76,7 @@ impl<'p, K: FixedKey, V: Value> Iter<'p, K, V> {
     fn load(&mut self, pno: PageNo) -> Result<Node<K>> {
         let page = self.pager.read(pno)?;
         page.verify_type(pno, crate::page::PageType::BTreeNode)?;
-        Node::decode(page.body(), pno)
+        Node::decode(page.body(), pno, self.key_len)
     }
 
     fn step(&mut self) -> Result<Option<(K, V)>> {

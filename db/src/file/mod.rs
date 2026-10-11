@@ -1,0 +1,458 @@
+// Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+// licensed under the terms of the MIT license which can be found in the
+// root directory of this project.
+
+//! `*FILE` objects: creation from a compiled definition, description,
+//! the member table and deletion.
+
+pub mod attr;
+pub mod members;
+
+pub use attr::{FileAttr, FileKind, Maint, Recover, Size, Wait};
+pub use members::MemberEntry;
+
+use dds::{DataType, FieldDef, PfDefinition, RecordFormat};
+use qsname::{MemberSpec, Name};
+use store::obj::header::{self, ObjectHeader, text_of};
+use store::obj::ops::{self, CreateParams};
+use store::obj::space::Space;
+use store::obj::{JobHandle, ObjectId, types};
+use store::txn::Txn;
+
+use crate::error::{DbError, Result};
+use crate::format::{FormatDef, sections};
+use crate::member;
+
+/// Which member a new file starts with.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum MemberOpt {
+    /// `MBR(*FILE)`: one member named after the file.
+    #[default]
+    File,
+    /// `MBR(*NONE)`.
+    None,
+    /// `MBR(name)`.
+    Named(Name),
+}
+
+/// Everything `CRTPF` and `CRTLF` take besides the definition.
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[allow(clippy::struct_excessive_bools)]
+pub struct CreateFileOpts {
+    /// `TEXT`.
+    pub text: String,
+    /// Owner profile.
+    pub owner: String,
+    /// Created-on system name.
+    pub system: String,
+    /// Unix seconds.
+    pub now: u64,
+    /// `MBR`.
+    pub member: MemberOpt,
+    /// `SIZE`.
+    pub size: Size,
+    /// `REUSEDLT`.
+    pub reusedlt: bool,
+    /// `MAXMBRS`, 0 for `*NOMAX`.
+    pub max_members: u32,
+    /// `SHARE`.
+    pub share: bool,
+    /// `LVLCHK`.
+    pub lvlchk: bool,
+    /// `MAINT`.
+    pub maint: Maint,
+    /// `RECOVER`.
+    pub recover: Recover,
+    /// `FRCRATIO`, 0 for `*NONE`.
+    pub frcratio: u16,
+    /// `WAITFILE`.
+    pub wait_file: Wait,
+    /// `WAITRCD`.
+    pub wait_rcd: Wait,
+    /// `CCSID`.
+    pub ccsid: u16,
+    /// `ALLOCATE`.
+    pub allocate: bool,
+    /// `ALWUPD`.
+    pub alwupd: bool,
+    /// `ALWDLT`.
+    pub alwdlt: bool,
+    /// `FRCACCPTH`.
+    pub frcaccpth: bool,
+}
+
+impl Default for CreateFileOpts {
+    fn default() -> Self {
+        Self {
+            text: String::new(),
+            owner: "QSECOFR".into(),
+            system: "QS400".into(),
+            now: 0,
+            member: MemberOpt::File,
+            size: Size::default(),
+            reusedlt: false,
+            max_members: 1,
+            share: false,
+            lvlchk: true,
+            maint: Maint::Immed,
+            recover: Recover::No,
+            frcratio: 0,
+            wait_file: Wait::Immed,
+            wait_rcd: Wait::Seconds(60),
+            ccsid: 37,
+            allocate: false,
+            alwupd: true,
+            alwdlt: true,
+            frcaccpth: false,
+        }
+    }
+}
+
+/// A file, described.
+#[derive(Clone, Debug)]
+pub struct FileDesc {
+    /// The object.
+    pub id: ObjectId,
+    /// Its header page.
+    pub page: store::PageNo,
+    /// The header.
+    pub header: ObjectHeader,
+    /// The attributes.
+    pub attr: FileAttr,
+    /// The record formats, in order.
+    pub formats: Vec<FormatDef>,
+    /// The members, in creation order.
+    pub members: Vec<MemberEntry>,
+}
+
+impl FileDesc {
+    /// The file name.
+    #[must_use]
+    pub fn name(&self) -> Name {
+        self.header.name
+    }
+
+    /// The member a `MBR` parameter means.
+    #[must_use]
+    pub fn member(&self, spec: MemberSpec) -> Option<&MemberEntry> {
+        match spec {
+            MemberSpec::Name(n) => self.members.iter().find(|m| m.name == n),
+            MemberSpec::First | MemberSpec::All => self.members.first(),
+            MemberSpec::Last => self.members.last(),
+        }
+    }
+}
+
+/// The three-field format of a source physical file.
+#[must_use]
+pub fn source_format(rcdlen: u32) -> RecordFormat {
+    let name = |s: &str| Name::parse(s).expect("valid");
+    let mut f = RecordFormat::new(name("QSRCSEQ"));
+    f.fields = vec![
+        FieldDef::new(name("SRCSEQ"), DataType::Zoned, 6, 2),
+        FieldDef::new(name("SRCDAT"), DataType::Zoned, 6, 0),
+        FieldDef::new(
+            name("SRCDTA"),
+            DataType::Char,
+            rcdlen.saturating_sub(12).max(1),
+            0,
+        ),
+    ];
+    f.fields[0].text = Some("Sequence number".into());
+    f.fields[1].text = Some("Change date".into());
+    f.fields[2].text = Some("Source statement".into());
+    f.lay_out();
+    f
+}
+
+/// `CRTPF` from a compiled definition.
+pub fn create_pf(
+    txn: &mut Txn<'_>,
+    library: ObjectId,
+    name: Name,
+    def: &PfDefinition,
+    opts: &CreateFileOpts,
+) -> Result<ObjectId> {
+    let format = FormatDef::new(def.format.clone(), def.unique, def.dup_order)?;
+    create_file(txn, library, name, FileKind::Physical, &[format], opts)
+}
+
+/// `CRTPF RCDLEN(n)`: one character field.
+pub fn create_pf_rcdlen(
+    txn: &mut Txn<'_>,
+    library: ObjectId,
+    name: Name,
+    rcdlen: u32,
+    opts: &CreateFileOpts,
+) -> Result<ObjectId> {
+    let mut f = RecordFormat::new(name);
+    f.fields = vec![FieldDef::new(name, DataType::Char, rcdlen, 0)];
+    f.lay_out();
+    let format = FormatDef::new(f, None, None)?;
+    create_file(txn, library, name, FileKind::Physical, &[format], opts)
+}
+
+/// `CRTSRCPF`.
+pub fn create_srcpf(
+    txn: &mut Txn<'_>,
+    library: ObjectId,
+    name: Name,
+    rcdlen: u32,
+    opts: &CreateFileOpts,
+) -> Result<ObjectId> {
+    let format = FormatDef::new(source_format(rcdlen), None, None)?;
+    create_file(txn, library, name, FileKind::Source, &[format], opts)
+}
+
+fn create_file(
+    txn: &mut Txn<'_>,
+    library: ObjectId,
+    name: Name,
+    kind: FileKind,
+    formats: &[FormatDef],
+    opts: &CreateFileOpts,
+) -> Result<ObjectId> {
+    let attribute = match kind {
+        FileKind::Physical | FileKind::Source => "PF",
+        FileKind::Logical => "LF",
+    };
+    let params = CreateParams {
+        library,
+        name,
+        type_code: types::FILE,
+        attribute: attribute.into(),
+        text: opts.text.clone(),
+        owner: opts.owner.clone(),
+        system: opts.system.clone(),
+        now: opts.now,
+        by_system: false,
+    };
+    let id = ops::create(txn, &params)?;
+    let blob = sections::encode(formats);
+    let table = members::encode_table(&[], members::INITIAL_CAP);
+    let def_len = blob.len() + table.len();
+    let space = Space::ensure(txn, id, u64::try_from(def_len).expect("fits"), 0)?;
+    space.write(txn, 0, &blob)?;
+    space.write(txn, u64::try_from(blob.len()).expect("fits"), &table)?;
+    let attr = FileAttr {
+        kind,
+        maint: opts.maint,
+        recover: opts.recover,
+        share: opts.share,
+        reusedlt: opts.reusedlt,
+        frcaccpth: opts.frcaccpth,
+        lvlchk: opts.lvlchk,
+        alwupd: opts.alwupd,
+        alwdlt: opts.alwdlt,
+        allocate: opts.allocate,
+        record_len: formats
+            .iter()
+            .map(|f| f.format.record_len)
+            .max()
+            .unwrap_or(0),
+        format_count: u16::try_from(formats.len()).expect("few"),
+        member_count: 0,
+        max_members: opts.max_members,
+        size: opts.size,
+        frcratio: opts.frcratio,
+        wait_file: opts.wait_file,
+        wait_rcd: opts.wait_rcd,
+        ccsid: opts.ccsid,
+        expdate: 0,
+        def_len: u64::try_from(def_len).expect("fits"),
+        formats_off: 0,
+        formats_len: u64::try_from(blob.len()).expect("fits"),
+        members_off: u64::try_from(blob.len()).expect("fits"),
+        member_cap: members::INITIAL_CAP,
+    };
+    let (page, _) = ops::read_header(txn, id)?;
+    ops::write_attr(txn, page, 0, &attr.encode())?;
+    match opts.member {
+        MemberOpt::None => {}
+        MemberOpt::File => {
+            add_member(txn, id, name, &opts.text, None, opts.now)?;
+        }
+        MemberOpt::Named(m) => {
+            add_member(txn, id, m, &opts.text, None, opts.now)?;
+        }
+    }
+    Ok(id)
+}
+
+/// Describe a file.
+pub fn describe(txn: &mut Txn<'_>, id: ObjectId) -> Result<FileDesc> {
+    let (page, h) = ops::read_header(txn, id)?;
+    let a = ops::read_attr(txn, page)?;
+    if h.id.type_code != types::FILE || &a[..8] != attr::MAGIC {
+        return Err(DbError::NotAFile {
+            name: h.name.to_string(),
+            library: library_name(txn, h.library),
+        });
+    }
+    let attr = FileAttr::decode(&a[..attr::ATTR_LEN])?;
+    let (space, _) = Space::load(txn, id)?;
+    let blob = space.read(
+        txn,
+        attr.formats_off,
+        usize::try_from(attr.formats_len).expect("fits"),
+    )?;
+    let formats = sections::decode(&blob)?;
+    let table = space.read(
+        txn,
+        attr.members_off,
+        usize::from(attr.member_count) * members::ENTRY_LEN,
+    )?;
+    let members = members::decode_table(&table, attr.member_count);
+    Ok(FileDesc {
+        id,
+        page,
+        header: h,
+        attr,
+        formats,
+        members,
+    })
+}
+
+fn library_name(txn: &mut Txn<'_>, id: ObjectId) -> String {
+    ops::read_header(txn, id).map_or_else(|_| id.to_string(), |(_, h)| h.name.to_string())
+}
+
+fn save_attr(txn: &mut Txn<'_>, desc: &FileDesc) -> Result<()> {
+    ops::write_attr(txn, desc.page, 0, &desc.attr.encode())?;
+    Ok(())
+}
+
+/// `ADDPFM`: a member of the first format.
+pub fn add_member(
+    txn: &mut Txn<'_>,
+    file: ObjectId,
+    name: Name,
+    text: &str,
+    srctype: Option<Name>,
+    now: u64,
+) -> Result<ObjectId> {
+    let mut desc = describe(txn, file)?;
+    if desc.members.iter().any(|m| m.name == name) {
+        return Err(DbError::MemberExists {
+            file: desc.name().to_string(),
+            member: name.to_string(),
+        });
+    }
+    if desc.attr.max_members > 0 && u32::from(desc.attr.member_count) >= desc.attr.max_members {
+        return Err(DbError::TooManyMembers {
+            file: desc.name().to_string(),
+            max: desc.attr.max_members,
+        });
+    }
+    let format = desc.formats.first().ok_or_else(|| DbError::Corrupt {
+        what: format!("file {} has no record format", desc.name()),
+    })?;
+    let params = CreateParams {
+        library: desc.header.library,
+        name,
+        type_code: types::MBR,
+        attribute: String::new(),
+        text: text.to_string(),
+        owner: text_of(&desc.header.owner),
+        system: text_of(&desc.header.system),
+        now,
+        by_system: true,
+    };
+    let object = member::create(
+        txn,
+        file,
+        format,
+        member::MemberParams {
+            format_index: 0,
+            max_records: desc.attr.size.max_records(),
+            increment: desc.attr.size.increment,
+            reuse_deleted: desc.attr.reusedlt,
+        },
+        &params,
+    )?;
+    let entry = MemberEntry {
+        name,
+        srctype,
+        object,
+    };
+    desc.members.push(entry);
+    write_members(txn, &mut desc)?;
+    Ok(object)
+}
+
+/// Write the member table back, growing it when full.
+fn write_members(txn: &mut Txn<'_>, desc: &mut FileDesc) -> Result<()> {
+    let count = u32::try_from(desc.members.len()).expect("fits");
+    if count > desc.attr.member_cap {
+        let cap = (desc.attr.member_cap * 2).max(count);
+        desc.attr.members_off = desc.attr.def_len;
+        desc.attr.member_cap = cap;
+        desc.attr.def_len += u64::from(cap) * members::ENTRY_LEN as u64;
+    }
+    let table = members::encode_table(&desc.members, desc.attr.member_cap);
+    let space = Space::ensure(txn, desc.id, desc.attr.def_len, 0)?;
+    space.write(txn, desc.attr.members_off, &table)?;
+    desc.attr.member_count = u16::try_from(desc.members.len()).expect("at most 32767");
+    save_attr(txn, desc)
+}
+
+/// `RMVM`.
+pub fn remove_member(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId, name: Name) -> Result<()> {
+    let mut desc = describe(txn, file)?;
+    let at = desc
+        .members
+        .iter()
+        .position(|m| m.name == name)
+        .ok_or_else(|| DbError::MemberNotFound {
+            file: desc.name().to_string(),
+            member: name.to_string(),
+        })?;
+    let entry = desc.members.remove(at);
+    member::destroy(txn, job, entry.object)?;
+    write_members(txn, &mut desc)
+}
+
+/// `RNMM`.
+pub fn rename_member(
+    txn: &mut Txn<'_>,
+    file: ObjectId,
+    from: Name,
+    to: Name,
+    now: u64,
+) -> Result<()> {
+    let mut desc = describe(txn, file)?;
+    if desc.members.iter().any(|m| m.name == to) {
+        return Err(DbError::MemberExists {
+            file: desc.name().to_string(),
+            member: to.to_string(),
+        });
+    }
+    let file_name = desc.name().to_string();
+    let entry = desc
+        .members
+        .iter_mut()
+        .find(|m| m.name == from)
+        .ok_or_else(|| DbError::MemberNotFound {
+            file: file_name,
+            member: from.to_string(),
+        })?;
+    entry.name = to;
+    let (page, mut h) = ops::read_header(txn, entry.object)?;
+    h.name = to;
+    h.changed = now;
+    ops::write_header(txn, page, &h)?;
+    write_members(txn, &mut desc)
+}
+
+/// `DLTF`: the members, then the file.
+pub fn delete_file(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId) -> Result<()> {
+    let desc = describe(txn, file)?;
+    for m in &desc.members {
+        member::destroy(txn, job, m.object)?;
+    }
+    ops::delete(txn, job, file)?;
+    Ok(())
+}
+
+/// The header's attribute area offset, for callers that read raw pages.
+pub const ATTR_OFF: usize = header::ATTR_OFF;
