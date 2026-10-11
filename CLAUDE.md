@@ -105,8 +105,13 @@ qir/          the IR: src/types/ layouts, src/module/ units, vars, procs, src/in
               instruction set and literal encoding, src/text/ lexer, parser, printer,
               src/verify/ places, typing, flow, monitors, per-instruction checks,
               src/binary/ the versioned module format, src/bin/qirc.rs; tests/programs/
+codegen/      IR to x86_64 through Cranelift: src/abi.rs env record, signatures, static
+              frames; src/rt.rs the runtime call table; src/lower/ driver, places, scalar
+              and control-flow instructions, calls; src/output.rs code, relocations, maps;
+              src/load.rs placing code and resolving relocations; tests/common/ a stand-in
+              runtime
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
-              DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, images/
+              DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, images/
 ```
 
 ## Commands
