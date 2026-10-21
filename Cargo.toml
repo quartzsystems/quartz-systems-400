@@ -23,6 +23,7 @@ members = [
     "codegen",
     "mi",
     "ile",
+    "msgf",
 ]
 
 [workspace.package]

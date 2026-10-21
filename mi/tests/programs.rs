@@ -135,10 +135,16 @@ DONE:
     assert_eq!(num(&p, "got"), "20");
     let j = p.job();
     assert_eq!(
-        j.handled.iter().map(|e| e.cond).collect::<Vec<_>>(),
+        j.handled
+            .iter()
+            .map(|e| e.cond.unwrap())
+            .collect::<Vec<_>>(),
         vec![Cond::Mch1210, Cond::Mch1202]
     );
-    assert_eq!(j.exception.as_ref().map(|e| e.cond), Some(Cond::Mch1211));
+    assert_eq!(
+        j.exception.as_ref().map(|e| e.cond),
+        Some(Some(Cond::Mch1211))
+    );
     assert!(j.pending());
 }
 
@@ -357,7 +363,10 @@ GONE:
     assert_eq!(num(&p, "dead"), "-1");
     let j = p.job();
     assert_eq!(
-        j.handled.iter().map(|e| e.cond).collect::<Vec<_>>(),
+        j.handled
+            .iter()
+            .map(|e| e.cond.unwrap())
+            .collect::<Vec<_>>(),
         vec![Cond::Mch0601, Cond::Mch3402]
     );
     assert!(!j.pending());
@@ -405,7 +414,7 @@ CAUGHT:
         vec!["caught in caller".to_string(), "1".to_string()]
     );
     assert_eq!(j.handled.len(), 1);
-    assert_eq!(j.handled[0].cond, Cond::Mch1211);
+    assert_eq!(j.handled[0].cond, Some(Cond::Mch1211));
     assert_eq!(j.handled[0].depth, 2, "raised inside INNER");
     assert_eq!(j.depth, 0);
     assert!(!j.pending());

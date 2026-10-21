@@ -16,11 +16,21 @@ use ile::{ActGrpAttr, PgmKind};
 
 use crate::act::{ActivationGroup, Activator, AgKind, ObjectSource, call_entry};
 use crate::cond::Exception;
+use crate::msg::{ClearMode, Message, MsgQueue, QueueRef};
 use crate::space::Spaces;
+use qir::MsgType;
 
 /// A program implemented in Rust, called like any other: the job and
 /// the parameter addresses.
 pub type NativeFn = fn(&mut Job, &[u64]);
+
+/// A resolved message queue.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum QueueTarget {
+    Frame(usize),
+    Ext,
+    SysOpr,
+}
 
 /// The job. The `abi` header comes first so the pointer generated code
 /// holds is also a pointer to the whole record.
@@ -52,6 +62,13 @@ pub struct Job {
     pub table: Vec<usize>,
     /// Mapped user spaces.
     pub usrspcs: crate::usrspc::UserSpaces,
+    /// The job's external message queue.
+    pub ext_msgq: MsgQueue,
+    /// `QSYSOPR`, as this job sees it; `MIGRATE(phase5)`.
+    pub sysopr: MsgQueue,
+    /// Message descriptions.
+    pub msgs: Box<dyn msgf::MsgLookup>,
+    next_key: u32,
     env: Box<Env>,
 }
 
@@ -74,6 +91,10 @@ impl Job {
             natives: HashMap::new(),
             table: crate::rtlib::table(),
             usrspcs: crate::usrspc::UserSpaces::default(),
+            ext_msgq: MsgQueue::default(),
+            sysopr: MsgQueue::default(),
+            msgs: Box::new(msgf::BuiltinMsgs::new()),
+            next_key: 1,
             env: Box::new(Env {
                 statics: std::ptr::null_mut(),
                 job: std::ptr::null_mut(),
@@ -254,6 +275,140 @@ impl Job {
         for b in self.act.reclaim_eligible() {
             self.spaces.kill_static(b);
         }
+    }
+
+    /// The queue a reference names, from the current entry: a frame
+    /// index, or the external or operator queue.
+    fn queue_target(&self, q: QueueRef) -> Result<QueueTarget, Cond> {
+        let n = self.act.frames.len();
+        let frame = |i: Option<usize>| i.map(QueueTarget::Frame).ok_or(Cond::Mch3601);
+        match q {
+            QueueRef::Same => frame(n.checked_sub(1)),
+            QueueRef::Prv => frame(n.checked_sub(2)),
+            QueueRef::Up(k) => frame(n.checked_sub(1 + k as usize)),
+            QueueRef::CtlBdy => {
+                let mut i = n.checked_sub(1).ok_or(Cond::Mch3601)?;
+                loop {
+                    if self.act.frames[i].control_boundary {
+                        return Ok(QueueTarget::Frame(i));
+                    }
+                    if i == 0 {
+                        return Ok(QueueTarget::Ext);
+                    }
+                    i -= 1;
+                }
+            }
+            QueueRef::Ext => Ok(QueueTarget::Ext),
+            QueueRef::SysOpr => Ok(QueueTarget::SysOpr),
+        }
+    }
+
+    fn queue_mut(&mut self, t: QueueTarget) -> &mut MsgQueue {
+        match t {
+            QueueTarget::Frame(i) => &mut self.act.frames[i].msgq,
+            QueueTarget::Ext => &mut self.ext_msgq,
+            QueueTarget::SysOpr => &mut self.sysopr,
+        }
+    }
+
+    /// The messages on a queue, for displays.
+    pub fn queue(&self, q: QueueRef) -> Option<&MsgQueue> {
+        Some(match self.queue_target(q).ok()? {
+            QueueTarget::Frame(i) => &self.act.frames[i].msgq,
+            QueueTarget::Ext => &self.ext_msgq,
+            QueueTarget::SysOpr => &self.sysopr,
+        })
+    }
+
+    /// A message's text, help and severity from its description.
+    pub fn describe_message(
+        &mut self,
+        msgid: &str,
+        msgf: &str,
+        lib: &str,
+        data: &[u8],
+    ) -> (String, String, u16) {
+        match self.msgs.describe(msgid, msgf, lib) {
+            Some(d) => (d.format(data), d.format_help(data), d.severity),
+            None => (
+                format!("{msgid} {}", ccsid::decode_trimmed(data)),
+                String::new(),
+                0,
+            ),
+        }
+    }
+
+    /// Send a program message. An escape message becomes the pending
+    /// exception of the entry it was sent to; a message to an entry
+    /// that does not exist is `MCH3601` here (`CPF2469` on the
+    /// machine).
+    pub fn send_message(
+        &mut self,
+        msgid: &str,
+        msgf: &str,
+        lib: &str,
+        data: Vec<u8>,
+        msg_type: MsgType,
+        to: QueueRef,
+    ) -> Result<u32, Cond> {
+        let target = self.queue_target(to)?;
+        let (text, help, severity) = self.describe_message(msgid, msgf, lib, &data);
+        let key = self.next_key;
+        self.next_key += 1;
+        let from_depth = self.depth;
+        let m = Message {
+            key,
+            msgid: msgid.into(),
+            msgf: msgf.into(),
+            msgf_lib: lib.into(),
+            msg_type,
+            data: data.clone(),
+            text,
+            help,
+            severity,
+            from_depth,
+            received: false,
+            reply: None,
+        };
+        self.queue_mut(target).push(m);
+        if msg_type == MsgType::Escape
+            && let QueueTarget::Frame(i) = target
+        {
+            let depth = u32::try_from(i + 1).expect("few frames");
+            let e = Exception::message(msgid, msgf, data, depth);
+            self.raised.push(e.clone());
+            self.exception = Some(e);
+            self.abi.pending = 1;
+        }
+        Ok(key)
+    }
+
+    /// Receive the oldest message of a type, or the keyed one, from a
+    /// queue; marked received or removed.
+    pub fn receive_message(
+        &mut self,
+        from: QueueRef,
+        ty: Option<MsgType>,
+        key: Option<u32>,
+        rmv: bool,
+    ) -> Option<Message> {
+        let t = self.queue_target(from).ok()?;
+        self.queue_mut(t).receive(ty, key, rmv)
+    }
+
+    /// Remove one message by key, or clear by mode; how many went.
+    pub fn remove_messages(
+        &mut self,
+        from: QueueRef,
+        key: Option<u32>,
+        clear: ClearMode,
+    ) -> Result<usize, Cond> {
+        let t = self.queue_target(from)?;
+        let q = self.queue_mut(t);
+        Ok(match key {
+            Some(k) => usize::from(q.remove(k)),
+            None => q.clear(clear),
+        })
     }
 
     /// Live activation groups, for `DSPACTGRP`.

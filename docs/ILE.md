@@ -258,10 +258,38 @@ and `MCH3601` when touched. Native programs (system APIs implemented
 in Rust) are registered by name and found before any object when the
 library is `QSYS` or `*LIBL`.
 
-## 5. Exceptions
+## 5. Messages and exceptions
 
-The runtime model so far is in `ABI.md` §7: percolation by return
-with a poll after every call, `monitor` dispatch blocks, resumption
-after `raise`. *Phase 4, pending*: condition handlers, cancel
-handlers, the function check and the inquiry message, with a state
-diagram here.
+**Queues.** Every call-stack entry has a call message queue; the job
+has an external queue and sees `QSYSOPR`. `sndpgmmsg` names the
+target as `*SAME`, `*PRV`, `*CTLBDY` (the nearest entry at or below
+the sender that is a control boundary: a program entry procedure; the
+external queue when there is none), `*EXT`, `*SYSOPR` or a count of
+entries up. A message keeps its identifier, file and data; its first-
+and second-level text are substituted when it is sent, from the
+description in the message file (`MSGF.md`), so later changes to the
+description do not change it. Keys are unique in the job. `rcvmsg`
+takes the oldest message of a type or the one with a key and marks it
+received or removes it; `rmvmsg` removes by key or clears `*ALL`,
+`*OLD` (received), `*NEW` (not received) or everything but unanswered
+inquiries (`*KEEPUNANS`). An entry's queue goes away when the entry
+ends.
+
+**Escapes.** A machine condition raised by generated code or the
+runtime is an `*ESCAPE` message from `QCPFMSG` sent to the entry that
+failed, and the job's pending exception at the same time. An `*ESCAPE`
+sent with `sndpgmmsg` to another entry is the pending exception of
+that entry: the sender's own handlers do not see it, since a handler
+takes an exception only at the entry it was sent to or at one of that
+entry's callers, and the sender's remaining code is skipped by
+percolation (`ABI.md` §7). `*STATUS` and `*NOTIFY` messages are queued
+like any other for now; their handling rules and the function check
+are *Phase 4, pending*, with a state diagram here.
+
+**Percolation.** From the failing entry upwards: the entry's
+`monitor` regions, innermost first; then the entry is left, its
+frame spaces die, and the caller polls, finding the exception at its
+own depth. *Phase 4, pending*: ILE condition handlers (`CEEHDLR`)
+before the monitors, cancel handlers when an entry is ended, the
+function check `CPF9999` at a control boundary and the inquiry
+`CEE9901` with its replies.

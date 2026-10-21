@@ -1,0 +1,43 @@
+# QCEEMSG: messages of the ILE common execution environment.
+name = "QCEEMSG"
+text = "ILE runtime messages"
+
+[[msg]]
+id = "CEE9901"
+sev = 30
+text = "Program &1 ended because of an unhandled exception &2. Reply C, D, F, G, I or R."
+help = "The exception was not handled by any program on the call stack. C cancels to the control boundary, D dumps the job and cancels, F dumps the call stack only, G resumes after the failing instruction, I ignores the exception, R retries the failing instruction."
+vars = ["*CHAR 10", "*CHAR 7"]
+reply = { default = "C", valid = ["C", "D", "F", "G", "I", "R"] }
+
+[[msg]]
+id = "CEE0200"
+sev = 30
+text = "Condition &1 was signaled."
+help = "CEESGL raised a condition that no handler took."
+vars = ["*CHAR 7"]
+
+[[msg]]
+id = "CEE0802"
+sev = 40
+text = "The heap storage pointer is not valid."
+help = "The pointer given to a heap API was not returned by one, or the storage was already freed."
+
+[[msg]]
+id = "CEE0803"
+sev = 40
+text = "The heap &1 does not exist."
+help = "The heap identifier was not returned by CEECRHP, or the heap was discarded."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CEE2501"
+sev = 30
+text = "The date, time or timestamp is not valid."
+help = "The value given to a date API is outside the supported range or does not match its picture."
+
+[[msg]]
+id = "CEE2518"
+sev = 30
+text = "The picture string is not valid."
+help = "The picture a date API was given uses a format it does not support."

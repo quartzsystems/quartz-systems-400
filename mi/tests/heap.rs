@@ -71,7 +71,10 @@ NH:
     let j = p.job_ref();
     assert!(!j.pending());
     assert_eq!(
-        j.handled.iter().map(|e| e.cond).collect::<Vec<_>>(),
+        j.handled
+            .iter()
+            .map(|e| e.cond.unwrap())
+            .collect::<Vec<_>>(),
         vec![Cond::Mch3402, Cond::Mch3402, Cond::Mch3601]
     );
 }

@@ -8,16 +8,21 @@
 
 pub use codegen::Cond;
 
-/// A raised condition, pending until a handler takes it.
+/// A pending exception: an escape message sent to a call-stack entry,
+/// from a machine condition or from `sndpgmmsg`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Exception {
-    /// The condition.
-    pub cond: Cond,
-    /// `MCHnnnn`.
+    /// The machine condition, when one raised it.
+    pub cond: Option<Cond>,
+    /// `AAAnnnn`.
     pub msgid: String,
-    /// The five-digit RPG status the condition maps to.
+    /// Message file.
+    pub msgf: String,
+    /// Message data.
+    pub data: Vec<u8>,
+    /// The five-digit RPG status the condition maps to; 0 when none.
     pub status: u16,
-    /// Call-stack depth where it was raised.
+    /// Call-stack depth of the entry it was sent to.
     pub depth: u32,
 }
 
@@ -26,18 +31,37 @@ impl Exception {
     #[must_use]
     pub fn new(cond: Cond, depth: u32) -> Self {
         Self {
-            cond,
+            cond: Some(cond),
             msgid: cond.msgid(),
+            msgf: "QCPFMSG".into(),
+            data: Vec::new(),
             status: status_of(cond),
             depth,
         }
     }
 
-    /// Whether a file operation raised it; none of the machine
-    /// conditions do.
+    /// An exception for an escape message sent to an entry.
+    #[must_use]
+    pub fn message(msgid: &str, msgf: &str, data: Vec<u8>, depth: u32) -> Self {
+        let cond = msgid
+            .strip_prefix("MCH")
+            .and_then(|n| n.parse::<u32>().ok())
+            .and_then(Cond::from_code);
+        Self {
+            cond,
+            msgid: msgid.into(),
+            msgf: msgf.into(),
+            data,
+            status: cond.map_or(0, status_of),
+            depth,
+        }
+    }
+
+    /// Whether a file operation raised it: the `CPF4` and `CPF5`
+    /// families.
     #[must_use]
     pub fn is_file_error(&self) -> bool {
-        false
+        self.msgid.starts_with("CPF4") || self.msgid.starts_with("CPF5")
     }
 }
 

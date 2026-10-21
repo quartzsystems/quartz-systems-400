@@ -1,0 +1,147 @@
+# QCPFMSG: the system message file. Every text is Quartz-written; the
+# identifiers are the compatibility interface. Substitution variables
+# are listed in order: "&1" is the first.
+name = "QCPFMSG"
+text = "System messages"
+
+# Machine conditions.
+
+[[msg]]
+id = "MCH0601"
+sev = 40
+text = "A pointer was moved outside the space it addresses."
+help = "Pointer arithmetic reached past the start or the end of the storage the pointer was set to. The operation did not run."
+
+[[msg]]
+id = "MCH0602"
+sev = 40
+text = "A pointer was stored at an address that is not a multiple of 16."
+help = "Pointers live on 16-byte boundaries. Check the structure layout that holds the pointer."
+
+[[msg]]
+id = "MCH0603"
+sev = 40
+text = "A subscript or position is outside its range."
+help = "An array index, a string position or a length reached outside the declared bounds. The operation did not run."
+
+[[msg]]
+id = "MCH1202"
+sev = 40
+text = "Decimal data is not valid."
+help = "A packed or zoned field holds bytes that are not digits and a sign, or text could not be read as a number."
+
+[[msg]]
+id = "MCH1210"
+sev = 40
+text = "A value does not fit the field it was assigned to."
+help = "The integer part of the result has more digits than the receiving field holds. The field was not changed."
+
+[[msg]]
+id = "MCH1211"
+sev = 40
+text = "Division by zero."
+help = "The divisor of a division or remainder operation was zero."
+
+[[msg]]
+id = "MCH1602"
+sev = 40
+text = "A date, time or timestamp is not valid."
+help = "The value could not be read in the format expected, or the result of a date operation is outside the range the type holds."
+
+[[msg]]
+id = "MCH3401"
+sev = 40
+text = "Object &1 was not found."
+help = "The object does not exist in the library named or in the library list, or an import the binder left unresolved was called."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "MCH3402"
+sev = 40
+text = "The storage a pointer addresses no longer exists."
+help = "The frame returned, the activation group was reclaimed, the heap block was freed or the object was deleted after the pointer was set."
+
+[[msg]]
+id = "MCH3601"
+sev = 40
+text = "A pointer that is not set was used."
+help = "The pointer is null, or a parameter was referenced that the caller did not pass."
+
+[[msg]]
+id = "MCH3602"
+sev = 40
+text = "A pointer of the wrong kind was used."
+help = "A space pointer was expected where a procedure or system pointer was given, or the other way round."
+
+[[msg]]
+id = "MCH4431"
+sev = 40
+text = "The signature of service program &1 does not match."
+help = "The program was bound to an export list the service program no longer answers to. Bind the program again."
+vars = ["*CHAR 10"]
+
+# Call and activation.
+
+[[msg]]
+id = "CPF2469"
+sev = 40
+text = "The message could not be sent to call stack entry &1."
+help = "The call stack entry named as the target of the message does not exist."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF4131"
+sev = 40
+text = "Level check on file &1 in library &2, member &3."
+help = "The record format the program was compiled with does not have the level identifier the file has now. Recompile the program or change the file."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF9897"
+sev = 10
+text = "&1"
+help = ""
+vars = ["*CHAR 512"]
+
+[[msg]]
+id = "CPF9898"
+sev = 40
+text = "&1"
+help = ""
+vars = ["*CHAR 512"]
+
+[[msg]]
+id = "CPF9999"
+sev = 50
+text = "Function check: &1 was not handled at &2."
+help = "A program failed with an exception no handler took. The job's default handler sends inquiry CEE9901 to the system operator, whose reply decides what happens next."
+vars = ["*CHAR 7", "*CHAR 10"]
+
+# Binder diagnostics.
+
+[[msg]]
+id = "CPD5D02"
+sev = 30
+text = "Import &1 was not resolved."
+help = "No module listed, no binding directory and QUSAPIBD exports the symbol. The program is not created unless OPTION(*UNRSLVREF) is specified."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "CPD5D03"
+sev = 30
+text = "Export &1 is not defined in any module."
+help = "The binder source names a symbol no module exports."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "CPD5D04"
+sev = 10
+text = "Symbol &1 is exported by more than one module."
+help = "The first module in the list that exports the symbol is used."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "CPD5D06"
+sev = 30
+text = "No module has a program entry procedure."
+help = "A program needs one module with a main procedure; name it with ENTMOD or list it first."

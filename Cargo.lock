@@ -1255,6 +1255,7 @@ dependencies = [
  "db",
  "dds",
  "ile",
+ "msgf",
  "qdecimal",
  "qir",
  "thiserror",
@@ -1270,6 +1271,20 @@ dependencies = [
  "libc",
  "wasi",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "msgf"
+version = "0.1.0"
+dependencies = [
+ "blockdev",
+ "ccsid",
+ "qdecimal",
+ "qsname",
+ "serde",
+ "store",
+ "thiserror",
+ "toml",
 ]
 
 [[package]]

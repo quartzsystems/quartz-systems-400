@@ -261,6 +261,10 @@ pub struct Frame {
     pub saved_statics: *mut u8,
     /// The caller's activation group, restored on leave.
     pub saved_ag: AgId,
+    /// The entry's call message queue.
+    pub msgq: crate::msg::MsgQueue,
+    /// A control boundary: a program entry procedure.
+    pub control_boundary: bool,
 }
 
 /// The activation state of a job.

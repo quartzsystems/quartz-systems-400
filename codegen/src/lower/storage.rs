@@ -11,8 +11,8 @@ use cranelift_codegen::ir::InstBuilder;
 use cranelift_codegen::ir::{Block, StackSlotData, StackSlotKind, Value, types};
 use qir::verify::typing::operand_type;
 use qir::{
-    Callee, Const, CvtOpts, DecUn, DtInst, Handler, Inst, Operand, Place, PtrInst, Selector,
-    StrInst, TrimSide, Type, TypeClass,
+    Callee, Const, CvtOpts, DecUn, DtInst, Handler, Inst, MsgInst, MsgQueue, Operand, Place,
+    PtrInst, Selector, StrInst, TrimSide, Type, TypeClass,
 };
 
 use super::Lowerer;
@@ -128,6 +128,7 @@ impl Lowerer<'_, '_> {
                 let (pa, _) = self.sop(ptr, Some(&Type::Ptr))?;
                 self.rt_call(RtFn::Dealloc, &[pa]);
             }
+            Inst::Msg(m) => self.msg_inst(m)?,
             Inst::Dsply { src, reply } => {
                 let (sa, sd) = self.sop(src, None)?;
                 let (ra, rd) = match reply {
@@ -140,6 +141,108 @@ impl Lowerer<'_, '_> {
                 let name = format!("{other:?}");
                 let name = name.split(['{', '(', ' ']).next().unwrap_or("instruction");
                 return Err(self.unsupported(name));
+            }
+        }
+        Ok(())
+    }
+
+    /// The kind and count words of a message queue reference.
+    fn queue_ref(&mut self, q: &MsgQueue) -> Result<(Value, Value)> {
+        let (kind, n) = match q {
+            MsgQueue::Same => (0, None),
+            MsgQueue::Prv => (1, None),
+            MsgQueue::CtlBdy => (2, None),
+            MsgQueue::Ext => (3, None),
+            MsgQueue::SysOpr => (4, None),
+            MsgQueue::Up(o) => (5, Some(o)),
+        };
+        let k = self.i64(kind);
+        let n = match n {
+            Some(o) => self.int_op(o)?,
+            None => self.i64(0),
+        };
+        Ok((k, n))
+    }
+
+    /// A place as an address, or 0 when absent.
+    fn opt_place_addr(&mut self, p: Option<&Place>) -> Result<Value> {
+        match p {
+            Some(p) => Ok(self.addr(p)?.0),
+            None => Ok(self.i64(0)),
+        }
+    }
+
+    /// A place as an (address, descriptor) pair, or zeros when absent.
+    fn opt_place_pair(&mut self, p: Option<&Place>) -> Result<(Value, Value)> {
+        match p {
+            Some(p) => self.place_pair(p),
+            None => Ok((self.i64(0), self.i64(0))),
+        }
+    }
+
+    fn msg_inst(&mut self, m: &MsgInst) -> Result<()> {
+        match m {
+            MsgInst::Snd {
+                msgid,
+                msgf,
+                msgf_lib,
+                data,
+                msg_type,
+                to,
+                key,
+            } => {
+                let (ia, _) = self.sop(msgid, Some(&Type::Char(7)))?;
+                let (fa, _) = self.sop(msgf, Some(&Type::Char(10)))?;
+                let (la, _) = match msgf_lib {
+                    Some(l) => self.sop(l, Some(&Type::Char(10)))?,
+                    None => (self.i64(0), self.i64(0)),
+                };
+                let (da, dd) = self.sop_opt(data.as_ref())?;
+                let ty = self.i64(i64::from(*msg_type as u8));
+                let (tk, tn) = self.queue_ref(to)?;
+                let ka = self.opt_place_addr(key.as_ref())?;
+                self.rt_call(RtFn::SndPgmMsg, &[ia, fa, la, da, dd, ty, tk, tn, ka]);
+            }
+            MsgInst::Rcv {
+                dst,
+                pgmq,
+                msg_type,
+                key,
+                rmv,
+                msg,
+                msgid,
+                data,
+                keyout,
+                sev,
+            } => {
+                let (qk, qn) = self.queue_ref(pgmq)?;
+                let ty = self.i64(msg_type.map_or(-1, |t| i64::from(t as u8)));
+                let (ka, _) = self.sop_opt(key.as_ref())?;
+                let rm = self.i64(i64::from(*rmv));
+                let (ma, mt) = self.opt_place_pair(msg.as_ref())?;
+                let ida = self.opt_place_addr(msgid.as_ref())?;
+                let (da, dd) = self.opt_place_pair(data.as_ref())?;
+                let ko = self.opt_place_addr(keyout.as_ref())?;
+                let (sa, st) = self.opt_place_pair(sev.as_ref())?;
+                let v = self
+                    .rt_call(
+                        RtFn::RcvMsg,
+                        &[qk, qn, ty, ka, rm, ma, mt, ida, da, dd, ko, sa, st],
+                    )
+                    .expect("result");
+                let ind = self.b.ins().ireduce(types::I8, v);
+                self.b.def_var(self.vars[dst.0 as usize], ind);
+            }
+            MsgInst::Rmv { pgmq, key, clear } => {
+                let (qk, qn) = self.queue_ref(pgmq)?;
+                let (ka, _) = self.sop_opt(key.as_ref())?;
+                let c = self.i64(match clear.as_str() {
+                    "*OLD" => 1,
+                    "*NEW" => 2,
+                    "*KEEPUNANS" => 3,
+                    _ => 0,
+                });
+                self.rt_call(RtFn::RmvMsg, &[qk, qn, ka, c]);
             }
         }
         Ok(())
@@ -495,6 +598,11 @@ impl Lowerer<'_, '_> {
                         Type::Packed(qir::Shape::new(sh.digits.max(1), sh.scale).expect("valid"))
                     }
                     (Const::Float(_), _) => Type::F64,
+                    (Const::Str(s), Some(t @ Type::Char(n)))
+                        if s.chars().count() <= *n as usize =>
+                    {
+                        t.clone()
+                    }
                     (Const::Str(s), _) => {
                         let n = u32::try_from(s.chars().count().max(1)).expect("literal fits");
                         Type::Char(n)

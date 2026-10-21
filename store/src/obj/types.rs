@@ -78,6 +78,8 @@ pub const USRSPC: u16 = 0x0004;
 pub const USRIDX: u16 = 0x0005;
 /// Code of `*USRQ`.
 pub const USRQ: u16 = 0x0006;
+/// Code of `*MSGF`.
+pub const MSGF: u16 = 0x0008;
 /// Code of `*USRPRF`.
 pub const USRPRF: u16 = 0x000E;
 /// Code of `*AUTL`.
@@ -131,7 +133,7 @@ pub static TYPES: &[TypeInfo] = &[
     ),
     t(USRQ, "*USRQ", false, true, false, false, Module::UserQueue),
     t(0x0007, "*MSGQ", true, true, false, false, Module::Opaque),
-    t(0x0008, "*MSGF", true, true, false, false, Module::Opaque),
+    t(MSGF, "*MSGF", true, true, false, false, Module::Opaque),
     t(0x0009, "*JOBD", true, true, false, false, Module::Opaque),
     t(0x000A, "*CLS", true, true, false, false, Module::Opaque),
     t(0x000B, "*SBSD", true, false, false, false, Module::Opaque),

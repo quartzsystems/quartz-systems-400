@@ -159,6 +159,9 @@ absent optional length is -1.
 | 37 | `alloc` | `out, n` | 16 bytes at `out` |
 | 38 | `realloc` | `out, ptr, n` | 16 bytes at `out` |
 | 39 | `dealloc` | `ptr` | |
+| 40 | `sndpgmmsg` | `msgid, msgf, lib, data, dty, type, to_kind, to_n, key` | |
+| 41 | `rcvmsg` | `pgmq_kind, pgmq_n, type, key, rmv, msg, mty, msgid, data, dty, keyout, sev, sevty` | `i32` 0 or 1 |
+| 42 | `rmvmsg` | `pgmq_kind, pgmq_n, key, clear` | |
 
 `enter` is called in every prologue with the procedure's own code
 address, so the runtime can push a call-stack entry and identify the

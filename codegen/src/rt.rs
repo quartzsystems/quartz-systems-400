@@ -106,10 +106,17 @@ pub enum RtFn {
     Realloc = 38,
     /// `dealloc(env, ptr)`: heap storage freed.
     Dealloc = 39,
+    /// `sndpgmmsg(env, msgid, msgf, lib, data, dty, type, to_kind, to_n, key)`.
+    SndPgmMsg = 40,
+    /// `rcvmsg(env, pgmq_kind, pgmq_n, type, key, rmv, msg, mty, msgid,
+    /// data, dty, keyout, sev, sevty) -> 0|1`.
+    RcvMsg = 41,
+    /// `rmvmsg(env, pgmq_kind, pgmq_n, key, clear)`.
+    RmvMsg = 42,
 }
 
 /// Every runtime function, in table order.
-pub const RT_FNS: [RtFn; 40] = [
+pub const RT_FNS: [RtFn; 43] = [
     RtFn::Raise,
     RtFn::Enter,
     RtFn::Leave,
@@ -150,6 +157,9 @@ pub const RT_FNS: [RtFn; 40] = [
     RtFn::Alloc,
     RtFn::Realloc,
     RtFn::Dealloc,
+    RtFn::SndPgmMsg,
+    RtFn::RcvMsg,
+    RtFn::RmvMsg,
 ];
 
 impl RtFn {
@@ -209,6 +219,9 @@ impl RtFn {
             Self::Alloc => "alloc",
             Self::Realloc => "realloc",
             Self::Dealloc => "dealloc",
+            Self::SndPgmMsg => "sndpgmmsg",
+            Self::RcvMsg => "rcvmsg",
+            Self::RmvMsg => "rmvmsg",
         }
     }
 
@@ -258,6 +271,9 @@ impl RtFn {
             Self::Alloc => (2, None),
             Self::Realloc => (3, None),
             Self::Dealloc => (1, None),
+            Self::SndPgmMsg => (9, None),
+            Self::RcvMsg => (13, Some(types::I32)),
+            Self::RmvMsg => (4, None),
         }
     }
 

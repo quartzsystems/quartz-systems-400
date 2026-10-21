@@ -20,9 +20,18 @@ use crate::cond::Exception;
 use crate::job::Job;
 use crate::space::{FatPtr, PtrKind};
 
-/// Record a condition on the job: it is pending until a handler takes it.
+/// Record a condition on the job: an escape message from `QCPFMSG` on
+/// the current entry's queue, pending until a handler takes it.
 pub(crate) fn raise_on(j: &mut Job, cond: Cond) {
     let e = Exception::new(cond, j.depth);
+    let _ = j.send_message(
+        &e.msgid,
+        "QCPFMSG",
+        "QSYS",
+        Vec::new(),
+        qir::MsgType::Escape,
+        crate::msg::QueueRef::Same,
+    );
     j.raised.push(e.clone());
     j.exception = Some(e);
     j.abi.pending = cond as u64;
@@ -57,12 +66,17 @@ pub extern "sysv64" fn enter(env: *mut Env, code: i64) {
         e.statics = base;
         j.act.current = ag;
     }
+    let control_boundary = program
+        .as_ref()
+        .is_some_and(|p| p.entry_addr() == Some(usize::try_from(code).unwrap_or(0)));
     j.act.frames.push(Frame {
         code,
         program,
         ag,
         saved_statics,
         saved_ag,
+        msgq: crate::msg::MsgQueue::default(),
+        control_boundary,
     });
 }
 
@@ -290,7 +304,9 @@ pub extern "sysv64" fn monitor_match(env: *mut Env, kind: i64, a: i64, b: i64) -
         }
         _ => false,
     };
-    if hit {
+    // A handler takes the exception only at the entry it was sent to
+    // or at one of its callers, never in the sender below the target.
+    if hit && j.depth <= e.depth {
         let e = j.exception.take().expect("present");
         j.handled.push(e);
         j.abi.pending = 0;

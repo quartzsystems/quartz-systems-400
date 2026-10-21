@@ -1,0 +1,112 @@
+# QSQLMSG: the SQL messages behind the SQLCODEs of the Phase 3 executor.
+name = "QSQLMSG"
+text = "SQL messages"
+
+[[msg]]
+id = "SQL0084"
+sev = 30
+text = "The statement is not supported: &1."
+help = "The statement or clause is outside the subset this release implements."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "SQL0104"
+sev = 30
+text = "Syntax error at line &1 column &2: &3."
+help = "The statement could not be parsed at the position shown."
+vars = ["*DEC 5 0", "*DEC 5 0", "*CHAR 256"]
+
+[[msg]]
+id = "SQL0117"
+sev = 30
+text = "The number of values does not match the number of columns."
+help = "An INSERT lists a different number of values than columns."
+
+[[msg]]
+id = "SQL0203"
+sev = 30
+text = "Column &1 is ambiguous."
+help = "More than one table in the statement has a column of that name; qualify it."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "SQL0204"
+sev = 30
+text = "&1 in &2 not found."
+help = "No table, view or index of that name exists in the schema named or the current schema."
+vars = ["*CHAR 30", "*CHAR 10"]
+
+[[msg]]
+id = "SQL0206"
+sev = 30
+text = "Column &1 not found."
+help = "No table in the statement has a column of that name."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "SQL0302"
+sev = 30
+text = "A value is not valid for its target: &1."
+help = "A literal or host value could not be converted to the column's type."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "SQL0401"
+sev = 30
+text = "The operands of &1 are not compatible."
+help = "The operator or comparison was given values of types that do not combine."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "SQL0407"
+sev = 30
+text = "Column &1 does not allow nulls."
+help = "A null value was assigned to a column defined without ALWNULL."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "SQL0501"
+sev = 30
+text = "Cursor &1 is not open."
+help = "FETCH, UPDATE or DELETE WHERE CURRENT OF needs an open cursor."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "SQL0802"
+sev = 30
+text = "Arithmetic overflow or division by zero."
+help = "The result of an arithmetic expression does not fit its type, or a divisor was zero."
+
+[[msg]]
+id = "SQL0803"
+sev = 30
+text = "Duplicate key value in &1."
+help = "The row would repeat a key of a unique index or the primary key."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "SQL0811"
+sev = 30
+text = "A scalar subselect returned more than one row."
+help = "The subquery in a scalar position must return at most one row."
+
+[[msg]]
+id = "SQL0901"
+sev = 50
+text = "SQL system error: &1."
+help = "The database layer reported an error the SQL executor did not expect."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "SQL0913"
+sev = 30
+text = "The row in &1 is locked by another job."
+help = "A row needed for update is held by another job's commit cycle."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "SQL7008"
+sev = 30
+text = "&1 is not journaled."
+help = "A change under commitment control needs a journaled file."
+vars = ["*CHAR 30"]

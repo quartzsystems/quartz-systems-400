@@ -112,15 +112,20 @@ codegen/      IR to x86_64 through Cranelift: src/abi.rs env record, signatures,
               runtime
 mi/           the runtime: src/job.rs the job stand-in, src/act.rs loaded programs,
               activation groups and the call stack, src/space.rs fat pointers and spaces,
-              src/heap.rs heaps, src/usrspc.rs mapped user spaces, src/cond.rs conditions and RPG status codes, src/rtlib/ the call
+              src/heap.rs heaps, src/usrspc.rs mapped user spaces, src/msg.rs message
+              queues, src/cond.rs conditions and RPG status codes, src/rtlib/ the call
               table's functions (core, decimal, string, convert, date; mem.rs holds the
               two unsafe blocks), src/exec.rs running one module; tests/programs.rs
+msgf/         message files: src/desc.rs descriptions and substitution, src/source.rs the
+              TOML sources (msgs/*.toml embedded), src/payload.rs the *MSGF payload,
+              src/store.rs CRTMSGF/ADDMSGD/CHGMSGD/RMVMSGD/MRGMSGF/RTVMSG/DSPMSGD and the
+              first-IPL install; msgs/ qcpfmsg.toml, qceemsg.toml, qsqlmsg.toml
 ile/          ILE objects: src/object/ *MODULE, *PGM/*SRVPGM and *BNDDIR payloads and the
               native-output codec; src/binder/ the binder, binder language, signatures;
               src/dsp/ DSPPGM, DSPSRVPGM, DSPMOD, DSPPGMREF, DSPBNDDIR text; src/store/
               CRTMOD/CRTPGM/CRTSRVPGM/UPDPGM/CRTBNDDIR against the store; src/spec.rs
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
-              DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, ILE_OPEN_QUESTIONS.md, images/
+              DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md, images/
 ```
 
 ## Commands
