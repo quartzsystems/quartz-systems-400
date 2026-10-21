@@ -13,8 +13,8 @@ closes when the machine's answer is recorded here and the code agrees.
    of jobs still on output queues (ended, spooled files kept) is not
    documented. Test: on the machine, `WRKUSRJOB *ALL *OUTQ`, note the
    lowest number held, and watch whether `SBMJOB` ever reuses it after
-   a wrap. Until spooled files exist here, only active numbers are
-   skipped.
+   a wrap. Implemented: active and queued numbers are skipped; the
+   numbers of ended jobs whose spooled files remain are not.
 
 2. **What `DSPJOBLOG` shows of an active job.** Implemented: the
    entries `LOG(level severity *)` keeps, with level 0 read as 1 so the
@@ -52,3 +52,65 @@ closes when the machine's answer is recorded here and the code agrees.
    The identifiers the machine writes to `QHST` for these are not
    confirmed. Test: `STRSBS QGPL/QTESTSBS`, `ENDSBS QTESTSBS`, then
    `DSPLOG MSGID(*ALL)` over that minute: note the identifiers.
+
+## Spooling and printing
+
+7. **A DDS printer record with no spacing keyword.** Implemented: it
+   prints on the current line and spaces one line after, as if it had
+   `SPACEA(1)`. Test: a printer file whose record has fields at fixed
+   positions and no `SKIPx`/`SPACEx`, written three times; `CPYSPLF
+   CTLCHAR(*PRTCTL)` shows where each line landed.
+
+8. **Option indicators in a printer record without `INDARA`.**
+   Implemented: the record buffer starts with one byte (`1` on) for
+   each indicator the format uses, in ascending order. The machine's
+   layout, as seen by a program using a record buffer directly
+   (`QSPPUTSP`-style, or an ILE C `_Rwrite`), is not documented here.
+   Test: an ILE C program writing a format conditioned by indicators 50
+   and 51, the buffer dumped.
+
+9. **FCFC channels.** Implemented: `1` skips to line 1, `2`-`9`, `A`,
+   `B` to lines 2 to 11, `C` to the overflow line; the machine takes the
+   channel lines from `CHLVAL`, which is not supported. Test:
+   `CRTPRTF CTLCHAR(*FCFC) CHLVAL((1 (3)) (12 (50)))` and records with
+   `1` and `C`.
+
+10. **The SCS command forms.** Implemented: the subset in `WORKMGMT.md`,
+    with one-byte parameters for `SHF`, `SVF` and `SLD` and `SCD` as
+    `2B D2 04 29 00 n`. Test: a spooled file of a program-described
+    report from the machine, read raw with `QSPGETSP` (or `CPYSPLF` to
+    a stream file as `*SCS`), compared byte for byte with ours.
+
+11. **Overrides issued by a program.** Implemented: `OVRDBF` and
+    `OVRPRTF` from command level reach every open; an override's
+    `OVRSCOPE(*ACTGRPDFN)` from a named activation group reaches that
+    group's opens only. A program's `QCMDEXC` commands run after the
+    call returns until the command analyzer of Phase 7, so call-level
+    scoping inside a group is not reached yet. Test: CL issuing
+    `OVRPRTF ... OVRSCOPE(*ACTGRPDFN)` then calling an RPG program in
+    another named group that opens the file.
+
+## Statistics
+
+12. **DB and non-DB faults.** Implemented: a pool's cgroup's major
+    faults are its DB faults and pages, its other faults the non-DB
+    ones. The machine counts by what the page held. Test: none on
+    the machine settles a mapping onto Linux; recorded so the numbers
+    are read as what they are.
+
+13. **`QWCRSSTS` formats `SSTS0400` and `SSTS0500`.** Implemented as
+    `WORKMGMT.md` lists them: the `SSTS0300` header and 104-byte pool
+    entries. Test: `QWCRSSTS` with each format on the machine, the
+    receiver dumped and compared field by field.
+
+## System jobs and power down
+
+14. **What `QSTRUP` starts.** Implemented: `QSPL`, `QSERVER`,
+    `QUSRWRK`; `QINTER`, `QBATCH`, `QCMN` when `QCTL` controls; the
+    writers when `QSTRPRTWTR` is 1; `QGPL/QS36EVOKE` released. Test:
+    `RTVCLSRC QSYS/QSTRUP` on the machine.
+
+15. **`PWRDWNSYS IPLSRC`.** Implemented: only `*PANEL`; the slot the
+    next IPL uses is the panel's (`qs400.slot`, DST). The machine
+    switches the IPL source. `MIGRATE(phase6)`, with the system
+    service tools.

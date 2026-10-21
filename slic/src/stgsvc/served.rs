@@ -170,6 +170,7 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
     // A submitted job starts as SBMJOB resolved it, with its class's
     // run attributes; any other from its job description.
     let queued = system.pending.remove(&job.number);
+    system.stats.started(job.number);
     let attrs = match &queued {
         Some(q) => {
             let mut a = q.attrs.clone();
@@ -574,6 +575,8 @@ impl Service for Served<'_> {
         if !self.ctx.splfs.contains(&id) {
             return Err(format!("CPF3309 spooled file {id} is not open in this job"));
         }
+        self.system.stats.spooled.0 += 1;
+        self.system.stats.spooled.1 += data.len() as u64;
         super::spool::append(self.system, id, &data, pages, records)
     }
 

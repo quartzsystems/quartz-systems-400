@@ -1483,6 +1483,87 @@ impl Suite {
     }
 }
 
+/// A report of 10,000 lines on `QSYSPRT`, as fast as it goes.
+const RPT10K: &str = "\
+module RPT10K
+file REPORT file(QSYSPRT) dev(*PRT)
+static $line: char(40) inz(\"SPOOL WRITE RATE LINE\")
+proc RPT10K() entry {
+L0:
+  %o = dbopen REPORT
+  %i = const.i32 0
+  br TEST
+TEST:
+  %done = cmp.ge %i, 10000
+  brif %done, OUT, BODY
+BODY:
+  %w = prtio REPORT WRITE fmt(QSYSPRT) rec($line)
+  %i = add %i, 1
+  br TEST
+OUT:
+  %c = dbclose REPORT
+  ret
+}
+";
+
+impl Suite {
+    /// Step 36: the work management numbers of `PHASE5.md`: `SBMJOB`
+    /// over the console, fifty jobs through their whole life, the start
+    /// latency the service measures, and the spool write rate.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    #[allow(clippy::cast_precision_loss)] // small counts
+    pub(crate) fn wm_bench(&self, s: &mut Session) -> Result<String, String> {
+        build(s, "RPT10K", RPT10K)?;
+        let t = std::time::Instant::now();
+        for _ in 0..20 {
+            s.command("dspjob", CMD)?;
+        }
+        let plain = t.elapsed().as_secs_f64() * 1000.0 / 20.0;
+        s.command("chgjobqe QSYS/QBATCH JOBQ(QGPL/QBATCH) MAXACT(*NOMAX)", CMD)?;
+        s.command("hldjobq QGPL/QBATCH", CMD)?;
+        let t = std::time::Instant::now();
+        for i in 1..=50 {
+            s.command(
+                &format!("sbmjob CMD('dlyjob DLY(0)') JOB(WMB{i:03}) JOBQ(QGPL/QBATCH) MSGQ(*NONE)"),
+                CMD,
+            )?;
+        }
+        let sbm = t.elapsed().as_secs_f64() * 1000.0 / 50.0;
+        s.command("strsbs QSYS/QBATCH", CMD)?;
+        let t = std::time::Instant::now();
+        s.command("rlsjobq QGPL/QBATCH", CMD)?;
+        let done = poll(s, "wrkjobq QGPL/QBATCH", 240, |o| {
+            o.lines().any(|l| l.starts_with("QBATCH") && l.split_whitespace().nth(2) == Some("0"))
+        })?;
+        let drained = poll(s, "wrkactjob", 240, |o| !o.contains("WMB0"))?;
+        let life = t.elapsed().as_secs_f64();
+        let stats = s.command("wmstats", CMD)?;
+        s.command("endsbs QBATCH OPTION(*IMMED)", CMD)?;
+        poll(s, "wrkactjob", 60, |o| active_row(o, "QBATCH").is_none())?;
+        s.command("chgjobqe QSYS/QBATCH JOBQ(QGPL/QBATCH) MAXACT(1)", CMD)?;
+        if drained.contains("WMB0") {
+            return Err(format!("the bench jobs did not all run:\n{done}\n{drained}"));
+        }
+        let t = std::time::Instant::now();
+        s.command("call QGPL/RPT10K", Duration::from_secs(120))?;
+        let spool = t.elapsed().as_secs_f64();
+        let files = s.command("wrksplf SELECT(*ALL) JOB(QSVCJOB)", CMD)?;
+        s.command("dltsplf QSYSPRT JOB(QSVCJOB) SPLNBR(*LAST)", CMD)?;
+        if !files.contains("QSYSPRT") {
+            return Err(format!("no report spooled:\n{files}"));
+        }
+        let latency = stats
+            .lines()
+            .next()
+            .and_then(|l| l.split_once("start latency "))
+            .map_or_else(String::new, |(_, r)| r.to_string());
+        Ok(format!(
+            "console round trip {plain:.1} ms; SBMJOB {sbm:.1} ms each; 50 jobs started, ran and ended in {life:.2} s; start latency {latency}; 10000 lines spooled in {spool:.2} s ({:.0} lines/s)",
+            10_000.0 / spool
+        ))
+    }
+}
+
 /// `YYYYMMDD` and `hhmmss` in UTC, `secs` seconds from now.
 fn utc_in(secs: u64) -> (String, String) {
     let unix = std::time::SystemTime::now()

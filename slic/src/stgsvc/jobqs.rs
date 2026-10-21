@@ -228,6 +228,7 @@ pub fn take(system: &mut System, monitor: u32, q: &str, allowed: &[bool]) -> Opt
     .ok()??;
     system.queued.remove(&j.number);
     system.pending.insert(j.number, j.clone());
+    system.stats.taken.insert(j.number, std::time::Instant::now());
     Some(j)
 }
 

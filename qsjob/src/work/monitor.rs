@@ -19,7 +19,7 @@ use super::cgroup;
 use super::spawn::{self, Spawned};
 
 /// How often the monitor looks around.
-const TICK: Duration = Duration::from_millis(500);
+const TICK: Duration = Duration::from_millis(100);
 
 /// The monitor's state.
 pub struct Monitor {

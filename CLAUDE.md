@@ -14,7 +14,13 @@ access, journaling, commitment control, SQL and the QSTEST conformance kit. Phas
 the ILE runtime: the IR (`qir`), the Cranelift code generator (`codegen`), ILE objects
 and the binder (`ile`), the runtime with its job stand-in, exception model, heaps, user
 spaces, messages, file I/O and debugger (`mi`), message files (`msgf`), the system APIs
-(`sysapi`), the service console's ILE commands and the IR conformance kit. Code waiting
+(`sysapi`), the service console's ILE commands and the IR conformance kit. Phase 5 added
+work management: the storage service (`/init qsstg`) and one `qsjob` process per job,
+job descriptions, classes, library lists, `*LDA`, job logs, message queues, `QSYSOPR`,
+`QHST`, the reply list, subsystems with pools as cgroups, routing, the console's
+sign-on and Command Entry, job queues, `SBMJOB`, the job scheduler, output queues,
+spooled files, printer files (SCS, DDS), writers with the capture device and PDF, the
+system jobs, `QSTRUP`, `PWRDWNSYS`, and the statistics displays. Code waiting
 for a later phase is marked `MIGRATE(phaseN)` or `TODO(phaseN)`.
 
 ## Ground rules
@@ -157,12 +163,22 @@ ipc/          process messages: src/wire/ the Wire codec and wire_struct!/wire_e
 stg/          storage service protocol: proto.rs the requests (rpc!), link.rs a job's link,
               src/remote/ the runtime's source traits answered by the service
 wm/           work management: cmd.rs console command parameters, ctl.rs the job control
-              channel (Start, ToJob, FromJob)
-qsjob/        the job process: start.rs (control channel, hello), src/console/ QSVCJOB
-              (line dispatch, call, debug session, the job commands)
+              channel (Start, ToJob, FromJob); src/job/ ids, types, statuses, attributes and
+              the library list; joblog.rs; table.rs the active job table; pools.rs activity
+              levels; stats.rs the /proc, cgroup and block parsers; wtr.rs; src/obj/ the
+              objects' payloads (*JOBD, *CLS, *MSGQ, the reply list, *SBSD and its
+              commands, *JOBQ, *JOBSCD, *OUTQ, *SPLF, *PRTF, *DEVD) and shipped.rs; spec.rs
+qsjob/        the job process: start.rs (control channel, hello, the role); src/console/
+              QSVCJOB and every job's runtime (line dispatch, call, debug session, the job
+              commands, job log, breaks); src/work/ the roles: monitor, batch (QCMD,
+              QWCSTRUP), inter (Command Entry), sysjob, scheduler (QEJSCHED), writer
+              (QSPWTR), spawn and cgroup
+spool/        spooling without the store: src/scs/ SCS encode and decode, printer.rs the line
+              printer (spacing, skipping, overflow, FCFC), ddsprt.rs DDS printer formats,
+              view.rs text, FCFC, *PRTCTL and hex views, pdf.rs the PDF writer
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
               DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md,
-              STORAGE_SERVICE.md, images/
+              STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, images/
 ```
 
 ## Commands
@@ -218,7 +234,21 @@ with expected status codes), `dbbench N`; ILE: `qir asm|check|dis`, `crtpgm`,
 `crtsrvpgm`, `updpgm`, `crtbnddir`, `addbnddire`, `call LIB/PGM [parms]`, `dsppgm`,
 `dspsrvpgm`, `dspmod`, `dsppgmref`, `dspbnddir`, `dspactgrp`, `rclactgrp`,
 `dspcallstk`, `dspmsgq`, `rpy`, `dmp`, `wrkmsgd`, `dspmsgd`, `strdbg`, `addbkp`,
-`rmvbkp`, `dspbkp`, `enddbg` (at a stop: `step`, `go`, `eval`, `dspvar`). Parameters are IBM-style `KEYWORD(value)`. Boot parameters: `qs400.slot=A|B`, `qs400.mode=normal|manual`,
+`rmvbkp`, `dspbkp`, `enddbg` (at a stop: `step`, `go`, `eval`, `dspvar`); work
+management: `wrkactjob [VIEW(1|2|3)]`, `wrkjob`, `dspjob`, `chgjob`, `dspjoblog`,
+`crtjobd`/`chgjobd`/`dspjobd`, `crtcls`/`dspcls`, `dsplibl`, `chglibl`, `addlible`,
+`rmvlible`, `chgcurlib`, `sndmsg`, `sndbrkmsg`, `sndrpymsg`, `dspmsg`, `rcvmsg`,
+`crtmsgq`, `chgmsgq`, `dsplog`, `wrkrpyle`, `addrpyle`, `rmvrpyle`, `crtsbsd`,
+`dspsbsd`, `addrtge`, `addaje`, `addjobqe`, `chgjobqe`, `strsbs`, `endsbs`, `wrksbs`,
+`wrksbsjob`, `wrkshrpool`, `chgshrpool`, `sbmjob`, `wrkjobq`, `crtjobq`, `hldjobq`,
+`rlsjobq`, `clrjobq`, `hldjob`, `rlsjob`, `endjob`, `dlyjob`, `addjobscde`,
+`chgjobscde`, `rmvjobscde`, `hldjobscde`, `rlsjobscde`, `wrkjobscde`, `crtoutq`,
+`chgoutq`, `dltoutq`, `hldoutq`, `rlsoutq`, `clroutq`, `wrkoutq`, `wrkoutqd`,
+`wrksplf`, `wrksplfa`, `dspsplf`, `cpysplf`, `chgsplfa`, `hldsplf`, `rlssplf`,
+`dltsplf`, `crtprtf`, `chgprtf`, `ovrprtf`, `strprtwtr`, `endwtr`, `hldwtr`,
+`rlswtr`, `chgwtr`, `wrkwtr`, `prtcapture list|get|clear`, `wrksyssts`, `wrkdsksts`,
+`wrksysact`, `wmstats`, `pwrdwnsys`, `endsys`, and `dbgkill JOB()` (slic's debug hook:
+SIGKILL a job). Parameters are IBM-style `KEYWORD(value)`. Boot parameters: `qs400.slot=A|B`, `qs400.mode=normal|manual`,
 `qs400.svc=1`, `qs400.ipl=D`, `qs400.media=iso`.
 
 `QS400_TARGET_DIR` relocates `target/` (use an ext4 path when the repo is on

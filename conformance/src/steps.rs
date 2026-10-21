@@ -456,6 +456,7 @@ impl Suite {
         reports.push(self.step(&mut s, "33 batch inquiry", Self::batch_inquiry)?);
         reports.push(self.step(&mut s, "34 end busy subsystem", Self::end_busy_subsystem)?);
         reports.push(self.step(&mut s, "35 killed job", Self::killed_job)?);
+        reports.push(self.step(&mut s, "36 work management bench", Self::wm_bench)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

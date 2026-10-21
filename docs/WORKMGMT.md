@@ -2,8 +2,9 @@
 
 Phase 5 replaces the single service job of Phase 4 with jobs: one Linux
 process per job, started, routed, held, ended and accounted for the way
-the machine does it. This document grows with the phase; the storage
-side of the process model is in `STORAGE_SERVICE.md`.
+the machine does it. The storage side of the process model is in
+`STORAGE_SERVICE.md`; `WM_OPEN_QUESTIONS.md` lists the readings the
+machine has to settle.
 
 ## 1. Jobs
 
@@ -30,6 +31,108 @@ its name, user, number, type, subsystem and process ID. The service
 adds it to the table, gives it a `QTEMP` (the library `QTnnnnnn` in the
 root of ASP 0, seen by the job as `QTEMP`) and removes both when the
 connection closes, however the job ended.
+
+### The process model
+
+Every job is a `qsjob` process. Its standard input is the control
+channel to the process that started it (`wm::ctl`: `ToJob` brings the
+start, console lines, display input and the end request; `FromJob`
+answers ready, output, the prompt, a panel, power down and why it
+ends). The first thing it does is connect to the storage service and
+say hello; from then on everything it does to objects is a request
+(`STORAGE_SERVICE.md`). The start names its role:
+
+| Role | Jobs | Runs |
+|---|---|---|
+| `SYSTEM` | `QSYSARB`-`QSYSARB5`, `QLUS`, `QDBSRV01`-`05`, `QSPLMAINT`, `QALERT`, `QSYSCOMM1` | its system task, or waits to be ended |
+| `MONITOR` | one per active subsystem, type `SBS` | the subsystem: pools, autostart jobs, job queues, ending |
+| `BATCH` | routed jobs: autostart, from job queues, writers | the routing entry's program (below) |
+| `INTER` | the console display's signed-on job | `QCMD`'s Command Entry |
+| `QSVCJOB` | the serial service console | console lines |
+
+`slic` starts the system jobs, the IPL's subsystems and the console
+jobs; a monitor starts its subsystem's jobs; a job that runs `STRSBS`
+starts that monitor.
+
+### A job's life
+
+```
+SBMJOB ──> on the job queue (RLS, HLD, SCD) ──> taken by a monitor
+                │ ENDJOB: ended there, never started           │
+                v                                              v
+        (CPF1164 in QHST)        process started, hello: active
+                                                │
+                     RUN <-> DEQW LCKW MSGW DSPW TIMW EVTW DLYW
+                      ^   \_> INEL (no activity level free)
+                      │   HLDJOB: SIGSTOP, HLD; RLSJOB: SIGCONT
+                      v
+          the program returns, ENDJOB, ENDSBS, a crash, power down
+                      │
+                      v
+  connection closed: open files, locks and commit cycle released or
+  rolled back; QTEMP dropped; CPF1164 to QHST and the job log; the job
+  log spooled as LOG says; CPF1240/1241 to the submitter's queue;
+  files held for *JOBEND released; the activity level given back
+```
+
+`ENDJOB OPTION(*CNTRLD)` asks the job to end at its next wait or when
+its request returns; `*IMMED` ends the process at once; after
+`QENDJOBLMT` seconds a job still there is killed. A job that vanishes
+(killed, crashed) ends the same way as one that returns; its end code
+is 70 and the service writes the `CPF1164` its log lacks.
+
+### Routing
+
+A job starts from its routing data: the job description's `RTGDTA` for
+an autostart or console job, `SBMJOB RTGDTA` (default `QCMDB`) for a
+submitted one. The subsystem's routing entries are tried in sequence
+order; the first whose compare value equals the routing data at its
+start position, or whose value is `*ANY`, wins. The entry names the
+program, the class (run priority, time slice, wait, the run-time
+limits) and the subsystem pool, which names the storage pool. The
+console's sign-on finds the controlling subsystem's workstation name
+entry for `QSCONSOLE`, else its `*CONS` or `*ALL` type entry, whose
+job description gives the routing data.
+
+The programs a routing entry can name: `QSYS/QCMD` runs the request
+data as a command (a console line, or `CALL LIB/PGM`); `QSYS/QWCSTRUP`
+calls the startup program; `QSYS/QEJSCHED` is the job scheduler;
+`QSYS/QSPWTR` the print writer; any other program is called.
+
+A subsystem takes jobs from its job queue entries in sequence order,
+each queue in priority then submission order, up to the entry's
+`MAXACT` and `MAXPTYn`, checking every 100 milliseconds.
+
+### Pools and cgroups
+
+A storage pool is a memory cgroup under `/sys/fs/cgroup/qs400`:
+`*BASE` is `BASE`, `*SHRPOOL3` is `SHRPOOL3`, the private pool 2 of
+`QBATCH` is `QBATCH/2`. A job's process joins its pool's cgroup when it
+starts. A private or `*SHRPOOLn` pool's size is the cgroup's
+`memory.high`; the pools the system manages (`*MACHINE`, `*BASE`,
+`*INTERACT`, `*SPOOL`) are not limited, as `QBASPOOL` is the base
+pool's minimum, not its cap.
+
+A pool's activity level is how many of its jobs may run at once. A job
+takes a level when its status turns runnable and gives it back at
+every wait; with none free it is ineligible (`INEL`) until one is. The
+transitions are counted for `WRKSYSSTS`.
+
+### The job log
+
+A job logs its requests and the messages sent to it; `JOBMSGQMX` sizes
+the log, and `JOBMSGQFL` says what a full log does (`*WRAP`,
+`*PRTWRAP`, which keeps what wrapped out for printing, `*NOWRAP`, which
+ends the job with `CPF2460`). The job brings the storage service's copy
+up to date after every request, so the log of a job that vanishes is
+still there. At the end the service prints the copy: messages kept by
+`LOG(level severity text)`: level 0 nothing; 1 the messages sent to
+the job's external queue at the severity or more; 2 adds the requests
+that left a message at that severity, with their messages; 3 adds every
+request; 4 every message at the severity or more and every request. The
+second-level text prints unless the text is `*MSG`; `*NOLIST` prints only after an abnormal end;
+`LOGOUTPUT(*PND)` prints nothing. The printed log is `QPJOBLOG` on
+`QUSRSYS/QEZJOBLOG`.
 
 ## 2. Payload layouts
 

@@ -39,6 +39,44 @@ pub struct Stats {
     dsksts: Option<Sample>,
     /// Storage requests each job made: its auxiliary I/O.
     pub aux_io: BTreeMap<u32, u64>,
+    /// When each queued job was taken off its queue.
+    pub taken: BTreeMap<u32, Instant>,
+    /// Jobs started from queues, and their start latency (taken to
+    /// hello): count, total and longest, microseconds.
+    pub starts: (u64, u128, u128),
+    /// Spooled file data written: requests and bytes.
+    pub spooled: (u64, u64),
+}
+
+impl Stats {
+    /// A queued job said hello: its start latency.
+    pub fn started(&mut self, number: u32) {
+        if let Some(t) = self.taken.remove(&number) {
+            let us = t.elapsed().as_micros();
+            self.starts.0 += 1;
+            self.starts.1 += us;
+            self.starts.2 = self.starts.2.max(us);
+        }
+    }
+
+    /// `wmstats`: what the service counted since it started.
+    #[must_use]
+    pub fn report(&self) -> String {
+        let (n, total, max) = self.starts;
+        let avg = if n == 0 { 0 } else { total / u128::from(n) };
+        format!(
+            "jobs started from queues: {n}, start latency average {:.1} ms, longest {:.1} ms\nspooled data: {} request(s), {} bytes\n",
+            ms(avg),
+            ms(max),
+            self.spooled.0,
+            self.spooled.1
+        )
+    }
+}
+
+#[allow(clippy::cast_precision_loss)] // microseconds far below 2^52
+fn ms(us: u128) -> f64 {
+    us as f64 / 1000.0
 }
 
 fn read(path: &str) -> Option<String> {
