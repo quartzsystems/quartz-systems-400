@@ -95,6 +95,8 @@ pub struct State {
     pub xfer: BTreeMap<String, String>,
     /// The SQL context (session, cursors, overrides), once storage is up.
     pub sql: Option<SqlContext>,
+    /// The ILE state: the service job and its lent resources.
+    pub ile: super::ile::State,
 }
 
 /// The prompt the mode wants.

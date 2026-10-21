@@ -114,6 +114,104 @@ impl Job {
     }
 }
 
+impl Job {
+    /// `DSPCALLSTK`: one line per entry, the running one last.
+    #[must_use]
+    pub fn call_stack_text(&self) -> String {
+        let mut out = String::from("  Depth Program    Procedure  Stmt   Group\n");
+        let top = self.act.frames.len();
+        for (i, f) in self.act.frames.iter().enumerate() {
+            let pgm = f
+                .program
+                .as_ref()
+                .map(|p| p.key.clone())
+                .unwrap_or_default();
+            let proc_name = f
+                .program
+                .as_ref()
+                .and_then(|p| p.proc_name(f.code))
+                .unwrap_or_default();
+            let stmt = if i + 1 == top {
+                self.abi.cur_stmt
+            } else {
+                f.stmt
+            };
+            let group = self
+                .act
+                .groups
+                .get(f.ag as usize)
+                .map(|g| g.name.clone())
+                .unwrap_or_default();
+            let _ = writeln!(
+                out,
+                "  {:<5} {pgm:<21} {proc_name:<10} {stmt:<6} {group}",
+                i + 1
+            );
+        }
+        if top == 0 {
+            out.push_str("  (no entries)\n");
+        }
+        out
+    }
+
+    /// `DSPACTGRP`: the live groups with their activations and heaps.
+    #[must_use]
+    pub fn actgrp_text(&self) -> String {
+        let mut out = String::from("  Group      Kind     Activations Heaps\n");
+        for g in self.groups() {
+            let kind = match g.kind {
+                crate::act::AgKind::Default => "*DFTACTGRP",
+                crate::act::AgKind::New => "*NEW",
+                crate::act::AgKind::Named => "*NAMED",
+            };
+            let _ = writeln!(
+                out,
+                "  {:<10} {kind:<10} {:<11} {}",
+                g.name,
+                g.activations.len(),
+                g.heaps.len()
+            );
+            for a in &g.activations {
+                let _ = writeln!(
+                    out,
+                    "    {} ({} bytes static)",
+                    a.program.key,
+                    a.statics.len()
+                );
+            }
+        }
+        out
+    }
+
+    /// `DSPMSGQ`: a queue's messages, oldest first.
+    #[must_use]
+    pub fn msgq_text(&self, q: crate::msg::QueueRef) -> String {
+        let Some(queue) = self.queue(q) else {
+            return "  (no such queue)\n".into();
+        };
+        if queue.msgs.is_empty() {
+            return "  (empty)\n".into();
+        }
+        let mut out = String::new();
+        for m in &queue.msgs {
+            let _ = writeln!(
+                out,
+                "  {:08X} {:<7} {:<8} {:02} {}{}",
+                m.key,
+                m.msgid,
+                m.msg_type.name(),
+                m.severity,
+                m.text,
+                m.reply
+                    .as_ref()
+                    .map(|r| format!("  reply: {r}"))
+                    .unwrap_or_default()
+            );
+        }
+        out
+    }
+}
+
 fn hex(b: &[u8]) -> String {
     let mut s = String::with_capacity(b.len() * 2);
     for x in b {

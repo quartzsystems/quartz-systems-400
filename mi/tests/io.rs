@@ -169,7 +169,7 @@ fn customers() -> (Rc<RefCell<Store>>, ObjectId) {
 fn attach(job: &mut Job, store: &Rc<RefCell<Store>>, cust: ObjectId) {
     let resolve = db::odp::session::resolve_in(name("QGPL"), vec![(name("CUST"), cust)]);
     job.io = Some(Box::new(StoreIo::new(
-        Rc::clone(store),
+        Box::new(Rc::clone(store)),
         JobHandle(1),
         Box::new(resolve),
     )));

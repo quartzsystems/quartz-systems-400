@@ -6,6 +6,7 @@
 //! by `qs400.svc=1`. No shell, no filesystem.
 
 pub(crate) mod db;
+pub(crate) mod ile;
 mod objects;
 mod storage;
 
@@ -69,12 +70,19 @@ pub fn handle(system: &mut System, line: &str) {
         system.out.serial(db::prompt(system));
         return;
     }
+    let reply = reply(system, line);
+    system.out.serial(&reply);
+    system.out.serial(db::prompt(system));
+}
+
+/// Execute one command line; its reply.
+pub fn reply(system: &mut System, line: &str) -> String {
     let mut words = line.split_whitespace();
     let cmd = words.next().unwrap_or("");
     let args: Vec<&str> = words.collect();
-    let reply = match (cmd, args.as_slice()) {
+    match (cmd, args.as_slice()) {
         ("", _) => String::new(),
-        ("help", _) => format!("{HELP}{HELP_DB}"),
+        ("help", _) => format!("{HELP}{HELP_DB}{}", ile::HELP),
         ("release", _) => format!("{}\n", release::full()),
         ("srcs", []) => system.log.dump(),
         ("srcs", ["table"]) => src_table(),
@@ -101,14 +109,15 @@ pub fn handle(system: &mut System, line: &str) {
         ("txn", ["stats"]) => storage::txn_stats(system),
         _ => match db::command(system, cmd, &args, line) {
             Some(reply) => reply,
-            None => format!(
-                "Unknown command '{cmd}'. Type help.
+            None => match ile::command(system, cmd, &args, line) {
+                Some(reply) => reply,
+                None => format!(
+                    "Unknown command '{cmd}'. Type help.
 "
-            ),
+                ),
+            },
         },
-    };
-    system.out.serial(&reply);
-    system.out.serial(db::prompt(system));
+    }
 }
 
 /// Commands that work while a menu or DST owns the serial line; any

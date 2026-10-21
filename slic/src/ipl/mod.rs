@@ -91,6 +91,8 @@ pub fn run() -> ! {
     }
 
     let (tx, rx) = mpsc::channel();
+    let rx = std::rc::Rc::new(rx);
+    system.events = Some(std::rc::Rc::clone(&rx));
     spawn_signal_thread(tx.clone());
     if !serial::spawn_reader(tx.clone()) {
         system

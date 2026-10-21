@@ -59,7 +59,9 @@ licpart/      LIC partition: A/B record (src/format/), locate by GPT type GUID
 sysval/       catalog.toml, validation, src/tz/ time zones, LIC storage
 console/      font/qs400-9x16.txt, src/fb/ framebuffer, src/keyboard/, screens
 slic/         PID 1: src/ipl/ state machine, src/hwrsrc/, src/net/, src/svc/ (db/ holds
-              the database, journal, SQL, rla and dbbench console commands),
+              the database, journal, SQL, rla and dbbench console commands; ile/ the
+              service job over the lent store: sources, the sysapi provider, the ILE and
+              debug commands),
               src/platform/ (console, mounts, power, rtc, serial, sys), src/src.rs
 conformance/  QEMU harness: src/qemu/ (session, qmp, serial, firmware), src/steps.rs;
               src/db/ the database kit (kit, local run, compare, oracle RPG, QEMU steps);
@@ -190,7 +192,11 @@ Service console (serial, dev builds): `help`, `srcs [table]`, `hist`, `hw`,
 `apyjrnchg`, `rmvjrnchg`, `strcmtctl`, `commit`, `rollbck`, `endcmtctl`, `ovrdbf`,
 `dltovr`, `sql` (line mode, `;` ends a statement, `quit` leaves), `sqlrun NAME`
 (RUNSQLSTM over an xfer buffer), `naming`, `curlib`, `rla [NAME]` (scripted RLA
-with expected status codes), `dbbench N`. Parameters are IBM-style `KEYWORD(value)`. Boot parameters: `qs400.slot=A|B`, `qs400.mode=normal|manual`,
+with expected status codes), `dbbench N`; ILE: `qir asm|check|dis`, `crtpgm`,
+`crtsrvpgm`, `updpgm`, `crtbnddir`, `addbnddire`, `call LIB/PGM [parms]`, `dsppgm`,
+`dspsrvpgm`, `dspmod`, `dsppgmref`, `dspbnddir`, `dspactgrp`, `rclactgrp`,
+`dspcallstk`, `dspmsgq`, `rpy`, `dmp`, `wrkmsgd`, `dspmsgd`, `strdbg`, `addbkp`,
+`rmvbkp`, `dspbkp`, `enddbg` (at a stop: `step`, `go`, `eval`, `dspvar`). Parameters are IBM-style `KEYWORD(value)`. Boot parameters: `qs400.slot=A|B`, `qs400.mode=normal|manual`,
 `qs400.svc=1`, `qs400.ipl=D`, `qs400.media=iso`.
 
 `QS400_TARGET_DIR` relocates `target/` (use an ext4 path when the repo is on

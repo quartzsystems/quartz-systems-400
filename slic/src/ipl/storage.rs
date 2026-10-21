@@ -578,6 +578,16 @@ pub fn bootstrap(store: &mut Store, now: u64, system_name: &str) -> store::Resul
                 },
             )?;
         }
+        let ctx = msgf::store::Ctx {
+            now,
+            owner: "QSYS".into(),
+            system: system_name.into(),
+        };
+        if let Err(e) = msgf::store::install_builtin(&mut t, &ctx, qsys) {
+            return Err(store::StoreError::Broken {
+                op: Box::leak(format!("installing the message files: {e}").into_boxed_str()),
+            });
+        }
         t.commit()?;
         qsys
     };

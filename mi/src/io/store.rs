@@ -8,7 +8,7 @@
 
 #![allow(clippy::single_match_else)]
 
-use std::cell::RefCell;
+use std::cell::{RefCell, RefMut};
 use std::rc::Rc;
 
 use db::odp::{KeyArg, OdpRef, OpenOpts, Session, Usage};
@@ -22,6 +22,18 @@ use super::{FileInfo, IoFail, IoOp, IoRequest, IoResult, IoSource, KeyRef, OpenS
 /// A resolver from a file reference to the object.
 pub type Resolver = Box<dyn FnMut(&dds::FileRef) -> db::Result<ObjectId>>;
 
+/// Whoever owns the store and lends it per operation.
+pub trait StoreHandle {
+    /// The store, borrowed for one operation.
+    fn store(&self) -> RefMut<'_, Store>;
+}
+
+impl StoreHandle for Rc<RefCell<Store>> {
+    fn store(&self) -> RefMut<'_, Store> {
+        self.borrow_mut()
+    }
+}
+
 /// One open file.
 struct Entry {
     odp: OdpRef,
@@ -30,7 +42,7 @@ struct Entry {
 
 /// The database behind a job's files.
 pub struct StoreIo {
-    store: Rc<RefCell<Store>>,
+    store: Box<dyn StoreHandle>,
     session: Session,
     resolve: Resolver,
     open: Vec<Option<Entry>>,
@@ -39,7 +51,7 @@ pub struct StoreIo {
 impl StoreIo {
     /// Over a store, as `job`, resolving file names with `resolve`.
     #[must_use]
-    pub fn new(store: Rc<RefCell<Store>>, job: JobHandle, resolve: Resolver) -> Self {
+    pub fn new(store: Box<dyn StoreHandle>, job: JobHandle, resolve: Resolver) -> Self {
         Self {
             store,
             session: Session::new(job, db::odp::new_shared()),
@@ -145,8 +157,7 @@ impl IoSource for StoreIo {
                     .collect(),
             );
         }
-        let store = Rc::clone(&self.store);
-        let mut store = store.borrow_mut();
+        let mut store = self.store.store();
         let mut txn = store.begin().map_err(|e| fail_of(&DbError::Store(e)))?;
         let odp = match self.session.open(&mut txn, &fr, &mut *self.resolve, opts) {
             Ok(o) => o,
@@ -197,8 +208,7 @@ impl IoSource for StoreIo {
         let fmt = &entry.formats[0];
         let key = Self::key_arg(fmt, req.key);
         let lock = !req.nolock;
-        let store = Rc::clone(&self.store);
-        let mut store = store.borrow_mut();
+        let mut store = self.store.store();
         let Ok(mut txn) = store.begin() else {
             return IoResult {
                 status: db::odp::status::OTHER,
@@ -253,8 +263,7 @@ impl IoSource for StoreIo {
         let Some(entry) = slot.take() else {
             return IoResult::default();
         };
-        let store = Rc::clone(&self.store);
-        let mut store = store.borrow_mut();
+        let mut store = self.store.store();
         if let Ok(mut txn) = store.begin() {
             self.session.close(&mut txn, &entry.odp);
             let _ = txn.commit();

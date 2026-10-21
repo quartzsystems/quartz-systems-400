@@ -4,7 +4,8 @@
 
 //! Everything the IPL and the service console share.
 
-use std::sync::mpsc::Sender;
+use std::rc::Rc;
+use std::sync::mpsc::{Receiver, Sender};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use licpart::{Device, IplMode, IplType, LicPart, Record, Slot};
@@ -16,7 +17,7 @@ use crate::hwrsrc::Table;
 use crate::ipl::cmdline::Boot;
 use crate::ipl::log::IplLog;
 use crate::ipl::storage::{Storage, Temp};
-use crate::ipl::{lic, park};
+use crate::ipl::{Event, lic, park};
 use crate::net::Link;
 use crate::platform::console::Outputs;
 use crate::src::Src;
@@ -55,6 +56,8 @@ pub struct System {
     pub temp: Option<Temp>,
     /// The service console's database state: modes, xfer buffers, SQL.
     pub svc: crate::svc::db::State,
+    /// The event channel, shared with a debug session inside a call.
+    pub events: Option<Rc<Receiver<Event>>>,
 }
 
 impl System {
@@ -78,6 +81,7 @@ impl System {
             storage: None,
             temp: None,
             svc: crate::svc::db::State::default(),
+            events: None,
         }
     }
 
