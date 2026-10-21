@@ -137,7 +137,7 @@ impl Suite {
                 ),
                 CMD,
             )?;
-            ok(&out, &format!("load {name}"), "0 error")?;
+            ok(&out, &format!("load {name}"), "0 not copied")?;
             loaded += 1;
         }
         let lib = kit::LIBRARY;
@@ -198,7 +198,7 @@ impl Suite {
         let out = s.command(&format!("dbbench {n}"), Duration::from_secs(300 + n / 50))?;
         let bench = out
             .lines()
-            .find(|l| l.starts_with("inserted"))
+            .find(|l| l.starts_with("insert"))
             .ok_or_else(|| format!("no bench result:\n{out}"))?
             .to_string();
         let check = s.command("chkstg", LONG)?;
