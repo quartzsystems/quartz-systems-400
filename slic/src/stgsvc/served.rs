@@ -180,6 +180,8 @@ fn end_job(system: &mut System, ctx: &mut JobCtx) {
     system.jobs.remove(ctx.job.number);
     system.attrs.remove(&ctx.job.number);
     super::msgs::release(system, ctx.job.number);
+    system.pools.remove(ctx.job.number);
+    super::sbs::monitor_ended(system, ctx.job.number);
 }
 
 /// End a job's use of the database and the store.
@@ -310,11 +312,19 @@ impl Service for Served<'_> {
         super::jobs::next(self.system)
     }
 
-    fn set_status(&mut self, status: u8, function: String) {
-        if let Some(j) = self.system.jobs.get_mut(self.ctx.job.number) {
-            j.status = status;
+    fn set_status(&mut self, status: u8, function: String) -> bool {
+        let me = self.ctx.job.number;
+        let runnable = wm::job::Status::from_byte(status).runnable();
+        let granted = self.system.pools.status(&self.ctx.job.pool, me, runnable);
+        if let Some(j) = self.system.jobs.get_mut(me) {
+            j.status = if granted {
+                status
+            } else {
+                wm::job::Status::Inel.byte()
+            };
             j.function = function;
         }
+        granted
     }
 
     fn active_jobs(&mut self) -> Vec<JobInfo> {
@@ -385,6 +395,41 @@ impl Service for Served<'_> {
 
     fn breaks(&mut self) -> Vec<msgs::Break> {
         msgs::take_breaks(self.system, self.ctx.job.number)
+    }
+
+    fn sbs_check(&mut self, name: String) -> Result<(String, Vec<u8>), String> {
+        super::sbs::check(self.system, &name)
+    }
+
+    fn sbs_register(&mut self, name: String, lib: String) -> Result<Vec<u8>, String> {
+        super::sbs::register(self.system, self.ctx.job.number, &name, &lib)
+    }
+
+    fn sbs_state(&mut self) -> wm::sbs::SbsState {
+        super::sbs::state(self.system, self.ctx.job.number)
+    }
+
+    fn sbs_list(&mut self) -> Vec<wm::sbs::SbsInfo> {
+        super::sbs::list(self.system)
+    }
+
+    fn pools(&mut self) -> Vec<wm::sbs::PoolInfo> {
+        self.system.pools.info()
+    }
+
+    fn sbs_end(&mut self, name: String, immediate: bool, delay: u32) -> Result<(), String> {
+        super::sbs::end(self.system, &name, immediate, delay).map(|_| ())
+    }
+
+    fn wm_object(&mut self, qual: String, ty: String) -> Result<Vec<u8>, String> {
+        self.own_libl();
+        let r = super::sbs::wm_object(self.system, &qual, &ty);
+        ile::set_libl(None);
+        r
+    }
+
+    fn define_pool(&mut self, name: String, size_kb: u64, actlvl: u32) {
+        self.system.pools.define(&name, size_kb, actlvl);
     }
 
     fn sysrpyl(&mut self, msgid: String, data: Vec<u8>) -> Option<(String, bool)> {

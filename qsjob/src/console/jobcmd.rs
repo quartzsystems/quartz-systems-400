@@ -36,6 +36,8 @@ pub fn command(c: &mut Console, cmd: &str, line: &str) -> String {
         "rmvbkp" => addbkp(c, &p, false),
         "dspbkp" => Ok(dspbkp(c)),
         "dspjoblog" => Ok(c.dspjoblog()),
+        "strsbs" => strsbs(c, &p),
+        "dlyjob" => dlyjob(c, &p),
         other => Err(format!("{other} is not a job command")),
     };
     match r {
@@ -172,4 +174,58 @@ pub fn lda(c: &mut Console, args: &[&str]) -> String {
         }
         _ => "Usage: dtaara get *LDA | set *LDA TEXT\n".into(),
     }
+}
+
+/// `STRSBS SBSD(LIB/NAME)`: start the subsystem's monitor and wait for
+/// it to register.
+fn strsbs(c: &mut Console, p: &Params) -> Result<String, String> {
+    use stg::Client;
+    let (_, name) = wm::obj::params::qualified(&p.pos_or(0, "SBSD")?);
+    let qual = p.pos_or(0, "SBSD")?.to_ascii_uppercase();
+    let (lib, _) = c.link.borrow_mut().with(|l| l.sbs_check(qual.clone()))?;
+    let number = c.link.borrow_mut().with(Client::job_number)?;
+    let start = wm::ctl::Start {
+        name: name.clone(),
+        user: "QSYS".into(),
+        number,
+        handle: u64::from(number),
+        kind: 'M',
+        subsystem: name.clone(),
+        role: "MONITOR".into(),
+        jobd: "QSYS/QSYSJOBD".into(),
+        class: "QSYS/QSYSCLS20".into(),
+        rqsdta: format!("{lib}/{name}"),
+        pool: "*BASE".into(),
+        ..wm::ctl::Start::default()
+    };
+    let mut s = crate::work::spawn::job(start)?;
+    crate::work::spawn::ready(&mut s)?;
+    c.children.push(s);
+    // The monitor registers the subsystem; wait for it, a few seconds.
+    for _ in 0..50 {
+        let active = c.link.borrow_mut().with(Client::sbs_list);
+        if active.iter().any(|a| a.name == name) {
+            return Ok(format!("Subsystem {name} started.\n"));
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    Err(format!("CPF1012 subsystem {name} did not start"))
+}
+
+/// `DLYJOB DLY(seconds)`: the job waits, in `DLYW`, taking break
+/// messages as they come.
+fn dlyjob(c: &mut Console, p: &Params) -> Result<String, String> {
+    let secs: u64 = p
+        .pos_or(0, "DLY")?
+        .trim()
+        .parse()
+        .map_err(|_| "CPD0084 DLY is a number of seconds".to_string())?;
+    let until = std::time::Instant::now() + std::time::Duration::from_secs(secs);
+    stg::remote::status(&c.link, wm::job::Status::Dlyw, &format!("DLY-{secs}"));
+    while std::time::Instant::now() < until {
+        std::thread::sleep(std::time::Duration::from_millis(250));
+        c.breaks();
+    }
+    stg::remote::status(&c.link, wm::job::Status::Run, "");
+    Ok(String::new())
 }

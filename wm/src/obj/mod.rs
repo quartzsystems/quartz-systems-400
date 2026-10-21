@@ -10,6 +10,8 @@ pub mod jobd;
 pub mod msgq;
 pub mod params;
 pub mod rpyl;
+pub mod sbsd;
+pub mod sbsdcmd;
 pub mod shipped;
 
 use qsname::{LibSpec, Name};

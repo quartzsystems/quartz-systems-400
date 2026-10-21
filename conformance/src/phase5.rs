@@ -279,3 +279,84 @@ impl Suite {
         Ok("shipped entries listed; CEE9901 answered D from entry 1".into())
     }
 }
+
+impl Suite {
+    /// Step 23: subsystems: a description with a private pool, a routing
+    /// entry and an autostart job; `STRSBS` starts the monitor, the job
+    /// runs routed into the pool, `ENDSBS *IMMED` ends both.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn subsystems(&self, s: &mut Session) -> Result<String, String> {
+        let rtg = s.command("dspsbsd QSYS/QBATCH OPTION(7)", CMD)?;
+        if !rtg.contains("QCMDB") {
+            return Err(format!("QBATCH routing entries:\n{rtg}"));
+        }
+        for c in [
+            "crtsbsd QGPL/WMSBS POOLS((1 *BASE) (2 8192 2)) TEXT('Harness subsystem')",
+            "addrtge QGPL/WMSBS SEQNBR(10) CMPVAL(WMRTG) PGM(QSYS/QCMD) CLS(QGPL/QBATCH) POOLID(2)",
+            "crtjobd QGPL/WMAJD RTGDTA(WMRTG) RQSDTA('dlyjob DLY(60)')",
+            "addaje QGPL/WMSBS JOB(WMAUTO) JOBD(QGPL/WMAJD)",
+        ] {
+            let out = s.command(c, CMD)?;
+            if !out.contains("created") && !out.contains("changed") {
+                return Err(format!("{c}: {out}"));
+            }
+        }
+        let started = s.command("strsbs QGPL/WMSBS", CMD)?;
+        if !started.contains("started") {
+            return Err(format!("strsbs: {started}"));
+        }
+        let sbs = s.command("wrksbs", CMD)?;
+        if !sbs.contains("WMSBS") {
+            return Err(format!("wrksbs:\n{sbs}"));
+        }
+        let mut active = String::new();
+        for _ in 0..20 {
+            active = s.command("wrkactjob", CMD)?;
+            if active
+                .lines()
+                .any(|l| l.starts_with("WMAUTO") && l.contains("DLYW"))
+            {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(250));
+        }
+        let auto = active
+            .lines()
+            .find(|l| l.starts_with("WMAUTO"))
+            .ok_or_else(|| format!("the autostart job is not active:\n{active}"))?;
+        if !auto.contains("ASJ") || !auto.contains("DLYW") {
+            return Err(format!("the autostart job is not waiting: {auto}"));
+        }
+        if !active
+            .lines()
+            .any(|l| l.starts_with("WMSBS") && l.contains("SBS"))
+        {
+            return Err(format!("the monitor is not listed:\n{active}"));
+        }
+        let ended = s.command("endsbs WMSBS OPTION(*IMMED)", CMD)?;
+        if !ended.contains("ending") {
+            return Err(format!("endsbs: {ended}"));
+        }
+        let mut gone = false;
+        for _ in 0..40 {
+            let now = s.command("wrkactjob", CMD)?;
+            if !now.contains("WMAUTO") && !now.contains("WMSBS") {
+                gone = true;
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(250));
+        }
+        if !gone {
+            return Err("the subsystem's jobs did not end".into());
+        }
+        let hist = s.command("dsplog MSGID(CPF0902 CPF0903)", CMD)?;
+        if !hist.contains("WMSBS") {
+            return Err(format!(
+                "the subsystem start and end are not logged:\n{hist}"
+            ));
+        }
+        s.command("dltsbsd QGPL/WMSBS", CMD)?;
+        s.command("dltjobd QGPL/WMAJD", CMD)?;
+        Ok("monitor started, autostart job routed and delayed, ENDSBS *IMMED ended both".into())
+    }
+}

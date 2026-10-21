@@ -14,6 +14,8 @@
 mod console;
 #[cfg(target_os = "linux")]
 mod start;
+#[cfg(target_os = "linux")]
+mod work;
 
 #[cfg(target_os = "linux")]
 fn main() {

@@ -167,6 +167,128 @@ bytes).
 | 16 | 32 | Reply | a reply, `*DFT`, `*RQD` |
 | 48 | 16 | Reserved2 | zero |
 
+### `SubsystemDescription` (128 bytes)
+
+`*SBSD`. After the fixed part come the entries, each kind in turn, as
+many as its count says: pools, routing, workstation names, workstation
+types, job queues, autostart, prestart, communications. Two- and
+four-byte limits of 0 mean `*NOMAX`.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | Magic | `QSWMSBSD` in ASCII |
+| 8 | 2 | Version | 1 |
+| 10 | 1 | Pools | pool entries |
+| 11 | 1 | Reserved1 | zero |
+| 12 | 4 | MaxJobs | `MAXJOBS` |
+| 16 | 10 | SgnDspfName | `*QDSIGNON` or a display file |
+| 26 | 10 | SgnDspfLib | |
+| 36 | 10 | SysLibLe | `SYSLIBLE`, `*NONE` |
+| 46 | 2 | Routing | routing entries |
+| 48 | 2 | WsNames | workstation name entries |
+| 50 | 2 | WsTypes | workstation type entries |
+| 52 | 2 | JobQueues | job queue entries |
+| 54 | 2 | Autostart | autostart job entries |
+| 56 | 2 | Prestart | prestart job entries |
+| 58 | 2 | Comm | communications entries |
+| 60 | 18 | Reserved2 | zero |
+| 78 | 50 | Text | |
+
+### `SubsystemPool` (16 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | Id | 1-10 |
+| 1 | 1 | Kind | 0 private, 1 `*BASE`, 2 `*INTERACT`, 3 `*SPOOL`, 4 `*SHRPOOLn`, 5 `*MACHINE` |
+| 2 | 1 | Shared | n of `*SHRPOOLn` |
+| 3 | 1 | Reserved | zero |
+| 4 | 8 | SizeKb | a private pool's size |
+| 12 | 4 | ActLvl | a private pool's activity level |
+
+### `RoutingEntry` (84 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | SeqNbr | |
+| 2 | 2 | CmpStart | 1-based |
+| 4 | 2 | MaxAct | |
+| 6 | 1 | PoolId | |
+| 7 | 1 | Reserved | zero |
+| 8 | 10 | PgmName | |
+| 18 | 10 | PgmLib | |
+| 28 | 10 | ClsName | |
+| 38 | 10 | ClsLib | |
+| 48 | 32 | CmpVal | `*ANY` matches all |
+| 80 | 4 | Reserved2 | zero |
+
+### `WorkstationEntry` (36 bytes)
+
+A workstation name entry (a device, generic with `*`) or a type entry
+(`*ALL`, `*CONS`, a device type).
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | Name | |
+| 10 | 10 | JobdName | or `*USRPRF` |
+| 20 | 10 | JobdLib | |
+| 30 | 2 | MaxAct | |
+| 32 | 1 | At | 1 `*SIGNON`, 0 `*ENTER` |
+| 33 | 3 | Reserved | zero |
+
+### `JobQueueEntry` (36 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | Name | |
+| 10 | 10 | Lib | |
+| 20 | 2 | SeqNbr | |
+| 22 | 2 | MaxAct | |
+| 24 | 9 | MaxPty | `MAXPTY1`-`MAXPTY9`, one byte each |
+| 33 | 3 | Reserved | zero |
+
+### `AutostartEntry` (32 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | Job | |
+| 10 | 10 | JobdName | |
+| 20 | 10 | JobdLib | |
+| 30 | 2 | Reserved | zero |
+
+### `PrestartEntry` (96 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | PgmName | |
+| 10 | 10 | PgmLib | |
+| 20 | 10 | User | |
+| 30 | 10 | JobName | |
+| 40 | 10 | JobdName | |
+| 50 | 10 | JobdLib | |
+| 60 | 10 | ClsName | |
+| 70 | 10 | ClsLib | |
+| 80 | 1 | StrJobs | |
+| 81 | 1 | Wait | |
+| 82 | 1 | PoolId | |
+| 83 | 1 | Reserved | zero |
+| 84 | 2 | InlJobs | |
+| 86 | 2 | Threshold | |
+| 88 | 2 | AdlJobs | |
+| 90 | 2 | MaxJobs | |
+| 92 | 2 | MaxUse | |
+| 94 | 2 | Reserved2 | zero |
+
+### `CommEntry` (32 bytes)
+
+Kept; inactive until communications exist.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | Dev | |
+| 10 | 10 | Mode | |
+| 20 | 10 | JobdName | |
+| 30 | 2 | MaxAct | |
+
 ### Shipped objects
 
 | Object | Notes |

@@ -15,6 +15,7 @@ mod exec;
 pub(crate) mod hist;
 mod jobs;
 pub(crate) mod msgs;
+pub(crate) mod sbs;
 
 pub use jobs::chgjob;
 mod served;
@@ -114,6 +115,7 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
             .map_err(|e| format!("system values: {e}"))?;
         system.sysvals = Some(vals);
     }
+    system.pools = sbs::pool_table(system);
     if let Ok(path) = licpart::locate()
         && let Ok(f) = fs::OpenOptions::new().read(true).write(true).open(&path)
     {

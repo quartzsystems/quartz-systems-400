@@ -134,10 +134,18 @@ impl DataSource for RemoteData {
     }
 }
 
-/// Tell the service what the job is doing.
+/// Tell the service what the job is doing. A runnable job waits here,
+/// ineligible, until its pool has a free activity level.
 pub fn status(link: &Shared, s: Status, function: &str) {
-    link.borrow_mut()
-        .with(|l| l.set_status(s.byte(), function.to_string()));
+    loop {
+        let granted = link
+            .borrow_mut()
+            .with(|l| l.set_status(s.byte(), function.to_string()));
+        if granted || !s.runnable() {
+            return;
+        }
+        std::thread::sleep(RETRY);
+    }
 }
 
 /// Files: the open data paths live in the service.

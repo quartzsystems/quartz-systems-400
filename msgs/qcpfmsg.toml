@@ -203,3 +203,17 @@ sev = 0
 text = "System value &1 changed from &2 to &3."
 help = "A system value was changed. Values marked to take effect at the next IPL keep their old effect until then."
 vars = ["*CHAR 10", "*CHAR 80", "*CHAR 80"]
+
+[[msg]]
+id = "CPF0902"
+sev = 0
+text = "Subsystem &1 in library &2 started."
+help = "The subsystem's monitor job is running: its pools are allocated, its autostart jobs started and its job queues attached."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF0903"
+sev = 0
+text = "Subsystem &1 in library &2 ended."
+help = "Every job of the subsystem ended and its monitor job ended; its private pools were released."
+vars = ["*CHAR 10", "*CHAR 10"]

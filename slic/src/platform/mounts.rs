@@ -2,7 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The Phase 0 mount table.
+//! The mount table: the pseudo filesystems, `/run`, and the cgroup2
+//! hierarchy the storage pools live in.
 
 use std::ffi::CStr;
 use std::fs;
@@ -29,7 +30,7 @@ const NOSUID_NOEXEC_NODEV: MountFlags = MountFlags::NOSUID
     .union(MountFlags::NODEV);
 
 /// Mounted in order.
-pub const TABLE: [Spec; 4] = [
+pub const TABLE: [Spec; 5] = [
     Spec {
         source: "proc",
         target: "/proc",
@@ -57,6 +58,14 @@ pub const TABLE: [Spec; 4] = [
         fstype: "tmpfs",
         flags: MountFlags::NOSUID.union(MountFlags::NODEV),
         data: Some(c"mode=0755"),
+    },
+    // Storage pools are memory cgroups under qs400/.
+    Spec {
+        source: "cgroup2",
+        target: "/sys/fs/cgroup",
+        fstype: "cgroup2",
+        flags: NOSUID_NOEXEC_NODEV,
+        data: None,
     },
 ];
 

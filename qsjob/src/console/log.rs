@@ -30,10 +30,7 @@ impl Console {
 
     /// The job is running: its log sized by `JOBMSGQMX` and
     /// `JOBMSGQFL`, and `CPF1124` in it.
-    pub(super) fn started(&mut self) {
-        // The console job is the operator's: it never waits on QSYSOPR.
-        let dft = vec![("INQMSGRPY".to_string(), "*DFT".to_string())];
-        let _ = self.link.borrow_mut().with(|l| l.chgjob(String::new(), dft));
+    pub fn started(&mut self) {
         let a = self.link.borrow_mut().with(Client::rtvjoba);
         let (name, user, number) = self.who();
         let subsystem = self.start.subsystem.clone();
@@ -46,7 +43,7 @@ impl Console {
 
     /// The job ends: `CPF1164`, then the printed log.
     /// `TODO(phase5)`: spool it as `QPJOBLOG` to the job's `OUTQ`.
-    pub(super) fn ended(&mut self, code: u16) -> Vec<String> {
+    pub fn ended(&mut self, code: u16) -> Vec<String> {
         let (name, user, number) = self.who();
         let j = self.job();
         let data = joblog::ended_data((&name, &user, number), now(), 0, code);

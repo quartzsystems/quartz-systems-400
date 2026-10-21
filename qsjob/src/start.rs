@@ -39,6 +39,9 @@ pub fn run() -> ! {
         subsystem: start.subsystem.clone(),
         pid: std::process::id(),
         handle: start.handle,
+        jobd: start.jobd.clone(),
+        class: start.class.clone(),
+        pool: start.pool.clone(),
         ..JobInfo::default()
     });
     match hello {
@@ -51,6 +54,8 @@ pub fn run() -> ! {
     });
     match start.role.as_str() {
         "QSVCJOB" => crate::console::serve(ctl, &link, &start),
+        "MONITOR" => crate::work::monitor::run(ctl, &link, &start),
+        "BATCH" => crate::work::batch::run(ctl, &link, &start),
         other => end(&mut ctl, &format!("no role {other}")),
     }
 }

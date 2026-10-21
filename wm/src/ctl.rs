@@ -23,8 +23,23 @@ pub struct Start {
     pub kind: char,
     /// The subsystem it runs in; blank for none.
     pub subsystem: String,
-    /// The job's role: `QSVCJOB` serves the service console.
+    /// The job's role: `QSVCJOB` serves the service console,
+    /// `MONITOR` runs a subsystem, `BATCH` runs a routed job.
     pub role: String,
+    /// The job description, `lib/name`.
+    pub jobd: String,
+    /// The class routing gave it, `lib/name`.
+    pub class: String,
+    /// The program routing calls first, `lib/name`; `QSYS/QCMD` runs
+    /// the request data.
+    pub program: String,
+    /// The request data: a command for `QCMD`.
+    pub rqsdta: String,
+    /// The pool it runs in: `*BASE`, `*SHRPOOLn`, or `SBS/n` for a
+    /// subsystem's private pool.
+    pub pool: String,
+    /// The `*LDA` it starts with; empty for blanks.
+    pub lda: Vec<u8>,
 }
 
 wire_struct!(Start {
@@ -34,7 +49,13 @@ wire_struct!(Start {
     handle,
     kind,
     subsystem,
-    role
+    role,
+    jobd,
+    class,
+    program,
+    rqsdta,
+    pool,
+    lda
 });
 
 /// Parent to job.
@@ -43,7 +64,7 @@ pub enum ToJob {
     /// Who the job is; the first message.
     Start {
         /// The attributes.
-        start: Start,
+        start: Box<Start>,
     },
     /// A line typed at the console the job serves.
     Line {
@@ -119,4 +140,6 @@ pub const JOB_COMMANDS: &[&str] = &[
     "rmvbkp",
     "dspbkp",
     "dspjoblog",
+    "strsbs",
+    "dlyjob",
 ];

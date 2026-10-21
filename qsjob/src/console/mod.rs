@@ -33,7 +33,7 @@ pub struct Console {
     /// Messages from `slic`, read by a thread so the job can wait
     /// with a timeout and look for breaks meanwhile.
     inbox: Inbox,
-    link: Shared,
+    pub(crate) link: Shared,
     job: Option<Box<Job>>,
     provider: Option<Rc<RefCell<RemoteProvider>>>,
     /// The job's `*LDA`.
@@ -45,30 +45,27 @@ pub struct Console {
     sysvals: Option<Vec<u8>>,
     /// Who the job is.
     start: Start,
+    /// Jobs this one started (subsystem monitors), until they end.
+    pub children: Vec<crate::work::spawn::Spawned>,
 }
 
 /// Serve lines until told to end. Never returns.
 pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
-    let inbox = inbox(&ctl);
-    let mut c = Console {
-        start: start.clone(),
-        inbox,
-        ctl,
-        link: Rc::clone(link),
-        job: None,
-        provider: None,
-        lda: stg::remote::new_lda(),
-        prompt: PROMPT.to_string(),
-        srcs: Vec::new(),
-        sysvals: None,
-    };
+    let mut c = Console::new(ctl, link, start);
+    // The console job is the operator's: it never waits on QSYSOPR.
+    let dft = vec![("INQMSGRPY".to_string(), "*DFT".to_string())];
+    let _ = c.link.borrow_mut().with(|l| l.chgjob(String::new(), dft));
     c.started();
     loop {
         status(&c.link, Status::Evtw, "");
         let next = loop {
             match c.inbox.recv_timeout(BREAK_POLL) {
                 Ok(m) => break Ok(m),
-                Err(RecvTimeoutError::Timeout) => c.breaks(),
+                Err(RecvTimeoutError::Timeout) => {
+                    c.breaks();
+                    c.children
+                        .retain_mut(|s| matches!(s.child.try_wait(), Ok(None)));
+                }
                 Err(RecvTimeoutError::Disconnected) => break Err(()),
             }
         };
@@ -115,6 +112,30 @@ pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
 }
 
 impl Console {
+    /// A job's runtime over `link`, its parent on `ctl`.
+    pub fn new(ctl: Chan, link: &Shared, start: &Start) -> Self {
+        let inbox = inbox(&ctl);
+        let lda = stg::remote::new_lda();
+        if !start.lda.is_empty() {
+            let mut b = start.lda.clone();
+            b.resize(stg::remote::LDA_LEN, 0x40);
+            *lda.borrow_mut() = b;
+        }
+        Self {
+            start: start.clone(),
+            inbox,
+            ctl,
+            link: Rc::clone(link),
+            job: None,
+            provider: None,
+            lda,
+            prompt: PROMPT.to_string(),
+            srcs: Vec::new(),
+            sysvals: None,
+            children: Vec::new(),
+        }
+    }
+
     /// Send text to the console now.
     fn output(&mut self, text: &str) {
         let _ = self.ctl.send(&FromJob::Output {
@@ -123,7 +144,7 @@ impl Console {
     }
 
     /// One line; its output.
-    fn line(&mut self, text: &str) -> String {
+    pub fn line(&mut self, text: &str) -> String {
         let word = text.split_whitespace().next().unwrap_or("");
         if self.prompt == PROMPT && JOB_COMMANDS.contains(&word) {
             return jobcmd::command(self, word, text);
@@ -162,7 +183,7 @@ impl Console {
     }
 
     /// The job, created on first use with its sources over the link.
-    fn job(&mut self) -> &mut Job {
+    pub fn job(&mut self) -> &mut Job {
         if self.job.is_none() {
             let mut s = Sources::new(&self.link);
             // The console's `*LDA` is the job's, whether or not a
@@ -235,6 +256,10 @@ fn inbox(ctl: &Chan) -> Inbox {
     if let Ok(mut reader) = ctl.try_clone() {
         std::thread::spawn(move || {
             while let Ok(m) = reader.recv::<ToJob>() {
+                if m == (ToJob::End { immediate: true }) {
+                    // ENDJOB *IMMED: the service releases what the job held.
+                    std::process::exit(2);
+                }
                 if tx.send(m).is_err() {
                     return;
                 }

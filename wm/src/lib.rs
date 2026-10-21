@@ -17,7 +17,9 @@ mod error;
 pub mod job;
 pub mod joblog;
 pub mod obj;
+pub mod pools;
 pub mod rec;
+pub mod sbs;
 pub mod spec;
 pub mod table;
 

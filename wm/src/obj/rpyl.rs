@@ -232,41 +232,6 @@ impl RpyList {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn matching() {
-        let mut l = RpyList::shipped();
-        assert_eq!(l.find("CPA0701", "").unwrap().seq, 10);
-        assert_eq!(l.find("RPG1241", "").unwrap().reply, "D");
-        assert!(l.find("CEE9901", "").is_none());
-        l.add(RpyEntry {
-            seq: 5,
-            msgid: "CEE9901".into(),
-            cmpdta: "FAILPGM".into(),
-            start: 1,
-            reply: "C".into(),
-            dump: false,
-        })
-        .unwrap();
-        assert!(l.find("CEE9901", "OTHERPGM  MCH1211").is_none());
-        assert_eq!(l.find("CEE9901", "FAILPGM   MCH1211").unwrap().reply, "C");
-        assert!(
-            l.add(RpyEntry {
-                seq: 5,
-                ..RpyEntry::default()
-            })
-            .is_err()
-        );
-        assert_eq!(RpyList::decode(&l.encode()).unwrap(), l);
-        l.remove(5).unwrap();
-        assert!(l.remove(5).is_err());
-        assert!(l.display().contains("CPA0700"));
-    }
-}
-
 /// The list's space in `QSYS`, if it exists.
 pub fn find(
     txn: &mut store::txn::Txn<'_>,
@@ -331,4 +296,39 @@ pub fn save(
     }
     store::obj::usrspc::write(txn, id, 0, &bytes)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn matching() {
+        let mut l = RpyList::shipped();
+        assert_eq!(l.find("CPA0701", "").unwrap().seq, 10);
+        assert_eq!(l.find("RPG1241", "").unwrap().reply, "D");
+        assert!(l.find("CEE9901", "").is_none());
+        l.add(RpyEntry {
+            seq: 5,
+            msgid: "CEE9901".into(),
+            cmpdta: "FAILPGM".into(),
+            start: 1,
+            reply: "C".into(),
+            dump: false,
+        })
+        .unwrap();
+        assert!(l.find("CEE9901", "OTHERPGM  MCH1211").is_none());
+        assert_eq!(l.find("CEE9901", "FAILPGM   MCH1211").unwrap().reply, "C");
+        assert!(
+            l.add(RpyEntry {
+                seq: 5,
+                ..RpyEntry::default()
+            })
+            .is_err()
+        );
+        assert_eq!(RpyList::decode(&l.encode()).unwrap(), l);
+        l.remove(5).unwrap();
+        assert!(l.remove(5).is_err());
+        assert!(l.display().contains("CPA0700"));
+    }
 }

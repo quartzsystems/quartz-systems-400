@@ -13,7 +13,7 @@ use super::Console;
 
 impl Console {
     /// Deliver the breaks waiting for the job.
-    pub(super) fn breaks(&mut self) {
+    pub(crate) fn breaks(&mut self) {
         let waiting = self.link.borrow_mut().with(Client::breaks);
         for (queue, (pgm, lib), m) in waiting {
             if pgm.is_empty() || pgm.starts_with('*') {
@@ -37,7 +37,11 @@ impl Console {
                 library.as_mut_ptr() as u64,
                 key.as_mut_ptr() as u64,
             ];
-            let lib = if lib.is_empty() { "*LIBL".to_string() } else { lib };
+            let lib = if lib.is_empty() {
+                "*LIBL".to_string()
+            } else {
+                lib
+            };
             let j = self.job();
             if let Err(e) = j.call_program(&pgm, &lib, &args) {
                 self.output(&format!(

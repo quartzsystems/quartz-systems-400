@@ -15,6 +15,7 @@ use sysapi::{
     LocalNow, MemberInfo, ObjInfo, SysVal, UserInfo,
 };
 use wm::job::JobAttrs;
+use wm::sbs::{PoolInfo, SbsInfo, SbsState};
 use wm::obj::msgq::{MsgKind, QMsg};
 use wm::table::JobInfo;
 
@@ -76,8 +77,10 @@ ipc::rpc! {
     /// A job number for a new job: the next after the last one
     /// handed out, skipping numbers in use. Kept in the store.
     4 => fn job_number / JobNumber () -> Result<u32, String>;
-    /// The job's status (`Status::byte`) and function.
-    5 => fn set_status / SetStatus (status: u8, function: String) -> ();
+    /// Set the job's status (`Status::byte`) and function. The answer:
+    /// whether the job holds an activity level in its pool now: a
+    /// runnable status takes one if one is free, a wait gives it up.
+    5 => fn set_status / SetStatus (status: u8, function: String) -> bool;
     /// Every active job.
     6 => fn active_jobs / ActiveJobs () -> Vec<JobInfo>;
     /// The job's own attributes (`RTVJOBA`).
@@ -197,4 +200,24 @@ ipc::rpc! {
     /// The system reply list's answer to an inquiry: the reply and
     /// whether to dump the job, or `None` when no entry matches.
     95 => fn sysrpyl / Sysrpyl (msgid: String, data: Vec<u8>) -> Option<(String, bool)>;
+
+    /// A subsystem that may be started: the library and the encoded
+    /// description. `CPF1010` when it is active.
+    100 => fn sbs_check / SbsCheck (name: String) -> Result<(String, Vec<u8>), String>;
+    /// A monitor says its subsystem is starting: the encoded
+    /// description.
+    101 => fn sbs_register / SbsRegister (name: String, lib: String) -> Result<Vec<u8>, String>;
+    /// What the calling monitor's subsystem is to do.
+    102 => fn sbs_state / SbsState () -> SbsState;
+    /// Every active subsystem.
+    103 => fn sbs_list / SbsList () -> Vec<SbsInfo>;
+    /// Every storage pool.
+    104 => fn pools / Pools () -> Vec<PoolInfo>;
+    /// `ENDSBS`.
+    105 => fn sbs_end / SbsEnd (name: String, immediate: bool, delay: u32) -> Result<(), String>;
+    /// A work management object's payload: `lib/name` of a type
+    /// (`*JOBD`, `*CLS`, `*SBSD` ...).
+    106 => fn wm_object / WmObject (qual: String, ty: String) -> Result<Vec<u8>, String>;
+    /// A subsystem's private pool, defined by its monitor.
+    107 => fn define_pool / DefinePool (name: String, size_kb: u64, actlvl: u32) -> ();
 }

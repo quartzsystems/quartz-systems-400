@@ -41,6 +41,8 @@ pub struct JobInfo {
     pub jobd: String,
     /// Its class, `lib/name`.
     pub class: String,
+    /// The storage pool it runs in; blank for none.
+    pub pool: String,
 }
 
 wire_struct!(JobInfo {
@@ -56,7 +58,8 @@ wire_struct!(JobInfo {
     started,
     handle,
     jobd,
-    class
+    class,
+    pool
 });
 
 impl JobInfo {

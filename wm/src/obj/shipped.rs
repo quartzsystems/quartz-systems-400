@@ -167,6 +167,13 @@ pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &Stamp) -> Result<usize
         super::rpyl::save(txn, qsys, &super::rpyl::RpyList::shipped(), stamp)?;
         made += 1;
     }
+    for (name, s) in super::sbsd::shipped() {
+        let n = Name::parse(name).expect("valid");
+        if !exists(txn, qsys, n, types::SBSD)? {
+            create(txn, qsys, n, types::SBSD, &s.text, stamp, &s.encode())?;
+            made += 1;
+        }
+    }
     for (lib, name, q) in queues() {
         let l = library(txn, qsys, lib)?;
         let n = Name::parse(name).expect("valid");

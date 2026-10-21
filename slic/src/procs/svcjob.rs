@@ -69,7 +69,7 @@ pub fn start(system: &mut System, tx: Sender<Event>) -> Result<(), String> {
         .map_err(|e| format!("QSVCJOB: {e}"))??;
     let (pid, mut chan) = spawn(QSJOB, &[])?;
     chan.send(&ToJob::Start {
-        start: Start {
+        start: Box::new(Start {
             name: "QSVCJOB".into(),
             user: "QSYS".into(),
             number,
@@ -77,7 +77,9 @@ pub fn start(system: &mut System, tx: Sender<Event>) -> Result<(), String> {
             kind: 'S',
             subsystem: String::new(),
             role: "QSVCJOB".into(),
-        },
+            jobd: "QSYS/QSYSJOBD".into(),
+            ..Start::default()
+        }),
     })
     .map_err(|e| format!("QSVCJOB: {e}"))?;
     match chan.recv::<FromJob>() {

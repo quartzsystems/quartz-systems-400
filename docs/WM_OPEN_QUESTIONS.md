@@ -44,3 +44,11 @@ closes when the machine's answer is recorded here and the code agrees.
    reply; a queue full of unanswered inquiries rejects the new message
    with `CPF2460`. Test: a queue of `SIZE(1 1 1) MSGQFULL(*WRAP)`
    filled with inquiries, then one more message.
+
+## Subsystems
+
+6. **History messages for subsystem start and end.** Implemented:
+   `CPF0902` and `CPF0903`, with the subsystem and library as data.
+   The identifiers the machine writes to `QHST` for these are not
+   confirmed. Test: `STRSBS QGPL/QTESTSBS`, `ENDSBS QTESTSBS`, then
+   `DSPLOG MSGID(*ALL)` over that minute: note the identifiers.
