@@ -147,6 +147,51 @@ impl Spaces {
         }
     }
 
+    /// A space over storage the runtime owns (a heap block, a mapped
+    /// user space): lives until [`Spaces::kill`].
+    pub fn add_region(&mut self, base: u64, len: u64) -> FatPtr {
+        self.spaces.push(Space {
+            base,
+            len,
+            generation: 1,
+            live: true,
+            owner_depth: 0,
+        });
+        FatPtr {
+            kind: PtrKind::Space as u8,
+            flags: 0,
+            generation: 1,
+            space: u32::try_from(self.spaces.len() - 1).expect("few spaces"),
+            offset: 0,
+        }
+    }
+
+    /// Kill the runtime-owned space at a base address, if any.
+    pub fn kill_at(&mut self, base: u64) {
+        for s in &mut self.spaces {
+            if s.live && s.owner_depth == 0 && s.base == base {
+                s.live = false;
+                s.generation = s.generation.wrapping_add(1);
+            }
+        }
+    }
+
+    /// Kill a space by number; pointers into it fail with `MCH3402`.
+    pub fn kill(&mut self, space: u32) {
+        if let Some(s) = self.spaces.get_mut(space as usize)
+            && s.live
+        {
+            s.live = false;
+            s.generation = s.generation.wrapping_add(1);
+        }
+    }
+
+    /// The space a pointer names, when live: its number and length.
+    pub fn space_info(&self, p: FatPtr) -> Result<(u32, u64), Cond> {
+        let s = self.space_of(p)?;
+        Ok((p.space, s.len))
+    }
+
     /// Forget a static area: the spaces inside it die, so pointers into
     /// a reclaimed activation group fail with `MCH3402`.
     pub fn kill_static(&mut self, base: u64) {

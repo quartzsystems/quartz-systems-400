@@ -12,6 +12,7 @@ mod convert;
 mod core;
 mod date;
 mod decimal;
+mod heap;
 mod mem;
 mod string;
 
@@ -22,6 +23,7 @@ pub use core::{
 };
 pub use date::{dt_add, dt_diff, dt_extract, dt_now, dt_test};
 pub use decimal::{dec_bin, dec_cmp, dec_to_float, dec_to_int, dec_un};
+pub use heap::{alloc, dealloc, realloc};
 pub use string::{
     str_cat, str_check, str_cmp, str_len, str_replace, str_scan, str_setlen, str_subst, str_trim,
     str_xlate,
@@ -73,6 +75,9 @@ pub fn table() -> Vec<usize> {
             RtFn::CallPgmVar => call_pgm_var as *const () as usize,
             RtFn::CallPgmPtr => call_pgm_ptr as *const () as usize,
             RtFn::ProcTarget => proc_target as *const () as usize,
+            RtFn::Alloc => alloc as *const () as usize,
+            RtFn::Realloc => realloc as *const () as usize,
+            RtFn::Dealloc => dealloc as *const () as usize,
         })
         .collect()
 }

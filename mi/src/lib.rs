@@ -15,13 +15,17 @@ mod error;
 pub mod act;
 pub mod cond;
 pub mod exec;
+pub mod heap;
 pub mod job;
 pub mod rtlib;
 pub mod space;
+pub mod usrspc;
 
 pub use act::{ActivationGroup, AgId, AgKind, LoadedProgram, MemSource, ObjectSource};
 pub use cond::{Cond, Exception};
 pub use error::{MiError, Result};
 pub use exec::Program;
+pub use heap::{Heap, HeapId};
 pub use job::Job;
 pub use space::{FatPtr, PtrKind, Spaces};
+pub use usrspc::{MemUserSpaces, UserSpaceSource};

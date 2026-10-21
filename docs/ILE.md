@@ -234,6 +234,23 @@ afterwards with `MCH3402`. `*ELIGIBLE` destroys every such named
 group. *Phase 4, pending*: files opened and commit definitions scoped
 to the group are closed and rolled back first, heaps freed last.
 
+**Heaps.** Every activation group has a default heap, where `alloc`
+(`%ALLOC`) takes storage, and `CEECRHP` adds user heaps to it. Each
+block is its own space: a pointer to a freed block, or to the old
+storage after `realloc`, fails with `MCH3402`; `dealloc` of a pointer
+that is not a heap block is `MCH3601`. The storage never moves until
+`realloc` replaces it. `CEEDSHP` discards a user heap with everything
+in it, and `RCLACTGRP` frees every heap of the group.
+
+**User spaces.** `QUSPTRUS` maps a `*USRSPC` into the job once, as a
+copy of its bytes that is a space of its own, and returns a space
+pointer to it; the copy goes back to the object when the job syncs
+its user spaces. Deleting the object unmaps it, so a pointer into it
+fails with `MCH3402` afterwards. The object store behind the mapping
+is a trait (`UserSpaceSource`); slic supplies the store-backed one.
+*Phase 4, pending*: pinning the object's pages instead of copying,
+with writes through the WAL.
+
 **Entry procedures.** A program's entry procedure receives a parameter
 list: the count and an array of parameter addresses (`ABI.md` §3).
 `%PARMS` is the count; a parameter not passed reads as a null pointer

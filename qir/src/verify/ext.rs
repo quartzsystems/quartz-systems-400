@@ -95,6 +95,12 @@ pub fn check(m: &Module, p: &Proc, i: &Inst) -> Result<(), String> {
                 (DtaaraOp::Lock | DtaaraOp::Unlock, None) => Ok(()),
             }
         }
+        Inst::Alloc { n, .. } => cx.int(n),
+        Inst::Realloc { ptr, n, .. } => {
+            cx.ptr(ptr)?;
+            cx.int(n)
+        }
+        Inst::Dealloc { ptr } => cx.ptr(ptr),
         Inst::Dtaq(DtaqInst::Snd {
             name,
             lib,
@@ -168,6 +174,16 @@ impl Cx<'_> {
             Err("two literals compared".into())
         } else {
             Ok(())
+        }
+    }
+
+    /// A space pointer operand: a `ptr` register or place.
+    fn ptr(&self, o: &Operand) -> Result<(), String> {
+        let t = self.ty(o, Some(&Type::Ptr))?;
+        if t == Type::Ptr {
+            Ok(())
+        } else {
+            Err(format!("a {t} where a ptr is needed"))
         }
     }
 

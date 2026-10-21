@@ -109,6 +109,25 @@ impl Lowerer<'_, '_> {
                 let r = self.regions.pop().expect("verified nesting");
                 self.closed_regions.push(r);
             }
+            Inst::Alloc { dst, n } => {
+                let nv = self.int_op(n)?;
+                let out = self.ptr_slot();
+                self.rt_call(RtFn::Alloc, &[out, nv]);
+                let v = self.b.ins().load(types::I128, super::le(), out, 0);
+                self.b.def_var(self.vars[dst.0 as usize], v);
+            }
+            Inst::Realloc { dst, ptr, n } => {
+                let (pa, _) = self.sop(ptr, Some(&Type::Ptr))?;
+                let nv = self.int_op(n)?;
+                let out = self.ptr_slot();
+                self.rt_call(RtFn::Realloc, &[out, pa, nv]);
+                let v = self.b.ins().load(types::I128, super::le(), out, 0);
+                self.b.def_var(self.vars[dst.0 as usize], v);
+            }
+            Inst::Dealloc { ptr } => {
+                let (pa, _) = self.sop(ptr, Some(&Type::Ptr))?;
+                self.rt_call(RtFn::Dealloc, &[pa]);
+            }
             Inst::Dsply { src, reply } => {
                 let (sa, sd) = self.sop(src, None)?;
                 let (ra, rd) = match reply {

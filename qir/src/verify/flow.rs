@@ -280,6 +280,12 @@ fn ext_uses(i: &Inst, out: &mut Vec<Reg>) {
             operand_uses(lib, out);
             opt_place_uses(data.as_ref(), out);
         }
+        Inst::Alloc { n, .. } => operand_uses(n, out),
+        Inst::Realloc { ptr, n, .. } => {
+            operand_uses(ptr, out);
+            operand_uses(n, out);
+        }
+        Inst::Dealloc { ptr } => operand_uses(ptr, out),
         Inst::Dtaq(DtaqInst::Snd {
             name,
             lib,
@@ -342,12 +348,25 @@ pub fn check_assigned(p: &Proc, regions: &[Region]) -> Result<(), (String, usize
         }
     }
     // Handler predecessors contribute their entry state, not their exit state.
-    let mut entry_preds: Vec<Vec<usize>> = vec![Vec::new(); nb];
+    // A pair of the block and the registers assigned in it before the
+    // region opens (only the block holding the `monitor` has any).
+    let mut entry_preds: Vec<Vec<(usize, Vec<bool>)>> = vec![Vec::new(); nb];
     for r in regions {
+        let mut before = vec![false; n];
+        for i in &p.blocks[r.start.0].insts[..r.start.1] {
+            if let Some(d) = i.def() {
+                before[d.0 as usize] = true;
+            }
+        }
         for h in &r.handlers {
             for b in 0..nb {
                 if r.overlaps(b) {
-                    entry_preds[h.0 as usize].push(b);
+                    let extra = if b == r.start.0 {
+                        before.clone()
+                    } else {
+                        vec![false; n]
+                    };
+                    entry_preds[h.0 as usize].push((b, extra));
                 }
             }
         }
@@ -373,9 +392,9 @@ pub fn check_assigned(p: &Proc, regions: &[Region]) -> Result<(), (String, usize
                     v[k] = v[k] && o[k];
                 }
             }
-            for &pr in &entry_preds[b] {
+            for (pr, extra) in &entry_preds[b] {
                 for k in 0..n {
-                    v[k] = v[k] && inn[pr][k];
+                    v[k] = v[k] && (inn[*pr][k] || extra[k]);
                 }
             }
             if v != inn[b] {

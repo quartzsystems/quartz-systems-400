@@ -414,6 +414,29 @@ pub enum Inst {
     },
     /// Data queues.
     Dtaq(DtaqInst),
+    /// `%d = alloc n`: `n` bytes from the activation group's heap.
+    Alloc {
+        /// Destination, a `ptr`.
+        dst: Reg,
+        /// Bytes.
+        n: Operand,
+    },
+    /// `%d = realloc p, n`: the storage `p` addresses resized to `n`
+    /// bytes, its contents kept; the old pointer is dead afterwards.
+    Realloc {
+        /// Destination, a `ptr`.
+        dst: Reg,
+        /// Storage from `alloc`.
+        ptr: Operand,
+        /// Bytes.
+        n: Operand,
+    },
+    /// `dealloc p`: free storage from `alloc`; a pointer that is not
+    /// from the heap is `MCH3601`.
+    Dealloc {
+        /// Storage from `alloc`.
+        ptr: Operand,
+    },
 }
 
 impl Inst {
@@ -468,7 +491,9 @@ impl Inst {
                 | IoInst::DevIo { dst, .. },
             )
             | Self::Msg(MsgInst::Rcv { dst, .. })
-            | Self::Dtaq(DtaqInst::Rcv { dst, .. }) => Some(*dst),
+            | Self::Dtaq(DtaqInst::Rcv { dst, .. })
+            | Self::Alloc { dst, .. }
+            | Self::Realloc { dst, .. } => Some(*dst),
             Self::Call {
                 ret: Some(CallRet::Reg(r)),
                 ..

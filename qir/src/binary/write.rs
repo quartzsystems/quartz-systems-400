@@ -699,6 +699,21 @@ impl W {
                 self.operand(lib);
                 self.opt_place(data.as_ref());
             }
+            Inst::Alloc { dst, n } => {
+                self.u8(34);
+                self.reg(*dst);
+                self.operand(n);
+            }
+            Inst::Realloc { dst, ptr, n } => {
+                self.u8(35);
+                self.reg(*dst);
+                self.operand(ptr);
+                self.operand(n);
+            }
+            Inst::Dealloc { ptr } => {
+                self.u8(36);
+                self.operand(ptr);
+            }
             Inst::Dtaq(DtaqInst::Snd {
                 name,
                 lib,

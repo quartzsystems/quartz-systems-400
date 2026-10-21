@@ -49,6 +49,8 @@ pub struct ActivationGroup {
     pub kind: AgKind,
     /// Programs activated in it.
     pub activations: Vec<Activation>,
+    /// Its heaps: the default heap first, then user-created ones.
+    pub heaps: Vec<crate::heap::Heap>,
     /// Alive; a reclaimed group's number is not reused.
     pub live: bool,
 }
@@ -285,6 +287,7 @@ impl Activator {
                 name: "*DFTACTGRP".into(),
                 kind: AgKind::Default,
                 activations: Vec::new(),
+                heaps: vec![crate::heap::Heap::new(0)],
                 live: true,
             }],
             current: 0,
@@ -307,6 +310,7 @@ impl Activator {
             name: name.into(),
             kind,
             activations: Vec::new(),
+            heaps: vec![crate::heap::Heap::new(0)],
             live: true,
         });
         id
@@ -408,12 +412,15 @@ impl Activator {
         }
         let g = &mut self.groups[id as usize];
         g.live = false;
-        let bases: Vec<u64> = g
+        let mut bases: Vec<u64> = g
             .activations
             .iter()
             .map(|a| a.statics.as_ptr() as u64)
             .collect();
         g.activations.clear();
+        for h in g.heaps.drain(..) {
+            bases.extend(h.blocks.iter().map(|b| b.data.as_ptr() as u64));
+        }
         Ok(bases)
     }
 

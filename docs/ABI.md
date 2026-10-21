@@ -156,6 +156,9 @@ absent optional length is -1.
 | 34 | `call_pgm_var` | `addr, len, argc, argv` | |
 | 35 | `call_pgm_ptr` | `ptr, argc, argv` | |
 | 36 | `proc_target` | `ptr` | code address, 0 when invalid |
+| 37 | `alloc` | `out, n` | 16 bytes at `out` |
+| 38 | `realloc` | `out, ptr, n` | 16 bytes at `out` |
+| 39 | `dealloc` | `ptr` | |
 
 `enter` is called in every prologue with the procedure's own code
 address, so the runtime can push a call-stack entry and identify the

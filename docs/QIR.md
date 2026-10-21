@@ -268,6 +268,9 @@ are in `ILE.md`.
 | `%d = procaddr NAME` | a procedure pointer to a procedure of this module or an `extern proc` |
 | `%d = rslvsp *TYPE, name, lib` | a system pointer to an object; `MCH3401` when absent |
 | `%d = const.ptr *NULL` | a null pointer |
+| `%d = alloc n` | `n` bytes from the activation group's default heap, zeroed (`%ALLOC`) |
+| `%d = realloc p, n` | the storage resized to `n` bytes with its contents kept; the old pointer is dead (`%REALLOC`) |
+| `dealloc p` | the storage freed (`DEALLOC`); a pointer not from `alloc` is `MCH3601` |
 
 **Monitors.** `monitor NAME, sel -> L, sel -> L, …` opens a region
 that `endmon NAME` closes; regions nest and are lexical over the
@@ -327,7 +330,8 @@ a register holds a storage-only type, or is assigned two types; a block
 lacks a terminator or has one before its end; a branch names no block;
 a register may be read before it is assigned on some path (a forward
 dataflow over the block graph, in which a handler sees the
-intersection of the entry states of the blocks its region overlaps);
+intersection of the entry states of the blocks its region overlaps,
+the opening block contributing its state at the `monitor`);
 an operand's type does not fit the instruction (§5); a call passes the
 wrong count, `*OMIT` where not allowed, a register by reference, or a
 type the parameter is not; a decimal operation omits its precision;

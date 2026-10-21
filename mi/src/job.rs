@@ -50,6 +50,8 @@ pub struct Job {
     pub natives: HashMap<String, NativeFn>,
     /// The runtime call table.
     pub table: Vec<usize>,
+    /// Mapped user spaces.
+    pub usrspcs: crate::usrspc::UserSpaces,
     env: Box<Env>,
 }
 
@@ -71,6 +73,7 @@ impl Job {
             act: Activator::new(source),
             natives: HashMap::new(),
             table: crate::rtlib::table(),
+            usrspcs: crate::usrspc::UserSpaces::default(),
             env: Box::new(Env {
                 statics: std::ptr::null_mut(),
                 job: std::ptr::null_mut(),
@@ -130,13 +133,105 @@ impl Job {
         Ok(())
     }
 
-    /// Destroy an activation group by number; its static areas die.
+    /// Destroy an activation group by number; its static areas and
+    /// heap storage die.
     pub fn reclaim_group(&mut self, id: u32) {
         if let Ok(bases) = self.act.reclaim_id(id) {
             for b in bases {
                 self.spaces.kill_static(b);
+                self.spaces.kill_at(b);
             }
         }
+    }
+
+    /// `%ALLOC` from the current group's default heap.
+    pub fn alloc(&mut self, n: u64) -> Result<crate::space::FatPtr, Cond> {
+        self.alloc_from(0, n)
+    }
+
+    /// `CEEGTST`: storage from a heap of the current group.
+    pub fn alloc_from(
+        &mut self,
+        heap: crate::heap::HeapId,
+        n: u64,
+    ) -> Result<crate::space::FatPtr, Cond> {
+        let ag = self.act.current as usize;
+        let h = self.act.groups[ag]
+            .heaps
+            .iter_mut()
+            .find(|h| h.id == heap)
+            .ok_or(Cond::Mch3601)?;
+        Ok(h.alloc(n, &mut self.spaces))
+    }
+
+    /// `%REALLOC` and `CEECZST`: the block resized, contents kept.
+    pub fn realloc(
+        &mut self,
+        p: crate::space::FatPtr,
+        n: u64,
+    ) -> Result<crate::space::FatPtr, Cond> {
+        let (space, _) = self.spaces.space_info(p)?;
+        for g in &mut self.act.groups {
+            for h in &mut g.heaps {
+                if let Some(q) = h.realloc(space, n, &mut self.spaces) {
+                    return Ok(q);
+                }
+            }
+        }
+        Err(Cond::Mch3601)
+    }
+
+    /// `DEALLOC` and `CEEFRST`: a block freed.
+    pub fn dealloc(&mut self, p: crate::space::FatPtr) -> Result<(), Cond> {
+        let (space, _) = self.spaces.space_info(p)?;
+        for g in &mut self.act.groups {
+            for h in &mut g.heaps {
+                if h.free(space, &mut self.spaces) {
+                    return Ok(());
+                }
+            }
+        }
+        Err(Cond::Mch3601)
+    }
+
+    /// `CEECRHP`: a user heap in the current group; its number.
+    pub fn create_heap(&mut self) -> crate::heap::HeapId {
+        let ag = self.act.current as usize;
+        let g = &mut self.act.groups[ag];
+        let id = g.heaps.iter().map(|h| h.id).max().map_or(1, |m| m + 1);
+        g.heaps.push(crate::heap::Heap::new(id));
+        id
+    }
+
+    /// `CEEDSHP`: a user heap of the current group discarded with
+    /// everything in it; the default heap (0) cannot be.
+    pub fn discard_heap(&mut self, heap: crate::heap::HeapId) -> Result<(), Cond> {
+        if heap == 0 {
+            return Err(Cond::Mch3601);
+        }
+        let ag = self.act.current as usize;
+        let g = &mut self.act.groups[ag];
+        let i = g
+            .heaps
+            .iter()
+            .position(|h| h.id == heap)
+            .ok_or(Cond::Mch3601)?;
+        let h = g.heaps.remove(i);
+        for b in &h.blocks {
+            self.spaces.kill(b.space);
+        }
+        Ok(())
+    }
+
+    /// `QUSPTRUS`: a space pointer to a user space, mapped on first
+    /// use; writes reach the object at [`Job::sync_user_spaces`].
+    pub fn map_user_space(&mut self, name: &str, lib: &str) -> Result<crate::space::FatPtr, Cond> {
+        self.usrspcs.map(name, lib, &mut self.spaces)
+    }
+
+    /// Write every changed user space back to its object.
+    pub fn sync_user_spaces(&mut self) {
+        self.usrspcs.sync();
     }
 
     /// `RCLACTGRP(name)`.

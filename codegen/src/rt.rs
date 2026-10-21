@@ -100,10 +100,16 @@ pub enum RtFn {
     /// `proc_target(env, ptr) -> code`: the code address a procedure
     /// pointer names, validated; 0 and a raised condition otherwise.
     ProcTarget = 36,
+    /// `alloc(env, out, n)`: heap storage, a pointer written to `out`.
+    Alloc = 37,
+    /// `realloc(env, out, ptr, n)`: resized heap storage, to `out`.
+    Realloc = 38,
+    /// `dealloc(env, ptr)`: heap storage freed.
+    Dealloc = 39,
 }
 
 /// Every runtime function, in table order.
-pub const RT_FNS: [RtFn; 37] = [
+pub const RT_FNS: [RtFn; 40] = [
     RtFn::Raise,
     RtFn::Enter,
     RtFn::Leave,
@@ -141,6 +147,9 @@ pub const RT_FNS: [RtFn; 37] = [
     RtFn::CallPgmVar,
     RtFn::CallPgmPtr,
     RtFn::ProcTarget,
+    RtFn::Alloc,
+    RtFn::Realloc,
+    RtFn::Dealloc,
 ];
 
 impl RtFn {
@@ -197,6 +206,9 @@ impl RtFn {
             Self::CallPgmVar => "call_pgm_var",
             Self::CallPgmPtr => "call_pgm_ptr",
             Self::ProcTarget => "proc_target",
+            Self::Alloc => "alloc",
+            Self::Realloc => "realloc",
+            Self::Dealloc => "dealloc",
         }
     }
 
@@ -243,6 +255,9 @@ impl RtFn {
             Self::CallPgmVar => (4, None),
             Self::CallPgmPtr => (3, None),
             Self::ProcTarget => (1, Some(types::I64)),
+            Self::Alloc => (2, None),
+            Self::Realloc => (3, None),
+            Self::Dealloc => (1, None),
         }
     }
 

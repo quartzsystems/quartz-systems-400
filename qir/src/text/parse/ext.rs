@@ -362,6 +362,16 @@ impl Parser {
                 }
                 Inst::Msg(msg)
             }
+            ("alloc", None) => Inst::Alloc {
+                dst,
+                n: self.operand()?,
+            },
+            ("realloc", None) => {
+                let ptr = self.operand()?;
+                self.comma()?;
+                let n = self.operand()?;
+                Inst::Realloc { dst, ptr, n }
+            }
             ("dtaq", Some("rcv")) => {
                 let name = self.operand()?;
                 self.comma()?;
@@ -613,6 +623,9 @@ impl Parser {
                     data,
                 }
             }
+            ("dealloc", None) => Inst::Dealloc {
+                ptr: self.operand()?,
+            },
             ("dtaq", Some("snd")) => {
                 let name = self.operand()?;
                 self.comma()?;

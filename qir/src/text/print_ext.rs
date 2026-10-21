@@ -419,6 +419,11 @@ impl Printer<'_> {
                 }
                 s
             }
+            Inst::Alloc { dst, n } => format!("{} = alloc {}", r(*dst), o(n)),
+            Inst::Realloc { dst, ptr, n } => {
+                format!("{} = realloc {}, {}", r(*dst), o(ptr), o(n))
+            }
+            Inst::Dealloc { ptr } => format!("dealloc {}", o(ptr)),
             Inst::Dtaq(DtaqInst::Snd {
                 name,
                 lib,

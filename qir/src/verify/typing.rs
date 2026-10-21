@@ -154,9 +154,9 @@ pub fn def_type(module: &Module, proc: &Proc, inst: &Inst) -> Result<Option<Type
         | Inst::Io(_)
         | Inst::Dtaq(DtaqInst::Rcv { .. }) => Type::I32,
         Inst::Dt(DtInst::Diff { .. }) | Inst::Ptr(PtrInst::PtrDiff { .. }) => Type::I64,
-        Inst::Ptr(PtrInst::Addr { .. } | PtrInst::PtrAdd { .. } | PtrInst::Rslvsp { .. }) => {
-            Type::Ptr
-        }
+        Inst::Ptr(PtrInst::Addr { .. } | PtrInst::PtrAdd { .. } | PtrInst::Rslvsp { .. })
+        | Inst::Alloc { .. }
+        | Inst::Realloc { .. } => Type::Ptr,
         Inst::Ptr(PtrInst::ProcAddr { .. }) => Type::ProcPtr,
         Inst::Call {
             target,

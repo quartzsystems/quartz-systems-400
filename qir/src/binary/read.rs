@@ -652,6 +652,18 @@ impl R<'_> {
                 lib: self.operand()?,
                 data: self.opt_place()?,
             },
+            34 => Inst::Alloc {
+                dst: self.reg()?,
+                n: self.operand()?,
+            },
+            35 => Inst::Realloc {
+                dst: self.reg()?,
+                ptr: self.operand()?,
+                n: self.operand()?,
+            },
+            36 => Inst::Dealloc {
+                ptr: self.operand()?,
+            },
             32 => Inst::Dtaq(DtaqInst::Snd {
                 name: self.operand()?,
                 lib: self.operand()?,
