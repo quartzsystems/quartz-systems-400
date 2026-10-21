@@ -211,11 +211,13 @@ impl Served<'_> {
     /// Run `f` with the store lent to the job's sources.
     fn lent<T>(&mut self, f: impl FnOnce(&mut JobCtx) -> T) -> T {
         let root = self.own_qtemp();
+        self.own_libl();
         let lent = ile::lend(self.system).is_ok();
         let r = f(self.ctx);
         if lent {
             ile::restore(self.system);
         }
+        ile::set_libl(None);
         self.root_qtemp(root);
         r
     }
@@ -226,6 +228,16 @@ impl Served<'_> {
         let t = self.system.temp.as_mut()?;
         let q = self.ctx.qtemp?;
         Some(std::mem::replace(&mut t.qtemp, q))
+    }
+
+    /// Resolve names through the job's library list.
+    fn own_libl(&mut self) {
+        ile::set_libl(
+            self.system
+                .attrs
+                .get(&self.ctx.job.number)
+                .map(|a| a.libl.clone()),
+        );
     }
 
     /// Put the root back.
@@ -244,10 +256,12 @@ impl Service for Served<'_> {
     fn exec(&mut self, line: String) -> ExecReply {
         let root = self.own_qtemp();
         self.system.current_job = self.ctx.job.number;
+        self.own_libl();
         std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
         let text = super::exec::run(self.system, &line);
         let prompt = svc::db::prompt(self.system).to_string();
         std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
+        ile::set_libl(None);
         self.root_qtemp(root);
         let srcs = std::mem::take(&mut self.system.raised)
             .into_iter()

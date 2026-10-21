@@ -105,15 +105,47 @@ pub fn with_temp<T>(
     }
 }
 
-/// The service job's library list: `QSYS` then `QGPL`, the current
-/// library `QGPL`.
+thread_local! {
+    /// The library list of the job whose request is being answered.
+    /// The service answers one request at a time, so one slot does.
+    static LIBL: RefCell<Option<wm::job::LibList>> = const { RefCell::new(None) };
+}
+
+/// Name resolution follows `libl` until the next call; `None` goes back
+/// to `QSYS` then `QGPL`.
+pub fn set_libl(libl: Option<wm::job::LibList>) {
+    LIBL.with(|c| *c.borrow_mut() = libl);
+}
+
+/// The library list name resolution uses now, if a job's is set.
+pub fn current_libl() -> Option<wm::job::LibList> {
+    LIBL.with(|c| c.borrow().clone())
+}
+
+/// The library list as the store resolves names: the requesting job's
+/// list in search order (`QTEMP` and libraries that do not exist left
+/// out), its current library or, for `*CRTDFT`, `QGPL`. Without a job,
+/// `QSYS` then `QGPL`.
 pub fn name_context(txn: &mut Txn<'_>, qsys: ObjectId) -> NameContext {
-    let qgpl = ops::find_library(txn, qsys, Name::parse("QGPL").expect("valid"))
-        .map(|f| f.id)
-        .ok();
-    NameContext {
-        curlib: qgpl,
-        libl: std::iter::once(qsys).chain(qgpl).collect(),
+    let mut find = |n: &str| -> Option<ObjectId> {
+        match n {
+            "QSYS" => Some(qsys),
+            "QTEMP" => None,
+            _ => ops::find_library(txn, qsys, Name::parse(n).ok()?)
+                .map(|f| f.id)
+                .ok(),
+        }
+    };
+    let qgpl = find("QGPL");
+    match current_libl() {
+        Some(l) => NameContext {
+            curlib: l.cur.as_deref().and_then(&mut find).or(qgpl),
+            libl: l.search().iter().filter_map(|n| find(n)).collect(),
+        },
+        None => NameContext {
+            curlib: qgpl,
+            libl: std::iter::once(qsys).chain(qgpl).collect(),
+        },
     }
 }
 

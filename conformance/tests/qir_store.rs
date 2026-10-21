@@ -36,7 +36,12 @@ fn cases_survive_the_store_round_trip() {
         wal_pages: 128,
         now: CLOCK,
     };
-    let mut store = Store::format(vec![Box::new(d) as Box<dyn BlockDev>], &params, StoreConfig::default()).unwrap();
+    let mut store = Store::format(
+        vec![Box::new(d) as Box<dyn BlockDev>],
+        &params,
+        StoreConfig::default(),
+    )
+    .unwrap();
     let mut t = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, CLOCK, "QS400").unwrap();
     let qgpl = ops::create(
@@ -110,9 +115,13 @@ fn cases_survive_the_store_round_trip() {
         }
         sysapi::uninstall(&job);
         let got = render(&job, &buffers);
-        let want = fs::read_to_string(kit.expected_dir().join(format!("{}.out", case.name))).unwrap();
+        let want =
+            fs::read_to_string(kit.expected_dir().join(format!("{}.out", case.name))).unwrap();
         if got != want.replace("\r\n", "\n") {
-            differ.push(format!("{}:\n--- store\n{got}--- memory\n{want}", case.name));
+            differ.push(format!(
+                "{}:\n--- store\n{got}--- memory\n{want}",
+                case.name
+            ));
         }
     }
     t.commit().unwrap();

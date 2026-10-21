@@ -25,6 +25,7 @@ crtcls LIB/CLS [RUNPTY() TIMESLICE() PURGE() DFTWAIT() CPUTIME() MAXTMPSTG() MAX
 chgcls LIB/CLS keywords | dltcls LIB/CLS | dspcls LIB/CLS
 chgjob [JOB(nnnnnn/USER/NAME)] keywords | dspjob [JOB(nnnnnn/USER/NAME)]
 wrkactjob            the active jobs
+dsplibl | chglibl LIBL(..) [CURLIB()] | addlible LIB [POSITION(*LAST)] | rmvlible LIB | chgcurlib LIB | chgsyslibl LIB [OPTION(*REMOVE)]
 ";
 
 /// Dispatch a command of this module; `None` when `cmd` is not one.
@@ -244,4 +245,169 @@ fn dspjob(system: &mut System, p: &Params) -> Result<String, String> {
         let _ = writeln!(out, "  {k:<38} {v}");
     }
     Ok(out)
+}
+
+/// The library list commands; `None` when `cmd` is not one.
+pub fn libl_command(system: &mut System, cmd: &str, line: &str) -> Option<String> {
+    let p = Params::parse(line);
+    let r = match cmd {
+        "dsplibl" => Ok(dsplibl(system)),
+        "chglibl" => change_libl(system, &p),
+        "addlible" => addlible(system, &p),
+        "rmvlible" => rmvlible(system, &p),
+        "chgcurlib" => chgcurlib(system, &p),
+        "chgsyslibl" => chgsyslibl(system, &p),
+        _ => return None,
+    };
+    Some(match r {
+        Ok(s) => s,
+        Err(e) => format!("{e}\n"),
+    })
+}
+
+/// Run `f` on the job's library list; the change holds for the rest of
+/// this request too.
+fn with_libl<T>(
+    system: &mut System,
+    f: impl FnOnce(&mut wm::job::LibList) -> Result<T, String>,
+) -> Result<T, String> {
+    let me = system.current_job;
+    let a = system
+        .attrs
+        .get_mut(&me)
+        .ok_or("CPF1070 the job has no attributes")?;
+    let mut l = a.libl.clone();
+    let r = f(&mut l)?;
+    a.libl = l.clone();
+    super::ile::set_libl(Some(l));
+    Ok(r)
+}
+
+/// A library must exist (`QTEMP` always does).
+fn check_lib(system: &mut System, lib: &str) -> Result<String, String> {
+    let lib = lib.to_ascii_uppercase();
+    if lib == "QTEMP" {
+        return Ok(lib);
+    }
+    in_store(system, |txn, qsys| {
+        wm::obj::library(txn, qsys, &lib).map_err(|_| format!("CPF2110 library {lib} not found"))
+    })?;
+    Ok(lib)
+}
+
+fn libl_err(e: &wm::Error) -> String {
+    err(e)
+}
+
+/// `DSPLIBL`.
+fn dsplibl(system: &System) -> String {
+    let me = system.current_job;
+    let l = system
+        .attrs
+        .get(&me)
+        .map(|a| a.libl.clone())
+        .unwrap_or_default();
+    let mut out = String::from("Library     Type\n");
+    for (part, libs) in [
+        ("SYS", l.sys.clone()),
+        ("PRD", l.prd.clone()),
+        ("CUR", l.cur.iter().cloned().collect()),
+        ("USR", l.usr.clone()),
+    ] {
+        for lib in libs {
+            let _ = writeln!(out, "{lib:<10}  {part}");
+        }
+    }
+    out
+}
+
+/// `CHGLIBL LIBL(...) [CURLIB(...)]`.
+fn change_libl(system: &mut System, p: &Params) -> Result<String, String> {
+    let raw = p
+        .kw("LIBL")
+        .map(str::to_string)
+        .or_else(|| (!p.pos.is_empty()).then(|| p.pos.join(" ")))
+        .ok_or("CPD0071 LIBL is needed")?;
+    let libs: Vec<String> = if raw.eq_ignore_ascii_case("*NONE") {
+        Vec::new()
+    } else {
+        raw.split_whitespace()
+            .map(|l| check_lib(system, l))
+            .collect::<Result<_, _>>()?
+    };
+    let cur = match p.upper("CURLIB") {
+        Some(c) if c == "*CRTDFT" => Some(None),
+        Some(c) if c == "*SAME" => None,
+        Some(c) => Some(Some(check_lib(system, &c)?)),
+        None => None,
+    };
+    with_libl(system, |l| {
+        if let Some(c) = cur {
+            l.cur = c;
+        }
+        l.change(libs).map_err(|e| libl_err(&e))
+    })?;
+    Ok("Library list changed.\n".into())
+}
+
+/// `ADDLIBLE LIB [POSITION(*FIRST|*LAST)]`.
+fn addlible(system: &mut System, p: &Params) -> Result<String, String> {
+    let lib = check_lib(system, &p.pos_or(0, "LIB")?)?;
+    let first = !matches!(p.upper("POSITION").as_deref(), Some("*LAST"));
+    with_libl(system, |l| l.add(&lib, first).map_err(|e| libl_err(&e)))?;
+    Ok(format!("Library {lib} added to library list.\n"))
+}
+
+/// `RMVLIBLE LIB`.
+fn rmvlible(system: &mut System, p: &Params) -> Result<String, String> {
+    let lib = p.pos_or(0, "LIB")?.to_ascii_uppercase();
+    with_libl(system, |l| l.remove(&lib).map_err(|e| libl_err(&e)))?;
+    Ok(format!("Library {lib} removed from library list.\n"))
+}
+
+/// `CHGCURLIB CURLIB(LIB|*CRTDFT)`.
+fn chgcurlib(system: &mut System, p: &Params) -> Result<String, String> {
+    let lib = p.pos_or(0, "CURLIB")?.to_ascii_uppercase();
+    if lib == "*CRTDFT" {
+        set_curlib(system, None)?;
+        return Ok("Current library changed to *CRTDFT.\n".into());
+    }
+    let lib = check_lib(system, &lib)?;
+    set_curlib(system, Some(lib.clone()))?;
+    Ok(format!("Current library changed to {lib}.\n"))
+}
+
+/// The job's current library; `None` is `*CRTDFT`.
+pub fn set_curlib(system: &mut System, lib: Option<String>) -> Result<(), String> {
+    with_libl(system, |l| {
+        if let Some(c) = &lib
+            && (l.sys.contains(c) || l.usr.contains(c))
+        {
+            return Err(format!("CPF2103 library {c} is already in the library list"));
+        }
+        l.cur = lib;
+        Ok(())
+    })
+}
+
+/// `CHGSYSLIBL LIB [OPTION(*ADD|*REMOVE)]`.
+fn chgsyslibl(system: &mut System, p: &Params) -> Result<String, String> {
+    let lib = check_lib(system, &p.pos_or(0, "LIB")?)?;
+    let remove = matches!(p.upper("OPTION").as_deref(), Some("*REMOVE"));
+    with_libl(system, |l| {
+        let mut sys = l.sys.clone();
+        if remove {
+            if !sys.contains(&lib) {
+                return Err(format!("CPF2104 library {lib} is not in the system part"));
+            }
+            sys.retain(|s| *s != lib);
+        } else {
+            if l.contains(&lib) {
+                return Err(format!("CPF2103 library {lib} is already in the library list"));
+            }
+            sys.insert(0, lib.clone());
+        }
+        l.change_sys(sys).map_err(|e| libl_err(&e))
+    })?;
+    Ok(format!("System library list changed for {lib}.\n"))
 }

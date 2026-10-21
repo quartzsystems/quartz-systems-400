@@ -7,8 +7,8 @@
 //! (`MIGRATE(phase7)`: the command analyzer runs them in place).
 
 use sysapi::{
-    ApiFail, ApiResult, CommitInfo, DataArea, DepInfo, DtaqEntry, DtaqInfo, FileInfo, FormatInfo,
-    IdxAttr, LocalNow, MemberInfo, ObjInfo, Provider, SysVal, UserInfo,
+    ApiFail, ApiResult, CommitInfo, DataArea, DataAreaType, DepInfo, DtaqEntry, DtaqInfo, FileInfo,
+    FormatInfo, IdxAttr, LocalNow, MemberInfo, ObjInfo, Provider, SysVal, UserInfo,
 };
 
 use crate::Shared;
@@ -17,6 +17,7 @@ use crate::proto::Client;
 /// The provider.
 pub struct RemoteProvider {
     link: Shared,
+    lda: super::data::Lda,
     /// Commands `QCMDEXC` queued, oldest first.
     pub pending: Vec<String>,
 }
@@ -24,9 +25,10 @@ pub struct RemoteProvider {
 impl RemoteProvider {
     /// Over a link.
     #[must_use]
-    pub fn new(link: Shared) -> Self {
+    pub fn new(link: Shared, lda: super::data::Lda) -> Self {
         Self {
             link,
+            lda,
             pending: Vec::new(),
         }
     }
@@ -183,12 +185,30 @@ impl Provider for RemoteProvider {
     }
 
     fn dtaara_read(&mut self, lib: &str, name: &str) -> ApiResult<DataArea> {
+        if name == "*LDA" {
+            return Ok(DataArea {
+                ty: DataAreaType::Char,
+                lib: String::new(),
+                len: 1024,
+                decimals: 0,
+                value: self.lda.borrow().clone(),
+            });
+        }
         self.link
             .borrow_mut()
             .with(|l| l.api_dtaara_read(lib.into(), name.into()))
     }
 
     fn dtaara_write(&mut self, lib: &str, name: &str, start: usize, bytes: &[u8]) -> ApiResult<()> {
+        if name == "*LDA" {
+            let mut lda = self.lda.borrow_mut();
+            let at = start.saturating_sub(1);
+            if at + bytes.len() > lda.len() {
+                return Err(ApiFail::id("CPF1088"));
+            }
+            lda[at..at + bytes.len()].copy_from_slice(bytes);
+            return Ok(());
+        }
         self.link
             .borrow_mut()
             .with(|l| l.api_dtaara_write(lib.into(), name.into(), start, bytes.to_vec()))

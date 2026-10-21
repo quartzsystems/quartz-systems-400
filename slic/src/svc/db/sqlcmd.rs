@@ -142,12 +142,11 @@ pub fn curlib(system: &mut System, args: &[&str]) -> Result<String, String> {
     let mut txn = store.begin().map_err(|e| e.to_string())?;
     let found = store::obj::ops::find_library(&mut txn, ctx.qsys, name).map_err(|e| e.to_string());
     txn.abort();
-    let id = found?.id;
-    ctx.names.curlib = Some(id);
-    ctx.names.libl.retain(|l| *l != id);
-    ctx.names.libl.insert(0, id);
+    found?;
     ctx.current_schema = Some(name);
+    // The job's current library: CHGCURLIB.
+    super::super::work::set_curlib(system, Some(name.to_string()))?;
     Ok(format!(
-        "Current library {name}; it heads the library list."
+        "Current library {name}; it heads the user part of the library list."
     ))
 }

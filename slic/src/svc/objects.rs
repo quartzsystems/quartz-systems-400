@@ -47,6 +47,14 @@ fn qualified(s: &str) -> Result<(String, Name), String> {
     let (lib, name) = s
         .split_once('/')
         .ok_or_else(|| format!("{s}: use LIB/NAME"))?;
+    if lib.eq_ignore_ascii_case("*CURLIB") {
+        // The job's current library; QGPL for *CRTDFT.
+        let cur = super::ile::current_libl()
+            .and_then(|l| l.cur)
+            .unwrap_or_else(|| "QGPL".into());
+        let name = Name::parse(name).map_err(|e| e.to_string())?;
+        return Ok((cur, name));
+    }
     Name::parse(lib).map_err(|e| e.to_string())?;
     let name = Name::parse(name).map_err(|e| e.to_string())?;
     Ok((lib.to_ascii_uppercase(), name))

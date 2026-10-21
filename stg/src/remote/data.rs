@@ -21,39 +21,70 @@ use crate::proto::Client;
 /// How long a waiting job sleeps between tries.
 pub const RETRY: Duration = Duration::from_millis(50);
 
-/// Data areas and data queues.
+/// The job's local data area: 1024 bytes, blanks at the start.
+pub type Lda = std::rc::Rc<std::cell::RefCell<Vec<u8>>>;
+
+/// A fresh `*LDA`.
+#[must_use]
+pub fn new_lda() -> Lda {
+    std::rc::Rc::new(std::cell::RefCell::new(vec![0x40; LDA_LEN]))
+}
+
+/// The `*LDA`'s length.
+pub const LDA_LEN: usize = 1024;
+
+/// Data areas and data queues. `*LDA` is the job's own and never
+/// leaves the process.
 pub struct RemoteData {
     link: Shared,
+    lda: Lda,
 }
 
 impl RemoteData {
-    /// Over a link.
+    /// Over a link, with the job's `*LDA`.
     #[must_use]
-    pub fn new(link: Shared) -> Self {
-        Self { link }
+    pub fn new(link: Shared, lda: Lda) -> Self {
+        Self { link, lda }
     }
 }
 
 impl DataSource for RemoteData {
     fn dtaara_lock(&mut self, name: &str, lib: &str) -> Result<(), IoFail> {
+        if name == "*LDA" {
+            return Ok(());
+        }
         self.link
             .borrow_mut()
             .with(|l| l.da_lock(name.into(), lib.into()))
     }
 
     fn dtaara_unlock(&mut self, name: &str, lib: &str) -> Result<(), IoFail> {
+        if name == "*LDA" {
+            return Ok(());
+        }
         self.link
             .borrow_mut()
             .with(|l| l.da_unlock(name.into(), lib.into()))
     }
 
     fn dtaara_read(&mut self, name: &str, lib: &str) -> Result<DataAreaValue, IoFail> {
+        if name == "*LDA" {
+            let mut v = DataAreaValue::chars(1024);
+            v.value.clone_from(&self.lda.borrow());
+            return Ok(v);
+        }
         self.link
             .borrow_mut()
             .with(|l| l.da_read(name.into(), lib.into()))
     }
 
     fn dtaara_write(&mut self, name: &str, lib: &str, value: &DataAreaValue) -> Result<(), IoFail> {
+        if name == "*LDA" {
+            let mut b = value.value.clone();
+            b.resize(LDA_LEN, 0x40);
+            *self.lda.borrow_mut() = b;
+            return Ok(());
+        }
         self.link
             .borrow_mut()
             .with(|l| l.da_write(name.into(), lib.into(), value.clone()))

@@ -152,3 +152,23 @@ fn dspbkp(c: &mut Console) -> String {
         out
     }
 }
+
+/// `dtaara get *LDA` and `dtaara set *LDA TEXT`: the job's own area.
+pub fn lda(c: &mut Console, args: &[&str]) -> String {
+    match args {
+        ["get", _] => {
+            let text = ccsid::from_ebcdic(&c.lda.borrow());
+            format!("*LDA: '{}'\n", text.trim_end())
+        }
+        ["set", _, rest @ ..] => {
+            let text = rest.join(" ");
+            let Ok(mut b) = ccsid::to_ebcdic(&text) else {
+                return format!("{text}: not CP037\n");
+            };
+            b.resize(stg::remote::LDA_LEN, 0x40);
+            *c.lda.borrow_mut() = b;
+            "*LDA changed.\n".into()
+        }
+        _ => "Usage: dtaara get *LDA | set *LDA TEXT\n".into(),
+    }
+}

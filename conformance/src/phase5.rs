@@ -18,7 +18,11 @@ impl Suite {
     #[allow(clippy::unused_self)] // every step has the same shape
     pub(crate) fn active_jobs(&self, s: &mut Session) -> Result<String, String> {
         let list = s.command("wrkactjob", CMD)?;
-        let row = |name: &str| list.lines().find(|l| l.starts_with(name)).map(str::to_string);
+        let row = |name: &str| {
+            list.lines()
+                .find(|l| l.starts_with(name))
+                .map(str::to_string)
+        };
         let scpf = row("SCPF").ok_or_else(|| format!("no SCPF:\n{list}"))?;
         if !scpf.contains("SYS") {
             return Err(format!("SCPF is not a system job: {scpf}"));
@@ -53,7 +57,10 @@ impl Suite {
             return Err(format!("QDFTJOBD:\n{shipped}"));
         }
         let cls = s.command("dspcls QGPL/QINTER", CMD)?;
-        if !cls.lines().any(|l| l.contains("Run priority") && l.trim_end().ends_with("20")) {
+        if !cls
+            .lines()
+            .any(|l| l.contains("Run priority") && l.trim_end().ends_with("20"))
+        {
             return Err(format!("QINTER class:\n{cls}"));
         }
         let made = s.command(
@@ -84,5 +91,53 @@ impl Suite {
             return Err(format!("dltjobd: {gone}"));
         }
         Ok("QDFTJOBD and QINTER shipped; created, shown, rejected, changed the job".into())
+    }
+}
+
+impl Suite {
+    /// Step 18: the job's library list from `QSYSLIBL` and `QUSRLIBL`,
+    /// changed by the list commands and followed by name resolution;
+    /// the job's own `*LDA`.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn library_list(&self, s: &mut Session) -> Result<String, String> {
+        let first = s.command("dsplibl", CMD)?;
+        let part = |list: &str, lib: &str| {
+            list.lines()
+                .find(|l| l.split_whitespace().next() == Some(lib))
+                .and_then(|l| l.split_whitespace().nth(1))
+                .map(str::to_string)
+        };
+        if part(&first, "QSYS").as_deref() != Some("SYS")
+            || part(&first, "QGPL").as_deref() != Some("USR")
+        {
+            return Err(format!("initial library list:\n{first}"));
+        }
+        s.command("addlible QRCL POSITION(*LAST)", CMD)?;
+        let dup = s.command("chgcurlib QRCL", CMD)?;
+        if !dup.contains("CPF2103") {
+            return Err(format!("chgcurlib accepted a library on the list: {dup}"));
+        }
+        s.command("rmvlible QRCL", CMD)?;
+        let cur = s.command("chgcurlib QRCL", CMD)?;
+        if !cur.contains("changed") {
+            return Err(format!("chgcurlib: {cur}"));
+        }
+        let made = s.command("obj crt *DTAARA *CURLIB/WMCUR", CMD)?;
+        let listed = s.command("obj ls QRCL", CMD)?;
+        let second = s.command("dsplibl", CMD)?;
+        s.command("chgcurlib *CRTDFT", CMD)?;
+        s.command("obj dlt *DTAARA QRCL/WMCUR", CMD)?;
+        if part(&second, "QRCL").as_deref() != Some("CUR") {
+            return Err(format!("QRCL is not the current library:\n{second}"));
+        }
+        if !listed.contains("WMCUR") {
+            return Err(format!("*CURLIB did not go to QRCL:\n{made}{listed}"));
+        }
+        s.command("dtaara set *LDA HELLO FROM THE JOB", CMD)?;
+        let lda = s.command("dtaara get *LDA", CMD)?;
+        if !lda.contains("'HELLO FROM THE JOB'") {
+            return Err(format!("*LDA: {lda}"));
+        }
+        Ok("QSYSLIBL and QUSRLIBL at start; list commands; *CURLIB followed; *LDA kept".into())
     }
 }

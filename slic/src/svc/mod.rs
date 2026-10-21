@@ -9,7 +9,7 @@ pub(crate) mod db;
 pub(crate) mod ile;
 mod objects;
 mod storage;
-mod work;
+pub(crate) mod work;
 
 use std::fmt::Write as _;
 
@@ -112,6 +112,7 @@ pub fn reply(system: &mut System, line: &str) -> String {
             Some(reply) => reply,
             None => match ile::command(system, cmd, &args, line)
                 .or_else(|| work::command(system, cmd, line))
+                .or_else(|| work::libl_command(system, cmd, line))
             {
                 Some(reply) => reply,
                 None => format!(

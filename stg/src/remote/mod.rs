@@ -8,7 +8,7 @@ mod data;
 mod objects;
 mod provider;
 
-pub use data::{RemoteData, RemoteIo, status};
+pub use data::{LDA_LEN, Lda, RemoteData, RemoteIo, new_lda, status};
 pub use objects::{RemoteMsgs, RemoteObjects, RemoteSpaces};
 pub use provider::RemoteProvider;
 
@@ -28,19 +28,23 @@ pub struct Sources {
     pub io: RemoteIo,
     /// The APIs' provider.
     pub provider: RemoteProvider,
+    /// The job's `*LDA`, shared by the two above.
+    pub lda: Lda,
 }
 
 impl Sources {
     /// All of them over `link`.
     #[must_use]
     pub fn new(link: &Shared) -> Self {
+        let lda = new_lda();
         Self {
             objects: RemoteObjects::new(link.clone()),
             spaces: RemoteSpaces::new(link.clone()),
             msgs: RemoteMsgs::new(link.clone()),
-            data: RemoteData::new(link.clone()),
+            data: RemoteData::new(link.clone(), lda.clone()),
             io: RemoteIo::new(link.clone()),
-            provider: RemoteProvider::new(link.clone()),
+            provider: RemoteProvider::new(link.clone(), lda.clone()),
+            lda,
         }
     }
 }

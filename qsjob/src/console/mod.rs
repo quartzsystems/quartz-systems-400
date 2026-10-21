@@ -29,6 +29,8 @@ pub struct Console {
     link: Shared,
     job: Option<Box<Job>>,
     provider: Option<Rc<RefCell<RemoteProvider>>>,
+    /// The job's `*LDA`.
+    lda: stg::remote::Lda,
     /// The prompt the storage service last asked for.
     prompt: String,
     /// SRC codes and system values the line's commands raised.
@@ -46,6 +48,7 @@ pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
         link: Rc::clone(link),
         job: None,
         provider: None,
+        lda: stg::remote::new_lda(),
         prompt: PROMPT.to_string(),
         srcs: Vec::new(),
         sysvals: None,
@@ -100,6 +103,12 @@ impl Console {
         if self.prompt == PROMPT && JOB_COMMANDS.contains(&word) {
             return jobcmd::command(self, word, text);
         }
+        if self.prompt == PROMPT && word == "dtaara" {
+            let args: Vec<&str> = text.split_whitespace().collect();
+            if args.get(2).is_some_and(|a| a.eq_ignore_ascii_case("*LDA")) {
+                return jobcmd::lda(self, &args[1..]);
+            }
+        }
         self.exec(text)
     }
 
@@ -112,6 +121,12 @@ impl Console {
             self.sysvals = reply.sysvals;
         }
         let word = text.split_whitespace().next().unwrap_or("");
+        if matches!(
+            word,
+            "chglibl" | "addlible" | "rmvlible" | "chgcurlib" | "chgsyslibl" | "curlib"
+        ) {
+            self.refresh_libl();
+        }
         if matches!(word, "updpgm" | "crtpgm" | "crtsrvpgm")
             && let Some(j) = self.job.as_mut()
         {
@@ -124,7 +139,12 @@ impl Console {
     /// The job, created on first use with its sources over the link.
     fn job(&mut self) -> &mut Job {
         if self.job.is_none() {
-            let s = Sources::new(&self.link);
+            let mut s = Sources::new(&self.link);
+            // The console's `*LDA` is the job's, whether or not a
+            // program has run yet.
+            s.lda = self.lda.clone();
+            s.data = stg::remote::RemoteData::new(self.link.clone(), self.lda.clone());
+            s.provider = RemoteProvider::new(self.link.clone(), self.lda.clone());
             let mut job = Job::boxed(Box::new(s.objects));
             job.usrspcs.set_source(Box::new(s.spaces));
             job.msgs = Box::new(s.msgs);
@@ -144,8 +164,19 @@ impl Console {
             }
             self.provider = Some(provider);
             self.job = Some(job);
+            self.refresh_libl();
         }
         self.job.as_mut().expect("created")
+    }
+
+    /// The job's library list, as the service keeps it.
+    fn refresh_libl(&mut self) {
+        let Some(j) = self.job.as_mut() else {
+            return;
+        };
+        let a = self.link.borrow_mut().with(Client::rtvjoba);
+        j.ident.libl = a.libl.search();
+        j.ident.curlib = a.libl.cur;
     }
 
     /// Commands `QCMDEXC` queued during a call, run now; their output.

@@ -20,7 +20,7 @@ use qsname::Name;
 use sql::SqlContext;
 use sql::ast::{Naming, ObjectName};
 use store::Store;
-use store::obj::ops::{self, NameContext};
+use store::obj::ops;
 use store::obj::{JobHandle, ObjectId};
 use store::txn::Txn;
 
@@ -292,27 +292,27 @@ pub fn member_spec(p: &Params, name: &str) -> Result<qsname::MemberSpec, String>
     }
 }
 
-/// The store and the SQL context, the context built on first use with
-/// QGPL current and QGPL then QSYS on the library list.
+/// The store and the SQL context, built on first use; names resolve
+/// through the job's library list as it is now.
 pub fn db(system: &mut System) -> Result<(&mut Store, &mut SqlContext), String> {
     let storage = system.storage.as_mut().ok_or("object store not open")?;
     let qsys = storage.qsys.ok_or("object store not initialized")?;
-    if system.svc.sql.is_none() {
+    let names = {
         let mut txn = storage.store.begin().map_err(|e| e.to_string())?;
-        let qgpl = ops::find_library(&mut txn, qsys, Name::parse("QGPL").expect("valid"))
-            .map(|f| f.id)
-            .ok();
+        let n = super::ile::name_context(&mut txn, qsys);
         txn.abort();
-        let names = NameContext {
-            curlib: qgpl,
-            libl: qgpl.into_iter().chain(std::iter::once(qsys)).collect(),
-        };
-        system.svc.sql = Some(SqlContext::with_locks(
-            qsys,
-            JOB,
-            names,
-            system.locks.clone(),
-        ));
+        n
+    };
+    match system.svc.sql.as_mut() {
+        Some(ctx) => ctx.names = names,
+        None => {
+            system.svc.sql = Some(SqlContext::with_locks(
+                qsys,
+                JOB,
+                names,
+                system.locks.clone(),
+            ));
+        }
     }
     Ok((&mut storage.store, system.svc.sql.as_mut().expect("set")))
 }
