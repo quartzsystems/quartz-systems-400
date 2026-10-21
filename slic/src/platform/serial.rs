@@ -24,7 +24,9 @@ pub fn spawn_reader(tx: Sender<Event>) -> bool {
 
 fn pump(file: File, tx: &Sender<Event>) {
     for chunk in BufReader::new(file).split(b'\n').map_while(Result::ok) {
-        let line = String::from_utf8_lossy(&chunk).trim().to_string();
+        // Only the end is trimmed: source lines pushed over the serial
+        // line keep their columns.
+        let line = String::from_utf8_lossy(&chunk).trim_end().to_string();
         if tx.send(Event::Line(line)).is_err() {
             break;
         }

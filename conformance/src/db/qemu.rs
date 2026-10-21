@@ -107,7 +107,7 @@ impl Suite {
                 ),
                 CMD,
             )?;
-            ok(&out, &format!("srcput {name}"), "copied")?;
+            ok(&out, &format!("srcput {name}"), "written")?;
             let reuse = if kit::reuse_deleted(&name) {
                 " REUSEDLT(*YES)"
             } else {
