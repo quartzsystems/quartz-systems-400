@@ -15,6 +15,7 @@ pub mod cmd;
 pub mod ctl;
 mod error;
 pub mod job;
+pub mod joblog;
 pub mod obj;
 pub mod rec;
 pub mod spec;

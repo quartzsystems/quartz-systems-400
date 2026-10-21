@@ -141,3 +141,31 @@ impl Suite {
         Ok("QSYSLIBL and QUSRLIBL at start; list commands; *CURLIB followed; *LDA kept".into())
     }
 }
+
+impl Suite {
+    /// Step 19: the job log holds the start message and the requests
+    /// the console job ran, and `LOG` level 1 keeps only messages.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn job_log(&self, s: &mut Session) -> Result<String, String> {
+        // Step 17 left LOG(2 20 *SECLVL); level 4 keeps everything.
+        s.command("chgjob LOG(4 0 *NOLIST)", CMD)?;
+        let log = s.command("dspjoblog", CMD)?;
+        if !log.lines().any(|l| l.starts_with("CPF1124")) {
+            return Err(format!("no CPF1124 in the job log:\n{log}"));
+        }
+        let requests = log
+            .lines()
+            .filter(|l| l.starts_with(">>") && l.contains("Request"))
+            .count();
+        if !log.lines().any(|l| l.starts_with(">>") && l.contains("wrkactjob")) {
+            return Err(format!("the wrkactjob request is not logged:\n{log}"));
+        }
+        s.command("chgjob LOG(1 0 *MSG)", CMD)?;
+        let quiet = s.command("dspjoblog", CMD)?;
+        s.command("chgjob LOG(4 0 *NOLIST)", CMD)?;
+        if quiet.lines().any(|l| l.starts_with(">>")) {
+            return Err(format!("LOG level 1 kept requests:\n{quiet}"));
+        }
+        Ok(format!("CPF1124 and {requests} requests logged; level 1 keeps messages only"))
+    }
+}

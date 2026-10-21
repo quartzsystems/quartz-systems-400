@@ -16,6 +16,7 @@ sysapi = { path = "../sysapi", version = "0.1.0" }
 msgf = { path = "../msgf", version = "0.1.0" }
 ccsid = { path = "../ccsid", version = "0.1.0" }
 qdecimal = { path = "../qdecimal", version = "0.1.0" }
+qir = { path = "../qir", version = "0.1.0" }
 
 [lints]
 workspace = true

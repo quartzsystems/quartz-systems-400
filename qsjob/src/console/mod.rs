@@ -10,6 +10,7 @@
 mod call;
 mod debug;
 mod jobcmd;
+mod log;
 
 use std::cell::RefCell;
 use std::fmt::Write as _;
@@ -53,6 +54,7 @@ pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
         srcs: Vec::new(),
         sysvals: None,
     };
+    c.started();
     loop {
         status(&c.link, Status::Evtw, "");
         match c.ctl.recv::<ToJob>() {
@@ -64,6 +66,9 @@ pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
                     format!("CMD-{}", word.to_ascii_uppercase())
                 };
                 status(&c.link, Status::Run, &function);
+                if c.prompt == PROMPT && !text.trim().is_empty() {
+                    c.job().log_request(&text, ("QSVCJOB", "QSYS"));
+                }
                 let out = c.line(&text);
                 if !out.is_empty() {
                     c.output(&out);
@@ -76,8 +81,12 @@ pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
                 if c.ctl.send(&done).is_err() {
                     std::process::exit(0);
                 }
+                if c.job.as_ref().is_some_and(|j| j.joblog_full) {
+                    c.full();
+                }
             }
             Ok(ToJob::End { .. }) => {
+                c.ended(0);
                 let _ = c.ctl.send(&FromJob::Ending {
                     reason: "ended by slic".into(),
                 });

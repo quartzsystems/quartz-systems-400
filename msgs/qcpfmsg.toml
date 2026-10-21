@@ -159,3 +159,33 @@ id = "CPD5D06"
 sev = 30
 text = "No module has a program entry procedure."
 help = "A program needs one module with a main procedure; name it with ENTMOD or list it first."
+
+# Work management.
+
+[[msg]]
+id = "CPF1124"
+sev = 0
+text = "Job &3/&2/&1 started &4 &5 in subsystem &6 in &7; it entered the system &8 &9."
+help = "The job began running. The subsystem and its library name where it runs; the second date and time are when it was submitted or signed on."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR 8", "*CHAR 8", "*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 8"]
+
+[[msg]]
+id = "CPF1164"
+sev = 0
+text = "Job &3/&2/&1 ended &4 &5; &6 seconds of processing were used, end code &7."
+help = "End code 0 is a normal end; 10 is a normal end with errors; 20 and above mean the job ended because of a severe error, a command to end it, or a power down."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR 8", "*CHAR 8", "*CHAR 10", "*CHAR 3"]
+
+[[msg]]
+id = "CPF2460"
+sev = 40
+text = "The job message queue of &3/&2/&1 is full."
+help = "The job log reached its maximum size and the job's queue-full action is *NOWRAP, so the job ends. Raise JOBMSGQMX or use JOBMSGQFL(*WRAP) or *PRTWRAP."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "CPI2417"
+sev = 0
+text = "The job message queue of &3/&2/&1 wrapped."
+help = "The job log reached its maximum size; the oldest messages were removed to make room, printed first when the action is *PRTWRAP."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]

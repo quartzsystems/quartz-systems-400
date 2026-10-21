@@ -118,4 +118,5 @@ pub const JOB_COMMANDS: &[&str] = &[
     "addbkp",
     "rmvbkp",
     "dspbkp",
+    "dspjoblog",
 ];

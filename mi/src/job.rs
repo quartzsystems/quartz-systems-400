@@ -151,6 +151,12 @@ pub struct Job {
     /// A resume granted to an entry below the top: the exception
     /// clears when the stack comes back down to this depth.
     pub resume_depth: Option<u32>,
+    /// The job log: every message sent, every request run.
+    pub joblog: wm::joblog::JobLog,
+    /// The log filled up under `JOBMSGQFL(*NOWRAP)`: the job must end.
+    pub joblog_full: bool,
+    /// Entries `*PRTWRAP` pushed out, to print with the job log.
+    pub joblog_wrapped: Vec<wm::joblog::Entry>,
     next_key: u32,
     env: Box<Env>,
 }
@@ -188,6 +194,9 @@ impl Job {
             last_dump: None,
             inquiry_log: Vec::new(),
             resume_depth: None,
+            joblog: wm::joblog::JobLog::new(16, wm::joblog::Full::Wrap),
+            joblog_full: false,
+            joblog_wrapped: Vec::new(),
             next_key: 1,
             env: Box::new(Env {
                 statics: std::ptr::null_mut(),
@@ -542,6 +551,7 @@ impl Job {
             received: false,
             reply: None,
         };
+        self.log_message(&m, target);
         self.queue_mut(target).push(m);
         if msg_type == MsgType::Escape
             && let QueueTarget::Frame(i) = target
@@ -630,5 +640,117 @@ impl Job {
     /// Live activation groups, for `DSPACTGRP`.
     pub fn groups(&self) -> impl Iterator<Item = &ActivationGroup> {
         self.act.groups()
+    }
+}
+
+impl Job {
+    /// The program, library and statement of call-stack entry `i`
+    /// (0 is the oldest); `*N` for a native or unknown entry.
+    fn frame_where(&self, i: Option<usize>) -> ((String, String), String) {
+        let unknown = || (("*N".to_string(), String::new()), "*N".to_string());
+        let Some(i) = i else {
+            return unknown();
+        };
+        let Some(f) = self.act.frames.get(i) else {
+            return unknown();
+        };
+        let Some(p) = f.program.as_ref() else {
+            return unknown();
+        };
+        let (lib, name) = p.key.split_once('/').unwrap_or(("", p.key.as_str()));
+        let stmt = if i + 1 == self.act.frames.len() {
+            self.abi.cur_stmt
+        } else {
+            f.stmt
+        };
+        ((name.to_string(), lib.to_string()), format!("{stmt:04}"))
+    }
+
+    /// Microseconds since the epoch.
+    fn log_now() -> u64 {
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_or(0, |d| u64::try_from(d.as_micros()).unwrap_or(u64::MAX))
+    }
+
+    /// Put a sent message in the job log.
+    fn log_message(&mut self, m: &Message, target: QueueTarget) {
+        let top = self.act.frames.len().checked_sub(1);
+        let (from, from_inst) = self.frame_where(top);
+        let (to, to_inst) = match target {
+            QueueTarget::Frame(i) => self.frame_where(Some(i)),
+            QueueTarget::Ext => (("*EXT".into(), String::new()), "*N".into()),
+            QueueTarget::SysOpr => (("QSYSOPR".into(), "QSYS".into()), "*N".into()),
+        };
+        let kind = match m.msg_type {
+            MsgType::Info | MsgType::Scope | MsgType::Any => "Information",
+            MsgType::Comp => "Completion",
+            MsgType::Diag => "Diagnostic",
+            MsgType::Escape => "Escape",
+            MsgType::Status => "Status",
+            MsgType::Notify => "Notify",
+            MsgType::Rqs => "Request",
+            MsgType::Inq => "Inquiry",
+            MsgType::Rpy => "Reply",
+        };
+        self.log_entry(wm::joblog::Entry {
+            msgid: m.msgid.clone(),
+            kind: kind.into(),
+            severity: m.severity,
+            time: Self::log_now(),
+            from,
+            from_inst,
+            to,
+            to_inst,
+            text: m.text.clone(),
+            help: m.help.clone(),
+            request: 0,
+            external: matches!(target, QueueTarget::Ext),
+        });
+    }
+
+    /// Append to the job log, noting a full log.
+    pub fn log_entry(&mut self, e: wm::joblog::Entry) {
+        match self.joblog.append(e) {
+            wm::joblog::Appended::Logged => {}
+            wm::joblog::Appended::Wrapped(gone) => self.joblog_wrapped.extend(gone),
+            wm::joblog::Appended::Full => self.joblog_full = true,
+        }
+    }
+
+    /// Log a request the job runs: a command or a call.
+    pub fn log_request(&mut self, text: &str, from: (&str, &str)) {
+        match self
+            .joblog
+            .request(text, Self::log_now(), (from.0.into(), from.1.into()))
+        {
+            wm::joblog::Appended::Logged => {}
+            wm::joblog::Appended::Wrapped(gone) => self.joblog_wrapped.extend(gone),
+            wm::joblog::Appended::Full => self.joblog_full = true,
+        }
+    }
+
+    /// Log a message the job sends to its own external queue from
+    /// outside any program: job start and end, commands' messages.
+    pub fn log_external(&mut self, msgid: &str, msgf: &str, data: &[u8], kind: MsgType) {
+        let (text, help, severity) = self.describe_message(msgid, msgf, "*LIBL", data);
+        let key = self.next_key;
+        self.next_key += 1;
+        let m = Message {
+            key,
+            msgid: msgid.into(),
+            msgf: msgf.into(),
+            msgf_lib: "*LIBL".into(),
+            msg_type: kind,
+            data: data.to_vec(),
+            text,
+            help,
+            severity,
+            from_depth: 0,
+            received: false,
+            reply: None,
+        };
+        self.log_message(&m, QueueTarget::Ext);
+        self.ext_msgq.push(m);
     }
 }

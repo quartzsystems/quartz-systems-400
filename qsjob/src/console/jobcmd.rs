@@ -35,6 +35,7 @@ pub fn command(c: &mut Console, cmd: &str, line: &str) -> String {
         "addbkp" => addbkp(c, &p, true),
         "rmvbkp" => addbkp(c, &p, false),
         "dspbkp" => Ok(dspbkp(c)),
+        "dspjoblog" => Ok(c.dspjoblog()),
         other => Err(format!("{other} is not a job command")),
     };
     match r {

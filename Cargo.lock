@@ -1275,6 +1275,7 @@ dependencies = [
  "store",
  "thiserror",
  "tracing",
+ "wm",
 ]
 
 [[package]]
@@ -1400,6 +1401,7 @@ dependencies = [
  "mi",
  "msgf",
  "qdecimal",
+ "qir",
  "stg",
  "sysapi",
  "wm",

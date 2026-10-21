@@ -18,6 +18,7 @@ db = { path = "../db", version = "0.1.0" }
 store = { path = "../store", version = "0.1.0" }
 qsname = { path = "../qsname", version = "0.1.0" }
 ipc = { path = "../ipc", version = "0.1.0" }
+wm = { path = "../wm", version = "0.1.0" }
 thiserror.workspace = true
 tracing.workspace = true
 
