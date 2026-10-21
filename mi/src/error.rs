@@ -23,4 +23,10 @@ pub enum MiError {
     /// The module has no entry procedure.
     #[error("module {0} has no entry procedure")]
     NoEntry(String),
+    /// Binding failed.
+    #[error(transparent)]
+    Bind(#[from] ile::IleError),
+    /// A condition was raised outside generated code.
+    #[error("{} was raised", .0.msgid())]
+    Cond(codegen::Cond),
 }

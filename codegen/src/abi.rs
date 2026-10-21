@@ -86,14 +86,21 @@ pub fn returns_in_register(ret: Option<&Type>) -> bool {
 
 /// The signature of a procedure with these parameters and return type.
 /// By-reference parameters and by-value storage types are `i64`
-/// addresses; by-value register types travel as themselves.
+/// addresses; by-value register types travel as themselves. A program
+/// entry procedure instead takes `argv`, the address of an array of
+/// `argc` parameter addresses, so a dynamic call reaches every program
+/// the same way.
 #[must_use]
-pub fn signature(params: &[Param], ret: Option<&Type>) -> Signature {
+pub fn signature(params: &[Param], ret: Option<&Type>, entry: bool) -> Signature {
     let mut s = Signature::new(CallConv::SystemV);
     let i64p = AbiParam::new(types::I64);
     s.params.push(i64p); // env
     s.params.push(i64p); // argc
     s.params.push(i64p); // opdesc
+    if entry {
+        s.params.push(i64p); // argv
+        return s;
+    }
     if !returns_in_register(ret) {
         s.params.push(i64p); // retbuf
     }

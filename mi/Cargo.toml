@@ -9,6 +9,7 @@ publish.workspace = true
 [dependencies]
 qir = { path = "../qir", version = "0.1.0" }
 codegen = { path = "../codegen", version = "0.1.0" }
+ile = { path = "../ile", version = "0.1.0" }
 qdecimal = { path = "../qdecimal", version = "0.1.0" }
 ccsid = { path = "../ccsid", version = "0.1.0" }
 dds = { path = "../dds", version = "0.1.0" }

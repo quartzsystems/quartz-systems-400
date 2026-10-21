@@ -20,6 +20,14 @@ pub(crate) fn job<'a>(env: *mut Env) -> &'a mut Job {
     unsafe { &mut *(*env).job.cast::<Job>() }
 }
 
+/// The environment itself, for the fields the call stack switches.
+pub(crate) fn env<'a>(env: *mut Env) -> &'a mut Env {
+    // SAFETY: `env` is the job's environment, alive for as long as
+    // generated code can run, and the runtime is single-threaded per
+    // job, so no other reference to it is live.
+    unsafe { &mut *env }
+}
+
 /// `len` bytes of storage at a native address.
 pub(crate) fn bytes<'a>(addr: i64, len: usize) -> &'a mut [u8] {
     if len == 0 {

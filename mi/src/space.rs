@@ -142,7 +142,21 @@ pub struct Spaces {
 impl Spaces {
     /// Record a static area, which pointers may address for ever.
     pub fn register_static(&mut self, base: u64, len: u64) {
-        self.statics.push((base, len));
+        if !self.statics.contains(&(base, len)) {
+            self.statics.push((base, len));
+        }
+    }
+
+    /// Forget a static area: the spaces inside it die, so pointers into
+    /// a reclaimed activation group fail with `MCH3402`.
+    pub fn kill_static(&mut self, base: u64) {
+        self.statics.retain(|(b, _)| *b != base);
+        for s in &mut self.spaces {
+            if s.live && s.owner_depth == 0 && s.base == base {
+                s.live = false;
+                s.generation = s.generation.wrapping_add(1);
+            }
+        }
     }
 
     fn in_statics(&self, addr: u64, len: u64) -> bool {

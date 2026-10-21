@@ -10,15 +10,13 @@
 use mi::{Cond, Program};
 
 fn run(text: &str) -> Program {
-    let mut p = Program::from_text(text, &[]).unwrap_or_else(|e| panic!("{e}"));
+    let mut p = Program::from_text(text).unwrap_or_else(|e| panic!("{e}"));
     p.call_entry().unwrap_or_else(|e| panic!("{e}"));
     p
 }
 
 fn statics(p: &Program, name: &str) -> Vec<u8> {
-    p.static_bytes(name)
-        .unwrap_or_else(|| panic!("no {name}"))
-        .to_vec()
+    p.static_bytes(name).unwrap_or_else(|| panic!("no {name}"))
 }
 
 fn text(p: &Program, name: &str) -> String {
@@ -26,7 +24,7 @@ fn text(p: &Program, name: &str) -> String {
 }
 
 fn num(p: &Program, name: &str) -> String {
-    let m = p.module();
+    let m = &p.object().modules[0].module.ir;
     let v = m.vars.iter().find(|v| v.name == name).expect("var");
     let b = statics(p, name);
     match &v.ty {

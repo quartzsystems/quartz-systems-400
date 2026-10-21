@@ -110,8 +110,8 @@ codegen/      IR to x86_64 through Cranelift: src/abi.rs env record, signatures,
               and control-flow instructions, calls; src/output.rs code, relocations, maps;
               src/load.rs placing code and resolving relocations; tests/common/ a stand-in
               runtime
-mi/           the runtime: src/job.rs the job stand-in, src/space.rs fat pointers and
-              spaces, src/cond.rs conditions and RPG status codes, src/rtlib/ the call
+mi/           the runtime: src/job.rs the job stand-in, src/act.rs loaded programs,
+              activation groups and the call stack, src/space.rs fat pointers and spaces, src/cond.rs conditions and RPG status codes, src/rtlib/ the call
               table's functions (core, decimal, string, convert, date; mem.rs holds the
               two unsafe blocks), src/exec.rs running one module; tests/programs.rs
 ile/          ILE objects: src/object/ *MODULE, *PGM/*SRVPGM and *BNDDIR payloads and the

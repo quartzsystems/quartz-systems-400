@@ -363,12 +363,12 @@ L0:
 #[test]
 fn unsupported_instructions_are_reported() {
     let m = qir::parse(
-        "module U\nstatic $p: packed(5,2)\nproc P() {\nL0:\n  call MYPGM($p)\n  ret\n}\n",
+        "module U\nstatic $n: char(10)\nproc P() {\nL0:\n  %s = rslvsp *PGM, $n, $n\n  ret\n}\n",
     )
     .unwrap();
     let err = codegen::compile(&m).unwrap_err().to_string();
     assert!(
-        err.contains("dynamic program call") && err.contains("not supported"),
+        err.contains("rslvsp") && err.contains("not supported"),
         "{err}"
     );
 }

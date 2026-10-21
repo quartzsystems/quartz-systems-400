@@ -201,11 +201,45 @@ names keep their case. `PGMLVL` defaults to `*CURRENT`; exactly one
 
 ## 4. Activation
 
-*Phase 4, pending*: activation groups (`*NEW`, `*CALLER`, named, the
-default), program activation (the static area allocated in the group,
-initialized from every module's initial bytes, procedure addresses
-registered, service programs activated and their signatures checked),
-`RCLACTGRP`, and the order resources are freed.
+**Loading.** A program is loaded once per job: every bound module's
+code is placed in memory, the service programs it is bound to are
+loaded first (recursively) and each must accept the signature the
+program was bound with, else the call fails with `MCH4431`; then the
+relocations are applied: runtime entries from the call table, the
+module's frame offset, bound procedures by address, service program
+exports by name, data imports by static area offset. An import the
+binder left unresolved points at a runtime entry that raises
+`MCH3401` when called.
+
+**Groups.** A job starts with the default activation group. A dynamic
+program call chooses the group from the program's attribute: `*NEW`
+creates a group for the call and destroys it on return; `*CALLER` is
+the caller's group; a named group is found or created; `DFTACTGRP(*YES)`
+is the default group. A bound call into a service program activates
+it, on first use, in the group its own attribute names (`*CALLER`
+being the calling program's group).
+
+**Activations.** A program's activation in a group is its static
+area: every module's frame at its bind-time offset, initialized from
+the module's initial bytes. The activation lives until the group is
+destroyed. One environment record serves the job; the runtime's
+`enter` points its static area at the activation of the program that
+owns the procedure being entered, and `leave` restores the caller's,
+so a call across programs needs no stub and every static access in
+generated code goes through the current activation (`ABI.md` §2).
+
+**`RCLACTGRP`.** A named group is destroyed when no call-stack entry
+runs in it; its static areas are freed, and a pointer into them fails
+afterwards with `MCH3402`. `*ELIGIBLE` destroys every such named
+group. *Phase 4, pending*: files opened and commit definitions scoped
+to the group are closed and rolled back first, heaps freed last.
+
+**Entry procedures.** A program's entry procedure receives a parameter
+list: the count and an array of parameter addresses (`ABI.md` §3).
+`%PARMS` is the count; a parameter not passed reads as a null pointer
+and `MCH3601` when touched. Native programs (system APIs implemented
+in Rust) are registered by name and found before any object when the
+library is `QSYS` or `*LIBL`.
 
 ## 5. Exceptions
 

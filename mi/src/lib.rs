@@ -12,12 +12,14 @@
 
 mod error;
 
+pub mod act;
 pub mod cond;
 pub mod exec;
 pub mod job;
 pub mod rtlib;
 pub mod space;
 
+pub use act::{ActivationGroup, AgId, AgKind, LoadedProgram, MemSource, ObjectSource};
 pub use cond::{Cond, Exception};
 pub use error::{MiError, Result};
 pub use exec::Program;

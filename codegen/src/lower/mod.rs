@@ -93,7 +93,7 @@ pub fn compile(m: &Module) -> Result<ModuleCode> {
     for (pi, p) in m.procs.iter().enumerate() {
         let mut func = Function::with_name_signature(
             UserFuncName::user(NS_LOCAL, index32(pi)),
-            abi::signature(&p.params, p.ret.as_ref()),
+            abi::signature(&p.params, p.ret.as_ref(), p.entry),
         );
         let mut fctx = FunctionBuilderContext::new();
         {
@@ -354,6 +354,7 @@ impl<'a, 'b> Lowerer<'a, 'b> {
     }
 
     /// The entry block: parameters, automatic storage, the call-stack entry.
+    #[allow(clippy::too_many_lines)]
     fn prologue(&mut self) {
         let entry = self.b.create_block();
         self.b.append_block_params_for_function_params(entry);
@@ -362,11 +363,32 @@ impl<'a, 'b> Lowerer<'a, 'b> {
         self.env = params[0];
         self.argc = params[1];
         let mut at = abi::HIDDEN_PARAMS;
-        if !abi::returns_in_register(self.p.ret.as_ref()) {
-            self.retbuf = Some(params[at]);
-            at += 1;
+        if self.p.entry {
+            // A parameter list: argv[k] when passed, else null.
+            let argv = params[at];
+            let mut vals = Vec::with_capacity(self.p.params.len());
+            for k in 0..self.p.params.len() {
+                let kk = i64::try_from(k).expect("few parameters");
+                let given = self.b.ins().icmp_imm_s(
+                    cranelift_codegen::ir::condcodes::IntCC::SignedGreaterThan,
+                    self.argc,
+                    kk,
+                );
+                let slot = self
+                    .b
+                    .ins()
+                    .load(types::I64, le(), argv, off32(8 * k as u64));
+                let zero = self.b.ins().iconst(types::I64, 0);
+                vals.push(self.b.ins().select(given, slot, zero));
+            }
+            self.param_vals = vals;
+        } else {
+            if !abi::returns_in_register(self.p.ret.as_ref()) {
+                self.retbuf = Some(params[at]);
+                at += 1;
+            }
+            self.param_vals = params[at..].to_vec();
         }
-        self.param_vals = params[at..].to_vec();
 
         // Storage slots for automatics and by-value parameters.
         for v in &self.p.vars {
@@ -558,7 +580,7 @@ impl<'a, 'b> Lowerer<'a, 'b> {
         let p = &self.m.procs[pi as usize];
         let sig = self
             .b
-            .import_signature(abi::signature(&p.params, p.ret.as_ref()));
+            .import_signature(abi::signature(&p.params, p.ret.as_ref(), p.entry));
         let name = self
             .b
             .func
@@ -590,7 +612,7 @@ impl<'a, 'b> Lowerer<'a, 'b> {
         }
         let sig = self
             .b
-            .import_signature(abi::signature(&proto.params, proto.ret.as_ref()));
+            .import_signature(abi::signature(&proto.params, proto.ret.as_ref(), false));
         let index = self.name_index(&proto.name);
         let name = self
             .b

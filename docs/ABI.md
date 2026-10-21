@@ -33,10 +33,13 @@ Every procedure receives a pointer to an `Env` as its first parameter:
 The job record's first field, `pending`, is a `u64` the runtime sets
 when an exception is raised and not handled where it occurred.
 
-One `Env` exists per (program, activation group). A module's static
-frame lies inside the program's static area at an offset fixed at bind
-time; that offset reaches the code through a relocation (§5), so the
-same code serves every activation group.
+One `Env` exists per job. The runtime's `enter` sets `statics` to the
+static area of the running program's activation in the current
+activation group and `leave` restores the caller's, so a call across
+programs needs no stub (`ILE.md` §4). A module's static frame lies
+inside the program's static area at an offset fixed at bind time; that
+offset reaches the code through a relocation (§5), so the same code
+serves every activation group.
 
 ## 3. Procedure signatures
 
@@ -48,6 +51,11 @@ proc(env: i64, argc: i64, opdesc: i64, [retbuf: i64,] params...) -> [value]
 - `argc`: the number of arguments the caller passed, `*OMIT` ones
   included; `%PARMS` reads it. Trailing `*NOPASS` parameters that were
   not passed are present as null pointers or zero values.
+- A program entry procedure takes `argv` instead of its parameters:
+  the address of an array of `argc` parameter addresses, which is what
+  a dynamic call (`call_pgm`) and a bound call to the entry both build.
+  The prologue reads each parameter's address from it, null when not
+  passed.
 - `opdesc`: the operational descriptor list, or 0 when the caller
   passed none. *Phase 4, pending*: `CEEDOD` and `*VARSIZE` lengths.
 - `retbuf`: present when the return type is not a register type; the
@@ -144,6 +152,10 @@ absent optional length is -1.
 | 30 | `proc_addr` | `out, code` | 16 bytes at `out` |
 | 31 | `dsply` | `src, sty, reply, rty` | |
 | 32 | `monitor_match` | `kind, a, b` | `i32` 0 or 1 |
+| 33 | `call_pgm` | `name, lib, argc, argv` | |
+| 34 | `call_pgm_var` | `addr, len, argc, argv` | |
+| 35 | `call_pgm_ptr` | `ptr, argc, argv` | |
+| 36 | `proc_target` | `ptr` | code address, 0 when invalid |
 
 `enter` is called in every prologue with the procedure's own code
 address, so the runtime can push a call-stack entry and identify the
@@ -209,7 +221,8 @@ imported procedures, `mov` between same-size storage and between text
 types, loads and stores of every register type, `parms`, `passed`,
 `omitted`, `debug.stmt`, every `dec.*`, `cvt`, `str.*` and `dt.*`
 instruction, `addr`, `ptradd`, `ptrdiff`, `procaddr`, based and
-deref places, `monitor`/`endmon`, `dsply`. Still
-`CodegenError::Unsupported`: `rslvsp`, dynamic program calls, calls
-through pointers, `sysapi`, I/O, messages, data areas and data queues,
-which arrive with their runtime pieces.
+deref places, `monitor`/`endmon`, `dsply`. Dynamic
+program calls, `sysapi` (a program call into `QSYS`) and calls through
+procedure pointers go through the runtime. Still
+`CodegenError::Unsupported`: `rslvsp`, I/O, messages, data areas and
+data queues, which arrive with their runtime pieces.

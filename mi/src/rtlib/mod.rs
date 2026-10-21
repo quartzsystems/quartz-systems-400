@@ -17,8 +17,8 @@ mod string;
 
 pub use convert::convert;
 pub use core::{
-    copy, deref, dsply, enter, leave, monitor_match, mov_str, proc_addr, ptr_add, ptr_addr,
-    ptr_diff, raise,
+    call_pgm, call_pgm_ptr, call_pgm_var, copy, deref, dsply, enter, leave, monitor_match, mov_str,
+    proc_addr, proc_target, ptr_add, ptr_addr, ptr_diff, raise, unresolved,
 };
 pub use date::{dt_add, dt_diff, dt_extract, dt_now, dt_test};
 pub use decimal::{dec_bin, dec_cmp, dec_to_float, dec_to_int, dec_un};
@@ -69,6 +69,10 @@ pub fn table() -> Vec<usize> {
             RtFn::ProcAddr => proc_addr as *const () as usize,
             RtFn::Dsply => dsply as *const () as usize,
             RtFn::MonitorMatch => monitor_match as *const () as usize,
+            RtFn::CallPgm => call_pgm as *const () as usize,
+            RtFn::CallPgmVar => call_pgm_var as *const () as usize,
+            RtFn::CallPgmPtr => call_pgm_ptr as *const () as usize,
+            RtFn::ProcTarget => proc_target as *const () as usize,
         })
         .collect()
 }

@@ -2,20 +2,23 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Conditions, the call stack, pointers, copies, text moves, `dsply`
-//! and `monitor` matching.
+//! Conditions, the call stack, program calls, pointers, copies, text
+//! moves, `dsply` and `monitor` matching.
 
-use codegen::Cond;
+#![allow(clippy::similar_names)]
+
 use std::fmt::Write as _;
 
+use codegen::Cond;
 use codegen::abi::Env;
 use codegen::rt::{selector, unpack_msgid};
 
-use super::mem::{bytes, job, typed};
+use super::mem::{bytes, env as env_of, job, typed};
 use super::string::{read_text, write_text};
+use crate::act::Frame;
 use crate::cond::Exception;
 use crate::job::Job;
-use crate::space::FatPtr;
+use crate::space::{FatPtr, PtrKind};
 
 /// Record a condition on the job: it is pending until a handler takes it.
 pub(crate) fn raise_on(j: &mut Job, cond: Cond) {
@@ -35,16 +38,43 @@ pub extern "sysv64" fn raise(env: *mut Env, cond: i32) {
     raise_on(j, c);
 }
 
-/// `enter(env, code)`.
-pub extern "sysv64" fn enter(env: *mut Env, _code: i64) {
+/// `enter(env, code)`: a call-stack entry; the static area becomes the
+/// running program's activation in the group its attribute names.
+pub extern "sysv64" fn enter(env: *mut Env, code: i64) {
     let j = job(env);
+    let e = env_of(env);
     j.depth += 1;
     j.max_depth = j.max_depth.max(j.depth);
+    let code = code.cast_unsigned();
+    let saved_ag = j.act.current;
+    let saved_statics = e.statics;
+    let program = j.act.program_of(code);
+    let mut ag = saved_ag;
+    if let Some(p) = &program {
+        ag = j.act.group_for(&p.object, saved_ag);
+        let (base, len) = j.act.activate(p, ag);
+        j.spaces.register_static(base as u64, len as u64);
+        e.statics = base;
+        j.act.current = ag;
+    }
+    j.act.frames.push(Frame {
+        code,
+        program,
+        ag,
+        saved_statics,
+        saved_ag,
+    });
 }
 
-/// `leave(env)`: frame spaces of the leaving entry die.
+/// `leave(env)`: the entry ends; the caller's static area and group
+/// come back and the frame's spaces die.
 pub extern "sysv64" fn leave(env: *mut Env) {
     let j = job(env);
+    let e = env_of(env);
+    if let Some(f) = j.act.frames.pop() {
+        e.statics = f.saved_statics;
+        j.act.current = f.saved_ag;
+    }
     j.depth = j.depth.saturating_sub(1);
     let depth = j.depth;
     j.spaces.leave(depth);
@@ -123,6 +153,72 @@ pub extern "sysv64" fn ptr_diff(env: *mut Env, p: i64, q: i64) -> i64 {
 /// `proc_addr(env, out, code)`.
 pub extern "sysv64" fn proc_addr(_env: *mut Env, out: i64, code: i64) {
     write_ptr(out, FatPtr::procedure(code.cast_unsigned()));
+}
+
+/// `proc_target(env, ptr) -> code`.
+pub extern "sysv64" fn proc_target(env: *mut Env, ptr: i64) -> i64 {
+    let p = read_ptr(ptr);
+    match p.kind() {
+        Some(PtrKind::Procedure) => p.offset.cast_signed(),
+        Some(PtrKind::Null) => {
+            raise_on(job(env), Cond::Mch3601);
+            0
+        }
+        _ => {
+            raise_on(job(env), Cond::Mch3602);
+            0
+        }
+    }
+}
+
+/// A `char(10)` name in storage.
+fn name_at(addr: i64) -> String {
+    ccsid::decode_trimmed(bytes(addr, 10))
+}
+
+fn args_at(argc: i64, argv: i64) -> Vec<u64> {
+    let n = usize::try_from(argc).unwrap_or(0);
+    bytes(argv, 8 * n)
+        .chunks(8)
+        .map(|c| u64::from_le_bytes(c.try_into().expect("8 bytes")))
+        .collect()
+}
+
+/// `call_pgm(env, name, lib, argc, argv)`.
+pub extern "sysv64" fn call_pgm(env: *mut Env, name: i64, lib: i64, argc: i64, argv: i64) {
+    let n = name_at(name);
+    let l = name_at(lib);
+    let args = args_at(argc, argv);
+    let j = job(env);
+    if let Err(c) = j.call_program(&n, &l, &args) {
+        raise_on(j, c);
+    }
+}
+
+/// `call_pgm_var(env, addr, len, argc, argv)`.
+pub extern "sysv64" fn call_pgm_var(env: *mut Env, addr: i64, len: i64, argc: i64, argv: i64) {
+    let n = name_at(addr);
+    let l = if len >= 20 {
+        name_at(addr + 10)
+    } else {
+        "*LIBL".into()
+    };
+    let args = args_at(argc, argv);
+    let j = job(env);
+    if let Err(c) = j.call_program(&n, &l, &args) {
+        raise_on(j, c);
+    }
+}
+
+/// `call_pgm_ptr(env, ptr, argc, argv)`: system pointers come with the
+/// object spaces; until then the call is `MCH3602`.
+pub extern "sysv64" fn call_pgm_ptr(env: *mut Env, _ptr: i64, _argc: i64, _argv: i64) {
+    raise_on(job(env), Cond::Mch3602);
+}
+
+/// The target of an import the binder left unresolved: `MCH3401`.
+pub extern "sysv64" fn unresolved(env: *mut Env) {
+    raise_on(job(env), Cond::Mch3401);
 }
 
 /// `dsply(env, src, sty, reply, rty)`: the text goes to the job's

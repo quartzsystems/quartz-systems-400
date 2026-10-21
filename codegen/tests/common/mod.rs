@@ -72,6 +72,7 @@ pub fn table() -> Vec<usize> {
     t[RtFn::Deref.index() as usize] = deref as *const () as usize;
     t[RtFn::Copy.index() as usize] = copy as *const () as usize;
     t[RtFn::MovStr.index() as usize] = mov_str as *const () as usize;
+    // Entries this stand-in does not implement stay 0; the tests never reach them.
     t
 }
 

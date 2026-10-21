@@ -2,87 +2,65 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Running one module: compile it, place its code against the runtime
-//! table, give it a static area, a job and an environment, and call
-//! its procedures. Program activation proper belongs to `ile`; this is
-//! what the conformance programs and the service console use until then.
+//! Running one module as a program: compile it, bind it on its own,
+//! give a job a source that holds it, and call its entry. The
+//! conformance programs and the service console use this until the
+//! store supplies programs.
+
+use std::sync::Arc;
 
 use codegen::abi::Env;
-use codegen::{Loaded, ModuleCode, RelocTarget};
+use ile::{BindInput, BindOptions, CreateData, ModuleObject, PgmKind, ProgramObject};
 use qir::Module;
 
+use crate::act::{LoadedProgram, MemSource};
 use crate::error::{MiError, Result};
 use crate::job::Job;
-use crate::rtlib;
 
-/// A module ready to run.
+/// A module bound as a program, with a job to run it in.
 pub struct Program {
-    module: Module,
-    code: ModuleCode,
-    loaded: Loaded,
-    statics: Vec<u8>,
     job: Box<Job>,
-    env: Box<Env>,
+    name: String,
+    object: Arc<ProgramObject>,
 }
 
-/// The signature of an entry procedure called with no arguments.
-type Entry = extern "sysv64" fn(*mut Env, i64, i64);
-
 impl Program {
-    /// Compile and place a module. Imported procedures resolve through
-    /// `imports`, by name to a native address.
-    pub fn new(module: Module, imports: &[(String, usize)]) -> Result<Self> {
-        let code = codegen::compile(&module)?;
-        let table = rtlib::table();
-        let loaded = Loaded::new(&code, &|t: &RelocTarget| match t {
-            RelocTarget::Runtime(f) => Ok(table[f.index() as usize] as u64),
-            RelocTarget::StaticFrame => Ok(0),
-            RelocTarget::ImportProc(name) => imports
-                .iter()
-                .find(|(n, _)| n == name)
-                .map(|(_, a)| *a as u64)
-                .ok_or_else(|| {
-                    codegen::CodegenError::Load(format!("import {name} is not resolved"))
-                }),
-            RelocTarget::ImportData(name) => Err(codegen::CodegenError::Load(format!(
-                "data import {name} is not resolved"
-            ))),
+    /// Compile and bind a module on its own. A module with an entry
+    /// procedure becomes a `*PGM`, otherwise a `*SRVPGM` exporting
+    /// everything; imports nothing resolves are left unresolved and
+    /// fail with `MCH3401` when called.
+    pub fn new(module: Module) -> Result<Self> {
+        let name = module.name.clone();
+        let kind = if module.entry().is_some() {
+            PgmKind::Pgm
+        } else {
+            PgmKind::SrvPgm
+        };
+        let mo = ModuleObject::compile(module, CreateData::default(), 0)?;
+        let mut options = BindOptions::new(&name, kind);
+        options.allow_unresolved = true;
+        let (object, _) = ile::bind(BindInput {
+            modules: vec![(mo, "QTEMP".into())],
+            bnddirs: Vec::new(),
+            lookup: &|_| None,
+            options,
         })?;
-        let mut statics = code.static_init.clone();
-        statics.resize(statics.len().max(16), 0);
-        let mut job = Box::new(Job::new());
-        job.spaces
-            .register_static(statics.as_ptr() as u64, statics.len() as u64);
-        let env = Box::new(Env {
-            statics: statics.as_mut_ptr(),
-            job: std::ptr::from_mut(&mut job.abi),
-            entry: std::ptr::null_mut(),
-        });
-        Ok(Self {
-            module,
-            code,
-            loaded,
-            statics,
-            job,
-            env,
-        })
+        let object = Arc::new(object);
+        let mut source = MemSource::default();
+        source.programs.push(("QTEMP".into(), object.clone()));
+        let job = Job::boxed(Box::new(source));
+        Ok(Self { job, name, object })
     }
 
-    /// Parse, compile and place a module from its text form.
-    pub fn from_text(text: &str, imports: &[(String, usize)]) -> Result<Self> {
-        Self::new(qir::parse(text)?, imports)
+    /// Parse, compile and bind a module from its text form.
+    pub fn from_text(text: &str) -> Result<Self> {
+        Self::new(qir::parse(text)?)
     }
 
-    /// The module.
+    /// The bound program.
     #[must_use]
-    pub fn module(&self) -> &Module {
-        &self.module
-    }
-
-    /// The generated code and its maps.
-    #[must_use]
-    pub fn code(&self) -> &ModuleCode {
-        &self.code
+    pub fn object(&self) -> &ProgramObject {
+        &self.object
     }
 
     /// The job.
@@ -98,47 +76,60 @@ impl Program {
 
     /// The environment generated code receives.
     pub fn env(&mut self) -> *mut Env {
-        std::ptr::from_mut(&mut *self.env)
+        self.job.env()
+    }
+
+    /// The program's code, loaded.
+    pub fn loaded(&mut self) -> Result<Arc<LoadedProgram>> {
+        let table = self.job.table.clone();
+        let kind = self.object.attr.kind;
+        self.job
+            .act
+            .load_program(&self.name, "QTEMP", kind, &table)
+            .map_err(MiError::Cond)
     }
 
     /// Native address of a procedure's entry.
-    pub fn proc_addr(&self, name: &str) -> Result<usize> {
-        self.loaded
-            .proc_addr(name)
-            .ok_or_else(|| MiError::NoProc(name.into()))
-    }
-
-    /// The bytes of a module-scope static.
-    #[must_use]
-    pub fn static_bytes(&self, var: &str) -> Option<&[u8]> {
-        let i = self.module.vars.iter().position(|v| v.name == var)?;
-        let slot = self.code.statics.module_var(u32::try_from(i).ok()?)?;
-        let at = usize::try_from(slot.offset).ok()?;
-        let len = usize::try_from(slot.size).ok()?;
-        self.statics.get(at..at + len)
-    }
-
-    /// Call the entry procedure with no parameters. The pending
-    /// exception, if one percolated out, stays on the job.
-    pub fn call_entry(&mut self) -> Result<()> {
-        let (_, entry) = self
+    pub fn proc_addr(&mut self, name: &str) -> Result<usize> {
+        let p = self.loaded()?;
+        let bm = &p.object.modules[0];
+        let i = bm
             .module
-            .entry()
-            .ok_or_else(|| MiError::NoEntry(self.module.name.clone()))?;
-        let addr = self.proc_addr(&entry.name.clone())?;
-        self.call_void(addr);
-        Ok(())
+            .code
+            .procs
+            .iter()
+            .position(|x| x.name == name)
+            .ok_or_else(|| MiError::NoProc(name.into()))?;
+        Ok(p.proc_addrs[0][i])
     }
 
-    /// Call a procedure that takes no parameters and returns nothing.
-    pub fn call_void(&mut self, addr: usize) {
-        let env = self.env();
-        // SAFETY: `addr` is the entry of a procedure the loader placed
-        // in executable memory it still holds; the code generator gave
-        // it the signature `(env, argc, opdesc)` for a procedure without
-        // parameters or a return value, and `env` points to this
-        // program's live environment, job and static area.
-        let f: Entry = unsafe { std::mem::transmute::<usize, Entry>(addr) };
-        f(env, 0, 0);
+    /// The bytes of a module-scope static, from the program's
+    /// activation; `None` before the program ran.
+    #[must_use]
+    pub fn static_bytes(&self, var: &str) -> Option<Vec<u8>> {
+        let bm = self.object.modules.first()?;
+        let i = bm.module.ir.vars.iter().position(|v| v.name == var)?;
+        let slot = bm.module.code.statics.module_var(u32::try_from(i).ok()?)?;
+        let at = usize::try_from(bm.frame_offset + slot.offset).ok()?;
+        let len = usize::try_from(slot.size).ok()?;
+        for g in self.job.groups() {
+            for a in &g.activations {
+                if Arc::ptr_eq(&a.program.object, &self.object) {
+                    return a.statics.get(at..at + len).map(<[u8]>::to_vec);
+                }
+            }
+        }
+        None
+    }
+
+    /// Call the entry procedure with no parameters. A pending exception
+    /// that percolated out stays on the job.
+    pub fn call_entry(&mut self) -> Result<()> {
+        if self.object.entry.is_none() {
+            return Err(MiError::NoEntry(self.name.clone()));
+        }
+        self.job
+            .call_program(&self.name, "QTEMP", &[])
+            .map_err(MiError::Cond)
     }
 }

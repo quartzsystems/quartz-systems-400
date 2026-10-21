@@ -88,10 +88,22 @@ pub enum RtFn {
     /// `monitor_match(env, kind, a, b) -> 0|1`: whether the pending
     /// exception matches a handler selector; 1 takes it.
     MonitorMatch = 32,
+    /// `call_pgm(env, name, lib, argc, argv)`: a dynamic program call by
+    /// `char(10)` name and library (`*LIBL` for the list); `argv` is an
+    /// array of `argc` parameter addresses.
+    CallPgm = 33,
+    /// `call_pgm_var(env, addr, len, argc, argv)`: a program whose
+    /// `char(10)` or `char(20)` name is in storage.
+    CallPgmVar = 34,
+    /// `call_pgm_ptr(env, ptr, argc, argv)`: a program by system pointer.
+    CallPgmPtr = 35,
+    /// `proc_target(env, ptr) -> code`: the code address a procedure
+    /// pointer names, validated; 0 and a raised condition otherwise.
+    ProcTarget = 36,
 }
 
 /// Every runtime function, in table order.
-pub const RT_FNS: [RtFn; 33] = [
+pub const RT_FNS: [RtFn; 37] = [
     RtFn::Raise,
     RtFn::Enter,
     RtFn::Leave,
@@ -125,6 +137,10 @@ pub const RT_FNS: [RtFn; 33] = [
     RtFn::ProcAddr,
     RtFn::Dsply,
     RtFn::MonitorMatch,
+    RtFn::CallPgm,
+    RtFn::CallPgmVar,
+    RtFn::CallPgmPtr,
+    RtFn::ProcTarget,
 ];
 
 impl RtFn {
@@ -177,6 +193,10 @@ impl RtFn {
             Self::ProcAddr => "proc_addr",
             Self::Dsply => "dsply",
             Self::MonitorMatch => "monitor_match",
+            Self::CallPgm => "call_pgm",
+            Self::CallPgmVar => "call_pgm_var",
+            Self::CallPgmPtr => "call_pgm_ptr",
+            Self::ProcTarget => "proc_target",
         }
     }
 
@@ -219,6 +239,10 @@ impl RtFn {
             Self::ProcAddr => (2, None),
             Self::Dsply => (4, None),
             Self::MonitorMatch => (3, Some(types::I32)),
+            Self::CallPgm => (4, None),
+            Self::CallPgmVar => (4, None),
+            Self::CallPgmPtr => (3, None),
+            Self::ProcTarget => (1, Some(types::I64)),
         }
     }
 
@@ -277,6 +301,8 @@ pub enum Cond {
     Mch3601 = 3601,
     /// `MCH3602`: pointer of the wrong kind.
     Mch3602 = 3602,
+    /// `MCH4431`: a service program's signature does not match.
+    Mch4431 = 4431,
 }
 
 impl Cond {
@@ -301,6 +327,7 @@ impl Cond {
             3402 => Self::Mch3402,
             3601 => Self::Mch3601,
             3602 => Self::Mch3602,
+            4431 => Self::Mch4431,
             _ => return None,
         })
     }

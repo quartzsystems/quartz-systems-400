@@ -56,6 +56,7 @@ pub fn status_of(c: Cond) -> u16 {
         | Cond::Mch3401
         | Cond::Mch3402
         | Cond::Mch3601
-        | Cond::Mch3602 => 222,
+        | Cond::Mch3602
+        | Cond::Mch4431 => 222,
     }
 }

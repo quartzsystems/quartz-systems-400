@@ -24,18 +24,56 @@ impl<F: Fn(&RelocTarget) -> Result<u64>> Resolve for F {
     }
 }
 
-/// A module's code in executable memory.
-pub struct Loaded {
-    map: Mmap,
+/// A module's code copied into memory, relocations not yet applied.
+/// Placing every module of a program first makes their addresses
+/// known to each other's relocations.
+pub struct Placed {
+    map: MmapMut,
     procs: Vec<(String, u32)>,
 }
 
-impl Loaded {
-    /// Place the code and resolve every relocation.
-    pub fn new(code: &ModuleCode, resolver: &dyn Resolve) -> Result<Self> {
+impl Placed {
+    /// Copy the code into a fresh mapping.
+    pub fn new(code: &ModuleCode) -> Result<Self> {
         let len = code.code.len().max(1);
         let mut map = MmapMut::map_anon(len).map_err(|e| CodegenError::Load(e.to_string()))?;
         map[..code.code.len()].copy_from_slice(&code.code);
+        Ok(Self {
+            map,
+            procs: code
+                .procs
+                .iter()
+                .map(|p| (p.name.clone(), p.offset))
+                .collect(),
+        })
+    }
+
+    /// Address of the code.
+    #[must_use]
+    pub fn base(&self) -> usize {
+        self.map.as_ptr() as usize
+    }
+
+    /// Address of a procedure's entry.
+    #[must_use]
+    pub fn proc_addr(&self, name: &str) -> Option<usize> {
+        self.procs
+            .iter()
+            .find(|(n, _)| n == name)
+            .map(|(_, off)| self.base() + *off as usize)
+    }
+
+    /// Address of a procedure's entry by index.
+    #[must_use]
+    pub fn proc_addr_at(&self, index: usize) -> Option<usize> {
+        self.procs
+            .get(index)
+            .map(|(_, off)| self.base() + *off as usize)
+    }
+
+    /// Apply every relocation and make the code executable.
+    pub fn resolve(self, code: &ModuleCode, resolver: &dyn Resolve) -> Result<Loaded> {
+        let mut map = self.map;
         let base = map.as_ptr() as u64;
         for r in &code.relocs {
             let value = resolver.resolve(&r.target)?;
@@ -61,14 +99,23 @@ impl Loaded {
         let map = map
             .make_exec()
             .map_err(|e| CodegenError::Load(e.to_string()))?;
-        Ok(Self {
+        Ok(Loaded {
             map,
-            procs: code
-                .procs
-                .iter()
-                .map(|p| (p.name.clone(), p.offset))
-                .collect(),
+            procs: self.procs,
         })
+    }
+}
+
+/// A module's code in executable memory.
+pub struct Loaded {
+    map: Mmap,
+    procs: Vec<(String, u32)>,
+}
+
+impl Loaded {
+    /// Place the code and resolve every relocation.
+    pub fn new(code: &ModuleCode, resolver: &dyn Resolve) -> Result<Self> {
+        Placed::new(code)?.resolve(code, resolver)
     }
 
     /// Address of the code.
@@ -77,12 +124,32 @@ impl Loaded {
         self.map.as_ptr() as usize
     }
 
+    /// Bytes of code.
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.map.len()
+    }
+
+    /// Whether there is no code.
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.map.is_empty()
+    }
+
     /// Address of a procedure's entry.
     #[must_use]
     pub fn proc_addr(&self, name: &str) -> Option<usize> {
         self.procs
             .iter()
             .find(|(n, _)| n == name)
+            .map(|(_, off)| self.base() + *off as usize)
+    }
+
+    /// Address of a procedure's entry by index.
+    #[must_use]
+    pub fn proc_addr_at(&self, index: usize) -> Option<usize> {
+        self.procs
+            .get(index)
             .map(|(_, off)| self.base() + *off as usize)
     }
 }
