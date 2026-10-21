@@ -73,6 +73,8 @@ fn call_lines(out: &str) -> Vec<String> {
             !l.is_empty()
                 && !l.starts_with("call ")
                 && !l.starts_with("Parm ")
+                && !l.starts_with("Exception ")
+                && !l.starts_with("Program ended")
                 && !l.starts_with(crate::PROMPT.trim_end())
         })
         .map(str::to_string)

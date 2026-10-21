@@ -151,6 +151,7 @@ fn call_cond_handler(j: &mut Job, proc_addr: u64, token: u64, e: &Exception) -> 
     let saved = j.exception.take();
     j.abi.pending = 0;
     let env = j.env();
+    crate::act::escape(j);
     call_handler(
         usize::try_from(proc_addr).unwrap_or(0),
         env,
@@ -188,6 +189,7 @@ pub(crate) fn run_cancel_handlers(j: &mut Job) {
     j.abi.pending = 0;
     for (proc_addr, token) in hs.iter().rev() {
         let env = j.env();
+        crate::act::escape(j);
         call_handler(
             usize::try_from(*proc_addr).unwrap_or(0),
             env,

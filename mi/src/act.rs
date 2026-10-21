@@ -205,6 +205,15 @@ type Entry = extern "sysv64" fn(*mut Env, i64, i64, *const u64);
 type Handler = extern "sysv64" fn(*mut Env, i64, i64, u64, u64, u64, u64);
 
 /// Call a handler procedure with by-reference parameters.
+/// Let the job escape before a call into generated code. The callee
+/// reaches the job through the environment record, a pointer the
+/// optimizer cannot see is derived from the caller's `&mut Job`; made
+/// visible this way, stores before the call stay before it and loads
+/// after it are not reused from before.
+pub(crate) fn escape(j: &mut crate::job::Job) {
+    std::hint::black_box(std::ptr::from_mut(j));
+}
+
 pub(crate) fn call_handler(addr: usize, env: *mut Env, params: [u64; 4], count: i64) {
     // SAFETY: `addr` is a procedure address the program handed the
     // runtime through a procedure pointer; the code generator gives

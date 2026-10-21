@@ -240,7 +240,9 @@ impl Job {
         let target = created.unwrap_or_else(|| self.act.group_for(&p.object, saved));
         self.act.current = target;
         let env = self.env();
+        crate::act::escape(self);
         call_entry(entry, env, args);
+        crate::act::escape(self);
         self.act.current = saved;
         if let Some(id) = created {
             self.reclaim_group(id);
@@ -295,6 +297,7 @@ impl Job {
             let mut result = [0u8; 4];
             let mut user_rc = [0u8; 4];
             let env = self.env();
+            crate::act::escape(self);
             crate::act::call_handler(
                 usize::try_from(*code).unwrap_or(0),
                 env,
