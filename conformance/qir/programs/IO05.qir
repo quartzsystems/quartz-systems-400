@@ -1,4 +1,5 @@
 ; update and delete need a prior read with a lock
+; qemu: no
 module IO05
 file CUST file(CUST) lib(QGPL) usage(*UPDATE) keyed fmt(CUSREC)
 static $rec: char(39)

@@ -1,0 +1,47 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the */
+/* root directory of this project.                                       */
+/* The driver: creates the observation file, runs every oracle program  */
+/* with the reply each needs queued on the system reply list, and       */
+/* copies the observations to the output member.                        */
+PGM
+  DCLF FILE(QTEMP/ORACLE)
+  CRTPF FILE(QTEMP/ORACLE) RCDLEN(80)
+  MONMSG CPF0000
+  CLRPFM QTEMP/ORACLE
+  CHGJOB INQMSGRPY(*SYSRPYL)
+  /* Replies the cases need: G for RESUMEG, R for REPLYR, C otherwise. */
+  ADDRPYLE SEQNBR(9901) MSGID(RNQ0102) CMPDTA(*NONE) RPY(C)
+  MONMSG CPF0000
+  CALL CVTCHAR
+  MONMSG CPF0000
+  CALL DATEBAD
+  MONMSG CPF0000
+  CALL SUBSTBAD
+  MONMSG CPF0000
+  CHGRPYLE SEQNBR(9901) RPY(G)
+  CALL RESUMEG
+  MONMSG CPF0000
+  CHGRPYLE SEQNBR(9901) RPY(R)
+  CALL REPLYR
+  MONMSG CPF0000
+  CHGRPYLE SEQNBR(9901) RPY(C)
+  CALL STATMAP
+  MONMSG CPF0000
+  CALL FCWHERE
+  MONMSG CPF0000
+  CALL PROMOTE
+  MONMSG CPF0000
+  CALL CEEFC
+  MONMSG CPF0000
+  CALL CANCELTO
+  MONMSG CPF0000
+  CALL DEEPREC
+  MONMSG CPF0000
+  CALL CMDEXC
+  MONMSG CPF0000
+  RMVRPYLE SEQNBR(9901)
+  MONMSG CPF0000
+  CPYTOIMPF FROMFILE(QTEMP/ORACLE) TOSTMF('/tmp/ile-oracle.txt') +
+            MBROPT(*REPLACE) STMFCODPAG(*PCASCII) RCDDLM(*LF) DTAFMT(*FIXED)
+ENDPGM

@@ -21,6 +21,8 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::Arc;
 
+pub mod qemu;
+
 use blockdev::{BlockDev, MemBlockDev};
 use db::file::CreateFileOpts;
 use dds::{CompileOpts, NoRefs, Source, compile_pf};
@@ -99,6 +101,9 @@ pub struct Case {
     pub dsply: Vec<String>,
     /// Parameters as the console's `call` types them.
     pub parms: String,
+    /// Whether the QEMU harness runs it over the console (`; qemu: no`
+    /// marks cases that need the in-memory world).
+    pub qemu: bool,
 }
 
 impl Case {
@@ -107,6 +112,7 @@ impl Case {
     pub fn parse(name: &str, text: &str) -> Self {
         let mut c = Self {
             name: name.to_ascii_uppercase(),
+            qemu: true,
             ..Self::default()
         };
         for l in text.lines() {
@@ -116,6 +122,8 @@ impl Case {
                 c.dsply = r.split_whitespace().map(str::to_string).collect();
             } else if let Some(r) = l.strip_prefix("; parms:") {
                 c.parms = r.trim().to_string();
+            } else if l.starts_with("; qemu: no") {
+                c.qemu = false;
             }
         }
         c.modules = text

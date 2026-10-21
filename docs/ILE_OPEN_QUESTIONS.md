@@ -89,3 +89,24 @@ is in `expected/` and the test passes.
     The machine sends `CEE9901` for ILE programs and `CPF9999`-based
     escapes for OPM ones. Oracle: `CANCELTO` calls a failing program
     under `MONMSG CEE9901` and prints the message data.
+
+14. **Stack overflow.** Implemented: every entry measures the native
+    stack from the first entry call of the job; past the job's budget
+    (1 MiB until the job owns its thread, `MIGRATE(phase5)`) the entry
+    raises `MCH0601` as soon as it starts, so a runaway recursion is
+    an addressing violation a monitor can take, and the guard page is
+    never reached. The machine's identifier for a stack overflow is
+    not certain. Oracle: `DEEPREC` recurses without end under `MONMSG
+    MCH0000` and prints the identifier.
+
+15. **`QCMDEXC` from a program.** Implemented: the command is queued
+    and the console runs it after the program returns, since Phase 4
+    has no command analyzer (`MIGRATE(phase7)`). The machine runs it
+    at once. Oracle: `CMDEXC` calls `QCMDEXC` with `SNDPGMMSG` and
+    prints what it receives afterwards.
+
+16. **Files in `QTEMP` from the IR.** Implemented: the IR's file I/O
+    resolves names in ASP 1 only, because the temporary ASP is a
+    separate store until one `QTEMP` per job lives in ASP 1
+    (`MIGRATE(phase5)`). Oracle: none; a limit, not a reading.
+

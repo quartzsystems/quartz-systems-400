@@ -1,4 +1,5 @@
 ; file I/O: chain, reade, read, write, update, delete and the status codes
+; qemu: no
 module IO01
 file CUST file(CUST) lib(QGPL) usage(*ALL) keyed fmt(CUSREC)
 static $rec: char(39)

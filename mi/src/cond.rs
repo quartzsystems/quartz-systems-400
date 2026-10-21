@@ -51,12 +51,19 @@ impl Exception {
             .strip_prefix("MCH")
             .and_then(|n| n.parse::<u32>().ok())
             .and_then(Cond::from_code);
+        // The RPG statuses of the messages the runtime itself sends: a
+        // cancelled callee is 202, a function check 9999.
+        let status = match msgid {
+            "CEE9901" | "CEE9902" => 202,
+            "CPF9999" => 9999,
+            _ => cond.map_or(0, status_of),
+        };
         Self {
             cond,
             msgid: msgid.into(),
             msgf: msgf.into(),
             data,
-            status: cond.map_or(0, status_of),
+            status,
             depth,
             key: 0,
         }

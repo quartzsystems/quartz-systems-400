@@ -1,4 +1,5 @@
 ; data area APIs on *LDA
+; qemu: no
 module API06
 extern sysapi QXXCHGDA($da: char(20), $s: i32, $l: i32, $v: char(5))
 extern sysapi QXXRTVDA($r: char(5), $rl: i32, $da: char(20), $s: i32, $l: i32)

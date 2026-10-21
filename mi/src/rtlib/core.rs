@@ -87,6 +87,12 @@ pub extern "sysv64" fn enter(env: *mut Env, code: i64, argc: i64) {
         cancel_handlers: Vec::new(),
         debug_vars: Vec::new(),
     });
+    // The native stack has a budget: past it the entry fails with
+    // `MCH0601` as soon as it starts, before any guard page is hit.
+    let here = std::ptr::from_ref(&code) as usize;
+    if j.stack_base != 0 && j.stack_base.saturating_sub(here) > j.stack_bytes {
+        raise_on(j, Cond::Mch0601);
+    }
 }
 
 /// `leave(env)`: the entry ends; the caller's static area and group

@@ -1,4 +1,5 @@
 ; positioning: setll, setgt, readp, chain by relative record number, feod, nolock reads
+; qemu: no
 module IO04
 file CUST file(CUST) lib(QGPL) usage(*UPDATE) keyed fmt(CUSREC)
 static $rec: char(39)

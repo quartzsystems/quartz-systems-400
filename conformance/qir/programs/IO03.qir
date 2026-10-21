@@ -1,4 +1,5 @@
 ; a missing file escapes at open; a level check is CPF4131; a closed file is 01211
+; qemu: no
 module IO03
 file NOPE file(NOPE) lib(QGPL) usage(*INPUT)
 file WRONG file(CUST) lib(QGPL) usage(*INPUT) keyed fmt(CUSREC:"0000000000000")

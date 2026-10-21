@@ -1,4 +1,5 @@
 ; data queue instructions: send, receive, empty, missing
+; qemu: no
 module DTA02
 static $q: char(10)
 static $qn: char(10) inz("Q1")

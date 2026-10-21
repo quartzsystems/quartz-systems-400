@@ -1,4 +1,5 @@
 ; data area instructions: lock, read, write, unlock, decimal conversion, a missing area
+; qemu: no
 module DTA01
 static $lda: char(1024)
 static $n: packed(5,0)

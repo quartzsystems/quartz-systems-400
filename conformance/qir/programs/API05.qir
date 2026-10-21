@@ -1,4 +1,5 @@
 ; data queue APIs with packed lengths; the queue description
+; qemu: no
 module API05
 extern sysapi QSNDDTAQ($n: char(10), $l: char(10), $len: packed(5,0), $d: char(5))
 extern sysapi QRCVDTAQ($n: char(10), $l: char(10), $len: packed(5,0), $d: char(10), $w: packed(5,0))

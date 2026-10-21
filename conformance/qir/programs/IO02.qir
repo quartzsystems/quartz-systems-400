@@ -1,4 +1,5 @@
 ; the information data structure after each operation
+; qemu: no
 module IO02
 type Infds = struct { file: char(8) @0, open: char(1) @8, eof: char(1) @9, status: zoned(5,0) @10, opcode: char(6) @15, stmt: char(8) @29, format: char(8) @37, msgid: char(7) @46, member: char(10) @128, rrn: i32 @396 }
 file CUST file(CUST) lib(QGPL) usage(*INPUT) keyed fmt(CUSREC)

@@ -433,6 +433,7 @@ impl Suite {
         reports.push(self.step(&mut s, "8 sysval in store", Self::sysval_in_store)?);
         reports.push(self.step(&mut s, "9 object bench", Self::object_bench)?);
         reports.push(self.step(&mut s, "13 database kit", Self::db_kit)?);
+        reports.push(self.step(&mut s, "15 IR kit", Self::qir_kit)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

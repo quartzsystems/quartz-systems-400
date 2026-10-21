@@ -1,0 +1,104 @@
+; fuzzptr: every illegal pointer operation and the exact condition it raises
+module FUZZPTR
+static $buf: char(16) inz("0123456789ABCDEF")
+static $p: ptr
+static $pp: procptr
+proto NOARG()
+proc NOTHING() {
+L0:
+  ret
+}
+proc FUZZPTR() entry {
+L0:
+  monitor A, MCH3601 -> NULLDEREF
+  %z = const.ptr *NULL
+  %v = load [%z]:i32
+  dsply "not reached"
+  endmon A
+  br B0
+NULLDEREF:
+  dsply "MCH3601 null deref"
+  br B0
+B0:
+  monitor B, MCH0601 -> RANGE
+  %blk = alloc 8
+  %far = ptradd %blk, 32
+  %w = load [%far]:i32
+  dsply "not reached"
+  endmon B
+  br C0
+RANGE:
+  dsply "MCH0601 past the heap block"
+  br C0
+C0:
+  monitor C, MCH3402 -> DEAD
+  %h = alloc 8
+  dealloc %h
+  %x = load [%h]:i32
+  dsply "not reached"
+  endmon C
+  br D0
+DEAD:
+  dsply "MCH3402 freed block"
+  br D0
+D0:
+  monitor D, MCH3601 -> NOTHEAP
+  %s = addr $buf
+  dealloc %s
+  dsply "not reached"
+  endmon D
+  br E0
+NOTHEAP:
+  dsply "MCH3601 not a heap block"
+  br E0
+E0:
+  monitor E, MCH3601 -> NULLPROC
+  %np = const.procptr *NULL
+  callpp %np as NOARG()
+  dsply "not reached"
+  endmon E
+  br F0
+NULLPROC:
+  dsply "MCH3601 null procedure pointer"
+  br F0
+F0:
+  monitor F, MCH3401 -> NOOBJ
+  %sp = rslvsp *PGM, "NOSUCH", "QGPL"
+  dsply "not reached"
+  endmon F
+  br G0
+NOOBJ:
+  dsply "MCH3401 no such object"
+  br G0
+G0:
+  monitor G, MCH0601 -> DIFF
+  %a1 = addr $buf
+  %h2 = alloc 8
+  %d = ptrdiff %h2, %a1
+  dsply "not reached"
+  endmon G
+  br H0
+DIFF:
+  dsply "MCH0601 pointers to different spaces"
+  br H0
+H0:
+  monitor H, MCH3601 -> NULLSYS
+  %ns = const.ptr *NULL
+  callp %ns()
+  dsply "not reached"
+  endmon H
+  br I0
+NULLSYS:
+  dsply "MCH3601 null system pointer"
+  br I0
+I0:
+  monitor I, MCH3602 -> WRONGKIND
+  %sp2 = addr $buf
+  callp %sp2()
+  dsply "not reached"
+  endmon I
+  ret
+WRONGKIND:
+  dsply "MCH3602 a space pointer is not a program"
+  ret
+}

@@ -21,6 +21,12 @@ mod string;
 
 pub use convert::convert;
 pub(crate) use core::display_text;
+
+/// The job behind an environment record, for the entry call's stack
+/// marker.
+pub(crate) fn job_opt(env: *mut codegen::abi::Env) -> Option<&'static mut crate::job::Job> {
+    (!env.is_null()).then(|| mem::job(env))
+}
 pub use core::{
     call_pgm, call_pgm_ptr, call_pgm_var, copy, deref, dsply, enter, leave, monitor_match, mov_str,
     proc_addr, proc_target, ptr_add, ptr_addr, ptr_diff, raise, unresolved,

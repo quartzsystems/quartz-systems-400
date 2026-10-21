@@ -1,4 +1,5 @@
 ; a data area written through a packed place keeps the area's scale
+; qemu: no
 module DTA03
 static $n: packed(9,3)
 proc DTA03() entry {

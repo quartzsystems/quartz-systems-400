@@ -10,8 +10,12 @@ values and a local 5250-style console. Phase 2 added the object store
 ISO installer. Addendum 2.5 added mirrored protection, Dedicated Service
 Tools (`svctools`) and the IBM-style install flow. Phase 3 added the
 database: DDS, decimal arithmetic, files and access paths, record-level
-access, journaling, commitment control, SQL and the QSTEST conformance kit. Code waiting for a
-later phase is marked `MIGRATE(phaseN)` or `TODO(phaseN)`.
+access, journaling, commitment control, SQL and the QSTEST conformance kit. Phase 4 added
+the ILE runtime: the IR (`qir`), the Cranelift code generator (`codegen`), ILE objects
+and the binder (`ile`), the runtime with its job stand-in, exception model, heaps, user
+spaces, messages, file I/O and debugger (`mi`), message files (`msgf`), the system APIs
+(`sysapi`), the service console's ILE commands and the IR conformance kit. Code waiting
+for a later phase is marked `MIGRATE(phaseN)` or `TODO(phaseN)`.
 
 ## Ground rules
 
@@ -178,6 +182,7 @@ cargo test --release -p conformance --test db_bench -- --ignored --nocapture   #
 cargo run -p qir --bin qirc -- asm|dis|check|fmt FILE   # IR assembler, disassembler, verifier
 cargo test -p conformance --test qir_kit   # the IR kit in memory; outputs under target/conformance-qir/ours/
 QS400_UPDATE_QIR=1 cargo test -p conformance --test qir_kit   # rewrite conformance/qir/expected/
+cargo test --release -p conformance --test callbench -- --ignored --nocapture   # a million calls, timed
 ```
 
 Lint the Linux-only crates for the musl target too: their real code is

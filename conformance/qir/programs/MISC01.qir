@@ -1,4 +1,5 @@
 ; dsply with a reply from the console
+; qemu: no
 ; dsply: yes 42
 module MISC01
 static $answer: char(10)

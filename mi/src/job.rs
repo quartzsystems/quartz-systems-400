@@ -128,6 +128,12 @@ pub struct Job {
     pub files: HashMap<FileKey, FileState>,
     /// The debugger, while `STRDBG` is in effect.
     pub debug: Option<crate::debug::Debugger>,
+    /// Where the native stack stood at the first entry call; the stack
+    /// check in `enter` measures from it.
+    pub stack_base: usize,
+    /// Native stack the job may use below that point before `enter`
+    /// raises `MCH0601`; `MIGRATE(phase5)`: the job's thread stack.
+    pub stack_bytes: usize,
     /// The job's external message queue.
     pub ext_msgq: MsgQueue,
     /// `QSYSOPR`, as this job sees it; `MIGRATE(phase5)`.
@@ -173,6 +179,8 @@ impl Job {
             data: None,
             files: HashMap::new(),
             debug: None,
+            stack_base: 0,
+            stack_bytes: 1 << 20,
             ext_msgq: MsgQueue::default(),
             sysopr: MsgQueue::default(),
             msgs: Box::new(msgf::BuiltinMsgs::new()),

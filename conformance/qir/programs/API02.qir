@@ -1,4 +1,5 @@
 ; QUSCRTUS, QUSLOBJ and the generic header; QUSROBJD of a program
+; qemu: no
 module API02
 extern sysapi QUSCRTUS($n: char(20), $a: char(10), $s: i32, $i: char(1), $au: char(10), $t: char(50), $r: char(10), $err: char(16))
 extern sysapi QUSLOBJ($us: char(20), $fmt: char(8), $obj: char(20), $ty: char(10), $err: char(16))

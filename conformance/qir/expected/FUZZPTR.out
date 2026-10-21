@@ -1,0 +1,15 @@
+console:
+  MCH3601 null deref
+  MCH0601 past the heap block
+  MCH3402 freed block
+  MCH3601 not a heap block
+  MCH3601 null procedure pointer
+  MCH3401 no such object
+  MCH0601 pointers to different spaces
+  MCH3601 null system pointer
+  MCH3602 a space pointer is not a program
+raised: MCH3601 MCH0601 MCH3402 MCH3601 MCH3601 MCH3401 MCH0601 MCH3601 MCH3602
+handled: MCH3601 MCH0601 MCH3402 MCH3601 MCH3601 MCH3401 MCH0601 MCH3601 MCH3602
+pending: none
+replies: 
+dump: no

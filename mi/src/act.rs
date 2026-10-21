@@ -217,6 +217,14 @@ pub(crate) fn call_handler(addr: usize, env: *mut Env, params: [u64; 4], count: 
 
 /// Call a program entry procedure with a parameter list.
 pub(crate) fn call_entry(addr: usize, env: *mut Env, args: &[u64]) {
+    // The stack check in `enter` measures from here.
+    let marker = 0u8;
+    let base = std::ptr::from_ref(&marker) as usize;
+    if let Some(j) = crate::rtlib::job_opt(env)
+        && j.stack_base == 0
+    {
+        j.stack_base = base;
+    }
     // SAFETY: `addr` is the entry of a procedure the loader placed in
     // executable memory the job still holds; the code generator gave
     // every entry procedure the signature `(env, argc, opdesc, argv)`,
@@ -239,16 +247,37 @@ pub(crate) fn load(
     deps: Vec<Arc<LoadedProgram>>,
     system: &HashMap<String, usize>,
     debug: bool,
-) -> Result<Arc<LoadedProgram>, Cond> {
+) -> Result<(Arc<LoadedProgram>, u32), Cond> {
+    // Code made by an older code generator is translated again from
+    // the IR the object keeps.
+    let mut again = 0;
+    let codes: Vec<std::borrow::Cow<'_, codegen::ModuleCode>> = object
+        .modules
+        .iter()
+        .map(|bm| {
+            let c = variant(bm, debug);
+            if c.version == codegen::CODEGEN_VERSION {
+                return Ok(std::borrow::Cow::Borrowed(c));
+            }
+            again += 1;
+            let fresh = if debug && bm.module.debug_code.is_some() {
+                codegen::compile_debug(&bm.module.ir)
+            } else {
+                codegen::compile(&bm.module.ir)
+            }
+            .map_err(|_| Cond::Mch3401)?;
+            Ok(std::borrow::Cow::Owned(fresh))
+        })
+        .collect::<Result<_, Cond>>()?;
     let mut placed = Vec::with_capacity(object.modules.len());
-    for bm in &object.modules {
-        placed.push(Placed::new(variant(bm, debug)).map_err(|_| Cond::Mch3401)?);
+    for c in &codes {
+        placed.push(Placed::new(c).map_err(|_| Cond::Mch3401)?);
     }
     let proc_addrs: Vec<Vec<usize>> = placed
         .iter()
-        .zip(&object.modules)
-        .map(|(p, bm)| {
-            (0..variant(bm, debug).procs.len())
+        .zip(&codes)
+        .map(|(p, c)| {
+            (0..c.procs.len())
                 .map(|i| p.proc_addr_at(i).expect("procedure"))
                 .collect()
         })
@@ -292,18 +321,21 @@ pub(crate) fn load(
             }
         };
         modules.push(
-            p.resolve(variant(bm, debug), &resolver)
+            p.resolve(&codes[mi], &resolver)
                 .map_err(|_| Cond::Mch3401)?,
         );
     }
-    Ok(Arc::new(LoadedProgram {
-        key,
-        object,
-        modules,
-        proc_addrs,
-        srvpgms: deps,
-        debug,
-    }))
+    Ok((
+        Arc::new(LoadedProgram {
+            key,
+            object,
+            modules,
+            proc_addrs,
+            srvpgms: deps,
+            debug,
+        }),
+        again,
+    ))
 }
 
 /// A bound module's code: the debug variant when asked for and present.
@@ -363,6 +395,9 @@ pub struct Activator {
     pub system: HashMap<String, usize>,
     /// Programs (`LIB/NAME`) that load their debug variant.
     pub debug_programs: Vec<String>,
+    /// Modules translated again at load because their code was made
+    /// by an older code generator.
+    pub retranslated: u32,
 }
 
 impl Activator {
@@ -387,6 +422,7 @@ impl Activator {
                 .filter_map(|n| crate::cee::bound_api(n).map(|a| ((*n).to_string(), a)))
                 .collect(),
             debug_programs: Vec::new(),
+            retranslated: 0,
         }
     }
 
@@ -484,7 +520,8 @@ impl Activator {
             }
             deps.push(dep);
         }
-        let p = load(object, key.clone(), table, deps, &self.system, debug)?;
+        let (p, again) = load(object, key.clone(), table, deps, &self.system, debug)?;
+        self.retranslated += again;
         self.loaded.insert(key, p.clone());
         Ok(p)
     }
