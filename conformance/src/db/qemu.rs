@@ -175,8 +175,10 @@ impl Suite {
                 &format!("cpytoimpf {lib}/{name} NULLS(*YES) DATFMT(*ISO) TIMFMT(*ISO)"),
                 LONG,
             )?;
-            let theirs = body(&out);
-            let ours = local.export(name)?;
+            // Line endings differ between the serial line and memory;
+            // only the lines are compared.
+            let theirs = body(&out).replace('\r', "").trim_end().to_string();
+            let ours = local.export(name)?.replace('\r', "").trim_end().to_string();
             if theirs != ours {
                 return Err(format!(
                     "{name} differs between the console and memory:\n--- console\n{theirs}--- memory\n{ours}"
