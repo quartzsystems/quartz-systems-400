@@ -1061,6 +1061,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "ile"
+version = "0.1.0"
+dependencies = [
+ "blockdev",
+ "ccsid",
+ "codegen",
+ "qir",
+ "qsname",
+ "release",
+ "sha2",
+ "store",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "indexmap"
 version = "2.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

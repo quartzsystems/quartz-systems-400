@@ -84,6 +84,14 @@ pub const USRPRF: u16 = 0x000E;
 pub const AUTL: u16 = 0x000F;
 /// Code of `*FILE`.
 pub const FILE: u16 = 0x0013;
+/// Code of `*MODULE`.
+pub const MODULE: u16 = 0x0014;
+/// Code of `*PGM`.
+pub const PGM: u16 = 0x0015;
+/// Code of `*SRVPGM`.
+pub const SRVPGM: u16 = 0x0016;
+/// Code of `*BNDDIR`.
+pub const BNDDIR: u16 = 0x0017;
 /// Code of `*MBR`: a database file member, owned by its file and listed
 /// in no library.
 pub const MBR: u16 = 0x00FE;
@@ -135,10 +143,10 @@ pub static TYPES: &[TypeInfo] = &[
     t(0x0011, "*MENU", true, true, false, false, Module::Opaque),
     t(0x0012, "*PNLGRP", true, true, false, false, Module::Opaque),
     t(FILE, "*FILE", true, true, false, false, Module::Opaque),
-    t(0x0014, "*MODULE", true, true, false, false, Module::Opaque),
-    t(0x0015, "*PGM", true, true, false, false, Module::Opaque),
-    t(0x0016, "*SRVPGM", true, true, false, false, Module::Opaque),
-    t(0x0017, "*BNDDIR", true, true, false, false, Module::Opaque),
+    t(MODULE, "*MODULE", true, true, false, false, Module::Opaque),
+    t(PGM, "*PGM", true, true, false, false, Module::Opaque),
+    t(SRVPGM, "*SRVPGM", true, true, false, false, Module::Opaque),
+    t(BNDDIR, "*BNDDIR", true, true, false, false, Module::Opaque),
     t(0x0018, "*JRN", true, false, false, false, Module::Opaque),
     t(0x0019, "*JRNRCV", true, false, false, false, Module::Opaque),
     t(0x001A, "*SAVF", true, true, false, false, Module::Opaque),

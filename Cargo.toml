@@ -22,6 +22,7 @@ members = [
     "qir",
     "codegen",
     "mi",
+    "ile",
 ]
 
 [workspace.package]

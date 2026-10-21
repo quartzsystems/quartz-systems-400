@@ -114,8 +114,12 @@ mi/           the runtime: src/job.rs the job stand-in, src/space.rs fat pointer
               spaces, src/cond.rs conditions and RPG status codes, src/rtlib/ the call
               table's functions (core, decimal, string, convert, date; mem.rs holds the
               two unsafe blocks), src/exec.rs running one module; tests/programs.rs
+ile/          ILE objects: src/object/ *MODULE, *PGM/*SRVPGM and *BNDDIR payloads and the
+              native-output codec; src/binder/ the binder, binder language, signatures;
+              src/dsp/ DSPPGM, DSPSRVPGM, DSPMOD, DSPPGMREF, DSPBNDDIR text; src/store/
+              CRTMOD/CRTPGM/CRTSRVPGM/UPDPGM/CRTBNDDIR against the store; src/spec.rs
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
-              DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE_OPEN_QUESTIONS.md, images/
+              DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, ILE_OPEN_QUESTIONS.md, images/
 ```
 
 ## Commands
