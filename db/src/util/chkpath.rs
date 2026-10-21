@@ -96,9 +96,11 @@ pub fn verify_file(txn: &mut Txn<'_>, file: ObjectId, report: &mut PathReport) -
             continue;
         };
         let entries = p.count(txn)?;
-        // A join or dynamically selected path indexes candidates the
-        // read filters afterwards, so only its attributes are checked.
+        // A join, multi-format or dynamically selected path indexes
+        // entries the read filters or spreads over formats, so only its
+        // attributes are checked.
         let filtered_at_read = desc.attr.dynslt
+            || desc.formats.len() > 1
             || desc
                 .formats
                 .iter()
