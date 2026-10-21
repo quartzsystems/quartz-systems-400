@@ -18,6 +18,27 @@ pub trait UserSpaceSource {
     fn load(&mut self, name: &str, lib: &str) -> Option<Vec<u8>>;
     /// Write the bytes back; `false` when the object is gone.
     fn store(&mut self, name: &str, lib: &str, data: &[u8]) -> bool;
+    /// Create `lib/name` of `size` bytes filled with `init`, or fail
+    /// with the message identifier (`CPF9870` exists, `CPF9810` no
+    /// such library).
+    fn create(
+        &mut self,
+        _name: &str,
+        _lib: &str,
+        _size: usize,
+        _init: u8,
+        _text: &str,
+    ) -> Result<(), &'static str> {
+        Err("CPF9810")
+    }
+    /// Delete `lib/name`; `false` when absent.
+    fn delete(&mut self, _name: &str, _lib: &str) -> bool {
+        false
+    }
+    /// The library an existing space was found in.
+    fn library_of(&mut self, _name: &str, _lib: &str) -> Option<String> {
+        None
+    }
 }
 
 /// User spaces held in memory, for tests and the IR driver.
@@ -31,7 +52,7 @@ impl UserSpaceSource for MemUserSpaces {
     fn load(&mut self, name: &str, lib: &str) -> Option<Vec<u8>> {
         self.spaces
             .iter()
-            .find(|(l, n, _)| n == name && (lib == "*LIBL" || l == lib))
+            .find(|(l, n, _)| n == name && (lib == "*LIBL" || lib == "*CURLIB" || l == lib))
             .map(|(_, _, d)| d.clone())
     }
 
@@ -39,7 +60,7 @@ impl UserSpaceSource for MemUserSpaces {
         match self
             .spaces
             .iter_mut()
-            .find(|(l, n, _)| n == name && (lib == "*LIBL" || l == lib))
+            .find(|(l, n, _)| n == name && (lib == "*LIBL" || lib == "*CURLIB" || l == lib))
         {
             Some((_, _, d)) => {
                 *d = data.to_vec();
@@ -47,6 +68,41 @@ impl UserSpaceSource for MemUserSpaces {
             }
             None => false,
         }
+    }
+
+    fn create(
+        &mut self,
+        name: &str,
+        lib: &str,
+        size: usize,
+        init: u8,
+        _text: &str,
+    ) -> Result<(), &'static str> {
+        let lib = if lib == "*LIBL" || lib == "*CURLIB" {
+            "QGPL"
+        } else {
+            lib
+        };
+        if self.spaces.iter().any(|(l, n, _)| n == name && l == lib) {
+            return Err("CPF9870");
+        }
+        self.spaces
+            .push((lib.into(), name.into(), vec![init; size]));
+        Ok(())
+    }
+
+    fn delete(&mut self, name: &str, lib: &str) -> bool {
+        let before = self.spaces.len();
+        self.spaces
+            .retain(|(l, n, _)| !(n == name && (lib == "*LIBL" || lib == "*CURLIB" || l == lib)));
+        before != self.spaces.len()
+    }
+
+    fn library_of(&mut self, name: &str, lib: &str) -> Option<String> {
+        self.spaces
+            .iter()
+            .find(|(l, n, _)| n == name && (lib == "*LIBL" || lib == "*CURLIB" || l == lib))
+            .map(|(l, _, _)| l.clone())
     }
 }
 
@@ -125,6 +181,41 @@ impl UserSpaces {
         let m = self.mapped.remove(i);
         spaces.kill(m.space);
         true
+    }
+
+    /// Create an object through the source.
+    pub fn create(
+        &mut self,
+        name: &str,
+        lib: &str,
+        size: usize,
+        init: u8,
+        text: &str,
+    ) -> Result<(), &'static str> {
+        match self.source.as_mut() {
+            Some(s) => s.create(name, lib, size, init, text),
+            None => Err("CPF9810"),
+        }
+    }
+
+    /// Delete an object: unmapped first, so pointers into it die.
+    pub fn delete(&mut self, name: &str, lib: &str, spaces: &mut Spaces) -> bool {
+        self.unmap(name, lib, spaces);
+        self.source.as_mut().is_some_and(|s| s.delete(name, lib))
+    }
+
+    /// The library an existing object was found in.
+    pub fn library_of(&mut self, name: &str, lib: &str) -> Option<String> {
+        self.source.as_mut().and_then(|s| s.library_of(name, lib))
+    }
+
+    /// The mapped copy of `lib/name`, writable; it is written back on
+    /// the next sync.
+    pub fn mapped_mut(&mut self, name: &str, lib: &str) -> Option<&mut Vec<u8>> {
+        self.mapped
+            .iter_mut()
+            .find(|m| m.name == name && m.lib == lib)
+            .map(|m| &mut m.data)
     }
 
     /// The mapped copy of `lib/name`, for displays and tests.

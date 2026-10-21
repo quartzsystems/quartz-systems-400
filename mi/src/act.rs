@@ -51,6 +51,8 @@ pub struct ActivationGroup {
     pub activations: Vec<Activation>,
     /// Its heaps: the default heap first, then user-created ones.
     pub heaps: Vec<crate::heap::Heap>,
+    /// Exit procedures (`CEE4RAGE`), called when the group is destroyed.
+    pub exits: Vec<u64>,
     /// Alive; a reclaimed group's number is not reused.
     pub live: bool,
 }
@@ -202,6 +204,7 @@ pub(crate) fn load(
     key: String,
     table: &[usize],
     deps: Vec<Arc<LoadedProgram>>,
+    system: &HashMap<String, usize>,
 ) -> Result<Arc<LoadedProgram>, Cond> {
     let mut placed = Vec::with_capacity(object.modules.len());
     for bm in &object.modules {
@@ -235,7 +238,9 @@ pub(crate) fn load(
                             .get(*srvpgm as usize)
                             .and_then(|d| d.export_addr(export))
                             .unwrap_or(rtlib::unresolved as *const () as usize),
-                        Some(ImportTarget::System) => crate::cee::bound_api(name)
+                        Some(ImportTarget::System) => system
+                            .get(name)
+                            .copied()
                             .unwrap_or(rtlib::unresolved as *const () as usize),
                         _ => rtlib::unresolved as *const () as usize,
                     };
@@ -282,6 +287,8 @@ pub struct Frame {
     pub msgq: crate::msg::MsgQueue,
     /// A control boundary: a program entry procedure.
     pub control_boundary: bool,
+    /// Arguments the entry was called with, `*OMIT` ones included.
+    pub argc: u32,
     /// The `monitor` region the entry is suspended in, from the
     /// module's region table; 0 outside every region.
     pub region: u32,
@@ -306,6 +313,9 @@ pub struct Activator {
     pub frames: Vec<Frame>,
     /// Where programs come from.
     pub source: Box<dyn ObjectSource>,
+    /// Bound procedures the runtime provides (`*SYSTEM` imports), by
+    /// export name: the condition APIs, and what `sysapi` installs.
+    pub system: HashMap<String, usize>,
 }
 
 impl Activator {
@@ -319,11 +329,16 @@ impl Activator {
                 kind: AgKind::Default,
                 activations: Vec::new(),
                 heaps: vec![crate::heap::Heap::new(0)],
+                exits: Vec::new(),
                 live: true,
             }],
             current: 0,
             frames: Vec::new(),
             source,
+            system: crate::cee::NAMES
+                .iter()
+                .filter_map(|n| crate::cee::bound_api(n).map(|a| ((*n).to_string(), a)))
+                .collect(),
         }
     }
 
@@ -342,6 +357,7 @@ impl Activator {
             kind,
             activations: Vec::new(),
             heaps: vec![crate::heap::Heap::new(0)],
+            exits: Vec::new(),
             live: true,
         });
         id
@@ -416,7 +432,7 @@ impl Activator {
             }
             deps.push(dep);
         }
-        let p = load(object, key.clone(), table, deps)?;
+        let p = load(object, key.clone(), table, deps, &self.system)?;
         self.loaded.insert(key, p.clone());
         Ok(p)
     }

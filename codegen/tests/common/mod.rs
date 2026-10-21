@@ -25,7 +25,7 @@ extern "sysv64" fn raise(env: *mut Env, cond: u32) {
     RAISED.lock().unwrap().push(cond);
 }
 
-extern "sysv64" fn enter(_env: *mut Env, _code: u64) {
+extern "sysv64" fn enter(_env: *mut Env, _code: u64, _argc: i64) {
     let mut d = DEPTH.lock().unwrap();
     d.0 += 1;
     d.1 = d.1.max(d.0);

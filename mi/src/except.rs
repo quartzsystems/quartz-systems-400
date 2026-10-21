@@ -291,14 +291,19 @@ fn inquire(j: &mut Job, pgm: &str, original: &str) -> String {
 fn cancel(j: &mut Job, pgm: &str, original: &str, boundary: Option<usize>) {
     let mut data = fixed(pgm, 10);
     data.extend(fixed(original, 7));
+    cancel_with(j, "CEE9901", "QCEEMSG", data, boundary);
+}
+
+/// Cancel to a boundary with a given escape for its caller.
+fn cancel_with(j: &mut Job, msgid: &str, msgf: &str, data: Vec<u8>, boundary: Option<usize>) {
     j.exception = None;
     j.abi.pending = 0;
     match boundary {
         Some(b) if b > 0 => {
             j.send_message_to(
                 QueueTarget::Frame(b - 1),
-                "CEE9901",
-                "QCEEMSG",
+                msgid,
+                msgf,
                 "QSYS",
                 data,
                 MsgType::Escape,
@@ -307,18 +312,24 @@ fn cancel(j: &mut Job, pgm: &str, original: &str, boundary: Option<usize>) {
         _ => {
             j.send_message_to(
                 QueueTarget::Ext,
-                "CEE9901",
-                "QCEEMSG",
+                msgid,
+                msgf,
                 "QSYS",
                 data.clone(),
                 MsgType::Escape,
             );
-            let e = Exception::message("CEE9901", "QCEEMSG", data, 0);
+            let e = Exception::message(msgid, msgf, data, 0);
             j.raised.push(e.clone());
             j.exception = Some(e);
             j.abi.pending = 1;
         }
     }
+}
+
+/// Cancel from the running entry down to its control boundary.
+pub(crate) fn cancel_to_boundary(j: &mut Job, msgid: &str, msgf: &str, data: Vec<u8>) {
+    let boundary = j.act.frames.iter().rposition(|f| f.control_boundary);
+    cancel_with(j, msgid, msgf, data, boundary);
 }
 
 /// The 12-byte condition token of an exception: severity and message

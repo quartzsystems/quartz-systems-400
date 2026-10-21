@@ -217,10 +217,12 @@ fn parameters_pass_through_a_dynamic_call() {
     assert_eq!(job.clear().map(|e| e.msgid), Some("CEE9901".into()));
     assert!(job.raised.iter().any(|e| e.cond == Some(Cond::Mch3601)));
     // A native program in QSYS is found before any object.
-    job.natives
-        .insert("QNATIVE".into(), |j: &mut Job, args: &[u64]| {
+    job.natives.insert(
+        "QNATIVE".into(),
+        std::rc::Rc::new(|j: &mut Job, args: &[u64]| {
             j.console.push(format!("native with {} args", args.len()));
-        });
+        }),
+    );
     job.call_program("QNATIVE", "QSYS", &[1, 2]).unwrap();
     assert_eq!(
         job.console.last().map(String::as_str),

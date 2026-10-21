@@ -119,6 +119,16 @@ mi/           the runtime: src/job.rs the job stand-in, src/act.rs loaded progra
               dumps, src/rtlib/ the call table's functions (core, decimal, string,
               convert, date, heap, msg; mem.rs holds the unsafe views), src/exec.rs
               running one module; tests/ programs, activation, heap, messages, except
+sysapi/       system APIs as natives of QSYS and QLEAWI procedures: src/param.rs parameter
+              and receiver conventions, ERRC0100/ERRC0200; src/provider.rs the Provider trait
+              (objects, data queues and areas, user indexes, files, system values, commands,
+              the clock) and MemProvider; src/msg.rs QMH*, src/usrspc.rs QUS user spaces and
+              indexes, src/obj.rs QUSLOBJ/QUSROBJD/QLICOBJD/QLIRNMO and the QUSGEN list
+              header, src/data.rs data queues and areas, src/job.rs QUSRJOBI/QUSLJOB/
+              QWCRSVAL/QWCCVTDT/QWCRTVCA/QWCRTVTZ/QSZRTVPR/QLGCNVCS/QWCRNETA, src/db.rs
+              QUSLMBR/QUSRMBRD/QUSLFLD/QUSLRCD/QDBRTVFD/QDBLDBR, src/misc.rs commands,
+              security, commitment and spool stubs, src/cee.rs the rest of QLEAWI,
+              src/picture.rs date pictures and the Lilian calendar; tests/apis.rs
 msgf/         message files: src/desc.rs descriptions and substitution, src/source.rs the
               TOML sources (msgs/*.toml embedded), src/payload.rs the *MSGF payload,
               src/store.rs CRTMSGF/ADDMSGD/CHGMSGD/RMVMSGD/MRGMSGF/RTVMSG/DSPMSGD and the

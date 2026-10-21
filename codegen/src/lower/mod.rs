@@ -466,7 +466,8 @@ impl<'a, 'b> Lowerer<'a, 'b> {
         let me = self.local_ref(self.pi);
         let code = self.b.ins().func_addr(types::I64, me);
         let enter = self.rt_ref(RtFn::Enter);
-        self.b.ins().call(enter, &[self.env, code]);
+        let argc = self.argc;
+        self.b.ins().call(enter, &[self.env, code, argc]);
         self.check_pending();
         self.b.ins().jump(self.blocks[0], &[]);
     }

@@ -462,7 +462,10 @@ fn resolve_one(
 /// Procedures the runtime provides, as `QLEAWI` exports them: resolved
 /// last, after every module, service program and directory.
 pub const SYSTEM_PROCS: &[&str] = &[
-    "CEEHDLR", "CEEHDLU", "CEERTX", "CEEUTX", "CEESGL", "CEENCOD", "CEEDCOD", "CEEMRCR",
+    "CEEHDLR", "CEEHDLU", "CEERTX", "CEEUTX", "CEESGL", "CEENCOD", "CEEDCOD", "CEEMRCR", "CEE4ABN",
+    "CEETREC", "CEEDOD", "CEEGPID", "CEETSTA", "CEECRHP", "CEEDSHP", "CEEGTST", "CEEFRST",
+    "CEECZST", "CEEDAYS", "CEEDATE", "CEEDATM", "CEESECS", "CEEUTC", "CEELOCT", "CEEQCEN",
+    "CEESCEN", "CEEGMT", "CEEGMTO", "CEERAN0", "CEE4RAGE",
 ];
 
 impl BndEntryKind {

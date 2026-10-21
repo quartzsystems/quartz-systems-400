@@ -23,6 +23,7 @@ pub mod job;
 pub mod msg;
 pub mod rtlib;
 pub mod space;
+pub mod storage;
 pub mod usrspc;
 
 pub use act::{ActivationGroup, AgId, AgKind, LoadedProgram, MemSource, ObjectSource};

@@ -232,7 +232,7 @@ impl RtFn {
     pub fn shape(self) -> (usize, Option<types::Type>) {
         match self {
             Self::Raise => (1, None),
-            Self::Enter => (1, None),
+            Self::Enter => (2, None),
             Self::Leave => (0, None),
             Self::Deref => (2, Some(types::I64)),
             Self::Copy => (2, None),

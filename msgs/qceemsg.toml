@@ -11,6 +11,27 @@ vars = ["*CHAR 10", "*CHAR 7"]
 reply = { default = "C", valid = ["C", "D", "F", "G", "I", "R"] }
 
 [[msg]]
+id = "CEE9902"
+sev = 50
+text = "Program &1 ended abnormally by CEE4ABN."
+help = "The program called CEE4ABN. The request ended at its control boundary and the caller received this message."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CEE9903"
+sev = 0
+text = "The request ended by CEETREC with return code &1."
+help = "CEETREC ended every call-stack entry of the request. No handler sees this message; the caller of the first entry clears it."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CEE0820"
+sev = 30
+text = "No operational descriptor for parameter &1."
+help = "The caller passed no operational descriptors, so CEEDOD has nothing to describe."
+vars = ["*BIN 4"]
+
+[[msg]]
 id = "CEE0200"
 sev = 30
 text = "Condition &1 was signaled."

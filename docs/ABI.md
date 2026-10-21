@@ -131,7 +131,7 @@ absent optional length is -1.
 | Index | Function | Operands after `env` | Returns |
 |---|---|---|---|
 | 0 | `raise` | `cond: i32` | |
-| 1 | `enter` | `code` | |
+| 1 | `enter` | `code, argc` | |
 | 2 | `leave` | | |
 | 3 | `deref` | `lo, hi` | native address |
 | 4 | `copy` | `dst, src, len` (no `env`) | |
@@ -175,8 +175,9 @@ absent optional length is -1.
 | 42 | `rmvmsg` | `pgmq_kind, pgmq_n, key, clear` | |
 
 `enter` is called in every prologue with the procedure's own code
-address, so the runtime can push a call-stack entry and identify the
-procedure from the program's procedure table; `leave` is called before
+address and its argument count, so the runtime can push a call-stack
+entry (with `%PARMS` for `CEETSTA`) and identify the procedure from
+the program's procedure table; `leave` is called before
 every return, and the spaces of automatic storage the entry handed out
 die with it. `cond` is the number of the `MCHnnnn` message: `0601`,
 `0602`, `0603`, `1202`, `1210`, `1211`, `1602`, `3401`, `3402`, `3601`,

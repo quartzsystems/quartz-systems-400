@@ -24,6 +24,7 @@ members = [
     "mi",
     "ile",
     "msgf",
+    "sysapi",
 ]
 
 [workspace.package]

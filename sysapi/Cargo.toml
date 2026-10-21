@@ -1,0 +1,25 @@
+[package]
+name = "sysapi"
+description = "QS/400 system APIs: IBM-named programs and QLEAWI procedures with IBM parameter layouts, as native code in QSYS"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+qir = { path = "../qir", version = "0.1.0" }
+codegen = { path = "../codegen", version = "0.1.0" }
+mi = { path = "../mi", version = "0.1.0" }
+msgf = { path = "../msgf", version = "0.1.0" }
+ccsid = { path = "../ccsid", version = "0.1.0" }
+qdecimal = { path = "../qdecimal", version = "0.1.0" }
+sysval = { path = "../sysval", version = "0.1.0" }
+release = { path = "../release", version = "0.1.0" }
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+ile = { path = "../ile", version = "0.1.0" }
+
+[lints]
+workspace = true

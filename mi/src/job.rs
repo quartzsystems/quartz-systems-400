@@ -9,6 +9,7 @@
 //! (`MIGRATE(phase5)`).
 
 use std::collections::{HashMap, VecDeque};
+use std::rc::Rc;
 
 use codegen::Cond;
 use codegen::abi::Env;
@@ -22,7 +23,37 @@ use qir::MsgType;
 
 /// A program implemented in Rust, called like any other: the job and
 /// the parameter addresses.
-pub type NativeFn = fn(&mut Job, &[u64]);
+pub type NativeFn = Rc<dyn Fn(&mut Job, &[u64])>;
+
+/// A job's identity: `QSVCJOB QSYS 000001` for the service job.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct JobIdent {
+    /// Job name.
+    pub name: String,
+    /// User profile.
+    pub user: String,
+    /// Six-digit number.
+    pub number: String,
+    /// Library list, `QSYS` first.
+    pub libl: Vec<String>,
+    /// Current library.
+    pub curlib: Option<String>,
+    /// System name.
+    pub system: String,
+}
+
+impl Default for JobIdent {
+    fn default() -> Self {
+        Self {
+            name: "QSVCJOB".into(),
+            user: "QSYS".into(),
+            number: "000001".into(),
+            libl: vec!["QSYS".into(), "QGPL".into(), "QTEMP".into()],
+            curlib: None,
+            system: "QS400".into(),
+        }
+    }
+}
 
 /// A resolved message queue.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -38,6 +69,8 @@ pub(crate) enum QueueTarget {
 pub struct Job {
     /// The part generated code reads: the pending flag.
     pub abi: codegen::abi::Job,
+    /// Who the job is; `MIGRATE(phase5)`: the job scheduler assigns it.
+    pub ident: JobIdent,
     /// The exception percolating now, if any.
     pub exception: Option<Exception>,
     /// Exceptions handled by a `monitor`, oldest first.
@@ -90,6 +123,7 @@ impl Job {
     pub fn boxed(source: Box<dyn ObjectSource>) -> Box<Self> {
         let mut j = Box::new(Self {
             abi: codegen::abi::Job::default(),
+            ident: JobIdent::default(),
             exception: None,
             handled: Vec::new(),
             raised: Vec::new(),
@@ -144,7 +178,7 @@ impl Job {
     /// program did not handle is left on the job.
     pub fn call_program(&mut self, name: &str, lib: &str, args: &[u64]) -> Result<(), Cond> {
         if (lib == "QSYS" || lib == "*LIBL")
-            && let Some(f) = self.natives.get(name).copied()
+            && let Some(f) = self.natives.get(name).cloned()
         {
             f(self, args);
             return Ok(());
@@ -172,11 +206,43 @@ impl Job {
     /// Destroy an activation group by number; its static areas and
     /// heap storage die.
     pub fn reclaim_group(&mut self, id: u32) {
+        self.run_group_exits(id);
         if let Ok(bases) = self.act.reclaim_id(id) {
             for b in bases {
                 self.spaces.kill_static(b);
                 self.spaces.kill_at(b);
             }
+        }
+    }
+
+    /// Call a group's exit procedures (`CEE4RAGE`), newest first, with
+    /// the group mark, the reason (1: `RCLACTGRP` or a normal end),
+    /// a result code and a user return code, all by reference.
+    fn run_group_exits(&mut self, id: u32) {
+        let exits: Vec<u64> = self
+            .act
+            .groups
+            .get(id as usize)
+            .filter(|g| g.live)
+            .map(|g| g.exits.clone())
+            .unwrap_or_default();
+        for code in exits.iter().rev() {
+            let mut mark = id.to_be_bytes();
+            let mut reason = 1i32.to_be_bytes();
+            let mut result = [0u8; 4];
+            let mut user_rc = [0u8; 4];
+            let env = self.env();
+            crate::act::call_handler(
+                usize::try_from(*code).unwrap_or(0),
+                env,
+                [
+                    mark.as_mut_ptr() as u64,
+                    reason.as_mut_ptr() as u64,
+                    result.as_mut_ptr() as u64,
+                    user_rc.as_mut_ptr() as u64,
+                ],
+                4,
+            );
         }
     }
 
@@ -343,6 +409,10 @@ impl Job {
         lib: &str,
         data: &[u8],
     ) -> (String, String, u16) {
+        if msgid.trim().is_empty() {
+            // An immediate message: the data is the text.
+            return (ccsid::decode_trimmed(data), String::new(), 0);
+        }
         match self.msgs.describe(msgid, msgf, lib) {
             Some(d) => (d.format(data), d.format_help(data), d.severity),
             None => (
@@ -445,6 +515,50 @@ impl Job {
             Some(k) => usize::from(q.remove(k)),
             None => q.clear(clear),
         })
+    }
+
+    /// Move a message by key from one queue to another, key kept
+    /// (`QMHMOVPM`); `false` when it is not there.
+    pub fn move_message(&mut self, key: u32, from: QueueRef, to: QueueRef) -> bool {
+        let (Ok(src), Ok(dst)) = (self.queue_target(from), self.queue_target(to)) else {
+            return false;
+        };
+        let queue = self.queue_mut(src);
+        let Some(i) = queue.msgs.iter().position(|m| m.key == key) else {
+            return false;
+        };
+        let m = queue.msgs.remove(i);
+        self.queue_mut(dst).push(m);
+        true
+    }
+
+    /// Mark the pending exception handled when `key` is its message
+    /// (`QMHCHGEM *HANDLE`); `false` otherwise.
+    pub fn handle_pending(&mut self, key: u32) -> bool {
+        if self.exception.as_ref().is_some_and(|e| e.key == key) {
+            crate::except::resume(self);
+            true
+        } else {
+            false
+        }
+    }
+
+    /// End the request abnormally (`CEE4ABN`): the entries down to the
+    /// nearest control boundary are cancelled and its caller receives
+    /// `msgid` as an escape, as reply `C` to an inquiry does.
+    pub fn cancel_request(&mut self, msgid: &str, msgf: &str, data: Vec<u8>) {
+        crate::except::cancel_to_boundary(self, msgid, msgf, data);
+    }
+
+    /// End the request (`CEETREC`): every entry ends with `CEE9903`
+    /// pending, which no handler sees; whoever called the first entry
+    /// clears it.
+    pub fn end_request(&mut self, user_rc: i32) {
+        let data = user_rc.to_be_bytes().to_vec();
+        let e = Exception::message("CEE9903", "QCEEMSG", data, 0);
+        self.raised.push(e.clone());
+        self.exception = Some(e);
+        self.abi.pending = 1;
     }
 
     /// Live activation groups, for `DSPACTGRP`.

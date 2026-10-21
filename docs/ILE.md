@@ -147,9 +147,9 @@ library when one is given.
    list; its own imports are resolved in turn.
 3. `QUSAPIBD` in `QSYS`, when it exists, as the last directory.
 4. The procedures the runtime itself provides, as `QLEAWI` exports
-   them (`CEEHDLR`, `CEEHDLU`, `CEERTX`, `CEEUTX`, `CEESGL`, `CEENCOD`,
-   `CEEDCOD`, `CEEMRCR`): the import is recorded as `*SYSTEM` and the
-   loader binds it to the runtime's procedure.
+   them (the condition APIs in `mi::cee`, the rest in `sysapi`;
+   `SYSAPI.md` §8): the import is recorded as `*SYSTEM` and the loader
+   binds it to the runtime's procedure.
 
 An import nothing resolves is `CPD5D02`; the object is not created
 unless `OPTION(*UNRSLVREF)`, in which case the import is recorded as
