@@ -134,6 +134,16 @@ pub trait ObjectSource {
         lib: &str,
         kind: PgmKind,
     ) -> Option<(Arc<ProgramObject>, String)>;
+    /// The identifier a system pointer to `lib/name` of `obj_type`
+    /// carries (`rslvsp`), or none when the object does not exist.
+    fn resolve(&mut self, _name: &str, _lib: &str, _obj_type: &str) -> Option<u64> {
+        None
+    }
+    /// The program a system pointer's identifier names, as `(name,
+    /// library)`.
+    fn by_id(&mut self, _id: u64) -> Option<(String, String)> {
+        None
+    }
 }
 
 /// Programs held in memory, for tests and the IR driver.
@@ -161,6 +171,27 @@ impl ObjectSource for MemSource {
             .iter()
             .find(|(l, p)| p.name == name && p.attr.kind == kind && (lib == "*LIBL" || l == lib))
             .map(|(l, p)| (p.clone(), l.clone()))
+    }
+
+    fn resolve(&mut self, name: &str, lib: &str, obj_type: &str) -> Option<u64> {
+        let kind = match obj_type {
+            "*PGM" => PgmKind::Pgm,
+            "*SRVPGM" => PgmKind::SrvPgm,
+            _ => return None,
+        };
+        self.programs
+            .iter()
+            .position(|(l, p)| {
+                p.name == name && p.attr.kind == kind && (lib == "*LIBL" || l == lib)
+            })
+            .map(|i| u64::try_from(i + 1).expect("few programs"))
+    }
+
+    fn by_id(&mut self, id: u64) -> Option<(String, String)> {
+        let i = usize::try_from(id.checked_sub(1)?).ok()?;
+        self.programs
+            .get(i)
+            .map(|(l, p)| (p.name.clone(), l.clone()))
     }
 }
 

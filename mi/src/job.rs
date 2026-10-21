@@ -25,6 +25,31 @@ use qir::MsgType;
 /// the parameter addresses.
 pub type NativeFn = Rc<dyn Fn(&mut Job, &[u64])>;
 
+/// An open file's owner: the activation (by its static area), the
+/// module and the file declaration.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct FileKey {
+    /// Base of the program's static area.
+    pub statics: u64,
+    /// Module index in the program.
+    pub module: u32,
+    /// File index in the module.
+    pub file: u32,
+}
+
+/// An open file's state.
+#[derive(Clone, Debug)]
+pub struct FileState {
+    /// The source's handle.
+    pub handle: u32,
+    /// Address of the information data structure, 0 for none.
+    pub infds: u64,
+    /// Its length.
+    pub infds_len: usize,
+    /// The file's standing.
+    pub info: crate::io::FileInfo,
+}
+
 /// A job's identity: `QSVCJOB QSYS 000001` for the service job.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct JobIdent {
@@ -95,6 +120,12 @@ pub struct Job {
     pub table: Vec<usize>,
     /// Mapped user spaces.
     pub usrspcs: crate::usrspc::UserSpaces,
+    /// Where files are opened; none until the console or a test sets it.
+    pub io: Option<Box<dyn crate::io::IoSource>>,
+    /// Data areas and data queues.
+    pub data: Option<Box<dyn crate::io::DataSource>>,
+    /// Open files by activation, module and file index.
+    pub files: HashMap<FileKey, FileState>,
     /// The job's external message queue.
     pub ext_msgq: MsgQueue,
     /// `QSYSOPR`, as this job sees it; `MIGRATE(phase5)`.
@@ -136,6 +167,9 @@ impl Job {
             natives: HashMap::new(),
             table: crate::rtlib::table(),
             usrspcs: crate::usrspc::UserSpaces::default(),
+            io: None,
+            data: None,
+            files: HashMap::new(),
             ext_msgq: MsgQueue::default(),
             sysopr: MsgQueue::default(),
             msgs: Box::new(msgf::BuiltinMsgs::new()),
@@ -208,9 +242,27 @@ impl Job {
     pub fn reclaim_group(&mut self, id: u32) {
         self.run_group_exits(id);
         if let Ok(bases) = self.act.reclaim_id(id) {
+            self.close_files_of(&bases);
             for b in bases {
                 self.spaces.kill_static(b);
                 self.spaces.kill_at(b);
+            }
+        }
+    }
+
+    /// Close the files of activations whose static areas are going away.
+    fn close_files_of(&mut self, bases: &[u64]) {
+        let keys: Vec<FileKey> = self
+            .files
+            .keys()
+            .filter(|k| bases.contains(&k.statics))
+            .copied()
+            .collect();
+        for k in keys {
+            if let Some(state) = self.files.remove(&k)
+                && let Some(io) = self.io.as_mut()
+            {
+                io.close(state.handle);
             }
         }
     }

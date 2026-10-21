@@ -1,0 +1,532 @@
+// Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+// licensed under the terms of the MIT license which can be found in the
+// root directory of this project.
+
+//! The runtime behind `dbopen`, `dbio`, `dbclose`, `dspio`/`prtio`,
+//! `dtaara`, `dtaq` and `rslvsp`: files are opened per activation and
+//! module, the information data structure is kept current after every
+//! operation, and data objects go through the job's data source.
+
+#![allow(
+    clippy::many_single_char_names,
+    clippy::similar_names,
+    clippy::single_match_else
+)]
+
+use codegen::Cond;
+use codegen::abi::Env;
+use qdecimal::{Decimal, Packed, Rounding, Zoned};
+use qir::Type;
+
+use super::core::raise_on;
+use super::mem::{bytes, env as env_of, job, ty};
+use crate::io::{
+    DataAreaKind, DataAreaValue, FileInfo, IoFail, IoOp, IoRequest, IoResult, KeyRef, OpenSpec,
+};
+use crate::job::{FileKey, FileState, Job};
+use crate::msg::QueueRef;
+use crate::space::{FatPtr, PtrKind};
+
+/// RPG status for an operation on a file that is not open.
+const CLOSED: i32 = 1211;
+/// RPG status for an unsupported device operation.
+const NO_DEVICE: i32 = 1299;
+
+/// The running entry's file declaration and the key of its state.
+fn file_of(env: *mut Env, file: i64) -> Option<(FileKey, qir::FileRef)> {
+    let j = job(env);
+    let statics = env_of(env).statics as u64;
+    let f = j.act.frames.last()?;
+    let p = f.program.as_ref()?;
+    let (mi, _) = p.proc_of(f.code)?;
+    let fr = p.object.modules[mi as usize]
+        .module
+        .ir
+        .files
+        .get(usize::try_from(file).ok()?)?
+        .clone();
+    let key = FileKey {
+        statics,
+        module: mi,
+        file: u32::try_from(file).ok()?,
+    };
+    Some((key, fr))
+}
+
+/// Send an I/O failure as an escape to the running entry.
+fn escape(j: &mut Job, f: &IoFail) {
+    let _ = j.send_message(
+        &f.msgid,
+        "QCPFMSG",
+        "QSYS",
+        f.data.clone(),
+        qir::MsgType::Escape,
+        QueueRef::Same,
+    );
+}
+
+/// Zoned digits of a status.
+fn zoned5(status: u16) -> [u8; 5] {
+    let s = format!("{status:05}");
+    let mut out = [0xF0; 5];
+    for (o, c) in out.iter_mut().zip(s.bytes()) {
+        *o = 0xF0 | (c - b'0');
+    }
+    out
+}
+
+fn put(buf: &mut [u8], off: usize, data: &[u8]) {
+    if off + data.len() <= buf.len() {
+        buf[off..off + data.len()].copy_from_slice(data);
+    }
+}
+
+fn put_text(buf: &mut [u8], off: usize, n: usize, s: &str) {
+    let mut b = ccsid::to_ebcdic(s).unwrap_or_default();
+    b.resize(n, 0x40);
+    put(buf, off, &b);
+}
+
+/// Keep the information data structure current: file name at 0,
+/// open and end-of-file flags at 8 and 9, the status at 10, the
+/// operation code at 15, the statement at 29, the record format at
+/// 37, the message identifier at 46, the member at 128, the relative
+/// record number at 396 and the key from 400.
+fn write_infds(
+    addr: u64,
+    len: usize,
+    info: &FileInfo,
+    r: &IoResult,
+    open: bool,
+    opcode: &str,
+    stmt: u32,
+) {
+    if addr == 0 || len == 0 {
+        return;
+    }
+    let buf = bytes(addr.cast_signed(), len);
+    put_text(buf, 0, 8, &info.file);
+    put_text(buf, 8, 1, if open { "1" } else { "0" });
+    put_text(buf, 9, 1, if r.eof { "1" } else { "0" });
+    put(buf, 10, &zoned5(r.status));
+    put_text(buf, 15, 6, opcode);
+    put_text(buf, 21, 8, "*INIT");
+    put_text(buf, 29, 8, &stmt.to_string());
+    put_text(
+        buf,
+        37,
+        8,
+        if r.format.is_empty() {
+            &info.format
+        } else {
+            &r.format
+        },
+    );
+    put_text(buf, 45, 1, "");
+    put_text(buf, 46, 7, r.msgid.as_deref().unwrap_or(""));
+    put_text(
+        buf,
+        128,
+        10,
+        if r.member.is_empty() {
+            &info.member
+        } else {
+            &r.member
+        },
+    );
+    put(
+        buf,
+        396,
+        &u32::try_from(r.rrn).unwrap_or(u32::MAX).to_be_bytes(),
+    );
+    put(buf, 400, &r.key);
+}
+
+/// `db_open(env, file, infds, infds_desc) -> status`.
+pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc: i64) -> i32 {
+    let Some((key, fr)) = file_of(env, file) else {
+        raise_on(job(env), Cond::Mch3601);
+        return CLOSED;
+    };
+    let j = job(env);
+    let spec = OpenSpec {
+        file: fr.file.clone(),
+        lib: fr.lib.clone(),
+        usage: fr.usage,
+        keyed: fr.keyed,
+        lvlchk: fr.lvlchk.then(|| {
+            fr.formats
+                .iter()
+                .filter_map(|f| f.level.clone().map(|l| (f.name.clone(), l)))
+                .collect()
+        }),
+        member: None,
+    };
+    let infds_len = if infds == 0 {
+        0
+    } else {
+        usize::try_from(ty(infds_desc).size()).unwrap_or(0)
+    };
+    let Some(io) = j.io.as_mut() else {
+        let f = IoFail::new(1299, "CPF4101", &[&fr.file, &fr.lib]);
+        escape(j, &f);
+        return i32::from(f.status);
+    };
+    match io.open(&spec) {
+        Ok((handle, info)) => {
+            let r = IoResult::default();
+            write_infds(
+                infds.cast_unsigned(),
+                infds_len,
+                &info,
+                &r,
+                true,
+                "OPEN",
+                j.abi.cur_stmt,
+            );
+            j.files.insert(
+                key,
+                FileState {
+                    handle,
+                    infds: infds.cast_unsigned(),
+                    infds_len,
+                    info,
+                },
+            );
+            0
+        }
+        Err(f) => {
+            let info = FileInfo {
+                file: fr.file.clone(),
+                lib: fr.lib.clone(),
+                ..FileInfo::default()
+            };
+            let r = IoResult {
+                status: f.status,
+                msgid: Some(f.msgid.clone()),
+                ..IoResult::default()
+            };
+            write_infds(
+                infds.cast_unsigned(),
+                infds_len,
+                &info,
+                &r,
+                false,
+                "OPEN",
+                j.abi.cur_stmt,
+            );
+            escape(j, &f);
+            i32::from(f.status)
+        }
+    }
+}
+
+/// `db_close(env, file) -> status`.
+pub extern "sysv64" fn db_close(env: *mut Env, file: i64) -> i32 {
+    let Some((key, _)) = file_of(env, file) else {
+        return CLOSED;
+    };
+    let j = job(env);
+    let Some(state) = j.files.remove(&key) else {
+        return CLOSED;
+    };
+    let r =
+        j.io.as_mut()
+            .map(|io| io.close(state.handle))
+            .unwrap_or_default();
+    write_infds(
+        state.infds,
+        state.infds_len,
+        &state.info,
+        &r,
+        false,
+        "CLOSE",
+        j.abi.cur_stmt,
+    );
+    i32::from(r.status)
+}
+
+/// `db_io(env, file, op, rec, rec_desc, key, key_desc, rrn, fmt,
+/// nolock) -> status`.
+#[allow(clippy::too_many_arguments)]
+pub extern "sysv64" fn db_io(
+    env: *mut Env,
+    file: i64,
+    op: i64,
+    rec: i64,
+    rec_desc: i64,
+    key: i64,
+    key_desc: i64,
+    rrn: i64,
+    fmt: i64,
+    nolock: i64,
+) -> i32 {
+    let Some((fkey, _)) = file_of(env, file) else {
+        return CLOSED;
+    };
+    let Some(op) = IoOp::from_code(op) else {
+        raise_on(job(env), Cond::Mch3601);
+        return CLOSED;
+    };
+    let j = job(env);
+    let Some(state) = j.files.get(&fkey) else {
+        return CLOSED;
+    };
+    let (handle, infds, infds_len, info) = (
+        state.handle,
+        state.infds,
+        state.infds_len,
+        state.info.clone(),
+    );
+    let rec_len = if rec == 0 {
+        0
+    } else {
+        usize::try_from(ty(rec_desc).size()).unwrap_or(0)
+    };
+    let record: Option<Vec<u8>> = (rec != 0 && (op == IoOp::Write || op == IoOp::Update))
+        .then(|| bytes(rec, rec_len).to_vec());
+    let key_bytes: Vec<u8> = if key == 0 {
+        Vec::new()
+    } else {
+        let n = usize::try_from(ty(key_desc).size()).unwrap_or(0);
+        bytes(key, n).to_vec()
+    };
+    let keyref = if key != 0 {
+        KeyRef::Fields(&key_bytes)
+    } else if rrn != 0 {
+        KeyRef::Rrn(rrn.cast_unsigned())
+    } else {
+        KeyRef::None
+    };
+    let format = (fmt != 0).then(|| ccsid::decode_trimmed(bytes(fmt, 10)));
+    let req = IoRequest {
+        op,
+        record: record.as_deref(),
+        key: keyref,
+        format: format.as_deref(),
+        nolock: nolock != 0,
+    };
+    let Some(io) = j.io.as_mut() else {
+        return CLOSED;
+    };
+    let r = io.io(handle, &req);
+    if let Some(data) = &r.record
+        && rec != 0
+    {
+        let buf = bytes(rec, rec_len);
+        let n = rec_len.min(data.len());
+        buf[..n].copy_from_slice(&data[..n]);
+        if n < rec_len {
+            buf[n..].fill(0x40);
+        }
+    }
+    write_infds(infds, infds_len, &info, &r, true, op.name(), j.abi.cur_stmt);
+    i32::from(r.status)
+}
+
+/// `dev_io(env, file, op, fmt, rec, rec_desc) -> status`: display and
+/// printer files have no device yet (`TODO(phase8)`): status `01299`.
+pub extern "sysv64" fn dev_io(
+    env: *mut Env,
+    file: i64,
+    _op: i64,
+    _fmt: i64,
+    _rec: i64,
+    _rec_desc: i64,
+) -> i32 {
+    let _ = file_of(env, file);
+    NO_DEVICE
+}
+
+/// The value of a numeric place as a decimal.
+fn read_decimal(addr: i64, t: &Type) -> Option<Decimal> {
+    match t {
+        Type::Packed(s) => Packed::new(s.digits, s.scale)
+            .ok()?
+            .decode(bytes(addr, usize::from(s.digits) / 2 + 1))
+            .ok(),
+        Type::Zoned(s) => Zoned::new(s.digits, s.scale)
+            .ok()?
+            .decode(bytes(addr, usize::from(s.digits)))
+            .ok(),
+        _ => None,
+    }
+}
+
+fn write_decimal(addr: i64, t: &Type, d: &Decimal) {
+    match t {
+        Type::Packed(s) => {
+            if let Ok(p) = Packed::new(s.digits, s.scale) {
+                let _ = d.rescale(s.scale, Rounding::Truncate).and_then(|d| {
+                    p.encode_into(
+                        &d,
+                        Rounding::Truncate,
+                        bytes(addr, usize::from(s.digits) / 2 + 1),
+                    )
+                });
+            }
+        }
+        Type::Zoned(s) => {
+            if let Ok(z) = Zoned::new(s.digits, s.scale) {
+                let _ = d.rescale(s.scale, Rounding::Truncate).and_then(|d| {
+                    z.encode_into(&d, Rounding::Truncate, bytes(addr, usize::from(s.digits)))
+                });
+            }
+        }
+        _ => {}
+    }
+}
+
+/// `dtaara(env, op, name, lib, data, data_desc)`: 1 lock, 2 read, 3
+/// write, 4 unlock; a character area copies, a decimal one converts
+/// to and from the place's numeric type.
+pub extern "sysv64" fn dtaara(
+    env: *mut Env,
+    op: i64,
+    name: i64,
+    lib: i64,
+    data: i64,
+    data_desc: i64,
+) {
+    let j = job(env);
+    let n = ccsid::decode_trimmed(bytes(name, 10));
+    let l = ccsid::decode_trimmed(bytes(lib, 10));
+    let Some(src) = j.data.as_mut() else {
+        escape(j, &IoFail::new(1299, "CPF1015", &[&n, &l]));
+        return;
+    };
+    let r: Result<(), IoFail> = match op {
+        1 => src.dtaara_lock(&n, &l),
+        4 => src.dtaara_unlock(&n, &l),
+        2 => src.dtaara_read(&n, &l).map(|v| {
+            if data == 0 {
+                return;
+            }
+            let t = ty(data_desc);
+            match (v.kind, &t) {
+                (DataAreaKind::Dec, Type::Packed(_) | Type::Zoned(_)) => {
+                    let digits = u8::try_from(v.len).unwrap_or(15);
+                    let scale = u8::try_from(v.decimals).unwrap_or(0);
+                    if let Some(d) = Packed::new(digits, scale)
+                        .ok()
+                        .and_then(|p| p.decode(&v.value).ok())
+                    {
+                        write_decimal(data, &t, &d);
+                    }
+                }
+                _ => {
+                    let len = usize::try_from(t.size()).unwrap_or(0);
+                    let buf = bytes(data, len);
+                    let m = len.min(v.value.len());
+                    buf[..m].copy_from_slice(&v.value[..m]);
+                    if m < len {
+                        buf[m..].fill(0x40);
+                    }
+                }
+            }
+        }),
+        3 => {
+            let t = ty(data_desc);
+            let current = src.dtaara_read(&n, &l);
+            match current {
+                Ok(mut v) => {
+                    match (v.kind, &t) {
+                        (DataAreaKind::Dec, Type::Packed(_) | Type::Zoned(_)) => {
+                            let digits = u8::try_from(v.len).unwrap_or(15);
+                            let scale = u8::try_from(v.decimals).unwrap_or(0);
+                            if let (Some(d), Ok(p)) =
+                                (read_decimal(data, &t), Packed::new(digits, scale))
+                            {
+                                v.value = d
+                                    .rescale(scale, Rounding::Truncate)
+                                    .and_then(|d| p.encode(&d, Rounding::Truncate))
+                                    .unwrap_or(v.value);
+                            }
+                        }
+                        _ => {
+                            let len = usize::try_from(t.size()).unwrap_or(0);
+                            v.value = bytes(data, len).to_vec();
+                        }
+                    }
+                    src.dtaara_write(&n, &l, &DataAreaValue { ..v })
+                }
+                Err(e) => Err(e),
+            }
+        }
+        _ => Ok(()),
+    };
+    if let Err(f) = r {
+        escape(j, &f);
+    }
+}
+
+/// `dtaq_snd(env, name, lib, data, len)`.
+pub extern "sysv64" fn dtaq_snd(env: *mut Env, name: i64, lib: i64, data: i64, len: i64) {
+    let j = job(env);
+    let n = ccsid::decode_trimmed(bytes(name, 10));
+    let l = ccsid::decode_trimmed(bytes(lib, 10));
+    let entry = bytes(data, usize::try_from(len).unwrap_or(0)).to_vec();
+    let r = match j.data.as_mut() {
+        Some(src) => src.dtaq_send(&n, &l, &entry),
+        None => Err(IoFail::new(1299, "CPF9801", &[&n, &l])),
+    };
+    if let Err(f) = r {
+        escape(j, &f);
+    }
+}
+
+/// `dtaq_rcv(env, name, lib, data, cap, wait) -> len`.
+pub extern "sysv64" fn dtaq_rcv(
+    env: *mut Env,
+    name: i64,
+    lib: i64,
+    data: i64,
+    cap: i64,
+    wait: i64,
+) -> i32 {
+    let j = job(env);
+    let n = ccsid::decode_trimmed(bytes(name, 10));
+    let l = ccsid::decode_trimmed(bytes(lib, 10));
+    let r = match j.data.as_mut() {
+        Some(src) => src.dtaq_receive(&n, &l, wait),
+        None => Err(IoFail::new(1299, "CPF9801", &[&n, &l])),
+    };
+    match r {
+        Ok(Some(e)) => {
+            let room = usize::try_from(cap).unwrap_or(0);
+            let m = room.min(e.len());
+            bytes(data, room)[..m].copy_from_slice(&e[..m]);
+            i32::try_from(m).unwrap_or(i32::MAX)
+        }
+        Ok(None) => 0,
+        Err(f) => {
+            escape(j, &f);
+            0
+        }
+    }
+}
+
+/// `rslvsp(env, out, type, name, lib)`: a system pointer to the
+/// object, `MCH3401` when there is none.
+pub extern "sysv64" fn rslvsp(env: *mut Env, out: i64, obj_type: i64, name: i64, lib: i64) {
+    let j = job(env);
+    let t = ccsid::decode_trimmed(bytes(obj_type, 10));
+    let n = ccsid::decode_trimmed(bytes(name, 10));
+    let l = ccsid::decode_trimmed(bytes(lib, 10));
+    match j.act.source.resolve(&n, &l, &t) {
+        Some(id) => {
+            let p = FatPtr {
+                kind: PtrKind::System as u8,
+                flags: 0,
+                generation: 0,
+                space: 0,
+                offset: id,
+            };
+            bytes(out, 16).copy_from_slice(&p.to_bytes());
+        }
+        None => {
+            bytes(out, 16).copy_from_slice(&FatPtr::null().to_bytes());
+            raise_on(j, Cond::Mch3401);
+        }
+    }
+}

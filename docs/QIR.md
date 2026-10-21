@@ -296,6 +296,31 @@ Level checks happen at `dbopen` (`CPF4131` as an escape message).
 | `%d = dspio FILE OP fmt(NAME) [rec(place)]` | `WRITE READ EXFMT` on a `dev(*DSP)` file; `TODO(phase8)` |
 | `%d = prtio FILE WRITE fmt(NAME) [rec(place)]` | on a `dev(*PRT)` file; `TODO(phase8)` |
 
+A file is open per activation of the program; it closes with
+`dbclose` or when the activation group is reclaimed. An open that
+fails sends its message (`CPF9801` not found, `CPF4131` level check)
+as an escape and returns the status; a failing operation only returns
+it. The record place is filled on a read (padded with blanks, or
+truncated) and taken whole on a write or update. A key operand holds
+the key fields in record layout, as many as it has room for; `rrn`
+positions by relative record number. Device files return `01299`
+until Phase 8.
+
+The information data structure, when given, is kept current after
+every operation: file name at 0 (8), open flag at 8, end-of-file flag
+at 9, the five-digit status at 10, the operation code at 15 (6), the
+routine at 21 (8), the statement at 29 (8), the record format at 37
+(8), the message identifier at 46 (7), the member at 128 (10), the
+relative record number at 396 (`bin4`) and the encoded key from 400.
+Only the fields that fit the place are written.
+
+`dtaara.read` and `dtaara.write` copy a character area into or out
+of a character place and convert a decimal area to or from a packed
+or zoned place; a missing area is `CPF1015` as an escape. `dtaq.rcv`
+returns 0 when the queue is empty; a missing queue is `CPF9801`.
+`rslvsp` yields a system pointer whose identifier the object source
+assigned, and `callp` through it calls the program it names.
+
 **Messages.** Queues are `*SAME` (this call-stack entry), `*PRV`,
 `*CTLBDY`, `*EXT`, `*SYSOPR`, or a count of entries up the stack.
 

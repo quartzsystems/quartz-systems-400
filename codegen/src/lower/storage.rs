@@ -11,14 +11,16 @@ use cranelift_codegen::ir::InstBuilder;
 use cranelift_codegen::ir::{Block, StackSlotData, StackSlotKind, Value, types};
 use qir::verify::typing::operand_type;
 use qir::{
-    Callee, Const, CvtOpts, DecUn, DtInst, Handler, Inst, MsgInst, MsgQueue, Operand, Place,
-    PtrInst, Selector, StrInst, TrimSide, Type, TypeClass,
+    Callee, Const, CvtOpts, DecUn, DtInst, DtaqInst, Handler, Inst, IoInst, MsgInst, MsgQueue,
+    Operand, Place, PtrInst, Selector, StrInst, TrimSide, Type, TypeClass,
 };
 
 use super::Lowerer;
 use crate::abi::{self, TypeDesc};
 use crate::error::Result;
-use crate::rt::{RtFn, cvt_opts, dec_flags, pack_msgid, selector};
+use crate::rt::{
+    RtFn, cvt_opts, db_op_code, dec_flags, dev_op_code, dtaara_op_code, pack_msgid, selector,
+};
 
 /// An open `monitor` region while its blocks are lowered.
 pub(crate) struct Region {
@@ -141,6 +143,52 @@ impl Lowerer<'_, '_> {
                 self.rt_call(RtFn::Dealloc, &[pa]);
             }
             Inst::Msg(m) => self.msg_inst(m)?,
+            Inst::Io(io) => self.io_inst(io)?,
+            Inst::Dtaara {
+                op,
+                name,
+                lib,
+                data,
+            } => {
+                let opv = self.i64(dtaara_op_code(*op));
+                let (na, _) = self.sop(name, Some(&Type::Char(10)))?;
+                let (la, _) = self.sop(lib, Some(&Type::Char(10)))?;
+                let (da, dd) = match data {
+                    Some(p) => self.place_pair(p)?,
+                    None => (self.i64(0), self.i64(0)),
+                };
+                self.rt_call(RtFn::Dtaara, &[opv, na, la, da, dd]);
+            }
+            Inst::Dtaq(DtaqInst::Snd {
+                name,
+                lib,
+                data,
+                len,
+            }) => {
+                let (na, _) = self.sop(name, Some(&Type::Char(10)))?;
+                let (la, _) = self.sop(lib, Some(&Type::Char(10)))?;
+                let (da, _) = self.sop(data, None)?;
+                let ln = self.int_op(len)?;
+                self.rt_call(RtFn::DtaqSnd, &[na, la, da, ln]);
+            }
+            Inst::Dtaq(DtaqInst::Rcv {
+                dst,
+                name,
+                lib,
+                data,
+                len,
+                wait,
+            }) => {
+                let (na, _) = self.sop(name, Some(&Type::Char(10)))?;
+                let (la, _) = self.sop(lib, Some(&Type::Char(10)))?;
+                let (da, _) = self.place_pair(data)?;
+                let ln = self.int_op(len)?;
+                let w = self.int_op(wait)?;
+                let v = self
+                    .rt_call(RtFn::DtaqRcv, &[na, la, da, ln, w])
+                    .expect("result");
+                self.b.def_var(self.vars[dst.0 as usize], v);
+            }
             Inst::Dsply { src, reply } => {
                 let (sa, sd) = self.sop(src, None)?;
                 let (ra, rd) = match reply {
@@ -255,6 +303,83 @@ impl Lowerer<'_, '_> {
                     _ => 0,
                 });
                 self.rt_call(RtFn::RmvMsg, &[qk, qn, ka, c]);
+            }
+        }
+        Ok(())
+    }
+
+    /// Lower a file I/O instruction: every operation yields its status.
+    fn io_inst(&mut self, io: &IoInst) -> Result<()> {
+        match io {
+            IoInst::DbOpen { dst, file, infds } => {
+                let f = self.i64(i64::from(*file));
+                let (ia, id) = match infds {
+                    Some(p) => self.place_pair(p)?,
+                    None => (self.i64(0), self.i64(0)),
+                };
+                let v = self.rt_call(RtFn::DbOpen, &[f, ia, id]).expect("result");
+                self.b.def_var(self.vars[dst.0 as usize], v);
+            }
+            IoInst::DbClose { dst, file } => {
+                let f = self.i64(i64::from(*file));
+                let v = self.rt_call(RtFn::DbClose, &[f]).expect("result");
+                self.b.def_var(self.vars[dst.0 as usize], v);
+            }
+            IoInst::DbIo {
+                dst,
+                file,
+                op,
+                rec,
+                key,
+                rrn,
+                fmt,
+                nolock,
+            } => {
+                let f = self.i64(i64::from(*file));
+                let opv = self.i64(db_op_code(*op));
+                let (ra, rd) = match rec {
+                    Some(p) => self.place_pair(p)?,
+                    None => (self.i64(0), self.i64(0)),
+                };
+                let (ka, kd) = match key {
+                    Some(k) => self.sop(k, None)?,
+                    None => (self.i64(0), self.i64(0)),
+                };
+                let rr = self.int_opt(rrn.as_ref(), 0)?;
+                let (fa, _) = match fmt {
+                    Some(n) => self.sop(
+                        &Operand::Const(Const::Str(n.clone())),
+                        Some(&Type::Char(10)),
+                    )?,
+                    None => (self.i64(0), self.i64(0)),
+                };
+                let nl = self.i64(i64::from(*nolock));
+                let v = self
+                    .rt_call(RtFn::DbIo, &[f, opv, ra, rd, ka, kd, rr, fa, nl])
+                    .expect("result");
+                self.b.def_var(self.vars[dst.0 as usize], v);
+            }
+            IoInst::DevIo {
+                dst,
+                file,
+                op,
+                fmt,
+                rec,
+            } => {
+                let f = self.i64(i64::from(*file));
+                let opv = self.i64(dev_op_code(*op));
+                let (fa, _) = self.sop(
+                    &Operand::Const(Const::Str(fmt.clone())),
+                    Some(&Type::Char(10)),
+                )?;
+                let (ra, rd) = match rec {
+                    Some(p) => self.place_pair(p)?,
+                    None => (self.i64(0), self.i64(0)),
+                };
+                let v = self
+                    .rt_call(RtFn::DevIo, &[f, opv, fa, ra, rd])
+                    .expect("result");
+                self.b.def_var(self.vars[dst.0 as usize], v);
             }
         }
         Ok(())
@@ -491,7 +616,23 @@ impl Lowerer<'_, '_> {
                 let v = self.b.ins().load(types::I128, super::le(), out, 0);
                 self.b.def_var(self.vars[dst.0 as usize], v);
             }
-            PtrInst::Rslvsp { .. } => return Err(self.unsupported("rslvsp")),
+            PtrInst::Rslvsp {
+                dst,
+                obj_type,
+                name,
+                lib,
+            } => {
+                let (oa, _) = self.sop(
+                    &Operand::Const(Const::Str(obj_type.clone())),
+                    Some(&Type::Char(10)),
+                )?;
+                let (na, _) = self.sop(name, Some(&Type::Char(10)))?;
+                let (la, _) = self.sop(lib, Some(&Type::Char(10)))?;
+                let out = self.ptr_slot();
+                self.rt_call(RtFn::Rslvsp, &[out, oa, na, la]);
+                let v = self.b.ins().load(types::I128, super::le(), out, 0);
+                self.b.def_var(self.vars[dst.0 as usize], v);
+            }
         }
         Ok(())
     }

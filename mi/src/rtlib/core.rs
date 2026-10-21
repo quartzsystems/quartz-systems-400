@@ -244,8 +244,23 @@ pub extern "sysv64" fn call_pgm_var(env: *mut Env, addr: i64, len: i64, argc: i6
 
 /// `call_pgm_ptr(env, ptr, argc, argv)`: system pointers come with the
 /// object spaces; until then the call is `MCH3602`.
-pub extern "sysv64" fn call_pgm_ptr(env: *mut Env, _ptr: i64, _argc: i64, _argv: i64) {
-    raise_on(job(env), Cond::Mch3602);
+pub extern "sysv64" fn call_pgm_ptr(env: *mut Env, ptr: i64, argc: i64, argv: i64) {
+    let j = job(env);
+    let p = read_ptr(ptr);
+    match p.kind() {
+        Some(PtrKind::System) => {
+            let Some((name, lib)) = j.act.source.by_id(p.offset) else {
+                raise_on(j, Cond::Mch3401);
+                return;
+            };
+            let args = args_at(argc, argv);
+            if let Err(c) = j.call_program(&name, &lib, &args) {
+                raise_on(j, c);
+            }
+        }
+        Some(PtrKind::Null) => raise_on(j, Cond::Mch3601),
+        _ => raise_on(j, Cond::Mch3602),
+    }
 }
 
 /// The target of an import the binder left unresolved: `MCH3401`.

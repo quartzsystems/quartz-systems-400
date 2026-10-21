@@ -363,12 +363,12 @@ L0:
 #[test]
 fn unsupported_instructions_are_reported() {
     let m = qir::parse(
-        "module U\nstatic $n: char(10)\nproc P() {\nL0:\n  %s = rslvsp *PGM, $n, $n\n  ret\n}\n",
+        "module U\nproc P() {\nL0:\n  %a = const.f64 1.5\n  %r = rem %a, %a\n  ret\n}\n",
     )
     .unwrap();
     let err = codegen::compile(&m).unwrap_err().to_string();
     assert!(
-        err.contains("rslvsp") && err.contains("not supported"),
+        err.contains("rem of floats") && err.contains("not supported"),
         "{err}"
     );
 }

@@ -90,6 +90,20 @@ help = "The call stack entry named as the target of the message does not exist."
 vars = ["*CHAR 10"]
 
 [[msg]]
+id = "CPF1015"
+sev = 40
+text = "Data area &1 in library &2 not found."
+help = "The data area does not exist, or the library is not in the library list."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF4101"
+sev = 40
+text = "File &1 in library &2 not found or inline data file missing."
+help = "The file named by the program does not exist, or the job has no file source."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
 id = "CPF4131"
 sev = 40
 text = "Level check on file &1 in library &2, member &3."

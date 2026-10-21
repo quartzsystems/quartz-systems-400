@@ -173,6 +173,25 @@ absent optional length is -1.
 | 40 | `sndpgmmsg` | `msgid, msgf, lib, data, dty, type, to_kind, to_n, key` | |
 | 41 | `rcvmsg` | `pgmq_kind, pgmq_n, type, key, rmv, msg, mty, msgid, data, dty, keyout, sev, sevty` | `i32` 0 or 1 |
 | 42 | `rmvmsg` | `pgmq_kind, pgmq_n, key, clear` | |
+| 43 | `db_open` | `file, infds, infds_desc` | `i32` status |
+| 44 | `db_close` | `file` | `i32` status |
+| 45 | `db_io` | `file, op, rec, rec_desc, key, key_desc, rrn, fmt, nolock` | `i32` status |
+| 46 | `dev_io` | `file, op, fmt, rec, rec_desc` | `i32` status |
+| 47 | `dtaara` | `op, name, lib, data, data_desc` | |
+| 48 | `dtaq_snd` | `name, lib, data, len` | |
+| 49 | `dtaq_rcv` | `name, lib, data, cap, wait` | `i32` length |
+| 50 | `rslvsp` | `out, type, name, lib` | 16 bytes at `out` |
+
+`file` is the index of the module's file declaration; the runtime
+finds the declaration through the running entry's program and keeps
+the open file per activation (static area), module and index, so each
+activation of a program has its own files, closed when its group is
+reclaimed. Operation codes: `db_io` 1 `READ`, 2 `READP`, 3 `READE`, 4
+`READPE`, 5 `CHAIN`, 6 `SETLL`, 7 `SETGT`, 8 `WRITE`, 9 `UPDATE`, 10
+`DELETE`, 11 `UNLOCK`, 12 `FEOD`; `dev_io` 1 `WRITE`, 2 `READ`, 3
+`EXFMT`; `dtaara` 1 lock, 2 read, 3 write, 4 unlock. A key operand is
+the key fields' bytes in record layout, a prefix allowed; a relative
+record number is passed when there is no key.
 
 `enter` is called in every prologue with the procedure's own code
 address and its argument count, so the runtime can push a call-stack
@@ -250,8 +269,10 @@ imported procedures, `mov` between same-size storage and between text
 types, loads and stores of every register type, `parms`, `passed`,
 `omitted`, `debug.stmt`, every `dec.*`, `cvt`, `str.*` and `dt.*`
 instruction, `addr`, `ptradd`, `ptrdiff`, `procaddr`, based and
-deref places, `monitor`/`endmon`, `dsply`. Dynamic
-program calls, `sysapi` (a program call into `QSYS`) and calls through
-procedure pointers go through the runtime. Still
-`CodegenError::Unsupported`: `rslvsp`, I/O, messages, data areas and
-data queues, which arrive with their runtime pieces.
+deref places, `monitor`/`endmon`, `dsply`, `sndpgmmsg`, `rcvmsg`,
+`rmvmsg`, `alloc`/`realloc`/`dealloc`, `dbopen`/`dbio`/`dbclose`,
+`dspio`/`prtio`, `dtaara.*`, `dtaq.*`, `rslvsp`. Dynamic program calls,
+`sysapi` (a program call into `QSYS`), calls through procedure and
+system pointers and every I/O go through the runtime. Still
+`CodegenError::Unsupported`: `rem` of floats and calls to a bare
+signature.

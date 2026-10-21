@@ -113,10 +113,69 @@ pub enum RtFn {
     RcvMsg = 41,
     /// `rmvmsg(env, pgmq_kind, pgmq_n, key, clear)`.
     RmvMsg = 42,
+    /// `db_open(env, file, infds, infds_desc) -> status`: the module's
+    /// file by index, opened for the running activation.
+    DbOpen = 43,
+    /// `db_close(env, file) -> status`.
+    DbClose = 44,
+    /// `db_io(env, file, op, rec, rec_desc, key, key_desc, rrn, fmt,
+    /// nolock) -> status`.
+    DbIo = 45,
+    /// `dev_io(env, file, op, fmt, rec, rec_desc) -> status`.
+    DevIo = 46,
+    /// `dtaara(env, op, name, lib, data, data_desc)`.
+    Dtaara = 47,
+    /// `dtaq_snd(env, name, lib, data, len)`.
+    DtaqSnd = 48,
+    /// `dtaq_rcv(env, name, lib, data, cap, wait) -> len`.
+    DtaqRcv = 49,
+    /// `rslvsp(env, out, type, name, lib)`: a system pointer written
+    /// to `out`.
+    Rslvsp = 50,
+}
+
+/// The code of a database operation, as `db_io` takes it.
+#[must_use]
+pub fn db_op_code(op: qir::DbOp) -> i64 {
+    match op {
+        qir::DbOp::Read => 1,
+        qir::DbOp::ReadP => 2,
+        qir::DbOp::ReadE => 3,
+        qir::DbOp::ReadPE => 4,
+        qir::DbOp::Chain => 5,
+        qir::DbOp::SetLL => 6,
+        qir::DbOp::SetGT => 7,
+        qir::DbOp::Write => 8,
+        qir::DbOp::Update => 9,
+        qir::DbOp::Delete => 10,
+        qir::DbOp::Unlock => 11,
+        qir::DbOp::Feod => 12,
+    }
+}
+
+/// The code of a device operation, as `dev_io` takes it.
+#[must_use]
+pub fn dev_op_code(op: qir::DevOp) -> i64 {
+    match op {
+        qir::DevOp::Write => 1,
+        qir::DevOp::Read => 2,
+        qir::DevOp::ExFmt => 3,
+    }
+}
+
+/// The code of a data area operation, as `dtaara` takes it.
+#[must_use]
+pub fn dtaara_op_code(op: qir::DtaaraOp) -> i64 {
+    match op {
+        qir::DtaaraOp::Lock => 1,
+        qir::DtaaraOp::Read => 2,
+        qir::DtaaraOp::Write => 3,
+        qir::DtaaraOp::Unlock => 4,
+    }
 }
 
 /// Every runtime function, in table order.
-pub const RT_FNS: [RtFn; 43] = [
+pub const RT_FNS: [RtFn; 51] = [
     RtFn::Raise,
     RtFn::Enter,
     RtFn::Leave,
@@ -160,6 +219,14 @@ pub const RT_FNS: [RtFn; 43] = [
     RtFn::SndPgmMsg,
     RtFn::RcvMsg,
     RtFn::RmvMsg,
+    RtFn::DbOpen,
+    RtFn::DbClose,
+    RtFn::DbIo,
+    RtFn::DevIo,
+    RtFn::Dtaara,
+    RtFn::DtaqSnd,
+    RtFn::DtaqRcv,
+    RtFn::Rslvsp,
 ];
 
 impl RtFn {
@@ -222,6 +289,14 @@ impl RtFn {
             Self::SndPgmMsg => "sndpgmmsg",
             Self::RcvMsg => "rcvmsg",
             Self::RmvMsg => "rmvmsg",
+            Self::DbOpen => "db_open",
+            Self::DbClose => "db_close",
+            Self::DbIo => "db_io",
+            Self::DevIo => "dev_io",
+            Self::Dtaara => "dtaara",
+            Self::DtaqSnd => "dtaq_snd",
+            Self::DtaqRcv => "dtaq_rcv",
+            Self::Rslvsp => "rslvsp",
         }
     }
 
@@ -274,6 +349,14 @@ impl RtFn {
             Self::SndPgmMsg => (9, None),
             Self::RcvMsg => (13, Some(types::I32)),
             Self::RmvMsg => (4, None),
+            Self::DbOpen => (3, Some(types::I32)),
+            Self::DbClose => (1, Some(types::I32)),
+            Self::DbIo => (9, Some(types::I32)),
+            Self::DevIo => (5, Some(types::I32)),
+            Self::Dtaara => (5, None),
+            Self::DtaqSnd => (4, None),
+            Self::DtaqRcv => (5, Some(types::I32)),
+            Self::Rslvsp => (4, None),
         }
     }
 

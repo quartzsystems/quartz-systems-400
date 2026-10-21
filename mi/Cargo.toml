@@ -15,8 +15,13 @@ qdecimal = { path = "../qdecimal", version = "0.1.0" }
 ccsid = { path = "../ccsid", version = "0.1.0" }
 dds = { path = "../dds", version = "0.1.0" }
 db = { path = "../db", version = "0.1.0" }
+store = { path = "../store", version = "0.1.0" }
+qsname = { path = "../qsname", version = "0.1.0" }
 thiserror.workspace = true
 tracing.workspace = true
+
+[dev-dependencies]
+blockdev = { path = "../blockdev", version = "0.1.0" }
 
 [lints]
 workspace = true

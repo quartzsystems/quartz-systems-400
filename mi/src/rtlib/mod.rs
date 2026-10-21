@@ -13,6 +13,7 @@ mod core;
 mod date;
 mod decimal;
 mod heap;
+mod io;
 pub(crate) mod mem;
 mod msg;
 mod string;
@@ -25,6 +26,7 @@ pub use core::{
 pub use date::{dt_add, dt_diff, dt_extract, dt_now, dt_test};
 pub use decimal::{dec_bin, dec_cmp, dec_to_float, dec_to_int, dec_un};
 pub use heap::{alloc, dealloc, realloc};
+pub use io::{db_close, db_io, db_open, dev_io, dtaara, dtaq_rcv, dtaq_snd, rslvsp};
 pub use msg::{rcvmsg, rmvmsg, sndpgmmsg};
 pub use string::{
     str_cat, str_check, str_cmp, str_len, str_replace, str_scan, str_setlen, str_subst, str_trim,
@@ -83,6 +85,14 @@ pub fn table() -> Vec<usize> {
             RtFn::SndPgmMsg => sndpgmmsg as *const () as usize,
             RtFn::RcvMsg => rcvmsg as *const () as usize,
             RtFn::RmvMsg => rmvmsg as *const () as usize,
+            RtFn::DbOpen => db_open as *const () as usize,
+            RtFn::DbClose => db_close as *const () as usize,
+            RtFn::DbIo => db_io as *const () as usize,
+            RtFn::DevIo => dev_io as *const () as usize,
+            RtFn::Dtaara => dtaara as *const () as usize,
+            RtFn::DtaqSnd => dtaq_snd as *const () as usize,
+            RtFn::DtaqRcv => dtaq_rcv as *const () as usize,
+            RtFn::Rslvsp => rslvsp as *const () as usize,
         })
         .collect()
 }

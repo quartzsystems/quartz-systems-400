@@ -264,6 +264,14 @@ library is `QSYS` or `*LIBL`.
 
 ## 5. Messages and exceptions
 
+**Files.** A program's files are open per activation: the runtime
+keys each open file by the activation's static area, the module and
+the file declaration, so two activations of one program in different
+groups hold separate open data paths, and reclaiming a group closes
+its files. The open data paths themselves are the database's
+(`DB_FORMAT.md`), reached through the job's `IoSource`; data areas and
+data queues through its `DataSource`.
+
 **Queues.** Every call-stack entry has a call message queue; the job
 has an external queue and sees `QSYSOPR`. `sndpgmmsg` names the
 target as `*SAME`, `*PRV`, `*CTLBDY` (the nearest entry at or below
