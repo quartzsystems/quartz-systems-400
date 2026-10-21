@@ -15,6 +15,7 @@ use sysapi::{
     LocalNow, MemberInfo, ObjInfo, SysVal, UserInfo,
 };
 use wm::job::JobAttrs;
+use wm::obj::msgq::{MsgKind, QMsg};
 use wm::table::JobInfo;
 
 /// What a command run in the service answered.
@@ -179,4 +180,18 @@ ipc::rpc! {
     84 => fn commit_info / CommitInfoReq () -> Option<CommitInfo>;
     /// `Provider::user_info`.
     85 => fn user_info / UserInfoReq (name: String) -> Option<UserInfo>;
+
+    /// Send to a message queue (`LIB/NAME`, `*SYSOPR`); the key. The
+    /// service fills in the sending job.
+    90 => fn msgq_send / MsgqSend (queue: String, msg: QMsg) -> Result<u32, String>;
+    /// Receive from a queue without waiting: the oldest new message of
+    /// a kind, or the keyed one; removed when `remove`.
+    91 => fn msgq_receive / MsgqReceive (queue: String, kind: Option<MsgKind>, key: Option<u32>, remove: bool) -> Result<Option<QMsg>, String>;
+    /// Answer an inquiry on a queue; the reply's key.
+    92 => fn msgq_reply / MsgqReply (queue: String, key: u32, reply: String) -> Result<u32, String>;
+    /// Every message on a queue.
+    93 => fn msgq_list / MsgqList (queue: String) -> Result<Vec<QMsg>, String>;
+    /// Break messages waiting for the job: the queue, its break
+    /// program (`*DSPMSG` for the system's) and the message.
+    94 => fn breaks / Breaks () -> Vec<(String, (String, String), QMsg)>;
 }

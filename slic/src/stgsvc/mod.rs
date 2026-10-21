@@ -13,6 +13,7 @@
 
 mod exec;
 mod jobs;
+pub(crate) mod msgs;
 
 pub use jobs::chgjob;
 mod served;

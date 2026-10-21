@@ -34,7 +34,10 @@ impl Client for StgProc {
 /// service reopens them; the checkpoint just taken leaves it nothing
 /// to replay.
 pub fn start(system: &mut System) -> Result<(), String> {
-    let storage = system.storage.take().ok_or("the object store is not open")?;
+    let storage = system
+        .storage
+        .take()
+        .ok_or("the object store is not open")?;
     let devices: Vec<String> = storage
         .devices
         .iter()
@@ -60,7 +63,9 @@ pub fn start(system: &mut System) -> Result<(), String> {
         .recv()
         .map_err(|e| format!("starting the storage service: {e}"))?;
     let text = opened?;
-    system.out.serial(&format!("slic: storage service {pid}: {text}\n"));
+    system
+        .out
+        .serial(&format!("slic: storage service {pid}: {text}\n"));
     system.procs.stg = Some(StgProc {
         pid,
         chan,

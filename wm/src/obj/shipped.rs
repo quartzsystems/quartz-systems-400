@@ -13,6 +13,7 @@ use store::txn::Txn;
 
 use super::cls::Cls;
 use super::jobd::JobD;
+use super::msgq::MsgQ;
 use super::{Stamp, create, library};
 use crate::Result;
 
@@ -121,6 +122,21 @@ fn classes() -> Vec<(&'static str, &'static str, Cls)> {
     ]
 }
 
+/// `(library, name, queue)`.
+fn queues() -> Vec<(&'static str, &'static str, MsgQ)> {
+    let q = |text: &str| MsgQ {
+        text: text.into(),
+        ..MsgQ::default()
+    };
+    vec![
+        ("QSYS", "QSYSOPR", q("System operator message queue")),
+        ("QSYS", "QSYSMSG", q("Severe system condition messages")),
+        ("QSYS", "QHST", q("History log message queue")),
+        ("QSYS", "QSCONSOLE", q("Console display message queue")),
+        ("QUSRSYS", "QSECOFR", q("Security officer message queue")),
+    ]
+}
+
 /// Whether `lib` holds `name` of a type.
 fn exists(txn: &mut Txn<'_>, lib: ObjectId, name: Name, type_code: u16) -> Result<bool> {
     Ok(Library::load(txn, lib)?
@@ -144,6 +160,14 @@ pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &Stamp) -> Result<usize
         let n = Name::parse(name).expect("valid");
         if !exists(txn, l, n, types::CLS)? {
             create(txn, l, n, types::CLS, &c.text, stamp, &c.encode())?;
+            made += 1;
+        }
+    }
+    for (lib, name, q) in queues() {
+        let l = library(txn, qsys, lib)?;
+        let n = Name::parse(name).expect("valid");
+        if !exists(txn, l, n, types::MSGQ)? {
+            create(txn, l, n, types::MSGQ, &q.text, stamp, &q.encode())?;
             made += 1;
         }
     }

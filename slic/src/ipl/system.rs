@@ -80,6 +80,11 @@ pub struct System {
     pub attrs: std::collections::BTreeMap<u32, wm::job::JobAttrs>,
     /// The job a console command runs for (storage service).
     pub current_job: u32,
+    /// Message queues in break delivery, by the job they are allocated
+    /// to (storage service).
+    pub break_alloc: std::collections::HashMap<store::obj::ObjectId, u32>,
+    /// Break messages waiting for each job: queue and message.
+    pub break_pending: std::collections::BTreeMap<u32, Vec<crate::stgsvc::msgs::Break>>,
     /// The active jobs (storage service).
     pub jobs: wm::table::JobTable,
     /// The storage service and the service console job, once started.
@@ -117,6 +122,8 @@ impl System {
             lent: std::rc::Rc::new(std::cell::RefCell::new(None)),
             procs: crate::procs::Procs::default(),
             jobs: wm::table::JobTable::default(),
+            break_alloc: std::collections::HashMap::new(),
+            break_pending: std::collections::BTreeMap::new(),
             attrs: std::collections::BTreeMap::new(),
             current_job: 0,
         }

@@ -7,6 +7,7 @@
 //! the storage service, and whatever the line produced goes back with
 //! the prompt to show next.
 
+mod breaks;
 mod call;
 mod debug;
 mod jobcmd;
@@ -15,18 +16,23 @@ mod log;
 use std::cell::RefCell;
 use std::fmt::Write as _;
 use std::rc::Rc;
+use std::sync::mpsc::{Receiver, RecvTimeoutError};
+use std::time::Duration;
 
 use ipc::chan::Chan;
 use mi::Job;
+use stg::remote::status;
 use stg::remote::{RemoteProvider, Sources};
 use stg::{Client, Shared};
-use stg::remote::status;
 use wm::ctl::{FromJob, JOB_COMMANDS, PROMPT, Start, ToJob};
 use wm::job::Status;
 
 /// The console job's state.
 pub struct Console {
     ctl: Chan,
+    /// Messages from `slic`, read by a thread so the job can wait
+    /// with a timeout and look for breaks meanwhile.
+    inbox: Inbox,
     link: Shared,
     job: Option<Box<Job>>,
     provider: Option<Rc<RefCell<RemoteProvider>>>,
@@ -43,8 +49,10 @@ pub struct Console {
 
 /// Serve lines until told to end. Never returns.
 pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
+    let inbox = inbox(&ctl);
     let mut c = Console {
         start: start.clone(),
+        inbox,
         ctl,
         link: Rc::clone(link),
         job: None,
@@ -57,7 +65,14 @@ pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
     c.started();
     loop {
         status(&c.link, Status::Evtw, "");
-        match c.ctl.recv::<ToJob>() {
+        let next = loop {
+            match c.inbox.recv_timeout(BREAK_POLL) {
+                Ok(m) => break Ok(m),
+                Err(RecvTimeoutError::Timeout) => c.breaks(),
+                Err(RecvTimeoutError::Disconnected) => break Err(()),
+            }
+        };
+        match next {
             Ok(ToJob::Line { text }) => {
                 let word = text.split_whitespace().next().unwrap_or("");
                 let function = if word.is_empty() {
@@ -84,6 +99,7 @@ pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
                 if c.job.as_ref().is_some_and(|j| j.joblog_full) {
                     c.full();
                 }
+                c.breaks();
             }
             Ok(ToJob::End { .. }) => {
                 c.ended(0);
@@ -93,7 +109,7 @@ pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
                 std::process::exit(0);
             }
             Ok(ToJob::Start { .. }) => {}
-            Err(_) => std::process::exit(0),
+            Err(()) => std::process::exit(0),
         }
     }
 }
@@ -167,8 +183,9 @@ impl Console {
             sysapi::install(&mut job, dyn_provider);
             if let Ok(ctl) = self.ctl.try_clone() {
                 let ctl = RefCell::new(ctl);
+                let inbox = Rc::clone(&self.inbox);
                 job.set_debug_hook(Box::new(move |job: &mut Job, stop| {
-                    debug::session(job, stop, &mut ctl.borrow_mut())
+                    debug::session(job, stop, &mut ctl.borrow_mut(), &inbox)
                 }));
             }
             self.provider = Some(provider);
@@ -202,4 +219,25 @@ impl Console {
         }
         out
     }
+}
+
+/// What `slic` sends, read on a thread.
+pub type Inbox = Rc<Receiver<ToJob>>;
+
+/// How often an idle job looks for break messages.
+const BREAK_POLL: Duration = Duration::from_secs(1);
+
+/// Read `ctl` on a thread; the channel closes when `slic` does.
+fn inbox(ctl: &Chan) -> Inbox {
+    let (tx, rx) = std::sync::mpsc::channel();
+    if let Ok(mut reader) = ctl.try_clone() {
+        std::thread::spawn(move || {
+            while let Ok(m) = reader.recv::<ToJob>() {
+                if tx.send(m).is_err() {
+                    return;
+                }
+            }
+        });
+    }
+    Rc::new(rx)
 }

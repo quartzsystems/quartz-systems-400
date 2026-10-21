@@ -157,7 +157,10 @@ impl Suite {
             .lines()
             .filter(|l| l.starts_with(">>") && l.contains("Request"))
             .count();
-        if !log.lines().any(|l| l.starts_with(">>") && l.contains("wrkactjob")) {
+        if !log
+            .lines()
+            .any(|l| l.starts_with(">>") && l.contains("wrkactjob"))
+        {
             return Err(format!("the wrkactjob request is not logged:\n{log}"));
         }
         s.command("chgjob LOG(1 0 *MSG)", CMD)?;
@@ -166,6 +169,55 @@ impl Suite {
         if quiet.lines().any(|l| l.starts_with(">>")) {
             return Err(format!("LOG level 1 kept requests:\n{quiet}"));
         }
-        Ok(format!("CPF1124 and {requests} requests logged; level 1 keeps messages only"))
+        Ok(format!(
+            "CPF1124 and {requests} requests logged; level 1 keeps messages only"
+        ))
+    }
+}
+
+impl Suite {
+    /// Step 20: message queues: shipped `QSYSOPR`, send and receive, an
+    /// inquiry answered, and a break message delivered to the job.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn message_queues(&self, s: &mut Session) -> Result<String, String> {
+        let opr = s.command("dspmsg QSYSOPR", CMD)?;
+        if !opr.contains("QSYSOPR") || !opr.contains("QSYS") {
+            return Err(format!("dspmsg QSYSOPR:\n{opr}"));
+        }
+        s.command("crtmsgq QGPL/WMQ TEXT('Harness queue')", CMD)?;
+        s.command("sndmsg MSG('Hello queue') TOMSGQ(QGPL/WMQ)", CMD)?;
+        let got = s.command("rcvmsg MSGQ(QGPL/WMQ)", CMD)?;
+        if !got.contains("Hello queue") {
+            return Err(format!("rcvmsg: {got}"));
+        }
+        let sent = s.command(
+            "sndmsg MSG('Please answer') TOMSGQ(QGPL/WMQ) MSGTYPE(*INQ)",
+            CMD,
+        )?;
+        let key = sent
+            .split("key ")
+            .nth(1)
+            .map(|k| k.trim().trim_end_matches('.').to_string())
+            .ok_or_else(|| format!("sndmsg *INQ: {sent}"))?;
+        let waiting = s.command("dspmsg QGPL/WMQ", CMD)?;
+        if !waiting.contains("(waiting") {
+            return Err(format!("the inquiry is not waiting:\n{waiting}"));
+        }
+        s.command(
+            &format!("sndrpymsg MSGKEY({key}) MSGQ(QGPL/WMQ) RPY('YES')"),
+            CMD,
+        )?;
+        let answered = s.command("dspmsg QGPL/WMQ", CMD)?;
+        if !answered.contains("Reply . . . :   YES") {
+            return Err(format!("the reply is not shown:\n{answered}"));
+        }
+        s.command("chgmsgq QGPL/WMQ DLVRY(*BREAK)", CMD)?;
+        s.command("sndbrkmsg MSG('Break now') TOMSGQ(QGPL/WMQ)", CMD)?;
+        s.expect("Break message on QGPL/WMQ", Duration::from_secs(5))?;
+        s.expect("Break now", CMD)?;
+        s.command("dltmsgq QGPL/WMQ", CMD)?;
+        Ok(format!(
+            "sent, received, inquiry {key} answered, break delivered"
+        ))
     }
 }

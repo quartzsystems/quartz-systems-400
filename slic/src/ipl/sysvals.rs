@@ -185,7 +185,9 @@ pub fn adopt(system: &mut System, blob: &[u8]) {
             .map_err(|e| e.to_string())
             .and_then(|()| part.write(record).map(|_| ()).map_err(|e| e.to_string()));
         if let Err(e) = r {
-            system.out.serial(&format!("slic: system values to the LIC: {e}\n"));
+            system
+                .out
+                .serial(&format!("slic: system values to the LIC: {e}\n"));
         }
     }
     system.sysvals = Some(vals);

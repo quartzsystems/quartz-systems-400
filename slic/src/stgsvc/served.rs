@@ -20,6 +20,9 @@ use msgf::{MsgDesc, MsgLookup};
 use stg::proto::IdxAttrs;
 use stg::{ExecReply, JobInfo, Request, Service};
 use wm::job::JobAttrs;
+use wm::obj::msgq::{MsgKind, QMsg};
+
+use super::msgs;
 use store::obj::{JobHandle, ObjectId, ops, types};
 use sysapi::{
     ApiFail, CommitInfo, DataArea, DepInfo, DtaqEntry, DtaqInfo, FileInfo, FormatInfo, IdxAttr,
@@ -29,8 +32,7 @@ use sysapi::{
 use crate::ipl::system::System;
 use crate::svc;
 use crate::svc::ile::{
-    self, MainStore, StoreData, StoreMsgs, StoreObjects, StoreProvider, StoreUserSpaces,
-    with_main,
+    self, MainStore, StoreData, StoreMsgs, StoreObjects, StoreProvider, StoreUserSpaces, with_main,
 };
 
 /// A connection: `slic`'s, or a job's once it said hello.
@@ -160,6 +162,7 @@ fn end_job(system: &mut System, ctx: &mut JobCtx) {
     }
     system.jobs.remove(ctx.job.number);
     system.attrs.remove(&ctx.job.number);
+    super::msgs::release(system, ctx.job.number);
 }
 
 /// End a job's use of the database and the store.
@@ -313,7 +316,66 @@ impl Service for Served<'_> {
         super::jobs::chgjob(self.system, self.ctx.job.number, &job, &changes)
     }
 
-    fn program(&mut self, name: String, lib: String, kind: u8) -> Option<(Vec<u8>, String, String)> {
+    fn msgq_send(&mut self, queue: String, mut msg: QMsg) -> Result<u32, String> {
+        let me = self.ctx.job.number;
+        msg.job = msgs::sender(self.system, me);
+        let (lib, name) = msgs::queue_name(&queue);
+        self.own_libl();
+        let r = msgs::send(self.system, &lib, &name, msg);
+        ile::set_libl(None);
+        r
+    }
+
+    fn msgq_receive(
+        &mut self,
+        queue: String,
+        kind: Option<MsgKind>,
+        key: Option<u32>,
+        remove: bool,
+    ) -> Result<Option<QMsg>, String> {
+        let (lib, name) = msgs::queue_name(&queue);
+        self.own_libl();
+        let r = msgs::with_queue(self.system, &lib, &name, |q, _| {
+            let m = q.receive(kind, key, remove);
+            let changed = m.is_some();
+            Ok((m, changed))
+        });
+        ile::set_libl(None);
+        r
+    }
+
+    fn msgq_reply(&mut self, queue: String, key: u32, reply: String) -> Result<u32, String> {
+        let from = msgs::sender(self.system, self.ctx.job.number);
+        let (lib, name) = msgs::queue_name(&queue);
+        self.own_libl();
+        let r = msgs::with_queue(self.system, &lib, &name, |q, _| {
+            let k = q
+                .reply(key, &reply, from, msgs::now_micros())
+                .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF2422")))?;
+            Ok((k, true))
+        });
+        ile::set_libl(None);
+        r
+    }
+
+    fn msgq_list(&mut self, queue: String) -> Result<Vec<QMsg>, String> {
+        let (lib, name) = msgs::queue_name(&queue);
+        self.own_libl();
+        let r = msgs::with_queue(self.system, &lib, &name, |q, _| Ok((q.msgs.clone(), false)));
+        ile::set_libl(None);
+        r
+    }
+
+    fn breaks(&mut self) -> Vec<msgs::Break> {
+        msgs::take_breaks(self.system, self.ctx.job.number)
+    }
+
+    fn program(
+        &mut self,
+        name: String,
+        lib: String,
+        kind: u8,
+    ) -> Option<(Vec<u8>, String, String)> {
         let kind = if kind == 1 {
             PgmKind::SrvPgm
         } else {

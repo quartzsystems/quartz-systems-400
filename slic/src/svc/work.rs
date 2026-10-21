@@ -95,14 +95,22 @@ fn build(type_code: u16, base: Option<&[u8]>, p: &Params) -> Result<(Vec<u8>, St
 }
 
 fn target(p: &Params, type_code: u16) -> Result<(String, String), String> {
-    let kw = if type_code == types::JOBD { "JOBD" } else { "CLS" };
+    let kw = if type_code == types::JOBD {
+        "JOBD"
+    } else {
+        "CLS"
+    };
     Ok(qualified(&p.pos_or(0, kw)?))
 }
 
 /// `CRTJOBD`, `CRTCLS`.
 fn create(system: &mut System, p: &Params, type_code: u16) -> Result<String, String> {
     let (lib, name) = target(p, type_code)?;
-    let lib = if lib == "*LIBL" { "*CURLIB".into() } else { lib };
+    let lib = if lib == "*LIBL" {
+        "*CURLIB".into()
+    } else {
+        lib
+    };
     let (payload, text) = build(type_code, None, p)?;
     in_store(system, |txn, qsys| {
         let names = super::ile::name_context(txn, qsys);
@@ -119,7 +127,10 @@ fn create(system: &mut System, p: &Params, type_code: u16) -> Result<String, Str
         wm::obj::create(txn, l, n, type_code, &text, &stamp, &payload).map_err(|e| err(&e))?;
         Ok(())
     })?;
-    Ok(format!("{} {name} created in library {lib}.\n", kind(type_code)))
+    Ok(format!(
+        "{} {name} created in library {lib}.\n",
+        kind(type_code)
+    ))
 }
 
 fn find(
@@ -180,12 +191,7 @@ fn display(system: &mut System, p: &Params, type_code: u16) -> Result<String, St
 /// `CHGJOB [JOB(...)] keywords`.
 fn chgjob(system: &mut System, p: &Params) -> Result<String, String> {
     let job = p.upper("JOB").unwrap_or_default();
-    let changes: Vec<(String, String)> = p
-        .kw
-        .iter()
-        .filter(|(k, _)| k != "JOB")
-        .cloned()
-        .collect();
+    let changes: Vec<(String, String)> = p.kw.iter().filter(|(k, _)| k != "JOB").cloned().collect();
     if changes.is_empty() {
         return Err("CPD0042 chgjob needs at least one attribute to change".into());
     }
@@ -383,7 +389,9 @@ pub fn set_curlib(system: &mut System, lib: Option<String>) -> Result<(), String
         if let Some(c) = &lib
             && (l.sys.contains(c) || l.usr.contains(c))
         {
-            return Err(format!("CPF2103 library {c} is already in the library list"));
+            return Err(format!(
+                "CPF2103 library {c} is already in the library list"
+            ));
         }
         l.cur = lib;
         Ok(())
@@ -403,7 +411,9 @@ fn chgsyslibl(system: &mut System, p: &Params) -> Result<String, String> {
             sys.retain(|s| *s != lib);
         } else {
             if l.contains(&lib) {
-                return Err(format!("CPF2103 library {lib} is already in the library list"));
+                return Err(format!(
+                    "CPF2103 library {lib} is already in the library list"
+                ));
             }
             sys.insert(0, lib.clone());
         }

@@ -7,6 +7,7 @@
 
 pub(crate) mod db;
 pub(crate) mod ile;
+mod msgq;
 mod objects;
 mod storage;
 pub(crate) mod work;
@@ -83,7 +84,7 @@ pub fn reply(system: &mut System, line: &str) -> String {
     let args: Vec<&str> = words.collect();
     match (cmd, args.as_slice()) {
         ("", _) => String::new(),
-        ("help", _) => format!("{HELP}{HELP_DB}{}{}", ile::HELP, work::HELP),
+        ("help", _) => format!("{HELP}{HELP_DB}{}{}{}", ile::HELP, work::HELP, msgq::HELP),
         ("release", _) => format!("{}\n", release::full()),
         ("srcs", []) => system.log.dump(),
         ("srcs", ["table"]) => src_table(),
@@ -113,6 +114,7 @@ pub fn reply(system: &mut System, line: &str) -> String {
             None => match ile::command(system, cmd, &args, line)
                 .or_else(|| work::command(system, cmd, line))
                 .or_else(|| work::libl_command(system, cmd, line))
+                .or_else(|| msgq::command(system, cmd, line))
             {
                 Some(reply) => reply,
                 None => format!(

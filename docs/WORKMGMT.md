@@ -97,6 +97,58 @@ count, then ten-byte names) and the request data (`RqsDtaLen` bytes).
 | 32 | 50 | Text | |
 | 82 | 2 | Reserved | zero |
 
+### `MessageQueue` (128 bytes)
+
+`*MSGQ`. The fixed part is followed by `Count` messages, each a
+`MessageEntry` and its data, text, second-level text, reply and default
+reply. Which job a queue is allocated to for break delivery is not
+kept: it ends with the job, so the storage service holds it in memory.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | Magic | `QSWMMSGQ` in ASCII |
+| 8 | 2 | Version | 1 |
+| 10 | 1 | Severity | `SEV` |
+| 11 | 1 | Reserved1 | zero |
+| 12 | 10 | Delivery | `*HOLD`, `*BREAK`, `*NOTIFY`, `*DFT` |
+| 22 | 10 | Full | `*SNDMSG`, `*WRAP` |
+| 32 | 10 | BrkPgmName | `*DSPMSG` for the system's handler |
+| 42 | 10 | BrkPgmLib | |
+| 52 | 4 | SizeInitial | kilobytes |
+| 56 | 4 | SizeIncrement | kilobytes |
+| 60 | 4 | SizeMax | kilobytes; 0 is `*NOMAX` |
+| 64 | 4 | NextKey | |
+| 68 | 4 | Count | messages that follow |
+| 72 | 50 | Text | |
+| 122 | 6 | Reserved2 | zero |
+
+### `MessageEntry` (112 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 4 | Key | unique on the queue |
+| 4 | 4 | ReplyKey | an inquiry's reply, a reply's inquiry |
+| 8 | 1 | Type | 1 info, 2 inquiry, 3 reply, 4 completion, 5 diagnostic, 6 notify, 7 escape |
+| 9 | 1 | Severity | |
+| 10 | 1 | Status | 0 new, 1 old, 2 unanswered, 3 answered |
+| 11 | 1 | Reserved | zero |
+| 12 | 8 | Time | microseconds since the epoch |
+| 20 | 7 | MsgId | blank for an immediate message |
+| 27 | 1 | Pad | zero |
+| 28 | 10 | MsgfName | |
+| 38 | 10 | MsgfLib | |
+| 48 | 10 | JobName | the sender |
+| 58 | 10 | JobUser | |
+| 68 | 4 | JobNumber | |
+| 72 | 10 | FromPgm | |
+| 82 | 10 | ReplyTo | the queue the reply goes to |
+| 92 | 10 | ReplyToLib | |
+| 102 | 2 | DataLen | |
+| 104 | 2 | TextLen | |
+| 106 | 2 | HelpLen | |
+| 108 | 2 | ReplyLen | |
+| 110 | 2 | DftLen | |
+
 ### Shipped objects
 
 | Object | Notes |

@@ -410,4 +410,3 @@ fn dspmsgd(system: &mut System, p: &Params) -> Result<String, String> {
         Ok(msgf::store::dspmsgd(&fname.to_string(), d))
     })
 }
-

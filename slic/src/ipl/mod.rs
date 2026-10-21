@@ -359,7 +359,9 @@ fn job_message(system: &mut System, m: wm::ctl::FromJob) {
             system.out.serial(&prompt);
         }
         FromJob::Ending { reason } => {
-            system.out.serial(&format!("slic: QSVCJOB ending: {reason}\n"));
+            system
+                .out
+                .serial(&format!("slic: QSVCJOB ending: {reason}\n"));
         }
         FromJob::Ready { .. } => {}
     }

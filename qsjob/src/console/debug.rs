@@ -5,13 +5,15 @@
 //! The debug session at a stop: commands from the console until one
 //! resumes the program.
 
+use std::sync::mpsc::Receiver;
+
 use ipc::chan::Chan;
 use mi::Job;
 use mi::debug::{Resume, Stop};
 use wm::ctl::{FromJob, ToJob};
 
 /// Serve the stop; how to go on.
-pub fn session(job: &mut Job, stop: &Stop, ctl: &mut Chan) -> Resume {
+pub fn session(job: &mut Job, stop: &Stop, ctl: &mut Chan, inbox: &Receiver<ToJob>) -> Resume {
     say(
         ctl,
         &format!(
@@ -21,7 +23,7 @@ pub fn session(job: &mut Job, stop: &Stop, ctl: &mut Chan) -> Resume {
     );
     loop {
         say(ctl, "dbg> ");
-        let line = match ctl.recv::<ToJob>() {
+        let line = match inbox.recv() {
             Ok(ToJob::Line { text }) => text,
             Ok(ToJob::End { .. }) | Err(_) => std::process::exit(0),
             Ok(ToJob::Start { .. }) => continue,

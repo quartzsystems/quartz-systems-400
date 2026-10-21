@@ -7,6 +7,7 @@
 
 pub mod cls;
 pub mod jobd;
+pub mod msgq;
 pub mod params;
 pub mod shipped;
 

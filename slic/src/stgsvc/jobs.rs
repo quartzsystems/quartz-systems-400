@@ -69,7 +69,10 @@ pub fn next(system: &mut System) -> Result<u32, String> {
 
 /// A job's `QTEMP`: a new library in ASP 0.
 pub fn make_qtemp(system: &mut System, number: u32) -> Result<ObjectId, String> {
-    let t = system.temp.as_mut().ok_or("the temporary ASP is not open")?;
+    let t = system
+        .temp
+        .as_mut()
+        .ok_or("the temporary ASP is not open")?;
     let name = Name::parse(&format!("QT{number:06}")).map_err(|e| e.to_string())?;
     let mut txn = t.store.begin().map_err(|e| e.to_string())?;
     let id = ops::create(
@@ -87,14 +90,18 @@ pub fn drop_qtemp(system: &mut System, number: u32, lib: ObjectId) {
         return;
     };
     let job = JobHandle(u64::from(number));
-    let r = t.store.begin().map_err(|e| e.to_string()).and_then(|mut txn| {
-        let objs = ops::list(&mut txn, lib, None).map_err(|e| e.to_string())?;
-        for (_, id) in objs {
-            ops::delete(&mut txn, job, id).map_err(|e| e.to_string())?;
-        }
-        ops::delete(&mut txn, job, lib).map_err(|e| e.to_string())?;
-        txn.commit().map_err(|e| e.to_string())
-    });
+    let r = t
+        .store
+        .begin()
+        .map_err(|e| e.to_string())
+        .and_then(|mut txn| {
+            let objs = ops::list(&mut txn, lib, None).map_err(|e| e.to_string())?;
+            for (_, id) in objs {
+                ops::delete(&mut txn, job, id).map_err(|e| e.to_string())?;
+            }
+            ops::delete(&mut txn, job, lib).map_err(|e| e.to_string())?;
+            txn.commit().map_err(|e| e.to_string())
+        });
     if let Err(e) = r {
         eprintln!("qsstg: QTEMP of job {number:06}: {e}");
     }
@@ -106,9 +113,7 @@ pub fn wrkactjob(system: &System) -> String {
     jobs.sort_by(|a, b| {
         (a.subsystem.as_str(), a.name.as_str()).cmp(&(b.subsystem.as_str(), b.name.as_str()))
     });
-    let mut out = String::from(
-        "Subsystem/Job  User        Number  Type  Status  Function\n",
-    );
+    let mut out = String::from("Subsystem/Job  User        Number  Type  Status  Function\n");
     for j in &jobs {
         let ty = j
             .job_type()
@@ -173,7 +178,8 @@ pub fn chgjob(
     let number = if job.trim().is_empty() || job == "*" {
         self_number
     } else {
-        let id = wm::job::JobId::parse(job).ok_or_else(|| format!("CPF1070 job {job} not found"))?;
+        let id =
+            wm::job::JobId::parse(job).ok_or_else(|| format!("CPF1070 job {job} not found"))?;
         let found = system
             .jobs
             .get(id.number)

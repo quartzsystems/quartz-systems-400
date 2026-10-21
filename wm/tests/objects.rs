@@ -35,21 +35,23 @@ fn open_new() -> (Store, ObjectId) {
     .unwrap();
     let mut t = store.begin().unwrap();
     let qsys = ops::bootstrap(&mut t, NOW, "QS400").unwrap();
-    ops::create(
-        &mut t,
-        &CreateParams {
-            library: qsys,
-            name: Name::parse("QGPL").unwrap(),
-            type_code: types::LIB,
-            attribute: String::new(),
-            text: String::new(),
-            owner: "QSYS".into(),
-            system: "QS400".into(),
-            now: NOW,
-            by_system: true,
-        },
-    )
-    .unwrap();
+    for lib in ["QGPL", "QUSRSYS"] {
+        ops::create(
+            &mut t,
+            &CreateParams {
+                library: qsys,
+                name: Name::parse(lib).unwrap(),
+                type_code: types::LIB,
+                attribute: String::new(),
+                text: String::new(),
+                owner: "QSYS".into(),
+                system: "QS400".into(),
+                now: NOW,
+                by_system: true,
+            },
+        )
+        .unwrap();
+    }
     t.commit().unwrap();
     (store, qsys)
 }
@@ -67,7 +69,7 @@ fn shipped_install_once_and_read_back() {
     let (mut store, qsys) = open_new();
     let mut t = store.begin().unwrap();
     let made = shipped::install(&mut t, qsys, &stamp()).unwrap();
-    assert_eq!(made, 13);
+    assert_eq!(made, 18);
     assert_eq!(shipped::install(&mut t, qsys, &stamp()).unwrap(), 0);
     t.commit().unwrap();
 

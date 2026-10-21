@@ -17,8 +17,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use qsname::Name;
-use store::obj::ops::{self, NameContext};
 use store::obj::ObjectId;
+use store::obj::ops::{self, NameContext};
 use store::txn::Txn;
 use sysval::SysVals;
 
