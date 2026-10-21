@@ -22,5 +22,6 @@ pub mod rec;
 pub mod sbs;
 pub mod spec;
 pub mod table;
+pub mod wtr;
 
 pub use error::{Error, Result};

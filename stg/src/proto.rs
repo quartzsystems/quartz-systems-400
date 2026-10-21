@@ -21,6 +21,7 @@ use wm::obj::prtf::Prtf;
 use wm::obj::splf::SplfAttrs;
 use wm::sbs::{PoolInfo, SbsInfo, SbsState};
 use wm::table::JobInfo;
+use wm::wtr::WtrStep;
 
 /// What a command run in the service answered.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -247,4 +248,8 @@ ipc::rpc! {
     /// Open printer file `lib/file` from activation group `actgrp`, the
     /// job's overrides applied: the new spooled file and the attributes.
     116 => fn prt_open / PrtOpen (file: String, lib: String, actgrp: String) -> Result<(u32, Prtf), String>;
+    /// The writer job `name`'s next step.
+    117 => fn wtr_next / WtrNext (name: String) -> WtrStep;
+    /// The writer printed spooled file `id`: its text and PDF.
+    118 => fn wtr_printed / WtrPrinted (name: String, id: u32, text: String, pdf: Vec<u8>) -> Result<(), String>;
 }

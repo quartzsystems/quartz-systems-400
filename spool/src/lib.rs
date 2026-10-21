@@ -11,6 +11,7 @@
 #![deny(missing_docs)]
 
 pub mod ddsprt;
+pub mod pdf;
 pub mod printer;
 pub mod scs;
 pub mod view;

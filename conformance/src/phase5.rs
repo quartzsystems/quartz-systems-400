@@ -775,6 +775,113 @@ impl Suite {
     }
 }
 
+impl Suite {
+    /// Step 29: writers and the capture device: `STRPRTWTR QSCAPTURE` in
+    /// `QSPL`, a spooled file moved to its queue printed to text and a
+    /// PDF whose structure checks, the writer held, released and ended.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn writers(&self, s: &mut Session) -> Result<String, String> {
+        s.command("strsbs QSYS/QSPL", CMD)?;
+        let started = s.command("strprtwtr DEV(QSCAPTURE)", CMD)?;
+        let mut wtr = String::new();
+        for _ in 0..40 {
+            wtr = s.command("wrkwtr", CMD)?;
+            if wtr.lines().any(|l| l.contains("QSCAPTURE") && l.contains("STR")) {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(250));
+        }
+        if !wtr.lines().any(|l| l.contains("QSCAPTURE") && l.contains("STR")) {
+            return Err(format!("the writer did not start:
+{started}
+{wtr}"));
+        }
+        s.command(
+            "chgsplfa QSYSPRT JOB(QSVCJOB) SPLNBR(*LAST) OUTQ(QUSRSYS/QSCAPTURE) SAVE(*YES)",
+            CMD,
+        )?;
+        let mut files = String::new();
+        for _ in 0..40 {
+            files = s.command("wrksplf SELECT(*ALL) JOB(QSVCJOB)", CMD)?;
+            if files.lines().any(|l| l.contains("QSYSPRT") && l.contains("SAV")) {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(250));
+        }
+        if !files.lines().any(|l| l.contains("QSYSPRT") && l.contains("SAV")) {
+            return Err(format!("QSYSPRT was not printed:
+{files}"));
+        }
+        let text = s.command("prtcapture get QSYSPRT JOB(QSVCJOB)", CMD)?;
+        if !text.contains("00A") || !text.contains("06E") {
+            return Err(format!("the captured text:
+{text}"));
+        }
+        let pdf_out = s.command("prtcapture get QSYSPRT JOB(QSVCJOB) FORMAT(*PDF)", CMD)?;
+        let b64: String = pdf_out
+            .lines()
+            .skip_while(|l| !l.starts_with("-----BEGIN PDF"))
+            .skip(1)
+            .take_while(|l| !l.starts_with("-----END PDF"))
+            .collect();
+        let pdf = unbase64(&b64).ok_or("the PDF is not base64")?;
+        let pages = spool::pdf::check(&pdf).map_err(|e| format!("the PDF: {e}"))?;
+        s.command("hldwtr QSCAPTURE", CMD)?;
+        let held = s.command("wrkwtr", CMD)?;
+        s.command("rlswtr QSCAPTURE", CMD)?;
+        s.command("endwtr QSCAPTURE", CMD)?;
+        let mut after = String::new();
+        for _ in 0..40 {
+            after = s.command("wrkwtr", CMD)?;
+            if !after.contains("QSCAPTURE") {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(250));
+        }
+        s.command("endsbs QSPL OPTION(*IMMED)", CMD)?;
+        s.command("dltsplf QSYSPRT JOB(QSVCJOB) SPLNBR(*LAST)", CMD)?;
+        s.command("prtcapture clear", CMD)?;
+        if !held.lines().any(|l| l.contains("QSCAPTURE") && l.contains("HLD")) {
+            return Err(format!("hldwtr:
+{held}"));
+        }
+        if after.contains("QSCAPTURE") {
+            return Err(format!("endwtr:
+{after}"));
+        }
+        Ok(format!(
+            "QSCAPTURE printed QSYSPRT: text and a {}-byte PDF of {pages} page(s); held, released, ended",
+            pdf.len()
+        ))
+    }
+}
+
+/// Base64 back to bytes.
+fn unbase64(s: &str) -> Option<Vec<u8>> {
+    let val = |c: u8| -> Option<u32> {
+        Some(u32::from(match c {
+            b'A'..=b'Z' => c - b'A',
+            b'a'..=b'z' => c - b'a' + 26,
+            b'0'..=b'9' => c - b'0' + 52,
+            b'+' => 62,
+            b'/' => 63,
+            _ => return None,
+        }))
+    };
+    let clean: Vec<u8> = s.bytes().filter(|b| !b.is_ascii_whitespace()).collect();
+    let mut out = Vec::new();
+    for chunk in clean.chunks(4) {
+        let pad = chunk.iter().rev().take_while(|b| **b == b'=').count();
+        let mut n = 0u32;
+        for &c in chunk {
+            n = (n << 6) | if c == b'=' { 0 } else { val(c)? };
+        }
+        let bytes = n.to_be_bytes();
+        out.extend_from_slice(&bytes[1..4 - pad]);
+    }
+    Some(out)
+}
+
 /// `YYYYMMDD` and `hhmmss` in UTC, `secs` seconds from now.
 fn utc_in(secs: u64) -> (String, String) {
     let unix = std::time::SystemTime::now()

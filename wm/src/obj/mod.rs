@@ -6,6 +6,7 @@
 //! type whose space holds a length and the encoded payload.
 
 pub mod cls;
+pub mod devd;
 pub mod jobd;
 pub mod jobq;
 pub mod jobscd;

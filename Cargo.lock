@@ -1405,6 +1405,7 @@ dependencies = [
  "msgf",
  "qdecimal",
  "qir",
+ "spool",
  "stg",
  "sysapi",
  "wm",

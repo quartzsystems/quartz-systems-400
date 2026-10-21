@@ -94,6 +94,8 @@ pub const JOBQ: u16 = 0x000C;
 pub const OUTQ: u16 = 0x000D;
 /// Code of `*JOBSCD`.
 pub const JOBSCD: u16 = 0x0021;
+/// Code of `*DEVD`.
+pub const DEVD: u16 = 0x001B;
 /// Code of `*SPLF`: a spooled file, kept in `QSPL`.
 pub const SPLF: u16 = 0x0022;
 /// Code of `*USRPRF`.
@@ -168,7 +170,7 @@ pub static TYPES: &[TypeInfo] = &[
     t(0x0018, "*JRN", true, false, false, false, Module::Opaque),
     t(0x0019, "*JRNRCV", true, false, false, false, Module::Opaque),
     t(0x001A, "*SAVF", true, true, false, false, Module::Opaque),
-    t(0x001B, "*DEVD", true, false, true, true, Module::Opaque),
+    t(DEVD, "*DEVD", true, false, true, true, Module::Opaque),
     t(0x001C, "*CTLD", true, false, true, true, Module::Opaque),
     t(0x001D, "*LIND", true, false, true, true, Module::Opaque),
     t(0x001E, "*SQLPKG", true, true, false, false, Module::Opaque),

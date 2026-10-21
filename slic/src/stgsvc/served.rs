@@ -217,6 +217,7 @@ fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
     }
     super::joblog::spool(system, ctx, abnormal);
     super::spool::job_ended(system, &who);
+    super::wtr::job_ended(system, ctx.job.number);
     completion_message(system, ctx);
     if let Some(q) = ctx.qtemp.take() {
         super::jobs::drop_qtemp(system, ctx.job.number, q);
@@ -517,6 +518,20 @@ impl Service for Served<'_> {
         let (id, prtf) = r?;
         self.ctx.splfs.push(id);
         Ok((id, prtf))
+    }
+
+    fn wtr_next(&mut self, name: String) -> wm::wtr::WtrStep {
+        super::wtr::next(self.system, &name)
+    }
+
+    fn wtr_printed(
+        &mut self,
+        name: String,
+        id: u32,
+        text: String,
+        pdf: Vec<u8>,
+    ) -> Result<(), String> {
+        super::wtr::printed(self.system, &name, id, &text, &pdf)
     }
 
     fn splf_put(&mut self, id: u32, data: Vec<u8>, pages: u32, records: u32) -> Result<(), String> {

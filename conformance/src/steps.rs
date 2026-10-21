@@ -447,6 +447,7 @@ impl Suite {
         reports.push(self.step(&mut s, "26 job scheduler", Self::job_scheduler)?);
         reports.push(self.step(&mut s, "27 spooled files", Self::spooled_files)?);
         reports.push(self.step(&mut s, "28 printer files", Self::printer_files)?);
+        reports.push(self.step(&mut s, "29 writers", Self::writers)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

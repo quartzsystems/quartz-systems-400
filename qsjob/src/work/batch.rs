@@ -33,6 +33,8 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         .unwrap_or(("QSYS", start.program.as_str()));
     let code = if pgm == "QEJSCHED" {
         super::scheduler::run(&mut c, link)
+    } else if pgm == "QSPWTR" {
+        super::writer::run(&mut c, link, start.rqsdta.trim())
     } else if pgm == "QCMD" {
         let rqs = start.rqsdta.trim();
         if rqs.is_empty() {

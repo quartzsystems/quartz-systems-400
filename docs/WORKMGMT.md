@@ -387,6 +387,26 @@ what is due. An entry due before the current IPL started was missed;
 `*SBMRLS` submits it, `*SBMHLD` submits it held, `*NOSBM` moves on to
 its next date. Each submission is logged in QHST as `CPI1E63`.
 
+### `DeviceDescription` (128 bytes)
+
+The payload of a `*DEVD`. Phase 5 has the capture device
+`QSYS/QSCAPTURE`, type `QSCP`, whose writer renders spooled files to
+text and PDF in the store; real printers are `MIGRATE(phase10)`.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | Magic | `QSWMDEVD` in ASCII |
+| 8 | 2 | Version | 1 |
+| 10 | 1 | Online | varied on |
+| 11 | 1 | Reserved | zero |
+| 12 | 10 | DevCls | `*PRT` |
+| 22 | 10 | Type | `QSCP` |
+| 32 | 10 | Model | |
+| 42 | 10 | OutqName | the device's queue |
+| 52 | 10 | OutqLib | |
+| 62 | 50 | Text | |
+| 112 | 16 | Reserved2 | zero |
+
 ### `OutputQueue` (256 bytes)
 
 The payload of an `*OUTQ`. `Count` spool identifiers follow, in queue
@@ -524,6 +544,7 @@ so database scans pass printer files by.
 | `QSYS/QSYSJOBD *JOBD` | `USER(QSYS) JOBQ(QSYS/QSYSNOMAX) RTGDTA(QCMDB)` |
 | `QSYS/QSYSSCD *JOBD` | `USER(QSYS) RTGDTA(QSYSSCD)`, the job scheduler |
 | `QUSRSYS/QDFTJOBSCD *JOBSCD` | the job schedule, empty |
+| `QSYS/QSCAPTURE *DEVD` | the capture printer; its queue `QUSRSYS/QSCAPTURE` |
 | `QGPL/QBATCH *CLS` | `RUNPTY(50) TIMESLICE(5000) DFTWAIT(120)` |
 | `QGPL/QINTER *CLS` | `RUNPTY(20) TIMESLICE(2000) DFTWAIT(30)` |
 | `QSYS/QCTL *CLS` | `RUNPTY(10) TIMESLICE(2000) DFTWAIT(30)` |
@@ -578,6 +599,28 @@ of the job's for `*JOB` and for one issued at command level; the
 console's `OVRDBF` and a program's database opens now share one table.
 Commands a program runs through `QCMDEXC` take effect after the call
 (`MIGRATE(phase7)`), so for now every override is a command-level one.
+
+### Writers and the capture device
+
+`STRPRTWTR DEV(QSCAPTURE)` submits the writer job (`QSPLJOB`, job
+description `QSYS/QSPLJOBD`) to `QSYS/QSPL` with routing data `PRTWTR`;
+`QSPL`'s routing entry starts `QSYS/QSPWTR`, the writer program, so
+`QSPL` must be active for the writer to run. The writer prints its
+device's queue (`OUTQ(*DEV)`, `QUSRSYS/QSCAPTURE`) or the one named,
+and the queue shows it as its writer. It asks the service for the
+next `RDY` file of a matching form type; the file is `WTR` while it
+prints, then `SAV` for `SAVE(*YES)` or deleted. `HLDWTR` stops it
+between files, `ENDWTR *CNTRLD` after the file in hand, `*IMMED` ends
+the job and the file goes back to `RDY`.
+
+The capture device prints into the store: per file a user space
+`QSPL/CPnnnnnnnn` (attribute `QSCAPTURE`; text: file, job, number)
+holding two little-endian `u32` lengths, the file as text (pages
+separated by form feeds) and a PDF of it. The PDF is our own: version
+1.4, text only, Courier, one PDF page per page sized from the page
+length, width, lines and characters per inch, a quarter-inch margin.
+`prtcapture get` shows the text, or the PDF in base64.
+`MIGRATE(phase10)`: printers that are devices, remote writers.
 
 ### The SCS subset
 

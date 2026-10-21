@@ -22,6 +22,7 @@ pub(crate) mod prtf;
 pub(crate) mod sbs;
 pub(crate) mod splcmd;
 pub(crate) mod spool;
+pub(crate) mod wtr;
 
 pub use jobs::chgjob;
 mod served;

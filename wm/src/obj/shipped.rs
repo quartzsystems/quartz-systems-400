@@ -222,6 +222,7 @@ pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &Stamp) -> Result<usize
         ("QGPL", "QPRINT2", "Second printer output queue"),
         ("QUSRSYS", "QEZJOBLOG", "Job logs"),
         ("QUSRSYS", "QEZDEBUG", "Service dumps and debug output"),
+        ("QUSRSYS", "QSCAPTURE", "Capture printer output queue"),
     ] {
         let l = library(txn, qsys, lib)?;
         let n = Name::parse(name).expect("valid");
@@ -238,6 +239,13 @@ pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &Stamp) -> Result<usize
             super::create_attr(txn, qsys, id, &f.text, stamp, &f.encode())?;
             made += 1;
         }
+    }
+    let n = Name::parse(super::devd::CAPTURE).expect("valid");
+    if !exists(txn, qsys, n, types::DEVD)? {
+        let d = super::devd::Devd::capture();
+        let id = (n, types::DEVD, "PRT");
+        super::create_attr(txn, qsys, id, &d.text, stamp, &d.encode())?;
+        made += 1;
     }
     let (slib, sname) = super::jobscd::SCHEDULE;
     let l = library(txn, qsys, slib)?;

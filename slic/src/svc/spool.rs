@@ -5,7 +5,7 @@
 //! Output queue and spooled file commands of the service console.
 
 use crate::ipl::system::System;
-use crate::stgsvc::splcmd;
+use crate::stgsvc::{splcmd, wtr};
 
 /// Help for these commands.
 pub const HELP: &str = "\
@@ -16,12 +16,26 @@ dspsplf FILE [JOB(n/u/name) SPLNBR(n|*LAST)] [VIEW(*TEXT|*FCFC|*HEX)] [PAGE(n)]
 cpysplf FILE TOFILE(LIB/F) [JOB() SPLNBR() TOMBR() MBROPT(*REPLACE|*ADD) CTLCHAR(*NONE|*FCFC|*PRTCTL)]
 chgsplfa FILE [JOB() SPLNBR()] [OUTQ() COPIES() OUTPTY() FORMTYPE() USRDTA() SAVE() ...]
 hldsplf FILE [JOB() SPLNBR()] | rlssplf FILE ... | dltsplf FILE ...
+strprtwtr DEV(QSCAPTURE) [OUTQ(*DEV|LIB/Q) WTR() FORMTYPE(*ALL) FILESEP(n) AUTOEND(*NO|*YES)]
+endwtr WTR [OPTION(*CNTRLD|*IMMED)] | hldwtr WTR | rlswtr WTR | chgwtr WTR [OUTQ() FORMTYPE()] | wrkwtr
+prtcapture list | prtcapture get FILE [JOB() SPLNBR() FORMAT(*TEXT|*PDF)] | prtcapture clear
 ";
 
 /// Dispatch; `None` when `cmd` is not one of these.
 pub fn command(system: &mut System, cmd: &str, line: &str) -> Option<String> {
     let me = system.current_job;
-    splcmd::command(system, me, cmd, line).map(|r| match r {
+    let p = wm::cmd::Params::parse(line);
+    let r = match cmd {
+        "strprtwtr" => Some(wtr::strprtwtr(system, me, &p)),
+        "endwtr" | "hldwtr" | "rlswtr" | "chgwtr" => Some(wtr::control(system, me, cmd, &p)),
+        "wrkwtr" => Some(Ok(wtr::wrkwtr(system))),
+        "prtcapture" => Some(wtr::prtcapture(system, line)),
+        "strrmtwtr" => Some(Err(
+            "CPF3310 remote writers come with communications (Phase 10)".into(),
+        )),
+        _ => splcmd::command(system, me, cmd, line),
+    };
+    r.map(|r| match r {
         Ok(s) => s,
         Err(e) => format!("{e}\n"),
     })
