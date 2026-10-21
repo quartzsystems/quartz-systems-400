@@ -253,6 +253,21 @@ fn dspjob(system: &mut System, p: &Params) -> Result<String, String> {
         ("Library list", a.libl.search().join(" ")),
         ("Routing data", a.rtgdta.clone()),
     ];
+    let mut rows = rows;
+    let p = std::fs::read_to_string(format!("/proc/{}/stat", j.pid))
+        .ok()
+        .and_then(|t| wm::stats::proc_stat(&t))
+        .unwrap_or_default();
+    let aux = system.stats.aux_io.get(&number).copied().unwrap_or(0);
+    rows.extend([
+        ("Processing unit time used (ms)", (p.cpu() * 10).to_string()),
+        ("Threads", p.threads.max(1).to_string()),
+        (
+            "Temporary storage used (M)",
+            (p.rss_pages * 4 / 1024).to_string(),
+        ),
+        ("Auxiliary I/O requests", aux.to_string()),
+    ]);
     for (k, v) in rows {
         let _ = writeln!(out, "  {k:<38} {v}");
     }

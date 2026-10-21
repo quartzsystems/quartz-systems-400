@@ -149,7 +149,8 @@ impl Monitor {
             name: j.name,
             user: j.user,
             number: j.number,
-            kind: 'B',
+            // A print writer submitted by STRPRTWTR is a writer job.
+            kind: if j.rtgdta == "PRTWTR" { 'W' } else { 'B' },
             jobd: j.jobd,
             rtgdta: j.rtgdta,
             rqsdta: j.rqsdta,

@@ -690,3 +690,57 @@ system jobs (`D1001007`), closes the storage service (`D1001010`), and
 powers down (`D1001090`). With `RESTART(*YES)` the next IPL's
 `QIPLSTS` is 2, kept in `QSYS/QWCIPLSTS` until then. `ENDSYS` is
 `ENDSBS *ALL`: the restricted state, the console still up.
+
+## 5. Statistics
+
+The storage service samples Linux and compares two samples:
+
+| Figure | Where it comes from |
+|---|---|
+| a job's CPU time and % | `/proc/<pid>/stat` user and system ticks, against the machine's from `/proc/stat` |
+| a job's threads, priority | `/proc/<pid>/stat` |
+| a job's temporary storage | its resident set |
+| a job's auxiliary I/O | the storage requests it made that reach its data |
+| % CPU used | `/proc/stat`, busy over all ticks |
+| main storage | `/proc/meminfo` `MemTotal` |
+| a pool's faults | its cgroup's `memory.stat`: `pgmajfault` as DB faults and pages, the other faults as non-DB |
+| a pool's transitions | the activity-level gate's counters |
+| a unit's requests and busy % | `/sys/class/block/<unit>/stat` |
+
+`WRKACTJOB` and `WRKSYSACT` measure from their previous use;
+`WRKSYSSTS`, `WRKDSKSTS` and `QWCRSSTS` from their first use or the last
+`RESET(*YES)`. `WRKACTJOB` has three views: `VIEW(1)` status (the
+default: subsystems and jobs outside them in name order, each
+subsystem's jobs indented under it), `VIEW(2)` elapsed data (pool,
+priority, CPU seconds, auxiliary I/O), `VIEW(3)` job numbers, threads
+and temporary storage. `% perm addresses` and `% temp addresses` are
+fixed low numbers: a single-level store address space this size is
+not used up.
+
+`CHGSHRPOOL` keeps the shared pools' sizes and activity levels in
+`QSYS/QWCSHRPOOL` (`NAME SIZE ACTLVL;` entries), applied at every
+start.
+
+`QWCRSSTS` formats, all integers big-endian, all text CP037:
+
+- `SSTS0100`: lengths, the `*DTS` time, the system name (8), then the
+  job counts: signed on, four kinds of suspended or signed off,
+  batch waiting for a message, batch running, two held, batch on job
+  queues, four more.
+- `SSTS0200`: lengths, time, system name, elapsed `hhmmss` (6), the
+  restricted state flag, a reserved byte, % CPU (tenths), jobs in
+  system, % permanent and temporary addresses, system ASP (MB), % system
+  ASP used (ten-thousandths over 100), total ASP (MB), current and
+  maximum unprotected storage (MB), % DB capability, main storage (KB),
+  partitions, partition id, a reserved word, processing capacity, the
+  sharing attribute and three reserved bytes, processors, active jobs,
+  active threads, maximum jobs.
+- `SSTS0300`: lengths, time, system name, elapsed, two reserved bytes,
+  the number of pools, the offset (44) and length (84) of an entry;
+  each entry: system pool number, size and reserved size (KB), maximum
+  active, DB faults and pages, non-DB faults and pages (tenths per
+  second), the three transition counts, pool name, subsystem and its
+  library, paging option.
+- `SSTS0400`, `SSTS0500`: as `SSTS0300` with 104-byte entries that add
+  the active and ineligible jobs, the defined size, the defined
+  activity level and a reserved word.

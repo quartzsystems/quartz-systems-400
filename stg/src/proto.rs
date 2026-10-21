@@ -260,4 +260,6 @@ ipc::rpc! {
     120 => fn job_state / JobState (name: String) -> u8;
     /// `QIPLSTS` for the next IPL, kept until then.
     121 => fn next_iplsts / NextIplsts (value: u8) -> Result<(), String>;
+    /// `QWCRSSTS`: the receiver of a format, statistics reset when asked.
+    122 => fn sys_status / SysStatus (format: String, reset: bool) -> Result<Vec<u8>, String>;
 }

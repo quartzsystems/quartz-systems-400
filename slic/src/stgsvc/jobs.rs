@@ -6,12 +6,10 @@
 //! counter in `QSYS/QJOBNBR`, each job's `QTEMP` (a library of its own
 //! in ASP 0, `QT` and the job number), and the active job list.
 
-use std::fmt::Write as _;
-
 use qsname::Name;
 use store::obj::dtaara::{self, DataAreaType, DataAreaValue};
 use store::obj::{CreateParams, JobHandle, ObjectId, ops, types};
-use wm::job::{Status, next_number, wrkactjob_type};
+use wm::job::{Status, next_number};
 
 use crate::ipl::system::{System, now_unix};
 
@@ -168,32 +166,6 @@ pub fn drop_qtemp(system: &mut System, number: u32, lib: ObjectId) {
     if let Err(e) = r {
         eprintln!("qsstg: QTEMP of job {number:06}: {e}");
     }
-}
-
-/// `wrkactjob`: the active jobs, by subsystem then name.
-pub fn wrkactjob(system: &System) -> String {
-    let mut jobs = system.jobs.all();
-    jobs.sort_by(|a, b| {
-        (a.subsystem.as_str(), a.name.as_str()).cmp(&(b.subsystem.as_str(), b.name.as_str()))
-    });
-    let mut out = String::from("Subsystem/Job  User        Number  Type  Status  Function\n");
-    for j in &jobs {
-        let ty = j
-            .job_type()
-            .map_or("   ", |t| wrkactjob_type(t, j.sub_type()));
-        let _ = writeln!(
-            out,
-            "{:<14} {:<10}  {:06}  {:<4}  {:<6}  {}",
-            j.name,
-            j.user,
-            j.number,
-            ty,
-            j.job_status().code(),
-            j.function
-        );
-    }
-    let _ = writeln!(out, "{} active job(s)", jobs.len());
-    out
 }
 
 /// The status of a job that has just said hello.

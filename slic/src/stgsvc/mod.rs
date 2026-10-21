@@ -22,6 +22,7 @@ pub(crate) mod prtf;
 pub(crate) mod sbs;
 pub(crate) mod splcmd;
 pub(crate) mod spool;
+pub(crate) mod stats;
 pub(crate) mod wtr;
 
 pub use jobs::chgjob;
@@ -131,7 +132,7 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
             .map_err(|e| format!("system values: {e}"))?;
         system.sysvals = Some(vals);
     }
-    system.pools = sbs::pool_table(system);
+    system.pools = sbs::pool_table_saved(system);
     let iplsts = jobs::take_next_iplsts(system);
     if iplsts != 0
         && let Some(v) = system.sysvals.as_mut()

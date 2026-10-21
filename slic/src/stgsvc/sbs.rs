@@ -47,6 +47,97 @@ pub fn pool_table(system: &System) -> PoolTable {
     )
 }
 
+/// The data area that keeps the shared pools' sizes across IPLs.
+const SHRPOOL: &str = "QWCSHRPOOL";
+
+/// Keep the shared pools' sizes and activity levels (`CHGSHRPOOL`) in
+/// `QSYS/QWCSHRPOOL`: `NAME SIZE ACTLVL;` for each defined one past
+/// `*BASE`, whose size is `QBASPOOL`'s.
+pub fn save_shared_pools(system: &mut System) -> Result<(), String> {
+    let mut text = String::new();
+    for p in system.pools.info() {
+        if p.name.starts_with('*') && p.number > 2 {
+            let _ = write!(text, "{} {} {};", p.name, p.size_kb, p.actlvl);
+        }
+    }
+    let s = system.storage.as_mut().ok_or("object store not open")?;
+    let qsys = s.qsys.ok_or("object store not initialized")?;
+    crate::svc::db::with_txn(&mut s.store, |txn| {
+        use store::obj::dtaara::{self, DataAreaType, DataAreaValue};
+        let name = qsname::Name::parse(SHRPOOL).expect("valid");
+        let lib = store::obj::library::Library::load(txn, qsys).map_err(|e| e.to_string())?;
+        let v = DataAreaValue::Char(text.clone());
+        if let Some(id) = lib
+            .lookup(txn, store::obj::types::DTAARA, name)
+            .map_err(|e| e.to_string())? { dtaara::write(txn, id, &v).map_err(|e| e.to_string()) } else {
+            let params = store::obj::CreateParams {
+                library: qsys,
+                name,
+                type_code: store::obj::types::DTAARA,
+                attribute: String::new(),
+                text: "Shared pool sizes".into(),
+                owner: "QSYS".into(),
+                system: "QS400".into(),
+                now: crate::ipl::system::now_unix(),
+                by_system: true,
+            };
+            dtaara::create(txn, &params, DataAreaType::Char { len: 2000 }, &v)
+                .map(|_| ())
+                .map_err(|e| e.to_string())
+        }
+    })
+}
+
+/// The shared pools `CHGSHRPOOL` defined before this IPL.
+fn saved_shared_pools(system: &mut System) -> Vec<(String, u64, u32)> {
+    let Some(s) = system.storage.as_mut() else {
+        return Vec::new();
+    };
+    let Some(qsys) = s.qsys else {
+        return Vec::new();
+    };
+    let Ok(mut txn) = s.store.begin() else {
+        return Vec::new();
+    };
+    let name = qsname::Name::parse(SHRPOOL).expect("valid");
+    let text = store::obj::library::Library::load(&mut txn, qsys)
+        .ok()
+        .and_then(|l| {
+            l.lookup(&mut txn, store::obj::types::DTAARA, name)
+                .ok()
+                .flatten()
+        })
+        .and_then(|id| store::obj::dtaara::read(&mut txn, id).ok())
+        .map(|v| {
+            if let store::obj::dtaara::DataAreaValue::Char(s) = v {
+                s
+            } else {
+                String::new()
+            }
+        })
+        .unwrap_or_default();
+    txn.abort();
+    text.split(';')
+        .filter_map(|e| {
+            let w: Vec<&str> = e.split_whitespace().collect();
+            Some((
+                w.first()?.to_string(),
+                w.get(1)?.parse().ok()?,
+                w.get(2)?.parse().ok()?,
+            ))
+        })
+        .collect()
+}
+
+/// The pool table, with the shared pools as `CHGSHRPOOL` left them.
+pub fn pool_table_saved(system: &mut System) -> PoolTable {
+    let mut t = pool_table(system);
+    for (name, size, actlvl) in saved_shared_pools(system) {
+        t.define(&name, size, actlvl);
+    }
+    t
+}
+
 /// The storage pool a subsystem pool is.
 pub fn pool_name(sbs: &str, id: u8, kind: PoolKind) -> String {
     match kind {

@@ -21,6 +21,7 @@ pub mod pools;
 pub mod rec;
 pub mod sbs;
 pub mod spec;
+pub mod stats;
 pub mod table;
 pub mod wtr;
 

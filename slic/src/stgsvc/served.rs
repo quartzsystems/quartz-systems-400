@@ -132,6 +132,20 @@ pub fn handle(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -
         // Nothing but hello before hello.
         return Vec::new();
     };
+    let quiet = matches!(
+        req,
+        Request::Ping {}
+            | Request::SetStatus { .. }
+            | Request::SbsState {}
+            | Request::Breaks {}
+            | Request::JoblogPut { .. }
+            | Request::WtrNext { .. }
+            | Request::ScdTick {}
+            | Request::JobState { .. }
+    );
+    if !quiet {
+        *system.stats.aux_io.entry(ctx.job.number).or_default() += 1;
+    }
     let mut served = Served { system, ctx };
     stg::dispatch(&mut served, req)
 }
@@ -228,6 +242,7 @@ fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
     system.attrs.remove(&ctx.job.number);
     super::msgs::release(system, ctx.job.number);
     system.pools.remove(ctx.job.number);
+    system.stats.aux_io.remove(&ctx.job.number);
     super::sbs::monitor_ended(system, ctx.job.number);
 }
 
@@ -524,6 +539,10 @@ impl Service for Served<'_> {
 
     fn spool_maint(&mut self) -> String {
         super::spool::maintain(self.system)
+    }
+
+    fn sys_status(&mut self, format: String, reset: bool) -> Result<Vec<u8>, String> {
+        super::stats::qwcrssts(self.system, &format, reset)
     }
 
     fn next_iplsts(&mut self, value: u8) -> Result<(), String> {

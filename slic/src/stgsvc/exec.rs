@@ -19,8 +19,17 @@ pub fn run(system: &mut System, line: &str) -> String {
     if LOCAL.contains(&word) {
         return format!("{word} is answered by the console, not the storage service\n");
     }
-    if word == "wrkactjob" {
-        return super::jobs::wrkactjob(system);
+    let p = wm::cmd::Params::parse(line);
+    let reset = p.upper("RESET").is_some_and(|r| r == "*YES");
+    match word {
+        "wrkactjob" => {
+            let view = p.upper("VIEW").unwrap_or_else(|| "1".into());
+            return super::stats::wrkactjob(system, &view);
+        }
+        "wrksyssts" => return super::stats::wrksyssts(system, reset),
+        "wrkdsksts" => return super::stats::wrkdsksts(system, reset),
+        "wrksysact" => return super::stats::wrksysact(system),
+        _ => {}
     }
     if word == "dsplog" {
         let p = wm::cmd::Params::parse(line);

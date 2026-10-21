@@ -16,6 +16,7 @@ pub const APIS: &[(&str, crate::ApiFn)] = &[
     ("QUSRJOBI", qusrjobi),
     ("QUSLJOB", qusljob),
     ("QWCRSVAL", qwcrsval),
+    ("QWCRSSTS", qwcrssts),
     ("QWCCVTDT", qwccvtdt),
     ("QWCRTVCA", qwcrtvca),
     ("QWCRTVTZ", qwcrtvtz),
@@ -222,6 +223,27 @@ fn qwcrsval(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     let room = usize::try_from(a.bin4(1)).unwrap_or(0);
     out.deliver_raw(&a, 0, room);
     errc.ok();
+}
+
+/// `QWCRSSTS(receiver, len, format, reset, errc)`.
+fn qwcrssts(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
+    let a = Args(args);
+    let errc = ErrCode::at(&a, 4);
+    let format = a.char(2, 8);
+    let reset = a.char(3, 10).trim() == "*YES";
+    match p.system_status(&format, reset) {
+        Err(f) => errc.fail(j, &f),
+        Ok(mut buf) => {
+            let room = usize::try_from(a.bin4(1)).unwrap_or(0);
+            let n = room.min(buf.len());
+            if n >= 8 {
+                let given = u32::try_from(n).unwrap_or(0).to_be_bytes();
+                buf[4..8].copy_from_slice(&given);
+            }
+            a.put_bytes(0, &buf[..n]);
+            errc.ok();
+        }
+    }
 }
 
 /// `QWCRNETA(receiver, len, count, names, errc)`.

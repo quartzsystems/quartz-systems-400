@@ -222,6 +222,13 @@ impl Provider for RemoteProvider {
         self.link.borrow_mut().with(|l| l.netattr(name.into()))
     }
 
+    fn system_status(&mut self, format: &str, reset: bool) -> sysapi::ApiResult<Vec<u8>> {
+        self.link
+            .borrow_mut()
+            .with(|l| l.sys_status(format.into(), reset))
+            .map_err(|_| ApiFail::id("CPF3C21"))
+    }
+
     fn now(&mut self) -> LocalNow {
         self.link.borrow_mut().with(Client::now)
     }

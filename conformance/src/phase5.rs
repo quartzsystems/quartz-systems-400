@@ -20,7 +20,7 @@ impl Suite {
         let list = s.command("wrkactjob", CMD)?;
         let row = |name: &str| {
             list.lines()
-                .find(|l| l.starts_with(name))
+                .find(|l| l.trim_start().starts_with(name))
                 .map(str::to_string)
         };
         let scpf = row("SCPF").ok_or_else(|| format!("no SCPF:\n{list}"))?;
@@ -67,9 +67,11 @@ impl Suite {
         if !shown.contains("WMQTEMP") {
             return Err(format!("QTEMP does not hold the area:\n{made}{shown}"));
         }
-        let number = svc
-            .split_whitespace()
-            .nth(2)
+        let numbers = s.command("wrkactjob VIEW(3)", CMD)?;
+        let number = numbers
+            .lines()
+            .find(|l| l.trim_start().starts_with("QSVCJOB"))
+            .and_then(|l| l.split_whitespace().nth(2))
             .unwrap_or_default()
             .to_string();
         Ok(format!(
@@ -345,7 +347,7 @@ impl Suite {
             active = s.command("wrkactjob", CMD)?;
             if active
                 .lines()
-                .any(|l| l.starts_with("WMAUTO") && l.contains("DLYW"))
+                .any(|l| l.trim_start().starts_with("WMAUTO") && l.contains("DLYW"))
             {
                 break;
             }
@@ -353,14 +355,14 @@ impl Suite {
         }
         let auto = active
             .lines()
-            .find(|l| l.starts_with("WMAUTO"))
+            .find(|l| l.trim_start().starts_with("WMAUTO"))
             .ok_or_else(|| format!("the autostart job is not active:\n{active}"))?;
         if !auto.contains("ASJ") || !auto.contains("DLYW") {
             return Err(format!("the autostart job is not waiting: {auto}"));
         }
         if !active
             .lines()
-            .any(|l| l.starts_with("WMSBS") && l.contains("SBS"))
+            .any(|l| l.trim_start().starts_with("WMSBS") && l.contains("SBS"))
         {
             return Err(format!("the monitor is not listed:\n{active}"));
         }
@@ -417,11 +419,11 @@ impl Suite {
         s.command("key enter", CMD)?;
         // The output, which lists the job running it; with the system
         // jobs it is long enough to scroll the command line away.
-        screen_has(s, "CMD-WRKACTJOB")?;
+        screen_has(s, "QSYSARB")?;
         let active = s.command("wrkactjob", CMD)?;
         let row = active
             .lines()
-            .find(|l| l.starts_with("QSCONSOLE"))
+            .find(|l| l.trim_start().starts_with("QSCONSOLE"))
             .ok_or_else(|| format!("no QSCONSOLE job:\n{active}"))?
             .to_string();
         if !row.contains("QSECOFR") || !row.contains("INT") {
@@ -492,7 +494,7 @@ impl Suite {
             active = s.command("wrkactjob", CMD)?;
             if active
                 .lines()
-                .any(|l| l.starts_with("WMDLY") && l.contains("DLYW"))
+                .any(|l| l.trim_start().starts_with("WMDLY") && l.contains("DLYW"))
             {
                 break;
             }
@@ -500,7 +502,7 @@ impl Suite {
         }
         let row = active
             .lines()
-            .find(|l| l.starts_with("WMDLY"))
+            .find(|l| l.trim_start().starts_with("WMDLY"))
             .ok_or_else(|| format!("WMDLY did not start:\n{active}"))?
             .to_string();
         if !row.contains("BCH") || !row.contains("DLYW") {
@@ -540,14 +542,14 @@ impl Suite {
         let mut active = String::new();
         for _ in 0..20 {
             active = s.command("wrkactjob", CMD)?;
-            if active.lines().any(|l| l.starts_with("QSYSSCD")) {
+            if active.lines().any(|l| l.trim_start().starts_with("QSYSSCD")) {
                 break;
             }
             std::thread::sleep(Duration::from_millis(250));
         }
         let row = active
             .lines()
-            .find(|l| l.starts_with("QSYSSCD"))
+            .find(|l| l.trim_start().starts_with("QSYSSCD"))
             .ok_or_else(|| {
                 format!(
                     "QSYSSCD did not start:
@@ -1017,6 +1019,128 @@ impl Suite {
         Ok(format!(
             "D1001000 to D1001090 from Command Entry; IPL again in {:.1}s, previous IPL Normal, QIPLSTS 2",
             boot.as_secs_f64()
+        ))
+    }
+}
+
+/// A program that touches 60 MB of heap, a page at a time.
+const MEMHOG: &str = "\
+module MEMHOG
+proc MEMHOG() entry {
+L0:
+  %k = const.i32 0
+  br OUTER
+OUTER:
+  %kd = cmp.ge %k, 4
+  brif %kd, DONE, BLOCK
+BLOCK:
+  %p = alloc 15000000
+  %i = const.i32 0
+  br TOUCH
+TOUCH:
+  %d = cmp.ge %i, 15000000
+  brif %d, NEXT, BODY
+BODY:
+  %q = ptradd %p, %i
+  store [%q]:i32, 1
+  %i = add %i, 4096
+  br TOUCH
+NEXT:
+  %k = add %k, 1
+  br OUTER
+DONE:
+  dsply \"touched\"
+  ret
+}
+";
+
+/// A program that asks `QWCRSSTS` for `SSTS0200` and shows the jobs in
+/// the system (offset 36) and the receiver's length.
+const WMSSTS: &str = "\
+module WMSSTS
+extern sysapi QWCRSSTS($r: char(200), $rl: i32, $fmt: char(8), $rst: char(10), $err: char(16))
+static $r: char(200)
+static $rl: i32 inz(200)
+static $fmt: char(8) inz(\"SSTS0200\")
+static $rst: char(10) inz(\"*NO\")
+static $err: char(16)
+proc WMSSTS() entry {
+L0:
+  sysapi QWCRSSTS($r, $rl, $fmt, $rst, $err)
+  %a = addr $r
+  %n = load [%a +36]:i32
+  dsply %n
+  %l = load [%a +4]:i32
+  dsply %l
+  ret
+}
+";
+
+impl Suite {
+    /// Step 31: statistics: `WRKSYSSTS` shows `*BASE` taking page faults
+    /// while a batch job touches 60 MB; `WRKACTJOB`'s views,
+    /// `WRKDSKSTS`, `WRKSYSACT`, `DSPJOB`'s run figures and `QWCRSSTS`.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn statistics(&self, s: &mut Session) -> Result<String, String> {
+        crate::qir::qemu::push(s, "MEMHOG", MEMHOG)?;
+        s.command("qir asm MEMHOG MODULE(QGPL/MEMHOG)", CMD)?;
+        s.command("crtpgm QGPL/MEMHOG MODULE(QGPL/MEMHOG)", CMD)?;
+        s.command("wrksyssts RESET(*YES)", CMD)?;
+        s.command("strsbs QSYS/QBATCH", CMD)?;
+        s.command(
+            "sbmjob CMD('call QGPL/MEMHOG') JOB(WMMEM) JOBQ(QGPL/QBATCH) MSGQ(QUSRSYS/QSECOFR)",
+            CMD,
+        )?;
+        let mut msgs = String::new();
+        for _ in 0..80 {
+            msgs = s.command("dspmsg QUSRSYS/QSECOFR", CMD)?;
+            if msgs.contains("WMMEM") && (msgs.contains("CPF1241") || msgs.contains("CPF1240")) {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(250));
+        }
+        let sts = s.command("wrksyssts", CMD)?;
+        s.command("endsbs QBATCH OPTION(*IMMED)", CMD)?;
+        let base = sts
+            .lines()
+            .find(|l| l.split_whitespace().next() == Some("2"))
+            .ok_or_else(|| format!("no *BASE in wrksyssts:\n{sts}"))?
+            .to_string();
+        let cols: Vec<f64> = base
+            .split_whitespace()
+            .filter_map(|w| w.parse().ok())
+            .collect();
+        let faults = cols.get(4).copied().unwrap_or(0.0) + cols.get(6).copied().unwrap_or(0.0);
+        if faults <= 0.0 {
+            return Err(format!("no faults in *BASE after WMMEM ran:\n{msgs}\n{sts}"));
+        }
+        let elapsed = s.command("wrkactjob VIEW(2)", CMD)?;
+        let threads = s.command("wrkactjob VIEW(3)", CMD)?;
+        let disks = s.command("wrkdsksts", CMD)?;
+        let top = s.command("wrksysact", CMD)?;
+        let job = s.command("dspjob", CMD)?;
+        if !elapsed.contains("AuxIO")
+            || !threads.contains("Threads")
+            || !disks.lines().any(|l| l.split_whitespace().next() == Some("1"))
+            || !top.contains("CPU Util")
+            || !job.contains("Processing unit time used")
+        {
+            return Err(format!("the displays:\n{elapsed}\n{threads}\n{disks}\n{top}\n{job}"));
+        }
+        crate::qir::qemu::push(s, "WMSSTS", WMSSTS)?;
+        s.command("qir asm WMSSTS MODULE(QGPL/WMSSTS)", CMD)?;
+        s.command("crtpgm QGPL/WMSSTS MODULE(QGPL/WMSSTS)", CMD)?;
+        let api = s.command("call QGPL/WMSSTS", CMD)?;
+        let nums: Vec<i64> = api
+            .lines()
+            .filter_map(|l| l.trim().parse().ok())
+            .collect();
+        if nums.len() < 2 || nums[0] < 10 || nums[1] < 100 {
+            return Err(format!("QWCRSSTS SSTS0200:\n{api}"));
+        }
+        Ok(format!(
+            "*BASE took {faults:.1} faults/s while WMMEM touched 60 MB; QWCRSSTS saw {} jobs",
+            nums[0]
         ))
     }
 }

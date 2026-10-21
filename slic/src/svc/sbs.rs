@@ -235,6 +235,7 @@ fn chgshrpool(system: &mut System, p: &Params) -> Result<String, String> {
         ));
     }
     system.pools.define(&pool, size, actlvl);
+    crate::stgsvc::sbs::save_shared_pools(system)?;
     Ok(format!(
         "Shared pool {pool} changed: {size} K, activity level {actlvl}.\n"
     ))

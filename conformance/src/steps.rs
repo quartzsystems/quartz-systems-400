@@ -451,6 +451,7 @@ impl Suite {
         reports.push(self.step(&mut s, "28 printer files", Self::printer_files)?);
         reports.push(self.step(&mut s, "29 writers", Self::writers)?);
         reports.push(self.step(&mut s, "30 power down", Self::power_down)?);
+        reports.push(self.step(&mut s, "31 statistics", Self::statistics)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

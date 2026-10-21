@@ -445,6 +445,12 @@ pub trait Provider {
     fn sysval(&mut self, name: &str) -> Option<SysVal> {
         None
     }
+    /// `QWCRSSTS`'s receiver for `format` (`SSTS0100` to `SSTS0500`), its
+    /// two lengths first; `reset` starts the statistics over.
+    fn system_status(&mut self, format: &str, reset: bool) -> ApiResult<Vec<u8>> {
+        let _ = (format, reset);
+        Err(ApiFail::id("CPF3C21"))
+    }
     /// A network attribute.
     fn netattr(&mut self, name: &str) -> Option<SysVal> {
         None
