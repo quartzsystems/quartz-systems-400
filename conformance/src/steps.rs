@@ -435,6 +435,7 @@ impl Suite {
         reports.push(self.step(&mut s, "13 database kit", Self::db_kit)?);
         reports.push(self.step(&mut s, "15 IR kit", Self::qir_kit)?);
         reports.push(self.step(&mut s, "16 active jobs", Self::active_jobs)?);
+        reports.push(self.step(&mut s, "17 job descriptions", Self::job_descriptions)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

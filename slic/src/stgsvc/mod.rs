@@ -13,6 +13,8 @@
 
 mod exec;
 mod jobs;
+
+pub use jobs::chgjob;
 mod served;
 
 use std::fs;
@@ -96,6 +98,12 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
         resume: None,
     });
     system.temp = Some(storage::fresh_temp().map_err(|e| format!("temporary ASP: {e}"))?);
+    let made = install(system).map_err(|e| format!("work management objects: {e}"))?;
+    let text = if made > 0 {
+        format!("{text}; {made} work management object(s) created")
+    } else {
+        text
+    };
     if let Some(blob) = &start.sysvals {
         let host = crate::ipl::sysvals::host_info();
         let mut vals =
@@ -204,4 +212,23 @@ fn wait_ready(listener: &UnixListener, conns: &[Conn], wait: Duration) -> (bool,
         .map(|(i, _)| i)
         .collect();
     (accept, ready)
+}
+
+/// The shipped work management objects that are missing.
+fn install(system: &mut System) -> Result<usize, String> {
+    let Some(s) = system.storage.as_mut() else {
+        return Ok(0);
+    };
+    let Some(qsys) = s.qsys else {
+        return Ok(0);
+    };
+    let stamp = wm::obj::Stamp {
+        owner: "QSYS".into(),
+        system: "QS400".into(),
+        now: crate::ipl::system::now_unix(),
+    };
+    let mut txn = s.store.begin().map_err(|e| e.to_string())?;
+    let made = wm::obj::shipped::install(&mut txn, qsys, &stamp).map_err(|e| e.to_string())?;
+    txn.commit().map_err(|e| e.to_string())?;
+    Ok(made)
 }

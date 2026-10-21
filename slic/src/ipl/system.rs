@@ -76,6 +76,10 @@ pub struct System {
     pub locks: db::odp::SharedLocks,
     /// The store as lent to the job sources for one request.
     pub lent: crate::svc::ile::Shared,
+    /// Each active job's attributes, by number (storage service).
+    pub attrs: std::collections::BTreeMap<u32, wm::job::JobAttrs>,
+    /// The job a console command runs for (storage service).
+    pub current_job: u32,
     /// The active jobs (storage service).
     pub jobs: wm::table::JobTable,
     /// The storage service and the service console job, once started.
@@ -113,6 +117,8 @@ impl System {
             lent: std::rc::Rc::new(std::cell::RefCell::new(None)),
             procs: crate::procs::Procs::default(),
             jobs: wm::table::JobTable::default(),
+            attrs: std::collections::BTreeMap::new(),
+            current_job: 0,
         }
     }
 

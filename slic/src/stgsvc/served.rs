@@ -19,6 +19,7 @@ use mi::{ObjectSource, UserSpaceSource};
 use msgf::{MsgDesc, MsgLookup};
 use stg::proto::IdxAttrs;
 use stg::{ExecReply, JobInfo, Request, Service};
+use wm::job::JobAttrs;
 use store::obj::{JobHandle, ObjectId, ops, types};
 use sysapi::{
     ApiFail, CommitInfo, DataArea, DepInfo, DtaqEntry, DtaqInfo, FileInfo, FormatInfo, IdxAttr,
@@ -128,7 +129,15 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
     if job.started == 0 {
         job.started = crate::ipl::system::now_unix();
     }
+    if job.jobd.is_empty() {
+        job.jobd = "QGPL/QDFTJOBD".into();
+    }
+    if job.class.is_empty() {
+        job.class = "QGPL/QBATCH".into();
+    }
     let qtemp = super::jobs::make_qtemp(system, job.number)?;
+    let attrs = super::jobs::resolve_attrs(system, &job.jobd, &job.class);
+    system.attrs.insert(job.number, attrs);
     system.jobs.add(job.clone());
     let mut ctx = JobCtx::new(system, job);
     ctx.qtemp = Some(qtemp);
@@ -150,6 +159,7 @@ fn end_job(system: &mut System, ctx: &mut JobCtx) {
         super::jobs::drop_qtemp(system, ctx.job.number, q);
     }
     system.jobs.remove(ctx.job.number);
+    system.attrs.remove(&ctx.job.number);
 }
 
 /// End a job's use of the database and the store.
@@ -233,6 +243,7 @@ impl Service for Served<'_> {
 
     fn exec(&mut self, line: String) -> ExecReply {
         let root = self.own_qtemp();
+        self.system.current_job = self.ctx.job.number;
         std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
         let text = super::exec::run(self.system, &line);
         let prompt = svc::db::prompt(self.system).to_string();
@@ -274,6 +285,18 @@ impl Service for Served<'_> {
 
     fn active_jobs(&mut self) -> Vec<JobInfo> {
         self.system.jobs.all()
+    }
+
+    fn rtvjoba(&mut self) -> JobAttrs {
+        self.system
+            .attrs
+            .get(&self.ctx.job.number)
+            .cloned()
+            .unwrap_or_default()
+    }
+
+    fn chgjob(&mut self, job: String, changes: Vec<(String, String)>) -> Result<(), String> {
+        super::jobs::chgjob(self.system, self.ctx.job.number, &job, &changes)
     }
 
     fn program(&mut self, name: String, lib: String, kind: u8) -> Option<(Vec<u8>, String, String)> {

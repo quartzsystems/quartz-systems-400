@@ -41,11 +41,11 @@ macro_rules! rpc {
                     } )*
                 }
             }
-            fn get(d: &mut $crate::Dec<'_>) -> Result<Self, $crate::WireError> {
+            fn get(d: &mut $crate::Dec<'_>) -> ::core::result::Result<Self, $crate::WireError> {
                 let tag = <u8 as $crate::Wire>::get(d)?;
                 match tag {
-                    $( $tag => Ok($req::$v { $($a: $crate::Wire::get(d)?),* }), )*
-                    tag => Err($crate::WireError::Tag { what: stringify!($req), tag }),
+                    $( $tag => ::core::result::Result::Ok($req::$v { $($a: $crate::Wire::get(d)?),* }), )*
+                    tag => ::core::result::Result::Err($crate::WireError::Tag { what: stringify!($req), tag }),
                 }
             }
         }
@@ -78,10 +78,10 @@ macro_rules! rpc {
         /// its encoded answer.
         pub trait $cli {
             /// Send a request; the encoded answer.
-            fn call(&mut self, req: &$req) -> Result<Vec<u8>, $crate::WireError>;
+            fn call(&mut self, req: &$req) -> ::core::result::Result<Vec<u8>, $crate::WireError>;
             $(
                 $(#[$m])*
-                fn $f(&mut self, $($a: $t),*) -> Result<$r, $crate::WireError> {
+                fn $f(&mut self, $($a: $t),*) -> ::core::result::Result<$r, $crate::WireError> {
                     let bytes = self.call(&$req::$v { $($a),* })?;
                     $crate::decode(&bytes)
                 }

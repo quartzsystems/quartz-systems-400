@@ -14,9 +14,9 @@ macro_rules! wire_struct {
                 $( $crate::Wire::put(&self.$f, out); )*
                 let _ = out;
             }
-            fn get(d: &mut $crate::Dec<'_>) -> Result<Self, $crate::WireError> {
+            fn get(d: &mut $crate::Dec<'_>) -> ::core::result::Result<Self, $crate::WireError> {
                 let _ = &d;
-                Ok(Self { $( $f: $crate::Wire::get(d)?, )* })
+                ::core::result::Result::Ok(Self { $( $f: $crate::Wire::get(d)?, )* })
             }
         }
     };
@@ -37,11 +37,11 @@ macro_rules! wire_enum {
                     } )*
                 }
             }
-            fn get(d: &mut $crate::Dec<'_>) -> Result<Self, $crate::WireError> {
+            fn get(d: &mut $crate::Dec<'_>) -> ::core::result::Result<Self, $crate::WireError> {
                 let tag = <u8 as $crate::Wire>::get(d)?;
                 match tag {
-                    $( $tag => Ok($t::$v $({ $($f: $crate::Wire::get(d)?),* })?), )*
-                    tag => Err($crate::WireError::Tag { what: stringify!($t), tag }),
+                    $( $tag => ::core::result::Result::Ok($t::$v $({ $($f: $crate::Wire::get(d)?),* })?), )*
+                    tag => ::core::result::Result::Err($crate::WireError::Tag { what: stringify!($t), tag }),
                 }
             }
         }

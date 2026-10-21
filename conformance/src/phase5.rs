@@ -42,3 +42,47 @@ impl Suite {
         ))
     }
 }
+
+impl Suite {
+    /// Step 17: shipped job descriptions and classes, `CRTJOBD`,
+    /// `CHGJOB` and `DSPJOB`.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn job_descriptions(&self, s: &mut Session) -> Result<String, String> {
+        let shipped = s.command("dspjobd QGPL/QDFTJOBD", CMD)?;
+        if !shipped.contains("Default job description") || !shipped.contains("QGPL/QBATCH") {
+            return Err(format!("QDFTJOBD:\n{shipped}"));
+        }
+        let cls = s.command("dspcls QGPL/QINTER", CMD)?;
+        if !cls.lines().any(|l| l.contains("Run priority") && l.trim_end().ends_with("20")) {
+            return Err(format!("QINTER class:\n{cls}"));
+        }
+        let made = s.command(
+            "crtjobd QGPL/WMTEST USER(QSECOFR) JOBPTY(3) LOG(4 0 *SECLVL) TEXT('Harness')",
+            CMD,
+        )?;
+        if !made.contains("created") {
+            return Err(format!("crtjobd: {made}"));
+        }
+        let shown = s.command("dspjobd QGPL/WMTEST", CMD)?;
+        if !shown.contains("QSECOFR") || !shown.contains("*SECLVL") {
+            return Err(format!("dspjobd:\n{shown}"));
+        }
+        let bad = s.command("chgjobd QGPL/WMTEST JOBPTY(12)", CMD)?;
+        if !bad.contains("CPD0085") {
+            return Err(format!("chgjobd accepted JOBPTY(12): {bad}"));
+        }
+        let changed = s.command("chgjob LOG(2 20 *SECLVL) SWS(10000001)", CMD)?;
+        if !changed.contains("changed") {
+            return Err(format!("chgjob: {changed}"));
+        }
+        let job = s.command("dspjob", CMD)?;
+        if !job.contains("2 20 *SECLVL") || !job.contains("10000001") {
+            return Err(format!("dspjob:\n{job}"));
+        }
+        let gone = s.command("dltjobd QGPL/WMTEST", CMD)?;
+        if !gone.contains("deleted") {
+            return Err(format!("dltjobd: {gone}"));
+        }
+        Ok("QDFTJOBD and QINTER shipped; created, shown, rejected, changed the job".into())
+    }
+}

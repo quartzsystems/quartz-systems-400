@@ -4,10 +4,12 @@
 
 //! The job: identity, type and status.
 
+mod attrs;
 mod id;
 mod kind;
 mod status;
 
+pub use attrs::{JobAttrs, LibList, SysvalFn};
 pub use id::{InternalId, JobId, MAX_NUMBER, next_number};
 pub use kind::{JobType, SubType, wrkactjob_type};
 pub use status::{JobState, Status};

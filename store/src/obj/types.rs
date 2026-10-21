@@ -78,8 +78,20 @@ pub const USRSPC: u16 = 0x0004;
 pub const USRIDX: u16 = 0x0005;
 /// Code of `*USRQ`.
 pub const USRQ: u16 = 0x0006;
+/// Code of `*MSGQ`.
+pub const MSGQ: u16 = 0x0007;
 /// Code of `*MSGF`.
 pub const MSGF: u16 = 0x0008;
+/// Code of `*JOBD`.
+pub const JOBD: u16 = 0x0009;
+/// Code of `*CLS`.
+pub const CLS: u16 = 0x000A;
+/// Code of `*SBSD`.
+pub const SBSD: u16 = 0x000B;
+/// Code of `*JOBQ`.
+pub const JOBQ: u16 = 0x000C;
+/// Code of `*OUTQ`.
+pub const OUTQ: u16 = 0x000D;
 /// Code of `*USRPRF`.
 pub const USRPRF: u16 = 0x000E;
 /// Code of `*AUTL`.
@@ -132,13 +144,13 @@ pub static TYPES: &[TypeInfo] = &[
         Module::UserIndex,
     ),
     t(USRQ, "*USRQ", false, true, false, false, Module::UserQueue),
-    t(0x0007, "*MSGQ", true, true, false, false, Module::Opaque),
+    t(MSGQ, "*MSGQ", true, true, false, false, Module::Opaque),
     t(MSGF, "*MSGF", true, true, false, false, Module::Opaque),
-    t(0x0009, "*JOBD", true, true, false, false, Module::Opaque),
-    t(0x000A, "*CLS", true, true, false, false, Module::Opaque),
-    t(0x000B, "*SBSD", true, false, false, false, Module::Opaque),
-    t(0x000C, "*JOBQ", true, false, false, false, Module::Opaque),
-    t(0x000D, "*OUTQ", true, false, false, false, Module::Opaque),
+    t(JOBD, "*JOBD", true, true, false, false, Module::Opaque),
+    t(CLS, "*CLS", true, true, false, false, Module::Opaque),
+    t(SBSD, "*SBSD", true, false, false, false, Module::Opaque),
+    t(JOBQ, "*JOBQ", true, false, false, false, Module::Opaque),
+    t(OUTQ, "*OUTQ", true, false, false, false, Module::Opaque),
     t(USRPRF, "*USRPRF", true, false, true, true, Module::Opaque),
     t(AUTL, "*AUTL", true, false, true, true, Module::Opaque),
     t(0x0010, "*CMD", true, true, false, false, Module::Opaque),

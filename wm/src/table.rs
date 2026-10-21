@@ -37,6 +37,10 @@ pub struct JobInfo {
     pub started: u64,
     /// The lock owner handle; the job number.
     pub handle: u64,
+    /// The job description it started from, `lib/name`.
+    pub jobd: String,
+    /// Its class, `lib/name`.
+    pub class: String,
 }
 
 wire_struct!(JobInfo {
@@ -50,7 +54,9 @@ wire_struct!(JobInfo {
     status,
     function,
     started,
-    handle
+    handle,
+    jobd,
+    class
 });
 
 impl JobInfo {

@@ -14,6 +14,7 @@ use sysapi::{
     ApiFail, CommitInfo, DataArea, DepInfo, DtaqEntry, DtaqInfo, FileInfo, FormatInfo, IdxAttr,
     LocalNow, MemberInfo, ObjInfo, SysVal, UserInfo,
 };
+use wm::job::JobAttrs;
 use wm::table::JobInfo;
 
 /// What a command run in the service answered.
@@ -78,6 +79,11 @@ ipc::rpc! {
     5 => fn set_status / SetStatus (status: u8, function: String) -> ();
     /// Every active job.
     6 => fn active_jobs / ActiveJobs () -> Vec<JobInfo>;
+    /// The job's own attributes (`RTVJOBA`).
+    7 => fn rtvjoba / Rtvjoba () -> JobAttrs;
+    /// `CHGJOB`: `job` is `number/user/name`, or blank for the job
+    /// itself; each change is a keyword and its value.
+    8 => fn chgjob / Chgjob (job: String, changes: Vec<(String, String)>) -> Result<(), String>;
 
     /// A `*PGM` (kind 0) or `*SRVPGM` (kind 1): its encoded object,
     /// name and the library it was found in.

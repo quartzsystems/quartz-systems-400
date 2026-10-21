@@ -132,3 +132,65 @@ pub fn wrkactjob(system: &System) -> String {
 pub fn initial_status() -> u8 {
     Status::Run.byte()
 }
+
+/// A job's attributes from its job description and class, `lib/name`
+/// each; a missing object falls back to the command defaults.
+pub fn resolve_attrs(system: &mut System, jobd: &str, class: &str) -> wm::job::JobAttrs {
+    use wm::obj::{cls::Cls, jobd::JobD, params::qualified};
+    let load = |system: &mut System, qual: &str, type_code: u16| -> Option<Vec<u8>> {
+        let s = system.storage.as_mut()?;
+        let qsys = s.qsys?;
+        let (lib, name) = qualified(qual);
+        let mut txn = s.store.begin().ok()?;
+        let names = crate::svc::ile::name_context(&mut txn, qsys);
+        let id = wm::obj::find(&mut txn, qsys, &names, &lib, &name, type_code).ok()?;
+        let b = wm::obj::read(&mut txn, id).ok();
+        txn.abort();
+        b
+    };
+    let d = load(system, jobd, types::JOBD)
+        .and_then(|b| JobD::decode(&b).ok())
+        .unwrap_or_default();
+    let c = load(system, class, types::CLS)
+        .and_then(|b| Cls::decode(&b).ok())
+        .unwrap_or_default();
+    let vals = system.sysvals.as_ref();
+    let sv = |name: &str| -> String {
+        vals.and_then(|v| v.get(name).ok())
+            .map(|v| v.text())
+            .unwrap_or_default()
+    };
+    wm::job::JobAttrs::resolve(jobd, &d, &c, &sv)
+}
+
+/// `CHGJOB`: `job` blank for `self_number`'s own job.
+pub fn chgjob(
+    system: &mut System,
+    self_number: u32,
+    job: &str,
+    changes: &[(String, String)],
+) -> Result<(), String> {
+    let number = if job.trim().is_empty() || job == "*" {
+        self_number
+    } else {
+        let id = wm::job::JobId::parse(job).ok_or_else(|| format!("CPF1070 job {job} not found"))?;
+        let found = system
+            .jobs
+            .get(id.number)
+            .filter(|j| j.name == id.name.to_string() && j.user == id.user.to_string())
+            .ok_or_else(|| format!("CPF1070 job {job} not found"))?;
+        found.number
+    };
+    let attrs = system
+        .attrs
+        .get_mut(&number)
+        .ok_or_else(|| format!("CPF1070 job {number:06} not found"))?;
+    // All or nothing: change a copy, then keep it.
+    let mut a = attrs.clone();
+    for (kw, v) in changes {
+        a.change(kw, v)
+            .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF1317")))?;
+    }
+    *attrs = a;
+    Ok(())
+}

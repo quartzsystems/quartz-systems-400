@@ -9,6 +9,7 @@ pub(crate) mod db;
 pub(crate) mod ile;
 mod objects;
 mod storage;
+mod work;
 
 use std::fmt::Write as _;
 
@@ -82,7 +83,7 @@ pub fn reply(system: &mut System, line: &str) -> String {
     let args: Vec<&str> = words.collect();
     match (cmd, args.as_slice()) {
         ("", _) => String::new(),
-        ("help", _) => format!("{HELP}{HELP_DB}{}", ile::HELP),
+        ("help", _) => format!("{HELP}{HELP_DB}{}{}", ile::HELP, work::HELP),
         ("release", _) => format!("{}\n", release::full()),
         ("srcs", []) => system.log.dump(),
         ("srcs", ["table"]) => src_table(),
@@ -109,7 +110,9 @@ pub fn reply(system: &mut System, line: &str) -> String {
         ("txn", ["stats"]) => storage::txn_stats(system),
         _ => match db::command(system, cmd, &args, line) {
             Some(reply) => reply,
-            None => match ile::command(system, cmd, &args, line) {
+            None => match ile::command(system, cmd, &args, line)
+                .or_else(|| work::command(system, cmd, line))
+            {
                 Some(reply) => reply,
                 None => format!(
                     "Unknown command '{cmd}'. Type help.
