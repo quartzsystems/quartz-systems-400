@@ -52,6 +52,11 @@ inside the program's static area at an offset fixed at bind time; that
 offset reaches the code through a relocation (§5), so the same code
 serves every activation group.
 
+The job pointer in the `Env` aliases the runtime's own `&mut Job`. The
+runtime makes the job escape (`act::escape`) before and after every
+call into generated code, so the optimizer cannot keep job fields in
+registers across a call that stores to them through the `Env`.
+
 ## 3. Procedure signatures
 
 ```

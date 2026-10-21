@@ -252,10 +252,14 @@ impl Suite {
             &format!("sql SELECT SUM(BAL) FROM {}/CUSTOMER;", kit::LIBRARY),
             CMD,
         )?;
-        out.lines()
-            .map(str::trim)
-            .find(|l| l.parse::<f64>().is_ok())
-            .map(str::to_string)
+        // The value line precedes the row count; the column header
+        // above it is a number too.
+        let lines: Vec<&str> = out.lines().map(str::trim).collect();
+        lines
+            .iter()
+            .position(|l| l.ends_with("row(s)"))
+            .and_then(|i| lines[..i].iter().rev().find(|l| l.parse::<f64>().is_ok()))
+            .map(|l| (*l).to_string())
             .ok_or_else(|| format!("no balance in:\n{out}"))
     }
 
