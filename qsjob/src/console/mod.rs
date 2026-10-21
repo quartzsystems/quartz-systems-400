@@ -131,6 +131,17 @@ impl Console {
         }
     }
 
+    /// Wait up to `d`, taking breaks; `false` when the job is to end.
+    pub fn idle(&mut self, d: Duration) -> bool {
+        match self.inbox.recv_timeout(d) {
+            Ok(ToJob::End { .. }) | Err(RecvTimeoutError::Disconnected) => false,
+            _ => {
+                self.breaks();
+                true
+            }
+        }
+    }
+
     /// A job's runtime over `link`, its parent on `ctl`.
     pub fn new(ctl: Chan, link: &Shared, start: &Start) -> Self {
         let inbox = inbox(&ctl);

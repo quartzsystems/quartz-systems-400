@@ -238,3 +238,10 @@ sev = 0
 text = "Job &3/&2/&1 completed normally."
 help = "The job ran to its end without an error it left unhandled."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR 3"]
+
+[[msg]]
+id = "CPI1E63"
+sev = 0
+text = "Job &3/&4/&1 submitted for job schedule entry &2."
+help = "The job scheduler found the entry due and submitted its command to the entry's job queue."
+vars = ["*CHAR 10", "*CHAR 6", "*CHAR 6", "*CHAR 10"]

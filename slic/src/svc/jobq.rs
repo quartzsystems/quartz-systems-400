@@ -8,13 +8,15 @@
 use wm::cmd::Params;
 
 use crate::ipl::system::System;
-use crate::stgsvc::jobqs;
+use crate::stgsvc::{jobqs, jobscd};
 
 /// Help for these commands.
 pub const HELP: &str = "\
 sbmjob CMD('..') [JOB() JOBD() JOBQ() JOBPTY() USER() RTGDTA() HOLD() SCDDATE() SCDTIME() MSGQ() INLLIBL() CURLIB() LOG() ...]
 wrkjobq [LIB/Q] | crtjobq LIB/Q [TEXT()] | dltjobq Q | hldjobq Q | rlsjobq Q | clrjobq Q
 hldjob JOB(n/u/name) | rlsjob JOB() | endjob JOB() [OPTION(*CNTRLD|*IMMED)] | dlyjob DLY(s)
+addjobscde JOB() CMD('..') FRQ(*ONCE|*WEEKLY|*MONTHLY) SCDDATE() SCDDAY() SCDTIME(hhmmss) [RELDAYMON() RCYACN() JOBD() JOBQ() USER() MSGQ() OMITDATE() SAVE() TEXT()]
+chgjobscde JOB() [ENTRYNBR()] ... | rmvjobscde JOB() | hldjobscde JOB() | rlsjobscde JOB() | wrkjobscde
 ";
 
 /// Dispatch; `None` when `cmd` is not one of these.
@@ -38,6 +40,9 @@ pub fn command(system: &mut System, cmd: &str, line: &str) -> Option<String> {
             let immediate = matches!(p.upper("OPTION").as_deref(), Some("*IMMED"));
             jobqs::endjob(system, me, &j, immediate)
         }),
+        "addjobscde" | "chgjobscde" | "rmvjobscde" | "hldjobscde" | "rlsjobscde" | "wrkjobscde" => {
+            jobscd::command(system, me, cmd, line)
+        }
         _ => return None,
     };
     Some(match r {

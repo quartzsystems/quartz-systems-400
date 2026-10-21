@@ -930,7 +930,17 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
             "QSYSWRK",
             Sbsd {
                 text: "System work subsystem".into(),
-                rtges: vec![rt(9999, "*ANY", q("QSYSCLS25", "QSYS"), 1)],
+                rtges: vec![
+                    Rtge {
+                        pgm: q("QEJSCHED", "QSYS"),
+                        ..rt(10, "QSYSSCD", q("QSYSCLS25", "QSYS"), 1)
+                    },
+                    rt(9999, "*ANY", q("QSYSCLS25", "QSYS"), 1),
+                ],
+                ajes: vec![Aje {
+                    job: "QSYSSCD".into(),
+                    jobd: q("QSYSSCD", "QSYS"),
+                }],
                 jobqes: vec![jq("QSYSNOMAX", "QSYS", 10, 0)],
                 ..Sbsd::default()
             },

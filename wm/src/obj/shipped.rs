@@ -79,6 +79,17 @@ fn jobds() -> Vec<(&'static str, &'static str, JobD)> {
                 ..d()
             },
         ),
+        (
+            "QSYS",
+            "QSYSSCD",
+            JobD {
+                user: "QSYS".into(),
+                jobq: ("QSYS".into(), "QSYSNOMAX".into()),
+                rtgdta: "QSYSSCD".into(),
+                text: "Job scheduler job description".into(),
+                ..d()
+            },
+        ),
     ]
 }
 
@@ -185,6 +196,18 @@ pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &Stamp) -> Result<usize
             create(txn, l, n, types::JOBQ, text, stamp, &q.encode())?;
             made += 1;
         }
+    }
+    let (slib, sname) = super::jobscd::SCHEDULE;
+    let l = library(txn, qsys, slib)?;
+    let n = Name::parse(sname).expect("valid");
+    if !exists(txn, l, n, types::JOBSCD)? {
+        let text = "Default job schedule";
+        let s = super::jobscd::JobScd {
+            next_entry: 1,
+            entries: Vec::new(),
+        };
+        create(txn, l, n, types::JOBSCD, text, stamp, &s.encode())?;
+        made += 1;
     }
     for (name, s) in super::sbsd::shipped() {
         let n = Name::parse(name).expect("valid");

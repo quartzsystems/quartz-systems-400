@@ -503,4 +503,130 @@ impl Suite {
             "{dly} held then started by QBATCH, ended *IMMED; {held} ended on the queue; {quick} completed"
         ))
     }
+
+    /// Step 26: the job scheduler: `QSYSWRK` starts `QSYSSCD`; a once
+    /// entry due a few seconds ahead is submitted and completes; a
+    /// weekly entry is held and removed.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn job_scheduler(&self, s: &mut Session) -> Result<String, String> {
+        s.command("strsbs QSYS/QSYSWRK", CMD)?;
+        let mut active = String::new();
+        for _ in 0..20 {
+            active = s.command("wrkactjob", CMD)?;
+            if active.lines().any(|l| l.starts_with("QSYSSCD")) {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(250));
+        }
+        let row = active
+            .lines()
+            .find(|l| l.starts_with("QSYSSCD"))
+            .ok_or_else(|| {
+                format!(
+                    "QSYSSCD did not start:
+{active}"
+                )
+            })?
+            .to_string();
+        if !row.contains("ASJ") {
+            return Err(format!("QSYSSCD is not an autostart job: {row}"));
+        }
+        let (date, time) = utc_in(15);
+        s.command(
+            &format!(
+                "addjobscde JOB(WMSCD) CMD('wrkactjob') FRQ(*ONCE) SCDDATE({date})                  SCDTIME({time}) JOBQ(QSYS/QSYSNOMAX) MSGQ(QUSRSYS/QSECOFR)"
+            ),
+            CMD,
+        )?;
+        s.command(
+            "addjobscde JOB(WMWEEK) CMD('wrkactjob') FRQ(*WEEKLY) SCDDAY(*ALL) SCDTIME(235959)",
+            CMD,
+        )?;
+        let held = s.command("hldjobscde WMWEEK", CMD)?;
+        let list = s.command("wrkjobscde", CMD)?;
+        let week = list
+            .lines()
+            .find(|l| l.starts_with("WMWEEK"))
+            .ok_or_else(|| {
+                format!(
+                    "WMWEEK not listed:
+{list}"
+                )
+            })?;
+        if !held.contains("held") || !week.contains("HLD") || !week.contains("*WEEKLY") {
+            return Err(format!(
+                "hldjobscde: {held}
+{list}"
+            ));
+        }
+        let mut pending = String::new();
+        for _ in 0..60 {
+            pending = s.command("wrkjobscde", CMD)?;
+            if !pending.lines().any(|l| l.starts_with("WMSCD")) {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(500));
+        }
+        if pending.lines().any(|l| l.starts_with("WMSCD")) {
+            return Err(format!(
+                "WMSCD was not submitted:
+{pending}"
+            ));
+        }
+        let mut msgs = String::new();
+        for _ in 0..40 {
+            msgs = s.command("dspmsg QUSRSYS/QSECOFR", CMD)?;
+            if msgs.contains("CPF1241") && msgs.contains("WMSCD") {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(250));
+        }
+        let hist = s.command("dsplog MSGID(CPI1E63)", CMD)?;
+        s.command("rmvjobscde WMWEEK", CMD)?;
+        let after = s.command("wrkjobscde", CMD)?;
+        s.command("endsbs QSYSWRK OPTION(*IMMED)", CMD)?;
+        if !msgs.contains("CPF1241") || !msgs.contains("WMSCD") {
+            return Err(format!(
+                "WMSCD did not complete:
+{msgs}"
+            ));
+        }
+        if !hist.contains("CPI1E63") || !hist.contains("WMSCD") {
+            return Err(format!(
+                "no CPI1E63 in QHST:
+{hist}"
+            ));
+        }
+        if after.contains("WMWEEK") {
+            return Err(format!(
+                "rmvjobscde left WMWEEK:
+{after}"
+            ));
+        }
+        Ok(format!(
+            "QSYSSCD active; WMSCD submitted at {date} {time} and completed; WMWEEK held and removed"
+        ))
+    }
+}
+
+/// `YYYYMMDD` and `hhmmss` in UTC, `secs` seconds from now.
+fn utc_in(secs: u64) -> (String, String) {
+    let unix = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs())
+        + secs;
+    let days = i64::try_from(unix / 86_400).unwrap_or(0) + 719_468;
+    let era = days.div_euclid(146_097);
+    let doe = days.rem_euclid(146_097);
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = yoe + era * 400 + i64::from(month <= 2);
+    let secs = unix % 86_400;
+    (
+        format!("{year:04}{month:02}{day:02}"),
+        format!("{:02}{:02}{:02}", secs / 3600, secs % 3600 / 60, secs % 60),
+    )
 }

@@ -15,9 +15,9 @@ use sysapi::{
     LocalNow, MemberInfo, ObjInfo, SysVal, UserInfo,
 };
 use wm::job::JobAttrs;
-use wm::sbs::{PoolInfo, SbsInfo, SbsState};
 use wm::obj::jobq::{QJob, SbmJob};
 use wm::obj::msgq::{MsgKind, QMsg};
+use wm::sbs::{PoolInfo, SbsInfo, SbsState};
 use wm::table::JobInfo;
 
 /// What a command run in the service answered.
@@ -229,4 +229,7 @@ ipc::rpc! {
     /// The job is ending with this end code (0 normal, 20 and up
     /// abnormal); its completion message says so.
     110 => fn job_ending / JobEnding (code: u16) -> ();
+    /// The job scheduler's tick: submit the schedule entries that are
+    /// due; what was submitted.
+    111 => fn scd_tick / ScdTick () -> Vec<String>;
 }

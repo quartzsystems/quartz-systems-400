@@ -446,6 +446,10 @@ impl Service for Served<'_> {
         self.ctx.end_code = Some(code);
     }
 
+    fn scd_tick(&mut self) -> Vec<String> {
+        super::jobscd::tick(self.system, self.ctx.job.number)
+    }
+
     fn sbs_list(&mut self) -> Vec<wm::sbs::SbsInfo> {
         super::sbs::list(self.system)
     }

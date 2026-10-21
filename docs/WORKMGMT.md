@@ -334,6 +334,59 @@ Kept; inactive until communications exist.
 | 20 | 10 | JobdName | |
 | 30 | 2 | MaxAct | |
 
+### `JobSchedule` (32 bytes)
+
+The payload of `QUSRSYS/QDFTJOBSCD *JOBSCD`. `Count` entries follow,
+each a `JobScheduleEntry`, then its omit dates (`Omits` little-endian
+`u32`s, `YYYYMMDD`), then its command (`CmdLen` bytes, CP037). Dates and
+times are UTC.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | Magic | `QSWMJSCD` in ASCII |
+| 8 | 2 | Version | 1 |
+| 10 | 2 | Reserved | zero |
+| 12 | 4 | NextEntry | the next entry number |
+| 16 | 4 | Count | entries that follow |
+| 20 | 12 | Reserved2 | zero |
+
+### `JobScheduleEntry` (256 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 4 | Number | `ENTRYNBR` |
+| 4 | 1 | Frequency | 0 `*ONCE`, 1 `*WEEKLY`, 2 `*MONTHLY` |
+| 5 | 1 | RcyAcn | 0 `*SBMRLS`, 1 `*SBMHLD`, 2 `*NOSBM` |
+| 6 | 1 | Held | `HLDJOBSCDE` |
+| 7 | 1 | Save | `SAVE(*YES)` |
+| 8 | 1 | Days | `SCDDAY`: bit 0 Monday to bit 6 Sunday |
+| 9 | 1 | RelDays | `RELDAYMON`: bits 0-4 the first to fifth, bit 5 `*LAST` |
+| 10 | 1 | DateKind | 0 a date, 1 `*CURRENT`, 2 `*MONTHSTR`, 3 `*MONTHEND`, 4 `*NONE` |
+| 11 | 1 | Reserved | zero |
+| 12 | 4 | Date | `YYYYMMDD` |
+| 16 | 4 | Time | seconds after midnight |
+| 20 | 8 | Next | Unix seconds it is next due; 0 for never |
+| 28 | 8 | LastSubmit | Unix seconds |
+| 36 | 10 | Job | |
+| 46 | 10 | JobdName | |
+| 56 | 10 | JobdLib | |
+| 66 | 10 | JobqName | blank for `*JOBD` |
+| 76 | 10 | JobqLib | |
+| 86 | 10 | User | |
+| 96 | 10 | MsgqName | blank for `*USRPRF` |
+| 106 | 10 | MsgqLib | |
+| 116 | 28 | LastJob | `number/user/name` |
+| 144 | 50 | Text | |
+| 194 | 2 | Omits | omit dates that follow |
+| 196 | 4 | CmdLen | |
+| 200 | 56 | Reserved2 | zero |
+
+The system job `QSYSSCD`, an autostart job of `QSYSWRK` routed to
+`QSYS/QEJSCHED`, asks the storage service every few seconds to submit
+what is due. An entry due before the current IPL started was missed;
+`*SBMRLS` submits it, `*SBMHLD` submits it held, `*NOSBM` moves on to
+its next date. Each submission is logged in QHST as `CPI1E63`.
+
 ### Shipped objects
 
 | Object | Notes |
@@ -344,6 +397,8 @@ Kept; inactive until communications exist.
 | `QSYS/QCTL *JOBD` | `JOBQ(QSYS/QCTL)` |
 | `QSYS/QSPLJOBD *JOBD` | `USER(QSPLJOB) JOBQ(QSYS/QSPL) RTGDTA(QCMDB)` |
 | `QSYS/QSYSJOBD *JOBD` | `USER(QSYS) JOBQ(QSYS/QSYSNOMAX) RTGDTA(QCMDB)` |
+| `QSYS/QSYSSCD *JOBD` | `USER(QSYS) RTGDTA(QSYSSCD)`, the job scheduler |
+| `QUSRSYS/QDFTJOBSCD *JOBSCD` | the job schedule, empty |
 | `QGPL/QBATCH *CLS` | `RUNPTY(50) TIMESLICE(5000) DFTWAIT(120)` |
 | `QGPL/QINTER *CLS` | `RUNPTY(20) TIMESLICE(2000) DFTWAIT(30)` |
 | `QSYS/QCTL *CLS` | `RUNPTY(10) TIMESLICE(2000) DFTWAIT(30)` |
