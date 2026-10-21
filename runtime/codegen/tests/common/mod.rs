@@ -7,32 +7,36 @@
 
 #![allow(dead_code, clippy::cast_possible_truncation)]
 
-use std::sync::Mutex;
+use std::cell::{Cell, RefCell};
 
 use codegen::abi::{Env, Job};
 use codegen::{Loaded, ModuleCode, RelocTarget, RtFn};
 
-/// Conditions raised, in order.
-pub static RAISED: Mutex<Vec<u32>> = Mutex::new(Vec::new());
-/// Current call depth as `enter`/`leave` see it, and the deepest seen.
-pub static DEPTH: Mutex<(i64, i64)> = Mutex::new((0, 0));
+// Per thread: tests run in parallel and generated code calls back on the
+// test's own thread.
+thread_local! {
+    /// Conditions raised, in order.
+    static RAISED: RefCell<Vec<u32>> = const { RefCell::new(Vec::new()) };
+    /// Current call depth as `enter`/`leave` see it, and the deepest seen.
+    static DEPTH: Cell<(i64, i64)> = const { Cell::new((0, 0)) };
+}
 
 extern "sysv64" fn raise(env: *mut Env, cond: u32) {
     // SAFETY: generated code passes the environment the test built.
     unsafe {
         (*(*env).job).pending = u64::from(cond);
     }
-    RAISED.lock().unwrap().push(cond);
+    RAISED.with_borrow_mut(|r| r.push(cond));
 }
 
 extern "sysv64" fn enter(_env: *mut Env, _code: u64, _argc: i64) {
-    let mut d = DEPTH.lock().unwrap();
-    d.0 += 1;
-    d.1 = d.1.max(d.0);
+    let (cur, max) = DEPTH.get();
+    DEPTH.set((cur + 1, max.max(cur + 1)));
 }
 
 extern "sysv64" fn leave(_env: *mut Env) {
-    DEPTH.lock().unwrap().0 -= 1;
+    let (cur, max) = DEPTH.get();
+    DEPTH.set((cur - 1, max));
 }
 
 extern "sysv64" fn deref(_env: *mut Env, lo: u64, _hi: u64) -> u64 {
@@ -114,8 +118,8 @@ impl Running {
             job: std::ptr::from_mut(&mut *job),
             entry: std::ptr::null_mut(),
         });
-        RAISED.lock().unwrap().clear();
-        *DEPTH.lock().unwrap() = (0, 0);
+        RAISED.with_borrow_mut(Vec::clear);
+        DEPTH.set((0, 0));
         Self {
             module,
             code,
@@ -162,9 +166,9 @@ impl Running {
 }
 
 pub fn raised() -> Vec<u32> {
-    RAISED.lock().unwrap().clone()
+    RAISED.with_borrow(Clone::clone)
 }
 
 pub fn max_depth() -> i64 {
-    DEPTH.lock().unwrap().1
+    DEPTH.get().1
 }
