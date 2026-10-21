@@ -9,8 +9,8 @@
 
 use std::time::Duration;
 
-use stg::{Client, Shared};
 use stg::remote::status;
+use stg::{Client, Shared};
 use wm::job::Status;
 use wm::wtr::WtrStep;
 

@@ -300,7 +300,11 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
         system.out.serial(&format!("slic: {e}\n"));
         system.fatal(&src::STG_ENDED);
     }
-    system.emit(&src::STRUP_SKIPPED);
+    if system.procs.stg.is_some() {
+        start_work(system);
+    } else {
+        system.emit(&src::STRUP_SKIPPED);
+    }
     lic::complete(system);
     system.emit(&src::IPL_COMPLETE);
     procs::console::sign_on(system, "");
@@ -312,6 +316,48 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
         }
         svc::banner(system);
     }
+}
+
+/// What `SCPF` starts before the IPL completes: the system jobs,
+/// `QSYSWRK`, the controlling subsystem, and the startup program's job
+/// run to its end.
+fn start_work(system: &mut System) {
+    let n = procs::sysjobs::start_system(system);
+    system
+        .out
+        .serial(&format!("slic: {n} system jobs started\n"));
+    system.emit(&src::SYSJOBS_STARTED);
+    if let Err(e) = procs::sysjobs::start_subsystem(system, "QSYSWRK") {
+        system.out.serial(&format!("slic: QSYSWRK: {e}\n"));
+    }
+    let ctl = procs::console::controlling(system);
+    if let Err(e) = procs::sysjobs::start_subsystem(system, &ctl) {
+        system.out.serial(&format!("slic: {ctl}: {e}\n"));
+        system.emit(&src::STRUP_SKIPPED);
+        return;
+    }
+    system.emit(&src::CTLSBS_STARTED);
+    let none = system
+        .sysvals
+        .as_ref()
+        .and_then(|v| v.get("QSTRUPPGM").ok())
+        .is_some_and(|v| v.text().trim_start().starts_with("*NONE"));
+    if none {
+        system.emit(&src::STRUP_SKIPPED);
+        return;
+    }
+    let ran = procs::sysjobs::wait_job(
+        system,
+        procs::sysjobs::STARTUP_JOB,
+        std::time::Duration::from_secs(30),
+        std::time::Duration::from_secs(120),
+    );
+    if !ran {
+        system
+            .out
+            .serial("slic: the startup job did not run to its end\n");
+    }
+    system.emit(&src::STRUP_ENDED);
 }
 
 /// A line typed on the serial port: to the service console job, or
@@ -363,6 +409,11 @@ fn job_message(system: &mut System, m: wm::ctl::FromJob) {
                 .out
                 .serial(&format!("slic: QSVCJOB ending: {reason}\n"));
         }
+        FromJob::PowerDown {
+            immediate,
+            delay,
+            restart,
+        } => power::down_ending(system, restart, immediate, delay),
         FromJob::Ready { .. } | FromJob::Show { .. } => {}
     }
 }

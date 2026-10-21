@@ -252,4 +252,12 @@ ipc::rpc! {
     117 => fn wtr_next / WtrNext (name: String) -> WtrStep;
     /// The writer printed spooled file `id`: its text and PDF.
     118 => fn wtr_printed / WtrPrinted (name: String, id: u32, text: String, pdf: Vec<u8>) -> Result<(), String>;
+    /// `QSPLMAINT`'s cleanup: expired spooled files and captures of
+    /// files long gone; what it did.
+    119 => fn spool_maint / SpoolMaint () -> String;
+    /// Where the last job of this name stands this IPL: 0 none yet, 1
+    /// active or about to be, 2 ended.
+    120 => fn job_state / JobState (name: String) -> u8;
+    /// `QIPLSTS` for the next IPL, kept until then.
+    121 => fn next_iplsts / NextIplsts (value: u8) -> Result<(), String>;
 }

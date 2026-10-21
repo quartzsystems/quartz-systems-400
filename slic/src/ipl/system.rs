@@ -101,6 +101,9 @@ pub struct System {
     pub jobs: wm::table::JobTable,
     /// Every spooled file (storage service).
     pub spool: crate::stgsvc::spool::Spool,
+    /// The last state of each job name this IPL: 1 active, 2 ended
+    /// (storage service).
+    pub job_seen: std::collections::BTreeMap<String, u8>,
     /// Started print writers (storage service).
     pub writers: crate::stgsvc::wtr::Writers,
     /// The storage service and the service console job, once started.
@@ -140,6 +143,7 @@ impl System {
             jobs: wm::table::JobTable::default(),
             spool: crate::stgsvc::spool::Spool::default(),
             writers: std::collections::BTreeMap::new(),
+            job_seen: std::collections::BTreeMap::new(),
             queued: std::collections::BTreeMap::new(),
             pending: std::collections::BTreeMap::new(),
             jobq_attach: std::collections::BTreeMap::new(),

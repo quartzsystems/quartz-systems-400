@@ -32,6 +32,64 @@ fn params(library: ObjectId, name: Name, type_code: u16, text: &str) -> CreatePa
     }
 }
 
+/// The data area holding the next IPL's `QIPLSTS`.
+const NEXT_IPLSTS: &str = "QWCIPLSTS";
+
+/// Keep `QIPLSTS` for the next IPL (`2` after `PWRDWNSYS RESTART(*YES)`).
+pub fn set_next_iplsts(system: &mut System, value: u8) -> Result<(), String> {
+    let s = system.storage.as_mut().ok_or("object store not open")?;
+    let qsys = s.qsys.ok_or("object store not initialized")?;
+    crate::svc::db::with_txn(&mut s.store, |txn| {
+        let name = Name::parse(NEXT_IPLSTS).expect("valid");
+        let lib = store::obj::library::Library::load(txn, qsys).map_err(|e| e.to_string())?;
+        let v = DataAreaValue::Dec(i128::from(value));
+        match lib
+            .lookup(txn, types::DTAARA, name)
+            .map_err(|e| e.to_string())?
+        {
+            Some(id) => dtaara::write(txn, id, &v).map_err(|e| e.to_string()),
+            None => dtaara::create(
+                txn,
+                &params(qsys, name, types::DTAARA, "QIPLSTS of the next IPL"),
+                DataAreaType::Dec {
+                    digits: 1,
+                    decimals: 0,
+                },
+                &v,
+            )
+            .map(|_| ())
+            .map_err(|e| e.to_string()),
+        }
+    })
+}
+
+/// The `QIPLSTS` the last power down left for this IPL, reset to 0.
+pub fn take_next_iplsts(system: &mut System) -> u8 {
+    let Some(s) = system.storage.as_mut() else {
+        return 0;
+    };
+    let Some(qsys) = s.qsys else {
+        return 0;
+    };
+    let r = crate::svc::db::with_txn(&mut s.store, |txn| {
+        let name = Name::parse(NEXT_IPLSTS).expect("valid");
+        let lib = store::obj::library::Library::load(txn, qsys).map_err(|e| e.to_string())?;
+        let Some(id) = lib
+            .lookup(txn, types::DTAARA, name)
+            .map_err(|e| e.to_string())?
+        else {
+            return Ok(0);
+        };
+        let v = match dtaara::read(txn, id).map_err(|e| e.to_string())? {
+            DataAreaValue::Dec(n) => u8::try_from(n).unwrap_or(0),
+            _ => 0,
+        };
+        dtaara::write(txn, id, &DataAreaValue::Dec(0)).map_err(|e| e.to_string())?;
+        Ok(v)
+    });
+    r.unwrap_or(0)
+}
+
 /// The next job number, skipping numbers of active jobs; the last one
 /// handed out is kept in `QSYS/QJOBNBR`.
 pub fn next(system: &mut System) -> Result<u32, String> {

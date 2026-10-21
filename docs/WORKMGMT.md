@@ -543,6 +543,8 @@ so database scans pass printer files by.
 | `QSYS/QSPLJOBD *JOBD` | `USER(QSPLJOB) JOBQ(QSYS/QSPL) RTGDTA(QCMDB)` |
 | `QSYS/QSYSJOBD *JOBD` | `USER(QSYS) JOBQ(QSYS/QSYSNOMAX) RTGDTA(QCMDB)` |
 | `QSYS/QSYSSCD *JOBD` | `USER(QSYS) RTGDTA(QSYSSCD)`, the job scheduler |
+| `QSYS/QSTRUPJD *JOBD` | `USER(QPGMR) RTGDTA(QSTRUP)`, the startup job |
+| `QSYS/QSTRUP *PGM` | the startup program, QIR, made at the first start |
 | `QUSRSYS/QDFTJOBSCD *JOBSCD` | the job schedule, empty |
 | `QSYS/QSCAPTURE *DEVD` | the capture printer; its queue `QUSRSYS/QSCAPTURE` |
 | `QGPL/QBATCH *CLS` | `RUNPTY(50) TIMESLICE(5000) DFTWAIT(120)` |
@@ -654,3 +656,37 @@ characters land in one position the first non-blank one stays.
 to 11; `C` skips to the overflow line. `CPYSPLF CTLCHAR(*PRTCTL)` puts
 the line skipped to (three digits, blank for none) and the lines spaced
 (one digit) before each line.
+
+## 4. System jobs, the startup program and power down
+
+After the storage service starts, `slic` (job `SCPF`) starts what the
+machine runs before anyone signs on, in order:
+
+1. The system jobs, type `SYS`, in pool `*MACHINE`: `QSYSARB` to
+   `QSYSARB5`, `QLUS`, `QDBSRV01` to `QDBSRV05`, `QSPLMAINT`, `QALERT`,
+   `QSYSCOMM1` (`C6001030`). `QSPLMAINT` deletes spooled files past
+   their `EXPDATE` every minute; the others wait for work that later
+   phases bring.
+2. `QSYSWRK`, whose autostart job `QSYSSCD` runs the job schedule.
+3. The controlling subsystem `QCTLSBSD` names (`C6001040`). Its
+   autostart job `QSTRUPJD` is routed by `QSTRUP` to `QSYS/QWCSTRUP`,
+   which calls the program `QSTRUPPGM` names (`*NONE`: none,
+   `C6001020`).
+
+The IPL completes (`C6001090`) when `QSTRUPJD` has ended
+(`C6001050`). The service remembers each job name's last state for the
+IPL so a startup job that ends quickly is still seen to have run.
+
+`QSYS/QSTRUP`, written in QIR (`MIGRATE(phase7)`: CL), starts `QSPL`,
+`QSERVER` and `QUSRWRK`; `QINTER`, `QBATCH` and `QCMN` when `QCTL`
+controls; the capture writer when `QSTRPRTWTR` is `1`; and releases
+`QGPL/QS36EVOKE`. Its commands go through `QCMDEXC` and run when it
+returns.
+
+`PWRDWNSYS OPTION(*CNTRLD|*IMMED) DELAY(n|*NOLIMIT) RESTART(*NO|*YES)
+IPLSRC(*PANEL)` is a job command: the job asks `slic`, which ends every
+subsystem as `ENDSBS *ALL` does (`D1001005`), the console jobs and the
+system jobs (`D1001007`), closes the storage service (`D1001010`), and
+powers down (`D1001090`). With `RESTART(*YES)` the next IPL's
+`QIPLSTS` is 2, kept in `QSYS/QWCIPLSTS` until then. `ENDSYS` is
+`ENDSBS *ALL`: the restricted state, the console still up.

@@ -41,7 +41,9 @@ pub const SRC_SEQUENCE: &[&str] = &[
     "SRC C6001000",
     "SRC C6001005",
     "SRC C6001010",
-    "SRC C6001020",
+    "SRC C6001030",
+    "SRC C6001040",
+    "SRC C6001050",
     SRC_IPL_COMPLETE,
 ];
 
@@ -448,6 +450,7 @@ impl Suite {
         reports.push(self.step(&mut s, "27 spooled files", Self::spooled_files)?);
         reports.push(self.step(&mut s, "28 printer files", Self::printer_files)?);
         reports.push(self.step(&mut s, "29 writers", Self::writers)?);
+        reports.push(self.step(&mut s, "30 power down", Self::power_down)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

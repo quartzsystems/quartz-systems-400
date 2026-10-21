@@ -82,6 +82,17 @@ fn jobds() -> Vec<(&'static str, &'static str, JobD)> {
         ),
         (
             "QSYS",
+            "QSTRUPJD",
+            JobD {
+                user: "QPGMR".into(),
+                jobq: ("QSYS".into(), "QCTL".into()),
+                rtgdta: "QSTRUP".into(),
+                text: "Startup job description".into(),
+                ..d()
+            },
+        ),
+        (
+            "QSYS",
             "QSYSSCD",
             JobD {
                 user: "QSYS".into(),

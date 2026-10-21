@@ -126,6 +126,15 @@ pub enum FromJob {
         /// The panel.
         panel: Panel,
     },
+    /// `PWRDWNSYS`: power the system down.
+    PowerDown {
+        /// `OPTION(*IMMED)`.
+        immediate: bool,
+        /// `DELAY` seconds for `*CNTRLD`.
+        delay: u32,
+        /// `RESTART(*YES)`.
+        restart: bool,
+    },
 }
 
 wire_enum!(FromJob {
@@ -134,6 +143,7 @@ wire_enum!(FromJob {
     2 => Done { prompt, srcs, sysvals },
     3 => Ending { reason },
     4 => Show { panel },
+    5 => PowerDown { immediate, delay, restart },
 });
 
 /// The service console's prompt.
@@ -158,6 +168,8 @@ pub const JOB_COMMANDS: &[&str] = &[
     "strsbs",
     "dlyjob",
     "sbmjob",
+    "pwrdwnsys",
+    "endsys",
 ];
 
 /// A display panel: text and input fields placed by row and column

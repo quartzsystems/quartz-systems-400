@@ -44,13 +44,18 @@ used once, else normal.
 | C1002000 | LIC | Previous IPL was abnormal (informational, continues) |
 | C6001000 | OS | OS phase started |
 | C6001010 | OS | System values loaded |
-| C6001020 | OS | Startup program skipped (`MIGRATE(phase5)`) |
+| C6001020 | OS | Startup program skipped (`QSTRUPPGM(*NONE)`, or no store) |
+| C6001030 | OS | System jobs started (Phase 5) |
+| C6001040 | OS | Controlling subsystem started (Phase 5) |
+| C6001050 | OS | Startup program ended (Phase 5) |
 | C6001090 | OS | IPL complete |
 | A6005008 | attention | Console not found, continuing on serial |
 | B1001000 | fatal | slic panic |
 | B1001010 | fatal | LIC partition not found |
 | B1001020 | fatal | LIC record unreadable, both copies |
 | D1001000 | power down | Power down started |
+| D1001005 | power down | Subsystems ended (Phase 5) |
+| D1001007 | power down | System jobs ended (Phase 5) |
 | D1001090 | power down | Power down complete |
 
 The table is [slic/src/src.rs](../slic/src/src.rs). Every transition prints

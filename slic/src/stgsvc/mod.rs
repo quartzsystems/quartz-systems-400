@@ -108,9 +108,16 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
         resume: None,
     });
     system.temp = Some(storage::fresh_temp().map_err(|e| format!("temporary ASP: {e}"))?);
-    let made = install(system).map_err(|e| format!("work management objects: {e}"))?;
+    let mut made = install(system).map_err(|e| format!("work management objects: {e}"))?;
     jobqs::load(system);
     spool::load(system);
+    wtr::clear_queues(system);
+    let strup = include_str!("shipped/QSTRUP.qir");
+    match crate::svc::ile::commands::ship_program(system, "QSYS", strup, "Startup program") {
+        Ok(true) => made += 1,
+        Ok(false) => {}
+        Err(e) => eprintln!("qsstg: QSYS/QSTRUP: {e}"),
+    }
     let text = if made > 0 {
         format!("{text}; {made} work management object(s) created")
     } else {
@@ -125,6 +132,12 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
         system.sysvals = Some(vals);
     }
     system.pools = sbs::pool_table(system);
+    let iplsts = jobs::take_next_iplsts(system);
+    if iplsts != 0
+        && let Some(v) = system.sysvals.as_mut()
+    {
+        let _ = v.set_system("QIPLSTS", sysval::Value::Char(iplsts.to_string()));
+    }
     if let Ok(path) = licpart::locate()
         && let Ok(f) = fs::OpenOptions::new().read(true).write(true).open(&path)
     {

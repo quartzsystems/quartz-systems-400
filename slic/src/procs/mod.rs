@@ -3,13 +3,15 @@
 // root directory of this project.
 
 //! The processes `slic` starts once the IPL has the store ready: the
-//! storage service, which takes the store over, and the service console
-//! job `QSVCJOB`, which runs the console's commands.
+//! storage service, which takes the store over, the system jobs and the
+//! IPL's subsystems, and the service console job `QSVCJOB`, which runs
+//! the console's commands.
 
 pub mod console;
 pub mod spawn;
 pub mod stg;
 pub mod svcjob;
+pub mod sysjobs;
 
 /// The children `slic` talks to.
 #[derive(Default)]
@@ -20,10 +22,18 @@ pub struct Procs {
     pub svcjob: Option<svcjob::SvcJob>,
     /// The job signed on at the console display.
     pub console: Option<console::ConsoleJob>,
+    /// The system jobs and the subsystem monitors `slic` started.
+    pub jobs: Vec<sysjobs::Child>,
 }
 
-/// End the service console job, then close the storage service.
-pub fn end_all(system: &mut crate::ipl::system::System) {
+/// End the subsystems (controlled within `delay` seconds, or at once),
+/// the console and service console jobs, the system jobs, then close
+/// the storage service.
+pub fn end_all(system: &mut crate::ipl::system::System, immediate: bool, delay: u32) {
+    if system.procs.stg.is_some() {
+        sysjobs::end_subsystems(system, immediate, delay);
+        system.emit(&crate::src::SBS_ENDED);
+    }
     if let Some(mut j) = system.procs.console.take() {
         j.end();
         spawn::wait_or_kill(j.pid, std::time::Duration::from_secs(5));
@@ -31,6 +41,10 @@ pub fn end_all(system: &mut crate::ipl::system::System) {
     if let Some(mut j) = system.procs.svcjob.take() {
         j.end();
         spawn::wait_or_kill(j.pid, std::time::Duration::from_secs(5));
+    }
+    if !system.procs.jobs.is_empty() {
+        sysjobs::end_children(system);
+        system.emit(&crate::src::SYSJOBS_ENDED);
     }
     stg::close(system);
 }

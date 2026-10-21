@@ -39,6 +39,12 @@ pub fn command(c: &mut Console, cmd: &str, line: &str) -> String {
         "strsbs" => strsbs(c, &p),
         "dlyjob" => dlyjob(c, &p),
         "sbmjob" => sbmjob(c, &p),
+        "pwrdwnsys" => pwrdwnsys(c, &p),
+        "endsys" => {
+            let opt = p.upper("OPTION").unwrap_or_else(|| "*CNTRLD".into());
+            let delay = p.upper("DELAY").unwrap_or_else(|| "*NOLIMIT".into());
+            Ok(c.line(&format!("endsbs *ALL OPTION({opt}) DELAY({delay})")))
+        }
         other => Err(format!("{other} is not a job command")),
     };
     match r {
@@ -211,6 +217,56 @@ fn strsbs(c: &mut Console, p: &Params) -> Result<String, String> {
         std::thread::sleep(std::time::Duration::from_millis(100));
     }
     Err(format!("CPF1012 subsystem {name} did not start"))
+}
+
+/// `PWRDWNSYS OPTION(*CNTRLD|*IMMED) DELAY(n|*NOLIMIT) RESTART(*NO|*YES)
+/// IPLSRC(*PANEL) CONFIRM(...)`: `slic` ends the subsystems, the system
+/// jobs and the storage service, then powers down.
+fn pwrdwnsys(c: &mut Console, p: &Params) -> Result<String, String> {
+    let immediate = match p.upper("OPTION").as_deref() {
+        None | Some("*CNTRLD") => false,
+        Some("*IMMED") => true,
+        Some(o) => return Err(format!("CPD0084 OPTION({o}) is not valid")),
+    };
+    let delay = match p.upper("DELAY").as_deref() {
+        None | Some("*NOLIMIT") => 3600,
+        Some(d) => d
+            .parse()
+            .map_err(|_| format!("CPD0084 DELAY({d}) is not valid"))?,
+    };
+    let restart = match p
+        .upper("RESTART")
+        .as_deref()
+        .map(|r| r.split_whitespace().next().unwrap_or(""))
+    {
+        None | Some("*NO") => false,
+        Some("*YES") => true,
+        Some(r) => return Err(format!("CPD0084 RESTART({r}) is not valid")),
+    };
+    match p.upper("IPLSRC").as_deref() {
+        None | Some("*PANEL") => {}
+        Some(s) => {
+            return Err(format!(
+                "CPD0084 IPLSRC({s}): the IPL source is chosen at the panel (*PANEL)"
+            ));
+        }
+    }
+    c.ctl
+        .send(&wm::ctl::FromJob::PowerDown {
+            immediate,
+            delay,
+            restart,
+        })
+        .map_err(|e| e.to_string())?;
+    Ok(format!(
+        "Power down {}{}.\n",
+        if immediate {
+            "immediately"
+        } else {
+            "in a controlled manner"
+        },
+        if restart { ", then IPL" } else { "" }
+    ))
 }
 
 /// `DLYJOB DLY(seconds)`: the job waits, in `DLYW`, taking break

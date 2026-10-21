@@ -1,0 +1,53 @@
+; QSYS/QSTRUP: the startup program QSTRUPPGM names, which the
+; controlling subsystem's autostart job QSTRUPJD calls. It asks for the
+; work every system starts with: the spooling, server and user work
+; subsystems, the interactive, batch and communications subsystems
+; when QCTL controls, the capture printer's writer when QSTRPRTWTR is
+; 1, and the System/36 evoke queue released. Commands QCMDEXC takes
+; run when the program returns.
+module QSTRUP
+extern sysapi QWCRSVAL($r: char(64), $rl: i32, $n: i32, $names: char(10), $err: char(16))
+extern sysapi QCMDEXC($c: char(48), $l: packed(15,5))
+static $sv: char(64)
+static $svl: i32 inz(64)
+static $one: i32 inz(1)
+static $err: char(16)
+static $len: packed(15,5) inz(48)
+static $v1: char(1)
+static $v10: char(10)
+static $wtrsv: char(10) inz("QSTRPRTWTR")
+static $ctlsv: char(10) inz("QCTLSBSD")
+static $spl: char(48) inz("strsbs QSYS/QSPL")
+static $srv: char(48) inz("strsbs QSYS/QSERVER")
+static $usr: char(48) inz("strsbs QSYS/QUSRWRK")
+static $int: char(48) inz("strsbs QSYS/QINTER")
+static $bch: char(48) inz("strsbs QSYS/QBATCH")
+static $cmn: char(48) inz("strsbs QSYS/QCMN")
+static $wtr: char(48) inz("strprtwtr DEV(QSCAPTURE)")
+static $evk: char(48) inz("rlsjobq QGPL/QS36EVOKE")
+proc QSTRUP() entry {
+L0:
+  sysapi QCMDEXC($spl, $len)
+  sysapi QCMDEXC($srv, $len)
+  sysapi QCMDEXC($usr, $len)
+  sysapi QWCRSVAL($sv, $svl, $one, $ctlsv, $err)
+  str.subst $v10, $sv, 25, 10
+  %qctl = str.cmp.eq $v10, "QCTL      "
+  brif %qctl, CTL, WTR
+CTL:
+  sysapi QCMDEXC($int, $len)
+  sysapi QCMDEXC($bch, $len)
+  sysapi QCMDEXC($cmn, $len)
+  br WTR
+WTR:
+  sysapi QWCRSVAL($sv, $svl, $one, $wtrsv, $err)
+  str.subst $v1, $sv, 25, 1
+  %w = str.cmp.eq $v1, "1"
+  brif %w, START, DONE
+START:
+  sysapi QCMDEXC($wtr, $len)
+  br DONE
+DONE:
+  sysapi QCMDEXC($evk, $len)
+  ret
+}

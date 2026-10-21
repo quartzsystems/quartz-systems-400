@@ -57,6 +57,7 @@ pub fn run() -> ! {
         "MONITOR" => crate::work::monitor::run(ctl, &link, &start),
         "BATCH" => crate::work::batch::run(ctl, &link, &start),
         "INTER" => crate::work::inter::run(ctl, &link, &start),
+        "SYSTEM" => crate::work::sysjob::run(ctl, &link, &start),
         other => end(&mut ctl, &format!("no role {other}")),
     }
 }

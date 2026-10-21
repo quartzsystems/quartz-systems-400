@@ -248,6 +248,11 @@ pub fn from_job(system: &mut System, m: FromJob) {
             }
         }
         FromJob::Output { text } => system.out.serial(&text),
+        FromJob::PowerDown {
+            immediate,
+            delay,
+            restart,
+        } => crate::ipl::power::down_ending(system, restart, immediate, delay),
         FromJob::Ending { .. } | FromJob::Ready { .. } | FromJob::Done { .. } => {}
     }
 }

@@ -13,8 +13,17 @@ use crate::src;
 
 /// Power off, or restart. Never returns.
 pub fn down(system: &mut System, restart: bool) -> ! {
+    down_ending(system, restart, true, 0)
+}
+
+/// `PWRDWNSYS`: power down with the work ending controlled within
+/// `delay` seconds, or at once. A restart is `QIPLSTS` 2 next time.
+pub fn down_ending(system: &mut System, restart: bool, immediate: bool, delay: u32) -> ! {
     system.emit(&src::PWRDWN_STARTED);
-    crate::procs::end_all(system);
+    if restart && let Some(s) = system.procs.stg.as_mut() {
+        let _ = stg::Client::next_iplsts(s, 2);
+    }
+    crate::procs::end_all(system, immediate, delay);
     storage::close(system);
     lic::shutdown(system, &src::PWRDWN_STARTED);
     if let Some((part, _)) = system.lic.take() {

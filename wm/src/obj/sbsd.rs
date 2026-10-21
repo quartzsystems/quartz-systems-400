@@ -849,6 +849,16 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
         maxact: 0,
         at_signon: true,
     };
+    // The startup job: routing data QSTRUP runs QWCSTRUP, which calls
+    // the program QSTRUPPGM names.
+    let strup = || Rtge {
+        pgm: q("QWCSTRUP", "QSYS"),
+        ..rt(5, "QSTRUP", q("QSYSCLS25", "QSYS"), 1)
+    };
+    let strupjd = || Aje {
+        job: "QSTRUPJD".into(),
+        jobd: q("QSTRUPJD", "QSYS"),
+    };
     vec![
         (
             "QBASE",
@@ -856,17 +866,15 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
                 pools: vec![pool(1, PoolKind::Base), pool(2, PoolKind::Interact)],
                 text: "Interactive, batch and spooling subsystem".into(),
                 rtges: vec![
+                    strup(),
                     rt(10, "QCMDB", q("QBATCH", "QGPL"), 1),
                     rt(20, "QCMDI", q("QINTER", "QGPL"), 2),
                     rt(9999, "*ANY", q("QBATCH", "QGPL"), 1),
                 ],
                 wsns: vec![console()],
                 wsts: vec![all_types()],
-                jobqes: vec![
-                    jq("QBASE", "QGPL", 10, 0),
-                    jq("QBATCH", "QGPL", 20, 1),
-                    jq("QSPL", "QSYS", 30, 0),
-                ],
+                jobqes: vec![jq("QBASE", "QGPL", 10, 0)],
+                ajes: vec![strupjd()],
                 ..Sbsd::default()
             },
         ),
@@ -874,7 +882,9 @@ pub fn shipped() -> Vec<(&'static str, Sbsd)> {
             "QCTL",
             Sbsd {
                 text: "Controlling subsystem".into(),
+                ajes: vec![strupjd()],
                 rtges: vec![
+                    strup(),
                     rt(10, "QCMDI", q("QCTL", "QSYS"), 1),
                     rt(20, "QCMDB", q("QCTL", "QSYS"), 1),
                     rt(9999, "*ANY", q("QCTL", "QSYS"), 1),

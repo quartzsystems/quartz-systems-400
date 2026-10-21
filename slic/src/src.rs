@@ -85,10 +85,20 @@ pub const RCLSTG_REQUIRED: Src = src("C6001008", "Reclaim storage required", Pha
 pub const SYSVALS_LOADED: Src = src("C6001010", "System values loaded", Phase::Os);
 /// The storage service process took over the store.
 pub const STG_STARTED: Src = src("C6001015", "Storage management service started", Phase::Os);
-/// Startup program skipped. MIGRATE(phase5): run QSTRUPPGM.
+/// Startup program skipped: `QSTRUPPGM(*NONE)`, or no store.
 pub const STRUP_SKIPPED: Src = src("C6001020", "Startup program skipped", Phase::Os);
 /// IPL complete.
 pub const IPL_COMPLETE: Src = src("C6001090", "IPL complete", Phase::Os);
+/// The system jobs are running.
+pub const SYSJOBS_STARTED: Src = src("C6001030", "System jobs started", Phase::Os);
+/// The controlling subsystem is active.
+pub const CTLSBS_STARTED: Src = src("C6001040", "Controlling subsystem started", Phase::Os);
+/// The startup program's job ended.
+pub const STRUP_ENDED: Src = src("C6001050", "Startup program ended", Phase::Os);
+/// Every subsystem ended for power down.
+pub const SBS_ENDED: Src = src("D1001005", "Subsystems ended", Phase::PowerDown);
+/// The system jobs ended for power down.
+pub const SYSJOBS_ENDED: Src = src("D1001007", "System jobs ended", Phase::PowerDown);
 /// The installer started writing the load source.
 pub const INSTALL_STARTED: Src = src("C6004001", "Install started", Phase::Os);
 /// Partition table and ESP written.
@@ -194,6 +204,9 @@ pub const TABLE: &[Src] = &[
     SYSVALS_LOADED,
     STG_STARTED,
     STRUP_SKIPPED,
+    SYSJOBS_STARTED,
+    CTLSBS_STARTED,
+    STRUP_ENDED,
     IPL_COMPLETE,
     INSTALL_STARTED,
     INSTALL_PARTITIONED,
@@ -218,6 +231,8 @@ pub const TABLE: &[Src] = &[
     ASP_WRONG_RELEASE,
     STG_ENDED,
     PWRDWN_STARTED,
+    SBS_ENDED,
+    SYSJOBS_ENDED,
     STORE_CLOSED,
     PWRDWN_COMPLETE,
 ];

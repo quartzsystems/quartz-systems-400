@@ -27,6 +27,37 @@ impl Suite {
         if !scpf.contains("SYS") {
             return Err(format!("SCPF is not a system job: {scpf}"));
         }
+        for name in [
+            "QSYSARB",
+            "QSYSARB5",
+            "QLUS",
+            "QDBSRV01",
+            "QDBSRV05",
+            "QSPLMAINT",
+            "QALERT",
+            "QSYSCOMM1",
+        ] {
+            let r = row(&format!("{name} ")).ok_or_else(|| format!("no {name}:\n{list}"))?;
+            if !r.contains("SYS") {
+                return Err(format!("{name} is not a system job: {r}"));
+            }
+        }
+        for sbs in ["QSYSWRK", "QBASE", "QSPL", "QSERVER", "QUSRWRK"] {
+            let r =
+                row(&format!("{sbs} ")).ok_or_else(|| format!("{sbs} is not active:\n{list}"))?;
+            if !r.contains("SBS") {
+                return Err(format!("{sbs} is not a subsystem monitor: {r}"));
+            }
+        }
+        if row("QSYSSCD").is_none() || row("QSTRUPJD").is_some() {
+            return Err(format!(
+                "QSYSSCD should run and QSTRUPJD have ended:\n{list}"
+            ));
+        }
+        let hist = s.command("dsplog MSGID(CPF0900)", CMD)?;
+        if !hist.contains("CPF0900") {
+            return Err(format!("no CPF0900 in QHST:\n{hist}"));
+        }
         let svc = row("QSVCJOB").ok_or_else(|| format!("no QSVCJOB:\n{list}"))?;
         if !svc.contains("RUN") || !svc.contains("CMD-WRKACTJOB") {
             return Err(format!("QSVCJOB is not running wrkactjob: {svc}"));
@@ -42,7 +73,7 @@ impl Suite {
             .unwrap_or_default()
             .to_string();
         Ok(format!(
-            "SCPF and QSVCJOB {number} active; QTEMP is the job's own"
+            "SCPF, 14 system jobs, QSYSWRK, QBASE and the startup subsystems; QSVCJOB {number}; QTEMP is the job's own"
         ))
     }
 }
@@ -384,13 +415,9 @@ impl Suite {
         screen_has(s, "Command Entry")?;
         s.command("type wrkactjob", CMD)?;
         s.command("key enter", CMD)?;
-        // The history line, not the input line ("===> wrkactjob").
-        let shown = screen_has(s, "  > wrkactjob")?;
-        if !shown.contains("QSCONSOLE") {
-            return Err(format!(
-                "the job's own command shows no QSCONSOLE:\n{shown}"
-            ));
-        }
+        // The output, which lists the job running it; with the system
+        // jobs it is long enough to scroll the command line away.
+        screen_has(s, "CMD-WRKACTJOB")?;
         let active = s.command("wrkactjob", CMD)?;
         let row = active
             .lines()
@@ -722,13 +749,18 @@ impl Suite {
     pub(crate) fn printer_files(&self, s: &mut Session) -> Result<String, String> {
         crate::qir::qemu::push(s, "KITDDS", crate::qir::KITPRT)?;
         s.command("crtsrcpf QGPL/WMSRC", CMD)?;
-        s.command("srcput QGPL/WMSRC KITPRT SRCTYPE(PRTF) FROMSTMF(KITDDS)", CMD)?;
+        s.command(
+            "srcput QGPL/WMSRC KITPRT SRCTYPE(PRTF) FROMSTMF(KITDDS)",
+            CMD,
+        )?;
         let made = s.command("crtprtf QGPL/KITPRT SRCFILE(QGPL/WMSRC)", CMD)?;
         let fd = s.command("dspfd QGPL/KITPRT", CMD)?;
         if !made.contains("3 record format(s)") || !fd.contains("PRTF") || !fd.contains("DETAIL") {
-            return Err(format!("crtprtf:
+            return Err(format!(
+                "crtprtf:
 {made}
-{fd}"));
+{fd}"
+            ));
         }
         let kit = crate::qir::Kit::locate();
         let program = std::fs::read_to_string(kit.root.join("programs").join("PRT02.qir"))
@@ -738,10 +770,15 @@ impl Suite {
         s.command("crtpgm QGPL/PRT02 MODULE(QGPL/PRT02) ACTGRP(*CALLER)", CMD)?;
         let out = s.command("call QGPL/PRT02", CMD)?;
         let files = s.command("wrksplf SELECT(*ALL) JOB(QSVCJOB)", CMD)?;
-        if !files.lines().any(|l| l.contains("KITPRT") && l.contains("RDY")) {
-            return Err(format!("no ready KITPRT after the call:
+        if !files
+            .lines()
+            .any(|l| l.contains("KITPRT") && l.contains("RDY"))
+        {
+            return Err(format!(
+                "no ready KITPRT after the call:
 {out}
-{files}"));
+{files}"
+            ));
         }
         let shown = s.command("dspsplf KITPRT JOB(QSVCJOB) SPLNBR(*LAST)", CMD)?;
         for want in [
@@ -751,25 +788,37 @@ impl Suite {
             "    End of report",
         ] {
             if !shown.contains(want) {
-                return Err(format!("the report lacks {want:?}:
-{shown}"));
+                return Err(format!(
+                    "the report lacks {want:?}:
+{shown}"
+                ));
             }
         }
-        s.command("ovrprtf FILE(KITPRT) OUTQ(QGPL/QPRINT2) SPLFNAME(WMOVR) HOLD(*YES)", CMD)?;
+        s.command(
+            "ovrprtf FILE(KITPRT) OUTQ(QGPL/QPRINT2) SPLFNAME(WMOVR) HOLD(*YES)",
+            CMD,
+        )?;
         s.command("call QGPL/PRT02", CMD)?;
         s.command("dltovr FILE(*ALL)", CMD)?;
         let moved = s.command("wrkoutq QGPL/QPRINT2", CMD)?;
-        if !moved.lines().any(|l| l.contains("WMOVR") && l.contains("HLD")) {
-            return Err(format!("the override did not take:
-{moved}"));
+        if !moved
+            .lines()
+            .any(|l| l.contains("WMOVR") && l.contains("HLD"))
+        {
+            return Err(format!(
+                "the override did not take:
+{moved}"
+            ));
         }
         s.command("dltsplf WMOVR JOB(QSVCJOB) SPLNBR(*LAST)", CMD)?;
         s.command("dltsplf KITPRT JOB(QSVCJOB) SPLNBR(*LAST)", CMD)?;
         let gone = s.command("dltf QGPL/KITPRT", CMD)?;
         s.command("dltf QGPL/WMSRC", CMD)?;
         if !gone.contains("deleted") {
-            return Err(format!("dltf of the printer file:
-{gone}"));
+            return Err(format!(
+                "dltf of the printer file:
+{gone}"
+            ));
         }
         Ok("KITPRT created from DDS; PRT02 printed headings, edited amounts, an indicator and an underline; OVRPRTF moved and held the next file".into())
     }
@@ -786,15 +835,23 @@ impl Suite {
         let mut wtr = String::new();
         for _ in 0..40 {
             wtr = s.command("wrkwtr", CMD)?;
-            if wtr.lines().any(|l| l.contains("QSCAPTURE") && l.contains("STR")) {
+            if wtr
+                .lines()
+                .any(|l| l.contains("QSCAPTURE") && l.contains("STR"))
+            {
                 break;
             }
             std::thread::sleep(Duration::from_millis(250));
         }
-        if !wtr.lines().any(|l| l.contains("QSCAPTURE") && l.contains("STR")) {
-            return Err(format!("the writer did not start:
+        if !wtr
+            .lines()
+            .any(|l| l.contains("QSCAPTURE") && l.contains("STR"))
+        {
+            return Err(format!(
+                "the writer did not start:
 {started}
-{wtr}"));
+{wtr}"
+            ));
         }
         s.command(
             "chgsplfa QSYSPRT JOB(QSVCJOB) SPLNBR(*LAST) OUTQ(QUSRSYS/QSCAPTURE) SAVE(*YES)",
@@ -803,19 +860,29 @@ impl Suite {
         let mut files = String::new();
         for _ in 0..40 {
             files = s.command("wrksplf SELECT(*ALL) JOB(QSVCJOB)", CMD)?;
-            if files.lines().any(|l| l.contains("QSYSPRT") && l.contains("SAV")) {
+            if files
+                .lines()
+                .any(|l| l.contains("QSYSPRT") && l.contains("SAV"))
+            {
                 break;
             }
             std::thread::sleep(Duration::from_millis(250));
         }
-        if !files.lines().any(|l| l.contains("QSYSPRT") && l.contains("SAV")) {
-            return Err(format!("QSYSPRT was not printed:
-{files}"));
+        if !files
+            .lines()
+            .any(|l| l.contains("QSYSPRT") && l.contains("SAV"))
+        {
+            return Err(format!(
+                "QSYSPRT was not printed:
+{files}"
+            ));
         }
         let text = s.command("prtcapture get QSYSPRT JOB(QSVCJOB)", CMD)?;
         if !text.contains("00A") || !text.contains("06E") {
-            return Err(format!("the captured text:
-{text}"));
+            return Err(format!(
+                "the captured text:
+{text}"
+            ));
         }
         let pdf_out = s.command("prtcapture get QSYSPRT JOB(QSVCJOB) FORMAT(*PDF)", CMD)?;
         let b64: String = pdf_out
@@ -841,13 +908,20 @@ impl Suite {
         s.command("endsbs QSPL OPTION(*IMMED)", CMD)?;
         s.command("dltsplf QSYSPRT JOB(QSVCJOB) SPLNBR(*LAST)", CMD)?;
         s.command("prtcapture clear", CMD)?;
-        if !held.lines().any(|l| l.contains("QSCAPTURE") && l.contains("HLD")) {
-            return Err(format!("hldwtr:
-{held}"));
+        if !held
+            .lines()
+            .any(|l| l.contains("QSCAPTURE") && l.contains("HLD"))
+        {
+            return Err(format!(
+                "hldwtr:
+{held}"
+            ));
         }
         if after.contains("QSCAPTURE") {
-            return Err(format!("endwtr:
-{after}"));
+            return Err(format!(
+                "endwtr:
+{after}"
+            ));
         }
         Ok(format!(
             "QSCAPTURE printed QSYSPRT: text and a {}-byte PDF of {pages} page(s); held, released, ended",
@@ -880,6 +954,71 @@ fn unbase64(s: &str) -> Option<Vec<u8>> {
         out.extend_from_slice(&bytes[1..4 - pad]);
     }
     Some(out)
+}
+
+/// Wait for the console display to show `want`; the screen.
+fn screen_wait(s: &mut Session, want: &str) -> Result<String, String> {
+    let mut last = String::new();
+    for _ in 0..80 {
+        last = s.command("screen", CMD)?;
+        if last.contains(want) {
+            return Ok(last);
+        }
+        std::thread::sleep(Duration::from_millis(250));
+    }
+    Err(format!("the console never showed {want:?}:\n{last}"))
+}
+
+impl Suite {
+    /// Step 30: `PWRDWNSYS *IMMED RESTART(*YES)` typed at Command Entry:
+    /// the subsystems and system jobs end, the store closes, the system
+    /// IPLs again normally with `QIPLSTS` 2.
+    pub(crate) fn power_down(&self, s: &mut Session) -> Result<String, String> {
+        screen_wait(s, "Sign On")?;
+        s.command("type QSECOFR", CMD)?;
+        s.command("key enter", CMD)?;
+        screen_wait(s, "Command Entry")?;
+        s.command("type pwrdwnsys OPTION(*IMMED) RESTART(*YES)", CMD)?;
+        s.send("key enter")?;
+        for code in [
+            "SRC D1001000",
+            "SRC D1001005",
+            "SRC D1001007",
+            "SRC D1001010",
+            "SRC D1001090",
+        ] {
+            s.expect(code, Duration::from_secs(60))?;
+        }
+        let t0 = s.elapsed();
+        s.expect_in_order(crate::steps::SRC_SEQUENCE, self.boot_timeout)?;
+        s.expect(crate::PROMPT, CMD)?;
+        let boot = s.elapsed().saturating_sub(t0);
+        let hist = s.command("hist", CMD)?;
+        let entries: Vec<&str> = hist
+            .lines()
+            .filter(|l| {
+                l.split_whitespace()
+                    .next()
+                    .is_some_and(|w| w.chars().all(|c| c.is_ascii_digit()))
+            })
+            .collect();
+        let before = entries
+            .len()
+            .checked_sub(2)
+            .and_then(|i| entries.get(i))
+            .ok_or_else(|| format!("too few history entries:\n{hist}"))?;
+        if !before.contains("Normal") {
+            return Err(format!("the powered-down IPL is not Normal: {before}"));
+        }
+        let sts = s.command("sysval QIPLSTS", CMD)?;
+        if !sts.contains("QIPLSTS: 2") {
+            return Err(format!("QIPLSTS after the restart: {sts}"));
+        }
+        Ok(format!(
+            "D1001000 to D1001090 from Command Entry; IPL again in {:.1}s, previous IPL Normal, QIPLSTS 2",
+            boot.as_secs_f64()
+        ))
+    }
 }
 
 /// `YYYYMMDD` and `hhmmss` in UTC, `secs` seconds from now.

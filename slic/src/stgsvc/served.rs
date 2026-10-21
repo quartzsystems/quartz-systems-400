@@ -165,6 +165,7 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
         None => super::jobs::resolve_attrs(system, &job.jobd, &job.class),
     };
     system.attrs.insert(job.number, attrs);
+    system.job_seen.insert(job.name.clone(), 1);
     system.jobs.add(job.clone());
     let who = (job.name.clone(), job.user.clone(), job.number);
     let data = wm::joblog::started_data(
@@ -223,6 +224,7 @@ fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
         super::jobs::drop_qtemp(system, ctx.job.number, q);
     }
     system.jobs.remove(ctx.job.number);
+    system.job_seen.insert(ctx.job.name.clone(), 2);
     system.attrs.remove(&ctx.job.number);
     super::msgs::release(system, ctx.job.number);
     system.pools.remove(ctx.job.number);
@@ -518,6 +520,21 @@ impl Service for Served<'_> {
         let (id, prtf) = r?;
         self.ctx.splfs.push(id);
         Ok((id, prtf))
+    }
+
+    fn spool_maint(&mut self) -> String {
+        super::spool::maintain(self.system)
+    }
+
+    fn next_iplsts(&mut self, value: u8) -> Result<(), String> {
+        super::jobs::set_next_iplsts(self.system, value)
+    }
+
+    fn job_state(&mut self, name: String) -> u8 {
+        if self.system.pending.values().any(|q| q.name == name) {
+            return 1;
+        }
+        self.system.job_seen.get(&name).copied().unwrap_or(0)
     }
 
     fn wtr_next(&mut self, name: String) -> wm::wtr::WtrStep {

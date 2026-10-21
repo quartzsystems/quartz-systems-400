@@ -33,6 +33,8 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         .unwrap_or(("QSYS", start.program.as_str()));
     let code = if pgm == "QEJSCHED" {
         super::scheduler::run(&mut c, link)
+    } else if pgm == "QWCSTRUP" {
+        startup(&mut c, link)
     } else if pgm == "QSPWTR" {
         super::writer::run(&mut c, link, start.rqsdta.trim())
     } else if pgm == "QCMD" {
@@ -66,6 +68,26 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         reason: format!("ended, code {code}"),
     });
     std::process::exit(0)
+}
+
+/// `QWCSTRUP`: call the program `QSTRUPPGM` names, unless `*NONE`.
+fn startup(c: &mut Console, link: &Shared) -> u16 {
+    let sv = link
+        .borrow_mut()
+        .with(|l| stg::Client::sysval(l, "QSTRUPPGM".into()));
+    let text = sv.map(|v| ccsid::from_ebcdic(&v.data)).unwrap_or_default();
+    let mut words = text.split_whitespace();
+    let (Some(pgm), lib) = (words.next(), words.next().unwrap_or("*LIBL")) else {
+        return 0;
+    };
+    if pgm == "*NONE" {
+        return 0;
+    }
+    status(link, Status::Run, &format!("PGM-{pgm}"));
+    c.job()
+        .log_request(&format!("CALL {lib}/{pgm}"), ("QWCSTRUP", "QSYS"));
+    let out = c.line(&format!("call {lib}/{pgm}"));
+    end_code(&out)
 }
 
 /// The end code a run's output implies: 20 when the program could not

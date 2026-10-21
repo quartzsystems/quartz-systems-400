@@ -345,6 +345,29 @@ pub fn job_ended(system: &mut System, number: u32) {
     }
 }
 
+/// At start: no writer survives an IPL, so no output queue has one.
+pub fn clear_queues(system: &mut System) {
+    let _ = with_store(system, |txn, qsys| {
+        let mut libs = vec![qsys];
+        for (_, id) in ops::list(txn, qsys, Some(types::LIB)).map_err(|e| e.to_string())? {
+            libs.push(id);
+        }
+        for lib in libs {
+            for (_, id) in ops::list(txn, lib, Some(types::OUTQ)).map_err(|e| e.to_string())? {
+                let b = wm::obj::read(txn, id).map_err(|e| e.to_string())?;
+                let Ok(mut oq) = wm::obj::outq::OutQ::decode(&b) else {
+                    continue;
+                };
+                if !oq.writer.is_empty() {
+                    oq.writer.clear();
+                    wm::obj::write(txn, id, &oq.encode()).map_err(|e| e.to_string())?;
+                }
+            }
+        }
+        Ok(())
+    });
+}
+
 /// Every capture: its object and what it holds.
 fn captures(system: &mut System) -> Result<Vec<(ObjectId, String)>, String> {
     with_store(system, |txn, qsys| {

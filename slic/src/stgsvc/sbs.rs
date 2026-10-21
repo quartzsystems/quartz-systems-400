@@ -75,9 +75,10 @@ pub fn wm_object(system: &mut System, qual: &str, ty: &str) -> Result<Vec<u8>, S
 /// A subsystem that may start: its library and description.
 pub fn check(system: &mut System, name: &str) -> Result<(String, Vec<u8>), String> {
     let name = name.to_ascii_uppercase();
-    if let Some(a) = system.sbs.get(&name) {
+    let bare = wm::obj::params::qualified(&name).1;
+    if let Some(a) = system.sbs.get(&bare) {
         return Err(format!(
-            "CPF1010 subsystem {name} is active, monitor job {:06}",
+            "CPF1010 subsystem {bare} is active, monitor job {:06}",
             a.monitor
         ));
     }

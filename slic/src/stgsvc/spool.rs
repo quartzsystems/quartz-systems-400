@@ -355,6 +355,35 @@ pub fn find(system: &System, file: &str, job: &str, splnbr: &str) -> Result<u32,
     .ok_or_else(|| format!("CPF3309 no spooled file {file} in job {job}"))
 }
 
+/// `QSPLMAINT`: delete the spooled files whose `EXPDATE` has passed
+/// (`QRCLSPLSTG` reclaims nothing more: a file's storage goes with it);
+/// what was done.
+pub fn maintain(system: &mut System) -> String {
+    let days = i64::try_from(now_unix() / 86_400).unwrap_or(0);
+    let (y, m, d) = wm::obj::jobscd::civil_from_days(days);
+    let today = u32::try_from(y * 10_000 + i64::from(m) * 100 + i64::from(d)).unwrap_or(0);
+    let expired: Vec<u32> = system
+        .spool
+        .files
+        .values()
+        .filter(|e| {
+            e.attrs.expires != 0
+                && e.attrs.expires < today
+                && !matches!(e.attrs.status, Status::Opn | Status::Wtr)
+        })
+        .map(|e| e.attrs.id)
+        .collect();
+    let n = expired
+        .iter()
+        .filter(|id| delete(system, **id).is_ok())
+        .count();
+    if n == 0 {
+        String::new()
+    } else {
+        format!("{n} expired spooled file(s) deleted")
+    }
+}
+
 /// The files on a queue, in queue order.
 pub fn on_queue(system: &mut System, q: &str) -> Result<(String, OutQ, Vec<SplfAttrs>), String> {
     let (real, oq) = with_outq(system, q, |oq, real| {

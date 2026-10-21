@@ -201,6 +201,7 @@ impl Suite {
             return Err(format!("the clean close left work to replay:\n{recovery}"));
         }
         s.expect("SRC C6001005", self.boot_timeout)?;
+        s.expect(crate::steps::SRC_IPL_COMPLETE, self.boot_timeout)?;
         s.expect(crate::PROMPT, CMD)?;
         Ok(format!(
             "{line}; reclaim check clean; clean restart replayed 0"
