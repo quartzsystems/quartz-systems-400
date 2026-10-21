@@ -36,6 +36,8 @@ members = [
     "work/spool",
     "work/ipc",
     "work/stg",
+    # Security: profiles, passwords, authority, auditing.
+    "security/sec",
 ]
 
 [workspace.package]
@@ -74,6 +76,16 @@ must_use_candidate = "allow"
 # unoptimized they take minutes.
 [profile.test.package.store]
 opt-level = 2
+
+# Argon2 unoptimized takes seconds per password hash.
+[profile.dev.package.argon2]
+opt-level = 3
+[profile.dev.package.blake2]
+opt-level = 3
+[profile.test.package.argon2]
+opt-level = 3
+[profile.test.package.blake2]
+opt-level = 3
 
 # Release profile is shared by the image binaries and the host tools.
 [profile.release]

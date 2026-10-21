@@ -132,6 +132,14 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
             .map_err(|e| format!("system values: {e}"))?;
         system.sysvals = Some(vals);
     }
+    let text = match install_security(system) {
+        Ok(d) if d.profiles > 0 => format!(
+            "{text}; {} user profile(s) created, {} object(s) re-owned",
+            d.profiles, d.reowned
+        ),
+        Ok(_) => text,
+        Err(e) => format!("{text}; user profiles: {e}"),
+    };
     system.pools = sbs::pool_table_saved(system);
     let iplsts = jobs::take_next_iplsts(system);
     if iplsts != 0
@@ -259,6 +267,35 @@ fn install(system: &mut System) -> Result<usize, String> {
     let made = wm::obj::shipped::install(&mut txn, qsys, &stamp).map_err(|e| e.to_string())?;
     txn.commit().map_err(|e| e.to_string())?;
     Ok(made)
+}
+
+/// A numeric system value, or `default` when unset.
+pub(crate) fn sysval_num(system: &System, name: &str, default: u8) -> u8 {
+    system
+        .sysvals
+        .as_ref()
+        .and_then(|v| v.get(name).ok())
+        .and_then(|v| v.text().trim().parse().ok())
+        .unwrap_or(default)
+}
+
+/// The shipped user profiles that are missing; the first time, the
+/// existing objects re-owned (`docs/SECURITY.md`).
+fn install_security(system: &mut System) -> Result<sec::profile::shipped::Installed, String> {
+    let qsecurity = sysval_num(system, "QSECURITY", 40);
+    let pwdlvl = sysval_num(system, "QPWDLVL", 3);
+    let Some(s) = system.storage.as_mut() else {
+        return Ok(Default::default());
+    };
+    let Some(qsys) = s.qsys else {
+        return Ok(Default::default());
+    };
+    let now = crate::ipl::system::now_unix();
+    let mut txn = s.store.begin().map_err(|e| e.to_string())?;
+    let d = sec::profile::shipped::install(&mut txn, qsys, qsecurity, pwdlvl, now)
+        .map_err(|e| e.to_string())?;
+    txn.commit().map_err(|e| e.to_string())?;
+    Ok(d)
 }
 
 /// `CPF0900` in the history log: this IPL, and how the last one ended.

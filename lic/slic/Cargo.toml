@@ -12,6 +12,7 @@ sysval = { path = "../../lic/sysval", version = "0.1.0" }
 console = { path = "../../lic/console", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
 store = { path = "../../storage/store", version = "0.1.0" }
+sec = { path = "../../security/sec", version = "0.1.0" }
 blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
 diskimg = { path = "../../lic/diskimg", version = "0.1.0" }
 qsname = { path = "../../storage/qsname", version = "0.1.0" }

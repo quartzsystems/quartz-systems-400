@@ -6,9 +6,11 @@
 //! directory, libraries with their directories, locks, and the generic
 //! operations every type gets. See `docs/STORE_FORMAT.md` §8 and §9.
 
+pub mod auth;
 pub mod dir;
 pub mod dtaara;
 pub mod dtaq;
+pub mod guard;
 pub mod header;
 pub mod id;
 pub mod library;

@@ -127,13 +127,17 @@ pub enum StoreError {
         library: String,
     },
 
-    /// Authority is lacking. Stored but not enforced in Phase 2.
-    #[error("not authorized to {name} in library {library}")]
+    /// Authority is lacking.
+    #[error("{msgid}: not authorized to {name} type {type_name} in library {library}")]
     NotAuthorized {
         /// Object name.
         name: String,
         /// Library name.
         library: String,
+        /// The message: `CPF2189`, `CPF9802`, `CPF9820` ...
+        msgid: &'static str,
+        /// The object type, `*FILE` ...
+        type_name: String,
     },
 
     /// Another job holds a conflicting lock.
@@ -221,7 +225,7 @@ impl StoreError {
             Self::ObjectNotFound { .. } => "CPF9801",
             Self::LibraryNotFound { .. } => "CPF9810",
             Self::AlreadyExists { .. } => "CPF2111",
-            Self::NotAuthorized { .. } => "CPF2189",
+            Self::NotAuthorized { msgid, .. } => msgid,
             Self::Locked { .. } => "CPF9803",
             Self::Damaged { .. } => "CPF3113",
             Self::StaleReference { .. } => "MCH3402",

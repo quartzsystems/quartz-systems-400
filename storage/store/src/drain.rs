@@ -9,6 +9,7 @@
 use tracing::info;
 
 use crate::btree::BTree;
+use crate::obj::auth::ProfileKey;
 use crate::obj::dir::{DirKey, LibDir, ObjDir, objdir_entries, objdir_update};
 use crate::obj::library::Library;
 use crate::obj::{ObjectId, ops, types, usridx};
@@ -176,15 +177,16 @@ fn move_object(
         ops::save_extents(txn, page, &mut h, &new_extents)?;
         moved = true;
     }
-    // Private authority overflow.
-    if let Some(p) = h.private_overflow
-        && on_span(txn, span, p)
-    {
-        let to = copy_page(txn, p)?;
-        txn.free_run(p, 1)?;
-        h.private_overflow = Some(to);
+    // Private authority overflow tree.
+    let privs: BTree<ProfileKey, u64> = BTree::open(h.private_overflow, id);
+    if h.private_overflow.is_some() && any_on_span(&privs, txn, span)? {
+        let items: Vec<(ProfileKey, u64)> = privs.entries(txn)?.collect::<Result<_>>()?;
+        let new = BTree::bulk_load(txn, id, items)?;
+        let mut old = privs;
+        old.free_all(txn)?;
+        h.private_overflow = new.root();
         ops::write_header(txn, page, &h)?;
-        report.pages_moved += 1;
+        report.trees_rebuilt += 1;
         moved = true;
     }
     // Trees the object owns.

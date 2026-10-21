@@ -69,6 +69,12 @@ const OFF_EXTENT_OVERFLOW: usize = 764;
 const OFF_AUDIT: usize = 772;
 /// Body offset of the tree root slots.
 pub const OFF_TREE_ROOTS: usize = 784;
+const OFF_AUTH_FLAGS: usize = 816;
+const OFF_OWNER_AUTH: usize = 820;
+const OFF_GROUP_AUTH: usize = 824;
+const OFF_AUTH_GEN: usize = 832;
+/// `auth_flags`: the owner's authority was reduced from `*ALL`.
+const OWNER_REDUCED: u32 = 1;
 
 /// Tree roots any type may use; RCLSTG walks and delete frees them.
 pub const TREE_ROOT_SLOTS: usize = 4;
@@ -119,7 +125,12 @@ pub static LAYOUT: Layout = Layout {
         field("audit", OFF_AUDIT, 10),
         field("reserved4", 782, 2),
         field("tree_roots", OFF_TREE_ROOTS, 32),
-        field("reserved5", 816, 208),
+        field("auth_flags", OFF_AUTH_FLAGS, 4),
+        field("owner_authority", OFF_OWNER_AUTH, 4),
+        field("group_authority", OFF_GROUP_AUTH, 4),
+        field("reserved5", 828, 4),
+        field("auth_gen", OFF_AUTH_GEN, 8),
+        field("reserved6", 840, 184),
     ],
 };
 
@@ -281,6 +292,12 @@ pub struct ObjectHeader {
     pub audit: [u8; 10],
     /// Roots of B+trees the payload owns, `None` for empty or unused.
     pub tree_roots: [Option<PageNo>; TREE_ROOT_SLOTS],
+    /// The owner's authority, `*ALL` unless reduced.
+    pub owner_authority: Authority,
+    /// The primary group's authority.
+    pub group_authority: Authority,
+    /// Bumped by every authority change; cached decisions compare it.
+    pub auth_gen: u64,
 }
 
 /// Blank CP037 text of a fixed size.
@@ -341,6 +358,9 @@ impl ObjectHeader {
             extent_overflow: None,
             audit: blank(),
             tree_roots: [None; TREE_ROOT_SLOTS],
+            owner_authority: Authority::ALL,
+            group_authority: Authority::EXCLUDE,
+            auth_gen: 0,
         }
     }
 
@@ -399,6 +419,12 @@ impl ObjectHeader {
         for (i, r) in self.tree_roots.iter().enumerate() {
             put_u64(b, OFF_TREE_ROOTS + i * 8, r.unwrap_or(0));
         }
+        if self.owner_authority != Authority::ALL {
+            put_u32(b, OFF_AUTH_FLAGS, OWNER_REDUCED);
+            put_u32(b, OFF_OWNER_AUTH, self.owner_authority.0);
+        }
+        put_u32(b, OFF_GROUP_AUTH, self.group_authority.0);
+        put_u64(b, OFF_AUTH_GEN, self.auth_gen);
     }
 
     /// Decode the fixed part of a page body. `page` is for errors.
@@ -477,6 +503,13 @@ impl ObjectHeader {
             extent_overflow: opt(get_u64(body, OFF_EXTENT_OVERFLOW)),
             audit: body[OFF_AUDIT..OFF_AUDIT + 10].try_into().expect("10"),
             tree_roots: std::array::from_fn(|i| opt(get_u64(body, OFF_TREE_ROOTS + i * 8))),
+            owner_authority: if get_u32(body, OFF_AUTH_FLAGS) & OWNER_REDUCED == 0 {
+                Authority::ALL
+            } else {
+                Authority(get_u32(body, OFF_OWNER_AUTH))
+            },
+            group_authority: Authority(get_u32(body, OFF_GROUP_AUTH)),
+            auth_gen: get_u64(body, OFF_AUTH_GEN),
         })
     }
 }
@@ -535,6 +568,8 @@ mod tests {
         h.extents.push(Run { start: 500, len: 3 });
         h.size_pages = 3;
         h.extent_overflow = Some(900);
+        h.owner_authority = Authority::USE;
+        h.auth_gen = 5;
         let mut body = vec![0u8; BODY_SIZE];
         h.encode(&mut body);
         let back = ObjectHeader::decode(&body, 1).unwrap();

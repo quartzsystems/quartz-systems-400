@@ -415,10 +415,19 @@ impl Store {
                 }
             }
         }
-        if let Some(p) = h.private_overflow
-            && let Some(w) = check_page(sweep, h.id, referenced, p, PageType::ExtentOverflow)
-        {
-            note(w);
+        if let Some(root) = h.private_overflow {
+            let mut ro = ReadOnly(self.asp_mut().io());
+            match crate::btree::walk_pages(&mut ro, root) {
+                Ok(pages) => {
+                    for p in pages {
+                        if let Some(w) = check_page(sweep, h.id, referenced, p, PageType::BTreeNode)
+                        {
+                            note(w);
+                        }
+                    }
+                }
+                Err(e) => note(format!("private authority tree: {e}")),
+            }
         }
         for run in &extents {
             for pno in run.start..run.start.saturating_add(run.len) {
@@ -668,11 +677,11 @@ fn remove_owned(txn: &mut crate::txn::Txn<'_>, pno: PageNo, h: &ObjectHeader) ->
     for run in &h.extents {
         txn.free_run(run.start, run.len)?;
     }
-    for p in [h.extent_overflow, h.private_overflow]
-        .into_iter()
-        .flatten()
-    {
+    if let Some(p) = h.extent_overflow {
         txn.free_run(p, 1)?;
+    }
+    if let Some(root) = h.private_overflow {
+        crate::btree::free_tree(txn, root)?;
     }
     for root in h.tree_roots.into_iter().flatten() {
         crate::btree::free_tree(txn, root)?;

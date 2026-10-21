@@ -1669,6 +1669,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "sec"
+version = "0.1.0"
+dependencies = [
+ "argon2",
+ "blockdev",
+ "ccsid",
+ "ipc",
+ "qsname",
+ "serde",
+ "store",
+ "sysval",
+ "thiserror",
+ "toml",
+ "tracing",
+]
+
+[[package]]
 name = "security-framework"
 version = "3.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1831,6 +1848,7 @@ dependencies = [
  "qsname",
  "release",
  "rustix",
+ "sec",
  "spool",
  "sql",
  "stg",

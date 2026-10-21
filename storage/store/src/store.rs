@@ -6,6 +6,7 @@
 //! and recovery.
 
 use std::collections::HashSet;
+use std::sync::Arc;
 
 use blockdev::BlockDev;
 use tracing::{info, warn};
@@ -15,6 +16,7 @@ use crate::asp::unit::UnitState;
 use crate::asp::{Asp, FormatParams, UnitEvent, UnitInfo};
 use crate::cache::{CacheStats, PageCache};
 use crate::obj::ObjectId;
+use crate::obj::guard::Guard;
 use crate::obj::lock::LockTable;
 use crate::page::pager::PageNo;
 use crate::page::{Page, PageType};
@@ -90,6 +92,7 @@ pub struct Store {
     broken: Option<&'static str>,
     stats: StoreStats,
     locks: LockTable,
+    guard: Option<Arc<dyn Guard>>,
 }
 
 impl Store {
@@ -292,6 +295,7 @@ impl Store {
             broken: None,
             stats: StoreStats::default(),
             locks: LockTable::default(),
+            guard: None,
             asp,
         }
     }
@@ -528,6 +532,17 @@ impl Store {
     #[must_use]
     pub fn locks(&self) -> &LockTable {
         &self.locks
+    }
+
+    /// Install the authority guard every object operation consults.
+    pub fn set_guard(&mut self, guard: Option<Arc<dyn Guard>>) {
+        self.guard = guard;
+    }
+
+    /// The authority guard, if one is installed.
+    #[must_use]
+    pub fn guard(&self) -> Option<Arc<dyn Guard>> {
+        self.guard.clone()
     }
 
     /// The object lock table, to take and release locks.

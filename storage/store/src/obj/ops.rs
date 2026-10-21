@@ -12,6 +12,7 @@ use tracing::debug;
 use crate::alloc::Run;
 use crate::obj::ObjectId;
 use crate::obj::dir::{self, DirKey};
+use crate::obj::guard;
 use crate::obj::header::{self, ATTR_OFF, ObjectHeader, text};
 use crate::obj::library::{LibAttr, LibType, Library};
 use crate::obj::lock::{JobHandle, LockState};
@@ -173,6 +174,8 @@ pub fn create(txn: &mut Txn<'_>, params: &CreateParams) -> Result<ObjectId> {
             return Err(StoreError::NotAuthorized {
                 name: params.name.to_string(),
                 library: library_name(txn, params.library),
+                msgid: "CPF2189",
+                type_name: info.name.into(),
             });
         }
         if info.q_reserved && params.name.as_bytes()[0] == 0xD8 {
@@ -183,6 +186,9 @@ pub fn create(txn: &mut Txn<'_>, params: &CreateParams) -> Result<ObjectId> {
     }
     let mut lib = Library::load(txn, params.library)?;
     let lib_header = read_header(txn, params.library)?.1;
+    if params.type_code != types::LIB {
+        guard::check(txn, "lib.create-in", &lib_header)?;
+    }
     // ASP 0's root holds each job's QTEMP library.
     if info.qsys_only && lib_header.name != qsys_name() && txn.store().asp_number() != 0 {
         return Err(StoreError::InvalidName {
@@ -208,6 +214,7 @@ pub fn create(txn: &mut Txn<'_>, params: &CreateParams) -> Result<ObjectId> {
     h.owner = text(&params.owner)?;
     h.creator = text(&params.owner)?;
     h.system = text(&params.system)?;
+    guard::creating(txn, &mut h, &lib_header)?;
     let mut p = Page::zeroed();
     h.encode(p.body_mut());
     if params.type_code == types::LIB {
@@ -216,6 +223,7 @@ pub fn create(txn: &mut Txn<'_>, params: &CreateParams) -> Result<ObjectId> {
     txn.write(page, &mut p, PageType::ObjectHeader, id)?;
     dir::objdir_insert(txn, id, page)?;
     lib.add(txn, params.type_code, params.name, id)?;
+    guard::created(txn, &h)?;
     Ok(id)
 }
 
@@ -277,6 +285,8 @@ pub fn set_tree_root(
 /// A library must be empty.
 pub fn delete(txn: &mut Txn<'_>, job: JobHandle, id: ObjectId) -> Result<()> {
     let (page, h) = read_header(txn, id)?;
+    check_in_library(txn, "lib.use", &h)?;
+    guard::check(txn, "obj.delete", &h)?;
     let lib_name = library_name(txn, h.library);
     if let Err(held) = txn.store().locks_mut().lock(job, id, LockState::Exclusive) {
         debug!(
@@ -294,6 +304,7 @@ pub fn delete(txn: &mut Txn<'_>, job: JobHandle, id: ObjectId) -> Result<()> {
 }
 
 fn delete_locked(txn: &mut Txn<'_>, id: ObjectId, page: PageNo, h: &ObjectHeader) -> Result<()> {
+    guard::deleting(txn, h)?;
     if h.id.type_code == types::LIB {
         let mut lib = Library::load(txn, id)?;
         let own = u64::from(id == h.library);
@@ -314,8 +325,8 @@ fn delete_locked(txn: &mut Txn<'_>, id: ObjectId, page: PageNo, h: &ObjectHeader
     if let Some(p) = h.extent_overflow {
         txn.free_run(p, 1)?;
     }
-    if let Some(p) = h.private_overflow {
-        txn.free_run(p, 1)?;
+    if let Some(root) = h.private_overflow {
+        crate::btree::free_tree(txn, root)?;
     }
     for root in h.tree_roots.into_iter().flatten() {
         crate::btree::free_tree(txn, root)?;
@@ -332,6 +343,8 @@ fn delete_locked(txn: &mut Txn<'_>, id: ObjectId, page: PageNo, h: &ObjectHeader
 /// Rename within the library.
 pub fn rename(txn: &mut Txn<'_>, id: ObjectId, new_name: Name, now: u64) -> Result<()> {
     let (page, mut h) = read_header(txn, id)?;
+    check_in_library(txn, "lib.rename-in", &h)?;
+    guard::check(txn, "obj.rename", &h)?;
     let mut lib = Library::load(txn, h.library)?;
     if lib.lookup(txn, id.type_code, new_name)?.is_some() {
         return Err(StoreError::AlreadyExists {
@@ -353,8 +366,13 @@ pub fn move_to(txn: &mut Txn<'_>, id: ObjectId, to: ObjectId, now: u64) -> Resul
         return Err(StoreError::NotAuthorized {
             name: h.name.to_string(),
             library: library_name(txn, h.library),
+            msgid: "CPF2189",
+            type_name: "*LIB".into(),
         });
     }
+    check_in_library(txn, "lib.move-from", &h)?;
+    guard::check(txn, "obj.move", &h)?;
+    guard::check_id(txn, "lib.move-to", to)?;
     let mut dest = Library::load(txn, to)?;
     if dest.lookup(txn, id.type_code, h.name)?.is_some() {
         return Err(StoreError::AlreadyExists {
@@ -373,6 +391,8 @@ pub fn move_to(txn: &mut Txn<'_>, id: ObjectId, to: ObjectId, now: u64) -> Resul
 /// Change the text description.
 pub fn change_text(txn: &mut Txn<'_>, id: ObjectId, new_text: &str, now: u64) -> Result<()> {
     let (page, mut h) = read_header(txn, id)?;
+    check_in_library(txn, "lib.use", &h)?;
+    guard::check(txn, "obj.change-text", &h)?;
     h.text = text(new_text)?;
     h.changed = now;
     write_header(txn, page, &h)
@@ -380,7 +400,18 @@ pub fn change_text(txn: &mut Txn<'_>, id: ObjectId, new_text: &str, now: u64) ->
 
 /// The header, for a description display.
 pub fn describe(txn: &mut Txn<'_>, id: ObjectId) -> Result<ObjectHeader> {
-    Ok(read_header(txn, id)?.1)
+    let h = read_header(txn, id)?.1;
+    guard::check(txn, "obj.describe", &h)?;
+    Ok(h)
+}
+
+/// Check `op` against the library holding `h`; owned objects (members)
+/// and libraries themselves have none to check.
+fn check_in_library(txn: &mut Txn<'_>, op: &'static str, h: &ObjectHeader) -> Result<()> {
+    if h.id.type_code == types::LIB || !is_library(h.library) {
+        return Ok(());
+    }
+    guard::check_id(txn, op, h.library)
 }
 
 /// Entries of a library, in key order (type, then EBCDIC name).
@@ -389,6 +420,7 @@ pub fn list(
     library: ObjectId,
     type_code: Option<u16>,
 ) -> Result<Vec<(DirKey, ObjectId)>> {
+    guard::check_id(txn, "lib.list", library)?;
     Library::load(txn, library)?.list(txn, type_code)
 }
 
@@ -411,7 +443,11 @@ pub fn resolve(
     type_code: u16,
 ) -> Result<Found> {
     let candidates: Vec<ObjectId> = match lib {
-        LibSpec::Name(n) => vec![find_library(txn, qsys, n)?.id],
+        LibSpec::Name(n) => {
+            let lib = find_library(txn, qsys, n)?.id;
+            guard::check_id(txn, "lib.search", lib)?;
+            vec![lib]
+        }
         LibSpec::Curlib => vec![ctx.curlib.ok_or_else(|| StoreError::LibraryNotFound {
             name: "*CURLIB".into(),
         })?],

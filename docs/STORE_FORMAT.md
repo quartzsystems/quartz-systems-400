@@ -459,7 +459,7 @@ At offset 0 of the body. Text fields are CP037, space padded.
 | 216 | 10 | autl | authorization list name, blank for none |
 | 226 | 2 | private_count | entries used in `private_auths` |
 | 228 | 256 | private_auths | 16 × `PrivateAuth` |
-| 484 | 8 | private_overflow | page of more entries, 0 for none; `MIGRATE(phase6)` |
+| 484 | 8 | private_overflow | root of a B+tree of more entries (key profile, value bits), 0 for none |
 | 492 | 8 | size_pages | pages in the extents |
 | 500 | 2 | extent_count | entries used in `extents` |
 | 502 | 1 | domain | 0 `*SYSTEM`, 1 `*USER` |
@@ -470,16 +470,23 @@ At offset 0 of the body. Text fields are CP037, space padded.
 | 507 | 1 | reserved3 | 0 |
 | 508 | 256 | extents | 16 × `ExtentRef` |
 | 764 | 8 | extent_overflow | page of more extents, 0 for none |
-| 772 | 10 | audit | object auditing value; `MIGRATE(phase6)` |
+| 772 | 10 | audit | `OBJAUD`: `*NONE`, `*USRPRF`, `*CHANGE`, `*ALL`; blank is `*NONE` |
 | 782 | 2 | reserved4 | 0 |
 | 784 | 32 | tree_roots | 4 × page: roots of B+trees the payload owns, 0 for none; RCLSTG walks them, delete frees them |
-| 816 | 208 | reserved5 | 0 |
+| 816 | 4 | auth_flags | bit 0: the owner's authority was reduced from `*ALL` |
+| 820 | 4 | owner_authority | bits, meaningful when bit 0 of `auth_flags` is set |
+| 824 | 4 | group_authority | the primary group's bits |
+| 828 | 4 | reserved5 | 0 |
+| 832 | 8 | auth_gen | authority generation, bumped by every authority change |
+| 840 | 184 | reserved6 | 0 |
 
 Public authority bits: 0x0001 `*OBJOPR`, 0x0002 `*OBJMGT`, 0x0004
 `*OBJEXIST`, 0x0008 `*OBJALTER`, 0x0010 `*OBJREF`, 0x0020 `*READ`,
 0x0040 `*ADD`, 0x0080 `*UPD`, 0x0100 `*DLT`, 0x0200 `*EXECUTE`; 0 is
 `*EXCLUDE`; 0x8000_0000 means the public authority comes from the
-authorization list. Stored, not enforced, in Phase 2.
+authorization list. Phase 6 enforces them; `docs/SECURITY.md` has the
+search order. The private authority overflow tree's pages are B+tree
+nodes owned by the object; RCLSTG walks it and delete frees it.
 
 ### `PrivateAuth` (16 bytes)
 
