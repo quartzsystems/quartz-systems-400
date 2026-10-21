@@ -30,8 +30,19 @@ Every procedure receives a pointer to an `Env` as its first parameter:
 | 8 | `job` | the job record |
 | 16 | `entry` | the current call-stack entry, runtime-owned |
 
-The job record's first field, `pending`, is a `u64` the runtime sets
-when an exception is raised and not handled where it occurred.
+The job record begins with three words generated code touches:
+
+| offset | field | meaning |
+|---|---|---|
+| 0 | `pending` | `u64`, nonzero while an exception percolates |
+| 8 | `cur_region` | `u32`, the `monitor` region the running code is in, 0 outside every region |
+| 12 | `cur_stmt` | `u32`, the statement the running code is at |
+
+Generated code stores `cur_region` before every call and every
+runtime call that can raise, and `cur_stmt` at every `debug.stmt`.
+The runtime's `enter` copies both into the caller's call-stack entry
+and `leave` restores them, so each suspended entry's region and
+statement are known at raise time (§7) and for the call stack display.
 
 One `Env` exists per job. The runtime's `enter` sets `statics` to the
 static area of the running program's activation in the current
@@ -203,10 +214,21 @@ falls through to the unwind block, so an unhandled exception leaves
 the procedure and percolates. Regions nest lexically, so the dispatch
 chain follows the static nesting the verifier checked.
 
-*Phase 4, pending*: condition handlers (`CEEHDLR`) and cancel handlers
-run inside `raise` and `leave`; the function check and the inquiry
-message. This design needs no unwind tables; the statement map (§8)
-serves the call stack display and dumps instead.
+The handler search happens before any of that, inside `raise` (or
+`sndpgmmsg`), while every frame is intact. `ModuleCode::regions`
+lists each `monitor` region's handler selectors and its enclosing
+region, numbered from 1 in lowering order; the region a suspended
+entry is in comes from `cur_region` (§2). The runtime walks the
+entries from the one the exception was sent to down to its control
+boundary, asking each entry's condition handlers (`CEEHDLR`) newest
+first, then its regions innermost first. A handler that resumes
+clears the flag and `raise` returns; a region that matches leaves the
+flag set and the dispatch chain above takes the exception once
+percolation reaches that entry. Nothing up to the boundary brings the
+function check and the inquiry (`ILE.md` §5). Cancel handlers
+(`CEERTX`) run inside `leave` when an entry ends with the flag set.
+This design needs no unwind tables; the statement map (§8) and
+`cur_stmt` serve the call stack display and dumps.
 
 Integer division by zero, overflow under `.chk`, `MIN / -1`, a narrowing
 `cvt.chk` that loses a value, an out-of-range index and a null

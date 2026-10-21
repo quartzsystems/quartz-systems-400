@@ -176,6 +176,7 @@ fn program_common(out: &mut String, p: &ProgramObject) {
             ImportTarget::SrvPgm { srvpgm, export } => {
                 format!("{} in *SRVPGM {}", export, p.srvpgms[*srvpgm as usize].name)
             }
+            ImportTarget::System => "*SYSTEM (QLEAWI)".into(),
             ImportTarget::Unresolved => "*UNRESOLVED".into(),
         };
         let _ = writeln!(

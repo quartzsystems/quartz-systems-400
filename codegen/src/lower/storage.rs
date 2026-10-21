@@ -22,6 +22,8 @@ use crate::rt::{RtFn, cvt_opts, dec_flags, pack_msgid, selector};
 
 /// An open `monitor` region while its blocks are lowered.
 pub(crate) struct Region {
+    /// Number in the module's region table, from 1.
+    pub id: u32,
     /// The block the pending poll branches to inside the region.
     pub dispatch: Block,
     /// Handlers in order.
@@ -99,7 +101,17 @@ impl Lowerer<'_, '_> {
             Inst::Monitor { handlers, .. } => {
                 let dispatch = self.b.create_block();
                 let parent = self.regions.last().map(|r| r.dispatch);
+                let parent_id = self.regions.last().map_or(0, |r| r.id);
+                self.region_table.push(crate::output::RegionDesc {
+                    handlers: handlers
+                        .iter()
+                        .map(|h| encode_selector(&h.selector))
+                        .collect(),
+                    parent: parent_id,
+                });
+                let id = u32::try_from(self.region_table.len()).expect("few regions");
                 self.regions.push(Region {
+                    id,
                     dispatch,
                     handlers: handlers.clone(),
                     parent,
@@ -522,6 +534,7 @@ impl Lowerer<'_, '_> {
         let mut vals = Vec::with_capacity(args.len() + 1);
         vals.push(self.env);
         vals.extend_from_slice(args);
+        self.mark_region();
         let call = self.b.ins().call(fref, &vals);
         let r = self.b.inst_results(call).first().copied();
         self.check_pending();

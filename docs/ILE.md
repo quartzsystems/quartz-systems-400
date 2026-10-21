@@ -146,6 +146,10 @@ library when one is given.
    exports the symbol copies the module in at the end of the module
    list; its own imports are resolved in turn.
 3. `QUSAPIBD` in `QSYS`, when it exists, as the last directory.
+4. The procedures the runtime itself provides, as `QLEAWI` exports
+   them (`CEEHDLR`, `CEEHDLU`, `CEERTX`, `CEEUTX`, `CEESGL`, `CEENCOD`,
+   `CEEDCOD`, `CEEMRCR`): the import is recorded as `*SYSTEM` and the
+   loader binds it to the runtime's procedure.
 
 An import nothing resolves is `CPD5D02`; the object is not created
 unless `OPTION(*UNRSLVREF)`, in which case the import is recorded as
@@ -283,13 +287,54 @@ that entry: the sender's own handlers do not see it, since a handler
 takes an exception only at the entry it was sent to or at one of that
 entry's callers, and the sender's remaining code is skipped by
 percolation (`ABI.md` §7). `*STATUS` and `*NOTIFY` messages are queued
-like any other for now; their handling rules and the function check
-are *Phase 4, pending*, with a state diagram here.
+like any other for now.
+
+**The search.** When an escape is sent, the runtime looks for a
+handler before anything unwinds, from the target entry down to the
+nearest control boundary (a program entry procedure):
+
+```
+          escape sent to entry E
+                   |
+                   v
+   +-----> entry: condition handlers (CEEHDLR), newest first
+   |          | resume (10)            -> cleared; E continues after
+   |          |                           the failing instruction
+   |          | percolate (20, 21)
+   |          v
+   |       entry: monitor regions, innermost first
+   |          | match                  -> pending; the dispatch chain
+   |          |                           takes it as the stack unwinds
+   |          | no match
+   |          v
+   +---no--- control boundary?
+              | yes
+              v
+   function check CPF9999 (data: the condition) sent to E, searched
+   the same way; unhandled ->
+              v
+   inquiry CEE9901 on the external queue, answered from the job's
+   queued replies or the description's default (C):
+      C      cancel: the entries from E down to the boundary end, their
+             cancel handlers (CEERTX) run, and the boundary's caller
+             receives CEE9901 as an escape, searched the same way; with
+             no caller the job keeps it pending
+      D, F   a job dump (full, or the call stack only), then cancel
+      G, I   resume: at the failing instruction when E is the running
+             entry, otherwise after E's call once the entries above it
+             have ended
+      R      as G
+```
+
+A handler that resumes from a deeper entry's condition handler
+resumes at the failing instruction, where the resume cursor sits
+(`CEEMRCR` moves it nowhere else). The condition token a handler
+receives is 12 bytes: severity class and message number (the
+identifier's four hex digits) as `i16`s, a byte of case, severity and
+control bits, the three-letter facility and the message key.
 
 **Percolation.** From the failing entry upwards: the entry's
-`monitor` regions, innermost first; then the entry is left, its
-frame spaces die, and the caller polls, finding the exception at its
-own depth. *Phase 4, pending*: ILE condition handlers (`CEEHDLR`)
-before the monitors, cancel handlers when an entry is ended, the
-function check `CPF9999` at a control boundary and the inquiry
-`CEE9901` with its replies.
+`monitor` dispatch chain, innermost first; then the entry is left, its
+cancel handlers run if the exception is still pending, its frame
+spaces die, and the caller polls, finding the exception at its own
+depth. The search above already decided where it stops.

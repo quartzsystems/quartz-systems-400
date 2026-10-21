@@ -13,7 +13,7 @@ mod core;
 mod date;
 mod decimal;
 mod heap;
-mod mem;
+pub(crate) mod mem;
 mod msg;
 mod string;
 

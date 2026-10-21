@@ -33,6 +33,7 @@ impl Lowerer<'_, '_> {
                     let (argc, argv) = self.argv(args, &callee.params)?;
                     let fref = self.local_ref(pr.0);
                     let zero = self.b.ins().iconst(types::I64, 0);
+                    self.mark_region();
                     self.b.ins().call(fref, &[self.env, argc, zero, argv]);
                     self.check_pending();
                     return Ok(());
@@ -94,6 +95,7 @@ impl Lowerer<'_, '_> {
                     false,
                 ));
                 let vals = self.bound_args(&proto.params, proto.ret.as_ref(), args, ret)?;
+                self.mark_region();
                 let inst = self.b.ins().call_indirect(sig, code, &vals);
                 let results = self.b.inst_results(inst).to_vec();
                 self.check_pending();
@@ -132,6 +134,7 @@ impl Lowerer<'_, '_> {
         ret: Option<&CallRet>,
     ) -> Result<()> {
         let vals = self.bound_args(params, ret_ty, args, ret)?;
+        self.mark_region();
         let inst = self.b.ins().call(fref, &vals);
         let results = self.b.inst_results(inst).to_vec();
         self.check_pending();

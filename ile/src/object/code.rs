@@ -8,7 +8,7 @@
 use std::collections::HashMap;
 
 use codegen::abi::{StaticLayout, StaticSlot};
-use codegen::{ModuleCode, ProcCode, Reloc, RelocKind, RelocTarget, RtFn, StmtRange};
+use codegen::{ModuleCode, ProcCode, RegionDesc, Reloc, RelocKind, RelocTarget, RtFn, StmtRange};
 use qir::Scope;
 
 use crate::bin::{R, W};
@@ -72,6 +72,14 @@ pub(crate) fn encode(w: &mut W, c: &ModuleCode) {
     w.list(&c.data_exports, |w, (n, o)| {
         w.str(n);
         w.u64(*o);
+    });
+    w.list(&c.regions, |w, r| {
+        w.list(&r.handlers, |w, (k, a, b)| {
+            w.i64(*k);
+            w.i64(*a);
+            w.i64(*b);
+        });
+        w.u32(r.parent);
     });
 }
 
@@ -142,6 +150,12 @@ pub(crate) fn decode(r: &mut R<'_>) -> Result<ModuleCode> {
     let size = r.u64()?;
     let static_init = r.bytes()?;
     let data_exports = r.list(|r| Ok((r.str()?, r.u64()?)))?;
+    let regions = r.list(|r| {
+        Ok(RegionDesc {
+            handlers: r.list(|r| Ok((r.i64()?, r.i64()?, r.i64()?)))?,
+            parent: r.u32()?,
+        })
+    })?;
     Ok(ModuleCode {
         name,
         version,
@@ -151,5 +165,6 @@ pub(crate) fn decode(r: &mut R<'_>) -> Result<ModuleCode> {
         statics: StaticLayout { slots, size },
         static_init,
         data_exports,
+        regions,
     })
 }

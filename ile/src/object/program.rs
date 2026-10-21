@@ -218,6 +218,7 @@ impl ProgramObject {
                         w.str(export);
                     }
                     ImportTarget::Unresolved => w.u8(3),
+                    ImportTarget::System => w.u8(4),
                 }
             });
             s.out
@@ -365,6 +366,7 @@ impl ProgramObject {
                         export: r.str()?,
                     },
                     3 => ImportTarget::Unresolved,
+                    4 => ImportTarget::System,
                     v => return Err(r.err(format!("{v} is not an import target"))),
                 };
                 Ok(ImportRes {

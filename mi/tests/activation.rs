@@ -187,7 +187,12 @@ fn procedure_pointers_and_missing_programs() {
     job.call_program("PP", "*LIBL", &[]).unwrap();
     assert_eq!(job.console, vec!["42", "no program"]);
     assert!(job.pending(), "the null procedure pointer percolates out");
-    assert_eq!(job.exception.as_ref().unwrap().cond, Some(Cond::Mch3601));
+    // Unhandled at the control boundary: function check, inquiry
+    // answered C, and CEE9901 left pending for the job.
+    assert_eq!(job.exception.as_ref().unwrap().msgid, "CEE9901");
+    assert!(job.raised.iter().any(|e| e.cond == Some(Cond::Mch3601)));
+    assert!(job.raised.iter().any(|e| e.msgid == "CPF9999"));
+    assert_eq!(job.inquiry_log, vec!["C"]);
     assert_eq!(job.handled.len(), 1);
     assert_eq!(job.handled[0].cond, Some(Cond::Mch3401));
 }
@@ -209,7 +214,8 @@ fn parameters_pass_through_a_dynamic_call() {
     job.call_program("CALLER", "*LIBL", &[]).unwrap();
     assert_eq!(job.console, vec!["3", "42", "3", "80"]);
     // The last call passed one parameter; reading the second is a null pointer.
-    assert_eq!(job.clear().map(|e| e.cond), Some(Some(Cond::Mch3601)));
+    assert_eq!(job.clear().map(|e| e.msgid), Some("CEE9901".into()));
+    assert!(job.raised.iter().any(|e| e.cond == Some(Cond::Mch3601)));
     // A native program in QSYS is found before any object.
     job.natives
         .insert("QNATIVE".into(), |j: &mut Job, args: &[u64]| {

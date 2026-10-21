@@ -165,6 +165,21 @@ impl ObjectSource for MemSource {
 /// The entry signature every program is called with.
 type Entry = extern "sysv64" fn(*mut Env, i64, i64, *const u64);
 
+/// A bound procedure with up to four by-reference parameters, as a
+/// condition or cancel handler is called.
+type Handler = extern "sysv64" fn(*mut Env, i64, i64, u64, u64, u64, u64);
+
+/// Call a handler procedure with by-reference parameters.
+pub(crate) fn call_handler(addr: usize, env: *mut Env, params: [u64; 4], count: i64) {
+    // SAFETY: `addr` is a procedure address the program handed the
+    // runtime through a procedure pointer; the code generator gives
+    // such procedures the bound signature `(env, argc, opdesc,
+    // params...)` with by-reference parameters as addresses, and the
+    // unused trailing registers are ignored by a callee with fewer.
+    let f: Handler = unsafe { std::mem::transmute::<usize, Handler>(addr) };
+    f(env, count, 0, params[0], params[1], params[2], params[3]);
+}
+
 /// Call a program entry procedure with a parameter list.
 pub(crate) fn call_entry(addr: usize, env: *mut Env, args: &[u64]) {
     // SAFETY: `addr` is the entry of a procedure the loader placed in
@@ -220,6 +235,8 @@ pub(crate) fn load(
                             .get(*srvpgm as usize)
                             .and_then(|d| d.export_addr(export))
                             .unwrap_or(rtlib::unresolved as *const () as usize),
+                        Some(ImportTarget::System) => crate::cee::bound_api(name)
+                            .unwrap_or(rtlib::unresolved as *const () as usize),
                         _ => rtlib::unresolved as *const () as usize,
                     };
                     Ok(addr as u64)
@@ -265,6 +282,16 @@ pub struct Frame {
     pub msgq: crate::msg::MsgQueue,
     /// A control boundary: a program entry procedure.
     pub control_boundary: bool,
+    /// The `monitor` region the entry is suspended in, from the
+    /// module's region table; 0 outside every region.
+    pub region: u32,
+    /// The statement the entry is suspended at.
+    pub stmt: u32,
+    /// ILE condition handlers (`CEEHDLR`), oldest first: procedure
+    /// code address and token address.
+    pub handlers: Vec<(u64, u64)>,
+    /// Cancel handlers (`CEERTX`), oldest first.
+    pub cancel_handlers: Vec<(u64, u64)>,
 }
 
 /// The activation state of a job.

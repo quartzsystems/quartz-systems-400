@@ -63,6 +63,7 @@ impl Lowerer<'_, '_> {
     pub(crate) fn deref(&mut self, fat: Value) -> Value {
         let (lo, hi) = self.b.ins().isplit(fat);
         let f = self.rt_ref(RtFn::Deref);
+        self.mark_region();
         let call = self.b.ins().call(f, &[self.env, lo, hi]);
         let addr = self.b.inst_results(call)[0];
         self.check_pending();

@@ -11,30 +11,24 @@ use std::fmt::Write as _;
 
 use codegen::Cond;
 use codegen::abi::Env;
-use codegen::rt::{selector, unpack_msgid};
 
 use super::mem::{bytes, env as env_of, job, typed};
 use super::string::{read_text, write_text};
 use crate::act::Frame;
-use crate::cond::Exception;
 use crate::job::Job;
 use crate::space::{FatPtr, PtrKind};
 
-/// Record a condition on the job: an escape message from `QCPFMSG` on
-/// the current entry's queue, pending until a handler takes it.
+/// Record a condition on the job: an escape message from `QCPFMSG` to
+/// the current entry, dispatched to its handlers (`except`).
 pub(crate) fn raise_on(j: &mut Job, cond: Cond) {
-    let e = Exception::new(cond, j.depth);
     let _ = j.send_message(
-        &e.msgid,
+        &cond.msgid(),
         "QCPFMSG",
         "QSYS",
         Vec::new(),
         qir::MsgType::Escape,
         crate::msg::QueueRef::Same,
     );
-    j.raised.push(e.clone());
-    j.exception = Some(e);
-    j.abi.pending = cond as u64;
 }
 
 /// `raise(env, cond)`.
@@ -69,6 +63,14 @@ pub extern "sysv64" fn enter(env: *mut Env, code: i64) {
     let control_boundary = program
         .as_ref()
         .is_some_and(|p| p.entry_addr() == Some(usize::try_from(code).unwrap_or(0)));
+    // The caller is suspended in the region it marked before the call.
+    let (caller_region, caller_stmt) = (j.abi.cur_region, j.abi.cur_stmt);
+    if let Some(f) = j.act.frames.last_mut() {
+        f.region = caller_region;
+        f.stmt = caller_stmt;
+    }
+    j.abi.cur_region = 0;
+    j.abi.cur_stmt = 0;
     j.act.frames.push(Frame {
         code,
         program,
@@ -77,6 +79,10 @@ pub extern "sysv64" fn enter(env: *mut Env, code: i64) {
         saved_ag,
         msgq: crate::msg::MsgQueue::default(),
         control_boundary,
+        region: 0,
+        stmt: 0,
+        handlers: Vec::new(),
+        cancel_handlers: Vec::new(),
     });
 }
 
@@ -84,14 +90,24 @@ pub extern "sysv64" fn enter(env: *mut Env, code: i64) {
 /// come back and the frame's spaces die.
 pub extern "sysv64" fn leave(env: *mut Env) {
     let j = job(env);
+    if j.abi.pending != 0 {
+        crate::except::run_cancel_handlers(j);
+    }
     let e = env_of(env);
     if let Some(f) = j.act.frames.pop() {
         e.statics = f.saved_statics;
         j.act.current = f.saved_ag;
     }
+    // The caller is back where it marked itself before the call.
+    let (region, stmt) = j.act.frames.last().map_or((0, 0), |c| (c.region, c.stmt));
+    j.abi.cur_region = region;
+    j.abi.cur_stmt = stmt;
     j.depth = j.depth.saturating_sub(1);
     let depth = j.depth;
     j.spaces.leave(depth);
+    if j.resume_depth == Some(depth) {
+        crate::except::resume(j);
+    }
 }
 
 /// `deref(env, lo, hi) -> addr`.
@@ -290,20 +306,7 @@ pub extern "sysv64" fn monitor_match(env: *mut Env, kind: i64, a: i64, b: i64) -
     let Some(e) = j.exception.as_ref() else {
         return 0;
     };
-    let hit = match kind {
-        selector::ALL => true,
-        selector::PROGRAM => !e.is_file_error(),
-        selector::FILE => e.is_file_error(),
-        selector::STATUS => i64::from(e.status) >= a && i64::from(e.status) <= b,
-        selector::MSGID => {
-            let id = unpack_msgid(a);
-            match id.strip_suffix('*') {
-                Some(prefix) => e.msgid.starts_with(prefix),
-                None => e.msgid == id,
-            }
-        }
-        _ => false,
-    };
+    let hit = e.matches(kind, a, b);
     // A handler takes the exception only at the entry it was sent to
     // or at one of its callers, never in the sender below the target.
     if hit && j.depth <= e.depth {

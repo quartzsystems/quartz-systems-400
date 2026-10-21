@@ -445,6 +445,9 @@ fn resolve_one(
             }
         }
     }
+    if kind == ExportKind::Proc && SYSTEM_PROCS.contains(&name) {
+        return ImportTarget::System;
+    }
     b.diags.push(Diag {
         id: "CPD5D02".into(),
         severity: Severity::Info,
@@ -455,6 +458,12 @@ fn resolve_one(
     });
     ImportTarget::Unresolved
 }
+
+/// Procedures the runtime provides, as `QLEAWI` exports them: resolved
+/// last, after every module, service program and directory.
+pub const SYSTEM_PROCS: &[&str] = &[
+    "CEEHDLR", "CEEHDLU", "CEERTX", "CEEUTX", "CEESGL", "CEENCOD", "CEEDCOD", "CEEMRCR",
+];
 
 impl BndEntryKind {
     /// Whether an entry of this kind is looked up as a module.

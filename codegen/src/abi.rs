@@ -35,6 +35,14 @@ pub struct Job {
     /// Nonzero while an exception is percolating; set by the runtime's
     /// `raise`, cleared when a handler takes it.
     pub pending: u64,
+    /// The `monitor` region the running code is in, as the module's
+    /// region table numbers it (0 outside every region); generated code
+    /// stores it before every call so the runtime can find the handlers
+    /// of a suspended entry.
+    pub cur_region: u32,
+    /// The statement the running code is at (`debug.stmt`), for the
+    /// call stack display and the inquiry text.
+    pub cur_stmt: u32,
 }
 
 /// Offset of `Env::statics`.
@@ -45,6 +53,10 @@ pub const ENV_JOB: i32 = 8;
 pub const ENV_ENTRY: i32 = 16;
 /// Offset of `Job::pending`.
 pub const JOB_PENDING: i32 = 0;
+/// Offset of `Job::cur_region`.
+pub const JOB_REGION: i32 = 8;
+/// Offset of `Job::cur_stmt`.
+pub const JOB_STMT: i32 = 12;
 
 /// A byte size as a host size.
 #[must_use]

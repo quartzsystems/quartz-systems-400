@@ -141,10 +141,8 @@ DONE:
             .collect::<Vec<_>>(),
         vec![Cond::Mch1210, Cond::Mch1202]
     );
-    assert_eq!(
-        j.exception.as_ref().map(|e| e.cond),
-        Some(Some(Cond::Mch1211))
-    );
+    assert_eq!(j.raised.last().map(|e| e.msgid.as_str()), Some("CEE9901"));
+    assert!(j.raised.iter().any(|e| e.cond == Some(Cond::Mch1211)));
     assert!(j.pending());
 }
 
@@ -434,7 +432,11 @@ L0:
 ");
     let j = p.job();
     assert!(j.pending());
-    assert_eq!(j.exception.as_ref().unwrap().msgid, "MCH1211");
-    assert_eq!(j.exception.as_ref().unwrap().status, 102);
+    // The condition, its function check and the cancel the default
+    // reply brings, in order; the last one is what the job sees.
+    let ids: Vec<&str> = j.raised.iter().map(|e| e.msgid.as_str()).collect();
+    assert_eq!(ids, vec!["MCH1211", "CPF9999", "CEE9901"]);
+    assert_eq!(j.raised[0].status, 102);
+    assert_eq!(j.exception.as_ref().unwrap().msgid, "CEE9901");
     assert_eq!(j.depth, 0);
 }

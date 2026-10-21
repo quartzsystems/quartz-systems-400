@@ -7,6 +7,7 @@
 //! `monitor` selector tests.
 
 pub use codegen::Cond;
+use codegen::rt::{selector, unpack_msgid};
 
 /// A pending exception: an escape message sent to a call-stack entry,
 /// from a machine condition or from `sndpgmmsg`.
@@ -24,6 +25,8 @@ pub struct Exception {
     pub status: u16,
     /// Call-stack depth of the entry it was sent to.
     pub depth: u32,
+    /// Key of the escape message that carries it.
+    pub key: u32,
 }
 
 impl Exception {
@@ -37,6 +40,7 @@ impl Exception {
             data: Vec::new(),
             status: status_of(cond),
             depth,
+            key: 0,
         }
     }
 
@@ -54,6 +58,27 @@ impl Exception {
             data,
             status: cond.map_or(0, status_of),
             depth,
+            key: 0,
+        }
+    }
+
+    /// Whether a `monitor` selector, as `rt::selector` encodes it,
+    /// takes this exception.
+    #[must_use]
+    pub fn matches(&self, kind: i64, a: i64, b: i64) -> bool {
+        match kind {
+            selector::ALL => true,
+            selector::PROGRAM => !self.is_file_error(),
+            selector::FILE => self.is_file_error(),
+            selector::STATUS => i64::from(self.status) >= a && i64::from(self.status) <= b,
+            selector::MSGID => {
+                let id = unpack_msgid(a);
+                match id.strip_suffix('*') {
+                    Some(prefix) => self.msgid.starts_with(prefix),
+                    None => self.msgid == id,
+                }
+            }
+            _ => false,
         }
     }
 

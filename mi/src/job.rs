@@ -26,7 +26,7 @@ pub type NativeFn = fn(&mut Job, &[u64]);
 
 /// A resolved message queue.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum QueueTarget {
+pub(crate) enum QueueTarget {
     Frame(usize),
     Ext,
     SysOpr,
@@ -68,6 +68,17 @@ pub struct Job {
     pub sysopr: MsgQueue,
     /// Message descriptions.
     pub msgs: Box<dyn msgf::MsgLookup>,
+    /// Replies queued for inquiry messages, oldest first; the
+    /// description's default when empty. `MIGRATE(phase5)`: QSYSOPR.
+    pub inquiry_replies: VecDeque<String>,
+    /// The last dump written (`D` or `F` reply); `MIGRATE(phase5)` to
+    /// a spooled file.
+    pub last_dump: Option<String>,
+    /// Every reply given to an inquiry, oldest first.
+    pub inquiry_log: Vec<String>,
+    /// A resume granted to an entry below the top: the exception
+    /// clears when the stack comes back down to this depth.
+    pub resume_depth: Option<u32>,
     next_key: u32,
     env: Box<Env>,
 }
@@ -94,6 +105,10 @@ impl Job {
             ext_msgq: MsgQueue::default(),
             sysopr: MsgQueue::default(),
             msgs: Box::new(msgf::BuiltinMsgs::new()),
+            inquiry_replies: VecDeque::new(),
+            last_dump: None,
+            inquiry_log: Vec::new(),
+            resume_depth: None,
             next_key: 1,
             env: Box::new(Env {
                 statics: std::ptr::null_mut(),
@@ -352,6 +367,27 @@ impl Job {
         to: QueueRef,
     ) -> Result<u32, Cond> {
         let target = self.queue_target(to)?;
+        Ok(self.send_message_to(target, msgid, msgf, lib, data, msg_type))
+    }
+
+    /// The severity of an exception's message description, 0 when it
+    /// has none.
+    #[must_use]
+    pub fn severity_of(&mut self, e: &Exception) -> u16 {
+        self.msgs
+            .describe(&e.msgid, &e.msgf, "QSYS")
+            .map_or(0, |d| d.severity)
+    }
+
+    pub(crate) fn send_message_to(
+        &mut self,
+        target: QueueTarget,
+        msgid: &str,
+        msgf: &str,
+        lib: &str,
+        data: Vec<u8>,
+        msg_type: MsgType,
+    ) -> u32 {
         let (text, help, severity) = self.describe_message(msgid, msgf, lib, &data);
         let key = self.next_key;
         self.next_key += 1;
@@ -375,12 +411,12 @@ impl Job {
             && let QueueTarget::Frame(i) = target
         {
             let depth = u32::try_from(i + 1).expect("few frames");
-            let e = Exception::message(msgid, msgf, data, depth);
+            let mut e = Exception::message(msgid, msgf, data, depth);
+            e.key = key;
             self.raised.push(e.clone());
-            self.exception = Some(e);
-            self.abi.pending = 1;
+            crate::except::dispatch(self, &e);
         }
-        Ok(key)
+        key
     }
 
     /// Receive the oldest message of a type, or the keyed one, from a

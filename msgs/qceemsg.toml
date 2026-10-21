@@ -18,6 +18,13 @@ help = "CEESGL raised a condition that no handler took."
 vars = ["*CHAR 7"]
 
 [[msg]]
+id = "CEE0801"
+sev = 30
+text = "The procedure pointer given to &1 is not valid."
+help = "The pointer is null or does not address a procedure."
+vars = ["*CHAR 7"]
+
+[[msg]]
 id = "CEE0802"
 sev = 40
 text = "The heap storage pointer is not valid."
@@ -28,6 +35,20 @@ id = "CEE0803"
 sev = 40
 text = "The heap &1 does not exist."
 help = "The heap identifier was not returned by CEECRHP, or the heap was discarded."
+vars = ["*BIN 4"]
+
+[[msg]]
+id = "CEE0809"
+sev = 30
+text = "&1 found no handler registered for the procedure."
+help = "The procedure was not registered by the calling entry, or was unregistered already."
+vars = ["*CHAR 7"]
+
+[[msg]]
+id = "CEE0810"
+sev = 30
+text = "Resume cursor action &1 is not supported."
+help = "Only action 0, resuming at the instruction after the failing one, exists."
 vars = ["*BIN 4"]
 
 [[msg]]

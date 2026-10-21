@@ -57,3 +57,35 @@ is in `expected/` and the test passes.
    `00907`, `MCH1602` to `00112`, and the pointer conditions to
    `00222`. Oracle: `STATMAP` forces each condition under `MONITOR`
    and prints `%STATUS`.
+
+9. **Reply `R` to `CEE9901`.** Implemented as `G`: the failing
+   instruction is not retried, execution continues after it. The
+   machine retries the instruction. Oracle: `REPLYR` answers `R` to
+   a divide by zero whose divisor a handler has since changed, and
+   prints the result.
+
+10. **Where the function check is sent.** Implemented: `CPF9999` goes
+    to the entry the original escape was sent to, so every entry up to
+    the control boundary sees it again (`*PSSR` in the failing
+    program first). Oracle: `FCWHERE` prints which of two `MONMSG
+    CPF9999` ran, in the callee or the caller.
+
+11. **Condition handler result codes 30 and 31 (promote).** Implemented
+    as percolate; the new condition token is ignored. Oracle:
+    `PROMOTE` promotes `MCH1211` to a user condition and prints what
+    the caller's `MONMSG` saw.
+
+12. **Feedback codes of the condition-management APIs.** Implemented:
+    `CEE0801` for a procedure pointer that is not a procedure,
+    `CEE0809` for `CEEHDLU`/`CEEUTX` of a handler never registered,
+    `CEE0810` for a `CEEMRCR` action other than 0. The machine's
+    identifiers for these cases are not certain. Oracle: `CEEFC`
+    prints the feedback codes of each misuse.
+
+13. **`CEE9901` to the caller of a cancelled program.** Implemented:
+    reply `C` ends the entries down to the control boundary and sends
+    `CEE9901` as an escape to the boundary's caller, where the search
+    runs again (its own function check and inquiry when unhandled).
+    The machine sends `CEE9901` for ILE programs and `CPF9999`-based
+    escapes for OPM ones. Oracle: `CANCELTO` calls a failing program
+    under `MONMSG CEE9901` and prints the message data.

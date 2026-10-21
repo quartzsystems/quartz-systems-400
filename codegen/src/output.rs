@@ -62,6 +62,16 @@ pub struct StmtRange {
     pub end: u32,
 }
 
+/// A `monitor` region's handlers, for the runtime's search at raise
+/// time: the selectors in order and the enclosing region.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RegionDesc {
+    /// Handler selectors as `(kind, a, b)` words (`rt::selector`).
+    pub handlers: Vec<(i64, i64, i64)>,
+    /// Enclosing region number, 0 for none.
+    pub parent: u32,
+}
+
 /// A compiled procedure.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ProcCode {
@@ -100,6 +110,8 @@ pub struct ModuleCode {
     pub static_init: Vec<u8>,
     /// Names of exported statics with their frame offsets.
     pub data_exports: Vec<(String, u64)>,
+    /// `monitor` regions of every procedure, numbered from 1 in order.
+    pub regions: Vec<RegionDesc>,
 }
 
 impl ModuleCode {

@@ -85,6 +85,7 @@ pub fn compile(m: &Module) -> Result<ModuleCode> {
     let isa = target()?;
     let layout = StaticLayout::of(m);
     let mut names: Vec<String> = Vec::new();
+    let mut region_table: Vec<crate::output::RegionDesc> = Vec::new();
     let mut code: Vec<u8> = Vec::new();
     let mut relocs: Vec<Reloc> = Vec::new();
     let mut procs: Vec<ProcCode> = Vec::new();
@@ -98,7 +99,7 @@ pub fn compile(m: &Module) -> Result<ModuleCode> {
         let mut fctx = FunctionBuilderContext::new();
         {
             let b = FunctionBuilder::new(&mut func, &mut fctx);
-            let mut lw = Lowerer::new(m, p, index32(pi), b, &layout, &mut names);
+            let mut lw = Lowerer::new(m, p, index32(pi), b, &layout, &mut names, &mut region_table);
             lw.lower()?;
         }
         let mut ctx = Context::for_function(func);
@@ -244,6 +245,7 @@ pub fn compile(m: &Module) -> Result<ModuleCode> {
         statics: layout,
         static_init,
         data_exports,
+        regions: region_table,
     })
 }
 
@@ -267,6 +269,7 @@ pub(crate) struct Lowerer<'a, 'b> {
     pub b: FunctionBuilder<'b>,
     pub layout: &'a StaticLayout,
     names: &'a mut Vec<String>,
+    pub(crate) region_table: &'a mut Vec<crate::output::RegionDesc>,
     pub vars: Vec<Variable>,
     pub blocks: Vec<Block>,
     pub slots: Vec<Option<StackSlot>>,
@@ -294,6 +297,7 @@ impl<'a, 'b> Lowerer<'a, 'b> {
         b: FunctionBuilder<'b>,
         layout: &'a StaticLayout,
         names: &'a mut Vec<String>,
+        region_table: &'a mut Vec<crate::output::RegionDesc>,
     ) -> Self {
         // Placeholders until the prologue runs.
         let zero = Value::from_u32(0);
@@ -304,6 +308,7 @@ impl<'a, 'b> Lowerer<'a, 'b> {
             b,
             layout,
             names,
+            region_table,
             vars: Vec::new(),
             blocks: Vec::new(),
             slots: Vec::new(),
@@ -518,10 +523,20 @@ impl<'a, 'b> Lowerer<'a, 'b> {
         self.b.switch_to_block(cont);
     }
 
+    /// Record the `monitor` region the next call runs in, so the
+    /// runtime can find this entry's handlers while it is suspended.
+    pub(crate) fn mark_region(&mut self) {
+        let id = self.regions.last().map_or(0, |r| r.id);
+        let job = self.b.ins().load(types::I64, le(), self.env, abi::ENV_JOB);
+        let v = self.b.ins().iconst(types::I32, i64::from(id));
+        self.b.ins().store(le(), v, job, abi::JOB_REGION);
+    }
+
     /// Raise a condition and poll for resumption.
     pub(crate) fn raise(&mut self, cond: Cond) {
         let f = self.rt_ref(RtFn::Raise);
         let c = self.b.ins().iconst(types::I32, i64::from(cond as u32));
+        self.mark_region();
         self.b.ins().call(f, &[self.env, c]);
         self.check_pending();
     }
@@ -697,6 +712,9 @@ impl<'a, 'b> Lowerer<'a, 'b> {
     /// Mark the statement the following code belongs to.
     pub(crate) fn stmt(&mut self, n: u32) {
         self.b.set_srcloc(SourceLoc::new(n + 1));
+        let job = self.b.ins().load(types::I64, le(), self.env, abi::ENV_JOB);
+        let v = self.b.ins().iconst(types::I32, i64::from(n));
+        self.b.ins().store(le(), v, job, abi::JOB_STMT);
     }
 
     /// Store raw bytes at an address, in 8, 4, 2 and 1 byte pieces.

@@ -197,6 +197,8 @@ pub enum ImportTarget {
         /// Export name.
         export: String,
     },
+    /// A procedure the runtime provides (`QLEAWI`).
+    System,
     /// Nothing; the program was created with `OPTION(*UNRSLVREF)`.
     Unresolved,
 }
