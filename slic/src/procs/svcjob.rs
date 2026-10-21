@@ -21,6 +21,7 @@ use crate::ipl::system::System;
 /// The commands `slic` answers itself while the console is idle.
 pub const LOCAL: &[&str] = &[
     "help", "release", "srcs", "hist", "hw", "lic", "mode", "screen", "key", "type", "pwrdwn",
+    "dbgkill",
 ];
 
 /// The running job.
@@ -75,7 +76,9 @@ pub fn start(system: &mut System, tx: Sender<Event>) -> Result<(), String> {
             number,
             handle: u64::from(number),
             kind: 'S',
-            subsystem: String::new(),
+            // Listed under QSYSWRK; no monitor owns it, so ending the
+            // subsystem leaves the console working.
+            subsystem: "QSYSWRK".into(),
             role: "QSVCJOB".into(),
             jobd: "QSYS/QSYSJOBD".into(),
             ..Start::default()

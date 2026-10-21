@@ -40,6 +40,7 @@ pub fn command(c: &mut Console, cmd: &str, line: &str) -> String {
         "dlyjob" => dlyjob(c, &p),
         "sbmjob" => sbmjob(c, &p),
         "pwrdwnsys" => pwrdwnsys(c, &p),
+        "wrkjob" => wrkjob(c, &p),
         "endsys" => {
             let opt = p.upper("OPTION").unwrap_or_else(|| "*CNTRLD".into());
             let delay = p.upper("DELAY").unwrap_or_else(|| "*NOLIMIT".into());
@@ -50,6 +51,41 @@ pub fn command(c: &mut Console, cmd: &str, line: &str) -> String {
     match r {
         Ok(s) => s,
         Err(e) => format!("{e}\n"),
+    }
+}
+
+/// `WRKJOB [JOB(n/u/name)] [OPTION(...)]`: the job's displays, by
+/// option. Another job's call stack and log are its own business
+/// (`MIGRATE(phase6)`: shown through the service).
+fn wrkjob(c: &mut Console, p: &Params) -> Result<String, String> {
+    let job = p.upper("JOB");
+    let own = job.is_none() || job.as_deref() == Some("*");
+    let jobkw = job.as_ref().map_or_else(String::new, |j| format!(" JOB({j})"));
+    let option = p.upper("OPTION").unwrap_or_else(|| "*SELECT".into());
+    match option.as_str() {
+        "*STSA" | "*DFNA" | "*RUNA" => Ok(c.line(&format!("dspjob{jobkw}"))),
+        "*SPLF" => {
+            let spec = if own {
+                format!(
+                    "{:06}/{}/{}",
+                    c.start.number, c.start.user, c.start.name
+                )
+            } else {
+                job.clone().unwrap_or_default()
+            };
+            Ok(c.line(&format!("wrksplf SELECT(*ALL) JOB({spec})")))
+        }
+        "*JOBLOG" if own => Ok(c.dspjoblog()),
+        "*PGMSTK" if own => Ok(c.job().call_stack_text()),
+        "*LIBL" if own => Ok(c.line("dsplibl")),
+        "*JOBLOG" | "*PGMSTK" | "*LIBL" => Err(format!(
+            "CPF1343 {option} of another job is not shown yet"
+        )),
+        "*SELECT" => Ok(format!(
+            "Work with Job: {:06}/{}/{}\n\n  1. Display job status attributes        (OPTION(*STSA))\n  2. Display job definition attributes    (OPTION(*DFNA))\n  3. Display job run attributes           (OPTION(*RUNA))\n  4. Work with spooled files              (OPTION(*SPLF))\n 10. Display job log                      (OPTION(*JOBLOG))\n 11. Display call stack                   (OPTION(*PGMSTK))\n 13. Display library list                 (OPTION(*LIBL))\n",
+            c.start.number, c.start.user, c.start.name
+        )),
+        o => Err(format!("CPD0084 OPTION({o}) is not valid")),
     }
 }
 

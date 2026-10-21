@@ -1101,6 +1101,12 @@ impl Suite {
         }
         let sts = s.command("wrksyssts", CMD)?;
         s.command("endsbs QBATCH OPTION(*IMMED)", CMD)?;
+        let left = poll(s, "wrkactjob", 60, |o| active_row(o, "QBATCH").is_none())?;
+        if let Some(r) = active_row(&left, "QBATCH") {
+            let v2 = s.command("wrkactjob VIEW(3)", CMD)?;
+            let sbs = s.command("wrksbs", CMD)?;
+            return Err(format!("QBATCH did not end: {r}\n{v2}\n{sbs}"));
+        }
         let base = sts
             .lines()
             .find(|l| l.split_whitespace().next() == Some("2"))
@@ -1141,6 +1147,338 @@ impl Suite {
         Ok(format!(
             "*BASE took {faults:.1} faults/s while WMMEM touched 60 MB; QWCRSSTS saw {} jobs",
             nums[0]
+        ))
+    }
+}
+
+/// A report of 100 lines on `QSYSPRT`, slowed so it is seen running,
+/// with a completion message in the job log.
+const RPT100: &str = "\
+module RPT100
+file REPORT file(QSYSPRT) dev(*PRT)
+static $line: char(20) inz(\"REPORT LINE\")
+proc RPT100() entry {
+L0:
+  %o = dbopen REPORT
+  %i = const.i32 1
+  br TEST
+TEST:
+  %done = cmp.gt %i, 100
+  brif %done, OUT, BODY
+BODY:
+  %j = const.i32 0
+  br SPIN
+SPIN:
+  %s = cmp.ge %j, 20000000
+  brif %s, PRINT, STEP
+STEP:
+  %j = add %j, 1
+  br SPIN
+PRINT:
+  %w = prtio REPORT WRITE fmt(QSYSPRT) rec($line)
+  %i = add %i, 1
+  br TEST
+OUT:
+  %c = dbclose REPORT
+  sndpgmmsg msgid(\"CPF9897\") msgf(\"QCPFMSG\") data(\"100 report lines printed\") type(*COMP) to(*EXT)
+  ret
+}
+";
+
+/// Reads the record of `QGPL/WMLCK` for update, keeping its lock, and
+/// spins until it is ended.
+const LOCKER: &str = "\
+module LOCKER
+file F file(WMLCK) lib(QGPL) usage(*UPDATE)
+static $rec: char(10)
+proc LOCKER() entry {
+L0:
+  %o = dbopen F
+  %r = dbio F READ rec($rec)
+  br SPIN
+SPIN:
+  br SPIN
+}
+";
+
+/// Reads the same record for update: 0 when no one holds its lock.
+const CHECKER: &str = "\
+module CHECKER
+file F file(WMLCK) lib(QGPL) usage(*UPDATE)
+static $rec: char(10)
+proc CHECKER() entry {
+L0:
+  %o = dbopen F
+  %r = dbio F READ rec($rec)
+  dsply %r
+  %c = dbclose F
+  ret
+}
+";
+
+/// Assemble and bind a program into `QGPL`.
+fn build(s: &mut Session, name: &str, text: &str) -> Result<(), String> {
+    crate::qir::qemu::push(s, name, text)?;
+    let m = s.command(&format!("qir asm {name} MODULE(QGPL/{name})"), CMD)?;
+    let p = s.command(&format!("crtpgm QGPL/{name} MODULE(QGPL/{name})"), CMD)?;
+    if !m.contains("created") || !p.contains("created") {
+        return Err(format!("{name}:\n{m}\n{p}"));
+    }
+    Ok(())
+}
+
+/// Poll `cmd` until its output satisfies `done`; the last output.
+fn poll(
+    s: &mut Session,
+    cmd: &str,
+    tries: u32,
+    done: impl Fn(&str) -> bool,
+) -> Result<String, String> {
+    let mut out = String::new();
+    for _ in 0..tries {
+        out = s.command(cmd, CMD)?;
+        if done(&out) {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(250));
+    }
+    Ok(out)
+}
+
+/// The active job named `name` in `WRKACTJOB`'s status view.
+fn active_row(list: &str, name: &str) -> Option<String> {
+    list.lines()
+        .find(|l| l.split_whitespace().next() == Some(name))
+        .map(str::to_string)
+}
+
+impl Suite {
+    /// Step 32: a submitted report: waits on the held queue, runs, prints
+    /// 100 lines and logs its completion; `QSYSPRT` and `QPJOBLOG` are
+    /// ready, displayed, and the capture writer prints the report to text
+    /// and a two-page PDF.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn report_job(&self, s: &mut Session) -> Result<String, String> {
+        build(s, "RPT100", RPT100)?;
+        s.command("strsbs QSYS/QBATCH", CMD)?;
+        s.command("hldjobq QGPL/QBATCH", CMD)?;
+        let out = s.command(
+            "sbmjob CMD('call QGPL/RPT100') JOB(WMRPT) JOBQ(QGPL/QBATCH) LOG(4 00 *SECLVL) MSGQ(QUSRSYS/QSECOFR)",
+            CMD,
+        )?;
+        let job = submitted(&out)?;
+        let queued = s.command("wrkjobq QGPL/QBATCH", CMD)?;
+        if !queued.contains("WMRPT") {
+            return Err(format!("WMRPT is not on the queue:\n{queued}"));
+        }
+        s.command("rlsjobq QGPL/QBATCH", CMD)?;
+        let running = poll(s, "wrkactjob", 80, |o| {
+            active_row(o, "WMRPT").is_some_and(|r| r.contains("RUN"))
+        })?;
+        let row = active_row(&running, "WMRPT")
+            .ok_or_else(|| format!("WMRPT was never seen running:\n{running}"))?;
+        let msgs = poll(s, "dspmsg QUSRSYS/QSECOFR", 120, |o| {
+            o.contains("CPF1241") && o.contains("WMRPT")
+        })?;
+        s.command("endsbs QBATCH OPTION(*IMMED)", CMD)?;
+        if !msgs.contains("WMRPT") {
+            return Err(format!("WMRPT did not complete:\n{msgs}"));
+        }
+        let files = s.command(&format!("wrksplf SELECT(*ALL) JOB({job})"), CMD)?;
+        for f in ["QSYSPRT", "QPJOBLOG"] {
+            if !files.lines().any(|l| l.contains(f) && l.contains("RDY")) {
+                return Err(format!("{f} is not ready:\n{files}"));
+            }
+        }
+        let report = s.command(&format!("dspsplf QSYSPRT JOB({job})"), CMD)?;
+        if report.matches("REPORT LINE").count() != 100 || !report.contains("   2/") {
+            return Err(format!("the report:\n{report}"));
+        }
+        let log = s.command(&format!("dspsplf QPJOBLOG JOB({job})"), CMD)?;
+        if !log.contains("CPF9897") || !log.contains("100 report lines printed") {
+            return Err(format!("the completion message is not logged:\n{log}"));
+        }
+        s.command(
+            &format!("chgsplfa QSYSPRT JOB({job}) OUTQ(QUSRSYS/QSCAPTURE)"),
+            CMD,
+        )?;
+        let caps = poll(s, "prtcapture list", 80, |o| o.contains(&job))?;
+        if !caps.contains(&job) {
+            return Err(format!("the writer did not print WMRPT:\n{caps}"));
+        }
+        let text = s.command(&format!("prtcapture get QSYSPRT JOB({job})"), CMD)?;
+        let pdf_out = s.command(
+            &format!("prtcapture get QSYSPRT JOB({job}) FORMAT(*PDF)"),
+            CMD,
+        )?;
+        let b64: String = pdf_out
+            .lines()
+            .skip_while(|l| !l.starts_with("-----BEGIN PDF"))
+            .skip(1)
+            .take_while(|l| !l.starts_with("-----END PDF"))
+            .collect();
+        let pdf = unbase64(&b64).ok_or("the PDF is not base64")?;
+        let pages = spool::pdf::check(&pdf).map_err(|e| format!("the PDF: {e}"))?;
+        if text.matches("REPORT LINE").count() != 100 || pages != 2 {
+            return Err(format!("the capture: {pages} PDF page(s)\n{text}"));
+        }
+        let wrkjob = s.command(&format!("wrkjob JOB({job}) OPTION(*SPLF)"), CMD)?;
+        if !wrkjob.contains("QPJOBLOG") {
+            return Err(format!("wrkjob *SPLF:\n{wrkjob}"));
+        }
+        Ok(format!(
+            "{job} queued, ran ({}), printed 100 lines on 2 pages, logged CPF9897; QSCAPTURE made text and a {}-byte PDF",
+            row.split_whitespace().last().unwrap_or(""),
+            pdf.len()
+        ))
+    }
+
+    /// Step 33: a program failing unmonitored in a batch job: the job
+    /// waits in `MSGW` on `CEE9901` at `QSYSOPR`, the reply `C` ends it,
+    /// and its job log holds the escape and the inquiry.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn batch_inquiry(&self, s: &mut Session) -> Result<String, String> {
+        s.command("strsbs QSYS/QBATCH", CMD)?;
+        let out = s.command(
+            "sbmjob CMD('call QGPL/FAILPGM') JOB(WMFAIL) JOBQ(QGPL/QBATCH) INQMSGRPY(*RQD) LOG(4 00 *SECLVL) MSGQ(QUSRSYS/QSECOFR)",
+            CMD,
+        )?;
+        let job = submitted(&out)?;
+        let waiting = poll(s, "wrkactjob", 80, |o| {
+            active_row(o, "WMFAIL").is_some_and(|r| r.contains("MSGW"))
+        })?;
+        if !active_row(&waiting, "WMFAIL").is_some_and(|r| r.contains("MSGW")) {
+            s.command("endsbs QBATCH OPTION(*IMMED)", CMD)?;
+            return Err(format!("WMFAIL is not waiting on a message:\n{waiting}"));
+        }
+        let opr = s.command("dspmsg QSYSOPR", CMD)?;
+        let key = opr
+            .lines()
+            .rfind(|l| l.contains("CEE9901"))
+            .and_then(|l| l.split_whitespace().next())
+            .ok_or_else(|| format!("no CEE9901 on QSYSOPR:\n{opr}"))?
+            .to_string();
+        s.command(
+            &format!("sndrpymsg MSGKEY({key}) MSGQ(QSYS/QSYSOPR) RPY('C')"),
+            CMD,
+        )?;
+        let msgs = poll(s, "dspmsg QUSRSYS/QSECOFR", 80, |o| {
+            o.contains("CPF1240") && o.contains("WMFAIL")
+        })?;
+        s.command("endsbs QBATCH OPTION(*IMMED)", CMD)?;
+        if !msgs.contains("WMFAIL") {
+            return Err(format!("WMFAIL did not end abnormally:\n{msgs}"));
+        }
+        let log = poll(s, &format!("dspsplf QPJOBLOG JOB({job})"), 40, |o| {
+            o.contains("CEE9901")
+        })?;
+        if !log.contains("CEE9901") || !log.contains("Escape") {
+            return Err(format!("the job log lacks the escape or the inquiry:\n{log}"));
+        }
+        Ok(format!(
+            "{job} waited in MSGW on CEE9901 ({key}); reply C ended it; the job log has the escape and the inquiry"
+        ))
+    }
+
+    /// Step 34: `ENDSBS QBATCH *IMMED` while five jobs run, one holding a
+    /// record lock and four waiting for it: all end, the lock is free,
+    /// the store checks clean.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn end_busy_subsystem(&self, s: &mut Session) -> Result<String, String> {
+        s.command("crtpf QGPL/WMLCK RCDLEN(10)", CMD)?;
+        crate::qir::qemu::push(s, "WMLDATA", "LOCKME")?;
+        s.command("cpyfrmimpf FROMSTMF(WMLDATA) TOFILE(QGPL/WMLCK)", CMD)?;
+        build(s, "LOCKER", LOCKER)?;
+        build(s, "CHECKER", CHECKER)?;
+        s.command("chgjobqe QSYS/QBATCH JOBQ(QGPL/QBATCH) MAXACT(*NOMAX)", CMD)?;
+        s.command("strsbs QSYS/QBATCH", CMD)?;
+        for i in 1..=5 {
+            s.command(
+                &format!("sbmjob CMD('call QGPL/LOCKER') JOB(WMLCK{i}) JOBQ(QGPL/QBATCH) MSGQ(*NONE)"),
+                CMD,
+            )?;
+        }
+        let busy = poll(s, "wrkactjob", 80, |o| {
+            (1..=5).all(|i| active_row(o, &format!("WMLCK{i}")).is_some())
+        })?;
+        if !(1..=5).all(|i| active_row(&busy, &format!("WMLCK{i}")).is_some()) {
+            return Err(format!("the five jobs are not all active:\n{busy}"));
+        }
+        s.command("endsbs QBATCH OPTION(*IMMED)", CMD)?;
+        let after = poll(s, "wrkactjob", 80, |o| !o.contains("WMLCK") && active_row(o, "QBATCH").is_none())?;
+        s.command("chgjobqe QSYS/QBATCH JOBQ(QGPL/QBATCH) MAXACT(1)", CMD)?;
+        if after.contains("WMLCK") {
+            return Err(format!("jobs survived ENDSBS *IMMED:\n{after}"));
+        }
+        let check = s.command("call QGPL/CHECKER", Duration::from_secs(90))?;
+        let chk = s.command("chkstg", Duration::from_secs(300))?;
+        let rcl = s.command("rclstg *CHECK", Duration::from_secs(300))?;
+        s.command("dltf QGPL/WMLCK", CMD)?;
+        if !check.lines().any(|l| l.trim() == "0") {
+            return Err(format!("the record is still locked:\n{check}"));
+        }
+        if !chk.contains(": 0 bad") || !rcl.contains("0 problem(s)") {
+            return Err(format!("the store after ENDSBS:\n{chk}\n{rcl}"));
+        }
+        Ok("five jobs ended by ENDSBS *IMMED; the record lock was free; chkstg and rclstg *CHECK clean".into())
+    }
+
+    /// Step 35: `dbgkill` kills the service console job in the middle of
+    /// a commitment-control cycle: the storage service rolls it back,
+    /// the job is gone from `WRKACTJOB`, its job log is spooled with the
+    /// abnormal end, and the store checks clean.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn killed_job(&self, s: &mut Session) -> Result<String, String> {
+        let numbers = s.command("wrkactjob VIEW(3)", CMD)?;
+        let old = numbers
+            .lines()
+            .find(|l| l.trim_start().starts_with("QSVCJOB"))
+            .and_then(|l| l.split_whitespace().nth(2))
+            .ok_or_else(|| format!("no QSVCJOB:\n{numbers}"))?
+            .to_string();
+        let lib = crate::db::kit::LIBRARY;
+        let sum = |s: &mut Session| -> Result<String, String> {
+            let out = s.command(&format!("sql SELECT SUM(BAL) FROM {lib}/CUSTOMER;"), CMD)?;
+            let lines: Vec<&str> = out.lines().map(str::trim).collect();
+            lines
+                .iter()
+                .position(|l| l.ends_with("row(s)"))
+                .and_then(|i| lines[..i].iter().rev().find(|l| l.parse::<f64>().is_ok()))
+                .map(|l| (*l).to_string())
+                .ok_or_else(|| format!("no balance in:\n{out}"))
+        };
+        let before = sum(s)?;
+        s.command("strcmtctl LCKLVL(*CHG)", CMD)?;
+        s.command(&format!("sql UPDATE {lib}/CUSTOMER SET BAL = BAL + 1000;"), CMD)?;
+        let during = sum(s)?;
+        if during == before {
+            return Err(format!("the update did not show: {before}"));
+        }
+        let killed = s.command("dbgkill JOB(QSVCJOB)", CMD)?;
+        if !killed.contains("killed") {
+            return Err(format!("dbgkill: {killed}"));
+        }
+        // slic starts the job again and shows its prompt.
+        s.expect("starting it again", Duration::from_secs(10))?;
+        s.expect(crate::PROMPT, Duration::from_secs(15))?;
+        let now = s.command("wrkactjob VIEW(3)", CMD)?;
+        if !now.contains("QSVCJOB") || now.contains(&old) {
+            return Err(format!("QSVCJOB {old} is still listed, or none is:\n{now}"));
+        }
+        let after = sum(s)?;
+        let log = s.command(&format!("dspsplf QPJOBLOG JOB({old}/QSYS/QSVCJOB)"), CMD)?;
+        let chk = s.command("chkstg", Duration::from_secs(300))?;
+        if after != before {
+            return Err(format!("not rolled back: {before} before, {during} during, {after} after"));
+        }
+        if !log.contains("CPF1164") || !log.contains(" 70") {
+            return Err(format!("the killed job's log:\n{log}"));
+        }
+        if !chk.contains(": 0 bad") {
+            return Err(format!("chkstg:\n{chk}"));
+        }
+        Ok(format!(
+            "QSVCJOB {old} killed mid-cycle; balance back to {after}; job log spooled with end code 70; chkstg clean"
         ))
     }
 }

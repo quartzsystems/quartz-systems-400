@@ -4,8 +4,9 @@
 
 //! Storage pools as memory cgroups: `/sys/fs/cgroup/qs400/<POOL>` for a
 //! shared pool (`*BASE` is `BASE`), `/sys/fs/cgroup/qs400/<SBS>/<n>`
-//! for a subsystem's private pool. A pool's size is the cgroup's
-//! `memory.high`. Failures are reported, not fatal: a system without
+//! for a subsystem's private pool. A private or `*SHRPOOLn` pool's size
+//! is the cgroup's `memory.high`; the pools the system manages
+//! (`*MACHINE`, `*BASE`, `*INTERACT`, `*SPOOL`) are not limited. Failures are reported, not fatal: a system without
 //! cgroups runs its jobs unpartitioned.
 
 use std::fs;

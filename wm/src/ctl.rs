@@ -170,6 +170,7 @@ pub const JOB_COMMANDS: &[&str] = &[
     "sbmjob",
     "pwrdwnsys",
     "endsys",
+    "wrkjob",
 ];
 
 /// A display panel: text and input fields placed by row and column

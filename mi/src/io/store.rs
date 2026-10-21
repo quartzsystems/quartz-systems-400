@@ -184,14 +184,36 @@ impl IoSource for StoreIo {
                     .collect(),
             );
         }
-        let mut store = self.store.store();
-        let mut txn = store.begin().map_err(|e| fail_of(&DbError::Store(e)))?;
         self.session.set_opener(if spec.actgrp.is_empty() {
             db::odp::ovrdbf::DFTACTGRP
         } else {
             &spec.actgrp
         });
-        let odp = match self.session.open(&mut txn, &fr, &mut *self.resolve, opts) {
+        // Resolve the file and its override's TOFILE before the store is
+        // taken: a resolver may need the store itself.
+        let mut wanted = vec![fr.clone()];
+        if let Some(to) = self.session.override_for(fr.file).and_then(|o| o.tofile.clone()) {
+            wanted.push(to);
+        }
+        let mut known: Vec<(dds::FileRef, Option<db::Result<ObjectId>>)> = Vec::new();
+        for w in wanted {
+            let r = (self.resolve)(&w);
+            known.push((w, Some(r)));
+        }
+        let mut lookup = |r: &dds::FileRef| -> db::Result<ObjectId> {
+            known
+                .iter_mut()
+                .find(|(k, _)| k == r)
+                .and_then(|(_, v)| v.take())
+                .unwrap_or_else(|| {
+                    Err(DbError::Definition {
+                        what: format!("{} was not resolved before the open", r.file),
+                    })
+                })
+        };
+        let mut store = self.store.store();
+        let mut txn = store.begin().map_err(|e| fail_of(&DbError::Store(e)))?;
+        let odp = match self.session.open(&mut txn, &fr, &mut lookup, opts) {
             Ok(o) => o,
             Err(e) => {
                 let _ = txn.commit();

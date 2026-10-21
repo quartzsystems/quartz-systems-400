@@ -80,6 +80,37 @@ pub fn handle(system: &mut System, line: &str) {
     system.out.serial(db::prompt(system));
 }
 
+/// `dbgkill JOB(name|number)`: the debug hook that kills a job's
+/// process as a crash would (`SIGKILL`), for the harness to see the
+/// storage service clean up after it.
+fn dbgkill(system: &mut System, line: &str) -> String {
+    let p = wm::cmd::Params::parse(line);
+    let Ok(want) = p.pos_or(0, "JOB") else {
+        return "dbgkill JOB(name|number)\n".into();
+    };
+    let want = want.to_ascii_uppercase();
+    let Some(stg) = system.procs.stg.as_mut() else {
+        return "the storage service is not running\n".into();
+    };
+    let jobs = stg::Client::active_jobs(stg).unwrap_or_default();
+    let Some(j) = jobs
+        .iter()
+        .find(|j| j.name == want || format!("{:06}", j.number) == want)
+    else {
+        return format!("no active job {want}\n");
+    };
+    let r = rustix::process::Pid::from_raw(i32::try_from(j.pid).unwrap_or(0))
+        .ok_or_else(|| "no process".to_string())
+        .and_then(|pid| {
+            rustix::process::kill_process(pid, rustix::process::Signal::KILL)
+                .map_err(|e| e.to_string())
+        });
+    match r {
+        Ok(()) => format!("Job {:06}/{}/{} killed.\n", j.number, j.user, j.name),
+        Err(e) => format!("dbgkill: {e}\n"),
+    }
+}
+
 /// Execute one command line; its reply.
 pub fn reply(system: &mut System, line: &str) -> String {
     let mut words = line.split_whitespace();
@@ -108,6 +139,7 @@ pub fn reply(system: &mut System, line: &str) -> String {
         ("screen", _) => crate::ipl::display::dump(system),
         ("key", [name]) => key(system, name),
         ("type", _) => type_text(system, line),
+        ("dbgkill", _) => dbgkill(system, line),
         ("pwrdwn", []) => power::down(system, false),
         ("pwrdwn", ["restart"]) => power::down(system, true),
         ("asp", _) => storage::asp(system),

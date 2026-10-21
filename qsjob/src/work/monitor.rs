@@ -70,11 +70,13 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
         }
     }
     loop {
+        stg::remote::status(&m.link, wm::job::Status::Deqw, "");
         std::thread::sleep(TICK);
         m.reap();
         let state = m.link.borrow_mut().with(Client::sbs_state);
         m.end_requested(&state.end_jobs);
         if let Some((immediate, delay)) = state.ending {
+            stg::remote::status(&m.link, wm::job::Status::Deqw, "END-SBS");
             m.end_all(immediate, delay);
             let _ = ctl.send(&FromJob::Ending {
                 reason: format!("subsystem {} ended", m.name),
@@ -102,7 +104,10 @@ impl Monitor {
                     .find(|i| i.name == pool)
                     .map_or(0, |i| i.size_kb)
             };
-            cgroup::ensure(&pool, size);
+            // The pools the system manages hold what the others leave
+            // (QBASPOOL is *BASE's minimum, not its cap): not limited.
+            let managed = matches!(pool.as_str(), "*MACHINE" | "*BASE" | "*INTERACT" | "*SPOOL");
+            cgroup::ensure(&pool, if managed { 0 } else { size });
         }
     }
 
@@ -236,6 +241,11 @@ impl Monitor {
                     break;
                 };
                 let name = j.qualified();
+                stg::remote::status(
+                    &self.link,
+                    wm::job::Status::Deqw,
+                    &format!("START-{}", j.name),
+                );
                 if let Err(err) = self.start_queued(&q, j) {
                     eprintln!("qsjob: {}: job {name} from {q}: {err}", self.name);
                     break;

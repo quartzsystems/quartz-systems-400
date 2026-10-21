@@ -24,7 +24,10 @@ chgjobd LIB/JOBD keywords | dltjobd LIB/JOBD | dspjobd LIB/JOBD
 crtcls LIB/CLS [RUNPTY() TIMESLICE() PURGE() DFTWAIT() CPUTIME() MAXTMPSTG() MAXTHD() TEXT()]
 chgcls LIB/CLS keywords | dltcls LIB/CLS | dspcls LIB/CLS
 chgjob [JOB(nnnnnn/USER/NAME)] keywords | dspjob [JOB(nnnnnn/USER/NAME)]
-wrkactjob            the active jobs
+wrkactjob [VIEW(1|2|3)]   the active jobs: status, elapsed data, numbers and threads
+wrksyssts [RESET(*YES)] | wrkdsksts [RESET(*YES)] | wrksysact   system, disk and job activity
+wrkjob [JOB(n/u/name)] [OPTION(*SELECT|*STSA|*DFNA|*RUNA|*SPLF|*JOBLOG|*PGMSTK|*LIBL)]
+pwrdwnsys [OPTION(*CNTRLD|*IMMED) DELAY(n) RESTART(*NO|*YES)] | endsys [OPTION() DELAY()]
 dsplog [PERIOD((time date) (time date)) JOB(n/u/name) MSGID(id ...)]   the history log
 dsplibl | chglibl LIBL(..) [CURLIB()] | addlible LIB [POSITION(*LAST)] | rmvlible LIB | chgcurlib LIB | chgsyslibl LIB [OPTION(*REMOVE)]
 ";

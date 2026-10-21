@@ -452,6 +452,10 @@ impl Suite {
         reports.push(self.step(&mut s, "29 writers", Self::writers)?);
         reports.push(self.step(&mut s, "30 power down", Self::power_down)?);
         reports.push(self.step(&mut s, "31 statistics", Self::statistics)?);
+        reports.push(self.step(&mut s, "32 report job", Self::report_job)?);
+        reports.push(self.step(&mut s, "33 batch inquiry", Self::batch_inquiry)?);
+        reports.push(self.step(&mut s, "34 end busy subsystem", Self::end_busy_subsystem)?);
+        reports.push(self.step(&mut s, "35 killed job", Self::killed_job)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);
