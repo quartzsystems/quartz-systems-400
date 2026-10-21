@@ -5,7 +5,9 @@
 //! The runtime call table: the functions generated code calls, by
 //! index. The index is what a relocation names; the runtime fills a
 //! table of addresses in the same order. Every function takes the
-//! environment first and uses the System V convention.
+//! environment first and uses the System V convention. Storage
+//! operands travel as a native address and a type descriptor
+//! ([`crate::abi::TypeDesc`]); an absent optional operand is 0.
 
 use cranelift_codegen::ir::{AbiParam, Signature, types};
 use cranelift_codegen::isa::CallConv;
@@ -27,18 +29,102 @@ pub enum RtFn {
     Deref = 3,
     /// `copy(dst, src, len)`: bytes between non-overlapping storage.
     Copy = 4,
-    /// `mov_char(dst, dst_len, src, src_len)`: fixed text, blank padded.
-    MovChar = 5,
+    /// `mov_str(env, dst, dty, src, sty)`: text assignment, padded or
+    /// truncated, varying lengths kept.
+    MovStr = 5,
+    /// `dec_bin(env, op, dst, dty, a, aty, b, bty, prec, flags)`.
+    DecBin = 6,
+    /// `dec_un(env, op, dst, dty, src, sty, halfadj)`.
+    DecUn = 7,
+    /// `dec_cmp(env, a, aty, b, bty) -> -1|0|1`.
+    DecCmp = 8,
+    /// `dec_to_int(env, src, sty, bits, signed, chk) -> i64`.
+    DecToInt = 9,
+    /// `dec_to_float(env, src, sty) -> f64`.
+    DecToFloat = 10,
+    /// `convert(env, dst, dty, src, sty, opts)`.
+    Convert = 11,
+    /// `str_cat(env, dst, dty, a, aty, b, bty)`.
+    StrCat = 12,
+    /// `str_subst(env, dst, dty, src, sty, start, len)`.
+    StrSubst = 13,
+    /// `str_scan(env, needle, nty, hay, hty, start) -> i32`.
+    StrScan = 14,
+    /// `str_check(env, set, sty, src, srcty, start, reverse) -> i32`.
+    StrCheck = 15,
+    /// `str_xlate(env, dst, dty, from, fty, to, tty, src, sty, start)`.
+    StrXlate = 16,
+    /// `str_trim(env, dst, dty, src, sty, chars, cty, side)`.
+    StrTrim = 17,
+    /// `str_cmp(env, a, aty, b, bty) -> -1|0|1`.
+    StrCmp = 18,
+    /// `str_len(env, src, sty) -> i32`.
+    StrLen = 19,
+    /// `str_setlen(env, dst, dty, n)`.
+    StrSetLen = 20,
+    /// `str_replace(env, dst, dty, src, sty, repl, rty, start, len)`.
+    StrReplace = 21,
+    /// `dt_add(env, dst, dty, src, sty, n, unit)`.
+    DtAdd = 22,
+    /// `dt_diff(env, a, aty, b, bty, unit) -> i64`.
+    DtDiff = 23,
+    /// `dt_extract(env, src, sty, unit) -> i32`.
+    DtExtract = 24,
+    /// `dt_test(env, src, sty, datfmt, timfmt) -> 0|1`.
+    DtTest = 25,
+    /// `dt_now(env, dst, dty)`.
+    DtNow = 26,
+    /// `ptr_addr(env, out, native, len)`: a space pointer to storage,
+    /// written to the 16 bytes at `out`.
+    PtrAddr = 27,
+    /// `ptr_add(env, out, ptr, n)`: `n` bytes on, written to `out`.
+    PtrAdd = 28,
+    /// `ptr_diff(env, p, q) -> i64`.
+    PtrDiff = 29,
+    /// `proc_addr(env, out, code)`: a procedure pointer, written to `out`.
+    ProcAddr = 30,
+    /// `dsply(env, src, sty, reply, rty)`.
+    Dsply = 31,
+    /// `monitor_match(env, kind, a, b) -> 0|1`: whether the pending
+    /// exception matches a handler selector; 1 takes it.
+    MonitorMatch = 32,
 }
 
 /// Every runtime function, in table order.
-pub const RT_FNS: [RtFn; 6] = [
+pub const RT_FNS: [RtFn; 33] = [
     RtFn::Raise,
     RtFn::Enter,
     RtFn::Leave,
     RtFn::Deref,
     RtFn::Copy,
-    RtFn::MovChar,
+    RtFn::MovStr,
+    RtFn::DecBin,
+    RtFn::DecUn,
+    RtFn::DecCmp,
+    RtFn::DecToInt,
+    RtFn::DecToFloat,
+    RtFn::Convert,
+    RtFn::StrCat,
+    RtFn::StrSubst,
+    RtFn::StrScan,
+    RtFn::StrCheck,
+    RtFn::StrXlate,
+    RtFn::StrTrim,
+    RtFn::StrCmp,
+    RtFn::StrLen,
+    RtFn::StrSetLen,
+    RtFn::StrReplace,
+    RtFn::DtAdd,
+    RtFn::DtDiff,
+    RtFn::DtExtract,
+    RtFn::DtTest,
+    RtFn::DtNow,
+    RtFn::PtrAddr,
+    RtFn::PtrAdd,
+    RtFn::PtrDiff,
+    RtFn::ProcAddr,
+    RtFn::Dsply,
+    RtFn::MonitorMatch,
 ];
 
 impl RtFn {
@@ -63,62 +149,134 @@ impl RtFn {
             Self::Leave => "leave",
             Self::Deref => "deref",
             Self::Copy => "copy",
-            Self::MovChar => "mov_char",
+            Self::MovStr => "mov_str",
+            Self::DecBin => "dec_bin",
+            Self::DecUn => "dec_un",
+            Self::DecCmp => "dec_cmp",
+            Self::DecToInt => "dec_to_int",
+            Self::DecToFloat => "dec_to_float",
+            Self::Convert => "convert",
+            Self::StrCat => "str_cat",
+            Self::StrSubst => "str_subst",
+            Self::StrScan => "str_scan",
+            Self::StrCheck => "str_check",
+            Self::StrXlate => "str_xlate",
+            Self::StrTrim => "str_trim",
+            Self::StrCmp => "str_cmp",
+            Self::StrLen => "str_len",
+            Self::StrSetLen => "str_setlen",
+            Self::StrReplace => "str_replace",
+            Self::DtAdd => "dt_add",
+            Self::DtDiff => "dt_diff",
+            Self::DtExtract => "dt_extract",
+            Self::DtTest => "dt_test",
+            Self::DtNow => "dt_now",
+            Self::PtrAddr => "ptr_addr",
+            Self::PtrAdd => "ptr_add",
+            Self::PtrDiff => "ptr_diff",
+            Self::ProcAddr => "proc_addr",
+            Self::Dsply => "dsply",
+            Self::MonitorMatch => "monitor_match",
         }
     }
 
-    /// The Cranelift signature.
+    /// Parameter count after `env` and the return type: `i64` operands
+    /// throughout, except where a result is an `i32` or an `f64`.
+    #[must_use]
+    #[allow(clippy::match_same_arms)]
+    pub fn shape(self) -> (usize, Option<types::Type>) {
+        match self {
+            Self::Raise => (1, None),
+            Self::Enter => (1, None),
+            Self::Leave => (0, None),
+            Self::Deref => (2, Some(types::I64)),
+            Self::Copy => (2, None),
+            Self::MovStr => (4, None),
+            Self::DecBin => (9, None),
+            Self::DecUn => (6, None),
+            Self::DecCmp => (4, Some(types::I32)),
+            Self::DecToInt => (5, Some(types::I64)),
+            Self::DecToFloat => (2, Some(types::F64)),
+            Self::Convert => (5, None),
+            Self::StrCat => (6, None),
+            Self::StrSubst => (6, None),
+            Self::StrScan => (5, Some(types::I32)),
+            Self::StrCheck => (6, Some(types::I32)),
+            Self::StrXlate => (9, None),
+            Self::StrTrim => (7, None),
+            Self::StrCmp => (4, Some(types::I32)),
+            Self::StrLen => (2, Some(types::I32)),
+            Self::StrSetLen => (3, None),
+            Self::StrReplace => (8, None),
+            Self::DtAdd => (6, None),
+            Self::DtDiff => (5, Some(types::I64)),
+            Self::DtExtract => (3, Some(types::I32)),
+            Self::DtTest => (4, Some(types::I32)),
+            Self::DtNow => (2, None),
+            Self::PtrAddr => (3, None),
+            Self::PtrAdd => (3, None),
+            Self::PtrDiff => (2, Some(types::I64)),
+            Self::ProcAddr => (2, None),
+            Self::Dsply => (4, None),
+            Self::MonitorMatch => (3, Some(types::I32)),
+        }
+    }
+
+    /// The Cranelift signature. `copy` takes no environment; `raise`
+    /// takes its condition as an `i32`.
     #[must_use]
     pub fn signature(self) -> Signature {
         let mut s = Signature::new(CallConv::SystemV);
         let i64p = AbiParam::new(types::I64);
-        match self {
-            Self::Raise => {
-                s.params.push(i64p);
-                s.params.push(AbiParam::new(types::I32));
-            }
-            Self::Enter => {
-                s.params.push(i64p);
-                s.params.push(i64p);
-            }
-            Self::Leave => s.params.push(i64p),
-            Self::Deref => {
-                s.params.push(i64p);
-                s.params.push(i64p);
-                s.params.push(i64p);
-                s.returns.push(i64p);
-            }
-            Self::Copy => {
-                s.params.push(i64p);
-                s.params.push(i64p);
+        let (n, ret) = self.shape();
+        if self != Self::Copy {
+            s.params.push(i64p);
+        }
+        if self == Self::Raise {
+            s.params.push(AbiParam::new(types::I32));
+        } else {
+            for _ in 0..n {
                 s.params.push(i64p);
             }
-            Self::MovChar => {
-                s.params.push(i64p);
-                s.params.push(i64p);
-                s.params.push(i64p);
-                s.params.push(i64p);
-            }
+        }
+        if self == Self::Copy {
+            s.params.push(i64p);
+        }
+        if let Some(r) = ret {
+            s.returns.push(AbiParam::new(r));
         }
         s
     }
 }
 
-/// A machine condition generated code raises, as the number of its
-/// `MCHnnnn` message.
+/// A machine condition generated code or the runtime raises, as the
+/// number of its `MCHnnnn` message.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[repr(u32)]
 pub enum Cond {
     /// `MCH0601`: pointer outside its space.
     Mch0601 = 601,
+    /// `MCH0602`: pointer stored unaligned.
+    Mch0602 = 602,
     /// `MCH0603`: index out of range.
     Mch0603 = 603,
+    /// `MCH1202`: decimal data error.
+    Mch1202 = 1202,
     /// `MCH1210`: size error, a value does not fit.
     Mch1210 = 1210,
     /// `MCH1211`: division by zero.
     Mch1211 = 1211,
+    /// `MCH1602`: a date, time or timestamp that is not valid (the
+    /// identifier is an open question, `ILE_OPEN_QUESTIONS.md`).
+    Mch1602 = 1602,
+    /// `MCH3401`: object not found.
+    Mch3401 = 3401,
+    /// `MCH3402`: space no longer exists.
+    Mch3402 = 3402,
     /// `MCH3601`: null pointer.
     Mch3601 = 3601,
+    /// `MCH3602`: pointer of the wrong kind.
+    Mch3602 = 3602,
 }
 
 impl Cond {
@@ -133,11 +291,70 @@ impl Cond {
     pub fn from_code(code: u32) -> Option<Self> {
         Some(match code {
             601 => Self::Mch0601,
+            602 => Self::Mch0602,
             603 => Self::Mch0603,
+            1202 => Self::Mch1202,
             1210 => Self::Mch1210,
             1211 => Self::Mch1211,
+            1602 => Self::Mch1602,
+            3401 => Self::Mch3401,
+            3402 => Self::Mch3402,
             3601 => Self::Mch3601,
+            3602 => Self::Mch3602,
             _ => return None,
         })
     }
+}
+
+/// Selector kinds `monitor_match` receives.
+pub mod selector {
+    /// `*ALL`.
+    pub const ALL: i64 = 0;
+    /// `*PROGRAM`.
+    pub const PROGRAM: i64 = 1;
+    /// `*FILE`.
+    pub const FILE: i64 = 2;
+    /// A status range: `a` low, `b` high.
+    pub const STATUS: i64 = 3;
+    /// A message identifier or prefix: `a` holds up to 8 ASCII bytes,
+    /// little-endian, blank padded; a trailing `*` matches a prefix.
+    pub const MSGID: i64 = 4;
+}
+
+/// Bits of the `flags` word of `dec_bin`.
+pub mod dec_flags {
+    /// Half-adjust the assignment.
+    pub const HALFADJ: i64 = 1;
+    /// `*RESDECPOS` was in effect (informational).
+    pub const RESDECPOS: i64 = 2;
+}
+
+/// Layout of the `opts` word of `convert`.
+pub mod cvt_opts {
+    /// Bit 0: half-adjust.
+    pub const HALFADJ: i64 = 1;
+    /// Bits 8-15: date format index plus one, 0 when none.
+    pub const DATFMT_SHIFT: u32 = 8;
+    /// Bits 16-23: time format index plus one, 0 when none.
+    pub const TIMFMT_SHIFT: u32 = 16;
+    /// Bits 32-47: CCSID, 0 when none.
+    pub const CCSID_SHIFT: u32 = 32;
+}
+
+/// Pack a message identifier or prefix for `selector::MSGID`.
+#[must_use]
+pub fn pack_msgid(id: &str) -> i64 {
+    let mut b = [b' '; 8];
+    for (i, c) in id.bytes().take(8).enumerate() {
+        b[i] = c;
+    }
+    i64::from_le_bytes(b)
+}
+
+/// Unpack a message identifier or prefix packed by [`pack_msgid`].
+#[must_use]
+pub fn unpack_msgid(v: i64) -> String {
+    String::from_utf8_lossy(&v.to_le_bytes())
+        .trim_end()
+        .to_string()
 }

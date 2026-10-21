@@ -103,11 +103,15 @@ impl Lowerer<'_, '_> {
                 let dty = self.p.reg_type(*dst).expect("typed").clone();
                 let sty = operand_type(self.m, self.p, src, Some(&dty))
                     .map_err(|e| self.unsupported(e))?;
-                if !sty.is_register() {
-                    return Err(self.unsupported("cvt from a decimal place"));
-                }
-                let sv = self.value(src, &sty)?;
-                let v = self.cvt(sv, &sty, &dty, *chk)?;
+                let v = match src {
+                    Operand::Place(p) if !sty.is_register() => {
+                        self.cvt_from_storage(p, &dty, *chk)?
+                    }
+                    _ => {
+                        let sv = self.value(src, &sty)?;
+                        self.cvt(sv, &sty, &dty, *chk)?
+                    }
+                };
                 self.b.def_var(self.vars[dst.0 as usize], v);
             }
             Inst::Br(l) => {
@@ -180,11 +184,7 @@ impl Lowerer<'_, '_> {
             Inst::Unreachable => {
                 self.b.ins().trap(TrapCode::user(1).expect("nonzero"));
             }
-            other => {
-                let name = format!("{other:?}");
-                let name = name.split(['{', '(', ' ']).next().unwrap_or("instruction");
-                return Err(self.unsupported(name));
-            }
+            other => self.ext_inst(other)?,
         }
         Ok(())
     }
@@ -219,11 +219,10 @@ impl Lowerer<'_, '_> {
                 let (saddr, sty) = self.addr(sp)?;
                 if dty == sty || (dty.size() == sty.size() && dty.class() == sty.class()) {
                     self.copy(daddr, saddr, dty.size());
-                } else if let (Type::Char(dn), Type::Char(sn)) = (&dty, &sty) {
-                    let f = self.rt_ref(RtFn::MovChar);
-                    let dl = self.b.ins().iconst(types::I64, i64::from(*dn));
-                    let sl = self.b.ins().iconst(types::I64, i64::from(*sn));
-                    self.b.ins().call(f, &[daddr, dl, saddr, sl]);
+                } else if dty.is_string() && sty.is_string() {
+                    let dd = self.i64(crate::abi::TypeDesc::of(&dty).word());
+                    let sd = self.i64(crate::abi::TypeDesc::of(&sty).word());
+                    self.rt_call(RtFn::MovStr, &[daddr, dd, saddr, sd]);
                 } else {
                     return Err(self.unsupported(format!("mov of a {sty} into a {dty}")));
                 }
@@ -433,7 +432,7 @@ impl Lowerer<'_, '_> {
     }
 }
 
-fn int_cc(c: QCond, signed: bool) -> IntCC {
+pub(crate) fn int_cc(c: QCond, signed: bool) -> IntCC {
     match (c, signed) {
         (QCond::Eq, _) => IntCC::Equal,
         (QCond::Ne, _) => IntCC::NotEqual,

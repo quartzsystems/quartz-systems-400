@@ -8,6 +8,7 @@ publish.workspace = true
 
 [dependencies]
 qir = { path = "../qir", version = "0.1.0" }
+qdecimal = { path = "../qdecimal", version = "0.1.0" }
 cranelift-codegen = { version = "=0.136.0", default-features = false, features = ["std", "x86", "unwind"] }
 cranelift-frontend = { version = "=0.136.0", default-features = false, features = ["std"] }
 target-lexicon = "0.13"

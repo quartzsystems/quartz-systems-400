@@ -44,7 +44,15 @@ extern "sysv64" fn copy(dst: *mut u8, src: *const u8, len: u64) {
     unsafe { std::ptr::copy_nonoverlapping(src, dst, len as usize) }
 }
 
-extern "sysv64" fn mov_char(dst: *mut u8, dlen: u64, src: *const u8, slen: u64) {
+extern "sysv64" fn mov_str(_env: *mut Env, dst: *mut u8, dty: i64, src: *const u8, sty: i64) {
+    let dlen = codegen::abi::TypeDesc::from_word(dty)
+        .decode()
+        .unwrap()
+        .size();
+    let slen = codegen::abi::TypeDesc::from_word(sty)
+        .decode()
+        .unwrap()
+        .size();
     // SAFETY: generated code passes storage it owns, of the lengths given.
     unsafe {
         let d = std::slice::from_raw_parts_mut(dst, dlen as usize);
@@ -63,7 +71,7 @@ pub fn table() -> Vec<usize> {
     t[RtFn::Leave.index() as usize] = leave as *const () as usize;
     t[RtFn::Deref.index() as usize] = deref as *const () as usize;
     t[RtFn::Copy.index() as usize] = copy as *const () as usize;
-    t[RtFn::MovChar.index() as usize] = mov_char as *const () as usize;
+    t[RtFn::MovStr.index() as usize] = mov_str as *const () as usize;
     t
 }
 

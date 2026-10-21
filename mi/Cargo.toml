@@ -1,0 +1,20 @@
+[package]
+name = "mi"
+description = "QS/400 machine interface runtime: the job stand-in, fat pointers, and the library generated code calls"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+qir = { path = "../qir", version = "0.1.0" }
+codegen = { path = "../codegen", version = "0.1.0" }
+qdecimal = { path = "../qdecimal", version = "0.1.0" }
+ccsid = { path = "../ccsid", version = "0.1.0" }
+dds = { path = "../dds", version = "0.1.0" }
+db = { path = "../db", version = "0.1.0" }
+thiserror.workspace = true
+tracing.workspace = true
+
+[lints]
+workspace = true

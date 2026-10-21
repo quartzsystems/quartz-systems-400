@@ -10,6 +10,7 @@
 mod call;
 mod inst;
 mod place;
+mod storage;
 
 use std::collections::HashMap;
 
@@ -55,6 +56,9 @@ pub fn target() -> Result<OwnedTargetIsa> {
     set(&mut fb, "is_pic", "false")?;
     set(&mut fb, "enable_probestack", "false")?;
     set(&mut fb, "use_colocated_libcalls", "false")?;
+    // Fat pointers travel as i128 values; the System V extension passes
+    // and returns them in register pairs, as Rust does for u128.
+    set(&mut fb, "enable_llvm_abi_extensions", "true")?;
     set(
         &mut fb,
         "enable_verifier",
@@ -276,6 +280,10 @@ pub(crate) struct Lowerer<'a, 'b> {
     import_refs: HashMap<String, FuncRef>,
     static_gv: Option<GlobalValue>,
     import_gvs: HashMap<String, GlobalValue>,
+    /// Open `monitor` regions, innermost last.
+    pub(crate) regions: Vec<storage::Region>,
+    /// Regions whose dispatch blocks await filling.
+    pub(crate) closed_regions: Vec<storage::Region>,
 }
 
 impl<'a, 'b> Lowerer<'a, 'b> {
@@ -309,6 +317,8 @@ impl<'a, 'b> Lowerer<'a, 'b> {
             import_refs: HashMap::new(),
             static_gv: None,
             import_gvs: HashMap::new(),
+            regions: Vec::new(),
+            closed_regions: Vec::new(),
         }
     }
 
@@ -337,6 +347,7 @@ impl<'a, 'b> Lowerer<'a, 'b> {
                 self.inst(i)?;
             }
         }
+        self.fill_dispatch_blocks();
         self.epilogue_unwind();
         self.b.seal_all_blocks();
         Ok(())
@@ -480,7 +491,8 @@ impl<'a, 'b> Lowerer<'a, 'b> {
         let job = self.b.ins().load(types::I64, le(), self.env, abi::ENV_JOB);
         let pend = self.b.ins().load(types::I64, le(), job, abi::JOB_PENDING);
         let cont = self.b.create_block();
-        self.b.ins().brif(pend, self.unwind, &[], cont, &[]);
+        let target = self.regions.last().map_or(self.unwind, |r| r.dispatch);
+        self.b.ins().brif(pend, target, &[], cont, &[]);
         self.b.switch_to_block(cont);
     }
 

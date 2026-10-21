@@ -110,8 +110,12 @@ codegen/      IR to x86_64 through Cranelift: src/abi.rs env record, signatures,
               and control-flow instructions, calls; src/output.rs code, relocations, maps;
               src/load.rs placing code and resolving relocations; tests/common/ a stand-in
               runtime
+mi/           the runtime: src/job.rs the job stand-in, src/space.rs fat pointers and
+              spaces, src/cond.rs conditions and RPG status codes, src/rtlib/ the call
+              table's functions (core, decimal, string, convert, date; mem.rs holds the
+              two unsafe blocks), src/exec.rs running one module; tests/programs.rs
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
-              DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, images/
+              DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE_OPEN_QUESTIONS.md, images/
 ```
 
 ## Commands
@@ -176,7 +180,9 @@ otherwise logs go to `target/logs/`.
   `slic/src/platform/sys.rs` (signals), `slic/src/platform/rtc.rs` (one
   ioctl), `console/src/fb/raw.rs` (framebuffer ioctls),
   `slic/src/platform/blk.rs` (BLKRRPART), `blockdev/src/aligned.rs`
-  (aligned buffer views) and `blockdev/src/linux.rs` (BLKDISCARD).
+  (aligned buffer views), `blockdev/src/linux.rs` (BLKDISCARD),
+  `mi/src/rtlib/mem.rs` (the storage and job behind a runtime call) and
+  `mi/src/exec.rs` (calling into generated code).
 - Errors: `thiserror` enums in libraries, `anyhow` only in binaries.
 - Logs: `tracing`.
 - Small documented modules, one responsibility each. Private modules in

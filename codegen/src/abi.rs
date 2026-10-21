@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use cranelift_codegen::ir::{AbiParam, Signature, types};
 use cranelift_codegen::isa::CallConv;
 use qir::module::index32;
-use qir::{Module, Param, Scope, StorageClass, Type};
+use qir::{DateFmt, Module, Param, Scope, StorageClass, TimeFmt, Type};
 
 /// The environment record every generated procedure receives in its
 /// first parameter. The runtime owns it; generated code reads the
@@ -199,5 +199,163 @@ impl StaticLayout {
             }
         }
         out
+    }
+}
+
+/// Date formats in descriptor order.
+pub const DATE_FMTS: [DateFmt; 8] = [
+    DateFmt::Iso,
+    DateFmt::Usa,
+    DateFmt::Eur,
+    DateFmt::Jis,
+    DateFmt::Mdy,
+    DateFmt::Dmy,
+    DateFmt::Ymd,
+    DateFmt::Jul,
+];
+
+/// Time formats in descriptor order.
+pub const TIME_FMTS: [TimeFmt; 5] = [
+    TimeFmt::Hms,
+    TimeFmt::Iso,
+    TimeFmt::Usa,
+    TimeFmt::Eur,
+    TimeFmt::Jis,
+];
+
+/// The index of a date format.
+#[must_use]
+pub fn date_fmt_index(f: DateFmt) -> u8 {
+    u8::try_from(DATE_FMTS.iter().position(|x| *x == f).expect("known")).expect("small")
+}
+
+/// The index of a time format.
+#[must_use]
+pub fn time_fmt_index(f: TimeFmt) -> u8 {
+    u8::try_from(TIME_FMTS.iter().position(|x| *x == f).expect("known")).expect("small")
+}
+
+/// A type as the 64-bit word runtime calls receive beside a storage
+/// address: bits 0-7 the kind, 8-39 the length or digits, 40-47 the
+/// decimal positions or timestamp precision, 48-55 the date or time
+/// format index.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct TypeDesc(pub u64);
+
+impl TypeDesc {
+    /// Encode a type. Structures, arrays and bytes encode as `bytes(n)`.
+    #[must_use]
+    pub fn of(ty: &Type) -> Self {
+        let (kind, len, scale, fmt): (u64, u64, u64, u64) = match ty {
+            Type::I8 => (0, 1, 0, 0),
+            Type::I16 => (1, 2, 0, 0),
+            Type::I32 => (2, 4, 0, 0),
+            Type::I64 => (3, 8, 0, 0),
+            Type::U8 => (4, 1, 0, 0),
+            Type::U16 => (5, 2, 0, 0),
+            Type::U32 => (6, 4, 0, 0),
+            Type::U64 => (7, 8, 0, 0),
+            Type::F32 => (8, 4, 0, 0),
+            Type::F64 => (9, 8, 0, 0),
+            Type::Packed(s) => (10, u64::from(s.digits), u64::from(s.scale), 0),
+            Type::Zoned(s) => (11, u64::from(s.digits), u64::from(s.scale), 0),
+            Type::Char(n) => (12, u64::from(*n), 0, 0),
+            Type::VarChar(n) => (13, u64::from(*n), 0, 0),
+            Type::Ucs2(n) => (14, u64::from(*n), 0, 0),
+            Type::VarUcs2(n) => (15, u64::from(*n), 0, 0),
+            Type::Graphic(n) => (16, u64::from(*n), 0, 0),
+            Type::Date(f) => (17, u64::from(f.length()), 0, u64::from(date_fmt_index(*f))),
+            Type::Time(f) => (18, 8, 0, u64::from(time_fmt_index(*f))),
+            Type::Timestamp(p) => (19, ty.size(), u64::from(*p), 0),
+            Type::Ind => (20, 1, 0, 0),
+            Type::Ptr => (21, 16, 0, 0),
+            Type::ProcPtr => (22, 16, 0, 0),
+            Type::Struct(_) | Type::Array { .. } | Type::Bytes(_) => (23, ty.size(), 0, 0),
+        };
+        Self(kind | (len << 8) | (scale << 40) | (fmt << 48))
+    }
+
+    /// Decode a descriptor.
+    #[must_use]
+    pub fn decode(self) -> Option<Type> {
+        let v = self.0;
+        let kind = v & 0xFF;
+        let len = u32::try_from((v >> 8) & 0xFFFF_FFFF).ok()?;
+        let scale = u8::try_from((v >> 40) & 0xFF).ok()?;
+        let fmt = usize::try_from((v >> 48) & 0xFF).ok()?;
+        let shape = |d: u32, s: u8| qir::Shape::new(u8::try_from(d).ok()?, s).ok();
+        Some(match kind {
+            0 => Type::I8,
+            1 => Type::I16,
+            2 => Type::I32,
+            3 => Type::I64,
+            4 => Type::U8,
+            5 => Type::U16,
+            6 => Type::U32,
+            7 => Type::U64,
+            8 => Type::F32,
+            9 => Type::F64,
+            10 => Type::Packed(shape(len, scale)?),
+            11 => Type::Zoned(shape(len, scale)?),
+            12 => Type::Char(len),
+            13 => Type::VarChar(len),
+            14 => Type::Ucs2(len),
+            15 => Type::VarUcs2(len),
+            16 => Type::Graphic(len),
+            17 => Type::Date(*DATE_FMTS.get(fmt)?),
+            18 => Type::Time(*TIME_FMTS.get(fmt)?),
+            19 => Type::Timestamp(scale),
+            20 => Type::Ind,
+            21 => Type::Ptr,
+            22 => Type::ProcPtr,
+            23 => Type::Bytes(len),
+            _ => return None,
+        })
+    }
+
+    /// The descriptor as the `i64` generated code passes.
+    #[must_use]
+    pub fn word(self) -> i64 {
+        i64::from_ne_bytes(self.0.to_ne_bytes())
+    }
+
+    /// From the `i64` a runtime function received.
+    #[must_use]
+    pub fn from_word(w: i64) -> Self {
+        Self(u64::from_ne_bytes(w.to_ne_bytes()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn type_descriptors_round_trip() {
+        for t in [
+            Type::I8,
+            Type::U64,
+            Type::F32,
+            Type::Packed(qir::Shape::new(15, 5).unwrap()),
+            Type::Zoned(qir::Shape::new(63, 63).unwrap()),
+            Type::Char(16_773_104),
+            Type::VarUcs2(10),
+            Type::Date(DateFmt::Jul),
+            Type::Time(TimeFmt::Usa),
+            Type::Timestamp(12),
+            Type::Ind,
+            Type::Ptr,
+            Type::Bytes(7),
+        ] {
+            assert_eq!(TypeDesc::of(&t).decode(), Some(t.clone()), "{t}");
+            assert_eq!(
+                TypeDesc::from_word(TypeDesc::of(&t).word()),
+                TypeDesc::of(&t)
+            );
+        }
+        let s = Type::Struct(Box::new(
+            qir::StructType::new(vec![("a".into(), None, Type::Char(3))], None).unwrap(),
+        ));
+        assert_eq!(TypeDesc::of(&s).decode(), Some(Type::Bytes(3)));
     }
 }

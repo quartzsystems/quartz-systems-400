@@ -21,6 +21,7 @@ members = [
     "sql",
     "qir",
     "codegen",
+    "mi",
 ]
 
 [workspace.package]

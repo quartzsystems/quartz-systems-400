@@ -16,7 +16,9 @@ Storage keeps IBM's byte layouts (`QIR.md` §2), so every multi-byte
 integer is big-endian in memory. The x86 backend has no big-endian
 memory operations; generated code byte-swaps around every integer load
 and store, and moves floats through their integer bit patterns. Fat
-pointers are 16 opaque bytes and travel as `i128` values.
+pointers are 16 bytes (`ILE.md` has the layout) and travel as `i128`
+values; Cranelift's `enable_llvm_abi_extensions` is on so an `i128`
+parameter or return value uses a register pair, as Rust's `u128` does.
 
 ## 2. The environment record
 
@@ -100,27 +102,64 @@ against a resolver and makes the mapping executable.
 
 Generated code never looks a symbol up. Each runtime function has a
 fixed index (`RtFn`), the relocation names the index, and the runtime
-fills a table of addresses in the same order. All take `env` first and
-use the System V convention:
+(`mi::rtlib::table`) fills a table of addresses in the same order. All
+take `env` first (except `copy`) and use the System V convention. A
+storage operand is a pair of `i64` words: the native address and a
+type descriptor (`TypeDesc`: kind, length or digits, scale or
+precision, date or time format). An absent optional operand is 0, an
+absent optional length is -1.
 
-| Index | Function | Signature |
-|---|---|---|
-| 0 | `raise` | `(env, cond: i32)` |
-| 1 | `enter` | `(env, code: i64)` |
-| 2 | `leave` | `(env)` |
-| 3 | `deref` | `(env, lo: i64, hi: i64) -> i64` |
-| 4 | `copy` | `(dst, src, len)` |
-| 5 | `mov_char` | `(dst, dst_len, src, src_len)` |
+| Index | Function | Operands after `env` | Returns |
+|---|---|---|---|
+| 0 | `raise` | `cond: i32` | |
+| 1 | `enter` | `code` | |
+| 2 | `leave` | | |
+| 3 | `deref` | `lo, hi` | native address |
+| 4 | `copy` | `dst, src, len` (no `env`) | |
+| 5 | `mov_str` | `dst, dty, src, sty` | |
+| 6 | `dec_bin` | `op, dst, dty, a, aty, b, bty, prec, flags` | |
+| 7 | `dec_un` | `op, dst, dty, src, sty, halfadj` | |
+| 8 | `dec_cmp` | `a, aty, b, bty` | `i32` -1, 0, 1 |
+| 9 | `dec_to_int` | `src, sty, bits, signed, chk` | `i64` |
+| 10 | `dec_to_float` | `src, sty` | `f64` |
+| 11 | `convert` | `dst, dty, src, sty, opts` | |
+| 12 | `str_cat` | `dst, dty, a, aty, b, bty` | |
+| 13 | `str_subst` | `dst, dty, src, sty, start, len` | |
+| 14 | `str_scan` | `needle, nty, hay, hty, start` | `i32` |
+| 15 | `str_check` | `set, sty, src, srcty, start, reverse` | `i32` |
+| 16 | `str_xlate` | `dst, dty, from, fty, to, tty, src, sty, start` | |
+| 17 | `str_trim` | `dst, dty, src, sty, chars, cty, side` | |
+| 18 | `str_cmp` | `a, aty, b, bty` | `i32` -1, 0, 1 |
+| 19 | `str_len` | `src, sty` | `i32` |
+| 20 | `str_setlen` | `dst, dty, n` | |
+| 21 | `str_replace` | `dst, dty, src, sty, repl, rty, start, len` | |
+| 22 | `dt_add` | `dst, dty, src, sty, n, unit` | |
+| 23 | `dt_diff` | `a, aty, b, bty, unit` | `i64` |
+| 24 | `dt_extract` | `src, sty, unit` | `i32` |
+| 25 | `dt_test` | `src, sty, datfmt, timfmt` | `i32` 0 or 1 |
+| 26 | `dt_now` | `dst, dty` | |
+| 27 | `ptr_addr` | `out, native, len` | 16 bytes at `out` |
+| 28 | `ptr_add` | `out, ptr, n` | 16 bytes at `out` |
+| 29 | `ptr_diff` | `p, q` | `i64` |
+| 30 | `proc_addr` | `out, code` | 16 bytes at `out` |
+| 31 | `dsply` | `src, sty, reply, rty` | |
+| 32 | `monitor_match` | `kind, a, b` | `i32` 0 or 1 |
 
 `enter` is called in every prologue with the procedure's own code
 address, so the runtime can push a call-stack entry and identify the
 procedure from the program's procedure table; `leave` is called before
-every return. `cond` is the number of the `MCHnnnn` message generated
-code raises: `0601`, `0603`, `1210`, `1211`, `3601`.
+every return, and the spaces of automatic storage the entry handed out
+die with it. `cond` is the number of the `MCHnnnn` message: `0601`,
+`0602`, `0603`, `1202`, `1210`, `1211`, `1602`, `3401`, `3402`, `3601`,
+`3602`. `prec` packs digits in its low byte and decimal positions in
+the next; `flags` bit 0 is half-adjust; `opts` of `convert` packs
+half-adjust, the date and time format index plus one, and a CCSID
+(`codegen::rt::cvt_opts`). Literal operands are placed in temporaries
+typed by the literal (`packed(d,s)` for numbers, `char(n)` for text);
+a register operand is spilled to a temporary of its type.
 
-*Phase 4, pending*: decimal, string, date, pointer, I/O, message, data
-area and data queue entries, which widen the table in later
-checkpoints without renumbering.
+*Phase 4, pending*: I/O, message, data area and data queue entries,
+which widen the table in later checkpoints without renumbering.
 
 ## 7. Exceptions
 
@@ -135,10 +174,21 @@ handler resumed execution at the instruction after the failing one,
 which is what IBM's reply `G` does; the failing operation's result is
 then zero.
 
-*Phase 4, pending*: `monitor` regions dispatch from the poll to their
-handler tables; condition handlers and cancel handlers run inside
-`raise` and `leave`. This design needs no unwind tables; the statement
-map (§8) serves the call stack display and dumps instead.
+Inside a `monitor` region the poll branches to the region's dispatch
+block instead of the unwind block. The dispatch block calls
+`monitor_match` once per handler, in order, with the handler's
+selector (`*ALL`, `*PROGRAM`, `*FILE`, a status range, or a message
+identifier or prefix packed into a word); a match clears the pending
+flag on the job and jumps to the handler's block; no match falls
+through to the enclosing region's dispatch block, and the outermost
+falls through to the unwind block, so an unhandled exception leaves
+the procedure and percolates. Regions nest lexically, so the dispatch
+chain follows the static nesting the verifier checked.
+
+*Phase 4, pending*: condition handlers (`CEEHDLR`) and cancel handlers
+run inside `raise` and `leave`; the function check and the inquiry
+message. This design needs no unwind tables; the statement map (§8)
+serves the call stack display and dumps instead.
 
 Integer division by zero, overflow under `.chk`, `MIN / -1`, a narrowing
 `cvt.chk` that loses a value, an out-of-range index and a null
@@ -154,8 +204,12 @@ offset in" for the call stack display and the debugger.
 ## 9. Limits of this checkpoint
 
 Lowered: scalar arithmetic, comparisons, conversions between register
-types, control flow, `callb` to local and imported procedures, `mov`
-between same-size storage and between fixed `char` fields, loads and
-stores of every register type, `parms`, `passed`, `omitted`,
-`debug.stmt`. Everything else returns `CodegenError::Unsupported` and
-arrives with the runtime library.
+types and from numeric storage, control flow, `callb` to local and
+imported procedures, `mov` between same-size storage and between text
+types, loads and stores of every register type, `parms`, `passed`,
+`omitted`, `debug.stmt`, every `dec.*`, `cvt`, `str.*` and `dt.*`
+instruction, `addr`, `ptradd`, `ptrdiff`, `procaddr`, based and
+deref places, `monitor`/`endmon`, `dsply`. Still
+`CodegenError::Unsupported`: `rslvsp`, dynamic program calls, calls
+through pointers, `sysapi`, I/O, messages, data areas and data queues,
+which arrive with their runtime pieces.

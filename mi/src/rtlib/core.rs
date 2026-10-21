@@ -1,0 +1,205 @@
+// Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+// licensed under the terms of the MIT license which can be found in the
+// root directory of this project.
+
+//! Conditions, the call stack, pointers, copies, text moves, `dsply`
+//! and `monitor` matching.
+
+use codegen::Cond;
+use std::fmt::Write as _;
+
+use codegen::abi::Env;
+use codegen::rt::{selector, unpack_msgid};
+
+use super::mem::{bytes, job, typed};
+use super::string::{read_text, write_text};
+use crate::cond::Exception;
+use crate::job::Job;
+use crate::space::FatPtr;
+
+/// Record a condition on the job: it is pending until a handler takes it.
+pub(crate) fn raise_on(j: &mut Job, cond: Cond) {
+    let e = Exception::new(cond, j.depth);
+    j.raised.push(e.clone());
+    j.exception = Some(e);
+    j.abi.pending = cond as u64;
+}
+
+/// `raise(env, cond)`.
+pub extern "sysv64" fn raise(env: *mut Env, cond: i32) {
+    let j = job(env);
+    let c = u32::try_from(cond)
+        .ok()
+        .and_then(Cond::from_code)
+        .unwrap_or(Cond::Mch3601);
+    raise_on(j, c);
+}
+
+/// `enter(env, code)`.
+pub extern "sysv64" fn enter(env: *mut Env, _code: i64) {
+    let j = job(env);
+    j.depth += 1;
+    j.max_depth = j.max_depth.max(j.depth);
+}
+
+/// `leave(env)`: frame spaces of the leaving entry die.
+pub extern "sysv64" fn leave(env: *mut Env) {
+    let j = job(env);
+    j.depth = j.depth.saturating_sub(1);
+    let depth = j.depth;
+    j.spaces.leave(depth);
+}
+
+/// `deref(env, lo, hi) -> addr`.
+pub extern "sysv64" fn deref(env: *mut Env, lo: i64, hi: i64) -> i64 {
+    let j = job(env);
+    let p = FatPtr::from_halves(lo.cast_unsigned(), hi.cast_unsigned());
+    match j.spaces.deref(p) {
+        Ok(a) => a.cast_signed(),
+        Err(c) => {
+            raise_on(j, c);
+            0
+        }
+    }
+}
+
+/// `copy(dst, src, len)`.
+pub extern "sysv64" fn copy(dst: i64, src: i64, len: i64) {
+    let n = usize::try_from(len).unwrap_or(0);
+    let s = bytes(src, n).to_vec();
+    bytes(dst, n).copy_from_slice(&s);
+}
+
+/// `mov_str(env, dst, dty, src, sty)`.
+pub extern "sysv64" fn mov_str(_env: *mut Env, dst: i64, dty: i64, src: i64, sty: i64) {
+    let t = read_text(src, sty);
+    write_text(dst, dty, &t);
+}
+
+fn write_ptr(out: i64, p: FatPtr) {
+    bytes(out, 16).copy_from_slice(&p.to_bytes());
+}
+
+fn read_ptr(addr: i64) -> FatPtr {
+    let b: [u8; 16] = bytes(addr, 16).try_into().expect("16 bytes");
+    FatPtr::from_bytes(&b)
+}
+
+/// `ptr_addr(env, out, native, len)`.
+pub extern "sysv64" fn ptr_addr(env: *mut Env, out: i64, native: i64, len: i64) {
+    let j = job(env);
+    let depth = j.depth;
+    let p = j
+        .spaces
+        .addr(native.cast_unsigned(), len.cast_unsigned(), depth);
+    write_ptr(out, p);
+}
+
+/// `ptr_add(env, out, ptr, n)`.
+pub extern "sysv64" fn ptr_add(env: *mut Env, out: i64, ptr: i64, n: i64) {
+    let j = job(env);
+    let p = read_ptr(ptr);
+    match j.spaces.add(p, n) {
+        Ok(q) => write_ptr(out, q),
+        Err(c) => {
+            raise_on(j, c);
+            write_ptr(out, FatPtr::null());
+        }
+    }
+}
+
+/// `ptr_diff(env, p, q) -> i64`.
+pub extern "sysv64" fn ptr_diff(env: *mut Env, p: i64, q: i64) -> i64 {
+    let j = job(env);
+    match j.spaces.diff(read_ptr(p), read_ptr(q)) {
+        Ok(d) => d,
+        Err(c) => {
+            raise_on(j, c);
+            0
+        }
+    }
+}
+
+/// `proc_addr(env, out, code)`.
+pub extern "sysv64" fn proc_addr(_env: *mut Env, out: i64, code: i64) {
+    write_ptr(out, FatPtr::procedure(code.cast_unsigned()));
+}
+
+/// `dsply(env, src, sty, reply, rty)`: the text goes to the job's
+/// console; a reply, when asked for, comes from the queued replies or
+/// is blank.
+pub extern "sysv64" fn dsply(env: *mut Env, src: i64, sty: i64, reply: i64, rty: i64) {
+    let line = display_text(src, sty);
+    let j = job(env);
+    j.console.push(line);
+    if reply != 0 {
+        let r = j.replies.pop_front().unwrap_or_default();
+        let units: Vec<u16> = r
+            .chars()
+            .map(|c| ccsid::byte_of(c).map_or(0x6F, u16::from))
+            .collect();
+        write_text(reply, rty, &super::string::Text { units, wide: false });
+    }
+}
+
+/// A storage operand as display text: text decoded from CP037, a
+/// number rendered, anything else in hexadecimal.
+fn display_text(addr: i64, desc: i64) -> String {
+    let (b, t) = typed(addr, desc);
+    if t.is_string() || t.class() == qir::TypeClass::DateTime {
+        let txt = read_text(addr, desc);
+        return if txt.wide {
+            String::from_utf16_lossy(&txt.units)
+        } else {
+            let raw: Vec<u8> = txt
+                .units
+                .iter()
+                .map(|u| u8::try_from(*u).unwrap_or(0x6F))
+                .collect();
+            ccsid::decode_trimmed(&raw)
+        };
+    }
+    if t.is_numeric() {
+        return match super::decimal::read_num(addr, desc) {
+            Ok(v) => v.value.to_string(),
+            Err(_) => "*ERROR".into(),
+        };
+    }
+    if t == qir::Type::Ind {
+        return if b[0] == 0xF1 { "1".into() } else { "0".into() };
+    }
+    b.iter().fold(String::new(), |mut s, x| {
+        let _ = write!(s, "{x:02X}");
+        s
+    })
+}
+
+/// `monitor_match(env, kind, a, b) -> 0|1`.
+pub extern "sysv64" fn monitor_match(env: *mut Env, kind: i64, a: i64, b: i64) -> i32 {
+    let j = job(env);
+    let Some(e) = j.exception.as_ref() else {
+        return 0;
+    };
+    let hit = match kind {
+        selector::ALL => true,
+        selector::PROGRAM => !e.is_file_error(),
+        selector::FILE => e.is_file_error(),
+        selector::STATUS => i64::from(e.status) >= a && i64::from(e.status) <= b,
+        selector::MSGID => {
+            let id = unpack_msgid(a);
+            match id.strip_suffix('*') {
+                Some(prefix) => e.msgid.starts_with(prefix),
+                None => e.msgid == id,
+            }
+        }
+        _ => false,
+    };
+    if hit {
+        let e = j.exception.take().expect("present");
+        j.handled.push(e);
+        j.abi.pending = 0;
+        1
+    } else {
+        0
+    }
+}

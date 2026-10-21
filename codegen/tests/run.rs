@@ -363,12 +363,12 @@ L0:
 #[test]
 fn unsupported_instructions_are_reported() {
     let m = qir::parse(
-        "module U\nstatic $p: packed(5,2)\nproc P() {\nL0:\n  dec.add $p, $p, 1 prec(5,2)\n  ret\n}\n",
+        "module U\nstatic $p: packed(5,2)\nproc P() {\nL0:\n  call MYPGM($p)\n  ret\n}\n",
     )
     .unwrap();
     let err = codegen::compile(&m).unwrap_err().to_string();
     assert!(
-        err.contains("DecBin") && err.contains("not supported"),
+        err.contains("dynamic program call") && err.contains("not supported"),
         "{err}"
     );
 }
