@@ -5,6 +5,7 @@
 //! The runtime's sources, answered by the service.
 
 mod data;
+pub mod inquiry;
 mod objects;
 mod provider;
 

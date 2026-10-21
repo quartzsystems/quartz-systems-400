@@ -21,6 +21,28 @@ use crate::msg::{ClearMode, Message, MsgQueue, QueueRef};
 use crate::space::Spaces;
 use qir::MsgType;
 
+/// An inquiry the job must answer.
+#[derive(Clone, Debug)]
+pub struct Inquiry {
+    /// Identifier.
+    pub msgid: String,
+    /// Message file.
+    pub msgf: String,
+    /// Message data.
+    pub data: Vec<u8>,
+    /// First-level text.
+    pub text: String,
+    /// Second-level text.
+    pub help: String,
+    /// The default reply.
+    pub dft: Option<String>,
+    /// Valid replies; empty for any.
+    pub valid: Vec<String>,
+}
+
+/// Answers an inquiry: the reply, or `None` for the default.
+pub type InquiryFn = Box<dyn FnMut(&Inquiry) -> Option<String>>;
+
 /// A program implemented in Rust, called like any other: the job and
 /// the parameter addresses.
 pub type NativeFn = Rc<dyn Fn(&mut Job, &[u64])>;
@@ -157,6 +179,9 @@ pub struct Job {
     pub joblog_full: bool,
     /// Entries `*PRTWRAP` pushed out, to print with the job log.
     pub joblog_wrapped: Vec<wm::joblog::Entry>,
+    /// Who answers an inquiry no queued reply answered: the job's
+    /// `INQMSGRPY`. `None` takes the default reply.
+    pub inquiry: Option<InquiryFn>,
     next_key: u32,
     env: Box<Env>,
 }
@@ -197,6 +222,7 @@ impl Job {
             joblog: wm::joblog::JobLog::new(16, wm::joblog::Full::Wrap),
             joblog_full: false,
             joblog_wrapped: Vec::new(),
+            inquiry: None,
             next_key: 1,
             env: Box::new(Env {
                 statics: std::ptr::null_mut(),

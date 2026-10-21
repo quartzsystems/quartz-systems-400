@@ -25,6 +25,7 @@ crtcls LIB/CLS [RUNPTY() TIMESLICE() PURGE() DFTWAIT() CPUTIME() MAXTMPSTG() MAX
 chgcls LIB/CLS keywords | dltcls LIB/CLS | dspcls LIB/CLS
 chgjob [JOB(nnnnnn/USER/NAME)] keywords | dspjob [JOB(nnnnnn/USER/NAME)]
 wrkactjob            the active jobs
+dsplog [PERIOD((time date) (time date)) JOB(n/u/name) MSGID(id ...)]   the history log
 dsplibl | chglibl LIBL(..) [CURLIB()] | addlible LIB [POSITION(*LAST)] | rmvlible LIB | chgcurlib LIB | chgsyslibl LIB [OPTION(*REMOVE)]
 ";
 

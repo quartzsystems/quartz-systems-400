@@ -84,7 +84,13 @@ pub fn reply(system: &mut System, line: &str) -> String {
     let args: Vec<&str> = words.collect();
     match (cmd, args.as_slice()) {
         ("", _) => String::new(),
-        ("help", _) => format!("{HELP}{HELP_DB}{}{}{}", ile::HELP, work::HELP, msgq::HELP),
+        ("help", _) => format!(
+            "{HELP}{HELP_DB}{}{}{}{}",
+            ile::HELP,
+            work::HELP,
+            msgq::HELP,
+            msgq::HELP_RPYL
+        ),
         ("release", _) => format!("{}\n", release::full()),
         ("srcs", []) => system.log.dump(),
         ("srcs", ["table"]) => src_table(),
@@ -115,6 +121,7 @@ pub fn reply(system: &mut System, line: &str) -> String {
                 .or_else(|| work::command(system, cmd, line))
                 .or_else(|| work::libl_command(system, cmd, line))
                 .or_else(|| msgq::command(system, cmd, line))
+                .or_else(|| msgq::rpyl_command(system, cmd, line))
             {
                 Some(reply) => reply,
                 None => format!(
@@ -284,10 +291,16 @@ fn sysval(system: &mut System, args: &[&str]) -> String {
         }
         [name, rest @ ..] => {
             let name = name.to_ascii_uppercase();
+            let before = vals.get(&name).map(|v| v.text()).unwrap_or_default();
             match vals.set_text(&name, &rest.join(" ")) {
                 Ok(effect) => {
                     let now = vals.get(&name).map(|v| v.text()).unwrap_or_default();
                     let saved = crate::ipl::sysvals::save(system);
+                    if saved.is_ok() && system.role == crate::ipl::system::Role::Storage {
+                        let data = wm::joblog::data(&[(&name, 10), (&before, 80), (&now, 80)]);
+                        let who = crate::stgsvc::msgs::sender(system, system.current_job);
+                        crate::stgsvc::hist::system_message(system, "CPF1806", &data, "04", who);
+                    }
                     let when = match effect {
                         sysval::Effect::Immediate => "",
                         sysval::Effect::NextIpl => " (takes effect at the next IPL)",

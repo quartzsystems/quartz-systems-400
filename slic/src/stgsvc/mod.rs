@@ -12,6 +12,7 @@
 //! when its connection closes. `docs/STORAGE_SERVICE.md` has the design.
 
 mod exec;
+pub(crate) mod hist;
 mod jobs;
 pub(crate) mod msgs;
 
@@ -146,6 +147,7 @@ fn serve(system: &mut System, slic: Chan, listener: &UnixListener) -> ! {
         pid: 1,
         ..JobInfo::default()
     };
+    ipl_message(system);
     let ctx = match served::begin_job(system, scpf) {
         Ok(c) => Some(c),
         Err(e) => {
@@ -232,4 +234,28 @@ fn install(system: &mut System) -> Result<usize, String> {
     let made = wm::obj::shipped::install(&mut txn, qsys, &stamp).map_err(|e| e.to_string())?;
     txn.commit().map_err(|e| e.to_string())?;
     Ok(made)
+}
+
+/// `CPF0900` in the history log: this IPL, and how the last one ended.
+fn ipl_message(system: &mut System) {
+    let abnormal = system
+        .sysvals
+        .as_ref()
+        .and_then(|v| v.get("QABNORMSW").ok())
+        .is_some_and(|v| v.text() == "1");
+    let name = system.system_name();
+    let (d, t) = wm::joblog::stamp_of(crate::ipl::system::now_unix().saturating_mul(1_000_000));
+    let data = wm::joblog::data(&[
+        (&name, 8),
+        (&d, 8),
+        (&t[..8], 8),
+        (if abnormal { "ABNORMAL" } else { "NORMAL" }, 8),
+    ]);
+    hist::system_message(
+        system,
+        "CPF0900",
+        &data,
+        "04",
+        ("SCPF".into(), "QSYS".into(), 0),
+    );
 }

@@ -163,6 +163,10 @@ pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &Stamp) -> Result<usize
             made += 1;
         }
     }
+    if super::rpyl::find(txn, qsys)?.is_none() {
+        super::rpyl::save(txn, qsys, &super::rpyl::RpyList::shipped(), stamp)?;
+        made += 1;
+    }
     for (lib, name, q) in queues() {
         let l = library(txn, qsys, lib)?;
         let n = Name::parse(name).expect("valid");

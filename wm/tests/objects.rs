@@ -69,7 +69,7 @@ fn shipped_install_once_and_read_back() {
     let (mut store, qsys) = open_new();
     let mut t = store.begin().unwrap();
     let made = shipped::install(&mut t, qsys, &stamp()).unwrap();
-    assert_eq!(made, 18);
+    assert_eq!(made, 19);
     assert_eq!(shipped::install(&mut t, qsys, &stamp()).unwrap(), 0);
     t.commit().unwrap();
 
@@ -111,5 +111,27 @@ fn payload_grows_and_shrinks() {
     assert_eq!(JobD::decode(&read(&mut t, id).unwrap()).unwrap(), big);
     write(&mut t, id, &small.encode()).unwrap();
     assert_eq!(JobD::decode(&read(&mut t, id).unwrap()).unwrap(), small);
+    t.commit().unwrap();
+}
+
+#[test]
+fn reply_list_round_trip() {
+    let (mut store, qsys) = open_new();
+    let mut t = store.begin().unwrap();
+    shipped::install(&mut t, qsys, &stamp()).unwrap();
+    let mut l = wm::obj::rpyl::load(&mut t, qsys).unwrap();
+    assert_eq!(l.entries.len(), 5);
+    l.add(wm::obj::rpyl::RpyEntry {
+        seq: 60,
+        msgid: "CEE9901".into(),
+        cmpdta: "FAILPGM".into(),
+        start: 1,
+        reply: "C".into(),
+        dump: false,
+    })
+    .unwrap();
+    wm::obj::rpyl::save(&mut t, qsys, &l, &stamp()).unwrap();
+    let back = wm::obj::rpyl::load(&mut t, qsys).unwrap();
+    assert_eq!(back, l);
     t.commit().unwrap();
 }

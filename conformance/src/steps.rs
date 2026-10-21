@@ -439,6 +439,8 @@ impl Suite {
         reports.push(self.step(&mut s, "18 library list", Self::library_list)?);
         reports.push(self.step(&mut s, "19 job log", Self::job_log)?);
         reports.push(self.step(&mut s, "20 message queues", Self::message_queues)?);
+        reports.push(self.step(&mut s, "21 history log", Self::history_log)?);
+        reports.push(self.step(&mut s, "22 reply list", Self::reply_list)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

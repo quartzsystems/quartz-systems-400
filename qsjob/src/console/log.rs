@@ -31,6 +31,9 @@ impl Console {
     /// The job is running: its log sized by `JOBMSGQMX` and
     /// `JOBMSGQFL`, and `CPF1124` in it.
     pub(super) fn started(&mut self) {
+        // The console job is the operator's: it never waits on QSYSOPR.
+        let dft = vec![("INQMSGRPY".to_string(), "*DFT".to_string())];
+        let _ = self.link.borrow_mut().with(|l| l.chgjob(String::new(), dft));
         let a = self.link.borrow_mut().with(Client::rtvjoba);
         let (name, user, number) = self.who();
         let subsystem = self.start.subsystem.clone();

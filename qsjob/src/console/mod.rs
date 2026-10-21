@@ -178,6 +178,8 @@ impl Console {
             job.ident.number = format!("{:06}", self.start.number);
             job.data = Some(Box::new(s.data));
             job.io = Some(Box::new(s.io));
+            let ask = Rc::clone(&self.link);
+            job.inquiry = Some(Box::new(move |q| stg::remote::inquiry::answer(&ask, q)));
             let provider = Rc::new(RefCell::new(s.provider));
             let dyn_provider: Rc<RefCell<dyn sysapi::Provider>> = provider.clone();
             sysapi::install(&mut job, dyn_provider);

@@ -22,5 +22,9 @@ pub fn run(system: &mut System, line: &str) -> String {
     if word == "wrkactjob" {
         return super::jobs::wrkactjob(system);
     }
+    if word == "dsplog" {
+        let p = wm::cmd::Params::parse(line);
+        return super::hist::dsplog(system, &p).unwrap_or_else(|e| format!("{e}\n"));
+    }
     svc::reply(system, line)
 }

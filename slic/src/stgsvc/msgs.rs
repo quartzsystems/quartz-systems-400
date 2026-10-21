@@ -69,6 +69,30 @@ pub fn send(system: &mut System, lib: &str, name: &str, mut m: QMsg) -> Result<u
     if m.time == 0 {
         m.time = now_micros();
     }
+    if lib == "QSYS" && name == "QHST" {
+        // What is sent to QHST goes into the history log.
+        let kind = match m.kind {
+            MsgKind::Comp => "01",
+            MsgKind::Diag => "02",
+            MsgKind::Inq => "05",
+            MsgKind::Rpy => "21",
+            MsgKind::Notify => "14",
+            MsgKind::Escape => "15",
+            MsgKind::Info => "04",
+        };
+        let h = super::hist::Hist {
+            time: m.time / 1_000_000,
+            msgid: m.msgid.clone(),
+            severity: m.severity,
+            kind,
+            job: m.job.clone(),
+            msgf: m.msgf.clone(),
+            data: m.data.clone(),
+            text: m.text.clone(),
+        };
+        super::hist::log(system, &h)?;
+        return Ok(0);
+    }
     let sent = m.clone();
     let (key, id, breaks, brkpgm) = with_queue(system, lib, name, |q, id| {
         let key = q

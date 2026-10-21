@@ -9,6 +9,7 @@ pub mod cls;
 pub mod jobd;
 pub mod msgq;
 pub mod params;
+pub mod rpyl;
 pub mod shipped;
 
 use qsname::{LibSpec, Name};

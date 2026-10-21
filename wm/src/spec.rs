@@ -15,5 +15,6 @@ pub fn layouts() -> Vec<&'static Layout> {
         &crate::obj::cls::LAYOUT,
         &crate::obj::msgq::LAYOUT,
         &crate::obj::msgq::ENTRY_LAYOUT,
+        &crate::obj::rpyl::LAYOUT,
     ]
 }

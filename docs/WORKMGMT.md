@@ -149,6 +149,24 @@ kept: it ends with the job, so the storage service holds it in memory.
 | 108 | 2 | ReplyLen | |
 | 110 | 2 | DftLen | |
 
+### `ReplyListEntry` (64 bytes)
+
+The system reply list, kept in the user space `QSYS/QRPYLIST`: a
+two-byte count, then each entry and its comparison data (`CmpLen`
+bytes).
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 2 | SeqNbr | 1-9999 |
+| 2 | 1 | Dump | `DUMP(*YES)` |
+| 3 | 1 | Reserved | zero |
+| 4 | 7 | MsgId | an identifier, generic (`CPA0000`), or `*ANY` |
+| 11 | 1 | Pad | zero |
+| 12 | 2 | Start | comparison start position, 1-based |
+| 14 | 2 | CmpLen | comparison data length; 0 is `*NONE` |
+| 16 | 32 | Reply | a reply, `*DFT`, `*RQD` |
+| 48 | 16 | Reserved2 | zero |
+
 ### Shipped objects
 
 | Object | Notes |

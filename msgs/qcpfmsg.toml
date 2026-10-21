@@ -189,3 +189,17 @@ sev = 0
 text = "The job message queue of &3/&2/&1 wrapped."
 help = "The job log reached its maximum size; the oldest messages were removed to make room, printed first when the action is *PRTWRAP."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6"]
+
+[[msg]]
+id = "CPF0900"
+sev = 0
+text = "IPL of &1 started &2 &3; the previous end was &4."
+help = "The system began an initial program load. The previous end is NORMAL when the last power down completed, ABNORMAL when it did not."
+vars = ["*CHAR 8", "*CHAR 8", "*CHAR 8", "*CHAR 8"]
+
+[[msg]]
+id = "CPF1806"
+sev = 0
+text = "System value &1 changed from &2 to &3."
+help = "A system value was changed. Values marked to take effect at the next IPL keep their old effect until then."
+vars = ["*CHAR 10", "*CHAR 80", "*CHAR 80"]

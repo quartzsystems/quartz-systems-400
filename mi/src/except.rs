@@ -264,7 +264,7 @@ fn inquire(j: &mut Job, pgm: &str, original: &str) -> String {
         "CEE9901",
         "QCEEMSG",
         "QSYS",
-        data,
+        data.clone(),
         MsgType::Inq,
     );
     let desc = j.msgs.describe("CEE9901", "QCEEMSG", "QSYS");
@@ -275,6 +275,31 @@ fn inquire(j: &mut Job, pgm: &str, original: &str) -> String {
             reply = Some(r);
             break;
         }
+    }
+    // No reply queued: the job's inquiry handler (its INQMSGRPY).
+    if reply.is_none()
+        && let Some(mut ask) = j.inquiry.take()
+    {
+        let (text, help) = desc.as_ref().map_or_else(
+            || (String::new(), String::new()),
+            |d| (d.format(&data), d.format_help(&data)),
+        );
+        let q = crate::job::Inquiry {
+            msgid: "CEE9901".into(),
+            msgf: "QCEEMSG".into(),
+            data: data.clone(),
+            text,
+            help,
+            dft: desc.as_ref().and_then(|d| d.dft_reply.clone()),
+            valid: desc
+                .as_ref()
+                .map(|d| d.valid_replies.clone())
+                .unwrap_or_default(),
+        };
+        reply = ask(&q)
+            .map(|r| r.trim().to_ascii_uppercase())
+            .filter(|r| desc.as_ref().is_none_or(|d| d.reply_ok(r)));
+        j.inquiry = Some(ask);
     }
     let reply = reply
         .or_else(|| desc.and_then(|d| d.dft_reply))

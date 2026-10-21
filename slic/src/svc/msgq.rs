@@ -336,3 +336,116 @@ fn dspmsg(system: &mut System, p: &Params) -> Result<String, String> {
     }
     Ok(out)
 }
+
+/// Help for the reply list commands.
+pub const HELP_RPYL: &str = "\
+addrpyle SEQNBR(n) MSGID(id|*ANY) [CMPDTA('..' start) RPY(r|*DFT|*RQD) DUMP(*YES)] | chgrpyle SEQNBR(n) ...
+rmvrpyle SEQNBR(n) | wrkrpyle
+";
+
+/// The reply list commands; `None` when `cmd` is not one.
+pub fn rpyl_command(system: &mut System, cmd: &str, line: &str) -> Option<String> {
+    let p = Params::parse(line);
+    let r = match cmd {
+        "addrpyle" => rpyle(system, &p, Edit::Add),
+        "chgrpyle" => rpyle(system, &p, Edit::Change),
+        "rmvrpyle" => rpyle(system, &p, Edit::Remove),
+        "wrkrpyle" => with_rpyl(system, |l| Ok((l.display(), false))),
+        _ => return None,
+    };
+    Some(match r {
+        Ok(s) => s,
+        Err(e) => format!("{e}\n"),
+    })
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Edit {
+    Add,
+    Change,
+    Remove,
+}
+
+/// Run `f` on the reply list; saved when it says it changed it.
+fn with_rpyl<T>(
+    system: &mut System,
+    f: impl FnOnce(&mut wm::obj::rpyl::RpyList) -> Result<(T, bool), String>,
+) -> Result<T, String> {
+    let s = system.storage.as_mut().ok_or("object store not open")?;
+    let qsys = s.qsys.ok_or("object store not initialized")?;
+    super::db::with_txn(&mut s.store, |txn| {
+        let mut l = wm::obj::rpyl::load(txn, qsys).map_err(|e| e.to_string())?;
+        let (r, changed) = f(&mut l)?;
+        if changed {
+            let stamp = wm::obj::Stamp {
+                owner: "QSYS".into(),
+                system: "QS400".into(),
+                now: now_unix(),
+            };
+            wm::obj::rpyl::save(txn, qsys, &l, &stamp).map_err(|e| e.to_string())?;
+        }
+        Ok(r)
+    })
+}
+
+/// `ADDRPYLE`, `CHGRPYLE`, `RMVRPYLE`.
+fn rpyle(system: &mut System, p: &Params, edit: Edit) -> Result<String, String> {
+    let seq: u16 = p
+        .pos_or(0, "SEQNBR")?
+        .parse()
+        .map_err(|_| "CPD0085 SEQNBR is 1 through 9999".to_string())?;
+    let err = |e: wm::Error| format!("{} {e}", e.msgid().unwrap_or("CPF2555"));
+    with_rpyl(system, |l| {
+        if edit == Edit::Remove {
+            l.remove(seq).map_err(err)?;
+            return Ok((format!("Reply list entry {seq} removed.\n"), true));
+        }
+        let mut e = match edit {
+            Edit::Change => l
+                .entries
+                .iter()
+                .find(|e| e.seq == seq)
+                .cloned()
+                .ok_or_else(|| format!("CPF2556 sequence number {seq} is not in the reply list"))?,
+            _ => wm::obj::rpyl::RpyEntry {
+                seq,
+                msgid: "*ANY".into(),
+                start: 1,
+                reply: "*DFT".into(),
+                ..wm::obj::rpyl::RpyEntry::default()
+            },
+        };
+        if let Some(id) = p.upper("MSGID") {
+            e.msgid = id;
+        }
+        if let Some(v) = p.kw("CMPDTA") {
+            let v = v.trim();
+            if v.eq_ignore_ascii_case("*NONE") {
+                e.cmpdta.clear();
+            } else {
+                let (text, rest) = match v.strip_prefix('\'').and_then(|r| r.split_once('\'')) {
+                    Some((t, rest)) => (t.to_string(), rest.trim()),
+                    None => (v.to_string(), ""),
+                };
+                e.cmpdta = text;
+                e.start = rest.parse().unwrap_or(1);
+            }
+        }
+        if let Some(r) = p.kw("RPY") {
+            e.reply = r.trim().trim_matches('\'').to_ascii_uppercase();
+        }
+        if let Some(d) = p.upper("DUMP") {
+            e.dump = d == "*YES";
+        }
+        if edit == Edit::Change {
+            l.remove(seq).map_err(err)?;
+        }
+        l.add(e).map_err(err)?;
+        let what = if edit == Edit::Add {
+            "added"
+        } else {
+            "changed"
+        };
+        Ok((format!("Reply list entry {seq} {what}.\n"), true))
+    })
+}

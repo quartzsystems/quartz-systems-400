@@ -194,4 +194,7 @@ ipc::rpc! {
     /// Break messages waiting for the job: the queue, its break
     /// program (`*DSPMSG` for the system's) and the message.
     94 => fn breaks / Breaks () -> Vec<(String, (String, String), QMsg)>;
+    /// The system reply list's answer to an inquiry: the reply and
+    /// whether to dump the job, or `None` when no entry matches.
+    95 => fn sysrpyl / Sysrpyl (msgid: String, data: Vec<u8>) -> Option<(String, bool)>;
 }

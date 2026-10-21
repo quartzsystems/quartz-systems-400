@@ -141,6 +141,14 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
     let attrs = super::jobs::resolve_attrs(system, &job.jobd, &job.class);
     system.attrs.insert(job.number, attrs);
     system.jobs.add(job.clone());
+    let who = (job.name.clone(), job.user.clone(), job.number);
+    let data = wm::joblog::started_data(
+        (&job.name, &job.user, job.number),
+        &job.subsystem,
+        job.started,
+        job.started,
+    );
+    super::hist::system_message(system, "CPF1124", &data, "04", who);
     let mut ctx = JobCtx::new(system, job);
     ctx.qtemp = Some(qtemp);
     Ok(ctx)
@@ -157,6 +165,15 @@ pub fn vanished(system: &mut System, conn: Conn) {
 /// End a job: its database use, its `QTEMP`, its table entry.
 fn end_job(system: &mut System, ctx: &mut JobCtx) {
     end_db(system, ctx);
+    let j = &ctx.job;
+    let data = wm::joblog::ended_data(
+        (&j.name, &j.user, j.number),
+        crate::ipl::system::now_unix(),
+        0,
+        0,
+    );
+    let who = (j.name.clone(), j.user.clone(), j.number);
+    super::hist::system_message(system, "CPF1164", &data, "04", who);
     if let Some(q) = ctx.qtemp.take() {
         super::jobs::drop_qtemp(system, ctx.job.number, q);
     }
@@ -368,6 +385,16 @@ impl Service for Served<'_> {
 
     fn breaks(&mut self) -> Vec<msgs::Break> {
         msgs::take_breaks(self.system, self.ctx.job.number)
+    }
+
+    fn sysrpyl(&mut self, msgid: String, data: Vec<u8>) -> Option<(String, bool)> {
+        let s = self.system.storage.as_mut()?;
+        let qsys = s.qsys?;
+        let mut txn = s.store.begin().ok()?;
+        let list = wm::obj::rpyl::load(&mut txn, qsys).ok();
+        txn.abort();
+        let text = ccsid::from_ebcdic(&data);
+        list?.find(&msgid, &text).map(|e| (e.reply.clone(), e.dump))
     }
 
     fn program(

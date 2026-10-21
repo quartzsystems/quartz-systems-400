@@ -221,3 +221,61 @@ impl Suite {
         ))
     }
 }
+
+impl Suite {
+    /// Step 21: the history log has the IPLs, the job starts, the
+    /// system value change of step 3, and what is sent to `QHST`;
+    /// `MSGID` selects.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn history_log(&self, s: &mut Session) -> Result<String, String> {
+        s.command("sndmsg MSG('History test entry') TOMSGQ(QHST)", CMD)?;
+        let all = s.command("dsplog", CMD)?;
+        for want in ["CPF0900", "CPF1124", "CPF1806", "History test entry"] {
+            if !all.contains(want) {
+                return Err(format!("{want} is not in the history log:\n{all}"));
+            }
+        }
+        let ipls = all.lines().filter(|l| l.contains("CPF0900")).count();
+        let starts = s.command("dsplog MSGID(CPF1124)", CMD)?;
+        if starts.contains("History test entry") || !starts.contains("QSVCJOB") {
+            return Err(format!("dsplog MSGID(CPF1124):\n{starts}"));
+        }
+        Ok(format!(
+            "{ipls} IPL entries, job starts, the QSECURITY change, a sent entry"
+        ))
+    }
+}
+
+impl Suite {
+    /// Step 22: the system reply list: shipped entries, and a job with
+    /// `INQMSGRPY(*SYSRPYL)` whose function-check inquiry the list
+    /// answers.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn reply_list(&self, s: &mut Session) -> Result<String, String> {
+        let list = s.command("wrkrpyle", CMD)?;
+        for id in ["CPA0700", "RPG0000", "CBE0000", "CPA5305"] {
+            if !list.contains(id) {
+                return Err(format!("{id} is not shipped:\n{list}"));
+            }
+        }
+        s.command(
+            "addrpyle SEQNBR(1) MSGID(CEE9901) CMPDTA('FAILPGM' 1) RPY(D)",
+            CMD,
+        )?;
+        s.command("chgjob INQMSGRPY(*SYSRPYL)", CMD)?;
+        s.command("call QGPL/FAILPGM", CMD)?;
+        let q = s.command("dspmsgq *EXT", CMD)?;
+        s.command("chgjob INQMSGRPY(*DFT)", CMD)?;
+        s.command("rmvrpyle SEQNBR(1)", CMD)?;
+        let newest = q
+            .lines()
+            .rev()
+            .find(|l| l.contains("reply:"))
+            .unwrap_or_default()
+            .to_string();
+        if !newest.contains("reply: D") {
+            return Err(format!("the reply list did not answer D:\n{q}"));
+        }
+        Ok("shipped entries listed; CEE9901 answered D from entry 1".into())
+    }
+}
