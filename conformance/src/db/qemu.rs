@@ -46,14 +46,12 @@ fn body(out: &str) -> String {
     let mut lines = Vec::new();
     let mut inside = false;
     for l in out.lines() {
-        let l = l.trim_end_matches('
-');
+        let l = l.trim_end_matches('\r');
         if l.starts_with("--- end") {
             break;
         }
         if inside {
-            lines.push(l.trim_end_matches('
-'));
+            lines.push(l);
         }
         if l.starts_with("--- ") && l.ends_with(" records") {
             inside = true;
