@@ -102,7 +102,7 @@ pub fn verify_file(txn: &mut Txn<'_>, file: ObjectId, report: &mut PathReport) -
             || desc
                 .formats
                 .iter()
-                .any(|f| f.logical.as_ref().is_some_and(|l| l.join));
+                .any(|f| f.logical.as_ref().is_some_and(|l| l.join || !l.joins.is_empty() || l.based_on.len() > 1));
         if filtered_at_read {
             if u64::try_from(entries).expect("fits") != m.attr().path_entries {
                 report.problems.push(format!(
