@@ -1,0 +1,188 @@
+// Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+// licensed under the terms of the MIT license which can be found in the
+// root directory of this project.
+
+//! The storage service's requests. A connection starts with `hello`;
+//! every other request runs as the job that said hello, in a
+//! transaction of its own the service begins and ends, so no store
+//! transaction ever outlives a request.
+
+use ipc::wire_struct;
+use mi::io::{DataAreaValue, FileInfo as IoFileInfo, IoFail, IoResult, OpenSpec, OwnedRequest};
+use msgf::MsgDesc;
+use sysapi::{
+    ApiFail, CommitInfo, DataArea, DepInfo, DtaqEntry, DtaqInfo, FileInfo, FormatInfo, IdxAttr,
+    LocalNow, MemberInfo, ObjInfo, SysVal, UserInfo,
+};
+
+/// Who a connection speaks for.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct JobRef {
+    /// Job name.
+    pub name: String,
+    /// User name.
+    pub user: String,
+    /// Job number.
+    pub number: u32,
+    /// The lock owner handle the job's locks are taken under.
+    pub handle: u64,
+}
+
+wire_struct!(JobRef {
+    name,
+    user,
+    number,
+    handle
+});
+
+/// What a command run in the service answered.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ExecReply {
+    /// Output.
+    pub text: String,
+    /// The prompt the command line wants next (`sql> ` in SQL mode).
+    pub prompt: String,
+    /// SRC codes the command raised, for `slic` to show and log.
+    pub srcs: Vec<String>,
+    /// The system values, when the command changed them.
+    pub sysvals: Option<Vec<u8>>,
+}
+
+wire_struct!(ExecReply {
+    text,
+    prompt,
+    srcs,
+    sysvals
+});
+
+/// What `slic` hands the service as it starts: the units, in the order
+/// they were found, and the system values as the IPL set them. The
+/// service answers with `Result<String, String>`: what it opened, or
+/// why it could not.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Start {
+    /// Device nodes of the ASP 1 units.
+    pub devices: Vec<String>,
+    /// The system values blob.
+    pub sysvals: Option<Vec<u8>>,
+    /// The values the IPL set (`QABNORMSW`, `QIPLSTS`), never saved.
+    pub system: Vec<u8>,
+}
+
+wire_struct!(Start {
+    devices,
+    sysvals,
+    system
+});
+
+/// Index attributes, entry count and library.
+pub type IdxAttrs = (IdxAttr, usize, String);
+
+ipc::rpc! {
+    request Request, service Service, client Client, dispatch dispatch;
+
+    /// First request on a connection: who is speaking.
+    0 => fn hello / Hello (job: JobRef) -> Result<(), String>;
+    /// A service console command, run in the service.
+    1 => fn exec / Exec (line: String) -> ExecReply;
+    /// Checkpoint and close the store; the service exits after the
+    /// answer. Only `slic` sends it.
+    2 => fn close / Close () -> Result<String, String>;
+    /// Nothing; proves the service is up.
+    3 => fn ping / Ping () -> ();
+
+    /// A `*PGM` (kind 0) or `*SRVPGM` (kind 1): its encoded object,
+    /// name and the library it was found in.
+    10 => fn program / Program (name: String, lib: String, kind: u8) -> Option<(Vec<u8>, String, String)>;
+    /// A system pointer's identifier for `lib/name` of a type.
+    11 => fn resolve / Resolve (name: String, lib: String, ty: String) -> Option<u64>;
+    /// The `(name, library)` an identifier names.
+    12 => fn by_id / ById (id: u64) -> Option<(String, String)>;
+
+    /// A user space's bytes.
+    20 => fn us_load / UsLoad (name: String, lib: String) -> Option<Vec<u8>>;
+    /// Write a user space back.
+    21 => fn us_store / UsStore (name: String, lib: String, data: Vec<u8>) -> bool;
+    /// Create a user space; the message identifier on failure.
+    22 => fn us_create / UsCreate (name: String, lib: String, size: u64, init: u8, text: String) -> Result<(), String>;
+    /// Delete a user space.
+    23 => fn us_delete / UsDelete (name: String, lib: String) -> bool;
+    /// The library a user space was found in.
+    24 => fn us_library_of / UsLibraryOf (name: String, lib: String) -> Option<String>;
+
+    /// A message description.
+    30 => fn describe / Describe (msgid: String, msgf: String, lib: String) -> Option<MsgDesc>;
+
+    /// `dtaara.lock`.
+    40 => fn da_lock / DaLock (name: String, lib: String) -> Result<(), IoFail>;
+    /// `dtaara.unlock`.
+    41 => fn da_unlock / DaUnlock (name: String, lib: String) -> Result<(), IoFail>;
+    /// `dtaara.read`.
+    42 => fn da_read / DaRead (name: String, lib: String) -> Result<DataAreaValue, IoFail>;
+    /// `dtaara.write`.
+    43 => fn da_write / DaWrite (name: String, lib: String, value: DataAreaValue) -> Result<(), IoFail>;
+    /// `dtaq.snd`.
+    44 => fn dq_send / DqSend (name: String, lib: String, data: Vec<u8>) -> Result<(), IoFail>;
+    /// `dtaq.rcv`, without waiting: the job waits between tries.
+    45 => fn dq_receive / DqReceive (name: String, lib: String) -> Result<Option<Vec<u8>>, IoFail>;
+
+    /// Open a file.
+    50 => fn open / Open (spec: OpenSpec) -> Result<(u32, IoFileInfo), IoFail>;
+    /// A record operation.
+    51 => fn io / Io (handle: u32, req: OwnedRequest) -> IoResult;
+    /// Close a file.
+    52 => fn close_file / CloseFile (handle: u32) -> IoResult;
+
+    /// `Provider::list_objects`.
+    60 => fn list_objects / ListObjects (lib: String, name: String, ty: String) -> Vec<ObjInfo>;
+    /// `Provider::object`.
+    61 => fn object / Object (lib: String, name: String, ty: String) -> Option<ObjInfo>;
+    /// `Provider::change_object`.
+    62 => fn change_object / ChangeObject (lib: String, name: String, ty: String, text: Option<String>, user_attr: Option<String>) -> Result<String, ApiFail>;
+    /// `Provider::rename_object`.
+    63 => fn rename_object / RenameObject (lib: String, name: String, ty: String, new_lib: String, new_name: String, replace: bool) -> Result<String, ApiFail>;
+    /// `Provider::usridx_create`.
+    64 => fn usridx_create / UsridxCreate (lib: String, name: String, attr: IdxAttr) -> Result<(), ApiFail>;
+    /// `Provider::usridx_delete`.
+    65 => fn usridx_delete / UsridxDelete (lib: String, name: String) -> Result<(), ApiFail>;
+    /// `Provider::usridx_add`.
+    66 => fn usridx_add / UsridxAdd (lib: String, name: String, entries: Vec<Vec<u8>>, replace: bool) -> Result<usize, ApiFail>;
+    /// `Provider::usridx_find`.
+    67 => fn usridx_find / UsridxFind (lib: String, name: String, rule: u32, key: Vec<u8>, key2: Vec<u8>, max: usize, remove: bool) -> Result<Vec<Vec<u8>>, ApiFail>;
+    /// `Provider::usridx_attrs`.
+    68 => fn usridx_attrs / UsridxAttrs (lib: String, name: String) -> Result<IdxAttrs, ApiFail>;
+    /// `Provider::dtaq_send`.
+    69 => fn api_dtaq_send / ApiDtaqSend (lib: String, name: String, key: Vec<u8>, data: Vec<u8>, sender: String) -> Result<(), ApiFail>;
+    /// `Provider::dtaq_receive`, without waiting.
+    70 => fn api_dtaq_receive / ApiDtaqReceive (lib: String, name: String, order: String, key: Vec<u8>, remove: bool) -> Result<Option<DtaqEntry>, ApiFail>;
+    /// `Provider::dtaq_clear`.
+    71 => fn api_dtaq_clear / ApiDtaqClear (lib: String, name: String, order: String, key: Vec<u8>) -> Result<(), ApiFail>;
+    /// `Provider::dtaq_describe`.
+    72 => fn api_dtaq_describe / ApiDtaqDescribe (lib: String, name: String) -> Result<DtaqInfo, ApiFail>;
+    /// `Provider::dtaq_entries`.
+    73 => fn api_dtaq_entries / ApiDtaqEntries (lib: String, name: String) -> Result<Vec<DtaqEntry>, ApiFail>;
+    /// `Provider::dtaara_read`.
+    74 => fn api_dtaara_read / ApiDtaaraRead (lib: String, name: String) -> Result<DataArea, ApiFail>;
+    /// `Provider::dtaara_write`.
+    75 => fn api_dtaara_write / ApiDtaaraWrite (lib: String, name: String, start: usize, bytes: Vec<u8>) -> Result<(), ApiFail>;
+    /// `Provider::sysval`.
+    76 => fn sysval / Sysval (name: String) -> Option<SysVal>;
+    /// `Provider::netattr`.
+    77 => fn netattr / Netattr (name: String) -> Option<SysVal>;
+    /// `Provider::now`.
+    78 => fn now / Now () -> LocalNow;
+    /// `Provider::check_command`.
+    79 => fn check_command / CheckCommand (text: String) -> Result<(), ApiFail>;
+    /// `Provider::file`.
+    80 => fn file / File (lib: String, name: String) -> Option<FileInfo>;
+    /// `Provider::members`.
+    81 => fn members / Members (lib: String, name: String) -> Vec<MemberInfo>;
+    /// `Provider::formats`.
+    82 => fn formats / Formats (lib: String, name: String) -> Vec<FormatInfo>;
+    /// `Provider::dependents`.
+    83 => fn dependents / Dependents (lib: String, name: String, member: String) -> Vec<DepInfo>;
+    /// `Provider::commit_info`.
+    84 => fn commit_info / CommitInfoReq () -> Option<CommitInfo>;
+    /// `Provider::user_info`.
+    85 => fn user_info / UserInfoReq (name: String) -> Option<UserInfo>;
+}

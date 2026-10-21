@@ -2,8 +2,9 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! slic: QS/400 PID 1. Phase 1: a real IPL with persistent state in the LIC
-//! partition, SRC progression, a serial service console and power down.
+//! slic: QS/400 PID 1. It runs the IPL, then starts itself again as the
+//! storage service (`/init qsstg`), which owns the object store for the
+//! rest of the IPL, and the job processes that reach it.
 //!
 //! `unsafe` is denied everywhere except `platform::sys`, which holds the
 //! signal plumbing. (`forbid` cannot be scoped, so `deny` is used.)
@@ -19,12 +20,19 @@ mod net;
 #[cfg(target_os = "linux")]
 mod platform;
 #[cfg(target_os = "linux")]
+mod procs;
+#[cfg(target_os = "linux")]
 mod src;
+#[cfg(target_os = "linux")]
+mod stgsvc;
 #[cfg(target_os = "linux")]
 mod svc;
 
 #[cfg(target_os = "linux")]
 fn main() {
+    if std::env::args().nth(1).as_deref() == Some("qsstg") {
+        stgsvc::run()
+    }
     ipl::run()
 }
 

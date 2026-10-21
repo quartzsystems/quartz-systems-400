@@ -2,38 +2,33 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! ILE on the service console: the service job that runs programs,
-//! the sources it reads objects through, and the commands that
-//! compile, bind, call, display and debug. While a program runs the
-//! console lends the job its store, its temporary ASP and the system
-//! values, and takes them back when the call returns; a debug stop
-//! reads its commands from the serial line inside the call.
+//! ILE in the storage service: the commands that compile, bind and
+//! display, and the sources a job's programs read objects, files, data
+//! areas and messages through. A request lends the store, the
+//! temporary ASP and the system values to the sources and takes them
+//! back when it is answered. Programs run in the job processes
+//! (`qsjob`), not here.
 
 pub mod commands;
 mod provider;
 mod sources;
 
 use std::cell::RefCell;
-use std::fmt::Write as _;
-use std::io::Write as _;
 use std::rc::Rc;
-use std::sync::mpsc::Receiver;
 
-use mi::Job;
-use mi::debug::{Resume, Stop};
 use qsname::Name;
 use store::obj::ops::{self, NameContext};
-use store::obj::{JobHandle, ObjectId, types};
+use store::obj::ObjectId;
 use store::txn::Txn;
 use sysval::SysVals;
 
-use crate::ipl::Event;
 use crate::ipl::storage::{Storage, Temp};
 use crate::ipl::system::System;
 
 pub use provider::StoreProvider;
+pub use sources::{MainStore, StoreData, StoreMsgs, StoreObjects, StoreUserSpaces};
 
-/// What the console lends the job while a program runs.
+/// What a request lends the sources.
 pub struct Lent {
     /// ASP 1 and its store.
     pub storage: Storage,
@@ -43,29 +38,8 @@ pub struct Lent {
     pub sysvals: Option<SysVals>,
 }
 
-/// The lent resources, shared with the job's sources.
+/// The lent resources, shared with the sources.
 pub type Shared = Rc<RefCell<Option<Lent>>>;
-
-/// The console's ILE state.
-pub struct State {
-    /// The service job, once a program has run.
-    pub job: Option<Box<Job>>,
-    /// The lent resources.
-    pub shared: Shared,
-    /// The system APIs' provider.
-    pub provider: Rc<RefCell<StoreProvider>>,
-}
-
-impl Default for State {
-    fn default() -> Self {
-        let shared: Shared = Rc::new(RefCell::new(None));
-        Self {
-            job: None,
-            provider: Rc::new(RefCell::new(StoreProvider::new(Rc::clone(&shared)))),
-            shared,
-        }
-    }
-}
 
 /// The help lines.
 pub const HELP: &str = "\
@@ -81,6 +55,8 @@ wrkmsgd LIB/MSGF | dspmsgd ID [MSGF(LIB/F)]
 strdbg LIB/PGM | addbkp N [PGM(LIB/PGM)] | rmvbkp N|*ALL | dspbkp | enddbg
    at a stop: step [over|into], go, eval VAR[:x|:c], dspvar, dspcallstk, addbkp N, rmvbkp N, dmp
 ";
+
+pub use wm::ctl::JOB_COMMANDS;
 
 /// Run `f` in a transaction on the lent main store.
 pub fn with_main<T>(
@@ -141,10 +117,11 @@ pub fn name_context(txn: &mut Txn<'_>, qsys: ObjectId) -> NameContext {
     }
 }
 
-/// Lend the store, the temporary ASP and the system values to the job.
-fn lend(system: &mut System) -> Result<(), String> {
+/// Lend the store, the temporary ASP and the system values to the
+/// sources.
+pub fn lend(system: &mut System) -> Result<(), String> {
     let storage = system.storage.take().ok_or("object store not open")?;
-    *system.svc.ile.shared.borrow_mut() = Some(Lent {
+    *system.lent.borrow_mut() = Some(Lent {
         storage,
         temp: system.temp.take(),
         sysvals: system.sysvals.take(),
@@ -153,137 +130,11 @@ fn lend(system: &mut System) -> Result<(), String> {
 }
 
 /// Take them back.
-fn restore(system: &mut System) {
-    if let Some(l) = system.svc.ile.shared.borrow_mut().take() {
+pub fn restore(system: &mut System) {
+    if let Some(l) = system.lent.borrow_mut().take() {
         system.storage = Some(l.storage);
         system.temp = l.temp;
         system.sysvals = l.sysvals;
-    }
-}
-
-/// The job, created on first use with its sources.
-fn job(system: &mut System) -> &mut Job {
-    if system.svc.ile.job.is_none() {
-        let shared = Rc::clone(&system.svc.ile.shared);
-        let mut job = Job::boxed(Box::new(sources::StoreObjects::new(Rc::clone(&shared))));
-        job.usrspcs
-            .set_source(Box::new(sources::StoreUserSpaces::new(Rc::clone(&shared))));
-        job.msgs = Box::new(sources::StoreMsgs::new(Rc::clone(&shared)));
-        job.data = Some(Box::new(sources::StoreData::new(Rc::clone(&shared))));
-        let resolver_shared = Rc::clone(&shared);
-        let resolve = move |fr: &dds::FileRef| -> db::Result<ObjectId> {
-            with_main(&resolver_shared, |txn, qsys| {
-                let names = name_context(txn, qsys);
-                ops::resolve(txn, qsys, &names, fr.library, fr.file, types::FILE)
-                    .map(|f| f.id)
-                    .map_err(|e| e.to_string())
-            })
-            .map_err(|what| db::DbError::Definition { what })
-        };
-        job.io = Some(Box::new(mi::io::store::StoreIo::new(
-            Box::new(sources::MainStore::new(Rc::clone(&shared))),
-            JobHandle(1),
-            Box::new(resolve),
-        )));
-        let provider: Rc<RefCell<dyn sysapi::Provider>> = system.svc.ile.provider.clone();
-        sysapi::install(&mut job, provider);
-        if let Some(events) = system.events.clone() {
-            let serial = system.out.serial_clone();
-            job.set_debug_hook(Box::new(move |job: &mut Job, stop: &Stop| {
-                debug_session(job, stop, &events, serial.as_ref())
-            }));
-        }
-        system.svc.ile.job = Some(job);
-    }
-    system.svc.ile.job.as_mut().expect("created")
-}
-
-/// Run `f` on the job with the store lent to it; the commands
-/// `QCMDEXC` asked for run afterwards and their output follows.
-pub fn run_in_job<T>(
-    system: &mut System,
-    f: impl FnOnce(&mut Job) -> T,
-) -> Result<(T, String), String> {
-    job(system);
-    lend(system)?;
-    let mut j = system.svc.ile.job.take().expect("created");
-    let r = f(&mut j);
-    system.svc.ile.job = Some(j);
-    restore(system);
-    let pending: Vec<String> = std::mem::take(&mut system.svc.ile.provider.borrow_mut().pending);
-    let mut extra = String::new();
-    for line in pending {
-        let _ = writeln!(extra, "QCMDEXC: {line}");
-        extra.push_str(&super::reply(system, &line));
-    }
-    Ok((r, extra))
-}
-
-/// The debug session at a stop: commands from the serial line until
-/// one resumes.
-fn debug_session(
-    job: &mut Job,
-    stop: &Stop,
-    events: &Receiver<Event>,
-    serial: Option<&std::fs::File>,
-) -> Resume {
-    let out = |s: &str| {
-        if let Some(mut f) = serial {
-            let _ = f.write_all(s.as_bytes());
-        }
-    };
-    out(&format!(
-        "Stopped at {} {} statement {}\n",
-        stop.program, stop.procedure, stop.stmt
-    ));
-    loop {
-        out("dbg> ");
-        let line = loop {
-            match events.recv() {
-                Ok(Event::Line(l)) => break l,
-                Ok(Event::Signal(_)) => {
-                    crate::platform::sys::reap();
-                }
-                Ok(_) => {}
-                Err(_) => return Resume::Go,
-            }
-        };
-        let words: Vec<&str> = line.split_whitespace().collect();
-        match words.as_slice() {
-            [] => {}
-            ["step"] | ["step", "over"] => return Resume::StepOver,
-            ["step", "into"] => return Resume::StepInto,
-            ["go" | "resume" | "g"] => return Resume::Go,
-            ["eval", expr] => match job.eval(expr) {
-                Ok(v) => out(&format!("{expr} = {v}\n")),
-                Err(e) => out(&format!("{e}\n")),
-            },
-            ["dspvar"] => {
-                for (n, t) in job.dspvar() {
-                    out(&format!("  {n:<12} {t}\n"));
-                }
-            }
-            ["dspcallstk"] => out(&job.call_stack_text()),
-            ["addbkp", n] => match n.parse::<u32>() {
-                Ok(n) => {
-                    job.addbkp(&stop.program, n);
-                    out(&format!("Breakpoint at {} statement {n}.\n", stop.program));
-                }
-                Err(_) => out("addbkp N\n"),
-            },
-            ["rmvbkp", n] => {
-                let gone = match n.parse::<u32>() {
-                    Ok(n) => job.rmvbkp(&stop.program, Some(n)),
-                    Err(_) => job.rmvbkp(&stop.program, None),
-                };
-                out(&format!("{gone} breakpoint(s) removed.\n"));
-            }
-            ["dmp"] => out(&job.dump(true)),
-            ["help"] => out(
-                "step [over|into], go, eval VAR[:x|:c], dspvar, dspcallstk, addbkp N, rmvbkp N|*ALL, dmp\n",
-            ),
-            _ => out("Not a debug command. Type help.\n"),
-        }
     }
 }
 

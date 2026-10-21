@@ -56,11 +56,11 @@ pub fn wait_signal() -> i32 {
     }
 }
 
-/// Reap every exited child. Returns how many.
-pub fn reap() -> usize {
-    let mut n = 0;
-    while let Ok(Some(_)) = waitpid(None, WaitOptions::NOHANG) {
-        n += 1;
+/// Reap every exited child. Returns their process IDs.
+pub fn reap() -> Vec<u32> {
+    let mut pids = Vec::new();
+    while let Ok(Some((pid, _))) = waitpid(None, WaitOptions::NOHANG) {
+        pids.push(pid.as_raw_nonzero().get().unsigned_abs());
     }
-    n
+    pids
 }

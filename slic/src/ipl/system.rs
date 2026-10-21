@@ -22,6 +22,16 @@ use crate::net::Link;
 use crate::platform::console::Outputs;
 use crate::src::Src;
 
+/// Which process the code runs in.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Role {
+    /// PID 1: the IPL, the console, power down.
+    Slic,
+    /// The storage service: the store, the database, the requests of
+    /// the jobs. SRC codes and the LIC record stay with `slic`.
+    Storage,
+}
+
 /// State of this IPL.
 pub struct System {
     /// Console and serial writers.
@@ -56,7 +66,19 @@ pub struct System {
     pub temp: Option<Temp>,
     /// The service console's database state: modes, xfer buffers, SQL.
     pub svc: crate::svc::db::State,
-    /// The event channel, shared with a debug session inside a call.
+    /// What this process is: PID 1, or the storage service.
+    pub role: Role,
+    /// SRC codes the storage service raised, for `slic` to show.
+    pub raised: Vec<&'static Src>,
+    /// The system values changed since the last request.
+    pub sysvals_changed: bool,
+    /// Record locks, one table for every job.
+    pub locks: db::odp::SharedLocks,
+    /// The store as lent to the job sources for one request.
+    pub lent: crate::svc::ile::Shared,
+    /// The storage service and the service console job, once started.
+    pub procs: crate::procs::Procs,
+    /// The event channel.
     pub events: Option<Rc<Receiver<Event>>>,
 }
 
@@ -82,6 +104,12 @@ impl System {
             temp: None,
             svc: crate::svc::db::State::default(),
             events: None,
+            role: Role::Slic,
+            raised: Vec::new(),
+            sysvals_changed: false,
+            locks: db::odp::new_shared(),
+            lent: std::rc::Rc::new(std::cell::RefCell::new(None)),
+            procs: crate::procs::Procs::default(),
         }
     }
 
@@ -100,6 +128,11 @@ impl System {
     /// Log a code and show it on serial, the text console and the display.
     /// Attention and fatal codes also go into the product activity log.
     pub fn emit(&mut self, src: &'static Src) {
+        if self.role == Role::Storage {
+            // slic shows, logs and records it with the reply.
+            self.raised.push(src);
+            return;
+        }
         self.log.push(src);
         self.out.both(&src.line());
         let severity = match src.phase {

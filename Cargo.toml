@@ -25,6 +25,11 @@ members = [
     "ile",
     "msgf",
     "sysapi",
+    "ipc",
+    "stg",
+    "wm",
+    "qsjob",
+
 ]
 
 [workspace.package]

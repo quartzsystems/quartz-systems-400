@@ -28,6 +28,7 @@ use licpart::IplMode;
 use crate::hwrsrc;
 use crate::net;
 use crate::platform::{console, mounts, serial, sys};
+use crate::procs;
 use crate::src;
 use crate::svc;
 use system::System;
@@ -41,6 +42,10 @@ pub enum Event {
     Line(String),
     /// A kernel hotplug event.
     Uevent(hwrsrc::uevent::Uevent),
+    /// A message from the service console job.
+    Job(wm::ctl::FromJob),
+    /// The service console job's channel closed.
+    JobGone,
     /// Something from the local console's keyboard.
     Console(::console::Input),
 }
@@ -103,8 +108,8 @@ pub fn run() -> ! {
     if let Err(fatal) = lic_phase(&mut system, &rx, &tx) {
         system.fatal(fatal);
     }
-    os_phase(&mut system, &rx);
-    run_loop(&mut system, &rx)
+    os_phase(&mut system, &rx, &tx);
+    run_loop(&mut system, &rx, &tx)
 }
 
 /// C1001000 through C1001060, plus the manual-mode menu.
@@ -269,7 +274,7 @@ fn open_or_service(
 
 /// C6001000 through C6001090. A fresh install asks for the IPL options
 /// once the system values exist.
-fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>) {
+fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<Event>) {
     system.emit(&src::OS_STARTED);
     if let Err(fatal) = storage::open_objects(system) {
         system.fatal(fatal);
@@ -283,6 +288,14 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>) {
         }
         install::finish(system);
     }
+    // The storage service takes the store over; from here on the jobs
+    // and the console reach it through the service.
+    if system.storage.is_some()
+        && let Err(e) = procs::stg::start(system)
+    {
+        system.out.serial(&format!("slic: {e}\n"));
+        system.fatal(&src::STG_ENDED);
+    }
     system.emit(&src::STRUP_SKIPPED);
     lic::complete(system);
     system.emit(&src::IPL_COMPLETE);
@@ -292,12 +305,87 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>) {
         display: "QSCONSOLE".to_string(),
     });
     if system.boot.svc {
+        if system.procs.stg.is_some()
+            && let Err(e) = procs::svcjob::start(system, tx.clone())
+        {
+            system.out.serial(&format!("slic: {e}\n"));
+        }
         svc::banner(system);
     }
 }
 
+/// A line typed on the serial port: to the service console job, or
+/// answered here when it is one of `slic`'s own commands or no job runs.
+fn console_line(system: &mut System, line: &str) {
+    match system.procs.svcjob.as_mut() {
+        Some(j) if !j.is_local(line) => {
+            if !j.line(line) {
+                system.out.serial("slic: QSVCJOB is not answering\n");
+            }
+        }
+        _ => svc::handle(system, line),
+    }
+}
+
+/// What the service console job sent.
+fn job_message(system: &mut System, m: wm::ctl::FromJob) {
+    use wm::ctl::FromJob;
+    match m {
+        FromJob::Output { text } => system.out.serial(&text),
+        FromJob::Done {
+            prompt,
+            srcs,
+            sysvals,
+        } => {
+            for code in srcs {
+                if let Some(s) = src::lookup(&code) {
+                    system.emit(s);
+                }
+            }
+            if let Some(blob) = sysvals {
+                sysvals::adopt(system, &blob);
+            }
+            if let Some(j) = system.procs.svcjob.as_mut() {
+                j.busy = false;
+                j.prompt.clone_from(&prompt);
+            }
+            system.out.serial(&prompt);
+        }
+        FromJob::Ending { reason } => {
+            system.out.serial(&format!("slic: QSVCJOB ending: {reason}\n"));
+        }
+        FromJob::Ready { .. } => {}
+    }
+}
+
+/// Children that exited: the storage service ending is fatal, the
+/// service console job is started again.
+fn reaped(system: &mut System, pids: &[u32], tx: &mpsc::Sender<Event>) {
+    for &pid in pids {
+        if system
+            .procs
+            .stg
+            .as_ref()
+            .is_some_and(|p| p.pid == pid && !p.closing)
+        {
+            system.procs.stg = None;
+            system.fatal(&src::STG_ENDED);
+        }
+        if system.procs.svcjob.as_ref().is_some_and(|j| j.pid == pid) {
+            system.procs.svcjob = None;
+            system
+                .out
+                .serial(&format!("slic: QSVCJOB ({pid}) ended; starting it again\n"));
+            if let Err(e) = procs::svcjob::start(system, tx.clone()) {
+                system.out.serial(&format!("slic: {e}\n"));
+            }
+            system.out.serial(svc::PROMPT);
+        }
+    }
+}
+
 /// Serve events forever. Power down leaves through `power::down`.
-fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>) -> ! {
+fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<Event>) -> ! {
     loop {
         let wait = if storage::busy(system) {
             Duration::from_millis(20)
@@ -307,15 +395,19 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>) -> ! {
         match rx.recv_timeout(wait) {
             Err(mpsc::RecvTimeoutError::Timeout) => storage::tick(system),
             Ok(Event::Signal(s)) if s == libc_sigchld() => {
-                sys::reap();
+                let pids = sys::reap();
+                reaped(system, &pids, tx);
             }
             Ok(Event::Signal(s)) if s == libc_sigusr1() => power::down(system, false),
-            Ok(Event::Signal(_)) => {} // SIGTERM/SIGINT are ignored by PID 1
+            // SIGTERM and SIGINT are ignored by PID 1; the reaper restarts
+            // a job whose channel closed.
+            Ok(Event::Signal(_) | Event::JobGone) => {}
             Ok(Event::Line(line)) => {
                 if system.boot.svc {
-                    svc::handle(system, &line);
+                    console_line(system, &line);
                 }
             }
+            Ok(Event::Job(m)) => job_message(system, m),
             Ok(Event::Uevent(ev)) => {
                 if let Some(msg) = system.hw.apply_uevent(&ev) {
                     system.out.serial(&format!("{msg}\n"));

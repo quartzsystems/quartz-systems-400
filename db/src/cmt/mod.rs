@@ -47,6 +47,16 @@ impl LckLvl {
             _ => return None,
         })
     }
+
+    /// The `*NAME`.
+    #[must_use]
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Chg => "*CHG",
+            Self::Cs => "*CS",
+            Self::All => "*ALL",
+        }
+    }
 }
 
 /// A job's commit definition, shared with its open data paths.

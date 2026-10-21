@@ -26,8 +26,9 @@ for a later phase is marked `MIGRATE(phaseN)` or `TODO(phaseN)`.
   // root directory of this project.
   ```
 - Comments are short and to the point.
-- Claude never commits. At a natural checkpoint it prints a one-line commit
-  message (under 60 chars) and waits for Cody to commit and say "continue".
+- Claude commits at each natural checkpoint, as Cody (the repo's git user),
+  with a one-line message under 60 chars and no Claude attribution or
+  `Co-Authored-By` lines, then carries on.
 - Pure Rust only. No crate may compile or link C (`cc`, `cmake`, `bindgen`,
   `links =`). `deny.toml` enforces this; `cargo run -p build -- deny` checks it.
 - Source files are grouped into folders by concern (`host/`, `kernel/`,
@@ -62,10 +63,13 @@ kernel/       VERSION, SHA256, config/qs400.config
 licpart/      LIC partition: A/B record (src/format/), locate by GPT type GUID
 sysval/       catalog.toml, validation, src/tz/ time zones, LIC storage
 console/      font/qs400-9x16.txt, src/fb/ framebuffer, src/keyboard/, screens
-slic/         PID 1: src/ipl/ state machine, src/hwrsrc/, src/net/, src/svc/ (db/ holds
-              the database, journal, SQL, rla and dbbench console commands; ile/ the
-              service job over the lent store: sources, the sysapi provider, the ILE and
-              debug commands),
+slic/         PID 1 and, as `/init qsstg`, the storage service: src/ipl/ state machine,
+              src/hwrsrc/, src/net/, src/procs/ (spawn, the storage service handover and
+              close, QSVCJOB line routing), src/stgsvc/ (the service: open, serve loop,
+              per-job contexts answering stg requests, exec of console commands),
+              src/svc/ (db/ holds the database, journal, SQL, rla and dbbench console
+              commands; ile/ the ILE build and display commands and the job sources over
+              the lent store with the sysapi provider),
               src/platform/ (console, mounts, power, rtc, serial, sys), src/src.rs
 conformance/  QEMU harness: src/qemu/ (session, qmp, serial, firmware), src/steps.rs;
               src/db/ the database kit (kit, local run, compare, oracle RPG, QEMU steps);
@@ -148,8 +152,17 @@ ile/          ILE objects: src/object/ *MODULE, *PGM/*SRVPGM and *BNDDIR payload
               native-output codec; src/binder/ the binder, binder language, signatures;
               src/dsp/ DSPPGM, DSPSRVPGM, DSPMOD, DSPPGMREF, DSPBNDDIR text; src/store/
               CRTMOD/CRTPGM/CRTSRVPGM/UPDPGM/CRTBNDDIR against the store; src/spec.rs
+ipc/          process messages: src/wire/ the Wire codec and wire_struct!/wire_enum!,
+              frame.rs length-prefixed frames, rpc.rs the rpc! macro, chan.rs Unix sockets
+stg/          storage service protocol: proto.rs the requests (rpc!), link.rs a job's link,
+              src/remote/ the runtime's source traits answered by the service
+wm/           work management: cmd.rs console command parameters, ctl.rs the job control
+              channel (Start, ToJob, FromJob)
+qsjob/        the job process: start.rs (control channel, hello), src/console/ QSVCJOB
+              (line dispatch, call, debug session, the job commands)
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
-              DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md, images/
+              DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md,
+              STORAGE_SERVICE.md, images/
 ```
 
 ## Commands

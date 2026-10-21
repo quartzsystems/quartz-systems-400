@@ -19,6 +19,7 @@ pub mod payload;
 pub mod source;
 pub mod spec;
 pub mod store;
+mod wire;
 
 pub use desc::{MsgDesc, VarType};
 pub use error::{MsgfError, Result};

@@ -52,9 +52,20 @@ impl StoreIo {
     /// Over a store, as `job`, resolving file names with `resolve`.
     #[must_use]
     pub fn new(store: Box<dyn StoreHandle>, job: JobHandle, resolve: Resolver) -> Self {
+        Self::with_locks(store, job, resolve, db::odp::new_shared())
+    }
+
+    /// Over a store, with record locks in a table other jobs share.
+    #[must_use]
+    pub fn with_locks(
+        store: Box<dyn StoreHandle>,
+        job: JobHandle,
+        resolve: Resolver,
+        locks: db::odp::SharedLocks,
+    ) -> Self {
         Self {
             store,
-            session: Session::new(job, db::odp::new_shared()),
+            session: Session::new(job, locks),
             resolve,
             open: Vec::new(),
         }
@@ -63,6 +74,22 @@ impl StoreIo {
     /// The session, for overrides and commitment control.
     pub fn session(&mut self) -> &mut Session {
         &mut self.session
+    }
+
+    /// End the job's use of the database: open files dropped, an open
+    /// commit cycle rolled back, every lock released.
+    pub fn end(&mut self) {
+        self.open.clear();
+        let mut store = self.store.store();
+        match store.begin() {
+            Ok(mut txn) => {
+                self.session.end(&mut txn);
+                if let Err(e) = txn.commit() {
+                    tracing::warn!("ending the job's files: {e}");
+                }
+            }
+            Err(e) => tracing::warn!("ending the job's files: {e}"),
+        }
     }
 
     /// The key fields' values from key bytes in record layout.

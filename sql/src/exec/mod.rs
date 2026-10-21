@@ -81,7 +81,17 @@ impl SqlContext {
     /// A context for `job` with a library list.
     #[must_use]
     pub fn new(qsys: ObjectId, job: JobHandle, names: NameContext) -> Self {
-        let locks = odp::new_shared();
+        Self::with_locks(qsys, job, names, odp::new_shared())
+    }
+
+    /// A context whose record locks live in a table other jobs share.
+    #[must_use]
+    pub fn with_locks(
+        qsys: ObjectId,
+        job: JobHandle,
+        names: NameContext,
+        locks: odp::SharedLocks,
+    ) -> Self {
         Self {
             naming: Naming::Sys,
             qsys,

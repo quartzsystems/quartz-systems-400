@@ -1,0 +1,18 @@
+[package]
+name = "stg"
+description = "QS/400 storage service protocol: the requests a job sends, and the job-side sources that send them"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ipc = { path = "../ipc", version = "0.1.0" }
+mi = { path = "../mi", version = "0.1.0" }
+ile = { path = "../ile", version = "0.1.0" }
+msgf = { path = "../msgf", version = "0.1.0" }
+sysapi = { path = "../sysapi", version = "0.1.0" }
+tracing.workspace = true
+
+[lints]
+workspace = true

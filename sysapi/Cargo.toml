@@ -15,6 +15,7 @@ ccsid = { path = "../ccsid", version = "0.1.0" }
 qdecimal = { path = "../qdecimal", version = "0.1.0" }
 sysval = { path = "../sysval", version = "0.1.0" }
 release = { path = "../release", version = "0.1.0" }
+ipc = { path = "../ipc", version = "0.1.0" }
 thiserror.workspace = true
 tracing.workspace = true
 

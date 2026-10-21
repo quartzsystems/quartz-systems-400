@@ -13,6 +13,7 @@ ccsid = { path = "../ccsid", version = "0.1.0" }
 qdecimal = { path = "../qdecimal", version = "0.1.0" }
 serde.workspace = true
 toml = { version = "1.1.8", default-features = false, features = ["parse", "serde"] }
+ipc = { path = "../ipc", version = "0.1.0" }
 thiserror.workspace = true
 
 [dev-dependencies]

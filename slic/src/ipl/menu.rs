@@ -77,7 +77,7 @@ pub fn read(system: &mut System, rx: &Receiver<Event>) -> Option<Answer> {
                     system.out.serial(&format!("{msg}\n"));
                 }
             }
-            Ok(Event::Signal(_)) => {}
+            Ok(Event::Signal(_) | Event::Job(_) | Event::JobGone) => {}
             Err(_) => return None,
         }
     }

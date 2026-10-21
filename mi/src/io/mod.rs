@@ -10,6 +10,9 @@
 use std::collections::{HashMap, VecDeque};
 
 pub mod store;
+mod wire;
+
+pub use wire::{OwnedKey, OwnedRequest};
 
 /// How a file is opened: the module's file declaration, as the
 /// runtime hands it over.

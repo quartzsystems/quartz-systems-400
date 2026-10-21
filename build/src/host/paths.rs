@@ -79,6 +79,11 @@ impl Paths {
         self.target.join(RUST_TARGET).join("release").join("slic")
     }
 
+    /// The built `qsjob` binary.
+    pub fn qsjob(&self) -> PathBuf {
+        self.target.join(RUST_TARGET).join("release").join("qsjob")
+    }
+
     /// The initramfs cpio.
     pub fn initramfs(&self) -> PathBuf {
         self.images().join("initramfs.cpio")

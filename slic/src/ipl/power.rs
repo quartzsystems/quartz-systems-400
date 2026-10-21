@@ -14,6 +14,7 @@ use crate::src;
 /// Power off, or restart. Never returns.
 pub fn down(system: &mut System, restart: bool) -> ! {
     system.emit(&src::PWRDWN_STARTED);
+    crate::procs::end_all(system);
     storage::close(system);
     lic::shutdown(system, &src::PWRDWN_STARTED);
     if let Some((part, _)) = system.lic.take() {

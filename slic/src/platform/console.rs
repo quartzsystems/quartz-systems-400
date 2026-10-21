@@ -42,12 +42,6 @@ impl Outputs {
     pub fn serial(&mut self, text: &str) {
         write(self.serial.as_mut(), text);
     }
-
-    /// Another handle on the serial line, for a debug session inside
-    /// a call.
-    pub fn serial_clone(&self) -> Option<File> {
-        self.serial.as_ref().and_then(|f| f.try_clone().ok())
-    }
 }
 
 /// Fresh handles for the panic path, which owns nothing.

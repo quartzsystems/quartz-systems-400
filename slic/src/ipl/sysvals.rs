@@ -13,7 +13,7 @@ use std::fs;
 use store::obj::sysval as sysval_obj;
 use sysval::{HostInfo, SysVals, Value};
 
-use crate::ipl::system::{System, now_unix};
+use crate::ipl::system::{Role, System, now_unix};
 
 pub(crate) fn host_info() -> HostInfo {
     // QEMU publishes no UUID unless given one, so fall back to the serials.
@@ -129,6 +129,8 @@ pub fn save(system: &mut System) -> Result<(), String> {
         sysvals,
         storage,
         lic,
+        role,
+        sysvals_changed,
         ..
     } = system;
     let Some(vals) = sysvals.as_ref() else {
@@ -143,6 +145,11 @@ pub fn save(system: &mut System) -> Result<(), String> {
             let mut t = s.store.begin().map_err(|e| e.to_string())?;
             sysval_obj::write(&mut t, id, &vals.to_blob()).map_err(|e| e.to_string())?;
             t.commit().map_err(|e| e.to_string())?;
+            if *role == Role::Storage {
+                // slic keeps the IPL subset in the LIC record.
+                *sysvals_changed = true;
+                return Ok(());
+            }
             if let Some((part, record)) = lic.as_mut() {
                 vals.store_ipl(record).map_err(|e| e.to_string())?;
                 part.write(record).map_err(|e| e.to_string())?;
@@ -154,4 +161,32 @@ pub fn save(system: &mut System) -> Result<(), String> {
             None => Err("LIC partition not attached".into()),
         },
     }
+}
+
+/// Take the values the storage service saved: keep them, and the IPL
+/// subset in the LIC record.
+pub fn adopt(system: &mut System, blob: &[u8]) {
+    let mut vals = match SysVals::from_blob(blob, &host_info()) {
+        Ok(v) => v,
+        Err(e) => {
+            system
+                .out
+                .serial(&format!("slic: system values from the service: {e}\n"));
+            return;
+        }
+    };
+    if let Some(old) = system.sysvals.as_ref() {
+        // The values this IPL set are not in the blob.
+        let _ = vals.set_system_blob(&old.system_blob());
+    }
+    if let Some((part, record)) = system.lic.as_mut() {
+        let r = vals
+            .store_ipl(record)
+            .map_err(|e| e.to_string())
+            .and_then(|()| part.write(record).map(|_| ()).map_err(|e| e.to_string()));
+        if let Err(e) = r {
+            system.out.serial(&format!("slic: system values to the LIC: {e}\n"));
+        }
+    }
+    system.sysvals = Some(vals);
 }

@@ -2,10 +2,10 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The ILE commands of the service console: assembling IR, creating
-//! and updating programs and binding directories, calling, displaying
-//! objects and the job, replying to inquiries, dumps, message
-//! descriptions, and the debugger outside a stop.
+//! The ILE commands the storage service runs: assembling IR, creating
+//! and updating programs and binding directories, displaying objects,
+//! and message descriptions. Calls, the job displays and the debugger
+//! run in the job (`qsjob`).
 
 use std::fmt::Write as _;
 
@@ -14,7 +14,6 @@ use ile::{
     ActGrpAttr, BindOptions, BndDirEntry, BndEntryKind, CreateData, ExportSpec, ModuleObject,
     PgmKind,
 };
-use mi::QueueRef;
 use qsname::{LibSpec, MemberSpec, Name};
 use store::obj::ops::{self, NameContext};
 use store::obj::{ObjectId, types};
@@ -24,7 +23,7 @@ use super::super::db::{Params, with_txn};
 use crate::ipl::system::{System, now_unix};
 
 /// The commands of this module, or none.
-pub fn command(system: &mut System, cmd: &str, args: &[&str], line: &str) -> Option<String> {
+pub fn command(system: &mut System, cmd: &str, _args: &[&str], line: &str) -> Option<String> {
     let p = Params::parse(line);
     let r = match cmd {
         "qir" => qir_cmd(system, &p),
@@ -33,45 +32,14 @@ pub fn command(system: &mut System, cmd: &str, args: &[&str], line: &str) -> Opt
         "updpgm" => updpgm(system, &p),
         "crtbnddir" => crtbnddir(system, &p),
         "addbnddire" => addbnddire(system, &p),
-        "call" => call(system, line),
         "dsppgm" => display(system, &p, types::PGM),
         "dspsrvpgm" => display(system, &p, types::SRVPGM),
         "dspmod" => display(system, &p, types::MODULE),
         "dsppgmref" => display(system, &p, u16::MAX),
         "dspbnddir" => display(system, &p, types::BNDDIR),
-        "dspactgrp" => with_job(system, |j| j.actgrp_text()),
-        "rclactgrp" => rclactgrp(system, args),
-        "dspcallstk" => with_job(system, |j| j.call_stack_text()),
-        "dspmsgq" => dspmsgq(system, args),
-        "rpy" => rpy(system, args),
-        "dmp" => with_job(system, |j| {
-            j.last_dump.clone().unwrap_or_else(|| j.dump(true))
-        }),
         "wrkmsgd" => wrkmsgd(system, &p),
         "dspmsgd" => dspmsgd(system, &p),
-        "strdbg" => strdbg(system, &p),
-        "enddbg" => with_job(system, |j| {
-            j.enddbg();
-            "Debug ended.\n".to_string()
-        }),
-        "addbkp" => addbkp(system, &p, true),
-        "rmvbkp" => addbkp(system, &p, false),
-        "dspbkp" => with_job(system, |j| {
-            let mut out = String::new();
-            if let Some(d) = &j.debug {
-                for (pgm, n) in &d.breakpoints {
-                    let _ = writeln!(out, "  {pgm:<21} statement {n}");
-                }
-                for pgm in &d.programs {
-                    let _ = writeln!(out, "  {pgm} under debug");
-                }
-            }
-            if out.is_empty() {
-                "No breakpoints.\n".into()
-            } else {
-                out
-            }
-        }),
+        c if super::JOB_COMMANDS.contains(&c) => Err(format!("{c} runs in a job, not here")),
         _ => return None,
     };
     Some(match r {
@@ -320,9 +288,6 @@ fn updpgm(system: &mut System, p: &Params) -> Result<String, String> {
     let diags = in_store(system, &lib, |txn, c, _| {
         ile::store::updpgm(txn, c, id, &modules).map_err(|e| e.to_string())
     })?;
-    if let Some(j) = system.svc.ile.job.as_mut() {
-        j.act.loaded.clear();
-    }
     Ok(format!("{}{qual} updated.\n", diag_text(&diags)))
 }
 
@@ -375,119 +340,6 @@ fn addbnddire(system: &mut System, p: &Params) -> Result<String, String> {
     ))
 }
 
-/// The parameter values of a `call` line: `'text'` as characters,
-/// numbers as `packed(15,5)`, `x'..'` as bytes.
-fn call_parms(rest: &str) -> Result<Vec<Vec<u8>>, String> {
-    let mut out = Vec::new();
-    let chars: Vec<char> = rest.chars().collect();
-    let mut i = 0;
-    while i < chars.len() {
-        if chars[i].is_whitespace() {
-            i += 1;
-            continue;
-        }
-        if chars[i] == '\''
-            || (chars[i].eq_ignore_ascii_case(&'x') && chars.get(i + 1) == Some(&'\''))
-        {
-            let hex = chars[i] != '\'';
-            i += if hex { 2 } else { 1 };
-            let start = i;
-            while i < chars.len() && chars[i] != '\'' {
-                i += 1;
-            }
-            let text: String = chars[start..i].iter().collect();
-            i += 1;
-            if hex {
-                let clean: String = text.chars().filter(|c| !c.is_whitespace()).collect();
-                let bytes = (0..clean.len() / 2)
-                    .map(|k| {
-                        u8::from_str_radix(&clean[2 * k..2 * k + 2], 16).map_err(|e| e.to_string())
-                    })
-                    .collect::<Result<Vec<u8>, String>>()?;
-                out.push(bytes);
-            } else {
-                out.push(ccsid::to_ebcdic(&text).map_err(|_| format!("{text}: not CP037"))?);
-            }
-            continue;
-        }
-        let start = i;
-        while i < chars.len() && !chars[i].is_whitespace() {
-            i += 1;
-        }
-        let word: String = chars[start..i].iter().collect();
-        let d = qdecimal::Decimal::parse(&word).map_err(|_| format!("{word}: not a number"))?;
-        let p = qdecimal::Packed::new(15, 5).expect("valid");
-        out.push(
-            p.encode(&d, qdecimal::Rounding::Truncate)
-                .map_err(|e| e.to_string())?,
-        );
-    }
-    Ok(out)
-}
-
-/// `call LIB/PGM [parms]`.
-fn call(system: &mut System, line: &str) -> Result<String, String> {
-    let rest = line.trim_start()[4..].trim_start();
-    let (qual, parms) = rest
-        .find(char::is_whitespace)
-        .map_or((rest, ""), |i| (&rest[..i], &rest[i..]));
-    if qual.is_empty() {
-        return Err("call LIB/PGM [parms]".into());
-    }
-    let (lib, name) = qual
-        .split_once('/')
-        .map_or(("*LIBL", qual), |(l, n)| (l, n));
-    let (lib, name) = (lib.to_ascii_uppercase(), name.to_ascii_uppercase());
-    let mut buffers = call_parms(parms)?;
-    let addrs: Vec<u64> = buffers.iter_mut().map(|b| b.as_mut_ptr() as u64).collect();
-    let (result, extra) = super::run_in_job(system, |j| {
-        let before = j.console.len();
-        let r = j.call_program(&name, &lib, &addrs);
-        let lines: Vec<String> = j.console.drain(before..).collect();
-        let pending = j.clear();
-        (r, lines, pending)
-    })?;
-    let (r, lines, pending) = result;
-    let mut out = String::new();
-    for l in lines {
-        let _ = writeln!(out, "{l}");
-    }
-    match r {
-        Ok(()) => {}
-        Err(c) => {
-            let _ = writeln!(out, "{}: {lib}/{name} could not be called.", c.msgid());
-        }
-    }
-    if let Some(e) = pending {
-        if e.msgid == "CEE9903" {
-            let _ = writeln!(out, "Program ended by CEETREC.");
-        } else {
-            let _ = writeln!(out, "Exception {} left for the caller.", e.msgid);
-        }
-    }
-    for (i, b) in buffers.iter().enumerate() {
-        if b.iter().all(u8::is_ascii_graphic) {
-            continue;
-        }
-        let _ = writeln!(out, "Parm {}: {}", i + 1, parm_text(b));
-    }
-    out.push_str(&extra);
-    Ok(out)
-}
-
-/// A parameter after the call: its text when it is text, else hex.
-fn parm_text(b: &[u8]) -> String {
-    let text = ccsid::from_ebcdic(b);
-    if text.chars().all(|c| c.is_ascii_graphic() || c == ' ') {
-        format!("'{}'", text.trim_end())
-    } else {
-        b.iter().fold(String::new(), |mut s, x| {
-            let _ = write!(s, "{x:02X}");
-            s
-        })
-    }
-}
-
 /// `dsppgm`, `dspsrvpgm`, `dspmod`, `dsppgmref`, `dspbnddir`.
 fn display(system: &mut System, p: &Params, type_code: u16) -> Result<String, String> {
     let qual = p.pos_or(0, "OBJ")?;
@@ -514,64 +366,6 @@ fn display(system: &mut System, p: &Params, type_code: u16) -> Result<String, St
         _ => ile::store::load_program(txn, id)
             .map(|pg| ile::dsp::dsppgm(&pg))
             .map_err(|e| e.to_string()),
-    })
-}
-
-/// A job display, creating the job when needed.
-fn with_job(system: &mut System, f: impl FnOnce(&mut mi::Job) -> String) -> Result<String, String> {
-    super::run_in_job(system, f).map(|(s, extra)| format!("{s}{extra}"))
-}
-
-/// `rclactgrp NAME|*ELIGIBLE`.
-fn rclactgrp(system: &mut System, args: &[&str]) -> Result<String, String> {
-    let name = args
-        .first()
-        .map(|s| s.to_ascii_uppercase())
-        .ok_or("rclactgrp NAME|*ELIGIBLE")?;
-    with_job(system, |j| {
-        if name == "*ELIGIBLE" {
-            j.rclactgrp_eligible();
-            "Eligible activation groups reclaimed.\n".to_string()
-        } else {
-            match j.rclactgrp(&name) {
-                Ok(()) => format!("Activation group {name} reclaimed.\n"),
-                Err(e) => format!("{e}\n"),
-            }
-        }
-    })
-}
-
-/// `dspmsgq [*PGM|*EXT|QSYSOPR]`.
-fn dspmsgq(system: &mut System, args: &[&str]) -> Result<String, String> {
-    let which = args
-        .first()
-        .map_or_else(|| "*EXT".to_string(), |s| s.to_ascii_uppercase());
-    let q = match which.as_str() {
-        "*PGM" | "*SAME" => QueueRef::Same,
-        "QSYSOPR" | "*SYSOPR" => QueueRef::SysOpr,
-        _ => QueueRef::Ext,
-    };
-    with_job(system, |j| j.msgq_text(q))
-}
-
-/// `rpy KEY REPLY`: answer an inquiry on the external queue, or queue
-/// the reply for the next one.
-fn rpy(system: &mut System, args: &[&str]) -> Result<String, String> {
-    let (key, reply) = match args {
-        [k, r] => (k.to_string(), r.to_ascii_uppercase()),
-        [r] => (String::new(), r.to_ascii_uppercase()),
-        _ => return Err("rpy [KEY] REPLY".into()),
-    };
-    with_job(system, |j| {
-        let k = u32::from_str_radix(&key, 16).ok();
-        if let Some(k) = k
-            && let Some(m) = j.ext_msgq.msgs.iter_mut().find(|m| m.key == k)
-        {
-            m.reply = Some(reply.clone());
-            return format!("Reply {reply} recorded for message {key}.\n");
-        }
-        j.inquiry_replies.push_back(reply.clone());
-        format!("Reply {reply} queued for the next inquiry.\n")
     })
 }
 
@@ -617,47 +411,3 @@ fn dspmsgd(system: &mut System, p: &Params) -> Result<String, String> {
     })
 }
 
-/// `strdbg LIB/PGM`.
-fn strdbg(system: &mut System, p: &Params) -> Result<String, String> {
-    let qual = p.pos_or(0, "PGM")?;
-    let (lib, name) = qual
-        .split_once('/')
-        .map_or(("*LIBL", qual.as_str()), |(l, n)| (l, n));
-    let (lib, name) = (lib.to_ascii_uppercase(), name.to_ascii_uppercase());
-    with_job(system, |j| match j.strdbg(&name, &lib) {
-        Ok(key) => format!("{key} is under debug; its next call runs the debug view.\n"),
-        Err(e) => format!("{e}\n"),
-    })
-}
-
-/// `addbkp N [PGM(LIB/PGM)]` and `rmvbkp N|*ALL [PGM(..)]`.
-fn addbkp(system: &mut System, p: &Params, add: bool) -> Result<String, String> {
-    let n = p.pos_or(0, "STMT")?;
-    let pgm = p.upper("PGM");
-    with_job(system, |j| {
-        let program = pgm.unwrap_or_else(|| {
-            j.debug
-                .as_ref()
-                .and_then(|d| d.programs.last().cloned())
-                .unwrap_or_default()
-        });
-        if program.is_empty() {
-            return "No program is under debug; strdbg first or give PGM().\n".into();
-        }
-        if add {
-            match n.parse::<u32>() {
-                Ok(stmt) => {
-                    j.addbkp(&program, stmt);
-                    format!("Breakpoint at {program} statement {stmt}.\n")
-                }
-                Err(_) => "addbkp N\n".into(),
-            }
-        } else {
-            let gone = match n.parse::<u32>() {
-                Ok(stmt) => j.rmvbkp(&program, Some(stmt)),
-                Err(_) => j.rmvbkp(&program, None),
-            };
-            format!("{gone} breakpoint(s) removed.\n")
-        }
-    })
-}

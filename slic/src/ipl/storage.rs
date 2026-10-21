@@ -117,8 +117,35 @@ pub struct Temp {
     pub qtemp: ObjectId,
 }
 
-fn config() -> StoreConfig {
+/// The store's tunables.
+pub fn config() -> StoreConfig {
     StoreConfig::default()
+}
+
+/// A new temporary ASP in memory with its root library QTEMP.
+pub fn fresh_temp() -> store::Result<Temp> {
+    let dev: Box<dyn BlockDev> = Box::new(Arc::new(MemBlockDev::new(TEMP_PAGES)));
+    let params = FormatParams {
+        asp_number: 0,
+        asp_uuid: random_bytes(),
+        unit_uuids: vec![random_bytes()],
+        unit_serials: Vec::new(),
+        wal_pages: 256,
+        now: now_unix(),
+    };
+    let mut store = Store::format(vec![dev], &params, config())?;
+    let qtemp = {
+        let mut t = store.begin()?;
+        let q = ops::bootstrap_root(
+            &mut t,
+            now_unix(),
+            "QS400",
+            Name::parse("QTEMP").expect("valid"),
+        )?;
+        t.commit()?;
+        q
+    };
+    Ok(Temp { store, qtemp })
 }
 
 fn random_bytes<const N: usize>() -> [u8; N] {
@@ -599,30 +626,7 @@ pub fn bootstrap(store: &mut Store, now: u64, system_name: &str) -> store::Resul
 /// The temporary ASP with QTEMP, fresh every IPL. `MIGRATE(phase5)`:
 /// one QTEMP per job.
 pub fn open_temp(system: &mut System) {
-    let dev: Box<dyn BlockDev> = Box::new(Arc::new(MemBlockDev::new(TEMP_PAGES)));
-    let params = FormatParams {
-        asp_number: 0,
-        asp_uuid: random_bytes(),
-        unit_uuids: vec![random_bytes()],
-        unit_serials: Vec::new(),
-        wal_pages: 256,
-        now: now_unix(),
-    };
-    let result = Store::format(vec![dev], &params, config()).and_then(|mut store| {
-        let qtemp = {
-            let mut t = store.begin()?;
-            let q = ops::bootstrap_root(
-                &mut t,
-                now_unix(),
-                "QS400",
-                Name::parse("QTEMP").expect("valid"),
-            )?;
-            t.commit()?;
-            q
-        };
-        Ok(Temp { store, qtemp })
-    });
-    match result {
+    match fresh_temp() {
         Ok(temp) => {
             system.out.serial(&format!(
                 "slic: QTEMP in ASP 0 ({} MiB)\n",

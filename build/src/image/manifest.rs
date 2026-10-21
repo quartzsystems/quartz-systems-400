@@ -90,6 +90,7 @@ pub fn manifest(ctx: &Ctx) -> Result<PathBuf> {
     }
     add("initramfs", &ctx.paths.initramfs())?;
     add("slic", &ctx.paths.slic())?;
+    add("qsjob", &ctx.paths.qsjob())?;
     let config = kernel::config_path(ctx);
     add("kernel-config", &config)?;
     ensure!(

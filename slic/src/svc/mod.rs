@@ -20,7 +20,7 @@ use crate::ipl::system::System;
 use crate::src;
 
 /// The prompt.
-pub const PROMPT: &str = "QS400-SVC> ";
+pub const PROMPT: &str = wm::ctl::PROMPT;
 
 const HELP: &str = "\
 help                 this list

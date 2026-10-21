@@ -83,6 +83,8 @@ pub const ASP_INITIALIZED: Src = src("C6001007", "ASP 1 initialized", Phase::Os)
 pub const RCLSTG_REQUIRED: Src = src("C6001008", "Reclaim storage required", Phase::Os);
 /// System values loaded.
 pub const SYSVALS_LOADED: Src = src("C6001010", "System values loaded", Phase::Os);
+/// The storage service process took over the store.
+pub const STG_STARTED: Src = src("C6001015", "Storage management service started", Phase::Os);
 /// Startup program skipped. MIGRATE(phase5): run QSTRUPPGM.
 pub const STRUP_SKIPPED: Src = src("C6001020", "Startup program skipped", Phase::Os);
 /// IPL complete.
@@ -159,6 +161,8 @@ pub const ASP_WRONG_RELEASE: Src = src(
     "Object store created by another release",
     Phase::Fatal,
 );
+/// The storage service process ended while the system ran.
+pub const STG_ENDED: Src = src("B1001060", "Storage management service ended", Phase::Fatal);
 /// Power down started.
 pub const PWRDWN_STARTED: Src = src("D1001000", "Power down started", Phase::PowerDown);
 /// Store checkpointed and closed.
@@ -188,6 +192,7 @@ pub const TABLE: &[Src] = &[
     ASP_INITIALIZED,
     RCLSTG_REQUIRED,
     SYSVALS_LOADED,
+    STG_STARTED,
     STRUP_SKIPPED,
     IPL_COMPLETE,
     INSTALL_STARTED,
@@ -211,6 +216,7 @@ pub const TABLE: &[Src] = &[
     ASP_NOT_FOUND,
     ASP_UNUSABLE,
     ASP_WRONG_RELEASE,
+    STG_ENDED,
     PWRDWN_STARTED,
     STORE_CLOSED,
     PWRDWN_COMPLETE,

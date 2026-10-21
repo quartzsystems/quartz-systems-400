@@ -101,6 +101,20 @@ impl SysVals {
         encode(&self.overrides)
     }
 
+    /// The values the system set for this IPL (`QABNORMSW`, `QIPLSTS`),
+    /// which are never saved, for another process to take over.
+    pub fn system_blob(&self) -> Vec<u8> {
+        encode(&self.system)
+    }
+
+    /// Take over the values another process set for this IPL.
+    pub fn set_system_blob(&mut self, blob: &[u8]) -> Result<(), SysValError> {
+        if !blob.is_empty() {
+            self.system = decode(blob, &self.catalog)?;
+        }
+        Ok(())
+    }
+
     /// The overrides of `IPL_NAMES` only.
     pub fn ipl_blob(&self) -> Vec<u8> {
         let subset: BTreeMap<String, Value> = self

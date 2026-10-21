@@ -42,6 +42,7 @@ pub mod param;
 pub mod picture;
 mod provider;
 mod usrspc;
+mod wire;
 
 pub use job::Civil;
 pub use provider::{

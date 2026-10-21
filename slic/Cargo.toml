@@ -26,10 +26,13 @@ qir = { path = "../qir", version = "0.1.0" }
 ile = { path = "../ile", version = "0.1.0" }
 mi = { path = "../mi", version = "0.1.0" }
 sysapi = { path = "../sysapi", version = "0.1.0" }
+ipc = { path = "../ipc", version = "0.1.0" }
+stg = { path = "../stg", version = "0.1.0" }
+wm = { path = "../wm", version = "0.1.0" }
 msgf = { path = "../msgf", version = "0.1.0" }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-rustix = { version = "1.1.5", features = ["fs", "mount", "net", "process", "system", "time"] }
+rustix = { version = "1.1.5", features = ["event", "fs", "mount", "net", "process", "system", "time"] }
 # Used only inside platform::sys for signal handling.
 libc = "0.2.190"
 

@@ -2,7 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The Phase 0 initramfs: `/init` (slic), mount points and a console node.
+//! The initramfs: `/init` (slic, which is also the storage service),
+//! `/qsjob` (the job process), mount points and a console node.
 
 use std::fs;
 use std::path::PathBuf;
@@ -23,6 +24,8 @@ pub fn initramfs(ctx: &Ctx) -> Result<PathBuf> {
         slic.display()
     );
     let init = fs::read(&slic).with_context(|| format!("cannot read {}", slic.display()))?;
+    let qsjob = ctx.paths.qsjob();
+    let job = fs::read(&qsjob).with_context(|| format!("cannot read {}", qsjob.display()))?;
 
     // The kernel does not auto-mount devtmpfs for an initramfs, so a static
     // console node lets it open the initial console before slic runs.
@@ -31,6 +34,7 @@ pub fn initramfs(ctx: &Ctx) -> Result<PathBuf> {
         Entry::chardev("dev/console", 5, 1),
         Entry::file("init", init),
         Entry::dir("proc"),
+        Entry::file("qsjob", job),
         Entry::dir("run"),
         Entry::dir("sys"),
     ];
