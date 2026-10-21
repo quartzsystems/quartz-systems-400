@@ -56,6 +56,7 @@ pub fn run() -> ! {
         "QSVCJOB" => crate::console::serve(ctl, &link, &start),
         "MONITOR" => crate::work::monitor::run(ctl, &link, &start),
         "BATCH" => crate::work::batch::run(ctl, &link, &start),
+        "INTER" => crate::work::inter::run(ctl, &link, &start),
         other => end(&mut ctl, &format!("no role {other}")),
     }
 }

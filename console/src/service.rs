@@ -17,8 +17,6 @@ use crate::render::Renderer;
 use crate::screen::{Attr, Screen};
 use crate::screens;
 
-/// Message shown when Enter is pressed on the sign-on display.
-pub const SIGN_ON_UNAVAILABLE: &str = "Sign-on not available in this release";
 /// Input-inhibited indicator, bottom left.
 pub const INHIBITED: &str = "X II";
 
@@ -67,6 +65,9 @@ pub enum Input {
     Enter(Vec<String>),
     /// A function key on any screen.
     Function(u8),
+    /// Enter on the sign-on display: user, password, program, menu,
+    /// current library.
+    SignOn(Vec<String>),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -243,7 +244,16 @@ impl Console {
                 false
             }
             Kind::SignOn => {
-                self.lock(SIGN_ON_UNAVAILABLE);
+                // slic signs on and shows the job's first screen, or this
+                // one again with the reason.
+                let fields = self
+                    .screen
+                    .fields
+                    .iter()
+                    .map(|f| self.screen.field_text(f))
+                    .collect();
+                self.send(Input::SignOn(fields));
+                self.lock("");
                 true
             }
             Kind::Src => false,
@@ -304,8 +314,10 @@ mod tests {
     }
 
     #[test]
-    fn sign_on_enter_locks_until_reset() {
+    fn sign_on_enter_sends_the_fields_and_locks() {
+        let (tx, rx) = std::sync::mpsc::channel();
         let mut c = console();
+        c.out = Some(tx);
         c.handle(Command::ShowSignOn {
             system: "QS400".into(),
             subsystem: "QINTER".into(),
@@ -314,13 +326,11 @@ mod tests {
         press(&mut c, 30); // a
         press(&mut c, 28); // Enter
         assert!(c.locked());
-        let dump = c.screen().dump();
-        assert!(
-            dump.lines()
-                .nth(22)
-                .unwrap()
-                .starts_with(SIGN_ON_UNAVAILABLE)
+        assert_eq!(
+            rx.try_recv().unwrap(),
+            Input::SignOn(vec!["a".into(), String::new(), String::new(), String::new(), String::new()])
         );
+        let dump = c.screen().dump();
         assert!(dump.lines().nth(23).unwrap().starts_with(INHIBITED));
         press(&mut c, 31); // s: ignored while locked
         assert_eq!(c.screen().field_text(&c.screen().fields[0]), "a");

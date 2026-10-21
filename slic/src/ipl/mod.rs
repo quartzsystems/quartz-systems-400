@@ -46,6 +46,10 @@ pub enum Event {
     Job(wm::ctl::FromJob),
     /// The service console job's channel closed.
     JobGone,
+    /// A message from the job signed on at the console display.
+    ConsoleJob(wm::ctl::FromJob),
+    /// That job's channel closed.
+    ConsoleGone,
     /// Something from the local console's keyboard.
     Console(::console::Input),
 }
@@ -299,11 +303,7 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
     system.emit(&src::STRUP_SKIPPED);
     lic::complete(system);
     system.emit(&src::IPL_COMPLETE);
-    system.show(display::Command::ShowSignOn {
-        system: system.system_name(),
-        subsystem: "QINTER".to_string(),
-        display: "QSCONSOLE".to_string(),
-    });
+    procs::console::sign_on(system, "");
     if system.boot.svc {
         if system.procs.stg.is_some()
             && let Err(e) = procs::svcjob::start(system, tx.clone())
@@ -363,7 +363,7 @@ fn job_message(system: &mut System, m: wm::ctl::FromJob) {
                 .out
                 .serial(&format!("slic: QSVCJOB ending: {reason}\n"));
         }
-        FromJob::Ready { .. } => {}
+        FromJob::Ready { .. } | FromJob::Show { .. } => {}
     }
 }
 
@@ -379,6 +379,9 @@ fn reaped(system: &mut System, pids: &[u32], tx: &mpsc::Sender<Event>) {
         {
             system.procs.stg = None;
             system.fatal(&src::STG_ENDED);
+        }
+        if system.procs.console.as_ref().is_some_and(|j| j.pid == pid) {
+            procs::console::gone(system);
         }
         if system.procs.svcjob.as_ref().is_some_and(|j| j.pid == pid) {
             system.procs.svcjob = None;
@@ -422,9 +425,9 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
                     system.out.serial(&format!("{msg}\n"));
                 }
             }
-            Ok(Event::Console(input)) => {
-                system.out.serial(&format!("slic: console {input:?}\n"));
-            }
+            Ok(Event::Console(input)) => console_input(system, input, tx),
+            Ok(Event::ConsoleJob(m)) => procs::console::from_job(system, m),
+            Ok(Event::ConsoleGone) => procs::console::gone(system),
             Err(_) => park(),
         }
     }
@@ -462,5 +465,21 @@ fn install_panic_hook() {
 pub fn park() -> ! {
     loop {
         thread::sleep(Duration::from_secs(3600));
+    }
+}
+
+/// Input at the console display: to the signed-on job, or a sign-on.
+fn console_input(system: &mut System, input: ::console::Input, tx: &mpsc::Sender<Event>) {
+    use ::console::Input;
+    match (system.procs.console.as_mut(), input) {
+        (Some(j), Input::Enter(fields)) => j.input(0, fields),
+        (Some(j), Input::Function(n)) => j.input(n, Vec::new()),
+        (None, Input::SignOn(fields)) if system.procs.stg.is_some() => {
+            procs::console::sign_on_entered(system, &fields, tx.clone());
+        }
+        (None, Input::SignOn(_)) => {
+            procs::console::sign_on(system, "Sign-on is not available until the IPL completes.");
+        }
+        (_, other) => system.out.serial(&format!("slic: console {other:?}\n")),
     }
 }

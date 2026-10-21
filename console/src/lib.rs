@@ -26,7 +26,7 @@ mod render;
 mod service;
 
 #[cfg(target_os = "linux")]
-pub use service::{Command, Console, INHIBITED, Input, SIGN_ON_UNAVAILABLE};
+pub use service::{Command, Console, INHIBITED, Input};
 
 pub use keyboard::map::Key;
 pub use screen::{Attr, COLS, Cell, Color, Field, ROWS, Screen};

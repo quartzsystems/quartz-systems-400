@@ -26,7 +26,7 @@ pub fn session(job: &mut Job, stop: &Stop, ctl: &mut Chan, inbox: &Receiver<ToJo
         let line = match inbox.recv() {
             Ok(ToJob::Line { text }) => text,
             Ok(ToJob::End { .. }) | Err(_) => std::process::exit(0),
-            Ok(ToJob::Start { .. }) => continue,
+            Ok(ToJob::Start { .. } | ToJob::Input { .. }) => continue,
         };
         let words: Vec<&str> = line.split_whitespace().collect();
         match words.as_slice() {

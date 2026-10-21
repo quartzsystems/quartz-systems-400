@@ -360,3 +360,60 @@ impl Suite {
         Ok("monitor started, autostart job routed and delayed, ENDSBS *IMMED ended both".into())
     }
 }
+
+impl Suite {
+    /// Step 24: sign on at the console: an interactive job routed
+    /// through the controlling subsystem to `QCMD`'s Command Entry runs a
+    /// command typed on its line; `SIGNOFF` brings the sign-on back.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn console_sign_on(&self, s: &mut Session) -> Result<String, String> {
+        let screen_has = |s: &mut Session, want: &str| -> Result<String, String> {
+            let mut last = String::new();
+            for _ in 0..40 {
+                last = s.command("screen", CMD)?;
+                if last.contains(want) {
+                    return Ok(last);
+                }
+                std::thread::sleep(Duration::from_millis(250));
+            }
+            Err(format!("the console never showed {want:?}:\n{last}"))
+        };
+        screen_has(s, "Sign On")?;
+        s.command("type QSECOFR", CMD)?;
+        s.command("key enter", CMD)?;
+        screen_has(s, "Command Entry")?;
+        s.command("type wrkactjob", CMD)?;
+        s.command("key enter", CMD)?;
+        // The history line, not the input line ("===> wrkactjob").
+        let shown = screen_has(s, "  > wrkactjob")?;
+        if !shown.contains("QSCONSOLE") {
+            return Err(format!(
+                "the job's own command shows no QSCONSOLE:\n{shown}"
+            ));
+        }
+        let active = s.command("wrkactjob", CMD)?;
+        let row = active
+            .lines()
+            .find(|l| l.starts_with("QSCONSOLE"))
+            .ok_or_else(|| format!("no QSCONSOLE job:\n{active}"))?
+            .to_string();
+        if !row.contains("QSECOFR") || !row.contains("INT") {
+            return Err(format!(
+                "the console job is not QSECOFR's interactive job: {row}"
+            ));
+        }
+        s.command("type signoff", CMD)?;
+        s.command("key enter", CMD)?;
+        screen_has(s, "Sign On")?;
+        let log = s.command("dsplog JOB(QSCONSOLE)", CMD)?;
+        if !log.contains("CPF1124") || !log.contains("CPF1164") {
+            return Err(format!(
+                "the console job's start and end are not logged:\n{log}"
+            ));
+        }
+        Ok(format!(
+            "signed on, Command Entry ran wrkactjob, signed off: {}",
+            row.trim()
+        ))
+    }
+}

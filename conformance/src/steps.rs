@@ -442,6 +442,7 @@ impl Suite {
         reports.push(self.step(&mut s, "21 history log", Self::history_log)?);
         reports.push(self.step(&mut s, "22 reply list", Self::reply_list)?);
         reports.push(self.step(&mut s, "23 subsystems", Self::subsystems)?);
+        reports.push(self.step(&mut s, "24 console sign-on", Self::console_sign_on)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);
@@ -669,7 +670,7 @@ pub fn expected_sign_on_rows() -> Vec<String> {
     put(2, 48, "System  . . . . . :");
     put(2, 68, "QS400");
     put(3, 48, "Subsystem . . . . :");
-    put(3, 68, "QINTER");
+    put(3, 68, "QBASE");
     put(4, 48, "Display . . . . . :");
     put(4, 68, "QSCONSOLE");
     put(6, 17, "User  . . . . . . . . . . . . . .");

@@ -76,12 +76,21 @@ pub enum ToJob {
         /// `*IMMED`.
         immediate: bool,
     },
+    /// The job's display answered: Enter (key 0) or a function key,
+    /// and every input field.
+    Input {
+        /// 0 for Enter, else the function key number.
+        key: u8,
+        /// The fields in order.
+        fields: Vec<String>,
+    },
 }
 
 wire_enum!(ToJob {
     0 => Start { start },
     1 => Line { text },
     2 => End { immediate },
+    3 => Input { key, fields },
 });
 
 /// Job to parent.
@@ -112,6 +121,11 @@ pub enum FromJob {
         /// Why, for the log.
         reason: String,
     },
+    /// Show a panel on the job's display.
+    Show {
+        /// The panel.
+        panel: Panel,
+    },
 }
 
 wire_enum!(FromJob {
@@ -119,6 +133,7 @@ wire_enum!(FromJob {
     1 => Output { text },
     2 => Done { prompt, srcs, sysvals },
     3 => Ending { reason },
+    4 => Show { panel },
 });
 
 /// The service console's prompt.
@@ -143,3 +158,65 @@ pub const JOB_COMMANDS: &[&str] = &[
     "strsbs",
     "dlyjob",
 ];
+
+/// A display panel: text and input fields placed by row and column
+/// (1-based), and the message line. `MIGRATE(phase8)`: display files
+/// build these.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Panel {
+    /// Text: row, column, attribute (0 green, 1 white, 2 blue, 3 red),
+    /// the text.
+    pub texts: Vec<(u8, u8, u8, String)>,
+    /// Input fields: row, column, length, hidden, initial value.
+    pub fields: Vec<(u8, u8, u16, bool, String)>,
+    /// The message line.
+    pub message: String,
+    /// The message is an error.
+    pub error: bool,
+}
+
+wire_struct!(Panel {
+    texts,
+    fields,
+    message,
+    error
+});
+
+impl Panel {
+    /// Put text.
+    pub fn text(&mut self, row: u8, col: u8, attr: u8, s: impl Into<String>) {
+        self.texts.push((row, col, attr, s.into()));
+    }
+
+    /// Put an input field.
+    pub fn field(&mut self, row: u8, col: u8, len: u16, value: impl Into<String>) {
+        self.fields.push((row, col, len, false, value.into()));
+    }
+
+    /// The panel as 24 lines of 80, for tests and dumps.
+    #[must_use]
+    pub fn lines(&self) -> Vec<String> {
+        let mut grid = vec![vec![' '; 80]; 24];
+        let mut put = |row: u8, col: u8, s: &str| {
+            let r = usize::from(row.max(1) - 1).min(23);
+            for (i, ch) in s.chars().enumerate() {
+                let c = usize::from(col.max(1) - 1) + i;
+                if c < 80 {
+                    grid[r][c] = ch;
+                }
+            }
+        };
+        for (r, c, _, s) in &self.texts {
+            put(*r, *c, s);
+        }
+        for (r, c, _, hidden, v) in &self.fields {
+            if !hidden {
+                put(*r, *c, v);
+            }
+        }
+        if !self.message.is_empty() {
+            put(23, 1, &self.message);
+        }
+        grid.into_iter().map(|l| l.into_iter().collect()).collect()
+    }
+}

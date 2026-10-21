@@ -105,13 +105,32 @@ pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
                 });
                 std::process::exit(0);
             }
-            Ok(ToJob::Start { .. }) => {}
+            Ok(ToJob::Start { .. } | ToJob::Input { .. }) => {}
             Err(()) => std::process::exit(0),
         }
     }
 }
 
 impl Console {
+    /// Show a panel on the job's display.
+    pub fn show(&mut self, panel: wm::ctl::Panel) {
+        let _ = self.ctl.send(&FromJob::Show { panel });
+    }
+
+    /// Wait for the display to answer: the key (0 for Enter) and the
+    /// fields. Breaks are taken meanwhile; `None` when the job is to
+    /// end.
+    pub fn wait_input(&mut self) -> Option<(u8, Vec<String>)> {
+        loop {
+            match self.inbox.recv_timeout(BREAK_POLL) {
+                Ok(ToJob::Input { key, fields }) => return Some((key, fields)),
+                Ok(ToJob::End { .. }) | Err(RecvTimeoutError::Disconnected) => return None,
+                Ok(_) => {}
+                Err(RecvTimeoutError::Timeout) => self.breaks(),
+            }
+        }
+    }
+
     /// A job's runtime over `link`, its parent on `ctl`.
     pub fn new(ctl: Chan, link: &Shared, start: &Start) -> Self {
         let inbox = inbox(&ctl);
