@@ -99,6 +99,8 @@ pub struct System {
     pub end_requests: std::collections::BTreeMap<u32, bool>,
     /// The active jobs (storage service).
     pub jobs: wm::table::JobTable,
+    /// Every spooled file (storage service).
+    pub spool: crate::stgsvc::spool::Spool,
     /// The storage service and the service console job, once started.
     pub procs: crate::procs::Procs,
     /// The event channel.
@@ -134,6 +136,7 @@ impl System {
             lent: std::rc::Rc::new(std::cell::RefCell::new(None)),
             procs: crate::procs::Procs::default(),
             jobs: wm::table::JobTable::default(),
+            spool: crate::stgsvc::spool::Spool::default(),
             queued: std::collections::BTreeMap::new(),
             pending: std::collections::BTreeMap::new(),
             jobq_attach: std::collections::BTreeMap::new(),

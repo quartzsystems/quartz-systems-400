@@ -17,6 +17,7 @@ use sysapi::{
 use wm::job::JobAttrs;
 use wm::obj::jobq::{QJob, SbmJob};
 use wm::obj::msgq::{MsgKind, QMsg};
+use wm::obj::splf::SplfAttrs;
 use wm::sbs::{PoolInfo, SbsInfo, SbsState};
 use wm::table::JobInfo;
 
@@ -232,4 +233,14 @@ ipc::rpc! {
     /// The job scheduler's tick: submit the schedule entries that are
     /// due; what was submitted.
     111 => fn scd_tick / ScdTick () -> Vec<String>;
+    /// Entries the job logged since the last call, for the service's
+    /// copy of its job log.
+    112 => fn joblog_put / JoblogPut (entries: Vec<wm::joblog::Entry>) -> ();
+    /// Open a spooled file for a printer file: its spool identifier.
+    113 => fn splf_open / SplfOpen (attrs: SplfAttrs) -> Result<u32, String>;
+    /// Append SCS data to an open spooled file, with its page and
+    /// record counts so far.
+    114 => fn splf_put / SplfPut (id: u32, data: Vec<u8>, pages: u32, records: u32) -> Result<(), String>;
+    /// Close a spooled file, held when the printer file says `HOLD(*YES)`.
+    115 => fn splf_close / SplfClose (id: u32, hold: bool) -> Result<(), String>;
 }

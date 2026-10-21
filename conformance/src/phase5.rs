@@ -609,6 +609,92 @@ impl Suite {
     }
 }
 
+impl Suite {
+    /// Step 27: output queues and spooled files: the shipped queues; a
+    /// batch job's log spooled as `QPJOBLOG` at its end, displayed, held,
+    /// released, moved, copied to a file with FCFC controls and deleted.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn spooled_files(&self, s: &mut Session) -> Result<String, String> {
+        let queues = s.command("wrkoutq", CMD)?;
+        for q in ["QPRINT", "QEZJOBLOG", "QEZDEBUG"] {
+            if !queues.contains(q) {
+                return Err(format!("{q} not shipped:
+{queues}"));
+            }
+        }
+        s.command("crtoutq QGPL/WMOUTQ SEQ(*FIFO) TEXT('Harness queue')", CMD)?;
+        let desc = s.command("wrkoutqd QGPL/WMOUTQ", CMD)?;
+        if !desc.contains("Harness queue") || !desc.contains("*FIFO") {
+            return Err(format!("wrkoutqd:
+{desc}"));
+        }
+        s.command("strsbs QSYS/QBATCH", CMD)?;
+        let out = s.command(
+            "sbmjob CMD('wrkactjob') JOB(WMLOG) JOBQ(QGPL/QBATCH) LOG(4 00 *SECLVL) MSGQ(QUSRSYS/QSECOFR)",
+            CMD,
+        )?;
+        let job = submitted(&out)?;
+        let mut files = String::new();
+        for _ in 0..40 {
+            files = s.command(&format!("wrksplf SELECT(*ALL) JOB({job})"), CMD)?;
+            if files.contains("QPJOBLOG") && files.contains("RDY") {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(250));
+        }
+        s.command("endsbs QBATCH OPTION(*IMMED)", CMD)?;
+        let row = files
+            .lines()
+            .find(|l| l.contains("QPJOBLOG"))
+            .ok_or_else(|| format!("no QPJOBLOG for {job}:
+{files}"))?
+            .to_string();
+        if !row.contains("QEZJOBLOG") || !row.contains("RDY") {
+            return Err(format!("QPJOBLOG is not ready on QEZJOBLOG: {row}"));
+        }
+        let shown = s.command(&format!("dspsplf QPJOBLOG JOB({job})"), CMD)?;
+        for want in ["Display Job Log", "CPF1124", "wrkactjob", "CPF1164"] {
+            if !shown.contains(want) {
+                return Err(format!("the job log lacks {want}:
+{shown}"));
+            }
+        }
+        s.command(&format!("hldsplf QPJOBLOG JOB({job})"), CMD)?;
+        let held = s.command(&format!("wrksplf SELECT(*ALL) JOB({job})"), CMD)?;
+        s.command(&format!("rlssplf QPJOBLOG JOB({job})"), CMD)?;
+        s.command(&format!("chgsplfa QPJOBLOG JOB({job}) OUTQ(QGPL/WMOUTQ) COPIES(2)"), CMD)?;
+        let moved = s.command("wrkoutq QGPL/WMOUTQ", CMD)?;
+        if !held.contains("HLD") || !moved.contains("QPJOBLOG") || !moved.contains("RDY") {
+            return Err(format!("hold, release and move:
+{held}
+{moved}"));
+        }
+        s.command("crtpf QGPL/WMSPLF RCDLEN(133)", CMD)?;
+        let copied = s.command(
+            &format!("cpysplf QPJOBLOG QGPL/WMSPLF JOB({job}) CTLCHAR(*FCFC)"),
+            CMD,
+        )?;
+        let records = s.command("dsppfm QGPL/WMSPLF NBRRCDS(2)", CMD)?;
+        if !copied.contains("records copied") || !records.contains("1QS400") {
+            return Err(format!("cpysplf:
+{copied}
+{records}"));
+        }
+        let busy = s.command("dltoutq QGPL/WMOUTQ", CMD)?;
+        s.command(&format!("dltsplf QPJOBLOG JOB({job})"), CMD)?;
+        let gone = s.command("dltoutq QGPL/WMOUTQ", CMD)?;
+        s.command("dltf QGPL/WMSPLF", CMD)?;
+        if !busy.contains("CPF3417") || !gone.contains("deleted") {
+            return Err(format!("dltoutq:
+{busy}
+{gone}"));
+        }
+        Ok(format!(
+            "{job}'s log spooled to QEZJOBLOG, shown, held, released, moved, copied with FCFC, deleted"
+        ))
+    }
+}
+
 /// `YYYYMMDD` and `hhmmss` in UTC, `secs` seconds from now.
 fn utc_in(secs: u64) -> (String, String) {
     let unix = std::time::SystemTime::now()

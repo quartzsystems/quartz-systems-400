@@ -387,6 +387,131 @@ what is due. An entry due before the current IPL started was missed;
 `*SBMRLS` submits it, `*SBMHLD` submits it held, `*NOSBM` moves on to
 its next date. Each submission is logged in QHST as `CPI1E63`.
 
+### `OutputQueue` (256 bytes)
+
+The payload of an `*OUTQ`. `Count` spool identifiers follow, in queue
+order; `SEQ(*JOBNBR)` keeps them sorted by job number.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | Magic | `QSWMOUTQ` in ASCII |
+| 8 | 2 | Version | 1 |
+| 10 | 1 | Held | `HLDOUTQ` |
+| 11 | 1 | Seq | 0 `*FIFO`, 1 `*JOBNBR` |
+| 12 | 4 | Count | spool identifiers that follow, `u32` each |
+| 16 | 4 | MaxPages | 0 `*NONE` |
+| 20 | 2 | AutoStrWtr | 0 `*NONE` |
+| 22 | 1 | DspDta | 0 `*NO`, 1 `*YES`, 2 `*OWNER` |
+| 23 | 1 | OprCtl |  |
+| 24 | 10 | AutChk |  |
+| 34 | 10 | Writer | the writer started to it |
+| 44 | 1 | CnnType | 0 `*IP`; `MIGRATE(phase10)` |
+| 45 | 3 | Reserved | zero |
+| 48 | 50 | Text |  |
+| 98 | 30 | Reserved2 | zero |
+| 128 | 64 | RmtSys | `MIGRATE(phase10)` |
+| 192 | 64 | RmtPrtQ | `MIGRATE(phase10)` |
+
+### `SpooledFile` (512 bytes)
+
+The first 512 bytes of a `*SPLF` object's space in `QSPL`; the SCS
+data follows at offset 512 and grows in place, the space doubling as
+needed.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | Magic | `QSWMSPLF` in ASCII |
+| 8 | 2 | Version | 1 |
+| 10 | 1 | Status | 0 `RDY`, 1 `HLD`, 2 `SAV`, 3 `WTR`, 4 `OPN`, 5 `CLO`, 6 `PND`, 7 `DFR`, 8 `MSGW` |
+| 11 | 1 | Schedule | 0 `*IMMED`, 1 `*FILEEND`, 2 `*JOBEND` |
+| 12 | 4 | Id | spool identifier; the object is `QSPL/SPnnnnnnnn` |
+| 16 | 4 | Number | file number in the job |
+| 20 | 4 | JobNumber |  |
+| 24 | 4 | Pages |  |
+| 28 | 4 | Records |  |
+| 32 | 8 | DataLen | bytes of SCS data from offset 512 |
+| 40 | 8 | Created | microseconds since the epoch |
+| 48 | 4 | Expires | `YYYYMMDD`; 0 `*NONE` |
+| 52 | 4 | LastPage |  |
+| 56 | 2 | Copies |  |
+| 58 | 1 | OutPty |  |
+| 59 | 1 | Save |  |
+| 60 | 2 | PageLen |  |
+| 62 | 2 | PageWidth |  |
+| 64 | 1 | Lpi |  |
+| 65 | 1 | Cpi |  |
+| 66 | 2 | Ovrflw |  |
+| 68 | 1 | Drawer |  |
+| 69 | 1 | Duplex | 0 `*NO`, 1 `*YES`, 2 `*TUMBLE` |
+| 70 | 1 | Align |  |
+| 71 | 1 | PrtQlty | 0 `*STD`, 1 `*DRAFT`, 2 `*NLQ`, 3 `*DEVD` |
+| 72 | 2 | CopiesLeft |  |
+| 74 | 1 | HeldFrom | the status `RLSSPLF` restores |
+| 75 | 1 | Reserved | zero |
+| 76 | 10 | Name |  |
+| 86 | 10 | JobName |  |
+| 96 | 10 | JobUser |  |
+| 106 | 10 | UsrDta |  |
+| 116 | 10 | FormType |  |
+| 126 | 10 | OutqName |  |
+| 136 | 10 | OutqLib |  |
+| 146 | 10 | DevType | `*SCS` |
+| 156 | 10 | Font |  |
+| 166 | 10 | PrtfName |  |
+| 176 | 10 | PrtfLib |  |
+| 186 | 10 | Writer |  |
+| 196 | 255 | UsrDfnDta |  |
+| 451 | 61 | Reserved2 | zero |
+
+### `PrinterFile` (256 bytes)
+
+The payload of a `*FILE` whose attribute is `PRTF`. The compiled DDS
+formats follow (`FmtLen` bytes, the `spool` crate's encoding); none for
+a program-described file. The attribute area keeps no database magic,
+so database scans pass printer files by.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | Magic | `QSWMPRTF` in ASCII |
+| 8 | 2 | Version | 1 |
+| 10 | 2 | PageLen |  |
+| 12 | 2 | PageWidth |  |
+| 14 | 1 | Lpi |  |
+| 15 | 1 | Cpi |  |
+| 16 | 2 | Ovrflw |  |
+| 18 | 1 | Fold |  |
+| 19 | 1 | RplUnprt |  |
+| 20 | 1 | RplChar |  |
+| 21 | 1 | Align |  |
+| 22 | 1 | PrtQlty | 0 `*STD`, 1 `*DRAFT`, 2 `*NLQ`, 3 `*DEVD` |
+| 23 | 1 | Hold |  |
+| 24 | 1 | Save |  |
+| 25 | 1 | OutPty | 0 `*JOB` |
+| 26 | 2 | Copies |  |
+| 28 | 1 | Schedule | 0 `*IMMED`, 1 `*FILEEND`, 2 `*JOBEND` |
+| 29 | 1 | CtlChar | 0 `*NONE`, 1 `*FCFC` |
+| 30 | 2 | FileSep |  |
+| 32 | 4 | MaxRcds | 0 `*NOMAX` |
+| 36 | 1 | Drawer |  |
+| 37 | 1 | Duplex |  |
+| 38 | 2 | PagRtt | degrees; 0xFFFF `*DEVD` |
+| 40 | 1 | Share |  |
+| 41 | 1 | LvlChk |  |
+| 42 | 2 | Reserved | zero |
+| 44 | 10 | FormType |  |
+| 54 | 10 | OutqName | `*JOB` with a blank library |
+| 64 | 10 | OutqLib |  |
+| 74 | 10 | Dev |  |
+| 84 | 10 | UsrDta |  |
+| 94 | 10 | SplfName |  |
+| 104 | 10 | Font |  |
+| 114 | 10 | DevType |  |
+| 124 | 10 | ChrId |  |
+| 134 | 50 | Text |  |
+| 184 | 30 | PrtTxt |  |
+| 214 | 38 | Reserved2 | zero |
+| 252 | 4 | FmtLen | bytes of compiled DDS formats that follow |
+
 ### Shipped objects
 
 | Object | Notes |
@@ -404,3 +529,59 @@ its next date. Each submission is logged in QHST as `CPI1E63`.
 | `QSYS/QCTL *CLS` | `RUNPTY(10) TIMESLICE(2000) DFTWAIT(30)` |
 | `QSYS/QSPL *CLS` | `RUNPTY(15) TIMESLICE(3000) DFTWAIT(120)` |
 | `QSYS/QSYSCLS20`, `25`, `50 *CLS` | system jobs at those priorities |
+
+## 3. Spooling
+
+A spooled file is a `*SPLF` object in `QSPL` named `SPnnnnnnnn` after
+its spool identifier: the `SpooledFile` attributes, then SCS data. Its
+output queue lists it by identifier. The storage service indexes every
+spooled file at start; files a lost job left `OPN` (or a writer left
+`WTR`) become `RDY`.
+
+A program writes through a printer file (`*FILE PRTF`). The job runs
+the line printer itself (the `spool` crate) and sends the SCS to the
+service in chunks, so a report costs a few requests, not one a line.
+The file opens `OPN`; at close it is `RDY`, `HLD` for `HOLD(*YES)`, or
+`CLO` until the job ends for `SCHEDULE(*JOBEND)`.
+
+The output queue of a new file: the printer file's `OUTQ`, else the
+job's, else `QGPL/QPRINT` (`MIGRATE(phase10)`: the printer device's).
+
+The job log: the job keeps the service's copy of its log current after
+every request, so a job that vanishes still has one. At the end the
+service prints the copy as `LOG` keeps it into `QPJOBLOG`
+(`OUTQ(QUSRSYS/QEZJOBLOG)`): `*NOLIST` prints only after an abnormal
+end, `LOGOUTPUT(*PND)` (or `QLOGOUTPUT`) prints nothing.
+
+### The SCS subset
+
+| Bytes | Name | What it does |
+|---|---|---|
+| `0C` | FF | line 1 of the next page |
+| `0D` | CR | column 1, same line |
+| `15` | NL | column 1 of the next line |
+| `16` | BS | back one column |
+| `1E` | IRS | as NL |
+| `25` | LF | the next line, same column |
+| `2F` | BEL | alert; nothing printed |
+| `34 C0 n` | PP AHPP | to column `n` |
+| `34 C8 n` | PP RHPP | right `n` columns |
+| `34 4C n` | PP AVPP | to line `n`; the next page when `n` is above the line |
+| `34 C4 n` | PP RVPP | down `n` lines |
+| `35 n data` | TRN | `n` bytes printed as they are |
+| `2B C1 02 w` | SHF | maximum presentation position `w` |
+| `2B C2 02 l` | SVF | maximum presentation line `l` |
+| `2B C6 02 d` | SLD | line density, `d`/72 inch |
+| `2B D1 06 01 g g c c` | SCG | graphic character set `g`, code page `c` (697, 37) |
+| `2B D2 04 29 00 n` | SCD | `n` characters per inch |
+
+Other `2B` commands are skipped by their length byte, which counts
+itself and the parameters. Bytes from `40` up are CP037 graphics; the
+printer sends control bytes in a record's text as blanks. When several
+characters land in one position the first non-blank one stays.
+
+`CTLCHAR(*FCFC)`: blank, `0`, `-` space one, two, three lines before;
+`+` overprints; `1` skips to line 1; `2`-`9`, `A`, `B` skip to lines 2
+to 11; `C` skips to the overflow line. `CPYSPLF CTLCHAR(*PRTCTL)` puts
+the line skipped to (three digits, blank for none) and the lines spaced
+(one digit) before each line.

@@ -175,6 +175,27 @@ impl Console {
 
     /// One line; its output.
     pub fn line(&mut self, text: &str) -> String {
+        let out = self.run_line(text);
+        self.sync_log();
+        out
+    }
+
+    /// Bring the storage service's copy of the job log up to date; it is
+    /// the copy that is spooled when the job ends, however it ends.
+    pub fn sync_log(&mut self) {
+        let Some(j) = self.job.as_mut() else {
+            return;
+        };
+        if j.log_outbox.is_empty() {
+            return;
+        }
+        let entries = std::mem::take(&mut j.log_outbox);
+        self.link
+            .borrow_mut()
+            .with(|l| stg::Client::joblog_put(l, entries));
+    }
+
+    fn run_line(&mut self, text: &str) -> String {
         let word = text.split_whitespace().next().unwrap_or("");
         if self.prompt == PROMPT && JOB_COMMANDS.contains(&word) {
             return jobcmd::command(self, word, text);

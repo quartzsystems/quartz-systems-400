@@ -10,11 +10,14 @@ pub mod jobd;
 pub mod jobq;
 pub mod jobscd;
 pub mod msgq;
+pub mod outq;
 pub mod params;
+pub mod prtf;
 pub mod rpyl;
 pub mod sbsd;
 pub mod sbsdcmd;
 pub mod shipped;
+pub mod splf;
 
 use qsname::{LibSpec, Name};
 use store::obj::ops::{self, NameContext};
@@ -45,13 +48,26 @@ pub fn create(
     stamp: &Stamp,
     payload: &[u8],
 ) -> Result<ObjectId> {
+    create_attr(txn, library, (name, type_code, ""), text, stamp, payload)
+}
+
+/// [`create`] with an extended attribute (`PRTF` for a printer file):
+/// `(name, type, attribute)`.
+pub fn create_attr(
+    txn: &mut Txn<'_>,
+    library: ObjectId,
+    (name, type_code, attribute): (Name, u16, &str),
+    text: &str,
+    stamp: &Stamp,
+    payload: &[u8],
+) -> Result<ObjectId> {
     let id = ops::create(
         txn,
         &CreateParams {
             library,
             name,
             type_code,
-            attribute: String::new(),
+            attribute: attribute.into(),
             text: text.into(),
             owner: stamp.owner.clone(),
             system: stamp.system.clone(),

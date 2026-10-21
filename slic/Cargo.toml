@@ -29,6 +29,7 @@ sysapi = { path = "../sysapi", version = "0.1.0" }
 ipc = { path = "../ipc", version = "0.1.0" }
 stg = { path = "../stg", version = "0.1.0" }
 wm = { path = "../wm", version = "0.1.0" }
+spool = { path = "../spool", version = "0.1.0" }
 msgf = { path = "../msgf", version = "0.1.0" }
 
 [target.'cfg(target_os = "linux")'.dependencies]

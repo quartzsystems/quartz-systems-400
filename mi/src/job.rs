@@ -179,6 +179,9 @@ pub struct Job {
     pub joblog_full: bool,
     /// Entries `*PRTWRAP` pushed out, to print with the job log.
     pub joblog_wrapped: Vec<wm::joblog::Entry>,
+    /// Entries logged since the storage service's copy was last brought
+    /// up to date; the copy is what is spooled at the end.
+    pub log_outbox: Vec<wm::joblog::Entry>,
     /// Who answers an inquiry no queued reply answered: the job's
     /// `INQMSGRPY`. `None` takes the default reply.
     pub inquiry: Option<InquiryFn>,
@@ -222,6 +225,7 @@ impl Job {
             joblog: wm::joblog::JobLog::new(16, wm::joblog::Full::Wrap),
             joblog_full: false,
             joblog_wrapped: Vec::new(),
+            log_outbox: Vec::new(),
             inquiry: None,
             next_key: 1,
             env: Box::new(Env {
@@ -737,23 +741,32 @@ impl Job {
 
     /// Append to the job log, noting a full log.
     pub fn log_entry(&mut self, e: wm::joblog::Entry) {
-        match self.joblog.append(e) {
+        let r = self.joblog.append(e);
+        self.logged(r);
+    }
+
+    /// What an append did: the entry into the outbox, wrapped entries
+    /// kept, a full log noted.
+    fn logged(&mut self, r: wm::joblog::Appended) {
+        match r {
             wm::joblog::Appended::Logged => {}
             wm::joblog::Appended::Wrapped(gone) => self.joblog_wrapped.extend(gone),
-            wm::joblog::Appended::Full => self.joblog_full = true,
+            wm::joblog::Appended::Full => {
+                self.joblog_full = true;
+                return;
+            }
+        }
+        if let Some(e) = self.joblog.entries().last() {
+            self.log_outbox.push(e.clone());
         }
     }
 
     /// Log a request the job runs: a command or a call.
     pub fn log_request(&mut self, text: &str, from: (&str, &str)) {
-        match self
+        let r = self
             .joblog
-            .request(text, Self::log_now(), (from.0.into(), from.1.into()))
-        {
-            wm::joblog::Appended::Logged => {}
-            wm::joblog::Appended::Wrapped(gone) => self.joblog_wrapped.extend(gone),
-            wm::joblog::Appended::Full => self.joblog_full = true,
-        }
+            .request(text, Self::log_now(), (from.0.into(), from.1.into()));
+        self.logged(r);
     }
 
     /// Log a message the job sends to its own external queue from

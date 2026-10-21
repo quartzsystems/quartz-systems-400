@@ -10,12 +10,14 @@ pub mod chkpath;
 pub mod clrpfm;
 pub mod cpyf;
 pub mod impf;
+pub mod lines;
 pub mod rgzpfm;
 
 pub use chkpath::{PathReport, verify_all, verify_file};
 pub use clrpfm::clrpfm;
 pub use cpyf::{CpyfOpts, CpyfReport, FmtOpt, MbrOpt, Target, ToMember, cpyf};
 pub use impf::{DtaFmt, ImpfOpts, ImpfReport, RcdDlm, RmvBlank, cpyfrmimpf, cpytoimpf};
+pub use lines::put_lines;
 pub use rgzpfm::{KeyFile, RgzReport, rgzpfm};
 
 use std::ops::Bound;

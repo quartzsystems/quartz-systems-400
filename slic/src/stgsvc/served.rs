@@ -60,6 +60,12 @@ pub struct JobCtx {
     pub completion: String,
     /// The end code it reported; none means it vanished.
     pub end_code: Option<u16>,
+    /// The service's copy of its job log, kept current by the job.
+    pub joblog: wm::joblog::JobLog,
+    /// Entries the copy wrapped out, for `*PRTWRAP`.
+    pub joblog_wrapped: Vec<wm::joblog::Entry>,
+    /// Spooled files it has open.
+    pub splfs: Vec<u32>,
     objects: StoreObjects,
     spaces: StoreUserSpaces,
     msgs: StoreMsgs,
@@ -100,6 +106,9 @@ impl JobCtx {
             qtemp: None,
             completion: String::new(),
             end_code: None,
+            joblog: wm::joblog::JobLog::default(),
+            joblog_wrapped: Vec::new(),
+            splfs: Vec::new(),
             job,
         }
     }
@@ -167,6 +176,9 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
     super::hist::system_message(system, "CPF1124", &data, "04", who);
     let mut ctx = JobCtx::new(system, job);
     ctx.qtemp = Some(qtemp);
+    if let Some(a) = system.attrs.get(&ctx.job.number) {
+        ctx.joblog = wm::joblog::JobLog::new(a.jobmsgqmx, wm::joblog::Full::parse(&a.jobmsgqfl));
+    }
     if let Some(q) = queued {
         ctx.completion = q.msgq;
     }
@@ -178,21 +190,33 @@ pub fn vanished(system: &mut System, conn: Conn) {
     let Some(mut ctx) = conn.ctx else {
         return;
     };
-    end_job(system, &mut ctx);
+    end_job(system, &mut ctx, true);
 }
 
-/// End a job: its database use, its `QTEMP`, its table entry.
-fn end_job(system: &mut System, ctx: &mut JobCtx) {
+/// End a job: its database use, its spooled files and job log, its
+/// `QTEMP`, its table entry. `vanished` says what a job that reported
+/// no end code did: vanish (abnormal) or end with the system.
+fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
     end_db(system, ctx);
+    let abnormal = ctx.end_code.map_or(vanished, |c| c >= 20);
+    let code = ctx.end_code.unwrap_or(if vanished { 70 } else { 0 });
     let j = &ctx.job;
     let data = wm::joblog::ended_data(
         (&j.name, &j.user, j.number),
         crate::ipl::system::now_unix(),
         0,
-        0,
+        code,
     );
     let who = (j.name.clone(), j.user.clone(), j.number);
-    super::hist::system_message(system, "CPF1164", &data, "04", who);
+    super::hist::system_message(system, "CPF1164", &data, "04", who.clone());
+    for id in std::mem::take(&mut ctx.splfs) {
+        let _ = super::spool::close(system, id, false);
+    }
+    if ctx.end_code.is_none() {
+        super::joblog::ended_here(system, ctx, &data);
+    }
+    super::joblog::spool(system, ctx, abnormal);
+    super::spool::job_ended(system, &who);
     completion_message(system, ctx);
     if let Some(q) = ctx.qtemp.take() {
         super::jobs::drop_qtemp(system, ctx.job.number, q);
@@ -225,7 +249,7 @@ fn end_db(system: &mut System, ctx: &mut JobCtx) {
 fn close(system: &mut System, conns: &mut [Conn]) -> Result<String, String> {
     for c in conns.iter_mut() {
         if let Some(ctx) = c.ctx.as_mut() {
-            end_job(system, ctx);
+            end_job(system, ctx, false);
         }
     }
     let storage = system
@@ -448,6 +472,43 @@ impl Service for Served<'_> {
 
     fn scd_tick(&mut self) -> Vec<String> {
         super::jobscd::tick(self.system, self.ctx.job.number)
+    }
+
+    fn joblog_put(&mut self, entries: Vec<wm::joblog::Entry>) {
+        for e in entries {
+            if let wm::joblog::Appended::Wrapped(gone) = self.ctx.joblog.append(e) {
+                self.ctx.joblog_wrapped.extend(gone);
+            }
+        }
+    }
+
+    fn splf_open(&mut self, attrs: wm::obj::splf::SplfAttrs) -> Result<u32, String> {
+        let j = &self.ctx.job;
+        let attrs = wm::obj::splf::SplfAttrs {
+            job: (j.name.clone(), j.user.clone(), j.number),
+            ..attrs
+        };
+        self.own_libl();
+        let r = super::spool::create(self.system, attrs);
+        ile::set_libl(None);
+        let id = r?;
+        self.ctx.splfs.push(id);
+        Ok(id)
+    }
+
+    fn splf_put(&mut self, id: u32, data: Vec<u8>, pages: u32, records: u32) -> Result<(), String> {
+        if !self.ctx.splfs.contains(&id) {
+            return Err(format!("CPF3309 spooled file {id} is not open in this job"));
+        }
+        super::spool::append(self.system, id, &data, pages, records)
+    }
+
+    fn splf_close(&mut self, id: u32, hold: bool) -> Result<(), String> {
+        if !self.ctx.splfs.contains(&id) {
+            return Err(format!("CPF3309 spooled file {id} is not open in this job"));
+        }
+        self.ctx.splfs.retain(|x| *x != id);
+        super::spool::close(self.system, id, hold)
     }
 
     fn sbs_list(&mut self) -> Vec<wm::sbs::SbsInfo> {

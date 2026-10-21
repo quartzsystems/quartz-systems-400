@@ -14,6 +14,7 @@ use store::txn::Txn;
 use super::cls::Cls;
 use super::jobd::JobD;
 use super::msgq::MsgQ;
+use super::prtf::Prtf;
 use super::{Stamp, create, library};
 use crate::Result;
 
@@ -148,6 +149,24 @@ fn queues() -> Vec<(&'static str, &'static str, MsgQ)> {
     ]
 }
 
+/// The printer files in `QSYS`.
+fn printer_files() -> Vec<(&'static str, Prtf)> {
+    let f = |text: &str, outq: &str| Prtf {
+        text: text.into(),
+        outq: outq.into(),
+        ..Prtf::default()
+    };
+    vec![
+        ("QSYSPRT", f("System printer file", "*JOB")),
+        ("QPRINT", f("Program-described printer file", "*JOB")),
+        ("QPJOBLOG", f("Job log", "QUSRSYS/QEZJOBLOG")),
+        ("QPSRVDMP", f("Service dump", "QUSRSYS/QEZDEBUG")),
+        ("QPDSPJOB", f("Job information", "*JOB")),
+        ("QPDSPLOG", f("History log", "*JOB")),
+        ("QPDSPSBS", f("Subsystem information", "*JOB")),
+    ]
+}
+
 /// Whether `lib` holds `name` of a type.
 fn exists(txn: &mut Txn<'_>, lib: ObjectId, name: Name, type_code: u16) -> Result<bool> {
     Ok(Library::load(txn, lib)?
@@ -194,6 +213,29 @@ pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &Stamp) -> Result<usize
         if !exists(txn, l, n, types::JOBQ)? {
             let q = super::jobq::JobQ::new(text);
             create(txn, l, n, types::JOBQ, text, stamp, &q.encode())?;
+            made += 1;
+        }
+    }
+    for (lib, name, text) in [
+        ("QGPL", "QPRINT", "Default printer output queue"),
+        ("QGPL", "QPRINTS", "Special forms output queue"),
+        ("QGPL", "QPRINT2", "Second printer output queue"),
+        ("QUSRSYS", "QEZJOBLOG", "Job logs"),
+        ("QUSRSYS", "QEZDEBUG", "Service dumps and debug output"),
+    ] {
+        let l = library(txn, qsys, lib)?;
+        let n = Name::parse(name).expect("valid");
+        if !exists(txn, l, n, types::OUTQ)? {
+            let q = super::outq::OutQ::new(text);
+            create(txn, l, n, types::OUTQ, text, stamp, &q.encode())?;
+            made += 1;
+        }
+    }
+    for (name, f) in printer_files() {
+        let n = Name::parse(name).expect("valid");
+        if !exists(txn, qsys, n, types::FILE)? {
+            let id = (n, types::FILE, "PRTF");
+            super::create_attr(txn, qsys, id, &f.text, stamp, &f.encode())?;
             made += 1;
         }
     }

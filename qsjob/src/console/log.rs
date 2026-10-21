@@ -3,13 +3,13 @@
 // root directory of this project.
 
 //! The job log of the console job: the start and end messages, the
-//! log size from the job's attributes, `DSPJOBLOG`, and the printed log
-//! at the end.
+//! log size from the job's attributes and `DSPJOBLOG`. The storage
+//! service keeps a copy and spools it when the job ends.
 
 use qir::MsgType;
 use stg::Client;
 use wm::ctl::FromJob;
-use wm::joblog::{self, Full, Header, JobLog};
+use wm::joblog::{self, Full, JobLog};
 
 use super::Console;
 
@@ -41,14 +41,15 @@ impl Console {
         j.log_external("CPF1124", "QCPFMSG", &data, MsgType::Info);
     }
 
-    /// The job ends: `CPF1164`, then the printed log.
-    /// `TODO(phase5)`: spool it as `QPJOBLOG` to the job's `OUTQ`.
-    pub fn ended(&mut self, code: u16) -> Vec<String> {
+    /// The job ends: `CPF1164`, the log brought up to date in the
+    /// service, and the end code reported; the service spools the log.
+    pub fn ended(&mut self, code: u16) {
         let (name, user, number) = self.who();
         let j = self.job();
         let data = joblog::ended_data((&name, &user, number), now(), 0, code);
         j.log_external("CPF1164", "QCPFMSG", &data, MsgType::Comp);
-        self.printed(code != 0)
+        self.sync_log();
+        self.link.borrow_mut().with(|l| l.job_ending(code));
     }
 
     /// The job log full under `*NOWRAP`: `CPF2460`, and the job ends.
@@ -63,30 +64,6 @@ impl Console {
             reason: "CPF2460 the job message queue is full".into(),
         });
         std::process::exit(1)
-    }
-
-    /// The printed log as `LOG(level severity text)` keeps it; nothing
-    /// for `*NOLIST` unless the job ended abnormally.
-    pub(super) fn printed(&mut self, abnormal: bool) -> Vec<String> {
-        let a = self.link.borrow_mut().with(Client::rtvjoba);
-        if a.log_text == "*NOLIST" && !abnormal {
-            return Vec::new();
-        }
-        let seclvl = a.log_text != "*MSG";
-        let (name, user, number) = self.who();
-        let (jlib, jname) = a.jobd.split_once('/').unwrap_or(("", a.jobd.as_str()));
-        let (date, time) = joblog::stamp_of(now().saturating_mul(1_000_000));
-        let header = Header {
-            job: (name, user, number),
-            jobd: (jname.to_string(), jlib.to_string()),
-            system: "QS400".into(),
-            stamp: (date, time[..8].to_string()),
-        };
-        let j = self.job();
-        let mut all: Vec<&joblog::Entry> = j.joblog_wrapped.iter().collect();
-        all.extend(j.joblog.entries());
-        let kept = joblog::filter(&all, a.log_level, u16::from(a.log_sev));
-        joblog::print(&header, &kept, seclvl)
     }
 
     /// `DSPJOBLOG`: the log as it stands, kept by the job's `LOG`.
