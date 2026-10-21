@@ -437,7 +437,7 @@ out differently. Test: none.
 
 ## Conformance kit
 
-**Compared outputs.** `conformance/db/expected/` is empty until the kit
+**Compared outputs.** `tools/conformance/db/expected/` is empty until the kit
 has run on a machine; the comparer skips a missing file. Journal entries
 compare on the record entries (`R`) only, by type, object and count,
 since the machine's sequence numbers and its `J` entries are its own.
@@ -470,7 +470,7 @@ SQL executor and will be added with the conformance kit. Test: none.
 ## Editing
 
 Every item here is covered by the qdecimal oracle kit
-(`conformance/oracle/qdecimal`); the machine's `results.csv` settles it.
+(`tools/conformance/oracle/qdecimal`); the machine's `results.csv` settles it.
 
 **Leading zero before the point in edit codes.** Suppressed: `%EDITC` of
 0.05 with `J` gives `.05`, a zero balance `.00`.

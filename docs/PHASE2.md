@@ -196,7 +196,7 @@ and `build manifest` read the whole 4 GiB.
 A and B UKIs beside it as `QS400A.EFI` and `QS400B.EFI`, since the media
 UKI's command line is the D-IPL one. The installer follows the IBM
 sequence; its screens are `svctools::install`'s (golden files under
-`conformance/golden/install/`), the work is `slic/src/ipl/install.rs`.
+`tools/conformance/golden/install/`), the work is `lic/slic/src/ipl/install.rs`.
 
 **Licensed Internal Code.** On a D IPL, option 2 of the attended menu:
 `Install Licensed Internal Code` (1 install, 2 DST, 3 not available),
@@ -299,7 +299,7 @@ every four batches, deletes leftovers of an interrupted run first
 
 ## Crash tests
 
-Unit level (`store/tests`): the B+tree against `BTreeMap` with crashes
+Unit level (`storage/store/tests`): the B+tree against `BTreeMap` with crashes
 between operations; a torn page write before commit; a corrupted
 committed page naming page and owner; the allocator under random
 allocation with a torn write at every position of a checkpoint; a

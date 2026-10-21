@@ -13,12 +13,12 @@ program and power down; and the displays that show it all.
 |---|---|
 | `ipc` | process messages: the `Wire` codec, frames, the `rpc!` macro, Unix socket channels |
 | `stg` | the storage service protocol (`proto.rs`), a job's link, the runtime's sources answered remotely, the job's spool sink |
-| `slic/src/stgsvc` | the storage service: open and serve, per-job contexts, job numbers and `QTEMP`, message queues, `QHST`, subsystems, pools, job queues, the job schedule, spooled files, printer files, writers, the job log copy, statistics |
-| `slic/src/procs` | the processes `slic` starts: the storage service, the system jobs and the IPL's subsystems, `QSVCJOB`, the console's signed-on job |
+| `lic/slic/src/stgsvc` | the storage service: open and serve, per-job contexts, job numbers and `QTEMP`, message queues, `QHST`, subsystems, pools, job queues, the job schedule, spooled files, printer files, writers, the job log copy, statistics |
+| `lic/slic/src/procs` | the processes `slic` starts: the storage service, the system jobs and the IPL's subsystems, `QSVCJOB`, the console's signed-on job |
 | `wm` | work management's model: job identifiers, attributes, statuses, the job log, the active job table, pools, the job control channel, every work management object's payload, the shipped objects, the statistics parsers |
 | `qsjob` | the job process: the console runtime and its roles (monitor, batch, interactive, system, scheduler, writer) |
 | `spool` | SCS, the line printer, DDS printer formats, the text, FCFC, `*PRTCTL` and hex views, the PDF writer |
-| `dds/src/prtf` | the printer file compiler and the encoding of its formats |
+| `database/dds/src/prtf` | the printer file compiler and the encoding of its formats |
 | `conformance` | QEMU steps 16 to 36, the IR kit's printer cases |
 
 `WORKMGMT.md` describes the model, the layouts, spooling, the system
@@ -64,7 +64,7 @@ before it is taken.
 ## Tests
 
 - `cargo test -p wm -p spool -p dds -p db -p mi -p stg`: the payloads'
-  round trips and the spec tables (`wm/tests/spec.rs` against
+  round trips and the spec tables (`work/wm/tests/spec.rs` against
   `WORKMGMT.md`), the shipped objects in a store, the schedule's date
   arithmetic, SCS and the printer, DDS printer formats, the PDF
   writer's structure, the statistics parsers.

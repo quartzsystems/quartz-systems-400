@@ -58,7 +58,7 @@ used once, else normal.
 | D1001007 | power down | System jobs ended (Phase 5) |
 | D1001090 | power down | Power down complete |
 
-The table is [slic/src/src.rs](../slic/src/src.rs). Every transition prints
+The table is [lic/slic/src/src.rs](../lic/slic/src/src.rs). Every transition prints
 `SRC <code>  <text>` on serial and `/dev/console`, updates the SRC display,
 and is kept in an in-memory log (`srcs` on the service console). Fatal
 codes write a history record with outcome Failed and park; nothing reboots
@@ -128,7 +128,7 @@ sysfs `partition` index. Device names are never assumed.
 Two copies of one record at offsets 0 and 64 KiB. A write goes to the older
 or invalid copy with the next sequence number, then `fsync`; a read takes
 the newest copy whose CRC verifies. A torn write can only damage the stale
-copy; the unit test in [licpart/tests/torn.rs](../licpart/tests/torn.rs)
+copy; the unit test in [lic/licpart/tests/torn.rs](../lic/licpart/tests/torn.rs)
 cuts a write 100 bytes in and checks the previous record is served and the
 torn slot is reused next.
 
@@ -158,7 +158,7 @@ First boot: both copies invalid, `init` writes the defaults with
 
 ## System values
 
-[sysval/catalog.toml](../sysval/catalog.toml) has 155 entries, one per
+[lic/sysval/catalog.toml](../lic/sysval/catalog.toml) has 155 entries, one per
 IBM i name, each with type (`char`, `dec`, `list`), length or elements,
 Quartz default, allowed set or range, `restart_required`, `readonly`,
 Quartz-written text and group. It is compiled in with `include_str!`; a
@@ -184,7 +184,7 @@ the DMI product UUID (`CONFIG_DMIID`), falling back to the product and
 chassis serials. The harness passes a fixed `-uuid`, which yields
 `VM1K2JR`.
 
-Time zones: 28 `Qxxxx` descriptions in [sysval/src/tz/](../sysval/src/tz/)
+Time zones: 28 `Qxxxx` descriptions in [lic/sysval/src/tz/](../lic/sysval/src/tz/)
 with the US, EU, south-eastern Australian and New Zealand daylight rules
 coded from the calendar. No tz database is involved. Setting QTIMZON
 changes QTIME and QUTCOFFSET immediately.
@@ -193,7 +193,7 @@ changes QTIME and QUTCOFFSET immediately.
 
 ### Font
 
-[console/font/qs400-9x16.txt](../console/font/qs400-9x16.txt): 107 glyphs
+[lic/console/font/qs400-9x16.txt](../lic/console/font/qs400-9x16.txt): 107 glyphs
 drawn by Quartz as text art, 9×16 cells, two-pixel strokes, printable
 ASCII plus eleven box-drawing characters and the 5250 column separator
 (private use U+E000). `build.rs` compiles it to a table; a test requires

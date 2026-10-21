@@ -15,10 +15,10 @@ dependency is Cranelift, pinned at 0.136.0, which is itself Rust.
 | `codegen` | IR to x86_64 through Cranelift: the ABI, the runtime call table, lowering, relocations, statement maps, placing code (`ABI.md`) |
 | `ile` | `*MODULE`, `*PGM`, `*SRVPGM`, `*BNDDIR` payloads, the binder, binder language, signatures, displays, store operations (`ILE.md`) |
 | `mi` | the runtime: the job, the call stack, activation groups, fat pointers and spaces, heaps, user spaces, message queues, the exception model, file I/O, data areas and queues, the debugger, dumps |
-| `msgf` | `*MSGF` objects, `QCPFMSG`, `QCEEMSG` and `QSQLMSG` from `msgs/*.toml`, substitution (`MSGF.md`) |
+| `msgf` | `*MSGF` objects, `QCPFMSG`, `QCEEMSG` and `QSQLMSG` from `runtime/msgf/msgs/*.toml`, substitution (`MSGF.md`) |
 | `sysapi` | the system APIs as natives of `QSYS` and procedures of `QLEAWI`, with IBM's parameter layouts (`SYSAPI.md`) |
-| `slic/src/svc/ile` | the console: `qir asm`, `crtpgm`, `call`, displays, `strdbg`, over the store lent to the job |
-| `conformance/qir` | 67 IR programs with their expected outcomes, run in memory and over the console |
+| `lic/slic/src/svc/ile` | the console: `qir asm`, `crtpgm`, `call`, displays, `strdbg`, over the store lent to the job |
+| `tools/conformance/qir` | 67 IR programs with their expected outcomes, run in memory and over the console |
 
 The design decisions in force: scalar registers against storage places;
 exceptions percolate by return with a pending-flag poll after every
@@ -54,10 +54,10 @@ activation check and the argument vector.
   every exception path, the APIs' layouts, file I/O over an in-memory
   store, the debugger, retranslation, the stack budget.
 - `cargo test -p conformance --test qir_kit`: the IR kit in memory,
-  compared with `conformance/qir/expected/`.
+  compared with `tools/conformance/qir/expected/`.
 - `cargo run -p build -- test` (WSL): the QEMU suite, now with step 15,
   the IR kit assembled, bound and called through the service console.
-- The oracle kit under `conformance/oracle/ile/`: RPG and CL for the
+- The oracle kit under `tools/conformance/oracle/ile/`: RPG and CL for the
   real machine, one program per open question; the test compares the
   machine's outputs when they are present.
 

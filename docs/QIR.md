@@ -3,7 +3,7 @@
 The IR every compiled program is translated to. The `qir` crate
 implements this document: the types with their byte layouts, the
 module structure, the text form and the verifier. Code generation is
-`codegen/`, the runtime it calls is `mi/`. Sections marked *Phase 4,
+`runtime/codegen/`, the runtime it calls is `runtime/mi/`. Sections marked *Phase 4,
 pending* describe parts that are specified but not yet in the crate.
 
 ## 1. Design
@@ -398,7 +398,7 @@ and smallest values (`FF`/`00` for text), `*NULL` sixteen zero bytes,
 `u16` of zero, then the module as tagged fields in a fixed order
 (little-endian integers, `u32`-prefixed strings and byte arrays,
 `u32`-counted lists, `u8` presence flags and enumeration tags; the
-tag tables are in `qir/src/binary/`). Within V1R the format only
+tag tables are in `runtime/qir/src/binary/`). Within V1R the format only
 grows: a new instruction or type takes a new tag, a new field goes at
 the end of its record behind a version bump, and a reader accepts
 every version up to its own and refuses a later one.

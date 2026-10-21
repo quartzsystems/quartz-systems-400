@@ -3,7 +3,7 @@
 Format version 2 (version 1 stores are not opened; V1R0M0 test installs
 are reinstalled). This document is written before the code that
 implements each structure, and the code's constants are checked against
-the tables here by `store/tests/spec.rs`. Every table under a heading of
+the tables here by `storage/store/tests/spec.rs`. Every table under a heading of
 the form `### \`Name\` (N bytes)` is parsed by that test: the heading name
 must match a `Layout` in the code, and the `Offset`, `Size` and `Field`
 columns must match its fields exactly. Prose and `Notes` are free.
@@ -540,7 +540,7 @@ the order a display would.
 
 ## 9. Type registry
 
-Type codes are fixed by `store/src/obj/types.rs` and appear in IDs,
+Type codes are fixed by `storage/store/src/obj/types.rs` and appear in IDs,
 directory keys and headers; see that table for the list. `*SYSVAL`
 (0x00FF) is internal: one instance, in QSYS, not user-creatable.
 

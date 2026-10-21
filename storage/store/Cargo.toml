@@ -1,0 +1,22 @@
+[package]
+name = "store"
+description = "QS/400 object store: ASP format, extent allocator, CoW B+tree, WAL, objects"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+release = { path = "../../lic/release", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+thiserror.workspace = true
+crc.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+release = { path = "../../lic/release", version = "0.1.0" }
+
+[lints]
+workspace = true

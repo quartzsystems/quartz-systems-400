@@ -1,0 +1,41 @@
+[package]
+name = "slic"
+description = "QS/400 PID 1"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+licpart = { path = "../../lic/licpart", version = "0.1.0" }
+sysval = { path = "../../lic/sysval", version = "0.1.0" }
+console = { path = "../../lic/console", version = "0.1.0" }
+release = { path = "../../lic/release", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0" }
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+diskimg = { path = "../../lic/diskimg", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+svctools = { path = "../../lic/svctools", version = "0.1.0" }
+db = { path = "../../database/db", version = "0.1.0" }
+jrn = { path = "../../database/jrn", version = "0.1.0" }
+sql = { path = "../../database/sql", version = "0.1.0" }
+dds = { path = "../../database/dds", version = "0.1.0" }
+qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+qir = { path = "../../runtime/qir", version = "0.1.0" }
+ile = { path = "../../runtime/ile", version = "0.1.0" }
+mi = { path = "../../runtime/mi", version = "0.1.0" }
+sysapi = { path = "../../runtime/sysapi", version = "0.1.0" }
+ipc = { path = "../../work/ipc", version = "0.1.0" }
+stg = { path = "../../work/stg", version = "0.1.0" }
+wm = { path = "../../work/wm", version = "0.1.0" }
+spool = { path = "../../work/spool", version = "0.1.0" }
+msgf = { path = "../../runtime/msgf", version = "0.1.0" }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+rustix = { version = "1.1.5", features = ["event", "fs", "mount", "net", "process", "system", "time"] }
+# Used only inside platform::sys for signal handling.
+libc = "0.2.190"
+
+[lints]
+workspace = true

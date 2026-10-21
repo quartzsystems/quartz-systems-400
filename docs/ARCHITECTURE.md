@@ -139,5 +139,6 @@ Cargo workspace, edition 2024, pinned toolchain, committed `Cargo.lock`.
 Lints: `unsafe_op_in_unsafe_fn = deny`, clippy `pedantic` warn, `missing_docs`
 warn; clippy must be warning-free. `thiserror` in libraries, `anyhow` in
 binaries, `tracing` for logs. Small, documented modules grouped into folders
-by concern. The repository will grow to 25+ crates; these conventions are set
-now.
+by concern. Crates are grouped the same way, one folder per OS layer:
+`tools/` (host side), `lic/`, `storage/`, `database/`, `runtime/` (ILE) and
+`work/` (work management).

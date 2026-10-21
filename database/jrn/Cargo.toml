@@ -1,0 +1,20 @@
+[package]
+name = "jrn"
+description = "QS/400 journaling: *JRN and *JRNRCV objects, journal entries, receiver chains"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+store = { path = "../../storage/store", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+
+[lints]
+workspace = true

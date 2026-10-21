@@ -71,7 +71,7 @@ binary, integer and float fields alike. Arithmetic follows the RPG
 runtime's intermediate precision rules; assignment half-adjusts and
 raises size errors. Edit codes and words render as the machine does.
 `qdfuzz` writes a kit of cases that an RPG program on IBM i answers; the
-answers under `conformance/oracle/qdecimal/` are the test.
+answers under `tools/conformance/oracle/qdecimal/` are the test.
 
 **Files, formats, members.** A `*FILE` object holds a 128-byte
 `FileAttr`, the member table, the dependents table (which logical
@@ -224,7 +224,7 @@ compares its path with its records.
 
 ## The conformance kit
 
-`conformance/db/` is the fixed library `QSTEST` every database test
+`tools/conformance/db/` is the fixed library `QSTEST` every database test
 uses here and on the machine: ten physical files covering every field
 type, every `DATFMT` and `TIMFMT`, nulls, `VARLEN`, `REUSEDLT` and a
 source file; eight logical files covering key order and `DESCEND`,
@@ -239,7 +239,7 @@ through `QDDSSRC` and `CRTPF`/`CRTLF`, loads the CSVs with
 output under `target/conformance-db/ours/`: `data/NAME.csv` for every
 physical file and single-format logical file (key order), `ffd.csv`,
 `lvlid.csv`, `rla.csv`, `rla.log`, `dspjrn.csv` and `sql/Qnn.csv`. It
-then compares each with the same path under `conformance/db/expected/`
+then compares each with the same path under `tools/conformance/db/expected/`
 and names the files that are not there. The same test regenerates the
 oracle programs from the script and the queries and fails when they are
 stale.
@@ -291,7 +291,7 @@ cargo test -p dds -p qdecimal -p db -p jrn -p sql   # the unit and integration t
 cargo test -p conformance --test db_kit             # QSTEST in memory, compared with expected/
 QS400_UPDATE_ORACLE=1 cargo test -p conformance --test db_kit   # regenerate the oracle programs
 cargo test --release -p conformance --test db_bench -- --ignored --nocapture
-cargo run -p qdecimal --bin qdfuzz -- kit conformance/oracle/qdecimal
+cargo run -p qdecimal --bin qdfuzz -- kit tools/conformance/oracle/qdecimal
 cargo run -p build -- test                          # the disk suite with steps 13 and 14
 ```
 
@@ -317,7 +317,7 @@ cargo run -p build -- test                          # the disk suite with steps 
   not acted on; audit (`T`) entries are never written.
 - The console's `cpyfrmimpf` and `cpytoimpf` read and write UTF-8
   buffers; `STMFCODPAG` is not a parameter.
-- `conformance/db/expected/` is empty until the kit has run on a
+- `tools/conformance/db/expected/` is empty until the kit has run on a
   machine; the comparison is a skip, not a pass, until then.
 
 ## Acceptance evidence
@@ -330,7 +330,7 @@ conformance kit test with 0 script mismatches, 12 queries and 32 files
 written; `build deny` clean on both Linux targets with 170 crates and
 no C build helpers; clippy clean for the host workspace and for `slic`
 and `console` on musl; `#![deny(missing_docs)]` on `dds`, `qdecimal`,
-`db`, `jrn` and `sql`; `db/tests/spec.rs` holds `DB_FORMAT.md` and the
+`db`, `jrn` and `sql`; `database/db/tests/spec.rs` holds `DB_FORMAT.md` and the
 code's layouts together, including the journal structures.
 
 The QEMU steps 13 and 14 are written and wired into the disk suite;

@@ -1,0 +1,19 @@
+[package]
+name = "codegen"
+description = "QS/400 code generation: IR to x86_64 native code through Cranelift"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+qir = { path = "../../runtime/qir", version = "0.1.0" }
+qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
+cranelift-codegen = { version = "=0.136.0", default-features = false, features = ["std", "x86", "unwind"] }
+cranelift-frontend = { version = "=0.136.0", default-features = false, features = ["std"] }
+target-lexicon = "0.13"
+memmap2 = "0.9.11"
+thiserror.workspace = true
+
+[lints]
+workspace = true

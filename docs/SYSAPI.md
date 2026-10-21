@@ -12,7 +12,7 @@ compatibility interface.
 
 Where a format is given here as *QS/400 reading*, IBM's documented
 layout was not available to check against and the offsets are this
-implementation's; the oracle kit under `conformance/oracle/ile/`
+implementation's; the oracle kit under `tools/conformance/oracle/ile/`
 settles them (`ILE_OPEN_QUESTIONS.md`).
 
 ## 1. Conventions

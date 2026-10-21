@@ -1,0 +1,20 @@
+[package]
+name = "wm"
+description = "QS/400 work management: jobs, job descriptions, classes, subsystems, job queues, message queues, spooling"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ipc = { path = "../../work/ipc", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+thiserror.workspace = true
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }

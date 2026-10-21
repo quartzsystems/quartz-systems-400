@@ -38,7 +38,9 @@ for a later phase is marked `MIGRATE(phaseN)` or `TODO(phaseN)`.
 - Pure Rust only. No crate may compile or link C (`cc`, `cmake`, `bindgen`,
   `links =`). `deny.toml` enforces this; `cargo run -p build -- deny` checks it.
 - Source files are grouped into folders by concern (`host/`, `kernel/`,
-  `image/`, ...), not left as one flat list under `src/`.
+  `image/`, ...), not left as one flat list under `src/`. Crates likewise
+  live in a category folder by OS layer (`tools/`, `lic/`, `storage/`,
+  `database/`, `runtime/`, `work/`), never at the repository root.
 
 ## Locked decisions
 
@@ -60,122 +62,128 @@ See `docs/ARCHITECTURE.md`. Short form:
 ## Layout
 
 ```
-build/        orchestrator: cargo run -p build -- <cmd>
-  src/host/     cmd, paths, hash, doctor, deny, testrun
-  src/kernel/   fetch, config, build (slot A and B UKIs)
-  src/userland/ slic build + ELF check
-  src/image/    cpio, initramfs, disk (via diskimg), iso (ISO 9660), media, manifest
 kernel/       VERSION, SHA256, config/qs400.config
-licpart/      LIC partition: A/B record (src/format/), locate by GPT type GUID
-sysval/       catalog.toml, validation, src/tz/ time zones, LIC storage
-console/      font/qs400-9x16.txt, src/fb/ framebuffer, src/keyboard/, screens
-slic/         PID 1 and, as `/init qsstg`, the storage service: src/ipl/ state machine,
-              src/hwrsrc/, src/net/, src/procs/ (spawn, the storage service handover and
-              close, QSVCJOB line routing), src/stgsvc/ (the service: open, serve loop,
-              per-job contexts answering stg requests, exec of console commands),
-              src/svc/ (db/ holds the database, journal, SQL, rla and dbbench console
-              commands; ile/ the ILE build and display commands and the job sources over
-              the lent store with the sysapi provider),
-              src/platform/ (console, mounts, power, rtc, serial, sys), src/src.rs
-conformance/  QEMU harness: src/qemu/ (session, qmp, serial, firmware), src/steps.rs;
-              src/db/ the database kit (kit, local run, compare, oracle RPG, QEMU steps);
-              db/ the QSTEST kit: dds/, data/, rla/, sql/, oracle/, expected/
-              src/qir/ the IR kit runner (cases, the in-memory job with CUST, *LDA,
-              COUNTER, Q1 and the APIs); qir/ the kit: programs/*.qir, expected/*.out
-release/      VxRyMz identity, build ID, PTF names (one source of truth)
-blockdev/     BlockDev trait, AlignedBuf, Linux O_DIRECT backend, MemBlockDev with faults
-store/        object store: src/page/, src/btree/, src/asp/ (units, superblock),
-              src/alloc/ (bitmaps, free tree), src/wal/, txn.rs, store.rs, cache.rs, src/obj/
-diskimg/      GPT layout (ESP, LIC, ASP1), FAT volumes, partition lookup; build + installer
-ccsid/        CP037 <-> UTF-8 from cp037.csv (build.rs), EBCDIC collation
-qsname/       object, library and member name rules; 10-byte CP037 Name
-svctools/     DST screens and the installer's: src/ui/ screen kit, panel.rs runner,
-              src/dst/ (disk/, environment, tools, security), src/install/, src/users/
-dds/          DDS: src/source/ records, src/lex/ columns and keywords, src/compile/
-              field, key, select/omit and file-keyword builders, src/pf/ and src/lf/
-              compilers, src/listing/
-qdecimal/     Decimal (63 digits), IBM intermediate precision rules (src/arith/),
-              packed, zoned, binary, integer and float encodings (src/encode/),
-              edit codes and words (src/edit/), the IBM i oracle kit (src/fuzz/,
-              src/bin/qdfuzz.rs; files under conformance/oracle/qdecimal/)
-db/           database: src/file/ *FILE attributes, member and dependents tables, LF
-              creation; src/format/ sections and level IDs; src/record/ field values;
-              src/path/ key encoding and path trees; src/lf/ derivation and select/omit;
-              src/member/ *MBR objects, record slots, path maintenance and rebuild;
-              src/odp/ open data paths, RLA operations, record locks, INFDS feedback,
-              OVRDBF overrides and the per-job session with shared paths;
-              src/util/ CLRPFM, RGZPFM, CPYF (select, map), CPYTOIMPF/CPYFRMIMPF (impf);
-              src/dsp/ DSPFD, DSPFFD, DSPPFM, DSPDBR; src/chg/ CHGPF, CHGLF, CHGPF SRCFILE;
-              src/source/ source members (srcput, srcget, DDS source of a member);
-              src/journal/ STRJRNPF/ENDJRNPF, the entries members and paths write,
-              APYJRNCHG/RMVJRNCHG (undo.rs) and IPL recovery (recover.rs); src/cmt/
-              commitment control (STRCMTCTL, COMMIT, ROLLBCK, lock levels)
-jrn/          journaling: *JRN (src/journal/) and *JRNRCV (src/rcv/) objects, the entry
-              layout (src/entry/), DSPJRN filters and the receiver chain cursor (src/dsp/)
-sql/          SQL: src/lex/ tokens, src/ast/ statements (ddl, query, expr), src/parse/
-              recursive descent (ddl, dml, query, expr); src/value/ runtime values;
-              src/exec/ context and name resolution (mod.rs), expressions (eval.rs),
-              scalar functions (func.rs), queries with path choice (query.rs), INSERT/
-              UPDATE/DELETE/MERGE through the ODP (dml.rs), CREATE TABLE/INDEX/VIEW and
-              labels as DDS (ddl.rs), cursors (cursor.rs), QSYS2 catalog views computed
-              from the store (catalog.rs); src/sqlca.rs the SQLCA; src/run.rs RUNSQLSTM
-qir/          the IR: src/types/ layouts, src/module/ units, vars, procs, src/inst/ the
-              instruction set and literal encoding, src/text/ lexer, parser, printer,
-              src/verify/ places, typing, flow, monitors, per-instruction checks,
-              src/binary/ the versioned module format, src/bin/qirc.rs; tests/programs/
-codegen/      IR to x86_64 through Cranelift: src/abi.rs env record, signatures, static
-              frames; src/rt.rs the runtime call table; src/lower/ driver, places, scalar
-              and control-flow instructions, calls; src/output.rs code, relocations, maps;
-              src/load.rs placing code and resolving relocations; tests/common/ a stand-in
-              runtime
-mi/           the runtime: src/job.rs the job stand-in, src/act.rs loaded programs,
-              activation groups and the call stack, src/space.rs fat pointers and spaces,
-              src/heap.rs heaps, src/usrspc.rs mapped user spaces, src/msg.rs message
-              queues, src/cond.rs conditions and RPG status codes, src/except.rs the
-              handler search, function check, inquiry and cancel, src/io/ the IoSource
-              and DataSource traits, MemData and the store-backed StoreIo, src/debug.rs STRDBG/
-              breakpoints/steps/EVAL over the debug-translated variant, src/cee.rs CEEHDLR/
-              CEERTX/CEESGL/CEENCOD/CEEDCOD/CEEMRCR as bound procedures, src/dump.rs job
-              dumps, src/rtlib/ the call table's functions (core, decimal, string,
-              convert, date, heap, msg, io, debug; mem.rs holds the unsafe views),
-              src/exec.rs running one module; tests/ programs, activation, heap, messages,
-              except, io, debug
-sysapi/       system APIs as natives of QSYS and QLEAWI procedures: src/param.rs parameter
-              and receiver conventions, ERRC0100/ERRC0200; src/provider.rs the Provider trait
-              (objects, data queues and areas, user indexes, files, system values, commands,
-              the clock) and MemProvider; src/msg.rs QMH*, src/usrspc.rs QUS user spaces and
-              indexes, src/obj.rs QUSLOBJ/QUSROBJD/QLICOBJD/QLIRNMO and the QUSGEN list
-              header, src/data.rs data queues and areas, src/job.rs QUSRJOBI/QUSLJOB/
-              QWCRSVAL/QWCCVTDT/QWCRTVCA/QWCRTVTZ/QSZRTVPR/QLGCNVCS/QWCRNETA, src/db.rs
-              QUSLMBR/QUSRMBRD/QUSLFLD/QUSLRCD/QDBRTVFD/QDBLDBR, src/misc.rs commands,
-              security, commitment and spool stubs, src/cee.rs the rest of QLEAWI,
-              src/picture.rs date pictures and the Lilian calendar; tests/apis.rs
-msgf/         message files: src/desc.rs descriptions and substitution, src/source.rs the
-              TOML sources (msgs/*.toml embedded), src/payload.rs the *MSGF payload,
-              src/store.rs CRTMSGF/ADDMSGD/CHGMSGD/RMVMSGD/MRGMSGF/RTVMSG/DSPMSGD and the
-              first-IPL install; msgs/ qcpfmsg.toml, qceemsg.toml, qsqlmsg.toml
-ile/          ILE objects: src/object/ *MODULE, *PGM/*SRVPGM and *BNDDIR payloads and the
-              native-output codec; src/binder/ the binder, binder language, signatures;
-              src/dsp/ DSPPGM, DSPSRVPGM, DSPMOD, DSPPGMREF, DSPBNDDIR text; src/store/
-              CRTMOD/CRTPGM/CRTSRVPGM/UPDPGM/CRTBNDDIR against the store; src/spec.rs
-ipc/          process messages: src/wire/ the Wire codec and wire_struct!/wire_enum!,
-              frame.rs length-prefixed frames, rpc.rs the rpc! macro, chan.rs Unix sockets
-stg/          storage service protocol: proto.rs the requests (rpc!), link.rs a job's link,
-              src/remote/ the runtime's source traits answered by the service
-wm/           work management: cmd.rs console command parameters, ctl.rs the job control
-              channel (Start, ToJob, FromJob); src/job/ ids, types, statuses, attributes and
-              the library list; joblog.rs; table.rs the active job table; pools.rs activity
-              levels; stats.rs the /proc, cgroup and block parsers; wtr.rs; src/obj/ the
-              objects' payloads (*JOBD, *CLS, *MSGQ, the reply list, *SBSD and its
-              commands, *JOBQ, *JOBSCD, *OUTQ, *SPLF, *PRTF, *DEVD) and shipped.rs; spec.rs
-qsjob/        the job process: start.rs (control channel, hello, the role); src/console/
-              QSVCJOB and every job's runtime (line dispatch, call, debug session, the job
-              commands, job log, breaks); src/work/ the roles: monitor, batch (QCMD,
-              QWCSTRUP), inter (Command Entry), sysjob, scheduler (QEJSCHED), writer
-              (QSPWTR), spawn and cgroup
-spool/        spooling without the store: src/scs/ SCS encode and decode, printer.rs the line
-              printer (spacing, skipping, overflow, FCFC), ddsprt.rs DDS printer formats,
-              view.rs text, FCFC, *PRTCTL and hex views, pdf.rs the PDF writer
+tools/        host-side tools
+  build/        orchestrator: cargo run -p build -- <cmd>
+    src/host/     cmd, paths, hash, doctor, deny, testrun
+    src/kernel/   fetch, config, build (slot A and B UKIs)
+    src/userland/ slic build + ELF check
+    src/image/    cpio, initramfs, disk (via diskimg), iso (ISO 9660), media, manifest
+  conformance/  QEMU harness: src/qemu/ (session, qmp, serial, firmware), src/steps.rs;
+                src/db/ the database kit (kit, local run, compare, oracle RPG, QEMU steps);
+                db/ the QSTEST kit: dds/, data/, rla/, sql/, oracle/, expected/
+                src/qir/ the IR kit runner (cases, the in-memory job with CUST, *LDA,
+                COUNTER, Q1 and the APIs); qir/ the kit: programs/*.qir, expected/*.out
+lic/          Licensed Internal Code: IPL, platform, console, DST, disks
+  slic/         PID 1 and, as `/init qsstg`, the storage service: src/ipl/ state machine,
+                src/hwrsrc/, src/net/, src/procs/ (spawn, the storage service handover and
+                close, QSVCJOB line routing), src/stgsvc/ (the service: open, serve loop,
+                per-job contexts answering stg requests, exec of console commands),
+                src/svc/ (db/ holds the database, journal, SQL, rla and dbbench console
+                commands; ile/ the ILE build and display commands and the job sources over
+                the lent store with the sysapi provider),
+                src/platform/ (console, mounts, power, rtc, serial, sys), src/src.rs
+  licpart/      LIC partition: A/B record (src/format/), locate by GPT type GUID
+  sysval/       catalog.toml, validation, src/tz/ time zones, LIC storage
+  release/      VxRyMz identity, build ID, PTF names (one source of truth)
+  console/      font/qs400-9x16.txt, src/fb/ framebuffer, src/keyboard/, screens
+  svctools/     DST screens and the installer's: src/ui/ screen kit, panel.rs runner,
+                src/dst/ (disk/, environment, tools, security), src/install/, src/users/
+  diskimg/      GPT layout (ESP, LIC, ASP1), FAT volumes, partition lookup; build + installer
+  blockdev/     BlockDev trait, AlignedBuf, Linux O_DIRECT backend, MemBlockDev with faults
+storage/      the object store and the names and code pages it holds
+  store/        object store: src/page/, src/btree/, src/asp/ (units, superblock),
+                src/alloc/ (bitmaps, free tree), src/wal/, txn.rs, store.rs, cache.rs, src/obj/
+  qsname/       object, library and member name rules; 10-byte CP037 Name
+  ccsid/        CP037 <-> UTF-8 from cp037.csv (build.rs), EBCDIC collation
+database/     DDS, decimal, files, journals, SQL
+  db/           database: src/file/ *FILE attributes, member and dependents tables, LF
+                creation; src/format/ sections and level IDs; src/record/ field values;
+                src/path/ key encoding and path trees; src/lf/ derivation and select/omit;
+                src/member/ *MBR objects, record slots, path maintenance and rebuild;
+                src/odp/ open data paths, RLA operations, record locks, INFDS feedback,
+                OVRDBF overrides and the per-job session with shared paths;
+                src/util/ CLRPFM, RGZPFM, CPYF (select, map), CPYTOIMPF/CPYFRMIMPF (impf);
+                src/dsp/ DSPFD, DSPFFD, DSPPFM, DSPDBR; src/chg/ CHGPF, CHGLF, CHGPF SRCFILE;
+                src/source/ source members (srcput, srcget, DDS source of a member);
+                src/journal/ STRJRNPF/ENDJRNPF, the entries members and paths write,
+                APYJRNCHG/RMVJRNCHG (undo.rs) and IPL recovery (recover.rs); src/cmt/
+                commitment control (STRCMTCTL, COMMIT, ROLLBCK, lock levels)
+  dds/          DDS: src/source/ records, src/lex/ columns and keywords, src/compile/
+                field, key, select/omit and file-keyword builders, src/pf/ and src/lf/
+                compilers, src/listing/
+  jrn/          journaling: *JRN (src/journal/) and *JRNRCV (src/rcv/) objects, the entry
+                layout (src/entry/), DSPJRN filters and the receiver chain cursor (src/dsp/)
+  sql/          SQL: src/lex/ tokens, src/ast/ statements (ddl, query, expr), src/parse/
+                recursive descent (ddl, dml, query, expr); src/value/ runtime values;
+                src/exec/ context and name resolution (mod.rs), expressions (eval.rs),
+                scalar functions (func.rs), queries with path choice (query.rs), INSERT/
+                UPDATE/DELETE/MERGE through the ODP (dml.rs), CREATE TABLE/INDEX/VIEW and
+                labels as DDS (ddl.rs), cursors (cursor.rs), QSYS2 catalog views computed
+                from the store (catalog.rs); src/sqlca.rs the SQLCA; src/run.rs RUNSQLSTM
+  qdecimal/     Decimal (63 digits), IBM intermediate precision rules (src/arith/),
+                packed, zoned, binary, integer and float encodings (src/encode/),
+                edit codes and words (src/edit/), the IBM i oracle kit (src/fuzz/,
+                src/bin/qdfuzz.rs; files under conformance/oracle/qdecimal/)
+runtime/      ILE: IR, code generator, runtime, objects, APIs, messages
+  qir/          the IR: src/types/ layouts, src/module/ units, vars, procs, src/inst/ the
+                instruction set and literal encoding, src/text/ lexer, parser, printer,
+                src/verify/ places, typing, flow, monitors, per-instruction checks,
+                src/binary/ the versioned module format, src/bin/qirc.rs; tests/programs/
+  codegen/      IR to x86_64 through Cranelift: src/abi.rs env record, signatures, static
+                frames; src/rt.rs the runtime call table; src/lower/ driver, places, scalar
+                and control-flow instructions, calls; src/output.rs code, relocations, maps;
+                src/load.rs placing code and resolving relocations; tests/common/ a stand-in
+                runtime
+  mi/           the runtime: src/job.rs the job stand-in, src/act.rs loaded programs,
+                activation groups and the call stack, src/space.rs fat pointers and spaces,
+                src/heap.rs heaps, src/usrspc.rs mapped user spaces, src/msg.rs message
+                queues, src/cond.rs conditions and RPG status codes, src/except.rs the
+                handler search, function check, inquiry and cancel, src/io/ the IoSource
+                and DataSource traits, MemData and the store-backed StoreIo, src/debug.rs STRDBG/
+                breakpoints/steps/EVAL over the debug-translated variant, src/cee.rs CEEHDLR/
+                CEERTX/CEESGL/CEENCOD/CEEDCOD/CEEMRCR as bound procedures, src/dump.rs job
+                dumps, src/rtlib/ the call table's functions (core, decimal, string,
+                convert, date, heap, msg, io, debug; mem.rs holds the unsafe views),
+                src/exec.rs running one module; tests/ programs, activation, heap, messages,
+                except, io, debug
+  ile/          ILE objects: src/object/ *MODULE, *PGM/*SRVPGM and *BNDDIR payloads and the
+                native-output codec; src/binder/ the binder, binder language, signatures;
+                src/dsp/ DSPPGM, DSPSRVPGM, DSPMOD, DSPPGMREF, DSPBNDDIR text; src/store/
+                CRTMOD/CRTPGM/CRTSRVPGM/UPDPGM/CRTBNDDIR against the store; src/spec.rs
+  sysapi/       system APIs as natives of QSYS and QLEAWI procedures: src/param.rs parameter
+                and receiver conventions, ERRC0100/ERRC0200; src/provider.rs the Provider trait
+                (objects, data queues and areas, user indexes, files, system values, commands,
+                the clock) and MemProvider; src/msg.rs QMH*, src/usrspc.rs QUS user spaces and
+                indexes, src/obj.rs QUSLOBJ/QUSROBJD/QLICOBJD/QLIRNMO and the QUSGEN list
+                header, src/data.rs data queues and areas, src/job.rs QUSRJOBI/QUSLJOB/
+                QWCRSVAL/QWCCVTDT/QWCRTVCA/QWCRTVTZ/QSZRTVPR/QLGCNVCS/QWCRNETA, src/db.rs
+                QUSLMBR/QUSRMBRD/QUSLFLD/QUSLRCD/QDBRTVFD/QDBLDBR, src/misc.rs commands,
+                security, commitment and spool stubs, src/cee.rs the rest of QLEAWI,
+                src/picture.rs date pictures and the Lilian calendar; tests/apis.rs
+  msgf/         message files: src/desc.rs descriptions and substitution, src/source.rs the
+                TOML sources (msgs/*.toml embedded), src/payload.rs the *MSGF payload,
+                src/store.rs CRTMSGF/ADDMSGD/CHGMSGD/RMVMSGD/MRGMSGF/RTVMSG/DSPMSGD and the
+                first-IPL install; msgs/ qcpfmsg.toml, qceemsg.toml, qsqlmsg.toml
+work/         work management: jobs, spooling, process messages
+  wm/           work management: cmd.rs console command parameters, ctl.rs the job control
+                channel (Start, ToJob, FromJob); src/job/ ids, types, statuses, attributes and
+                the library list; joblog.rs; table.rs the active job table; pools.rs activity
+                levels; stats.rs the /proc, cgroup and block parsers; wtr.rs; src/obj/ the
+                objects' payloads (*JOBD, *CLS, *MSGQ, the reply list, *SBSD and its
+                commands, *JOBQ, *JOBSCD, *OUTQ, *SPLF, *PRTF, *DEVD) and shipped.rs; spec.rs
+  qsjob/        the job process: start.rs (control channel, hello, the role); src/console/
+                QSVCJOB and every job's runtime (line dispatch, call, debug session, the job
+                commands, job log, breaks); src/work/ the roles: monitor, batch (QCMD,
+                QWCSTRUP), inter (Command Entry), sysjob, scheduler (QEJSCHED), writer
+                (QSPWTR), spawn and cgroup
+  spool/        spooling without the store: src/scs/ SCS encode and decode, printer.rs the line
+                printer (spacing, skipping, overflow, FCFC), ddsprt.rs DDS printer formats,
+                view.rs text, FCFC, *PRTCTL and hex views, pdf.rs the PDF writer
+  ipc/          process messages: src/wire/ the Wire codec and wire_struct!/wire_enum!,
+                frame.rs length-prefixed frames, rpc.rs the rpc! macro, chan.rs Unix sockets
+  stg/          storage service protocol: proto.rs the requests (rpc!), link.rs a job's link,
+                src/remote/ the runtime's source traits answered by the service
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
               DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md,
               STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, images/
@@ -204,7 +212,7 @@ cargo run -p build -- deny        # cargo-deny + links/cc lockfile check
 cargo clippy --workspace --all-targets    # must be warning-free
 cargo clippy -p slic -p console --all-targets --target x86_64-unknown-linux-musl
 QS400_QEMU=1 cargo test -p conformance    # the suite as a cargo test
-cargo run -p qdecimal --bin qdfuzz -- kit conformance/oracle/qdecimal   # regenerate the oracle kit
+cargo run -p qdecimal --bin qdfuzz -- kit tools/conformance/oracle/qdecimal   # regenerate the oracle kit
 cargo test -p conformance --test db_kit   # QSTEST in memory; outputs under target/conformance-db/ours/
 QS400_UPDATE_ORACLE=1 cargo test -p conformance --test db_kit   # regenerate RLATEST.RPGLE and QRESULTS.SQL
 cargo test --release -p conformance --test db_bench -- --ignored --nocapture   # dbbench in memory
@@ -261,12 +269,12 @@ otherwise logs go to `target/logs/`.
 - Workspace lints: `unsafe_op_in_unsafe_fn = deny`, clippy `pedantic` warn,
   `missing_docs` warn. Clippy must stay clean.
 - Every `unsafe` block has a `// SAFETY:` comment. `unsafe` lives only in
-  `slic/src/platform/sys.rs` (signals), `slic/src/platform/rtc.rs` (one
-  ioctl), `console/src/fb/raw.rs` (framebuffer ioctls),
-  `slic/src/platform/blk.rs` (BLKRRPART), `blockdev/src/aligned.rs`
-  (aligned buffer views), `blockdev/src/linux.rs` (BLKDISCARD),
-  `mi/src/rtlib/mem.rs` (the storage and job behind a runtime call) and
-  `mi/src/act.rs` (calling into generated code: entries and handlers).
+  `lic/slic/src/platform/sys.rs` (signals), `lic/slic/src/platform/rtc.rs` (one
+  ioctl), `lic/console/src/fb/raw.rs` (framebuffer ioctls),
+  `lic/slic/src/platform/blk.rs` (BLKRRPART), `lic/blockdev/src/aligned.rs`
+  (aligned buffer views), `lic/blockdev/src/linux.rs` (BLKDISCARD),
+  `runtime/mi/src/rtlib/mem.rs` (the storage and job behind a runtime call) and
+  `runtime/mi/src/act.rs` (calling into generated code: entries and handlers).
 - Errors: `thiserror` enums in libraries, `anyhow` only in binaries.
 - Logs: `tracing`.
 - Small documented modules, one responsibility each. Private modules in
@@ -274,20 +282,20 @@ otherwise logs go to `target/logs/`.
 - Downloaded sources live under `target/src/` and are untrusted. Nothing is
   executed from there except the kernel's own `make` and `merge_config.sh`,
   always invoked with explicit paths.
-- SRC codes live in one table, `slic/src/src.rs`; see docs/PHASE1.md.
+- SRC codes live in one table, `lic/slic/src/src.rs`; see docs/PHASE1.md.
 - Every string a user sees is Quartz-written; never reproduce IBM message
   or help text. IBM names (system values, SRC families, screen geometry,
   DST menu titles and option numbers) are the compatibility interface.
 - Every DST and installer screen has a golden file under
-  `conformance/golden/`; `QS400_UPDATE_GOLDEN=1 cargo test -p svctools`
+  `tools/conformance/golden/`; `QS400_UPDATE_GOLDEN=1 cargo test -p svctools`
   rewrites them after a deliberate change.
 - IPL state (slots, history, keylock, the IPL subset of the system
   values) stays in `licpart`; everything else persists in the object
   store.
 - On-disk store structures are specified in `docs/STORE_FORMAT.md` before
-  they are coded; `store/tests/spec.rs` compares the code's `Layout`s with
+  they are coded; `storage/store/tests/spec.rs` compares the code's `Layout`s with
   the spec tables, so both change together. `docs/DB_FORMAT.md` and
-  `db/tests/spec.rs` do the same for the database layouts.
+  `database/db/tests/spec.rs` do the same for the database layouts.
 - Framebuffer writes: one `pwrite` per frame spanning every line, then
   `fsync`. Partial-line writes lose damage at line ends and `mmap` never
   flushes under simpledrm's fbdev emulation (see docs/PHASE1.md).

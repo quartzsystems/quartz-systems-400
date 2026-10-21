@@ -47,8 +47,8 @@ field and entered. `screen` dumps the display.
 
 ## Golden files
 
-Every screen has a golden file in `conformance/golden/dst/`, rendered
-against a fixed in-memory environment by `svctools/tests/golden.rs`,
+Every screen has a golden file in `tools/conformance/golden/dst/`, rendered
+against a fixed in-memory environment by `lic/svctools/tests/golden.rs`,
 `disk.rs` and `environment.rs` and compared whitespace-exact. Run those
 tests with `QS400_UPDATE_GOLDEN=1` to rewrite the files after a
 deliberate change. The harness step `12 DST sign-on` compares the
@@ -74,7 +74,7 @@ guest's own screens with the same files.
 | Work with System Security | `security.txt` |
 
 The installer's screens have their own golden files under
-`conformance/golden/install/`, from `svctools/tests/install.rs`:
+`tools/conformance/golden/install/`, from `lic/svctools/tests/install.rs`:
 `lic-menu`, `lic-options`, `load-source`, `lic-confirm`, `disk-status`,
 `lic-status`, `device-type`, `os-confirm`, `language`,
 `language-confirm`, `os-status`, `ipl-options` and `major-options`. The

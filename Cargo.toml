@@ -1,36 +1,41 @@
 [workspace]
 resolver = "3"
 members = [
-    "build",
-    "slic",
-    "conformance",
-    "licpart",
-    "sysval",
-    "console",
-    "release",
-    "blockdev",
-    "store",
-    "ccsid",
-    "qsname",
-    "diskimg",
-    "svctools",
-    "dds",
-    "qdecimal",
-    "db",
-    "jrn",
-    "sql",
-    "qir",
-    "codegen",
-    "mi",
-    "ile",
-    "msgf",
-    "sysapi",
-    "ipc",
-    "stg",
-    "wm",
-    "qsjob",
-    "spool",
-
+    # Host tools: the build orchestrator and the conformance harness.
+    "tools/build",
+    "tools/conformance",
+    # Licensed Internal Code: IPL, platform, console, DST, disks.
+    "lic/slic",
+    "lic/licpart",
+    "lic/sysval",
+    "lic/release",
+    "lic/console",
+    "lic/svctools",
+    "lic/diskimg",
+    "lic/blockdev",
+    # Object store and the names and code pages it holds.
+    "storage/store",
+    "storage/qsname",
+    "storage/ccsid",
+    # Database: DDS, decimal, files, journals, SQL.
+    "database/db",
+    "database/dds",
+    "database/jrn",
+    "database/sql",
+    "database/qdecimal",
+    # ILE: IR, code generator, runtime, objects, APIs, messages.
+    "runtime/qir",
+    "runtime/codegen",
+    "runtime/mi",
+    "runtime/ile",
+    "runtime/sysapi",
+    "runtime/msgf",
+    # Work management: jobs, spooling, process messages.
+    "work/wm",
+    "work/qsjob",
+    "work/spool",
+    "work/ipc",
+    "work/stg",
 ]
 
 [workspace.package]

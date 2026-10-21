@@ -5,7 +5,7 @@ criteria. QS/400 is x86_64 only.
 
 ## What exists
 
-- `build/`: the orchestrator. `cargo run -p build -- <cmd>`.
+- `tools/build/`: the orchestrator. `cargo run -p build -- <cmd>`.
   - `fetch`: downloads `linux-<ver>.tar.xz` from kernel.org in Rust
     (`reqwest` over `rustls` + pure-Rust `graviola`), verifies the sha256
     against `kernel/SHA256`, extracts under `target/src/`. On first run it
@@ -37,11 +37,11 @@ criteria. QS/400 is x86_64 only.
   - `doctor`: host prerequisite table. `deny`: `cargo deny check` plus a scan
     of the compiled dependency graph (`cargo tree`, host and image target)
     for `links` keys and C build helpers.
-- `slic/`: PID 1. Mounts proc, sysfs, devtmpfs, tmpfs on `/run`; prints
+- `lic/slic/`: PID 1. Mounts proc, sysfs, devtmpfs, tmpfs on `/run`; prints
   `SRC C1001000` and `QS/400 IPL - phase 0` to `/dev/console` and
   `/dev/ttyS0`; heartbeats `SRC C1001005` on serial every 5 s; reaps on
   `SIGCHLD`; a panic prints `SRC B1001000` and parks.
-- `conformance/`: QEMU driver (`-machine q35`, KVM when `/dev/kvm` is usable,
+- `tools/conformance/`: QEMU driver (`-machine q35`, KVM when `/dev/kvm` is usable,
   else TCG, OVMF via `-drive if=pflash`). Asserts the IPL SRC within 60 s and
   two heartbeats within the next 15 s. Prints the serial log on failure.
   Also `cargo test -p conformance`, which runs the boot only when

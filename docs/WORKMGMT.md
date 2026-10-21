@@ -139,7 +139,7 @@ second-level text prints unless the text is `*MSG`; `*NOLIST` prints only after 
 Every work management object is an object of its type whose space holds
 a four-byte little-endian length and the payload. Payloads start with a
 fixed part laid out below; text is CP037, blank padded; integers are
-little-endian. `wm/tests/spec.rs` compares these tables with the code.
+little-endian. `work/wm/tests/spec.rs` compares these tables with the code.
 
 ### `JobDescription` (352 bytes)
 

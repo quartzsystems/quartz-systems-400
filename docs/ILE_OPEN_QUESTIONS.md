@@ -3,7 +3,7 @@
 Behaviour of the runtime, the binder and the exception model that the
 IBM documentation leaves ambiguous, with the reading implemented and
 the oracle test that settles it. The oracle programs live under
-`conformance/oracle/ile/`; an entry closes when the machine's output
+`tools/conformance/oracle/ile/`; an entry closes when the machine's output
 is in `expected/` and the test passes.
 
 ## Runtime library

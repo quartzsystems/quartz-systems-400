@@ -1,0 +1,18 @@
+[package]
+name = "qir"
+description = "QS/400 intermediate representation: types, instructions, modules, text format and verifier"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
+dds = { path = "../../database/dds", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+thiserror.workspace = true
+clap.workspace = true
+anyhow.workspace = true
+
+[lints]
+workspace = true

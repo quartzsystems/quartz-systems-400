@@ -1,9 +1,9 @@
 # QS/400 database: on-disk format
 
 How `*FILE` objects, their members, record formats, records and access
-paths lie in the object store. Written before the code; `db/tests/spec.rs`
+paths lie in the object store. Written before the code; `database/db/tests/spec.rs`
 checks the code's `Layout`s against the tables here the way
-`store/tests/spec.rs` checks `STORE_FORMAT.md`: every `### \`Name\` (N
+`storage/store/tests/spec.rs` checks `STORE_FORMAT.md`: every `### \`Name\` (N
 bytes)` heading must match a `Layout`, and the `Offset`, `Size` and
 `Field` columns must match its fields. Conventions are those of
 `STORE_FORMAT.md` §0: little-endian page structures, big-endian tree

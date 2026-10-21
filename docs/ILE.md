@@ -2,7 +2,7 @@
 
 The `ile` crate implements the object payloads and the binder in this
 document; `mi` implements the runtime model. Byte layouts are
-little-endian unless a field is marked CP037; `ile/tests/spec.rs`
+little-endian unless a field is marked CP037; `runtime/ile/tests/spec.rs`
 compares the code's layouts with the tables here, so both change
 together. Sections marked *Phase 4, pending* describe parts that are
 specified but not yet in the crates.
@@ -45,7 +45,7 @@ One per section, right after the header.
 
 Module sections: `1` the IR (`QIR.md` §8), `2` the native output
 (code, relocations, procedures with statement maps, the static frame
-layout and its initial bytes, data exports; `ile/src/object/code.rs`),
+layout and its initial bytes, data exports; `runtime/ile/src/object/code.rs`),
 `3` creation data (compiler, options, source file, library and member),
 `4` the source view, as CP037 lines, when the compiler supplied it,
 `5` the debug variant of the native output, present when `DBGVIEW` is

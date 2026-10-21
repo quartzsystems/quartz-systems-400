@@ -171,6 +171,6 @@ and chosen edge values, every edit code with every fill on three shapes,
 fifteen edit words, and seeded random operands; the program has one
 `when` per shape pair so every operand carries the declared precision.
 `qdfuzz diff cases.csv results.csv` compares the machine's rows; the
-test `qdecimal/tests/oracle.rs` does the same and is skipped while
-`conformance/oracle/qdecimal/results.csv` is absent. Numbers compare by
+test `database/qdecimal/tests/oracle.rs` does the same and is skipped while
+`tools/conformance/oracle/qdecimal/results.csv` is absent. Numbers compare by
 value and scale, so `.5` and `0.5` agree; edited text compares exactly.

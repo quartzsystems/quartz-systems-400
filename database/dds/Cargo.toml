@@ -1,0 +1,18 @@
+[package]
+name = "dds"
+description = "QS/400 DDS: fixed-column lexer, keyword parser, PF and LF compilers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+thiserror.workspace = true
+
+[lints]
+workspace = true
+
+[dev-dependencies]
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }

@@ -2,7 +2,7 @@
 
 The `msgf` crate implements this document: message descriptions, the
 substitution of message data into text, the `*MSGF` payload, the
-commands over it and the system files. `msgf/tests/spec.rs` compares
+commands over it and the system files. `runtime/msgf/tests/spec.rs` compares
 the code's layouts with the tables here. Every text is ours; the
 message identifiers, the `ADDMSGD` parameters and the substitution
 variable types are the compatibility interface.
@@ -36,7 +36,7 @@ rest is empty.
 
 ## 2. Sources
 
-The system files are authored in `msgs/*.toml`, embedded in the crate
+The system files are authored in `runtime/msgf/msgs/*.toml`, embedded in the crate
 at build time and installed into `QSYS` on first IPL when absent:
 `QCPFMSG` (the `MCH`, `CPF`, `CPD` and `CPI` identifiers the runtime,
 the binder and the database use), `QCEEMSG` (`CEE` identifiers) and
