@@ -180,6 +180,14 @@ impl Lowerer<'_, '_> {
                 self.b.def_var(self.vars[dst.0 as usize], v);
             }
             Inst::Debug(Debug::Stmt(n)) => self.stmt(*n),
+            Inst::Debug(Debug::Var { name, place }) if self.debug => {
+                let (a, d) = self.place_pair(place)?;
+                let (na, _) = self.sop(
+                    &Operand::Const(qir::Const::Str(name.clone())),
+                    Some(&Type::Char(64)),
+                )?;
+                self.rt_call(RtFn::DbgVar, &[na, a, d]);
+            }
             Inst::Debug(_) => {}
             Inst::Unreachable => {
                 self.b.ins().trap(TrapCode::user(1).expect("nonzero"));

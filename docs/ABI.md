@@ -181,6 +181,8 @@ absent optional length is -1.
 | 48 | `dtaq_snd` | `name, lib, data, len` | |
 | 49 | `dtaq_rcv` | `name, lib, data, cap, wait` | `i32` length |
 | 50 | `rslvsp` | `out, type, name, lib` | 16 bytes at `out` |
+| 51 | `dbg_stmt` | `n` | debug variant only |
+| 52 | `dbg_var` | `name, addr, desc` | debug variant only |
 
 `file` is the index of the module's file declaration; the runtime
 finds the declaration through the running entry's program and keeps

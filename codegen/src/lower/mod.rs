@@ -81,6 +81,18 @@ pub fn target() -> Result<OwnedTargetIsa> {
 /// Compile a verified module.
 #[allow(clippy::too_many_lines)]
 pub fn compile(m: &Module) -> Result<ModuleCode> {
+    compile_with(m, false)
+}
+
+/// Compile the debug variant: every `debug.stmt` calls the runtime
+/// and every `debug.var` registers its place, so a debugger can stop
+/// at statements and evaluate variables.
+pub fn compile_debug(m: &Module) -> Result<ModuleCode> {
+    compile_with(m, true)
+}
+
+#[allow(clippy::too_many_lines)]
+fn compile_with(m: &Module, debug: bool) -> Result<ModuleCode> {
     qir::verify(m).map_err(|e| CodegenError::Verify(e.to_string()))?;
     let isa = target()?;
     let layout = StaticLayout::of(m);
@@ -100,6 +112,7 @@ pub fn compile(m: &Module) -> Result<ModuleCode> {
         {
             let b = FunctionBuilder::new(&mut func, &mut fctx);
             let mut lw = Lowerer::new(m, p, index32(pi), b, &layout, &mut names, &mut region_table);
+            lw.debug = debug;
             lw.lower()?;
         }
         let mut ctx = Context::for_function(func);
@@ -270,6 +283,8 @@ pub(crate) struct Lowerer<'a, 'b> {
     pub layout: &'a StaticLayout,
     names: &'a mut Vec<String>,
     pub(crate) region_table: &'a mut Vec<crate::output::RegionDesc>,
+    /// The debug variant: statements and variables call the runtime.
+    pub(crate) debug: bool,
     pub vars: Vec<Variable>,
     pub blocks: Vec<Block>,
     pub slots: Vec<Option<StackSlot>>,
@@ -309,6 +324,7 @@ impl<'a, 'b> Lowerer<'a, 'b> {
             layout,
             names,
             region_table,
+            debug: false,
             vars: Vec::new(),
             blocks: Vec::new(),
             slots: Vec::new(),
@@ -716,6 +732,10 @@ impl<'a, 'b> Lowerer<'a, 'b> {
         let job = self.b.ins().load(types::I64, le(), self.env, abi::ENV_JOB);
         let v = self.b.ins().iconst(types::I32, i64::from(n));
         self.b.ins().store(le(), v, job, abi::JOB_STMT);
+        if self.debug {
+            let nv = self.i64(i64::from(n));
+            self.rt_call(RtFn::DbgStmt, &[nv]);
+        }
     }
 
     /// Store raw bytes at an address, in 8, 4, 2 and 1 byte pieces.

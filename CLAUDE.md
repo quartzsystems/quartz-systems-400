@@ -115,11 +115,13 @@ mi/           the runtime: src/job.rs the job stand-in, src/act.rs loaded progra
               src/heap.rs heaps, src/usrspc.rs mapped user spaces, src/msg.rs message
               queues, src/cond.rs conditions and RPG status codes, src/except.rs the
               handler search, function check, inquiry and cancel, src/io/ the IoSource
-              and DataSource traits, MemData and the store-backed StoreIo, src/cee.rs CEEHDLR/
+              and DataSource traits, MemData and the store-backed StoreIo, src/debug.rs STRDBG/
+              breakpoints/steps/EVAL over the debug-translated variant, src/cee.rs CEEHDLR/
               CEERTX/CEESGL/CEENCOD/CEEDCOD/CEEMRCR as bound procedures, src/dump.rs job
               dumps, src/rtlib/ the call table's functions (core, decimal, string,
-              convert, date, heap, msg, io; mem.rs holds the unsafe views), src/exec.rs
-              running one module; tests/ programs, activation, heap, messages, except, io
+              convert, date, heap, msg, io, debug; mem.rs holds the unsafe views),
+              src/exec.rs running one module; tests/ programs, activation, heap, messages,
+              except, io, debug
 sysapi/       system APIs as natives of QSYS and QLEAWI procedures: src/param.rs parameter
               and receiver conventions, ERRC0100/ERRC0200; src/provider.rs the Provider trait
               (objects, data queues and areas, user indexes, files, system values, commands,

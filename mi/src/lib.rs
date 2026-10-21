@@ -15,6 +15,7 @@ mod error;
 pub mod act;
 pub mod cee;
 pub mod cond;
+pub mod debug;
 pub mod dump;
 pub mod except;
 pub mod exec;

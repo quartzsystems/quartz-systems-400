@@ -25,6 +25,7 @@ const SEC_IR: u32 = 1;
 const SEC_CODE: u32 = 2;
 const SEC_CREATE: u32 = 3;
 const SEC_SOURCE: u32 = 4;
+const SEC_DEBUG: u32 = 5;
 
 /// Layout of `ModuleHdr`, for the spec test.
 pub static HDR_LAYOUT: Layout = Layout {
@@ -80,6 +81,8 @@ pub struct ModuleObject {
     pub ir: Module,
     /// The native output.
     pub code: ModuleCode,
+    /// The debug variant, when `DBGVIEW` asked for one.
+    pub debug_code: Option<ModuleCode>,
     /// Creation data.
     pub create: CreateData,
     /// Unix seconds of creation.
@@ -92,10 +95,16 @@ impl ModuleObject {
     /// Compile a module's IR into a module object.
     pub fn compile(ir: Module, create: CreateData, created: u64) -> Result<Self> {
         let code = codegen::compile(&ir)?;
+        let debug_code = if ir.options.dbgview == qir::DbgView::None {
+            None
+        } else {
+            Some(codegen::compile_debug(&ir)?)
+        };
         Ok(Self {
             name: ir.name.clone(),
             ir,
             code,
+            debug_code,
             create,
             created,
             source: None,
@@ -188,6 +197,11 @@ impl ModuleObject {
             });
             sections.push((SEC_SOURCE, cw.out));
         }
+        if let Some(dc) = &self.debug_code {
+            let mut cw = W::default();
+            code::encode(&mut cw, dc);
+            sections.push((SEC_DEBUG, cw.out));
+        }
         w.u32(crate::bin::len32(sections.len()));
         let mut flags = 0u32;
         if self.ir.options.srcstmt {
@@ -263,10 +277,18 @@ impl ModuleObject {
             }
             None => None,
         };
+        let debug_code = match find(SEC_DEBUG) {
+            Some(b) => {
+                let mut cr = R::new(b, "*MODULE");
+                Some(code::decode(&mut cr)?)
+            }
+            None => None,
+        };
         Ok(Self {
             name: ir.name.clone(),
             ir,
             code,
+            debug_code,
             create,
             created,
             source,

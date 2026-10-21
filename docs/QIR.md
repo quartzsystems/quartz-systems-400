@@ -321,6 +321,15 @@ returns 0 when the queue is empty; a missing queue is `CPF9801`.
 `rslvsp` yields a system pointer whose identifier the object source
 assigned, and `callp` through it calls the program it names.
 
+**Debug.** `debug.stmt n` marks the statement the following code
+belongs to; `debug.var NAME, place` names a place for `EVAL`;
+`debug.scope` brackets nested scopes. The production translation only
+records statements in its map and in `job.cur_stmt`; the debug
+translation (`DBGVIEW` other than `*NONE`, `ILE.md` §2) also calls the
+runtime at every statement and registers every `debug.var` with the
+running call-stack entry, so a job under `STRDBG` stops at breakpoints
+and steps, and `EVAL` reads the variables the entry registered.
+
 **Messages.** Queues are `*SAME` (this call-stack entry), `*PRV`,
 `*CTLBDY`, `*EXT`, `*SYSOPR`, or a count of entries up the stack.
 

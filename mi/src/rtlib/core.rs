@@ -85,6 +85,7 @@ pub extern "sysv64" fn enter(env: *mut Env, code: i64, argc: i64) {
         stmt: 0,
         handlers: Vec::new(),
         cancel_handlers: Vec::new(),
+        debug_vars: Vec::new(),
     });
 }
 
@@ -287,7 +288,7 @@ pub extern "sysv64" fn dsply(env: *mut Env, src: i64, sty: i64, reply: i64, rty:
 
 /// A storage operand as display text: text decoded from CP037, a
 /// number rendered, anything else in hexadecimal.
-fn display_text(addr: i64, desc: i64) -> String {
+pub(crate) fn display_text(addr: i64, desc: i64) -> String {
     let (b, t) = typed(addr, desc);
     if t.is_string() || t.class() == qir::TypeClass::DateTime {
         let txt = read_text(addr, desc);

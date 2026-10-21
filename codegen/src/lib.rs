@@ -21,7 +21,7 @@ pub mod rt;
 
 pub use error::{CodegenError, Result};
 pub use load::{Loaded, Placed, Resolve};
-pub use lower::{compile, target};
+pub use lower::{compile, compile_debug, target};
 pub use output::{
     CODEGEN_VERSION, ModuleCode, ProcCode, RegionDesc, Reloc, RelocKind, RelocTarget, StmtRange,
 };

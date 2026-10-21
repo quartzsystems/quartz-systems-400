@@ -126,6 +126,8 @@ pub struct Job {
     pub data: Option<Box<dyn crate::io::DataSource>>,
     /// Open files by activation, module and file index.
     pub files: HashMap<FileKey, FileState>,
+    /// The debugger, while `STRDBG` is in effect.
+    pub debug: Option<crate::debug::Debugger>,
     /// The job's external message queue.
     pub ext_msgq: MsgQueue,
     /// `QSYSOPR`, as this job sees it; `MIGRATE(phase5)`.
@@ -170,6 +172,7 @@ impl Job {
             io: None,
             data: None,
             files: HashMap::new(),
+            debug: None,
             ext_msgq: MsgQueue::default(),
             sysopr: MsgQueue::default(),
             msgs: Box::new(msgf::BuiltinMsgs::new()),

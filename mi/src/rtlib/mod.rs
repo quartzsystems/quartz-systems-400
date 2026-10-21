@@ -11,6 +11,7 @@
 mod convert;
 mod core;
 mod date;
+mod debug;
 mod decimal;
 mod heap;
 mod io;
@@ -19,11 +20,13 @@ mod msg;
 mod string;
 
 pub use convert::convert;
+pub(crate) use core::display_text;
 pub use core::{
     call_pgm, call_pgm_ptr, call_pgm_var, copy, deref, dsply, enter, leave, monitor_match, mov_str,
     proc_addr, proc_target, ptr_add, ptr_addr, ptr_diff, raise, unresolved,
 };
 pub use date::{dt_add, dt_diff, dt_extract, dt_now, dt_test};
+pub use debug::{dbg_stmt, dbg_var};
 pub use decimal::{dec_bin, dec_cmp, dec_to_float, dec_to_int, dec_un};
 pub use heap::{alloc, dealloc, realloc};
 pub use io::{db_close, db_io, db_open, dev_io, dtaara, dtaq_rcv, dtaq_snd, rslvsp};
@@ -93,6 +96,8 @@ pub fn table() -> Vec<usize> {
             RtFn::DtaqSnd => dtaq_snd as *const () as usize,
             RtFn::DtaqRcv => dtaq_rcv as *const () as usize,
             RtFn::Rslvsp => rslvsp as *const () as usize,
+            RtFn::DbgStmt => dbg_stmt as *const () as usize,
+            RtFn::DbgVar => dbg_var as *const () as usize,
         })
         .collect()
 }

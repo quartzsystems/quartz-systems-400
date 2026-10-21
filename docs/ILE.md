@@ -47,7 +47,11 @@ Module sections: `1` the IR (`QIR.md` §8), `2` the native output
 (code, relocations, procedures with statement maps, the static frame
 layout and its initial bytes, data exports; `ile/src/object/code.rs`),
 `3` creation data (compiler, options, source file, library and member),
-`4` the source view, as CP037 lines, when the compiler supplied it.
+`4` the source view, as CP037 lines, when the compiler supplied it,
+`5` the debug variant of the native output, present when `DBGVIEW` is
+not `*NONE`: the same code with a runtime call at every statement and
+every `debug.var` (`ABI.md` rows 51 and 52), the copy a job runs
+while the program is under `STRDBG`.
 The module's exports and imports are not stored twice: they are read
 from the IR (exported procedures and statics, `extern proc` and
 `import` declarations).

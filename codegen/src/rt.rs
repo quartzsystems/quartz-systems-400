@@ -132,6 +132,12 @@ pub enum RtFn {
     /// `rslvsp(env, out, type, name, lib)`: a system pointer written
     /// to `out`.
     Rslvsp = 50,
+    /// `dbg_stmt(env, n)`: statement `n` starts; the debug variant
+    /// only.
+    DbgStmt = 51,
+    /// `dbg_var(env, name, addr, desc)`: a source variable's place,
+    /// for `EVAL`; the debug variant only.
+    DbgVar = 52,
 }
 
 /// The code of a database operation, as `db_io` takes it.
@@ -175,7 +181,7 @@ pub fn dtaara_op_code(op: qir::DtaaraOp) -> i64 {
 }
 
 /// Every runtime function, in table order.
-pub const RT_FNS: [RtFn; 51] = [
+pub const RT_FNS: [RtFn; 53] = [
     RtFn::Raise,
     RtFn::Enter,
     RtFn::Leave,
@@ -227,6 +233,8 @@ pub const RT_FNS: [RtFn; 51] = [
     RtFn::DtaqSnd,
     RtFn::DtaqRcv,
     RtFn::Rslvsp,
+    RtFn::DbgStmt,
+    RtFn::DbgVar,
 ];
 
 impl RtFn {
@@ -297,6 +305,8 @@ impl RtFn {
             Self::DtaqSnd => "dtaq_snd",
             Self::DtaqRcv => "dtaq_rcv",
             Self::Rslvsp => "rslvsp",
+            Self::DbgStmt => "dbg_stmt",
+            Self::DbgVar => "dbg_var",
         }
     }
 
@@ -357,6 +367,8 @@ impl RtFn {
             Self::DtaqSnd => (4, None),
             Self::DtaqRcv => (5, Some(types::I32)),
             Self::Rslvsp => (4, None),
+            Self::DbgStmt => (1, None),
+            Self::DbgVar => (3, None),
         }
     }
 

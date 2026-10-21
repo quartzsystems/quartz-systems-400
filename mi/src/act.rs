@@ -69,6 +69,8 @@ pub struct LoadedProgram {
     pub proc_addrs: Vec<Vec<usize>>,
     /// The service programs bound to, in the object's order.
     pub srvpgms: Vec<Arc<LoadedProgram>>,
+    /// The debug variant is loaded.
+    pub debug: bool,
 }
 
 impl LoadedProgram {
@@ -236,16 +238,17 @@ pub(crate) fn load(
     table: &[usize],
     deps: Vec<Arc<LoadedProgram>>,
     system: &HashMap<String, usize>,
+    debug: bool,
 ) -> Result<Arc<LoadedProgram>, Cond> {
     let mut placed = Vec::with_capacity(object.modules.len());
     for bm in &object.modules {
-        placed.push(Placed::new(&bm.module.code).map_err(|_| Cond::Mch3401)?);
+        placed.push(Placed::new(variant(bm, debug)).map_err(|_| Cond::Mch3401)?);
     }
     let proc_addrs: Vec<Vec<usize>> = placed
         .iter()
         .zip(&object.modules)
         .map(|(p, bm)| {
-            (0..bm.module.code.procs.len())
+            (0..variant(bm, debug).procs.len())
                 .map(|i| p.proc_addr_at(i).expect("procedure"))
                 .collect()
         })
@@ -289,7 +292,7 @@ pub(crate) fn load(
             }
         };
         modules.push(
-            p.resolve(&bm.module.code, &resolver)
+            p.resolve(variant(bm, debug), &resolver)
                 .map_err(|_| Cond::Mch3401)?,
         );
     }
@@ -299,7 +302,16 @@ pub(crate) fn load(
         modules,
         proc_addrs,
         srvpgms: deps,
+        debug,
     }))
+}
+
+/// A bound module's code: the debug variant when asked for and present.
+fn variant(bm: &ile::BoundModule, debug: bool) -> &codegen::ModuleCode {
+    match (&bm.module.debug_code, debug) {
+        (Some(dc), true) => dc,
+        _ => &bm.module.code,
+    }
 }
 
 /// A frame of the call stack as the runtime keeps it.
@@ -330,6 +342,8 @@ pub struct Frame {
     pub handlers: Vec<(u64, u64)>,
     /// Cancel handlers (`CEERTX`), oldest first.
     pub cancel_handlers: Vec<(u64, u64)>,
+    /// Variables registered by `debug.var`, for `EVAL`.
+    pub debug_vars: Vec<crate::debug::DbgVar>,
 }
 
 /// The activation state of a job.
@@ -347,6 +361,8 @@ pub struct Activator {
     /// Bound procedures the runtime provides (`*SYSTEM` imports), by
     /// export name: the condition APIs, and what `sysapi` installs.
     pub system: HashMap<String, usize>,
+    /// Programs (`LIB/NAME`) that load their debug variant.
+    pub debug_programs: Vec<String>,
 }
 
 impl Activator {
@@ -370,6 +386,7 @@ impl Activator {
                 .iter()
                 .filter_map(|n| crate::cee::bound_api(n).map(|a| ((*n).to_string(), a)))
                 .collect(),
+            debug_programs: Vec::new(),
         }
     }
 
@@ -452,8 +469,12 @@ impl Activator {
     ) -> Result<Arc<LoadedProgram>, Cond> {
         let (object, found_lib) = self.source.program(name, lib, kind).ok_or(Cond::Mch3401)?;
         let key = format!("{found_lib}/{name}");
+        let debug = self.debug_programs.contains(&key);
         if let Some(p) = self.loaded.get(&key) {
-            return Ok(p.clone());
+            if p.debug == debug {
+                return Ok(p.clone());
+            }
+            self.loaded.remove(&key);
         }
         let mut deps = Vec::with_capacity(object.srvpgms.len());
         for r in &object.srvpgms {
@@ -463,7 +484,7 @@ impl Activator {
             }
             deps.push(dep);
         }
-        let p = load(object, key.clone(), table, deps, &self.system)?;
+        let p = load(object, key.clone(), table, deps, &self.system, debug)?;
         self.loaded.insert(key, p.clone());
         Ok(p)
     }
