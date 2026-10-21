@@ -20,7 +20,8 @@ pub mod proto;
 pub mod remote;
 
 pub use link::{Link, Shared};
-pub use proto::{Client, ExecReply, JobRef, Request, Service, Start, dispatch};
+pub use proto::{Client, ExecReply, Request, Service, Start, dispatch};
+pub use wm::table::JobInfo;
 
 /// Where the service listens for job connections.
 pub const SOCKET: &str = "/run/qs400/stg";

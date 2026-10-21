@@ -13,6 +13,8 @@ use mi::io::{
     OwnedRequest,
 };
 
+use wm::job::Status;
+
 use crate::Shared;
 use crate::proto::Client;
 
@@ -69,25 +71,42 @@ impl DataSource for RemoteData {
         lib: &str,
         wait: i64,
     ) -> Result<Option<Vec<u8>>, IoFail> {
-        let until = (wait > 0).then(|| {
-            Instant::now() + Duration::from_secs(u64::try_from(wait).unwrap_or(0))
-        });
-        loop {
+        let until = (wait > 0)
+            .then(|| Instant::now() + Duration::from_secs(u64::try_from(wait).unwrap_or(0)));
+        let mut waiting = false;
+        let r = loop {
             let got = self
                 .link
                 .borrow_mut()
-                .with(|l| l.dq_receive(name.into(), lib.into()))?;
-            if got.is_some() {
-                return Ok(got);
+                .with(|l| l.dq_receive(name.into(), lib.into()));
+            if !matches!(got, Ok(None)) {
+                break got;
             }
-            match until {
-                Some(t) if Instant::now() < t => std::thread::sleep(RETRY),
+            let more = match until {
+                Some(t) => Instant::now() < t,
                 // A negative wait is for ever.
-                None if wait < 0 => std::thread::sleep(RETRY),
-                _ => return Ok(None),
+                None => wait < 0,
+            };
+            if !more {
+                break got;
             }
+            if !waiting {
+                waiting = true;
+                status(&self.link, Status::Deqw, &format!("DEQW-{name}"));
+            }
+            std::thread::sleep(RETRY);
+        };
+        if waiting {
+            status(&self.link, Status::Run, "");
         }
+        r
     }
+}
+
+/// Tell the service what the job is doing.
+pub fn status(link: &Shared, s: Status, function: &str) {
+    link.borrow_mut()
+        .with(|l| l.set_status(s.byte(), function.to_string()));
 }
 
 /// Files: the open data paths live in the service.

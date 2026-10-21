@@ -19,6 +19,10 @@ pub struct Start {
     pub number: u32,
     /// The lock owner handle.
     pub handle: u64,
+    /// Type code (`QUSRJOBI`).
+    pub kind: char,
+    /// The subsystem it runs in; blank for none.
+    pub subsystem: String,
     /// The job's role: `QSVCJOB` serves the service console.
     pub role: String,
 }
@@ -28,6 +32,8 @@ wire_struct!(Start {
     user,
     number,
     handle,
+    kind,
+    subsystem,
     role
 });
 

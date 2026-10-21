@@ -12,6 +12,7 @@ mi = { path = "../mi", version = "0.1.0" }
 ile = { path = "../ile", version = "0.1.0" }
 msgf = { path = "../msgf", version = "0.1.0" }
 sysapi = { path = "../sysapi", version = "0.1.0" }
+wm = { path = "../wm", version = "0.1.0" }
 tracing.workspace = true
 
 [lints]

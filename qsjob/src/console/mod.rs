@@ -19,7 +19,9 @@ use ipc::chan::Chan;
 use mi::Job;
 use stg::remote::{RemoteProvider, Sources};
 use stg::{Client, Shared};
-use wm::ctl::{FromJob, JOB_COMMANDS, PROMPT, ToJob};
+use stg::remote::status;
+use wm::ctl::{FromJob, JOB_COMMANDS, PROMPT, Start, ToJob};
+use wm::job::Status;
 
 /// The console job's state.
 pub struct Console {
@@ -32,11 +34,14 @@ pub struct Console {
     /// SRC codes and system values the line's commands raised.
     srcs: Vec<String>,
     sysvals: Option<Vec<u8>>,
+    /// Who the job is.
+    start: Start,
 }
 
 /// Serve lines until told to end. Never returns.
-pub fn serve(ctl: Chan, link: &Shared) -> ! {
+pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
     let mut c = Console {
+        start: start.clone(),
         ctl,
         link: Rc::clone(link),
         job: None,
@@ -46,8 +51,16 @@ pub fn serve(ctl: Chan, link: &Shared) -> ! {
         sysvals: None,
     };
     loop {
+        status(&c.link, Status::Evtw, "");
         match c.ctl.recv::<ToJob>() {
             Ok(ToJob::Line { text }) => {
+                let word = text.split_whitespace().next().unwrap_or("");
+                let function = if word.is_empty() {
+                    String::new()
+                } else {
+                    format!("CMD-{}", word.to_ascii_uppercase())
+                };
+                status(&c.link, Status::Run, &function);
                 let out = c.line(&text);
                 if !out.is_empty() {
                     c.output(&out);
@@ -115,6 +128,9 @@ impl Console {
             let mut job = Job::boxed(Box::new(s.objects));
             job.usrspcs.set_source(Box::new(s.spaces));
             job.msgs = Box::new(s.msgs);
+            job.ident.name.clone_from(&self.start.name);
+            job.ident.user.clone_from(&self.start.user);
+            job.ident.number = format!("{:06}", self.start.number);
             job.data = Some(Box::new(s.data));
             job.io = Some(Box::new(s.io));
             let provider = Rc::new(RefCell::new(s.provider));

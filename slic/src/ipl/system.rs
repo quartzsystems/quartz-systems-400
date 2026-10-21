@@ -76,6 +76,8 @@ pub struct System {
     pub locks: db::odp::SharedLocks,
     /// The store as lent to the job sources for one request.
     pub lent: crate::svc::ile::Shared,
+    /// The active jobs (storage service).
+    pub jobs: wm::table::JobTable,
     /// The storage service and the service console job, once started.
     pub procs: crate::procs::Procs,
     /// The event channel.
@@ -110,6 +112,7 @@ impl System {
             locks: db::odp::new_shared(),
             lent: std::rc::Rc::new(std::cell::RefCell::new(None)),
             procs: crate::procs::Procs::default(),
+            jobs: wm::table::JobTable::default(),
         }
     }
 

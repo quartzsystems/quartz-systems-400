@@ -18,7 +18,7 @@ use mi::io::{
 use mi::{ObjectSource, UserSpaceSource};
 use msgf::{MsgDesc, MsgLookup};
 use stg::proto::IdxAttrs;
-use stg::{ExecReply, JobRef, Request, Service};
+use stg::{ExecReply, JobInfo, Request, Service};
 use store::obj::{JobHandle, ObjectId, ops, types};
 use sysapi::{
     ApiFail, CommitInfo, DataArea, DepInfo, DtaqEntry, DtaqInfo, FileInfo, FormatInfo, IdxAttr,
@@ -50,7 +50,9 @@ impl Conn {
 /// What the service keeps for one job.
 pub struct JobCtx {
     /// Who.
-    pub job: JobRef,
+    pub job: JobInfo,
+    /// Its `QTEMP` in ASP 0.
+    pub qtemp: Option<ObjectId>,
     objects: StoreObjects,
     spaces: StoreUserSpaces,
     msgs: StoreMsgs,
@@ -63,7 +65,7 @@ pub struct JobCtx {
 
 impl JobCtx {
     /// The sources for `job` over the system's lent store.
-    pub fn new(system: &System, job: JobRef) -> Self {
+    pub fn new(system: &System, job: JobInfo) -> Self {
         let shared = &system.lent;
         let resolver = Rc::clone(shared);
         let resolve = move |fr: &dds::FileRef| -> db::Result<ObjectId> {
@@ -88,6 +90,7 @@ impl JobCtx {
             ),
             provider: StoreProvider::new(Rc::clone(shared)),
             svc: svc::db::State::default(),
+            qtemp: None,
             job,
         }
     }
@@ -97,11 +100,10 @@ impl JobCtx {
 pub fn handle(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -> Vec<u8> {
     let conn = &mut conns[i];
     if let Request::Hello { job } = req {
-        let r: Result<(), String> = if conn.ctx.is_some() {
+        let r = if conn.ctx.is_some() {
             Err("this connection already said hello".into())
         } else {
-            conn.ctx = Some(JobCtx::new(system, job));
-            Ok(())
+            begin_job(system, job).map(|ctx| conn.ctx = Some(ctx))
         };
         return ipc::encode(&r);
     }
@@ -116,6 +118,23 @@ pub fn handle(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -
     stg::dispatch(&mut served, req)
 }
 
+/// A job said hello: into the active table, with a `QTEMP` of its own.
+pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String> {
+    if system.jobs.in_use(job.number) {
+        return Err(format!("job number {:06} is in use", job.number));
+    }
+    job.handle = u64::from(job.number);
+    job.status = super::jobs::initial_status();
+    if job.started == 0 {
+        job.started = crate::ipl::system::now_unix();
+    }
+    let qtemp = super::jobs::make_qtemp(system, job.number)?;
+    system.jobs.add(job.clone());
+    let mut ctx = JobCtx::new(system, job);
+    ctx.qtemp = Some(qtemp);
+    Ok(ctx)
+}
+
 /// A job's connection closed: whatever it held goes.
 pub fn vanished(system: &mut System, conn: Conn) {
     let Some(mut ctx) = conn.ctx else {
@@ -124,8 +143,17 @@ pub fn vanished(system: &mut System, conn: Conn) {
     end_job(system, &mut ctx);
 }
 
-/// End a job's use of the database and the store.
+/// End a job: its database use, its `QTEMP`, its table entry.
 fn end_job(system: &mut System, ctx: &mut JobCtx) {
+    end_db(system, ctx);
+    if let Some(q) = ctx.qtemp.take() {
+        super::jobs::drop_qtemp(system, ctx.job.number, q);
+    }
+    system.jobs.remove(ctx.job.number);
+}
+
+/// End a job's use of the database and the store.
+fn end_db(system: &mut System, ctx: &mut JobCtx) {
     let lent = ile::lend(system).is_ok();
     ctx.io.end();
     ile::restore(system);
@@ -172,25 +200,44 @@ struct Served<'a> {
 impl Served<'_> {
     /// Run `f` with the store lent to the job's sources.
     fn lent<T>(&mut self, f: impl FnOnce(&mut JobCtx) -> T) -> T {
+        let root = self.own_qtemp();
         let lent = ile::lend(self.system).is_ok();
         let r = f(self.ctx);
         if lent {
             ile::restore(self.system);
         }
+        self.root_qtemp(root);
         r
+    }
+
+    /// Make the job's library the temporary ASP's `QTEMP`; the root it
+    /// replaced.
+    fn own_qtemp(&mut self) -> Option<ObjectId> {
+        let t = self.system.temp.as_mut()?;
+        let q = self.ctx.qtemp?;
+        Some(std::mem::replace(&mut t.qtemp, q))
+    }
+
+    /// Put the root back.
+    fn root_qtemp(&mut self, root: Option<ObjectId>) {
+        if let (Some(t), Some(r)) = (self.system.temp.as_mut(), root) {
+            t.qtemp = r;
+        }
     }
 }
 
 impl Service for Served<'_> {
-    fn hello(&mut self, _job: JobRef) -> Result<(), String> {
+    fn hello(&mut self, _job: JobInfo) -> Result<(), String> {
         Err("this connection already said hello".into())
     }
 
     fn exec(&mut self, line: String) -> ExecReply {
+        let root = self.own_qtemp();
         std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
         let text = super::exec::run(self.system, &line);
         let prompt = svc::db::prompt(self.system).to_string();
         std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
+        self.root_qtemp(root);
         let srcs = std::mem::take(&mut self.system.raised)
             .into_iter()
             .map(|s| s.code.to_string())
@@ -213,6 +260,21 @@ impl Service for Served<'_> {
     }
 
     fn ping(&mut self) {}
+
+    fn job_number(&mut self) -> Result<u32, String> {
+        super::jobs::next(self.system)
+    }
+
+    fn set_status(&mut self, status: u8, function: String) {
+        if let Some(j) = self.system.jobs.get_mut(self.ctx.job.number) {
+            j.status = status;
+            j.function = function;
+        }
+    }
+
+    fn active_jobs(&mut self) -> Vec<JobInfo> {
+        self.system.jobs.all()
+    }
 
     fn program(&mut self, name: String, lib: String, kind: u8) -> Option<(Vec<u8>, String, String)> {
         let kind = if kind == 1 {

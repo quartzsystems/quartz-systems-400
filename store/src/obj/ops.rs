@@ -183,7 +183,8 @@ pub fn create(txn: &mut Txn<'_>, params: &CreateParams) -> Result<ObjectId> {
     }
     let mut lib = Library::load(txn, params.library)?;
     let lib_header = read_header(txn, params.library)?.1;
-    if info.qsys_only && lib_header.name != qsys_name() {
+    // ASP 0's root holds each job's QTEMP library.
+    if info.qsys_only && lib_header.name != qsys_name() && txn.store().asp_number() != 0 {
         return Err(StoreError::InvalidName {
             name: format!("{}/{} {}", lib_header.name, params.name, info.name),
         });

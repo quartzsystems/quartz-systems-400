@@ -11,6 +11,7 @@ use std::sync::mpsc::Sender;
 use std::thread;
 
 use ipc::chan::Chan;
+use stg::Client;
 use wm::ctl::{FromJob, Start, ToJob};
 
 use super::spawn::{QSJOB, spawn};
@@ -59,13 +60,22 @@ impl SvcJob {
 
 /// Start `QSVCJOB`; its messages arrive on `tx`.
 pub fn start(system: &mut System, tx: Sender<Event>) -> Result<(), String> {
+    let number = system
+        .procs
+        .stg
+        .as_mut()
+        .ok_or("the storage service is not running")?
+        .job_number()
+        .map_err(|e| format!("QSVCJOB: {e}"))??;
     let (pid, mut chan) = spawn(QSJOB, &[])?;
     chan.send(&ToJob::Start {
         start: Start {
             name: "QSVCJOB".into(),
             user: "QSYS".into(),
-            number: 0,
-            handle: 1,
+            number,
+            handle: u64::from(number),
+            kind: 'S',
+            subsystem: String::new(),
             role: "QSVCJOB".into(),
         },
     })
@@ -92,4 +102,9 @@ pub fn start(system: &mut System, tx: Sender<Event>) -> Result<(), String> {
         busy: false,
     });
     Ok(())
+}
+
+/// Whether a line is one of `slic`'s own commands.
+pub fn is_own(line: &str) -> bool {
+    LOCAL.contains(&line.split_whitespace().next().unwrap_or(""))
 }

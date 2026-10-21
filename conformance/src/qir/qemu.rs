@@ -127,7 +127,8 @@ impl Suite {
                 s.command(&format!("rpy {r}"), CMD)?;
             }
             let out = s.command(&format!("call QGPL/{main} {}", case.parms), CMD)?;
-            let got = call_lines(&out);
+            let got = mask_job_number(call_lines(&out));
+            let want = mask_job_number(want);
             ran += 1;
             if got != want {
                 mismatched.push(format!(
@@ -147,4 +148,16 @@ impl Suite {
             "{ran} IR kit cases ran over the console and matched"
         ))
     }
+}
+
+/// The job number a program reads about its own job differs from run to
+/// run: hide it where it follows `QSVCJOB QSYS`.
+fn mask_job_number(mut lines: Vec<String>) -> Vec<String> {
+    for i in 2..lines.len() {
+        let six = lines[i].len() == 6 && lines[i].bytes().all(|b| b.is_ascii_digit());
+        if six && lines[i - 2] == "QSVCJOB" && lines[i - 1] == "QSYS" {
+            lines[i] = "######".into();
+        }
+    }
+    lines
 }

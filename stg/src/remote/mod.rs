@@ -8,7 +8,7 @@ mod data;
 mod objects;
 mod provider;
 
-pub use data::{RemoteData, RemoteIo};
+pub use data::{RemoteData, RemoteIo, status};
 pub use objects::{RemoteMsgs, RemoteObjects, RemoteSpaces};
 pub use provider::RemoteProvider;
 

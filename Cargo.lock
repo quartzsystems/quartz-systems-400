@@ -1882,6 +1882,7 @@ dependencies = [
  "msgf",
  "sysapi",
  "tracing",
+ "wm",
 ]
 
 [[package]]

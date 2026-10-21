@@ -19,5 +19,8 @@ pub fn run(system: &mut System, line: &str) -> String {
     if LOCAL.contains(&word) {
         return format!("{word} is answered by the console, not the storage service\n");
     }
+    if word == "wrkactjob" {
+        return super::jobs::wrkactjob(system);
+    }
     svc::reply(system, line)
 }

@@ -323,6 +323,13 @@ fn console_line(system: &mut System, line: &str) {
                 system.out.serial("slic: QSVCJOB is not answering\n");
             }
         }
+        None if system.procs.stg.is_some() && !procs::svcjob::is_own(line) => {
+            // The store is the service's now; only QSVCJOB can reach it.
+            system
+                .out
+                .serial("slic: QSVCJOB is not running; only slic's own commands work\n");
+            system.out.serial(svc::PROMPT);
+        }
         _ => svc::handle(system, line),
     }
 }

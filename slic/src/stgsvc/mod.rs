@@ -12,6 +12,7 @@
 //! when its connection closes. `docs/STORAGE_SERVICE.md` has the design.
 
 mod exec;
+mod jobs;
 mod served;
 
 use std::fs;
@@ -22,7 +23,7 @@ use std::time::Duration;
 use blockdev::{BlockDev, LinuxBlockDev};
 use ipc::chan::Chan;
 use rustix::event::{PollFd, PollFlags, Timespec, poll};
-use stg::{JobRef, Request, Start};
+use stg::{JobInfo, Request, Start};
 use sysval::SysVals;
 
 use crate::ipl::cmdline::Boot;
@@ -30,7 +31,7 @@ use crate::ipl::storage::{self, Storage};
 use crate::ipl::system::{Role, System};
 use crate::platform::console::Outputs;
 
-use served::{Conn, JobCtx};
+use served::Conn;
 
 /// Run as the storage service. Never returns.
 pub fn run() -> ! {
@@ -127,14 +128,23 @@ fn listen(path: &Path) -> Result<UnixListener, String> {
 
 /// Serve `slic` and the jobs until `slic` asks for the close.
 fn serve(system: &mut System, slic: Chan, listener: &UnixListener) -> ! {
-    let scpf = JobRef {
+    let scpf = JobInfo {
         name: "SCPF".into(),
         user: "QSYS".into(),
         number: 0,
-        handle: 0,
+        kind: 'X',
+        subtype: ' ',
+        pid: 1,
+        ..JobInfo::default()
     };
-    let ctx = JobCtx::new(system, scpf);
-    let mut conns = vec![Conn::new(slic, Some(ctx))];
+    let ctx = match served::begin_job(system, scpf) {
+        Ok(c) => Some(c),
+        Err(e) => {
+            eprintln!("qsstg: SCPF: {e}");
+            None
+        }
+    };
+    let mut conns = vec![Conn::new(slic, ctx)];
     loop {
         let wait = if storage::busy(system) {
             Duration::from_millis(20)

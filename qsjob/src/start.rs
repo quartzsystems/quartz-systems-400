@@ -8,7 +8,7 @@
 use std::path::Path;
 
 use ipc::chan::Chan;
-use stg::{Client, JobRef, Link};
+use stg::{Client, JobInfo, Link};
 use wm::ctl::{FromJob, ToJob};
 
 /// Run the job. Never returns.
@@ -30,11 +30,16 @@ pub fn run() -> ! {
         Err(e) => end(&mut ctl, &format!("storage service: {e}")),
     };
     let link = link.shared();
-    let hello = link.borrow_mut().hello(JobRef {
+    let hello = link.borrow_mut().hello(JobInfo {
         name: start.name.clone(),
         user: start.user.clone(),
         number: start.number,
+        kind: start.kind,
+        subtype: ' ',
+        subsystem: start.subsystem.clone(),
+        pid: std::process::id(),
         handle: start.handle,
+        ..JobInfo::default()
     });
     match hello {
         Ok(Ok(())) => {}
@@ -45,7 +50,7 @@ pub fn run() -> ! {
         pid: std::process::id(),
     });
     match start.role.as_str() {
-        "QSVCJOB" => crate::console::serve(ctl, &link),
+        "QSVCJOB" => crate::console::serve(ctl, &link, &start),
         other => end(&mut ctl, &format!("no role {other}")),
     }
 }

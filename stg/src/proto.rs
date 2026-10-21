@@ -14,26 +14,7 @@ use sysapi::{
     ApiFail, CommitInfo, DataArea, DepInfo, DtaqEntry, DtaqInfo, FileInfo, FormatInfo, IdxAttr,
     LocalNow, MemberInfo, ObjInfo, SysVal, UserInfo,
 };
-
-/// Who a connection speaks for.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct JobRef {
-    /// Job name.
-    pub name: String,
-    /// User name.
-    pub user: String,
-    /// Job number.
-    pub number: u32,
-    /// The lock owner handle the job's locks are taken under.
-    pub handle: u64,
-}
-
-wire_struct!(JobRef {
-    name,
-    user,
-    number,
-    handle
-});
+use wm::table::JobInfo;
 
 /// What a command run in the service answered.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -82,7 +63,7 @@ ipc::rpc! {
     request Request, service Service, client Client, dispatch dispatch;
 
     /// First request on a connection: who is speaking.
-    0 => fn hello / Hello (job: JobRef) -> Result<(), String>;
+    0 => fn hello / Hello (job: JobInfo) -> Result<(), String>;
     /// A service console command, run in the service.
     1 => fn exec / Exec (line: String) -> ExecReply;
     /// Checkpoint and close the store; the service exits after the
@@ -90,6 +71,13 @@ ipc::rpc! {
     2 => fn close / Close () -> Result<String, String>;
     /// Nothing; proves the service is up.
     3 => fn ping / Ping () -> ();
+    /// A job number for a new job: the next after the last one
+    /// handed out, skipping numbers in use. Kept in the store.
+    4 => fn job_number / JobNumber () -> Result<u32, String>;
+    /// The job's status (`Status::byte`) and function.
+    5 => fn set_status / SetStatus (status: u8, function: String) -> ();
+    /// Every active job.
+    6 => fn active_jobs / ActiveJobs () -> Vec<JobInfo>;
 
     /// A `*PGM` (kind 0) or `*SRVPGM` (kind 1): its encoded object,
     /// name and the library it was found in.
