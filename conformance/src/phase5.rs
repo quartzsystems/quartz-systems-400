@@ -417,3 +417,90 @@ impl Suite {
         ))
     }
 }
+
+/// The `number/user/name` in `SBMJOB`'s message.
+fn submitted(out: &str) -> Result<String, String> {
+    out.split_whitespace()
+        .nth(1)
+        .filter(|j| j.split('/').count() == 3)
+        .map(str::to_string)
+        .ok_or_else(|| format!("sbmjob: {out}"))
+}
+
+impl Suite {
+    /// Step 25: job queues: `SBMJOB` onto a held queue, released, the
+    /// job started by `QBATCH`'s monitor; a held job ended while queued;
+    /// `ENDJOB *IMMED` of the running job and a job that completes, each
+    /// with its completion message.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn job_queues(&self, s: &mut Session) -> Result<String, String> {
+        let queues = s.command("wrkjobq", CMD)?;
+        if !queues.contains("QBATCH") || !queues.contains("QSYSNOMAX") {
+            return Err(format!("wrkjobq:\n{queues}"));
+        }
+        s.command("strsbs QSYS/QBATCH", CMD)?;
+        s.command("hldjobq QGPL/QBATCH", CMD)?;
+        let out = s.command(
+            "sbmjob CMD('dlyjob DLY(60)') JOB(WMDLY) JOBQ(QGPL/QBATCH) MSGQ(QUSRSYS/QSECOFR)",
+            CMD,
+        )?;
+        let dly = submitted(&out)?;
+        let waiting = s.command("wrkjobq QGPL/QBATCH", CMD)?;
+        if !waiting.contains("WMDLY") || !waiting.contains("HLD") || !waiting.contains("QBATCH") {
+            return Err(format!(
+                "the job is not waiting on the held queue:\n{waiting}"
+            ));
+        }
+        let held = submitted(&s.command(
+            "sbmjob CMD('wrkactjob') JOB(WMHELD) JOBQ(QGPL/QBATCH) HOLD(*YES)",
+            CMD,
+        )?)?;
+        let gone = s.command(&format!("endjob JOB({held})"), CMD)?;
+        if !gone.contains("ended while on job queue") {
+            return Err(format!("endjob of a queued job: {gone}"));
+        }
+        s.command("rlsjobq QGPL/QBATCH", CMD)?;
+        let mut active = String::new();
+        for _ in 0..30 {
+            active = s.command("wrkactjob", CMD)?;
+            if active
+                .lines()
+                .any(|l| l.starts_with("WMDLY") && l.contains("DLYW"))
+            {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(250));
+        }
+        let row = active
+            .lines()
+            .find(|l| l.starts_with("WMDLY"))
+            .ok_or_else(|| format!("WMDLY did not start:\n{active}"))?
+            .to_string();
+        if !row.contains("BCH") || !row.contains("DLYW") {
+            return Err(format!("WMDLY is not a delayed batch job: {row}"));
+        }
+        s.command(&format!("endjob JOB({dly}) OPTION(*IMMED)"), CMD)?;
+        let quick = submitted(&s.command(
+            "sbmjob CMD('wrkactjob') JOB(WMQUICK) JOBQ(QGPL/QBATCH) MSGQ(QUSRSYS/QSECOFR)",
+            CMD,
+        )?)?;
+        let mut msgs = String::new();
+        for _ in 0..40 {
+            msgs = s.command("dspmsg QUSRSYS/QSECOFR", CMD)?;
+            if msgs.contains("CPF1240") && msgs.contains("CPF1241") {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(250));
+        }
+        s.command("endsbs QBATCH OPTION(*IMMED)", CMD)?;
+        if !msgs.contains("CPF1240") || !msgs.contains("WMDLY") {
+            return Err(format!("no abnormal end message for {dly}:\n{msgs}"));
+        }
+        if !msgs.contains("CPF1241") || !msgs.contains("WMQUICK") {
+            return Err(format!("no completion message for {quick}:\n{msgs}"));
+        }
+        Ok(format!(
+            "{dly} held then started by QBATCH, ended *IMMED; {held} ended on the queue; {quick} completed"
+        ))
+    }
+}

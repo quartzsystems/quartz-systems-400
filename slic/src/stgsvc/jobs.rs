@@ -61,7 +61,12 @@ pub fn next(system: &mut System) -> Result<u32, String> {
         DataAreaValue::Dec(n) => u32::try_from(n).unwrap_or(0),
         _ => 0,
     };
-    let n = next_number(last, |n| jobs.in_use(n)).ok_or("every job number is in use")?;
+    let queued = &system.queued;
+    let pending = &system.pending;
+    let n = next_number(last, |n| {
+        jobs.in_use(n) || queued.contains_key(&n) || pending.contains_key(&n)
+    })
+    .ok_or("every job number is in use")?;
     dtaara::write(&mut txn, id, &DataAreaValue::Dec(i128::from(n))).map_err(|e| e.to_string())?;
     txn.commit().map_err(|e| e.to_string())?;
     Ok(n)
@@ -199,4 +204,21 @@ pub fn chgjob(
     }
     *attrs = a;
     Ok(())
+}
+
+/// The run attributes of a class over a job's attributes.
+pub fn apply_class(system: &mut System, attrs: &mut wm::job::JobAttrs, class: &str) {
+    let Ok(b) = super::sbs::wm_object(system, class, "*CLS") else {
+        return;
+    };
+    let Ok(c) = wm::obj::cls::Cls::decode(&b) else {
+        return;
+    };
+    attrs.runpty = c.runpty;
+    attrs.timeslice = c.timeslice;
+    attrs.purge = c.purge;
+    attrs.dftwait = c.dftwait.unwrap_or(u32::MAX);
+    attrs.cputime = c.cputime.unwrap_or(u32::MAX);
+    attrs.maxtmpstg = c.maxtmpstg.unwrap_or(u32::MAX);
+    attrs.maxthd = c.maxthd.unwrap_or(u32::MAX);
 }

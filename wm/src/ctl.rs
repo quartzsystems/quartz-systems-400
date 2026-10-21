@@ -157,6 +157,7 @@ pub const JOB_COMMANDS: &[&str] = &[
     "dspjoblog",
     "strsbs",
     "dlyjob",
+    "sbmjob",
 ];
 
 /// A display panel: text and input fields placed by row and column

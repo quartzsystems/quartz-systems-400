@@ -167,6 +167,25 @@ pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &Stamp) -> Result<usize
         super::rpyl::save(txn, qsys, &super::rpyl::RpyList::shipped(), stamp)?;
         made += 1;
     }
+    for (lib, name, text) in [
+        ("QGPL", "QBATCH", "Batch job queue"),
+        ("QGPL", "QBASE", "Base subsystem job queue"),
+        ("QGPL", "QINTER", "Interactive job queue"),
+        ("QGPL", "QPGMR", "Programmer job queue"),
+        ("QGPL", "QS36EVOKE", "System/36 evoke job queue"),
+        ("QSYS", "QCTL", "Controlling subsystem job queue"),
+        ("QSYS", "QSPL", "Spooling job queue"),
+        ("QSYS", "QSYSNOMAX", "System jobs, no limit"),
+        ("QSYS", "QUSRNOMAX", "User jobs, no limit"),
+    ] {
+        let l = library(txn, qsys, lib)?;
+        let n = Name::parse(name).expect("valid");
+        if !exists(txn, l, n, types::JOBQ)? {
+            let q = super::jobq::JobQ::new(text);
+            create(txn, l, n, types::JOBQ, text, stamp, &q.encode())?;
+            made += 1;
+        }
+    }
     for (name, s) in super::sbsd::shipped() {
         let n = Name::parse(name).expect("valid");
         if !exists(txn, qsys, n, types::SBSD)? {

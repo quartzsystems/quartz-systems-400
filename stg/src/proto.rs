@@ -16,6 +16,7 @@ use sysapi::{
 };
 use wm::job::JobAttrs;
 use wm::sbs::{PoolInfo, SbsInfo, SbsState};
+use wm::obj::jobq::{QJob, SbmJob};
 use wm::obj::msgq::{MsgKind, QMsg};
 use wm::table::JobInfo;
 
@@ -220,4 +221,12 @@ ipc::rpc! {
     106 => fn wm_object / WmObject (qual: String, ty: String) -> Result<Vec<u8>, String>;
     /// A subsystem's private pool, defined by its monitor.
     107 => fn define_pool / DefinePool (name: String, size_kb: u64, actlvl: u32) -> ();
+    /// `SBMJOB`: the job's number and the message saying where it went.
+    108 => fn sbmjob / Sbmjob (req: SbmJob) -> Result<(u32, String), String>;
+    /// The next job a monitor may start from a queue it holds: the
+    /// priorities it may start (index 0-9) given its limits.
+    109 => fn jobq_take / JobqTake (qual: String, allowed: Vec<bool>) -> Option<QJob>;
+    /// The job is ending with this end code (0 normal, 20 and up
+    /// abnormal); its completion message says so.
+    110 => fn job_ending / JobEnding (code: u16) -> ();
 }

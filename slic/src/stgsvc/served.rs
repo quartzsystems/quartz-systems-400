@@ -56,6 +56,10 @@ pub struct JobCtx {
     pub job: JobInfo,
     /// Its `QTEMP` in ASP 0.
     pub qtemp: Option<ObjectId>,
+    /// Where its completion message goes, `lib/name`; empty for none.
+    pub completion: String,
+    /// The end code it reported; none means it vanished.
+    pub end_code: Option<u16>,
     objects: StoreObjects,
     spaces: StoreUserSpaces,
     msgs: StoreMsgs,
@@ -94,6 +98,8 @@ impl JobCtx {
             provider: StoreProvider::new(Rc::clone(shared)),
             svc: svc::db::State::default(),
             qtemp: None,
+            completion: String::new(),
+            end_code: None,
             job,
         }
     }
@@ -138,7 +144,17 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
         job.class = "QGPL/QBATCH".into();
     }
     let qtemp = super::jobs::make_qtemp(system, job.number)?;
-    let attrs = super::jobs::resolve_attrs(system, &job.jobd, &job.class);
+    // A submitted job starts as SBMJOB resolved it, with its class's
+    // run attributes; any other from its job description.
+    let queued = system.pending.remove(&job.number);
+    let attrs = match &queued {
+        Some(q) => {
+            let mut a = q.attrs.clone();
+            super::jobs::apply_class(system, &mut a, &job.class);
+            a
+        }
+        None => super::jobs::resolve_attrs(system, &job.jobd, &job.class),
+    };
     system.attrs.insert(job.number, attrs);
     system.jobs.add(job.clone());
     let who = (job.name.clone(), job.user.clone(), job.number);
@@ -151,6 +167,9 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
     super::hist::system_message(system, "CPF1124", &data, "04", who);
     let mut ctx = JobCtx::new(system, job);
     ctx.qtemp = Some(qtemp);
+    if let Some(q) = queued {
+        ctx.completion = q.msgq;
+    }
     Ok(ctx)
 }
 
@@ -174,6 +193,7 @@ fn end_job(system: &mut System, ctx: &mut JobCtx) {
     );
     let who = (j.name.clone(), j.user.clone(), j.number);
     super::hist::system_message(system, "CPF1164", &data, "04", who);
+    completion_message(system, ctx);
     if let Some(q) = ctx.qtemp.take() {
         super::jobs::drop_qtemp(system, ctx.job.number, q);
     }
@@ -406,7 +426,24 @@ impl Service for Served<'_> {
     }
 
     fn sbs_state(&mut self) -> wm::sbs::SbsState {
-        super::sbs::state(self.system, self.ctx.job.number)
+        let mut s = super::sbs::state(self.system, self.ctx.job.number);
+        s.end_jobs = super::jobqs::take_end_requests(self.system, self.ctx.job.number);
+        s
+    }
+
+    fn sbmjob(&mut self, req: wm::obj::jobq::SbmJob) -> Result<(u32, String), String> {
+        self.own_libl();
+        let r = super::jobqs::sbmjob(self.system, self.ctx.job.number, &req);
+        ile::set_libl(None);
+        r
+    }
+
+    fn jobq_take(&mut self, qual: String, allowed: Vec<bool>) -> Option<wm::obj::jobq::QJob> {
+        super::jobqs::take(self.system, self.ctx.job.number, &qual, &allowed)
+    }
+
+    fn job_ending(&mut self, code: u16) {
+        self.ctx.end_code = Some(code);
     }
 
     fn sbs_list(&mut self) -> Vec<wm::sbs::SbsInfo> {
@@ -708,5 +745,42 @@ impl Service for Served<'_> {
 
     fn user_info(&mut self, name: String) -> Option<UserInfo> {
         self.lent(|c| c.provider.user_info(&name))
+    }
+}
+
+/// `CPF1241` (normal) or `CPF1240` (abnormal: end code 20 and up, or no
+/// end code because the job vanished) to the queue `SBMJOB` named.
+fn completion_message(system: &mut System, ctx: &JobCtx) {
+    if ctx.completion.is_empty() {
+        return;
+    }
+    let code = ctx.end_code.unwrap_or(30);
+    let j = &ctx.job;
+    let num = format!("{:06}", j.number);
+    let data = wm::joblog::data(&[
+        (&j.name, 10),
+        (&j.user, 10),
+        (&num, 6),
+        (&code.to_string(), 3),
+    ]);
+    let (msgid, kind) = if code >= 20 {
+        ("CPF1240", wm::obj::msgq::MsgKind::Escape)
+    } else {
+        ("CPF1241", wm::obj::msgq::MsgKind::Comp)
+    };
+    let text = super::hist::message_text(msgid, &data);
+    let m = QMsg {
+        kind,
+        msgid: msgid.into(),
+        msgf: ("QCPFMSG".into(), "QSYS".into()),
+        data,
+        text,
+        severity: if code >= 20 { 50 } else { 0 },
+        job: (j.name.clone(), j.user.clone(), j.number),
+        ..QMsg::default()
+    };
+    let (lib, name) = wm::obj::params::qualified(&ctx.completion);
+    if let Err(e) = msgs::send(system, &lib, &name, m) {
+        eprintln!("qsstg: completion message to {}: {e}", ctx.completion);
     }
 }

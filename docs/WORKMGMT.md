@@ -97,6 +97,51 @@ count, then ten-byte names) and the request data (`RqsDtaLen` bytes).
 | 32 | 50 | Text | |
 | 82 | 2 | Reserved | zero |
 
+### `JobQueue` (80 bytes)
+
+`*JOBQ`. The fixed part, then `Count` jobs in starting order: each a
+`JobQueueJob` and its request data (`RqsLen` bytes, CP037), its
+attributes as the job starts with them (`AttrsLen` bytes, the storage
+service's wire encoding of `JobAttrs`) and its `*LDA` (`LdaLen` bytes).
+How many jobs a queue may start at once is the subsystem's job queue
+entry's business.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | Magic | `QSWMJOBQ` in ASCII |
+| 8 | 2 | Version | 1 |
+| 10 | 1 | Held | `HLDJOBQ` |
+| 11 | 1 | OprCtl | `OPRCTL(*YES)` |
+| 12 | 4 | Count | jobs that follow |
+| 16 | 10 | AutChk | `*OWNER`, `*DTAAUT` |
+| 26 | 4 | Reserved | zero |
+| 30 | 50 | Text | |
+
+### `JobQueueJob` (176 bytes)
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 4 | Number | job number, given at submission |
+| 4 | 1 | JobPty | 0-9 |
+| 5 | 1 | Held | |
+| 6 | 2 | Reserved | zero |
+| 8 | 8 | Submitted | microseconds since the epoch |
+| 16 | 8 | Scheduled | Unix seconds; 0 for none |
+| 24 | 10 | Name | |
+| 34 | 10 | User | |
+| 44 | 10 | JobdName | |
+| 54 | 10 | JobdLib | |
+| 64 | 10 | MsgqName | completion message queue; blank for none |
+| 74 | 10 | MsgqLib | |
+| 84 | 10 | SbmName | the submitting job |
+| 94 | 10 | SbmUser | |
+| 104 | 4 | SbmNumber | |
+| 108 | 48 | RtgDta | |
+| 156 | 4 | RqsLen | |
+| 160 | 4 | AttrsLen | |
+| 164 | 4 | LdaLen | |
+| 168 | 8 | Reserved2 | zero |
+
 ### `MessageQueue` (128 bytes)
 
 `*MSGQ`. The fixed part is followed by `Count` messages, each a

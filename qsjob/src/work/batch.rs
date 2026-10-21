@@ -56,6 +56,7 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         let out = c.line(&format!("call {lib}/{pgm}"));
         end_code(&out)
     };
+    link.borrow_mut().with(|l| stg::Client::job_ending(l, code));
     c.ended(code);
     let mut ending = ending;
     let _ = ending.send(&FromJob::Ending {

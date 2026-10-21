@@ -13,6 +13,8 @@ pub fn layouts() -> Vec<&'static Layout> {
     vec![
         &crate::obj::jobd::LAYOUT,
         &crate::obj::cls::LAYOUT,
+        &crate::obj::jobq::LAYOUT,
+        &crate::obj::jobq::ENTRY_LAYOUT,
         &crate::obj::msgq::LAYOUT,
         &crate::obj::msgq::ENTRY_LAYOUT,
         &crate::obj::rpyl::LAYOUT,

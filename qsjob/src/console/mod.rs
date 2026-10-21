@@ -37,7 +37,7 @@ pub struct Console {
     job: Option<Box<Job>>,
     provider: Option<Rc<RefCell<RemoteProvider>>>,
     /// The job's `*LDA`.
-    lda: stg::remote::Lda,
+    pub(crate) lda: stg::remote::Lda,
     /// The prompt the storage service last asked for.
     prompt: String,
     /// SRC codes and system values the line's commands raised.

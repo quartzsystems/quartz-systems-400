@@ -199,7 +199,10 @@ mod tests {
         assert!(t.status("*BASE", 1, true));
         assert!(t.status("*BASE", 2, true));
         assert!(!t.status("*BASE", 3, true), "third job is ineligible");
-        assert!(!t.status("*BASE", 3, true), "still ineligible, counted once");
+        assert!(
+            !t.status("*BASE", 3, true),
+            "still ineligible, counted once"
+        );
         assert!(t.status("*BASE", 1, false), "job 1 waits");
         assert!(t.status("*BASE", 3, true), "job 3 gets the level");
         let b = t.get("*BASE").unwrap().clone();

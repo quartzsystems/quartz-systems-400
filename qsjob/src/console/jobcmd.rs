@@ -38,6 +38,7 @@ pub fn command(c: &mut Console, cmd: &str, line: &str) -> String {
         "dspjoblog" => Ok(c.dspjoblog()),
         "strsbs" => strsbs(c, &p),
         "dlyjob" => dlyjob(c, &p),
+        "sbmjob" => sbmjob(c, &p),
         other => Err(format!("{other} is not a job command")),
     };
     match r {
@@ -228,4 +229,168 @@ fn dlyjob(c: &mut Console, p: &Params) -> Result<String, String> {
     }
     stg::remote::status(&c.link, wm::job::Status::Run, "");
     Ok(String::new())
+}
+
+/// Keywords of `SBMJOB` the job's attributes take as `CHGJOB` would.
+const SBM_CHANGES: &[&str] = &[
+    "LOG",
+    "LOGCLPGM",
+    "LOGOUTPUT",
+    "INQMSGRPY",
+    "OUTPTY",
+    "PRTDEV",
+    "OUTQ",
+    "PRTTXT",
+    "DATE",
+    "SWS",
+    "SRTSEQ",
+    "LANGID",
+    "CNTRYID",
+    "CCSID",
+    "DUPJOBOPT",
+];
+/// Keywords accepted and kept for later phases.
+const SBM_LATER: &[&str] = &[
+    "DSPSBMJOB",
+    "CPYENVVAR",
+    "ALWMLTTHD",
+    "INLASPGRP",
+    "SYSLIBL",
+    "SPLFACN",
+];
+
+/// `SCDDATE` (`YYYYMMDD` or `MMDDYY`, `*CURRENT`) and `SCDTIME`
+/// (`HHMMSS`, `*CURRENT`) as Unix seconds; 0 for now.
+fn scheduled(date: Option<&str>, time: Option<&str>) -> Result<u64, String> {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs());
+    let date = date
+        .map(str::trim)
+        .filter(|d| !d.eq_ignore_ascii_case("*CURRENT"));
+    let time = time
+        .map(str::trim)
+        .filter(|t| !t.eq_ignore_ascii_case("*CURRENT"));
+    if date.is_none() && time.is_none() {
+        return Ok(0);
+    }
+    let day = match date {
+        None => now / 86_400 * 86_400,
+        Some(d) => {
+            let (y, m, dd) = match d.len() {
+                8 => (
+                    d[0..4].parse::<i64>(),
+                    d[4..6].parse::<u32>(),
+                    d[6..8].parse::<u32>(),
+                ),
+                6 => (
+                    d[4..6].parse::<i64>().map(|y| 2000 + y),
+                    d[0..2].parse::<u32>(),
+                    d[2..4].parse::<u32>(),
+                ),
+                _ => return Err(format!("CPD0084 SCDDATE({d})")),
+            };
+            let (Ok(y), Ok(m), Ok(dd)) = (y, m, dd) else {
+                return Err(format!("CPD0084 SCDDATE({d})"));
+            };
+            let unix = sysapi::Civil {
+                year: y,
+                month: m,
+                day: dd,
+                hour: 0,
+                min: 0,
+                sec: 0,
+                ms: 0,
+            }
+            .unix();
+            u64::try_from(unix).map_err(|_| format!("CPD0084 SCDDATE({d})"))?
+        }
+    };
+    let secs = match time {
+        None => now % 86_400,
+        Some(t) if t.len() == 6 && t.bytes().all(|b| b.is_ascii_digit()) => {
+            let n = |a: usize| {
+                u64::from(t.as_bytes()[a] - b'0') * 10 + u64::from(t.as_bytes()[a + 1] - b'0')
+            };
+            n(0) * 3600 + n(2) * 60 + n(4)
+        }
+        Some(t) => return Err(format!("CPD0084 SCDTIME({t})")),
+    };
+    Ok(day + secs)
+}
+
+/// `SBMJOB`: the request goes to the storage service with the job's
+/// `*LDA`; `MIGRATE(phase7)`: `CMD` is checked by the command analyzer.
+fn sbmjob(c: &mut Console, p: &Params) -> Result<String, String> {
+    use stg::Client;
+    let cmd = p
+        .kw("CMD")
+        .or_else(|| p.kw("RQSDTA"))
+        .map(|v| v.trim().trim_matches('\'').replace("''", "'"))
+        .ok_or("CPD0071 CMD or RQSDTA is needed")?;
+    let up = |k: &str| p.upper(k).unwrap_or_default();
+    let mut req = wm::obj::jobq::SbmJob {
+        cmd,
+        job: up("JOB"),
+        jobd: p
+            .upper("JOBD")
+            .filter(|v| v != "*USRPRF")
+            .unwrap_or_default(),
+        jobq: up("JOBQ"),
+        jobpty: match p.upper("JOBPTY").as_deref() {
+            None | Some("*JOBD") => None,
+            Some(v) => Some(v.parse().map_err(|_| format!("CPD0084 JOBPTY({v})"))?),
+        },
+        user: up("USER"),
+        rtgdta: p
+            .kw("RTGDTA")
+            .map(|v| v.trim().trim_matches('\'').to_string())
+            .unwrap_or_default(),
+        hold: match p.upper("HOLD").as_deref() {
+            None | Some("*JOBD") => None,
+            Some("*YES") => Some(true),
+            Some("*NO") => Some(false),
+            Some(v) => return Err(format!("CPD0084 HOLD({v})")),
+        },
+        scheduled: scheduled(p.kw("SCDDATE"), p.kw("SCDTIME"))?,
+        msgq: up("MSGQ"),
+        inllibl: match p.upper("INLLIBL").as_deref() {
+            None | Some("*CURRENT") => None,
+            Some("*JOBD") => Some(Vec::new()),
+            Some(v) => Some(v.split_whitespace().map(str::to_string).collect()),
+        },
+        curlib: up("CURLIB"),
+        changes: Vec::new(),
+        lda: c.lda.borrow().clone(),
+    };
+    for (k, v) in &p.kw {
+        if SBM_CHANGES.contains(&k.as_str()) {
+            if !v.trim().eq_ignore_ascii_case("*JOBD") && !v.trim().eq_ignore_ascii_case("*CURRENT")
+            {
+                req.changes.push((k.clone(), v.trim().to_string()));
+            }
+        } else if !SBM_LATER.contains(&k.as_str())
+            && !matches!(
+                k.as_str(),
+                "CMD"
+                    | "RQSDTA"
+                    | "JOB"
+                    | "JOBD"
+                    | "JOBQ"
+                    | "JOBPTY"
+                    | "USER"
+                    | "RTGDTA"
+                    | "HOLD"
+                    | "SCDDATE"
+                    | "SCDTIME"
+                    | "MSGQ"
+                    | "INLLIBL"
+                    | "CURLIB"
+            )
+        {
+            return Err(format!("CPD0043 keyword {k} not valid for SBMJOB"));
+        }
+    }
+    let (_, msg) = c.link.borrow_mut().with(|l| l.sbmjob(req))?;
+    Ok(format!("{msg}\n"))
 }

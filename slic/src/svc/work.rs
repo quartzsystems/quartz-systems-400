@@ -196,6 +196,11 @@ fn chgjob(system: &mut System, p: &Params) -> Result<String, String> {
     if changes.is_empty() {
         return Err("CPD0042 chgjob needs at least one attribute to change".into());
     }
+    if !job.is_empty()
+        && let Some(r) = crate::stgsvc::jobqs::chgjob(system, &job, &changes)
+    {
+        return r;
+    }
     let me = system.current_job;
     crate::stgsvc::chgjob(system, me, &job, &changes)?;
     Ok("Job attributes changed.\n".into())

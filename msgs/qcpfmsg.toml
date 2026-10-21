@@ -217,3 +217,24 @@ sev = 0
 text = "Subsystem &1 in library &2 ended."
 help = "Every job of the subsystem ended and its monitor job ended; its private pools were released."
 vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC1221"
+sev = 0
+text = "Job &3/&2/&1 submitted to job queue &4 in &5."
+help = "The job waits on the job queue until a subsystem that holds the queue starts it."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF1240"
+sev = 50
+text = "Job &3/&2/&1 ended abnormally, end code &4."
+help = "The job ended because of an error it did not handle, a request to end it, or because its process ended. Its job log has the reason."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR 3"]
+
+[[msg]]
+id = "CPF1241"
+sev = 0
+text = "Job &3/&2/&1 completed normally."
+help = "The job ran to its end without an error it left unhandled."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 6", "*CHAR 3"]

@@ -89,6 +89,14 @@ pub struct System {
     pub sbs: std::collections::BTreeMap<String, crate::stgsvc::sbs::Active>,
     /// Storage pools and activity levels (storage service).
     pub pools: wm::pools::PoolTable,
+    /// Jobs waiting on job queues: number and queue (storage service).
+    pub queued: std::collections::BTreeMap<u32, String>,
+    /// Jobs taken off a queue, until they say hello.
+    pub pending: std::collections::BTreeMap<u32, wm::obj::jobq::QJob>,
+    /// Which subsystem holds each job queue.
+    pub jobq_attach: std::collections::BTreeMap<String, String>,
+    /// Jobs `ENDJOB` asked to end, and whether `*IMMED`.
+    pub end_requests: std::collections::BTreeMap<u32, bool>,
     /// The active jobs (storage service).
     pub jobs: wm::table::JobTable,
     /// The storage service and the service console job, once started.
@@ -126,6 +134,10 @@ impl System {
             lent: std::rc::Rc::new(std::cell::RefCell::new(None)),
             procs: crate::procs::Procs::default(),
             jobs: wm::table::JobTable::default(),
+            queued: std::collections::BTreeMap::new(),
+            pending: std::collections::BTreeMap::new(),
+            jobq_attach: std::collections::BTreeMap::new(),
+            end_requests: std::collections::BTreeMap::new(),
             sbs: std::collections::BTreeMap::new(),
             pools: wm::pools::PoolTable::default(),
             break_alloc: std::collections::HashMap::new(),

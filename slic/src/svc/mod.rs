@@ -7,6 +7,7 @@
 
 pub(crate) mod db;
 pub(crate) mod ile;
+mod jobq;
 mod msgq;
 mod objects;
 mod sbs;
@@ -86,12 +87,13 @@ pub fn reply(system: &mut System, line: &str) -> String {
     match (cmd, args.as_slice()) {
         ("", _) => String::new(),
         ("help", _) => format!(
-            "{HELP}{HELP_DB}{}{}{}{}{}",
+            "{HELP}{HELP_DB}{}{}{}{}{}{}",
             ile::HELP,
             work::HELP,
             msgq::HELP,
             msgq::HELP_RPYL,
-            sbs::HELP
+            sbs::HELP,
+            jobq::HELP
         ),
         ("release", _) => format!("{}\n", release::full()),
         ("srcs", []) => system.log.dump(),
@@ -125,6 +127,7 @@ pub fn reply(system: &mut System, line: &str) -> String {
                 .or_else(|| msgq::command(system, cmd, line))
                 .or_else(|| msgq::rpyl_command(system, cmd, line))
                 .or_else(|| sbs::command(system, cmd, line))
+                .or_else(|| jobq::command(system, cmd, line))
             {
                 Some(reply) => reply,
                 None => format!(

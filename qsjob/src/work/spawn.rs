@@ -23,6 +23,10 @@ pub struct Spawned {
     pub chan: Chan,
     /// Who it is.
     pub start: Start,
+    /// The job queue it came from, `lib/name`; empty for none.
+    pub jobq: String,
+    /// Its priority on that queue.
+    pub jobpty: u8,
 }
 
 /// Start a job process and send it `start`; it is placed in its pool's
@@ -54,6 +58,8 @@ pub fn job(start: Start) -> Result<Spawned, String> {
         child: c,
         chan: parent,
         start,
+        jobq: String::new(),
+        jobpty: 0,
     })
 }
 

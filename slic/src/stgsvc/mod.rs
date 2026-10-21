@@ -13,6 +13,7 @@
 
 mod exec;
 pub(crate) mod hist;
+pub(crate) mod jobqs;
 mod jobs;
 pub(crate) mod msgs;
 pub(crate) mod sbs;
@@ -102,6 +103,7 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
     });
     system.temp = Some(storage::fresh_temp().map_err(|e| format!("temporary ASP: {e}"))?);
     let made = install(system).map_err(|e| format!("work management objects: {e}"))?;
+    jobqs::load(system);
     let text = if made > 0 {
         format!("{text}; {made} work management object(s) created")
     } else {

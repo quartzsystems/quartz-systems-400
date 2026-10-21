@@ -42,9 +42,11 @@ pub struct SbsState {
     /// The subsystem is to end: `*IMMED` and the delay in seconds
     /// before a controlled end becomes immediate.
     pub ending: Option<(bool, u32)>,
+    /// Its jobs `ENDJOB` asked to end: number, and `*IMMED`.
+    pub end_jobs: Vec<(u32, bool)>,
 }
 
-wire_struct!(SbsState { ending });
+wire_struct!(SbsState { ending, end_jobs });
 
 /// A storage pool.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

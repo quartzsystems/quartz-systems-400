@@ -111,6 +111,11 @@ pub fn register(
         .iter()
         .map(|p| (p.id, pool_name(name, p.id, p.kind)))
         .collect();
+    let queues: Vec<String> = d
+        .jobqes
+        .iter()
+        .map(|q| format!("{}/{}", q.jobq.1, q.jobq.0))
+        .collect();
     system.sbs.insert(
         name.to_string(),
         Active {
@@ -121,6 +126,7 @@ pub fn register(
             pools,
         },
     );
+    super::jobqs::attach(system, name, &queues);
     let who = crate::stgsvc::msgs::sender(system, monitor);
     let data = wm::joblog::data(&[(name, 10), (lib, 10)]);
     super::hist::system_message(system, "CPF0902", &data, "04", who);
@@ -137,6 +143,7 @@ pub fn monitor_ended(system: &mut System, monitor: u32) {
         .collect();
     for name in ended {
         if let Some(a) = system.sbs.remove(&name) {
+            super::jobqs::detach(system, &name);
             for (_, p) in &a.pools {
                 system.pools.drop_private(p);
             }
@@ -155,6 +162,7 @@ pub fn monitor_ended(system: &mut System, monitor: u32) {
 /// What the subsystem of monitor `monitor` is to do.
 pub fn state(system: &System, monitor: u32) -> SbsState {
     SbsState {
+        end_jobs: Vec::new(),
         ending: system
             .sbs
             .values()
@@ -305,4 +313,19 @@ pub fn wrksbsjob(system: &System, sbs: &str) -> String {
         );
     }
     out
+}
+
+/// Whether a subsystem has room for another job (`MAXJOBS`).
+pub fn has_room(system: &System, name: &str) -> bool {
+    let Some(a) = system.sbs.get(name) else {
+        return false;
+    };
+    a.maxjobs == 0
+        || system
+            .jobs
+            .all()
+            .iter()
+            .filter(|j| j.subsystem == name && j.number != a.monitor)
+            .count()
+            < a.maxjobs as usize
 }

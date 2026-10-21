@@ -414,6 +414,19 @@ pub fn system_message(
     );
 }
 
+/// A system message's first-level text with its data.
+pub fn message_text(msgid: &str, data: &[u8]) -> String {
+    use msgf::MsgLookup as _;
+    BUILTIN.with(|b| {
+        let mut b = b.borrow_mut();
+        let msgs = b.get_or_insert_with(msgf::BuiltinMsgs::new);
+        msgs.describe(msgid, "QCPFMSG", "QSYS").map_or_else(
+            || format!("{msgid} {}", wm::rec::text_of(data)),
+            |d| d.format(data),
+        )
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

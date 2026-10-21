@@ -443,6 +443,7 @@ impl Suite {
         reports.push(self.step(&mut s, "22 reply list", Self::reply_list)?);
         reports.push(self.step(&mut s, "23 subsystems", Self::subsystems)?);
         reports.push(self.step(&mut s, "24 console sign-on", Self::console_sign_on)?);
+        reports.push(self.step(&mut s, "25 job queues", Self::job_queues)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

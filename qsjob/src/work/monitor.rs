@@ -73,6 +73,7 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
         std::thread::sleep(TICK);
         m.reap();
         let state = m.link.borrow_mut().with(Client::sbs_state);
+        m.end_requested(&state.end_jobs);
         if let Some((immediate, delay)) = state.ending {
             m.end_all(immediate, delay);
             let _ = ctl.send(&FromJob::Ending {
@@ -80,6 +81,7 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
             });
             std::process::exit(0);
         }
+        m.start_from_queues();
     }
 }
 
@@ -117,47 +119,139 @@ impl Monitor {
             .borrow_mut()
             .with(|l| l.wm_object(jobd.to_string(), "*JOBD".into()))?;
         let d = JobD::decode(&b).map_err(|e| e.to_string())?;
-        let r = self.sbsd.route(&d.rtgdta).cloned().ok_or_else(|| {
-            format!(
-                "CPF1226 no routing entry in {} for '{}'",
-                self.name, d.rtgdta
-            )
-        })?;
-        let kind_of = self.sbsd.pool(r.pool).map_or(PoolKind::Base, |p| p.kind);
         let number = self.link.borrow_mut().with(Client::job_number)?;
-        let class = if r.cls.0.starts_with('*') {
-            "QGPL/QBATCH".to_string()
-        } else {
-            format!("{}/{}", r.cls.1, r.cls.0)
-        };
         let user = if d.user.starts_with('*') {
             "QSYS".to_string()
         } else {
             d.user.clone()
         };
-        let start = Start {
+        let rqsdta = if d.rqsdta == "*NONE" {
+            String::new()
+        } else {
+            d.rqsdta.clone()
+        };
+        let routed = Routed {
             name: job.to_string(),
             user,
             number,
-            handle: u64::from(number),
             kind,
+            jobd: jobd.to_string(),
+            rtgdta: d.rtgdta,
+            rqsdta,
+            lda: lda.to_vec(),
+        };
+        self.start(routed).map(|_| number)
+    }
+
+    /// Start a job taken from a job queue: numbered when it was submitted.
+    fn start_queued(&mut self, q: &str, j: wm::obj::jobq::QJob) -> Result<(), String> {
+        let routed = Routed {
+            name: j.name,
+            user: j.user,
+            number: j.number,
+            kind: 'B',
+            jobd: j.jobd,
+            rtgdta: j.rtgdta,
+            rqsdta: j.rqsdta,
+            lda: j.lda,
+        };
+        let pty = j.jobpty;
+        let s = self.start(routed)?;
+        s.jobq = q.to_string();
+        s.jobpty = pty;
+        Ok(())
+    }
+
+    /// Route a job by its routing data and start it.
+    fn start(&mut self, j: Routed) -> Result<&mut Spawned, String> {
+        let r = self.sbsd.route(&j.rtgdta).cloned().ok_or_else(|| {
+            format!(
+                "CPF1226 no routing entry in {} for '{}'",
+                self.name, j.rtgdta
+            )
+        })?;
+        let kind_of = self.sbsd.pool(r.pool).map_or(PoolKind::Base, |p| p.kind);
+        let class = if r.cls.0.starts_with('*') {
+            "QGPL/QBATCH".to_string()
+        } else {
+            format!("{}/{}", r.cls.1, r.cls.0)
+        };
+        let start = Start {
+            name: j.name,
+            user: j.user,
+            number: j.number,
+            handle: u64::from(j.number),
+            kind: j.kind,
             subsystem: self.name.clone(),
             role: "BATCH".into(),
-            jobd: jobd.to_string(),
+            jobd: j.jobd,
             class,
             program: format!("{}/{}", r.pgm.1, r.pgm.0),
-            rqsdta: if d.rqsdta == "*NONE" {
-                String::new()
-            } else {
-                d.rqsdta.clone()
-            },
+            rqsdta: j.rqsdta,
             pool: pool_name(&self.name, r.pool, kind_of),
-            lda: lda.to_vec(),
+            lda: j.lda,
         };
         let mut s = spawn::job(start)?;
         spawn::ready(&mut s)?;
         self.jobs.push(s);
-        Ok(number)
+        Ok(self.jobs.last_mut().expect("pushed"))
+    }
+
+    /// Start what the job queues have, within each entry's `MAXACT` and
+    /// `MAXPTYn`.
+    fn start_from_queues(&mut self) {
+        let mut entries = self.sbsd.jobqes.clone();
+        entries.sort_by_key(|e| e.seq);
+        for e in entries {
+            let q = format!("{}/{}", e.jobq.1, e.jobq.0);
+            loop {
+                let mine: Vec<u8> = self
+                    .jobs
+                    .iter()
+                    .filter(|s| s.jobq == q)
+                    .map(|s| s.jobpty)
+                    .collect();
+                if e.maxact != 0 && mine.len() >= usize::from(e.maxact) {
+                    break;
+                }
+                let mut per = [0usize; 10];
+                for p in &mine {
+                    per[usize::from(*p).min(9)] += 1;
+                }
+                let allowed: Vec<bool> = (0..10usize)
+                    .map(|p| {
+                        if p == 0 {
+                            return true;
+                        }
+                        let max = e.maxpty[p - 1];
+                        max == 0 || per[p] < usize::from(max)
+                    })
+                    .collect();
+                let taken = self
+                    .link
+                    .borrow_mut()
+                    .with(|l| l.jobq_take(q.clone(), allowed));
+                let Some(j) = taken else {
+                    break;
+                };
+                let name = j.qualified();
+                if let Err(err) = self.start_queued(&q, j) {
+                    eprintln!("qsjob: {}: job {name} from {q}: {err}", self.name);
+                    break;
+                }
+            }
+        }
+    }
+
+    /// Pass `ENDJOB` on to the jobs it names.
+    fn end_requested(&mut self, which: &[(u32, bool)]) {
+        for (n, immediate) in which {
+            if let Some(s) = self.jobs.iter_mut().find(|s| s.start.number == *n) {
+                let _ = s.chan.send(&ToJob::End {
+                    immediate: *immediate,
+                });
+            }
+        }
     }
 
     /// Forget the jobs that ended.
@@ -204,4 +298,16 @@ impl Monitor {
             cgroup::remove(&pool_name(&self.name, p.id, p.kind));
         }
     }
+}
+
+/// What starting a job needs once it is chosen.
+struct Routed {
+    name: String,
+    user: String,
+    number: u32,
+    kind: char,
+    jobd: String,
+    rtgdta: String,
+    rqsdta: String,
+    lda: Vec<u8>,
 }
