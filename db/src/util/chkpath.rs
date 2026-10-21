@@ -96,6 +96,22 @@ pub fn verify_file(txn: &mut Txn<'_>, file: ObjectId, report: &mut PathReport) -
             continue;
         };
         let entries = p.count(txn)?;
+        // A join or dynamically selected path indexes candidates the
+        // read filters afterwards, so only its attributes are checked.
+        let filtered_at_read = desc.attr.dynslt
+            || desc
+                .formats
+                .iter()
+                .any(|f| f.logical.as_ref().is_some_and(|l| l.join));
+        if filtered_at_read {
+            if u64::try_from(entries).expect("fits") != m.attr().path_entries {
+                report.problems.push(format!(
+                    "{label}: path holds {entries} entries, attributes say {}",
+                    m.attr().path_entries
+                ));
+            }
+            continue;
+        }
         let expected = if desc.attr.kind == FileKind::Logical {
             // Every record the format derives and select/omit keeps.
             let mut n = 0usize;
