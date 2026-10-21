@@ -10,6 +10,7 @@
 mod bench;
 mod files;
 mod journal;
+pub(crate) mod prtf;
 mod rla;
 mod sqlcmd;
 
@@ -53,6 +54,8 @@ apyjrnchg|rmvjrnchg LIB/JRN [FILE(LIB/F) FROMENT(n) TOENT(n) CMTBDY(*YES)]
 strcmtctl [LCKLVL(*CHG|*CS|*ALL) DFTJRN(LIB/JRN)] | commit | rollbck | endcmtctl
 ovrdbf FILE(F) [TOFILE(LIB/F) MBR(M) SHARE(*YES) LVLCHK(*NO) INHWRT(*YES) POSITION(*START|*END)]
 dltovr FILE(F|*ALL)
+crtprtf LIB/FILE [SRCFILE(LIB/SRC) SRCMBR(M)] [PAGESIZE(l w) LPI() CPI() OVRFLW() CTLCHAR(*FCFC) OUTQ() HOLD() SCHEDULE() ...]
+chgprtf LIB/FILE keywords | ovrprtf FILE(F) [TOFILE(LIB/F) OVRSCOPE(*JOB)] keywords
 sql [STATEMENT;]     SQL mode: statements end with ';', quit leaves | sqlrun NAME [COMMIT(*CHG) ERRLVL(n) NAMING(*SQL)]
 naming *SYS|*SQL | curlib LIB
 rla [NAME]           run an RLA script from xfer, or type lines until 'end'
@@ -95,6 +98,8 @@ pub struct State {
     pub xfer: BTreeMap<String, String>,
     /// The SQL context (session, cursors, overrides), once storage is up.
     pub sql: Option<SqlContext>,
+    /// `OVRPRTF`s in effect, oldest first.
+    pub prt_overrides: Vec<crate::stgsvc::prtf::PrtOverride>,
 }
 
 /// The prompt the mode wants.
@@ -167,7 +172,13 @@ pub fn command(system: &mut System, cmd: &str, args: &[&str], line: &str) -> Opt
         "crtpf" => files::crtpf(system, &p),
         "crtsrcpf" => files::crtsrcpf(system, &p),
         "crtlf" => files::crtlf(system, &p),
-        "dltf" => files::dltf(system, &p),
+        "dltf" => {
+            let qual = p.pos_or(0, "FILE").unwrap_or_default();
+            prtf::dltf(system, &qual).unwrap_or_else(|| files::dltf(system, &p))
+        }
+        "crtprtf" => prtf::crtprtf(system, &p),
+        "chgprtf" => prtf::chgprtf(system, &p),
+        "ovrprtf" => prtf::ovrprtf(system, line),
         "addpfm" => files::addpfm(system, &p),
         "rmvm" => files::rmvm(system, &p),
         "clrpfm" => files::clrpfm(system, &p),
@@ -175,7 +186,10 @@ pub fn command(system: &mut System, cmd: &str, args: &[&str], line: &str) -> Opt
         "cpyf" => files::cpyf(system, &p),
         "cpytoimpf" => files::cpytoimpf(system, &p),
         "cpyfrmimpf" => files::cpyfrmimpf(system, &p),
-        "dspfd" => files::dspfd(system, &p),
+        "dspfd" => {
+            let qual = p.pos_or(0, "FILE").unwrap_or_default();
+            prtf::dspfd(system, &qual).unwrap_or_else(|| files::dspfd(system, &p))
+        }
         "dspffd" => files::dspffd(system, &p),
         "dsppfm" => files::dsppfm(system, &p),
         "dspdbr" => files::dspdbr(system, &p),

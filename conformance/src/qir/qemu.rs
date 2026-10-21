@@ -16,7 +16,7 @@ use crate::steps::Suite;
 
 const CMD: Duration = Duration::from_secs(30);
 
-fn push(s: &mut Session, name: &str, text: &str) -> Result<(), String> {
+pub(crate) fn push(s: &mut Session, name: &str, text: &str) -> Result<(), String> {
     let lines: Vec<&str> = text.lines().collect();
     if lines.is_empty() {
         return Err(format!("{name}: nothing to push"));

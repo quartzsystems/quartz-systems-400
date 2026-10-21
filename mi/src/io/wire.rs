@@ -72,6 +72,7 @@ impl Wire for OpenSpec {
         self.keyed.put(out);
         self.lvlchk.put(out);
         self.member.put(out);
+        self.actgrp.put(out);
     }
     fn get(d: &mut Dec<'_>) -> Result<Self, WireError> {
         Ok(Self {
@@ -81,11 +82,16 @@ impl Wire for OpenSpec {
             keyed: Wire::get(d)?,
             lvlchk: Wire::get(d)?,
             member: Wire::get(d)?,
+            actgrp: Wire::get(d)?,
         })
     }
 }
 
-wire_struct!(IoFail { status, msgid, data });
+wire_struct!(IoFail {
+    status,
+    msgid,
+    data
+});
 wire_struct!(FileInfo {
     file,
     lib,

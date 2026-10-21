@@ -226,11 +226,17 @@ impl Printer {
     /// A record of a `CTLCHAR(*FCFC)` file: its first character is the
     /// control. An unknown control spaces one line.
     pub fn write_fcfc(&mut self, record: &[u8]) -> bool {
-        let (first, text) = record.split_first().map_or((' ', &[][..]), |(c, t)| {
-            (ccsid::char_of(*c), t)
-        });
+        let (first, text) = record
+            .split_first()
+            .map_or((' ', &[][..]), |(c, t)| (ccsid::char_of(*c), t));
         let ctl = Control::fcfc(first, self.fmt.ovrflw).unwrap_or_else(Control::line);
         self.write(text, ctl)
+    }
+
+    /// Print over the current line without counting a record:
+    /// underlining and highlighting.
+    pub fn overprint(&mut self, text: &[u8]) {
+        self.print(text);
     }
 
     /// A plain record: one line down, then print.
@@ -282,7 +288,14 @@ mod tests {
     #[test]
     fn skip_space_overprint_fcfc() {
         let mut p = Printer::new(PageFormat::default());
-        p.write(&ebc("TITLE"), Control { skip_before: 3, space_after: 2, ..Control::default() });
+        p.write(
+            &ebc("TITLE"),
+            Control {
+                skip_before: 3,
+                space_after: 2,
+                ..Control::default()
+            },
+        );
         p.write(&ebc("BODY"), Control::default());
         p.write_fcfc(&ebc("+____"));
         p.write_fcfc(&ebc("0NEXT"));
@@ -309,6 +322,9 @@ mod tests {
         let (pages, _) = decode(&p.take());
         assert_eq!(pages[0].lines[&1], "ABCDE");
         assert_eq!(pages[0].lines[&2], "FG");
-        assert_eq!(pages[0].lines[&3], "X Y", "a control byte prints as a blank");
+        assert_eq!(
+            pages[0].lines[&3], "X Y",
+            "a control byte prints as a blank"
+        );
     }
 }

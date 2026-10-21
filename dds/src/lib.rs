@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! DDS for QS/400: the fixed-column source form, the keyword grammar and
-//! the physical and logical file compilers. Display and printer files
+//! the physical, logical and printer file compilers. Display files
 //! will share the lexer and the keyword parser.
 //!
 //! The compiler never touches the store. References to other files
@@ -21,6 +21,7 @@ pub mod lf;
 pub mod listing;
 pub mod model;
 pub mod pf;
+pub mod prtf;
 pub mod refs;
 pub mod source;
 
@@ -35,5 +36,6 @@ pub use model::{
     Validity, VarLen,
 };
 pub use pf::compile_pf;
+pub use prtf::compile_prtf;
 pub use refs::{MapRefs, NoRefs, RefError, RefResolver};
 pub use source::{RECORD_LEN, Source, SourceLine};

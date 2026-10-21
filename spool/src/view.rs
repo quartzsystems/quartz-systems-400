@@ -131,14 +131,35 @@ mod tests {
         let mut p = Printer::new(PageFormat::default());
         let e = |s: &str| ccsid::to_ebcdic(s).unwrap();
         p.write_line(&e("ONE"));
-        p.write(&e("THREE"), Control { space_before: 2, ..Control::default() });
-        p.write(&e("NINE"), Control { space_before: 6, ..Control::default() });
-        p.write(&e("NEXT"), Control { skip_before: 2, ..Control::default() });
+        p.write(
+            &e("THREE"),
+            Control {
+                space_before: 2,
+                ..Control::default()
+            },
+        );
+        p.write(
+            &e("NINE"),
+            Control {
+                space_before: 6,
+                ..Control::default()
+            },
+        );
+        p.write(
+            &e("NEXT"),
+            Control {
+                skip_before: 2,
+                ..Control::default()
+            },
+        );
         let data = p.take();
         let (pages, _) = decode(&data);
         assert_eq!(text(&pages), "ONE\n\nTHREE\n\n\n\n\n\nNINE\n\x0c\nNEXT\n");
         assert_eq!(fcfc(&pages), ["1ONE", "0THREE", "-", "-NINE", "1", " NEXT"]);
-        assert_eq!(prtctl(&pages), ["0010ONE", "   2THREE", "0090NINE", "0020NEXT"]);
+        assert_eq!(
+            prtctl(&pages),
+            ["0010ONE", "   2THREE", "0090NINE", "0020NEXT"]
+        );
         assert_eq!(rows(&pages).len(), 11);
         assert!(hex(&data).starts_with("00000000  2B D1"));
     }

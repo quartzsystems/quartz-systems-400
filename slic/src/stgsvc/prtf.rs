@@ -3,36 +3,74 @@
 // root directory of this project.
 
 //! Printer files in the service: resolving one (a `*FILE` whose
-//! attribute is `PRTF`) with the overrides that apply, and the output
-//! queue its spooled files go to.
+//! attribute is `PRTF`) with the `OVRPRTF`s that reach the opener,
+//! opening its spooled file, and the output queue the file goes to.
 
 use store::obj::{ops, types};
 use wm::cmd::Params;
 use wm::obj::prtf::Prtf;
+use wm::obj::splf::SplfAttrs;
+use wm::table::JobInfo;
 
 use crate::ipl::system::System;
 
 /// The queue spooled files go to when nothing else names one.
 pub const DEFAULT_OUTQ: &str = "QGPL/QPRINT";
 
-/// A printer file, `lib/name`, with `overrides` applied in order.
-pub fn resolve(system: &mut System, qual: &str, overrides: &[Params]) -> Result<Prtf, String> {
+/// One `OVRPRTF`: the file it names, the activation group that issued
+/// it (or `*JOB`), and its keywords as typed.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PrtOverride {
+    /// `FILE`.
+    pub file: String,
+    /// `OVRSCOPE`: `*JOB`, or the issuing activation group.
+    pub scope: String,
+    /// The command line, for its keywords.
+    pub line: String,
+}
+
+/// Whether `lib/name` is a printer file; its real library when it is.
+fn find(
+    txn: &mut store::txn::Txn<'_>,
+    qsys: store::obj::ObjectId,
+    qual: &str,
+) -> Result<(store::obj::ObjectId, String), String> {
     let (lib, name) = wm::obj::params::qualified(qual);
-    let mut f = super::spool::with_store(system, |txn, qsys| {
-        let names = crate::svc::ile::name_context(txn, qsys);
-        let id = wm::obj::find(txn, qsys, &names, &lib, &name, types::FILE)
-            .map_err(|_| format!("CPF4101 file {name} in library {lib} not found"))?;
-        let (_, h) = ops::read_header(txn, id).map_err(|e| e.to_string())?;
-        if ccsid::decode_trimmed(&h.attribute) != "PRTF" {
-            return Err(format!("CPF4123 file {name} in library {lib} is not a printer file"));
-        }
+    let names = crate::svc::ile::name_context(txn, qsys);
+    let id = wm::obj::find(txn, qsys, &names, &lib, &name, types::FILE)
+        .map_err(|_| format!("CPF4101 file {name} in library {lib} not found"))?;
+    let (_, h) = ops::read_header(txn, id).map_err(|e| e.to_string())?;
+    if ccsid::decode_trimmed(&h.attribute) != "PRTF" {
+        return Err(format!(
+            "CPF4123 file {name} in library {lib} is not a printer file"
+        ));
+    }
+    let real = ile::store::library_name(txn, id).map_err(|e| e.to_string())?;
+    Ok((id, format!("{real}/{name}")))
+}
+
+/// A printer file, `lib/name`, with `overrides` applied in order, and
+/// its real `lib/name`.
+pub fn resolve_real(
+    system: &mut System,
+    qual: &str,
+    overrides: &[Params],
+) -> Result<(Prtf, String), String> {
+    let (mut f, real) = super::spool::with_store(system, |txn, qsys| {
+        let (id, real) = find(txn, qsys, qual)?;
         let b = wm::obj::read(txn, id).map_err(|e| e.to_string())?;
-        Prtf::decode(&b).map_err(|e| e.to_string())
+        Ok((Prtf::decode(&b).map_err(|e| e.to_string())?, real))
     })?;
     for o in overrides {
-        f.apply(o).map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPD0084")))?;
+        f.apply(o)
+            .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPD0084")))?;
     }
-    Ok(f)
+    Ok((f, real))
+}
+
+/// [`resolve_real`] without the name.
+pub fn resolve(system: &mut System, qual: &str, overrides: &[Params]) -> Result<Prtf, String> {
+    resolve_real(system, qual, overrides).map(|r| r.0)
 }
 
 /// Whether an output queue exists.
@@ -41,10 +79,14 @@ fn exists(system: &mut System, q: &str) -> bool {
 }
 
 /// The output queue a file of job `job` opened through `f` goes to:
-/// the file's `OUTQ`, else the job's, else the printer device's
-/// (`MIGRATE(phase10)`: printer devices have queues), else `QGPL/QPRINT`.
+/// the file's `OUTQ`, else the job's, else `QGPL/QPRINT`
+/// (`MIGRATE(phase10)`: the printer device's queue before that).
 pub fn outq_of(system: &mut System, f: &Prtf, job: u32) -> String {
-    let job_q = system.attrs.get(&job).map(|a| a.outq.clone()).unwrap_or_default();
+    let job_q = system
+        .attrs
+        .get(&job)
+        .map(|a| a.outq.clone())
+        .unwrap_or_default();
     let mut tries = Vec::new();
     if f.outq != "*JOB" && !f.outq.is_empty() {
         tries.push(f.outq.clone());
@@ -57,4 +99,64 @@ pub fn outq_of(system: &mut System, f: &Prtf, job: u32) -> String {
         .into_iter()
         .find(|q| exists(system, q))
         .unwrap_or_else(|| DEFAULT_OUTQ.into())
+}
+
+/// Open printer file `(file, lib)` for `job` from activation group
+/// `actgrp`: the overrides that reach it applied (the last `TOFILE`
+/// redirects), a new spooled file. Its identifier and the attributes.
+pub fn open(
+    system: &mut System,
+    overrides: &[PrtOverride],
+    job: &JobInfo,
+    (file, lib): (&str, &str),
+    actgrp: &str,
+) -> Result<(u32, Prtf), String> {
+    let file = file.to_ascii_uppercase();
+    let mine: Vec<Params> = overrides
+        .iter()
+        .filter(|o| o.file == file && db::odp::ovrdbf::reaches(&o.scope, actgrp))
+        .map(|o| Params::parse(&o.line))
+        .collect();
+    let target = mine
+        .iter()
+        .rev()
+        .find_map(|p| p.upper("TOFILE"))
+        .unwrap_or_else(|| format!("{}/{file}", if lib.is_empty() { "*LIBL" } else { lib }));
+    let (prtf, real) = resolve_real(system, &target, &mine)?;
+    let outq = outq_of(system, &prtf, job.number);
+    let a = system.attrs.get(&job.number);
+    let outpty = if prtf.outpty == 0 {
+        a.map_or(5, |a| a.outpty)
+    } else {
+        prtf.outpty
+    };
+    let attrs = SplfAttrs {
+        name: if prtf.splfname == "*FILE" || prtf.splfname.is_empty() {
+            file.clone()
+        } else {
+            prtf.splfname.clone()
+        },
+        job: (job.name.clone(), job.user.clone(), job.number),
+        usrdta: prtf.usrdta.clone(),
+        schedule: prtf.schedule,
+        copies: prtf.copies.max(1),
+        outpty,
+        save: prtf.save,
+        page_len: prtf.page_len,
+        page_width: prtf.page_width,
+        lpi: prtf.lpi,
+        cpi: prtf.cpi,
+        ovrflw: prtf.ovrflw,
+        drawer: prtf.drawer,
+        duplex: prtf.duplex,
+        prtqlty: prtf.prtqlty,
+        formtype: prtf.formtype.clone(),
+        outq,
+        devtype: prtf.devtype.clone(),
+        font: prtf.font.clone(),
+        prtf: real,
+        ..SplfAttrs::default()
+    };
+    let id = super::spool::create(system, attrs)?;
+    Ok((id, prtf))
 }

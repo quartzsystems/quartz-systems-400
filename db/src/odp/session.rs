@@ -3,8 +3,10 @@
 // root directory of this project.
 
 //! A job's view of the database: its overrides and the open data paths
-//! it shares. `MIGRATE(phase5)`: one per job, with call-level scoping
-//! (`OVRSCOPE`) once there are call levels.
+//! it shares. An override reaches the opens of the activation group
+//! that issued it, or every open for `OVRSCOPE(*JOB)` and for one
+//! issued at command level; call-level scoping within a group waits for
+//! commands run in place (`MIGRATE(phase7)`).
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -41,6 +43,8 @@ pub struct Session {
     job: JobHandle,
     locks: SharedLocks,
     overrides: Vec<Override>,
+    /// The activation group opening files now.
+    opener: String,
     shared: HashMap<(ObjectId, Name), Shared>,
     cmt: Option<CommitRef>,
     odps: Vec<Weak<RefCell<Odp>>>,
@@ -54,6 +58,7 @@ impl Session {
             job,
             locks,
             overrides: Vec::new(),
+            opener: super::ovrdbf::DFTACTGRP.into(),
             shared: HashMap::new(),
             cmt: None,
             odps: Vec::new(),
@@ -68,7 +73,8 @@ impl Session {
 
     /// `OVRDBF`: a second override of the same file replaces the first.
     pub fn ovrdbf(&mut self, ovr: Override) {
-        self.overrides.retain(|o| o.file != ovr.file);
+        self.overrides
+            .retain(|o| o.file != ovr.file || o.scope != ovr.scope);
         self.overrides.push(ovr);
     }
 
@@ -91,7 +97,25 @@ impl Session {
     /// The override for a file name, if any.
     #[must_use]
     pub fn override_for(&self, file: Name) -> Option<&Override> {
-        self.overrides.iter().find(|o| o.file == file)
+        self.overrides
+            .iter()
+            .find(|o| o.file == file && super::ovrdbf::reaches(&o.scope, &self.opener))
+    }
+
+    /// The activation group the next opens come from.
+    pub fn set_opener(&mut self, actgrp: &str) {
+        actgrp.clone_into(&mut self.opener);
+    }
+
+    /// Replace the overrides: the job's one table, as its command level
+    /// last changed it.
+    pub fn set_overrides(&mut self, overrides: Vec<Override>) {
+        self.overrides = overrides;
+    }
+
+    /// An activation group went: its overrides go with it.
+    pub fn reclaim(&mut self, actgrp: &str) {
+        self.overrides.retain(|o| o.scope != actgrp);
     }
 
     /// Open the file a program names, through the overrides: `TOFILE`

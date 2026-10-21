@@ -46,6 +46,7 @@ impl Console {
     pub fn ended(&mut self, code: u16) {
         let (name, user, number) = self.who();
         let j = self.job();
+        j.close_printers();
         let data = joblog::ended_data((&name, &user, number), now(), 0, code);
         j.log_external("CPF1164", "QCPFMSG", &data, MsgType::Comp);
         self.sync_log();

@@ -357,5 +357,6 @@ pub fn dltovr(system: &mut System, p: &Params) -> Result<String, String> {
         let fname = Name::parse(&file).map_err(|e| format!("FILE({file}): {e}"))?;
         ctx.session.dltovr(Some(fname))
     };
+    let n = n + super::prtf::dltovr(system, &file);
     Ok(format!("{n} override(s) deleted."))
 }

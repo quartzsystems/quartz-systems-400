@@ -12,6 +12,9 @@ use crate::diag::{Diagnostics, ids};
 use crate::lex::columns::FUNCTIONS;
 use crate::source::SourceLine;
 
+/// The name a constant (`'text'` in positions 45-80) is lexed under.
+pub const CONSTANT: &str = "'";
+
 /// One keyword parameter.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Parm {
@@ -223,6 +226,19 @@ impl Parser<'_> {
                 break;
             };
             let line = self.line();
+            if ch == '\'' {
+                // A constant (display and printer files).
+                if let Ok(text) = self.quoted(CONSTANT) {
+                    out.push(Keyword {
+                        name: CONSTANT.into(),
+                        parms: vec![Parm::Quoted(text)],
+                        line,
+                    });
+                } else {
+                    self.skip_to_blank();
+                }
+                continue;
+            }
             if !ch.is_ascii_alphabetic() {
                 self.diags.push(ids::keyword_expected(line, ch));
                 self.skip_to_blank();

@@ -437,7 +437,10 @@ impl SplfAttrs {
             let v = raw.trim();
             let up = v.to_ascii_uppercase();
             let num = |max: u32| -> Result<u32> {
-                up.parse().ok().filter(|n| (1..=max).contains(n)).ok_or_else(|| bad(k, v))
+                up.parse()
+                    .ok()
+                    .filter(|n| (1..=max).contains(n))
+                    .ok_or_else(|| bad(k, v))
             };
             match k.as_str() {
                 "FILE" | "JOB" | "SPLNBR" | "OUTQ" => {}
@@ -456,14 +459,20 @@ impl SplfAttrs {
                     };
                 }
                 "PRTQLTY" => {
-                    let i = QUALITIES.iter().position(|q| *q == up).ok_or_else(|| bad(k, v))?;
+                    let i = QUALITIES
+                        .iter()
+                        .position(|q| *q == up)
+                        .ok_or_else(|| bad(k, v))?;
                     self.prtqlty = u8::try_from(i).unwrap_or(0);
                 }
                 "EXPDATE" => {
                     self.expires = if up == "*NONE" {
                         0
                     } else {
-                        up.parse().ok().filter(|_| up.len() == 8).ok_or_else(|| bad(k, v))?
+                        up.parse()
+                            .ok()
+                            .filter(|_| up.len() == 8)
+                            .ok_or_else(|| bad(k, v))?
                     };
                 }
                 "USRDFNDTA" => self.usrdfndta = v.trim_matches('\'').to_string(),
@@ -513,7 +522,10 @@ impl SplfAttrs {
         row("Printer file", &self.prtf);
         row(
             "Print quality",
-            QUALITIES.get(usize::from(self.prtqlty)).copied().unwrap_or("*STD"),
+            QUALITIES
+                .get(usize::from(self.prtqlty))
+                .copied()
+                .unwrap_or("*STD"),
         );
         row(
             "Expiration date",
@@ -613,7 +625,8 @@ mod tests {
         assert_eq!(SplfAttrs::object_name(7), "SP00000007");
         assert_eq!(a.job_text(), "000042/QSECOFR/WMJOB");
         let mut b = a.clone();
-        b.apply(&Params::parse("x COPIES(3) PRTQLTY(*NLQ) SAVE(*YES)")).unwrap();
+        b.apply(&Params::parse("x COPIES(3) PRTQLTY(*NLQ) SAVE(*YES)"))
+            .unwrap();
         assert_eq!((b.copies, b.prtqlty, b.save), (3, 2, true));
         assert!(b.describe().contains("*NLQ"));
     }

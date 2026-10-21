@@ -283,11 +283,19 @@ impl OutQ {
     pub fn describe(&self) -> String {
         let mut out = String::new();
         let yn = |b: bool| if b { "*YES" } else { "*NO" };
-        let _ = writeln!(out, "Status . . . . . . . : {}", if self.held { "HLD" } else { "RLS" });
+        let _ = writeln!(
+            out,
+            "Status . . . . . . . : {}",
+            if self.held { "HLD" } else { "RLS" }
+        );
         let _ = writeln!(
             out,
             "Order on queue . . . : {}",
-            if self.seq == Seq::Fifo { "*FIFO" } else { "*JOBNBR" }
+            if self.seq == Seq::Fifo {
+                "*FIFO"
+            } else {
+                "*JOBNBR"
+            }
         );
         let _ = writeln!(
             out,
@@ -304,7 +312,11 @@ impl OutQ {
         let _ = writeln!(
             out,
             "Writer . . . . . . . : {}",
-            if self.writer.is_empty() { "*NONE" } else { &self.writer }
+            if self.writer.is_empty() {
+                "*NONE"
+            } else {
+                &self.writer
+            }
         );
         let _ = writeln!(out, "Text . . . . . . . . : {}", self.text);
         out
@@ -318,8 +330,10 @@ mod tests {
     #[test]
     fn round_trip_and_apply() {
         let mut q = OutQ::new("Test queue");
-        q.apply(&Params::parse("x OUTQ(Q) SEQ(*JOBNBR) MAXPAGES(50) DSPDTA(*YES) TEXT('It''s')"))
-            .unwrap();
+        q.apply(&Params::parse(
+            "x OUTQ(Q) SEQ(*JOBNBR) MAXPAGES(50) DSPDTA(*YES) TEXT('It''s')",
+        ))
+        .unwrap();
         q.files = vec![3, 1, 2];
         let back = OutQ::decode(&q.encode()).unwrap();
         assert_eq!(back, q);

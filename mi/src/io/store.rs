@@ -186,6 +186,11 @@ impl IoSource for StoreIo {
         }
         let mut store = self.store.store();
         let mut txn = store.begin().map_err(|e| fail_of(&DbError::Store(e)))?;
+        self.session.set_opener(if spec.actgrp.is_empty() {
+            db::odp::ovrdbf::DFTACTGRP
+        } else {
+            &spec.actgrp
+        });
         let odp = match self.session.open(&mut txn, &fr, &mut *self.resolve, opts) {
             Ok(o) => o,
             Err(e) => {

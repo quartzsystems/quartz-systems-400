@@ -8,6 +8,8 @@ publish.workspace = true
 
 [dependencies]
 ccsid = { path = "../ccsid", version = "0.1.0" }
+dds = { path = "../dds", version = "0.1.0" }
+qdecimal = { path = "../qdecimal", version = "0.1.0" }
 
 [lints]
 workspace = true

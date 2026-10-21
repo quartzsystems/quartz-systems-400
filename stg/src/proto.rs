@@ -17,6 +17,7 @@ use sysapi::{
 use wm::job::JobAttrs;
 use wm::obj::jobq::{QJob, SbmJob};
 use wm::obj::msgq::{MsgKind, QMsg};
+use wm::obj::prtf::Prtf;
 use wm::obj::splf::SplfAttrs;
 use wm::sbs::{PoolInfo, SbsInfo, SbsState};
 use wm::table::JobInfo;
@@ -243,4 +244,7 @@ ipc::rpc! {
     114 => fn splf_put / SplfPut (id: u32, data: Vec<u8>, pages: u32, records: u32) -> Result<(), String>;
     /// Close a spooled file, held when the printer file says `HOLD(*YES)`.
     115 => fn splf_close / SplfClose (id: u32, hold: bool) -> Result<(), String>;
+    /// Open printer file `lib/file` from activation group `actgrp`, the
+    /// job's overrides applied: the new spooled file and the attributes.
+    116 => fn prt_open / PrtOpen (file: String, lib: String, actgrp: String) -> Result<(u32, Prtf), String>;
 }

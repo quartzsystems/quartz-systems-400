@@ -70,6 +70,8 @@ pub struct FileState {
     pub infds_len: usize,
     /// The file's standing.
     pub info: crate::io::FileInfo,
+    /// The line printer of an open printer file.
+    pub printer: Option<Box<crate::io::spool::PrinterState>>,
 }
 
 /// A job's identity: `QSVCJOB QSYS 000001` for the service job.
@@ -144,6 +146,8 @@ pub struct Job {
     pub usrspcs: crate::usrspc::UserSpaces,
     /// Where files are opened; none until the console or a test sets it.
     pub io: Option<Box<dyn crate::io::IoSource>>,
+    /// Where printer files' spooled files go.
+    pub spool: Option<Box<dyn crate::io::spool::SpoolSink>>,
     /// Data areas and data queues.
     pub data: Option<Box<dyn crate::io::DataSource>>,
     /// Open files by activation, module and file index.
@@ -210,6 +214,7 @@ impl Job {
             table: crate::rtlib::table(),
             usrspcs: crate::usrspc::UserSpaces::default(),
             io: None,
+            spool: None,
             data: None,
             files: HashMap::new(),
             debug: None,
@@ -311,10 +316,33 @@ impl Job {
             .copied()
             .collect();
         for k in keys {
-            if let Some(state) = self.files.remove(&k)
-                && let Some(io) = self.io.as_mut()
-            {
+            let Some(state) = self.files.remove(&k) else {
+                continue;
+            };
+            if let Some(mut p) = state.printer {
+                if let Some(sink) = self.spool.as_mut() {
+                    let _ = p.close(sink.as_mut());
+                }
+            } else if let Some(io) = self.io.as_mut() {
                 io.close(state.handle);
+            }
+        }
+    }
+
+    /// Close every open printer file: the job is ending, and what they
+    /// printed must reach their spooled files.
+    pub fn close_printers(&mut self) {
+        let keys: Vec<FileKey> = self
+            .files
+            .iter()
+            .filter(|(_, s)| s.printer.is_some())
+            .map(|(k, _)| *k)
+            .collect();
+        for k in keys {
+            if let Some(mut p) = self.files.remove(&k).and_then(|s| s.printer)
+                && let Some(sink) = self.spool.as_mut()
+            {
+                let _ = p.close(sink.as_mut());
             }
         }
     }

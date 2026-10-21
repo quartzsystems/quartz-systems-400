@@ -27,8 +27,9 @@ use blockdev::{BlockDev, MemBlockDev};
 use db::file::CreateFileOpts;
 use dds::{CompileOpts, NoRefs, Source, compile_pf};
 use ile::{ActGrpAttr, BindInput, BindOptions, CreateData, ModuleObject, PgmKind};
+use mi::io::spool::{MemSpool, PrinterOpen, SpoolSink};
 use mi::io::store::StoreIo;
-use mi::io::{DataAreaValue, MemData};
+use mi::io::{DataAreaValue, IoFail, MemData};
 use mi::{Job, MemSource, MemUserSpaces};
 use qsname::{MemberSpec, Name};
 use store::obj::{CreateParams, JobHandle, ObjectId, ops, types};
@@ -333,6 +334,71 @@ pub fn program(text: &str) -> Result<ile::ProgramObject, String> {
     .map_err(|e| e.to_string())
 }
 
+/// The DDS of `KITPRT`, the kit's printer file.
+pub const KITPRT: &str = "\n     A          R HEADER                    SKIPB(1) SPACEA(2)
+\n     A                                     1'Kit report' UNDERLINE
+\n     A                                    40'Page'
+\n     A                                    +1PAGNBR
+\n     A          R DETAIL                    SPACEA(1)
+\n     A            CUST          10A        5
+\n     A            AMOUNT         9S 2     +2EDTCDE(J)
+\n     A  50                                +1'*'
+\n     A          R TOTAL                     SPACEB(1)
+\n     A                                     5'End of report' HIGHLIGHT
+";
+
+/// The kit's spooled files, shared between the job and the report.
+#[derive(Clone, Default)]
+pub struct KitSpool(pub Rc<RefCell<MemSpool>>);
+
+impl SpoolSink for KitSpool {
+    fn open(&mut self, file: &str, lib: &str, actgrp: &str) -> Result<PrinterOpen, IoFail> {
+        self.0.borrow_mut().open(file, lib, actgrp)
+    }
+    fn put(&mut self, id: u32, data: &[u8], pages: u32, records: u32) -> Result<(), IoFail> {
+        self.0.borrow_mut().put(id, data, pages, records)
+    }
+    fn close(&mut self, id: u32, hold: bool) -> Result<(), IoFail> {
+        self.0.borrow_mut().close(id, hold)
+    }
+}
+
+/// `KITPRT` compiled.
+fn kitprt() -> Result<wm::obj::prtf::Prtf, String> {
+    let (src, _) = dds::Source::from_text(KITPRT);
+    let c = dds::compile_prtf(&src, &dds::NoRefs, &dds::CompileOpts::default());
+    let ids = c.ids().join(" ");
+    let def = c.definition.ok_or_else(|| format!("KITPRT: {ids}"))?;
+    Ok(wm::obj::prtf::Prtf {
+        formats: dds::prtf::codec::encode(&def),
+        ..wm::obj::prtf::Prtf::default()
+    })
+}
+
+/// The spooled files as the expected file holds them: each file's
+/// counts and text, page by page.
+#[must_use]
+pub fn render_spool(spool: &MemSpool) -> String {
+    let mut out = String::new();
+    for (id, f) in &spool.files {
+        let _ = writeln!(
+            out,
+            "spooled {id} {}: {} pages, {} records, {}",
+            f.file,
+            f.pages,
+            f.records,
+            if f.closed { "closed" } else { "open" }
+        );
+        let (pages, _) = spool::scs::decode(&f.data);
+        for (page, line, text) in spool::view::rows(&pages) {
+            if !text.is_empty() {
+                let _ = writeln!(out, "  {page}/{line:<3} {text}");
+            }
+        }
+    }
+    out
+}
+
 /// A job with the kit's data: `QGPL/CUST`, `*LDA`, a decimal area
 /// `QGPL/COUNTER` holding 41, a queue `QGPL/Q1`, the system APIs with
 /// the fixed clock, and the case's replies.
@@ -440,11 +506,19 @@ pub fn run(case: &Case) -> Result<String, String> {
         .cloned()
         .ok_or_else(|| format!("{}: no module", case.name))?;
     let mut job = job_for(case, src, &names)?;
+    let spool = KitSpool::default();
+    spool
+        .0
+        .borrow_mut()
+        .prtfs
+        .insert("KITPRT".into(), kitprt()?);
+    job.spool = Some(Box::new(spool.clone()));
     let mut buffers = parms(&case.parms)?;
     let addrs: Vec<u64> = buffers.iter_mut().map(|b| b.as_mut_ptr() as u64).collect();
     if let Err(c) = job.call_program(&main, "QGPL", &addrs) {
         job.console.push(format!("call failed: {}", c.msgid()));
     }
+    job.close_printers();
     sysapi::uninstall(&job);
-    Ok(render(&job, &buffers))
+    Ok(render(&job, &buffers) + &render_spool(&spool.0.borrow()))
 }

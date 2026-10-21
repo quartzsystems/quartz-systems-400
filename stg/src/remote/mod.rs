@@ -8,6 +8,7 @@ mod data;
 pub mod inquiry;
 mod objects;
 mod provider;
+pub mod spool;
 
 pub use data::{LDA_LEN, Lda, RemoteData, RemoteIo, new_lda, status};
 pub use objects::{RemoteMsgs, RemoteObjects, RemoteSpaces};

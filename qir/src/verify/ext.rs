@@ -7,8 +7,8 @@
 use super::place::place_type;
 use super::typing::{operand_type, reg_type};
 use crate::inst::{
-    Callee, Const, CvtOpts, DecUn, DtInst, DtUnit, DtaaraOp, DtaqInst, Inst, IoInst, MsgInst,
-    MsgQueue, Operand, PtrInst, StrInst,
+    Callee, Const, CvtOpts, DecUn, DevOp, DtInst, DtUnit, DtaaraOp, DtaqInst, Inst, IoInst,
+    MsgInst, MsgQueue, Operand, PtrInst, StrInst,
 };
 use crate::module::{FileDev, Linkage, Module, Proc};
 use crate::types::{Shape, Type, TypeClass, TypeClass as C};
@@ -499,8 +499,8 @@ fn io_inst(cx: &Cx, io: &IoInst) -> Result<(), String> {
     match io {
         IoInst::DbOpen { file: f, infds, .. } => {
             let fr = file(*f)?;
-            if fr.dev != FileDev::Db {
-                return Err(format!("{} is not a database file", fr.name));
+            if fr.dev == FileDev::Display {
+                return Err(format!("{} is a display file", fr.name));
             }
             if let Some(ds) = infds {
                 let t = place_type(cx.m, cx.p, ds)?;
@@ -555,10 +555,18 @@ fn io_inst(cx: &Cx, io: &IoInst) -> Result<(), String> {
             }
             Ok(())
         }
-        IoInst::DevIo { file: f, rec, .. } => {
+        IoInst::DevIo {
+            file: f, op, rec, ..
+        } => {
             let fr = file(*f)?;
             if fr.dev == FileDev::Db {
                 return Err(format!("{} is a database file", fr.name));
+            }
+            if fr.dev == FileDev::Printer && *op != DevOp::Write {
+                return Err(format!(
+                    "a printer file takes only WRITE, not {}",
+                    op.name()
+                ));
             }
             if let Some(r) = rec {
                 place_type(cx.m, cx.p, r)?;

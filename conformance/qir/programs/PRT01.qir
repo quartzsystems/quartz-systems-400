@@ -1,0 +1,29 @@
+; printer files: a program-described report, the overflow line, close
+module PRT01
+file REPORT file(QSYSPRT) dev(*PRT)
+static $num: zoned(3,0)
+proc PRT01() entry {
+L0:
+  %o = dbopen REPORT
+  dsply %o
+  %i = const.i32 1
+  br TEST
+TEST:
+  %done = cmp.gt %i, 65
+  brif %done, OUT, BODY
+BODY:
+  dec.mov $num, %i
+  %w = prtio REPORT WRITE fmt(QSYSPRT) rec($num)
+  %ov = cmp.ne %w, 0
+  brif %ov, OVER, NEXT
+OVER:
+  dsply %i
+  br NEXT
+NEXT:
+  %i = add %i, 1
+  br TEST
+OUT:
+  %c = dbclose REPORT
+  dsply %c
+  ret
+}

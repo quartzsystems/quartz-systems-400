@@ -9,6 +9,7 @@
 
 use std::collections::{HashMap, VecDeque};
 
+pub mod spool;
 pub mod store;
 mod wire;
 
@@ -30,6 +31,8 @@ pub struct OpenSpec {
     pub lvlchk: Option<Vec<(String, String)>>,
     /// A member, when one was named.
     pub member: Option<String>,
+    /// The activation group opening it, for the overrides that reach it.
+    pub actgrp: String,
 }
 
 /// A failed open or data operation: the RPG status and the message.

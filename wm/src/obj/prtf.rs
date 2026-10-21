@@ -324,7 +324,11 @@ impl Prtf {
             share: r.flag("Share"),
             lvlchk: r.flag("LvlChk"),
             formtype: r.text("FormType"),
-            outq: if ol.is_empty() { on } else { format!("{ol}/{on}") },
+            outq: if ol.is_empty() {
+                on
+            } else {
+                format!("{ol}/{on}")
+            },
             dev: r.text("Dev"),
             usrdta: r.text("UsrDta"),
             splfname: r.text("SplfName"),
@@ -399,7 +403,10 @@ impl Prtf {
                 }
                 "ALIGN" => self.align = yes()?,
                 "PRTQLTY" => {
-                    let i = QUALITIES.iter().position(|q| *q == up).ok_or_else(|| bad(k, v))?;
+                    let i = QUALITIES
+                        .iter()
+                        .position(|q| *q == up)
+                        .ok_or_else(|| bad(k, v))?;
                     self.prtqlty = u8::try_from(i).unwrap_or(3);
                 }
                 "HOLD" => self.hold = yes()?,
@@ -487,10 +494,7 @@ impl Prtf {
         let yn = |b: bool| if b { "*YES" } else { "*NO" };
         let rows: [(&str, String); 16] = [
             ("File attribute", "PRTF".into()),
-            (
-                "Externally described",
-                yn(!self.formats.is_empty()).into(),
-            ),
+            ("Externally described", yn(!self.formats.is_empty()).into()),
             ("Device type", self.devtype.clone()),
             (
                 "Page size",
@@ -537,7 +541,11 @@ mod tests {
         assert_eq!(back, f);
         assert_eq!((back.page_len, back.page_width, back.lpi), (88, 198, 8));
         assert!(Prtf::default().apply(&Params::parse("x LPI(7)")).is_err());
-        assert!(Prtf::default().apply(&Params::parse("x OVRFLW(90)")).is_err());
+        assert!(
+            Prtf::default()
+                .apply(&Params::parse("x OVRFLW(90)"))
+                .is_err()
+        );
         assert!(f.describe().contains("*FCFC"));
     }
 }

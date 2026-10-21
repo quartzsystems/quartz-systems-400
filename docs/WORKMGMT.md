@@ -553,6 +553,32 @@ service prints the copy as `LOG` keeps it into `QPJOBLOG`
 (`OUTQ(QUSRSYS/QEZJOBLOG)`): `*NOLIST` prints only after an abnormal
 end, `LOGOUTPUT(*PND)` (or `QLOGOUTPUT`) prints nothing.
 
+### Printer files
+
+`CRTPRTF` makes a `*FILE PRTF`: program-described without `SRCFILE`,
+externally described from DDS with it. The DDS compiler takes record
+formats of fields (`A` or `S`, usage blank, `O` or `P`) and constants
+at a line (positions 39-41, optional) and a position (42-44, or `+n`
+after the previous field), option indicators in 8-16, and `SKIPB`,
+`SKIPA`, `SPACEB`, `SPACEA`, `PAGNBR`, `DATE`, `TIME`, `EDTCDE`,
+`EDTWRD`, `UNDERLINE`, `HIGHLIGHT`, `INDARA`, `TEXT`, `REF`, `REFFLD`.
+`CPI`, `FONT`, `LPI` and their kin are accepted and change nothing
+(`DDS5005`). Messages `DDS5001`-`DDS5009` are the printer file's own.
+
+A record of a format: option indicators first, one byte each (`1` on)
+for every indicator the format uses in ascending order, unless the
+file has `INDARA`; then the fields in order. A format with no spacing
+keyword and no line numbers spaces one line after (`SPACEA(1)`).
+`UNDERLINE` and `HIGHLIGHT` overprint the line with underscores and
+with the text again.
+
+`OVRPRTF` takes the `CRTPRTF` keywords and `TOFILE`, `OVRSCOPE`. An
+override reaches the opens of the activation group that issued it, all
+of the job's for `*JOB` and for one issued at command level; the
+console's `OVRDBF` and a program's database opens now share one table.
+Commands a program runs through `QCMDEXC` take effect after the call
+(`MIGRATE(phase7)`), so for now every override is a command-level one.
+
 ### The SCS subset
 
 | Bytes | Name | What it does |

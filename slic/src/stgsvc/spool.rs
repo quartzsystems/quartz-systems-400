@@ -61,7 +61,10 @@ pub fn load(system: &mut System) {
             let Ok(mut a) = splf::read_attrs(txn, id) else {
                 continue;
             };
-            if matches!(a.status, Status::Opn | Status::Clo | Status::Wtr | Status::Pnd) {
+            if matches!(
+                a.status,
+                Status::Opn | Status::Clo | Status::Wtr | Status::Pnd
+            ) {
                 a.status = Status::Rdy;
                 a.writer.clear();
                 splf::write_attrs(txn, id, &a).map_err(|e| e.to_string())?;
@@ -82,7 +85,11 @@ pub fn load(system: &mut System) {
 }
 
 /// An output queue's object and real `lib/name`.
-pub fn outq_object(txn: &mut Txn<'_>, qsys: ObjectId, q: &str) -> Result<(ObjectId, String), String> {
+pub fn outq_object(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    q: &str,
+) -> Result<(ObjectId, String), String> {
     let (lib, name) = qualified(q);
     let names = crate::svc::ile::name_context(txn, qsys);
     let id = wm::obj::find(txn, qsys, &names, &lib, &name, types::OUTQ)
@@ -163,7 +170,9 @@ pub fn create(system: &mut System, mut attrs: SplfAttrs) -> Result<u32, String> 
     if attrs.devtype.is_empty() {
         attrs.devtype = "*SCS".into();
     }
-    let real = with_store(system, |txn, qsys| outq_object(txn, qsys, &attrs.outq).map(|o| o.1))?;
+    let real = with_store(system, |txn, qsys| {
+        outq_object(txn, qsys, &attrs.outq).map(|o| o.1)
+    })?;
     attrs.outq.clone_from(&real);
     let name = SplfAttrs::object_name(id);
     let obj = with_store(system, |txn, qsys| {
@@ -309,9 +318,7 @@ pub fn job_matches(spec: &str, job: &(String, String, u32)) -> bool {
     match parts.as_slice() {
         [name] => *name == job.0,
         [user, name] => *user == job.1 && *name == job.0,
-        [n, user, name] => {
-            n.parse::<u32>().ok() == Some(job.2) && *user == job.1 && *name == job.0
-        }
+        [n, user, name] => n.parse::<u32>().ok() == Some(job.2) && *user == job.1 && *name == job.0,
         _ => false,
     }
 }
@@ -350,7 +357,9 @@ pub fn find(system: &System, file: &str, job: &str, splnbr: &str) -> Result<u32,
 
 /// The files on a queue, in queue order.
 pub fn on_queue(system: &mut System, q: &str) -> Result<(String, OutQ, Vec<SplfAttrs>), String> {
-    let (real, oq) = with_outq(system, q, |oq, real| Ok(((real.to_string(), oq.clone()), false)))?;
+    let (real, oq) = with_outq(system, q, |oq, real| {
+        Ok(((real.to_string(), oq.clone()), false))
+    })?;
     let files = oq
         .files
         .iter()

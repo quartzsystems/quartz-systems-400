@@ -1,0 +1,22 @@
+; printer files: DDS formats, edited amounts, an option indicator, underline
+; qemu: no
+module PRT02
+file RPT file(KITPRT) dev(*PRT) fmt(HEADER) fmt(DETAIL) fmt(TOTAL)
+static $hdr: char(1)
+static $det: char(20)
+proc PRT02() entry {
+L0:
+  %o = dbopen RPT
+  dsply %o
+  %h = prtio RPT WRITE fmt(HEADER) rec($hdr)
+  dsply %h
+  mov $det, x"F1C1C3D4C5404040404040F0F0F0F1F2F3F4F5C0"
+  %d1 = prtio RPT WRITE fmt(DETAIL) rec($det)
+  mov $det, x"F0E9C5D5C9E3C840404040F0F0F0F0F0F0F7F5D0"
+  %d2 = prtio RPT WRITE fmt(DETAIL) rec($det)
+  %t = prtio RPT WRITE fmt(TOTAL) rec($hdr)
+  dsply %t
+  %c = dbclose RPT
+  dsply %c
+  ret
+}

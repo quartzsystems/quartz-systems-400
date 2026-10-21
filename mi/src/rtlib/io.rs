@@ -5,7 +5,9 @@
 //! The runtime behind `dbopen`, `dbio`, `dbclose`, `dspio`/`prtio`,
 //! `dtaara`, `dtaq` and `rslvsp`: files are opened per activation and
 //! module, the information data structure is kept current after every
-//! operation, and data objects go through the job's data source.
+//! operation, and data objects go through the job's data source. A
+//! printer file opens a spooled file through the job's spool sink and
+//! runs its line printer here.
 
 #![allow(
     clippy::many_single_char_names,
@@ -20,6 +22,7 @@ use qir::Type;
 
 use super::core::raise_on;
 use super::mem::{bytes, env as env_of, job, ty};
+use crate::io::spool::PrinterState;
 use crate::io::{
     DataAreaKind, DataAreaValue, FileInfo, IoFail, IoOp, IoRequest, IoResult, KeyRef, OpenSpec,
 };
@@ -142,6 +145,63 @@ fn write_infds(
     put(buf, 400, &r.key);
 }
 
+/// The running entry's activation group.
+fn actgrp(j: &Job) -> String {
+    j.act
+        .frames
+        .last()
+        .and_then(|f| j.act.groups().find(|g| g.id == f.ag))
+        .map_or_else(|| "*DFTACTGRP".into(), |g| g.name.clone())
+}
+
+/// Open a printer file: a spooled file through the job's sink.
+fn open_printer(j: &mut Job, key: FileKey, fr: &qir::FileRef, infds: u64, infds_len: usize) -> i32 {
+    let info = FileInfo {
+        file: fr.file.clone(),
+        lib: fr.lib.clone(),
+        ..FileInfo::default()
+    };
+    let ag = actgrp(j);
+    let opened = match j.spool.as_mut() {
+        Some(s) => s.open(&fr.file, &fr.lib, &ag),
+        None => Err(IoFail::new(1299, "CPF4101", &[&fr.file, &fr.lib])),
+    };
+    match opened {
+        Ok(o) => {
+            write_infds(
+                infds,
+                infds_len,
+                &info,
+                &IoResult::default(),
+                true,
+                "OPEN",
+                j.abi.cur_stmt,
+            );
+            j.files.insert(
+                key,
+                FileState {
+                    handle: o.id,
+                    infds,
+                    infds_len,
+                    info,
+                    printer: Some(Box::new(PrinterState::new(o))),
+                },
+            );
+            0
+        }
+        Err(f) => {
+            let r = IoResult {
+                status: f.status,
+                msgid: Some(f.msgid.clone()),
+                ..IoResult::default()
+            };
+            write_infds(infds, infds_len, &info, &r, false, "OPEN", j.abi.cur_stmt);
+            escape(j, &f);
+            i32::from(f.status)
+        }
+    }
+}
+
 /// `db_open(env, file, infds, infds_desc) -> status`.
 pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc: i64) -> i32 {
     let Some((key, fr)) = file_of(env, file) else {
@@ -149,6 +209,14 @@ pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc:
         return CLOSED;
     };
     let j = job(env);
+    let infds_len = if infds == 0 {
+        0
+    } else {
+        usize::try_from(ty(infds_desc).size()).unwrap_or(0)
+    };
+    if fr.dev == qir::FileDev::Printer {
+        return open_printer(j, key, &fr, infds.cast_unsigned(), infds_len);
+    }
     let spec = OpenSpec {
         file: fr.file.clone(),
         lib: fr.lib.clone(),
@@ -161,11 +229,7 @@ pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc:
                 .collect()
         }),
         member: None,
-    };
-    let infds_len = if infds == 0 {
-        0
-    } else {
-        usize::try_from(ty(infds_desc).size()).unwrap_or(0)
+        actgrp: actgrp(j),
     };
     let Some(io) = j.io.as_mut() else {
         let f = IoFail::new(1299, "CPF4101", &[&fr.file, &fr.lib]);
@@ -191,6 +255,7 @@ pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc:
                     infds: infds.cast_unsigned(),
                     infds_len,
                     info,
+                    printer: None,
                 },
             );
             0
@@ -227,13 +292,24 @@ pub extern "sysv64" fn db_close(env: *mut Env, file: i64) -> i32 {
         return CLOSED;
     };
     let j = job(env);
-    let Some(state) = j.files.remove(&key) else {
+    let Some(mut state) = j.files.remove(&key) else {
         return CLOSED;
     };
-    let r =
+    let r = if let Some(p) = state.printer.as_mut() {
+        let closed = j.spool.as_mut().map(|s| p.close(s.as_mut()));
+        match closed {
+            Some(Err(f)) => IoResult {
+                status: f.status,
+                msgid: Some(f.msgid),
+                ..IoResult::default()
+            },
+            _ => IoResult::default(),
+        }
+    } else {
         j.io.as_mut()
             .map(|io| io.close(state.handle))
-            .unwrap_or_default();
+            .unwrap_or_default()
+    };
     write_infds(
         state.infds,
         state.infds_len,
@@ -324,18 +400,48 @@ pub extern "sysv64" fn db_io(
     i32::from(r.status)
 }
 
-/// `dev_io(env, file, op, fmt, rec, rec_desc) -> status`: display and
-/// printer files have no device yet (`TODO(phase8)`): status `01299`.
+/// `dev_io(env, file, op, fmt, rec, rec_desc) -> status`. A printer
+/// file's `WRITE` prints the record: 0, or 1 when the carriage reached
+/// the overflow line. Display files have no device yet
+/// (`TODO(phase8)`): status `01299`.
 pub extern "sysv64" fn dev_io(
     env: *mut Env,
     file: i64,
     _op: i64,
-    _fmt: i64,
-    _rec: i64,
-    _rec_desc: i64,
+    fmt: i64,
+    rec: i64,
+    rec_desc: i64,
 ) -> i32 {
-    let _ = file_of(env, file);
-    NO_DEVICE
+    let Some((key, _)) = file_of(env, file) else {
+        return CLOSED;
+    };
+    let j = job(env);
+    let format = if fmt == 0 {
+        String::new()
+    } else {
+        ccsid::decode_trimmed(bytes(fmt, 10))
+    };
+    let record = if rec == 0 {
+        Vec::new()
+    } else {
+        bytes(rec, usize::try_from(ty(rec_desc).size()).unwrap_or(0)).to_vec()
+    };
+    let Some(state) = j.files.get_mut(&key) else {
+        return CLOSED;
+    };
+    let Some(p) = state.printer.as_mut() else {
+        return NO_DEVICE;
+    };
+    let Some(sink) = j.spool.as_mut() else {
+        return NO_DEVICE;
+    };
+    match p.write(sink.as_mut(), &format, &record) {
+        Ok(over) => i32::from(over),
+        Err(f) => {
+            escape(j, &f);
+            i32::from(f.status)
+        }
+    }
 }
 
 /// The value of a numeric place as a decimal.

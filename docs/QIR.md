@@ -294,7 +294,14 @@ Level checks happen at `dbopen` (`CPF4131` as an escape message).
 | `%d = dbclose FILE` | |
 | `%d = dbio FILE OP [rec(place)] [key(x)] [rrn(x)] [fmt(NAME)] [nolock]` | `READ READP READE READPE CHAIN SETLL SETGT WRITE UPDATE DELETE UNLOCK FEOD`; reads and writes need `rec`, positioning needs `key` or `rrn` |
 | `%d = dspio FILE OP fmt(NAME) [rec(place)]` | `WRITE READ EXFMT` on a `dev(*DSP)` file; `TODO(phase8)` |
-| `%d = prtio FILE WRITE fmt(NAME) [rec(place)]` | on a `dev(*PRT)` file; `TODO(phase8)` |
+| `%d = prtio FILE WRITE fmt(NAME) [rec(place)]` | print a record of a `dev(*PRT)` file: 0, or 1 when the carriage reached the overflow line |
+
+`dbopen` and `dbclose` also open and close a printer file: the open
+creates its spooled file (`OPN`), the close makes it ready. An
+externally described printer file prints the record format `fmt`
+names from the record (option indicators first, one byte each, unless
+the file has `INDARA`); a program-described one prints the record as
+one line, its first byte the carriage control under `CTLCHAR(*FCFC)`.
 
 A file is open per activation of the program; it closes with
 `dbclose` or when the activation group is reclaimed. An open that
@@ -303,7 +310,7 @@ as an escape and returns the status; a failing operation only returns
 it. The record place is filled on a read (padded with blanks, or
 truncated) and taken whole on a write or update. A key operand holds
 the key fields in record layout, as many as it has room for; `rrn`
-positions by relative record number. Device files return `01299`
+positions by relative record number. Display files return `01299`
 until Phase 8.
 
 The information data structure, when given, is kept current after

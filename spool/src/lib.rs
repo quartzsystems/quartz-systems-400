@@ -10,6 +10,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod ddsprt;
 pub mod printer;
 pub mod scs;
 pub mod view;

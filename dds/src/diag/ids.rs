@@ -757,3 +757,89 @@ pub fn jdftval_without_join(line: usize) -> Diagnostic {
         "JDFTVAL requires a join logical file".to_string(),
     )
 }
+
+// Printer files.
+
+/// Positions 39-44 do not hold a line and a position.
+pub fn bad_location(line: usize, text: &str) -> Diagnostic {
+    err(
+        "DDS5001",
+        line,
+        format!("Positions 39-44 ({text:?}) must hold a line (39-41) and a position or +n (42-44)"),
+    )
+}
+
+/// A data type a printer file cannot hold.
+pub fn prtf_type(line: usize, ch: char) -> Diagnostic {
+    err(
+        "DDS5002",
+        line,
+        format!("Data type {ch} is not valid in a printer file; use A or S"),
+    )
+}
+
+/// A usage a printer file cannot have.
+pub fn prtf_usage(line: usize, ch: char) -> Diagnostic {
+    err(
+        "DDS5003",
+        line,
+        format!("Usage {ch} is not valid in a printer file; use blank, O or P"),
+    )
+}
+
+/// A keyword's parameters are wrong.
+pub fn prtf_parm(line: usize, kw: &str) -> Diagnostic {
+    err(
+        "DDS5004",
+        line,
+        format!("The parameters of {kw} are not valid"),
+    )
+}
+
+/// A keyword is accepted and has no effect yet.
+pub fn prtf_ignored(line: usize, kw: &str) -> Diagnostic {
+    warn(
+        "DDS5005",
+        line,
+        format!("{kw} is accepted and does not change the output"),
+    )
+}
+
+/// A printer file with no record format.
+pub fn prtf_no_formats() -> Diagnostic {
+    Diagnostic::new(
+        "DDS5006",
+        Severity::Error,
+        None,
+        "A printer file needs at least one record format",
+    )
+}
+
+/// A field or constant without a location.
+pub fn prtf_no_location(line: usize) -> Diagnostic {
+    err(
+        "DDS5007",
+        line,
+        "A field or constant needs a position in positions 42-44".to_string(),
+    )
+}
+
+/// `REFFLD` or `R` names a field nobody has.
+pub fn prtf_ref(line: usize, field: &str) -> Diagnostic {
+    err(
+        "DDS5008",
+        line,
+        format!("Referenced field {field} was not found"),
+    )
+}
+
+/// Conditioning indicators are malformed.
+pub fn prtf_cond(line: usize, text: &str) -> Diagnostic {
+    err(
+        "DDS5009",
+        line,
+        format!(
+            "Positions 8-16 ({text:?}) must hold up to three indicators, each N or blank and 01-99"
+        ),
+    )
+}

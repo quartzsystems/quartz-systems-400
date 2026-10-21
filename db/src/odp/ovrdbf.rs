@@ -33,6 +33,16 @@ pub enum Position {
     KeyAfterEqual(Vec<Value>),
 }
 
+/// The default activation group, where command-level overrides live.
+pub const DFTACTGRP: &str = "*DFTACTGRP";
+
+/// Whether an override issued in `scope` reaches an open from
+/// activation group `opener`.
+#[must_use]
+pub fn reaches(scope: &str, opener: &str) -> bool {
+    scope == "*JOB" || scope == DFTACTGRP || scope == opener
+}
+
 /// One override. Every `None` means "as the file or program has it".
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Override {
@@ -57,8 +67,13 @@ pub struct Override {
     /// `INHWRT`.
     pub inhwrt: Option<bool>,
     /// `SECURE(*YES)`: overrides from higher call levels are ignored.
-    /// Kept; there is one level until jobs exist (`MIGRATE(phase5)`).
+    /// Kept; overrides come from command level until programs run
+    /// commands in place (`MIGRATE(phase7)`).
     pub secure: bool,
+    /// `OVRSCOPE`: `*JOB`, or the activation group that issued it
+    /// (`*ACTGRPDFN`). One issued from the default activation group
+    /// (command level) reaches every open in the job.
+    pub scope: String,
 }
 
 impl Override {
@@ -77,6 +92,7 @@ impl Override {
             lvlchk: None,
             inhwrt: None,
             secure: false,
+            scope: DFTACTGRP.into(),
         }
     }
 

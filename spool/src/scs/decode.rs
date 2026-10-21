@@ -9,8 +9,7 @@
 use std::collections::BTreeMap;
 
 use super::{
-    AHPP, AVPP, BEL, BS, CR, CSP, FF, IRS, LF, NL, PAGE, PP, RHPP, RVPP, SCD, SHF, SLD, SVF,
-    TRN,
+    AHPP, AVPP, BEL, BS, CR, CSP, FF, IRS, LF, NL, PAGE, PP, RHPP, RVPP, SCD, SHF, SLD, SVF, TRN,
 };
 
 /// One page: its printed lines by line number (1-based).
@@ -165,7 +164,12 @@ pub fn decode(data: &[u8]) -> (Vec<Page>, Format) {
         .map(|p| Page {
             lines: p
                 .into_iter()
-                .map(|(n, chars)| (n, chars.into_iter().collect::<String>().trim_end().to_string()))
+                .map(|(n, chars)| {
+                    (
+                        n,
+                        chars.into_iter().collect::<String>().trim_end().to_string(),
+                    )
+                })
                 .collect(),
         })
         .collect();

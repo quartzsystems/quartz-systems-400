@@ -308,10 +308,12 @@ dependencies = [
  "qir",
  "qsname",
  "serde_json",
+ "spool",
  "sql",
  "store",
  "sysapi",
  "thiserror",
+ "wm",
 ]
 
 [[package]]
@@ -1272,6 +1274,7 @@ dependencies = [
  "qdecimal",
  "qir",
  "qsname",
+ "spool",
  "store",
  "thiserror",
  "tracing",
@@ -1858,6 +1861,8 @@ name = "spool"
 version = "0.1.0"
 dependencies = [
  "ccsid",
+ "dds",
+ "qdecimal",
 ]
 
 [[package]]

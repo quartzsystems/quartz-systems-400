@@ -23,7 +23,7 @@ use crate::ipl::system::System;
 
 /// The files a DDS source names in `PFILE`, `JFILE`, `FORMAT`, `REF` and
 /// `REFFLD`, resolved now so the compiler and the create can use them.
-fn refs_for(
+pub(super) fn refs_for(
     txn: &mut Txn<'_>,
     ctx: &SqlContext,
     text: &str,
@@ -120,7 +120,7 @@ fn create_opts(p: &Params) -> Result<CreateFileOpts, String> {
 }
 
 /// The DDS source of `SRCFILE`/`SRCMBR` as text and records.
-fn source(
+pub(super) fn source(
     txn: &mut Txn<'_>,
     ctx: &SqlContext,
     p: &Params,

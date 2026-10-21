@@ -32,7 +32,11 @@ fn me_job(system: &System, me: u32) -> String {
 }
 
 fn me_user(system: &System, me: u32) -> String {
-    system.jobs.get(me).map(|j| j.user.clone()).unwrap_or_default()
+    system
+        .jobs
+        .get(me)
+        .map(|j| j.user.clone())
+        .unwrap_or_default()
 }
 
 /// The spooled file `FILE() JOB() SPLNBR()` names.
@@ -121,7 +125,9 @@ fn queue_op(system: &mut System, cmd: &str, p: &Params) -> Result<String, String
                     n += 1;
                 }
             }
-            Ok(format!("{n} spooled files deleted from output queue {real}.\n"))
+            Ok(format!(
+                "{n} spooled files deleted from output queue {real}.\n"
+            ))
         }
     }
 }
@@ -137,9 +143,7 @@ fn wrkoutq(system: &mut System, p: &Params) -> Result<String, String> {
         "Queue: {name:<10}  Library: {lib:<10}  Status: {}\n\n",
         status_of(&oq)
     );
-    out.push_str(
-        "Opt  File        User        User Data   Sts   Pages  Copies  Form Type   Pty\n",
-    );
+    out.push_str("Opt  File        User        User Data   Sts   Pages  Copies  Form Type   Pty\n");
     for f in &files {
         let _ = writeln!(
             out,
@@ -186,8 +190,7 @@ fn all_queues(system: &mut System) -> Result<String, String> {
         }
         Ok(out)
     })?;
-    let mut out =
-        String::from("Opt  Queue       Library        Files  Writer      Status\n");
+    let mut out = String::from("Opt  Queue       Library        Files  Writer      Status\n");
     for (lib, name, oq) in queues {
         let _ = writeln!(
             out,
@@ -239,13 +242,20 @@ fn wrksplf(system: &System, me: u32, p: &Params) -> String {
             }
         }
         "3" => {
-            out.push_str("Opt  File        File Nbr  Job         User        Number  Date      Time\n");
+            out.push_str(
+                "Opt  File        File Nbr  Job         User        Number  Date      Time\n",
+            );
             for f in files {
                 let (date, time) = wm::joblog::stamp_of(f.created);
                 let _ = writeln!(
                     out,
                     "     {:<10}  {:>8}  {:<10}  {:<10}  {:06}  {date}  {}",
-                    f.name, f.number, f.job.0, f.job.1, f.job.2, &time[..8]
+                    f.name,
+                    f.number,
+                    f.job.0,
+                    f.job.1,
+                    f.job.2,
+                    &time[..8]
                 );
             }
         }
@@ -298,7 +308,10 @@ fn dspsplf(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
     }
     let only: Option<u32> = p
         .upper("PAGE")
-        .map(|n| n.parse().map_err(|_| format!("CPD0084 PAGE({n}) is not valid")))
+        .map(|n| {
+            n.parse()
+                .map_err(|_| format!("CPD0084 PAGE({n}) is not valid"))
+        })
         .transpose()?;
     out.push_str("Page/Line  ....+....1....+....2....+....3....+....4....+....5....+....6\n");
     for (pg, ln, text) in ::spool::view::rows(&pages) {
@@ -346,10 +359,20 @@ fn cpysplf(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
 /// `CHGSPLFA`, `HLDSPLF`, `RLSSPLF`, `DLTSPLF`, `WRKSPLFA`.
 fn file_op(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<String, String> {
     let id = target(system, me, p)?;
-    let name = system.spool.files.get(&id).map(|e| e.attrs.name.clone()).unwrap_or_default();
+    let name = system
+        .spool
+        .files
+        .get(&id)
+        .map(|e| e.attrs.name.clone())
+        .unwrap_or_default();
     match cmd {
         "dltsplf" => {
-            if system.spool.files.get(&id).is_some_and(|e| e.attrs.status == Status::Wtr) {
+            if system
+                .spool
+                .files
+                .get(&id)
+                .is_some_and(|e| e.attrs.status == Status::Wtr)
+            {
                 return Err(format!("CPF3330 spooled file {name} is being printed"));
             }
             spool::delete(system, id)?;
@@ -394,21 +417,26 @@ fn file_op(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<String
 }
 
 /// Dispatch; `None` when `cmd` is not one of these.
-pub fn command(system: &mut System, me: u32, cmd: &str, line: &str) -> Option<Result<String, String>> {
+pub fn command(
+    system: &mut System,
+    me: u32,
+    cmd: &str,
+    line: &str,
+) -> Option<Result<String, String>> {
     let p = Params::parse(line);
     Some(match cmd {
         "crtoutq" | "chgoutq" | "dltoutq" => crt_chg_dlt(system, me, cmd, &p),
         "hldoutq" | "rlsoutq" | "clroutq" => queue_op(system, cmd, &p),
         "wrkoutq" => wrkoutq(system, &p),
-        "wrkoutqd" => p
-            .pos_or(0, "OUTQ")
-            .and_then(|q| with_outq(system, &q.to_ascii_uppercase(), |oq, _| Ok((oq.describe(), false)))),
+        "wrkoutqd" => p.pos_or(0, "OUTQ").and_then(|q| {
+            with_outq(system, &q.to_ascii_uppercase(), |oq, _| {
+                Ok((oq.describe(), false))
+            })
+        }),
         "wrksplf" => Ok(wrksplf(system, me, &p)),
         "dspsplf" => dspsplf(system, me, &p),
         "cpysplf" => cpysplf(system, me, &p),
-        "chgsplfa" | "hldsplf" | "rlssplf" | "dltsplf" | "wrksplfa" => {
-            file_op(system, me, cmd, &p)
-        }
+        "chgsplfa" | "hldsplf" | "rlssplf" | "dltsplf" | "wrksplfa" => file_op(system, me, cmd, &p),
         _ => return None,
     })
 }

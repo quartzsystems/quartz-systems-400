@@ -1,0 +1,15 @@
+console:
+  0
+  0
+  0
+  0
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+spooled 1 KITPRT: 1 pages, 4 records, closed
+  1/1   Kit_report                             Page    1
+  1/3       ACME            1,234.50  *
+  1/4       ZENITH              7.50-
+  1/6       End of report

@@ -13,12 +13,12 @@
 
 mod exec;
 pub(crate) mod hist;
+mod joblog;
 pub(crate) mod jobqs;
 mod jobs;
 pub(crate) mod jobscd;
-mod joblog;
-pub(crate) mod prtf;
 pub(crate) mod msgs;
+pub(crate) mod prtf;
 pub(crate) mod sbs;
 pub(crate) mod splcmd;
 pub(crate) mod spool;

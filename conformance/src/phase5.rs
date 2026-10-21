@@ -618,15 +618,19 @@ impl Suite {
         let queues = s.command("wrkoutq", CMD)?;
         for q in ["QPRINT", "QEZJOBLOG", "QEZDEBUG"] {
             if !queues.contains(q) {
-                return Err(format!("{q} not shipped:
-{queues}"));
+                return Err(format!(
+                    "{q} not shipped:
+{queues}"
+                ));
             }
         }
         s.command("crtoutq QGPL/WMOUTQ SEQ(*FIFO) TEXT('Harness queue')", CMD)?;
         let desc = s.command("wrkoutqd QGPL/WMOUTQ", CMD)?;
         if !desc.contains("Harness queue") || !desc.contains("*FIFO") {
-            return Err(format!("wrkoutqd:
-{desc}"));
+            return Err(format!(
+                "wrkoutqd:
+{desc}"
+            ));
         }
         s.command("strsbs QSYS/QBATCH", CMD)?;
         let out = s.command(
@@ -646,8 +650,12 @@ impl Suite {
         let row = files
             .lines()
             .find(|l| l.contains("QPJOBLOG"))
-            .ok_or_else(|| format!("no QPJOBLOG for {job}:
-{files}"))?
+            .ok_or_else(|| {
+                format!(
+                    "no QPJOBLOG for {job}:
+{files}"
+                )
+            })?
             .to_string();
         if !row.contains("QEZJOBLOG") || !row.contains("RDY") {
             return Err(format!("QPJOBLOG is not ready on QEZJOBLOG: {row}"));
@@ -655,19 +663,26 @@ impl Suite {
         let shown = s.command(&format!("dspsplf QPJOBLOG JOB({job})"), CMD)?;
         for want in ["Display Job Log", "CPF1124", "wrkactjob", "CPF1164"] {
             if !shown.contains(want) {
-                return Err(format!("the job log lacks {want}:
-{shown}"));
+                return Err(format!(
+                    "the job log lacks {want}:
+{shown}"
+                ));
             }
         }
         s.command(&format!("hldsplf QPJOBLOG JOB({job})"), CMD)?;
         let held = s.command(&format!("wrksplf SELECT(*ALL) JOB({job})"), CMD)?;
         s.command(&format!("rlssplf QPJOBLOG JOB({job})"), CMD)?;
-        s.command(&format!("chgsplfa QPJOBLOG JOB({job}) OUTQ(QGPL/WMOUTQ) COPIES(2)"), CMD)?;
+        s.command(
+            &format!("chgsplfa QPJOBLOG JOB({job}) OUTQ(QGPL/WMOUTQ) COPIES(2)"),
+            CMD,
+        )?;
         let moved = s.command("wrkoutq QGPL/WMOUTQ", CMD)?;
         if !held.contains("HLD") || !moved.contains("QPJOBLOG") || !moved.contains("RDY") {
-            return Err(format!("hold, release and move:
+            return Err(format!(
+                "hold, release and move:
 {held}
-{moved}"));
+{moved}"
+            ));
         }
         s.command("crtpf QGPL/WMSPLF RCDLEN(133)", CMD)?;
         let copied = s.command(
@@ -676,22 +691,87 @@ impl Suite {
         )?;
         let records = s.command("dsppfm QGPL/WMSPLF NBRRCDS(2)", CMD)?;
         if !copied.contains("records copied") || !records.contains("1QS400") {
-            return Err(format!("cpysplf:
+            return Err(format!(
+                "cpysplf:
 {copied}
-{records}"));
+{records}"
+            ));
         }
         let busy = s.command("dltoutq QGPL/WMOUTQ", CMD)?;
         s.command(&format!("dltsplf QPJOBLOG JOB({job})"), CMD)?;
         let gone = s.command("dltoutq QGPL/WMOUTQ", CMD)?;
         s.command("dltf QGPL/WMSPLF", CMD)?;
         if !busy.contains("CPF3417") || !gone.contains("deleted") {
-            return Err(format!("dltoutq:
+            return Err(format!(
+                "dltoutq:
 {busy}
-{gone}"));
+{gone}"
+            ));
         }
         Ok(format!(
             "{job}'s log spooled to QEZJOBLOG, shown, held, released, moved, copied with FCFC, deleted"
         ))
+    }
+}
+
+impl Suite {
+    /// Step 28: printer files: `CRTPRTF` from DDS, a program printing
+    /// through it with the spooled lines matching the in-memory run,
+    /// and `OVRPRTF` sending the next run's file elsewhere, held.
+    #[allow(clippy::unused_self)] // every step has the same shape
+    pub(crate) fn printer_files(&self, s: &mut Session) -> Result<String, String> {
+        crate::qir::qemu::push(s, "KITDDS", crate::qir::KITPRT)?;
+        s.command("crtsrcpf QGPL/WMSRC", CMD)?;
+        s.command("srcput QGPL/WMSRC KITPRT SRCTYPE(PRTF) FROMSTMF(KITDDS)", CMD)?;
+        let made = s.command("crtprtf QGPL/KITPRT SRCFILE(QGPL/WMSRC)", CMD)?;
+        let fd = s.command("dspfd QGPL/KITPRT", CMD)?;
+        if !made.contains("3 record format(s)") || !fd.contains("PRTF") || !fd.contains("DETAIL") {
+            return Err(format!("crtprtf:
+{made}
+{fd}"));
+        }
+        let kit = crate::qir::Kit::locate();
+        let program = std::fs::read_to_string(kit.root.join("programs").join("PRT02.qir"))
+            .map_err(|e| e.to_string())?;
+        crate::qir::qemu::push(s, "PRT02M0", &program)?;
+        s.command("qir asm PRT02M0 MODULE(QGPL/PRT02)", CMD)?;
+        s.command("crtpgm QGPL/PRT02 MODULE(QGPL/PRT02) ACTGRP(*CALLER)", CMD)?;
+        let out = s.command("call QGPL/PRT02", CMD)?;
+        let files = s.command("wrksplf SELECT(*ALL) JOB(QSVCJOB)", CMD)?;
+        if !files.lines().any(|l| l.contains("KITPRT") && l.contains("RDY")) {
+            return Err(format!("no ready KITPRT after the call:
+{out}
+{files}"));
+        }
+        let shown = s.command("dspsplf KITPRT JOB(QSVCJOB) SPLNBR(*LAST)", CMD)?;
+        for want in [
+            "Kit_report                             Page    1",
+            "    ACME            1,234.50  *",
+            "    ZENITH              7.50-",
+            "    End of report",
+        ] {
+            if !shown.contains(want) {
+                return Err(format!("the report lacks {want:?}:
+{shown}"));
+            }
+        }
+        s.command("ovrprtf FILE(KITPRT) OUTQ(QGPL/QPRINT2) SPLFNAME(WMOVR) HOLD(*YES)", CMD)?;
+        s.command("call QGPL/PRT02", CMD)?;
+        s.command("dltovr FILE(*ALL)", CMD)?;
+        let moved = s.command("wrkoutq QGPL/QPRINT2", CMD)?;
+        if !moved.lines().any(|l| l.contains("WMOVR") && l.contains("HLD")) {
+            return Err(format!("the override did not take:
+{moved}"));
+        }
+        s.command("dltsplf WMOVR JOB(QSVCJOB) SPLNBR(*LAST)", CMD)?;
+        s.command("dltsplf KITPRT JOB(QSVCJOB) SPLNBR(*LAST)", CMD)?;
+        let gone = s.command("dltf QGPL/KITPRT", CMD)?;
+        s.command("dltf QGPL/WMSRC", CMD)?;
+        if !gone.contains("deleted") {
+            return Err(format!("dltf of the printer file:
+{gone}"));
+        }
+        Ok("KITPRT created from DDS; PRT02 printed headings, edited amounts, an indicator and an underline; OVRPRTF moved and held the next file".into())
     }
 }
 

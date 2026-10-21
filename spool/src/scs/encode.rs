@@ -18,7 +18,8 @@ impl Encoder {
     /// width and length, the line density and the pitch.
     pub fn header(&mut self, width: u16, len: u16, lpi: u8, cpi: u8) {
         // GCGID 697, CPGID 37.
-        self.out.extend_from_slice(&[CSP, SCG, 6, 1, 0x02, 0xB9, 0x00, 0x25]);
+        self.out
+            .extend_from_slice(&[CSP, SCG, 6, 1, 0x02, 0xB9, 0x00, 0x25]);
         self.out
             .extend_from_slice(&[CSP, SHF, 2, u8::try_from(width.min(255)).unwrap_or(255)]);
         self.out

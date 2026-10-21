@@ -327,6 +327,14 @@ impl Service for Served<'_> {
         let text = super::exec::run(self.system, &line);
         let prompt = svc::db::prompt(self.system).to_string();
         std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
+        // One override table per job: what command level changed reaches
+        // the programs' opens.
+        if matches!(line.split_whitespace().next(), Some("ovrdbf" | "dltovr"))
+            && let Some(sql) = self.ctx.svc.sql.as_ref()
+        {
+            let table = sql.session.overrides().to_vec();
+            self.ctx.io.session().set_overrides(table);
+        }
         ile::set_libl(None);
         self.root_qtemp(root);
         let srcs = std::mem::take(&mut self.system.raised)
@@ -494,6 +502,21 @@ impl Service for Served<'_> {
         let id = r?;
         self.ctx.splfs.push(id);
         Ok(id)
+    }
+
+    fn prt_open(
+        &mut self,
+        file: String,
+        lib: String,
+        actgrp: String,
+    ) -> Result<(u32, wm::obj::prtf::Prtf), String> {
+        self.own_libl();
+        let ovr = self.ctx.svc.prt_overrides.clone();
+        let r = super::prtf::open(self.system, &ovr, &self.ctx.job, (&file, &lib), &actgrp);
+        ile::set_libl(None);
+        let (id, prtf) = r?;
+        self.ctx.splfs.push(id);
+        Ok((id, prtf))
     }
 
     fn splf_put(&mut self, id: u32, data: Vec<u8>, pages: u32, records: u32) -> Result<(), String> {
