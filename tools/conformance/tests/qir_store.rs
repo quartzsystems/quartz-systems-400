@@ -11,7 +11,7 @@ use std::fs;
 use std::sync::Arc;
 
 use blockdev::{BlockDev, MemBlockDev};
-use conformance::qir::{CLOCK, Kit, job_for, parms, render};
+use conformance::qir::{CLOCK, Kit, call, job_for};
 use ile::store::{Ctx, ObjSpec};
 use ile::{ActGrpAttr, BindOptions, CreateData, ModuleObject, PgmKind};
 use mi::MemSource;
@@ -107,14 +107,8 @@ fn cases_survive_the_store_round_trip() {
             src.add("QGPL", loaded);
         }
         let main = names[0].clone();
-        let mut job = job_for(&case, src, &names).unwrap();
-        let mut buffers = parms(&case.parms).unwrap();
-        let addrs: Vec<u64> = buffers.iter_mut().map(|b| b.as_mut_ptr() as u64).collect();
-        if let Err(c) = job.call_program(&main, "QGPL", &addrs) {
-            job.console.push(format!("call failed: {}", c.msgid()));
-        }
-        sysapi::uninstall(&job);
-        let got = render(&job, &buffers);
+        let job = job_for(&case, src, &names).unwrap();
+        let got = call(&case, job, &main).unwrap();
         let want =
             fs::read_to_string(kit.expected_dir().join(format!("{}.out", case.name))).unwrap();
         if got != want.replace("\r\n", "\n") {

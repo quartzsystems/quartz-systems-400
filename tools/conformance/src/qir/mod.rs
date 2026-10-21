@@ -506,7 +506,13 @@ pub fn run(case: &Case) -> Result<String, String> {
         .first()
         .cloned()
         .ok_or_else(|| format!("{}: no module", case.name))?;
-    let mut job = job_for(case, src, &names)?;
+    let job = job_for(case, src, &names)?;
+    call(case, job, &main)
+}
+
+/// Call `main` in a job made by [`job_for`], with the kit's spool and
+/// `KITPRT` attached; the rendered outcome, spooled files included.
+pub fn call(case: &Case, mut job: Box<Job>, main: &str) -> Result<String, String> {
     let spool = KitSpool::default();
     spool
         .0
@@ -516,7 +522,7 @@ pub fn run(case: &Case) -> Result<String, String> {
     job.spool = Some(Box::new(spool.clone()));
     let mut buffers = parms(&case.parms)?;
     let addrs: Vec<u64> = buffers.iter_mut().map(|b| b.as_mut_ptr() as u64).collect();
-    if let Err(c) = job.call_program(&main, "QGPL", &addrs) {
+    if let Err(c) = job.call_program(main, "QGPL", &addrs) {
         job.console.push(format!("call failed: {}", c.msgid()));
     }
     job.close_printers();
