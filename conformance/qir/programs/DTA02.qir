@@ -1,0 +1,26 @@
+; data queue instructions: send, receive, empty, missing
+module DTA02
+static $q: char(10)
+static $qn: char(10) inz("Q1")
+static $lib: char(10) inz("QGPL")
+proc DTA02() entry {
+L0:
+  dtaq.snd $qn, $lib, "abc", 3
+  dtaq.snd $qn, $lib, "defgh", 5
+  %l = dtaq.rcv $qn, $lib, $q, 10, 0
+  dsply %l
+  dsply $q
+  %l2 = dtaq.rcv $qn, $lib, $q, 10, 0
+  dsply %l2
+  dsply $q
+  %l3 = dtaq.rcv $qn, $lib, $q, 10, 0
+  dsply %l3
+  monitor M, CPF9801 -> NOQ
+  dtaq.snd "NOSUCH", $lib, "x", 1
+  dsply "not reached"
+  endmon M
+  ret
+NOQ:
+  dsply "no queue"
+  ret
+}

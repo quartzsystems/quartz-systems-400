@@ -1,0 +1,45 @@
+; activation groups: *NEW restarts statics, *CALLER and named keep them
+module ACTGRP01
+proc ACTGRP01() entry {
+L0:
+  call NEWPGM()
+  call NEWPGM()
+  call NAMED()
+  call NAMED()
+  call CALLERP()
+  call CALLERP()
+  ret
+}
+====
+module NEWPGM actgrp(*NEW)
+static $n: i32
+proc NEWPGM() entry {
+L0:
+  %n = load $n
+  %n2 = add %n, 1
+  store $n, %n2
+  dsply $n
+  ret
+}
+====
+module NAMED actgrp(GRP1)
+static $n: i32
+proc NAMED() entry {
+L0:
+  %n = load $n
+  %n2 = add %n, 10
+  store $n, %n2
+  dsply $n
+  ret
+}
+====
+module CALLERP actgrp(*CALLER)
+static $n: i32
+proc CALLERP() entry {
+L0:
+  %n = load $n
+  %n2 = add %n, 100
+  store $n, %n2
+  dsply $n
+  ret
+}

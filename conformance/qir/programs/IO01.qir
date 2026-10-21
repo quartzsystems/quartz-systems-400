@@ -1,0 +1,46 @@
+; file I/O: chain, reade, read, write, update, delete and the status codes
+module IO01
+file CUST file(CUST) lib(QGPL) usage(*ALL) keyed fmt(CUSREC)
+static $rec: char(39)
+static $k3: packed(7,0) inz(3)
+static $k9: packed(7,0) inz(9)
+static $nm: char(30)
+proc SHOW() {
+L0:
+  str.subst $nm, $rec, 5, 30
+  dsply $nm
+  ret
+}
+proc IO01() entry {
+L0:
+  %o = dbopen CUST
+  dsply %o
+  %c = dbio CUST CHAIN rec($rec) key($k3)
+  dsply %c
+  callb SHOW()
+  %e = dbio CUST READE rec($rec) key($k3)
+  dsply %e
+  callb SHOW()
+  %e2 = dbio CUST READE rec($rec) key($k3)
+  dsply %e2
+  %r = dbio CUST READ rec($rec)
+  dsply %r
+  callb SHOW()
+  %n = dbio CUST CHAIN rec($rec) key($k9)
+  dsply %n
+  mov $rec, x"0000009FE9859440404040404040404040404040404040404040404040404040000000100F"
+  %w = dbio CUST WRITE rec($rec)
+  dsply %w
+  %c2 = dbio CUST CHAIN rec($rec) key($k9)
+  dsply %c2
+  callb SHOW()
+  %d = dbio CUST DELETE
+  dsply %d
+  %c3 = dbio CUST CHAIN rec($rec) key($k9)
+  dsply %c3
+  %x = dbclose CUST
+  dsply %x
+  %z = dbio CUST READ rec($rec)
+  dsply %z
+  ret
+}

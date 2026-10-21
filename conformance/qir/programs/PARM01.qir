@@ -1,0 +1,29 @@
+; parameters by reference and by value, *OMIT, *NOPASS, %PARMS
+module PARM01
+proc SHOW($a: i32, byval $b: i32, $c: char(3) *OMIT, $d: i32 *NOPASS) -> i32 {
+L0:
+  %n = parms
+  dsply %n
+  %pc = passed $c
+  dsply %pc
+  %oc = omitted $c
+  dsply %oc
+  %pd = passed $d
+  dsply %pd
+  %a = load $a
+  %b = load $b
+  %s = add %a, %b
+  store $a, %s
+  ret %s
+}
+proc PARM01() entry {
+  auto $x: i32 inz(40)
+  auto $t: char(3) inz("abc")
+L0:
+  %r = callb SHOW($x, 2, $t, $x)
+  dsply %r
+  dsply $x
+  %r2 = callb SHOW($x, 1, *OMIT)
+  dsply %r2
+  ret
+}

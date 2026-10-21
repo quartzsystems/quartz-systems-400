@@ -1,0 +1,13 @@
+console:
+  30
+  40
+  8
+  CDE
+  ABxDEFGH
+  outside the space
+  null pointer
+raised: MCH0601 MCH3601
+handled: MCH0601 MCH3601
+pending: none
+replies: 
+dump: no

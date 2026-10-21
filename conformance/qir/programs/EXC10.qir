@@ -1,0 +1,23 @@
+; a cancelled program sends CEE9901 to its caller, which monitors it
+module EXC10
+proc EXC10() entry {
+L0:
+  monitor M, CEE9901 -> GOT
+  call FAILPGM()
+  dsply "not reached"
+  endmon M
+  ret
+GOT:
+  dsply "caller got CEE9901"
+  ret
+}
+====
+module FAILPGM
+static $z: packed(3,0)
+proc FAILPGM() entry {
+L0:
+  dsply "in the callee"
+  dec.div $z, 1, 0 prec(3,0)
+  dsply "not reached"
+  ret
+}

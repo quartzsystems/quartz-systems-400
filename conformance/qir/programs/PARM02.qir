@@ -1,0 +1,22 @@
+; *VARSIZE accepts any length of the class; entry parameters by reference
+; parms: 'hello world' 42
+module PARM02
+proc LEN($s: char(1) *VARSIZE) -> i32 {
+L0:
+  %l = str.len $s
+  ret %l
+}
+proc PARM02($text: char(11), $num: packed(15,5)) entry {
+  auto $short: char(3) inz("abc")
+L0:
+  %n = parms
+  dsply %n
+  dsply $text
+  dsply $num
+  %a = callb LEN($short)
+  dsply %a
+  %b = callb LEN($text)
+  dsply %b
+  mov $text, "changed"
+  ret
+}

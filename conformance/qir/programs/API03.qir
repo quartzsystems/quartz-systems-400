@@ -1,0 +1,39 @@
+; user space APIs: change, retrieve, attributes, delete, error code after the delete
+module API03
+extern sysapi QUSCRTUS($n: char(20), $a: char(10), $s: i32, $i: char(1), $au: char(10), $t: char(50), $r: char(10), $err: char(16))
+extern sysapi QUSCHGUS($n: char(20), $st: i32, $l: i32, $d: char(5), $f: char(1), $err: char(16))
+extern sysapi QUSRTVUS($n: char(20), $st: i32, $l: i32, $d: char(5), $err: char(16))
+extern sysapi QUSRUSAT($r: char(24), $rl: i32, $fmt: char(8), $n: char(20), $err: char(16))
+extern sysapi QUSDLTUS($n: char(20), $err: char(16))
+static $name: char(20) inz("SPACE     QGPL")
+static $attr: char(10) inz("TEST")
+static $size: i32 inz(100)
+static $init: char(1) inz(x"00")
+static $auth: char(10) inz("*ALL")
+static $text: char(50) inz("a test space")
+static $no: char(10) inz("*NO")
+static $err: char(16) inz(x"00000010000000000000000000000000")
+static $five: i32 inz(5)
+static $data: char(5) inz("HELLO")
+static $force: char(1) inz("0")
+static $got: char(5)
+static $attrs: char(24)
+static $alen: i32 inz(24)
+static $fmt: char(8) inz("SPCA0100")
+static $f7: char(7)
+proc API03() entry {
+L0:
+  sysapi QUSCRTUS($name, $attr, $size, $init, $auth, $text, $no, $err)
+  sysapi QUSCHGUS($name, $five, $five, $data, $force, $err)
+  sysapi QUSRTVUS($name, $five, $five, $got, $err)
+  dsply $got
+  sysapi QUSRUSAT($attrs, $alen, $fmt, $name, $err)
+  %a_attrs = addr $attrs
+  %sz = load [%a_attrs +8]:i32
+  dsply %sz
+  sysapi QUSDLTUS($name, $err)
+  sysapi QUSRTVUS($name, $five, $five, $got, $err)
+  str.subst $f7, $err, 9, 7
+  dsply $f7
+  ret
+}

@@ -1,0 +1,34 @@
+; user spaces: a pointer into the object, deletion while mapped
+module PTR03
+extern sysapi QUSCRTUS($n: char(20), $a: char(10), $s: i32, $i: char(1), $au: char(10), $t: char(50), $r: char(10), $err: char(16))
+extern sysapi QUSPTRUS($n: char(20), $p: ptr, $err: char(16))
+extern sysapi QUSDLTUS($n: char(20), $err: char(16))
+static $name: char(20) inz("SPC       QGPL")
+static $attr: char(10) inz("TEST")
+static $size: i32 inz(64)
+static $init: char(1) inz(x"00")
+static $auth: char(10) inz("*ALL")
+static $text: char(50)
+static $no: char(10) inz("*NO")
+static $err: char(16) inz(x"00000010000000000000000000000000")
+static $ptr: ptr
+proc PTR03() entry {
+L0:
+  sysapi QUSCRTUS($name, $attr, $size, $init, $auth, $text, $no, $err)
+  sysapi QUSPTRUS($name, $ptr, $err)
+  %p = load $ptr
+  mov [%p]:char(5), "hello"
+  store [%p +8]:i32, 77
+  %v = load [%p +8]:i32
+  dsply %v
+  dsply [%p]:char(5)
+  sysapi QUSDLTUS($name, $err)
+  monitor M, MCH3402 -> GONE
+  %w = load [%p +8]:i32
+  dsply "not reached"
+  endmon M
+  ret
+GONE:
+  dsply "space deleted"
+  ret
+}

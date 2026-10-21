@@ -1,0 +1,12 @@
+; reply G resumes after the failing instruction
+; replies: G
+module EXC03
+static $z: packed(3,0)
+proc EXC03() entry {
+L0:
+  dsply "before"
+  dec.div $z, 1, 0 prec(3,0)
+  dsply "after"
+  dsply $z
+  ret
+}

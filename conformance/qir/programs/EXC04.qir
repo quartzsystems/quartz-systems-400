@@ -1,0 +1,11 @@
+; reply D dumps and cancels
+; replies: D
+module EXC04
+static $z: packed(3,0)
+static $name: char(6) inz("quartz")
+proc EXC04() entry {
+L0:
+  dec.div $z, 1, 0 prec(3,0)
+  dsply "not reached"
+  ret
+}

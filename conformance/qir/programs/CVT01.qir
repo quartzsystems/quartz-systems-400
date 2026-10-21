@@ -1,0 +1,32 @@
+; conversions between register types and numeric storage
+module CVT01
+static $p: packed(5,2) inz(123.45)
+static $z: zoned(4,0) inz(-77)
+static $f: f64
+static $i: i16
+proc CVT01() entry {
+L0:
+  %a = cvt.i32 $p
+  dsply %a
+  %b = cvt.f64 $p
+  dsply %b
+  %c = cvt.i64 $z
+  dsply %c
+  %d = const.i64 70000
+  %e = cvt.i16 %d
+  dsply %e
+  %g = const.i32 -1
+  %u = cvt.u8 %g
+  dsply %u
+  %h = const.f64 -2.75e0
+  %k = cvt.i32 %h
+  dsply %k
+  %m = cvt.i8 %g
+  dsply %m
+  store $i, %e
+  dsply $i
+  %w = cvt.f32 %b
+  %x = cvt.f64 %w
+  dsply %x
+  ret
+}

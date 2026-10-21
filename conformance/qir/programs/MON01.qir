@@ -1,0 +1,49 @@
+; monitor selectors: identifier, prefix, status range, *PROGRAM, *FILE, *ALL
+module MON01
+static $z: packed(3,0)
+static $big: packed(9,0) inz(999999)
+proc MON01() entry {
+L0:
+  monitor A, MCH1211 -> ZERO
+  dec.div $z, 1, 0 prec(3,0)
+  endmon A
+  br B0
+ZERO:
+  dsply "by identifier"
+  br B0
+B0:
+  monitor B, "MCH12*" -> PREFIX
+  dec.div $z, 1, 0 prec(3,0)
+  endmon B
+  br C0
+PREFIX:
+  dsply "by prefix"
+  br C0
+C0:
+  monitor C, 100..199 -> RANGE
+  dec.mov $z, $big
+  endmon C
+  br D0
+RANGE:
+  dsply "by status range"
+  br D0
+D0:
+  monitor D, *FILE -> FILE, *PROGRAM -> PROG
+  dec.div $z, 1, 0 prec(3,0)
+  endmon D
+  br E0
+FILE:
+  dsply "wrong: file"
+  br E0
+PROG:
+  dsply "by *PROGRAM"
+  br E0
+E0:
+  monitor E, *ALL -> ALL
+  dec.div $z, 1, 0 prec(3,0)
+  endmon E
+  ret
+ALL:
+  dsply "by *ALL"
+  ret
+}

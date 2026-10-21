@@ -1,0 +1,17 @@
+; rmvmsg modes: *OLD after a receive, *NEW, *KEEPUNANS
+module MSG03
+static $id: char(7)
+proc MSG03() entry {
+L0:
+  sndpgmmsg msgid("CPF9898") msgf("QCPFMSG") data("a") type(*INFO) to(*SAME)
+  sndpgmmsg msgid("CPF9898") msgf("QCPFMSG") data("b") type(*INFO) to(*SAME)
+  sndpgmmsg msgid("CPF9898") msgf("QCPFMSG") data("c") type(*DIAG) to(*SAME)
+  %one = rcvmsg pgmq(*SAME) type(*INFO) msgid($id)
+  rmvmsg pgmq(*SAME) clear(*OLD)
+  %two = rcvmsg pgmq(*SAME) type(*INFO) msgid($id)
+  dsply %two
+  rmvmsg pgmq(*SAME) clear(*NEW)
+  %three = rcvmsg pgmq(*SAME) type(*ANY) msgid($id)
+  dsply %three
+  ret
+}

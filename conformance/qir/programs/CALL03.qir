@@ -1,0 +1,37 @@
+; dynamic calls: typed prototype, untyped by name, by variable, missing program
+module CALL03
+extern pgm ADDER($a: i32, $b: i32, $sum: i32) pgm(ADDER) lib(QGPL)
+static $x: i32 inz(40)
+static $y: i32 inz(2)
+static $z: i32
+static $name: char(10) inz("ADDER")
+static $qual: char(20) inz("ADDER     QGPL")
+proc CALL03() entry {
+L0:
+  call ADDER($x, $y, $z)
+  dsply $z
+  call QGPL/ADDER($z, $z, $z)
+  dsply $z
+  call $name($x, $x, $z)
+  dsply $z
+  call $qual($y, $y, $z)
+  dsply $z
+  monitor M, MCH3401 -> GONE
+  call NOSUCH($x)
+  dsply "not reached"
+  endmon M
+  ret
+GONE:
+  dsply "no such program"
+  ret
+}
+====
+module ADDER
+proc ADDER($a: i32, $b: i32, $sum: i32) entry {
+L0:
+  %a = load $a
+  %b = load $b
+  %s = add %a, %b
+  store $sum, %s
+  ret
+}

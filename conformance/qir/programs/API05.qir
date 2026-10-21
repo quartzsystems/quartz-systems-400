@@ -1,0 +1,37 @@
+; data queue APIs with packed lengths; the queue description
+module API05
+extern sysapi QSNDDTAQ($n: char(10), $l: char(10), $len: packed(5,0), $d: char(5))
+extern sysapi QRCVDTAQ($n: char(10), $l: char(10), $len: packed(5,0), $d: char(10), $w: packed(5,0))
+extern sysapi QMHQRDQD($r: char(100), $rl: i32, $fmt: char(8), $q: char(20), $err: char(16))
+static $qn: char(10) inz("TESTQ")
+static $ql: char(10) inz("QGPL")
+static $slen: packed(5,0) inz(5)
+static $sdata: char(5) inz("ABCDE")
+static $rlen: packed(5,0)
+static $rdata: char(10)
+static $wait: packed(5,0) inz(0)
+static $desc: char(100)
+static $dlen: i32 inz(100)
+static $dfmt: char(8) inz("RDQD0100")
+static $qual: char(20) inz("TESTQ     *LIBL")
+static $err: char(16) inz(x"00000010000000000000000000000000")
+static $f1: char(1)
+proc API05() entry {
+L0:
+  sysapi QSNDDTAQ($qn, $ql, $slen, $sdata)
+  sysapi QMHQRDQD($desc, $dlen, $dfmt, $qual, $err)
+  %a_desc = addr $desc
+  %max = load [%a_desc +8]:i32
+  dsply %max
+  %a_desc = addr $desc
+  %count = load [%a_desc +72]:i32
+  dsply %count
+  str.subst $f1, $desc, 17, 1
+  dsply $f1
+  sysapi QRCVDTAQ($qn, $ql, $rlen, $rdata, $wait)
+  dsply $rlen
+  dsply $rdata
+  sysapi QRCVDTAQ($qn, $ql, $rlen, $rdata, $wait)
+  dsply $rlen
+  ret
+}

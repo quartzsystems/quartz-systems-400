@@ -1,0 +1,16 @@
+; reply F dumps the call stack and cancels; a second failure uses the default
+; replies: F
+module EXC06
+static $z: packed(3,0)
+proc SUB() {
+L0:
+  dec.div $z, 1, 0 prec(3,0)
+  dsply "not reached"
+  ret
+}
+proc EXC06() entry {
+L0:
+  callb SUB()
+  dsply "not reached either"
+  ret
+}

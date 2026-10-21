@@ -1,0 +1,23 @@
+; system pointers: rslvsp and callp, a missing object
+module SYSPTR01
+static $name: char(10) inz("SUBPGM")
+proc SYSPTR01() entry {
+L0:
+  %p = rslvsp *PGM, $name, "QGPL"
+  callp %p()
+  monitor M, MCH3401 -> GONE
+  %q = rslvsp *PGM, "NOSUCH", "QGPL"
+  dsply "not reached"
+  endmon M
+  ret
+GONE:
+  dsply "no object"
+  ret
+}
+====
+module SUBPGM
+proc SUBPGM() entry {
+L0:
+  dsply "called by system pointer"
+  ret
+}

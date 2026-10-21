@@ -1,0 +1,18 @@
+; debug pseudo-instructions cost nothing in the production translation
+module DEBUG01 dbgview(*STMT)
+static $x: i32 inz(5)
+proc DEBUG01() entry {
+  auto $y: i32 inz(6)
+L0:
+  debug.var "X", $x
+  debug.var "Y", $y
+  debug.scope begin
+  debug.stmt 1
+  %a = load $x
+  %b = load $y
+  %c = mul %a, %b
+  debug.stmt 2
+  dsply %c
+  debug.scope end
+  ret
+}

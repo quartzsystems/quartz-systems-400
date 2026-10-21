@@ -1,0 +1,8 @@
+console:
+  about to abend
+  caller got CEE9902
+raised: CEE9902
+handled: CEE9902
+pending: none
+replies: 
+dump: no

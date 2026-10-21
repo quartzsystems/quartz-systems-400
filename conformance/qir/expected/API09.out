@@ -1,0 +1,13 @@
+console:
+  36
+  CPF9801
+  NOSUCH
+  -1
+  52
+  CPF9801
+  escaped
+raised: CPF9801
+handled: CPF9801
+pending: none
+replies: 
+dump: no

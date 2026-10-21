@@ -1,0 +1,15 @@
+; an invalid date raises MCH1602 (status 112)
+module DATE02
+static $c: char(10) inz("2026-13-01")
+static $d: date(*ISO)
+proc DATE02() entry {
+L0:
+  monitor M, 112 -> BAD
+  cvt $d, $c datfmt(*ISO)
+  dsply "not reached"
+  endmon M
+  ret
+BAD:
+  dsply "bad date"
+  ret
+}

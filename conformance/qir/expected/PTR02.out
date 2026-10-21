@@ -1,0 +1,11 @@
+console:
+  11
+  22
+  33
+  freed storage
+  not heap storage
+raised: MCH3402 MCH3601
+handled: MCH3402 MCH3601
+pending: none
+replies: 
+dump: no

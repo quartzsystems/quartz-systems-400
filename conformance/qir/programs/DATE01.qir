@@ -1,0 +1,42 @@
+; dates, times and timestamps: add, diff, extract, test, conversions
+module DATE01
+static $d: date(*ISO) inz("2026-10-21")
+static $d2: date(*ISO)
+static $u: date(*USA)
+static $t: time(*ISO) inz("13.05.09")
+static $t2: time(*ISO)
+static $ts: timestamp(6) inz("2026-10-21-13.05.09.250000")
+static $c: char(10)
+static $n: packed(8,0)
+proc DATE01() entry {
+L0:
+  dt.add $d2, $d, 10, *DAYS
+  dsply $d2
+  dt.add $d2, $d, -1, *MONTHS
+  dsply $d2
+  dt.add $d2, $d, 1, *YEARS
+  dsply $d2
+  %diff = dt.diff $d2, $d, *DAYS
+  dsply %diff
+  %m = dt.extract $d, *MONTHS
+  dsply %m
+  dt.add $t2, $t, 90, *MINUTES
+  dsply $t2
+  %secs = dt.diff $t2, $t, *SECONDS
+  dsply %secs
+  %h = dt.extract $ts, *HOURS
+  dsply %h
+  cvt $u, $d
+  dsply $u
+  cvt $c, $d datfmt(*MDY)
+  dsply $c
+  cvt $n, $d
+  dsply $n
+  mov $c, "2026-02-30"
+  %ok = dt.test $c datfmt(*ISO)
+  dsply %ok
+  mov $c, "2026-02-28"
+  %ok2 = dt.test $c datfmt(*ISO)
+  dsply %ok2
+  ret
+}

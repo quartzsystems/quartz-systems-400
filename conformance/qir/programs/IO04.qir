@@ -1,0 +1,35 @@
+; positioning: setll, setgt, readp, chain by relative record number, feod, nolock reads
+module IO04
+file CUST file(CUST) lib(QGPL) usage(*UPDATE) keyed fmt(CUSREC)
+static $rec: char(39)
+static $k3: packed(7,0) inz(3)
+static $nm: char(30)
+proc SHOW() {
+L0:
+  str.subst $nm, $rec, 5, 30
+  dsply $nm
+  ret
+}
+proc IO04() entry {
+L0:
+  %o = dbopen CUST
+  %s = dbio CUST SETLL key($k3)
+  dsply %s
+  %r = dbio CUST READ rec($rec) nolock
+  callb SHOW()
+  %g = dbio CUST SETGT key($k3)
+  dsply %g
+  %r2 = dbio CUST READ rec($rec) nolock
+  callb SHOW()
+  %p = dbio CUST READP rec($rec) nolock
+  callb SHOW()
+  %c = dbio CUST CHAIN rec($rec) rrn(5) nolock
+  dsply %c
+  callb SHOW()
+  %u = dbio CUST UPDATE rec($rec)
+  dsply %u
+  %f = dbio CUST FEOD
+  dsply %f
+  %x = dbclose CUST
+  ret
+}

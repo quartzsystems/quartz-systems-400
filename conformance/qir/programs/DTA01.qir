@@ -1,0 +1,28 @@
+; data area instructions: lock, read, write, unlock, decimal conversion, a missing area
+module DTA01
+static $lda: char(1024)
+static $n: packed(5,0)
+static $short: char(5)
+proc DTA01() entry {
+L0:
+  dtaara.lock "*LDA", "*LIBL"
+  mov $lda, "hello lda"
+  dtaara.write "*LDA", "*LIBL", $lda
+  dtaara.unlock "*LDA", "*LIBL"
+  dtaara.read "*LDA", "*LIBL", $short
+  dsply $short
+  dtaara.read "COUNTER", "QGPL", $n
+  dsply $n
+  dec.add $n, $n, 1 prec(5,0)
+  dtaara.write "COUNTER", "QGPL", $n
+  dtaara.read "COUNTER", "QGPL", $n
+  dsply $n
+  monitor M, CPF1015 -> NOAREA
+  dtaara.read "NOSUCH", "QGPL", $lda
+  dsply "not reached"
+  endmon M
+  ret
+NOAREA:
+  dsply "no area"
+  ret
+}

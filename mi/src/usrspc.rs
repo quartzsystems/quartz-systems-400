@@ -209,6 +209,28 @@ impl UserSpaces {
         self.source.as_mut().and_then(|s| s.library_of(name, lib))
     }
 
+    /// Grow a mapped space to `len` bytes: the copy moves, so the old
+    /// region dies and pointers handed out before fail with `MCH3402`.
+    pub fn grow(&mut self, name: &str, lib: &str, len: usize, spaces: &mut Spaces) -> bool {
+        let Some(m) = self
+            .mapped
+            .iter_mut()
+            .find(|m| m.name == name && m.lib == lib)
+        else {
+            return false;
+        };
+        if m.data.len() >= len {
+            return true;
+        }
+        let mut data = std::mem::take(&mut m.data);
+        data.resize(len, 0);
+        spaces.kill(m.space);
+        let p = spaces.add_region(data.as_ptr() as u64, data.len() as u64);
+        m.data = data;
+        m.space = p.space;
+        true
+    }
+
     /// The mapped copy of `lib/name`, writable; it is written back on
     /// the next sync.
     pub fn mapped_mut(&mut self, name: &str, lib: &str) -> Option<&mut Vec<u8>> {

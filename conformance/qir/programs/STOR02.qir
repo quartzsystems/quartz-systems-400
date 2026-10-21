@@ -1,0 +1,31 @@
+; structures, arrays and zero-based indexes; MCH0603 past the end
+module STOR02
+type Rec = struct { id: i32, name: char(6), amt: packed(5,2) }
+static $rows: array[3] of Rec
+static $flags: array[4] of char(1)
+proc STOR02() entry {
+L0:
+  store $rows[0].id, 10
+  store $rows[1].id, 20
+  store $rows[2].id, 30
+  mov $rows[1].name, "second"
+  dec.mov $rows[2].amt, 9.99
+  %i = const.i32 1
+  %v = load $rows[%i].id
+  dsply %v
+  dsply $rows[1].name
+  dsply $rows[2].amt
+  mov $flags[0], "Y"
+  mov $flags[3], "N"
+  dsply $flags[0]
+  dsply $flags[3]
+  monitor M, MCH0603 -> RANGE
+  %j = const.i32 5
+  %w = load $rows[%j].id
+  dsply %w
+  endmon M
+  ret
+RANGE:
+  dsply "index out of range"
+  ret
+}

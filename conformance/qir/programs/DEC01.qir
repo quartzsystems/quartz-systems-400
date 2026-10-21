@@ -1,0 +1,37 @@
+; decimal arithmetic with intermediate precision and half-adjust
+module DEC01
+static $a: packed(7,2) inz(123.45)
+static $b: packed(5,3) inz(1.005)
+static $r: packed(9,2)
+static $z: zoned(6,1)
+static $q: packed(5,0)
+proc DEC01() entry {
+L0:
+  dec.add $r, $a, $b prec(11,3)
+  dsply $r
+  dec.add $r, $a, $b prec(11,3) halfadj
+  dsply $r
+  dec.sub $r, $a, 200 prec(11,2)
+  dsply $r
+  dec.mul $r, $a, 3 prec(13,2)
+  dsply $r
+  dec.div $r, $a, 7 prec(15,6)
+  dsply $r
+  dec.div $r, $a, 7 prec(15,6) halfadj
+  dsply $r
+  dec.rem $q, 100, 7 prec(5,0)
+  dsply $q
+  dec.mov $z, $a
+  dsply $z
+  dec.mov $z, $a halfadj
+  dsply $z
+  dec.neg $r, $a
+  dsply $r
+  dec.abs $r, $r
+  dsply $r
+  %gt = dec.cmp.gt $a, $b
+  dsply %gt
+  %eq = dec.cmp.eq $a, 123.45
+  dsply %eq
+  ret
+}

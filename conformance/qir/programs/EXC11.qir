@@ -1,0 +1,30 @@
+; CEEMRCR accepts action 0 only; CEEHDLU of an unregistered handler is CEE0809 in the feedback code
+module EXC11
+extern proc CEEMRCR($a: i32, $fc: char(12) *NOPASS)
+extern proc CEEHDLU($p: procptr, $fc: char(12) *NOPASS)
+static $zero: i32 inz(0)
+static $one: i32 inz(1)
+static $fc: char(12)
+static $pp: procptr
+static $num: char(2)
+proc NOOP($tok: char(12), $utok: i32, $rc: i32, $new: char(12)) {
+L0:
+  ret
+}
+proc EXC11() entry {
+L0:
+  callb CEEMRCR($zero, $fc)
+  %ok = str.cmp.eq $fc, x"000000000000000000000000"
+  dsply %ok
+  callb CEEMRCR($one, $fc)
+  str.subst $num, $fc, 3, 2
+  %bad = str.cmp.eq $num, x"0810"
+  dsply %bad
+  %p = procaddr NOOP
+  store $pp, %p
+  callb CEEHDLU($pp, $fc)
+  str.subst $num, $fc, 3, 2
+  %none = str.cmp.eq $num, x"0809"
+  dsply %none
+  ret
+}

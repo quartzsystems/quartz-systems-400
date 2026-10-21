@@ -1,0 +1,7 @@
+console:
+  before
+raised: MCH1211 CPF9999 CEE9901
+handled: 
+pending: CEE9901
+replies: C
+dump: no

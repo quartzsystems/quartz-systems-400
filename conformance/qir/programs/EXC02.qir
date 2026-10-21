@@ -1,0 +1,10 @@
+; unhandled all the way: inquiry CEE9901 answered with the default C
+module EXC02
+static $z: packed(3,0)
+proc EXC02() entry {
+L0:
+  dsply "before"
+  dec.div $z, 1, 0 prec(3,0)
+  dsply "not reached"
+  ret
+}

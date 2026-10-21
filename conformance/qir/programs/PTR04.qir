@@ -1,0 +1,30 @@
+; based variables, pointer comparison and a space pointer as a parameter
+module PTR04
+static $data: char(12) inz("abcdefghijkl")
+static $p: ptr
+static $q: ptr
+proc PEEK($at: ptr) {
+  based $v: char(3) on $at
+L0:
+  dsply $v
+  ret
+}
+proc PTR04() entry {
+  based $here: char(4) on $p
+L0:
+  %a = addr $data
+  store $p, %a
+  dsply $here
+  %b = ptradd %a, 4
+  store $q, %b
+  callb PEEK($q)
+  %eq = cmp.eq %a, %b
+  dsply %eq
+  %c = load $q
+  %same = cmp.eq %c, %b
+  dsply %same
+  %n = const.ptr *NULL
+  %isnull = cmp.eq %n, %a
+  dsply %isnull
+  ret
+}

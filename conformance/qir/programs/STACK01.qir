@@ -1,0 +1,22 @@
+; a deep call stack returns in order; %PARMS at depth
+module STACK01
+static $max: i32
+proc DOWN(byval $n: i32) -> i32 {
+L0:
+  %n = load $n
+  %z = cmp.eq %n, 0
+  brif %z, BOTTOM, MORE
+BOTTOM:
+  ret 0
+MORE:
+  %m = sub %n, 1
+  %r = callb DOWN(%m)
+  %s = add %r, 1
+  ret %s
+}
+proc STACK01() entry {
+L0:
+  %d = callb DOWN(500)
+  dsply %d
+  ret
+}

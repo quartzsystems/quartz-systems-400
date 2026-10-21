@@ -1,0 +1,10 @@
+; reply I ignores the exception and continues
+; replies: I
+module EXC05
+static $z: packed(3,0)
+proc EXC05() entry {
+L0:
+  dec.div $z, 1, 0 prec(3,0)
+  dsply "continued"
+  ret
+}

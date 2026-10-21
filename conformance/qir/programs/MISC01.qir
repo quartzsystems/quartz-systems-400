@@ -1,0 +1,15 @@
+; dsply with a reply from the console
+; dsply: yes 42
+module MISC01
+static $answer: char(10)
+static $num: char(10)
+proc MISC01() entry {
+L0:
+  dsply "continue?" reply($answer)
+  dsply $answer
+  dsply "how many?" reply($num)
+  dsply $num
+  dsply "no reply queued" reply($answer)
+  dsply $answer
+  ret
+}

@@ -1,0 +1,37 @@
+; numeric and character conversions: %DEC, %CHAR, %INT with the machine's rules
+module DEC03
+static $txt: char(12) inz("  -12.5 ")
+static $p: packed(7,2)
+static $out: char(15)
+static $i: i32
+static $txt2: char(6) inz("12A")
+proc DEC03() entry {
+L0:
+  cvt $p, $txt
+  dsply $p
+  cvt $out, $p
+  dsply $out
+  cvt $i, $txt
+  dsply $i
+  dec.mov $p, -0.5
+  cvt $out, $p
+  dsply $out
+  %n = cvt.i32 $p
+  dsply %n
+  monitor M, MCH1202 -> BAD
+  cvt $p, $txt2
+  dsply "not reached"
+  endmon M
+  ret
+BAD:
+  dsply "not numeric"
+  %big = const.i64 3000000000
+  monitor N, MCH1210 -> NARROW
+  %x = cvt.i32.chk %big
+  dsply %x
+  endmon N
+  ret
+NARROW:
+  dsply "does not fit"
+  ret
+}

@@ -1,0 +1,20 @@
+; an unhandled condition becomes CPF9999, caught by a *PSSR-style monitor
+module EXC01
+static $z: packed(3,0)
+proc SUB() {
+L0:
+  dec.div $z, 1, 0 prec(3,0)
+  dsply "not reached"
+  ret
+}
+proc EXC01() entry {
+L0:
+  monitor M, CPF9999 -> PSSR
+  callb SUB()
+  dsply "not reached"
+  endmon M
+  ret
+PSSR:
+  dsply "function check"
+  ret
+}

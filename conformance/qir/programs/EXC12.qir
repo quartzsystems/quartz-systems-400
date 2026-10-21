@@ -1,0 +1,23 @@
+; CEE4ABN ends the request abnormally with CEE9902 to the caller
+module EXC12
+proc EXC12() entry {
+L0:
+  monitor M, CEE9902 -> GOT
+  call ABEND()
+  dsply "not reached"
+  endmon M
+  ret
+GOT:
+  dsply "caller got CEE9902"
+  ret
+}
+====
+module ABEND
+extern proc CEE4ABN()
+proc ABEND() entry {
+L0:
+  dsply "about to abend"
+  callb CEE4ABN()
+  dsply "not reached"
+  ret
+}

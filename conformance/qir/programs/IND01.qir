@@ -1,0 +1,33 @@
+; indicators, comparisons, select and branches
+module IND01
+static $on: ind inz(*ON)
+static $off: ind inz(*OFF)
+static $c: char(1)
+proc IND01() entry {
+L0:
+  %a = load $on
+  %b = load $off
+  dsply %a
+  dsply %b
+  %eq = cmp.eq %a, %b
+  dsply %eq
+  %one = const.i32 1
+  %two = const.i32 2
+  %s = select %a, %one, %two
+  dsply %s
+  %t = select %b, %one, %two
+  dsply %t
+  %n = const.i32 7
+  %lt = cmp.lt %n, 10
+  brif %lt, YES, NO
+YES:
+  dsply "less"
+  cvt $c, $on
+  dsply $c
+  store $off, *ON
+  dsply $off
+  ret
+NO:
+  dsply "not less"
+  ret
+}

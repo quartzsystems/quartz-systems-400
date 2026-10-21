@@ -1,0 +1,29 @@
+; CEE dates and the century window
+module API07
+extern proc CEEDAYS($d: char(12), $p: char(12), $l: i32, $fc: char(12) *NOPASS)
+extern proc CEEDATE($l: i32, $p: char(13), $o: char(80), $fc: char(12) *NOPASS)
+extern proc CEEQCEN($c: i32, $fc: char(12) *NOPASS)
+extern proc CEEGPID($v: i32, $pl: i32, $fc: char(12) *NOPASS)
+static $in: char(12) inz(x"000AF2F0F2F660F1F060F2F1")
+static $pic: char(12) inz(x"000AE8E8E8E860D4D460C4C4")
+static $pic2: char(13) inz(x"000BC4C440D4949440E8E8E8E8")
+static $lil: i32
+static $out: char(80)
+static $cen: i32
+static $ver: i32
+static $plat: i32
+static $f11: char(11)
+proc API07() entry {
+L0:
+  callb CEEDAYS($in, $pic, $lil)
+  dsply $lil
+  callb CEEDATE($lil, $pic2, $out)
+  str.subst $f11, $out, 1, 11
+  dsply $f11
+  callb CEEQCEN($cen)
+  dsply $cen
+  callb CEEGPID($ver, $plat)
+  dsply $ver
+  dsply $plat
+  ret
+}

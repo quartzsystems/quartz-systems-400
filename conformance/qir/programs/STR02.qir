@@ -1,0 +1,29 @@
+; varying strings and MCH0603 for a position outside the string
+module STR02
+static $v: varchar(20)
+static $d: char(20)
+static $s: char(6) inz("abcdef")
+proc STR02() entry {
+L0:
+  mov $v, "hello"
+  %l = str.len $v
+  dsply %l
+  str.setlen $v, 3
+  dsply $v
+  str.cat $v, $v, "p!"
+  dsply $v
+  %l2 = str.len $v
+  dsply %l2
+  str.replace $d, $s, "XY", 2
+  dsply $d
+  str.replace $d, $s, "XY", 2, 3
+  dsply $d
+  monitor M, MCH0603 -> RANGE
+  str.subst $d, $s, 5, 4
+  dsply "not reached"
+  endmon M
+  ret
+RANGE:
+  dsply "outside the string"
+  ret
+}

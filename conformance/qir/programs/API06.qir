@@ -1,0 +1,30 @@
+; data area APIs on *LDA
+module API06
+extern sysapi QXXCHGDA($da: char(20), $s: i32, $l: i32, $v: char(5))
+extern sysapi QXXRTVDA($r: char(5), $rl: i32, $da: char(20), $s: i32, $l: i32)
+extern sysapi QWCRDTAA($r: char(60), $rl: i32, $da: char(20), $s: i32, $l: i32, $err: char(16))
+static $lda: char(20) inz("*LDA      *LIBL")
+static $one: i32 inz(1)
+static $five: i32 inz(5)
+static $val: char(5) inz("HELLO")
+static $got: char(5)
+static $area: char(60)
+static $alen: i32 inz(60)
+static $err: char(16) inz(x"00000010000000000000000000000000")
+static $f10: char(10)
+static $f5: char(5)
+proc API06() entry {
+L0:
+  sysapi QXXCHGDA($lda, $one, $five, $val)
+  sysapi QXXRTVDA($got, $five, $lda, $one, $five)
+  dsply $got
+  sysapi QWCRDTAA($area, $alen, $lda, $one, $five, $err)
+  str.subst $f10, $area, 9, 10
+  dsply $f10
+  %a_area = addr $area
+  %len = load [%a_area +28]:i32
+  dsply %len
+  str.subst $f5, $area, 37, 5
+  dsply $f5
+  ret
+}

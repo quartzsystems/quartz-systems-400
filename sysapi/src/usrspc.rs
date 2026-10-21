@@ -135,31 +135,14 @@ fn quschgus(j: &mut Job, args: &[u64], _p: &mut dyn Provider) {
         errc.fail(j, &ApiFail::id("CPF3C14").bin4(a.bin4(1)));
         return;
     }
+    let end = start - 1 + len;
+    // Growing moves the bytes: pointers handed out before die.
+    j.usrspcs.grow(&name, &lib, end, &mut j.spaces);
     let Some(space) = j.usrspcs.mapped_mut(&name, &lib) else {
         errc.fail(j, &ApiFail::not_found(&name, &lib));
         return;
     };
-    let end = start - 1 + len;
-    if space.len() < end {
-        // Growing moves the bytes, so the mapping is redone from the
-        // object: pointers handed out before die.
-        let mut copy = space.clone();
-        copy.resize(end, 0);
-        copy[start - 1..end].copy_from_slice(&data);
-        j.usrspcs.unmap(&name, &lib, &mut j.spaces);
-        let _ = j.usrspcs.delete(&name, &lib, &mut j.spaces);
-        if let Err(id) = j.usrspcs.create(&name, &lib, copy.len(), 0, "") {
-            errc.fail(j, &ApiFail::id(id).text(&name, 10).text(&lib, 10));
-            return;
-        }
-        if j.map_user_space(&name, &lib).is_ok()
-            && let Some(s) = j.usrspcs.mapped_mut(&name, &lib)
-        {
-            s.copy_from_slice(&copy);
-        }
-    } else {
-        space[start - 1..end].copy_from_slice(&data);
-    }
+    space[start - 1..end].copy_from_slice(&data);
     j.sync_user_spaces();
     errc.ok();
 }
@@ -206,24 +189,10 @@ fn quscusat(j: &mut Job, args: &[u64], _p: &mut dyn Provider) {
         let data = recs.get(at + 8..at + 8 + len).unwrap_or(&[]).to_vec();
         match key {
             1 => {
-                let size = usize::try_from(bin4_at(&data, 0)).unwrap_or(0);
-                let copy = j
-                    .usrspcs
-                    .mapped(&name, &lib)
-                    .map(<[u8]>::to_vec)
-                    .unwrap_or_default();
-                let mut copy = copy;
-                copy.resize(size.max(1), 0);
-                j.usrspcs.unmap(&name, &lib, &mut j.spaces);
-                let _ = j.usrspcs.delete(&name, &lib, &mut j.spaces);
-                if let Err(id) = j.usrspcs.create(&name, &lib, copy.len(), 0, "") {
-                    errc.fail(j, &ApiFail::id(id).text(&name, 10).text(&lib, 10));
-                    return;
-                }
-                if j.map_user_space(&name, &lib).is_ok()
-                    && let Some(s) = j.usrspcs.mapped_mut(&name, &lib)
-                {
-                    s.copy_from_slice(&copy);
+                let size = usize::try_from(bin4_at(&data, 0)).unwrap_or(0).max(1);
+                j.usrspcs.grow(&name, &lib, size, &mut j.spaces);
+                if let Some(s) = j.usrspcs.mapped_mut(&name, &lib) {
+                    s.truncate(size);
                 }
                 j.sync_user_spaces();
             }

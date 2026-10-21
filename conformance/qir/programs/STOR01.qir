@@ -1,0 +1,33 @@
+; storage classes: static, auto, based, const, initializers
+module STOR01
+static $count: i32 inz(0)
+const $greeting: char(5) = "hello"
+static $p: ptr
+proc BUMP() {
+  auto $local: i32 inz(100)
+L0:
+  %c = load $count
+  %c2 = add %c, 1
+  store $count, %c2
+  %l = load $local
+  %l2 = add %l, 1
+  store $local, %l2
+  dsply $local
+  ret
+}
+proc STOR01() entry {
+  auto $area: char(8) inz("abcdefgh")
+  based $view: char(4) on $p
+L0:
+  callb BUMP()
+  callb BUMP()
+  dsply $count
+  dsply $greeting
+  %a = addr $area
+  %b = ptradd %a, 2
+  store $p, %b
+  dsply $view
+  mov $view, "XY"
+  dsply $area
+  ret
+}

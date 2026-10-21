@@ -1,0 +1,26 @@
+; a missing file escapes at open; a level check is CPF4131; a closed file is 01211
+module IO03
+file NOPE file(NOPE) lib(QGPL) usage(*INPUT)
+file WRONG file(CUST) lib(QGPL) usage(*INPUT) keyed fmt(CUSREC:"0000000000000")
+file CUST file(CUST) lib(QGPL) usage(*INPUT) keyed
+static $rec: char(39)
+proc IO03() entry {
+L0:
+  monitor M, CPF9801 -> GONE
+  %o = dbopen NOPE
+  dsply "not reached"
+  endmon M
+  ret
+GONE:
+  dsply "no file"
+  monitor L, CPF4131 -> LEVEL
+  %o2 = dbopen WRONG
+  dsply "not reached"
+  endmon L
+  ret
+LEVEL:
+  dsply "level check"
+  %r = dbio CUST READ rec($rec)
+  dsply %r
+  ret
+}

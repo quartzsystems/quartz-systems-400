@@ -1,0 +1,31 @@
+; decimal edges: scale change, negative zero, sixty-three digits, zoned signs
+module DEC04
+static $big: packed(63,0) inz(x"999999999999999999999999999999999999999999999999999999999999999F")
+static $p: packed(5,2) inz(-0.00)
+static $z: zoned(3,0) inz(-5)
+static $q: packed(5,3)
+static $w: packed(15,5)
+proc DEC04() entry {
+L0:
+  dsply $big
+  dsply $p
+  %neg = dec.cmp.lt $p, 0
+  dsply %neg
+  dsply $z
+  dec.mov $q, $z
+  dsply $q
+  dec.div $w, 1, 3 prec(15,5)
+  dsply $w
+  dec.div $w, 1, 3 prec(15,5) halfadj
+  dsply $w
+  dec.mul $w, $w, 3 prec(30,10)
+  dsply $w
+  monitor M, MCH1210 -> SIZE
+  dec.add $big, $big, 1 prec(63,0)
+  dsply "not reached"
+  endmon M
+  ret
+SIZE:
+  dsply "sixty-three digits overflowed"
+  ret
+}

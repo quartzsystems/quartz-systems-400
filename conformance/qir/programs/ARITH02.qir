@@ -1,0 +1,38 @@
+; float arithmetic and conversions
+module ARITH02
+static $f: f64 inz(2.5e0)
+static $g: f32 inz(1.5e0)
+proc ARITH02() entry {
+L0:
+  %a = load $f
+  %b = mul %a, 4.0e0
+  dsply %b
+  %c = div %b, 3.0e0
+  %i = cvt.i32 %c
+  dsply %i
+  %s = cvt.f64 %i
+  %t = add %s, 0.25e0
+  dsply %t
+  %h = load $g
+  %w = cvt.f64 %h
+  %u = sub %w, 0.5e0
+  dsply %u
+  %bits = cvt.i64 %u
+  dsply %bits
+  %twelve = const.i32 12
+  %ten = const.i32 10
+  %and = and %twelve, %ten
+  dsply %and
+  %or = or %twelve, %ten
+  dsply %or
+  %x = xor %twelve, %ten
+  dsply %x
+  %one = const.i32 1
+  %sh = shl %one, %ten
+  dsply %sh
+  %m1024 = const.i32 -1024
+  %three = const.i32 3
+  %sr = shr %m1024, %three
+  dsply %sr
+  ret
+}

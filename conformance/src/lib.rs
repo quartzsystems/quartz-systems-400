@@ -17,6 +17,7 @@ mod phase2;
 #[cfg(unix)]
 mod png;
 mod qemu;
+pub mod qir;
 mod steps;
 
 use std::env;

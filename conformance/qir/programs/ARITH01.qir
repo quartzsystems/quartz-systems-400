@@ -1,0 +1,40 @@
+; integer arithmetic: wrap, .chk overflow MCH1210, division by zero MCH1211
+module ARITH01
+static $big: i32 inz(2147483647)
+proc ARITH01() entry {
+L0:
+  %a = const.i32 7
+  %b = add %a, 5
+  dsply %b
+  %c = sub %a, 10
+  dsply %c
+  %m = mul %a, 6
+  dsply %m
+  %d = div %m, 4
+  dsply %d
+  %r = rem %m, 4
+  dsply %r
+  %n = neg %a
+  dsply %n
+  %x = load $big
+  %w = add %x, 1
+  dsply %w
+  monitor M, MCH1210 -> OVF
+  %y = add.chk %x, 1
+  dsply %y
+  endmon M
+  br NEXT
+OVF:
+  dsply "overflow"
+  br NEXT
+NEXT:
+  monitor Z, MCH1211 -> ZERO
+  %z = const.i32 0
+  %q = div %a, %z
+  dsply %q
+  endmon Z
+  ret
+ZERO:
+  dsply "divide by zero"
+  ret
+}

@@ -1,0 +1,25 @@
+; update and delete need a prior read with a lock
+module IO05
+file CUST file(CUST) lib(QGPL) usage(*UPDATE) keyed fmt(CUSREC)
+static $rec: char(39)
+static $k1: packed(7,0) inz(1)
+proc IO05() entry {
+L0:
+  %o = dbopen CUST
+  %c = dbio CUST CHAIN rec($rec) key($k1) nolock
+  dsply %c
+  %u = dbio CUST UPDATE rec($rec)
+  dsply %u
+  %c2 = dbio CUST CHAIN rec($rec) key($k1)
+  %u2 = dbio CUST UPDATE rec($rec)
+  dsply %u2
+  %d = dbio CUST DELETE
+  dsply %d
+  %c3 = dbio CUST CHAIN rec($rec) key($k1)
+  %ul = dbio CUST UNLOCK
+  dsply %ul
+  %d2 = dbio CUST DELETE
+  dsply %d2
+  %x = dbclose CUST
+  ret
+}

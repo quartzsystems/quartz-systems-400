@@ -1,0 +1,27 @@
+; QUSRJOBI JOBI0100: the job's name, user, number and status at their offsets
+module API01
+extern sysapi QUSRJOBI($r: char(86), $rl: i32, $fmt: char(8), $job: char(26), $iid: char(16), $err: char(16))
+static $ji: char(86)
+static $jl: i32 inz(86)
+static $jfmt: char(8) inz("JOBI0100")
+static $job: char(26) inz("*")
+static $iid: char(16)
+static $err: char(16) inz(x"00000010000000000000000000000000")
+static $f10: char(10)
+static $f6: char(6)
+proc API01() entry {
+L0:
+  sysapi QUSRJOBI($ji, $jl, $jfmt, $job, $iid, $err)
+  %a_ji = addr $ji
+  %ret = load [%a_ji]:i32
+  dsply %ret
+  str.subst $f10, $ji, 9, 10
+  dsply $f10
+  str.subst $f10, $ji, 19, 10
+  dsply $f10
+  str.subst $f6, $ji, 29, 6
+  dsply $f6
+  str.subst $f10, $ji, 51, 10
+  dsply $f10
+  ret
+}

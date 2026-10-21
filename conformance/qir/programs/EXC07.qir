@@ -1,0 +1,43 @@
+; ILE condition handlers: the newest first, resume and percolate
+module EXC07
+extern proc CEEHDLR($p: procptr, $t: i32, $fc: char(12) *NOPASS)
+extern proc CEEHDLU($p: procptr, $fc: char(12) *NOPASS)
+static $pp1: procptr
+static $pp2: procptr
+static $t1: i32 inz(1)
+static $t2: i32 inz(2)
+static $z: packed(3,0)
+proc H1($tok: char(12), $utok: i32, $rc: i32, $new: char(12)) {
+L0:
+  dsply "handler one"
+  dsply $utok
+  store $rc, 20
+  ret
+}
+proc H2($tok: char(12), $utok: i32, $rc: i32, $new: char(12)) {
+L0:
+  dsply "handler two"
+  dsply $utok
+  store $rc, 10
+  ret
+}
+proc EXC07() entry {
+L0:
+  %a = procaddr H1
+  store $pp1, %a
+  %b = procaddr H2
+  store $pp2, %b
+  callb CEEHDLR($pp1, $t1)
+  callb CEEHDLR($pp2, $t2)
+  dec.div $z, 1, 0 prec(3,0)
+  dsply "resumed by two"
+  callb CEEHDLU($pp2)
+  monitor M, MCH1211 -> MON
+  dec.div $z, 2, 0 prec(3,0)
+  dsply "not reached"
+  endmon M
+  ret
+MON:
+  dsply "one percolated to the monitor"
+  ret
+}

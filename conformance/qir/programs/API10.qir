@@ -1,0 +1,36 @@
+; QLGCNVCS case conversion, QWCRTVCA and QWCRTVTZ
+module API10
+extern sysapi QLGCNVCS($req: char(22), $in: char(5), $out: char(5), $len: i32, $err: char(16))
+extern sysapi QWCRTVCA($r: char(60), $rl: i32, $fmt: char(8), $err: char(16))
+extern sysapi QWCRTVTZ($r: char(90), $rl: i32, $fmt: char(8), $tz: char(10), $err: char(16))
+static $upper: char(22) inz(x"000000010000002500000000")
+static $lower: char(22) inz(x"000000010000002500000001")
+static $in: char(5) inz("Hello")
+static $out: char(5)
+static $five: i32 inz(5)
+static $err: char(16) inz(x"00000010000000000000000000000000")
+static $ca: char(60)
+static $cal: i32 inz(60)
+static $cfmt: char(8) inz("RTVC0100")
+static $tz: char(90)
+static $tzl: i32 inz(90)
+static $tfmt: char(8) inz("RTMZ0100")
+static $cur: char(10) inz("*CURRENT")
+static $f10: char(10)
+proc API10() entry {
+L0:
+  sysapi QLGCNVCS($upper, $in, $out, $five, $err)
+  dsply $out
+  sysapi QLGCNVCS($lower, $in, $out, $five, $err)
+  dsply $out
+  sysapi QWCRTVCA($ca, $cal, $cfmt, $err)
+  str.subst $f10, $ca, 9, 10
+  dsply $f10
+  sysapi QWCRTVTZ($tz, $tzl, $tfmt, $cur, $err)
+  %a_tz = addr $tz
+  %off = load [%a_tz +8]:i32
+  dsply %off
+  str.subst $f10, $tz, 14, 10
+  dsply $f10
+  ret
+}

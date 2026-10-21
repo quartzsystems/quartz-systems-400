@@ -1,0 +1,38 @@
+; recursion and bound calls
+module CALL01
+proc FACT(byval $n: i64) -> i64 {
+L0:
+  %n = cvt.i64 $n
+  %z = cmp.le %n, 1
+  brif %z, ONE, MORE
+ONE:
+  ret 1
+MORE:
+  %m = sub %n, 1
+  %f = callb FACT(%m)
+  %r = mul %n, %f
+  ret %r
+}
+proc FIB(byval $n: i32) -> i32 {
+L0:
+  %n = cvt.i32 $n
+  %small = cmp.lt %n, 2
+  brif %small, BASE, STEP
+BASE:
+  ret %n
+STEP:
+  %a = sub %n, 1
+  %b = sub %n, 2
+  %fa = callb FIB(%a)
+  %fb = callb FIB(%b)
+  %s = add %fa, %fb
+  ret %s
+}
+proc CALL01() entry {
+L0:
+  %f = callb FACT(10)
+  dsply %f
+  %g = callb FIB(15)
+  dsply %g
+  ret
+}

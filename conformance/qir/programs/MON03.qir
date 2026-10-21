@@ -1,0 +1,24 @@
+; an escape sent to the caller skips the sender's own handlers
+module MON03
+proc SENDER() {
+L0:
+  monitor M, *ALL -> MINE
+  sndpgmmsg msgid("CPF9898") msgf("QCPFMSG") data("to the caller") type(*ESCAPE) to(*PRV)
+  dsply "not reached"
+  endmon M
+  ret
+MINE:
+  dsply "wrong: the sender handled it"
+  ret
+}
+proc MON03() entry {
+L0:
+  monitor M, CPF9898 -> GOT
+  callb SENDER()
+  dsply "not reached"
+  endmon M
+  ret
+GOT:
+  dsply "the caller handled it"
+  ret
+}

@@ -1,0 +1,35 @@
+; decimal conditions: size MCH1210, data MCH1202, zero MCH1211, each monitored
+module DEC02
+static $small: packed(3,0)
+static $big: packed(9,0) inz(123456)
+static $bad: packed(3,0) inz(x"FFFF")
+static $z: packed(3,0)
+proc DEC02() entry {
+L0:
+  monitor A, MCH1210 -> SIZE
+  dec.mov $small, $big
+  dsply "not reached"
+  endmon A
+  br B0
+SIZE:
+  dsply "size error"
+  br B0
+B0:
+  monitor B, 907 -> DATA
+  dec.add $z, $bad, 1 prec(3,0)
+  dsply "not reached"
+  endmon B
+  br C0
+DATA:
+  dsply "decimal data"
+  br C0
+C0:
+  monitor C, "MCH*" -> ZERO
+  dec.div $z, $big, 0 prec(9,0)
+  dsply "not reached"
+  endmon C
+  ret
+ZERO:
+  dsply "divide by zero"
+  ret
+}

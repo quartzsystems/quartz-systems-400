@@ -301,12 +301,16 @@ dependencies = [
  "crc",
  "db",
  "dds",
+ "ile",
  "jrn",
+ "mi",
  "qdecimal",
+ "qir",
  "qsname",
  "serde_json",
  "sql",
  "store",
+ "sysapi",
  "thiserror",
 ]
 

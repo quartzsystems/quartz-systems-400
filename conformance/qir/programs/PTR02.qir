@@ -1,0 +1,36 @@
+; heap storage: alloc, realloc, dealloc, a dead block MCH3402, a non-heap pointer MCH3601
+module PTR02
+static $s: i32 inz(5)
+proc PTR02() entry {
+L0:
+  %p = alloc 16
+  store [%p]:i32 , 11
+  store [%p +12]:i32, 22
+  %q = realloc %p, 64
+  %a = load [%q]:i32
+  dsply %a
+  %b = load [%q +12]:i32
+  dsply %b
+  store [%q +60]:i32, 33
+  %c = load [%q +60]:i32
+  dsply %c
+  dealloc %q
+  monitor M, MCH3402 -> DEAD
+  %d = load [%q]:i32
+  dsply "not reached"
+  endmon M
+  br N0
+DEAD:
+  dsply "freed storage"
+  br N0
+N0:
+  monitor N, MCH3601 -> NOTHEAP
+  %sp = addr $s
+  dealloc %sp
+  dsply "not reached"
+  endmon N
+  ret
+NOTHEAP:
+  dsply "not heap storage"
+  ret
+}

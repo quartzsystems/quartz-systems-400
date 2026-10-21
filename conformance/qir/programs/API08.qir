@@ -1,0 +1,46 @@
+; CEE heap APIs and CEETSTA
+module API08
+extern proc CEECRHP($h: i32, $i: i32, $inc: i32, $s: i32, $fc: char(12) *NOPASS)
+extern proc CEEGTST($h: i32, $sz: i32, $addr: ptr, $fc: char(12) *NOPASS)
+extern proc CEEFRST($addr: ptr, $fc: char(12) *NOPASS)
+extern proc CEEDSHP($h: i32, $fc: char(12) *NOPASS)
+extern proc CEETSTA($pr: i32, $n: i32, $fc: char(12) *NOPASS)
+static $heap: i32
+static $zero: i32 inz(0)
+static $size: i32 inz(32)
+static $addr: ptr
+static $pres: i32
+static $two: i32 inz(2)
+static $three: i32 inz(3)
+proc SUB($a: i32, $b: i32) {
+L0:
+  callb CEETSTA($pres, $two)
+  dsply $pres
+  callb CEETSTA($pres, $three)
+  dsply $pres
+  ret
+}
+proc API08() entry {
+L0:
+  callb CEECRHP($heap, $zero, $zero, $zero)
+  %h = load $heap
+  %pos = cmp.gt %h, 0
+  dsply %pos
+  callb CEEGTST($heap, $size, $addr)
+  %p = load $addr
+  store [%p +8]:i32, 4242
+  %v = load [%p +8]:i32
+  dsply %v
+  callb CEEFRST($addr)
+  callb SUB($zero, $size)
+  callb CEEDSHP($heap)
+  monitor M, *ALL -> FREED
+  %q = load $addr
+  %w = load [%q +8]:i32
+  dsply "not reached"
+  endmon M
+  ret
+FREED:
+  dsply "freed storage"
+  ret
+}

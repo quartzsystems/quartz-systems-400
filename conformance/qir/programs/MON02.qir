@@ -1,0 +1,37 @@
+; nested monitors and percolation through procedures
+module MON02
+static $z: packed(3,0)
+static $log: char(30)
+proc INNER() {
+L0:
+  monitor IN, MCH1210 -> SIZE
+  dec.div $z, 1, 0 prec(3,0)
+  dsply "not reached"
+  endmon IN
+  ret
+SIZE:
+  dsply "wrong handler"
+  ret
+}
+proc MIDDLE() {
+L0:
+  callb INNER()
+  dsply "not reached in middle"
+  ret
+}
+proc MON02() entry {
+L0:
+  monitor OUT, MCH1211 -> CAUGHT
+  monitor IN2, MCH0603 -> INDEX
+  callb MIDDLE()
+  dsply "not reached"
+  endmon IN2
+  endmon OUT
+  ret
+INDEX:
+  dsply "wrong: index"
+  ret
+CAUGHT:
+  dsply "caught two levels up"
+  ret
+}

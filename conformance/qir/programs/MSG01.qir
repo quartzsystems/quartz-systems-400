@@ -1,0 +1,27 @@
+; program messages: send, receive by type and by key, severity, remove
+module MSG01
+static $key: char(4)
+static $id: char(7)
+static $data: char(30)
+static $sev: i32
+static $text: char(60)
+proc MSG01() entry {
+L0:
+  sndpgmmsg msgid("CPF9898") msgf("QCPFMSG") data("first note") type(*INFO) to(*SAME) key($key)
+  sndpgmmsg msgid("CPF9897") msgf("QCPFMSG") data("second") type(*DIAG) to(*SAME)
+  %got = rcvmsg pgmq(*SAME) type(*DIAG) msgid($id) data($data) sev($sev)
+  dsply %got
+  dsply $id
+  dsply $data
+  dsply $sev
+  %byk = rcvmsg pgmq(*SAME) key($key) msg($text) msgid($id)
+  dsply %byk
+  dsply $id
+  dsply $text
+  %none = rcvmsg pgmq(*SAME) type(*COMP) msgid($id)
+  dsply %none
+  rmvmsg pgmq(*SAME) clear(*ALL)
+  %after = rcvmsg pgmq(*SAME) type(*ANY) msgid($id)
+  dsply %after
+  ret
+}

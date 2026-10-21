@@ -1,0 +1,11 @@
+; a data area written through a packed place keeps the area's scale
+module DTA03
+static $n: packed(9,3)
+proc DTA03() entry {
+L0:
+  dec.mov $n, 123.456
+  dtaara.write "COUNTER", "QGPL", $n
+  dtaara.read "COUNTER", "QGPL", $n
+  dsply $n
+  ret
+}

@@ -1,0 +1,39 @@
+; error codes: ERRC0100 filled, ERRC0200 keyed, and an escape when bytes provided is 0
+module API09
+extern sysapi QUSRTVUS($n: char(20), $st: i32, $l: i32, $d: char(5), $err: char(40))
+static $name: char(20) inz("NOSUCH    QGPL")
+static $one: i32 inz(1)
+static $got: char(5)
+static $err1: char(40) inz(x"00000028")
+static $err2: char(40) inz(x"FFFFFFFF00000028")
+static $err0: char(40) inz(x"00000000")
+static $f7: char(7)
+static $f10: char(10)
+proc API09() entry {
+L0:
+  sysapi QUSRTVUS($name, $one, $one, $got, $err1)
+  %a_err1 = addr $err1
+  %avail = load [%a_err1 +4]:i32
+  dsply %avail
+  str.subst $f7, $err1, 9, 7
+  dsply $f7
+  str.subst $f10, $err1, 17, 10
+  dsply $f10
+  sysapi QUSRTVUS($name, $one, $one, $got, $err2)
+  %a_err2 = addr $err2
+  %key = load [%a_err2]:i32
+  dsply %key
+  %a_err2 = addr $err2
+  %avail2 = load [%a_err2 +8]:i32
+  dsply %avail2
+  str.subst $f7, $err2, 13, 7
+  dsply $f7
+  monitor M, CPF9801 -> ESC
+  sysapi QUSRTVUS($name, $one, $one, $got, $err0)
+  dsply "not reached"
+  endmon M
+  ret
+ESC:
+  dsply "escaped"
+  ret
+}

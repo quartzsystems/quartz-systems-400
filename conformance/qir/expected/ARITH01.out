@@ -1,0 +1,15 @@
+console:
+  12
+  -3
+  42
+  10
+  2
+  -7
+  -2147483648
+  overflow
+  divide by zero
+raised: MCH1210 MCH1211
+handled: MCH1210 MCH1211
+pending: none
+replies: 
+dump: no

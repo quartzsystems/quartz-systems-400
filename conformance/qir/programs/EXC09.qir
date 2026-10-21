@@ -1,0 +1,35 @@
+; CEESGL signals a condition built with CEENCOD; CEEDCOD takes it apart
+module EXC09
+extern proc CEENCOD($c1: i16, $c2: i16, $case: i16, $sev: i16, $ctl: i16, $fac: char(3), $isi: i32, $tok: char(12), $fc: char(12) *NOPASS)
+extern proc CEEDCOD($tok: char(12), $c1: i16, $c2: i16, $case: i16, $sev: i16, $ctl: i16, $fac: char(3), $isi: i32, $fc: char(12) *NOPASS)
+extern proc CEESGL($tok: char(12), $q: i32, $fc: char(12) *NOPASS)
+static $c1: i16 inz(3)
+static $c2: i16 inz(x"1211")
+static $case: i16 inz(1)
+static $sev: i16 inz(3)
+static $ctl: i16
+static $fac: char(3) inz("MCH")
+static $isi: i32
+static $tok: char(12)
+static $o1: i16
+static $o2: i16
+static $ocase: i16
+static $osev: i16
+static $octl: i16
+static $ofac: char(3)
+static $oisi: i32
+proc EXC09() entry {
+L0:
+  callb CEENCOD($c1, $c2, $case, $sev, $ctl, $fac, $isi, $tok)
+  callb CEEDCOD($tok, $o1, $o2, $ocase, $osev, $octl, $ofac, $oisi)
+  dsply $osev
+  dsply $ofac
+  monitor M, 102 -> GOT
+  callb CEESGL($tok, $isi)
+  dsply "not reached"
+  endmon M
+  ret
+GOT:
+  dsply "signaled MCH1211"
+  ret
+}

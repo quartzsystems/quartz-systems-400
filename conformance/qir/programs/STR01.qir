@@ -1,0 +1,38 @@
+; string operations: cat, subst, scan, check, xlate, trim, compare, len
+module STR01
+static $a: char(5) inz("ab")
+static $b: char(5) inz("cd")
+static $d: char(12)
+static $s: char(10) inz("  hello   ")
+static $t: char(10)
+static $n: char(8) inz("12x45")
+proc STR01() entry {
+L0:
+  str.cat $d, $a, $b
+  dsply $d
+  str.subst $d, $s, 3, 3
+  dsply $d
+  %p = str.scan "ll", $s
+  dsply %p
+  %q = str.scan "zz", $s
+  dsply %q
+  %c = str.check "0123456789", $n
+  dsply %c
+  %r = str.checkr "0123456789", $n
+  dsply %r
+  str.xlate $t, "abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", $s
+  dsply $t
+  str.trim $t, $s
+  dsply $t
+  str.triml $t, $s
+  dsply $t
+  str.trimr $t, $s
+  dsply $t
+  %eq = str.cmp.eq $a, "ab   "
+  dsply %eq
+  %lt = str.cmp.lt $a, $b
+  dsply %lt
+  %len = str.len $s
+  dsply %len
+  ret
+}

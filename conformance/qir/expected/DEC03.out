@@ -1,0 +1,13 @@
+console:
+  -12.50
+  -12.50
+  -12
+  -0.50
+  0
+  not numeric
+  does not fit
+raised: MCH1202 MCH1210
+handled: MCH1202 MCH1210
+pending: none
+replies: 
+dump: no

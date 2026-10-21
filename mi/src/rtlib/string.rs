@@ -224,7 +224,12 @@ pub extern "sysv64" fn str_check(
     let set = read_text(set, sty);
     let s = read_text(src, srcty);
     let set = to_width(&set, s.wide);
-    let from = if start == 0 { 1 } else { start };
+    // Without a start, a reverse check begins at the last position.
+    let from = match (start, reverse != 0) {
+        (0, true) => i64::try_from(s.units.len()).unwrap_or(1).max(1),
+        (0, false) => 1,
+        (n, _) => n,
+    };
     let Ok((at, _)) = range(from, 0, s.units.len()) else {
         raise_on(job(env), Cond::Mch0603);
         return 0;

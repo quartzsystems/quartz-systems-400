@@ -66,6 +66,8 @@ slic/         PID 1: src/ipl/ state machine, src/hwrsrc/, src/net/, src/svc/ (db
 conformance/  QEMU harness: src/qemu/ (session, qmp, serial, firmware), src/steps.rs;
               src/db/ the database kit (kit, local run, compare, oracle RPG, QEMU steps);
               db/ the QSTEST kit: dds/, data/, rla/, sql/, oracle/, expected/
+              src/qir/ the IR kit runner (cases, the in-memory job with CUST, *LDA,
+              COUNTER, Q1 and the APIs); qir/ the kit: programs/*.qir, expected/*.out
 release/      VxRyMz identity, build ID, PTF names (one source of truth)
 blockdev/     BlockDev trait, AlignedBuf, Linux O_DIRECT backend, MemBlockDev with faults
 store/        object store: src/page/, src/btree/, src/asp/ (units, superblock),
@@ -174,6 +176,8 @@ cargo test -p conformance --test db_kit   # QSTEST in memory; outputs under targ
 QS400_UPDATE_ORACLE=1 cargo test -p conformance --test db_kit   # regenerate RLATEST.RPGLE and QRESULTS.SQL
 cargo test --release -p conformance --test db_bench -- --ignored --nocapture   # dbbench in memory
 cargo run -p qir --bin qirc -- asm|dis|check|fmt FILE   # IR assembler, disassembler, verifier
+cargo test -p conformance --test qir_kit   # the IR kit in memory; outputs under target/conformance-qir/ours/
+QS400_UPDATE_QIR=1 cargo test -p conformance --test qir_kit   # rewrite conformance/qir/expected/
 ```
 
 Lint the Linux-only crates for the musl target too: their real code is

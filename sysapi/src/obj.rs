@@ -80,13 +80,11 @@ pub fn write_list(
         out.bytes(at, &e);
         at += entry_size;
     }
+    j.usrspcs.grow(&name, &lib, out.buf.len(), &mut j.spaces);
     let space = j
         .usrspcs
         .mapped_mut(&name, &lib)
         .ok_or_else(|| ApiFail::not_found(&name, &lib))?;
-    if space.len() < out.buf.len() {
-        space.resize(out.buf.len(), 0);
-    }
     space[..out.buf.len()].copy_from_slice(&out.buf);
     j.sync_user_spaces();
     Ok(())

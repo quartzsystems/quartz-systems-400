@@ -1,0 +1,45 @@
+; system values, the release, date conversion
+module API04
+extern sysapi QWCRSVAL($r: char(200), $rl: i32, $n: i32, $names: char(20), $err: char(16))
+extern sysapi QSZRTVPR($r: char(108), $rl: i32, $fmt: char(8), $prd: char(7), $err: char(16))
+extern sysapi QWCCVTDT($if: char(10), $i: char(17), $of: char(10), $o: char(17), $err: char(16))
+static $sv: char(200)
+static $svl: i32 inz(200)
+static $two: i32 inz(2)
+static $names: char(20) inz("QDATFMT   QCCSID")
+static $err: char(16) inz(x"00000010000000000000000000000000")
+static $pr: char(108)
+static $prl: i32 inz(108)
+static $pfmt: char(8) inz("PRDR0100")
+static $prd: char(7) inz("*OPSYS")
+static $yymd: char(10) inz("*YYMD")
+static $in: char(17) inz("20261021130509250")
+static $mdyy: char(10) inz("*MDYY")
+static $jul: char(10) inz("*LONGJUL")
+static $out: char(17)
+static $f10: char(10)
+static $f6: char(6)
+static $f1: char(1)
+proc API04() entry {
+L0:
+  sysapi QWCRSVAL($sv, $svl, $two, $names, $err)
+  %a_sv = addr $sv
+  %n = load [%a_sv]:i32
+  dsply %n
+  %a_sv = addr $sv
+  %o1 = load [%a_sv +4]:i32
+  dsply %o1
+  str.subst $f10, $sv, 13, 10
+  dsply $f10
+  str.subst $f1, $sv, 23, 1
+  dsply $f1
+  sysapi QSZRTVPR($pr, $prl, $pfmt, $prd, $err)
+  str.subst $f6, $pr, 20, 6
+  dsply $f6
+  sysapi QWCCVTDT($yymd, $in, $mdyy, $out, $err)
+  dsply $out
+  mov $out, *BLANKS
+  sysapi QWCCVTDT($yymd, $in, $jul, $out, $err)
+  dsply $out
+  ret
+}

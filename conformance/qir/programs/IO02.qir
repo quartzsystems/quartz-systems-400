@@ -1,0 +1,34 @@
+; the information data structure after each operation
+module IO02
+type Infds = struct { file: char(8) @0, open: char(1) @8, eof: char(1) @9, status: zoned(5,0) @10, opcode: char(6) @15, stmt: char(8) @29, format: char(8) @37, msgid: char(7) @46, member: char(10) @128, rrn: i32 @396 }
+file CUST file(CUST) lib(QGPL) usage(*INPUT) keyed fmt(CUSREC)
+static $rec: char(39)
+static $infds: Infds
+static $k7: packed(7,0) inz(7)
+static $k9: packed(7,0) inz(9)
+proc IO02() entry {
+L0:
+  debug.stmt 10
+  %o = dbopen CUST infds($infds)
+  dsply $infds.file
+  dsply $infds.open
+  dsply $infds.format
+  dsply $infds.member
+  debug.stmt 11
+  %c = dbio CUST CHAIN rec($rec) key($k7)
+  dsply $infds.status
+  dsply $infds.opcode
+  dsply $infds.rrn
+  dsply $infds.stmt
+  debug.stmt 12
+  %n = dbio CUST CHAIN rec($rec) key($k9)
+  dsply $infds.status
+  dsply $infds.eof
+  %r = dbio CUST READ rec($rec)
+  dsply $infds.status
+  dsply $infds.eof
+  %x = dbclose CUST
+  dsply $infds.open
+  dsply $infds.opcode
+  ret
+}

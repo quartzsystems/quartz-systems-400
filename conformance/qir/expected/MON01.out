@@ -1,0 +1,11 @@
+console:
+  by identifier
+  by prefix
+  by status range
+  by *PROGRAM
+  by *ALL
+raised: MCH1211 MCH1211 MCH1210 MCH1211 MCH1211
+handled: MCH1211 MCH1211 MCH1210 MCH1211 MCH1211
+pending: none
+replies: 
+dump: no

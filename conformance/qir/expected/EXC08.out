@@ -1,0 +1,12 @@
+console:
+  returning normally
+  cancel handler
+  2
+  cancel handler
+  1
+  caught after the cancel handlers
+raised: MCH1211
+handled: MCH1211
+pending: none
+replies: 
+dump: no

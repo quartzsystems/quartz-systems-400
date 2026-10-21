@@ -1,0 +1,36 @@
+; procedure pointers, null and wrong-kind pointers
+module CALL02
+proto UNARY(byval $v: i32) -> i32
+static $pp: procptr
+proc DOUBLE(byval $v: i32) -> i32 {
+L0:
+  %v = cvt.i32 $v
+  %d = mul %v, 2
+  ret %d
+}
+proc SQUARE(byval $v: i32) -> i32 {
+L0:
+  %v = cvt.i32 $v
+  %d = mul %v, %v
+  ret %d
+}
+proc CALL02() entry {
+L0:
+  %f = procaddr DOUBLE
+  %r = callpp %f as UNARY(21)
+  dsply %r
+  %g = procaddr SQUARE
+  store $pp, %g
+  %h = load $pp
+  %s = callpp %h as UNARY(9)
+  dsply %s
+  monitor M, MCH3601 -> NULLP
+  %z = const.procptr *NULL
+  %q = callpp %z as UNARY(1)
+  dsply "not reached"
+  endmon M
+  ret
+NULLP:
+  dsply "null procedure pointer"
+  ret
+}

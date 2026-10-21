@@ -1,0 +1,43 @@
+; cancel handlers run newest first when an entry is cancelled, not on a normal return
+module EXC08
+extern proc CEERTX($p: procptr, $t: i32, $fc: char(12) *NOPASS)
+static $pp1: procptr
+static $pp2: procptr
+static $t1: i32 inz(1)
+static $t2: i32 inz(2)
+static $z: packed(3,0)
+proc CAN($utok: i32) {
+L0:
+  dsply "cancel handler"
+  dsply $utok
+  ret
+}
+proc FAILS() {
+L0:
+  %a = procaddr CAN
+  store $pp1, %a
+  store $pp2, %a
+  callb CEERTX($pp1, $t1)
+  callb CEERTX($pp2, $t2)
+  dec.div $z, 1, 0 prec(3,0)
+  ret
+}
+proc OK() {
+L0:
+  %a = procaddr CAN
+  store $pp1, %a
+  callb CEERTX($pp1, $t1)
+  dsply "returning normally"
+  ret
+}
+proc EXC08() entry {
+L0:
+  callb OK()
+  monitor M, *ALL -> MON
+  callb FAILS()
+  endmon M
+  ret
+MON:
+  dsply "caught after the cancel handlers"
+  ret
+}

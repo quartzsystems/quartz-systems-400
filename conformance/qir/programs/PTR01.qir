@@ -1,0 +1,43 @@
+; space pointers: addr, ptradd, ptrdiff, deref, MCH0601 range, MCH3601 null
+module PTR01
+static $buf: char(8) inz("ABCDEFGH")
+static $nums: array[4] of i32
+proc PTR01() entry {
+L0:
+  store $nums[0], 10
+  store $nums[1], 20
+  store $nums[2], 30
+  store $nums[3], 40
+  %p = addr $nums
+  %q = ptradd %p, 8
+  %v = load [%q]:i32
+  dsply %v
+  %w = load [%q +4]:i32
+  dsply %w
+  %d = ptrdiff %q, %p
+  dsply %d
+  %b = addr $buf
+  %c = ptradd %b, 2
+  dsply [%c]:char(3)
+  mov [%c]:char(1), "x"
+  dsply $buf
+  monitor M, MCH0601 -> RANGE
+  %far = ptradd %p, 64
+  %bad = load [%far]:i32
+  dsply "not reached"
+  endmon M
+  br N0
+RANGE:
+  dsply "outside the space"
+  br N0
+N0:
+  monitor N, MCH3601 -> NULLP
+  %z = const.ptr *NULL
+  %x = load [%z]:i32
+  dsply "not reached"
+  endmon N
+  ret
+NULLP:
+  dsply "null pointer"
+  ret
+}

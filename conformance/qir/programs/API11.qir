@@ -1,0 +1,43 @@
+; QMHRTVM, QSYRUSRI and QTNRCMTI without commitment control
+module API11
+extern sysapi QMHRTVM($r: char(300), $rl: i32, $fmt: char(8), $id: char(7), $f: char(20), $d: char(10), $l: i32, $rep: char(10), $ctl: char(10), $err: char(16))
+extern sysapi QSYRUSRI($r: char(94), $rl: i32, $fmt: char(8), $u: char(10), $err: char(16))
+extern sysapi QTNRCMTI($r: char(50), $rl: i32, $fmt: char(8), $err: char(16))
+static $recv: char(300)
+static $rlen: i32 inz(300)
+static $fmt: char(8) inz("RTVM0100")
+static $id: char(7) inz("CPF9898")
+static $msgf: char(20) inz("QCPFMSG   *LIBL")
+static $data: char(10) inz("subst")
+static $dlen: i32 inz(5)
+static $yes: char(10) inz("*YES")
+static $no: char(10) inz("*NO")
+static $err: char(16) inz(x"00000010000000000000000000000000")
+static $ui: char(94)
+static $ul: i32 inz(94)
+static $ufmt: char(8) inz("USRI0100")
+static $user: char(10) inz("*CURRENT")
+static $ci: char(50)
+static $cl: i32 inz(50)
+static $cfmt: char(8) inz("CMTI0100")
+static $f10: char(10)
+static $f7: char(7)
+static $f5: char(5)
+proc API11() entry {
+L0:
+  sysapi QMHRTVM($recv, $rlen, $fmt, $id, $msgf, $data, $dlen, $yes, $no, $err)
+  %a_recv = addr $recv
+  %ml = load [%a_recv +8]:i32
+  dsply %ml
+  str.subst $f5, $recv, 25, 5
+  dsply $f5
+  sysapi QSYRUSRI($ui, $ul, $ufmt, $user, $err)
+  str.subst $f10, $ui, 9, 10
+  dsply $f10
+  str.subst $f10, $ui, 37, 10
+  dsply $f10
+  sysapi QTNRCMTI($ci, $cl, $cfmt, $err)
+  str.subst $f7, $err, 9, 7
+  dsply $f7
+  ret
+}

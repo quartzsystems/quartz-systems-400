@@ -1,0 +1,51 @@
+; QUSCRTUS, QUSLOBJ and the generic header; QUSROBJD of a program
+module API02
+extern sysapi QUSCRTUS($n: char(20), $a: char(10), $s: i32, $i: char(1), $au: char(10), $t: char(50), $r: char(10), $err: char(16))
+extern sysapi QUSLOBJ($us: char(20), $fmt: char(8), $obj: char(20), $ty: char(10), $err: char(16))
+extern sysapi QUSPTRUS($n: char(20), $p: ptr, $err: char(16))
+extern sysapi QUSROBJD($r: char(180), $rl: i32, $fmt: char(8), $obj: char(20), $ty: char(10), $err: char(16))
+static $us: char(20) inz("LIST      QGPL")
+static $attr: char(10) inz("USRSPC")
+static $size: i32 inz(16)
+static $init: char(1) inz(x"00")
+static $auth: char(10) inz("*ALL")
+static $text: char(50)
+static $no: char(10) inz("*NO")
+static $err: char(16) inz(x"00000010000000000000000000000000")
+static $fmt: char(8) inz("OBJL0100")
+static $obj: char(20) inz("*ALL      QGPL")
+static $ty: char(10) inz("*ALL")
+static $ptr: ptr
+static $recv: char(180)
+static $rlen: i32 inz(180)
+static $dfmt: char(8) inz("OBJD0100")
+static $one: char(20) inz("API02     QGPL")
+static $pgm: char(10) inz("*PGM")
+static $f10: char(10)
+static $f8: char(8)
+proc API02() entry {
+L0:
+  sysapi QUSCRTUS($us, $attr, $size, $init, $auth, $text, $no, $err)
+  sysapi QUSLOBJ($us, $fmt, $obj, $ty, $err)
+  sysapi QUSPTRUS($us, $ptr, $err)
+  %p = load $ptr
+  %hdr = load [%p +64]:i32
+  dsply %hdr
+  str.subst $f8, [%p]:char(200), 73, 8
+  dsply $f8
+  str.subst $f10, [%p]:char(200), 81, 10
+  dsply $f10
+  %n = load [%p +132]:i32
+  dsply %n
+  %size = load [%p +136]:i32
+  dsply %size
+  sysapi QUSROBJD($recv, $rlen, $dfmt, $one, $pgm, $err)
+  %a_err = addr $err
+  %avail = load [%a_err +4]:i32
+  dsply %avail
+  str.subst $f10, $recv, 9, 10
+  dsply $f10
+  str.subst $f10, $recv, 29, 10
+  dsply $f10
+  ret
+}

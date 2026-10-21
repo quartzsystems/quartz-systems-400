@@ -1,0 +1,34 @@
+; loops with branches and a switch
+module LOOP01
+static $sum: i32
+proc LOOP01() entry {
+L0:
+  %i = const.i32 0
+  br TEST
+TEST:
+  %done = cmp.ge %i, 5
+  brif %done, OUT, BODY
+BODY:
+  %s = load $sum
+  %s2 = add %s, %i
+  store $sum, %s2
+  %i = add %i, 1
+  br TEST
+OUT:
+  dsply $sum
+  %k = const.i32 2
+  switch %k, [1: ONE, 2: TWO, 3: THREE], default OTHER
+ONE:
+  dsply "one"
+  ret
+TWO:
+  dsply "two"
+  %j = const.i32 9
+  switch %j, [1: ONE], default OTHER
+THREE:
+  dsply "three"
+  ret
+OTHER:
+  dsply "other"
+  ret
+}

@@ -1,0 +1,12 @@
+console:
+  handler two
+  2
+  resumed by two
+  handler one
+  1
+  one percolated to the monitor
+raised: MCH1211 MCH1211
+handled: MCH1211 MCH1211
+pending: none
+replies: 
+dump: no
