@@ -210,10 +210,12 @@ then `READ`.
 physical file the reads go on in key order from that record. Test:
 `OVRDBF POSITION(*RRN 4)` over a keyed LF, read twice.
 
-**`WAITRCD`.** Kept in the open options; a locked record fails at once
-with CPF5027 whatever the wait, since one store transaction runs at a
-time (`MIGRATE(phase5)`: wait on the lock table when jobs exist). Test:
-none until then.
+**`WAITRCD`.** The storage service answers a locked record with
+`01218` at once; the job waits, trying every 50 ms in `LCKW`, for as
+long as `WAITRCD` says (`*IMMED` not at all, `*NOMAX` until the lock is
+free). The console's own database commands do not wait. Test:
+`WAITRCD(5)` on a file, a record held by another job for ten seconds,
+`CHAIN` for update: the machine's `01218` arrives after five seconds.
 
 **`SEQONLY` and `NBRRCDS`.** Kept and ignored: records are never
 blocked, so no read ever misses another job's write. Test: none.
@@ -291,9 +293,10 @@ CPF7022, `AlreadyJournaled` CPF7030, `NotJournaled` CPF7032,
 all as placeholders. Test: provoke each on the machine and note the
 escape message.
 
-**Job names in entries.** Every entry says job `QS400`, user `QSECOFR`
-and the job handle as the number until jobs exist (`MIGRATE(phase5)`).
-The conformance diff masks these columns.
+**Job names in entries.** An entry names the job whose change it
+records; changes the console makes through its own database commands
+(not a job's programs) say job `QS400`, user `QSECOFR` and the handle as
+the number. The conformance diff masks these columns.
 
 **`R DL` carries the deleted record.** The delete entry holds the image
 of the record as it was, whatever `IMAGES` says, so a rollback can put it

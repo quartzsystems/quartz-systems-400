@@ -92,8 +92,9 @@ refused and the store stays usable; a full ring forces a checkpoint.
 Checkpoints also run every 256 transactions and every 30 seconds.
 
 **Page cache.** CLOCK replacement, 256 MiB by default, write-through, so
-it never holds dirty committed data. `MIGRATE(phase5)`: the *MACHINE
-pool.
+it never holds dirty committed data. Since Phase 5 it lives in the
+storage service; sizing it as the *MACHINE pool from `QMCHPOOL` is
+`MIGRATE(phase6)`.
 
 **Objects.** IDs are 128 bits: ASP, type code, a serial that is never
 reused, and a generation. The object directory (ID to header page) is a
@@ -167,8 +168,10 @@ rewrite the disk; with no ASP unit a D IPL continues without a store.
 The run loop wakes every five seconds for the time-based checkpoint.
 
 **QTEMP.** ASP 0 is a 64 MiB `MemBlockDev` formatted at every IPL with
-the same code, with a root library called QTEMP. `MIGRATE(phase5)`: one
-per job. `QTEMP/NAME` on the service console addresses it.
+the same code, with a root library called QTEMP. Since Phase 5 every
+job has its own, a library `QTnnnnnn` in this ASP's root seen as
+`QTEMP`. `QTEMP/NAME` on the service console addresses the console
+job's.
 
 **System values.** They live in the `QSYSVAL` object (`*SYSVAL`, in
 QSYS) as the `sysval` crate's TLV blob. On the first boot after the
@@ -365,7 +368,8 @@ cargo test -p store                       # unit, property and crash tests
 - One ASP with one unit; the unit table and headers allow more, but
   nothing adds a unit or mirrors (`mirror_of` is stored and ignored).
 - No journaling, no authority enforcement, no jobs: headers carry the
-  fields; nothing acts on them (`MIGRATE(phase6)`, `MIGRATE(phase5)`).
+  fields; nothing acts on them (`MIGRATE(phase6)`; journaling came with
+  Phase 3, jobs with Phase 5).
 - DST implements the disk, environment, service tool and security
   menus; `Work with Licensed Internal Code`, console mode, save and
   restore storage, remote service, partitions, capacity and batch

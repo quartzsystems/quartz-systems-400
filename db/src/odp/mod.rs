@@ -105,7 +105,8 @@ pub struct OpenOpts {
     pub seqonly: Option<u32>,
     /// `INHWRT(*YES)`: writes, updates and deletes succeed without changing anything.
     pub inhwrt: bool,
-    /// `WAITRCD` in effect; the lock is not waited for yet (`MIGRATE(phase5)`).
+    /// `WAITRCD` in effect. A locked record answers `01218` at once; the
+    /// job waits between tries (the storage service never waits).
     pub wait_rcd: Option<Wait>,
 }
 
@@ -177,6 +178,14 @@ pub struct Odp {
     file_lock: LockState,
     open: bool,
     cmt: Option<CommitRef>,
+}
+
+impl Odp {
+    /// `WAITRCD` in effect for this path.
+    #[must_use]
+    pub fn wait_rcd(&self) -> Wait {
+        self.opts.wait_rcd.unwrap_or_default()
+    }
 }
 
 /// Allocate an object for a job, as `ALCOBJ` would; `file` names the

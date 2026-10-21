@@ -148,27 +148,57 @@ pub fn status(link: &Shared, s: Status, function: &str) {
     }
 }
 
-/// Files: the open data paths live in the service.
+/// Files: the open data paths live in the service. A record another job
+/// holds is waited for here, a try every 50 ms, as `WAITRCD` says.
 pub struct RemoteIo {
     link: Shared,
+    waits: std::collections::HashMap<u32, i64>,
 }
 
 impl RemoteIo {
     /// Over a link.
     #[must_use]
     pub fn new(link: Shared) -> Self {
-        Self { link }
+        Self {
+            link,
+            waits: std::collections::HashMap::new(),
+        }
     }
 }
 
+/// The status of a record another job holds.
+const LOCKED: u16 = 1218;
+
 impl IoSource for RemoteIo {
     fn open(&mut self, spec: &OpenSpec) -> Result<(u32, FileInfo), IoFail> {
-        self.link.borrow_mut().with(|l| l.open(spec.clone()))
+        let r = self.link.borrow_mut().with(|l| l.open(spec.clone()));
+        if let Ok((h, info)) = &r {
+            self.waits.insert(*h, info.wait_ms);
+        }
+        r
     }
 
     fn io(&mut self, handle: u32, req: &IoRequest<'_>) -> IoResult {
         let req = OwnedRequest::from_request(req);
-        self.link.borrow_mut().with(|l| l.io(handle, req))
+        let wait = self.waits.get(&handle).copied().unwrap_or(0);
+        let until = Instant::now()
+            + Duration::from_millis(u64::try_from(wait).unwrap_or(0));
+        let mut waited = false;
+        loop {
+            let r = self.link.borrow_mut().with(|l| l.io(handle, req.clone()));
+            let more = wait < 0 || Instant::now() < until;
+            if r.status != LOCKED || wait == 0 || !more {
+                if waited {
+                    status(&self.link, Status::Run, "");
+                }
+                return r;
+            }
+            if !waited {
+                status(&self.link, Status::Lckw, "");
+                waited = true;
+            }
+            std::thread::sleep(RETRY);
+        }
     }
 
     fn close(&mut self, handle: u32) -> IoResult {

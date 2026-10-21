@@ -82,10 +82,31 @@ pub struct JobInfo {
     pub number: u32,
 }
 
+thread_local! {
+    /// The jobs the storage service has named, by handle.
+    static NAMES: std::cell::RefCell<std::collections::HashMap<u64, JobInfo>> =
+        std::cell::RefCell::new(std::collections::HashMap::new());
+}
+
+/// Name a job's handle for the entries its changes write.
+pub fn name_job(job: JobHandle, info: JobInfo) {
+    NAMES.with(|n| n.borrow_mut().insert(job.0, info));
+}
+
+/// The job ended: its handle is no longer named.
+pub fn forget_job(job: JobHandle) {
+    NAMES.with(|n| n.borrow_mut().remove(&job.0));
+}
+
 impl JobInfo {
-    /// What a job handle says until jobs have names (`MIGRATE(phase5)`).
+    /// The job a handle stands for: its name when the storage service
+    /// named it, else `QS400`, `QSECOFR` and the handle as the number
+    /// (the console's own database commands, tests).
     #[must_use]
     pub fn from_handle(job: JobHandle) -> Self {
+        if let Some(j) = NAMES.with(|n| n.borrow().get(&job.0).cloned()) {
+            return j;
+        }
         Self {
             name: "QS400".into(),
             user: "QSECOFR".into(),

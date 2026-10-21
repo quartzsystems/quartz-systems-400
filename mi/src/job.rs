@@ -2,11 +2,11 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The job stand-in: what generated code and the runtime library share
-//! while a program runs: the pending exception, the call stack and
-//! activation groups, the spaces pointers address, the console. Phase 5
-//! replaces its creation and scheduling; the fields are the contract
-//! (`MIGRATE(phase5)`).
+//! The job: what generated code and the runtime library share while a
+//! program runs: the pending exception, the call stack and activation
+//! groups, the spaces pointers address, the console. A job process
+//! (`qsjob`) makes one and sets its sources to the storage service's;
+//! tests and the IR kit make one over memory.
 
 use std::collections::{HashMap, VecDeque};
 use std::rc::Rc;
@@ -118,7 +118,7 @@ pub(crate) enum QueueTarget {
 pub struct Job {
     /// The part generated code reads: the pending flag.
     pub abi: codegen::abi::Job,
-    /// Who the job is; `MIGRATE(phase5)`: the job scheduler assigns it.
+    /// Who the job is: set by the job process from its start.
     pub ident: JobIdent,
     /// The exception percolating now, if any.
     pub exception: Option<Exception>,
@@ -132,7 +132,8 @@ pub struct Job {
     pub max_depth: u32,
     /// Spaces pointers address.
     pub spaces: Spaces,
-    /// Lines `dsply` wrote; `MIGRATE(phase5)` to the job's display.
+    /// Lines `dsply` wrote; the console job shows them
+    /// (`MIGRATE(phase8)`: the job's display).
     pub console: Vec<String>,
     /// Replies `dsply` reads, oldest first.
     pub replies: VecDeque<String>,
@@ -158,19 +159,21 @@ pub struct Job {
     /// check in `enter` measures from it.
     pub stack_base: usize,
     /// Native stack the job may use below that point before `enter`
-    /// raises `MCH0601`; `MIGRATE(phase5)`: the job's thread stack.
+    /// raises `MCH0601`. A job process sets it from its main thread's
+    /// stack; 1 MiB otherwise.
     pub stack_bytes: usize,
     /// The job's external message queue.
     pub ext_msgq: MsgQueue,
-    /// `QSYSOPR`, as this job sees it; `MIGRATE(phase5)`.
+    /// `QSYSOPR` for a job over memory; a job process's inquiries go to
+    /// the real one through `inquiry`.
     pub sysopr: MsgQueue,
     /// Message descriptions.
     pub msgs: Box<dyn msgf::MsgLookup>,
-    /// Replies queued for inquiry messages, oldest first; the
-    /// description's default when empty. `MIGRATE(phase5)`: QSYSOPR.
+    /// Replies queued for inquiry messages, oldest first; when empty,
+    /// `inquiry` asks, or the description's default answers.
     pub inquiry_replies: VecDeque<String>,
-    /// The last dump written (`D` or `F` reply); `MIGRATE(phase5)` to
-    /// a spooled file.
+    /// The last dump written (`D` or `F` reply); with a spool sink it is
+    /// also spooled as `QPSRVDMP`.
     pub last_dump: Option<String>,
     /// Every reply given to an inquiry, oldest first.
     pub inquiry_log: Vec<String>,
@@ -327,6 +330,26 @@ impl Job {
                 io.close(state.handle);
             }
         }
+    }
+
+    /// Print `text` into a new spooled file of printer file `file`, a
+    /// line a record; its spool identifier.
+    pub fn spool_text(&mut self, file: &str, text: &str) -> Result<u32, crate::io::IoFail> {
+        let Some(sink) = self.spool.as_mut() else {
+            return Err(crate::io::IoFail::new(1299, "CPF4101", &[file]));
+        };
+        let open = sink.open(file, "*LIBL", "*DFTACTGRP")?;
+        let id = open.id;
+        let mut p = crate::io::spool::PrinterState::new(open);
+        for line in text.lines() {
+            let rec: Vec<u8> = line
+                .chars()
+                .map(|c| ccsid::byte_of(c).unwrap_or(0x40))
+                .collect();
+            p.write(sink.as_mut(), "", &rec)?;
+        }
+        p.close(sink.as_mut())?;
+        Ok(id)
     }
 
     /// Close every open printer file: the job is ending, and what they

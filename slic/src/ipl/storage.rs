@@ -623,8 +623,8 @@ pub fn bootstrap(store: &mut Store, now: u64, system_name: &str) -> store::Resul
     Ok(qsys)
 }
 
-/// The temporary ASP with QTEMP, fresh every IPL. `MIGRATE(phase5)`:
-/// one QTEMP per job.
+/// The temporary ASP with QTEMP, fresh every IPL. The storage service
+/// gives every job a `QTEMP` of its own in it.
 pub fn open_temp(system: &mut System) {
     match fresh_temp() {
         Ok(temp) => {

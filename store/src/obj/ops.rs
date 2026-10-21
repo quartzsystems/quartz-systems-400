@@ -55,8 +55,8 @@ pub struct Found {
     pub page: PageNo,
 }
 
-/// What `*LIBL` and `*CURLIB` mean for a caller. `MIGRATE(phase5)`:
-/// comes from the job.
+/// What `*LIBL` and `*CURLIB` mean for a caller. The storage service
+/// builds it from the requesting job's library list.
 #[derive(Debug, Clone, Default)]
 pub struct NameContext {
     /// Current library, if any.

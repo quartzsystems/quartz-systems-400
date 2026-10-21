@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! The in-process object lock table: the seed of WRKOBJLCK.
-//! `MIGRATE(phase5)`: job handles come from real jobs.
+//! A job handle is the job's number, as the storage service gives it.
 
 use std::collections::HashMap;
 

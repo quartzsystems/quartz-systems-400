@@ -5,7 +5,8 @@
 //! A bounded page cache with CLOCK replacement. It only ever holds
 //! pages as they are on the device: every write goes through to the
 //! device and updates the copy here, so nothing in the cache is dirty.
-//! `MIGRATE(phase5)`: this becomes the *MACHINE pool.
+//! It lives in the storage service; `MIGRATE(phase6)`: sized as the
+//! *MACHINE pool, from `QMCHPOOL`.
 
 use std::collections::HashMap;
 

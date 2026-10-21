@@ -92,7 +92,7 @@ is in `expected/` and the test passes.
 
 14. **Stack overflow.** Implemented: every entry measures the native
     stack from the first entry call of the job; past the job's budget
-    (1 MiB until the job owns its thread, `MIGRATE(phase5)`) the entry
+    (6 MiB of a job process's 8 MiB main thread, 1 MiB in memory) the entry
     raises `MCH0601` as soon as it starts, so a runaway recursion is
     an addressing violation a monitor can take, and the guard page is
     never reached. The machine's identifier for a stack overflow is
@@ -106,7 +106,8 @@ is in `expected/` and the test passes.
     prints what it receives afterwards.
 
 16. **Files in `QTEMP` from the IR.** Implemented: the IR's file I/O
-    resolves names in ASP 1 only, because the temporary ASP is a
-    separate store until one `QTEMP` per job lives in ASP 1
-    (`MIGRATE(phase5)`). Oracle: none; a limit, not a reading.
+    resolves names in ASP 1 only. Phase 5 gives every job a `QTEMP` of
+    its own, but in the temporary ASP, which a program's file I/O does
+    not reach (`MIGRATE(phase6)`). Oracle: none; a limit, not a
+    reading.
 

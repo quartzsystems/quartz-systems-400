@@ -250,6 +250,9 @@ impl Console {
             job.ident.number = format!("{:06}", self.start.number);
             job.data = Some(Box::new(s.data));
             job.io = Some(Box::new(s.io));
+            // Programs run on this process's main thread (8 MiB): leave
+            // room below the budget for the runtime and the handlers.
+            job.stack_bytes = 6 << 20;
             job.spool = Some(Box::new(stg::remote::spool::RemoteSpool::new(
                 self.link.clone(),
             )));

@@ -233,6 +233,11 @@ impl IoSource for StoreIo {
                 .map(|f| f.format.name.to_string())
                 .unwrap_or_default(),
             rec_len: desc.formats.first().map_or(0, |f| f.format.record_len),
+            wait_ms: match odp.borrow().wait_rcd() {
+                db::file::Wait::Immed => 0,
+                db::file::Wait::NoMax => -1,
+                db::file::Wait::Seconds(n) => i64::from(n) * 1000,
+            },
         };
         let entry = Entry {
             odp,

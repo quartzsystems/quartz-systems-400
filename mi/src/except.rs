@@ -243,11 +243,15 @@ fn unhandled(j: &mut Job, e: &Exception, boundary: Option<usize>) {
     match reply.as_str() {
         "G" | "I" | "R" => resume_target(j, e),
         "D" => {
-            j.last_dump = Some(j.dump(true));
+            let d = j.dump(true);
+            let _ = j.spool_text("QPSRVDMP", &d);
+            j.last_dump = Some(d);
             cancel(j, &pgm, &original, boundary);
         }
         "F" => {
-            j.last_dump = Some(j.dump(false));
+            let d = j.dump(false);
+            let _ = j.spool_text("QPSRVDMP", &d);
+            j.last_dump = Some(d);
             cancel(j, &pgm, &original, boundary);
         }
         _ => cancel(j, &pgm, &original, boundary),

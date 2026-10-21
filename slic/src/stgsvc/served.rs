@@ -181,6 +181,14 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
     };
     system.attrs.insert(job.number, attrs);
     system.job_seen.insert(job.name.clone(), 1);
+    jrn::entry::name_job(
+        store::obj::JobHandle(job.handle),
+        jrn::entry::JobInfo {
+            name: job.name.clone(),
+            user: job.user.clone(),
+            number: job.number,
+        },
+    );
     system.jobs.add(job.clone());
     let who = (job.name.clone(), job.user.clone(), job.number);
     let data = wm::joblog::started_data(
@@ -240,6 +248,7 @@ fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
     }
     system.jobs.remove(ctx.job.number);
     system.job_seen.insert(ctx.job.name.clone(), 2);
+    jrn::entry::forget_job(JobHandle(ctx.job.handle));
     system.attrs.remove(&ctx.job.number);
     super::msgs::release(system, ctx.job.number);
     system.pools.remove(ctx.job.number);

@@ -197,7 +197,7 @@ cargo run -p build -- manifest
 cargo run -p build -- all         # the whole pipeline (dev: service console on)
 cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media
-cargo run -p build -- test        # the six-step Phase 1 suite under QEMU
+cargo run -p build -- test        # the QEMU suite: Phases 1 to 5, 36 steps
 cargo run -p build -- test --media iso    # the media steps
 cargo run -p build -- test --media iso --install   # automatic install, boot, interactive reinstall
 cargo run -p build -- deny        # cargo-deny + links/cc lockfile check

@@ -198,6 +198,9 @@ pub struct FileInfo {
     pub format: String,
     /// Record length.
     pub rec_len: u32,
+    /// How long to wait for a locked record, milliseconds: 0 for
+    /// `*IMMED`, -1 for `*NOMAX`.
+    pub wait_ms: i64,
 }
 
 /// Where files are opened and records read and written.

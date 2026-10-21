@@ -238,7 +238,8 @@ pub fn create_srcpf(
 }
 
 /// Resolves a `LIB/FILE` reference of a logical file's DDS to the
-/// physical file object. `MIGRATE(phase5)`: the job's library list.
+/// physical file object. In the storage service names resolve through
+/// the requesting job's library list.
 pub type Resolve<'a> = &'a mut dyn FnMut(&FileRef) -> Result<ObjectId>;
 
 fn definition(what: String) -> DbError {

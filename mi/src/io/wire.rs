@@ -97,7 +97,8 @@ wire_struct!(FileInfo {
     lib,
     member,
     format,
-    rec_len
+    rec_len,
+    wait_ms
 });
 wire_struct!(IoResult {
     status,
