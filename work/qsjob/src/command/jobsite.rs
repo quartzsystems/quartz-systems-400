@@ -16,6 +16,30 @@ use super::{Fail, parms_of};
 use crate::console::host::Host;
 use crate::console::jobcmd;
 
+/// The old console words the job answers itself, for `svc.` lines.
+pub const OLD_JOB_WORDS: &[&str] = &[
+    "dspactgrp",
+    "rclactgrp",
+    "dspcallstk",
+    "dspmsgq",
+    "rpy",
+    "dmp",
+    "strdbg",
+    "enddbg",
+    "addbkp",
+    "rmvbkp",
+    "dspbkp",
+    "dspjoblog",
+    "strsbs",
+    "dlyjob",
+    "sbmjob",
+    "pwrdwnsys",
+    "wrkjob",
+    "chgpwd",
+    "dscjob",
+    "endsys",
+];
+
 /// Run a job-site command.
 pub fn run(job: &mut Job, host: &Host, r: &cmd::Resolved) -> Result<String, Fail> {
     let parms = parms_of(r);
@@ -23,7 +47,7 @@ pub fn run(job: &mut Job, host: &Host, r: &cmd::Resolved) -> Result<String, Fail
     if r.name == "CALL" {
         return call(job, host, &parms);
     }
-    let line = sys_cpps::bridge::line(&entry.word, &parms);
+    let line = sys_cpps::bridge::specified_line(&entry.word, &parms);
     let out = jobcmd::command(job, host, &entry.word, &line);
     classify(out)
 }

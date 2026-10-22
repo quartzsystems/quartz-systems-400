@@ -48,7 +48,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
 
 /// The bridge: the keyword form into the console table.
 fn bridge(system: &mut System, e: &Entry, parms: &Parms) -> CmdReply {
-    let line = sys_cpps::bridge::line(&e.word, parms);
+    let line = sys_cpps::bridge::specified_line(&e.word, parms);
     let text = crate::stgsvc::exec::run(system, &line);
     classify(text, e, parms)
 }

@@ -124,7 +124,7 @@ pub fn run_with(
 ) -> Outcome {
     let text = text.trim();
     if let Some(rest) = text.strip_prefix("svc.") {
-        return passthrough(host, rest);
+        return passthrough(job, host, rest);
     }
     let resolved = {
         let mut cmds = host.cmds.borrow_mut();
@@ -146,6 +146,12 @@ pub fn run_with(
     };
     let r = match resolved {
         Ok(r) => r,
+        // A line of the old console table, until every harness script
+        // says `svc.` (`MIGRATE(phase7)`: the shim goes at the end of
+        // the phase).
+        Err(e) if e.msgid() == "CPD0030" && is_old_word(text) => {
+            return passthrough(job, host, text);
+        }
         Err(e) => return failed(job, &e),
     };
     let mut out = Outcome {
@@ -288,8 +294,57 @@ fn user_cpp(job: &mut Job, _host: &Host, r: &Resolved) -> Result<String, Fail> {
     Ok(text)
 }
 
-/// A `svc.` line: the storage service's console table.
-fn passthrough(host: &Host, rest: &str) -> Outcome {
+/// Whether a line starts with a word of the old console tables.
+fn is_old_word(text: &str) -> bool {
+    let word = text.split_whitespace().next().unwrap_or("");
+    jobsite::OLD_JOB_WORDS.contains(&word) || OLD_SERVICE_WORDS.contains(&word)
+}
+
+/// The words of the storage service's console table that have no
+/// command of their own (the development commands).
+const OLD_SERVICE_WORDS: &[&str] = &[
+    "asp",
+    "unit",
+    "mirror",
+    "lib",
+    "obj",
+    "dtaara",
+    "dtaq",
+    "usrspc",
+    "rclstg",
+    "chkstg",
+    "txn",
+    "xfer",
+    "srcput",
+    "srcget",
+    "sql",
+    "sqlrun",
+    "naming",
+    "curlib",
+    "rla",
+    "dbbench",
+    "qir",
+    "prtcapture",
+    "whoami",
+    "wmstats",
+    "sysval",
+    "fuzzptr",
+    "callbench",
+    "help",
+    "release",
+    "dsplog",
+];
+
+/// A `svc.` line: a job command of the old table, else the storage
+/// service's console table.
+fn passthrough(job: &mut Job, host: &Host, rest: &str) -> Outcome {
+    let word = rest.split_whitespace().next().unwrap_or("");
+    if jobsite::OLD_JOB_WORDS.contains(&word) {
+        return Outcome {
+            text: crate::console::jobcmd::command(job, host, word, rest),
+            ..Outcome::default()
+        };
+    }
     let reply = host.exec(rest);
     Outcome {
         text: reply.text,
