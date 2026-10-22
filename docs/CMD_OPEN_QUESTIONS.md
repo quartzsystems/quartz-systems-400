@@ -19,13 +19,11 @@ now and what to check.
    sends first when several apply, and whether CPD0014 or CPD0015
    names a missing required parameter, is unverified.
 
-3. **Three-part qualified names.** IBM spells a job name
-   `number/user/job` with slashes and a file member `LIB/FILE MBR` with
-   a blank, both `QUAL` groups of three. The analyzer renders the parts
-   past the second after a blank (`JOB(ABC/* ABC)`), so a job name
-   rendered back differs from how it was typed. Whether IBM's QUAL
-   definitions carry a spelling flag, or the parser keeps the form it
-   read, is unverified.
+3. **Three-part qualified names.** A `QUAL` group renders with
+   slashes, last part first (`JOB(123456/USER/NAME)`); a file member
+   is an `ELEM` beside its qualified file, not a third `QUAL` part.
+   Whether IBM's definitions ever spell a third `QUAL` part after a
+   blank is unverified.
 
 4. **`EXPR(*YES)`.** Our shipped definitions leave it out, so the
    analyzer takes an expression on any character, numeric, logical or

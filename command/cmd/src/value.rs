@@ -63,30 +63,17 @@ impl Value {
             Self::Expr(t) => Tok::join(t),
             Self::Null => "*NULL".into(),
             Self::Qual(parts) => {
-                // `LIB/NAME`, then any further part (a member) after a
-                // blank, as the command string has it.
+                // The parts in the string's order, last first:
+                // `LIB/NAME`, `NUMBER/USER/JOB`.
                 let v: Vec<String> = parts
                     .iter()
                     .map(|p| match p {
                         Self::Char(s) if s.is_empty() => String::new(),
                         other => other.source(),
                     })
+                    .filter(|p| !p.is_empty())
                     .collect();
-                let mut s = String::new();
-                match (v.first(), v.get(1)) {
-                    (Some(n), Some(l)) if !l.is_empty() => {
-                        s.push_str(l);
-                        s.push('/');
-                        s.push_str(n);
-                    }
-                    (Some(n), _) => s.push_str(n),
-                    (None, _) => {}
-                }
-                for rest in v.iter().skip(2).filter(|r| !r.is_empty()) {
-                    s.push(' ');
-                    s.push_str(rest);
-                }
-                s
+                v.iter().rev().cloned().collect::<Vec<_>>().join("/")
             }
             Self::Elems(items) => {
                 let v: Vec<String> = items
