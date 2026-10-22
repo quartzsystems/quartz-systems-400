@@ -369,14 +369,33 @@ authorities `char(15)` (`Y`/`N` in `*ALLOBJ *SECADM *JOBCTL *SPLCTL
 *SAVSYS *SERVICE *AUDIT *IOSYSCFG` order, seven reserved), group,
 owner, group authority, limit capabilities, group authority type,
 reserved 3, supplemental groups offset and count `bin4`, text 50, the
-groups `char(10)` each. `USRI0300` is `USRI0100`, the `USRI0200` part
-from 94, and from 380 the libraries, programs, menus, queues and
-attention program (name and library each), accounting code, delivery,
-severity, printer, assistance level, special environment, keyboard
-buffering, language, country, CCSID, UID, GID, maximum and used
-storage, priority limit, object auditing, expiration date and home
-directory. *QS/400 reading*: `USRI0300`'s offsets past the groups
-are ours; `SEC_OPEN_QUESTIONS.md` lists them for the oracle.
+groups `char(10)` each. `USRI0300` is laid out as an IBM i 7.1 returns
+it (`tools/conformance/oracle/sec/expected/usri0300.txt`): `USRI0100`
+to 72, then class 73, special authorities `char(15)` 83, group 98,
+owner 108, group authority 118, assistance level 128, current library
+138, initial menu 148 and library 158, initial program 168 and library
+178, limit capabilities 188, text 198, display sign-on information 248,
+limit device sessions 258, keyboard buffering 268, reserved 278,
+maximum storage `bin4` 280, storage used 284, priority limit `char(1)`
+288, job description 289 and library 299, accounting code `char(15)`
+309, message queue 324 and library 334, delivery 344, reserved 354,
+severity `bin4` 356, output queue 360 and library 370, printer 380,
+special environment 390, attention program 400 and library 410,
+language 420, country 430, CCSID `bin4` 440 (-2 for `*SYSVAL`), user
+options 444 (seven `Y`/`N`, blank to 480), sort sequence 480 and
+library 490, object auditing 500, action auditing 510 (31 `Y`/`N`,
+blank to 574), group authority type 574, supplemental groups offset
+`bin4` 584 and count 588, UID 592, GID 596, home directory offset 600
+and length 604, locale job attributes 608 (eight `Y`/`N`), reserved
+616, locale offset `bin4` 624 and length 628, two bytes `00` at 632
+and a `char(10)` `*SYSVAL` at 634 (the capture shows them; read here
+as a reserved pair and `CHRIDCTL`), zeros 644, local password
+management 660, block password change 661, a byte `1` at 671 (not
+identified), `bin4` 0 at 672, user expiration date 676, user
+expiration interval 684; then the home directory as a
+`Qlg_Path_Name_T` (CCSID 1200, `US`, `ENU`, path type, path length,
+`/` delimiter, the path in UCS-2) at 694, the locale after it, and the
+supplemental groups last.
 
 An authority in a receiver is its name (`*ALL`, `*CHANGE`, `*USE`,
 `*EXCLUDE`, `USER DEF`; `*AUTLMGT` for a list) and eleven `Y`/`N`

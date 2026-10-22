@@ -122,11 +122,7 @@ fn qsyrusri(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     match format.as_str() {
         "USRI0100" => usri0100(&mut out, &u),
         "USRI0200" => usri0200(&mut out, &u, 18),
-        _ => {
-            usri0100(&mut out, &u);
-            usri0200(&mut out, &u, 94);
-            usri0300(&mut out, &u);
-        }
+        _ => usri0300(&mut out, &u),
     }
     out.deliver(&a, 0, 1);
     errc.ok();
@@ -148,7 +144,8 @@ fn interval(v: u32) -> i32 {
     }
 }
 
-fn usri0100(out: &mut Out, u: &UsrPrf) {
+/// The sign-on and password part every format shares (18 to 72).
+fn usri0100_common(out: &mut Out, u: &UsrPrf) {
     out.char(18, 13, &ts(u.prev_signon));
     out.blank(31, 1);
     out.bin4(32, i32::try_from(u.signon_invalid).unwrap_or(i32::MAX));
@@ -164,17 +161,22 @@ fn usri0100(out: &mut Out, u: &UsrPrf) {
     out.blank(60, 8);
     out.bin4(68, -1);
     out.ch(72, yn(u.pwdexp));
+}
+
+/// `PWDCHGBLK` as the receivers spell it.
+fn pwdchgblk_text(v: u32) -> String {
+    match v {
+        0 => "*SYSVAL".to_string(),
+        u32::MAX => "*NONE".to_string(),
+        n => n.to_string(),
+    }
+}
+
+fn usri0100(out: &mut Out, u: &UsrPrf) {
+    usri0100_common(out, u);
     out.char(73, 10, u.dspsgninf.name());
     out.ch(83, yn(u.lclpwdmgt));
-    out.char(
-        84,
-        10,
-        &match u.pwdchgblk {
-            0 => "*SYSVAL".to_string(),
-            u32::MAX => "*NONE".to_string(),
-            n => n.to_string(),
-        },
-    );
+    out.char(84, 10, &pwdchgblk_text(u.pwdchgblk));
 }
 
 /// The `USRI0200` part from `at`: class, special authorities, groups.
@@ -207,48 +209,141 @@ fn usri0200(out: &mut Out, u: &UsrPrf, at: usize) {
     }
 }
 
-/// The rest of `USRI0300`, after the groups.
+/// `USRI0300` from offset 73, laid out as an IBM i 7.1 returns it
+/// (`tools/conformance/oracle/sec/expected/usri0300.txt`): the
+/// supplemental groups follow the locale at the end.
+#[allow(clippy::too_many_lines)] // one line per field
 fn usri0300(out: &mut Out, u: &UsrPrf) {
-    let at = 94 + 136 + 150;
-    out.pad_to(at);
+    usri0100_common(out, u);
     let q = |(n, l): &(String, String)| (n.clone(), l.clone());
-    let pairs = [
-        ("CURLIB", (u.curlib.clone(), String::new())),
-        ("INLPGM", q(&u.inlpgm)),
-        ("INLMNU", q(&u.inlmnu)),
-        ("JOBD", q(&u.jobd)),
-        ("MSGQ", q(&u.msgq)),
-        ("OUTQ", q(&u.outq)),
-        ("ATNPGM", q(&u.atnpgm)),
-    ];
-    let mut off = at;
-    for (_, (n, l)) in pairs {
-        out.char(off, 10, &n);
-        out.char(off + 10, 10, &l);
-        off += 20;
-    }
-    out.char(off, 15, &u.acgcde);
-    out.char(off + 15, 10, &u.dlvry);
-    out.bin4(off + 25, i32::from(u.sev));
-    out.char(off + 29, 10, &u.prtdev);
-    out.char(off + 39, 10, &u.astlvl);
-    out.char(off + 49, 10, &u.spcenv);
-    out.char(off + 59, 10, &u.kbdbuf);
-    out.char(off + 69, 10, &u.langid);
-    out.char(off + 79, 10, &u.cntryid);
-    out.bin4(off + 89, i32::try_from(u.ccsid).unwrap_or(0));
-    out.bin4(off + 93, i32::try_from(u.uid).unwrap_or(0));
-    out.bin4(off + 97, i32::try_from(u.gid).unwrap_or(0));
-    out.bin4(off + 101, i32::try_from(u.maxstg).unwrap_or(-1));
-    out.bin4(off + 105, i32::try_from(u.stg_used).unwrap_or(i32::MAX));
-    out.ch(off + 109, char::from(b'0' + u.ptylmt.min(9)));
-    out.char(off + 110, 10, &u.objaud);
+    out.char(73, 10, u.usrcls.name());
+    out.char(83, 15, &special_flags(u.spcaut));
+    out.char(98, 10, &u.grpprf);
+    out.char(108, 10, if u.owner_grpprf { "*GRPPRF" } else { "*USRPRF" });
+    out.char(118, 10, &u.grpaut);
+    out.char(128, 10, &u.astlvl);
+    out.char(138, 10, &u.curlib);
+    let (n, l) = q(&u.inlmnu);
+    out.char(148, 10, &n);
+    out.char(158, 10, &l);
+    let (n, l) = q(&u.inlpgm);
+    out.char(168, 10, &n);
+    out.char(178, 10, &l);
+    out.char(188, 10, u.lmtcpb.name());
+    out.char(198, 50, &u.text);
+    out.char(248, 10, u.dspsgninf.name());
+    out.char(258, 10, u.lmtdevssn.name());
+    out.char(268, 10, &u.kbdbuf);
+    out.bytes(278, &[0, 0]);
+    out.bin4(280, i32::try_from(u.maxstg).unwrap_or(-1));
+    out.bin4(284, i32::try_from(u.stg_used).unwrap_or(i32::MAX));
+    out.ch(288, char::from(b'0' + u.ptylmt.min(9)));
+    let (n, l) = q(&u.jobd);
+    out.char(289, 10, &n);
+    out.char(299, 10, &l);
+    out.char(309, 15, &u.acgcde);
+    let (n, l) = q(&u.msgq);
+    out.char(324, 10, &n);
+    out.char(334, 10, &l);
+    out.char(344, 10, &u.dlvry);
+    out.bytes(354, &[0, 0]);
+    out.bin4(356, i32::from(u.sev));
+    let (n, l) = q(&u.outq);
+    out.char(360, 10, &n);
+    out.char(370, 10, &l);
+    out.char(380, 10, &u.prtdev);
+    out.char(390, 10, &u.spcenv);
+    let (n, l) = q(&u.atnpgm);
+    out.char(400, 10, &n);
+    out.char(410, 10, &l);
+    out.char(420, 10, &u.langid);
+    out.char(430, 10, &u.cntryid);
+    out.bin4(440, if u.ccsid == 0 { -2 } else { i32::try_from(u.ccsid).unwrap_or(-2) });
+    out.char(444, 36, &flags(&u.usropt, USROPT_FLAGS, 7));
+    let (n, l) = q(&u.srtseq);
+    out.char(480, 10, &n);
+    out.char(490, 10, &l);
+    out.char(500, 10, &u.objaud);
+    out.char(510, 64, &flags(&u.audlvl, AUDLVL_FLAGS, 31));
+    out.char(574, 10, if u.grpauttyp_pgp { "*PGP" } else { "*PRIVATE" });
+    out.bin4(592, i32::try_from(u.uid).unwrap_or(0));
+    out.bin4(596, i32::try_from(u.gid).unwrap_or(0));
+    out.char(608, 8, &flags(&u.setjobatr, SETJOBATR_FLAGS, 8));
+    out.blank(616, 8);
+    out.char(632, 2, "00");
+    out.char(634, 10, &u.chridctl);
+    out.bytes(644, &[0; 16]);
+    out.ch(660, yn(u.lclpwdmgt));
+    out.char(661, 10, &pwdchgblk_text(u.pwdchgblk));
+    out.ch(671, '1');
+    out.bin4(672, 0);
     out.char(
-        off + 120,
-        10,
+        676,
+        8,
         &ts(u.usrexpdate).chars().take(8).collect::<String>(),
     );
-    out.char(off + 130, 64, &u.homedir);
+    out.char(
+        684,
+        10,
+        &if u.usrexpitv == 0 {
+            "*NONE".to_string()
+        } else {
+            u.usrexpitv.to_string()
+        },
+    );
+    // The home directory as a `Qlg_Path_Name_T`: UCS-2, then the locale.
+    let path: Vec<u8> = u.homedir.encode_utf16().flat_map(u16::to_be_bytes).collect();
+    let home_at = 694;
+    out.bin4(600, i32::try_from(home_at).unwrap_or(0));
+    out.bin4(604, i32::try_from(32 + path.len()).unwrap_or(0));
+    out.bin4(home_at, 1200);
+    out.char(home_at + 4, 2, "US");
+    out.char(home_at + 6, 3, "ENU");
+    out.bytes(home_at + 9, &[0; 3]);
+    out.bin4(home_at + 12, 0);
+    out.bin4(home_at + 16, i32::try_from(path.len()).unwrap_or(0));
+    out.bytes(home_at + 20, &[0x00, 0x2F]);
+    out.bytes(home_at + 22, &[0; 10]);
+    out.bytes(home_at + 32, &path);
+    let locale_at = home_at + 32 + path.len();
+    out.bin4(624, i32::try_from(locale_at).unwrap_or(0));
+    out.bin4(628, i32::try_from(u.locale.len().max(10)).unwrap_or(10));
+    out.char(locale_at, u.locale.len().max(10), &u.locale);
+    let groups_at = locale_at + u.locale.len().max(10);
+    out.bin4(584, if u.supgrpprf.is_empty() { 0 } else { i32::try_from(groups_at).unwrap_or(0) });
+    out.bin4(588, i32::try_from(u.supgrpprf.len()).unwrap_or(0));
+    for (i, g) in u.supgrpprf.iter().enumerate() {
+        out.char(groups_at + i * 10, 10, g);
+    }
+}
+
+/// `USROPT` flags, in receiver order.
+const USROPT_FLAGS: &[&str] = &[
+    "*CLKWD", "*EXPERT", "*HLPFULL", "*STSMSG", "*NOSTSMSG", "*ROLLKEY", "*PRTMSG",
+];
+
+/// `SETJOBATR` flags, in receiver order.
+const SETJOBATR_FLAGS: &[&str] = &[
+    "*NONE", "*SYSVAL", "*CCSID", "*DATFMT", "*DATSEP", "*SRTSEQ", "*TIMSEP", "*DECFMT",
+];
+
+/// `AUDLVL` flags, in receiver order.
+const AUDLVL_FLAGS: &[&str] = &[
+    "*CMD", "*CREATE", "*DELETE", "*JOBDTA", "*OBJMGT", "*OFCSRV", "*OPTICAL", "*PGMADP",
+    "*SAVRST", "*SECURITY", "*SERVICE", "*SPLFDTA", "*SYSMGT", "*AUTFAIL", "*JOBBAS",
+    "*JOBCHGUSR", "*NETBAS", "*NETCLU", "*NETCMN", "*NETFAIL", "*NETSCK", "*PGMFAIL",
+    "*PTFOBJ", "*PTFOPR", "*SECCFG", "*SECDIRSRV", "*SECIPC", "*SECNAS", "*SECRUN",
+    "*SECSCKD", "*SECVFY",
+];
+
+/// `Y`/`N` for each of `names` in `values`, blank padded to `n`... the
+/// first `count` flags, the rest blank.
+fn flags(values: &[String], names: &[&str], count: usize) -> String {
+    let mut s = String::new();
+    for name in names.iter().take(count) {
+        s.push(yn(values.iter().any(|v| v == name)));
+    }
+    s
 }
 
 /// `QSYCUSRS(indicator, user, special authorities, count, call level,
