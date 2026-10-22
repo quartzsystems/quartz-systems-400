@@ -78,3 +78,24 @@ fn install_reowns_and_indexes() {
     let again = shipped::install(&mut t, qsys, 40, 3, NOW).unwrap();
     assert_eq!(again, shipped::Installed::default());
 }
+
+#[test]
+fn level_rise_takes_allobj() {
+    let (mut store, qsys) = open_new();
+    let mut t = store.begin().unwrap();
+    shipped::install(&mut t, qsys, 20, 3, NOW).unwrap();
+    let first = sec::level::ipl(&mut t, qsys, 20, NOW).unwrap();
+    assert_eq!((first.from, first.revoked), (0, 0));
+    // At 20 a *USER profile created with *USRCLS has *ALLOBJ.
+    let mut u = sec::profile::UsrPrf::new("LOWUSER", 20);
+    u.created = NOW;
+    objects::create(&mut t, qsys, &u, "QSECOFR", Authority::EXCLUDE, NOW).unwrap();
+    assert!(objects::read(&mut t, qsys, "LOWUSER").unwrap().1.spcaut.has(SpecialAuth::ALLOBJ));
+    let c = sec::level::ipl(&mut t, qsys, 40, NOW).unwrap();
+    assert_eq!(c.from, 20);
+    assert!(c.revoked >= 1);
+    assert!(!objects::read(&mut t, qsys, "LOWUSER").unwrap().1.spcaut.has(SpecialAuth::ALLOBJ));
+    assert!(objects::read(&mut t, qsys, "QSECOFR").unwrap().1.spcaut.has(SpecialAuth::ALLOBJ));
+    let again = sec::level::ipl(&mut t, qsys, 40, NOW).unwrap();
+    assert_eq!((again.from, again.revoked), (40, 0));
+}

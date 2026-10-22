@@ -82,6 +82,10 @@ fn qusptrus(j: &mut Job, args: &[u64], _p: &mut dyn Provider) {
             return;
         }
     };
+    if j.act.enforcing() && j.act.user_state() && j.usrspcs.system_domain(&name, &lib) {
+        j.raise(mi::Cond::Mch6801);
+        return;
+    }
     match j.map_user_space(&name, &lib) {
         Ok(p) => {
             a.put_bytes(1, &p.to_bytes());

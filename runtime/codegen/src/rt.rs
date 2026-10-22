@@ -429,6 +429,8 @@ pub enum Cond {
     Mch3602 = 3602,
     /// `MCH4431`: a service program's signature does not match.
     Mch4431 = 4431,
+    /// `MCH6801`: object domain or state violation (`QSECURITY` 40+).
+    Mch6801 = 6801,
 }
 
 impl Cond {
@@ -454,6 +456,7 @@ impl Cond {
             3601 => Self::Mch3601,
             3602 => Self::Mch3602,
             4431 => Self::Mch4431,
+            6801 => Self::Mch6801,
             _ => return None,
         })
     }

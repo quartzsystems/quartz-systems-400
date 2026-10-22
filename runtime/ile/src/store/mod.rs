@@ -209,6 +209,15 @@ pub fn crtpgm(
     let (program, diags) = bind_in_store(txn, ctx, modules, bnddirs, options)?;
     let id = ops::create(txn, &ctx.params(library, name, type_code, "", text))?;
     write_payload(txn, id, &program.encode())?;
+    // The header carries the program's domain and state too.
+    let (page, mut h) = ops::read_header(txn, id)?;
+    h.user_state = program.attr.user_state;
+    h.domain = if program.attr.user_domain {
+        store::obj::header::Domain::User
+    } else {
+        store::obj::header::Domain::System
+    };
+    ops::write_header(txn, page, &h)?;
     Ok((id, diags))
 }
 

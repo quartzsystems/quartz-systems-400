@@ -445,7 +445,7 @@ fn resolve_one(
             }
         }
     }
-    if kind == ExportKind::Proc && SYSTEM_PROCS.contains(&name) {
+    if kind == ExportKind::Proc && (SYSTEM_PROCS.contains(&name) || PRIVILEGED_PROCS.contains(&name)) {
         return ImportTarget::System;
     }
     b.diags.push(Diag {
@@ -467,6 +467,12 @@ pub const SYSTEM_PROCS: &[&str] = &[
     "CEECZST", "CEEDAYS", "CEEDATE", "CEEDATM", "CEESECS", "CEEUTC", "CEELOCT", "CEEQCEN",
     "CEESCEN", "CEEGMT", "CEEGMTO", "CEERAN0", "CEE4RAGE",
 ];
+
+/// Procedures only system state may import: raw storage, the storage
+/// service's direct calls and authority bypass. A user-state program
+/// that imports one is refused at load at `QSECURITY` 40 and up
+/// (`MCH6801`); no job provides them, so at 30 a call is `MCH3401`.
+pub const PRIVILEGED_PROCS: &[&str] = &["_QSYSRAW", "_QSTGDIRECT", "_QAUTBYPASS"];
 
 impl BndEntryKind {
     /// Whether an entry of this kind is looked up as a module.

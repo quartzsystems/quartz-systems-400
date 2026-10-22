@@ -261,6 +261,8 @@ impl Console {
             let provider = Rc::new(RefCell::new(s.provider));
             let dyn_provider: Rc<RefCell<dyn sysapi::Provider>> = provider.clone();
             sysapi::install(&mut job, dyn_provider);
+            // Domain and state are enforced at the level of this IPL.
+            job.act.qsecurity = self.link.borrow_mut().with(Client::whoami).qsecurity;
             if let Ok(ctl) = self.ctl.try_clone() {
                 let ctl = RefCell::new(ctl);
                 let inbox = Rc::clone(&self.inbox);

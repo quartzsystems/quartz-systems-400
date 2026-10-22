@@ -134,9 +134,12 @@ pub struct Space {
 
 /// The job's space table.
 #[derive(Clone, Debug, Default)]
+#[allow(clippy::struct_field_names)]
 pub struct Spaces {
     spaces: Vec<Space>,
     statics: Vec<(u64, u64)>,
+    /// Static areas of system-state programs: the system domain.
+    system: Vec<(u64, u64)>,
 }
 
 impl Spaces {
@@ -145,6 +148,21 @@ impl Spaces {
         if !self.statics.contains(&(base, len)) {
             self.statics.push((base, len));
         }
+    }
+
+    /// Record a system-state program's static area as system domain.
+    pub fn register_system(&mut self, base: u64, len: u64) {
+        if !self.system.contains(&(base, len)) {
+            self.system.push((base, len));
+        }
+    }
+
+    /// Whether a native address lies in system-domain storage.
+    #[must_use]
+    pub fn in_system(&self, addr: u64) -> bool {
+        self.system
+            .iter()
+            .any(|(b, l)| addr >= *b && addr < b.saturating_add(*l))
     }
 
     /// A space over storage the runtime owns (a heap block, a mapped
@@ -196,6 +214,7 @@ impl Spaces {
     /// a reclaimed activation group fail with `MCH3402`.
     pub fn kill_static(&mut self, base: u64) {
         self.statics.retain(|(b, _)| *b != base);
+        self.system.retain(|(b, _)| *b != base);
         for s in &mut self.spaces {
             if s.live && s.owner_depth == 0 && s.base == base {
                 s.live = false;

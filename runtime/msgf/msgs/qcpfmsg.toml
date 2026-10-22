@@ -56,6 +56,12 @@ help = "The object does not exist in the library named or in the library list, o
 vars = ["*CHAR 10"]
 
 [[msg]]
+id = "MCH6801"
+sev = 40
+text = "Object domain or state was violated."
+help = "At security level 40 or 50 a user-state program reached a system-domain object, called a system-state program that is not a published entry, or used a procedure only system state may use."
+
+[[msg]]
 id = "MCH3402"
 sev = 40
 text = "The storage a pointer addresses no longer exists."

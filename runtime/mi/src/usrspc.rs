@@ -39,6 +39,10 @@ pub trait UserSpaceSource {
     fn library_of(&mut self, _name: &str, _lib: &str) -> Option<String> {
         None
     }
+    /// Whether `lib/name` is in the system domain.
+    fn system_domain(&mut self, _name: &str, _lib: &str) -> bool {
+        false
+    }
 }
 
 /// User spaces held in memory, for tests and the IR driver.
@@ -207,6 +211,13 @@ impl UserSpaces {
     /// The library an existing object was found in.
     pub fn library_of(&mut self, name: &str, lib: &str) -> Option<String> {
         self.source.as_mut().and_then(|s| s.library_of(name, lib))
+    }
+
+    /// Whether `lib/name` is in the system domain.
+    pub fn system_domain(&mut self, name: &str, lib: &str) -> bool {
+        self.source
+            .as_mut()
+            .is_some_and(|s| s.system_domain(name, lib))
     }
 
     /// Grow a mapped space to `len` bytes: the copy moves, so the old

@@ -264,6 +264,19 @@ impl Job {
         self.exception.take()
     }
 
+    /// Signal machine condition `cond` to the running entry, as generated
+    /// code would.
+    pub fn raise(&mut self, cond: Cond) {
+        let _ = self.send_message(
+            &cond.msgid(),
+            "QCPFMSG",
+            "QSYS",
+            Vec::new(),
+            qir::MsgType::Escape,
+            crate::msg::QueueRef::Same,
+        );
+    }
+
     /// Call a program by name with parameter addresses, as a dynamic
     /// call does: a native program first, else the object, activated
     /// in the group its attribute names. A pending exception the
@@ -272,11 +285,24 @@ impl Job {
         if (lib == "QSYS" || lib == "*LIBL")
             && let Some(f) = self.natives.get(name).cloned()
         {
+            // Level 50: a user-state caller passes only user-domain storage.
+            if self.act.qsecurity >= 50
+                && self.act.user_state()
+                && args.iter().any(|a| self.spaces.in_system(*a))
+            {
+                return Err(Cond::Mch6801);
+            }
             f(self, args);
             return Ok(());
         }
         let table = self.table.clone();
+        let caller_user = self.act.user_state();
         let p = self.act.load_program(name, lib, PgmKind::Pgm, &table)?;
+        // A user-state program may not call a system-state one directly;
+        // the published entries are the natives above.
+        if self.act.enforcing() && caller_user && !p.object.attr.user_state {
+            return Err(Cond::Mch6801);
+        }
         let entry = p.entry_addr().ok_or(Cond::Mch3401)?;
         let saved = self.act.current;
         let created = if p.object.attr.actgrp == ActGrpAttr::New {

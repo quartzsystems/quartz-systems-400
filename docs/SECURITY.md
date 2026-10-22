@@ -346,3 +346,47 @@ cached.
 `USEADPAUT(*YES)` is the default. When `QUSEADPAUT` names an
 authorization list, a program created by a user without `*USE` to the
 list is made `USEADPAUT(*NO)`, and `CRTPGM` says so.
+
+## 6. Security levels, domain and state
+
+`QSECURITY` takes effect at an IPL: the storage service reads it once
+as it starts and every job's principal and runtime use that level. The
+level the last IPL ran at is kept in `QSYS/QSECLVL`; going from 20 or
+below to 30 or above takes `*ALLOBJ` from every profile whose class is
+not `*SECOFR`.
+
+| Level | Sign-on | Authority | Domain and state |
+|---|---|---|---|
+| 20 | user and password | everyone has `*ALLOBJ` and `*SAVSYS` | not enforced |
+| 30 | as 20 | the search of §4 | not enforced |
+| 40 | as 20 | as 30 | enforced |
+| 50 | as 20 | as 30 | enforced, and API parameters checked |
+
+Objects carry a domain (`*SYSTEM`, `*USER`) and programs a state. At 40
+and 50 the runtime (`mi`) refuses, with `MCH6801`:
+
+- loading a user-state program that imports a procedure only system
+  state may use (`ile::binder::PRIVILEGED_PROCS`: raw storage, direct
+  storage service calls, authority bypass); at 30 the import resolves to
+  nothing and a call is `MCH3401`;
+- a call from a user-state program to a system-state program; the
+  published entry points, the `sysapi` programs, are not programs but
+  natives of the runtime and stay callable. Command level counts as
+  system state (`QCMD`), so routing and the startup program call any
+  program;
+- `QUSPTRUS` from user state on a user space in the system domain.
+
+At 50 a user-state caller of an API may pass only user-domain storage:
+the runtime refuses a parameter that points into a system-state
+program's static area. Changing an object's domain is not offered by
+any API at any level.
+
+A user space created in a library `QALWUSRDMN` does not list (`*ALL`
+lists every one; `QTEMP` is always allowed) is in the system domain.
+Programs carry the domain and state of their attributes in their
+header. Only development images (`qs400.svc=1`) let `CRTPGM
+STATE(*SYSTEM)` make a system-state program, for the harness.
+
+Jobs never reach pages: every object operation is a typed request the
+storage service performs, so there is no raw page access for a
+user-state job to be refused.

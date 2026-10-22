@@ -141,6 +141,21 @@ impl StoreUserSpaces {
     }
 }
 
+/// Whether `QALWUSRDMN` lets library `lib` hold user-domain objects
+/// (`*ALL`, or the library listed; `QTEMP` always may).
+fn user_domain_allowed(shared: &Shared, lib: &str) -> bool {
+    let b = shared.borrow();
+    let Some(v) = b.as_ref().and_then(|l| l.sysvals.as_ref()) else {
+        return true;
+    };
+    let Ok(val) = v.get("QALWUSRDMN") else {
+        return true;
+    };
+    let text = val.text();
+    text.split_whitespace()
+        .any(|l| l.eq_ignore_ascii_case("*ALL") || l.eq_ignore_ascii_case(lib))
+}
+
 impl UserSpaceSource for StoreUserSpaces {
     fn load(&mut self, name: &str, lib: &str) -> Option<Vec<u8>> {
         let (id, _, temp) = self.locate(name, lib)?;
@@ -202,23 +217,34 @@ impl UserSpaceSource for StoreUserSpaces {
                     .map_err(|e| e.to_string())
             })
         } else {
+            let target = if lib_u == "*CURLIB" || lib_u == "*LIBL" {
+                "QGPL".to_string()
+            } else {
+                lib_u.clone()
+            };
+            let user_domain = user_domain_allowed(&self.shared, &target);
             with_main(&self.shared, |txn, qsys| {
-                let target = if lib_u == "*CURLIB" || lib_u == "*LIBL" {
-                    "QGPL".to_string()
-                } else {
-                    lib_u.clone()
-                };
                 let l =
                     ops::find_library(txn, qsys, Name::parse(&target).map_err(|e| e.to_string())?)
                         .map_err(|e| e.to_string())?;
-                usrspc::create(txn, &params(l.id), size as u64, true, init)
-                    .map(|_| ())
-                    .map_err(|e| e.to_string())
+                let id = usrspc::create(txn, &params(l.id), size as u64, true, init)
+                    .map_err(|e| e.to_string())?;
+                if !user_domain {
+                    // QALWUSRDMN does not list the library: system domain.
+                    let (page, mut h) = ops::read_header(txn, id).map_err(|e| e.to_string())?;
+                    h.domain = store::obj::header::Domain::System;
+                    ops::write_header(txn, page, &h).map_err(|e| e.to_string())?;
+                }
+                Ok(())
             })
         };
         r.map_err(|e| {
             if e.contains("exists") {
                 "CPF9870"
+            } else if e.starts_with("CPF9820") {
+                "CPF9820"
+            } else if e.starts_with("CPF2189") {
+                "CPF2189"
             } else {
                 "CPF9810"
             }
@@ -239,6 +265,22 @@ impl UserSpaceSource for StoreUserSpaces {
 
     fn library_of(&mut self, name: &str, lib: &str) -> Option<String> {
         self.locate(name, lib).map(|(_, l, _)| l)
+    }
+
+    fn system_domain(&mut self, name: &str, lib: &str) -> bool {
+        let Some((id, _, temp)) = self.locate(name, lib) else {
+            return false;
+        };
+        let domain = |txn: &mut Txn<'_>| {
+            store::obj::ops::read_header(txn, id)
+                .map(|(_, h)| h.domain == store::obj::header::Domain::System)
+                .map_err(|e| e.to_string())
+        };
+        if temp {
+            with_temp(&self.shared, |txn, _| domain(txn)).unwrap_or(false)
+        } else {
+            with_main(&self.shared, |txn, _| domain(txn)).unwrap_or(false)
+        }
     }
 }
 

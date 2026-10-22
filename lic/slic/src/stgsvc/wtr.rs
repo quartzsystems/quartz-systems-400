@@ -96,7 +96,8 @@ pub fn strprtwtr(system: &mut System, me: u32, p: &Params) -> Result<String, Str
         curlib: "*CRTDFT".into(),
         ..SbmJob::default()
     };
-    let (job, _) = super::jobqs::sbmjob(system, me, &r)?;
+    // The system starts the writer as QSPLJOB, not the user asking.
+    let (job, _) = sec::guard::as_system(|| super::jobqs::sbmjob(system, me, &r))?;
     with_outq(system, &real, |oq, _| {
         oq.writer.clone_from(&name);
         Ok(((), true))

@@ -47,12 +47,19 @@ pub fn kind(name: &str, security: bool) -> Kind {
 }
 
 /// Refuse the change unless `p` may make it; `None` is the system.
-pub fn require_change(p: Option<&Principal>, name: &str, security: bool, dst_allows: bool) -> Result<()> {
+pub fn require_change(
+    p: Option<&Principal>,
+    name: &str,
+    security: bool,
+    dst_allows: bool,
+) -> Result<()> {
     let k = kind(name, security);
     if k != Kind::Other && !dst_allows {
         return Err(SecError::msg(
             "CPF18B4",
-            format!("{name} cannot change: security system values are locked in dedicated service tools."),
+            format!(
+                "{name} cannot change: security system values are locked in dedicated service tools."
+            ),
         ));
     }
     let Some(p) = p else {
@@ -60,7 +67,10 @@ pub fn require_change(p: Option<&Principal>, name: &str, security: bool, dst_all
     };
     match k {
         Kind::Audit => p.require(SpecialAuth::AUDIT, &format!("change {name}")),
-        Kind::Security => p.require(SpecialAuth::ALLOBJ.union(SpecialAuth::SECADM), &format!("change {name}")),
+        Kind::Security => p.require(
+            SpecialAuth::ALLOBJ.union(SpecialAuth::SECADM),
+            &format!("change {name}"),
+        ),
         Kind::Other => p.require(SpecialAuth::ALLOBJ, &format!("change {name}")),
     }
 }

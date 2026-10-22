@@ -130,6 +130,12 @@ impl UserSpaceSource for RemoteSpaces {
             .borrow_mut()
             .with(|l| l.us_library_of(name.into(), lib.into()))
     }
+
+    fn system_domain(&mut self, name: &str, lib: &str) -> bool {
+        self.link
+            .borrow_mut()
+            .with(|l| l.us_domain(name.into(), lib.into()))
+    }
 }
 
 /// Message descriptions, remembered once fetched: they change only

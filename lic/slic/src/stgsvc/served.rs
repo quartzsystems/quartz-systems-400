@@ -713,6 +713,10 @@ impl Service for Served<'_> {
         self.lent(|c| c.spaces.library_of(&name, &lib))
     }
 
+    fn us_domain(&mut self, name: String, lib: String) -> bool {
+        self.lent(|c| c.spaces.system_domain(&name, &lib))
+    }
+
     fn describe(&mut self, msgid: String, msgf: String, lib: String) -> Option<MsgDesc> {
         self.lent(|c| c.msgs.describe(&msgid, &msgf, &lib))
     }

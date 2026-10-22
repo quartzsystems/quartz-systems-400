@@ -13,6 +13,7 @@ pub mod auth;
 pub mod cmd;
 mod error;
 pub mod guard;
+pub mod level;
 pub mod password;
 pub mod profile;
 pub mod rec;

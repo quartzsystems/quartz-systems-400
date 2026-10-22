@@ -80,6 +80,8 @@ pub struct System {
     pub attrs: std::collections::BTreeMap<u32, wm::job::JobAttrs>,
     /// The job a console command runs for (storage service).
     pub current_job: u32,
+    /// `QSECURITY` as this IPL started; a change waits for the next.
+    pub qsecurity: u8,
     /// The authority guard on ASP 1 (storage service).
     pub guard: Option<std::sync::Arc<sec::guard::SecGuard>>,
     /// Refused authority checks not yet in the audit journal.
@@ -161,6 +163,7 @@ impl System {
             break_pending: std::collections::BTreeMap::new(),
             attrs: std::collections::BTreeMap::new(),
             current_job: 0,
+            qsecurity: 40,
             guard: None,
             audit_pending: Vec::new(),
         }

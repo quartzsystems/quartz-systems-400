@@ -350,6 +350,16 @@ pub(crate) fn load(
     ))
 }
 
+/// Whether a program imports a procedure only system state may use.
+#[must_use]
+pub fn uses_privileged(object: &ProgramObject) -> bool {
+    object.imports.iter().any(|i| {
+        i.kind == ExportKind::Proc
+            && i.target == ImportTarget::System
+            && ile::binder::PRIVILEGED_PROCS.contains(&i.name.as_str())
+    })
+}
+
 /// A bound module's code: the debug variant when asked for and present.
 fn variant(bm: &ile::BoundModule, debug: bool) -> &codegen::ModuleCode {
     match (&bm.module.debug_code, debug) {
@@ -414,6 +424,8 @@ pub struct Activator {
     pub adopting_frames: usize,
     /// The adopting programs last told to the source.
     pub adopted: Vec<String>,
+    /// `QSECURITY`; 40 and up enforce domain and state.
+    pub qsecurity: u8,
 }
 
 impl Activator {
@@ -441,7 +453,24 @@ impl Activator {
             retranslated: 0,
             adopting_frames: 0,
             adopted: Vec::new(),
+            qsecurity: 0,
         }
+    }
+
+    /// Whether the running entry is in user state: its program's state;
+    /// command level (no entry) is the system's `QCMD`.
+    #[must_use]
+    pub fn user_state(&self) -> bool {
+        self.frames
+            .last()
+            .and_then(|f| f.program.as_ref())
+            .is_some_and(|p| p.object.attr.user_state)
+    }
+
+    /// Whether domain and state are enforced.
+    #[must_use]
+    pub fn enforcing(&self) -> bool {
+        self.qsecurity >= 40
     }
 
     /// The programs whose owners' authority applies now, nearest first:
@@ -576,6 +605,9 @@ impl Activator {
                 return Ok(p.clone());
             }
             self.loaded.remove(&key);
+        }
+        if self.enforcing() && object.attr.user_state && uses_privileged(&object) {
+            return Err(Cond::Mch6801);
         }
         let mut deps = Vec::with_capacity(object.srvpgms.len());
         for r in &object.srvpgms {

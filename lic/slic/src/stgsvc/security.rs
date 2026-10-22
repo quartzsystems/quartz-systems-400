@@ -61,6 +61,8 @@ pub fn install(system: &mut System) -> Result<sec::profile::shipped::Installed, 
 /// Put the guard on ASP 1. The temporary ASP has none: `QTEMP` is one
 /// job's.
 pub fn guard(system: &mut System) {
+    system.qsecurity = sysval_num(system, "QSECURITY", 40);
+    level_change(system);
     let Some(s) = system.storage.as_mut() else {
         return;
     };
@@ -82,7 +84,7 @@ pub fn refresh(system: &System) {
 /// `user`'s principal from its profile; a user with no profile has no
 /// authority of its own.
 pub fn principal(system: &mut System, user: &str) -> Principal {
-    let qsecurity = sysval_num(system, "QSECURITY", 40);
+    let qsecurity = system.qsecurity;
     let loaded = system.storage.as_mut().and_then(|s| {
         let qsys = s.qsys?;
         let mut txn = s.store.begin().ok()?;
@@ -265,4 +267,30 @@ pub fn adopted(system: &mut System, programs: &[String]) -> Vec<sec::auth::princ
         }
     }
     out
+}
+
+/// Note the level this IPL runs at; going from 20 or below to 30 or
+/// above takes `*ALLOBJ` from every profile not of class `*SECOFR`.
+fn level_change(system: &mut System) {
+    let level = system.qsecurity;
+    let Some(s) = system.storage.as_mut() else {
+        return;
+    };
+    let Some(qsys) = s.qsys else {
+        return;
+    };
+    let Ok(mut txn) = s.store.begin() else {
+        return;
+    };
+    match sec::level::ipl(&mut txn, qsys, level, crate::ipl::system::now_unix()) {
+        Ok(c) => {
+            if txn.commit().is_ok() && c.revoked > 0 {
+                eprintln!(
+                    "qsstg: security level {} to {}: *ALLOBJ taken from {} profile(s)",
+                    c.from, c.to, c.revoked
+                );
+            }
+        }
+        Err(e) => eprintln!("qsstg: security level: {e}"),
+    }
 }

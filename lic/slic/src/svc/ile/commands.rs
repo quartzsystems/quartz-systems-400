@@ -280,6 +280,16 @@ fn crtpgm(system: &mut System, p: &Params, kind: PgmKind) -> Result<String, Stri
         Some("*OWNER") => ile::UserProfile::Owner,
         Some(v) => return Err(format!("CPD0084 USRPRF({v}) is not valid")),
     };
+    // Only IBM makes system-state programs; development images let the
+    // harness make one to test state (`SECURITY.md` §6).
+    match p.upper("STATE").as_deref() {
+        None | Some("*USER") => {}
+        Some("*SYSTEM") if system.boot.svc => {
+            options.attr.user_state = false;
+            options.attr.user_domain = false;
+        }
+        Some(v) => return Err(format!("CPD0084 STATE({v}) is not valid here")),
+    }
     let mut note = String::new();
     options.attr.useadpaut = match p.upper("USEADPAUT").as_deref() {
         None | Some("*YES") => {

@@ -270,4 +270,6 @@ ipc::rpc! {
     /// nearest first; the service checks each is `USRPRF(*OWNER)`. The
     /// owners adopted.
     124 => fn adopt / Adopt (programs: Vec<String>) -> Result<Vec<String>, String>;
+    /// Whether a user space is in the system domain.
+    125 => fn us_domain / UsDomain (name: String, lib: String) -> bool;
 }

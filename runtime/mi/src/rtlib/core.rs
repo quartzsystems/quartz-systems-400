@@ -58,6 +58,9 @@ pub extern "sysv64" fn enter(env: *mut Env, code: i64, argc: i64) {
         ag = j.act.group_for(&p.object, saved_ag);
         let (base, len) = j.act.activate(p, ag);
         j.spaces.register_static(base as u64, len as u64);
+        if !p.object.attr.user_state {
+            j.spaces.register_system(base as u64, len as u64);
+        }
         e.statics = base;
         j.act.current = ag;
     }
