@@ -370,9 +370,9 @@ impl Suite {
             std::thread::sleep(Duration::from_millis(250));
         }
         want(&opr, "CPI2283", "QSYSOPR after the receiver filled")?;
-        let set = s.command("sysval QAUDENDACN *PWRDWNSYS", CMD)?;
-        want(&set, "set to", "sysval QAUDENDACN")?;
-        s.send("obj crt *DTAARA QGPL/TEMPD the last straw")?;
+        // The change itself is audited (SV): with the receiver full,
+        // that entry is the one that powers the system down.
+        s.send("sysval QAUDENDACN *PWRDWNSYS")?;
         s.expect("SRC D1001090", Duration::from_secs(60))?;
         if !s.wait_exit(Duration::from_secs(30)) {
             return Err("the system did not power off".into());
