@@ -39,6 +39,19 @@ fn key(s: &mut Session, name: &str) -> Result<(), String> {
     s.command(&format!("key {name}"), CMD).map(|_| ())
 }
 
+/// Wait until the display no longer shows `text` (a key was taken).
+fn screen_without(s: &mut Session, text: &str) -> Result<(), String> {
+    let mut last = String::new();
+    for _ in 0..40 {
+        last = s.command("screen", CMD)?;
+        if !last.contains(text) {
+            return Ok(());
+        }
+        std::thread::sleep(Duration::from_millis(250));
+    }
+    Err(format!("the console kept showing {text:?}:\n{last}"))
+}
+
 impl Suite {
     /// Step 46: QSECOFR at Command Entry creates a library through the
     /// analyzer, prompts `CRTPF` with `?` and with F4, runs it from the
@@ -78,6 +91,7 @@ impl Suite {
         key(s, "f9")?;
         let older = screen_wait(s, "===> crtpf")?;
         key(s, "f12")?;
+        screen_without(s, "===> crtpf")?;
         let _ = (retrieved, older);
         // A command the analyzer refuses: the diagnostic and CPF0001.
         entry_wait(s, "crtlib LIB(CLTEST) NOPE(1)", has(&["CPD0012"]))?;
