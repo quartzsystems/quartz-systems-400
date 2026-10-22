@@ -8,6 +8,7 @@
 //! Only parameters the caller gave or that have a default appear.
 
 use cmd::block::Parms;
+use cmd::token::Tok;
 use cmd::value::Value;
 
 /// The line for `parms` as the function behind `word` reads it.
@@ -41,7 +42,13 @@ pub fn specified_line(word: &str, parms: &Parms) -> String {
         s.push(' ');
         s.push_str(&b.kwd);
         s.push('(');
-        s.push_str(&bare_libl(v).parm_source());
+        // As the caller typed it when it typed it (special values and
+        // quotes kept); the analyzer's spelling for a block's values.
+        if b.given.is_empty() {
+            s.push_str(&bare_libl(v).parm_source());
+        } else {
+            s.push_str(&Tok::join(&b.given));
+        }
         s.push(')');
     }
     s
