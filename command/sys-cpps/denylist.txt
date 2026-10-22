@@ -19,7 +19,8 @@ os/400
 i5/os
 as/400
 iseries
-system i
+ibm system i
+ibm i 
 power systems
 specifies the name of the
 specifies whether
