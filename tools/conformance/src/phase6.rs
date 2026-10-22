@@ -394,7 +394,7 @@ impl Suite {
         want(&hist, "CPI2284", "QHST")?;
         // Auditing back on, with room.
         for cmd in [
-            "crtjrnrcv QSYS/AUDRCV2 THRESHOLD(0)",
+            "crtjrnrcv QSYS/AUDRCV2",
             "chgjrn QSYS/QAUDJRN JRNRCV(QSYS/AUDRCV2)",
             "chgsecaud QAUDCTL(*AUDLVL *OBJAUD)",
             "svc.sysval QAUDENDACN *NOTIFY",

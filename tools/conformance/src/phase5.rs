@@ -67,7 +67,7 @@ impl Suite {
         if !shown.contains("WMQTEMP") {
             return Err(format!("QTEMP does not hold the area:\n{made}{shown}"));
         }
-        let numbers = s.command("wrkactjob VIEW(3)", CMD)?;
+        let numbers = s.command("svc.wrkactjob VIEW(3)", CMD)?;
         let number = numbers
             .lines()
             .find(|l| l.trim_start().starts_with("QSVCJOB"))
@@ -108,7 +108,7 @@ impl Suite {
             return Err(format!("dspjobd:\n{shown}"));
         }
         let bad = s.command("chgjobd QGPL/WMTEST JOBPTY(12)", CMD)?;
-        if !bad.contains("CPD0085") {
+        if !bad.contains("CPD0093") {
             return Err(format!("chgjobd accepted JOBPTY(12): {bad}"));
         }
         let changed = s.command("chgjob LOG(2 20 *SECLVL) SWS(10000001)", CMD)?;
@@ -219,7 +219,7 @@ impl Suite {
         }
         s.command("crtmsgq QGPL/WMQ TEXT('Harness queue')", CMD)?;
         s.command("sndmsg MSG('Hello queue') TOMSGQ(QGPL/WMQ)", CMD)?;
-        let got = s.command("rcvmsg MSGQ(QGPL/WMQ)", CMD)?;
+        let got = s.command("svc.rcvmsg MSGQ(QGPL/WMQ)", CMD)?;
         if !got.contains("Hello queue") {
             return Err(format!("rcvmsg: {got}"));
         }
@@ -319,7 +319,7 @@ impl Suite {
     /// runs routed into the pool, `ENDSBS *IMMED` ends both.
     #[allow(clippy::unused_self)] // every step has the same shape
     pub(crate) fn subsystems(&self, s: &mut Session) -> Result<String, String> {
-        let rtg = s.command("dspsbsd QSYS/QBATCH OPTION(7)", CMD)?;
+        let rtg = s.command("dspsbsd QSYS/QBATCH OPTION(*RTGE)", CMD)?;
         if !rtg.contains("QCMDB") {
             return Err(format!("QBATCH routing entries:\n{rtg}"));
         }
@@ -719,7 +719,7 @@ impl Suite {
             &format!("cpysplf QPJOBLOG QGPL/WMSPLF JOB({job}) CTLCHAR(*FCFC)"),
             CMD,
         )?;
-        let records = s.command("dsppfm QGPL/WMSPLF NBRRCDS(2)", CMD)?;
+        let records = s.command("svc.dsppfm QGPL/WMSPLF NBRRCDS(2)", CMD)?;
         if !copied.contains("records copied") || !records.contains("1QS400") {
             return Err(format!(
                 "cpysplf:
@@ -1184,7 +1184,7 @@ impl Suite {
         s.command("endsbs QBATCH OPTION(*IMMED)", CMD)?;
         let left = poll(s, "wrkactjob", 60, |o| active_row(o, "QBATCH").is_none())?;
         if let Some(r) = active_row(&left, "QBATCH") {
-            let v2 = s.command("wrkactjob VIEW(3)", CMD)?;
+            let v2 = s.command("svc.wrkactjob VIEW(3)", CMD)?;
             let sbs = s.command("wrksbs", CMD)?;
             return Err(format!("QBATCH did not end: {r}\n{v2}\n{sbs}"));
         }
@@ -1203,8 +1203,8 @@ impl Suite {
                 "no faults in *BASE after WMMEM ran:\n{msgs}\n{sts}"
             ));
         }
-        let elapsed = s.command("wrkactjob VIEW(2)", CMD)?;
-        let threads = s.command("wrkactjob VIEW(3)", CMD)?;
+        let elapsed = s.command("svc.wrkactjob VIEW(2)", CMD)?;
+        let threads = s.command("svc.wrkactjob VIEW(3)", CMD)?;
         let disks = s.command("wrkdsksts", CMD)?;
         let top = s.command("wrksysact", CMD)?;
         let job = s.command("dspjob", CMD)?;
@@ -1519,7 +1519,7 @@ impl Suite {
     /// abnormal end, and the store checks clean.
     #[allow(clippy::unused_self)] // every step has the same shape
     pub(crate) fn killed_job(&self, s: &mut Session) -> Result<String, String> {
-        let numbers = s.command("wrkactjob VIEW(3)", CMD)?;
+        let numbers = s.command("svc.wrkactjob VIEW(3)", CMD)?;
         let old = numbers
             .lines()
             .find(|l| l.trim_start().starts_with("QSVCJOB"))
@@ -1554,7 +1554,7 @@ impl Suite {
         // slic starts the job again and shows its prompt.
         s.expect("starting it again", Duration::from_secs(10))?;
         s.expect(crate::PROMPT, Duration::from_secs(15))?;
-        let now = s.command("wrkactjob VIEW(3)", CMD)?;
+        let now = s.command("svc.wrkactjob VIEW(3)", CMD)?;
         if !now.contains("QSVCJOB") || now.contains(&old) {
             return Err(format!("QSVCJOB {old} is still listed, or none is:\n{now}"));
         }

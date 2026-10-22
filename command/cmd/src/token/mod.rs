@@ -174,6 +174,12 @@ pub fn tokenize(text: &str, opts: Options) -> Result<Tokens, CmdError> {
         opts,
     };
     let toks = lx.list(false)?;
+    structure(toks)
+}
+
+/// A token list as a command: the label, the `?`, the name and its
+/// library, then the parameters (what `tokenize` does after lexing).
+pub fn structure(toks: Vec<Tok>) -> Result<Tokens, CmdError> {
     let mut toks = toks.into_iter().peekable();
     let mut out = Tokens::default();
     let Some(first) = toks.next() else {

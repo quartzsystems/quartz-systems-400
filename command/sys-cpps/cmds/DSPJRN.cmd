@@ -36,8 +36,10 @@
              PARM       KWD(DEPENT) TYPE(*CHAR) LEN(5) RSTD(*YES) +
                           DFT(*ALL) VALUES(*ALL *NONE) +
                           PROMPT('Dependent entries')
-             PARM       KWD(FROMTIME) TYPE(E4) PROMPT('Starting date and time')
-             PARM       KWD(TOTIME) TYPE(E4) PROMPT('Ending date and time')
+             PARM       KWD(FROMTIME) TYPE(E4) DFT(*FIRST) +
+                          SNGVAL((*FIRST)) PROMPT('Starting date and time')
+             PARM       KWD(TOTIME) TYPE(E4) DFT(*LAST) +
+                          SNGVAL((*LAST)) PROMPT('Ending date and time')
              PARM       KWD(OUTPUT) TYPE(*CHAR) LEN(8) RSTD(*YES) +
                           DFT(*) VALUES(* *PRINT *OUTFILE) +
                           PROMPT('Output')

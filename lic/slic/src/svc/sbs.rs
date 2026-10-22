@@ -177,15 +177,27 @@ fn dspsbsd(system: &mut System, p: &Params) -> Result<String, String> {
     let (lib, name) = target(p)?;
     let b = sbs::wm_object(system, &format!("{lib}/{name}"), "*SBSD")?;
     let d = Sbsd::decode(&b).map_err(|e| err(&e))?;
-    let option = match p.kw("OPTION") {
-        Some(o) => Some(
-            o.trim()
-                .parse::<u8>()
-                .ok()
-                .filter(|n| (1..=10).contains(n))
-                .ok_or_else(|| format!("CPD0084 OPTION({o}) is 1 through 10"))?,
-        ),
-        None => None,
+    let option = match p.kw("OPTION").map(|o| o.trim().to_ascii_uppercase()) {
+        None | Some(_) if p.kw("OPTION").is_none() => None,
+        Some(o) => match o.as_str() {
+            "*ALL" => None,
+            "*OPRATR" => Some(1),
+            "*POOLS" => Some(2),
+            "*AJE" => Some(3),
+            "*WSNE" => Some(4),
+            "*WSTE" => Some(5),
+            "*JOBQE" => Some(6),
+            "*RTGE" => Some(7),
+            "*CMNE" => Some(8),
+            "*RMTLE" => Some(9),
+            "*PJE" => Some(10),
+            n => Some(
+                n.parse::<u8>()
+                    .ok()
+                    .filter(|n| (1..=10).contains(n))
+                    .ok_or_else(|| format!("CPD0084 OPTION({o}) is not valid"))?,
+            ),
+        },
     };
     Ok(d.display(&lib, &name, option))
 }

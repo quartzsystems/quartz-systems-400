@@ -120,7 +120,11 @@ impl Ctx<'_, '_> {
     /// takes its elements' defaults.
     pub fn default_of(&mut self, parm: &Parm, kwd: &str) -> Option<Value> {
         let Some(text) = parm.constant.as_ref().or(parm.dft.as_ref()) else {
-            if is_elem(parm) && !parm.is_list() && parm.items.iter().any(|i| i.dft.is_some()) {
+            if is_elem(parm)
+                && !parm.is_list()
+                && parm.items.iter().any(|i| i.dft.is_some())
+                && !parm.items.iter().any(Parm::required)
+            {
                 return self.bind_group(parm, kwd, &[], true);
             }
             return None;

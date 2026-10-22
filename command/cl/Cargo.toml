@@ -1,0 +1,18 @@
+[package]
+name = "cl"
+description = "QS/400 ILE CL compiler: CLLE source to the IR, with the compile listing and the debug views"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+cmd = { path = "../cmd", version = "0.1.0" }
+sys-cpps = { path = "../sys-cpps", version = "0.1.0" }
+qir = { path = "../../runtime/qir", version = "0.1.0" }
+qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+thiserror.workspace = true
+
+[lints]
+workspace = true

@@ -8,7 +8,7 @@
                           ALLOW(*ALL) HLPPNLGRP(QHMHCMD) HLPID(SNDBRKMSG)
              PARM       KWD(MSG) TYPE(*CHAR) LEN(512) MIN(1) +
                           PROMPT('Message text')
-             PARM       KWD(TOMSGQ) TYPE(*NAME) LEN(10) MIN(1) MAX(50) +
+             PARM       KWD(TOMSGQ) TYPE(QM) MIN(1) MAX(50) +
                           SNGVAL((*ALLWS)) +
                           PROMPT('To work station message queue')
              PARM       KWD(MSGTYPE) TYPE(*CHAR) LEN(5) RSTD(*YES) +
@@ -20,3 +20,6 @@
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
              P1:        PMTCTL     CTL(MSGTYPE) COND((*EQ *INQ))
+             QM:        QUAL       TYPE(*NAME) LEN(10)
+                        QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
+                          SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')

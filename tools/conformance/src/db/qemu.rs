@@ -133,7 +133,7 @@ impl Suite {
             push(s, &format!("D{name}"), &String::from_utf8_lossy(&csv))?;
             let out = s.command(
                 &format!(
-                    "cpyfrmimpf FROMSTMF(D{name}) TOFILE({}/{name}) NULLS(*YES) DATFMT(*ISO) TIMFMT(*ISO)",
+                    "cpyfrmimpf FROMSTMF(D{name}) TOFILE({}/{name}) RPLNULLVAL(*NO) DATFMT(*ISO) TIMFMT(*ISO)",
                     kit::LIBRARY
                 ),
                 CMD,

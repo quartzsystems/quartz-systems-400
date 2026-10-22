@@ -7,6 +7,7 @@
                           ALLOW(*ALL) HLPPNLGRP(QHSPCMD) HLPID(WRKSPLF)
              PARM       KWD(SELECT) TYPE(E1) PROMPT('Select files for')
              PARM       KWD(PERIOD) TYPE(E2) PROMPT('Time period')
+             PARM       KWD(JOB) TYPE(QJ) DFT(*) PROMPT('Job name')
              PARM       KWD(ASTLVL) TYPE(*CHAR) LEN(10) RSTD(*YES) +
                           DFT(*PRV) VALUES(*PRV *BASIC *INTERMED +
                           *ADVANCED) PROMPT('Assistance level')
@@ -33,3 +34,7 @@
                           SPCVAL((*AVAIL)) PROMPT('End time')
                         ELEM       TYPE(*DATE) DFT(*END) +
                           SPCVAL((*END) (*CURRENT)) PROMPT('End date')
+             QJ:        QUAL       TYPE(*NAME) LEN(10) SPCVAL((*))
+                        QUAL       TYPE(*NAME) LEN(10) PROMPT('User')
+                        QUAL       TYPE(*CHAR) LEN(6) RANGE(000000 999999) +
+                          FULL(*YES) PROMPT('Number')

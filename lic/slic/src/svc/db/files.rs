@@ -452,7 +452,7 @@ fn impf_opts(p: &Params) -> Result<ImpfOpts, String> {
             TimeFmt::from_word(&f).ok_or_else(|| format!("TIMFMT({f}) is not a time format"))?,
         );
     }
-    o.nulls = p.yes("NULLS");
+    o.nulls = p.yes("NULLS") || p.upper("RPLNULLVAL").as_deref() == Some("*NO");
     Ok(o)
 }
 
