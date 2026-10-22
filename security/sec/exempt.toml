@@ -29,7 +29,7 @@ fns = ["resolve_members", "undo", "apply"]
 
 [file."database/db/src/member/mod.rs"]
 reason = "members are reached through a file the caller checked (open, CLRPFM, RGZPFM, ADDPFM)"
-fns = ["load", "base_members", "read_slot", "invalidate", "create", "create_logical", "destroy", "open", "open_by", "open_base", "next_identity", "read", "scan", "delete", "clear", "set_reuse_deleted", "set_limits", "refresh", "keys", "keys_back", "read_entry", "ensure_path", "rebuild_path"]
+fns = ["load", "base_members", "read_slot", "invalidate", "create", "create_logical", "destroy", "open", "open_by", "open_base", "next_identity", "read", "scan", "delete", "clear", "set_reuse_deleted", "set_limits", "refresh", "keys", "keys_back", "read_entry", "ensure_path", "rebuild_path", "read_entries", "reformat"]
 
 [file."database/db/src/member/join.rs"]
 reason = "a join is read through the logical member the caller opened and checked"
@@ -37,11 +37,11 @@ fns = ["expand"]
 
 [file."database/db/src/odp/mod.rs"]
 reason = "record I/O through an open data path: authority was checked when it opened (check_open)"
-fns = ["allocate", "deallocate", "close", "after_commit", "setll", "setgt", "read", "readp", "reade", "readpe", "chain", "write", "update", "delete", "delete_key", "unlock_op", "feod"]
+fns = ["allocate", "deallocate", "close", "after_commit", "setll", "setgt", "read", "readp", "reade", "readpe", "chain", "write", "update", "delete", "delete_key", "unlock_op", "feod", "next_identity"]
 
 [file."database/db/src/odp/session.rs"]
 reason = "the job's own session: its opens were checked"
-fns = ["close", "clof", "strcmtctl", "commit", "rollbck", "endcmtctl", "end"]
+fns = ["close", "clof", "strcmtctl", "commit", "rollbck", "endcmtctl", "end", "reclaim_in", "strcmtctl_in"]
 
 [file."database/db/src/source/mod.rs"]
 reason = "source reads for a member the caller checked"
@@ -61,7 +61,7 @@ fns = ["new", "next", "seek"]
 
 [file."database/jrn/src/journal/mod.rs"]
 reason = "journal plumbing: the db commands check the journal (jrn.attach, jrn.change) before calling"
-fns = ["crtjrn", "load", "save", "receivers", "objects", "object", "add_object", "remove_object", "attached", "append", "sndjrne", "chain"]
+fns = ["crtjrn", "load", "save", "receivers", "objects", "object", "add_object", "remove_object", "attached", "append", "sndjrne", "chain", "delete_saved"]
 
 [file."database/jrn/src/rcv/mod.rs"]
 reason = "receiver plumbing under a checked journal"
