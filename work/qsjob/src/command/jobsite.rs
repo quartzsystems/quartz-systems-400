@@ -265,7 +265,12 @@ fn call(job: &mut Job, _host: &Host, parms: &cmd::Parms) -> Result<String, Fail>
     // user at Command Entry would see it.
     for m in job.ext_msgq.msgs.iter().skip(ext_before) {
         let text = m.text.trim_end();
-        if !text.is_empty() && m.msg_type != qir::MsgType::Escape {
+        // Inquiries were answered on their own queue; escapes end the call.
+        let shown = !matches!(
+            m.msg_type,
+            qir::MsgType::Escape | qir::MsgType::Inq | qir::MsgType::Rpy
+        );
+        if !text.is_empty() && shown {
             out.push_str(text);
             out.push('\n');
         }

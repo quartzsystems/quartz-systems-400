@@ -100,6 +100,10 @@ In memory, release build, one core of the development machine
   the compiler keeps intermediate results in `varchar` temps and
   copies them into fixed storage only where an instruction takes the
   bytes as they lie.
+- A user command's `VLDCKR` program sees the block before the
+  processing program; `LOGCLPGM(*YES)` logs each command a CL program
+  runs as a request of that program; `EVAL &VAR` in the debugger names
+  a CL variable as the source spells it.
 - The runtime learned two things: a message to `*PRV` from the first
   entry goes to the job's external queue, and an escape there ends the
   call with the exception pending; the parser now remaps monitor
@@ -130,6 +134,10 @@ In memory, release build, one core of the development machine
   functions (`msgf::store`, `sql::run`) that a later batch of direct
   implementations can reach; the device, PTF and hardware ones wait
   for their phases.
+- **`PRDLIB` and `CURLIB` on a command definition** are kept in the
+  object and not applied to the library list while the command runs.
+- **`QCAPCMD`'s retrieve option** (the previous command of the job) is
+  not kept; F9 at Command Entry is the job's own list.
 - **The `CPD0030` fallback** to the old console words without `svc.`
   stays (`MIGRATE(phase7)` in `work/qsjob/src/command/mod.rs`) until
   every script of the harness and every note of the docs says `svc.`;
