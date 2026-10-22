@@ -81,7 +81,7 @@ impl Gen<'_, '_> {
         let list = args.join(", ");
         match target {
             CallTarget::Name(name, lib) if lib == "*LIBL" => {
-                self.ins(&format!("call {name}({list})"))
+                self.ins(&format!("call {name}({list})"));
             }
             CallTarget::Name(name, lib) => self.ins(&format!("call {lib}/{name}({list})")),
             CallTarget::Var(v) => match self.t.var(v) {
@@ -207,7 +207,7 @@ impl Gen<'_, '_> {
             if let Some(v) = self.t.var(t.var()) {
                 match v.ty {
                     VarType::Dec | VarType::Int | VarType::Uint => {
-                        self.ins(&format!("dec.mov {}, $_srv", v.place()))
+                        self.ins(&format!("dec.mov {}, $_srv", v.place()));
                     }
                     _ => self.err(
                         s.line,
@@ -334,7 +334,7 @@ impl Gen<'_, '_> {
                     if let Some(v) = self.t.var(&fd.name) {
                         match v.ty {
                             VarType::Dec => {
-                                self.ins(&format!("dec.mov {}, {rec}.{}", v.place(), fd.name))
+                                self.ins(&format!("dec.mov {}, {rec}.{}", v.place(), fd.name));
                             }
                             _ => self.ins(&format!("mov {}, {rec}.{}", v.place(), fd.name)),
                         }
@@ -639,7 +639,7 @@ impl Gen<'_, '_> {
             };
             match v.ty {
                 VarType::Dec | VarType::Int | VarType::Uint => {
-                    self.ins(&format!("dec.mov {}, {field}", v.place()))
+                    self.ins(&format!("dec.mov {}, {field}", v.place()));
                 }
                 VarType::Lgl => self.ins(&format!("cvt {}, {field}", v.place())),
                 _ => self.ins(&format!("mov {}, {field}", v.place())),

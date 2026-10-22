@@ -272,7 +272,7 @@ impl Gen<'_, '_> {
                     .push(format!("  auto {}: {}", v.place(), v.qir_type())),
                 Stg::Based(p) => {
                     self.decls
-                        .push(format!("  based {}: {} on ${p}", v.place(), v.qir_type()))
+                        .push(format!("  based {}: {} on ${p}", v.place(), v.qir_type()));
                 }
                 Stg::Defined(..) => {
                     self.decls.push(format!("  auto $_dp_{}: ptr", v.name));
@@ -362,7 +362,7 @@ impl Gen<'_, '_> {
                 match v.ty {
                     VarType::Char => self.ins(&format!("mov {}, *BLANKS", v.place())),
                     VarType::Dec | VarType::Int | VarType::Uint => {
-                        self.ins(&format!("dec.mov {}, 0", v.place()))
+                        self.ins(&format!("dec.mov {}, 0", v.place()));
                     }
                     VarType::Lgl => self.ins(&format!("store {}, *OFF", v.place())),
                     VarType::Ptr => {}
@@ -379,7 +379,7 @@ impl Gen<'_, '_> {
             (VarType::Char, Lit::Hex(b)) => self.ins(&format!("mov {place}, {}", expr::qhex(b))),
             (VarType::Char, Lit::Num(n)) => self.ins(&format!("mov {place}, {}", expr::qstr(n))),
             (VarType::Dec | VarType::Int | VarType::Uint, Lit::Num(n)) => {
-                self.ins(&format!("dec.mov {place}, {n}"))
+                self.ins(&format!("dec.mov {place}, {n}"));
             }
             (VarType::Dec | VarType::Int | VarType::Uint, Lit::Str(s)) => {
                 self.ins(&format!("cvt {place}, {}", expr::qstr(s)));

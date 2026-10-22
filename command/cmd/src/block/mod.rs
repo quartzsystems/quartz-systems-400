@@ -338,7 +338,7 @@ pub fn read(def: &CmdDef, segments: &[Segment], specified: &[bool]) -> Result<Pa
                             value: None,
                             specified: false,
                             sel: None,
-            given: Vec::new(),
+                            given: Vec::new(),
                         });
                         continue;
                     }
@@ -349,7 +349,7 @@ pub fn read(def: &CmdDef, segments: &[Segment], specified: &[bool]) -> Result<Pa
                     value: Some(v),
                     specified: specified_atr,
                     sel: None,
-            given: Vec::new(),
+                    given: Vec::new(),
                 });
                 continue;
             }
@@ -614,6 +614,31 @@ impl Parms {
             }
         }
         s
+    }
+}
+
+/// The most bytes a parameter's segment can hold: what a processing
+/// program called with raw addresses reads before decoding.
+#[must_use]
+pub fn max_len(p: &Parm) -> usize {
+    let one = if p.ty.is_group() {
+        group_len(p)
+    } else {
+        scalar_size(p)
+    };
+    let body = if p.is_list() {
+        2 + usize::from(p.max) * (one + usize::from(matches!(p.ty, ParmType::Elem { .. })) * 2)
+    } else {
+        one
+    };
+    body + usize::from(p.passatr)
+}
+
+fn group_len(p: &Parm) -> usize {
+    match &p.ty {
+        ParmType::Qual { .. } => p.items.iter().map(scalar_size).sum(),
+        ParmType::Elem { .. } => 2 + p.items.iter().map(max_len).sum::<usize>(),
+        _ => scalar_size(p),
     }
 }
 

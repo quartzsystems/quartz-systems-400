@@ -272,6 +272,7 @@ impl Console {
                 debug::session(job, stop, &mut ctl.borrow_mut(), &inbox)
             }));
             crate::command::install_hook(&mut job, &self.host);
+            crate::command::natives::install(&mut job, &self.host);
             self.provider = Some(provider);
             self.job = Some(job);
             self.refresh_libl();

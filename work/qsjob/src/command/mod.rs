@@ -12,6 +12,7 @@
 //! own console table (the development commands).
 
 pub mod jobsite;
+pub mod natives;
 pub mod prompt;
 
 use std::rc::Rc;
@@ -68,6 +69,9 @@ pub struct Outcome {
     pub srcs: Vec<String>,
     /// The system values when they changed.
     pub sysvals: Option<Vec<u8>>,
+    /// The parameter block as the processing program left it, for
+    /// `RTNVAL(*YES)` parameters.
+    pub segments: Option<Vec<cmd::Segment>>,
 }
 
 /// The mode: run, check only, prompt then run, prompt and return.
@@ -206,6 +210,17 @@ fn prompt(
 }
 
 /// Run a resolved command where its processing program lives.
+/// Run a command already resolved (a processing program called by
+/// name with its block).
+pub fn dispatch_resolved(job: &mut Job, host: &Host, r: &Resolved) -> Outcome {
+    let out = Outcome {
+        name: r.name.clone(),
+        changed: r.text(),
+        ..Outcome::default()
+    };
+    dispatch(job, host, r, out)
+}
+
 fn dispatch(job: &mut Job, host: &Host, r: &Resolved, mut out: Outcome) -> Outcome {
     let entry = (r.lib == "QSYS")
         .then(|| sys_cpps::entry(&r.name))
@@ -242,6 +257,7 @@ fn service(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
     out.prompt = Some(reply.prompt);
     out.srcs = reply.srcs;
     out.sysvals = reply.sysvals;
+    out.segments = Some(reply.segments);
     match reply.escape {
         Some(e) => {
             let mut text = reply.text;
@@ -403,7 +419,7 @@ fn shown(job: &mut Job, f: &Fail) -> String {
 }
 
 /// A message to the job log, on the external queue.
-fn log(job: &mut Job, msgid: &str, data: &[u8], kind: MsgType, text: Option<&str>) {
+pub(crate) fn log(job: &mut Job, msgid: &str, data: &[u8], kind: MsgType, text: Option<&str>) {
     let text = text.filter(|t| !t.is_empty()).map(|t| {
         let t = t.trim_end();
         t.strip_prefix(msgid).map_or(t, str::trim_start).to_string()

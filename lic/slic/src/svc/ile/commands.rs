@@ -69,7 +69,7 @@ fn ctx(txn: &mut Txn<'_>, qsys: ObjectId) -> Ctx {
 }
 
 /// Run `f` in the store that holds `lib`, with the library's id.
-fn in_store<T>(
+pub(crate) fn in_store<T>(
     system: &mut System,
     lib: &str,
     f: impl FnOnce(&mut Txn<'_>, &Ctx, ObjectId) -> Result<T, String>,

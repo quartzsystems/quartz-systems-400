@@ -35,6 +35,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
             let out = old(system, &format!("obj dlt *LIB QSYS/{lib}"));
             finish(out, name, "CPC2194", &[(&lib, 10)])
         }
+        "CRTBNDCL" | "CRTCLMOD" | "CRTCLPGM" | "RTVCLSRC" => super::clpgm::run(system, name, parms),
         "CLRLIB" => clrlib(system, &parms.name("LIB")),
         "DSPLIB" | "WRKLIB" => {
             let lib = parms.name("LIB");
@@ -151,7 +152,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
 
 /// A library name for the old commands: `*LIBL` and `*CURLIB` as they
 /// take them.
-fn lib_or(l: &str) -> String {
+pub(super) fn lib_or(l: &str) -> String {
     if l.is_empty() {
         "*LIBL".into()
     } else {
@@ -194,7 +195,7 @@ fn finish(text: String, name: &str, comp: &str, fields: &[(&str, usize)]) -> Cmd
 }
 
 /// Run `f` on ASP 1 in a transaction with the job's names.
-fn in_store<T>(
+pub(super) fn in_store<T>(
     system: &mut System,
     f: impl FnOnce(&mut Txn<'_>, ObjectId, &ops::NameContext) -> Result<T, String>,
 ) -> Result<T, String> {
@@ -383,7 +384,7 @@ fn wrksysval(system: &mut System, which: &str) -> CmdReply {
 }
 
 /// The source of a member, for `CRTCMD`.
-fn member_text(
+pub(super) fn member_text(
     txn: &mut Txn<'_>,
     qsys: ObjectId,
     names: &ops::NameContext,
