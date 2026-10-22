@@ -101,6 +101,32 @@ pub struct State {
     pub sql: Option<SqlContext>,
     /// `OVRPRTF`s in effect, oldest first.
     pub prt_overrides: Vec<crate::stgsvc::prtf::PrtOverride>,
+    /// `OVRMSGF`s in effect, oldest first.
+    pub msgf_overrides: Vec<MsgfOvr>,
+}
+
+/// One `OVRMSGF`: lookups of `file` go to `to` (library, name).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MsgfOvr {
+    /// `MSGF`.
+    pub file: String,
+    /// `TOMSGF` as (library, name).
+    pub to: (String, String),
+    /// The call level that issued it.
+    pub level: u32,
+    /// `SECURE(*YES)`.
+    pub secure: bool,
+}
+
+/// The override in effect for message file `file`: the deepest call
+/// level's.
+#[must_use]
+pub fn msgf_target(table: &[MsgfOvr], file: &str) -> Option<(String, String)> {
+    table
+        .iter()
+        .filter(|o| o.file.eq_ignore_ascii_case(file))
+        .max_by_key(|o| o.level)
+        .map(|o| o.to.clone())
 }
 
 /// The prompt the mode wants.
@@ -184,6 +210,10 @@ pub fn command(system: &mut System, cmd: &str, args: &[&str], line: &str) -> Opt
         "rmvm" => files::rmvm(system, &p),
         "clrpfm" => files::clrpfm(system, &p),
         "rgzpfm" => files::rgzpfm(system, &p),
+        "inzpfm" => files::inzpfm(system, &p),
+        "chgpf" => files::chgpf(system, &p),
+        "agend" => journal::agend(system, &p),
+        "ovrmsgf" => journal::ovrmsgf(system, &p),
         "cpyf" => files::cpyf(system, &p),
         "cpytoimpf" => files::cpytoimpf(system, &p),
         "cpyfrmimpf" => files::cpyfrmimpf(system, &p),

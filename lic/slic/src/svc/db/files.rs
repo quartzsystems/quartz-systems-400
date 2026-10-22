@@ -294,6 +294,57 @@ pub fn clrpfm(system: &mut System, p: &Params) -> Result<String, String> {
     })
 }
 
+/// `inzpfm LIB/FILE [MBR(M)] [RECORDS(*DFT|*DLT)] [TOTRCDS(n)]`.
+pub fn inzpfm(system: &mut System, p: &Params) -> Result<String, String> {
+    let qual = p.pos_or(0, "FILE")?;
+    let mbr = member_spec(p, "MBR")?;
+    let deleted = match p.upper("RECORDS").as_deref() {
+        None | Some("*DFT") => false,
+        Some("*DLT") => true,
+        Some(v) => return Err(format!("CPD0084 RECORDS({v}) is not *DFT or *DLT")),
+    };
+    let n: u64 = p.num::<u64>("TOTRCDS")?.unwrap_or(1);
+    let (store, ctx) = db(system)?;
+    let job = ctx.session.job();
+    with_txn(store, |txn| {
+        let id = file_id(txn, ctx, &qual)?;
+        let n = util::inzpfm(txn, job, id, mbr, n, deleted).map_err(|e| db_err(&e))?;
+        Ok(format!("{n} record(s) initialized in {qual}."))
+    })
+}
+
+/// `chgpf LIB/FILE SRCFILE(LIB/SRC) [SRCMBR(M)]`: the file takes the
+/// member's DDS, its data converted when the format changed.
+pub fn chgpf(system: &mut System, p: &Params) -> Result<String, String> {
+    let qual = p.pos_or(0, "FILE")?;
+    let name = object_name(&qual)?;
+    let (store, ctx) = db(system)?;
+    let job = ctx.session.job();
+    with_txn(store, |txn| {
+        let id = file_id(txn, ctx, &qual)?;
+        let fname = SqlContext::sys_name(&name.name).map_err(|e| e.to_string())?;
+        let (src, text) = source(txn, ctx, p, fname)?;
+        let (refs, _) = refs_for(txn, ctx, &text);
+        let comp = compile_pf(
+            &src,
+            &refs,
+            &CompileOpts {
+                file: Some(fname.to_string()),
+                ..CompileOpts::default()
+            },
+        );
+        let Some(def) = comp.definition else {
+            return Err(format!("File {qual} not changed.\n{}", comp.listing));
+        };
+        db::chg::chgpf_srcfile(txn, job, id, &def).map_err(|e| db_err(&e))?;
+        Ok(format!(
+            "File {qual} changed from source: {} fields, {} key(s).",
+            def.format.fields.len(),
+            def.format.keys.len()
+        ))
+    })
+}
+
 /// `rgzpfm LIB/FILE [MBR(M)] [KEYFILE(*FILE|LIB/LF)]`.
 pub fn rgzpfm(system: &mut System, p: &Params) -> Result<String, String> {
     let qual = p.pos_or(0, "FILE")?;

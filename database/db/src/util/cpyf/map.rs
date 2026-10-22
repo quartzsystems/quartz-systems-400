@@ -106,7 +106,7 @@ fn fields(from: &FormatDef, to: &FormatDef, map: bool, drop: bool) -> Result<Pla
 }
 
 /// A field's `DFT`, with whether it is the null value.
-fn default_of(f: &dds::FieldDef) -> Result<(Value, bool)> {
+pub(crate) fn default_of(f: &dds::FieldDef) -> Result<(Value, bool)> {
     Ok(match &f.default {
         Some(DefaultValue::Null) => (Value::Null, f.allow_null),
         Some(DefaultValue::Quoted(q)) => (

@@ -275,10 +275,10 @@ Service console (serial, dev builds): `help`, `srcs [table]`, `hist`, `hw`,
 `key NAME`, `type TEXT` (`QTEMP/NAME` addresses the temporary ASP); database:
 `xfer put|get|ls|rm` (named line buffers pushed over serial), `crtpf`, `crtlf`,
 `dltf`, `addpfm`, `rmvm`, `clrpfm`, `rgzpfm`, `cpyf`, `cpytoimpf`, `cpyfrmimpf`,
-`dspfd`, `dspffd`, `dsppfm`, `dspdbr`, `srcput`, `srcget`, `crtjrnrcv`, `crtjrn`,
+`inzpfm`, `chgpf` (SRCFILE), `dspfd`, `dspffd`, `dsppfm`, `dspdbr`, `srcput`, `srcget`, `crtjrnrcv`, `crtjrn`,
 `chgjrn`, `dltjrn`, `dltjrnrcv`, `dspjrnrcva`, `strjrnpf`, `endjrnpf`, `dspjrn`,
 `apyjrnchg`, `rmvjrnchg`, `strcmtctl`, `commit`, `rollbck`, `endcmtctl`, `ovrdbf`,
-`dltovr`, `sql` (line mode, `;` ends a statement, `quit` leaves), `sqlrun NAME`
+`dltovr`, `ovrmsgf`, `opnqryf`, `clof`, `sql` (line mode, `;` ends a statement, `quit` leaves), `sqlrun NAME`
 (RUNSQLSTM over an xfer buffer), `naming`, `curlib`, `rla [NAME]` (scripted RLA
 with expected status codes), `dbbench N`; ILE: `qir asm|check|dis`, `crtpgm`,
 `crtsrvpgm`, `updpgm`, `crtbnddir`, `addbnddire`, `call LIB/PGM [parms]`, `dsppgm`,

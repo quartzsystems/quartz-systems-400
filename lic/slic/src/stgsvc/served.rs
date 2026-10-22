@@ -391,11 +391,15 @@ impl Service for Served<'_> {
         std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
         // One override table per job: what command level changed reaches
         // the programs' opens.
-        if matches!(line.split_whitespace().next(), Some("ovrdbf" | "dltovr"))
-            && let Some(sql) = self.ctx.svc.sql.as_ref()
-        {
-            let table = sql.session.overrides().to_vec();
-            self.ctx.io.session().set_overrides(table);
+        if matches!(
+            line.split_whitespace().next(),
+            Some("ovrdbf" | "dltovr" | "ovrmsgf" | "agend")
+        ) {
+            if let Some(sql) = self.ctx.svc.sql.as_ref() {
+                let table = sql.session.overrides().to_vec();
+                self.ctx.io.session().set_overrides(table);
+            }
+            self.ctx.msgs.overrides.clone_from(&self.ctx.svc.msgf_overrides);
         }
         ile::set_libl(None);
         self.root_qtemp(root);
@@ -983,11 +987,12 @@ impl Service for Served<'_> {
         let mut reply = crate::cpp::run(self.system, &name, &parms, &typed);
         reply.prompt = svc::db::prompt(self.system).to_string();
         std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
-        if matches!(name.as_str(), "OVRDBF" | "DLTOVR")
-            && let Some(sql) = self.ctx.svc.sql.as_ref()
-        {
-            let table = sql.session.overrides().to_vec();
-            self.ctx.io.session().set_overrides(table);
+        if matches!(name.as_str(), "OVRDBF" | "DLTOVR" | "OVRMSGF") {
+            if let Some(sql) = self.ctx.svc.sql.as_ref() {
+                let table = sql.session.overrides().to_vec();
+                self.ctx.io.session().set_overrides(table);
+            }
+            self.ctx.msgs.overrides.clone_from(&self.ctx.svc.msgf_overrides);
         }
         ile::set_libl(None);
         self.root_qtemp(root);

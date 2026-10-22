@@ -33,6 +33,7 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         "CHGLF" => chglf(system, parms),
         "CHGPFM" | "CHGLFM" => chgpfm(system, parms),
         "RNMM" => rnmm(system, parms),
+        "INZPFM" => inzpfm(system, parms),
         "CPYSRCF" => cpysrcf(system, parms),
         "RUNSQL" => return Some(runsql(system, parms)),
         "RUNSQLSTM" => return Some(runsqlstm_cmd(system, parms)),
@@ -123,12 +124,26 @@ fn text_change(parms: &Parms) -> Option<String> {
 }
 
 fn chgpf(system: &mut System, name: &str, parms: &Parms) -> Result<String, String> {
-    if parms.specified("SRCFILE") {
-        return Err(format!(
-            "CPF0006 {name} SRCFILE: changing the record format waits for the database conversion"
-        ));
-    }
     let q = parms.qual("FILE");
+    let mut out = String::new();
+    if parms.specified("SRCFILE") && name == "CHGPF" {
+        let (sn, sl) = parms.qual("SRCFILE");
+        let mbr = {
+            let m = parms.name("SRCMBR");
+            if m.is_empty() || m == "*FILE" { q.0.clone() } else { m }
+        };
+        let line = format!(
+            "chgpf {}/{} SRCFILE({}/{sn}) SRCMBR({mbr})",
+            lib_or(&q.1),
+            q.0,
+            lib_or(&sl)
+        );
+        let r = super::direct::old(system, &line);
+        if super::leading_msgid(r.trim()).is_some_and(|id| !id.starts_with("CPC")) {
+            return Err(r.trim_end().to_string());
+        }
+        out = r;
+    }
     let mut c = ChgPf {
         now: now_unix(),
         ..ChgPf::default()
@@ -183,8 +198,28 @@ fn chgpf(system: &mut System, name: &str, parms: &Parms) -> Result<String, Strin
     in_store(system, |txn, qsys, names| {
         let id = file(txn, qsys, names, &q)?;
         db::chg::chgpf(txn, job, id, &c).map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF3204")))?;
-        Ok(format!("File {} changed.\n", q.0))
+        Ok(format!("{out}File {} changed.\n", q.0))
     })
+}
+
+/// `INZPFM`: through the console word.
+fn inzpfm(system: &mut System, parms: &Parms) -> Result<String, String> {
+    let q = parms.qual("FILE");
+    let mbr = parms.name("MBR");
+    let records = parms.name("RECORDS");
+    let n = parms.int("TOTRCDS").unwrap_or(1);
+    let line = format!(
+        "inzpfm {}/{} MBR({}) RECORDS({}) TOTRCDS({n})",
+        lib_or(&q.1),
+        q.0,
+        if mbr.is_empty() { "*FIRST" } else { &mbr },
+        if records.is_empty() { "*DFT" } else { &records }
+    );
+    let r = super::direct::old(system, &line);
+    if super::leading_msgid(r.trim()).is_some_and(|id| !id.starts_with("CPC")) {
+        return Err(r.trim_end().to_string());
+    }
+    Ok(r)
 }
 
 fn chglf(system: &mut System, parms: &Parms) -> Result<String, String> {

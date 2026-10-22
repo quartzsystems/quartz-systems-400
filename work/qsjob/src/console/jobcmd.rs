@@ -21,7 +21,7 @@ pub fn command(job: &mut Job, host: &Host, cmd: &str, line: &str) -> String {
     let p = Params::parse(line);
     let r = match cmd {
         "dspactgrp" => Ok(job.actgrp_text()),
-        "rclactgrp" => rclactgrp(job, &p),
+        "rclactgrp" => rclactgrp(job, host, &p),
         "dspcallstk" => Ok(job.call_stack_text()),
         "dspmsgq" => Ok(dspmsgq(job, &p)),
         "rpy" => rpy(job, &p),
@@ -139,14 +139,19 @@ fn wrkjob(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
 }
 
 /// `RCLACTGRP ACTGRP(NAME|*ELIGIBLE)`.
-fn rclactgrp(job: &mut Job, p: &Params) -> Result<String, String> {
+fn rclactgrp(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
     let name = p.pos_or(0, "ACTGRP")?.to_ascii_uppercase();
     if name == "*ELIGIBLE" {
         job.rclactgrp_eligible();
         return Ok("Eligible activation groups reclaimed.\n".to_string());
     }
     Ok(match job.rclactgrp(&name) {
-        Ok(()) => format!("Activation group {name} reclaimed.\n"),
+        Ok(()) => {
+            // The service drops the group's overrides and commitment
+            // definition.
+            let _ = host.exec(&format!("agend ACTGRP({name})"));
+            format!("Activation group {name} reclaimed.\n")
+        }
         Err(e) => format!("{e}\n"),
     })
 }

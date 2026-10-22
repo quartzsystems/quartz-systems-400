@@ -382,7 +382,8 @@ pub fn ovrdbf(system: &mut System, p: &Params) -> Result<String, String> {
 }
 
 /// `dltovr FILE(F|*ALL) [LVL(*|*JOB) CALLLVL(n)]`, or `dltovr ENDLVL(n)`
-/// from the job when call level `n` returned.
+/// from the job when call level `n` returned. Message file overrides
+/// go with the database and printer ones.
 pub fn dltovr(system: &mut System, p: &Params) -> Result<String, String> {
     if let Some(n) = p.kw("ENDLVL") {
         let level: u32 = n
@@ -392,6 +393,9 @@ pub fn dltovr(system: &mut System, p: &Params) -> Result<String, String> {
         let (_, ctx) = db(system)?;
         let k = ctx.session.end_level(level);
         let k = k + super::prtf::end_level(system, level);
+        let before = system.svc.msgf_overrides.len();
+        system.svc.msgf_overrides.retain(|o| o.level < level);
+        let k = k + before - system.svc.msgf_overrides.len();
         return Ok(format!("{k} override(s) deleted."));
     }
     let file = p.pos_or(0, "FILE")?;
@@ -409,5 +413,46 @@ pub fn dltovr(system: &mut System, p: &Params) -> Result<String, String> {
         ctx.session.dltovr_at(fname, level)
     };
     let n = n + super::prtf::dltovr(system, &file, (!every_level).then_some(level));
+    let before = system.svc.msgf_overrides.len();
+    system.svc.msgf_overrides.retain(|o| {
+        (!every_level && o.level != level) || (!file.eq_ignore_ascii_case("*ALL") && !o.file.eq_ignore_ascii_case(&file))
+    });
+    let n = n + before - system.svc.msgf_overrides.len();
     Ok(format!("{n} override(s) deleted."))
+}
+
+/// `ovrmsgf MSGF(F) TOMSGF(LIB/F) [SECURE(*YES)] [CALLLVL(n)]`.
+pub fn ovrmsgf(system: &mut System, p: &Params) -> Result<String, String> {
+    let file = p.pos_or(0, "MSGF")?.to_ascii_uppercase();
+    Name::parse(&file).map_err(|e| format!("CPD0078 MSGF({file}): {e}"))?;
+    let to = p.pos_or(1, "TOMSGF")?.to_ascii_uppercase();
+    let (lib, name) = to
+        .split_once('/')
+        .map_or(("*LIBL", to.as_str()), |(l, n)| (l, n));
+    Name::parse(name).map_err(|e| format!("CPD0078 TOMSGF({to}): {e}"))?;
+    let level = call_level(p);
+    let table = &mut system.svc.msgf_overrides;
+    table.retain(|o| o.file != file || o.level != level);
+    table.push(super::MsgfOvr {
+        file: file.clone(),
+        to: (lib.to_string(), name.to_string()),
+        level,
+        secure: p.upper("SECURE").as_deref() == Some("*YES"),
+    });
+    Ok(format!(
+        "Override of message file {file} in effect ({} message file override(s)).",
+        table.len()
+    ))
+}
+
+/// `agend ACTGRP(name)`: the job says a named activation group ended:
+/// its overrides and its commitment definition go.
+pub fn agend(system: &mut System, p: &Params) -> Result<String, String> {
+    let name = p.pos_or(0, "ACTGRP")?.to_ascii_uppercase();
+    let (store, ctx) = db(system)?;
+    ctx.session.reclaim(&name);
+    with_txn(store, |txn| {
+        ctx.session.reclaim_in(txn, &name);
+        Ok(String::new())
+    })
 }

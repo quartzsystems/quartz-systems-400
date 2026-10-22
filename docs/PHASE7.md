@@ -126,13 +126,11 @@ In memory, release build, one core of the development machine
 - **Save and restore** (`SAVLIB`, `RSTLIB`, `CHKTAP`) are stubs for
   Phase 11.
 - **Unsupported commands**, defined and analyzed but without a
-  processing program: `CLOF`, `OPNQRYF`, `POSDBF` (the database
-  stream's shared query path), `CPYLIB` (a generic object copy comes
-  with save and restore),
-  `INZPFM` (default records), `OVRMSGF` (a per-job message file table
-  in the lookup), `TFRJOB`, and the display-bound `CRTDEVDSP`, `CRTDSPF`,
+  processing program: `POSDBF` (positioning a shared query path by
+  `OPNID`), `CPYLIB` (a generic object copy comes with save and
+  restore), `TFRJOB`, and the display-bound `CRTDEVDSP`, `CRTDSPF`,
   `DSPMODSRC`, `EDTLIBL` and `STRSQL`. The cleanup after Phase 7 gave
-  the other 45 processing programs: the message file, `CHGPF`/`CHGLF`/
+  the other 50 processing programs: the message file, `CHGPF`/`CHGLF`/
   member, `RUNSQL`/`RUNSQLSTM`, journal, lock, library, override
   display, network attribute, device, software resource and PTF
   commands run directly in the service; `RTVMBRD`, `RTVUSRPRF`,

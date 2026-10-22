@@ -158,7 +158,7 @@ pub const DIRECT: &[&str] = &[
     "CRTDTAQ", "CRTLIB", "CRTMSGF", "CRTPRXCMD", "DLCOBJ", "DLTAUTL", "DLTBNDDIR", "DLTCMD",
     "DLTDTAARA", "DLTDTAQ", "DLTLIB", "DLTMOD", "DLTMSGF", "DLTPGM", "DLTPRXCMD", "DLTSRVPGM",
     "DSPCMD", "DSPDEVD", "DSPDTAARA", "DSPLIB", "DSPNETA", "DSPOBJD", "DSPOVR", "DSPPTF",
-    "DSPSFWRSC", "DSPSYSVAL", "GO", "MOVOBJ", "MRGMSGF", "RCLSTG", "RCLTMPSTG", "RMVBNDDIRE",
+    "DSPSFWRSC", "DSPSYSVAL", "GO", "INZPFM", "MOVOBJ", "MRGMSGF", "RCLSTG", "RCLTMPSTG", "RMVBNDDIRE",
     "RMVMSGD", "RNMM", "RNMOBJ", "RTVCLSRC", "RUNSQL", "RUNSQLSTM", "SNDJRNE", "UPDSRVPGM",
     "VRYCFG", "WRKCFGSTS", "WRKJRN", "WRKJRNA", "WRKLIB", "WRKOBJ", "WRKOBJLCK", "WRKSYSVAL",
 ];
@@ -188,6 +188,7 @@ pub const BRIDGE_WORDS: &[&str] = &[
     "addaje", "addautle", "addbnddire", "addjobqe", "addjobscde", "addlible", "addpfm",
     "addpje", "addrpyle", "addrtge", "addwse", "anzdftpwd", "anzprfact", "apyjrnchg", "asp",
     "chgautle", "chgcls", "chgcurlib", "chgjob", "chgjobd", "chgjobq", "chgjobqe", "chgjobscde",
+    "clof",
     "chgjrn", "chglibl", "chgmsgq", "chgobjaud", "chgobjown", "chgobjpgp", "chgoutq",
     "chgpje", "chgprtf", "chgrpyle", "chgrtge", "chgsbsd", "chgsecaud", "chgshrpool",
     "chgsplfa", "chgsyslibl", "chgusraud", "chgusrprf", "chgwtr", "chkobj", "chkstg",
@@ -203,7 +204,7 @@ pub const BRIDGE_WORDS: &[&str] = &[
     "dspsbsd", "dspsecaud", "dspsplf", "dspsrvpgm", "dspusrprf", "dtaara", "dtaq",
     "edtobjaut", "endcmtctl", "endjob", "endjrnpf", "endsbs", "endwtr", "grtobjaut",
     "grtusraut", "hldjob", "hldjobq", "hldjobscde", "hldoutq", "hldsplf", "hldwtr", "hw",
-    "lib", "mirror", "naming", "obj", "ovrdbf", "ovrprtf", "prtadpobj",
+    "lib", "mirror", "naming", "obj", "opnqryf", "ovrdbf", "ovrmsgf", "ovrprtf", "prtadpobj",
     "prtcapture", "prtjobdaut", "prtpubaut", "prtpvtaut", "prtqaut", "prtsbsdaut", "prtsysseca",
     "prtusrobj", "prtusrprf", "qir", "rclstg", "rcvmsg", "rgzpfm", "rla", "rlsjob",
     "rlsjobq", "rlsjobscde", "rlsoutq", "rlssplf", "rlswtr", "rmvaje", "rmvautle",
@@ -220,6 +221,5 @@ pub const BRIDGE_WORDS: &[&str] = &[
 /// analyzer accepts them and the service answers `CPF0006`
 /// (`docs/PHASE7.md` lists them under Blocked).
 pub const UNSUPPORTED: &[&str] = &[
-    "CLOF", "CPYLIB", "CRTDEVDSP", "CRTDSPF", "DSPMODSRC", "EDTLIBL", "INZPFM",
-    "OPNQRYF", "OVRMSGF", "POSDBF", "STRSQL", "TFRJOB",
+    "CPYLIB", "CRTDEVDSP", "CRTDSPF", "DSPMODSRC", "EDTLIBL", "POSDBF", "STRSQL", "TFRJOB",
 ];

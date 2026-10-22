@@ -289,6 +289,8 @@ impl UserSpaceSource for StoreUserSpaces {
 pub struct StoreMsgs {
     shared: Shared,
     builtin: msgf::BuiltinMsgs,
+    /// The job's `OVRMSGF`s, as its command level last changed them.
+    pub overrides: Vec<crate::svc::db::MsgfOvr>,
 }
 
 impl StoreMsgs {
@@ -297,12 +299,19 @@ impl StoreMsgs {
         Self {
             shared,
             builtin: msgf::BuiltinMsgs::new(),
+            overrides: Vec::new(),
         }
     }
 }
 
 impl msgf::MsgLookup for StoreMsgs {
     fn describe(&mut self, msgid: &str, msgf: &str, lib: &str) -> Option<MsgDesc> {
+        // An OVRMSGF redirects the file.
+        let redirected = crate::svc::db::msgf_target(&self.overrides, msgf);
+        let (msgf, lib) = match &redirected {
+            Some((l, n)) => (n.as_str(), l.as_str()),
+            None => (msgf, lib),
+        };
         let found = with_main(&self.shared, |txn, qsys| {
             let names = super::name_context(txn, qsys);
             let f = Name::parse(msgf).map_err(|e| e.to_string())?;

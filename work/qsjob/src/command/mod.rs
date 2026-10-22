@@ -421,7 +421,7 @@ fn service(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         .map(|e| sys_cpps::bridge::specified_line(&e.word, &parms_of(r)))
         .unwrap_or_default();
     // An override belongs to the call level that issued it.
-    if matches!(r.name.as_str(), "OVRDBF" | "OVRPRTF" | "DLTOVR") {
+    if matches!(r.name.as_str(), "OVRDBF" | "OVRPRTF" | "OVRMSGF" | "DLTOVR") {
         let _ = write!(typed, " CALLLVL({})", job.depth);
         if r.name != "DLTOVR" {
             job.ovr_top = job.ovr_top.max(job.depth);
