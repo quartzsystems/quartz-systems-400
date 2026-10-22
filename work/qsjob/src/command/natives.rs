@@ -133,6 +133,8 @@ fn definition(host: &Host, name: &str) -> Option<(cmd::CmdDef, String)> {
 /// Which parameters the caller gave: those whose value is not the
 /// definition's default.
 fn mark_specified(host: &Host, mut parms: Parms) -> Parms {
+    // The defaults as they come back out of a block, so a default
+    // the block cannot hold whole (`*SAME` in one byte) still matches.
     let defaults = {
         let mut cmds = host.cmds.borrow_mut();
         let mut env = Env::new(&mut *cmds);
@@ -141,13 +143,15 @@ fn mark_specified(host: &Host, mut parms: Parms) -> Parms {
             program: true,
             ..Setting::default()
         };
-        cmd::analyze(&mut env, &parms.def.name).ok()
+        let bounds = cmd::analyze::defaults(&mut env, &parms.def);
+        let spec = vec![false; parms.def.parms.len()];
+        block::build(&parms.def, &bounds)
+            .ok()
+            .and_then(|built| block::read(&parms.def, &built.segments, &spec).ok())
+            .map_or(bounds, |p| p.values)
     };
     for (i, b) in parms.values.iter_mut().enumerate() {
-        let dft = defaults
-            .as_ref()
-            .and_then(|d| d.parms.get(i))
-            .and_then(|d| d.value.as_ref());
+        let dft = defaults.get(i).and_then(|d| d.value.as_ref());
         b.specified = match (&b.value, dft) {
             (Some(v), Some(d)) => v.source() != d.source(),
             (Some(_), None) => true,
