@@ -150,10 +150,10 @@ pub fn set(
         policy
             .rules
             .check(new, old, &p.name, policy.pwdlvl)
-            .map_err(|v| SecError::msg("CPF4AA7", format!("{} (reason {})", v.text(), v.reason)))?;
+            .map_err(|v| SecError::msg("CPF22C2", format!("{} (reason {})", v.text(), v.reason)))?;
     } else if policy.pwdlvl <= 1 && !super::short_ok(new) {
         return Err(SecError::msg(
-            "CPF4AA7",
+            "CPF22C2",
             "The password is not valid at this password level. (reason 24)",
         ));
     }
@@ -251,7 +251,7 @@ mod tests {
             &mut ok,
         )
         .unwrap_err();
-        assert_eq!(e.msgid(), Some("CPF4AA7"));
+        assert_eq!(e.msgid(), Some("CPF22C2"));
         set(
             &mut p,
             "second2",

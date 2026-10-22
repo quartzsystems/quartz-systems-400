@@ -164,7 +164,8 @@ say. The rules bind a user changing their own password; `CRTUSRPRF`
 and `CHGUSRPRF PASSWORD` are bound only with `*ALLCRTCHG` (otherwise
 only the level's form is checked).
 
-A composition failure is `CPF4AA7` with IBM's reason code:
+A composition failure is `CPF22C2` (the identifier an IBM i 7.1 sends
+for a `QPWD*` rule) with IBM's reason code:
 
 | Reason | Rule |
 |---|---|

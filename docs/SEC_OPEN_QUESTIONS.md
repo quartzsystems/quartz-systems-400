@@ -1,83 +1,77 @@
 # Security: open questions
 
 Readings of IBM i behavior that Phase 6 had to choose without a
-machine to ask. Each names what QS/400 does now and the oracle test
-that settles it: a command or program run on a real system whose
-output goes under `tools/conformance/oracle/sec/` when Cody supplies
-it. The tests that read those outputs skip while they are absent.
+machine to ask. On 2026-10-22 the oracle kit ran on an IBM i 7.1
+(`tools/conformance/oracle/sec/expected/`); the entries it settled are
+gone from here and into the code (`cargo test -p conformance --test
+sec_oracle` and `cargo test -p sec --test shipped_csv` compare with the
+captures). What remains names what QS/400 does now and what would
+settle it.
 
-1. **Shipped profiles' special authorities.** IBM's per-profile table
-   was not at hand. `sec::profile::shipped::PROFILES` gives `QSYSOPR`
-   and `QPGMR` `*JOBCTL *SAVSYS`, `QSRV` `*JOBCTL *SAVSYS *SERVICE`,
-   `QTCP` `*JOBCTL *IOSYSCFG`, `QCOLSRV`, `QPEX` and `QSNADS` `*JOBCTL`,
-   `QLPAUTO` and `QLPINSTALL` `*ALLOBJ *JOBCTL *SAVSYS *SECADM`, the rest
-   none. Oracle: `DSPUSRPRF USRPRF(x) OUTPUT(*OUTFILE)` for every
-   shipped profile, compared field by field.
+1. **Shipped profiles beyond the outfile's first 1000 bytes.** The
+   `DSPUSRPRF OUTPUT(*OUTFILE)` capture was cut at 1000 bytes a record,
+   so the attributes after `UPLANG` (country, CCSID, sort sequence,
+   auditing, group authority type, supplemental groups, UID and GID,
+   locale, home directory) are this system's defaults. Oracle: the
+   outfile again with a longer record.
 
-2. **Adopted authority and the owner's groups.** The Phase 6 brief says
-   to check an adopting owner "with steps 1-5"; IBM's documentation as
-   remembered says adopted authority is the owner's own and does not
-   include its group profiles. QS/400 follows IBM: the owner's
-   `*ALLOBJ`, ownership, private and list entries. Oracle: an
-   `USRPRF(*OWNER)` program owned by `OWNA` (member of `GRPA`, which has
-   `*CHANGE` to `LIB/F`; `OWNA` has none) opens `F` for update; record
-   whether the open succeeds.
+2. **Adopted authority and the owner's groups.** Settled: an adopting
+   program does not reach the owner's group authorities (the machine
+   refused). Kept here only because the capture covers `*CHANGE` to a
+   file; other authorities are read the same way.
 
-3. **Owner authority that falls short.** When the user owns the object
-   and the owner's authority was reduced below what is needed, QS/400
-   does not go on to groups or `*PUBLIC` (the owner entry decides) but
-   does add adopted authority. Oracle: `GRTOBJAUT ... USER(*OWNER)`
-   reduce, then `CHKOBJ` as the owner with a group that has `*ALL`.
+3. **Owner authority that falls short.** Settled: the owner entry
+   decides, groups are not consulted (the machine refused).
 
-4. **Classic password rule messages.** Composition failures use
-   `CPF4AA7` with IBM's reason codes for every rule, including the
-   `QPWD*` system values; IBM's older per-rule `CPF23xx` messages for
-   those values are not reproduced. `QPWDLMTCHR` uses reason 24, which
-   is Quartz's. History, change block, validation program and current
-   password failures use `CPF22C3`, `CPF22C5`, `CPF22C6` and `CPF2362`.
-   Oracle: `CHGPWD` through `QSYCHGPW` with each rule broken, the
-   message identifiers in the error code.
+4. **Password rule messages beyond `QPWDMINLEN`.** The machine sends
+   `CPF22C2` for a password breaking `QPWDMINLEN`; every other
+   composition rule now uses the same identifier with IBM's reason
+   code in the text. Whether the machine distinguishes rules by
+   identifier (`CPF2353` and its kin for the classic `QPWD*` values)
+   is unsettled. Oracle: `CHGPWD` through `QSYCHGPW` with each rule
+   broken, the identifiers in the error code.
 
-5. **Missing special authority.** Commands that need a special
-   authority the user lacks report `CPF2222`. Oracle: `CRTUSRPRF` by a
-   user without `*SECADM`, the escape message.
+5. **Missing special authority.** Settled for `CRTUSRPRF`: `CPF2292`,
+   now used by `CRTUSRPRF` and `CHGUSRPRF`. Other commands that need a
+   special authority the user lacks still report `CPF2222`. Oracle:
+   `STRSBS` without `*JOBCTL`, `CHGSYSVAL` without `*ALLOBJ`.
 
-6. **Owner and public authority of a new profile.** `CRTUSRPRF` makes
-   the creator the owner of the `*USRPRF` and gives the profile no
-   private authority to itself; `*PUBLIC` is `AUT` (default
-   `*EXCLUDE`). Oracle: `DSPOBJAUT OBJ(NEWUSR) OBJTYPE(*USRPRF)` after
-   `CRTUSRPRF` by a security officer.
+6. **Owner and public authority of a new profile.** Settled: the
+   creator (`QSECOFR`) owns a new profile.
 
-7. **`PTYLMT` and `RUNPTY`.** `PTYLMT` limits `JOBPTY` and `OUTPTY`;
-   QS/400 also keeps `RUNPTY` from being numerically below it, as the
-   brief asks. Oracle: `CHGJOB RUNPTY(1)` as a user with `PTYLMT(5)`,
-   then `RTVJOBA`.
+7. **`PTYLMT` and `RUNPTY`.** Settled: `CHGJOB RUNPTY(10)` under
+   `PTYLMT(5)` is refused with `CPF1337`; QS/400 refuses `JOBPTY` and
+   `OUTPTY` below the limit and `RUNPTY` below ten times it.
 
 8. **Level 20 to 30.** At the first IPL at 30 or above after 20,
    `*ALLOBJ` is taken from every profile whose class is not `*SECOFR`
    (and `*SAVSYS` stays). Oracle: a profile created at level 20 with
-   `SPCAUT(*USRCLS)`, `DSPUSRPRF` before and after the change and IPL.
+   `SPCAUT(*USRCLS)`, `DSPUSRPRF` before and after the change and IPL
+   (two IPLs; not scripted).
 
-9. **Required authorities.** `security/sec/required.toml` follows IBM's
-   published tables where remembered; where IBM accepts one of two
-   authorities (`*OBJMGT` or `*OBJALTER` for `ADDPFM`, `CHGPF`,
-   `STRJRNPF`), QS/400 requires the one named first. Oracle: the
-   authority matrix kit (`tools/conformance/oracle/sec/`), `CHKOBJ` and
-   each command as a user given exactly the authorities the table
-   lists, then each minus one.
+9. **Required authorities.** Settled for `ADDPFM`: `*OBJALTER` alone
+   suffices, so `required.toml` takes either of `*OBJMGT` and
+   `*OBJALTER` for members, `CHGPF`/`CHGLF` and journaling. The rest
+   of the table follows IBM's published tables as remembered. Oracle:
+   `CHKOBJ` and each command as a user given exactly the authorities
+   the table lists, then each minus one.
 
-10. **API receivers.** `USRI0300` past the supplemental groups,
-    `OBJA0200`, `RTUA0100`'s entry and feedback and `AUTU0100` are
-    laid out in IBM's field order with offsets of our own
-    (`SYSAPI.md` §10). `QSYRUPWD` data is not IBM's. Oracle: call each
-    API on IBM i with the same profiles and objects and compare the
-    receivers byte for byte, outside the password data.
+10. **API receivers.** `USRI0300` is now laid out as the machine's
+    dump shows (`SYSAPI.md` §10), with two fields read from the dump
+    rather than named (`00` at 632, `1` at 671). `OBJA0200`,
+    `RTUA0100`'s entry and feedback and `AUTU0100` are still in IBM's
+    field order with offsets of our own, and `QSYRUPWD` data is not
+    IBM's. Oracle: call each API on IBM i with the same profiles and
+    objects and compare the receivers byte for byte.
 
-11. **`QSYCHGPR`.** No IBM API by that name could be identified; it
-    is not provided. Oracle: the IBM i API finder.
+11. **`QSYCHGPR`.** It exists on the machine (`CHKOBJ QSYS/QSYCHGPR
+    *PGM` succeeds); its parameters are unknown, so it is not
+    provided. Oracle: `DSPPGM QSYS/QSYCHGPR` and the API finder for its
+    parameter list.
 
-12. **Authority command messages.** The escape and diagnostic
-    identifiers of `GRTOBJAUT`/`RVKOBJAUT` (`CPF2227`, `CPF2253`,
-    `CPF2254`), the list commands (`CPF2270`, `CPF2272`) and
-    `DLTUSRPRF` (`CPF2204`, `CPF2245`, `CPF2257`) are best recollection.
-    Oracle: run each refusal on IBM i and record the job log.
+12. **Authority command messages.** Settled: `DLTUSRPRF` of an owner
+    is `CPF2215`, `ADDAUTLE` of a user on the list `CPF2282`,
+    `RMVAUTLE` of one not on it `CPF2285`, `GRTOBJAUT` beyond one's
+    own `CPF2227`. Still recollection: `DLTUSRPRF` of a primary group
+    (`CPF2204` here), `RVKOBJAUT` (`CPF2253`, `CPF2254`). Oracle: run
+    each refusal on IBM i and record the job log.

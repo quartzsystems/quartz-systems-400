@@ -16,6 +16,8 @@ use crate::auth::bits::Auth;
 pub enum Need {
     /// Exactly these authorities (none: finding the object is enough).
     Bits(Auth),
+    /// Either set, where IBM takes one of two (`*OBJMGT|*OBJALTER`).
+    Either(Auth, Auth),
     /// Any authority but `*EXCLUDE`.
     Any,
 }
@@ -41,14 +43,27 @@ fn table() -> &'static BTreeMap<String, Need> {
         let f: File = toml::from_str(SOURCE).expect("required.toml parses");
         f.op.into_iter()
             .map(|(k, e)| {
+                let parse = |words: &[&str]| {
+                    Auth::parse(words, true).unwrap_or_else(|w| panic!("required.toml {k}: {w}"))
+                };
                 let need = if e.need.iter().any(|n| n == "*ANY") {
                     Need::Any
+                } else if let Some(alt) = e.need.iter().find(|n| n.contains('|')) {
+                    let common: Vec<&str> = e
+                        .need
+                        .iter()
+                        .filter(|n| !n.contains('|'))
+                        .map(String::as_str)
+                        .collect();
+                    let (a, b) = alt.split_once('|').expect("a bar");
+                    let mut with_a = common.clone();
+                    with_a.push(a);
+                    let mut with_b = common;
+                    with_b.push(b);
+                    Need::Either(parse(&with_a), parse(&with_b))
                 } else {
                     let words: Vec<&str> = e.need.iter().map(String::as_str).collect();
-                    Need::Bits(
-                        Auth::parse(&words, true)
-                            .unwrap_or_else(|w| panic!("required.toml {k}: {w}")),
-                    )
+                    Need::Bits(parse(&words))
                 };
                 (k, need)
             })

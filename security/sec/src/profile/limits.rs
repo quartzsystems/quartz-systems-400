@@ -48,11 +48,14 @@ pub fn sign_on_fields(p: &UsrPrf) -> SignOnFields {
     }
 }
 
-/// A scheduling priority (`JOBPTY`, `OUTPTY`, `RUNPTY`) no higher than
-/// `PTYLMT` allows: a smaller number is a higher priority.
+/// Whether a scheduling priority is within `PTYLMT`: a smaller number
+/// is a higher priority; `JOBPTY` and `OUTPTY` compare with the limit,
+/// `RUNPTY` with ten times it. The machine refuses one beyond it
+/// (`CPF1337`) rather than clamping.
 #[must_use]
-pub fn clamp_priority(p: &UsrPrf, value: u8) -> u8 {
-    value.max(p.ptylmt)
+pub fn priority_allowed(p: &UsrPrf, kw: &str, value: u8) -> bool {
+    let limit = if kw == "RUNPTY" { p.ptylmt * 10 } else { p.ptylmt };
+    value >= limit
 }
 
 /// Whether `add_kb` more storage fits `MAXSTG`; `CPF1151` when not.
@@ -92,8 +95,10 @@ mod tests {
         p.lmtcpb = LmtCpb::Partial;
         assert!(sign_on_fields(&p).menu && !sign_on_fields(&p).program);
         p.ptylmt = 3;
-        assert_eq!(clamp_priority(&p, 1), 3);
-        assert_eq!(clamp_priority(&p, 5), 5);
+        assert!(!priority_allowed(&p, "JOBPTY", 1));
+        assert!(priority_allowed(&p, "JOBPTY", 5));
+        assert!(!priority_allowed(&p, "RUNPTY", 10));
+        assert!(priority_allowed(&p, "RUNPTY", 30));
         p.maxstg = 100;
         p.stg_used = 90;
         assert!(storage(&p, 8).is_ok());

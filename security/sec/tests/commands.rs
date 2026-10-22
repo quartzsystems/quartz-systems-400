@@ -246,7 +246,7 @@ fn grant_revoke_owner_group_and_lists() {
         true,
     )
     .unwrap_err();
-    assert_eq!(e.msgid(), Some("CPF2272"));
+    assert_eq!(e.msgid(), Some("CPF2282"));
     object::setautle(
         &mut t,
         &env,
@@ -277,7 +277,7 @@ fn grant_revoke_owner_group_and_lists() {
     // DLTUSRPRF: BOB owns DATA; *NODLT stops it, *CHGOWN moves it.
     let job = JobHandle(1);
     let e = dltusrprf::dltusrprf(&mut t, &env, job, &kw(&[("USRPRF", "BOB")])).unwrap_err();
-    assert_eq!(e.msgid(), Some("CPF2204"));
+    assert_eq!(e.msgid(), Some("CPF2215"));
     dltusrprf::dltusrprf(
         &mut t,
         &env,

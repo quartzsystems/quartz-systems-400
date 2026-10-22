@@ -283,10 +283,17 @@ fn cp_event(cmd: &str, p: &UsrPrf, password: bool) -> crate::audit::Event {
         .set("GAUT", p.grpaut.as_str())
 }
 
+/// `*SECADM` for the profile commands: `CPF2292`, as the machine
+/// refuses `CRTUSRPRF`.
+fn require_secadm(env: &Env<'_>, what: &str) -> Result<()> {
+    env.actor
+        .require(SpecialAuth::SECADM, what)
+        .map_err(|_| SecError::msg("CPF2292", format!("*SECADM special authority is needed to {what}.")))
+}
+
 /// `CRTUSRPRF`.
 pub fn crtusrprf(txn: &mut Txn<'_>, env: &Env<'_>, k: &Keywords) -> Result<String> {
-    env.actor
-        .require(SpecialAuth::SECADM, "create user profiles")?;
+    require_secadm(env, "create user profiles")?;
     let name = k
         .upper("USRPRF")
         .ok_or_else(|| SecError::msg("CPD0071", "USRPRF is required."))?;
@@ -322,8 +329,7 @@ pub fn crtusrprf(txn: &mut Txn<'_>, env: &Env<'_>, k: &Keywords) -> Result<Strin
 
 /// `CHGUSRPRF`.
 pub fn chgusrprf(txn: &mut Txn<'_>, env: &Env<'_>, k: &Keywords) -> Result<String> {
-    env.actor
-        .require(SpecialAuth::SECADM, "change user profiles")?;
+    require_secadm(env, "change user profiles")?;
     let name = k
         .upper("USRPRF")
         .ok_or_else(|| SecError::msg("CPD0071", "USRPRF is required."))?;

@@ -98,7 +98,11 @@ faster.
   and the IPL that follows; `DLTUSRPRF`; the suite's subset at 30 and
   50; the numbers above. Phases 1 to 5's steps still pass; they now
   sign `QSECOFR` on with a password.
-- The oracle kit (`tools/conformance/oracle/sec/`) waits for a
+- The oracle kit (`tools/conformance/oracle/sec/`) was captured on an
+  IBM i 7.1 on 2026-10-22 and `cargo test -p conformance --test
+  sec_oracle` agrees with it; `sec`'s `shipped_csv` test checks the
+  shipped profiles against the machine's `DSPUSRPRF` outfile. Before
+  that it waited for a
   machine.
 
 ## Unsupported, by design or for now

@@ -153,11 +153,13 @@ L0:
     assert_eq!(bin4(&u, 32), 2, "sign-on attempts not valid");
     assert_eq!(chars(&u, 36, 10), "*ENABLED");
     assert_eq!(chars(&u, 54, 1), "Y", "no password");
-    assert_eq!(chars(&u, 94, 10), "*USER");
-    assert_eq!(chars(&u, 119, 10), "CLERKS");
-    assert_eq!(bin4(&u, 176), 1, "one supplemental group");
-    assert_eq!(chars(&u, 180, 50), "Anne");
-    let at = usize::try_from(bin4(&u, 172)).unwrap();
+    assert_eq!(chars(&u, 73, 10), "*USER");
+    assert_eq!(chars(&u, 98, 10), "CLERKS");
+    assert_eq!(bin4(&u, 588), 1, "one supplemental group");
+    assert_eq!(chars(&u, 198, 50), "Anne");
+    assert_eq!(chars(&u, 289, 10), "QDFTJOBD");
+    assert_eq!(bin4(&u, 600), 694, "the home directory path");
+    let at = usize::try_from(bin4(&u, 584)).unwrap();
     assert_eq!(chars(&u, at, 10), "AUDIT");
     assert_eq!(chars(&bytes(&p, "ind1"), 0, 1), "Y");
     assert_eq!(chars(&bytes(&p, "ind2"), 0, 1), "N");

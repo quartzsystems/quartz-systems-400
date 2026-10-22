@@ -232,6 +232,7 @@ pub fn satisfies(have: Auth, need: Need, all: bool) -> bool {
     all || match need {
         Need::Any => have.0 != 0,
         Need::Bits(b) => have.has(b),
+        Need::Either(a, b) => have.has(a) || have.has(b),
     }
 }
 

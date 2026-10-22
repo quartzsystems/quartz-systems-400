@@ -93,7 +93,7 @@ fns = ["read_header", "write_header", "bootstrap", "bootstrap_root", "find_libra
 
 [file."storage/store/src/obj/space.rs"]
 reason = "an object's space, reached through an object the caller checked"
-fns = ["load", "read", "write", "ensure", "truncate"]
+fns = ["load", "read", "write", "write_relocating", "ensure", "truncate"]
 
 [file."storage/store/src/obj/usridx.rs"]
 reason = "creation is checked by the store's create; descriptions for an index the caller checked"

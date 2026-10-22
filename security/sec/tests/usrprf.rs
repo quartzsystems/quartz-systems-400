@@ -126,7 +126,7 @@ fn create_change_and_passwords() {
     // CHGPWD and CHKPWD as BOB.
     let mut ok = |_: &sec::profile::UsrPrf, _: &str, _: Option<&str>| Ok(());
     let e = usrprf::chgpwd(&mut t, &bob_env, "Start123", "short", &mut ok).unwrap_err();
-    assert_eq!(e.msgid(), Some("CPF4AA7"));
+    assert_eq!(e.msgid(), Some("CPF22C2"));
     usrprf::chgpwd(&mut t, &bob_env, "Start123", "Better456", &mut ok).unwrap();
     assert!(!objects::read(&mut t, qsys, "BOB").unwrap().1.pwdexp);
     usrprf::chkpwd(&mut t, &bob_env, "Better456").unwrap();
