@@ -6,6 +6,7 @@
 //! native output, the creation data and the source view.
 
 use codegen::ModuleCode;
+use qir::inst::{CallTarget, Inst};
 use qir::{Linkage, Module, StorageClass};
 use store::spec::{Layout, field};
 
@@ -131,15 +132,35 @@ impl ModuleObject {
         out
     }
 
-    /// The symbols the module imports: bound procedures and statics.
+    /// The symbols the module imports: bound procedures (an `extern
+    /// proc`, or a bare signature called by name) and statics.
     #[must_use]
     pub fn imports(&self) -> Vec<(String, ExportKind)> {
+        let called: Vec<u32> = self
+            .ir
+            .procs
+            .iter()
+            .flat_map(|p| p.blocks.iter())
+            .flat_map(|b| b.insts.iter())
+            .filter_map(|i| match i {
+                Inst::Call {
+                    target: CallTarget::Proto(r),
+                    ..
+                } => Some(r.0),
+                _ => None,
+            })
+            .collect();
         let mut out: Vec<(String, ExportKind)> = self
             .ir
             .protos
             .iter()
-            .filter(|p| p.linkage == Linkage::Import)
-            .map(|p| (p.name.clone(), ExportKind::Proc))
+            .enumerate()
+            .filter(|(k, p)| {
+                p.linkage == Linkage::Import
+                    || (p.linkage == Linkage::Signature
+                        && called.contains(&u32::try_from(*k).expect("few protos")))
+            })
+            .map(|(_, p)| (p.name.clone(), ExportKind::Proc))
             .collect();
         out.extend(
             self.ir

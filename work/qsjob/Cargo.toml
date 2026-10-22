@@ -21,6 +21,7 @@ qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
 qir = { path = "../../runtime/qir", version = "0.1.0" }
 cmd = { path = "../../command/cmd", version = "0.1.0" }
 sys-cpps = { path = "../../command/sys-cpps", version = "0.1.0" }
+libc = "0.2.190"
 
 [lints]
 workspace = true

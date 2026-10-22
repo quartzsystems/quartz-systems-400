@@ -276,9 +276,14 @@ impl Console {
             job.ident.number = format!("{:06}", self.host.start.number);
             job.data = Some(Box::new(s.data));
             job.io = Some(Box::new(s.io));
-            // Programs run on this process's main thread (8 MiB): leave
-            // room below the budget for the runtime and the handlers.
-            job.stack_bytes = 6 << 20;
+            // Programs run on this process's main thread; its guard page
+            // (`platform::stack`) catches a runaway recursion, so the
+            // runtime's own budget never fires first.
+            job.stack_bytes = usize::MAX;
+            // A running program takes its break messages too.
+            let breaks_host = self.host.clone();
+            job.attn = Some(Rc::new(move |job: &mut Job| breaks_host.breaks(job)));
+            host::attention_timer();
             job.spool = Some(Box::new(stg::remote::spool::RemoteSpool::new(link.clone())));
             let ask = Rc::clone(link);
             job.inquiry = Some(Box::new(move |q| stg::remote::inquiry::answer(&ask, q)));

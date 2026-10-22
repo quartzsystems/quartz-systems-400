@@ -26,6 +26,10 @@ pub enum RelocTarget {
     /// A static another module exports, by name: its offset inside the
     /// program's static area, as a plain value.
     ImportData(String),
+    /// The runtime's attention flag: the address of a `u64` generated
+    /// code polls at statement starts and loop back-edges, calling
+    /// `attn` when it is set.
+    AttnFlag,
 }
 
 /// How a relocation is applied.

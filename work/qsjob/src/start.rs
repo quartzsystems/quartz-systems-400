@@ -13,6 +13,7 @@ use wm::ctl::{FromJob, ToJob};
 
 /// Run the job. Never returns.
 pub fn run() -> ! {
+    crate::platform::stack::install();
     let mut ctl = match Chan::from_stdin() {
         Ok(c) => c,
         Err(e) => {

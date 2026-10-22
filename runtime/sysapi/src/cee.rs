@@ -190,9 +190,23 @@ fn ceetrec(j: &mut Job, a: &Args<'_>) {
 
 /// `CEEDOD(position, type, datatype, info1, info2, length, fc)`: no
 /// operational descriptors exist, so `CEE0820`.
+/// `CEEDOD(position, desc_type, datatype, info1, info2, length, fc)`:
+/// the caller's operational descriptor of argument `position`;
+/// `CEE0820` when it received none or the position is past them.
 fn ceedod(j: &mut Job, a: &Args<'_>) {
     let pos = a.bin4(0);
-    feedback(j, a, 6, Err(ApiFail::id("CEE0820").bin4(pos)));
+    let list = j.act.frames.last().map_or(0, |f| f.opdesc);
+    match mi::opdesc::entry(list, pos) {
+        Some(d) => {
+            a.put_bin4(1, d.desc_type);
+            a.put_bin4(2, d.datatype);
+            a.put_bin4(3, d.info1);
+            a.put_bin4(4, d.info2);
+            a.put_bin4(5, d.length);
+            feedback(j, a, 6, Ok(()));
+        }
+        None => feedback(j, a, 6, Err(ApiFail::id("CEE0820").bin4(pos))),
+    }
 }
 
 /// `CEEGPID(version, platform, fc)`: ILE version 1 on platform 3.

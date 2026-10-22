@@ -7,7 +7,7 @@
 use super::place::place_type;
 use super::typing::{const_fits, def_type, operand_type, pair_type, reg_type};
 use crate::inst::{Arg, BinOp, CallRet, CallTarget, Cond, Debug, Inst, Operand};
-use crate::module::{Linkage, Module, Param, Proc, Reg};
+use crate::module::{Module, Param, Proc, Reg};
 use crate::types::{Type, TypeClass};
 
 /// Check one instruction.
@@ -192,12 +192,6 @@ fn call(
                 .protos
                 .get(r.0 as usize)
                 .ok_or("prototype does not exist")?;
-            if matches!(target, CallTarget::Proto(_)) && proto.linkage == Linkage::Signature {
-                return Err(format!(
-                    "{} is a signature; call it through a procedure pointer",
-                    proto.name
-                ));
-            }
             if let CallTarget::ProcPtr { ptr, .. } = target {
                 pointer(p, *ptr, &Type::ProcPtr)?;
             }

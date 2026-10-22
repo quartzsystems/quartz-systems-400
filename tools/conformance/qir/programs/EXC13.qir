@@ -1,0 +1,60 @@
+; condition handlers that promote: 30 keeps searching the entry's handlers, 31 skips them
+module EXC13
+extern proc CEEHDLR($p: procptr, $t: i32, $fc: char(12) *NOPASS)
+extern proc CEEHDLU($p: procptr, $fc: char(12) *NOPASS)
+static $pp1: procptr
+static $pp2: procptr
+static $t1: i32 inz(1)
+static $t2: i32 inz(2)
+static $z: packed(3,0)
+proc OLDER($tok: char(12), $utok: i32, $rc: i32, $new: char(12)) {
+L0:
+  dsply "older handler"
+  str.subst $new, $tok, 1, 12
+  store $rc, 20
+  ret
+}
+proc PROMOTER($tok: char(12), $utok: i32, $rc: i32, $new: char(12)) {
+L0:
+  dsply "promoter"
+  mov $new, x"0003000101E4E2D900000000"
+  store $rc, 30
+  ret
+}
+proc SKIPPER($tok: char(12), $utok: i32, $rc: i32, $new: char(12)) {
+L0:
+  dsply "skipper"
+  mov $new, x"0003000201E4E2D900000000"
+  store $rc, 31
+  ret
+}
+proc EXC13() entry {
+L0:
+  %a = procaddr OLDER
+  store $pp1, %a
+  %b = procaddr PROMOTER
+  store $pp2, %b
+  callb CEEHDLR($pp1, $t1)
+  callb CEEHDLR($pp2, $t2)
+  monitor M, USR0001 -> MON
+  dec.div $z, 1, 0 prec(3,0)
+  dsply "not reached"
+  endmon M
+  br SECOND
+MON:
+  dsply "monitor took USR0001 after the older handler saw it"
+  br SECOND
+SECOND:
+  callb CEEHDLU($pp2)
+  %c = procaddr SKIPPER
+  store $pp2, %c
+  callb CEEHDLR($pp2, $t2)
+  monitor N, USR0002 -> MON2
+  dec.div $z, 2, 0 prec(3,0)
+  dsply "not reached"
+  endmon N
+  ret
+MON2:
+  dsply "monitor took USR0002, the older handler skipped"
+  ret
+}

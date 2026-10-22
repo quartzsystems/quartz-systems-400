@@ -27,6 +27,17 @@ use crate::work::spawn::Spawned;
 /// How often a waiting job looks for break messages.
 pub const BREAK_POLL: Duration = Duration::from_secs(1);
 
+/// Raise the runtime's attention flag every `BREAK_POLL`, so a running
+/// program looks for break messages at its next statement.
+pub fn attention_timer() {
+    std::thread::spawn(|| {
+        loop {
+            std::thread::sleep(BREAK_POLL);
+            mi::rtlib::ATTN.store(1, std::sync::atomic::Ordering::Relaxed);
+        }
+    });
+}
+
 /// The job's surroundings.
 #[derive(Clone)]
 pub struct Host {

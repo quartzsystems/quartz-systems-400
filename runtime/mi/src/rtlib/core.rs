@@ -8,6 +8,7 @@
 #![allow(clippy::similar_names)]
 
 use std::fmt::Write as _;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use codegen::Cond;
 use codegen::abi::Env;
@@ -41,10 +42,35 @@ pub extern "sysv64" fn raise(env: *mut Env, cond: i32) {
     raise_on(j, c);
 }
 
-/// `enter(env, code, argc)`: a call-stack entry; the static area
-/// becomes the running program's activation in the group its attribute
-/// names.
-pub extern "sysv64" fn enter(env: *mut Env, code: i64, argc: i64) {
+/// The attention flag: generated code polls it at statement starts
+/// and loop back-edges and calls `attention` when it is set. The job
+/// process raises it on a timer so a running program looks for break
+/// messages.
+pub static ATTN: AtomicU64 = AtomicU64::new(0);
+
+/// Set by the job process's stack guard when a `SIGSEGV` on the stack's
+/// guard page was forgiven: the next entry raises `MCH0601`.
+static STACK_FAULT: AtomicBool = AtomicBool::new(false);
+
+/// The stack guard forgave a fault on the guard page.
+pub fn note_stack_fault() {
+    STACK_FAULT.store(true, Ordering::Release);
+}
+
+/// `attention(env)`: the flag was set; clear it and run the job's
+/// attention hook, which takes the breaks waiting for the job.
+pub extern "sysv64" fn attention(env: *mut Env) {
+    ATTN.store(0, Ordering::Relaxed);
+    let j = job(env);
+    if let Some(h) = j.attn.clone() {
+        h(j);
+    }
+}
+
+/// `enter(env, code, argc, opdesc)`: a call-stack entry; the static
+/// area becomes the running program's activation in the group its
+/// attribute names.
+pub extern "sysv64" fn enter(env: *mut Env, code: i64, argc: i64, opdesc: i64) {
     let j = job(env);
     let e = env_of(env);
     j.depth += 1;
@@ -85,6 +111,7 @@ pub extern "sysv64" fn enter(env: *mut Env, code: i64, argc: i64) {
         msgq: crate::msg::MsgQueue::default(),
         control_boundary,
         argc: u32::try_from(argc).unwrap_or(0),
+        opdesc: opdesc.cast_unsigned(),
         region: 0,
         stmt: 0,
         handlers: Vec::new(),
@@ -92,10 +119,12 @@ pub extern "sysv64" fn enter(env: *mut Env, code: i64, argc: i64) {
         debug_vars: Vec::new(),
     });
     j.act.frame_changed(adopts.as_ref(), true);
-    // The native stack has a budget: past it the entry fails with
-    // `MCH0601` as soon as it starts, before any guard page is hit.
+    // A fault on the guard page the job process forgave, or the
+    // in-memory budget run out: the entry fails with `MCH0601` as soon
+    // as it starts.
     let here = std::ptr::from_ref(&code) as usize;
-    if j.stack_base != 0 && j.stack_base.saturating_sub(here) > j.stack_bytes {
+    let faulted = STACK_FAULT.load(Ordering::Acquire) && STACK_FAULT.swap(false, Ordering::AcqRel);
+    if faulted || (j.stack_base != 0 && j.stack_base.saturating_sub(here) > j.stack_bytes) {
         raise_on(j, Cond::Mch0601);
     }
 }

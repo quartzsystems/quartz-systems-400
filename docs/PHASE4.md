@@ -63,15 +63,8 @@ activation check and the argument vector.
 
 ## Unsupported, by design or for now
 
-- `rem` of floats and calls to a bare signature are not lowered.
 - Display and printer files (`dspio`, `prtio`) return status `01299`
   until Phase 8.
-- Operational descriptors are not built, so `CEEDOD` reports
-  `CEE0820`.
-- Condition handler result codes 30 and 31 (promote) act as percolate.
-- A stack overflow is caught by a budget check in `enter`, not by the
-  guard page; the job's own thread, and the signal handler on its
-  alternate stack, come with Phase 5.
 - Service programs bind through the binder and the kit's in-memory
   programs, but the console has no `*SRVPGM` signature display beyond
   `dspsrvpgm`.

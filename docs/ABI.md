@@ -73,7 +73,19 @@ proc(env: i64, argc: i64, opdesc: i64, [retbuf: i64,] params...) -> [value]
   The prologue reads each parameter's address from it, null when not
   passed.
 - `opdesc`: the operational descriptor list, or 0 when the caller
-  passed none. *Phase 4, pending*: `CEEDOD` and `*VARSIZE` lengths.
+  passed none. A caller builds one for a callee declared `opdesc`
+  (a `proc`, `extern proc` or `proto` with the keyword): a native
+  `i32` entry count (one per declared parameter, or per argument when
+  more are passed) and 4 reserved bytes (`OPDESC_HEADER`, 8), then
+  24 bytes per argument (`OPDESC_ENTRY`): native `i32`s `desc_type`
+  (0 not passed or `*OMIT`, 2 element, 3 array), `datatype` (0
+  untyped, 1 numeric, 2 char, 3 varchar, 4 UCS-2, 5 varying UCS-2, 6
+  graphic, 7 date, time or timestamp), `info1` (an array's element
+  count), `info2` (reserved), `length` (the bytes of the argument, or
+  of one array element; a `*VARSIZE` literal's own length) and 4
+  reserved bytes. `enter` keeps the list in the call-stack entry and
+  `CEEDOD` answers from it (`codegen::abi::describe` and
+  `mi::opdesc`). The codes are a QS/400 reading of `CEEDOD`'s.
 - `retbuf`: present when the return type is not a register type; the
   caller provides storage of the type's size and the callee writes it.
 - Parameters in declaration order: a by-reference parameter is the
@@ -117,6 +129,7 @@ loader, in `ModuleCode::relocs`:
 | `ImportProc(name)` | `Abs8` | the address of the exported procedure |
 | `StaticFrame` | `Abs8` | this module's frame offset in the program's static area |
 | `ImportData(name)` | `Abs8` | the frame offset of the exporting module plus the variable's offset |
+| `AttnFlag` | `Abs8` | the address of the runtime's attention flag (`mi::rtlib::ATTN`) |
 
 `Abs8` sites are the 8-byte immediate of a `movabs`; the loader writes
 the value plus the addend. `Loaded::new` does this for a `ModuleCode`
@@ -136,7 +149,7 @@ absent optional length is -1.
 | Index | Function | Operands after `env` | Returns |
 |---|---|---|---|
 | 0 | `raise` | `cond: i32` | |
-| 1 | `enter` | `code, argc` | |
+| 1 | `enter` | `code, argc, opdesc` | |
 | 2 | `leave` | | |
 | 3 | `deref` | `lo, hi` | native address |
 | 4 | `copy` | `dst, src, len` (no `env`) | |
@@ -188,6 +201,7 @@ absent optional length is -1.
 | 50 | `rslvsp` | `out, type, name, lib` | 16 bytes at `out` |
 | 51 | `dbg_stmt` | `n` | debug variant only |
 | 52 | `dbg_var` | `name, addr, desc` | debug variant only |
+| 53 | `attn` | | the attention flag was set |
 
 `file` is the index of the module's file declaration; the runtime
 finds the declaration through the running entry's program and keeps
@@ -200,10 +214,19 @@ reclaimed. Operation codes: `db_io` 1 `READ`, 2 `READP`, 3 `READE`, 4
 the key fields' bytes in record layout, a prefix allowed; a relative
 record number is passed when there is no key.
 
+Generated code polls the attention flag at every `debug.stmt` and
+before every branch back to an earlier block (a loop's back-edge): a
+load through the `AttnFlag` relocation and a branch to a cold block
+that calls `attn`, which clears the flag and runs the job's attention
+hook. The job process raises the flag on a timer so a running program
+takes its break messages between statements; the in-memory runtime
+never raises it.
+
 `enter` is called in every prologue with the procedure's own code
-address and its argument count, so the runtime can push a call-stack
-entry (with `%PARMS` for `CEETSTA`) and identify the procedure from
-the program's procedure table; `leave` is called before
+address, its argument count and its descriptor list, so the runtime
+can push a call-stack entry (with `%PARMS` for `CEETSTA` and the
+descriptors for `CEEDOD`) and identify the procedure from the
+program's procedure table; `leave` is called before
 every return, and the spaces of automatic storage the entry handed out
 die with it. `cond` is the number of the `MCHnnnn` message: `0601`,
 `0602`, `0603`, `1202`, `1210`, `1211`, `1602`, `3401`, `3402`, `3601`,
@@ -280,6 +303,7 @@ deref places, `monitor`/`endmon`, `dsply`, `sndpgmmsg`, `rcvmsg`,
 `rmvmsg`, `alloc`/`realloc`/`dealloc`, `dbopen`/`dbio`/`dbclose`,
 `dspio`/`prtio`, `dtaara.*`, `dtaq.*`, `rslvsp`. Dynamic program calls,
 `sysapi` (a program call into `QSYS`), calls through procedure and
-system pointers and every I/O go through the runtime. Still
-`CodegenError::Unsupported`: `rem` of floats and calls to a bare
-signature.
+system pointers and every I/O go through the runtime. `rem` of floats
+is `a - b * trunc(a / b)`; a bare signature called by name is an
+import of that name. Nothing the verifier accepts is
+`CodegenError::Unsupported`.

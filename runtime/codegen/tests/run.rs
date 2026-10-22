@@ -281,6 +281,53 @@ extern "sysv64" fn twice(_env: *mut Env, _argc: i64, _opdesc: i64, n: i32) -> i3
     n * 2
 }
 
+/// Reads the descriptor list: the count, then entry `n`'s length.
+extern "sysv64" fn described(
+    _env: *mut Env,
+    _argc: i64,
+    opdesc: i64,
+    _s: *const u8,
+    n: i32,
+) -> i32 {
+    let list = opdesc as *const u8;
+    // SAFETY: generated code built the list in its frame with the layout
+    // `codegen::abi` documents, for the two arguments of this call.
+    unsafe {
+        let count = std::ptr::read_unaligned(list.cast::<i32>());
+        let at = list.add(codegen::abi::OPDESC_HEADER as usize)
+            .add(codegen::abi::OPDESC_ENTRY as usize * (usize::try_from(n).unwrap() - 1));
+        let desc_type = std::ptr::read_unaligned(at.cast::<i32>());
+        let datatype = std::ptr::read_unaligned(at.add(4).cast::<i32>());
+        let length = std::ptr::read_unaligned(at.add(16).cast::<i32>());
+        count * 10000 + desc_type * 1000 + datatype * 100 + length
+    }
+}
+
+#[test]
+fn operational_descriptors_describe_the_arguments() {
+    let mut r = Running::new(
+        "
+module OPD
+extern proc DESCRIBED($s: char(10) *VARSIZE, byval $n: i32) -> i32 opdesc
+static $text: char(10)
+proc MAIN(byval $n: i32) -> i32 export {
+L0:
+  %n = load $n
+  %lit = callb DESCRIBED(\"AB\", %n)
+  %var = callb DESCRIBED($text, %n)
+  %r = add %lit, %var
+  ret %r
+}
+",
+        &[("DESCRIBED", described as *const () as usize)],
+    );
+    let main: Fn1 = unsafe { f(r.addr("MAIN")) };
+    // Two arguments; element, char, the literal's 2 bytes then the static's 10.
+    assert_eq!(main(r.env(), 1, 0, 1), (22202) + (22210));
+    // Argument 2: element, numeric, 4 bytes.
+    assert_eq!(main(r.env(), 1, 0, 2), 2 * 22104);
+}
+
 #[test]
 fn imported_procedures_resolve_by_name() {
     let mut r = Running::new(
@@ -361,14 +408,49 @@ L0:
 }
 
 #[test]
-fn unsupported_instructions_are_reported() {
-    let m = qir::parse(
-        "module U\nproc P() {\nL0:\n  %a = const.f64 1.5\n  %r = rem %a, %a\n  ret\n}\n",
-    )
-    .unwrap();
-    let err = codegen::compile(&m).unwrap_err().to_string();
-    assert!(
-        err.contains("rem of floats") && err.contains("not supported"),
-        "{err}"
+fn float_remainder_takes_the_dividend_sign() {
+    let mut r = Running::new(
+        "
+module FREM
+proc MAIN(byval $n: i32) -> i32 export {
+L0:
+  %n = load $n
+  %f = cvt.f64 %n
+  %r = rem %f, 4.0
+  %t = mul %r, 10.0
+  %i = cvt.i32 %t
+  ret %i
+}
+",
+        &[],
     );
+    let main: Fn1 = unsafe { f(r.addr("MAIN")) };
+    assert_eq!(main(r.env(), 1, 0, 7), 30);
+    assert_eq!(main(r.env(), 1, 0, -7), -30);
+    assert_eq!(main(r.env(), 1, 0, 8), 0);
+}
+
+#[test]
+fn a_signature_called_by_name_is_an_import() {
+    let mut r = Running::new(
+        "
+module SIG
+proto TWICE(byval $n: i32) -> i32
+proc MAIN(byval $n: i32) -> i32 export {
+L0:
+  %n = load $n
+  %t = callb TWICE(%n)
+  ret %t
+}
+",
+        &[("TWICE", twice as *const () as usize)],
+    );
+    assert!(
+        r.code
+            .relocs
+            .iter()
+            .any(|x| x.target == codegen::RelocTarget::ImportProc("TWICE".into()))
+    );
+    let main: Fn1 = unsafe { f(r.addr("MAIN")) };
+    assert_eq!(main(r.env(), 1, 0, 21), 42);
 }

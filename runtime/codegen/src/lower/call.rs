@@ -11,6 +11,7 @@
 use cranelift_codegen::ir::InstBuilder;
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{StackSlotData, StackSlotKind, Value, types};
+use qir::verify::typing::operand_type;
 use qir::{Arg, CallRet, CallTarget, Const, Linkage, Operand, Param, Type};
 
 use super::Lowerer;
@@ -39,14 +40,30 @@ impl Lowerer<'_, '_> {
                     return Ok(());
                 }
                 let fref = self.local_ref(pr.0);
-                self.bound_call(fref, &callee.params, callee.ret.as_ref(), args, ret)
+                self.bound_call(
+                    fref,
+                    &callee.params,
+                    callee.ret.as_ref(),
+                    args,
+                    ret,
+                    callee.opdesc,
+                )
             }
             CallTarget::Proto(pr) => {
                 let proto = self.m.protos[pr.0 as usize].clone();
                 match &proto.linkage {
-                    Linkage::Import => {
+                    // A bare signature called by name is an import of
+                    // that name, resolved at bind time.
+                    Linkage::Import | Linkage::Signature => {
                         let fref = self.import_ref(&proto);
-                        self.bound_call(fref, &proto.params, proto.ret.as_ref(), args, ret)
+                        self.bound_call(
+                            fref,
+                            &proto.params,
+                            proto.ret.as_ref(),
+                            args,
+                            ret,
+                            proto.opdesc,
+                        )
                     }
                     Linkage::Pgm { name, lib } => {
                         let (argc, argv) = self.argv(args, &proto.params)?;
@@ -56,7 +73,6 @@ impl Lowerer<'_, '_> {
                         let (argc, argv) = self.argv(args, &proto.params)?;
                         self.call_pgm(&proto.name, "QSYS", argc, argv)
                     }
-                    Linkage::Signature => Err(self.unsupported("a call to a signature")),
                 }
             }
             CallTarget::PgmName { name, lib } => {
@@ -94,7 +110,8 @@ impl Lowerer<'_, '_> {
                     proto.ret.as_ref(),
                     false,
                 ));
-                let vals = self.bound_args(&proto.params, proto.ret.as_ref(), args, ret)?;
+                let vals =
+                    self.bound_args(&proto.params, proto.ret.as_ref(), args, ret, proto.opdesc)?;
                 self.mark_region();
                 let inst = self.b.ins().call_indirect(sig, code, &vals);
                 let results = self.b.inst_results(inst).to_vec();
@@ -124,7 +141,8 @@ impl Lowerer<'_, '_> {
         Ok(t)
     }
 
-    /// A bound call with its arguments in registers and storage.
+    /// A bound call with its arguments in registers and storage, and
+    /// their operational descriptors when the callee declares `opdesc`.
     fn bound_call(
         &mut self,
         fref: cranelift_codegen::ir::FuncRef,
@@ -132,8 +150,9 @@ impl Lowerer<'_, '_> {
         ret_ty: Option<&Type>,
         args: &[Arg],
         ret: Option<&CallRet>,
+        opdesc: bool,
     ) -> Result<()> {
-        let vals = self.bound_args(params, ret_ty, args, ret)?;
+        let vals = self.bound_args(params, ret_ty, args, ret, opdesc)?;
         self.mark_region();
         let inst = self.b.ins().call(fref, &vals);
         let results = self.b.inst_results(inst).to_vec();
@@ -144,20 +163,27 @@ impl Lowerer<'_, '_> {
         Ok(())
     }
 
-    /// The argument values of a bound call: `env`, `argc`, `opdesc`,
-    /// the return buffer when the type needs one, then each parameter.
+    /// The argument values of a bound call: `env`, `argc`, `opdesc`
+    /// (the descriptor list when asked for, else 0), the return buffer
+    /// when the type needs one, then each parameter.
     fn bound_args(
         &mut self,
         params: &[Param],
         ret_ty: Option<&Type>,
         args: &[Arg],
         ret: Option<&CallRet>,
+        opdesc: bool,
     ) -> Result<Vec<Value>> {
         let mut vals: Vec<Value> = Vec::with_capacity(args.len() + 4);
         vals.push(self.env);
         let count = i64::try_from(args.len()).expect("fewer than 2^63 arguments");
         vals.push(self.b.ins().iconst(types::I64, count));
-        vals.push(self.b.ins().iconst(types::I64, 0));
+        let list = if opdesc {
+            self.descriptors(params, args)?
+        } else {
+            self.b.ins().iconst(types::I64, 0)
+        };
+        vals.push(list);
         if !abi::returns_in_register(ret_ty) {
             let size = ret_ty.map_or(0, Type::size);
             let buf = match ret {
@@ -186,6 +212,52 @@ impl Lowerer<'_, '_> {
             vals.push(v);
         }
         Ok(vals)
+    }
+
+    /// The operational descriptor list of a call, in a frame slot:
+    /// `abi::OPDESC_HEADER`, then one `abi::OPDESC_ENTRY` per argument.
+    fn descriptors(&mut self, params: &[Param], args: &[Arg]) -> Result<Value> {
+        let n = u32::try_from(args.len().max(params.len())).expect("few arguments");
+        let slot = self.b.create_sized_stack_slot(StackSlotData::new(
+            StackSlotKind::ExplicitSlot,
+            abi::OPDESC_HEADER + abi::OPDESC_ENTRY * n,
+            3,
+        ));
+        let list = self.b.ins().stack_addr(types::I64, slot, 0);
+        let count = self.b.ins().iconst(types::I32, i64::from(n));
+        self.b.ins().store(super::le(), count, list, 0);
+        let zero = self.b.ins().iconst(types::I32, 0);
+        self.b.ins().store(super::le(), zero, list, 4);
+        for k in 0..n {
+            let words = match (args.get(k as usize), params.get(k as usize)) {
+                (Some(Arg::Value(op)), Some(param)) => abi::describe(&self.arg_type(op, param)?),
+                (Some(Arg::Value(op)), None) => {
+                    let ty = operand_type(self.m, self.p, op, None).map_err(|e| self.unsupported(e))?;
+                    abi::describe(&ty)
+                }
+                _ => [abi::opdesc::NONE; 5],
+            };
+            let base = u64::from(abi::OPDESC_HEADER + abi::OPDESC_ENTRY * k);
+            for (i, w) in words.iter().enumerate() {
+                let v = self.b.ins().iconst(types::I32, i64::from(*w));
+                let at = off32(base + 4 * u64::try_from(i).expect("five words"));
+                self.b.ins().store(super::le(), v, list, at);
+            }
+            self.b.ins().store(super::le(), zero, list, off32(base + 20));
+        }
+        Ok(list)
+    }
+
+    /// The type an argument is passed as: a literal takes the
+    /// parameter's type, cut to its own length for `*VARSIZE` text.
+    fn arg_type(&self, op: &Operand, param: &Param) -> Result<Type> {
+        match op {
+            Operand::Const(Const::Str(s)) if param.varsize && matches!(param.ty, Type::Char(_)) => {
+                Ok(Type::Char(u32::try_from(s.len().max(1)).expect("literal fits")))
+            }
+            Operand::Const(_) => Ok(param.ty.clone()),
+            _ => operand_type(self.m, self.p, op, Some(&param.ty)).map_err(|e| self.unsupported(e)),
+        }
     }
 
     /// A parameter list for a program call: every argument by address,

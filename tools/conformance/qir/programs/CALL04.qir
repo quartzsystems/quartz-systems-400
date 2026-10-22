@@ -1,0 +1,34 @@
+; float remainder and a bare signature called by name (unresolved here: MCH3401)
+module CALL04
+proto TWICE(byval $v: i64) -> i64
+static $r: f64
+proc CALL04() entry {
+L0:
+  %a = const.f64 7.5
+  %r = rem %a, 2.0
+  store $r, %r
+  dsply $r
+  %n = const.f64 -7.5
+  %s = rem %n, 2.0
+  store $r, %s
+  dsply $r
+  monitor Z, MCH1211 -> ZERO
+  %z = const.f64 0.0
+  %q = rem %a, %z
+  dsply "not reached"
+  endmon Z
+  br NEXT
+ZERO:
+  dsply "float rem by zero"
+  br NEXT
+NEXT:
+  monitor U, MCH3401 -> GONE
+  %x = const.i64 21
+  %y = callb TWICE(%x)
+  dsply %y
+  endmon U
+  ret
+GONE:
+  dsply "signature with no export"
+  ret
+}

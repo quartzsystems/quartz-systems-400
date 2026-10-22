@@ -321,8 +321,9 @@ otherwise logs go to `target/logs/`.
   ioctl), `lic/console/src/fb/raw.rs` (framebuffer ioctls),
   `lic/slic/src/platform/blk.rs` (BLKRRPART), `lic/blockdev/src/aligned.rs`
   (aligned buffer views), `lic/blockdev/src/linux.rs` (BLKDISCARD),
-  `runtime/mi/src/rtlib/mem.rs` (the storage and job behind a runtime call) and
-  `runtime/mi/src/act.rs` (calling into generated code: entries and handlers).
+  `runtime/mi/src/rtlib/mem.rs` (the storage and job behind a runtime call),
+  `runtime/mi/src/act.rs` (calling into generated code: entries and handlers) and
+  `work/qsjob/src/platform/stack.rs` (the stack guard's signal handler).
 - Errors: `thiserror` enums in libraries, `anyhow` only in binaries.
 - Logs: `tracing`.
 - Small documented modules, one responsibility each. Private modules in

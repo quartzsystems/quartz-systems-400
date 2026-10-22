@@ -27,7 +27,7 @@ fn ours() -> Vec<(&'static str, &'static str)> {
         ("STATMAP", "MCH0603 status 121"),
         ("STATMAP", "MCH3601 status 222"),
         ("FCWHERE", "caller saw status 9999"),
-        ("PROMOTE", "monitor saw status 102"),
+        ("PROMOTE", "monitor saw status 0"),
         ("CEEFC", "CEEHDLU unregistered: CEE2057"),
         ("CEEFC", "CEEMRCR action 1: CEE2064"),
         ("CANCELTO", "caller got CEE9901 status 202"),

@@ -1,0 +1,11 @@
+console:
+  promoter
+  older handler
+  monitor took USR0001 after the older handler saw it
+  skipper
+  monitor took USR0002, the older handler skipped
+raised: MCH1211 MCH1211
+handled: USR0001 USR0002
+pending: none
+replies: 
+dump: no

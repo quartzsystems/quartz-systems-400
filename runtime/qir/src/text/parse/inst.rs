@@ -282,7 +282,8 @@ impl Parser {
                 if let Some((r, _)) = self.m.proc_named(&name) {
                     CallTarget::Local(r)
                 } else if let Some((r, p)) = self.m.proto_named(&name) {
-                    if p.linkage != Linkage::Import {
+                    // An extern proc, or a bare signature imported by name.
+                    if !matches!(p.linkage, Linkage::Import | Linkage::Signature) {
                         return Err(
                             self.err(format!("{name} is not a procedure; use call or sysapi"))
                         );

@@ -20,7 +20,8 @@ pub enum RtFn {
     /// Returns when the condition was handled and execution resumes;
     /// otherwise sets the job's pending flag and returns.
     Raise = 0,
-    /// `enter(env, code)`: a procedure at code address `code` begins.
+    /// `enter(env, code, argc, opdesc)`: a procedure at code address
+    /// `code` begins with `argc` arguments and the descriptor list.
     Enter = 1,
     /// `leave(env)`: the procedure ends, normally or by percolation.
     Leave = 2,
@@ -138,6 +139,9 @@ pub enum RtFn {
     /// `dbg_var(env, name, addr, desc)`: a source variable's place,
     /// for `EVAL`; the debug variant only.
     DbgVar = 52,
+    /// `attn(env)`: the attention flag was set; the runtime takes what
+    /// waits for the job (a break message) and clears it.
+    Attn = 53,
 }
 
 /// The code of a database operation, as `db_io` takes it.
@@ -181,7 +185,7 @@ pub fn dtaara_op_code(op: qir::DtaaraOp) -> i64 {
 }
 
 /// Every runtime function, in table order.
-pub const RT_FNS: [RtFn; 53] = [
+pub const RT_FNS: [RtFn; 54] = [
     RtFn::Raise,
     RtFn::Enter,
     RtFn::Leave,
@@ -235,6 +239,7 @@ pub const RT_FNS: [RtFn; 53] = [
     RtFn::Rslvsp,
     RtFn::DbgStmt,
     RtFn::DbgVar,
+    RtFn::Attn,
 ];
 
 impl RtFn {
@@ -307,6 +312,7 @@ impl RtFn {
             Self::Rslvsp => "rslvsp",
             Self::DbgStmt => "dbg_stmt",
             Self::DbgVar => "dbg_var",
+            Self::Attn => "attn",
         }
     }
 
@@ -317,7 +323,7 @@ impl RtFn {
     pub fn shape(self) -> (usize, Option<types::Type>) {
         match self {
             Self::Raise => (1, None),
-            Self::Enter => (2, None),
+            Self::Enter => (3, None),
             Self::Leave => (0, None),
             Self::Deref => (2, Some(types::I64)),
             Self::Copy => (2, None),
@@ -369,6 +375,7 @@ impl RtFn {
             Self::Rslvsp => (4, None),
             Self::DbgStmt => (1, None),
             Self::DbgVar => (3, None),
+            Self::Attn => (0, None),
         }
     }
 

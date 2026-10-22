@@ -70,10 +70,14 @@ is in `expected/` and the test passes.
     program first). Oracle: `FCWHERE` prints which of two `MONMSG
     CPF9999` ran, in the callee or the caller.
 
-11. **Condition handler result codes 30 and 31 (promote).** Implemented
-    as percolate; the new condition token is ignored. Oracle:
-    `PROMOTE` promotes `MCH1211` to a user condition and prints what
-    the caller's `MONMSG` saw.
+11. **Condition handler result codes 30 and 31 (promote).** Implemented:
+    the new condition token's message identifier replaces the
+    condition, which goes on through the entry's remaining handlers
+    (30) or straight to its monitors (31) as if raised there; a token
+    naming no message percolates. The promoted condition carries no
+    RPG status, so an RPG `MONITOR` taking it sees `%STATUS` 0; the
+    machine may map it to `00202`. Oracle: `PROMOTE` promotes `MCH1211`
+    to a user condition and prints what the caller's monitor saw.
 
 12. **Feedback codes of the condition-management APIs.** Implemented:
     `CEE0801` for a procedure pointer that is not a procedure,
@@ -90,13 +94,14 @@ is in `expected/` and the test passes.
     escapes for OPM ones. Oracle: `CANCELTO` calls a failing program
     under `MONMSG CEE9901` and prints the message data.
 
-14. **Stack overflow.** Implemented: every entry measures the native
-    stack from the first entry call of the job; past the job's budget
-    (6 MiB of a job process's 8 MiB main thread, 1 MiB in memory) the entry
-    raises `MCH0601` as soon as it starts, so a runaway recursion is
-    an addressing violation a monitor can take, and the guard page is
-    never reached. The machine's identifier for a stack overflow is
-    not certain. Oracle: `DEEPREC` recurses without end under `MONMSG
+14. **Stack overflow.** Implemented: a job process catches the
+    `SIGSEGV` on its stack's guard page (`work/qsjob/src/platform/
+    stack.rs`), lets the stack grow one more MiB so the access
+    completes, and the next call-stack entry raises `MCH0601`, so a
+    runaway recursion is an addressing violation a monitor can take;
+    the in-memory runtime measures a 1 MiB budget at every entry
+    instead. The machine's identifier for a stack overflow is not
+    certain. Oracle: `DEEPREC` recurses without end under `MONMSG
     MCH0000` and prints the identifier.
 
 15. **`QCMDEXC` from a program.** Closed: since Phase 7 the command

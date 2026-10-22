@@ -148,7 +148,7 @@ pub extern "sysv64" fn ceeutx(env: *mut Env, argc: i64, _od: i64, p1: i64, p2: i
 }
 
 /// The message file a facility's messages live in.
-fn file_of(msgid: &str) -> &'static str {
+pub(crate) fn file_of(msgid: &str) -> &'static str {
     match msgid.get(..3) {
         Some("CEE") => "QCEEMSG",
         Some("SQL") => "QSQLMSG",
