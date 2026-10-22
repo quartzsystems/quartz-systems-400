@@ -380,8 +380,8 @@ cargo test -p store                       # unit, property and crash tests
 - The installer offers optical media only and the English language
   group; the IPL options other than `Start print writers` are kept for
   Phase 5.
-- `*USRIDX` entries are at most the key plus 1024 bytes; user spaces at
-  most 16 MiB; a queue reclaims space only when it empties.
+- User spaces are at most 16 MiB; a queue reclaims space only when it
+  empties.
 - Locks are in-process and per caller-supplied job handle.
 - RCLSTG runs with the store otherwise idle and treats a valid header on
   a free page as a deleted object.
@@ -439,7 +439,8 @@ power pull, and the four RCLSTG scenarios.
   pages and rewrites the extent list; shorter and partial writes are
   patches (a list that would outgrow its slots falls back to patches).
 - `*USRIDX` keys are 128 bytes in the tree (120 zero-padded plus the
-  insertion sequence); entries beyond key plus 1024 bytes are refused.
+  insertion sequence); an entry's data beyond 1023 bytes lives on
+  overflow pages chained from the tree value, up to IBM's 2000 bytes.
 - `C1001085` and `C1001087` are informational and are followed by the
   fatal B-codes B1001040 and B1001050.
 - `StoreError` reports message IDs through `msgid()` rather than a

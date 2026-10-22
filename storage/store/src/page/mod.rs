@@ -44,6 +44,8 @@ pub enum PageType {
     ObjectData = 0x0021,
     /// Extent list overflow.
     ExtentOverflow = 0x0022,
+    /// The rest of a long user index entry.
+    IndexOverflow = 0x0023,
 }
 
 impl PageType {
@@ -60,6 +62,7 @@ impl PageType {
             0x0020 => Self::ObjectHeader,
             0x0021 => Self::ObjectData,
             0x0022 => Self::ExtentOverflow,
+            0x0023 => Self::IndexOverflow,
             _ => return None,
         })
     }

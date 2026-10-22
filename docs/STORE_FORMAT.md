@@ -51,6 +51,7 @@ Page types:
 | 0x0020 | object header |
 | 0x0021 | object data |
 | 0x0022 | extent overflow |
+| 0x0023 | index entry overflow |
 
 ## 2. Object ID
 
@@ -635,10 +636,12 @@ multiple of 8.
 
 ### `UsridxAttr` (32 bytes)
 
-Entries live in a B+tree owned by the index, keyed by `IdxKey`, whose
-value is the entry's bytes after the key (at most 1024, so
-`entry_len` is at most `key_len + 1024`; longer entries are a later
-phase).
+Entries live in a B+tree owned by the index, keyed by `IdxKey`. The
+value starts with a tag byte: 0, and the entry's bytes after the key
+follow (at most 1023 of them); 1, and an `IdxOverflowRef` names the
+first of a chain of index entry overflow pages (type 0x0023, owned by
+the index) that hold those bytes, 4048 per page. An entry is at most
+2000 bytes, so `entry_len` is 1..2000.
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
@@ -657,6 +660,28 @@ phase).
 |---|---|---|---|
 | 0 | 120 | key | the entry's first `key_len` bytes, zero padded |
 | 120 | 8 | seq | insertion sequence, so equal keys sort by age |
+
+### `IdxOverflowRef` (11 bytes)
+
+The tree value of an entry whose data is on overflow pages.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | tag | 1 |
+| 1 | 8 | page | the first overflow page |
+| 9 | 2 | len | bytes of data in all |
+
+### `IdxOverflowHeader` (16 bytes)
+
+At offset 0 of an index entry overflow page, followed by `len` bytes
+of the entry's data; `next` chains to the page holding the rest, 0 on
+the last. Freed with the entry.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | next | next overflow page, 0 for none |
+| 8 | 2 | len | data bytes on this page |
+| 10 | 6 | reserved | 0 |
 
 ### `SysvalAttr` (16 bytes)
 

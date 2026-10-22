@@ -11,7 +11,7 @@ use blockdev::{BlockDev, MemBlockDev};
 use store::asp::superblock::{NO_PARTNER, Superblock};
 use store::asp::unit::UnitState;
 use store::obj::lock::JobHandle;
-use store::obj::{CreateParams, ObjectId, ops, types, usrspc};
+use store::obj::{CreateParams, ObjectId, ops, types, usridx, usrspc};
 use store::{FormatParams, PageType, Store, StoreConfig, StoreError};
 
 const WAL: u64 = 32;
@@ -123,6 +123,7 @@ fn three_units_make_one_page_space() {
 }
 
 #[test]
+#[allow(clippy::too_many_lines)]
 fn units_are_added_and_removed_through_the_table() {
     let devs = devices(&[1024], 2);
     let mut store = Store::format(boxed(&devs), &params(1), config()).unwrap();
@@ -160,6 +161,18 @@ fn units_are_added_and_removed_through_the_table() {
         t.commit().unwrap();
     }
     assert!(store.units()[1].used_pages > 0);
+    // An index with long entries: its tree and overflow pages move too.
+    let idx = {
+        let mut t = store.begin().unwrap();
+        let idx = usridx::create(&mut t, &create_params(qsys, "IDX"), false, 10, 2000).unwrap();
+        for i in 0..5u32 {
+            let mut e = format!("{i:<10}").into_bytes();
+            e.resize(2000, b'z');
+            usridx::insert(&mut t, idx, &e).unwrap();
+        }
+        t.commit().unwrap();
+        idx
+    };
     // Write something recognizable into the last object, then remove
     // the unit: its data moves to unit 0 and stays readable.
     let last = {
@@ -200,6 +213,10 @@ fn units_are_added_and_removed_through_the_table() {
         assert_eq!(&page.body()[100..119], b"moved with the unit");
         let ids = ops::list(&mut t, qsys, Some(types::USRSPC)).unwrap();
         assert_eq!(ids.len(), 12);
+        let found = usridx::find(&mut t, idx, usridx::KeyOp::Eq, b"3         ", 1).unwrap();
+        assert_eq!(found.len(), 1);
+        assert_eq!(found[0].len(), 2000);
+        assert_eq!(found[0][1999], b'z');
         t.abort();
     }
     let check = store.reclaim(store::ReclaimMode::Check, 1).unwrap();
@@ -214,6 +231,8 @@ fn units_are_added_and_removed_through_the_table() {
         for id in ids {
             ops::delete(&mut t, JobHandle(1), id).unwrap();
         }
+        usridx::drop_entries(&mut t, idx).unwrap();
+        ops::delete(&mut t, JobHandle(1), idx).unwrap();
         t.commit().unwrap();
     }
     assert!(matches!(

@@ -437,27 +437,8 @@ impl Store {
             }
         }
         if h.id.type_code == types::USRIDX {
-            let root = {
-                let page = self
-                    .asp_mut()
-                    .io()
-                    .read_page(sweep_header_page(sweep, h.id))?;
-                let a = &page.body()[ATTR_OFF..ATTR_OFF + usridx::ATTR_LEN];
-                let root = u64::from_le_bytes(a[8..16].try_into().expect("8"));
-                (root != 0).then_some(root)
-            };
-            let tree: BTree<usridx::IdxKey, Vec<u8>> = BTree::open(root, h.id);
-            let mut ro = ReadOnly(self.asp_mut().io());
-            match tree.pages(&mut ro) {
-                Ok(pages) => {
-                    for p in pages {
-                        if let Some(w) = check_page(sweep, h.id, referenced, p, PageType::BTreeNode)
-                        {
-                            note(w);
-                        }
-                    }
-                }
-                Err(e) => note(format!("index tree: {e}")),
+            for w in self.verify_index(sweep, h, referenced)? {
+                note(w);
             }
         }
         for root in h.tree_roots.into_iter().flatten() {
@@ -475,6 +456,63 @@ impl Store {
             }
         }
         Ok(why)
+    }
+
+    /// Check a user index's tree pages and its long entries' overflow
+    /// pages, marking them referenced; what was wrong with them.
+    fn verify_index(
+        &mut self,
+        sweep: &Sweep,
+        h: &ObjectHeader,
+        referenced: &mut [bool],
+    ) -> Result<Vec<String>> {
+        let mut wrong = Vec::new();
+        let root = {
+            let page = self
+                .asp_mut()
+                .io()
+                .read_page(sweep_header_page(sweep, h.id))?;
+            let a = &page.body()[ATTR_OFF..ATTR_OFF + usridx::ATTR_LEN];
+            let root = u64::from_le_bytes(a[8..16].try_into().expect("8"));
+            (root != 0).then_some(root)
+        };
+        let tree: BTree<usridx::IdxKey, Vec<u8>> = BTree::open(root, h.id);
+        let mut ro = ReadOnly(self.asp_mut().io());
+        match tree.pages(&mut ro) {
+            Ok(pages) => {
+                for p in pages {
+                    if let Some(w) = check_page(sweep, h.id, referenced, p, PageType::BTreeNode) {
+                        wrong.push(w);
+                    }
+                }
+            }
+            Err(e) => wrong.push(format!("index tree: {e}")),
+        }
+        let raws: Result<Vec<Vec<u8>>> = tree
+            .entries(&mut ro)
+            .and_then(|it| it.map(|r| r.map(|(_, v)| v)).collect());
+        let raws = match raws {
+            Ok(raws) => raws,
+            Err(e) => {
+                wrong.push(format!("index entries: {e}"));
+                return Ok(wrong);
+            }
+        };
+        for raw in &raws {
+            match usridx::overflow_pages(&mut ro, raw) {
+                Ok(pages) => {
+                    for p in pages {
+                        if let Some(w) =
+                            check_page(sweep, h.id, referenced, p, PageType::IndexOverflow)
+                        {
+                            wrong.push(w);
+                        }
+                    }
+                }
+                Err(e) => wrong.push(format!("index entry overflow: {e}")),
+            }
+        }
+        Ok(wrong)
     }
 
     fn diff_objdir(
