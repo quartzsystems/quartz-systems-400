@@ -185,7 +185,9 @@ pub fn set(
     }
     p.hashes = hashes_for(new, policy.pwdlvl);
     p.pwd_none = false;
-    p.pwdexp = false;
+    if user {
+        p.pwdexp = false;
+    }
     p.pwd_changed = now;
     Ok(())
 }

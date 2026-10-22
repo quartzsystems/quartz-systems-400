@@ -36,6 +36,10 @@ pub trait Guard: Send + Sync {
 
     /// The object is about to go: drop it from every profile's index.
     fn deleting(&self, txn: &mut Txn<'_>, h: &ObjectHeader) -> Result<()>;
+
+    /// The object's storage changes by `pages` (negative: freed): the
+    /// owner's tally, and its storage limit when it grows.
+    fn sizing(&self, txn: &mut Txn<'_>, h: &ObjectHeader, pages: i64) -> Result<()>;
 }
 
 /// The guard installed on the transaction's store, if any.
@@ -82,6 +86,14 @@ pub fn created(txn: &mut Txn<'_>, h: &ObjectHeader) -> Result<()> {
 pub fn deleting(txn: &mut Txn<'_>, h: &ObjectHeader) -> Result<()> {
     match guard(txn) {
         Some(g) => g.deleting(txn, h),
+        None => Ok(()),
+    }
+}
+
+/// See [`Guard::sizing`].
+pub fn sizing(txn: &mut Txn<'_>, h: &ObjectHeader, pages: i64) -> Result<()> {
+    match guard(txn) {
+        Some(g) => g.sizing(txn, h, pages),
         None => Ok(()),
     }
 }

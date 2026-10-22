@@ -478,6 +478,7 @@ pub fn all_extents(txn: &mut Txn<'_>, h: &ObjectHeader) -> Result<Vec<Run>> {
 /// place when possible. Returns the runs added.
 pub fn grow(txn: &mut Txn<'_>, id: ObjectId, pages: u64) -> Result<Vec<Run>> {
     let (page, mut h) = read_header(txn, id)?;
+    guard::sizing(txn, &h, i64::try_from(pages).unwrap_or(i64::MAX))?;
     let mut extents = all_extents(txn, &h)?;
     let mut added = Vec::new();
     let mut need = pages;
@@ -506,6 +507,11 @@ pub fn grow(txn: &mut Txn<'_>, id: ObjectId, pages: u64) -> Result<Vec<Run>> {
 /// Give back the last `pages` pages of an object's storage.
 pub fn shrink(txn: &mut Txn<'_>, id: ObjectId, pages: u64) -> Result<()> {
     let (page, mut h) = read_header(txn, id)?;
+    guard::sizing(
+        txn,
+        &h,
+        -i64::try_from(pages.min(h.size_pages)).unwrap_or(0),
+    )?;
     let mut extents = all_extents(txn, &h)?;
     let mut left = pages.min(h.size_pages);
     while left > 0 {

@@ -9,6 +9,8 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod auth;
+pub mod cmd;
 mod error;
 pub mod password;
 pub mod profile;

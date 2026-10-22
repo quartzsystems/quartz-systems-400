@@ -6,7 +6,9 @@
 //! classes, the profile objects in `QSYS`, their object indexes, and
 //! the shipped profiles.
 
+pub mod groups;
 pub mod index;
+pub mod limits;
 pub mod objects;
 pub mod payload;
 pub mod shipped;
