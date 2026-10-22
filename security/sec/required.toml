@@ -263,3 +263,7 @@ ibm = "CHGJOBD, CHGCLS, CHGSBSD: *OBJOPR and *OBJMGT"
 [op."wmobj.display"]
 need = ["*OBJOPR", "*READ"]
 ibm = "DSPJOBD, DSPCLS, DSPSBSD: *OBJOPR and *READ"
+
+[op."autl.use"]
+need = ["*USE"]
+ibm = "QUSEADPAUT: *USE to the list to create programs with USEADPAUT(*YES)"

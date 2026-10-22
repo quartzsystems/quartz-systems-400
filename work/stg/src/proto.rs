@@ -266,4 +266,8 @@ ipc::rpc! {
     /// Who the job is: its user, groups, special authorities, the
     /// owners it adopts.
     123 => fn whoami / Whoami () -> sec::auth::principal::Principal;
+    /// The programs (`LIB/NAME`) whose owners the call stack adopts,
+    /// nearest first; the service checks each is `USRPRF(*OWNER)`. The
+    /// owners adopted.
+    124 => fn adopt / Adopt (programs: Vec<String>) -> Result<Vec<String>, String>;
 }

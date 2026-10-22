@@ -275,6 +275,23 @@ fn crtpgm(system: &mut System, p: &Params, kind: PgmKind) -> Result<String, Stri
     let bnddirs = spec_list(p, "BNDDIR")?;
     let mut options = BindOptions::new(&name.to_string(), kind);
     options.attr.actgrp = actgrp_of(p);
+    options.attr.usrprf = match p.upper("USRPRF").as_deref() {
+        None | Some("*USER") => ile::UserProfile::User,
+        Some("*OWNER") => ile::UserProfile::Owner,
+        Some(v) => return Err(format!("CPD0084 USRPRF({v}) is not valid")),
+    };
+    let mut note = String::new();
+    options.attr.useadpaut = match p.upper("USEADPAUT").as_deref() {
+        None | Some("*YES") => {
+            let ok = useadpaut_allowed(system);
+            if !ok {
+                note = "QUSEADPAUT: you are not on its list, so the program does not use adopted authority.\n".into();
+            }
+            ok
+        }
+        Some("*NO") => false,
+        Some(v) => return Err(format!("CPD0084 USEADPAUT({v}) is not valid")),
+    };
     options.entry_module = p.upper("ENTMOD");
     options.allow_unresolved = p.upper("OPTION").as_deref() == Some("*UNRSLVREF");
     if kind == PgmKind::SrvPgm && p.upper("EXPORT").as_deref() == Some("*SRCFILE") {
@@ -307,9 +324,32 @@ fn crtpgm(system: &mut System, p: &Params, kind: PgmKind) -> Result<String, Stri
             .map_err(|e| e.to_string())
     })?;
     Ok(format!(
-        "{}{what} {lib}/{name} created.\n",
+        "{}{note}{what} {lib}/{name} created.\n",
         diag_text(&diags)
     ))
+}
+
+/// `QUSEADPAUT`: when it names an authorization list, only users with
+/// `*USE` to the list create programs that use adopted authority.
+fn useadpaut_allowed(system: &mut System) -> bool {
+    let list = crate::stgsvc::security::sysval_text(system, "QUSEADPAUT");
+    let list = list.trim();
+    if list.is_empty() || list.eq_ignore_ascii_case("*NONE") {
+        return true;
+    }
+    let Some(s) = system.storage.as_mut() else {
+        return true;
+    };
+    let Some(qsys) = s.qsys else {
+        return true;
+    };
+    let Ok(mut txn) = s.store.begin() else {
+        return false;
+    };
+    match sec::auth::autl::find(&mut txn, qsys, list) {
+        Ok(id) => sec::guard::allowed(&mut txn, qsys, "autl.use", id),
+        Err(_) => true,
+    }
 }
 
 /// `updpgm LIB/PGM MODULE(...)`.

@@ -66,8 +66,8 @@ The start of a `*PGM` or `*SRVPGM` payload.
 | 8 | 4 | version | 1 |
 | 12 | 1 | kind | 0 `*PGM`, 1 `*SRVPGM` |
 | 13 | 1 | actgrp_kind | 0 `*NEW`, 1 `*CALLER`, 2 named, 3 `DFTACTGRP(*YES)` |
-| 14 | 1 | usrprf | 0 `*USER`, 1 `*OWNER`; `MIGRATE(phase6)` |
-| 15 | 1 | useadpaut | `MIGRATE(phase6)` |
+| 14 | 1 | usrprf | 0 `*USER`, 1 `*OWNER`: adopt the owner's authority (`SECURITY.md` §4) |
+| 15 | 1 | useadpaut | 1 `USEADPAUT(*YES)` (the default): use what callers adopt |
 | 16 | 1 | user_state | 1 user state, 0 system state |
 | 17 | 1 | user_domain | 1 user domain, 0 system domain |
 | 18 | 1 | alwupd | `ALWUPD(*YES)` |

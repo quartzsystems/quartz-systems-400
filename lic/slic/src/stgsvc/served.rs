@@ -408,6 +408,13 @@ impl Service for Served<'_> {
 
     fn ping(&mut self) {}
 
+    fn adopt(&mut self, programs: Vec<String>) -> Result<Vec<String>, String> {
+        let adopted = super::security::adopted(self.system, &programs);
+        let owners = adopted.iter().map(|a| a.owner.clone()).collect();
+        self.ctx.session.borrow_mut().principal.adopted = adopted;
+        Ok(owners)
+    }
+
     fn whoami(&mut self) -> sec::auth::principal::Principal {
         self.ctx.session.borrow().principal.clone()
     }

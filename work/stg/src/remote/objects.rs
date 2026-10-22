@@ -56,6 +56,16 @@ impl ObjectSource for RemoteObjects {
     fn by_id(&mut self, id: u64) -> Option<(String, String)> {
         self.link.borrow_mut().with(|l| l.by_id(id))
     }
+
+    fn adopt(&mut self, programs: &[String]) {
+        let r = self
+            .link
+            .borrow_mut()
+            .with(|l| l.adopt(programs.to_vec()));
+        if let Err(e) = r {
+            tracing::warn!("adopted authority: {e}");
+        }
+    }
 }
 
 /// User spaces.

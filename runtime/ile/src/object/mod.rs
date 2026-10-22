@@ -81,7 +81,7 @@ pub enum UserProfile {
     /// Run under the caller's profile.
     #[default]
     User,
-    /// Run under the owner's profile; `MIGRATE(phase6)`.
+    /// Adopt the owner's authority while it runs.
     Owner,
 }
 
@@ -95,7 +95,7 @@ pub struct PgmAttr {
     pub actgrp: ActGrpAttr,
     /// User profile.
     pub usrprf: UserProfile,
-    /// Use adopted authority; `MIGRATE(phase6)`.
+    /// `USEADPAUT(*YES)`: use the authority callers adopted.
     pub useadpaut: bool,
     /// User state rather than system state.
     pub user_state: bool,
@@ -126,7 +126,7 @@ impl PgmAttr {
             kind,
             actgrp: ActGrpAttr::Caller,
             usrprf: UserProfile::User,
-            useadpaut: false,
+            useadpaut: true,
             user_state: true,
             user_domain: true,
             alwupd: true,

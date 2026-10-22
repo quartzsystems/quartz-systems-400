@@ -326,3 +326,23 @@ or a list's entries bumps the epoch. Either makes the entry stale.
 Every check runs in the storage service, one process, so the epoch is
 a counter in memory and nothing is broadcast to the job processes.
 Adopted authority is never cached: the call stack changes it.
+
+## 5. Adopted authority
+
+A program or service program created with `USRPRF(*OWNER)` adopts its
+owner's authority while it is on the call stack. The job's activator
+(`mi::act::Activator::adopting`) walks the stack from the newest entry
+down: each `*OWNER` program adds its owner; a program with
+`USEADPAUT(*NO)` keeps the adoption of the programs below it from
+reaching those above. Control boundaries do not stop it. When the list
+changes, and only while some program on the stack adopts, the job sends
+it to the storage service (`adopt`, request 124); the service looks each
+program up, ignores one that is not `USRPRF(*OWNER)`, and puts its
+owner's authorities (its own special authorities and its owner,
+private and list entries; not its groups) in the job's principal.
+Adopted authority is added to what steps 1 to 5 found and is never
+cached.
+
+`USEADPAUT(*YES)` is the default. When `QUSEADPAUT` names an
+authorization list, a program created by a user without `*USE` to the
+list is made `USEADPAUT(*NO)`, and `CRTPGM` says so.

@@ -216,3 +216,53 @@ pub fn dst_allows_sysval_changes(record: Option<&licpart::Record>) -> bool {
         .and_then(|t| t.first().copied())
         .is_none_or(|b| svctools::dst::security::decode(b).allow_sysval_security_changes)
 }
+
+/// The owners `programs` (`LIB/NAME`, nearest first) adopt: each must be
+/// a `*PGM` or `*SRVPGM` created with `USRPRF(*OWNER)`; one that is not
+/// adopts nothing.
+pub fn adopted(system: &mut System, programs: &[String]) -> Vec<sec::auth::principal::Adopted> {
+    let mut out = Vec::new();
+    let Some(storage) = system.storage.as_mut() else {
+        return out;
+    };
+    let Some(qsys) = storage.qsys else {
+        return out;
+    };
+    let Ok(mut txn) = storage.store.begin() else {
+        return out;
+    };
+    for key in programs {
+        let Some((lib, name)) = key.split_once('/') else {
+            continue;
+        };
+        let (Ok(lib_name), Ok(pgm)) = (qsname::Name::parse(lib), qsname::Name::parse(name)) else {
+            continue;
+        };
+        let Ok(lid) = store::obj::ops::find_library(&mut txn, qsys, lib_name) else {
+            continue;
+        };
+        let Ok(lib_obj) = store::obj::library::Library::load(&mut txn, lid.id) else {
+            continue;
+        };
+        let id = [store::obj::types::PGM, store::obj::types::SRVPGM]
+            .into_iter()
+            .find_map(|ty| lib_obj.lookup(&mut txn, ty, pgm).ok().flatten());
+        let Some(id) = id else {
+            continue;
+        };
+        let Ok(p) = ile::store::load_program(&mut txn, id) else {
+            continue;
+        };
+        if p.attr.usrprf != ile::UserProfile::Owner {
+            continue;
+        }
+        let Ok((_, h)) = store::obj::ops::read_header(&mut txn, id) else {
+            continue;
+        };
+        let owner = store::obj::header::text_of(&h.owner);
+        if let Ok(a) = Principal::adopt(&mut txn, qsys, &owner, key) {
+            out.push(a);
+        }
+    }
+    out
+}

@@ -146,6 +146,9 @@ pub trait ObjectSource {
     fn by_id(&mut self, _id: u64) -> Option<(String, String)> {
         None
     }
+    /// The programs (`LIB/NAME`) whose owners' authority the call stack
+    /// now adopts, nearest first; the storage service checks them.
+    fn adopt(&mut self, _programs: &[String]) {}
 }
 
 /// Programs held in memory, for tests and the IR driver.
@@ -407,6 +410,10 @@ pub struct Activator {
     /// Modules translated again at load because their code was made
     /// by an older code generator.
     pub retranslated: u32,
+    /// Frames whose program adopts (`USRPRF(*OWNER)`).
+    pub adopting_frames: usize,
+    /// The adopting programs last told to the source.
+    pub adopted: Vec<String>,
 }
 
 impl Activator {
@@ -432,6 +439,55 @@ impl Activator {
                 .collect(),
             debug_programs: Vec::new(),
             retranslated: 0,
+            adopting_frames: 0,
+            adopted: Vec::new(),
+        }
+    }
+
+    /// The programs whose owners' authority applies now, nearest first:
+    /// each `USRPRF(*OWNER)` program on the stack, until a program with
+    /// `USEADPAUT(*NO)` stops what is below it from reaching above.
+    #[must_use]
+    pub fn adopting(&self) -> Vec<String> {
+        let mut out: Vec<String> = Vec::new();
+        let mut usable = true;
+        let mut last: Option<&str> = None;
+        for f in self.frames.iter().rev() {
+            let Some(p) = &f.program else {
+                continue;
+            };
+            if last == Some(p.key.as_str()) {
+                continue;
+            }
+            last = Some(p.key.as_str());
+            if usable && p.object.attr.usrprf == ile::UserProfile::Owner && !out.contains(&p.key) {
+                out.push(p.key.clone());
+            }
+            if !p.object.attr.useadpaut {
+                usable = false;
+            }
+        }
+        out
+    }
+
+    /// A frame came or went for `program`: tell the source when what is
+    /// adopted changed. Costs nothing while no program adopts.
+    pub fn frame_changed(&mut self, program: Option<&Arc<LoadedProgram>>, pushed: bool) {
+        let owner = program.is_some_and(|p| p.object.attr.usrprf == ile::UserProfile::Owner);
+        if owner {
+            if pushed {
+                self.adopting_frames += 1;
+            } else {
+                self.adopting_frames = self.adopting_frames.saturating_sub(1);
+            }
+        }
+        if !owner && self.adopting_frames == 0 && self.adopted.is_empty() {
+            return;
+        }
+        let now = self.adopting();
+        if now != self.adopted {
+            self.source.adopt(&now);
+            self.adopted = now;
         }
     }
 

@@ -72,6 +72,7 @@ pub extern "sysv64" fn enter(env: *mut Env, code: i64, argc: i64) {
     }
     j.abi.cur_region = 0;
     j.abi.cur_stmt = 0;
+    let adopts = program.clone();
     j.act.frames.push(Frame {
         code,
         program,
@@ -87,6 +88,7 @@ pub extern "sysv64" fn enter(env: *mut Env, code: i64, argc: i64) {
         cancel_handlers: Vec::new(),
         debug_vars: Vec::new(),
     });
+    j.act.frame_changed(adopts.as_ref(), true);
     // The native stack has a budget: past it the entry fails with
     // `MCH0601` as soon as it starts, before any guard page is hit.
     let here = std::ptr::from_ref(&code) as usize;
@@ -106,6 +108,7 @@ pub extern "sysv64" fn leave(env: *mut Env) {
     if let Some(f) = j.act.frames.pop() {
         e.statics = f.saved_statics;
         j.act.current = f.saved_ag;
+        j.act.frame_changed(f.program.as_ref(), false);
     }
     // The caller is back where it marked itself before the call.
     let (region, stmt) = j.act.frames.last().map_or((0, 0), |c| (c.region, c.stmt));
