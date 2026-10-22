@@ -6,7 +6,7 @@
    Library  . . . . . . . . . . .     QGPL          Name, *CURLIB               
  Storage pools:                                                                 
    Pool identifier  . . . . . . .   > 1             1-10                        
-   Storage size or name . . . . .     *BASE         Character value             
+   Storage size or name . . . . .     *BASE         *BASE, *NOSTG, *INTERACT... 
    Activity level . . . . . . . .                   0-32767                     
                        + for more values                                        
  Maximum jobs . . . . . . . . . .   *NOMAX        0-1000, *NOMAX                

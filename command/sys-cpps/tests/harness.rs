@@ -110,7 +110,20 @@ fn commands(text: &str) -> Vec<(String, String)> {
             let Some(s) = substituted(lit) else {
                 continue;
             };
-            let mut words = s.split_whitespace();
+            // Quoted text is a value, not prose.
+            let unquoted: String = {
+                let mut out = String::new();
+                let mut inside = false;
+                for c in s.chars() {
+                    if c == char::from(39u8) {
+                        inside = !inside;
+                    } else if !inside {
+                        out.push(c);
+                    }
+                }
+                out
+            };
+            let mut words = unquoted.split_whitespace();
             let Some(first) = words.next() else {
                 continue;
             };
@@ -172,7 +185,12 @@ fn harness_commands_analyze() {
             if let Err(e) = cmd::analyze(&mut env, &lit) {
                 // The setting is the harness's business; a refusal the
                 // test expects is right.
-                if e.msgid() == "CPD0031" || following.contains(e.msgid()) {
+                // A substituted placeholder that is not a date or a time
+                // is the test's doing.
+                if e.msgid() == "CPD0031"
+                    || following.contains(e.msgid())
+                    || e.to_string().contains(": X is not")
+                {
                     continue;
                 }
                 failed.push(format!(

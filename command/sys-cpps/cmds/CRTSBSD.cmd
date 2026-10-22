@@ -30,7 +30,10 @@
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
              E1:        ELEM       TYPE(*INT2) RANGE(1 10) +
                           PROMPT('Pool identifier')
-                        ELEM       TYPE(*CHAR) LEN(10) +
-                          PROMPT('Storage size or name')
+                        ELEM       TYPE(*CHAR) LEN(10) SPCVAL((*BASE) +
+                          (*NOSTG) (*INTERACT) (*SPOOL) (*SHRPOOL1) +
+                          (*SHRPOOL2) (*SHRPOOL3) (*SHRPOOL4) (*SHRPOOL5) +
+                          (*SHRPOOL6) (*SHRPOOL7) (*SHRPOOL8) (*SHRPOOL9) +
+                          (*SHRPOOL10)) PROMPT('Storage size or name')
                         ELEM       TYPE(*INT4) DFT(1) RANGE(0 32767) +
                           PROMPT('Activity level')
