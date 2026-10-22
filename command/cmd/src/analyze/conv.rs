@@ -216,7 +216,10 @@ fn restrictions(
     let max = parm.length().len as usize;
     if let Value::Char(s) = value
         && parm.ty.is_char()
-        && !matches!(parm.ty, ParmType::Date | ParmType::Time | ParmType::Lgl)
+        && !matches!(
+            parm.ty,
+            ParmType::Date | ParmType::Time | ParmType::Lgl | ParmType::X
+        )
         && s.chars().count() > max
     {
         return Err(bad("CPD0074").detail(format!(

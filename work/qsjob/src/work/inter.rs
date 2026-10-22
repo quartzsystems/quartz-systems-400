@@ -135,7 +135,7 @@ fn change_password(s: &mut Session<'_>) -> bool {
             continue;
         }
         let user = s.signon.user.clone();
-        match super::pwdpgm::validate(&mut s.c, s.link, &user, &new, &current) {
+        match super::pwdpgm::validate(s.c.job(), s.link, &user, &new, &current) {
             Ok(true) => {}
             Ok(false) => {
                 message = "The password validation program did not accept the new password.".into();
@@ -172,14 +172,6 @@ fn signon_info(s: &mut Session<'_>) -> bool {
             _ => {}
         }
     }
-}
-
-/// Whether the profile may run `word` from a command line.
-fn allowed(s: &Session<'_>, word: &str) -> bool {
-    s.signon.lmtcpb != "*YES"
-        || sec::profile::limits::LIMITED_COMMANDS
-            .iter()
-            .any(|c| c.eq_ignore_ascii_case(word))
 }
 
 /// The interim MAIN menu until the user signs off. F3 and F12 do
@@ -244,14 +236,6 @@ fn main_menu(s: &mut Session<'_>) {
             }
             continue;
         }
-        if !allowed(s, &word) {
-            message = format!(
-                "{} is limited and may not run {}.",
-                s.signon.user,
-                word.to_ascii_uppercase()
-            );
-            continue;
-        }
         let out = command_output(s, &typed);
         message = out
             .lines()
@@ -306,14 +290,6 @@ fn command_entry(s: &mut Session<'_>) -> bool {
         if word == "signoff" {
             signoff(s, &cmd);
             return true;
-        }
-        if !allowed(s, &word) {
-            message = format!(
-                "{} is limited and may not run {}.",
-                s.signon.user,
-                word.to_ascii_uppercase()
-            );
-            continue;
         }
         run_command(s, &cmd);
     }

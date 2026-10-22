@@ -33,7 +33,7 @@ pub use cond::{Cond, Exception};
 pub use error::{MiError, Result};
 pub use exec::Program;
 pub use heap::{Heap, HeapId};
-pub use job::Job;
+pub use job::{CmdExecFn, Job};
 pub use msg::{ClearMode, Message, MsgQueue, QueueRef};
 pub use space::{FatPtr, PtrKind, Spaces};
 pub use usrspc::{MemUserSpaces, UserSpaceSource};

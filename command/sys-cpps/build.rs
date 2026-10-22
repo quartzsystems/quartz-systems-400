@@ -13,7 +13,7 @@ fn main() {
     println!("cargo:rerun-if-changed=cmds");
     let mut names: Vec<String> = std::fs::read_dir(&dir)
         .expect("cmds/ exists")
-        .filter_map(|e| e.ok())
+        .filter_map(Result::ok)
         .map(|e| e.path())
         .filter(|p| p.extension().is_some_and(|x| x == "cmd"))
         .map(|p| {

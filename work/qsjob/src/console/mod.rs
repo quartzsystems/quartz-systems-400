@@ -2,19 +2,19 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `QSVCJOB`: the service console's job. Lines come from `slic`; calls,
-//! the job's displays and the debugger run here, every other command in
-//! the storage service, and whatever the line produced goes back with
-//! the prompt to show next.
+//! `QSVCJOB`: the service console's job, and the runtime every job
+//! role shares. Lines come from `slic`; each runs through the command
+//! analyzer (`command`): the processing program runs here, in the
+//! storage service or as a called program, and whatever the line
+//! produced goes back with the prompt to show next. `svc.` lines reach
+//! the service's own console table; in SQL mode every line does.
 
-mod breaks;
-mod call;
 mod debug;
-mod jobcmd;
+pub mod host;
+pub mod jobcmd;
 mod log;
 
 use std::cell::RefCell;
-use std::fmt::Write as _;
 use std::rc::Rc;
 use std::sync::mpsc::{Receiver, RecvTimeoutError};
 use std::time::Duration;
@@ -22,31 +22,24 @@ use std::time::Duration;
 use ipc::chan::Chan;
 use mi::Job;
 use stg::remote::status;
-use stg::remote::{RemoteProvider, Sources};
+use stg::remote::{RemoteCmds, RemoteProvider, Sources};
 use stg::{Client, Shared};
-use wm::ctl::{FromJob, JOB_COMMANDS, PROMPT, Start, ToJob};
+use wm::ctl::{FromJob, PROMPT, Start, ToJob};
 use wm::job::Status;
+
+pub use host::Host;
 
 /// The console job's state.
 pub struct Console {
-    ctl: Chan,
-    /// Messages from `slic`, read by a thread so the job can wait
-    /// with a timeout and look for breaks meanwhile.
-    inbox: Inbox,
-    pub(crate) link: Shared,
+    /// The job's surroundings.
+    pub host: Host,
     job: Option<Box<Job>>,
     provider: Option<Rc<RefCell<RemoteProvider>>>,
-    /// The job's `*LDA`.
-    pub(crate) lda: stg::remote::Lda,
     /// The prompt the storage service last asked for.
     prompt: String,
     /// SRC codes and system values the line's commands raised.
     srcs: Vec<String>,
     sysvals: Option<Vec<u8>>,
-    /// Who the job is.
-    start: Start,
-    /// Jobs this one started (subsystem monitors), until they end.
-    pub children: Vec<crate::work::spawn::Spawned>,
 }
 
 /// Serve lines until told to end. Never returns.
@@ -54,16 +47,22 @@ pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
     let mut c = Console::new(ctl, link, start);
     // The console job is the operator's: it never waits on QSYSOPR.
     let dft = vec![("INQMSGRPY".to_string(), "*DFT".to_string())];
-    let _ = c.link.borrow_mut().with(|l| l.chgjob(String::new(), dft));
+    let _ = c
+        .host
+        .link
+        .borrow_mut()
+        .with(|l| l.chgjob(String::new(), dft));
     c.started();
     loop {
-        status(&c.link, Status::Evtw, "");
+        status(&c.host.link, Status::Evtw, "");
         let next = loop {
-            match c.inbox.recv_timeout(BREAK_POLL) {
+            match c.host.inbox.recv_timeout(host::BREAK_POLL) {
                 Ok(m) => break Ok(m),
                 Err(RecvTimeoutError::Timeout) => {
                     c.breaks();
-                    c.children
+                    c.host
+                        .children
+                        .borrow_mut()
                         .retain_mut(|s| matches!(s.child.try_wait(), Ok(None)));
                 }
                 Err(RecvTimeoutError::Disconnected) => break Err(()),
@@ -77,20 +76,20 @@ pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
                 } else {
                     format!("CMD-{}", word.to_ascii_uppercase())
                 };
-                status(&c.link, Status::Run, &function);
+                status(&c.host.link, Status::Run, &function);
                 if c.prompt == PROMPT && !text.trim().is_empty() {
                     c.job().log_request(&text, ("QSVCJOB", "QSYS"));
                 }
                 let out = c.line(&text);
                 if !out.is_empty() {
-                    c.output(&out);
+                    c.host.output(&out);
                 }
                 let done = FromJob::Done {
                     prompt: c.prompt.clone(),
                     srcs: std::mem::take(&mut c.srcs),
                     sysvals: c.sysvals.take(),
                 };
-                if c.ctl.send(&done).is_err() {
+                if c.host.ctl.borrow_mut().send(&done).is_err() {
                     std::process::exit(0);
                 }
                 if c.job.as_ref().is_some_and(|j| j.joblog_full) {
@@ -100,7 +99,7 @@ pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
             }
             Ok(ToJob::End { .. }) => {
                 c.ended(0);
-                let _ = c.ctl.send(&FromJob::Ending {
+                let _ = c.host.ctl.borrow_mut().send(&FromJob::Ending {
                     reason: "ended by slic".into(),
                 });
                 std::process::exit(0);
@@ -112,36 +111,6 @@ pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
 }
 
 impl Console {
-    /// Show a panel on the job's display.
-    pub fn show(&mut self, panel: wm::ctl::Panel) {
-        let _ = self.ctl.send(&FromJob::Show { panel });
-    }
-
-    /// Wait for the display to answer: the key (0 for Enter) and the
-    /// fields. Breaks are taken meanwhile; `None` when the job is to
-    /// end.
-    pub fn wait_input(&mut self) -> Option<(u8, Vec<String>)> {
-        loop {
-            match self.inbox.recv_timeout(BREAK_POLL) {
-                Ok(ToJob::Input { key, fields }) => return Some((key, fields)),
-                Ok(ToJob::End { .. }) | Err(RecvTimeoutError::Disconnected) => return None,
-                Ok(_) => {}
-                Err(RecvTimeoutError::Timeout) => self.breaks(),
-            }
-        }
-    }
-
-    /// Wait up to `d`, taking breaks; `false` when the job is to end.
-    pub fn idle(&mut self, d: Duration) -> bool {
-        match self.inbox.recv_timeout(d) {
-            Ok(ToJob::End { .. }) | Err(RecvTimeoutError::Disconnected) => false,
-            _ => {
-                self.breaks();
-                true
-            }
-        }
-    }
-
     /// A job's runtime over `link`, its parent on `ctl`.
     pub fn new(ctl: Chan, link: &Shared, start: &Start) -> Self {
         let inbox = inbox(&ctl);
@@ -151,26 +120,47 @@ impl Console {
             b.resize(stg::remote::LDA_LEN, 0x40);
             *lda.borrow_mut() = b;
         }
-        Self {
-            start: start.clone(),
-            inbox,
-            ctl,
+        let host = Host {
             link: Rc::clone(link),
+            ctl: Rc::new(RefCell::new(ctl)),
+            inbox,
+            children: Rc::new(RefCell::new(Vec::new())),
+            cmds: Rc::new(RefCell::new(RemoteCmds::new(Rc::clone(link)))),
+            lda,
+            start: Rc::new(start.clone()),
+            attrs: Rc::new(RefCell::new(None)),
+        };
+        Self {
+            host,
             job: None,
             provider: None,
-            lda,
             prompt: PROMPT.to_string(),
             srcs: Vec::new(),
             sysvals: None,
-            children: Vec::new(),
         }
     }
 
-    /// Send text to the console now.
-    fn output(&mut self, text: &str) {
-        let _ = self.ctl.send(&FromJob::Output {
-            text: text.to_string(),
-        });
+    /// Show a panel on the job's display.
+    pub fn show(&mut self, panel: wm::ctl::Panel) {
+        self.host.show(panel);
+    }
+
+    /// Wait for the display to answer; `None` when the job is to end.
+    pub fn wait_input(&mut self) -> Option<(u8, Vec<String>)> {
+        let host = self.host.clone();
+        host.wait_input(self.job())
+    }
+
+    /// Wait up to `d`, taking breaks; `false` when the job is to end.
+    pub fn idle(&mut self, d: Duration) -> bool {
+        let host = self.host.clone();
+        host.idle(self.job(), d)
+    }
+
+    /// Deliver the breaks waiting for the job.
+    pub(crate) fn breaks(&mut self) {
+        let host = self.host.clone();
+        host.breaks(self.job());
     }
 
     /// One line; its output.
@@ -190,45 +180,59 @@ impl Console {
             return;
         }
         let entries = std::mem::take(&mut j.log_outbox);
-        self.link
+        self.host
+            .link
             .borrow_mut()
             .with(|l| stg::Client::joblog_put(l, entries));
     }
 
     fn run_line(&mut self, text: &str) -> String {
-        let word = text.split_whitespace().next().unwrap_or("");
-        if self.prompt == PROMPT && JOB_COMMANDS.contains(&word) {
-            return jobcmd::command(self, word, text);
+        if self.prompt != PROMPT {
+            // SQL mode: the service reads the line as it stands.
+            return self.exec(text);
         }
-        if self.prompt == PROMPT && word == "dtaara" {
-            let args: Vec<&str> = text.split_whitespace().collect();
-            if args.get(2).is_some_and(|a| a.eq_ignore_ascii_case("*LDA")) {
-                return jobcmd::lda(self, &args[1..]);
-            }
+        let host = self.host.clone();
+        let o = crate::command::run(self.job(), &host, text);
+        if let Some(p) = o.prompt {
+            self.prompt = p;
         }
-        self.exec(text)
+        self.srcs.extend(o.srcs);
+        if o.sysvals.is_some() {
+            self.sysvals = o.sysvals;
+        }
+        self.after(&o.name);
+        o.text
     }
 
-    /// Run a line in the storage service.
+    /// What a command changes in the job's own state.
+    fn after(&mut self, name: &str) {
+        match name {
+            "CHGLIBL" | "ADDLIBLE" | "RMVLIBLE" | "CHGCURLIB" | "CHGSYSLIBL" => {
+                self.host.attrs_changed();
+                self.refresh_libl();
+            }
+            "CHGJOB" => self.host.attrs_changed(),
+            "UPDPGM" | "CRTPGM" | "CRTSRVPGM" | "CRTBNDCL" | "CRTCLPGM" | "DLTPGM" => {
+                // A changed program is loaded afresh at its next call.
+                if let Some(j) = self.job.as_mut() {
+                    j.act.loaded.clear();
+                }
+            }
+            "CRTCMD" | "CHGCMD" | "DLTCMD" | "CHGCMDDFT" | "CRTPRXCMD" | "CHGPRXCMD"
+            | "DLTPRXCMD" => {
+                self.host.cmds.borrow_mut().clear();
+            }
+            _ => {}
+        }
+    }
+
+    /// Run a line in the storage service's console table.
     fn exec(&mut self, text: &str) -> String {
-        let reply = self.link.borrow_mut().with(|l| l.exec(text.to_string()));
+        let reply = self.host.exec(text);
         self.prompt = reply.prompt;
         self.srcs.extend(reply.srcs);
         if reply.sysvals.is_some() {
             self.sysvals = reply.sysvals;
-        }
-        let word = text.split_whitespace().next().unwrap_or("");
-        if matches!(
-            word,
-            "chglibl" | "addlible" | "rmvlible" | "chgcurlib" | "chgsyslibl" | "curlib"
-        ) {
-            self.refresh_libl();
-        }
-        if matches!(word, "updpgm" | "crtpgm" | "crtsrvpgm")
-            && let Some(j) = self.job.as_mut()
-        {
-            // A changed program is loaded afresh at its next call.
-            j.act.loaded.clear();
         }
         reply.text
     }
@@ -236,40 +240,38 @@ impl Console {
     /// The job, created on first use with its sources over the link.
     pub fn job(&mut self) -> &mut Job {
         if self.job.is_none() {
-            let mut s = Sources::new(&self.link);
+            let link = &self.host.link;
+            let mut s = Sources::new(link);
             // The console's `*LDA` is the job's, whether or not a
             // program has run yet.
-            s.lda = self.lda.clone();
-            s.data = stg::remote::RemoteData::new(self.link.clone(), self.lda.clone());
-            s.provider = RemoteProvider::new(self.link.clone(), self.lda.clone());
+            s.lda = self.host.lda.clone();
+            s.data = stg::remote::RemoteData::new(link.clone(), self.host.lda.clone());
+            s.provider = RemoteProvider::new(link.clone(), self.host.lda.clone());
             let mut job = Job::boxed(Box::new(s.objects));
             job.usrspcs.set_source(Box::new(s.spaces));
             job.msgs = Box::new(s.msgs);
-            job.ident.name.clone_from(&self.start.name);
-            job.ident.user.clone_from(&self.start.user);
-            job.ident.number = format!("{:06}", self.start.number);
+            job.ident.name.clone_from(&self.host.start.name);
+            job.ident.user.clone_from(&self.host.start.user);
+            job.ident.number = format!("{:06}", self.host.start.number);
             job.data = Some(Box::new(s.data));
             job.io = Some(Box::new(s.io));
             // Programs run on this process's main thread (8 MiB): leave
             // room below the budget for the runtime and the handlers.
             job.stack_bytes = 6 << 20;
-            job.spool = Some(Box::new(stg::remote::spool::RemoteSpool::new(
-                self.link.clone(),
-            )));
-            let ask = Rc::clone(&self.link);
+            job.spool = Some(Box::new(stg::remote::spool::RemoteSpool::new(link.clone())));
+            let ask = Rc::clone(link);
             job.inquiry = Some(Box::new(move |q| stg::remote::inquiry::answer(&ask, q)));
             let provider = Rc::new(RefCell::new(s.provider));
             let dyn_provider: Rc<RefCell<dyn sysapi::Provider>> = provider.clone();
             sysapi::install(&mut job, dyn_provider);
             // Domain and state are enforced at the level of this IPL.
-            job.act.qsecurity = self.link.borrow_mut().with(Client::whoami).qsecurity;
-            if let Ok(ctl) = self.ctl.try_clone() {
-                let ctl = RefCell::new(ctl);
-                let inbox = Rc::clone(&self.inbox);
-                job.set_debug_hook(Box::new(move |job: &mut Job, stop| {
-                    debug::session(job, stop, &mut ctl.borrow_mut(), &inbox)
-                }));
-            }
+            job.act.qsecurity = link.borrow_mut().with(Client::whoami).qsecurity;
+            let ctl = self.host.ctl.clone();
+            let inbox = Rc::clone(&self.host.inbox);
+            job.set_debug_hook(Box::new(move |job: &mut Job, stop| {
+                debug::session(job, stop, &mut ctl.borrow_mut(), &inbox)
+            }));
+            crate::command::install_hook(&mut job, &self.host);
             self.provider = Some(provider);
             self.job = Some(job);
             self.refresh_libl();
@@ -279,35 +281,17 @@ impl Console {
 
     /// The job's library list, as the service keeps it.
     fn refresh_libl(&mut self) {
+        let a = self.host.attrs();
         let Some(j) = self.job.as_mut() else {
             return;
         };
-        let a = self.link.borrow_mut().with(Client::rtvjoba);
         j.ident.libl = a.libl.search();
         j.ident.curlib = a.libl.cur;
-    }
-
-    /// Commands `QCMDEXC` queued during a call, run now; their output.
-    fn pending(&mut self) -> String {
-        let lines = self
-            .provider
-            .as_ref()
-            .map(|p| std::mem::take(&mut p.borrow_mut().pending))
-            .unwrap_or_default();
-        let mut out = String::new();
-        for l in lines {
-            let _ = writeln!(out, "QCMDEXC: {l}");
-            out.push_str(&self.line(&l));
-        }
-        out
     }
 }
 
 /// What `slic` sends, read on a thread.
 pub type Inbox = Rc<Receiver<ToJob>>;
-
-/// How often an idle job looks for break messages.
-const BREAK_POLL: Duration = Duration::from_secs(1);
 
 /// Read `ctl` on a thread; the channel closes when `slic` does.
 fn inbox(ctl: &Chan) -> Inbox {

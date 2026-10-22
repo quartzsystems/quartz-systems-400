@@ -42,28 +42,59 @@ fn escape(j: &mut Job, f: &ApiFail) {
     );
 }
 
+/// Run, check or prompt a command string through the job's command
+/// hook (the analyzer), or the provider when the job has none. Mode 0
+/// runs, 1 checks, 2 prompts then runs, 3 prompts and returns the
+/// string.
+fn command(j: &mut Job, p: &mut dyn Provider, text: &str, mode: u8) -> Result<String, ApiFail> {
+    if text.trim().is_empty() {
+        return Err(ApiFail::id("CPF0006"));
+    }
+    if let Some(f) = j.cmdexc.clone() {
+        return f(j, text, mode).map_err(|(msgid, data)| ApiFail { msgid, data });
+    }
+    match mode {
+        1 => p.check_command(text)?,
+        _ => p.exec_command(text)?,
+    }
+    Ok(text.to_string())
+}
+
 /// `QCMDEXC(command, length, [igc])`.
 fn qcmdexc(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     let a = Args(args);
     let text = command_text(&a);
-    if let Err(f) = p.exec_command(&text) {
+    if let Err(f) = command(j, p, &text, 0) {
         escape(j, &f);
     }
 }
 
-/// `QCMDCHK(command, length)`.
+/// `QCMDCHK(command, length)`: the syntax checked and, with `?` or a
+/// selective prompt, prompted; the changed string goes back into the
+/// caller's variable.
 fn qcmdchk(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     let a = Args(args);
     let text = command_text(&a);
-    if let Err(f) = p.check_command(&text) {
-        escape(j, &f);
+    let mode = if text.contains('?') { 3 } else { 1 };
+    match command(j, p, &text, mode) {
+        Ok(changed) => {
+            let n = usize::try_from(a.packed(1, 15, 5)).unwrap_or(0);
+            if mode == 3 && n > 0 {
+                a.put_bytes(0, &fixed(&changed, n));
+            }
+        }
+        Err(f) => escape(j, &f),
     }
 }
 
 /// `QCAPCMD(source, length, options, options length, options format,
 /// changed command, changed length, available length, errc)`:
-/// `CPOP0100`, whose type of command processing is 0 (run), 1 (check
-/// syntax) or 2 (prompt and run, treated as run).
+/// `CPOP0100`. The type of command processing: 0, 3 and 10 run the
+/// command (3 and 10 as a command line would, prompting on `?`); 1, 4
+/// and 6 check its syntax; 2, 5, 7, 8, 9 and 11 prompt it and return
+/// the changed string without running it. The prompter action byte at
+/// offset 5 forces a prompt (`1`) or allows one on `?` (`2`); the
+/// changed command string comes back in the receiver.
 fn qcapcmd(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     let a = Args(args);
     let errc = ErrCode::at(&a, 8);
@@ -76,13 +107,18 @@ fn qcapcmd(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     }
     let opts = a.bytes(2, 20);
     let kind = crate::param::bin4_at(&opts, 0);
-    let r = match kind {
-        1 => p.check_command(&text),
-        _ => p.exec_command(&text),
+    let action = opts.get(5).copied().unwrap_or(0xF0);
+    let mut mode = match kind {
+        1 | 4 | 6 => 1,
+        2 | 5 | 7 | 8 | 9 | 11 => 3,
+        _ => 0,
     };
-    match r {
-        Ok(()) => {
-            let changed = fixed(&text, text.len());
+    if action == 0xF1 && mode == 0 {
+        mode = 2;
+    }
+    match command(j, p, &text, mode) {
+        Ok(changed) => {
+            let changed = fixed(&changed, changed.len());
             let room = usize::try_from(a.bin4(6)).unwrap_or(0);
             a.put_bin4(7, i32::try_from(changed.len()).unwrap_or(i32::MAX));
             let n = room.min(changed.len());

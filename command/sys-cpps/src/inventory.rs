@@ -47,6 +47,8 @@ pub struct Entry {
     pub word: String,
     /// A note for the inventory table (`PHASE7.md`).
     pub note: String,
+    /// `ALWLMTUSR(*YES)`: a limited user may type it.
+    pub alwlmtusr: bool,
 }
 
 #[derive(Deserialize, Default)]
@@ -65,6 +67,8 @@ struct Over {
     word: Option<String>,
     #[serde(default)]
     note: String,
+    #[serde(default)]
+    alwlmtusr: bool,
 }
 
 #[derive(Deserialize)]
@@ -115,6 +119,7 @@ pub fn all() -> &'static [Entry] {
                         .and_then(|o| o.word.clone())
                         .unwrap_or_else(|| name.to_ascii_lowercase()),
                     note: o.map(|o| o.note.clone()).unwrap_or_default(),
+                    alwlmtusr: o.is_some_and(|o| o.alwlmtusr),
                 }
             })
             .collect()

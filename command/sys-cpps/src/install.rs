@@ -34,6 +34,7 @@ pub fn object(name: &str, now: u64) -> Result<CmdObject, Vec<cmd::Diag>> {
     let mut def = cmd::source::compile(name, source)?;
     let e = inventory::entry(name).expect("every definition is in the inventory");
     def.cpp = Qual::new(&e.cpp, "QSYS");
+    def.alwlmtusr = e.alwlmtusr;
     if def.text.is_empty() {
         def.text.clone_from(&def.prompt);
     }
@@ -66,7 +67,10 @@ pub fn install(txn: &mut Txn<'_>, ctx: &Ctx, qsys: ObjectId) -> cmd::Result<Inst
         let o = match object(name, ctx.now) {
             Ok(o) => o,
             Err(diags) => {
-                let first = diags.first().map(|d| format!("{} {}", d.msgid, d.detail)).unwrap_or_default();
+                let first = diags
+                    .first()
+                    .map(|d| format!("{} {}", d.msgid, d.detail))
+                    .unwrap_or_default();
                 done.failed.push(((*name).to_string(), first));
                 continue;
             }

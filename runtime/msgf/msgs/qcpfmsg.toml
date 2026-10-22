@@ -251,3 +251,560 @@ sev = 0
 text = "Job &3/&4/&1 submitted for job schedule entry &2."
 help = "The job scheduler found the entry due and submitted its command to the entry's job queue."
 vars = ["*CHAR 10", "*CHAR 6", "*CHAR 6", "*CHAR 10"]
+
+# The command analyzer's diagnostics (CPD00xx), the command messages
+# (CPF00xx), the definition compiler's rules (CPD02xx, ours until the
+# machine settles them) and the prompter's.
+
+[[msg]]
+id = "CPD0010"
+sev = 30
+text = "Value &1 is positional beyond the parameters that may be given that way."
+help = "The command allows only so many parameters without their keywords. Give this one as KEYWORD(value)."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0011"
+sev = 30
+text = "Value &1 is positional after a keyword."
+help = "Once a parameter is given with its keyword, every following parameter needs its keyword too."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0012"
+sev = 30
+text = "Keyword &1 is not a parameter of this command."
+help = "Check the spelling against the command's prompt (F4) or DSPCMD."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0013"
+sev = 30
+text = "A quoted string is not closed."
+help = "An apostrophe opened a string that never ends. Inside a string, write an apostrophe twice."
+
+[[msg]]
+id = "CPD0014"
+sev = 30
+text = "Parentheses are not balanced."
+help = "Every opening parenthesis needs its closing one, outside quoted strings."
+
+[[msg]]
+id = "CPD0015"
+sev = 30
+text = "Parameter &1 is required."
+help = "The command needs a value for this parameter and has no default for it."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0016"
+sev = 30
+text = "Parameter &1 has more values than it allows."
+help = "A single value was given several values, a list has more elements than its maximum, or a group has more parts than it defines."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0017"
+sev = 30
+text = "A hexadecimal string must hold pairs of hexadecimal digits."
+help = "X'..' takes an even number of the digits 0 to 9 and A to F."
+
+[[msg]]
+id = "CPD0019"
+sev = 30
+text = "Character &1 cannot start a value."
+help = "The character is not one a name, number, string or operator starts with."
+vars = ["*CHAR 1"]
+
+[[msg]]
+id = "CPD0020"
+sev = 30
+text = "Keyword &1 was given more than once."
+help = "A parameter takes one value or one list; remove the repeated keyword."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0030"
+sev = 30
+text = "Command &1 in library &2 was not found."
+help = "No *CMD object of that name is in the library named, or in the library list when none was named."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD0031"
+sev = 30
+text = "Command &1 is not allowed where it was used."
+help = "The command's ALLOW attribute does not include this setting: an interactive or batch job, a CL program, or QCMDEXC."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0032"
+sev = 30
+text = "Command &1 is not allowed in the job's mode."
+help = "The command's MODE attribute does not include the mode the job runs in (production, debug or service)."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0035"
+sev = 30
+text = "Proxy command &1 leads through too many proxies."
+help = "A proxy chain may be at most five commands long."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0043"
+sev = 30
+text = "Command &1 is not allowed for a user with limited capabilities."
+help = "The user profile has LMTCPB(*YES); only commands with ALWLMTUSR(*YES) may be typed on a command line."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0061"
+sev = 30
+text = "The values of parameter &1 of command &2 do not go together."
+help = "A dependency between parameters of the command does not hold. The prompt (F4) shows which values are expected together."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD0074"
+sev = 30
+text = "The value of parameter &1 is too long."
+help = "The value has more characters or digits than the parameter's length allows."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0078"
+sev = 30
+text = "The value of parameter &1 is not a valid name."
+help = "A name is up to ten characters: a letter, $, # or @ first, then letters, digits, $, #, @, _ or a period."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0084"
+sev = 30
+text = "The value of parameter &1 is not allowed."
+help = "The value is not one the parameter accepts: not in its list of values, of the wrong kind, or a variable where none is allowed."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0085"
+sev = 30
+text = "The value of parameter &1 has too many decimal positions."
+help = "The parameter allows fewer decimal positions than the value has, or none."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0093"
+sev = 30
+text = "The value of parameter &1 is outside its range."
+help = "The parameter's RANGE attribute bounds the values it accepts."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0094"
+sev = 30
+text = "The value of parameter &1 fails its relational check."
+help = "The parameter's REL attribute compares the value with a limit."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0201"
+sev = 30
+text = "Command &1 already exists in library &2."
+help = "Use REPLACE(*YES) to replace it, or another name."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD0202"
+sev = 30
+text = "Keyword &1 is not a parameter of command &2."
+help = "NEWDFT names keywords of the command whose defaults change."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD0203"
+sev = 30
+text = "Parameter &1 of command &2 has no default to change."
+help = "A required parameter has no default; CHGCMDDFT changes only defaults."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD0211"
+sev = 30
+text = "A PARM statement needs KWD."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0212"
+sev = 30
+text = "More than 99 parameters are defined."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0213"
+sev = 30
+text = "Keyword &1 is not well formed."
+help = "A keyword is one to ten characters: a letter, then letters, digits, $, # or @."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0214"
+sev = 30
+text = "Keyword &1 is defined more than once."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0215"
+sev = 30
+text = "MAXPOS(&1) is more than the parameters defined."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0216"
+sev = 30
+text = "TYPE(&1) is not a type or a label."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0217"
+sev = 30
+text = "TYPE(&1) names no ELEM or QUAL statement."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0218"
+sev = 30
+text = "Label &1 is used more than once."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0219"
+sev = 30
+text = "Lists nest more than three levels deep at &1."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0220"
+sev = 30
+text = "A qualified name has at most five parts; &1 has more."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0221"
+sev = 30
+text = "A list has at most 300 elements; &1 has more."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0222"
+sev = 30
+text = "LEN is not valid for TYPE(&1)."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0223"
+sev = 30
+text = "LEN(&1): the decimal positions or the digits are out of range."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0224"
+sev = 30
+text = "RTNVAL(*YES) on &1 needs TYPE *CHAR, *DEC or *LGL."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0225"
+sev = 30
+text = "RTNVAL(*YES) on &1 allows no default, minimum, values or ranges."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0226"
+sev = 30
+text = "TYPE(*CMDSTR) on &1 allows no list, restriction or values."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0227"
+sev = 30
+text = "TYPE(*CMD) on &1 cannot be a list."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0228"
+sev = 30
+text = "MIN and MAX on &1 are not valid together."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0229"
+sev = 30
+text = "&1 is required and has a default."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0230"
+sev = 30
+text = "RSTD(*YES) on &1 needs VALUES, SPCVAL or SNGVAL."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0231"
+sev = 30
+text = "&1 has both REL and RANGE."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0232"
+sev = 30
+text = "RANGE on &1: the lower value is above the upper one."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0233"
+sev = 30
+text = "SNGVAL on &1 needs a list or a group type."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0234"
+sev = 30
+text = "PMTCTL(&1) names no PMTCTL statement."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0235"
+sev = 30
+text = "PMTCTL CTL(&1) names no parameter."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0236"
+sev = 30
+text = "DEP names parameter &1, which is not defined."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0237"
+sev = 30
+text = "The source needs exactly one CMD statement."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0238"
+sev = 30
+text = "KEYPARM(*YES) parameters must come before the others; &1 does not."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0239"
+sev = 30
+text = "CONSTANT on &1 allows no default, minimum, restriction or return value."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0240"
+sev = 30
+text = "VARY on &1 needs TYPE *CHAR or *PNAME."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0241"
+sev = 30
+text = "PROMPT text on &1 is over 30 characters."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0242"
+sev = 30
+text = "Keyword &1 is not valid on this statement."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0243"
+sev = 30
+text = "Statement &1 is not one of CMD, PARM, ELEM, QUAL, DEP or PMTCTL."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0244"
+sev = 30
+text = "The value of &1 is not valid on this statement."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0245"
+sev = 30
+text = "An ELEM or QUAL statement has no KWD."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0246"
+sev = 30
+text = "NBRTRUE(&1) is more than the PARM entries of the DEP."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0247"
+sev = 30
+text = "&1 has a default but its type takes none."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0248"
+sev = 30
+text = "TYPE(&1) names a PMTCTL label; a type needs an ELEM or QUAL label."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0249"
+sev = 30
+text = "The qualifiers of &1 must be name or character types."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0250"
+sev = 30
+text = "The CMD statement must come before any other."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0251"
+sev = 30
+text = "MAXPOS(&1) must be *NONE or 0 to 99."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0252"
+sev = 30
+text = "LGLREL on the first PMTCTL statement of label &1."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0253"
+sev = 30
+text = "An unlabelled &1 statement follows no labelled one."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0727"
+sev = 30
+text = "Variable &1 is not declared."
+help = "Every variable a CL program uses must be declared with DCL or DCLF before it is used."
+vars = ["*CHAR 11"]
+
+[[msg]]
+id = "CPF0001"
+sev = 30
+text = "Errors were found on command &1."
+help = "The diagnostic messages before this one say what was wrong. The command did not run."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF0002"
+sev = 30
+text = "The validity checker refused command &1."
+help = "The command's validity checking program found the values unacceptable; its messages say why."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF0005"
+sev = 30
+text = "The command string is longer than allowed."
+help = "A command line takes up to 512 characters; QCMDEXC up to 32702."
+
+[[msg]]
+id = "CPF0006"
+sev = 30
+text = "Errors occurred while command &1 was processed."
+help = "The command's processing program ended with an error; the messages before this one say what happened."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF0201"
+sev = 30
+text = "Command &1 already exists in library &2."
+help = "Use REPLACE(*YES) to replace it, or choose another name."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF0276"
+sev = 30
+text = "Command &1 was not created in library &2."
+help = "The definition source has errors; the diagnostic messages before this one name them."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF0901"
+sev = 30
+text = "Menu &1 is not available in this release."
+help = "Menus arrive in a later release; the command line of the main menu and Command Entry run commands now."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF3700"
+sev = 40
+text = "Save and restore are not available in this release."
+help = "The function arrives in a later release."
+
+[[msg]]
+id = "CPF6801"
+sev = 10
+text = "The command prompt was cancelled."
+help = "F3 or F12 was pressed on the prompt display; the command did not run."
+
+[[msg]]
+id = "CPF6802"
+sev = 30
+text = "The command cannot be prompted here."
+help = "Prompting needs a display; the job has none."
+
+[[msg]]
+id = "CPF9801"
+sev = 40
+text = "Object &1 in library &2 was not found."
+help = "No object of that name and type is in the library named."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF9810"
+sev = 40
+text = "Library &1 was not found."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF2111"
+sev = 40
+text = "Object &1 already exists in library &2."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF2105"
+sev = 40
+text = "Object &1 in &2 of type &3 was not found."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF2110"
+sev = 40
+text = "Library &1 was not found."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2102"
+sev = 0
+text = "Library &1 created."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2194"
+sev = 0
+text = "Library &1 deleted."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC2191"
+sev = 0
+text = "Object &1 in &2 of type &3 deleted."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]

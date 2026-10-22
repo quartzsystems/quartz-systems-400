@@ -47,6 +47,13 @@ pub type InquiryFn = Box<dyn FnMut(&Inquiry) -> Option<String>>;
 /// the parameter addresses.
 pub type NativeFn = Rc<dyn Fn(&mut Job, &[u64])>;
 
+/// How a command string is run (`QCMDEXC`), checked (`QCMDCHK`) or
+/// prompted (`QCAPCMD`): the job, the text and the mode (0 run, 1
+/// check, 2 prompt then run, 3 prompt and return the string); the
+/// resulting command string, or the escape message and its data. The
+/// job process installs it over the command analyzer.
+pub type CmdExecFn = Rc<dyn Fn(&mut Job, &str, u8) -> Result<String, (String, Vec<u8>)>>;
+
 /// An open file's owner: the activation (by its static area), the
 /// module and the file declaration.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -192,6 +199,9 @@ pub struct Job {
     /// Who answers an inquiry no queued reply answered: the job's
     /// `INQMSGRPY`. `None` takes the default reply.
     pub inquiry: Option<InquiryFn>,
+    /// Who runs command strings for `QCMDEXC` and its kin; without one
+    /// the APIs' provider takes them.
+    pub cmdexc: Option<CmdExecFn>,
     next_key: u32,
     env: Box<Env>,
 }
@@ -235,6 +245,7 @@ impl Job {
             joblog_wrapped: Vec::new(),
             log_outbox: Vec::new(),
             inquiry: None,
+            cmdexc: None,
             next_key: 1,
             env: Box::new(Env {
                 statics: std::ptr::null_mut(),
@@ -849,7 +860,24 @@ impl Job {
     /// Log a message the job sends to its own external queue from
     /// outside any program: job start and end, commands' messages.
     pub fn log_external(&mut self, msgid: &str, msgf: &str, data: &[u8], kind: MsgType) {
-        let (text, help, severity) = self.describe_message(msgid, msgf, "*LIBL", data);
+        self.log_external_with(msgid, msgf, data, kind, None, None);
+    }
+
+    /// [`log_external`](Self::log_external) with the first- or
+    /// second-level text replaced when the sender has better than the
+    /// description gives.
+    pub fn log_external_with(
+        &mut self,
+        msgid: &str,
+        msgf: &str,
+        data: &[u8],
+        kind: MsgType,
+        text: Option<String>,
+        help: Option<String>,
+    ) {
+        let (dtext, dhelp, severity) = self.describe_message(msgid, msgf, "*LIBL", data);
+        let text = text.unwrap_or(dtext);
+        let help = help.unwrap_or(dhelp);
         let key = self.next_key;
         self.next_key += 1;
         let m = Message {

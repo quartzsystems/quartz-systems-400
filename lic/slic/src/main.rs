@@ -12,6 +12,8 @@
 #![deny(unsafe_code)]
 
 #[cfg(target_os = "linux")]
+mod cpp;
+#[cfg(target_os = "linux")]
 mod hwrsrc;
 #[cfg(target_os = "linux")]
 mod ipl;

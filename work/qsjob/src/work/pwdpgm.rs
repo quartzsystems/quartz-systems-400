@@ -9,9 +9,8 @@
 //! `CHAR(10)`; at 2 and 3 each is a four-byte length, a four-byte CCSID
 //! (37) and the characters.
 
+use mi::Job;
 use stg::{Client, Shared};
-
-use crate::console::Console;
 
 /// The program `QPWDVLDPGM` names, `(lib, name)`; `None` for `*NONE`
 /// and `*REGFAC`.
@@ -59,7 +58,7 @@ fn password_parm(p: &str, level: u8) -> Vec<u8> {
 /// Run the validation program, if one is named: `Ok(true)` when it
 /// accepted or there is none, `Ok(false)` when it refused.
 pub fn validate(
-    c: &mut Console,
+    j: &mut Job,
     link: &Shared,
     user: &str,
     new: &str,
@@ -80,7 +79,6 @@ pub fn validate(
         rc.as_mut_ptr() as u64,
         profile.as_mut_ptr() as u64,
     ];
-    let j = c.job();
     j.call_program(&name, &lib, &addrs).map_err(|e| {
         format!(
             "{}: the password validation program {lib}/{name} could not be called",

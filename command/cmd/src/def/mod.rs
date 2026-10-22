@@ -390,6 +390,7 @@ impl ParmType {
         match self {
             Self::Char | Self::Cmd | Self::CmdStr | Self::PName | Self::X => 5000,
             Self::Dec => 24,
+            Self::VarName => 11,
             _ => 10,
         }
     }

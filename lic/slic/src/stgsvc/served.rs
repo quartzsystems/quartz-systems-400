@@ -939,6 +939,68 @@ impl Service for Served<'_> {
         self.lent(|c| c.provider.check_command(&text))
     }
 
+    fn cmd_lookup(&mut self, name: String, lib: Option<String>) -> Result<Option<(Vec<u8>, String)>, String> {
+        self.system.current_job = self.ctx.job.number;
+        self.own_libl();
+        let r = (|| {
+            let s = self.system.storage.as_mut().ok_or("object store not open")?;
+            let qsys = s.qsys.ok_or("object store not initialized")?;
+            svc::db::with_txn(&mut s.store, |txn| {
+                let names = ile::name_context(txn, qsys);
+                let mut src = cmd::store::StoreSource { txn, qsys, names };
+                match cmd::analyze::CmdSource::lookup(&mut src, &name, lib.as_deref()) {
+                    Ok(Some((o, l))) => Ok(Some((o.encode(), l))),
+                    Ok(None) => Ok(None),
+                    Err(e) => Err(e.msgid().to_string()),
+                }
+            })
+        })();
+        ile::set_libl(None);
+        r
+    }
+
+    fn run_cmd(&mut self, name: String, segments: Vec<Option<Vec<u8>>>, specified: Vec<bool>) -> stg::proto::CmdReply {
+        let def = match sys_cpps::install::object(&name, 0) {
+            Ok(o) => o.def,
+            Err(_) => {
+                return crate::cpp::escape("CPF0006", &name, &format!("{name} has no shipped definition"));
+            }
+        };
+        let parms = match cmd::block::read(&def, &segments, &specified) {
+            Ok(p) => p,
+            Err(e) => return crate::cpp::escape(e.msgid(), &name, &e.to_string()),
+        };
+        let root = self.own_qtemp();
+        self.system.current_job = self.ctx.job.number;
+        self.own_libl();
+        std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
+        let mut reply = crate::cpp::run(self.system, &name, &parms);
+        reply.prompt = svc::db::prompt(self.system).to_string();
+        std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
+        if matches!(name.as_str(), "OVRDBF" | "DLTOVR")
+            && let Some(sql) = self.ctx.svc.sql.as_ref()
+        {
+            let table = sql.session.overrides().to_vec();
+            self.ctx.io.session().set_overrides(table);
+        }
+        ile::set_libl(None);
+        self.root_qtemp(root);
+        reply.srcs = std::mem::take(&mut self.system.raised)
+            .into_iter()
+            .map(|s| s.code.to_string())
+            .collect();
+        if self.system.sysvals_changed {
+            super::security::refresh(self.system);
+        }
+        reply.sysvals = if std::mem::take(&mut self.system.sysvals_changed) {
+            self.system.sysvals.as_ref().map(sysval::SysVals::to_blob)
+        } else {
+            None
+        };
+        reply.segments = segments;
+        reply
+    }
+
     fn file(&mut self, lib: String, name: String) -> Option<FileInfo> {
         self.lent(|c| c.provider.file(&lib, &name))
     }

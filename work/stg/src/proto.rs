@@ -66,6 +66,51 @@ wire_struct!(Start {
 /// Index attributes, entry count and library.
 pub type IdxAttrs = (IdxAttr, usize, String);
 
+/// A message a command's processing program sent: identifier, type
+/// code (`MsgType` as `QUSRJOBI` names it: 1 info, 4 completion, 5
+/// diagnostic, 7 escape ...) and data.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CmdMsg {
+    /// `AAAnnnn`.
+    pub msgid: String,
+    /// The message type code.
+    pub kind: u8,
+    /// Substitution data.
+    pub data: Vec<u8>,
+}
+
+wire_struct!(CmdMsg { msgid, kind, data });
+
+/// What running a system command in the service answered.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CmdReply {
+    /// Output for the display.
+    pub text: String,
+    /// Messages for the job log: completion and diagnostics, in order.
+    pub messages: Vec<CmdMsg>,
+    /// The escape message that ended the command, if one did.
+    pub escape: Option<CmdMsg>,
+    /// The parameter block back, for `RTNVAL(*YES)` parameters.
+    pub segments: Vec<Option<Vec<u8>>>,
+    /// The console state `exec` reports: the prompt to show next, the
+    /// SRC codes raised and the system values when they changed.
+    pub prompt: String,
+    /// SRC codes.
+    pub srcs: Vec<String>,
+    /// The system values.
+    pub sysvals: Option<Vec<u8>>,
+}
+
+wire_struct!(CmdReply {
+    text,
+    messages,
+    escape,
+    segments,
+    prompt,
+    srcs,
+    sysvals
+});
+
 ipc::rpc! {
     request Request, service Service, client Client, dispatch dispatch;
 
@@ -283,4 +328,14 @@ ipc::rpc! {
     128 => fn audit_lic / AuditLic (events: Vec<(String, String, String)>) -> ();
     /// `Provider::sec`: a security API's question, as the job.
     129 => fn sec_api / SecApi (q: sec::api::Query) -> Result<sec::api::Answer, ApiFail>;
+
+    /// A `*CMD` by name, in `lib` or through the job's library list,
+    /// with the authority to run it checked: its payload and the
+    /// library it was found in; `None` when there is none; `Err` with
+    /// the message identifier when it may not be used.
+    130 => fn cmd_lookup / CmdLookup (name: String, lib: Option<String>) -> Result<Option<(Vec<u8>, String)>, String>;
+    /// Run a system command's processing program in the service: the
+    /// resolved command, its parameter block and which parameters the
+    /// caller gave.
+    131 => fn run_cmd / RunCmd (name: String, segments: Vec<Option<Vec<u8>>>, specified: Vec<bool>) -> CmdReply;
 }

@@ -11,6 +11,8 @@
 #![forbid(unsafe_code)]
 
 #[cfg(target_os = "linux")]
+mod command;
+#[cfg(target_os = "linux")]
 mod console;
 #[cfg(target_os = "linux")]
 mod start;

@@ -2,57 +2,62 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The console commands that act on the job itself: calls, activation
-//! groups, the call stack, message queues, replies, dumps and the
-//! debugger outside a stop.
+//! The commands that act on the job itself: activation groups, the
+//! call stack, message queues, replies, dumps, the debugger outside a
+//! stop, `STRSBS`, `SBMJOB`, `DLYJOB`, `PWRDWNSYS`, `DSCJOB`, `CHGPWD`
+//! and the job's displays. They take the keyword form the bridge makes
+//! from the parameter block.
 
 use std::fmt::Write as _;
 
-use mi::QueueRef;
+use mi::{Job, QueueRef};
 use wm::cmd::Params;
 
-use super::Console;
+use super::host::Host;
 
-/// Run `cmd`; its output.
-pub fn command(c: &mut Console, cmd: &str, line: &str) -> String {
+/// Run `cmd`; its output. An error is a line starting with the message
+/// identifier that ended the command.
+pub fn command(job: &mut Job, host: &Host, cmd: &str, line: &str) -> String {
     let p = Params::parse(line);
     let r = match cmd {
-        "call" => super::call::call(c, line),
-        "dspactgrp" => Ok(c.job().actgrp_text()),
-        "rclactgrp" => rclactgrp(c, &p),
-        "dspcallstk" => Ok(c.job().call_stack_text()),
-        "dspmsgq" => Ok(dspmsgq(c, &p)),
-        "rpy" => rpy(c, &p),
-        "dmp" => {
-            let j = c.job();
-            Ok(j.last_dump.clone().unwrap_or_else(|| j.dump(true)))
-        }
-        "strdbg" => strdbg(c, &p),
+        "dspactgrp" => Ok(job.actgrp_text()),
+        "rclactgrp" => rclactgrp(job, &p),
+        "dspcallstk" => Ok(job.call_stack_text()),
+        "dspmsgq" => Ok(dspmsgq(job, &p)),
+        "rpy" => rpy(job, &p),
+        "dmp" => Ok(job.last_dump.clone().unwrap_or_else(|| job.dump(true))),
+        "strdbg" => strdbg(job, &p),
         "enddbg" => {
-            c.job().enddbg();
+            job.enddbg();
             Ok("Debug ended.\n".to_string())
         }
-        "addbkp" => addbkp(c, &p, true),
-        "rmvbkp" => addbkp(c, &p, false),
-        "dspbkp" => Ok(dspbkp(c)),
-        "dspjoblog" => Ok(c.dspjoblog()),
-        "strsbs" => strsbs(c, &p),
-        "dlyjob" => dlyjob(c, &p),
-        "sbmjob" => sbmjob(c, &p),
-        "pwrdwnsys" => pwrdwnsys(c, &p),
-        "wrkjob" => wrkjob(c, &p),
-        "chgpwd" => chgpwd(c, &p),
-        "dscjob" => c
+        "addbkp" => addbkp(job, &p, true),
+        "rmvbkp" => addbkp(job, &p, false),
+        "dspbkp" => Ok(dspbkp(job)),
+        "dspjoblog" => Ok(super::log::dspjoblog(job, host)),
+        "strsbs" => strsbs(host, &p),
+        "dlyjob" => dlyjob(job, host, &p),
+        "sbmjob" => sbmjob(host, &p),
+        "pwrdwnsys" => pwrdwnsys(host, &p),
+        "wrkjob" => wrkjob(job, host, &p),
+        "chgpwd" => chgpwd(job, host, &p),
+        "dscjob" => host
             .ctl
+            .borrow_mut()
             .send(&wm::ctl::FromJob::Disconnect)
             .map(|()| "Job disconnected; sign on again to return to it.\n".to_string())
             .map_err(|e| e.to_string()),
         "endsys" => {
             let opt = p.upper("OPTION").unwrap_or_else(|| "*CNTRLD".into());
             let delay = p.upper("DELAY").unwrap_or_else(|| "*NOLIMIT".into());
-            Ok(c.line(&format!("endsbs *ALL OPTION({opt}) DELAY({delay})")))
+            Ok(crate::command::run(
+                job,
+                host,
+                &format!("ENDSBS SBS(*ALL) OPTION({opt}) DELAY({delay})"),
+            )
+            .text)
         }
-        other => Err(format!("{other} is not a job command")),
+        other => Err(format!("CPF0006 {other} is not a job command")),
     };
     match r {
         Ok(s) => s,
@@ -60,22 +65,35 @@ pub fn command(c: &mut Console, cmd: &str, line: &str) -> String {
     }
 }
 
+/// A parameter after a call: its text when it is text, else hex.
+#[must_use]
+pub fn parm_text(b: &[u8]) -> String {
+    let text = ccsid::from_ebcdic(b);
+    if text.chars().all(|c| c.is_ascii_graphic() || c == ' ') {
+        format!("'{}'", text.trim_end())
+    } else {
+        b.iter().fold(String::new(), |mut s, x| {
+            let _ = write!(s, "{x:02X}");
+            s
+        })
+    }
+}
+
 /// `CHGPWD CURPWD() NEWPWD()`: the job's own password. The validation
 /// program runs here, in the job, before the service changes it.
-fn chgpwd(c: &mut Console, p: &Params) -> Result<String, String> {
+fn chgpwd(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
     let current = p.text("CURPWD");
     let new = p.text("NEWPWD");
     if new.is_empty() {
         return Err("CPD0071 NEWPWD is required".into());
     }
-    let link = c.link.clone();
-    let user = c.link.borrow_mut().with(stg::Client::whoami).user;
-    if !crate::work::pwdpgm::validate(c, &link, &user, &new, &current)? {
+    let user = host.link.borrow_mut().with(stg::Client::whoami).user;
+    if !crate::work::pwdpgm::validate(job, &host.link, &user, &new, &current)? {
         return Err(
             "CPF22C6 The password validation program did not accept the new password.".into(),
         );
     }
-    c.link
+    host.link
         .borrow_mut()
         .with(|l| stg::Client::chg_pwd(l, current, new, true))?;
     Ok("Password changed successfully.\n".into())
@@ -83,134 +101,146 @@ fn chgpwd(c: &mut Console, p: &Params) -> Result<String, String> {
 
 /// `WRKJOB [JOB(n/u/name)] [OPTION(...)]`: the job's displays, by
 /// option. Another job's call stack and log are its own business
-/// (`MIGRATE(phase6)`: shown through the service).
-fn wrkjob(c: &mut Console, p: &Params) -> Result<String, String> {
-    let job = p.upper("JOB");
-    let own = job.is_none() || job.as_deref() == Some("*");
-    let jobkw = job
+/// (`MIGRATE(phase8)`: shown through the service).
+fn wrkjob(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
+    let which = p.upper("JOB");
+    let own = which.is_none() || which.as_deref() == Some("*");
+    let jobkw = which
         .as_ref()
+        .filter(|j| *j != "*")
         .map_or_else(String::new, |j| format!(" JOB({j})"));
     let option = p.upper("OPTION").unwrap_or_else(|| "*SELECT".into());
+    let s = &host.start;
     match option.as_str() {
-        "*STSA" | "*DFNA" | "*RUNA" => Ok(c.line(&format!("dspjob{jobkw}"))),
+        "*STSA" | "*DFNA" | "*RUNA" => {
+            Ok(crate::command::run(job, host, &format!("DSPJOB{jobkw}")).text)
+        }
         "*SPLF" => {
             let spec = if own {
-                format!("{:06}/{}/{}", c.start.number, c.start.user, c.start.name)
+                format!("{:06}/{}/{}", s.number, s.user, s.name)
             } else {
-                job.clone().unwrap_or_default()
+                which.clone().unwrap_or_default()
             };
-            Ok(c.line(&format!("wrksplf SELECT(*ALL) JOB({spec})")))
+            Ok(crate::command::run(job, host, &format!("WRKSPLF SELECT(*ALL) JOB({spec})")).text)
         }
-        "*JOBLOG" if own => Ok(c.dspjoblog()),
-        "*PGMSTK" if own => Ok(c.job().call_stack_text()),
-        "*LIBL" if own => Ok(c.line("dsplibl")),
+        "*JOBLOG" if own => Ok(super::log::dspjoblog(job, host)),
+        "*PGMSTK" if own => Ok(job.call_stack_text()),
+        "*LIBL" if own => Ok(crate::command::run(job, host, "DSPLIBL").text),
         "*JOBLOG" | "*PGMSTK" | "*LIBL" => {
             Err(format!("CPF1343 {option} of another job is not shown yet"))
         }
         "*SELECT" => Ok(format!(
             "Work with Job: {:06}/{}/{}\n\n  1. Display job status attributes        (OPTION(*STSA))\n  2. Display job definition attributes    (OPTION(*DFNA))\n  3. Display job run attributes           (OPTION(*RUNA))\n  4. Work with spooled files              (OPTION(*SPLF))\n 10. Display job log                      (OPTION(*JOBLOG))\n 11. Display call stack                   (OPTION(*PGMSTK))\n 13. Display library list                 (OPTION(*LIBL))\n",
-            c.start.number, c.start.user, c.start.name
+            s.number, s.user, s.name
         )),
         o => Err(format!("CPD0084 OPTION({o}) is not valid")),
     }
 }
 
-/// `rclactgrp NAME|*ELIGIBLE`.
-fn rclactgrp(c: &mut Console, p: &Params) -> Result<String, String> {
+/// `RCLACTGRP ACTGRP(NAME|*ELIGIBLE)`.
+fn rclactgrp(job: &mut Job, p: &Params) -> Result<String, String> {
     let name = p.pos_or(0, "ACTGRP")?.to_ascii_uppercase();
-    let j = c.job();
     if name == "*ELIGIBLE" {
-        j.rclactgrp_eligible();
+        job.rclactgrp_eligible();
         return Ok("Eligible activation groups reclaimed.\n".to_string());
     }
-    Ok(match j.rclactgrp(&name) {
+    Ok(match job.rclactgrp(&name) {
         Ok(()) => format!("Activation group {name} reclaimed.\n"),
         Err(e) => format!("{e}\n"),
     })
 }
 
-/// `dspmsgq [*PGM|*EXT|QSYSOPR]`.
-fn dspmsgq(c: &mut Console, p: &Params) -> String {
+/// `DSPMSGQ [*PGM|*EXT|QSYSOPR]`: the job's own queues (`svc.`-era
+/// display).
+fn dspmsgq(job: &mut Job, p: &Params) -> String {
     let which = p
         .pos
         .first()
+        .cloned()
+        .or_else(|| p.upper("MSGQ"))
         .map_or_else(|| "*EXT".to_string(), |s| s.to_ascii_uppercase());
     let q = match which.as_str() {
         "*PGM" | "*SAME" => QueueRef::Same,
         "QSYSOPR" | "*SYSOPR" => QueueRef::SysOpr,
         _ => QueueRef::Ext,
     };
-    c.job().msgq_text(q)
+    job.msgq_text(q)
 }
 
 /// `rpy KEY REPLY`: answer an inquiry on the external queue, or queue
 /// the reply for the next one.
-fn rpy(c: &mut Console, p: &Params) -> Result<String, String> {
+fn rpy(job: &mut Job, p: &Params) -> Result<String, String> {
     let (key, reply) = match p.pos.as_slice() {
         [k, r] => (k.clone(), r.to_ascii_uppercase()),
         [r] => (String::new(), r.to_ascii_uppercase()),
-        _ => return Err("rpy [KEY] REPLY".into()),
+        _ => (
+            p.upper("MSGKEY").unwrap_or_default(),
+            p.upper("RPY").unwrap_or_default(),
+        ),
     };
-    let j = c.job();
+    if reply.is_empty() {
+        return Err("CPD0015 RPY is required".into());
+    }
     let k = u32::from_str_radix(&key, 16).ok();
     if let Some(k) = k
-        && let Some(m) = j.ext_msgq.msgs.iter_mut().find(|m| m.key == k)
+        && let Some(m) = job.ext_msgq.msgs.iter_mut().find(|m| m.key == k)
     {
         m.reply = Some(reply.clone());
         return Ok(format!("Reply {reply} recorded for message {key}.\n"));
     }
-    j.inquiry_replies.push_back(reply.clone());
+    job.inquiry_replies.push_back(reply.clone());
     Ok(format!("Reply {reply} queued for the next inquiry.\n"))
 }
 
-/// `strdbg LIB/PGM`.
-fn strdbg(c: &mut Console, p: &Params) -> Result<String, String> {
+/// `STRDBG PGM(LIB/PGM)`.
+fn strdbg(job: &mut Job, p: &Params) -> Result<String, String> {
     let qual = p.pos_or(0, "PGM")?;
+    let qual = qual.split_whitespace().next().unwrap_or("").to_string();
     let (lib, name) = qual
         .split_once('/')
         .map_or(("*LIBL", qual.as_str()), |(l, n)| (l, n));
     let (lib, name) = (lib.to_ascii_uppercase(), name.to_ascii_uppercase());
-    Ok(match c.job().strdbg(&name, &lib) {
+    Ok(match job.strdbg(&name, &lib) {
         Ok(key) => format!("{key} is under debug; its next call runs the debug view.\n"),
         Err(e) => format!("{e}\n"),
     })
 }
 
-/// `addbkp N [PGM(LIB/PGM)]` and `rmvbkp N|*ALL [PGM(..)]`.
-fn addbkp(c: &mut Console, p: &Params, add: bool) -> Result<String, String> {
+/// `ADDBKP STMT(n) [PGM(LIB/PGM)]` and `RMVBKP STMT(n|*ALL) [PGM(..)]`.
+fn addbkp(job: &mut Job, p: &Params, add: bool) -> Result<String, String> {
     let n = p.pos_or(0, "STMT")?;
-    let pgm = p.upper("PGM");
-    let j = c.job();
+    let pgm = p
+        .upper("PGM")
+        .map(|q| q.split('/').next_back().unwrap_or("").to_string());
     let program = pgm.unwrap_or_else(|| {
-        j.debug
+        job.debug
             .as_ref()
             .and_then(|d| d.programs.last().cloned())
             .unwrap_or_default()
     });
     if program.is_empty() {
-        return Ok("No program is under debug; strdbg first or give PGM().\n".into());
+        return Ok("No program is under debug; STRDBG first or give PGM().\n".into());
     }
     if add {
         return Ok(match n.parse::<u32>() {
             Ok(stmt) => {
-                j.addbkp(&program, stmt);
+                job.addbkp(&program, stmt);
                 format!("Breakpoint at {program} statement {stmt}.\n")
             }
-            Err(_) => "addbkp N\n".into(),
+            Err(_) => "CPD0084 STMT is a statement number\n".into(),
         });
     }
     let gone = match n.parse::<u32>() {
-        Ok(stmt) => j.rmvbkp(&program, Some(stmt)),
-        Err(_) => j.rmvbkp(&program, None),
+        Ok(stmt) => job.rmvbkp(&program, Some(stmt)),
+        Err(_) => job.rmvbkp(&program, None),
     };
     Ok(format!("{gone} breakpoint(s) removed.\n"))
 }
 
-/// `dspbkp`.
-fn dspbkp(c: &mut Console) -> String {
-    let j = c.job();
+/// `DSPBKP`.
+fn dspbkp(job: &mut Job) -> String {
     let mut out = String::new();
-    if let Some(d) = &j.debug {
+    if let Some(d) = &job.debug {
         for (pgm, n) in &d.breakpoints {
             let _ = writeln!(out, "  {pgm:<21} statement {n}");
         }
@@ -225,34 +255,14 @@ fn dspbkp(c: &mut Console) -> String {
     }
 }
 
-/// `dtaara get *LDA` and `dtaara set *LDA TEXT`: the job's own area.
-pub fn lda(c: &mut Console, args: &[&str]) -> String {
-    match args {
-        ["get", _] => {
-            let text = ccsid::from_ebcdic(&c.lda.borrow());
-            format!("*LDA: '{}'\n", text.trim_end())
-        }
-        ["set", _, rest @ ..] => {
-            let text = rest.join(" ");
-            let Ok(mut b) = ccsid::to_ebcdic(&text) else {
-                return format!("{text}: not CP037\n");
-            };
-            b.resize(stg::remote::LDA_LEN, 0x40);
-            *c.lda.borrow_mut() = b;
-            "*LDA changed.\n".into()
-        }
-        _ => "Usage: dtaara get *LDA | set *LDA TEXT\n".into(),
-    }
-}
-
 /// `STRSBS SBSD(LIB/NAME)`: start the subsystem's monitor and wait for
 /// it to register.
-fn strsbs(c: &mut Console, p: &Params) -> Result<String, String> {
+fn strsbs(host: &Host, p: &Params) -> Result<String, String> {
     use stg::Client;
     let (_, name) = wm::obj::params::qualified(&p.pos_or(0, "SBSD")?);
     let qual = p.pos_or(0, "SBSD")?.to_ascii_uppercase();
-    let (lib, _) = c.link.borrow_mut().with(|l| l.sbs_check(qual.clone()))?;
-    let number = c.link.borrow_mut().with(Client::job_number)?;
+    let (lib, _) = host.link.borrow_mut().with(|l| l.sbs_check(qual.clone()))?;
+    let number = host.link.borrow_mut().with(Client::job_number)?;
     let start = wm::ctl::Start {
         name: name.clone(),
         user: "QSYS".into(),
@@ -269,10 +279,10 @@ fn strsbs(c: &mut Console, p: &Params) -> Result<String, String> {
     };
     let mut s = crate::work::spawn::job(start)?;
     crate::work::spawn::ready(&mut s)?;
-    c.children.push(s);
+    host.children.borrow_mut().push(s);
     // The monitor registers the subsystem; wait for it, a few seconds.
     for _ in 0..50 {
-        let active = c.link.borrow_mut().with(Client::sbs_list);
+        let active = host.link.borrow_mut().with(Client::sbs_list);
         if active.iter().any(|a| a.name == name) {
             return Ok(format!("Subsystem {name} started.\n"));
         }
@@ -284,8 +294,8 @@ fn strsbs(c: &mut Console, p: &Params) -> Result<String, String> {
 /// `PWRDWNSYS OPTION(*CNTRLD|*IMMED) DELAY(n|*NOLIMIT) RESTART(*NO|*YES)
 /// IPLSRC(*PANEL) CONFIRM(...)`: `slic` ends the subsystems, the system
 /// jobs and the storage service, then powers down.
-fn pwrdwnsys(c: &mut Console, p: &Params) -> Result<String, String> {
-    let me = c.link.borrow_mut().with(stg::Client::whoami);
+fn pwrdwnsys(host: &Host, p: &Params) -> Result<String, String> {
+    let me = host.link.borrow_mut().with(stg::Client::whoami);
     me.require(sec::profile::SpecialAuth::JOBCTL, "power down the system")
         .map_err(|e| e.to_string())?;
     let immediate = match p.upper("OPTION").as_deref() {
@@ -316,7 +326,8 @@ fn pwrdwnsys(c: &mut Console, p: &Params) -> Result<String, String> {
             ));
         }
     }
-    c.ctl
+    host.ctl
+        .borrow_mut()
         .send(&wm::ctl::FromJob::PowerDown {
             immediate,
             delay,
@@ -336,19 +347,19 @@ fn pwrdwnsys(c: &mut Console, p: &Params) -> Result<String, String> {
 
 /// `DLYJOB DLY(seconds)`: the job waits, in `DLYW`, taking break
 /// messages as they come.
-fn dlyjob(c: &mut Console, p: &Params) -> Result<String, String> {
+fn dlyjob(job: &mut Job, host: &Host, p: &Params) -> Result<String, String> {
     let secs: u64 = p
         .pos_or(0, "DLY")?
         .trim()
         .parse()
         .map_err(|_| "CPD0084 DLY is a number of seconds".to_string())?;
     let until = std::time::Instant::now() + std::time::Duration::from_secs(secs);
-    stg::remote::status(&c.link, wm::job::Status::Dlyw, &format!("DLY-{secs}"));
+    stg::remote::status(&host.link, wm::job::Status::Dlyw, &format!("DLY-{secs}"));
     while std::time::Instant::now() < until {
         std::thread::sleep(std::time::Duration::from_millis(250));
-        c.breaks();
+        host.breaks(job);
     }
-    stg::remote::status(&c.link, wm::job::Status::Run, "");
+    stg::remote::status(&host.link, wm::job::Status::Run, "");
     Ok(String::new())
 }
 
@@ -370,18 +381,10 @@ const SBM_CHANGES: &[&str] = &[
     "CCSID",
     "DUPJOBOPT",
 ];
-/// Keywords accepted and kept for later phases.
-const SBM_LATER: &[&str] = &[
-    "DSPSBMJOB",
-    "CPYENVVAR",
-    "ALWMLTTHD",
-    "INLASPGRP",
-    "SYSLIBL",
-    "SPLFACN",
-];
 
-/// `SCDDATE` (`YYYYMMDD` or `MMDDYY`, `*CURRENT`) and `SCDTIME`
-/// (`HHMMSS`, `*CURRENT`) as Unix seconds; 0 for now.
+/// `SCDDATE` (`CYYMMDD` from the analyzer, `YYYYMMDD` or `MMDDYY`,
+/// `*CURRENT`) and `SCDTIME` (`HHMMSS`, `*CURRENT`) as Unix seconds; 0
+/// for now.
 fn scheduled(date: Option<&str>, time: Option<&str>) -> Result<u64, String> {
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -403,6 +406,13 @@ fn scheduled(date: Option<&str>, time: Option<&str>) -> Result<u64, String> {
                     d[0..4].parse::<i64>(),
                     d[4..6].parse::<u32>(),
                     d[6..8].parse::<u32>(),
+                ),
+                7 => (
+                    d[1..3]
+                        .parse::<i64>()
+                        .map(|y| if &d[..1] == "1" { 2000 + y } else { 1900 + y }),
+                    d[3..5].parse::<u32>(),
+                    d[5..7].parse::<u32>(),
                 ),
                 6 => (
                     d[4..6].parse::<i64>().map(|y| 2000 + y),
@@ -441,28 +451,30 @@ fn scheduled(date: Option<&str>, time: Option<&str>) -> Result<u64, String> {
 }
 
 /// `SBMJOB`: the request goes to the storage service with the job's
-/// `*LDA`; `MIGRATE(phase7)`: `CMD` is checked by the command analyzer.
-fn sbmjob(c: &mut Console, p: &Params) -> Result<String, String> {
+/// `*LDA`; the analyzer checked `CMD`.
+fn sbmjob(host: &Host, p: &Params) -> Result<String, String> {
     use stg::Client;
     let cmd = p
         .kw("CMD")
         .or_else(|| p.kw("RQSDTA"))
         .map(|v| v.trim().trim_matches('\'').replace("''", "'"))
-        .ok_or("CPD0071 CMD or RQSDTA is needed")?;
+        .ok_or("CPD0015 CMD or RQSDTA is needed")?;
     let up = |k: &str| p.upper(k).unwrap_or_default();
+    let optional = |k: &str| {
+        p.upper(k)
+            .filter(|v| v != "*JOBD" && v != "*USRPRF" && v != "*CURRENT")
+            .unwrap_or_default()
+    };
     let mut req = wm::obj::jobq::SbmJob {
         cmd,
-        job: up("JOB"),
-        jobd: p
-            .upper("JOBD")
-            .filter(|v| v != "*USRPRF")
-            .unwrap_or_default(),
-        jobq: up("JOBQ"),
+        job: optional("JOB"),
+        jobd: optional("JOBD"),
+        jobq: optional("JOBQ"),
         jobpty: match p.upper("JOBPTY").as_deref() {
-            None | Some("*JOBD") => None,
+            None | Some("*JOBD" | "0") => None,
             Some(v) => Some(v.parse().map_err(|_| format!("CPD0084 JOBPTY({v})"))?),
         },
-        user: up("USER"),
+        user: optional("USER"),
         rtgdta: p
             .kw("RTGDTA")
             .map(|v| v.trim().trim_matches('\'').to_string())
@@ -474,44 +486,25 @@ fn sbmjob(c: &mut Console, p: &Params) -> Result<String, String> {
             Some(v) => return Err(format!("CPD0084 HOLD({v})")),
         },
         scheduled: scheduled(p.kw("SCDDATE"), p.kw("SCDTIME"))?,
-        msgq: up("MSGQ"),
+        msgq: optional("MSGQ"),
         inllibl: match p.upper("INLLIBL").as_deref() {
             None | Some("*CURRENT") => None,
             Some("*JOBD") => Some(Vec::new()),
             Some(v) => Some(v.split_whitespace().map(str::to_string).collect()),
         },
-        curlib: up("CURLIB"),
+        curlib: optional("CURLIB"),
         changes: Vec::new(),
-        lda: c.lda.borrow().clone(),
+        lda: host.lda.borrow().clone(),
     };
     for (k, v) in &p.kw {
-        if SBM_CHANGES.contains(&k.as_str()) {
-            if !v.trim().eq_ignore_ascii_case("*JOBD") && !v.trim().eq_ignore_ascii_case("*CURRENT")
-            {
-                req.changes.push((k.clone(), v.trim().to_string()));
-            }
-        } else if !SBM_LATER.contains(&k.as_str())
-            && !matches!(
-                k.as_str(),
-                "CMD"
-                    | "RQSDTA"
-                    | "JOB"
-                    | "JOBD"
-                    | "JOBQ"
-                    | "JOBPTY"
-                    | "USER"
-                    | "RTGDTA"
-                    | "HOLD"
-                    | "SCDDATE"
-                    | "SCDTIME"
-                    | "MSGQ"
-                    | "INLLIBL"
-                    | "CURLIB"
-            )
+        if SBM_CHANGES.contains(&k.as_str())
+            && !v.trim().eq_ignore_ascii_case("*JOBD")
+            && !v.trim().eq_ignore_ascii_case("*CURRENT")
         {
-            return Err(format!("CPD0043 keyword {k} not valid for SBMJOB"));
+            req.changes.push((k.clone(), v.trim().to_string()));
         }
     }
-    let (_, msg) = c.link.borrow_mut().with(|l| l.sbmjob(req))?;
+    let _ = up;
+    let (_, msg) = host.link.borrow_mut().with(|l| l.sbmjob(req))?;
     Ok(format!("{msg}\n"))
 }

@@ -11,7 +11,7 @@
 //! (open files, a commit cycle, record and object locks) is released
 //! when its connection closes. `docs/STORAGE_SERVICE.md` has the design.
 
-mod exec;
+pub(crate) mod exec;
 pub(crate) mod hist;
 mod joblog;
 pub(crate) mod jobqs;
@@ -111,6 +111,7 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
     });
     system.temp = Some(storage::fresh_temp().map_err(|e| format!("temporary ASP: {e}"))?);
     let mut made = install(system).map_err(|e| format!("work management objects: {e}"))?;
+    made += install_commands(system);
     jobqs::load(system);
     spool::load(system);
     wtr::clear_queues(system);
@@ -250,6 +251,41 @@ fn wait_ready(listener: &UnixListener, conns: &[Conn], wait: Duration) -> (bool,
         .map(|(i, _)| i)
         .collect();
     (accept, ready)
+}
+
+/// The system command set: every `*CMD` of `QSYS` created or, when its
+/// shipped definition changed, replaced. How many were made.
+fn install_commands(system: &mut System) -> usize {
+    let Some(s) = system.storage.as_mut() else {
+        return 0;
+    };
+    let Some(qsys) = s.qsys else {
+        return 0;
+    };
+    let ctx = cmd::store::Ctx {
+        now: crate::ipl::system::now_unix(),
+        owner: "QSYS".into(),
+        system: "QS400".into(),
+    };
+    let Ok(mut txn) = s.store.begin() else {
+        return 0;
+    };
+    match sys_cpps::install::install(&mut txn, &ctx, qsys) {
+        Ok(done) => {
+            for (name, why) in &done.failed {
+                eprintln!("qsstg: command {name}: {why}");
+            }
+            if txn.commit().is_err() {
+                return 0;
+            }
+            done.created.len() + done.replaced.len()
+        }
+        Err(e) => {
+            eprintln!("qsstg: installing the commands: {e}");
+            txn.abort();
+            0
+        }
+    }
 }
 
 /// The shipped work management objects that are missing.

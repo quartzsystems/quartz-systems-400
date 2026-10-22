@@ -1415,6 +1415,7 @@ name = "qsjob"
 version = "0.1.0"
 dependencies = [
  "ccsid",
+ "cmd",
  "ile",
  "ipc",
  "mi",
@@ -1424,6 +1425,7 @@ dependencies = [
  "sec",
  "spool",
  "stg",
+ "sys-cpps",
  "sysapi",
  "wm",
 ]
@@ -1850,6 +1852,7 @@ version = "0.1.0"
 dependencies = [
  "blockdev",
  "ccsid",
+ "cmd",
  "console",
  "db",
  "dds",
@@ -1872,6 +1875,7 @@ dependencies = [
  "stg",
  "store",
  "svctools",
+ "sys-cpps",
  "sysapi",
  "sysval",
  "wm",
@@ -1928,6 +1932,7 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 name = "stg"
 version = "0.1.0"
 dependencies = [
+ "cmd",
  "ile",
  "ipc",
  "mi",
