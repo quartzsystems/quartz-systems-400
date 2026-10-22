@@ -33,6 +33,7 @@ qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
 qir = { path = "../../runtime/qir", version = "0.1.0" }
 ile = { path = "../../runtime/ile", version = "0.1.0" }
 mi = { path = "../../runtime/mi", version = "0.1.0" }
+sec = { path = "../../security/sec", version = "0.1.0" }
 sysapi = { path = "../../runtime/sysapi", version = "0.1.0" }
 
 [lints]

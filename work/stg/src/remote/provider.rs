@@ -35,6 +35,10 @@ impl RemoteProvider {
 }
 
 impl Provider for RemoteProvider {
+    fn sec(&mut self, q: sec::api::Query) -> Result<sec::api::Answer, ApiFail> {
+        self.link.borrow_mut().with(|l| l.sec_api(q))
+    }
+
     fn list_objects(&mut self, lib: &str, name: &str, ty: &str) -> Vec<ObjInfo> {
         self.link
             .borrow_mut()

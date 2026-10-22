@@ -16,6 +16,7 @@ qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
 sysval = { path = "../../lic/sysval", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
 ipc = { path = "../../work/ipc", version = "0.1.0" }
+sec = { path = "../../security/sec", version = "0.1.0" }
 thiserror.workspace = true
 tracing.workspace = true
 

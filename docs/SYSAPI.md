@@ -210,8 +210,6 @@ data area, 1024 characters.
 | `QCMDEXC` | command, length `packed(15,5)`, [IGC] |
 | `QCMDCHK` | command, length `packed(15,5)` |
 | `QCAPCMD` | source, length `bin4`, options `CPOP0100`, options length, format, changed command out, its length, available length out, error code |
-| `QSYRUSRI` | receiver, length, format `USRI0100`/`0200`/`0300`, user `char(10)` (`*CURRENT`), error code |
-| `QSYCUSRA` | indicator out `char(1)`, format `CHKA0100`, object, type, authorities, count, user, error code |
 | `QTNRCMTI` | receiver, length, format `CMTI0100`, error code |
 | `QUSLSPL` | user space, format `SPLF0100`/`SPLF0200`, user, output queue, form type, user data, error code |
 | `QWDRSBSD` | receiver, length, format `SBSI0100`, subsystem `char(20)`, error code |
@@ -245,13 +243,7 @@ text 33. `PRDR0100`: product id `5770SS1` at 12, release level
 fields fixed. `QLGCNVCS` request block: type `bin4` (1), CCSID
 `bin4`, direction `bin4` (0 upper, 1 lower), reserved 10.
 
-`USRI0100`: user 8, previous sign-on 18, reserved 31, invalid
-sign-on attempts `bin4` 32, status 36, password change date 46, no
-password 54, reserved 55, expiration interval `bin4` 56, expiration
-date 60, days until expiration `bin4` 68, set to expire 72, display
-sign-on information 73, local password management 83, block password
-change 84 (94 bytes); `USRI0200` and `0300` add class at 94, special
-authorities `char(10)` each from 104 and text at 184. `CMTI0100`
+`CMTI0100`
 (*QS/400 reading*): commitment definition 8, lock level 18, pending
 changes `char(1)` 28, journal 29 and library 39; no commitment
 definition is `CPF83E4`. `SBSI0100`: name 8, library 18, status 28
@@ -340,3 +332,70 @@ values from the catalog's defaults. `install` registers the programs
 as natives of `QSYS` and the procedures as `*SYSTEM` imports for the
 loader, and keeps the provider for the procedures that need the
 clock.
+
+## 10. Security
+
+The security APIs live in `sysapi/src/security.rs`. Each asks the
+provider one `sec::api::Query`; in a job the storage service answers
+it as the job's user (`stg` request 129), so the authority an API
+needs is checked where the objects are.
+
+| API | parameters |
+|---|---|
+| `QSYRUSRI` | receiver, length, format `USRI0100`/`0200`/`0300`, user `char(10)` (`*CURRENT`), error code |
+| `QSYCUSRS` | indicator out `char(1)`, user, special authorities `char(10)` each, count `bin4`, call level, error code |
+| `QSYCUSRA` | indicator out `char(1)`, user, object `char(20)`, type, authorities `char(10)` each, count, call level, error code |
+| `QSYRUSRA` | receiver, length, format `USRA0100`, user, object `char(20)`, type, error code |
+| `QSYLOBJA` | user space, format `OBJA0100`/`0200`, user, type, `*ALL`/`*OBJOWN`/`*OBJAUT`, continuation handle `char(20)`, error code |
+| `QSYLOBJP` | user space, format `OBJP0100`, user, type, error code |
+| `QSYRAUTU` | receiver, length, format `RTUA0100`, feedback `char(16)`, object `char(20)`, type, error code |
+| `QSYLAUTU` | user space, format `AUTU0100`, `*ALL`/`*USRPRF`/`*GROUP`/`*MEMBER`, group, error code |
+| `QSYLATLO` | user space, format `ATLO0100`, list `char(10)`, error code |
+| `QSYGETPH` | user, password `char(10)` (or `*NOPWD`, `*NOPWDCHK`, `*NOPWDSTS`), handle out `char(12)`, error code [, password length, CCSID] |
+| `QWTSETP` | handle, error code |
+| `QSYRLSPH` | handle, error code |
+| `QSYCHGPW` | user, current password, new password, error code [, lengths and CCSIDs] |
+| `QSYRUPWD` | receiver, length, format `UPWD0100`, user, error code |
+| `QSYSUPWD` | data, format `UPWD0100`, error code |
+
+`USRI0100`: user 8, previous sign-on 18, reserved 31, invalid sign-on
+attempts `bin4` 32, status 36, password change date 46, no password
+54, reserved 55, expiration interval `bin4` 56, reserved 60, days to
+expiration `bin4` 68 (-1), set to expire 72, display sign-on
+information 73, local password management 83, block password change
+84 (94 bytes). `USRI0200`: user 8, then from 18 class, special
+authorities `char(15)` (`Y`/`N` in `*ALLOBJ *SECADM *JOBCTL *SPLCTL
+*SAVSYS *SERVICE *AUDIT *IOSYSCFG` order, seven reserved), group,
+owner, group authority, limit capabilities, group authority type,
+reserved 3, supplemental groups offset and count `bin4`, text 50, the
+groups `char(10)` each. `USRI0300` is `USRI0100`, the `USRI0200` part
+from 94, and from 380 the libraries, programs, menus, queues and
+attention program (name and library each), accounting code, delivery,
+severity, printer, assistance level, special environment, keyboard
+buffering, language, country, CCSID, UID, GID, maximum and used
+storage, priority limit, object auditing, expiration date and home
+directory. *QS/400 reading*: `USRI0300`'s offsets past the groups
+are ours; `SEC_OPEN_QUESTIONS.md` lists them for the oracle.
+
+An authority in a receiver is its name (`*ALL`, `*CHANGE`, `*USE`,
+`*EXCLUDE`, `USER DEF`; `*AUTLMGT` for a list) and eleven `Y`/`N`
+flags: `*OBJOPR *OBJMGT *OBJEXIST *OBJALTER *OBJREF`, a reserved
+byte, `*READ *ADD *UPD *DLT *EXECUTE`. `USRA0100`: authority 8,
+`*AUTLMGT` 18, flags 19, source 30 (the search step), list 46,
+owner 56, primary group 66. `OBJA0100`/`OBJP0100` entries (62 bytes):
+object, library, type, owner, owned `Y`/`N`, authority, flags.
+`RTUA0100` entries (40 bytes): profile, group `Y`/`N`, authority,
+`*AUTLMGT`, flags, reserved; the owner first, `*PUBLIC` last; the
+feedback holds bytes returned and available, the count and the entry
+length. `AUTU0100` entries: profile, group, has members, text.
+`ATLO0100` entries: object, library, type, owner.
+
+`QSYGETPH` checks the password as sign-on does (`CPF22E2` wrong,
+`CPF22E3` disabled, `CPF22E4` expired, `CPF22E5` none) or, for the
+`*NOPWD` values, `*USE` to the profile; `QWTSETP` switches the job's
+user in the storage service, keeping its adopted authority, and both
+are audited (`PS`). `QSYCHGPW` runs `QPWDVLDPGM` in the job first,
+then changes the password as `CHGPWD` would. `QSYRUPWD` and
+`QSYSUPWD` need `*ALLOBJ` and `*SECADM`; their data is the magic
+`QS400PWD` and the profile's hashes, not IBM's format, so it moves
+between QS/400 systems only.

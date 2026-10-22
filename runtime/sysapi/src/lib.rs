@@ -41,6 +41,7 @@ mod obj;
 pub mod param;
 pub mod picture;
 mod provider;
+mod security;
 mod usrspc;
 mod wire;
 
@@ -48,7 +49,7 @@ pub use job::Civil;
 pub use provider::{
     ApiFail, ApiResult, CommitInfo, DataArea, DataAreaType, DepInfo, DtaqEntry, DtaqInfo,
     FieldInfo, FileInfo, FormatInfo, IdxAttr, LocalNow, MemDtaq, MemFile, MemIndex, MemProvider,
-    MemberInfo, ObjInfo, Provider, SysVal, SysValKind, UserInfo,
+    MemberInfo, ObjInfo, Provider, SecAnswers, SysVal, SysValKind, UserInfo,
 };
 
 /// A program API: the job, the parameter addresses, the provider.
@@ -68,6 +69,7 @@ pub fn programs() -> Vec<(&'static str, ApiFn)> {
     v.extend(job::APIS);
     v.extend(db::APIS);
     v.extend(misc::APIS);
+    v.extend(security::APIS);
     v
 }
 

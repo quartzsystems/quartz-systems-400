@@ -65,3 +65,13 @@ it. The tests that read those outputs skip while they are absent.
    authority matrix kit (`tools/conformance/oracle/sec/`), `CHKOBJ` and
    each command as a user given exactly the authorities the table
    lists, then each minus one.
+
+10. **API receivers.** `USRI0300` past the supplemental groups,
+    `OBJA0200`, `RTUA0100`'s entry and feedback and `AUTU0100` are
+    laid out in IBM's field order with offsets of our own
+    (`SYSAPI.md` §10). `QSYRUPWD` data is not IBM's. Oracle: call each
+    API on IBM i with the same profiles and objects and compare the
+    receivers byte for byte, outside the password data.
+
+11. **`QSYCHGPR`.** No IBM API by that name could be identified; it
+    is not provided. Oracle: the IBM i API finder.

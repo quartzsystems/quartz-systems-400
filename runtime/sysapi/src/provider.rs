@@ -325,6 +325,10 @@ pub struct UserInfo {
 /// Where the APIs' objects live.
 #[allow(unused_variables)]
 pub trait Provider {
+    /// The security APIs' questions (`sec::api`).
+    fn sec(&mut self, q: sec::api::Query) -> Result<sec::api::Answer, ApiFail> {
+        Err(ApiFail::id("CPF3CF2"))
+    }
     /// Objects in `lib` whose name matches `name` (`*ALL`, a name or
     /// `ABC*`) and type `ty` (`*ALL` or `*PGM` ...).
     fn list_objects(&mut self, lib: &str, name: &str, ty: &str) -> Vec<ObjInfo> {
@@ -551,8 +555,13 @@ pub struct MemProvider {
     pub commit: Option<CommitInfo>,
     /// User profiles.
     pub users: Vec<UserInfo>,
+    /// Answers the security APIs' questions; `CPF3CF2` without it.
+    pub sec: Option<SecAnswers>,
     catalog: sysval::Catalog,
 }
+
+/// A test's answers to the security APIs.
+pub type SecAnswers = Box<dyn FnMut(&sec::api::Query) -> Result<sec::api::Answer, ApiFail>>;
 
 impl Default for MemProvider {
     fn default() -> Self {
@@ -593,6 +602,7 @@ impl Default for MemProvider {
                 special: vec!["*ALLOBJ".into(), "*SECADM".into()],
                 text: "System profile".into(),
             }],
+            sec: None,
             catalog: sysval::Catalog::builtin().expect("the catalog parses"),
         }
     }
@@ -1089,6 +1099,13 @@ impl Provider for MemProvider {
 
     fn commit_info(&mut self) -> Option<CommitInfo> {
         self.commit.clone()
+    }
+
+    fn sec(&mut self, q: sec::api::Query) -> Result<sec::api::Answer, ApiFail> {
+        match &mut self.sec {
+            Some(f) => f(&q),
+            None => Err(ApiFail::id("CPF3CF2")),
+        }
     }
 
     fn user_info(&mut self, name: &str) -> Option<UserInfo> {

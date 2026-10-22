@@ -281,4 +281,6 @@ ipc::rpc! {
     /// Service tools use `slic` saw (DST, the serial console): kind
     /// (`ST`, `DS`, `PW`), code, user; for the audit journal.
     128 => fn audit_lic / AuditLic (events: Vec<(String, String, String)>) -> ();
+    /// `Provider::sec`: a security API's question, as the job.
+    129 => fn sec_api / SecApi (q: sec::api::Query) -> Result<sec::api::Answer, ApiFail>;
 }

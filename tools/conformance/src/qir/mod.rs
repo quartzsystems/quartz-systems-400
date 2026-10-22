@@ -433,6 +433,13 @@ pub fn job_for(case: &Case, src: MemSource, programs: &[String]) -> Result<Box<J
         dst: false,
     });
     provider.add_dtaq("QGPL", "TESTQ", 100, 0, 'F');
+    // QSYRUSRI: every profile as CRTUSRPRF would make it.
+    provider.sec = Some(Box::new(|q| match q {
+        sec::api::Query::Profile { user } => Ok(sec::api::Answer::Profile {
+            data: sec::profile::UsrPrf::new(user, 40).encode(),
+        }),
+        _ => Err(sysapi::ApiFail::id("CPF3CF2")),
+    }));
     for p in programs {
         provider.objects.push(sysapi::ObjInfo {
             name: p.clone(),

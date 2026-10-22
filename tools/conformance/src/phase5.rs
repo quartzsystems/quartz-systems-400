@@ -1010,23 +1010,15 @@ pub(crate) fn console_sign_on_as(
             s.command("key tab", CMD)?;
             s.command(&format!("type {new}"), CMD)?;
             s.command("key enter", CMD)?;
-            let (j, screen) = screen_any(
-                s,
-                &[
-                    "Sign-on Information",
-                    "Main Menu",
-                    "Command Entry",
-                    "Change Password",
-                ],
-            )?;
-            match j {
-                0 => {
-                    s.command("key enter", CMD)?;
-                    screen_any(s, &["Main Menu", "Command Entry"]).map(|(_, x)| x)
-                }
-                3 => Err(format!("the password change was refused:\n{screen}")),
-                _ => Ok(screen),
+            // The old screen stays up until the job answers, so a refusal
+            // shows as never leaving it.
+            let (j, screen) = screen_any(s, &["Sign-on Information", "Main Menu", "Command Entry"])
+                .map_err(|e| format!("the password change was refused: {e}"))?;
+            if j == 0 {
+                s.command("key enter", CMD)?;
+                return screen_any(s, &["Main Menu", "Command Entry"]).map(|(_, x)| x);
             }
+            Ok(screen)
         }
         1 => {
             s.command("key enter", CMD)?;

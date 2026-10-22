@@ -173,6 +173,7 @@ pub fn as_user(req: &Request) -> bool {
             | R::SbsEnd { .. }
             | R::Sbmjob { .. }
             | R::PrtOpen { .. }
+            | R::SecApi { .. }
     )
 }
 
@@ -610,4 +611,104 @@ pub fn audit_lic(events: &[(String, String, String)]) {
         };
         sec::audit::record(e.by(user));
     }
+}
+
+fn api_fail(e: &sec::SecError) -> sysapi::ApiFail {
+    sysapi::ApiFail::id(e.msgid().unwrap_or("CPF3CF2"))
+}
+
+/// A security API's question, as the job.
+pub fn api(
+    system: &mut System,
+    ctx: &mut super::served::JobCtx,
+    q: sec::api::Query,
+) -> Result<sec::api::Answer, sysapi::ApiFail> {
+    use sec::api::{Answer, Query};
+    use sec::audit::{Event, Kind};
+    let me = ctx.session.borrow().principal.clone();
+    match q {
+        Query::GetHandle { user, password } => {
+            let user = user.to_ascii_uppercase();
+            let ok = handle_check(system, &me, &user, &password).map_err(|e| api_fail(&e))?;
+            let mut handle = sec::password::fresh_salt()[..12].to_vec();
+            handle[0] |= 1;
+            ctx.handles.insert(handle.clone(), ok);
+            sec::audit::record(Event::new(Kind::Ps).set("ETYP", "H").set("USRP", me.user.as_str()).set("NUSR", user.as_str()));
+            Ok(Answer::Bytes { data: handle })
+        }
+        Query::SetHandle { handle } => {
+            let user = ctx
+                .handles
+                .get(&handle)
+                .cloned()
+                .ok_or_else(|| sysapi::ApiFail::id("CPF22E9"))?;
+            let mut p = principal(system, &user);
+            p.adopted = std::mem::take(&mut ctx.session.borrow_mut().principal.adopted);
+            *ctx.session.borrow_mut() = sec::auth::cache::Session::new(p);
+            sec::audit::record(Event::new(Kind::Ps).set("ETYP", "S").set("USRP", me.user.as_str()).set("NUSR", user.as_str()));
+            Ok(Answer::Done)
+        }
+        Query::ReleaseHandle { handle } => {
+            let user = ctx.handles.remove(&handle).ok_or_else(|| sysapi::ApiFail::id("CPF22E9"))?;
+            sec::audit::record(Event::new(Kind::Ps).set("ETYP", "E").set("USRP", me.user.as_str()).set("NUSR", user.as_str()));
+            Ok(Answer::Done)
+        }
+        Query::ChangePassword { user, current, new } => {
+            let target = principal(system, &user.to_ascii_uppercase());
+            chg_pwd(system, &target, &current, &new, true).map(|()| Answer::Done).map_err(|e| {
+                sysapi::ApiFail::id(e.split_whitespace().next().filter(|w| w.starts_with("CP")).unwrap_or("CPF22E2"))
+            })
+        }
+        other => {
+            let s = system.storage.as_mut().ok_or_else(|| sysapi::ApiFail::id("CPF3CF2"))?;
+            let qsys = s.qsys.ok_or_else(|| sysapi::ApiFail::id("CPF3CF2"))?;
+            let mut txn = s.store.begin().map_err(|_| sysapi::ApiFail::id("CPF3CF2"))?;
+            let a = sec::api::answer(&mut txn, qsys, &me, &other).map_err(|e| api_fail(&e))?;
+            txn.commit().map_err(|_| sysapi::ApiFail::id("CPF3CF2"))?;
+            a.ok_or_else(|| sysapi::ApiFail::id("CPF3CF2"))
+        }
+    }
+}
+
+/// `QSYGETPH`'s checks: a password as sign-on checks it (`CPF22E2`
+/// wrong, `CPF22E3` disabled, `CPF22E4` expired, `CPF22E5` none), or
+/// `*NOPWD`, `*NOPWDCHK`, `*NOPWDSTS` with `*USE` to the profile.
+fn handle_check(system: &mut System, me: &Principal, user: &str, password: &str) -> sec::Result<String> {
+    let values = sec::signon::Values::from_sysvals(&|n: &str| sysval_text(system, n));
+    let s = system
+        .storage
+        .as_mut()
+        .ok_or_else(|| sec::SecError::msg("CPF3CF2", "The store is not open."))?;
+    let qsys = s.qsys.ok_or_else(|| sec::SecError::msg("CPF3CF2", "The store is not open."))?;
+    let mut txn = s.store.begin()?;
+    let (id, mut p) = sec::profile::objects::read(&mut txn, qsys, user)?;
+    let special = password.trim().to_ascii_uppercase();
+    if matches!(special.as_str(), "*NOPWD" | "*NOPWDCHK" | "*NOPWDSTS") {
+        let h = store::obj::ops::read_header(&mut txn, id)?.1;
+        let ok = sec::auth::search::check(&mut txn, qsys, me, &h, sec::auth::required::Need::Bits(sec::auth::bits::Auth::USE))?;
+        if !ok.allowed {
+            return Err(sec::SecError::msg("CPF22E9", format!("Not authorized to user profile {user}.")));
+        }
+        if p.disabled && special != "*NOPWDSTS" {
+            return Err(sec::SecError::msg("CPF22E3", format!("User profile {user} is disabled.")));
+        }
+        return Ok(p.name);
+    }
+    if p.disabled {
+        return Err(sec::SecError::msg("CPF22E3", format!("User profile {user} is disabled.")));
+    }
+    if p.pwd_none {
+        return Err(sec::SecError::msg("CPF22E5", format!("No password is associated with user profile {user}.")));
+    }
+    if !sec::password::matches(&p, password, values.policy.pwdlvl) {
+        p.signon_invalid += 1;
+        sec::profile::objects::write(&mut txn, id, &p)?;
+        txn.commit()?;
+        sec::audit::record(sec::audit::Event::new(sec::audit::Kind::Pw).set("ETYP", "P").set("USRP", user).by(user));
+        return Err(sec::SecError::msg("CPF22E2", format!("The password is not correct for user profile {user}.")));
+    }
+    if values.policy.expired(&p, crate::ipl::system::now_unix()) {
+        return Err(sec::SecError::msg("CPF22E4", format!("The password of user profile {user} has expired.")));
+    }
+    Ok(p.name)
 }

@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! Commands, security, commitment control and the stubs: `QCMDEXC`,
-//! `QCAPCMD`, `QCMDCHK`, `QSYRUSRI`, `QSYCUSRA`, `QTNRCMTI`,
+//! `QCAPCMD`, `QCMDCHK`, `QTNRCMTI`,
 //! `QUSLSPL`, `QWDRSBSD`, `QWCRJBST`. The command APIs hand the text
 //! to the provider (`MIGRATE(phase7)`: the command analyzer).
 
@@ -17,8 +17,6 @@ pub const APIS: &[(&str, crate::ApiFn)] = &[
     ("QCMDEXC", qcmdexc),
     ("QCAPCMD", qcapcmd),
     ("QCMDCHK", qcmdchk),
-    ("QSYRUSRI", qsyrusri),
-    ("QSYCUSRA", qsycusra),
     ("QTNRCMTI", qtnrcmti),
     ("QUSLSPL", quslspl),
     ("QWDRSBSD", qwdrsbsd),
@@ -95,67 +93,6 @@ fn qcapcmd(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
         }
         Err(f) => errc.fail(j, &f),
     }
-}
-
-/// `QSYRUSRI(receiver, len, format, user, errc)`: `USRI0100`.
-fn qsyrusri(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
-    let a = Args(args);
-    let errc = ErrCode::at(&a, 4);
-    let format = a.char(2, 8);
-    if !matches!(format.as_str(), "USRI0100" | "USRI0200" | "USRI0300") {
-        errc.fail(j, &ApiFail::id("CPF3C21").text(&format, 8));
-        return;
-    }
-    let mut name = a.char(3, 10);
-    if name == "*CURRENT" || name.is_empty() {
-        name.clone_from(&j.ident.user);
-    }
-    let Some(u) = p.user_info(&name) else {
-        errc.fail(j, &ApiFail::id("CPF9802").text(&name, 10));
-        return;
-    };
-    let mut out = Out::new();
-    out.char(8, 10, &u.name);
-    out.blank(18, 13);
-    out.blank(31, 1);
-    out.bin4(32, 0);
-    out.char(36, 10, &u.status);
-    out.blank(46, 8);
-    out.ch(54, 'N');
-    out.blank(55, 1);
-    out.bin4(56, 0);
-    out.blank(60, 8);
-    out.bin4(68, 0);
-    out.ch(72, '0');
-    out.char(73, 10, "*SYSVAL");
-    out.ch(83, '0');
-    out.char(84, 10, "*SYSVAL");
-    if format != "USRI0100" {
-        out.char(94, 10, &u.class);
-        let mut at = 104;
-        for s in &u.special {
-            out.char(at, 10, s);
-            at += 10;
-        }
-        out.pad_to(184);
-        out.char(184, 50, &u.text);
-    }
-    out.deliver(&a, 0, 1);
-    errc.ok();
-}
-
-/// `QSYCUSRA(indicator, format, object, type, authorities, count,
-/// user, errc)`: always authorized here.
-fn qsycusra(j: &mut Job, args: &[u64], _p: &mut dyn Provider) {
-    let a = Args(args);
-    let errc = ErrCode::at(&a, 7);
-    let format = a.char(1, 8);
-    if format != "CHKA0100" {
-        errc.fail(j, &ApiFail::id("CPF3C21").text(&format, 8));
-        return;
-    }
-    a.put_char(0, 1, "Y");
-    errc.ok();
 }
 
 /// `QTNRCMTI(receiver, len, format, errc)`: `CMTI0100`.

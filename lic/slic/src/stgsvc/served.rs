@@ -77,6 +77,8 @@ pub struct JobCtx {
     pub svc: svc::db::State,
     /// Its security session: who it is and the decisions made.
     pub session: Rc<RefCell<sec::auth::cache::Session>>,
+    /// Profile handles `QSYGETPH` gave it, with their users.
+    pub handles: std::collections::HashMap<Vec<u8>, String>,
 }
 
 impl JobCtx {
@@ -113,6 +115,7 @@ impl JobCtx {
             joblog_wrapped: Vec::new(),
             splfs: Vec::new(),
             session: Rc::new(RefCell::new(sec::auth::cache::Session::default())),
+            handles: std::collections::HashMap::new(),
             job,
         }
     }
@@ -446,6 +449,10 @@ impl Service for Served<'_> {
 
     fn audit_lic(&mut self, events: Vec<(String, String, String)>) {
         super::security::audit_lic(&events);
+    }
+
+    fn sec_api(&mut self, q: sec::api::Query) -> Result<sec::api::Answer, ApiFail> {
+        super::security::api(self.system, self.ctx, q)
     }
 
     fn whoami(&mut self) -> sec::auth::principal::Principal {

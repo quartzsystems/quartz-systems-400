@@ -9,6 +9,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod api;
 pub mod audit;
 pub mod auth;
 pub mod cmd;
