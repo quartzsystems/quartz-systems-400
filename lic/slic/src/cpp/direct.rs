@@ -31,7 +31,12 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
             finish(out, name, "CPC2102", &[(&lib, 10)])
         }
         "DLTLIB" => {
+            // The objects go first, as IBM's DLTLIB deletes them.
             let lib = parms.name("LIB");
+            let cleared = clrlib(system, &lib);
+            if cleared.escape.is_some() {
+                return Some(cleared);
+            }
             let out = old(system, &format!("obj dlt *LIB QSYS/{lib}"));
             finish(out, name, "CPC2194", &[(&lib, 10)])
         }
