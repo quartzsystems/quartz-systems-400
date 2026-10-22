@@ -40,6 +40,7 @@ members = [
     "security/sec",
     # Commands: definitions, the analyzer, the prompter, CL, the system command set.
     "command/cmd",
+    "command/sys-cpps",
 ]
 
 [workspace.package]

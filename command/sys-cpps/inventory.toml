@@ -1,0 +1,21 @@
+# The inventory: what the command name alone does not say. A command
+# runs in the storage service unless `site` says "job" (calls, the
+# debugger, the job's own displays) or `stub` names the message its
+# processing program sends instead of working (a later phase). `cpp`
+# names the processing program when it is not QC plus the name; `comp`
+# a completion message with the keywords whose values fill it; `word`
+# the console word of the library function the bridge calls.
+
+[cmd.CRTLIB]
+comp = "CPC2102"
+comp_data = ["LIB"]
+
+[cmd.DLTLIB]
+comp = "CPC2194"
+comp_data = ["LIB"]
+
+[cmd.CALL]
+site = "job"
+
+[cmd.CHKOBJ]
+note = "no completion message; a refusal is the escape"

@@ -1,0 +1,32 @@
+# IBM phrasings that must not appear in shipped prompt texts or message
+# texts. The names of commands, keywords and special values are the
+# interface and are not listed; these are the openers and sentences of
+# IBM's own text. Matched case-insensitively (tests/defs.rs).
+cause . . . . . :
+recovery  . . . :
+technical description
+recovery . . . :
+cause . . . . :
+see previous messages
+correct the errors and try the request again
+refer to the ibm
+refer to ibm
+licensed program 57
+(c) copyright ibm
+copyright ibm
+ibm corp
+os/400
+i5/os
+as/400
+iseries
+system i
+power systems
+specifies the name of the
+specifies whether
+this is a required parameter
+single values
+other values
+element 1:
+element 2:
+qualifier 1:
+qualifier 2:

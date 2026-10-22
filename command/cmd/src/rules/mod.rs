@@ -140,12 +140,12 @@ fn check_parm(def: &CmdDef, p: &Parm, kwd: &str, depth: u32, out: &mut Vec<Diag>
     let ty = p.ty.text();
     if let Some(l) = p.len {
         match p.ty {
-            ParmType::Dec | ParmType::X => {
+            ParmType::Dec => {
                 if l.len == 0 || l.len > 24 || u32::from(l.dec) > l.len {
                     out.push(diag("dec-len", &[&l.len.to_string(), &l.dec.to_string()]));
                 }
             }
-            ParmType::Char | ParmType::PName | ParmType::Cmd | ParmType::CmdStr => {
+            ParmType::Char | ParmType::PName | ParmType::Cmd | ParmType::CmdStr | ParmType::X => {
                 if l.len == 0 || l.len > p.ty.max_len() {
                     out.push(diag("len-bad", &[&ty, &l.len.to_string()]));
                 }

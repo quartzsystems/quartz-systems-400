@@ -2017,6 +2017,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "sys-cpps"
+version = "0.1.0"
+dependencies = [
+ "blockdev",
+ "cmd",
+ "qsname",
+ "serde",
+ "store",
+ "thiserror",
+ "toml",
+]
+
+[[package]]
 name = "sysapi"
 version = "0.1.0"
 dependencies = [

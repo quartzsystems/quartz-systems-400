@@ -1,0 +1,24 @@
+[package]
+name = "sys-cpps"
+description = "QS/400 system command set: the command definitions, the inventory, the installer and the processing-program bridge"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+name = "sys_cpps"
+
+[dependencies]
+cmd = { path = "../cmd", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+serde.workspace = true
+toml = { version = "1.1.8", default-features = false, features = ["parse", "serde"] }
+thiserror.workspace = true
+
+[dev-dependencies]
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+
+[lints]
+workspace = true

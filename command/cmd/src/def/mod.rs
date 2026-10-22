@@ -388,10 +388,8 @@ impl ParmType {
     #[must_use]
     pub fn max_len(&self) -> u32 {
         match self {
-            Self::Char | Self::Cmd | Self::CmdStr => 5000,
-            Self::PName => 5000,
+            Self::Char | Self::Cmd | Self::CmdStr | Self::PName | Self::X => 5000,
             Self::Dec => 24,
-            Self::X => 24,
             _ => 10,
         }
     }
