@@ -392,6 +392,12 @@ fn rtvclsrc(system: &mut System, parms: &Parms) -> CmdReply {
         let file = wm::obj::find(txn, qsys, names, &lib_or(&sfl), &sf, types::FILE)
             .map_err(|e| format!("CPF9801 {e}"))?;
         let m = Name::parse(&mbr).map_err(|e| format!("CPD0078 {e}"))?;
+        // The member is added when the file lacks it, as RTVCLSRC does.
+        let desc = db::file::describe(txn, file).map_err(|e| format!("CPF0006 {e}"))?;
+        if desc.member(MemberSpec::Name(m)).is_none() {
+            db::file::add_member(txn, file, m, "", Name::parse("CLLE").ok(), now_unix())
+                .map_err(|e| format!("CPF0006 {e}"))?;
+        }
         let text = lines.join("\n");
         db::source::srcput(
             txn,
