@@ -56,6 +56,7 @@ ovrdbf FILE(F) [TOFILE(LIB/F) MBR(M) SHARE(*YES) LVLCHK(*NO) INHWRT(*YES) POSITI
 dltovr FILE(F|*ALL)
 crtprtf LIB/FILE [SRCFILE(LIB/SRC) SRCMBR(M)] [PAGESIZE(l w) LPI() CPI() OVRFLW() CTLCHAR(*FCFC) OUTQ() HOLD() SCHEDULE() ...]
 chgprtf LIB/FILE keywords | ovrprtf FILE(F) [TOFILE(LIB/F) OVRSCOPE(*JOB)] keywords
+opnqryf FILE(LIB/F) [QRYSLT('FLD *EQ 3 *AND ...') KEYFLD((F1) (F2 *DESCEND)) OPTION(*INP|*ALL)] | clof FILE(F)
 sql [STATEMENT;]     SQL mode: statements end with ';', quit leaves | sqlrun NAME [COMMIT(*CHG) ERRLVL(n) NAMING(*SQL)]
 naming *SYS|*SQL | curlib LIB
 rla [NAME]           run an RLA script from xfer, or type lines until 'end'
@@ -212,6 +213,8 @@ pub fn command(system: &mut System, cmd: &str, args: &[&str], line: &str) -> Opt
         "endcmtctl" => journal::endcmtctl(system),
         "ovrdbf" => journal::ovrdbf(system, &p),
         "dltovr" => journal::dltovr(system, &p),
+        "opnqryf" => sqlcmd::opnqryf(system, &p),
+        "clof" => sqlcmd::clof(system, &p),
         "sql" => return Some(sqlcmd::sql(system, line)),
         "sqlrun" => sqlcmd::sqlrun(system, &p),
         "naming" => sqlcmd::naming(system, args),

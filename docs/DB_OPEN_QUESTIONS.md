@@ -466,8 +466,15 @@ not the length-prefixed byte protocol first planned, because the serial
 reader hands slic whole lines. Binary data has no path until the IFS
 (`MIGRATE(phase10)`). Test: none.
 
-**`OPNQRYF`.** Not on the console yet; the `QRYSLT` grammar maps onto the
-SQL executor and will be added with the conformance kit. Test: none.
+**`OPNQRYF`.** `QRYSLT` (`*EQ` and the other operators, `*AND`, `*OR`,
+`*NOT`, `*CT`, `%RANGE`, `%VALUES`, `%WLDCRD`, `%SST`) maps onto the
+SQL executor; the selected records are put in `KEYFLD` order at open
+time and left as the job's shared open data path, which a program's
+`SHARE(*YES)` open reads and `CLOF` closes. `FORMAT`, `MAPFLD`,
+`GRPFLD`, `JFLD` and `OPTIMIZE` are not taken. A record deleted after
+the open is skipped; one changed is read as it is now. Test: `OPNQRYF`
+then `CHGPF`-free changes by another job: does the machine's ODP show
+them?
 
 ## Editing
 

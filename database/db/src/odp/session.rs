@@ -23,7 +23,9 @@ use super::{KeyArg, Odp, OpenOpts, SharedLocks, Usage, status};
 use crate::cmt::{CmtScope, CommitDef, CommitRef, LckLvl};
 use crate::error::{DbError, Result};
 use crate::file::{self, Resolve};
+use crate::format::FormatDef;
 use crate::journal::ChangeReport;
+use crate::path::PathKey;
 use crate::record::Value;
 
 /// An open data path handed out by a session; shared ones are the same
@@ -224,6 +226,68 @@ impl Session {
             self.shared.remove(&k);
         }
         odp.borrow_mut().release(txn);
+    }
+
+    /// `OPNQRYF`: open `file` as the job's shared path, reading `plan`'s
+    /// entries in order (keyed over `fmt`); the program's own open with
+    /// `SHARE(*YES)` joins it, `CLOF` closes it. Refused while the file
+    /// already has a shared path.
+    pub fn open_query(
+        &mut self,
+        txn: &mut Txn<'_>,
+        file: &FileRef,
+        resolve: Resolve<'_>,
+        mut opts: OpenOpts,
+        plan: Vec<PathKey>,
+        fmt: FormatDef,
+    ) -> Result<OdpRef> {
+        let id = resolve(file)?;
+        crate::auth::check_open(txn, id, opts.usage)?;
+        let desc = file::describe(txn, id)?;
+        opts.job = self.job;
+        opts.share = true;
+        opts.keyed = true;
+        if opts.wait_rcd.is_none() {
+            opts.wait_rcd = Some(desc.attr.wait_rcd);
+        }
+        let member_name =
+            desc.member(opts.member)
+                .map(|m| m.name)
+                .ok_or_else(|| DbError::MemberNotFound {
+                    file: desc.name().to_string(),
+                    member: opts.member.to_string(),
+                })?;
+        if self.shared.contains_key(&(id, member_name)) {
+            return Err(DbError::Definition {
+                what: format!(
+                    "file {} already has a shared open data path; CLOF it first",
+                    desc.name()
+                ),
+            });
+        }
+        if opts.commit && self.commit_def().is_none() {
+            return Err(DbError::CommitOpen);
+        }
+        let usage = opts.usage;
+        let mut odp = Odp::open(txn, Arc::clone(&self.locks), id, opts)?;
+        odp.set_plan(plan, fmt);
+        if odp.opts().commit
+            && let Some(c) = self.commit_def()
+        {
+            odp.set_commit(Rc::clone(c));
+        }
+        let odp = Rc::new(RefCell::new(odp));
+        self.odps.push(Rc::downgrade(&odp));
+        self.shared.insert(
+            (id, member_name),
+            Shared {
+                odp: Rc::clone(&odp),
+                file: desc.name(),
+                uses: 1,
+                usage,
+            },
+        );
+        Ok(odp)
     }
 
     /// `CLOF`: close the shared paths over `file`, whoever still uses

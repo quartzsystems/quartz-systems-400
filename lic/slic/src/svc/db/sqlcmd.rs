@@ -80,6 +80,52 @@ pub fn run_text(system: &mut System, text: &str) -> String {
     out
 }
 
+/// `opnqryf FILE(LIB/F) [QRYSLT('...') KEYFLD((F1) (F2 *DESCEND)) OPTION(*INP|*OUT|*UPD|*ALL)]`.
+pub fn opnqryf(system: &mut System, p: &Params) -> Result<String, String> {
+    use sql::exec::opnqryf::{OpnQryF, keyfld, opnqryf as open};
+    let file = p.pos_or(0, "FILE")?.to_ascii_uppercase();
+    let (lib, name) = file.split_once('/').unwrap_or(("", file.as_str()));
+    let usage = match p.upper("OPTION").as_deref() {
+        None | Some("*INP") => db::odp::Usage::INPUT,
+        Some("*OUT") => db::odp::Usage::OUTPUT,
+        Some("*UPD") => db::odp::Usage::UPDATE,
+        Some("*ALL") => db::odp::Usage::ALL,
+        Some(x) => return Err(format!("CPD0084 OPTION({x}) is not valid")),
+    };
+    let q = OpnQryF {
+        file: sql::ast::ObjectName {
+            schema: (!lib.is_empty()).then(|| sql::ast::Ident::new(lib)),
+            name: sql::ast::Ident::new(name),
+        },
+        qryslt: p.text("QRYSLT"),
+        keyfld: p.kw("KEYFLD").map(keyfld).unwrap_or_default(),
+        usage,
+    };
+    let (store, ctx) = db(system)?;
+    super::with_txn(store, |txn| {
+        let n = open(txn, ctx, &q).map_err(|e| super::db_err(&e))?;
+        Ok(format!("File {file} opened with {n} record(s) selected."))
+    })
+}
+
+/// `clof FILE(F)`.
+pub fn clof(system: &mut System, p: &Params) -> Result<String, String> {
+    let file = p.pos_or(0, "FILE")?.to_ascii_uppercase();
+    let name = file.rsplit('/').next().unwrap_or(&file);
+    let obj = sql::ast::ObjectName {
+        schema: None,
+        name: sql::ast::Ident::new(name),
+    };
+    let (store, ctx) = db(system)?;
+    super::with_txn(store, |txn| {
+        let n = sql::exec::opnqryf::clof(txn, ctx, &obj).map_err(|e| super::db_err(&e))?;
+        if n == 0 {
+            return Err(format!("CPF4520 file {file} is not open"));
+        }
+        Ok(format!("File {file} closed."))
+    })
+}
+
 /// `sqlrun NAME [COMMIT(*CHG|*CS|*ALL) ERRLVL(n) NAMING(*SQL) DFTRDBCOL(LIB)]`.
 pub fn sqlrun(system: &mut System, p: &Params) -> Result<String, String> {
     let name = p.pos_or(0, "SRCSTMF")?;

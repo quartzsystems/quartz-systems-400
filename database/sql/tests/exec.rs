@@ -412,6 +412,89 @@ fn external_sort_spills_and_merges() {
 }
 
 #[test]
+fn opnqryf_selects_and_orders() {
+    use db::odp::{OpenOpts, Usage};
+    use sql::ast::{Ident, ObjectName};
+    use sql::exec::opnqryf::{OpnQryF, clof, opnqryf};
+    let mut db = Db::new();
+    setup(&mut db);
+    let cust = ObjectName {
+        schema: None,
+        name: Ident::new("CUST"),
+    };
+    let mut t = db.store.begin().unwrap();
+    let n = opnqryf(
+        &mut t,
+        &mut db.ctx,
+        &OpnQryF {
+            file: cust.clone(),
+            qryslt: "BAL *GE 0 *AND NAME *NE \"Dave\"".into(),
+            keyfld: vec![("BAL".into(), true), ("NAME".into(), false)],
+            usage: Usage::INPUT,
+        },
+    )
+    .unwrap();
+    assert_eq!(n, 3);
+    // The program's open with SHARE(*YES) reads the query's records.
+    let file_id = db.ctx.resolve_file(&mut t, &cust).unwrap();
+    let fr = dds::FileRef::parse("CUST").unwrap();
+    let o = db
+        .ctx
+        .session
+        .open(
+            &mut t,
+            &fr,
+            &mut |_| Ok(file_id),
+            OpenOpts {
+                share: true,
+                ..OpenOpts::input(JobHandle(1))
+            },
+        )
+        .unwrap();
+    let mut names = Vec::new();
+    loop {
+        let next = o.borrow_mut().read(&mut t, false).unwrap();
+        let Some(r) = next else { break };
+        let v = o.borrow().field(&r, "NAME").unwrap();
+        match v {
+            db::Value::Char(b) => names.push(ccsid::decode_trimmed(&b)),
+            v => panic!("{v:?}"),
+        }
+    }
+    assert_eq!(names, ["Carol", "Alice", "Bob"]);
+    // Positioning by the KEYFLD key, and a second query is refused.
+    o.borrow_mut()
+        .setll(
+            &mut t,
+            &db::KeyArg::one(db::Value::Num("10.50".parse().unwrap())),
+        )
+        .unwrap();
+    assert!(o.borrow().fb.equal);
+    let r = o.borrow_mut().read(&mut t, false).unwrap().unwrap();
+    assert_eq!(
+        o.borrow().field(&r, "CUSNO").unwrap(),
+        db::Value::Num("1".parse().unwrap())
+    );
+    assert!(
+        opnqryf(
+            &mut t,
+            &mut db.ctx,
+            &OpnQryF {
+                file: cust.clone(),
+                qryslt: "*ALL".into(),
+                keyfld: Vec::new(),
+                usage: Usage::INPUT,
+            },
+        )
+        .is_err()
+    );
+    db.ctx.session.close(&mut t, &o);
+    assert_eq!(clof(&mut t, &mut db.ctx, &cust).unwrap(), 1);
+    assert_eq!(clof(&mut t, &mut db.ctx, &cust).unwrap(), 0);
+    t.commit().unwrap();
+}
+
+#[test]
 fn indexes_and_plans() {
     let mut db = Db::new();
     setup(&mut db);

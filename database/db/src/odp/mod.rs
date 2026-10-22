@@ -186,6 +186,10 @@ pub struct Odp {
     last_key: Option<Vec<u8>>,
     /// The rest of a join entry's records, when it had several.
     join: Option<JoinCursor>,
+    /// `OPNQRYF`: the entries read, in order, instead of the path.
+    plan: Option<Vec<PathKey>>,
+    /// The format whose keys the plan's entries are encoded over.
+    plan_fmt: Option<FormatDef>,
     /// The feedback.
     pub fb: IoFeedback,
     locks: SharedLocks,
@@ -310,6 +314,8 @@ impl Odp {
             locked: None,
             last_key: None,
             join: None,
+            plan: None,
+            plan_fmt: None,
             fb,
             locks,
             file_lock,
@@ -523,9 +529,17 @@ impl Odp {
         &self.opts
     }
 
+    /// `OPNQRYF`: reads follow `entries`, keyed over `fmt`'s keys, from
+    /// the start.
+    pub fn set_plan(&mut self, entries: Vec<PathKey>, fmt: FormatDef) {
+        self.plan = Some(entries);
+        self.plan_fmt = Some(fmt);
+        self.pos = Pos::Start;
+    }
+
     /// Whether reads go by key.
     fn keyed(&self) -> bool {
-        self.opts.keyed && self.member.attr().key_len > 0
+        self.plan.is_some() || (self.opts.keyed && self.member.attr().key_len > 0)
     }
 
     /// The format a key argument is encoded for.
@@ -586,7 +600,10 @@ impl Odp {
     fn prefix(&self, arg: &KeyArg) -> Result<Vec<u8>> {
         match arg {
             KeyArg::Values(values) => {
-                let fmt = &self.member.file.formats[self.key_format()];
+                let fmt = self
+                    .plan_fmt
+                    .as_ref()
+                    .unwrap_or(&self.member.file.formats[self.key_format()]);
                 if values.len() > fmt.format.keys.len() {
                     return Err(DbError::Definition {
                         what: format!(
@@ -662,10 +679,68 @@ impl Odp {
                 return Ok(Some((c.entry.clone(), c.records[n].clone())));
             }
         }
+        if self.plan.is_some() {
+            return self.step_planned(txn, forward);
+        }
         if self.keyed() {
             return self.step_keyed(txn, forward);
         }
         self.step_arrival(txn, forward)
+    }
+
+    /// The next entry of an `OPNQRYF` plan from the position; a record
+    /// deleted since the plan was made is skipped.
+    fn step_planned(
+        &mut self,
+        txn: &mut Txn<'_>,
+        forward: bool,
+    ) -> Result<Option<(PathKey, Record)>> {
+        let plan = self.plan.clone().expect("planned");
+        let n = plan.len();
+        let same = |a: &PathKey, b: &PathKey| a.format == b.format && a.rrn == b.rrn;
+        let start: Option<usize> = match (&self.pos, forward) {
+            (Pos::Start, true) => (n > 0).then_some(0),
+            (Pos::Start, false) | (Pos::End, true) => None,
+            (Pos::End, false) => n.checked_sub(1),
+            (Pos::Before(p), true) => plan.iter().position(|k| k.key.as_slice() >= p.as_slice()),
+            (Pos::Before(p), false) => plan.iter().rposition(|k| k.key.as_slice() < p.as_slice()),
+            (Pos::After(p), true) => plan
+                .iter()
+                .position(|k| k.key.as_slice() > p.as_slice() && !k.key.starts_with(p)),
+            (Pos::After(p), false) => plan
+                .iter()
+                .rposition(|k| k.key.starts_with(p) || k.key.as_slice() < p.as_slice()),
+            (Pos::At(at), true) => plan
+                .iter()
+                .position(|k| same(k, at))
+                .map(|i| i + 1)
+                .filter(|i| *i < n),
+            (Pos::At(at), false) => plan
+                .iter()
+                .position(|k| same(k, at))
+                .and_then(|i| i.checked_sub(1)),
+        };
+        let Some(mut i) = start else {
+            return Ok(None);
+        };
+        loop {
+            let k = plan[i].clone();
+            self.pos = Pos::At(k.clone());
+            if let Some(r) = self.take(txn, &k, forward)? {
+                return Ok(Some((k, r)));
+            }
+            if forward {
+                i += 1;
+                if i >= n {
+                    return Ok(None);
+                }
+            } else {
+                let Some(prev) = i.checked_sub(1) else {
+                    return Ok(None);
+                };
+                i = prev;
+            }
+        }
     }
 
     fn step_keyed(

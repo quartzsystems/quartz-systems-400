@@ -318,9 +318,12 @@ cargo run -p build -- test                          # the disk suite with steps 
   temporary storage is a file system. Keyed scans read their paths in
   batches. Joins, grouping, projection and `DISTINCT` still hold their
   rows between steps, so a query without a sort is bounded by memory.
-- `OPNQRYF`, `ALTER TABLE`, aliases, constraints other than unique
-  indexes, identity columns, `FULL OUTER JOIN`, triggers, stored
-  procedures and functions, `LOB`, `DBCS` and `GRAPHIC` data are out.
+- `OPNQRYF` (`sql::exec::opnqryf`) selects and orders at open time
+  into the job's shared open data path; `FORMAT`, `MAPFLD`, `GRPFLD`
+  and `JFLD` are not taken. `ALTER TABLE`, aliases, constraints other
+  than unique indexes, identity columns, `FULL OUTER JOIN`, triggers,
+  stored procedures and functions, `LOB`, `DBCS` and `GRAPHIC` data are
+  out.
 - Commitment control is scoped: `STRCMTCTL CMTSCOPE(*ACTGRP)` gives the
   activation group its own commit definition, `*JOB` the job's one that
   every group without its own reaches; a group's definition ends with

@@ -12,6 +12,7 @@ pub mod ddl;
 pub mod dml;
 pub mod eval;
 pub mod func;
+pub mod opnqryf;
 pub mod query;
 mod sort;
 pub mod spill;
