@@ -132,7 +132,7 @@ impl Suite {
             "sbmjob CMD(CALL PGM(CLTEST/HELLO) PARM('batch')) JOB(HELLOB)",
             has(&["HELLOB", "submitted"]),
         )?;
-        let active = entry_wait(s, "wrkactjob", has(&["QINTER"]))?;
+        let active = entry_wait(s, "wrkactjob", has(&["SCPF", "RUN"]))?;
         entry_wait(
             s,
             "rtvclsrc PGM(CLTEST/HELLO) SRCFILE(QGPL/QCLSRC) SRCMBR(HELLO2)",
