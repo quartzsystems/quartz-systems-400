@@ -326,6 +326,7 @@ pub fn chgusrprf(txn: &mut Txn<'_>, env: &Env<'_>, k: &Keywords) -> Result<Strin
     p.changed = env.now;
     objects::write(txn, id, &p)?;
     groups::ensure_gids(txn, env.qsys, &p)?;
+    crate::auth::cache::bump_epoch();
     Ok(format!("User profile {name} changed."))
 }
 

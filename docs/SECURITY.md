@@ -266,3 +266,63 @@ entries therefore live where any object's private authorities do.
 `*AUTLMGT` on the list lets a user add and remove entries. Tree root
 slot 0 indexes the objects the list secures (`DSPAUTLOBJ`). A list
 cannot secure another list.
+
+## 4. The authority search
+
+`sec::auth::search` is the one implementation; the store's guard, the
+commands and `CHKOBJ` all call it. For a user `U` with groups `G1..Gn`
+(`GRPPRF`, then `SUPGRPPRF` in order) and an object `O`:
+
+| Step | Source | Rule |
+|---|---|---|
+| 1 | `*ALLOBJ` | `U` has it (or `QSECURITY` is 20 or less): allowed |
+| 2 | owner | `U` owns `O`: the owner's authority decides |
+| 2 | private | `U` has a private authority to `O`: it decides, even `*EXCLUDE`, even when `*PUBLIC` has more |
+| 3 | list | `U` owns or has an entry on the list securing `O`: it decides |
+| 4 | group `*ALLOBJ` | any group has it: allowed |
+| 4 | groups | for each group: primary group authority if it is `O`'s primary group, else its owner, private or list entry; the entries found add up and decide together |
+| 5 | `*PUBLIC` | only when neither `U` nor a group had an entry: `O`'s `*PUBLIC`, or the list's when `O` takes it from the list |
+| 6 | adopted | when 1-5 fall short: each owner the call stack adopts, nearest first, adds its own authority (its `*ALLOBJ`, or its owner, private or list entry; not its groups) to what was found, until it suffices |
+
+Required authorities are `need` sets from `security/sec/required.toml`,
+keyed by operation and, where one type differs, `operation@TYPE`.
+`*ANY` is any authority but `*EXCLUDE`. A check names the operation;
+the guard looks up the need for the object's type. Library operations
+(`lib.*`) are checked against the library before the object: naming a
+library needs `*EXECUTE`, creating in it `*READ *ADD`, renaming in it
+`*UPD *EXECUTE`, moving out `*DLT *EXECUTE` and in `*READ *ADD`. A
+refusal on a library is `CPF9820`, on an object `CPF2189`, with the
+object, library and type as IBM's substitution data. The step that
+decided is recorded with every answer: the `AF` audit entry carries it,
+and `DSPOBJAUT` will show it as the authority source.
+
+### Where checks happen
+
+The store calls the guard (`store::obj::guard`) in its own operations,
+so every caller is checked the same way. The storage service installs
+`sec::guard::SecGuard` on ASP 1 and runs each job request inside
+`sec::guard::as_job` with the job's session; work the system does for
+itself (starting a job, the job log, spooling into `QSPL`) runs inside
+`as_system`. A store without a guard, or a request without a session,
+is the system and is not checked: formatting, the IPL, tests. The
+temporary ASP has no guard: `QTEMP` belongs to one job.
+
+On creation the guard sets the owner (the user, or its group with
+`OWNER(*GRPPRF)`), the primary group with `GRPAUTTYP(*PGP)`, `*PUBLIC`
+from the library's `CRTAUT` (`*SYSVAL` is `QCRTAUT`; a list name
+secures the object by that list with `*PUBLIC *AUTL`), the object
+auditing value from `QCRTOBJAUD`, and gives `GRPAUT` privately to the
+group with `GRPAUTTYP(*PRIVATE)`. It indexes the object under its
+owner, and charges its storage to the owner as it grows (refused past
+`MAXSTG`, `CPF1151`). Deletion takes the object out of every index.
+
+### The cache
+
+A job's session (`sec::auth::cache::Session`) keeps, per object, what
+steps 1 to 5 found, with the object's authority generation and the
+system's security epoch. A grant, a revoke, a new owner, primary group
+or list bumps the object's generation; a change to a profile, a group
+or a list's entries bumps the epoch. Either makes the entry stale.
+Every check runs in the storage service, one process, so the epoch is
+a counter in memory and nothing is broadcast to the job processes.
+Adopted authority is never cached: the call stack changes it.

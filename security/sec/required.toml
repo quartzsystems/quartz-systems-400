@@ -1,0 +1,155 @@
+# QS/400 required authorities.
+#
+# One entry per operation the system checks: the authorities the user
+# needs to the object the operation names. `op@TYPE` overrides `op` for
+# one object type. `need` lists authority names or combinations; `*ANY`
+# is any authority but *EXCLUDE; `[]` needs nothing beyond finding the
+# object. `ibm` says which IBM command or rule the entry follows.
+# Operations on a library itself (`lib.*`) are checked against the
+# library. Every operation the code names must be here (tests/required.rs).
+
+# ------------------------------------------------------------- libraries
+
+[op."lib.create-in"]
+need = ["*READ", "*ADD"]
+ibm = "CRTxxx: *READ and *ADD to the library"
+
+[op."lib.use"]
+need = ["*EXECUTE"]
+ibm = "any command naming lib/obj: *EXECUTE to the library"
+
+[op."lib.search"]
+need = ["*EXECUTE"]
+ibm = "locating an object in a named library"
+
+[op."lib.list"]
+need = ["*READ"]
+ibm = "DSPLIB, WRKOBJ: *READ to the library"
+
+[op."lib.rename-in"]
+need = ["*UPD", "*EXECUTE"]
+ibm = "RNMOBJ: *UPD and *EXECUTE to the library"
+
+[op."lib.move-from"]
+need = ["*DLT", "*EXECUTE"]
+ibm = "MOVOBJ: *DLT and *EXECUTE to the from-library"
+
+[op."lib.move-to"]
+need = ["*READ", "*ADD"]
+ibm = "MOVOBJ: *READ and *ADD to the to-library"
+
+# --------------------------------------------------------- every object
+
+[op."obj.delete"]
+need = ["*OBJEXIST"]
+ibm = "DLTxxx: *OBJEXIST"
+
+[op."obj.delete@*LIB"]
+need = ["*OBJEXIST", "*USE"]
+ibm = "DLTLIB: *OBJEXIST and *USE to the library"
+
+[op."obj.delete@*FILE"]
+need = ["*OBJOPR", "*OBJEXIST"]
+ibm = "DLTF: *OBJOPR and *OBJEXIST"
+
+[op."obj.rename"]
+need = ["*OBJMGT"]
+ibm = "RNMOBJ: *OBJMGT"
+
+[op."obj.move"]
+need = ["*OBJMGT", "*OBJEXIST", "*READ"]
+ibm = "MOVOBJ: *OBJMGT, *OBJEXIST and *READ"
+
+[op."obj.change-text"]
+need = ["*OBJMGT"]
+ibm = "CHGOBJD: *OBJMGT"
+
+[op."obj.describe"]
+need = ["*ANY"]
+ibm = "DSPOBJD: any authority"
+
+[op."obj.check"]
+need = []
+ibm = "CHKOBJ without AUT: the object exists and the library is usable"
+
+[op."obj.grant"]
+need = ["*OBJMGT"]
+ibm = "GRTOBJAUT: *OBJMGT, or ownership, or *ALLOBJ; only authorities the granter has"
+
+[op."obj.change-owner"]
+need = ["*OBJEXIST"]
+ibm = "CHGOBJOWN: *OBJEXIST to the object, *ADD to the new owner's profile"
+
+[op."obj.change-pgp"]
+need = ["*OBJEXIST"]
+ibm = "CHGOBJPGP: *OBJEXIST, or ownership"
+
+[op."obj.audit"]
+need = []
+ibm = "CHGOBJAUD: *AUDIT special authority (checked by the command)"
+
+# ------------------------------------------------------------- profiles
+
+[op."usrprf.add-owned"]
+need = ["*ADD"]
+ibm = "CHGOBJOWN: *ADD to the new owner's profile"
+
+[op."usrprf.display"]
+need = ["*READ", "*OBJOPR"]
+ibm = "DSPUSRPRF of another user: *READ and *OBJOPR to the profile"
+
+[op."usrprf.use"]
+need = ["*USE"]
+ibm = "naming a profile (GRPPRF, SBMJOB USER): *USE to it"
+
+# ---------------------------------------------------- authorization lists
+
+[op."autl.manage"]
+need = ["*AUTLMGT"]
+ibm = "ADDAUTLE, CHGAUTLE, RMVAUTLE: *AUTLMGT (only authorities the user has)"
+
+[op."autl.secure"]
+need = []
+ibm = "GRTOBJAUT AUTL: the list exists; the user owns the object or has *ALLOBJ (checked by the command)"
+
+# ----------------------------------------------------- data areas, queues
+
+[op."dtaara.read"]
+need = ["*USE"]
+ibm = "RTVDTAARA, DSPDTAARA, QWCRDTAA: *USE"
+
+[op."dtaara.write"]
+need = ["*CHANGE"]
+ibm = "CHGDTAARA: *CHANGE"
+
+[op."dtaq.send"]
+need = ["*OBJOPR", "*ADD"]
+ibm = "QSNDDTAQ: *OBJOPR and *ADD"
+
+[op."dtaq.receive"]
+need = ["*OBJOPR", "*READ"]
+ibm = "QRCVDTAQ: *OBJOPR and *READ"
+
+[op."dtaq.clear"]
+need = ["*OBJOPR", "*DLT"]
+ibm = "QCLRDTAQ: *OBJOPR and *DLT"
+
+[op."usrspc.read"]
+need = ["*USE"]
+ibm = "QUSRTVUS, QUSPTRUS: *USE"
+
+[op."usrspc.write"]
+need = ["*CHANGE"]
+ibm = "QUSCHGUS: *CHANGE"
+
+[op."usridx.read"]
+need = ["*USE"]
+ibm = "QUSRTVUI: *USE"
+
+[op."usridx.write"]
+need = ["*CHANGE"]
+ibm = "QUSADDUI, QUSRMVUI: *CHANGE"
+
+[op."sysval.read"]
+need = []
+ibm = "RTVSYSVAL: none"

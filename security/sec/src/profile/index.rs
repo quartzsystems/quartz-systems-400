@@ -122,6 +122,10 @@ fn lookup(txn: &mut Txn<'_>, qsys: ObjectId, profile: &str) -> Result<Option<Obj
 }
 
 fn bump_owned(txn: &mut Txn<'_>, pid: ObjectId, by: i64) -> Result<()> {
+    // A profile being created (QSYS owns itself) has no payload yet.
+    if store::obj::space::Space::load(txn, pid)?.0.bytes() == 0 {
+        return Ok(());
+    }
     let mut p = objects::read_id(txn, pid)?;
     p.owned_count = p.owned_count.saturating_add_signed(by);
     objects::write(txn, pid, &p)
@@ -216,6 +220,9 @@ pub fn verify(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<Vec<String>> {
         .difference(&have)
         .map(|e| format!("missing from the index: {e:?}"))
         .collect();
-    out.extend(have.difference(&want).map(|e| format!("indexed but not on the object: {e:?}")));
+    out.extend(
+        have.difference(&want)
+            .map(|e| format!("indexed but not on the object: {e:?}")),
+    );
     Ok(out)
 }

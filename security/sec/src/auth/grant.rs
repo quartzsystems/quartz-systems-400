@@ -58,6 +58,9 @@ pub fn set_private(
     }
     let (page, mut h) = auth::load(txn, id)?;
     auth::private_set(txn, page, &mut h, key(profile)?, bits.map(Auth::store))?;
+    if id.type_code == store::obj::types::AUTL {
+        crate::auth::cache::bump_epoch();
+    }
     match bits {
         Some(b) => index::put(txn, qsys, profile, Kind::Private, id, u64::from(b.0))?,
         None => index::remove(txn, qsys, profile, Kind::Private, id)?,
@@ -72,6 +75,9 @@ pub fn private(txn: &mut Txn<'_>, h: &ObjectHeader, profile: &str) -> Result<Opt
 
 /// Set `*PUBLIC`; `None` takes it from the authorization list.
 pub fn set_public(txn: &mut Txn<'_>, id: ObjectId, bits: Option<Auth>) -> Result<()> {
+    if id.type_code == store::obj::types::AUTL {
+        crate::auth::cache::bump_epoch();
+    }
     let (page, mut h) = auth::load(txn, id)?;
     h.public_authority = if let Some(b) = bits {
         b.store()
