@@ -10,7 +10,7 @@
  Message queue  . . . . . . . . .   *PGMQ         Name, *PGMQ, *EXT             
    Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
  Message type . . . . . . . . . . > *ANY          *ANY, *NEXT, *PRV, *INFO, ... 
- Message key  . . . . . . . . . .   *NON          *NONE, *TOP                   
+ Message key  . . . . . . . . . .   *NONE         *NONE, *TOP                   
  Wait time (seconds)  . . . . . .   0             0-9999999, *MAX               
  Remove message . . . . . . . . .   *YES          *YES, *NO, *KEEPEXCP          
  Coded character set ID . . . . .   *JOB          1-65535, *JOB, *HEX           
