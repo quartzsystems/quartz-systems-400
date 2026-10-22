@@ -215,17 +215,17 @@ fn strdbg(job: &mut Job, p: &Params) -> Result<String, String> {
 
 /// `CHGDBG UPDPROD(*YES|*NO)`: whether production files may change
 /// under debug.
-fn chgdbg(job: &mut Job, p: &Params) -> Result<String, String> {
+fn chgdbg(job: &mut Job, p: &Params) -> String {
     let Some(d) = job.debug.as_mut() else {
-        return Ok("CPF1999 the job is not in debug mode; STRDBG first.\n".into());
+        return "CPF1999 the job is not in debug mode; STRDBG first.\n".into();
     };
     if let Some(v) = p.upper("UPDPROD") {
         d.updprod = v == "*YES";
     }
-    Ok(format!(
+    format!(
         "Debug attributes changed: UPDPROD({}).\n",
         if d.updprod { "*YES" } else { "*NO" }
-    ))
+    )
 }
 
 /// `ADDBKP STMT(n) [PGM(LIB/PGM)]` and `RMVBKP STMT(n|*ALL) [PGM(..)]`.

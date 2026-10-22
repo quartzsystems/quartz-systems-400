@@ -213,7 +213,8 @@ command/      commands and CL
                 (sites, stubs, bridge words, DIRECT/JOB_SITE/CL_STATEMENTS/UNSUPPORTED),
                 src/install.rs, src/bridge.rs, denylist.txt; tests/ (defs, the harness
                 tripwire, inventory, prompt goldens). The service's processing programs
-                are lic/slic/src/cpp/ (direct.rs, clpgm.rs), the job's
+                are lic/slic/src/cpp/ (direct.rs, clpgm.rs, dbcmd.rs, msgfcmd.rs,
+                objcmd.rs, sysinfo.rs), the job's
                 work/qsjob/src/command/ (jobsite.rs, natives.rs, prompt.rs)
   cl/           the CL compiler: lex.rs, parse/, sem.rs, lower/ (statements, expr, cmds),
                 compile.rs the driver and listing, diag.rs the CPD07xx identifiers
