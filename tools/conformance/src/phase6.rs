@@ -69,8 +69,13 @@ const USRCALL: &str = "; a user-state call into system state
 module USRCALL
 proc USRCALL() entry {
 L0:
+  monitor M, MCH6801 -> REFUSED
   call SYSPGM()
   dsply \"not reached\"
+  endmon M
+  ret
+REFUSED:
+  dsply \"state refused\"
   ret
 }
 ";
@@ -296,7 +301,7 @@ impl Suite {
         let raw = s.command("call QGPL/RAW", CMD)?;
         want(&raw, "MCH6801", "call RAW")?;
         let up = s.command("call QGPL/USRCALL", CMD)?;
-        want(&up, "MCH6801", "call USRCALL")?;
+        want(&up, "state refused", "call USRCALL")?;
         refuse(&up, "not reached", "call USRCALL")?;
         Ok(
             "RAW (imports _QSYSRAW) and USRCALL (calls a STATE(*SYSTEM) program) both MCH6801"
