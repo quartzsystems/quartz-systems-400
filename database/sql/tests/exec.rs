@@ -372,6 +372,46 @@ fn joins_groups_and_subqueries() {
 }
 
 #[test]
+fn external_sort_spills_and_merges() {
+    let mut db = Db::new();
+    setup(&mut db);
+    db.ctx.sort_budget = 2;
+    let want = [
+        row(&["Carol"]),
+        row(&["Alice"]),
+        row(&["Bob"]),
+        row(&["Dave"]),
+    ];
+    // Four rows, two per run: two runs merged in memory.
+    assert_eq!(
+        db.rows("SELECT name FROM cust ORDER BY bal DESC, name"),
+        want
+    );
+    // The same through files in a directory.
+    let dir = std::env::temp_dir().join(format!("qsql-test-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    db.ctx.spill = Box::new(sql::exec::spill::FileSpill::new(dir.clone()));
+    assert_eq!(
+        db.rows("SELECT name FROM cust ORDER BY bal DESC, name"),
+        want
+    );
+    assert_eq!(
+        db.rows("SELECT cusno, name FROM cust WHERE bal >= 0 ORDER BY 2 DESC"),
+        [
+            row(&["4", "Dave"]),
+            row(&["3", "Carol"]),
+            row(&["2", "Bob"]),
+            row(&["1", "Alice"])
+        ]
+    );
+    assert!(
+        std::fs::read_dir(&dir).unwrap().next().is_none(),
+        "runs are removed"
+    );
+    let _ = std::fs::remove_dir(&dir);
+}
+
+#[test]
 fn indexes_and_plans() {
     let mut db = Db::new();
     setup(&mut db);

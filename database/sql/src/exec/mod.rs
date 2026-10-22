@@ -13,6 +13,8 @@ pub mod dml;
 pub mod eval;
 pub mod func;
 pub mod query;
+mod sort;
+pub mod spill;
 
 use db::file::{self, FileDesc, MemberEntry};
 use db::format::FormatDef;
@@ -50,6 +52,9 @@ impl TableInfo {
     }
 }
 
+/// Rows an `ORDER BY` sorts in memory before spilling (`sort_budget`).
+pub const DEFAULT_SORT_BUDGET: usize = 100_000;
+
 /// What a job brings to SQL: naming, the library list, the schema, the
 /// job handle and its database session.
 pub struct SqlContext {
@@ -75,6 +80,10 @@ pub struct SqlContext {
     pub explain: Vec<String>,
     /// Declared cursors by name.
     pub cursors: std::collections::HashMap<String, cursor::Cursor>,
+    /// Rows a sort holds in memory before it spills a run.
+    pub sort_budget: usize,
+    /// Where sort runs go: the job's temporary storage.
+    pub spill: Box<dyn spill::SpillArea>,
 }
 
 impl SqlContext {
@@ -104,6 +113,8 @@ impl SqlContext {
             now: None,
             explain: Vec::new(),
             cursors: std::collections::HashMap::new(),
+            sort_budget: DEFAULT_SORT_BUDGET,
+            spill: Box::new(spill::MemSpill::default()),
         }
     }
 

@@ -3,9 +3,9 @@
 // root directory of this project.
 
 //! Running a query: scans with access path selection, joins, grouping,
-//! projection, `DISTINCT`, ordering and row limits. Rows are
-//! materialized between steps (`MIGRATE(phase3)`: streaming iterators
-//! and an external sort over QTEMP).
+//! projection, `DISTINCT`, ordering and row limits. Scans read their
+//! paths in batches; `ORDER BY` is an external merge sort that spills
+//! past the job's row budget (`sort`); the other steps hold their rows.
 
 use std::collections::{HashMap, HashSet};
 use std::ops::Bound;
@@ -20,6 +20,7 @@ use store::obj::ObjectId;
 use store::txn::Txn;
 
 use super::eval::{ColInfo, Env, Evaluator, Row, Schema, has_aggregate, sql_type};
+use super::sort::{KeySpec, Sorter};
 use super::{ColumnDesc, ResultSet, SqlContext, TableInfo};
 use crate::ast::{
     CmpOp, ColumnRef, Expr, JoinKind, Literal, OrderItem, Query, QueryBody, Select, SelectItem,
@@ -27,6 +28,9 @@ use crate::ast::{
 };
 use crate::error::{Result, SqlError};
 use crate::value::Value;
+
+/// Path entries a keyed scan reads per batch.
+const KEY_BATCH: usize = 256;
 
 /// A table in `FROM`, with its schema and the predicates pushed to it.
 struct Scan {
@@ -733,30 +737,48 @@ fn scan_table(
         let mut pm = Member::open(txn, &desc, &c.member)?;
         pm.ensure_path(txn, &mut |_, _| {})?;
         let backward = ch.ordered == Some(true);
-        let keys = if backward {
-            let mut ks = pm.keys_back(txn, Bound::Included(hi.as_slice()), usize::MAX)?;
-            ks.retain(|k| k.key.as_slice() >= lo.as_slice());
-            ks
+        // The path in batches, each read as far as the bounds allow.
+        let path = pm.path().ok_or_else(|| SqlError::Database {
+            what: format!("{} has no access path", c.label),
+            msgid: None,
+        })?;
+        let mut batch = if backward {
+            path.scan_back(txn, Bound::Included(hi.as_slice()), KEY_BATCH)?
         } else {
-            pm.keys(
+            path.scan(
                 txn,
                 Bound::Included(lo.as_slice()),
                 Bound::Included(hi.as_slice()),
-                usize::MAX,
+                KEY_BATCH,
             )?
         };
-        for k in keys {
-            let slots = match &base_pf {
-                Some(pf) => pf
-                    .read(txn, k.rrn)?
-                    .filter(|s| !s.deleted)
-                    .into_iter()
-                    .collect(),
-                None => pm.read_entries(txn, &k)?,
-            };
-            for s in slots {
-                rows.push(row_of(&t.format, &s)?);
+        'keys: while let Some(last) = batch.last().cloned() {
+            for k in &batch {
+                let past = if backward {
+                    k.key.as_slice() < lo.as_slice() && !k.key.starts_with(&lo)
+                } else {
+                    k.key.as_slice() > hi.as_slice()
+                };
+                if past {
+                    break 'keys;
+                }
+                let slots = match &base_pf {
+                    Some(pf) => pf
+                        .read(txn, k.rrn)?
+                        .filter(|s| !s.deleted)
+                        .into_iter()
+                        .collect(),
+                    None => pm.read_entries(txn, k)?,
+                };
+                for s in slots {
+                    rows.push(row_of(&t.format, &s)?);
+                }
             }
+            batch = if backward {
+                path.scan_back_from(txn, Bound::Excluded(&last), KEY_BATCH)?
+            } else {
+                path.scan_from(txn, Bound::Excluded(&last), KEY_BATCH)?
+            };
         }
     } else {
         if explain_only {
@@ -1248,13 +1270,14 @@ fn column_at(schema: &Schema, i: usize) -> Expr {
 
 /// Sort produced rows by the `ORDER BY` items: a number is a position in
 /// the select list, a name is looked up in the output row first, then
-/// the source row.
+/// the source row. Past the job's row budget the sort spills runs to
+/// its temporary storage and merges them.
 fn order_rows(
     txn: &mut Txn<'_>,
     ctx: &mut SqlContext,
     params: &[Value],
     out_schema: &Rc<Schema>,
-    produced: &mut [Produced],
+    produced: &mut Vec<Produced>,
     order: &[OrderItem],
 ) -> Result<()> {
     let mut ev = Evaluator { ctx, params };
@@ -1284,63 +1307,20 @@ fn order_rows(
         }
         keys.push(k);
     }
-    let mut idx: Vec<usize> = (0..produced.len()).collect();
-    let mut failure = None;
-    idx.sort_by(|&a, &b| {
-        for (i, item) in order.iter().enumerate() {
-            let (x, y) = (&keys[a][i], &keys[b][i]);
-            // Nulls sort high unless told otherwise.
-            let nulls_first = item.nulls_first.unwrap_or(item.desc);
-            let o = match (x.is_null(), y.is_null()) {
-                (true, true) => std::cmp::Ordering::Equal,
-                (true, false) => {
-                    if nulls_first {
-                        std::cmp::Ordering::Less
-                    } else {
-                        std::cmp::Ordering::Greater
-                    }
-                }
-                (false, true) => {
-                    if nulls_first {
-                        std::cmp::Ordering::Greater
-                    } else {
-                        std::cmp::Ordering::Less
-                    }
-                }
-                (false, false) => match x.compare(y) {
-                    Ok(Some(o)) => {
-                        if item.desc {
-                            o.reverse()
-                        } else {
-                            o
-                        }
-                    }
-                    Ok(None) => std::cmp::Ordering::Equal,
-                    Err(e) => {
-                        failure = Some(e);
-                        std::cmp::Ordering::Equal
-                    }
-                },
-            };
-            if o != std::cmp::Ordering::Equal {
-                return o;
-            }
-        }
-        std::cmp::Ordering::Equal
-    });
-    if let Some(e) = failure {
-        return Err(e);
-    }
-    let sorted: Vec<Produced> = idx
-        .into_iter()
-        .map(|i| Produced {
-            out: produced[i].out.clone(),
-            source: produced[i].source.clone(),
+    // Nulls sort high unless told otherwise.
+    let specs: Vec<KeySpec> = order
+        .iter()
+        .map(|item| KeySpec {
+            desc: item.desc,
+            nulls_first: item.nulls_first.unwrap_or(item.desc),
         })
         .collect();
-    for (slot, p) in produced.iter_mut().zip(sorted) {
-        *slot = p;
+    let mut sorter = Sorter::new(specs, ctx.sort_budget);
+    for (k, p) in keys.into_iter().zip(produced.drain(..)) {
+        sorter.push(&mut *ctx.spill, k, p)?;
     }
+    let (in_order, _runs) = sorter.finish(&mut *ctx.spill)?;
+    *produced = in_order;
     Ok(())
 }
 

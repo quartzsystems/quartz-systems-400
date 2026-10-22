@@ -310,8 +310,14 @@ cargo run -p build -- test                          # the disk suite with steps 
   it now gives one record per match (`member::join`), in `JDUPSEQ`
   order, honours `JDFTVAL`, searches a keyed secondary through its path
   and tests select/omit on secondary fields at read time.
-- The query executor materializes rows between steps; there is no
-  streaming and no external sort, so a query is bounded by memory.
+- `ORDER BY` is an external merge sort (`sql::exec::sort`): rows past
+  the job's `sort_budget` (100,000 by default) go to the spill area as
+  sorted runs and are merged on the way out. The spill area
+  (`sql::exec::spill`) is memory-backed, as the temporary ASP is on
+  this system; `FileSpill` writes runs to a directory for a host whose
+  temporary storage is a file system. Keyed scans read their paths in
+  batches. Joins, grouping, projection and `DISTINCT` still hold their
+  rows between steps, so a query without a sort is bounded by memory.
 - `OPNQRYF`, `ALTER TABLE`, aliases, constraints other than unique
   indexes, identity columns, `FULL OUTER JOIN`, triggers, stored
   procedures and functions, `LOB`, `DBCS` and `GRAPHIC` data are out.
