@@ -72,7 +72,6 @@ activation check and the argument vector.
   the command analyzer is Phase 7.
 - Operational descriptors are not built, so `CEEDOD` reports
   `CEE0820`.
-- Condition handler result codes 30 and 31 (promote) act as percolate.
 - A stack overflow is caught by a budget check in `enter`, not by the
   guard page; the job's own thread, and the signal handler on its
   alternate stack, come with Phase 5.

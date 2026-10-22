@@ -28,7 +28,9 @@ pub mod result {
     pub const PERCOLATE: i32 = 20;
     /// Percolate, skipping the entry's other handlers.
     pub const PERCOLATE_SKIP: i32 = 21;
-    /// Promote to the new condition; treated as percolate.
+    /// Promote: the new condition token replaces the condition and
+    /// the search goes on as if it had been raised at the handler's
+    /// level.
     pub const PROMOTE: i32 = 30;
     /// Promote, skipping the entry's other handlers.
     pub const PROMOTE_SKIP: i32 = 31;
@@ -52,6 +54,9 @@ enum Verdict {
     Percolate,
     Skip,
     Replaced,
+    /// A new condition takes the place of the old; `true` skips the
+    /// entry's other handlers.
+    Promote(Exception, bool),
 }
 
 /// Dispatch an exception sent to the entry at `e.depth`.
@@ -64,7 +69,11 @@ pub(crate) fn dispatch(j: &mut Job, e: &Exception) {
     match search(j, e) {
         Found::Pending | Found::Replaced => {}
         Found::Resumed => resume(j),
-        Found::Unhandled(boundary) => unhandled(j, e, boundary),
+        Found::Unhandled(boundary) => {
+            // A handler may have promoted the condition on the way.
+            let cur = j.exception.clone().unwrap_or_else(|| e.clone());
+            unhandled(j, &cur, boundary);
+        }
     }
 }
 
@@ -92,14 +101,24 @@ fn resume_target(j: &mut Job, e: &Exception) {
 fn search(j: &mut Job, e: &Exception) -> Found {
     let top = j.act.frames.len();
     let start = (e.depth as usize).clamp(1, top) - 1;
+    // The condition under search: a promoting handler replaces it.
+    let mut cur = e.clone();
     for i in (0..=start).rev() {
         let handlers = j.act.frames[i].handlers.clone();
         for (proc_addr, token) in handlers.iter().rev() {
-            match call_cond_handler(j, *proc_addr, *token, e) {
+            match call_cond_handler(j, *proc_addr, *token, &cur) {
                 Verdict::Resume => return Found::Resumed,
                 Verdict::Replaced => return Found::Replaced,
                 Verdict::Skip => break,
                 Verdict::Percolate => {}
+                Verdict::Promote(mut new, skip) => {
+                    new.depth = u32::try_from(i + 1).unwrap_or(u32::MAX);
+                    j.exception = Some(new.clone());
+                    cur = new;
+                    if skip {
+                        break;
+                    }
+                }
             }
         }
         let f = &j.act.frames[i];
@@ -108,7 +127,7 @@ fn search(j: &mut Job, e: &Exception) -> Found {
         } else {
             f.region
         };
-        if region_handles(f, region, e) {
+        if region_handles(f, region, &cur) {
             return Found::Pending;
         }
         if f.control_boundary {
@@ -168,7 +187,14 @@ fn call_cond_handler(j: &mut Job, proc_addr: u64, token: u64, e: &Exception) -> 
     }
     j.exception = saved;
     j.abi.pending = 1;
-    match i32::from_be_bytes(rc) {
+    let rc = i32::from_be_bytes(rc);
+    if matches!(rc, result::PROMOTE | result::PROMOTE_SKIP)
+        && let Some(msgid) = decode_token(&newtok)
+    {
+        let new = Exception::message(&msgid, crate::cee::file_of(&msgid), Vec::new(), e.depth);
+        return Verdict::Promote(new, rc == result::PROMOTE_SKIP);
+    }
+    match rc {
         result::RESUME => Verdict::Resume,
         result::PERCOLATE_SKIP | result::PROMOTE_SKIP => Verdict::Skip,
         _ => Verdict::Percolate,

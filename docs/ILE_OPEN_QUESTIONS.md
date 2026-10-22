@@ -70,10 +70,14 @@ is in `expected/` and the test passes.
     program first). Oracle: `FCWHERE` prints which of two `MONMSG
     CPF9999` ran, in the callee or the caller.
 
-11. **Condition handler result codes 30 and 31 (promote).** Implemented
-    as percolate; the new condition token is ignored. Oracle:
-    `PROMOTE` promotes `MCH1211` to a user condition and prints what
-    the caller's `MONMSG` saw.
+11. **Condition handler result codes 30 and 31 (promote).** Implemented:
+    the new condition token's message identifier replaces the
+    condition, which goes on through the entry's remaining handlers
+    (30) or straight to its monitors (31) as if raised there; a token
+    naming no message percolates. The promoted condition carries no
+    RPG status, so an RPG `MONITOR` taking it sees `%STATUS` 0; the
+    machine may map it to `00202`. Oracle: `PROMOTE` promotes `MCH1211`
+    to a user condition and prints what the caller's monitor saw.
 
 12. **Feedback codes of the condition-management APIs.** Implemented:
     `CEE0801` for a procedure pointer that is not a procedure,
