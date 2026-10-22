@@ -93,8 +93,6 @@ before it is taken.
   console's Command Entry is `QCMD`'s own panel.
 - `DEVTYPE` is `*SCS` only; `CHLVAL` channels are not supported (FCFC
   channels map to fixed lines).
-- Break messages arrive at a job's wait points, not in the middle of a
-  running program.
 - `PWRDWNSYS IPLSRC` is `*PANEL` only; DB and non-DB faults are a
   pool's major and minor page faults.
 

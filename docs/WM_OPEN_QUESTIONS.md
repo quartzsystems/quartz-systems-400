@@ -28,16 +28,15 @@ closes when the machine's answer is recorded here and the code agrees.
 
 ## Messages
 
-4. **Break delivery inside a running program.** Implemented: a job
-   takes its break messages at its wait points (data queue and message
-   waits, the console's idle wait) and when each request returns. The
-   machine interrupts a program at the next machine-instruction
-   boundary. Here that needs a check at every statement of every
-   program, which generated code has only in its debug variant; the
-   cost of adding it everywhere is not yet measured. Test on the
-   machine: a CL program looping `CHGVAR` for ten seconds with no
-   waits, a break message sent meanwhile: it is shown during the loop.
-   QS/400 shows it when the call ends.
+4. **Break delivery inside a running program.** Implemented: generated
+   code polls an attention flag at every statement start and before
+   every backward branch; a timer raises the flag each second and the
+   poll's cold path runs the break-handling program, so a program with
+   no waits shows a break within a second. The machine interrupts at
+   the next machine-instruction boundary. Test on the machine: a CL
+   program looping `CHGVAR` for ten seconds with no waits, a break
+   message sent meanwhile: whether it is shown at once (here: within a
+   second).
 
 5. **`MSGQFULL(*WRAP)` and unanswered inquiries.** Implemented: wrap
    removes the oldest messages that are not inquiries waiting for a

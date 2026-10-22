@@ -31,6 +31,7 @@ fn check(name: &str, dump: &str) {
     }
     let want = fs::read_to_string(&path)
         .unwrap_or_else(|e| panic!("{}: {e}; run with QS400_UPDATE_GOLDEN=1", path.display()));
+    let want = want.replace("\r\n", "\n");
     assert_eq!(dump, want, "screen {name} differs from {}", path.display());
 }
 

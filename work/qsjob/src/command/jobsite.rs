@@ -364,10 +364,14 @@ fn cyymmdd(secs: u64) -> String {
 fn rtvmbrd(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
     let (name, lib) = qual_of(r, "FILE");
     let want = text_of(r, "MBR").to_ascii_uppercase();
-    let (info, members) = host
+    let info = host
         .link
         .borrow_mut()
-        .with(|l| (l.file(lib.clone(), name.clone()), l.members(lib.clone(), name.clone())));
+        .with(|l| l.file(lib.clone(), name.clone()));
+    let members = host
+        .link
+        .borrow_mut()
+        .with(|l| l.members(lib.clone(), name.clone()));
     let Some(f) = info else {
         return Err(Fail {
             msgid: "CPF9812".into(),
@@ -418,7 +422,7 @@ fn rtvmbrd(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail>
 fn rtvusrprf(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
     let mut user = text_of(r, "USRPRF").to_ascii_uppercase();
     if user.is_empty() || user == "*CURRENT" {
-        user = host.start.user.clone();
+        user.clone_from(&host.start.user);
     }
     let answer = host
         .link
