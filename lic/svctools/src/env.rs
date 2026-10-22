@@ -115,6 +115,11 @@ pub trait DstEnv {
     /// Make the user IDs durable.
     fn save_users(&mut self) -> Result<(), String>;
 
+    /// Something the security audit journal records: `kind` `ST` (a
+    /// sign-on, `code` `DS`), `DS` (a password reset) or `PW` (`X`, a
+    /// service tools user ID or password not valid).
+    fn audit(&mut self, _kind: &str, _code: &str, _user: &str) {}
+
     /// The configured disk units.
     fn disk_units(&mut self) -> Vec<DiskUnit> {
         Vec::new()

@@ -69,7 +69,7 @@ fn shipped_install_once_and_read_back() {
     let (mut store, qsys) = open_new();
     let mut t = store.begin().unwrap();
     let made = shipped::install(&mut t, qsys, &stamp()).unwrap();
-    assert_eq!(made, 54);
+    assert_eq!(made, 55);
     assert_eq!(shipped::install(&mut t, qsys, &stamp()).unwrap(), 0);
     t.commit().unwrap();
 

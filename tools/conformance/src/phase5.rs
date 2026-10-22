@@ -412,9 +412,7 @@ impl Suite {
             Err(format!("the console never showed {want:?}:\n{last}"))
         };
         screen_has(s, "Sign On")?;
-        s.command("type QSECOFR", CMD)?;
-        s.command("key enter", CMD)?;
-        screen_has(s, "Command Entry")?;
+        secofr_command_entry(s)?;
         s.command("type wrkactjob", CMD)?;
         s.command("key enter", CMD)?;
         // The output, which lists the job running it; with the system
@@ -542,7 +540,10 @@ impl Suite {
         let mut active = String::new();
         for _ in 0..20 {
             active = s.command("wrkactjob", CMD)?;
-            if active.lines().any(|l| l.trim_start().starts_with("QSYSSCD")) {
+            if active
+                .lines()
+                .any(|l| l.trim_start().starts_with("QSYSSCD"))
+            {
                 break;
             }
             std::thread::sleep(Duration::from_millis(250));
@@ -959,6 +960,97 @@ fn unbase64(s: &str) -> Option<Vec<u8>> {
 }
 
 /// Wait for the console display to show `want`; the screen.
+/// The password the harness gives `QSECOFR` the first time it signs on.
+pub(crate) const SECOFR_PASSWORD: &str = "Quartz2026";
+
+/// The screen once it shows one of `wants`: which, and the screen.
+pub(crate) fn screen_any(s: &mut Session, wants: &[&str]) -> Result<(usize, String), String> {
+    let mut last = String::new();
+    for _ in 0..80 {
+        last = s.command("screen", CMD)?;
+        if let Some(i) = wants.iter().position(|w| last.contains(w)) {
+            return Ok((i, last));
+        }
+        std::thread::sleep(Duration::from_millis(250));
+    }
+    Err(format!(
+        "the console never showed any of {wants:?}:\n{last}"
+    ))
+}
+
+/// Sign on at the console as `user` with `password`; on an expired
+/// password, change it to `new`. Leaves the job at its first menu or
+/// Command Entry; returns the screen it got to.
+pub(crate) fn console_sign_on_as(
+    s: &mut Session,
+    user: &str,
+    password: &str,
+    new: &str,
+) -> Result<String, String> {
+    screen_wait(s, "Sign On")?;
+    s.command(&format!("type {user}"), CMD)?;
+    s.command("key tab", CMD)?;
+    s.command(&format!("type {password}"), CMD)?;
+    s.command("key enter", CMD)?;
+    let (i, screen) = screen_any(
+        s,
+        &[
+            "Change Password",
+            "Sign-on Information",
+            "Main Menu",
+            "Command Entry",
+            "not correct",
+        ],
+    )?;
+    match i {
+        0 => {
+            s.command(&format!("type {password}"), CMD)?;
+            s.command("key tab", CMD)?;
+            s.command(&format!("type {new}"), CMD)?;
+            s.command("key tab", CMD)?;
+            s.command(&format!("type {new}"), CMD)?;
+            s.command("key enter", CMD)?;
+            let (j, screen) = screen_any(
+                s,
+                &[
+                    "Sign-on Information",
+                    "Main Menu",
+                    "Command Entry",
+                    "Change Password",
+                ],
+            )?;
+            match j {
+                0 => {
+                    s.command("key enter", CMD)?;
+                    screen_any(s, &["Main Menu", "Command Entry"]).map(|(_, x)| x)
+                }
+                3 => Err(format!("the password change was refused:\n{screen}")),
+                _ => Ok(screen),
+            }
+        }
+        1 => {
+            s.command("key enter", CMD)?;
+            screen_any(s, &["Main Menu", "Command Entry"]).map(|(_, x)| x)
+        }
+        4 => Err(format!("sign-on refused:\n{screen}")),
+        _ => Ok(screen),
+    }
+}
+
+/// Sign on as `QSECOFR` with the harness's password, setting it from the
+/// shipped one the first time, and reach Command Entry.
+pub(crate) fn secofr_command_entry(s: &mut Session) -> Result<(), String> {
+    let mut screen = console_sign_on_as(s, "QSECOFR", SECOFR_PASSWORD, SECOFR_PASSWORD);
+    if screen.as_ref().is_err_and(|e| e.contains("not correct")) {
+        screen = console_sign_on_as(s, "QSECOFR", "QSECOFR", SECOFR_PASSWORD);
+    }
+    if screen?.contains("Main Menu") {
+        s.command("type call QCMD", CMD)?;
+        s.command("key enter", CMD)?;
+    }
+    screen_wait(s, "Command Entry").map(|_| ())
+}
+
 fn screen_wait(s: &mut Session, want: &str) -> Result<String, String> {
     let mut last = String::new();
     for _ in 0..80 {
@@ -976,10 +1068,7 @@ impl Suite {
     /// the subsystems and system jobs end, the store closes, the system
     /// IPLs again normally with `QIPLSTS` 2.
     pub(crate) fn power_down(&self, s: &mut Session) -> Result<String, String> {
-        screen_wait(s, "Sign On")?;
-        s.command("type QSECOFR", CMD)?;
-        s.command("key enter", CMD)?;
-        screen_wait(s, "Command Entry")?;
+        secofr_command_entry(s)?;
         s.command("type pwrdwnsys OPTION(*IMMED) RESTART(*YES)", CMD)?;
         s.send("key enter")?;
         for code in [
@@ -1118,7 +1207,9 @@ impl Suite {
             .collect();
         let faults = cols.get(4).copied().unwrap_or(0.0) + cols.get(6).copied().unwrap_or(0.0);
         if faults <= 0.0 {
-            return Err(format!("no faults in *BASE after WMMEM ran:\n{msgs}\n{sts}"));
+            return Err(format!(
+                "no faults in *BASE after WMMEM ran:\n{msgs}\n{sts}"
+            ));
         }
         let elapsed = s.command("wrkactjob VIEW(2)", CMD)?;
         let threads = s.command("wrkactjob VIEW(3)", CMD)?;
@@ -1127,20 +1218,21 @@ impl Suite {
         let job = s.command("dspjob", CMD)?;
         if !elapsed.contains("AuxIO")
             || !threads.contains("Threads")
-            || !disks.lines().any(|l| l.split_whitespace().next() == Some("1"))
+            || !disks
+                .lines()
+                .any(|l| l.split_whitespace().next() == Some("1"))
             || !top.contains("CPU Util")
             || !job.contains("Processing unit time used")
         {
-            return Err(format!("the displays:\n{elapsed}\n{threads}\n{disks}\n{top}\n{job}"));
+            return Err(format!(
+                "the displays:\n{elapsed}\n{threads}\n{disks}\n{top}\n{job}"
+            ));
         }
         crate::qir::qemu::push(s, "WMSSTS", WMSSTS)?;
         s.command("qir asm WMSSTS MODULE(QGPL/WMSSTS)", CMD)?;
         s.command("crtpgm QGPL/WMSSTS MODULE(QGPL/WMSSTS)", CMD)?;
         let api = s.command("call QGPL/WMSSTS", CMD)?;
-        let nums: Vec<i64> = api
-            .lines()
-            .filter_map(|l| l.trim().parse().ok())
-            .collect();
+        let nums: Vec<i64> = api.lines().filter_map(|l| l.trim().parse().ok()).collect();
         if nums.len() < 2 || nums[0] < 10 || nums[1] < 100 {
             return Err(format!("QWCRSSTS SSTS0200:\n{api}"));
         }
@@ -1373,7 +1465,9 @@ impl Suite {
             o.contains("CEE9901")
         })?;
         if !log.contains("CEE9901") || !log.contains("Escape") {
-            return Err(format!("the job log lacks the escape or the inquiry:\n{log}"));
+            return Err(format!(
+                "the job log lacks the escape or the inquiry:\n{log}"
+            ));
         }
         Ok(format!(
             "{job} waited in MSGW on CEE9901 ({key}); reply C ended it; the job log has the escape and the inquiry"
@@ -1394,7 +1488,9 @@ impl Suite {
         s.command("strsbs QSYS/QBATCH", CMD)?;
         for i in 1..=5 {
             s.command(
-                &format!("sbmjob CMD('call QGPL/LOCKER') JOB(WMLCK{i}) JOBQ(QGPL/QBATCH) MSGQ(*NONE)"),
+                &format!(
+                    "sbmjob CMD('call QGPL/LOCKER') JOB(WMLCK{i}) JOBQ(QGPL/QBATCH) MSGQ(*NONE)"
+                ),
                 CMD,
             )?;
         }
@@ -1405,7 +1501,9 @@ impl Suite {
             return Err(format!("the five jobs are not all active:\n{busy}"));
         }
         s.command("endsbs QBATCH OPTION(*IMMED)", CMD)?;
-        let after = poll(s, "wrkactjob", 80, |o| !o.contains("WMLCK") && active_row(o, "QBATCH").is_none())?;
+        let after = poll(s, "wrkactjob", 80, |o| {
+            !o.contains("WMLCK") && active_row(o, "QBATCH").is_none()
+        })?;
         s.command("chgjobqe QSYS/QBATCH JOBQ(QGPL/QBATCH) MAXACT(1)", CMD)?;
         if after.contains("WMLCK") {
             return Err(format!("jobs survived ENDSBS *IMMED:\n{after}"));
@@ -1449,7 +1547,10 @@ impl Suite {
         };
         let before = sum(s)?;
         s.command("strcmtctl LCKLVL(*CHG)", CMD)?;
-        s.command(&format!("sql UPDATE {lib}/CUSTOMER SET BAL = BAL + 1000;"), CMD)?;
+        s.command(
+            &format!("sql UPDATE {lib}/CUSTOMER SET BAL = BAL + 1000;"),
+            CMD,
+        )?;
         let during = sum(s)?;
         if during == before {
             return Err(format!("the update did not show: {before}"));
@@ -1469,7 +1570,9 @@ impl Suite {
         let log = s.command(&format!("dspsplf QPJOBLOG JOB({old}/QSYS/QSVCJOB)"), CMD)?;
         let chk = s.command("chkstg", Duration::from_secs(300))?;
         if after != before {
-            return Err(format!("not rolled back: {before} before, {during} during, {after} after"));
+            return Err(format!(
+                "not rolled back: {before} before, {during} during, {after} after"
+            ));
         }
         if !log.contains("CPF1164") || !log.contains(" 70") {
             return Err(format!("the killed job's log:\n{log}"));
@@ -1524,7 +1627,9 @@ impl Suite {
         let t = std::time::Instant::now();
         for i in 1..=50 {
             s.command(
-                &format!("sbmjob CMD('dlyjob DLY(0)') JOB(WMB{i:03}) JOBQ(QGPL/QBATCH) MSGQ(*NONE)"),
+                &format!(
+                    "sbmjob CMD('dlyjob DLY(0)') JOB(WMB{i:03}) JOBQ(QGPL/QBATCH) MSGQ(*NONE)"
+                ),
                 CMD,
             )?;
         }
@@ -1533,7 +1638,8 @@ impl Suite {
         let t = std::time::Instant::now();
         s.command("rlsjobq QGPL/QBATCH", CMD)?;
         let done = poll(s, "wrkjobq QGPL/QBATCH", 240, |o| {
-            o.lines().any(|l| l.starts_with("QBATCH") && l.split_whitespace().nth(2) == Some("0"))
+            o.lines()
+                .any(|l| l.starts_with("QBATCH") && l.split_whitespace().nth(2) == Some("0"))
         })?;
         let drained = poll(s, "wrkactjob", 240, |o| !o.contains("WMB0"))?;
         let life = t.elapsed().as_secs_f64();
@@ -1542,7 +1648,9 @@ impl Suite {
         poll(s, "wrkactjob", 60, |o| active_row(o, "QBATCH").is_none())?;
         s.command("chgjobqe QSYS/QBATCH JOBQ(QGPL/QBATCH) MAXACT(1)", CMD)?;
         if drained.contains("WMB0") {
-            return Err(format!("the bench jobs did not all run:\n{done}\n{drained}"));
+            return Err(format!(
+                "the bench jobs did not all run:\n{done}\n{drained}"
+            ));
         }
         let t = std::time::Instant::now();
         s.command("call QGPL/RPT10K", Duration::from_secs(120))?;

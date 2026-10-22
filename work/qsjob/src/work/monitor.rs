@@ -196,6 +196,7 @@ impl Monitor {
             rqsdta: j.rqsdta,
             pool: pool_name(&self.name, r.pool, kind_of),
             lda: j.lda,
+            signon: None,
         };
         let mut s = spawn::job(start)?;
         spawn::ready(&mut s)?;

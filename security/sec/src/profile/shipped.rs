@@ -207,6 +207,18 @@ pub fn install(
     if first {
         done.reowned = reown(txn, qsys)?;
         done.indexed = index::rebuild(txn, qsys)?;
+        // QLMTSECOFR: the security officer is authorized to the console.
+        let lib = store::obj::library::Library::load(txn, qsys)?;
+        let console = qsname::Name::parse("QSCONSOLE").expect("valid");
+        if let Some(dev) = lib.lookup(txn, types::DEVD, console)? {
+            crate::auth::grant::set_private(
+                txn,
+                qsys,
+                dev,
+                "QSECOFR",
+                Some(crate::auth::bits::Auth::CHANGE),
+            )?;
+        }
     }
     Ok(done)
 }

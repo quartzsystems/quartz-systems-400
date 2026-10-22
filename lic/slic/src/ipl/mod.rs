@@ -49,7 +49,7 @@ pub enum Event {
     /// A message from the job signed on at the console display.
     ConsoleJob(wm::ctl::FromJob),
     /// That job's channel closed.
-    ConsoleGone,
+    ConsoleGone(u32),
     /// Something from the local console's keyboard.
     Console(::console::Input),
 }
@@ -308,13 +308,74 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
     lic::complete(system);
     system.emit(&src::IPL_COMPLETE);
     procs::console::sign_on(system, "");
+    audit_lic(system);
+    if system.procs.stg.is_some()
+        && let Err(e) = procs::svcjob::start(system, tx.clone())
+    {
+        system.out.serial(&format!("slic: {e}\n"));
+    }
     if system.boot.svc {
-        if system.procs.stg.is_some()
-            && let Err(e) = procs::svcjob::start(system, tx.clone())
-        {
-            system.out.serial(&format!("slic: {e}\n"));
-        }
+        // Development images sign the serial console on for the harness.
+        system.svc_user = Some("*DEV".into());
         svc::banner(system);
+    } else {
+        system
+            .out
+            .serial("Service console: sign on with a service tools user ID: signon USER PASSWORD\n");
+    }
+}
+
+/// Hand the service tools events of the IPL to the storage service for
+/// the audit journal.
+pub fn audit_lic(system: &mut System) {
+    if system.audit_lic.is_empty() {
+        return;
+    }
+    let events = std::mem::take(&mut system.audit_lic);
+    if let Some(stg) = system.procs.stg.as_mut() {
+        let _ = stg::Client::audit_lic(stg, events);
+    }
+}
+
+/// `signon USER PASSWORD` on the serial console: a service tools user
+/// ID, as DST checks it.
+fn serial_sign_on(system: &mut System, line: &str) {
+    let mut w = line.split_whitespace();
+    if w.next() != Some("signon") {
+        system
+            .out
+            .serial("Sign on first: signon USER PASSWORD\n");
+        return;
+    }
+    let user = w.next().unwrap_or("").to_ascii_uppercase();
+    let password = w.next().unwrap_or("");
+    let Some((part, record)) = system.lic.as_mut() else {
+        system.out.serial("The service tools user IDs are not available.\n");
+        return;
+    };
+    let Some(mut users) = svctools::UserDb::load(record) else {
+        system.out.serial("The service tools user IDs are not available.\n");
+        return;
+    };
+    let r = users.sign_on(&user, password).map(|_| ());
+    if users.store(record).is_ok() {
+        let _ = part.write(record);
+    }
+    match r {
+        Ok(()) => {
+            system.audit_lic.push(("ST".into(), "SC".into(), user.clone()));
+            system.out.serial(&format!("Service tools user {user} signed on.\n"));
+            system.svc_user = Some(user);
+            audit_lic(system);
+            system.out.serial(svc::PROMPT);
+        }
+        Err(e) => {
+            system.audit_lic.push(("PW".into(), "X".into(), user));
+            audit_lic(system);
+            system
+                .out
+                .serial(&format!("{}\n", svctools::dst::signon::message(&e)));
+        }
     }
 }
 
@@ -414,7 +475,7 @@ fn job_message(system: &mut System, m: wm::ctl::FromJob) {
             delay,
             restart,
         } => power::down_ending(system, restart, immediate, delay),
-        FromJob::Ready { .. } | FromJob::Show { .. } => {}
+        FromJob::Ready { .. } | FromJob::Show { .. } | FromJob::Disconnect => {}
     }
 }
 
@@ -431,9 +492,7 @@ fn reaped(system: &mut System, pids: &[u32], tx: &mpsc::Sender<Event>) {
             system.procs.stg = None;
             system.fatal(&src::STG_ENDED);
         }
-        if system.procs.console.as_ref().is_some_and(|j| j.pid == pid) {
-            procs::console::gone(system);
-        }
+        procs::console::gone(system, pid);
         if system.procs.svcjob.as_ref().is_some_and(|j| j.pid == pid) {
             system.procs.svcjob = None;
             system
@@ -449,6 +508,9 @@ fn reaped(system: &mut System, pids: &[u32], tx: &mpsc::Sender<Event>) {
 
 /// Serve events forever. Power down leaves through `power::down`.
 fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<Event>) -> ! {
+    if system.boot.svc && system.svc_user.is_none() {
+        system.svc_user = Some("*DEV".into());
+    }
     loop {
         let wait = if storage::busy(system) {
             Duration::from_millis(20)
@@ -456,7 +518,10 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
             Duration::from_secs(5)
         };
         match rx.recv_timeout(wait) {
-            Err(mpsc::RecvTimeoutError::Timeout) => storage::tick(system),
+            Err(mpsc::RecvTimeoutError::Timeout) => {
+                storage::tick(system);
+                procs::console::inactivity(system);
+            }
             Ok(Event::Signal(s)) if s == libc_sigchld() => {
                 let pids = sys::reap();
                 reaped(system, &pids, tx);
@@ -466,8 +531,10 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
             // a job whose channel closed.
             Ok(Event::Signal(_) | Event::JobGone) => {}
             Ok(Event::Line(line)) => {
-                if system.boot.svc {
+                if system.svc_user.is_some() {
                     console_line(system, &line);
+                } else if system.complete {
+                    serial_sign_on(system, &line);
                 }
             }
             Ok(Event::Job(m)) => job_message(system, m),
@@ -478,7 +545,7 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
             }
             Ok(Event::Console(input)) => console_input(system, input, tx),
             Ok(Event::ConsoleJob(m)) => procs::console::from_job(system, m),
-            Ok(Event::ConsoleGone) => procs::console::gone(system),
+            Ok(Event::ConsoleGone(pid)) => procs::console::gone(system, pid),
             Err(_) => park(),
         }
     }

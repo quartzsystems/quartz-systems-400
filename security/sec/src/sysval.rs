@@ -77,10 +77,39 @@ pub fn require_change(
 
 /// `QAUDLVL` and `QAUDLVL2` values.
 pub const AUDLVL_VALUES: &[&str] = &[
-    "*NONE", "*AUDLVL2", "*ATNEVT", "*AUTFAIL", "*CREATE", "*DELETE", "*JOBBAS", "*JOBCHGUSR", "*JOBDTA",
-    "*NETBAS", "*NETCLU", "*NETCMN", "*NETFAIL", "*NETSCK", "*OBJMGT", "*OFCSRV", "*OPTICAL", "*PGMADP",
-    "*PGMFAIL", "*PRTDTA", "*SAVRST", "*SECCFG", "*SECDIRSRV", "*SECIPC", "*SECNAS", "*SECRUN", "*SECSCKD",
-    "*SECURITY", "*SECVFY", "*SECVLDL", "*SERVICE", "*SPLFDTA", "*SYSMGT",
+    "*NONE",
+    "*AUDLVL2",
+    "*ATNEVT",
+    "*AUTFAIL",
+    "*CREATE",
+    "*DELETE",
+    "*JOBBAS",
+    "*JOBCHGUSR",
+    "*JOBDTA",
+    "*NETBAS",
+    "*NETCLU",
+    "*NETCMN",
+    "*NETFAIL",
+    "*NETSCK",
+    "*OBJMGT",
+    "*OFCSRV",
+    "*OPTICAL",
+    "*PGMADP",
+    "*PGMFAIL",
+    "*PRTDTA",
+    "*SAVRST",
+    "*SECCFG",
+    "*SECDIRSRV",
+    "*SECIPC",
+    "*SECNAS",
+    "*SECRUN",
+    "*SECSCKD",
+    "*SECURITY",
+    "*SECVFY",
+    "*SECVLDL",
+    "*SERVICE",
+    "*SPLFDTA",
+    "*SYSMGT",
 ];
 
 /// `QAUDCTL` values.
@@ -100,7 +129,10 @@ pub fn validate(name: &str, value: &str, journal: bool) -> Result<()> {
         "QPWDRULES" => {
             for w in &words {
                 if !pwdrule_ok(w) {
-                    return Err(SecError::msg("CPF1028", format!("{w} is not a password rule.")));
+                    return Err(SecError::msg(
+                        "CPF1028",
+                        format!("{w} is not a password rule."),
+                    ));
                 }
             }
             return Ok(());
@@ -109,11 +141,17 @@ pub fn validate(name: &str, value: &str, journal: bool) -> Result<()> {
     };
     for w in &words {
         if !allowed.contains(&w.as_str()) {
-            return Err(SecError::msg("CPF1028", format!("{w} is not a value {name} takes.")));
+            return Err(SecError::msg(
+                "CPF1028",
+                format!("{w} is not a value {name} takes."),
+            ));
         }
     }
     if words.len() > 1 && words.iter().any(|w| w == "*NONE") {
-        return Err(SecError::msg("CPF1028", format!("*NONE must be alone in {name}.")));
+        return Err(SecError::msg(
+            "CPF1028",
+            format!("*NONE must be alone in {name}."),
+        ));
     }
     if name == "QAUDCTL" && !journal && words.iter().any(|w| w != "*NONE") {
         return Err(SecError::msg(
@@ -126,13 +164,37 @@ pub fn validate(name: &str, value: &str, journal: bool) -> Result<()> {
 
 fn pwdrule_ok(w: &str) -> bool {
     const PLAIN: &[&str] = &[
-        "*PWDSYSVAL", "*ALLCRTCHG", "*CHRLMTAJC", "*CHRLMTREP", "*DGTLMTAJC", "*DGTLMTFST", "*DGTLMTLST",
-        "*LTRLMTAJC", "*LTRLMTFST", "*LTRLMTLST", "*LMTSAMPOS", "*LMTPRFNAME", "*REQANY3", "*SPCCHRLMTAJC",
-        "*SPCCHRLMTFST", "*SPCCHRLMTLST",
+        "*PWDSYSVAL",
+        "*ALLCRTCHG",
+        "*CHRLMTAJC",
+        "*CHRLMTREP",
+        "*DGTLMTAJC",
+        "*DGTLMTFST",
+        "*DGTLMTLST",
+        "*LTRLMTAJC",
+        "*LTRLMTFST",
+        "*LTRLMTLST",
+        "*LMTSAMPOS",
+        "*LMTPRFNAME",
+        "*REQANY3",
+        "*SPCCHRLMTAJC",
+        "*SPCCHRLMTFST",
+        "*SPCCHRLMTLST",
     ];
     const NUMBERED: &[&str] = &[
-        "*MINLEN", "*MAXLEN", "*DGTMIN", "*DGTMAX", "*LTRMIN", "*LTRMAX", "*MIXCASE", "*SPCCHRMIN",
-        "*SPCCHRMAX", "*UPRMIN", "*UPRMAX", "*LWRMIN", "*LWRMAX",
+        "*MINLEN",
+        "*MAXLEN",
+        "*DGTMIN",
+        "*DGTMAX",
+        "*LTRMIN",
+        "*LTRMAX",
+        "*MIXCASE",
+        "*SPCCHRMIN",
+        "*SPCCHRMAX",
+        "*UPRMIN",
+        "*UPRMAX",
+        "*LWRMIN",
+        "*LWRMAX",
     ];
     PLAIN.contains(&w)
         || NUMBERED.iter().any(|p| {
@@ -163,7 +225,10 @@ mod tests {
         assert_eq!(e.msgid(), Some("CPF18B4"));
         assert!(require_change(None, "QDATE", false, false).is_ok());
         assert!(validate("QAUDCTL", "*AUDLVL *OBJAUD", true).is_ok());
-        assert_eq!(validate("QAUDCTL", "*AUDLVL", false).unwrap_err().msgid(), Some("CPF2283"));
+        assert_eq!(
+            validate("QAUDCTL", "*AUDLVL", false).unwrap_err().msgid(),
+            Some("CPF2283")
+        );
         assert!(validate("QAUDCTL", "*NONE", false).is_ok());
         assert!(validate("QAUDLVL", "*AUTFAIL *BOGUS", true).is_err());
         assert!(validate("QAUDLVL", "*NONE *AUTFAIL", true).is_err());

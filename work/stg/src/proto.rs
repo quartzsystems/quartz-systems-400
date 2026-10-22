@@ -272,4 +272,13 @@ ipc::rpc! {
     124 => fn adopt / Adopt (programs: Vec<String>) -> Result<Vec<String>, String>;
     /// Whether a user space is in the system domain.
     125 => fn us_domain / UsDomain (name: String, lib: String) -> bool;
+    /// Sign on at display `device` (`console` for the system console):
+    /// what to do next, or why not. `slic` sends it.
+    126 => fn sign_on / SignOn (user: String, password: String, device: String, console: bool) -> Result<sec::signon::SignedOn, sec::signon::Refused>;
+    /// Change the job's own password; `validated` says `QPWDVLDPGM`
+    /// already accepted it in the job.
+    127 => fn chg_pwd / ChgPwd (current: String, new: String, validated: bool) -> Result<(), String>;
+    /// Service tools use `slic` saw (DST, the serial console): kind
+    /// (`ST`, `DS`, `PW`), code, user; for the audit journal.
+    128 => fn audit_lic / AuditLic (events: Vec<(String, String, String)>) -> ();
 }

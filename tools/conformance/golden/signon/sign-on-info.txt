@@ -1,0 +1,24 @@
+                             Sign-on Information                                
+                                                              System:  QS400    
+                                                                                
+                                                                                
+ Previous sign-on . . . . . . . . . . . . :   10/21/26  14:10:00                
+                                                                                
+ Sign-on attempts not valid . . . . . . . :   2                                 
+                                                                                
+ Days until password expires  . . . . . . :   5                                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Press Enter to continue.                                                       
+ F3=Exit   F12=Cancel                                                           
+                                                                                

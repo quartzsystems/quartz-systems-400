@@ -468,3 +468,146 @@ pub fn audit_journal_exists(system: &mut System) -> bool {
     };
     matches!(sec::audit::write::journal(&mut txn, qsys), Ok(Some(_)))
 }
+
+/// Sign on at a display: the profile checked, the attempt counted, the
+/// user's message queue made when it is missing.
+pub fn sign_on(
+    system: &mut System,
+    user: &str,
+    password: &str,
+    device: &str,
+    console: bool,
+) -> Result<sec::signon::SignedOn, sec::signon::Refused> {
+    use sec::signon::{Attempt, Refused, Values};
+    let fail = |text: String| Refused {
+        msgid: "CPF1107".into(),
+        text,
+        vary_off: false,
+    };
+    let values = Values::from_sysvals(&|n: &str| sysval_text(system, n));
+    let upper = user.trim().to_ascii_uppercase();
+    let sessions = u32::try_from(
+        system
+            .jobs
+            .all()
+            .iter()
+            .filter(|j| j.kind == 'I' && j.user == upper)
+            .count(),
+    )
+    .unwrap_or(u32::MAX);
+    let attempt = Attempt {
+        user: upper.clone(),
+        password: password.to_string(),
+        device: device.to_string(),
+        console,
+        sessions,
+        now: crate::ipl::system::now_unix(),
+    };
+    let r = sec::guard::as_system(|| {
+        let s = system.storage.as_mut()?;
+        let qsys = s.qsys?;
+        let mut txn = s.store.begin().ok()?;
+        let dev_name = device.to_string();
+        let device_authority = move |txn: &mut store::Txn<'_>, who: &str| -> Option<sec::auth::bits::Auth> {
+            let lib = store::obj::library::Library::load(txn, qsys).ok()?;
+            let id = lib
+                .lookup(txn, store::obj::types::DEVD, qsname::Name::parse(&dev_name).ok()?)
+                .ok()??;
+            let h = sec::auth::grant::header(txn, id).ok()?;
+            if store::obj::header::text_of(&h.owner) == who {
+                return Some(sec::auth::bits::Auth::of(h.owner_authority));
+            }
+            sec::auth::grant::private(txn, &h, who).ok()?
+        };
+        let r = sec::signon::sign_on(&mut txn, qsys, &attempt, &values, &device_authority).ok()?;
+        txn.commit().ok()?;
+        Some(r)
+    });
+    let r = r.unwrap_or_else(|| Err(fail("The sign-on could not be checked.".into())));
+    match &r {
+        Ok(s) => user_queue(system, &s.user),
+        Err(e) if e.vary_off => vary_off(system, device),
+        Err(_) => {}
+    }
+    r
+}
+
+/// The user's message queue in `QUSRSYS`, made at sign-on when missing.
+fn user_queue(system: &mut System, user: &str) {
+    let _ = sec::guard::as_system(|| {
+        let s = system.storage.as_mut()?;
+        let qsys = s.qsys?;
+        let mut txn = s.store.begin().ok()?;
+        let lib = wm::obj::library(&mut txn, qsys, "QUSRSYS").ok()?;
+        let name = qsname::Name::parse(user).ok()?;
+        let l = store::obj::library::Library::load(&mut txn, lib).ok()?;
+        if l.lookup(&mut txn, store::obj::types::MSGQ, name).ok()?.is_some() {
+            return Some(());
+        }
+        let stamp = wm::obj::Stamp {
+            owner: user.into(),
+            system: "QS400".into(),
+            now: crate::ipl::system::now_unix(),
+        };
+        let q = wm::obj::msgq::MsgQ::default();
+        let id = wm::obj::create(&mut txn, lib, name, store::obj::types::MSGQ, "User message queue", &stamp, &q.encode()).ok()?;
+        // The user owns its queue.
+        let qsys_id = qsys;
+        sec::auth::grant::set_owner(&mut txn, qsys_id, id, user, true).ok()?;
+        txn.commit().ok()
+    });
+}
+
+/// `QMAXSGNACN` 1 or 3: the display is varied off.
+fn vary_off(system: &mut System, device: &str) {
+    let _ = sec::guard::as_system(|| {
+        let s = system.storage.as_mut()?;
+        let qsys = s.qsys?;
+        let mut txn = s.store.begin().ok()?;
+        let id = wm::obj::find(&mut txn, qsys, &store::obj::NameContext::default(), "QSYS", device, store::obj::types::DEVD).ok()?;
+        let mut d = wm::obj::devd::Devd::decode(&wm::obj::read(&mut txn, id).ok()?).ok()?;
+        d.online = false;
+        wm::obj::write(&mut txn, id, &d.encode()).ok()?;
+        txn.commit().ok()
+    });
+}
+
+/// `CHGPWD` for the job's own user; `validated` says the job already
+/// ran `QPWDVLDPGM`.
+pub fn chg_pwd(system: &mut System, me: &Principal, current: &str, new: &str, validated: bool) -> Result<(), String> {
+    let program = sysval_text(system, "QPWDVLDPGM");
+    let program = program.split_whitespace().next().unwrap_or("*NONE");
+    if !program.starts_with('*') && !validated {
+        return Err("CPF22C6 The password validation program was not run.".into());
+    }
+    let vals = crate::svc::security::sysvals(system);
+    let get = |n: &str| vals.get(n).cloned().unwrap_or_default();
+    let s = system.storage.as_mut().ok_or("object store not open")?;
+    let qsys = s.qsys.ok_or("object store not initialized")?;
+    let env = sec::cmd::Env {
+        qsys,
+        actor: me,
+        now: crate::ipl::system::now_unix(),
+        sysval: &get,
+    };
+    let mut accepted = |_: &sec::profile::UsrPrf, _: &str, _: Option<&str>| Ok(());
+    crate::svc::db::with_txn(&mut s.store, |txn| {
+        sec::cmd::usrprf::chgpwd(txn, &env, current, new, &mut accepted)
+            .map(|_| ())
+            .map_err(|e| e.to_string())
+    })
+}
+
+/// Service tools events `slic` passed on.
+pub fn audit_lic(events: &[(String, String, String)]) {
+    use sec::audit::{Event, Kind};
+    for (kind, code, user) in events {
+        let e = match kind.as_str() {
+            "ST" => Event::new(Kind::St).set("ETYP", "A").set("SRVT", code.as_str()).set("USRP", user.as_str()),
+            "DS" => Event::new(Kind::Ds).set("USRP", user.as_str()).set("RTYP", code.as_str()),
+            "PW" => Event::new(Kind::Pw).set("ETYP", code.as_str()).set("USRP", user.as_str()),
+            _ => continue,
+        };
+        sec::audit::record(e.by(user));
+    }
+}

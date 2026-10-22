@@ -186,6 +186,7 @@ fn exists(txn: &mut Txn<'_>, lib: ObjectId, name: Name, type_code: u16) -> Resul
 }
 
 /// Create the shipped objects that do not exist; how many were made.
+#[allow(clippy::too_many_lines)]
 pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &Stamp) -> Result<usize> {
     let mut made = 0;
     for (lib, name, d) in jobds() {
@@ -250,6 +251,13 @@ pub fn install(txn: &mut Txn<'_>, qsys: ObjectId, stamp: &Stamp) -> Result<usize
             super::create_attr(txn, qsys, id, &f.text, stamp, &f.encode())?;
             made += 1;
         }
+    }
+    let n = Name::parse(super::devd::CONSOLE).expect("valid");
+    if !exists(txn, qsys, n, types::DEVD)? {
+        let d = super::devd::Devd::console();
+        let id = (n, types::DEVD, "DSP");
+        super::create_attr(txn, qsys, id, &d.text, stamp, &d.encode())?;
+        made += 1;
     }
     let n = Name::parse(super::devd::CAPTURE).expect("valid");
     if !exists(txn, qsys, n, types::DEVD)? {

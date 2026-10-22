@@ -41,6 +41,12 @@ pub fn command(c: &mut Console, cmd: &str, line: &str) -> String {
         "sbmjob" => sbmjob(c, &p),
         "pwrdwnsys" => pwrdwnsys(c, &p),
         "wrkjob" => wrkjob(c, &p),
+        "chgpwd" => chgpwd(c, &p),
+        "dscjob" => c
+            .ctl
+            .send(&wm::ctl::FromJob::Disconnect)
+            .map(|()| "Job disconnected; sign on again to return to it.\n".to_string())
+            .map_err(|e| e.to_string()),
         "endsys" => {
             let opt = p.upper("OPTION").unwrap_or_else(|| "*CNTRLD".into());
             let delay = p.upper("DELAY").unwrap_or_else(|| "*NOLIMIT".into());
@@ -54,22 +60,42 @@ pub fn command(c: &mut Console, cmd: &str, line: &str) -> String {
     }
 }
 
+/// `CHGPWD CURPWD() NEWPWD()`: the job's own password. The validation
+/// program runs here, in the job, before the service changes it.
+fn chgpwd(c: &mut Console, p: &Params) -> Result<String, String> {
+    let current = p.text("CURPWD");
+    let new = p.text("NEWPWD");
+    if new.is_empty() {
+        return Err("CPD0071 NEWPWD is required".into());
+    }
+    let link = c.link.clone();
+    let user = c.link.borrow_mut().with(stg::Client::whoami).user;
+    if !crate::work::pwdpgm::validate(c, &link, &user, &new, &current)? {
+        return Err(
+            "CPF22C6 The password validation program did not accept the new password.".into(),
+        );
+    }
+    c.link
+        .borrow_mut()
+        .with(|l| stg::Client::chg_pwd(l, current, new, true))?;
+    Ok("Password changed successfully.\n".into())
+}
+
 /// `WRKJOB [JOB(n/u/name)] [OPTION(...)]`: the job's displays, by
 /// option. Another job's call stack and log are its own business
 /// (`MIGRATE(phase6)`: shown through the service).
 fn wrkjob(c: &mut Console, p: &Params) -> Result<String, String> {
     let job = p.upper("JOB");
     let own = job.is_none() || job.as_deref() == Some("*");
-    let jobkw = job.as_ref().map_or_else(String::new, |j| format!(" JOB({j})"));
+    let jobkw = job
+        .as_ref()
+        .map_or_else(String::new, |j| format!(" JOB({j})"));
     let option = p.upper("OPTION").unwrap_or_else(|| "*SELECT".into());
     match option.as_str() {
         "*STSA" | "*DFNA" | "*RUNA" => Ok(c.line(&format!("dspjob{jobkw}"))),
         "*SPLF" => {
             let spec = if own {
-                format!(
-                    "{:06}/{}/{}",
-                    c.start.number, c.start.user, c.start.name
-                )
+                format!("{:06}/{}/{}", c.start.number, c.start.user, c.start.name)
             } else {
                 job.clone().unwrap_or_default()
             };
@@ -78,9 +104,9 @@ fn wrkjob(c: &mut Console, p: &Params) -> Result<String, String> {
         "*JOBLOG" if own => Ok(c.dspjoblog()),
         "*PGMSTK" if own => Ok(c.job().call_stack_text()),
         "*LIBL" if own => Ok(c.line("dsplibl")),
-        "*JOBLOG" | "*PGMSTK" | "*LIBL" => Err(format!(
-            "CPF1343 {option} of another job is not shown yet"
-        )),
+        "*JOBLOG" | "*PGMSTK" | "*LIBL" => {
+            Err(format!("CPF1343 {option} of another job is not shown yet"))
+        }
         "*SELECT" => Ok(format!(
             "Work with Job: {:06}/{}/{}\n\n  1. Display job status attributes        (OPTION(*STSA))\n  2. Display job definition attributes    (OPTION(*DFNA))\n  3. Display job run attributes           (OPTION(*RUNA))\n  4. Work with spooled files              (OPTION(*SPLF))\n 10. Display job log                      (OPTION(*JOBLOG))\n 11. Display call stack                   (OPTION(*PGMSTK))\n 13. Display library list                 (OPTION(*LIBL))\n",
             c.start.number, c.start.user, c.start.name

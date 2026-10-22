@@ -32,11 +32,16 @@ pub struct ConsoleJob {
     /// Its process ID.
     pub pid: u32,
     chan: Chan,
+    /// Its user.
+    pub user: String,
+    /// When the display was last used.
+    pub used: std::time::Instant,
 }
 
 impl ConsoleJob {
     /// Pass Enter or a function key on.
     pub fn input(&mut self, key: u8, fields: Vec<String>) {
+        self.used = std::time::Instant::now();
         let _ = self.chan.send(&ToJob::Input { key, fields });
     }
 
@@ -81,8 +86,9 @@ struct Routed {
 
 /// Route a sign-on: the controlling subsystem's workstation name entry
 /// for the console, else its `*CONS` or `*ALL` type entry; the job
-/// description's routing data; the routing entry it selects.
-fn route(system: &mut System, sbs: &str) -> Result<Routed, String> {
+/// description (`*USRPRF` is the profile's) and its routing data; the
+/// routing entry it selects.
+fn route(system: &mut System, sbs: &str, profile_jobd: &str) -> Result<Routed, String> {
     let stg = system
         .procs
         .stg
@@ -102,7 +108,13 @@ fn route(system: &mut System, sbs: &str) -> Result<Routed, String> {
                 .find(|w| w.name == "*CONS" || w.name == "*ALL")
         })
         .ok_or_else(|| format!("CPF1109 subsystem {sbs} has no work station entry for {DEVICE}"))?;
-    let jobd = if wse.jobd.0.starts_with('*') {
+    let jobd = if wse.jobd.0 == "*USRPRF" && !profile_jobd.is_empty() {
+        if profile_jobd.contains('/') {
+            profile_jobd.to_string()
+        } else {
+            format!("QGPL/{profile_jobd}")
+        }
+    } else if wse.jobd.0.starts_with('*') {
         "QGPL/QDFTJOBD".to_string()
     } else {
         format!("{}/{}", wse.jobd.1, wse.jobd.0)
@@ -126,8 +138,9 @@ fn route(system: &mut System, sbs: &str) -> Result<Routed, String> {
     })
 }
 
-/// Sign on: user, password (not checked yet, `MIGRATE(phase6)`),
-/// program, menu, current library.
+/// Sign on: the user and password checked by the storage service, then
+/// the job started with the program, menu and current library typed,
+/// as far as `LMTCPB` lets them change the profile's.
 pub fn sign_on_entered(system: &mut System, fields: &[String], tx: Sender<Event>) {
     let user = fields.first().map_or("", |f| f.trim()).to_ascii_uppercase();
     if user.is_empty() {
@@ -135,10 +148,35 @@ pub fn sign_on_entered(system: &mut System, fields: &[String], tx: Sender<Event>
         return;
     }
     if qsname::Name::parse(&user).is_err() {
-        sign_on(system, &format!("{user} is not a valid user profile name."));
+        sign_on(system, "Password or user profile is not correct.");
         return;
     }
-    match start(system, &user, fields, tx) {
+    let password = fields.get(1).map_or("", |f| f.trim()).to_string();
+    let user_typed = user.clone();
+    let Some(stg) = system.procs.stg.as_mut() else {
+        sign_on(system, "Sign-on is not available until the IPL completes.");
+        return;
+    };
+    let checked = stg
+        .sign_on(user, password, DEVICE.into(), true)
+        .map_err(|e| e.to_string());
+    let signed = match checked {
+        Ok(Ok(s)) => s,
+        // The password was right; the one session is the disconnected job.
+        Ok(Err(r)) if r.msgid == "CPF1220" && reconnect(system, &user_typed) => return,
+        Ok(Err(r)) => {
+            sign_on(system, &r.text);
+            return;
+        }
+        Err(e) => {
+            sign_on(system, &e);
+            return;
+        }
+    };
+    if reconnect(system, &signed.user) {
+        return;
+    }
+    match start(system, signed, fields, tx) {
         Ok(()) => {}
         Err(e) => {
             system.out.serial(&format!("slic: sign-on: {e}\n"));
@@ -147,14 +185,41 @@ pub fn sign_on_entered(system: &mut System, fields: &[String], tx: Sender<Event>
     }
 }
 
+/// What the sign-on display's fields may change: `LMTCPB(*PARTIAL)`
+/// keeps the program and current library, `*YES` all three.
+fn effective(s: &mut sec::signon::SignedOn, fields: &[String]) -> String {
+    let typed = |i: usize| {
+        fields
+            .get(i)
+            .map(|f| f.trim().to_ascii_uppercase())
+            .filter(|f| !f.is_empty())
+    };
+    let (program, menu, curlib) = match s.lmtcpb.as_str() {
+        "*YES" => (false, false, false),
+        "*PARTIAL" => (false, true, false),
+        _ => (true, true, true),
+    };
+    if let (true, Some(m)) = (menu, typed(3)) {
+        s.inlmnu = m;
+    }
+    if let (true, Some(c)) = (curlib, typed(4)) {
+        s.curlib = c;
+    }
+    match (program, typed(2)) {
+        (true, Some(p)) => p,
+        _ if s.inlpgm == "*NONE" => String::new(),
+        _ => s.inlpgm.clone(),
+    }
+}
+
 fn start(
     system: &mut System,
-    user: &str,
+    mut signed: sec::signon::SignedOn,
     fields: &[String],
     tx: Sender<Event>,
 ) -> Result<(), String> {
     let sbs = controlling(system);
-    let r = route(system, &sbs)?;
+    let r = route(system, &sbs, &signed.jobd)?;
     let number = system
         .procs
         .stg
@@ -162,13 +227,15 @@ fn start(
         .ok_or("the storage service is not running")?
         .job_number()
         .map_err(|e| e.to_string())??;
-    let program = fields.get(2).map_or("", |f| f.trim()).to_ascii_uppercase();
+    let program = effective(&mut signed, fields);
+    let user = signed.user.clone();
+    let user_name = user.clone();
     let (pid, mut chan) = spawn(QSJOB, &[])?;
     super::cgroup_place(&r.pool, pid);
     chan.send(&ToJob::Start {
         start: Box::new(Start {
             name: DEVICE.into(),
-            user: user.into(),
+            user,
             number,
             handle: u64::from(number),
             kind: 'I',
@@ -180,6 +247,7 @@ fn start(
             rqsdta: program,
             pool: r.pool,
             lda: Vec::new(),
+            signon: Some(signed),
         }),
     })
     .map_err(|e| e.to_string())?;
@@ -196,14 +264,14 @@ fn start(
                 return;
             }
         }
-        let _ = tx.send(Event::ConsoleGone);
+        let _ = tx.send(Event::ConsoleGone(pid));
     });
-    system.procs.console = Some(ConsoleJob { pid, chan });
-    if let Some(lib) = fields.get(4).map(|f| f.trim()).filter(|f| !f.is_empty()) {
-        system.out.serial(&format!(
-            "slic: sign-on current library {lib} is applied by CHGCURLIB in the job\n"
-        ));
-    }
+    system.procs.console = Some(ConsoleJob {
+        pid,
+        chan,
+        user: user_name,
+        used: std::time::Instant::now(),
+    });
     Ok(())
 }
 
@@ -253,13 +321,127 @@ pub fn from_job(system: &mut System, m: FromJob) {
             delay,
             restart,
         } => crate::ipl::power::down_ending(system, restart, immediate, delay),
+        FromJob::Disconnect => disconnect(system),
         FromJob::Ending { .. } | FromJob::Ready { .. } | FromJob::Done { .. } => {}
     }
 }
 
 /// The console job is gone: back to the sign-on display.
-pub fn gone(system: &mut System) {
-    if system.procs.console.take().is_some() {
+pub fn gone(system: &mut System, pid: u32) {
+    if system.procs.console.as_ref().is_some_and(|j| j.pid == pid) {
+        system.procs.console = None;
         sign_on(system, "");
+    } else if system
+        .procs
+        .disconnected
+        .as_ref()
+        .is_some_and(|d| d.job.pid == pid)
+    {
+        system.procs.disconnected = None;
+    }
+}
+
+/// The job the display left by `DSCJOB` or inactivity, when it went.
+pub struct Disconnected {
+    /// The job.
+    pub job: ConsoleJob,
+    /// Since when.
+    pub at: std::time::Instant,
+}
+
+/// Back to `user`'s disconnected job, when there is one: its display
+/// shows again.
+fn reconnect(system: &mut System, user: &str) -> bool {
+    match system.procs.disconnected.take() {
+        Some(d) if d.job.user == user => {
+            let mut j = d.job;
+            j.used = std::time::Instant::now();
+            // An empty Enter makes the job show its panel again.
+            j.input(0, Vec::new());
+            system.procs.console = Some(j);
+            true
+        }
+        other => {
+            system.procs.disconnected = other;
+            false
+        }
+    }
+}
+
+/// Free the display and keep the job (`DSCJOB`, `QINACTMSGQ(*DSCJOB)`).
+pub fn disconnect(system: &mut System) {
+    if let Some(j) = system.procs.console.take() {
+        if let Some(old) = system.procs.disconnected.take() {
+            let mut o = old.job;
+            o.end();
+        }
+        system.procs.disconnected = Some(Disconnected {
+            job: j,
+            at: std::time::Instant::now(),
+        });
+        sign_on(system, "");
+    }
+}
+
+/// Minutes a system value names, `None` for `*NONE` or unset.
+fn minutes(system: &System, name: &str) -> Option<u64> {
+    system
+        .sysvals
+        .as_ref()
+        .and_then(|v| v.get(name).ok())
+        .and_then(|v| v.text().trim().parse::<u64>().ok())
+        .filter(|m| *m > 0)
+}
+
+/// `QINACTITV` and `QINACTMSGQ` for the console job, `QDSCJOBITV` for a
+/// disconnected one.
+pub fn inactivity(system: &mut System) {
+    if let (Some(itv), Some(j)) = (minutes(system, "QINACTITV"), system.procs.console.as_ref())
+        && j.used.elapsed().as_secs() >= itv * 60
+    {
+        let action = system
+            .sysvals
+            .as_ref()
+            .and_then(|v| v.get("QINACTMSGQ").ok())
+            .map(|v| v.text())
+            .unwrap_or_default();
+        let action = action.split_whitespace().collect::<Vec<_>>();
+        match action.first().copied().unwrap_or("*ENDJOB") {
+            "*ENDJOB" => {
+                if let Some(mut j) = system.procs.console.take() {
+                    system.out.serial(&format!("slic: {} inactive; job ended\n", j.user));
+                    j.end();
+                    sign_on(system, "The job ended: the display was not used.");
+                }
+            }
+            "*DSCJOB" => {
+                system.out.serial("slic: console inactive; job disconnected\n");
+                disconnect(system);
+            }
+            queue => {
+                let lib = action.get(1).copied().unwrap_or("*LIBL");
+                let user = j.user.clone();
+                if let Some(c) = system.procs.console.as_mut() {
+                    c.used = std::time::Instant::now();
+                }
+                let msg = wm::obj::msgq::QMsg {
+                    msgid: "CPI1126".into(),
+                    msgf: ("QCPFMSG".into(), "QSYS".into()),
+                    text: format!("Job {DEVICE} of user {user} has not been used for {itv} minutes."),
+                    severity: 0,
+                    ..wm::obj::msgq::QMsg::default()
+                };
+                if let Some(stg) = system.procs.stg.as_mut() {
+                    let _ = stg.msgq_send(format!("{lib}/{queue}"), msg);
+                }
+            }
+        }
+    }
+    if let (Some(itv), Some(d)) = (minutes(system, "QDSCJOBITV"), system.procs.disconnected.as_ref())
+        && d.at.elapsed().as_secs() >= itv * 60
+        && let Some(d) = system.procs.disconnected.take()
+    {
+        let mut j = d.job;
+        j.end();
     }
 }

@@ -429,6 +429,25 @@ impl Service for Served<'_> {
         Ok(owners)
     }
 
+    fn sign_on(
+        &mut self,
+        user: String,
+        password: String,
+        device: String,
+        console: bool,
+    ) -> Result<sec::signon::SignedOn, sec::signon::Refused> {
+        super::security::sign_on(self.system, &user, &password, &device, console)
+    }
+
+    fn chg_pwd(&mut self, current: String, new: String, validated: bool) -> Result<(), String> {
+        let me = self.ctx.session.borrow().principal.clone();
+        super::security::chg_pwd(self.system, &me, &current, &new, validated)
+    }
+
+    fn audit_lic(&mut self, events: Vec<(String, String, String)>) {
+        super::security::audit_lic(&events);
+    }
+
     fn whoami(&mut self) -> sec::auth::principal::Principal {
         self.ctx.session.borrow().principal.clone()
     }

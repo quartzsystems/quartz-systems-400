@@ -103,6 +103,12 @@ impl DstEnv for Env<'_> {
         &mut self.users
     }
 
+    fn audit(&mut self, kind: &str, code: &str, user: &str) {
+        self.system
+            .audit_lic
+            .push((kind.into(), code.into(), user.into()));
+    }
+
     fn save_users(&mut self) -> Result<(), String> {
         let Some((part, record)) = self.system.lic.as_mut() else {
             return Ok(()); // no partition: the defaults live for this IPL only

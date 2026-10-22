@@ -22,6 +22,8 @@ pub struct Procs {
     pub svcjob: Option<svcjob::SvcJob>,
     /// The job signed on at the console display.
     pub console: Option<console::ConsoleJob>,
+    /// The console job `DSCJOB` or inactivity left running.
+    pub disconnected: Option<console::Disconnected>,
     /// The system jobs and the subsystem monitors `slic` started.
     pub jobs: Vec<sysjobs::Child>,
 }
@@ -35,6 +37,11 @@ pub fn end_all(system: &mut crate::ipl::system::System, immediate: bool, delay: 
         system.emit(&crate::src::SBS_ENDED);
     }
     if let Some(mut j) = system.procs.console.take() {
+        j.end();
+        spawn::wait_or_kill(j.pid, std::time::Duration::from_secs(5));
+    }
+    if let Some(d) = system.procs.disconnected.take() {
+        let mut j = d.job;
         j.end();
         spawn::wait_or_kill(j.pid, std::time::Duration::from_secs(5));
     }

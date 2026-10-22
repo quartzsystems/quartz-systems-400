@@ -2541,6 +2541,7 @@ dependencies = [
  "ccsid",
  "ipc",
  "qsname",
+ "sec",
  "store",
  "thiserror",
 ]

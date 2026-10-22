@@ -33,6 +33,9 @@ pub const LAYOUT: Layout = Layout {
 const MAGIC: &[u8; 8] = b"QSWMDEVD";
 const VERSION: u64 = 1;
 
+/// The console display's name.
+pub const CONSOLE: &str = "QSCONSOLE";
+
 /// The capture device's name.
 pub const CAPTURE: &str = "QSCAPTURE";
 
@@ -64,6 +67,19 @@ impl Devd {
             model: "1".into(),
             outq: format!("QUSRSYS/{CAPTURE}"),
             text: "Capture printer: text and PDF in the store".into(),
+        }
+    }
+
+    /// The console display.
+    #[must_use]
+    pub fn console() -> Self {
+        Self {
+            online: true,
+            devcls: "*DSP".into(),
+            devtype: "3477".into(),
+            model: "FC".into(),
+            outq: String::new(),
+            text: "System console display".into(),
         }
     }
 

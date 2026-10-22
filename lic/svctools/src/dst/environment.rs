@@ -375,6 +375,9 @@ impl Panel for ResetPassword {
         let now = env.now();
         let salt = env.random();
         let r = env.users().reset_password(&self.name, pw, now, salt);
+        if r.is_ok() {
+            env.audit("DS", "R", &self.name);
+        }
         save_after(
             env,
             r.map(|()| {

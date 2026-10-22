@@ -792,3 +792,61 @@ writes an `SV` entry and `CPF1806` in `QHST` with the old and new value.
 | `QUSEADPAUT` | §5 |
 | `QALWOBJRST`, `QVFYOBJRST`, `QFRCCVNRST` | stored until restore (Phase 11) |
 | `QAUTOCFG`, `QAUTOVRT`, `QRMTSIGN`, `QRETSVRSEC`, `QSHRMEMCTL`, `QSCANFS`, `QSCANFSCTL`, `QSSLCSL`, `QSSLCSLCTL`, `QSSLPCL` | stored; their subjects (devices, servers, file system scans, TLS) come later |
+
+## 9. Signing on
+
+The console's Sign On display sends the user and password to the
+storage service (`sign_on`, request 126), which checks them
+(`sec::signon`):
+
+| Condition | Message | Audit |
+|---|---|---|
+| no such user, or the password is wrong | `CPF1107`, the same text for both | `PW` `U` or `P` |
+| the wrong password once more would reach `QMAXSIGN` | `CPF1392` | `PW` `P` |
+| `QMAXSIGN` reached | `CPF1393`; `QMAXSGNACN` 2 or 3 disables the profile, 1 or 3 varies the device off | `PW` `P` |
+| `STATUS(*DISABLED)`, or `USREXPDATE` passed (which disables) | `CPF1394` | |
+| `PASSWORD(*NONE)` | `CPF1118` | |
+| `QLMTSECOFR` 1, a user with `*ALLOBJ` or `*SERVICE` without `*CHANGE` (owned or private, not public) to the device description | `CPF1110` | |
+| `LMTDEVSSN`/`QLMTDEVSSN` and the user already has an interactive job | `CPF1220` | |
+
+`QSECOFR` may always sign on at the console: it is never disabled there
+and `QLMTSECOFR` does not apply. The shipped `*DEVD QSCONSOLE` gives
+`QSECOFR` `*CHANGE`. A good sign-on clears the count, records the
+previous sign-on and makes the user's message queue in `QUSRSYS` when
+it is missing.
+
+The interactive job then starts, as on IBM i, with what the sign-on
+found: an expired password first shows Change Password (current, new,
+new again), which must succeed before anything else runs; it calls
+`QPWDVLDPGM` in the job and changes the password through the service
+(`chg_pwd`, request 127). `DSPSGNINF`/`QDSPSGNINF` shows Sign-on
+Information (the previous sign-on, the attempts not valid, the days
+the password has left when it warns). The job takes `INLPGM`,
+`INLMNU`, `CURLIB` and, for a workstation entry with `JOBD(*USRPRF)`,
+`JOBD` from the profile; the sign-on display's program, menu and
+current library override them unless `LMTCPB` says not (`*PARTIAL`
+keeps the program and current library, `*YES` all three). `DLVRY(*BREAK)`
+puts the user's queue in break delivery. `LMTCPB(*YES)` limits the
+command line to `SIGNOFF`, `DSPMSG`, `DSPJOB`, `DSPJOBLOG` and `WRKMSG`
+until `*CMD` objects carry `ALLOW(*LIMITED)`.
+
+`INLMNU(MAIN)` shows the interim MAIN menu (golden
+`tools/conformance/golden/main-interim.txt`): options 1 to 11 say menus
+are not available in this release, 90 signs off, the command line runs
+commands (`CALL QCMD` opens Command Entry, whose F3 returns), F9
+retrieves the last command, F4 says prompting is not available.
+`INLMNU(*SIGNOFF)` signs off when the initial program returns.
+
+`SIGNOFF LOG(*LIST)` keeps the job log; `DROP` and `ENDCNN` have no
+connection to drop at the console. `DSCJOB` frees the display and keeps
+the job; signing on again as the same user reconnects to it.
+`QINACTITV` minutes without input: `QINACTMSGQ(*ENDJOB)` ends the job,
+`*DSCJOB` disconnects it, a queue name gets `CPI1126`. A disconnected
+job ends after `QDSCJOBITV` minutes.
+
+The serial service console needs a service tools user ID (`signon
+USER PASSWORD`, checked as DST checks it, audited `ST` `SC` or `PW`
+`X`). Development images (`qs400.svc=1`) sign it on by themselves for
+the harness; a `--release` image never has that flag. DST sign-ons
+(`ST` `DS`) and password resets (`DS`) are kept by `slic` until the
+storage service runs, then audited (`audit_lic`, request 128).

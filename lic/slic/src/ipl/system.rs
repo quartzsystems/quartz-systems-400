@@ -87,6 +87,11 @@ pub struct System {
     pub guard: Option<std::sync::Arc<sec::guard::SecGuard>>,
     /// `QSYSOPR` was told the audit journal is full.
     pub audit_full_told: bool,
+    /// Audit events of service tools use, until the storage service
+    /// takes them: kind, code, user.
+    pub audit_lic: Vec<(String, String, String)>,
+    /// The service tools user signed on to the serial console.
+    pub svc_user: Option<String>,
     /// Message queues in break delivery, by the job they are allocated
     /// to (storage service).
     pub break_alloc: std::collections::HashMap<store::obj::ObjectId, u32>,
@@ -167,6 +172,8 @@ impl System {
             qsecurity: 40,
             guard: None,
             audit_full_told: false,
+            audit_lic: Vec::new(),
+            svc_user: None,
         }
     }
 

@@ -18,6 +18,7 @@ pub mod level;
 pub mod password;
 pub mod profile;
 pub mod rec;
+pub mod signon;
 pub mod spec;
 pub mod sysval;
 

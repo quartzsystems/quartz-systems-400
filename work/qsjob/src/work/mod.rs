@@ -10,6 +10,7 @@ pub mod batch;
 pub mod cgroup;
 pub mod inter;
 pub mod monitor;
+pub mod pwdpgm;
 pub mod scheduler;
 pub mod spawn;
 pub mod sysjob;

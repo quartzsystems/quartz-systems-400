@@ -40,6 +40,8 @@ pub struct Start {
     pub pool: String,
     /// The `*LDA` it starts with; empty for blanks.
     pub lda: Vec<u8>,
+    /// An interactive job: what signing on found out.
+    pub signon: Option<sec::signon::SignedOn>,
 }
 
 wire_struct!(Start {
@@ -55,7 +57,8 @@ wire_struct!(Start {
     program,
     rqsdta,
     pool,
-    lda
+    lda,
+    signon
 });
 
 /// Parent to job.
@@ -135,6 +138,8 @@ pub enum FromJob {
         /// `RESTART(*YES)`.
         restart: bool,
     },
+    /// `DSCJOB`: leave the job, keep it, free the display.
+    Disconnect,
 }
 
 wire_enum!(FromJob {
@@ -144,6 +149,7 @@ wire_enum!(FromJob {
     3 => Ending { reason },
     4 => Show { panel },
     5 => PowerDown { immediate, delay, restart },
+    6 => Disconnect,
 });
 
 /// The service console's prompt.
@@ -171,6 +177,8 @@ pub const JOB_COMMANDS: &[&str] = &[
     "pwrdwnsys",
     "endsys",
     "wrkjob",
+    "chgpwd",
+    "dscjob",
 ];
 
 /// A display panel: text and input fields placed by row and column
@@ -205,6 +213,11 @@ impl Panel {
     /// Put an input field.
     pub fn field(&mut self, row: u8, col: u8, len: u16, value: impl Into<String>) {
         self.fields.push((row, col, len, false, value.into()));
+    }
+
+    /// Put an input field whose text does not show (a password).
+    pub fn hidden(&mut self, row: u8, col: u8, len: u16) {
+        self.fields.push((row, col, len, true, String::new()));
     }
 
     /// The panel as 24 lines of 80, for tests and dumps.

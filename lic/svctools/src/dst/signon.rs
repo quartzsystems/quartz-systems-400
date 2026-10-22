@@ -44,6 +44,11 @@ impl Panel for SignOn {
         let result = env.users().sign_on(&user, password).map(|u| u.privileges);
         // Failure counts and disables are durable.
         let _ = env.save_users();
+        match &result {
+            Ok(_) => env.audit("ST", "DS", &user),
+            Err(SignOnError::NotCorrect) => env.audit("PW", "X", &user),
+            Err(_) => {}
+        }
         match result {
             Ok(privileges) => Flow::Reset(Box::new(MainMenu::new(user, privileges))),
             Err(SignOnError::Expired) => Flow::Push(Box::new(ChangePassword::new(user))),
