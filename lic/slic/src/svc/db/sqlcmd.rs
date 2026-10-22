@@ -103,7 +103,7 @@ pub fn opnqryf(system: &mut System, p: &Params) -> Result<String, String> {
     };
     let (store, ctx) = db(system)?;
     super::with_txn(store, |txn| {
-        let n = open(txn, ctx, &q).map_err(|e| super::db_err(&e))?;
+        let n = open(txn, ctx, &q).map_err(|e| e.to_string())?;
         Ok(format!("File {file} opened with {n} record(s) selected."))
     })
 }
@@ -118,7 +118,7 @@ pub fn clof(system: &mut System, p: &Params) -> Result<String, String> {
     };
     let (store, ctx) = db(system)?;
     super::with_txn(store, |txn| {
-        let n = sql::exec::opnqryf::clof(txn, ctx, &obj).map_err(|e| super::db_err(&e))?;
+        let n = sql::exec::opnqryf::clof(txn, ctx, &obj).map_err(|e| e.to_string())?;
         if n == 0 {
             return Err(format!("CPF4520 file {file} is not open"));
         }

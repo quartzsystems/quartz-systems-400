@@ -18,8 +18,8 @@ use super::codec::FixedKey;
 
 /// Bytes of node header.
 pub const HEADER_LEN: usize = 16;
-/// Longest key.
-pub const MAX_KEY_LEN: usize = 1024;
+/// Longest key: a file's 2000-byte DDS key with its format tag and RRN.
+pub const MAX_KEY_LEN: usize = 2048;
 /// Longest value.
 pub const MAX_VALUE_LEN: usize = 1024;
 /// Bytes per leaf slot beyond the key.

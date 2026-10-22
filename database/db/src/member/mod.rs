@@ -296,6 +296,23 @@ pub fn create_logical(
     Ok(id)
 }
 
+/// The member takes a new record format (`CHGPF SRCFILE`): its slot,
+/// key and null map sizes follow. The member must be empty.
+pub fn reformat(txn: &mut Txn<'_>, member: ObjectId, format: &FormatDef) -> Result<()> {
+    let mut core = Core::load(txn, member)?;
+    if core.attr.slots != 0 {
+        return Err(DbError::Definition {
+            what: format!("member {} holds records; clear it first", core.name),
+        });
+    }
+    core.attr.slot_len = format.slot_len();
+    core.attr.key_len = format.key_len;
+    core.attr.null_map_len = format.null_map_len;
+    core.attr.path_entries = 0;
+    core.attr.path_invalid = false;
+    core.save(txn)
+}
+
 /// Delete a member object with everything it holds.
 pub fn destroy(txn: &mut Txn<'_>, job: JobHandle, id: ObjectId) -> Result<()> {
     ops::delete(txn, job, id)?;

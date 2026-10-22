@@ -97,14 +97,6 @@ write 32767 through SQL into a `B 4,0` column and read it back in RPG.
 
 ## Files and members
 
-**Keys longer than 1014 bytes.** The store's B+tree key is at most 1024
-bytes and the access path key ends in a 2-byte format tag and the 8-byte
-RRN, so a file whose encoded key exceeds 1014 bytes is refused at create;
-DDS allows 2000.
-Test: `CRTPF` with two `A 1000` key fields on the real machine works;
-here it fails. A raise needs the tree to accept keys over a quarter of
-the page.
-
 **Message for a full member.** `SIZE` reached is a typed error without a
 message ID. Test: fill a `SIZE(5 0 0)` member on the machine and note
 the CPF message the write fails with.
@@ -267,12 +259,11 @@ error carries CPF4128 like every allocation failure here; the machine
 reports CPF3156 for `CLRPFM`. Test: `CLRPFM` while a program has the
 member open.
 
-**`CHGPF SRCFILE` with a changed record format.** Refused when the
-level identifier, the keys, `UNIQUE` or the duplicate order changed; the
-machine converts the data through a temporary copy. Only text, headings,
-edit words, defaults and the like change in place here. Test: `CHGPF
-SRCFILE` adding a field; the data survives on the machine, here the
-command fails.
+**`CHGPF SRCFILE` with a changed record format.** The data is converted
+through a copy, field by field by name as `CPYF FMTOPT(*MAP *DROP)` maps
+it, new fields taking their defaults; a file with dependent logical
+files refuses the conversion, where the machine re-creates the logical
+files too. Test: `CHGPF SRCFILE` adding a field to a file with an LF.
 
 **`DSPDBR` based-on members.** The relations come from each logical
 member's based-on members, so an LF member over a named PF member shows

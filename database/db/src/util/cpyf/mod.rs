@@ -5,7 +5,7 @@
 //! `CPYF`: copy records from one member to another, selecting by RRN,
 //! key, character or relation, mapping formats, creating the to-file.
 
-mod map;
+pub(crate) mod map;
 pub mod select;
 
 pub use map::Plan;

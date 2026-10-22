@@ -352,9 +352,8 @@ Byte order of the encoded key is the key order DDS asks for:
 
 `KeyEntry.key_len` is the part's length by these rules; `key_len` of the
 format is their sum, and of a multi-format member the largest format's.
-The sum is at most 1014 bytes (the store's 1024-byte key less the tail);
-DDS allows 2000 and the compiler still says so, so a file whose key is
-longer than 1016 bytes is refused at create.
+The sum is at most 2000 bytes, DDS's own limit; with the tail the tree
+key is at most 2010 of the store's 2048.
 
 **Maintenance.** With `MAINT(*IMMED)` every write, update and delete of
 a physical record changes the member's own path and every dependent
