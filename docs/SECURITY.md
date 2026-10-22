@@ -351,6 +351,11 @@ group with `GRPAUTTYP(*PRIVATE)`. It indexes the object under its
 owner, and charges its storage to the owner as it grows (refused past
 `MAXSTG`, `CPF1151`). Deletion takes the object out of every index.
 
+A refusal reaches a program as an escape with the guard's identifier
+(`CPF2189`, `CPF2207`, `CPF9802` ...), on a file open through the
+database's feedback and on a data area or queue through the job's
+source, so a program monitors it like any other condition.
+
 `security/sec/exempt.toml` lists every public store, database,
 journal and work management function that takes a transaction yet
 checks nothing itself, with the reason (its caller checks, it runs as

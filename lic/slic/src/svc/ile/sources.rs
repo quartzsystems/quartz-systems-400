@@ -349,11 +349,22 @@ impl StoreData {
         } else {
             with_main(&self.shared, |txn, _| f(txn, id))
         };
-        r.map_err(|e| IoFail {
-            status: 1299,
-            msgid: "CPF9899".into(),
-            data: ccsid::to_ebcdic(&e).unwrap_or_default(),
-        })
+        r.map_err(|e| io_fail(&e))
+    }
+}
+
+/// An error text as a failure: its leading message identifier
+/// (`CPF2189 ...` from the guard) with the rest as data, else `CPF9899`.
+fn io_fail(e: &str) -> IoFail {
+    let (id, rest) = e.split_once(' ').unwrap_or((e, ""));
+    let is_id = id.len() == 7
+        && (id.starts_with("CPF") || id.starts_with("CPD") || id.starts_with("MCH"))
+        && id[3..].chars().all(|c| c.is_ascii_alphanumeric());
+    let (msgid, data) = if is_id { (id, rest) } else { ("CPF9899", e) };
+    IoFail {
+        status: 1299,
+        msgid: msgid.into(),
+        data: ccsid::to_ebcdic(data).unwrap_or_default(),
     }
 }
 
