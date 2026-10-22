@@ -429,9 +429,16 @@ fn rpyle(system: &mut System, p: &Params, edit: Edit) -> Result<String, String> 
             if v.eq_ignore_ascii_case("*NONE") {
                 e.cmpdta.clear();
             } else {
+                // `'text' start`, or `text start` as the analyzer spells a
+                // name that needs no quotes.
                 let (text, rest) = match v.strip_prefix('\'').and_then(|r| r.split_once('\'')) {
                     Some((t, rest)) => (t.to_string(), rest.trim()),
-                    None => (v.to_string(), ""),
+                    None => match v.rsplit_once(' ') {
+                        Some((t, n)) if n.trim().parse::<usize>().is_ok() => {
+                            (t.trim().to_string(), n.trim())
+                        }
+                        _ => (v.to_string(), ""),
+                    },
                 };
                 e.cmpdta = text;
                 e.start = rest.parse().unwrap_or(1);
