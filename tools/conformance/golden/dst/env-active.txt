@@ -2,7 +2,7 @@
                                                                  System:  QS400 
                                                                                 
  Service tool                        Started by                                 
- Dedicated service tools             Local console                              
+ Dedicated service tools             Local console (display and keyboard)       
                                                                                 
                                                                                 
                                                                                 

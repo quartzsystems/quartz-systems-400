@@ -139,7 +139,7 @@ pub fn write(txn: &mut Txn<'_>, id: ObjectId, offset: u64, bytes: &[u8]) -> Resu
         change_size(txn, id, end)?;
     }
     let (mut space, _) = Space::load(txn, id)?;
-    space.write(txn, offset, bytes)
+    space.write_relocating(txn, offset, bytes)
 }
 
 /// Resize. Growth is filled with the initial value.

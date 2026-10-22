@@ -108,11 +108,13 @@ impl Space {
         Ok(out)
     }
 
-    /// Change bytes at `off`. Partial pages are patched in place; a
-    /// span of at least `RELOCATE_MIN_PAGES` whole pages is written to
-    /// fresh pages that replace the old ones in the extent list, unless
-    /// the list would then not fit, when it is patched too.
-    pub fn write(&mut self, txn: &mut Txn<'_>, off: u64, bytes: &[u8]) -> Result<()> {
+    /// Change bytes at `off`, moving whole pages. Partial pages are
+    /// patched in place; a span of at least `RELOCATE_MIN_PAGES` whole
+    /// pages is written to fresh pages that replace the old ones in the
+    /// extent list, unless the list would then not fit, when it is
+    /// patched too. The space is current afterwards; any other copy of
+    /// it is stale.
+    pub fn write_relocating(&mut self, txn: &mut Txn<'_>, off: u64, bytes: &[u8]) -> Result<()> {
         let end = off + bytes.len() as u64;
         if end > self.bytes() {
             return Err(self.out_of_space(off, bytes.len()));
@@ -120,25 +122,28 @@ impl Space {
         let first_full = off.div_ceil(PAGE_BYTES);
         let end_full = end / PAGE_BYTES;
         if end_full <= first_full || end_full - first_full < RELOCATE_MIN_PAGES {
-            return self.patch(txn, off, bytes);
+            return self.write(txn, off, bytes);
         }
         let at = |index: u64| usize::try_from(index * PAGE_BYTES - off).expect("in bytes");
         if !self.relocate(txn, first_full, end_full, &bytes[at(first_full)..at(end_full)])? {
-            return self.patch(txn, off, bytes);
+            return self.write(txn, off, bytes);
         }
         let head = at(first_full);
         if head > 0 {
-            self.patch(txn, off, &bytes[..head])?;
+            self.write(txn, off, &bytes[..head])?;
         }
         let tail = at(end_full);
         if tail < bytes.len() {
-            self.patch(txn, end_full * PAGE_BYTES, &bytes[tail..])?;
+            self.write(txn, end_full * PAGE_BYTES, &bytes[tail..])?;
         }
         Ok(())
     }
 
-    /// Change bytes at `off` in place.
-    fn patch(&self, txn: &mut Txn<'_>, off: u64, bytes: &[u8]) -> Result<()> {
+    /// Change bytes at `off` in place, page by page, through patches.
+    pub fn write(&self, txn: &mut Txn<'_>, off: u64, bytes: &[u8]) -> Result<()> {
+        if off + bytes.len() as u64 > self.bytes() {
+            return Err(self.out_of_space(off, bytes.len()));
+        }
         let mut done = 0;
         while done < bytes.len() {
             let (page, in_page) = self.locate(off + done as u64).expect("checked");

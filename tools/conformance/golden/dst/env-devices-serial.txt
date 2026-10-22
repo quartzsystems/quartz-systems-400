@@ -1,0 +1,24 @@
+                                 System Devices                                 
+                                                                 System:  QS400 
+                                                                                
+ Console type . . . . . :  Serial console (ttyS0)                               
+                                                                                
+ Option 6 of the DST menu chooses the local or the serial console;              
+ an operations console over the LAN comes with a later phase.                   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+    Press Enter to continue.                                             Bottom 
+ F3=Exit   F7=Previous page   F8=Next page   F12=Cancel                         
+                                                                                

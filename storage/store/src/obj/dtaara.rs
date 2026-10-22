@@ -359,7 +359,7 @@ fn write_value(
         let (page, _) = ops::read_header(txn, id)?;
         return ops::write_attr(txn, page, INLINE_OFF + off, bytes);
     }
-    let (mut space, _) = Space::load(txn, id)?;
+    let (space, _) = Space::load(txn, id)?;
     space.write(txn, off as u64, bytes)
 }
 

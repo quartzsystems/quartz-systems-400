@@ -1,0 +1,24 @@
+                            Select DST Console Mode                             
+                                                                 System:  QS400 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Local console (display and keyboard)                                   
+      2. Serial console (ttyS0)                                                 
+                                                                                
+                                                                                
+ Console mode now . . . . . :  Local console (display and keyboard)             
+                                                                                
+ The choice is kept in the Licensed Internal Code and takes effect              
+ at the next IPL. The serial console echoes every screen either way.            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

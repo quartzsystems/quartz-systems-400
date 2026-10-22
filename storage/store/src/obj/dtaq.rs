@@ -325,7 +325,7 @@ pub fn send(
     });
     rec[ENTRY_LEN..ENTRY_LEN + key.len()].copy_from_slice(key);
     rec[ENTRY_LEN + key.len()..ENTRY_LEN + key.len() + data.len()].copy_from_slice(data);
-    space.write(txn, attr.tail, &rec)?;
+    space.write_relocating(txn, attr.tail, &rec)?;
     let seq = attr.next_seq;
     attr.tail += need;
     attr.entry_count += 1;
@@ -383,7 +383,7 @@ pub fn receive(txn: &mut Txn<'_>, id: ObjectId, select: &Select<'_>) -> Result<O
     if attr.entry_count == 0 {
         return Ok(None);
     }
-    let (mut space, _) = Space::load(txn, id)?;
+    let (space, _) = Space::load(txn, id)?;
     let slots = live_slots(txn, &space, &attr)?;
     let pick = match (select, attr.order) {
         (Select::Next, Order::Lifo) => slots.len().checked_sub(1),

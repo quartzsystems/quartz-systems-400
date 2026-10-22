@@ -567,8 +567,9 @@ An object's payload lives in its extents. For the types below the
 extents form one byte space: page `i` of the concatenated extents holds
 bytes `i * 4064 ..` of the space (the body of a data page, type
 0x0021, owned by the object). A change to part of a page is an in-place
-change logged as a WAL image or patch (§6). A write covering at least
-4 whole pages puts them on fresh pages (written before the WAL record,
+change logged as a WAL image or patch (§6). A user space, data queue
+or system value write covering at least 4 whole pages puts them on
+fresh pages (written before the WAL record,
 like any new page) that take the old pages' place in the extent list;
 the old pages are freed and the header, and its overflow page, are
 rewritten in the same transaction. Adjacent runs merge; when the list
