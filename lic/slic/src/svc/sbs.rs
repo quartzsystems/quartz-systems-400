@@ -178,7 +178,7 @@ fn dspsbsd(system: &mut System, p: &Params) -> Result<String, String> {
     let b = sbs::wm_object(system, &format!("{lib}/{name}"), "*SBSD")?;
     let d = Sbsd::decode(&b).map_err(|e| err(&e))?;
     let option = match p.kw("OPTION").map(|o| o.trim().to_ascii_uppercase()) {
-        None | Some(_) if p.kw("OPTION").is_none() => None,
+        None => None,
         Some(o) => match o.as_str() {
             "*ALL" => None,
             "*OPRATR" => Some(1),

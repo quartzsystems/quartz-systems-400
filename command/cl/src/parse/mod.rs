@@ -48,7 +48,7 @@ fn positional(toks: &[Tok]) -> &[Tok] {
 }
 
 /// The keyword's arguments, or the `i`th positional token.
-fn arg<'a>(toks: &'a [Tok], name: &str, i: usize) -> Option<Vec<Tok>> {
+fn arg(toks: &[Tok], name: &str, i: usize) -> Option<Vec<Tok>> {
     if let Some(a) = kw(toks, name) {
         return Some(a.to_vec());
     }

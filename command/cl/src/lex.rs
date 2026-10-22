@@ -27,7 +27,7 @@ pub struct Raw {
 
 /// Tokenize a source; errors are collected per statement.
 pub fn statements(source: &str) -> (Vec<Raw>, Vec<Diag>) {
-    let lines: Vec<&str> = source.lines().map(|l| l.trim_end()).collect();
+    let lines: Vec<&str> = source.lines().map(str::trim_end).collect();
     let mut out = Vec::new();
     let mut errs = Vec::new();
     for (i, j) in token::join(&lines).into_iter().enumerate() {
