@@ -20,8 +20,13 @@ job descriptions, classes, library lists, `*LDA`, job logs, message queues, `QSY
 `QHST`, the reply list, subsystems with pools as cgroups, routing, the console's
 sign-on and Command Entry, job queues, `SBMJOB`, the job scheduler, output queues,
 spooled files, printer files (SCS, DDS), writers with the capture device and PDF, the
-system jobs, `QSTRUP`, `PWRDWNSYS`, and the statistics displays. Code waiting
-for a later phase is marked `MIGRATE(phaseN)` or `TODO(phaseN)`.
+system jobs, `QSTRUP`, `PWRDWNSYS`, and the statistics displays. Phase 6 added
+security: user profiles and passwords (`sec`), the authority model with private
+authorities, authorization lists and IBM's search, enforced by a guard inside the
+store, adopted authority, `QSECURITY` 40 and 50 domain and state checks, the audit
+journal `QAUDJRN`, the security system values, a real console sign-on with the
+interim `MAIN` menu, the security APIs and the console's security commands. Code
+waiting for a later phase is marked `MIGRATE(phaseN)` or `TODO(phaseN)`.
 
 ## Ground rules
 
@@ -184,9 +189,19 @@ work/         work management: jobs, spooling, process messages
                 frame.rs length-prefixed frames, rpc.rs the rpc! macro, chan.rs Unix sockets
   stg/          storage service protocol: proto.rs the requests (rpc!), link.rs a job's link,
                 src/remote/ the runtime's source traits answered by the service
+security/     users, authorities, auditing
+  sec/          security: src/profile/ the *USRPRF payload, special authorities, the profile
+                objects and indexes, the shipped profiles, groups and limits; src/password/
+                Argon2id hashes, the QPWD* rules and the policy; src/auth/ bits, grants,
+                authorization lists, the principal, the search, the cache and required.rs
+                (required.toml); guard.rs the store's guard; src/audit/ kinds, layouts, the
+                writer and QAUDENDACN; sysval.rs; level.rs; signon.rs; api.rs the APIs'
+                questions; src/cmd/ the commands as library functions (usrprf, object,
+                dltusrprf, audit); required.toml, exempt.toml; tests/
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
               DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md,
-              STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, images/
+              STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, SECURITY.md,
+              SEC_OPEN_QUESTIONS.md, PHASE6.md, SYSAPI.md, images/
 ```
 
 ## Commands

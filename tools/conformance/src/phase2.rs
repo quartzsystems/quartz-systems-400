@@ -163,8 +163,8 @@ impl Suite {
     #[allow(clippy::unused_self)] // every step has the same shape
     pub(crate) fn sysval_in_store(&self, s: &mut Session) -> Result<String, String> {
         let security = s.command("sysval QSECURITY", CMD)?;
-        if !security.contains("QSECURITY: 50") {
-            return Err(format!("QSECURITY is not 50: {security}"));
+        if !security.contains("QSECURITY: 40") {
+            return Err(format!("QSECURITY is not 40: {security}"));
         }
         let lic = s.command("lic", CMD)?;
         if lic.contains("tlv 0x0100") {
