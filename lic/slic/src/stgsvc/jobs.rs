@@ -235,6 +235,10 @@ pub fn chgjob(
             .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF1317")))?;
     }
     *attrs = a;
+    if let Some(j) = system.jobs.get(number) {
+        let (name, user, kind, jobd) = (j.name.clone(), j.user.clone(), j.kind, j.jobd.clone());
+        super::security::js("C", (&name, &user, number), kind, &jobd);
+    }
     Ok(())
 }
 

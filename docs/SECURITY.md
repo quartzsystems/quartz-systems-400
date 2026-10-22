@@ -390,3 +390,383 @@ STATE(*SYSTEM)` make a system-state program, for the harness.
 Jobs never reach pages: every object operation is a typed request the
 storage service performs, so there is no raw page access for a
 user-state job to be refused.
+
+## 7. Auditing
+
+Audit entries are journal entries of code `T` in `QSYS/QAUDJRN`, the
+Phase 3 journal. Neither the journal nor its first receiver is shipped:
+`CHGSECAUD` creates `QSYS/AUDRCV0001` and `QSYS/QAUDJRN` when they are
+missing, or create them yourself (`CRTJRNRCV QSYS/AUDRCV0001`, `CRTJRN
+QSYS/QAUDJRN JRNRCV(QSYS/AUDRCV0001)`).
+
+Code that does something auditable records an event
+(`sec::audit::record`); the storage service takes a request's events
+after it answers, keeps the ones the values select and writes them in a
+transaction of their own, so a request that failed (an authority
+failure) is audited too. An event is written when:
+
+- `QAUDCTL` has `*AUDLVL` and its type's value (below) is in `QAUDLVL`
+  (with `QAUDLVL2` when `QAUDLVL` lists `*AUDLVL2`) or in the user's
+  `AUDLVL` (`CHGUSRAUD`); `*SECURITY` stands for every `*SECxxx` value
+  and `*JOBDTA` for `*JOBBAS` and `*JOBCHGUSR`; or
+- `QAUDCTL` has `*OBJAUD` and the object's `OBJAUD` asks for it:
+  `*ALL` reads (`ZR`) and changes (`ZC`), `*CHANGE` changes, `*USRPRF`
+  what the user's `OBJAUD` says. An access is a change when its
+  operation needs more than `*OBJOPR *READ *EXECUTE`;
+- and, with `*NOQTEMP`, the object is not in `QTEMP`.
+
+`QCRTOBJAUD` gives new objects their `OBJAUD`.
+
+| Type | Value | Written when |
+|---|---|---|
+| `AF` | `*AUTFAIL` | an authority check fails (`A`), a special authority is missing (`K`), a user-state program breaks domain or state (`B` privileged import, `C` program validation, `D` system-state call or system-domain object), `SBMJOB USER` is refused (`J`) |
+| `AD` | `*SECCFG` | `CHGOBJAUD`, `CHGUSRAUD` |
+| `AU` | `*SECCFG` | an object's text changes |
+| `CA` | `*SECRUN` | a private, public, group or owner authority, or the list securing an object, changes |
+| `CO` | `*CREATE` | an object is created |
+| `CP` | `*SECCFG` | `CRTUSRPRF`, `CHGUSRPRF`, `DLTUSRPRF`, `CHGPWD` |
+| `DO` | `*DELETE` | an object is deleted |
+| `DS` | `*SECCFG` | DST resets a service tools password |
+| `GR` | `*SECRUN` | the password validation program is called |
+| `JD` | `*SECRUN` | a job description's `USER` changes |
+| `JS` | `*JOBBAS` | a job starts, ends, is submitted, held, released, changed or ended by `ENDJOB` |
+| `OM` | `*OBJMGT` | an object is moved or renamed |
+| `OW` | `*SECRUN` | an object's owner changes |
+| `PA` | `*SECRUN` | a program that adopts its owner is created |
+| `PG` | `*SECRUN` | an object's primary group changes |
+| `PS` | `*SECVFY` | a profile handle is obtained, used to swap, or released |
+| `PW` | `*AUTFAIL` | a sign-on or API names a user that does not exist (`U`), a wrong password (`P`), a service tools user ID or password that is wrong (`X`) |
+| `SE` | `*SECCFG` | a routing entry is added, changed or removed |
+| `SF` | `*SPLFDTA` | a spooled file is read, held, released, changed or deleted |
+| `ST` | `*SERVICE` | DST or the service console is signed on to |
+| `SV` | `*SECCFG` | a system value changes |
+| `ZC` | object auditing | an audited object is changed |
+| `ZR` | object auditing | an audited object is read |
+
+The restore family (`OR`, `RA`, `RO`, `RP`, `RU`, `RZ`) waits for save
+and restore (Phase 11); `SO`, `VA`, `VO`, `VP`, `VU`, `X0`, `X1` and
+`X2` belong to servers and networks QS/400 does not have yet. They are
+defined (`sec::audit::Kind`) and never written.
+
+Each entry's data is the type's fields below, fixed-width CP037 text,
+named as IBM's model files name them (`QASYxxJ5` without the journal
+heading). `CPYAUDJRNE` puts the heading and these fields in its output
+files; `DSPAUDJRNE` prints them.
+
+### When an entry cannot be written
+
+A receiver past its threshold under `MNGRCV(*USER)` is full. Then:
+
+- `QAUDENDACN(*NOTIFY)`: `CPI2283` goes to `QSYSOPR` (and `QSYSMSG` when
+  it exists) once per receiver, and the entries are lost;
+- `QAUDENDACN(*PWRDWNSYS)`: `CPI2284` goes to `QSYSOPR`, the service
+  marks the next IPL to start with `QAUDCTL(*NONE)` (data area
+  `QSYS/QAUDFORCE`), and the system powers down at once. At that IPL
+  `QAUDCTL` is set to `*NONE`, `CPI2284` is logged again in `QHST`, and
+  auditing stays off until the security officer attaches a new receiver
+  and sets `QAUDCTL` again. This is IBM's behavior and a trap: a full
+  receiver stops the system; keep `MNGRCV(*SYSTEM)` on `QAUDJRN` or watch
+  its threshold.
+
+### `AuditAF` (97 bytes)
+
+Authority failure.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | AFVIOL | violation type, `A`-`Z` |
+| 1 | 10 | AFONAM | object name |
+| 11 | 10 | AFOLIB | object library |
+| 21 | 8 | AFOTYP | object type |
+| 29 | 24 | AFOPER | operation (`required.toml`) |
+| 53 | 16 | AFSTEP | the search step that decided |
+| 69 | 8 | AFHAVE | authority found, hexadecimal bits |
+| 77 | 10 | AFPGMN | program, when one was running |
+| 87 | 10 | AFPGML | its library |
+
+### `AuditAD` (229 bytes)
+
+Auditing change.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | ADETYP | `O` object, `U` user |
+| 1 | 10 | ADONAM | object name |
+| 11 | 10 | ADOLIB | object library |
+| 21 | 8 | ADOTYP | object type |
+| 29 | 10 | ADUSRP | the user audited, `U` entries |
+| 39 | 10 | ADOVAL | old `OBJAUD` |
+| 49 | 10 | ADNVAL | new `OBJAUD` |
+| 59 | 10 | ADCMDN | command |
+| 69 | 160 | ADALVL | new `AUDLVL`, sixteen values of ten |
+
+### `AuditAU` (139 bytes)
+
+Attribute change.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | AUETYP | `T` text |
+| 1 | 10 | AUONAM | object name |
+| 11 | 10 | AUOLIB | object library |
+| 21 | 8 | AUOTYP | object type |
+| 29 | 10 | AUATTR | attribute |
+| 39 | 50 | AUOVAL | old value |
+| 89 | 50 | AUNVAL | new value |
+
+### `AuditCA` (75 bytes)
+
+Authority change.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | CAETYP | `A` granted, `R` revoked, `S` set |
+| 1 | 10 | CAONAM | object name |
+| 11 | 10 | CAOLIB | object library |
+| 21 | 8 | CAOTYP | object type |
+| 29 | 10 | CAUSRP | profile, `*PUBLIC` or `*OWNER`, `*PGP` |
+| 39 | 10 | CAAUTL | authorization list |
+| 49 | 8 | CAOAUT | old bits, hexadecimal |
+| 57 | 8 | CANAUT | new bits, hexadecimal |
+| 65 | 10 | CACMDN | command |
+
+### `AuditCO` (57 bytes)
+
+Object created.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | COETYP | `N` new |
+| 1 | 10 | COONAM | object name |
+| 11 | 10 | COOLIB | object library |
+| 21 | 8 | COOTYP | object type |
+| 29 | 10 | COOWNR | owner |
+| 39 | 10 | COPGPN | primary group |
+| 49 | 8 | COPUBA | `*PUBLIC` bits, hexadecimal |
+
+### `AuditCP` (153 bytes)
+
+User profile changed.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | CPCMDN | `CRTUSRPRF`, `CHGUSRPRF`, `DLTUSRPRF`, `CHGPWD` |
+| 10 | 10 | CPUSRP | profile |
+| 20 | 1 | CPPWDC | `Y` password changed |
+| 21 | 1 | CPPWDN | `Y` password `*NONE` |
+| 22 | 1 | CPPWDX | `Y` password expired |
+| 23 | 10 | CPSTAT | `STATUS` |
+| 33 | 10 | CPCLAS | `USRCLS` |
+| 43 | 80 | CPSPCA | `SPCAUT`, eight values of ten |
+| 123 | 10 | CPGRPP | `GRPPRF` |
+| 133 | 10 | CPOWNR | `OWNER` |
+| 143 | 10 | CPGAUT | `GRPAUT` |
+
+### `AuditDO` (39 bytes)
+
+Object deleted.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | DOETYP | `A` deleted |
+| 1 | 10 | DOONAM | object name |
+| 11 | 10 | DOOLIB | object library |
+| 21 | 8 | DOOTYP | object type |
+| 29 | 10 | DOOWNR | owner |
+
+### `AuditDS` (11 bytes)
+
+Service tools password reset.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | DSUSRP | service tools user |
+| 10 | 1 | DSRTYP | `R` reset to default |
+
+### `AuditGR` (42 bytes)
+
+Generic record.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | GRETYP | `F` exit program called |
+| 1 | 20 | GREXPT | exit point |
+| 21 | 10 | GREXPN | exit program |
+| 31 | 10 | GREXPL | its library |
+| 41 | 1 | GRRTCD | return code |
+
+### `AuditJD` (40 bytes)
+
+Job description USER changed.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | JDONAM | object name |
+| 10 | 10 | JDOLIB | object library |
+| 20 | 10 | JDOUSR | old `USER` |
+| 30 | 10 | JDNUSR | new `USER` |
+
+### `AuditJS` (88 bytes)
+
+Job change.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | JSETYP | `S` start, `E` end, `B` submit, `H` hold, `R` release, `C` change, `N` ended by `ENDJOB` |
+| 1 | 1 | JSJTYP | job type |
+| 2 | 10 | JSJNAM | job name |
+| 12 | 10 | JSJUSR | job user |
+| 22 | 6 | JSJNBR | job number |
+| 28 | 10 | JSORUS | the user acting |
+| 38 | 20 | JSJOBD | job description, `LIB/NAME` |
+| 58 | 20 | JSJOBQ | job queue, `LIB/NAME` |
+| 78 | 10 | JSCMDN | command |
+
+### `AuditOM` (49 bytes)
+
+Object moved or renamed.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | OMETYP | `M` moved, `R` renamed |
+| 1 | 10 | OMONAM | object name |
+| 11 | 10 | OMOLIB | object library |
+| 21 | 8 | OMOTYP | object type |
+| 29 | 10 | OMNNAM | new name |
+| 39 | 10 | OMNLIB | new library |
+
+### `AuditOW` (48 bytes)
+
+Owner changed.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | OWONAM | object name |
+| 10 | 10 | OWOLIB | object library |
+| 20 | 8 | OWOTYP | object type |
+| 28 | 10 | OWOOWN | old owner |
+| 38 | 10 | OWNOWN | new owner |
+
+### `AuditPA` (49 bytes)
+
+Adopting program changed.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | PAETYP | `A` adopting program created |
+| 1 | 10 | PAONAM | object name |
+| 11 | 10 | PAOLIB | object library |
+| 21 | 8 | PAOTYP | object type |
+| 29 | 10 | PAOWNR | owner |
+| 39 | 10 | PAUPRF | `USRPRF` |
+
+### `AuditPG` (56 bytes)
+
+Primary group changed.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | PGONAM | object name |
+| 10 | 10 | PGOLIB | object library |
+| 20 | 8 | PGOTYP | object type |
+| 28 | 10 | PGOPGP | old primary group |
+| 38 | 10 | PGNPGP | new primary group |
+| 48 | 8 | PGPAUT | its bits, hexadecimal |
+
+### `AuditPS` (31 bytes)
+
+Profile swap.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | PSETYP | `H` handle obtained, `S` swapped, `E` handle released |
+| 1 | 10 | PSUSRP | from user |
+| 11 | 10 | PSNUSR | to user |
+| 21 | 10 | PSDEVN | device |
+
+### `AuditPW` (21 bytes)
+
+Password or user not valid.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | PWETYP | `P` password, `U` user, `A` other, `X` service tools user |
+| 1 | 10 | PWUSRP | user named |
+| 11 | 10 | PWDEVN | device |
+
+### `AuditSE` (85 bytes)
+
+Subsystem routing changed.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | SEETYP | `A` added, `C` changed, `R` removed |
+| 1 | 10 | SESBSN | subsystem description |
+| 11 | 10 | SESBSL | its library |
+| 21 | 4 | SESEQN | sequence number |
+| 25 | 10 | SEPGMN | program |
+| 35 | 10 | SEPGML | its library |
+| 45 | 10 | SECLSN | class |
+| 55 | 10 | SECLSL | its library |
+| 65 | 20 | SECMPD | compare data |
+
+### `AuditSF` (73 bytes)
+
+Spooled file action.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | SFETYP | `R` read, `D` deleted, `H` held, `L` released, `A` attributes changed |
+| 1 | 10 | SFFILE | spooled file |
+| 11 | 6 | SFSPNB | its number |
+| 17 | 10 | SFJNAM | job name |
+| 27 | 10 | SFJUSR | job user |
+| 37 | 6 | SFJNBR | job number |
+| 43 | 10 | SFOUTQ | output queue |
+| 53 | 10 | SFOQLB | its library |
+| 63 | 10 | SFOWNR | the file's user |
+
+### `AuditST` (13 bytes)
+
+Service tools used.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | STETYP | `A` used |
+| 1 | 2 | STSRVT | `DS` DST sign-on, `SC` service console sign-on |
+| 3 | 10 | STUSRP | service tools user |
+
+### `AuditSV` (511 bytes)
+
+System value changed.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 1 | SVETYP | `A` changed |
+| 1 | 10 | SVSYSV | system value |
+| 11 | 250 | SVNVAL | new value |
+| 261 | 250 | SVOVAL | old value |
+
+### `AuditZC` (53 bytes)
+
+Object changed.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | ZCONAM | object name |
+| 10 | 10 | ZCOLIB | object library |
+| 20 | 8 | ZCOTYP | object type |
+| 28 | 1 | ZCACCY | `C` change |
+| 29 | 24 | ZCOPER | operation |
+
+### `AuditZR` (53 bytes)
+
+Object read.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 10 | ZRONAM | object name |
+| 10 | 10 | ZROLIB | object library |
+| 20 | 8 | ZROTYP | object type |
+| 28 | 1 | ZRACCY | `R` read |
+| 29 | 24 | ZROPER | operation |

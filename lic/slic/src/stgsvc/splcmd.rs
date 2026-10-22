@@ -118,6 +118,26 @@ fn may_spool(system: &mut System, id: u32, display: bool) -> Result<(), String> 
     }
 }
 
+/// An `SF` entry for spooled file `id`.
+fn sf(system: &System, id: u32, etyp: &str) {
+    let Some(a) = system.spool.files.get(&id).map(|e| e.attrs.clone()) else {
+        return;
+    };
+    let (q, ql) = qualified(&a.outq);
+    sec::audit::record(
+        sec::audit::Event::new(sec::audit::Kind::Sf)
+            .set("ETYP", etyp)
+            .set("FILE", a.name.as_str())
+            .set("SPNB", format!("{:06}", a.number))
+            .set("JNAM", a.job.0.as_str())
+            .set("JUSR", a.job.1.as_str())
+            .set("JNBR", format!("{:06}", a.job.2))
+            .set("OUTQ", q)
+            .set("OQLB", ql)
+            .set("OWNR", a.job.1.as_str()),
+    );
+}
+
 /// The spooled file `FILE() JOB() SPLNBR()` names.
 fn target(system: &System, me: u32, p: &Params) -> Result<u32, String> {
     let file = p.pos_or(0, "FILE")?.to_ascii_uppercase();
@@ -366,6 +386,7 @@ fn wrksplf(system: &System, me: u32, p: &Params) -> String {
 fn dspsplf(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
     let id = target(system, me, p)?;
     may_spool(system, id, true)?;
+    sf(system, id, "R");
     let (a, data) = spool::data(system, id)?;
     let view = p.upper("VIEW").unwrap_or_else(|| "*TEXT".into());
     let mut out = format!(
@@ -409,6 +430,7 @@ fn dspsplf(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
 fn cpysplf(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
     let id = target(system, me, p)?;
     may_spool(system, id, true)?;
+    sf(system, id, "R");
     let to = p.pos_or(1, "TOFILE")?.to_ascii_uppercase();
     let replace = p.upper("MBROPT").is_none_or(|o| o == "*REPLACE");
     let mbr = match p.upper("TOMBR").as_deref() {
@@ -443,6 +465,16 @@ fn cpysplf(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
 fn file_op(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<String, String> {
     let id = target(system, me, p)?;
     may_spool(system, id, false)?;
+    let etyp = match cmd {
+        "dltsplf" => "D",
+        "hldsplf" => "H",
+        "rlssplf" => "L",
+        "wrksplfa" => "",
+        _ => "A",
+    };
+    if !etyp.is_empty() {
+        sf(system, id, etyp);
+    }
     let name = system
         .spool
         .files

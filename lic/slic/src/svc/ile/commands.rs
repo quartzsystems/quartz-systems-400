@@ -328,11 +328,23 @@ fn crtpgm(system: &mut System, p: &Params, kind: PgmKind) -> Result<String, Stri
     } else {
         "Service program"
     };
+    let adopts = options.attr.usrprf == ile::UserProfile::Owner;
     let diags = in_store(system, &lib, |txn, c, library| {
         ile::store::crtpgm(txn, c, library, &modules, &bnddirs, options, &text)
             .map(|(_, d)| d)
             .map_err(|e| e.to_string())
     })?;
+    if adopts {
+        let owner = crate::stgsvc::security::actor().map_or_else(|| "QSYS".to_string(), |p| p.user);
+        let ty = if kind == PgmKind::Pgm { "*PGM" } else { "*SRVPGM" };
+        sec::audit::record(
+            sec::audit::Event::new(sec::audit::Kind::Pa)
+                .set("ETYP", "A")
+                .object(&name.to_string(), &lib, ty)
+                .set("OWNR", owner)
+                .set("UPRF", "*OWNER"),
+        );
+    }
     Ok(format!(
         "{}{note}{what} {lib}/{name} created.\n",
         diag_text(&diags)

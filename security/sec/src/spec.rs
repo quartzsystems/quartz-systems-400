@@ -10,5 +10,7 @@ pub use crate::rec::{Field, Layout};
 /// The layouts.
 #[must_use]
 pub fn layouts() -> Vec<&'static Layout> {
-    vec![&crate::profile::payload::LAYOUT]
+    let mut v = vec![&crate::profile::payload::LAYOUT];
+    v.extend(crate::audit::layout::all());
+    v
 }

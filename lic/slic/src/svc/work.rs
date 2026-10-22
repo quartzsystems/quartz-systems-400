@@ -157,6 +157,18 @@ fn change(system: &mut System, p: &Params, type_code: u16) -> Result<String, Str
         store::obj::guard::check_id(txn, "wmobj.change", id).map_err(|e| e.to_string())?;
         let old = wm::obj::read(txn, id).map_err(|e| err(&e))?;
         let (payload, text) = build(type_code, Some(&old), p)?;
+        if type_code == types::JOBD
+            && let (Ok(o), Ok(n)) = (JobD::decode(&old), JobD::decode(&payload))
+            && o.user != n.user
+        {
+            sec::audit::record(
+                sec::audit::Event::new(sec::audit::Kind::Jd)
+                    .set("ONAM", name.as_str())
+                    .set("OLIB", lib.as_str())
+                    .set("OUSR", o.user)
+                    .set("NUSR", n.user),
+            );
+        }
         wm::obj::write(txn, id, &payload).map_err(|e| err(&e))?;
         if p.kw("TEXT").is_some() {
             ops::change_text(txn, id, &text, now_unix()).map_err(|e| e.to_string())?;

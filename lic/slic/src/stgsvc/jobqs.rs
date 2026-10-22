@@ -209,6 +209,7 @@ pub fn sbmjob(system: &mut System, me: u32, r: &SbmJob) -> Result<(u32, String),
     ]);
     let who = super::msgs::sender(system, me);
     super::hist::system_message(system, "CPC1221", &data, "01", who);
+    super::security::js("B", (&name, &user, number), 'B', &r.jobd);
     Ok((
         number,
         format!("Job {number:06}/{user}/{name} submitted to job queue {qname} in {lib}."),
@@ -312,6 +313,10 @@ pub fn hold(system: &mut System, me: u32, job: &str, hold: bool) -> Result<Strin
             j.status = wm::job::Status::Run.byte();
         }
     }
+    if let Some(j) = system.jobs.get(n) {
+        let (name, user, kind, jobd) = (j.name.clone(), j.user.clone(), j.kind, j.jobd.clone());
+        super::security::js(if hold { "H" } else { "R" }, (&name, &user, n), kind, &jobd);
+    }
     Ok(format!("Job {n:06} {verb}.\n"))
 }
 
@@ -359,6 +364,10 @@ pub fn endjob(system: &mut System, me: u32, job: &str, immediate: bool) -> Resul
         let _ = signal(system, n, rustix::process::Signal::CONT);
     }
     system.end_requests.insert(n, immediate);
+    if let Some(j) = system.jobs.get(n) {
+        let (name, user, kind, jobd) = (j.name.clone(), j.user.clone(), j.kind, j.jobd.clone());
+        super::security::js("N", (&name, &user, n), kind, &jobd);
+    }
     Ok(format!("Job {n:06} is ending.\n"))
 }
 

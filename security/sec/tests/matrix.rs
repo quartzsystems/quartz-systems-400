@@ -164,6 +164,8 @@ fn principal(source: Source) -> Principal {
         qsecurity: 40,
         adopted: Vec::new(),
         ptylmt: 0,
+        objaud: String::new(),
+        audlvl: Vec::new(),
     };
     match source {
         Source::AllObj => p.spcaut = SpecialAuth::ALLOBJ.0,

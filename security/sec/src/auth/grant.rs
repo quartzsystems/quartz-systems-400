@@ -57,7 +57,20 @@ pub fn set_private(
         return Err(objects::not_found(profile));
     }
     let (page, mut h) = auth::load(txn, id)?;
-    auth::private_set(txn, page, &mut h, key(profile)?, bits.map(Auth::store))?;
+    let old = auth::private_set(txn, page, &mut h, key(profile)?, bits.map(Auth::store))?;
+    crate::audit::record(
+        crate::guard::object_event(txn, crate::audit::Kind::Ca, &h)
+            .set("ETYP", if bits.is_some() { "A" } else { "R" })
+            .set("USRP", profile)
+            .set(
+                "OAUT",
+                old.map_or_else(String::new, |o| format!("{:08X}", o.0)),
+            )
+            .set(
+                "NAUT",
+                bits.map_or_else(String::new, |b| format!("{:08X}", b.0)),
+            ),
+    );
     if id.type_code == store::obj::types::AUTL {
         crate::auth::cache::bump_epoch();
     }
@@ -90,6 +103,12 @@ pub fn set_public(txn: &mut Txn<'_>, id: ObjectId, bits: Option<Auth>) -> Result
         }
         A(h.public_authority.0 | A::FROM_AUTL)
     };
+    crate::audit::record(
+        crate::guard::object_event(txn, crate::audit::Kind::Ca, &h)
+            .set("ETYP", "S")
+            .set("USRP", "*PUBLIC")
+            .set("NAUT", format!("{:08X}", h.public_authority.0)),
+    );
     auth::save_authority(txn, page, &mut h).map_err(Into::into)
 }
 
@@ -130,6 +149,11 @@ pub fn set_owner(
     let size = i64::try_from(h.size_pages).unwrap_or(0) * PAGE_KB;
     charge(txn, qsys, owner, size)?;
     charge(txn, qsys, &old, -size)?;
+    crate::audit::record(
+        crate::guard::object_event(txn, crate::audit::Kind::Ow, &h)
+            .set("OOWN", old.as_str())
+            .set("NOWN", owner),
+    );
     h.owner = key(owner)?;
     h.owner_authority = A::ALL;
     auth::save_authority(txn, page, &mut h)?;
@@ -190,6 +214,12 @@ pub fn set_group(
     };
     h.group_authority = new_bits.store();
     auth::save_authority(txn, page, &mut h)?;
+    crate::audit::record(
+        crate::guard::object_event(txn, crate::audit::Kind::Pg, &h)
+            .set("OPGP", old.as_str())
+            .set("NPGP", group.unwrap_or("*NONE"))
+            .set("PAUT", format!("{:08X}", new_bits.0)),
+    );
     if !old.is_empty() {
         index::remove(txn, qsys, &old, Kind::Group, id)?;
         if !revoke {
@@ -242,6 +272,11 @@ pub fn set_autl(txn: &mut Txn<'_>, qsys: ObjectId, id: ObjectId, list: Option<&s
         Some(l) => key(l)?,
         None => store::obj::header::blank(),
     };
+    crate::audit::record(
+        crate::guard::object_event(txn, crate::audit::Kind::Ca, &h)
+            .set("ETYP", if list.is_some() { "A" } else { "R" })
+            .set("AUTL", list.unwrap_or("*NONE")),
+    );
     if list.is_none() {
         h.public_authority = A(h.public_authority.0 & !A::FROM_AUTL);
     }

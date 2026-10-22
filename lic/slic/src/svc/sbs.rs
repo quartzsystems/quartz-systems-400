@@ -40,9 +40,9 @@ pub fn command(system: &mut System, cmd: &str, line: &str) -> Option<String> {
             Ok(())
         }),
         "dltsbsd" => dltsbsd(system, &p),
-        "addrtge" => with_sbsd(system, &p, |s, p| sbsdcmd::rtge(s, p, true)),
-        "chgrtge" => with_sbsd(system, &p, |s, p| sbsdcmd::rtge(s, p, false)),
-        "rmvrtge" => with_sbsd(system, &p, edit(sbsdcmd::rmvrtge)),
+        "addrtge" => with_sbsd(system, &p, |s, p| sbsdcmd::rtge(s, p, true)).inspect(|_| se(&p, "A")),
+        "chgrtge" => with_sbsd(system, &p, |s, p| sbsdcmd::rtge(s, p, false)).inspect(|_| se(&p, "C")),
+        "rmvrtge" => with_sbsd(system, &p, edit(sbsdcmd::rmvrtge)).inspect(|_| se(&p, "R")),
         "addwse" => with_sbsd(system, &p, edit(sbsdcmd::addwse)),
         "rmvwse" => with_sbsd(system, &p, edit(sbsdcmd::rmvwse)),
         "addjobqe" => with_sbsd(system, &p, |s, p| sbsdcmd::jobqe(s, p, true)),
@@ -83,6 +83,33 @@ fn target(p: &Params) -> Result<(String, String), String> {
 }
 
 /// Change a description in place.
+/// An `SE` entry for a routing entry command.
+fn se(p: &Params, etyp: &str) {
+    let Ok((lib, name)) = target(p) else {
+        return;
+    };
+    let (pgm, pgml) = p.upper("PGM").map_or((String::new(), String::new()), |v| {
+        let (l, n) = wm::obj::params::qualified(&v);
+        (n, l)
+    });
+    let (cls, clsl) = p.upper("CLS").map_or((String::new(), String::new()), |v| {
+        let (l, n) = wm::obj::params::qualified(&v);
+        (n, l)
+    });
+    sec::audit::record(
+        sec::audit::Event::new(sec::audit::Kind::Se)
+            .set("ETYP", etyp)
+            .set("SBSN", name)
+            .set("SBSL", lib)
+            .set("SEQN", p.upper("SEQNBR").unwrap_or_default())
+            .set("PGMN", pgm)
+            .set("PGML", pgml)
+            .set("CLSN", cls)
+            .set("CLSL", clsl)
+            .set("CMPD", p.kw("CMPVAL").unwrap_or_default()),
+    );
+}
+
 fn with_sbsd(
     system: &mut System,
     p: &Params,
@@ -94,6 +121,7 @@ fn with_sbsd(
     super::db::with_txn(&mut s.store, |txn| {
         let names = super::ile::name_context(txn, qsys);
         let id = wm::obj::find(txn, qsys, &names, &lib, &name, types::SBSD).map_err(|e| err(&e))?;
+        store::obj::guard::check_id(txn, "wmobj.change", id).map_err(|e| e.to_string())?;
         let mut d =
             Sbsd::decode(&wm::obj::read(txn, id).map_err(|e| err(&e))?).map_err(|e| err(&e))?;
         f(&mut d, p).map_err(|e| err(&e))?;

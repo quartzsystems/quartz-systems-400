@@ -33,6 +33,7 @@ pub enum Role {
 }
 
 /// State of this IPL.
+#[allow(clippy::struct_excessive_bools)]
 pub struct System {
     /// Console and serial writers.
     pub out: Outputs,
@@ -84,8 +85,8 @@ pub struct System {
     pub qsecurity: u8,
     /// The authority guard on ASP 1 (storage service).
     pub guard: Option<std::sync::Arc<sec::guard::SecGuard>>,
-    /// Refused authority checks not yet in the audit journal.
-    pub audit_pending: Vec<sec::guard::Failure>,
+    /// `QSYSOPR` was told the audit journal is full.
+    pub audit_full_told: bool,
     /// Message queues in break delivery, by the job they are allocated
     /// to (storage service).
     pub break_alloc: std::collections::HashMap<store::obj::ObjectId, u32>,
@@ -165,7 +166,7 @@ impl System {
             current_job: 0,
             qsecurity: 40,
             guard: None,
-            audit_pending: Vec::new(),
+            audit_full_told: false,
         }
     }
 

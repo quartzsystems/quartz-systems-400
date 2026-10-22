@@ -63,6 +63,10 @@ pub fn install(system: &mut System) -> Result<sec::profile::shipped::Installed, 
 pub fn guard(system: &mut System) {
     system.qsecurity = sysval_num(system, "QSECURITY", 40);
     level_change(system);
+    audit_force(system);
+    // What the IPL itself did is not audited.
+    let _ = sec::audit::take();
+    let _ = sec::guard::take_failures();
     let Some(s) = system.storage.as_mut() else {
         return;
     };
@@ -293,4 +297,160 @@ fn level_change(system: &mut System) {
         }
         Err(e) => eprintln!("qsstg: security level: {e}"),
     }
+}
+
+/// Who a request's audit entries are charged to: the job and the
+/// user's `AUDLVL`.
+pub struct Charged {
+    /// `name`, `user`, `number`.
+    pub job: (String, String, u32),
+    /// The user's `AUDLVL`.
+    pub audlvl: Vec<String>,
+}
+
+/// Write what the request left to audit: its authority failures as `AF`
+/// entries and the events it recorded, as the auditing values select.
+pub fn flush(system: &mut System, who: Option<Charged>) {
+    use sec::audit::{Event, Kind};
+    let failures = sec::guard::take_failures();
+    let mut events = sec::audit::take();
+    if failures.is_empty() && events.is_empty() {
+        return;
+    }
+    let control = sec::audit::Control::from_sysvals(&|n: &str| sysval_text(system, n));
+    if !control.on() {
+        return;
+    }
+    for f in failures {
+        events.push(
+            Event::new(Kind::Af)
+                .set("VIOL", "A")
+                .object(&f.name, &f.library, &f.type_name)
+                .set("OPER", f.op)
+                .set("STEP", f.step.name())
+                .set("HAVE", format!("{:08X}", f.have.0))
+                .by(&f.user),
+        );
+    }
+    let (job, lvl) = who.map_or_else(
+        || (("QSYSARB".to_string(), "QSYS".to_string(), 0), Vec::new()),
+        |c| (c.job, c.audlvl),
+    );
+    let selected: Vec<(Event, jrn::JobInfo)> = events
+        .into_iter()
+        .filter(|e| control.wanted(e, &lvl))
+        .map(|e| {
+            let user = e.user.clone().unwrap_or_else(|| job.1.clone());
+            let info = jrn::JobInfo {
+                name: job.0.clone(),
+                user,
+                number: job.2,
+            };
+            (e, info)
+        })
+        .collect();
+    if selected.is_empty() {
+        return;
+    }
+    let outcome = sec::guard::as_system(|| {
+        let s = system.storage.as_mut()?;
+        let qsys = s.qsys?;
+        let mut txn = s.store.begin().ok()?;
+        let r = sec::audit::write::write(&mut txn, qsys, &selected).ok()?;
+        txn.commit().ok()?;
+        Some(r)
+    });
+    if let Some(sec::audit::write::Outcome::Full) = outcome {
+        audit_end_action(system);
+    }
+}
+
+/// The audit journal's receiver is full: `QAUDENDACN`. `*NOTIFY` tells
+/// `QSYSOPR` once; `*PWRDWNSYS` marks the next IPL to start with
+/// `QAUDCTL(*NONE)` and powers down now (`docs/SECURITY.md` §7).
+fn audit_end_action(system: &mut System) {
+    let action = sysval_text(system, "QAUDENDACN");
+    let power = action.trim() == "*PWRDWNSYS";
+    if !power && system.audit_full_told {
+        return;
+    }
+    system.audit_full_told = true;
+    let msgid = if power { "CPI2284" } else { "CPI2283" };
+    let who = ("QSYSARB".to_string(), "QSYS".to_string(), 0);
+    super::hist::system_message(system, msgid, b"QAUDJRN   QSYS      ", "04", who.clone());
+    let m = wm::obj::msgq::QMsg {
+        msgid: msgid.into(),
+        msgf: ("QCPFMSG".into(), "QSYS".into()),
+        severity: 90,
+        text: if power {
+            "The audit journal cannot be written; the system is powering down.".into()
+        } else {
+            "The audit journal cannot be written; audit entries are being lost.".into()
+        },
+        job: who,
+        from_pgm: "QSYSARB".into(),
+        ..wm::obj::msgq::QMsg::default()
+    };
+    let _ = super::msgs::send(system, "QSYS", "QSYSOPR", m.clone());
+    let _ = super::msgs::send(system, "QSYS", "QSYSMSG", m);
+    if power {
+        force_audit_off_next_ipl(system);
+        // slic powers down on SIGUSR1.
+        if let Some(init) = rustix::process::Pid::from_raw(1) {
+            let _ = rustix::process::kill_process(init, rustix::process::Signal::USR1);
+        }
+    }
+}
+
+/// Remember, in `QSYS/QAUDFORCE`, that the next IPL sets `QAUDCTL(*NONE)`.
+fn force_audit_off_next_ipl(system: &mut System) {
+    let Some(s) = system.storage.as_mut() else {
+        return;
+    };
+    let Some(qsys) = s.qsys else {
+        return;
+    };
+    let Ok(mut txn) = s.store.begin() else {
+        return;
+    };
+    if sec::audit::force::set(&mut txn, qsys, crate::ipl::system::now_unix()).is_ok() {
+        let _ = txn.commit();
+    }
+}
+
+/// A `JS` entry: `etyp` `S` start, `E` end, `B` submit, `H` hold, `R`
+/// release, `C` change, `N` ended by `ENDJOB`.
+pub fn js(etyp: &str, job: (&str, &str, u32), kind: char, jobd: &str) {
+    let by = actor().map_or_else(|| "QSYS".to_string(), |p| p.user);
+    sec::audit::record(
+        sec::audit::Event::new(sec::audit::Kind::Js)
+            .set("ETYP", etyp)
+            .set("JTYP", kind.to_string())
+            .set("JNAM", job.0)
+            .set("JUSR", job.1)
+            .set("JNBR", format!("{:06}", job.2))
+            .set("ORUS", by)
+            .set("JOBD", jobd),
+    );
+}
+
+/// Apply a power down the audit journal forced: `QAUDCTL(*NONE)`.
+fn audit_force(system: &mut System) {
+    let forced = (|| {
+        let s = system.storage.as_mut()?;
+        let qsys = s.qsys?;
+        let mut txn = s.store.begin().ok()?;
+        let on = sec::audit::force::take(&mut txn, qsys).ok()?;
+        txn.commit().ok()?;
+        Some(on)
+    })();
+    if forced != Some(true) {
+        return;
+    }
+    if let Some(v) = system.sysvals.as_mut() {
+        let _ = v.set_text("QAUDCTL", "*NONE");
+    }
+    let _ = crate::ipl::sysvals::save(system);
+    let who = ("QSYSARB".to_string(), "QSYS".to_string(), 0);
+    super::hist::system_message(system, "CPI2284", b"QAUDJRN   QSYS      ", "04", who);
 }

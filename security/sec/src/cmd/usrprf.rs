@@ -261,6 +261,28 @@ fn public(k: &Keywords) -> Result<Authority> {
     }
 }
 
+/// The `CP` entry for a profile command.
+fn cp_event(cmd: &str, p: &UsrPrf, password: bool) -> crate::audit::Event {
+    crate::audit::Event::new(crate::audit::Kind::Cp)
+        .set("CMDN", cmd)
+        .set("USRP", p.name.as_str())
+        .set("PWDC", if password { "Y" } else { "N" })
+        .set("PWDN", if p.pwd_none { "Y" } else { "N" })
+        .set("PWDX", if p.pwdexp { "Y" } else { "N" })
+        .set("STAT", if p.disabled { "*DISABLED" } else { "*ENABLED" })
+        .set("CLAS", p.usrcls.name())
+        .set(
+            "SPCA",
+            p.spcaut.names().iter().fold(String::new(), |mut acc, n| {
+                let _ = write!(acc, "{n:<10}");
+                acc
+            }),
+        )
+        .set("GRPP", p.grpprf.as_str())
+        .set("OWNR", if p.owner_grpprf { "*GRPPRF" } else { "*USRPRF" })
+        .set("GAUT", p.grpaut.as_str())
+}
+
 /// `CRTUSRPRF`.
 pub fn crtusrprf(txn: &mut Txn<'_>, env: &Env<'_>, k: &Keywords) -> Result<String> {
     env.actor
@@ -294,6 +316,7 @@ pub fn crtusrprf(txn: &mut Txn<'_>, env: &Env<'_>, k: &Keywords) -> Result<Strin
     password(&mut p, k, env)?;
     objects::create(txn, env.qsys, &p, &env.actor.user, public(k)?, env.now)?;
     groups::ensure_gids(txn, env.qsys, &p)?;
+    crate::audit::record(cp_event("CRTUSRPRF", &p, k.has("PASSWORD")));
     Ok(format!("User profile {name} created."))
 }
 
@@ -327,6 +350,7 @@ pub fn chgusrprf(txn: &mut Txn<'_>, env: &Env<'_>, k: &Keywords) -> Result<Strin
     objects::write(txn, id, &p)?;
     groups::ensure_gids(txn, env.qsys, &p)?;
     crate::auth::cache::bump_epoch();
+    crate::audit::record(cp_event("CHGUSRPRF", &p, k.has("PASSWORD")));
     Ok(format!("User profile {name} changed."))
 }
 
@@ -355,6 +379,7 @@ pub fn chgpwd(
     )?;
     p.changed = env.now;
     objects::write(txn, id, &p)?;
+    crate::audit::record(cp_event("CHGPWD", &p, true));
     Ok("Password changed successfully.".into())
 }
 

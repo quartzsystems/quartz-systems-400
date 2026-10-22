@@ -11,6 +11,7 @@ ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 ipc = { path = "../../work/ipc", version = "0.1.0" }
 qsname = { path = "../../storage/qsname", version = "0.1.0" }
 store = { path = "../../storage/store", version = "0.1.0" }
+jrn = { path = "../../database/jrn", version = "0.1.0" }
 sysval = { path = "../../lic/sysval", version = "0.1.0" }
 thiserror.workspace = true
 tracing.workspace = true

@@ -347,6 +347,13 @@ fn sysval(system: &mut System, args: &[&str]) -> String {
             match vals.set_text(&name, &rest.join(" ")) {
                 Ok(effect) => {
                     let now = vals.get(&name).map(|v| v.text()).unwrap_or_default();
+                    sec::audit::record(
+                        sec::audit::Event::new(sec::audit::Kind::Sv)
+                            .set("ETYP", "A")
+                            .set("SYSV", name.as_str())
+                            .set("NVAL", now.as_str())
+                            .set("OVAL", before.as_str()),
+                    );
                     let saved = crate::ipl::sysvals::save(system);
                     if saved.is_ok() && system.role == crate::ipl::system::Role::Storage {
                         let data = wm::joblog::data(&[(&name, 10), (&before, 80), (&now, 80)]);

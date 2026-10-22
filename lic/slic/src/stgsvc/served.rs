@@ -118,8 +118,23 @@ impl JobCtx {
     }
 }
 
-/// Answer one request on connection `i`.
+/// Answer one request on connection `i`, then audit what it did.
 pub fn handle(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -> Vec<u8> {
+    let reply = answer(system, conns, i, req);
+    let who = conns.get(i).and_then(|c| c.ctx.as_ref()).map(charged);
+    super::security::flush(system, who);
+    reply
+}
+
+/// Who a job's audit entries are charged to.
+fn charged(ctx: &JobCtx) -> super::security::Charged {
+    super::security::Charged {
+        job: (ctx.job.name.clone(), ctx.job.user.clone(), ctx.job.number),
+        audlvl: ctx.session.borrow().principal.audlvl.clone(),
+    }
+}
+
+fn answer(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -> Vec<u8> {
     let conn = &mut conns[i];
     if let Request::Hello { job } = req {
         let r = if conn.ctx.is_some() {
@@ -154,16 +169,11 @@ pub fn handle(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -
     let session = Rc::clone(&ctx.session);
     super::security::freshen(system, &session);
     let mut served = Served { system, ctx };
-    let reply = if user {
+    if user {
         sec::guard::as_job(&session, || stg::dispatch(&mut served, req))
     } else {
         stg::dispatch(&mut served, req)
-    };
-    let failures = sec::guard::take_failures();
-    if !failures.is_empty() && system.audit_pending.len() < 10_000 {
-        system.audit_pending.extend(failures);
     }
-    reply
 }
 
 /// A job said hello: into the active table, with a `QTEMP` of its own.
@@ -206,6 +216,7 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
         },
     );
     system.jobs.add(job.clone());
+    super::security::js("S", (&job.name, &job.user, job.number), job.kind, &job.jobd);
     let who = (job.name.clone(), job.user.clone(), job.number);
     let data = wm::joblog::started_data(
         (&job.name, &job.user, job.number),
@@ -232,6 +243,8 @@ pub fn vanished(system: &mut System, conn: Conn) {
         return;
     };
     end_job(system, &mut ctx, true);
+    let who = charged(&ctx);
+    super::security::flush(system, Some(who));
 }
 
 /// End a job: its database use, its spooled files and job log, its
@@ -263,6 +276,7 @@ fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
     if let Some(q) = ctx.qtemp.take() {
         super::jobs::drop_qtemp(system, ctx.job.number, q);
     }
+    super::security::js("E", (&ctx.job.name, &ctx.job.user, ctx.job.number), ctx.job.kind, &ctx.job.jobd);
     system.jobs.remove(ctx.job.number);
     system.job_seen.insert(ctx.job.name.clone(), 2);
     jrn::entry::forget_job(JobHandle(ctx.job.handle));

@@ -51,6 +51,10 @@ pub struct Principal {
     pub adopted: Vec<Adopted>,
     /// `PTYLMT`: the highest scheduling priority the user may have.
     pub ptylmt: u8,
+    /// `OBJAUD`, for objects audited `*USRPRF`.
+    pub objaud: String,
+    /// `AUDLVL`: what else is audited for this user.
+    pub audlvl: Vec<String>,
 }
 
 wire_struct!(Principal {
@@ -60,7 +64,9 @@ wire_struct!(Principal {
     group_spcaut,
     qsecurity,
     adopted,
-    ptylmt
+    ptylmt,
+    objaud,
+    audlvl
 });
 
 impl Principal {
@@ -82,6 +88,8 @@ impl Principal {
             qsecurity,
             adopted: Vec::new(),
             ptylmt: p.ptylmt,
+            objaud: p.objaud,
+            audlvl: p.audlvl,
         })
     }
 
@@ -126,6 +134,12 @@ impl Principal {
         if self.has(a) {
             Ok(())
         } else {
+            crate::audit::record(
+                crate::audit::Event::new(crate::audit::Kind::Af)
+                    .set("VIOL", "K")
+                    .set("OPER", what.chars().take(24).collect::<String>())
+                    .set("HAVE", format!("{:08X}", self.special_adopted().0)),
+            );
             Err(SecError::msg(
                 "CPF2222",
                 format!(
@@ -157,6 +171,8 @@ mod tests {
             qsecurity: 40,
             adopted: Vec::new(),
             ptylmt: 0,
+            objaud: String::new(),
+            audlvl: Vec::new(),
         };
         assert!(p.has(SpecialAuth::JOBCTL));
         assert!(!p.has(SpecialAuth::ALLOBJ));

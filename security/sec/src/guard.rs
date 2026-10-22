@@ -193,6 +193,58 @@ pub fn decide(
     search::decide(txn, qsys, &principal, h, found, need)
 }
 
+/// The object fields of an audit event: name, library, type.
+pub fn object_event(
+    txn: &mut Txn<'_>,
+    kind: crate::audit::Kind,
+    h: &ObjectHeader,
+) -> crate::audit::Event {
+    let type_name = types::type_by_code(h.id.type_code).map_or("*UNKNOWN", |t| t.name);
+    let library = if h.id.type_code == types::LIB || h.id == h.library {
+        "QSYS".to_string()
+    } else {
+        store::obj::ops::read_header(txn, h.library)
+            .map_or_else(|_| String::new(), |(_, l)| l.name.to_string())
+    };
+    crate::audit::Event::new(kind).object(&h.name.to_string(), &library, type_name)
+}
+
+/// The events a successful check leaves: `ZR`/`ZC` for an audited
+/// object, `OM` for a move or rename, `AU` for a text change.
+fn audit_access(txn: &mut Txn<'_>, s: &Rc<RefCell<Session>>, op: &'static str, h: &ObjectHeader) {
+    use crate::audit::{self, Kind};
+    match op {
+        "obj.rename" | "obj.move" => {
+            let e = object_event(txn, Kind::Om, h)
+                .set("ETYP", if op == "obj.move" { "M" } else { "R" });
+            audit::record(e);
+        }
+        "obj.change-text" => audit::record(
+            object_event(txn, Kind::Au, h)
+                .set("ETYP", "T")
+                .set("ATTR", "TEXT"),
+        ),
+        _ => {}
+    }
+    let value = text_of(&h.audit);
+    if value.is_empty() || value == "*NONE" || op.starts_with("lib.") {
+        return;
+    }
+    let type_name = types::type_by_code(h.id.type_code).map_or("*UNKNOWN", |t| t.name);
+    let change = match required::need(op, type_name) {
+        Some(Need::Bits(b)) => audit::is_change(b),
+        _ => false,
+    };
+    let user_value = s.borrow().principal.objaud.clone();
+    if audit::audits_access(&value, &user_value, change) {
+        let kind = if change { Kind::Zc } else { Kind::Zr };
+        let e = object_event(txn, kind, h)
+            .set("ACCY", if change { "C" } else { "R" })
+            .set("OPER", op);
+        audit::record(e);
+    }
+}
+
 fn to_store(e: crate::SecError) -> StoreError {
     match e {
         crate::SecError::Store(s) => s,
@@ -213,6 +265,7 @@ impl Guard for SecGuard {
         }
         let d = decide(txn, qsys, &s, op, h).map_err(to_store)?;
         if d.allowed {
+            audit_access(txn, &s, op, h);
             Ok(())
         } else {
             let user = s.borrow().principal.user.clone();
@@ -306,6 +359,13 @@ impl Guard for SecGuard {
             if !list.is_empty() {
                 autl::secure(txn, qsys, &list, h.id)?;
             }
+            crate::audit::record(
+                object_event(txn, crate::audit::Kind::Co, h)
+                    .set("ETYP", "N")
+                    .set("OWNR", owner.as_str())
+                    .set("PGPN", pgp.as_str())
+                    .set("PUBA", format!("{:08X}", h.public_authority.0)),
+            );
             // GRPAUT given privately to the creator's group.
             if let Some(s) = current() {
                 let user = s.borrow().principal.user.clone();
@@ -331,6 +391,11 @@ impl Guard for SecGuard {
         };
         let r = (|| -> crate::Result<()> {
             let owner = text_of(&h.owner);
+            crate::audit::record(
+                object_event(txn, crate::audit::Kind::Do, h)
+                    .set("ETYP", "A")
+                    .set("OWNR", owner.as_str()),
+            );
             index::remove(txn, qsys, &owner, Kind::Owned, h.id)?;
             if h.id.type_code != types::USRPRF && h.id.type_code != types::AUTL {
                 let size = i64::try_from(h.size_pages).unwrap_or(0) * grant::PAGE_KB;
