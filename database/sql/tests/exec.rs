@@ -325,6 +325,26 @@ fn joins_groups_and_subqueries() {
         db.rows("SELECT o.ordno FROM cust c RIGHT EXCEPTION JOIN orders o ON c.cusno = o.cusno"),
         [row(&["103"])]
     );
+    assert_eq!(
+        db.rows("SELECT c.cusno, o.ordno FROM cust c FULL OUTER JOIN orders o ON c.cusno = o.cusno ORDER BY 1, 2"),
+        [
+            row(&["1", "100"]),
+            row(&["1", "101"]),
+            row(&["2", "-"]),
+            row(&["3", "102"]),
+            row(&["4", "-"]),
+            row(&["-", "103"])
+        ]
+    );
+    // Common table expressions, in FROM and in a subquery.
+    assert_eq!(
+        db.rows("WITH big (who, total) AS (SELECT cusno, SUM(amount) FROM orders GROUP BY cusno) SELECT c.name, b.total FROM cust c JOIN big b ON b.who = c.cusno WHERE b.total > 10 ORDER BY 1"),
+        [row(&["Alice", "25.25"]), row(&["Carol", "1000.00"])]
+    );
+    assert_eq!(
+        db.rows("WITH rich AS (SELECT cusno FROM cust WHERE bal > 100) SELECT ordno FROM orders WHERE cusno IN (SELECT cusno FROM rich)"),
+        [row(&["102"])]
+    );
     assert_eq!(db.rows("SELECT COUNT(*) FROM cust, orders"), [row(&["16"])]);
     assert_eq!(
         db.rows("SELECT c.name FROM cust c, orders o WHERE c.cusno = o.cusno AND o.amount > 100"),
@@ -547,6 +567,18 @@ fn indexes_and_plans() {
             row(&["Dave"])
         ]
     );
+    // A UNIQUE constraint is a unique index the catalog lists.
+    db.ok("CREATE TABLE qstest/tags (id INTEGER NOT NULL PRIMARY KEY, tag CHAR(10) NOT NULL UNIQUE, grp CHAR(5), CONSTRAINT grptag UNIQUE (grp, tag))");
+    assert_eq!(
+        db.count("INSERT INTO tags VALUES (1, 'a', 'x'), (2, 'b', 'x')"),
+        2
+    );
+    assert_eq!(db.code("INSERT INTO tags VALUES (3, 'a', 'y')"), -803);
+    assert_eq!(
+        db.rows("SELECT constraint_name, constraint_type FROM qsys2/syscst WHERE table_name = 'TAGS' ORDER BY 1"),
+        [row(&["GRPTAG", "UNIQUE"]), row(&["Q_QSTEST_TAGS_ID_00001", "PRIMARY KEY"]), row(&["Q_TAGS_1", "UNIQUE"])]
+    );
+    db.ok("DROP TABLE qstest/tags");
     // A unique index refuses a duplicate.
     db.ok("CREATE UNIQUE INDEX qstest/cusnote ON cust (note)");
     assert_eq!(

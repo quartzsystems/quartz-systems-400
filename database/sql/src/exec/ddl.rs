@@ -12,7 +12,7 @@ use store::txn::Txn;
 
 use super::SqlContext;
 use crate::ast::{
-    ColumnDef, ColumnDefault, Constraint, CreateIndex, CreateTable, DataType, Expr, Literal,
+    ColumnDef, ColumnDefault, Constraint, CreateIndex, CreateTable, DataType, Expr, Ident, Literal,
     ObjectName,
 };
 use crate::error::{Result, SqlError};
@@ -168,8 +168,10 @@ pub fn create_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) ->
             Name::parse(&format!("{name}R").chars().take(10).collect::<String>()).unwrap_or(name)
         }
     };
-    // Keys: the primary key, from the table or a column.
+    // Keys: the primary key, from the table or a column; UNIQUE
+    // constraints become unique indexes afterwards.
     let mut keys: Vec<Name> = Vec::new();
+    let mut uniques: Vec<(Option<Ident>, Vec<Ident>)> = Vec::new();
     for c in &t.constraints {
         match c {
             Constraint::PrimaryKey { columns, .. } => {
@@ -178,10 +180,8 @@ pub fn create_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) ->
                     .map(SqlContext::sys_name)
                     .collect::<Result<_>>()?;
             }
-            Constraint::Unique { .. } => {
-                return Err(SqlError::Unsupported {
-                    what: "UNIQUE constraints; create a unique index instead".into(),
-                });
+            Constraint::Unique { name, columns } => {
+                uniques.push((name.clone(), columns.clone()));
             }
             Constraint::ForeignKey { .. } | Constraint::Check { .. } => {}
         }
@@ -191,9 +191,7 @@ pub fn create_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) ->
             keys.push(sys_name(&c.name, c.system_name.as_ref())?);
         }
         if c.unique && !c.primary_key {
-            return Err(SqlError::Unsupported {
-                what: "UNIQUE on a column; create a unique index instead".into(),
-            });
+            uniques.push((None, vec![c.name.clone()]));
         }
     }
     let mut lines = Vec::new();
@@ -229,11 +227,65 @@ pub fn create_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) ->
             ..CreateFileOpts::default()
         },
     )?;
+    for (n, (cname, columns)) in uniques.into_iter().enumerate() {
+        add_unique(txn, ctx, &t.name, &name, n + 1, cname.as_ref(), &columns)?;
+    }
     Ok(())
 }
 
+/// A `UNIQUE` constraint: a unique index over the columns, its file
+/// named after the constraint (or `Q<table>U<n>`) and its text recording
+/// the constraint for the catalog.
+pub fn add_unique(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    table: &ObjectName,
+    sys_table: &Name,
+    n: usize,
+    cname: Option<&Ident>,
+    columns: &[Ident],
+) -> Result<()> {
+    let cname = cname.map_or_else(|| format!("Q_{sys_table}_{n}"), |c| c.value.clone());
+    let index_name = match cname.len() {
+        0..=10 if Name::parse(&cname).is_ok() => cname.clone(),
+        _ => {
+            let stem: String = sys_table.to_string().chars().take(6).collect();
+            format!("{stem}U{n:03}")
+        }
+    };
+    let i = CreateIndex {
+        name: ObjectName {
+            schema: table.schema.clone(),
+            name: Ident::new(&index_name),
+        },
+        unique: true,
+        where_not_null: false,
+        table: table.clone(),
+        columns: columns.iter().map(|c| (c.clone(), false)).collect(),
+        rcdfmt: None,
+    };
+    create_index_with_text(txn, ctx, &i, &format!("{UNIQUE_TEXT}{cname}"))
+}
+
+/// What the text of a unique constraint's index starts with.
+pub const UNIQUE_TEXT: &str = "SQL unique constraint ";
+
 /// `CREATE INDEX`: a keyed logical file over the table.
 pub fn create_index(txn: &mut Txn<'_>, ctx: &mut SqlContext, i: &CreateIndex) -> Result<()> {
+    let text = format!(
+        "SQL index {}",
+        i.name.name.value.chars().take(40).collect::<String>()
+    );
+    create_index_with_text(txn, ctx, i, &text)
+}
+
+/// `CREATE INDEX` with the file's text given.
+fn create_index_with_text(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    i: &CreateIndex,
+    text: &str,
+) -> Result<()> {
     let table = ctx.resolve_table(txn, &i.table)?;
     if table.desc.attr.kind == FileKind::Logical {
         return Err(SqlError::Unsupported {
@@ -311,10 +363,7 @@ pub fn create_index(txn: &mut Txn<'_>, ctx: &mut SqlContext, i: &CreateIndex) ->
         &mut |_| Ok(base),
         &CreateFileOpts {
             now: ctx.clock(),
-            text: format!(
-                "SQL index {}",
-                i.name.name.value.chars().take(40).collect::<String>()
-            ),
+            text: text.chars().take(50).collect(),
             ..CreateFileOpts::default()
         },
     )?;

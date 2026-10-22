@@ -902,12 +902,18 @@ fn from_rows(
                 from_rows(txn, ctx, params, right, scans, outer, &[], explain_only)?;
             let mut cols = ls.cols.clone();
             cols.extend(rs.cols.iter().cloned().map(|mut c| {
-                if matches!(kind, JoinKind::Left | JoinKind::LeftException) {
+                if matches!(
+                    kind,
+                    JoinKind::Left | JoinKind::LeftException | JoinKind::Full
+                ) {
                     c.nullable = true;
                 }
                 c
             }));
-            if matches!(kind, JoinKind::Right | JoinKind::RightException) {
+            if matches!(
+                kind,
+                JoinKind::Right | JoinKind::RightException | JoinKind::Full
+            ) {
                 for c in &mut cols[..ls.cols.len()] {
                     c.nullable = true;
                 }
@@ -956,11 +962,6 @@ fn join(
     on: Option<&Expr>,
     outer: &Env,
 ) -> Result<Vec<Row>> {
-    if kind == JoinKind::Full {
-        return Err(SqlError::Unsupported {
-            what: "FULL OUTER JOIN".into(),
-        });
-    }
     let mut ev = Evaluator { ctx, params };
     let mut out = Vec::new();
     let lnull = vec![Value::Null; ls.cols.len()];
@@ -983,19 +984,31 @@ fn join(
                 right_matched[ri] = true;
                 if matches!(
                     kind,
-                    JoinKind::Inner | JoinKind::Cross | JoinKind::Left | JoinKind::Right
+                    JoinKind::Inner
+                        | JoinKind::Cross
+                        | JoinKind::Left
+                        | JoinKind::Right
+                        | JoinKind::Full
                 ) {
                     out.push(combined);
                 }
             }
         }
-        if !matched && matches!(kind, JoinKind::Left | JoinKind::LeftException) {
+        if !matched
+            && matches!(
+                kind,
+                JoinKind::Left | JoinKind::LeftException | JoinKind::Full
+            )
+        {
             let mut row = l.clone();
             row.extend(rnull.iter().cloned());
             out.push(row);
         }
     }
-    if matches!(kind, JoinKind::Right | JoinKind::RightException) {
+    if matches!(
+        kind,
+        JoinKind::Right | JoinKind::RightException | JoinKind::Full
+    ) {
         for (ri, r) in right_rows.iter().enumerate() {
             if !right_matched[ri] {
                 let mut row = lnull.clone();
