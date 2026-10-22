@@ -3,8 +3,9 @@
 // root directory of this project.
 
 //! Password composition rules: the `QPWD*` system values, or the
-//! `QPWDRULES` tokens that replace them. A failure is `CPF4AA7` with
-//! IBM's reason code; the table is in `docs/SECURITY.md`.
+//! `QPWDRULES` tokens that replace them. A failure is `CPF22C2` (the
+//! identifier an IBM i 7.1 sends) with IBM's reason code; the table is
+//! in `docs/SECURITY.md`.
 
 /// One composition rule.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -65,7 +66,7 @@ pub enum Rule {
     LwrMax(usize),
 }
 
-/// Why a password was refused: `CPF4AA7` and IBM's reason code.
+/// Why a password was refused: `CPF22C2` and IBM's reason code.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Violation {
     /// The reason code.
@@ -74,7 +75,7 @@ pub struct Violation {
 
 impl Violation {
     /// The message identifier.
-    pub const MSGID: &'static str = "CPF4AA7";
+    pub const MSGID: &'static str = "CPF22C2";
 
     /// Quartz's text for the reason.
     #[must_use]

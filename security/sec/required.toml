@@ -2,9 +2,9 @@
 #
 # One entry per operation the system checks: the authorities the user
 # needs to the object the operation names. `op@TYPE` overrides `op` for
-# one object type. `need` lists authority names or combinations; `*ANY`
-# is any authority but *EXCLUDE; `[]` needs nothing beyond finding the
-# object. `ibm` says which IBM command or rule the entry follows.
+# one object type. `need` lists authority names or combinations; one
+# entry may be `A|B` where IBM takes either; `*ANY` is any authority
+# but *EXCLUDE; `[]` needs nothing beyond finding the object. `ibm` says which IBM command or rule the entry follows.
 # Operations on a library itself (`lib.*`) are checked against the
 # library. Every operation the code names must be here (tests/required.rs).
 
@@ -181,16 +181,16 @@ need = ["*OBJOPR"]
 ibm = "CRTLF: *OBJOPR to each based-on file"
 
 [op."file.member"]
-need = ["*OBJOPR", "*OBJMGT"]
-ibm = "ADDPFM, ADDLFM, CHGPFM, RNMM: *OBJOPR and *OBJMGT (IBM also takes *OBJALTER for some)"
+need = ["*OBJOPR", "*OBJMGT|*OBJALTER"]
+ibm = "ADDPFM, ADDLFM, CHGPFM, RNMM: *OBJOPR and *OBJMGT or *OBJALTER (the machine takes *OBJALTER alone for ADDPFM)"
 
 [op."file.remove-member"]
 need = ["*OBJEXIST"]
 ibm = "RMVM: *OBJEXIST"
 
 [op."file.change"]
-need = ["*OBJOPR", "*OBJALTER"]
-ibm = "CHGPF, CHGLF: *OBJOPR and *OBJALTER (or *OBJMGT)"
+need = ["*OBJOPR", "*OBJALTER|*OBJMGT"]
+ibm = "CHGPF, CHGLF: *OBJOPR and *OBJALTER or *OBJMGT"
 
 [op."file.clear"]
 need = ["*OBJOPR", "*OBJMGT", "*DLT"]
@@ -201,8 +201,8 @@ need = ["*CHANGE", "*OBJMGT"]
 ibm = "RGZPFM: *OBJOPR, *OBJMGT, *READ, *ADD, *UPD, *DLT"
 
 [op."file.journal"]
-need = ["*OBJMGT"]
-ibm = "STRJRNPF, ENDJRNPF: *OBJMGT (or *OBJALTER) to the file"
+need = ["*OBJMGT|*OBJALTER"]
+ibm = "STRJRNPF, ENDJRNPF: *OBJMGT or *OBJALTER to the file"
 
 # ------------------------------------------------------------- journals
 

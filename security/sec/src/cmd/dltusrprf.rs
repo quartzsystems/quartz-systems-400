@@ -66,7 +66,7 @@ pub fn dltusrprf(txn: &mut Txn<'_>, env: &Env<'_>, job: JobHandle, k: &Keywords)
         .collect();
     if !owned.is_empty() && own[0] == "*NODLT" {
         return Err(SecError::msg(
-            "CPF2204",
+            "CPF2215",
             format!(
                 "User profile {name} owns {} objects; OWNOBJOPT(*NODLT) keeps it.",
                 owned.len()

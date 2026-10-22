@@ -207,14 +207,24 @@ pub fn may_control(target_user: &str, job: &str) -> Result<(), String> {
     }
 }
 
-/// A scheduling priority within the actor's `PTYLMT`.
-pub fn clamp_priority(kw: &str, value: &str) -> String {
+/// A scheduling priority beyond the actor's `PTYLMT` is refused with
+/// `CPF1337`, as the machine does (`RUNPTY` against ten times the limit).
+pub fn check_priority(kw: &str, value: &str) -> Result<(), String> {
     let Some(p) = actor() else {
-        return value.to_string();
+        return Ok(());
     };
     match (kw, value.trim().parse::<u8>()) {
-        ("JOBPTY" | "OUTPTY" | "RUNPTY", Ok(n)) if n < p.ptylmt => p.ptylmt.to_string(),
-        _ => value.to_string(),
+        ("JOBPTY" | "OUTPTY" | "RUNPTY", Ok(n)) => {
+            let limit = if kw == "RUNPTY" { p.ptylmt * 10 } else { p.ptylmt };
+            if n < limit {
+                return Err(format!(
+                    "CPF1337 {kw}({n}) is beyond the priority limit {} of user {}",
+                    p.ptylmt, p.user
+                ));
+            }
+            Ok(())
+        }
+        _ => Ok(()),
     }
 }
 

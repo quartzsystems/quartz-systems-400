@@ -453,13 +453,13 @@ pub fn setautle(txn: &mut Txn<'_>, env: &Env<'_>, k: &Keywords, add: bool) -> Re
         let on = grant::private(txn, &h, &u)?.is_some() || text_of(&h.owner) == u;
         if add && on {
             return Err(SecError::msg(
-                "CPF2272",
+                "CPF2282",
                 format!("{u} is already on authorization list {name}."),
             ));
         }
         if !add && !on {
             return Err(SecError::msg(
-                "CPF2270",
+                "CPF2285",
                 format!("{u} is not on authorization list {name}."),
             ));
         }
@@ -480,7 +480,7 @@ pub fn rmvautle(txn: &mut Txn<'_>, env: &Env<'_>, k: &Keywords) -> Result<String
         let h = grant::header(txn, list)?;
         if grant::private(txn, &h, &u)?.is_none() {
             return Err(SecError::msg(
-                "CPF2270",
+                "CPF2285",
                 format!("{u} is not on authorization list {name}."),
             ));
         }

@@ -233,6 +233,7 @@ fn audit_access(txn: &mut Txn<'_>, s: &Rc<RefCell<Session>>, op: &'static str, h
     let type_name = types::type_by_code(h.id.type_code).map_or("*UNKNOWN", |t| t.name);
     let change = match required::need(op, type_name) {
         Some(Need::Bits(b)) => audit::is_change(b),
+        Some(Need::Either(a, b)) => audit::is_change(a) || audit::is_change(b),
         _ => false,
     };
     let user_value = s.borrow().principal.objaud.clone();
