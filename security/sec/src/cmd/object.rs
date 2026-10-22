@@ -70,7 +70,9 @@ fn users(k: &Keywords) -> Result<Vec<String>> {
 }
 
 /// `GRTOBJAUT OBJ() OBJTYPE() USER() AUT() [AUTL()] [REPLACE()]`.
-/// `AUT(*AUTL)` for `*PUBLIC` takes it from the list.
+/// `AUT(*AUTL)` for `*PUBLIC` takes it from the list; a combination
+/// value or `REPLACE(*YES)` replaces the user's authority, single
+/// authorities add to it.
 pub fn grtobjaut(txn: &mut Txn<'_>, env: &Env<'_>, id: ObjectId, k: &Keywords) -> Result<String> {
     let h = grant::header(txn, id)?;
     let what = label(txn, &h);
@@ -95,6 +97,12 @@ pub fn grtobjaut(txn: &mut Txn<'_>, env: &Env<'_>, id: ObjectId, k: &Keywords) -
         &k.upper("REPLACE").unwrap_or_else(|| "*NO".into()),
         &["*NO", "*YES"],
     )? == "*YES";
+    // A combination value replaces what the user had; single
+    // authorities add to it.
+    let replace = replace
+        || words
+            .iter()
+            .any(|w| matches!(w.as_str(), "*ALL" | "*CHANGE" | "*USE" | "*EXCLUDE"));
     let from_list = words == ["*AUTL"];
     let bits = if from_list {
         Auth::EXCLUDE

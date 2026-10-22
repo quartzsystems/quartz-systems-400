@@ -68,7 +68,8 @@ fn grant_revoke_owner_group_and_lists() {
     }
     grant::set_public(&mut t, data, Some(Auth::EXCLUDE)).unwrap();
 
-    // GRTOBJAUT merges unless REPLACE(*YES); RVKOBJAUT takes bits away.
+    // GRTOBJAUT adds single authorities and replaces with a combination;
+    // RVKOBJAUT takes bits away.
     object::grtobjaut(
         &mut t,
         &env,

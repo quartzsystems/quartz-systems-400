@@ -279,9 +279,10 @@ decides and a refusal is audited like any other:
 
 - `GRTOBJAUT` and `RVKOBJAUT` need `*OBJMGT` (`obj.grant`); a user who
   is neither the owner nor `*ALLOBJ` may give only authorities it has
-  itself (`CPF2227`). `USER()` merges into an existing private
-  authority unless `REPLACE(*YES)`; a revoke that leaves nothing
-  removes the private authority. `AUTL()` secures or releases the
+  itself (`CPF2227`). Single authorities (`*OBJMGT`, `*ADD` ...) add
+  to what the user has; a combination (`*ALL`, `*CHANGE`, `*USE`,
+  `*EXCLUDE`) or `REPLACE(*YES)` replaces it; a revoke that leaves
+  nothing removes the private authority. `AUTL()` secures or releases the
   object, for the owner or `*ALLOBJ` only. `AUT(*AUTL)` gives
   `*PUBLIC` from the list.
 - `DSPOBJAUT` shows every user to the owner and to `*OBJMGT`, and only
