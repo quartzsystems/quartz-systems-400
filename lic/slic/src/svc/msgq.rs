@@ -137,7 +137,7 @@ fn crtmsgq(system: &mut System, p: &Params) -> Result<String, String> {
 fn chgmsgq(system: &mut System, p: &Params) -> Result<String, String> {
     let (lib, name) = queue_name(&p.pos_or(0, "MSGQ")?);
     let me = system.current_job;
-    let brk = with_queue(system, &lib, &name, |q, _| {
+    let brk = with_queue(system, "msgq.change", &lib, &name, |q, _| {
         apply(q, p)?;
         Ok((q.delivery == "*BREAK", true))
     })?;
@@ -150,7 +150,7 @@ fn chgmsgq(system: &mut System, p: &Params) -> Result<String, String> {
 /// `DLTMSGQ`.
 fn dltmsgq(system: &mut System, p: &Params) -> Result<String, String> {
     let (lib, name) = queue_name(&p.pos_or(0, "MSGQ")?);
-    let id = with_queue(system, &lib, &name, |_, id| Ok((id, false)))?;
+    let id = with_queue(system, "obj.check", &lib, &name, |_, id| Ok((id, false)))?;
     let job = JobHandle(u64::from(system.current_job));
     let s = system.storage.as_mut().ok_or("object store not open")?;
     super::db::with_txn(&mut s.store, |txn| {
@@ -164,7 +164,7 @@ fn dltmsgq(system: &mut System, p: &Params) -> Result<String, String> {
 fn clrmsgq(system: &mut System, p: &Params) -> Result<String, String> {
     let (lib, name) = queue_name(&p.pos_or(0, "MSGQ")?);
     let which = p.upper("CLEAR").unwrap_or_else(|| "*ALL".into());
-    let n = with_queue(system, &lib, &name, |q, _| Ok((q.clear(&which), true)))?;
+    let n = with_queue(system, "msgq.clear", &lib, &name, |q, _| Ok((q.clear(&which), true)))?;
     Ok(format!("{n} message(s) removed from {name}.\n"))
 }
 
@@ -225,7 +225,7 @@ fn sndrpymsg(system: &mut System, p: &Params) -> Result<String, String> {
     let (lib, name) = queue_name(&p.upper("MSGQ").unwrap_or_else(|| "*SYSOPR".into()));
     let reply = text_kw(p, "RPY");
     let from = msgs::sender(system, system.current_job);
-    let rkey = with_queue(system, &lib, &name, |q, _| {
+    let rkey = with_queue(system, "msgq.reply", &lib, &name, |q, _| {
         let k = q
             .reply(key, &reply, from, msgs::now_micros())
             .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF2422")))?;
@@ -250,7 +250,7 @@ fn rcvmsg(system: &mut System, p: &Params) -> Result<String, String> {
         None => None,
     };
     let remove = !matches!(p.upper("RMV").as_deref(), Some("*NO"));
-    let m = with_queue(system, &lib, &name, |q, _| {
+    let m = with_queue(system, if remove { "msgq.remove" } else { "msgq.receive" }, &lib, &name, |q, _| {
         let m = q.receive(kind, key, remove);
         let changed = m.is_some();
         Ok((m, changed))
@@ -271,7 +271,7 @@ fn rcvmsg(system: &mut System, p: &Params) -> Result<String, String> {
 fn rmvmsg(system: &mut System, p: &Params) -> Result<String, String> {
     let (lib, name) = queue_name(&p.upper("MSGQ").ok_or("CPD0071 MSGQ is needed")?);
     if let Some(which) = p.upper("CLEAR") {
-        let n = with_queue(system, &lib, &name, |q, _| Ok((q.clear(&which), true)))?;
+        let n = with_queue(system, "msgq.clear", &lib, &name, |q, _| Ok((q.clear(&which), true)))?;
         return Ok(format!("{n} message(s) removed.\n"));
     }
     let key = u32::from_str_radix(
@@ -281,7 +281,7 @@ fn rmvmsg(system: &mut System, p: &Params) -> Result<String, String> {
         16,
     )
     .map_err(|_| "CPD0084 MSGKEY is hexadecimal".to_string())?;
-    with_queue(system, &lib, &name, |q, _| {
+    with_queue(system, "msgq.remove", &lib, &name, |q, _| {
         q.remove(key)
             .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF2410")))?;
         Ok(((), true))
@@ -299,7 +299,7 @@ fn dspmsg(system: &mut System, p: &Params) -> Result<String, String> {
         .or_else(|| p.upper("MSGQ"))
         .unwrap_or_else(|| "*SYSOPR".into());
     let (lib, name) = queue_name(&which);
-    let (msgs, delivery, sev) = with_queue(system, &lib, &name, |q, _| {
+    let (msgs, delivery, sev) = with_queue(system, "msgq.receive", &lib, &name, |q, _| {
         Ok(((q.msgs.clone(), q.delivery.clone(), q.severity), false))
     })?;
     let mut out = format!(

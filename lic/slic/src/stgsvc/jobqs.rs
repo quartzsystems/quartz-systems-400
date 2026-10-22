@@ -148,6 +148,15 @@ pub fn sbmjob(system: &mut System, me: u32, r: &SbmJob) -> Result<(u32, String),
     } else {
         r.user.clone()
     };
+    if user != me_info.user {
+        // Running as another user needs *USE to its profile.
+        super::spool::with_store(system, |txn, qsys| {
+            let id = sec::profile::objects::find(txn, qsys, &user)
+                .map_err(|e| e.to_string())?
+                .ok_or_else(|| format!("CPF2204 user profile {user} not found"))?;
+            store::obj::guard::check_id(txn, "usrprf.use", id).map_err(|e| e.to_string())
+        })?;
+    }
     let name = if r.job.is_empty() || r.job == "*JOBD" {
         qualified(&jobd).1
     } else {
@@ -267,18 +276,28 @@ fn system_job(system: &System, number: u32, me: u32) -> bool {
             .is_some_and(|j| matches!(j.kind, 'S' | 'X' | 'M'))
 }
 
+/// Whether the actor may control active job `n`.
+fn control_active(system: &System, n: u32) -> Result<(), String> {
+    match system.jobs.get(n) {
+        Some(j) => super::security::may_control(&j.user, &j.qualified()),
+        None => Ok(()),
+    }
+}
+
 /// `HLDJOB`, `RLSJOB`.
 pub fn hold(system: &mut System, me: u32, job: &str, hold: bool) -> Result<String, String> {
     let verb = if hold { "held" } else { "released" };
     if let Some((n, q)) = find_queued(system, job) {
         with_jobq(system, &q, |jq, _| {
             let j = jq.job_mut(n).ok_or("CPF1321 job not found")?;
+            super::security::may_control(&j.user, &j.qualified())?;
             j.held = hold;
             Ok(((), true))
         })?;
         return Ok(format!("Job {n:06} on job queue {q} {verb}.\n"));
     }
     let n = find_active(system, job).ok_or_else(|| format!("CPF1321 job {job} not found"))?;
+    control_active(system, n)?;
     if system_job(system, n, me) {
         return Err(format!("CPF1342 job {n:06} cannot be held"));
     }
@@ -300,6 +319,8 @@ pub fn hold(system: &mut System, me: u32, job: &str, hold: bool) -> Result<Strin
 pub fn endjob(system: &mut System, me: u32, job: &str, immediate: bool) -> Result<String, String> {
     if let Some((n, q)) = find_queued(system, job) {
         let j = with_jobq(system, &q, |jq, _| {
+            let j = jq.job_mut(n).ok_or("CPF1321 job not found")?;
+            super::security::may_control(&j.user, &j.qualified())?;
             let j = jq.remove(n).ok_or("CPF1321 job not found")?;
             Ok((j, true))
         })?;
@@ -318,6 +339,7 @@ pub fn endjob(system: &mut System, me: u32, job: &str, immediate: bool) -> Resul
         ));
     }
     let n = find_active(system, job).ok_or_else(|| format!("CPF1321 job {job} not found"))?;
+    control_active(system, n)?;
     if system_job(system, n, me) {
         return Err(format!("CPF1362 job {n:06} cannot be ended this way"));
     }
@@ -392,6 +414,7 @@ pub fn chgjob(
         }
         let mut moved = with_jobq(system, &q, |jq, _| {
             let j = jq.job_mut(n).ok_or("CPF1321 job not found")?;
+            super::security::may_control(&j.user, &j.qualified())?;
             for (k, v) in &rest {
                 j.attrs
                     .change(k, v)

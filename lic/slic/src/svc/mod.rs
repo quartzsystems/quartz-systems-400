@@ -332,6 +332,17 @@ fn sysval(system: &mut System, args: &[&str]) -> String {
         }
         [name, rest @ ..] => {
             let name = name.to_ascii_uppercase();
+            let security = vals.catalog().get(&name).is_some_and(|e| e.group == sysval::Group::Sec);
+            let actor = crate::stgsvc::security::actor();
+            let dst = crate::stgsvc::security::dst_allows_sysval_changes(system.lic.as_ref().map(|(_, r)| r));
+            if let Err(e) = sec::sysval::require_change(actor.as_ref(), &name, security, dst) {
+                return format!("{e}
+");
+            }
+            let Some(vals) = system.sysvals.as_mut() else {
+                return "System values not loaded
+".to_string();
+            };
             let before = vals.get(&name).map(|v| v.text()).unwrap_or_default();
             match vals.set_text(&name, &rest.join(" ")) {
                 Ok(effect) => {

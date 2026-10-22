@@ -365,3 +365,16 @@ impl Guard for SecGuard {
         grant::charge(txn, qsys, &text_of(&h.owner), pages * grant::PAGE_KB).map_err(to_store)
     }
 }
+
+/// Whether the session in force may do `op` on `id`, without recording
+/// a failure: for rules with more than one way in (spool, `DSPDTA`).
+/// The system may do anything.
+pub fn allowed(txn: &mut Txn<'_>, qsys: ObjectId, op: &'static str, id: ObjectId) -> bool {
+    let Some(s) = current() else {
+        return true;
+    };
+    let Ok((_, h)) = store::obj::ops::read_header(txn, id) else {
+        return false;
+    };
+    decide(txn, qsys, &s, op, &h).is_ok_and(|d| d.allowed)
+}

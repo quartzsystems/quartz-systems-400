@@ -217,3 +217,49 @@ ibm = "DSPJRN, APYJRNCHG, RMVJRNCHG: *USE to the journal"
 [op."jrn.change"]
 need = ["*OBJOPR", "*OBJMGT"]
 ibm = "CHGJRN: *OBJOPR and *OBJMGT to the journal"
+
+# ------------------------------------------------- work management
+
+[op."msgq.send"]
+need = ["*OBJOPR", "*ADD"]
+ibm = "SNDMSG, SNDBRKMSG, QMHSNDM: *OBJOPR and *ADD to the queue"
+
+[op."msgq.receive"]
+need = ["*OBJOPR", "*READ"]
+ibm = "RCVMSG RMV(*NO), DSPMSG: *OBJOPR and *READ (*USE)"
+
+[op."msgq.remove"]
+need = ["*OBJOPR", "*READ", "*DLT"]
+ibm = "RCVMSG RMV(*YES), RMVMSG: *USE and *DLT"
+
+[op."msgq.reply"]
+need = ["*OBJOPR", "*READ", "*ADD"]
+ibm = "SNDRPY: *USE and *ADD to the queue"
+
+[op."msgq.clear"]
+need = ["*OBJOPR", "*OBJMGT"]
+ibm = "CLRMSGQ: *OBJOPR and *OBJMGT (the Phase 6 brief: *OBJMGT to clear)"
+
+[op."msgq.change"]
+need = ["*OBJOPR", "*OBJMGT"]
+ibm = "CHGMSGQ: *OBJOPR and *OBJMGT"
+
+[op."msgq.allocate"]
+need = ["*USE"]
+ibm = "break delivery: *USE to the queue"
+
+[op."outq.manage"]
+need = ["*READ", "*ADD", "*DLT"]
+ibm = "AUTCHK(*DTAAUT): *READ, *ADD and *DLT to the output queue"
+
+[op."outq.use"]
+need = ["*USE"]
+ibm = "DSPDTA(*YES): *USE to the output queue"
+
+[op."wmobj.change"]
+need = ["*OBJOPR", "*OBJMGT"]
+ibm = "CHGJOBD, CHGCLS, CHGSBSD: *OBJOPR and *OBJMGT"
+
+[op."wmobj.display"]
+need = ["*OBJOPR", "*READ"]
+ibm = "DSPJOBD, DSPCLS, DSPSBSD: *OBJOPR and *READ"

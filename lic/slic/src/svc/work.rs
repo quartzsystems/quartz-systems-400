@@ -154,6 +154,7 @@ fn change(system: &mut System, p: &Params, type_code: u16) -> Result<String, Str
     let (lib, name) = target(p, type_code)?;
     in_store(system, |txn, qsys| {
         let id = find(txn, qsys, &lib, &name, type_code)?;
+        store::obj::guard::check_id(txn, "wmobj.change", id).map_err(|e| e.to_string())?;
         let old = wm::obj::read(txn, id).map_err(|e| err(&e))?;
         let (payload, text) = build(type_code, Some(&old), p)?;
         wm::obj::write(txn, id, &payload).map_err(|e| err(&e))?;
@@ -181,6 +182,7 @@ fn display(system: &mut System, p: &Params, type_code: u16) -> Result<String, St
     let (lib, name) = target(p, type_code)?;
     in_store(system, |txn, qsys| {
         let id = find(txn, qsys, &lib, &name, type_code)?;
+        store::obj::guard::check_id(txn, "wmobj.display", id).map_err(|e| e.to_string())?;
         let lib_name = ile::store::library_name(txn, id).map_err(|e| e.to_string())?;
         let b = wm::obj::read(txn, id).map_err(|e| err(&e))?;
         if type_code == types::JOBD {

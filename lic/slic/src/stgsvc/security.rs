@@ -169,3 +169,50 @@ pub fn as_user(req: &Request) -> bool {
             | R::PrtOpen { .. }
     )
 }
+
+/// The principal of the request being served; `None` is the system.
+pub fn actor() -> Option<Principal> {
+    sec::guard::current().map(|s| s.borrow().principal.clone())
+}
+
+/// Require special authority `a` of the actor; the system has all.
+pub fn require(a: sec::profile::SpecialAuth, what: &str) -> Result<(), String> {
+    match actor() {
+        Some(p) => p
+            .require(a, what)
+            .map_err(|e| e.to_string()),
+        None => Ok(()),
+    }
+}
+
+/// Controlling another job (`ENDJOB`, `HLDJOB`, `RLSJOB`, `CHGJOB`):
+/// its own user, or `*JOBCTL`.
+pub fn may_control(target_user: &str, job: &str) -> Result<(), String> {
+    match actor() {
+        Some(p) if p.user != target_user && !p.has(sec::profile::SpecialAuth::JOBCTL) => Err(format!(
+            "CPF1343 {} is not authorized to control job {job}; *JOBCTL special authority is needed",
+            p.user
+        )),
+        _ => Ok(()),
+    }
+}
+
+/// A scheduling priority within the actor's `PTYLMT`.
+pub fn clamp_priority(kw: &str, value: &str) -> String {
+    let Some(p) = actor() else {
+        return value.to_string();
+    };
+    match (kw, value.trim().parse::<u8>()) {
+        ("JOBPTY" | "OUTPTY" | "RUNPTY", Ok(n)) if n < p.ptylmt => p.ptylmt.to_string(),
+        _ => value.to_string(),
+    }
+}
+
+/// DST's "allow system value security changes", as the IPL left the LIC
+/// record; on when the record has no flags (as shipped).
+pub fn dst_allows_sysval_changes(record: Option<&licpart::Record>) -> bool {
+    record
+        .and_then(|r| r.tlv(svctools::dst::security::TAG_SECURITY))
+        .and_then(|t| t.first().copied())
+        .is_none_or(|b| svctools::dst::security::decode(b).allow_sysval_security_changes)
+}

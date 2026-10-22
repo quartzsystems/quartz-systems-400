@@ -49,6 +49,8 @@ pub struct Principal {
     pub qsecurity: u8,
     /// Owners the call stack adopts, nearest first.
     pub adopted: Vec<Adopted>,
+    /// `PTYLMT`: the highest scheduling priority the user may have.
+    pub ptylmt: u8,
 }
 
 wire_struct!(Principal {
@@ -57,7 +59,8 @@ wire_struct!(Principal {
     spcaut,
     group_spcaut,
     qsecurity,
-    adopted
+    adopted,
+    ptylmt
 });
 
 impl Principal {
@@ -78,6 +81,7 @@ impl Principal {
             group_spcaut: group_spcaut.0,
             qsecurity,
             adopted: Vec::new(),
+            ptylmt: p.ptylmt,
         })
     }
 
@@ -152,6 +156,7 @@ mod tests {
             group_spcaut: SpecialAuth::JOBCTL.0,
             qsecurity: 40,
             adopted: Vec::new(),
+            ptylmt: 0,
         };
         assert!(p.has(SpecialAuth::JOBCTL));
         assert!(!p.has(SpecialAuth::ALLOBJ));

@@ -220,6 +220,7 @@ pub fn chgjob(
             .get(id.number)
             .filter(|j| j.name == id.name.to_string() && j.user == id.user.to_string())
             .ok_or_else(|| format!("CPF1070 job {job} not found"))?;
+        super::security::may_control(&found.user, &found.qualified())?;
         found.number
     };
     let attrs = system
@@ -229,6 +230,7 @@ pub fn chgjob(
     // All or nothing: change a copy, then keep it.
     let mut a = attrs.clone();
     for (kw, v) in changes {
+        let v = &super::security::clamp_priority(kw, v);
         a.change(kw, v)
             .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF1317")))?;
     }

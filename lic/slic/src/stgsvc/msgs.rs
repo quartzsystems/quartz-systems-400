@@ -31,9 +31,11 @@ pub fn queue_name(q: &str) -> (String, String) {
     }
 }
 
-/// Run `f` on a queue; written back when `f` says it changed it.
+/// Run `f` on a queue, `op` checked first; written back when `f` says
+/// it changed it.
 pub fn with_queue<T>(
     system: &mut System,
+    op: &'static str,
     lib: &str,
     name: &str,
     f: impl FnOnce(&mut MsgQ, ObjectId) -> Result<(T, bool), String>,
@@ -44,6 +46,7 @@ pub fn with_queue<T>(
         let names = crate::svc::ile::name_context(txn, qsys);
         let id = wm::obj::find(txn, qsys, &names, lib, name, types::MSGQ)
             .map_err(|_| format!("CPF2403 message queue {name} in {lib} not found"))?;
+        store::obj::guard::check_id(txn, op, id).map_err(|e| e.to_string())?;
         let mut q =
             wm::obj::msgq::MsgQ::decode(&wm::obj::read(txn, id).map_err(|e| e.to_string())?)
                 .map_err(|e| e.to_string())?;
@@ -94,7 +97,7 @@ pub fn send(system: &mut System, lib: &str, name: &str, mut m: QMsg) -> Result<u
         return Ok(0);
     }
     let sent = m.clone();
-    let (key, id, breaks, brkpgm) = with_queue(system, lib, name, |q, id| {
+    let (key, id, breaks, brkpgm) = with_queue(system, "msgq.send", lib, name, |q, id| {
         let key = q
             .send(m)
             .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF2460")))?;
@@ -127,7 +130,7 @@ pub fn immediate(system: &System, sender_job: u32, kind: MsgKind, text: &str) ->
 /// Put `lib/name` in break delivery for `job`: `CPF2451` when another
 /// active job has it.
 pub fn allocate(system: &mut System, lib: &str, name: &str, job: u32) -> Result<(), String> {
-    let id = with_queue(system, lib, name, |_, id| Ok((id, false)))?;
+    let id = with_queue(system, "msgq.allocate", lib, name, |_, id| Ok((id, false)))?;
     if let Some(&holder) = system.break_alloc.get(&id)
         && holder != job
         && system.jobs.in_use(holder)

@@ -48,6 +48,7 @@ fn named_ops(text: &str) -> Vec<String> {
         "require_op(\"",
         "check_on(txn, \"",
         "check_in_library(txn, \"",
+        "allowed(txn, qsys, \"",
     ] {
         let mut rest = text;
         while let Some(i) = rest.find(call) {

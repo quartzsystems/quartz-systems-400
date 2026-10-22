@@ -262,4 +262,8 @@ ipc::rpc! {
     121 => fn next_iplsts / NextIplsts (value: u8) -> Result<(), String>;
     /// `QWCRSSTS`: the receiver of a format, statistics reset when asked.
     122 => fn sys_status / SysStatus (format: String, reset: bool) -> Result<Vec<u8>, String>;
+
+    /// Who the job is: its user, groups, special authorities, the
+    /// owners it adopts.
+    123 => fn whoami / Whoami () -> sec::auth::principal::Principal;
 }

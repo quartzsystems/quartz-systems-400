@@ -408,6 +408,10 @@ impl Service for Served<'_> {
 
     fn ping(&mut self) {}
 
+    fn whoami(&mut self) -> sec::auth::principal::Principal {
+        self.ctx.session.borrow().principal.clone()
+    }
+
     fn job_number(&mut self) -> Result<u32, String> {
         super::jobs::next(self.system)
     }
@@ -462,7 +466,7 @@ impl Service for Served<'_> {
     ) -> Result<Option<QMsg>, String> {
         let (lib, name) = msgs::queue_name(&queue);
         self.own_libl();
-        let r = msgs::with_queue(self.system, &lib, &name, |q, _| {
+        let r = msgs::with_queue(self.system, if remove { "msgq.remove" } else { "msgq.receive" }, &lib, &name, |q, _| {
             let m = q.receive(kind, key, remove);
             let changed = m.is_some();
             Ok((m, changed))
@@ -475,7 +479,7 @@ impl Service for Served<'_> {
         let from = msgs::sender(self.system, self.ctx.job.number);
         let (lib, name) = msgs::queue_name(&queue);
         self.own_libl();
-        let r = msgs::with_queue(self.system, &lib, &name, |q, _| {
+        let r = msgs::with_queue(self.system, "msgq.reply", &lib, &name, |q, _| {
             let k = q
                 .reply(key, &reply, from, msgs::now_micros())
                 .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPF2422")))?;
@@ -488,7 +492,7 @@ impl Service for Served<'_> {
     fn msgq_list(&mut self, queue: String) -> Result<Vec<QMsg>, String> {
         let (lib, name) = msgs::queue_name(&queue);
         self.own_libl();
-        let r = msgs::with_queue(self.system, &lib, &name, |q, _| Ok((q.msgs.clone(), false)));
+        let r = msgs::with_queue(self.system, "msgq.receive", &lib, &name, |q, _| Ok((q.msgs.clone(), false)));
         ile::set_libl(None);
         r
     }

@@ -128,7 +128,7 @@ pub enum StoreError {
     },
 
     /// Authority is lacking.
-    #[error("{msgid}: not authorized to {name} type {type_name} in library {library}")]
+    #[error("{msgid} not authorized to {name} type {type_name} in library {library}")]
     NotAuthorized {
         /// Object name.
         name: String,

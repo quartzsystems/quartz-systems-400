@@ -17,5 +17,6 @@ pub mod password;
 pub mod profile;
 pub mod rec;
 pub mod spec;
+pub mod sysval;
 
 pub use error::{Result, SecError};

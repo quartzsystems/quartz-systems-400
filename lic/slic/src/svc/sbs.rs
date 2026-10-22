@@ -197,6 +197,7 @@ fn wrkshrpool(system: &System) -> String {
 
 /// `CHGSHRPOOL POOL() SIZE(kb) ACTLVL(n)`.
 fn chgshrpool(system: &mut System, p: &Params) -> Result<String, String> {
+    crate::stgsvc::security::require(sec::profile::SpecialAuth::JOBCTL, "change a shared pool")?;
     let pool = p
         .upper("POOL")
         .or_else(|| p.pos.first().map(|s| s.to_ascii_uppercase()))

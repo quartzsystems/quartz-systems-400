@@ -165,6 +165,7 @@ pub fn wm_object(system: &mut System, qual: &str, ty: &str) -> Result<Vec<u8>, S
 
 /// A subsystem that may start: its library and description.
 pub fn check(system: &mut System, name: &str) -> Result<(String, Vec<u8>), String> {
+    super::security::require(sec::profile::SpecialAuth::JOBCTL, "start a subsystem")?;
     let name = name.to_ascii_uppercase();
     let bare = wm::obj::params::qualified(&name).1;
     if let Some(a) = system.sbs.get(&bare) {
@@ -266,6 +267,7 @@ pub fn state(system: &System, monitor: u32) -> SbsState {
 /// `ENDSBS`: `*ALL` ends every subsystem but the controlling one,
 /// which needs `*ALL` to end the last.
 pub fn end(system: &mut System, name: &str, immediate: bool, delay: u32) -> Result<String, String> {
+    super::security::require(sec::profile::SpecialAuth::JOBCTL, "end a subsystem")?;
     let name = name.to_ascii_uppercase();
     let ctl = controlling(system);
     if name == "*ALL" {

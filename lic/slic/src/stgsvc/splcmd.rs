@@ -39,6 +39,85 @@ fn me_user(system: &System, me: u32) -> String {
         .unwrap_or_default()
 }
 
+/// What the actor may do on an output queue: its owner, whether the
+/// actor has the queue's data authorities (`*READ *ADD *DLT`), and
+/// `*USE`.
+fn outq_rights(system: &mut System, q: &str) -> Result<(String, bool, bool), String> {
+    with_store(system, |txn, qsys| {
+        let (id, _) = spool::outq_object(txn, qsys, q)?;
+        let (_, h) = ops::read_header(txn, id).map_err(|e| e.to_string())?;
+        let manage = sec::guard::allowed(txn, qsys, "outq.manage", id);
+        let usable = sec::guard::allowed(txn, qsys, "outq.use", id);
+        Ok((store::obj::header::text_of(&h.owner), manage, usable))
+    })
+}
+
+/// Whether the actor may act on output queue `q` itself (`HLDOUTQ`,
+/// `RLSOUTQ`, `CLROUTQ`, `CHGOUTQ`): `*SPLCTL`; `*JOBCTL` with
+/// `OPRCTL(*YES)`; or what `AUTCHK` says: the queue's owner, or its
+/// data authorities. `CPF3303` when not.
+fn may_queue(system: &mut System, q: &str) -> Result<(), String> {
+    use sec::profile::SpecialAuth as S;
+    let Some(me) = super::security::actor() else {
+        return Ok(());
+    };
+    if me.has(S::SPLCTL) {
+        return Ok(());
+    }
+    let (real, oq, _) = spool::on_queue(system, q)?;
+    if oq.oprctl && me.has(S::JOBCTL) {
+        return Ok(());
+    }
+    let (owner, manage, _) = outq_rights(system, &real)?;
+    let ok = if oq.autchk == "*OWNER" { owner == me.user } else { manage };
+    if ok {
+        Ok(())
+    } else {
+        Err(format!("CPF3303 {} is not authorized to output queue {real}", me.user))
+    }
+}
+
+/// Whether the actor may act on spooled file `id`; `display` reads its
+/// data (`DSPSPLF`, `CPYSPLF`). The file's owner and `*SPLCTL` always
+/// may; otherwise the queue decides, and `DSPDTA` too for display:
+/// `*YES` lets anyone with `*USE` to the queue see it, `*OWNER` no one
+/// but the owner. `CPF3303` when not.
+fn may_spool(system: &mut System, id: u32, display: bool) -> Result<(), String> {
+    use sec::profile::SpecialAuth as S;
+    let Some(me) = super::security::actor() else {
+        return Ok(());
+    };
+    let Some(a) = system.spool.files.get(&id).map(|e| e.attrs.clone()) else {
+        return Ok(());
+    };
+    if a.job.1 == me.user || me.has(S::SPLCTL) {
+        return Ok(());
+    }
+    let (real, oq, _) = spool::on_queue(system, &a.outq)?;
+    let (owner, manage, usable) = outq_rights(system, &real)?;
+    let by_queue = (oq.oprctl && me.has(S::JOBCTL))
+        || if oq.autchk == "*OWNER" { owner == me.user } else { manage };
+    let ok = if display {
+        match oq.dspdta.as_str() {
+            "*YES" => usable || by_queue,
+            "*OWNER" => false,
+            _ => by_queue,
+        }
+    } else {
+        by_queue
+    };
+    if ok {
+        Ok(())
+    } else {
+        Err(format!(
+            "CPF3303 {} is not authorized to spooled file {} of job {}",
+            me.user,
+            a.name,
+            a.job_text()
+        ))
+    }
+}
+
 /// The spooled file `FILE() JOB() SPLNBR()` names.
 fn target(system: &System, me: u32, p: &Params) -> Result<u32, String> {
     let file = p.pos_or(0, "FILE")?.to_ascii_uppercase();
@@ -79,6 +158,7 @@ fn crt_chg_dlt(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<St
             Ok(format!("Output queue {name} created in library {lib}.\n"))
         }
         "chgoutq" => {
+            may_queue(system, &q)?;
             with_outq(system, &q, |oq, _| {
                 oq.apply(p).map_err(|e| err(&e))?;
                 Ok(((), true))
@@ -104,6 +184,7 @@ fn crt_chg_dlt(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<St
 /// `HLDOUTQ`, `RLSOUTQ`, `CLROUTQ`.
 fn queue_op(system: &mut System, cmd: &str, p: &Params) -> Result<String, String> {
     let q = p.pos_or(0, "OUTQ")?.to_ascii_uppercase();
+    may_queue(system, &q)?;
     match cmd {
         "hldoutq" | "rlsoutq" => {
             let hold = cmd == "hldoutq";
@@ -284,6 +365,7 @@ fn wrksplf(system: &System, me: u32, p: &Params) -> String {
 /// `DSPSPLF FILE JOB SPLNBR [VIEW(*TEXT|*FCFC|*HEX)] [PAGE(n)]`.
 fn dspsplf(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
     let id = target(system, me, p)?;
+    may_spool(system, id, true)?;
     let (a, data) = spool::data(system, id)?;
     let view = p.upper("VIEW").unwrap_or_else(|| "*TEXT".into());
     let mut out = format!(
@@ -326,6 +408,7 @@ fn dspsplf(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
 /// `CPYSPLF FILE TOFILE JOB SPLNBR TOMBR MBROPT CTLCHAR`.
 fn cpysplf(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
     let id = target(system, me, p)?;
+    may_spool(system, id, true)?;
     let to = p.pos_or(1, "TOFILE")?.to_ascii_uppercase();
     let replace = p.upper("MBROPT").is_none_or(|o| o == "*REPLACE");
     let mbr = match p.upper("TOMBR").as_deref() {
@@ -359,6 +442,7 @@ fn cpysplf(system: &mut System, me: u32, p: &Params) -> Result<String, String> {
 /// `CHGSPLFA`, `HLDSPLF`, `RLSSPLF`, `DLTSPLF`, `WRKSPLFA`.
 fn file_op(system: &mut System, me: u32, cmd: &str, p: &Params) -> Result<String, String> {
     let id = target(system, me, p)?;
+    may_spool(system, id, false)?;
     let name = system
         .spool
         .files

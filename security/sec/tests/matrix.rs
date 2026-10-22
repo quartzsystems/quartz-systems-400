@@ -95,6 +95,7 @@ struct World {
     qsys: ObjectId,
     app: ObjectId,
     n: usize,
+    made: std::collections::HashMap<(u16, u8, u32), ObjectId>,
 }
 
 impl World {
@@ -162,6 +163,7 @@ fn principal(source: Source) -> Principal {
         group_spcaut: 0,
         qsecurity: 40,
         adopted: Vec::new(),
+        ptylmt: 0,
     };
     match source {
         Source::AllObj => p.spcaut = SpecialAuth::ALLOBJ.0,
@@ -219,7 +221,15 @@ fn setup() -> (store::Store, World) {
     )
     .unwrap();
     t.commit().unwrap();
-    (store, World { qsys, app, n: 0 })
+    (
+        store,
+        World {
+            qsys,
+            app,
+            n: 0,
+            made: std::collections::HashMap::new(),
+        },
+    )
 }
 
 #[test]
@@ -241,7 +251,15 @@ fn every_operation_source_and_grant() {
                 continue;
             }
             for bits in grants() {
-                let id = w.object(&mut t, code, source, bits);
+                // One object per type, source and grant, shared by every operation.
+                let slot = (code, source as u8, bits.0);
+                let id = if let Some(id) = w.made.get(&slot) {
+                    *id
+                } else {
+                    let id = w.object(&mut t, code, source, bits);
+                    w.made.insert(slot, id);
+                    id
+                };
                 let h = grant::header(&mut t, id).unwrap();
                 let p = principal(source);
                 let d = search::check(&mut t, w.qsys, &p, &h, need).unwrap();

@@ -259,6 +259,9 @@ fn strsbs(c: &mut Console, p: &Params) -> Result<String, String> {
 /// IPLSRC(*PANEL) CONFIRM(...)`: `slic` ends the subsystems, the system
 /// jobs and the storage service, then powers down.
 fn pwrdwnsys(c: &mut Console, p: &Params) -> Result<String, String> {
+    let me = c.link.borrow_mut().with(stg::Client::whoami);
+    me.require(sec::profile::SpecialAuth::JOBCTL, "power down the system")
+        .map_err(|e| e.to_string())?;
     let immediate = match p.upper("OPTION").as_deref() {
         None | Some("*CNTRLD") => false,
         Some("*IMMED") => true,
