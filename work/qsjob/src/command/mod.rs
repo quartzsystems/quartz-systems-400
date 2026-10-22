@@ -167,7 +167,7 @@ pub fn run_with(
         || r.selective()
         || matches!(mode, RunMode::PromptRun | RunMode::PromptReturn)
     {
-        match prompt(job, host, r, mode) {
+        match prompt(job, host, &r, mode) {
             Ok(Some(r)) => r,
             Ok(None) => {
                 let f = Fail::new("CPF6801", "");
@@ -196,13 +196,13 @@ pub fn run_with(
 fn prompt(
     job: &mut Job,
     host: &Host,
-    r: Resolved,
+    r: &Resolved,
     _mode: RunMode,
 ) -> Result<Option<Resolved>, Fail> {
     if !host.has_display() {
         return Err(Fail::new("CPF6802", ""));
     }
-    prompt::session(job, host, &r)
+    prompt::session(job, host, r)
 }
 
 /// Run a resolved command where its processing program lives.

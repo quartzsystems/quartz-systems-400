@@ -783,7 +783,7 @@ fn default_texts(p: &Parm, path: &Path, out: &mut HashMap<Path, String>) {
     match &p.ty {
         ParmType::Qual { .. } => {
             if let [one] = toks.as_slice() {
-                tok_texts(p, one, path, out)
+                tok_texts(p, one, path, out);
             }
             for (k, q) in p.items.iter().enumerate() {
                 let sub = path.step(k);
