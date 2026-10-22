@@ -383,8 +383,12 @@ cargo test -p store                       # unit, property and crash tests
 - User spaces are at most 16 MiB; a queue reclaims space only when it
   empties.
 - Locks are in-process and per caller-supplied job handle.
-- RCLSTG runs with the store otherwise idle and treats a valid header on
-  a free page as a deleted object.
+- RCLSTG quiesces the store for a rebuild (`Store::quiesce`: refused
+  with `CPF8201`, a placeholder identifier, while any job holds an
+  object lock; `begin` fails with `Quiesced` until `release`), and
+  treats a valid header on a free page as a deleted object. The storage
+  service's own quiesce ahead of the command, holding the jobs' requests
+  back, is its wiring to add.
 
 ## Acceptance evidence
 

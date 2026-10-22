@@ -179,8 +179,23 @@ impl Store {
         Ok(report)
     }
 
-    /// Reclaim storage. See the module documentation.
+    /// Reclaim storage. See the module documentation. A rebuild needs
+    /// the store quiesced; one that is not yet is quiesced here and
+    /// released afterwards, which fails with `Busy` while jobs hold
+    /// object locks. `*CHECK` writes nothing and runs regardless.
     pub fn reclaim(&mut self, mode: ReclaimMode, now: u64) -> Result<ReclaimReport> {
+        let mine = mode != ReclaimMode::Check && !self.is_quiesced();
+        if mine {
+            self.quiesce()?;
+        }
+        let r = self.reclaim_quiesced(mode, now);
+        if mine {
+            self.release();
+        }
+        r
+    }
+
+    fn reclaim_quiesced(&mut self, mode: ReclaimMode, now: u64) -> Result<ReclaimReport> {
         self.checkpoint()?;
         let mut report = ReclaimReport {
             free_before: self.asp().total_free(),
@@ -599,7 +614,7 @@ impl Store {
         report: &mut ReclaimReport,
     ) -> Result<usize> {
         let asp = self.asp_number();
-        let mut txn = self.begin()?;
+        let mut txn = self.begin_exclusive()?;
         for id in damaged {
             if let Some((pno, h)) = headers.get_mut(id) {
                 h.damaged = true;
