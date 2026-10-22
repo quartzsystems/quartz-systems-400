@@ -4,7 +4,10 @@
 // root directory of this project.
 // Open question 9: reply R retries the failing instruction.
 ctl-opt dftactgrp(*no) actgrp(*new) option(*srcstmt);
-dcl-pr QORACLE extpgm('QORACLE'); name char(10); line char(80); end-pr;
+dcl-pr QORACLE extpgm('QORACLE');
+  name char(10) const;
+  line char(80) const;
+  end-pr;
 dcl-s z packed(3:0) inz(7);
 dcl-s d packed(3:0) inz(0);
 // Reply R at the inquiry after CHGVAR'ing nothing: the divisor stays

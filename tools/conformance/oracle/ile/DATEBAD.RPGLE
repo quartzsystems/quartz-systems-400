@@ -4,7 +4,10 @@
 // root directory of this project.
 // Open question 2: the identifier of an invalid date operation.
 ctl-opt dftactgrp(*no) actgrp(*new) option(*srcstmt);
-dcl-pr QORACLE extpgm('QORACLE'); name char(10); line char(80); end-pr;
+dcl-pr QORACLE extpgm('QORACLE');
+  name char(10) const;
+  line char(80) const;
+  end-pr;
 dcl-s d date;
 dcl-s t char(10) inz('2026-13-01');
 monitor;

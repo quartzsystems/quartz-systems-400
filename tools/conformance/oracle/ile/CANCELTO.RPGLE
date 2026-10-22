@@ -4,8 +4,12 @@
 // root directory of this project.
 // Open question 13: what the caller of a cancelled program receives.
 ctl-opt dftactgrp(*no) actgrp(*new) option(*srcstmt);
-dcl-pr QORACLE extpgm('QORACLE'); name char(10); line char(80); end-pr;
-dcl-pr FCCALLEE extpgm('FCCALLEE'); end-pr;
+dcl-pr QORACLE extpgm('QORACLE');
+  name char(10) const;
+  line char(80) const;
+  end-pr;
+dcl-pr FCCALLEE extpgm('FCCALLEE');
+  end-pr;
 dcl-ds psds psds;
   excid char(7) pos(40);
 end-ds;

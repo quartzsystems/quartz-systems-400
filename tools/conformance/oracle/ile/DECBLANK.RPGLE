@@ -4,7 +4,10 @@
 // root directory of this project.
 // Open question 5: %DEC of text with an embedded blank.
 ctl-opt dftactgrp(*no) actgrp(*new) option(*srcstmt);
-dcl-pr QORACLE extpgm('QORACLE'); name char(10); line char(80); end-pr;
+dcl-pr QORACLE extpgm('QORACLE');
+  name char(10) const;
+  line char(80) const;
+  end-pr;
 dcl-s t char(5) inz('1 2');
 dcl-s n packed(5:0);
 monitor;

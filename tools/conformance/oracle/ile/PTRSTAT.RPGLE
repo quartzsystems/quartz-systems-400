@@ -5,7 +5,10 @@
 // Open question 4: a pointer advanced one byte past a static, then past
 // an automatic, and dereferenced.
 ctl-opt dftactgrp(*no) actgrp(*new) option(*srcstmt);
-dcl-pr QORACLE extpgm('QORACLE'); name char(10); line char(80); end-pr;
+dcl-pr QORACLE extpgm('QORACLE');
+  name char(10) const;
+  line char(80) const;
+  end-pr;
 dcl-pr auto end-pr;
 dcl-s s1 char(4) inz('AAAA');
 dcl-s s2 char(4) inz('BBBB');

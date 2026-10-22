@@ -93,7 +93,10 @@ pub fn rpg_source() -> String {
     s.push_str("read qdfuzzin;\n");
     s.push_str("dow not %eof(qdfuzzin);\n");
     s.push_str("  oid = iid;\n");
-    s.push_str("  inter = ''; r1t = ''; rht = ''; rrt = '';\n");
+    // One statement per line: the machine's compiler wants the rest blank.
+    for v in ["inter", "r1t", "rht", "rrt"] {
+        let _ = writeln!(s, "  {v} = '';");
+    }
     s.push_str("  monitor;\n");
     s.push_str("    select;\n");
     arithmetic(&mut s);
@@ -230,7 +233,7 @@ run, unload:
 
 ```
 CPYFRMIMPF FROMSTMF('/home/you/cases.csv') TOFILE(QDFUZZ/QDFUZZIN)
-           MBROPT(*REPLACE) RCDDLM(*CRLF) STRDLM('\"') FLDDLM(',')
+           MBROPT(*REPLACE) RCDDLM(*ALL) STRDLM('\"') FLDDLM(',')
 CALL QDFUZZ/QDFUZZ
 CPYTOIMPF FROMFILE(QDFUZZ/QDFUZZOUT) TOSTMF('/home/you/results.csv')
           STMFCODPAG(*PCASCII) RCDDLM(*CRLF) STRDLM('\"') FLDDLM(',')
@@ -250,6 +253,15 @@ edited text in brackets, `r1` the result in a 15,5 field, `rh` with
 half-adjust, `rr` under `EVAL(R)`), our value and the machine's. Error
 tokens are `E` and the RPG status code (`E00103` size error, `E00102`
 division by zero).
+
+## Captured 2026-10-22 on pub400.com (IBM i 7.5)
+
+`results.csv` came from pub400 (job CCSID 273). `CRTBNDRPG` needed
+`GENLVL(20)`: three edit-word cases (statements 7155, 7176 and 7179)
+draw `RNF8004`, not enough replaceable characters, and compile anyway.
+`cargo test -p qdecimal --test oracle` reports 590 mismatches, 584 in
+`inter` (the `%CHAR` of the intermediate result, mostly fewer decimal
+positions than this implementation keeps) and 6 in `rr`.
 "
     .to_string()
 }

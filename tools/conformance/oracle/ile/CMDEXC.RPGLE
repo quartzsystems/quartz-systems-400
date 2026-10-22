@@ -4,11 +4,26 @@
 // root directory of this project.
 // Open question 15: QCMDEXC runs the command at once.
 ctl-opt dftactgrp(*no) actgrp(*new) option(*srcstmt);
-dcl-pr QORACLE extpgm('QORACLE'); name char(10); line char(80); end-pr;
-dcl-pr QCMDEXC extpgm('QCMDEXC'); cmd char(200) const; len packed(15:5) const; end-pr;
-dcl-pr QMHRCVPM extpgm('QMHRCVPM'); recv char(300); recvlen int(10) const; fmt char(8) const;
-  entry char(10) const; counter int(10) const; type char(10) const; key char(4) const;
-  wait int(10) const; action char(10) const; err char(16); end-pr;
+dcl-pr QORACLE extpgm('QORACLE');
+  name char(10) const;
+  line char(80) const;
+  end-pr;
+dcl-pr QCMDEXC extpgm('QCMDEXC');
+  cmd char(200) const;
+  len packed(15:5) const;
+  end-pr;
+dcl-pr QMHRCVPM extpgm('QMHRCVPM');
+  recv char(300);
+  recvlen int(10) const;
+  fmt char(8) const;
+  entry char(10) const;
+    counter int(10) const;
+    type char(10) const;
+    key char(4) const;
+  wait int(10) const;
+    action char(10) const;
+    err char(16);
+    end-pr;
 dcl-s recv char(300);
 dcl-s err char(16) inz(x'00000010');
 dcl-s cmd char(200);

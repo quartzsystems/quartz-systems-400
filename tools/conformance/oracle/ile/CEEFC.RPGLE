@@ -4,10 +4,24 @@
 // root directory of this project.
 // Open question 12: the feedback codes of misused condition APIs.
 ctl-opt dftactgrp(*no) actgrp(*new) option(*srcstmt);
-dcl-pr QORACLE extpgm('QORACLE'); name char(10); line char(80); end-pr;
-dcl-pr CEEHDLU; proc pointer(*proc); fc char(12) options(*omit); end-pr;
-dcl-pr CEEMRCR; action int(10); fc char(12) options(*omit); end-pr;
-dcl-pr NEVER; tok char(12); utok pointer; rc int(10); newtok char(12); end-pr;
+dcl-pr QORACLE extpgm('QORACLE');
+  name char(10) const;
+  line char(80) const;
+  end-pr;
+dcl-pr CEEHDLU;
+  proc pointer(*proc);
+  fc char(12) options(*omit);
+  end-pr;
+dcl-pr CEEMRCR;
+  action int(10);
+  fc char(12) options(*omit);
+  end-pr;
+dcl-pr NEVER;
+  tok char(12);
+  utok pointer;
+  rc int(10);
+  newtok char(12);
+  end-pr;
 dcl-s fc char(12);
 dcl-s pp pointer(*proc);
 dcl-s one int(10) inz(1);
@@ -20,6 +34,11 @@ QORACLE('CEEFC' : 'CEEMRCR action 1: ' + %subst(fc : 6 : 3) + %char(%int(%subst(
 *inlr = *on;
 
 dcl-proc NEVER;
-  dcl-pi *n; tok char(12); utok pointer; rc int(10); newtok char(12); end-pi;
+  dcl-pi *n;
+    tok char(12);
+    utok pointer;
+    rc int(10);
+    newtok char(12);
+    end-pi;
   rc = 20;
 end-proc;

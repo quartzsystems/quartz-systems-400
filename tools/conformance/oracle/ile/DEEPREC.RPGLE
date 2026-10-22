@@ -4,8 +4,13 @@
 // root directory of this project.
 // Open question 14: the identifier a stack overflow raises.
 ctl-opt dftactgrp(*no) actgrp(*new) option(*srcstmt);
-dcl-pr QORACLE extpgm('QORACLE'); name char(10); line char(80); end-pr;
-dcl-pr DOWN; n int(10) value; end-pr;
+dcl-pr QORACLE extpgm('QORACLE');
+  name char(10) const;
+  line char(80) const;
+  end-pr;
+dcl-pr DOWN;
+  n int(10) value;
+  end-pr;
 dcl-ds psds psds;
   excid char(7) pos(40);
 end-ds;
@@ -17,7 +22,9 @@ endmon;
 *inlr = *on;
 
 dcl-proc DOWN;
-  dcl-pi *n; n int(10) value; end-pi;
+  dcl-pi *n;
+    n int(10) value;
+    end-pi;
   dcl-s pad char(4096);
   pad = %char(n);
   DOWN(n + 1);

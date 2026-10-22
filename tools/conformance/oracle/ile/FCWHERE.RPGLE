@@ -4,8 +4,12 @@
 // root directory of this project.
 // Open question 10: which MONMSG CPF9999 runs, the callee's or the caller's.
 ctl-opt dftactgrp(*no) actgrp(*new) option(*srcstmt);
-dcl-pr QORACLE extpgm('QORACLE'); name char(10); line char(80); end-pr;
-dcl-pr FCCALLEE extpgm('FCCALLEE'); end-pr;
+dcl-pr QORACLE extpgm('QORACLE');
+  name char(10) const;
+  line char(80) const;
+  end-pr;
+dcl-pr FCCALLEE extpgm('FCCALLEE');
+  end-pr;
 monitor;
   FCCALLEE();
 on-error;

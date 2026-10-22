@@ -1,0 +1,20 @@
+CVTCHAR: [1.50]
+CVTCHAR: [.50]
+CVTCHAR: [100]
+CVTCHAR: [-.50]
+DATEBAD: status 112
+SUBSTBAD: status 100
+STATMAP: MCH1211 status 102
+STATMAP: MCH1210 status 103
+STATMAP: MCH1202 status 907
+STATMAP: MCH0603 status 121
+STATMAP: MCH3601 status 222
+FCWHERE: caller saw status 202
+PROMOTE: monitor saw status 102
+CANCELTO: caller got MCH1211 status 202
+DEEPREC: got MCH4429 status 202
+PTRSTAT: static neighbour read ok
+PTRSTAT: auto neighbour read ok
+DECBLANK: [12]
+DIFFTS: earlier time of day: months 0
+DIFFTS: later time of day: months 1

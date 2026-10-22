@@ -4,7 +4,10 @@
 // root directory of this project.
 // Open question 3: the identifier of %SUBST past the end.
 ctl-opt dftactgrp(*no) actgrp(*new) option(*srcstmt);
-dcl-pr QORACLE extpgm('QORACLE'); name char(10); line char(80); end-pr;
+dcl-pr QORACLE extpgm('QORACLE');
+  name char(10) const;
+  line char(80) const;
+  end-pr;
 dcl-s s char(6) inz('abcdef');
 dcl-s r char(10);
 dcl-s start int(10) inz(5);

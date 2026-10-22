@@ -57,15 +57,19 @@ fn machine_observations_match_when_captured() {
         .filter_map(|l| l.split_once(": "))
         .map(|(a, b)| (a.trim().to_string(), b.trim().to_string()))
         .collect();
+    // Per program, in order: a program the machine could not run (no
+    // reply queued, a function check) leaves its own lines out and
+    // shifts nothing else.
     let mut differ = Vec::new();
-    for (i, (pgm, line)) in ours().into_iter().enumerate() {
-        match machine.get(i) {
-            Some((mp, ml)) if mp == pgm && ml == line => {}
-            Some((mp, ml)) => differ.push(format!("{pgm}: ours `{line}`, machine `{mp}: {ml}`")),
-            None => differ.push(format!(
-                "{pgm}: ours `{line}`, machine has no line {}",
-                i + 1
-            )),
+    let mut seen: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
+    for (pgm, line) in ours() {
+        let n = seen.entry(pgm).or_insert(0);
+        let theirs = machine.iter().filter(|(mp, _)| mp == pgm).nth(*n);
+        *n += 1;
+        match theirs {
+            Some((_, ml)) if ml == line => {}
+            Some((_, ml)) => differ.push(format!("{pgm}: ours `{line}`, machine `{ml}`")),
+            None => differ.push(format!("{pgm}: ours `{line}`, machine has no line {n}")),
         }
     }
     assert!(

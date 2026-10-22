@@ -34,5 +34,19 @@ that differ; without the file the test reports itself skipped.
 `QS400_UPDATE_ORACLE_ILE=1` is not a thing: the expected file comes
 from the machine only.
 
-Not captured yet: the machine at hand (IBM i 7.1) has no RPG compiler
-(no `CRTBNDRPG` in any library), and every program here is RPG.
+## Captured 2026-10-22 on pub400.com (IBM i 7.5)
+
+The compiler there wanted one statement per line, `const` on the
+`QORACLE` prototype's parameters (literals cannot be passed by
+reference), and a variable zero instead of `/ 0`, which it rejects at
+compile time; the sources now have all three. A pub400 user cannot
+`ADDRPYLE`, so the driver ran with `INQMSGRPY(*DFT)`: `RESUMEG` and
+`REPLYR` ended on the default reply and left no line. To answer them,
+sign on interactively, `CRTPF QTEMP/ORACLE RCDLEN(80)`, `ADDLIBLE
+CWELLMAN2`, `CALL RESUMEG` and reply `G`, `CALL REPLYR` and reply `R`,
+then `DSPPFM QTEMP/ORACLE`. `CEEFC` ended in a function check before
+writing anything, and `CMDEXC` got `CPD0031` (`SNDPGMMSG` is not
+allowed through `QCMDEXC`), both from the job log. The comparer
+matches lines per program, so those gaps shift nothing. The output
+file is a hex field, so `CPYTOIMPF` wrote it unconverted (job CCSID
+273); `expected/ile-oracle.txt` is the decoded text.
