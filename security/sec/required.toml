@@ -267,3 +267,13 @@ ibm = "DSPJOBD, DSPCLS, DSPSBSD: *OBJOPR and *READ"
 [op."autl.use"]
 need = ["*USE"]
 ibm = "QUSEADPAUT: *USE to the list to create programs with USEADPAUT(*YES)"
+
+# -------------------------------------------------------------- commands
+
+[op."cmd.run"]
+need = ["*USE"]
+ibm = "running a command: *OBJOPR and *USE to the *CMD"
+
+[op."cmd.change"]
+need = ["*OBJMGT", "*USE"]
+ibm = "CHGCMD, CHGCMDDFT, CHGPRXCMD: *OBJMGT and *USE to the *CMD"

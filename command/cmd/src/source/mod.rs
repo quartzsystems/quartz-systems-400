@@ -464,6 +464,11 @@ impl Builder {
                         Some(item) => d.ctl = DepCtl::Item { item },
                         None => self.err(diag("value-bad", &[k, &one.text()]), s.line),
                     },
+                    // `CTL(&KWD *EQ value)` without the inner parentheses.
+                    [Tok::Var(_), _, _] => match dep_item(&Tok::Paren(args.clone())) {
+                        Some(item) => d.ctl = DepCtl::Item { item },
+                        None => self.err(diag("value-bad", &[k, &Tok::join(args)]), s.line),
+                    },
                     _ => self.err(diag("value-bad", &[k, &Tok::join(args)]), s.line),
                 },
                 "PARM" => {

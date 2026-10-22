@@ -21,13 +21,21 @@
     clippy::struct_excessive_bools
 )]
 
+pub mod analyze;
+pub mod block;
 pub mod def;
 pub mod error;
 pub mod payload;
 pub mod rules;
 pub mod source;
+pub mod store;
 pub mod token;
+pub mod value;
 
+pub use analyze::{Bound, CmdSource, Env, MemSource, Resolved, Setting, analyze};
+pub use block::{Built, Parms, Segment};
 pub use def::{CmdDef, Parm, ParmType, Qual};
 pub use error::{CmdError, Diag, Result};
 pub use payload::CmdObject;
+pub use token::{Sel, Tok};
+pub use value::Value;

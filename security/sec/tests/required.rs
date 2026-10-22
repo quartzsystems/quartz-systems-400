@@ -22,6 +22,7 @@ const ROOTS: &[&str] = &[
     "runtime/ile/src",
     "runtime/msgf/src",
     "lic/slic/src",
+    "command/cmd/src",
 ];
 
 fn sources(dir: &Path, out: &mut Vec<PathBuf>) {
