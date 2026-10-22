@@ -118,6 +118,9 @@ fn field_text(f: &FieldDef, v: &Value, opts: &ImpfOpts) -> String {
                     }
                 }
                 DataType::Timestamp => s.trim_end().to_string(),
+                // The machine writes a hex field's bytes unconverted: as
+                // Latin-1 they are what `*PCASCII` shows.
+                DataType::Hex => bytes.iter().map(|&b| char::from(b)).collect(),
                 _ => opts.rmvblank.apply(&s).to_string(),
             }
         }

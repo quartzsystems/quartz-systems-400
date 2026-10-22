@@ -339,7 +339,7 @@ impl Value {
             DataType::Time => text(
                 &self
                     .as_time()?
-                    .render(f.time_fmt.unwrap_or_default(), f.time_sep),
+                    .stored(f.time_fmt.unwrap_or_default(), f.time_sep),
             ),
             DataType::Timestamp => text(&self.as_timestamp()?.render_field()),
             _ => {
