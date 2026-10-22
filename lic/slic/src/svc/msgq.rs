@@ -434,8 +434,8 @@ fn rpyle(system: &mut System, p: &Params, edit: Edit) -> Result<String, String> 
                 let (text, rest) = match v.strip_prefix('\'').and_then(|r| r.split_once('\'')) {
                     Some((t, rest)) => (t.to_string(), rest.trim()),
                     None => match v.rsplit_once(' ') {
-                        Some((t, n)) if n.trim().parse::<usize>().is_ok() => {
-                            (t.trim().to_string(), n.trim())
+                        Some((txt, pos)) if pos.trim().parse::<usize>().is_ok() => {
+                            (txt.trim().to_string(), pos.trim())
                         }
                         _ => (v.to_string(), ""),
                     },
