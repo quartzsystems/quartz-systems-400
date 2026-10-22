@@ -59,6 +59,19 @@ fn oracle(text: &str) -> Vec<(usize, String)> {
     out
 }
 
+/// The diagnostic that says why: the second identifier when the first
+/// is the analyzer's escape (`CPF0001` here, `QCMDCHK`'s `CPF0006`
+/// there), else the first.
+fn first_diagnostic(outcome: &str) -> &str {
+    let mut ids = outcome.split_whitespace();
+    let first = ids.next().unwrap_or("");
+    if matches!(first, "CPF0001" | "CPF0006") {
+        ids.next().unwrap_or(first)
+    } else {
+        first
+    }
+}
+
 #[test]
 fn analyzer_agrees_with_the_box() {
     let path = kit().join("oracle.txt");
@@ -77,12 +90,7 @@ fn analyzer_agrees_with_the_box() {
         compared += 1;
         let same = match (ours.strip_prefix("OK "), theirs.strip_prefix("OK ")) {
             (Some(_), Some(_)) => true,
-            (None, None) => {
-                let mut ids = theirs.split_whitespace();
-                let escape = ids.next().unwrap_or("");
-                let first_diag = ids.next().unwrap_or(escape);
-                ours.get(..7) == Some(first_diag)
-            }
+            (None, None) => first_diagnostic(ours) == first_diagnostic(theirs),
             _ => false,
         };
         if !same {
