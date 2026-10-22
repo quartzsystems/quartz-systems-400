@@ -57,6 +57,11 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
     }
     let line = sys_cpps::bridge::specified_line(&entry.word, &parms);
     let out = jobcmd::command(job, host, &entry.word, &line);
+    // A display's first line may well start with a message identifier
+    // (the job log's, the queue's): no escape in that.
+    if matches!(entry.word.as_str(), "dspjoblog" | "dspmsgq" | "dmp") {
+        return Ok(out);
+    }
     classify(out)
 }
 
