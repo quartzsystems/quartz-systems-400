@@ -130,3 +130,51 @@ note = "tape is Phase 11"
 [cmd.STRSST]
 stub = "CPF0901"
 note = "system service tools at a display are Phase 8"
+
+# ------------------------------------------------- the cleanup's commands
+
+[cmd.RTVMBRD]
+site = "job"
+note = "the member description through the job's link"
+
+[cmd.RTVUSRPRF]
+site = "job"
+note = "the profile through the security API"
+
+[cmd.RTVNETA]
+site = "job"
+note = "the network attributes through the job's link"
+
+[cmd.RTVMSG]
+site = "job"
+note = "the description through the job's link, formatted with MSGDTA"
+
+[cmd.RTVCFGSTS]
+site = "job"
+note = "the device description's varied-on flag"
+
+[cmd.RCLRSC]
+site = "job"
+note = "overrides of returned call levels; open files wait for per-program ownership"
+
+[cmd.DSPHDWRSC]
+word = "hw"
+
+[cmd.WRKHDWRSC]
+word = "hw"
+
+[cmd.EDTAUTL]
+word = "dspautl"
+note = "the editor waits for display files; the list is shown"
+
+[cmd.WRKBNDDIR]
+word = "dspbnddir"
+
+[cmd.PRTUSRPRF]
+word = "prtusrprf"
+
+[cmd.ANZPRFACT]
+word = "anzprfact"
+
+[cmd.CHGJOBQ]
+word = "chgjobq"

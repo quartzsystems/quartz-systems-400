@@ -13,7 +13,11 @@
 //! the inventory gives it.
 
 pub(crate) mod clpgm;
+mod dbcmd;
 mod direct;
+mod msgfcmd;
+mod objcmd;
+mod sysinfo;
 
 use cmd::block::Parms;
 use stg::proto::{CmdMsg, CmdReply};
@@ -42,10 +46,12 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             name,
             &format!("{name} runs in the job, not the service"),
         ),
-        Site::Service => match direct::run(system, name, parms) {
-            Some(r) => r,
-            None => bridge(system, e, parms, typed),
-        },
+        Site::Service => direct::run(system, name, parms)
+            .or_else(|| msgfcmd::run(system, name, parms))
+            .or_else(|| dbcmd::run(system, name, parms))
+            .or_else(|| objcmd::run(system, name, parms))
+            .or_else(|| sysinfo::run(system, name, parms))
+            .unwrap_or_else(|| bridge(system, e, parms, typed)),
     }
 }
 

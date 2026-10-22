@@ -626,3 +626,99 @@ pub fn list(txn: &mut Txn<'_>, env: &Env<'_>) -> Result<Vec<(String, UserClass, 
     }
     Ok(out)
 }
+
+/// `PRTUSRPRF TYPE(*AUTINFO|*ENVINFO|*PWDINFO)`: one line per profile
+/// for the spooled report; `*ALLOBJ` is needed.
+pub fn prtusrprf(txn: &mut Txn<'_>, env: &Env<'_>, kind: &str) -> Result<Vec<String>> {
+    env.actor.require(SpecialAuth::ALLOBJ, "print user profiles")?;
+    let mut lines = vec![match kind {
+        "*ENVINFO" => format!(
+            "{:<10} {:<10} {:<21} {:<21} {:<21} {:<21} {:<21} {}",
+            "Profile", "Curlib", "Initial program", "Initial menu", "Job description",
+            "Message queue", "Output queue", "Printer"
+        ),
+        "*PWDINFO" => format!(
+            "{:<10} {:<8} {:<10} {:>7} {:<10} {}",
+            "Profile", "Password", "Changed", "Expitv", "Status", "Last sign-on"
+        ),
+        _ => format!(
+            "{:<10} {:<8} {:<10} {:<8} {:<10} {}",
+            "Profile", "Class", "Group", "Owner", "Status", "Special authorities"
+        ),
+    }];
+    let qualified = |(n, l): &(String, String)| {
+        if n.starts_with('*') || n.is_empty() {
+            n.clone()
+        } else {
+            format!("{l}/{n}")
+        }
+    };
+    for name in objects::list(txn, env.qsys)? {
+        let (_, p) = objects::read(txn, env.qsys, &name)?;
+        let status = if p.disabled { "*DISABLED" } else { "*ENABLED" };
+        lines.push(match kind {
+            "*ENVINFO" => format!(
+                "{:<10} {:<10} {:<21} {:<21} {:<21} {:<21} {:<21} {}",
+                p.name,
+                p.curlib,
+                qualified(&p.inlpgm),
+                qualified(&p.inlmnu),
+                qualified(&p.jobd),
+                qualified(&p.msgq),
+                qualified(&p.outq),
+                p.prtdev
+            ),
+            "*PWDINFO" => format!(
+                "{:<10} {:<8} {:<10} {:>7} {:<10} {}",
+                p.name,
+                if p.pwd_none { "*NONE" } else { "*YES" },
+                if p.pwd_changed == 0 { "*NONE".to_string() } else { civil(p.pwd_changed) },
+                if p.pwdexpitv == 0 { "*SYSVAL".to_string() } else { p.pwdexpitv.to_string() },
+                status,
+                if p.last_signon == 0 { "*NONE".to_string() } else { civil(p.last_signon) }
+            ),
+            _ => format!(
+                "{:<10} {:<8} {:<10} {:<8} {:<10} {}",
+                p.name,
+                p.usrcls.name(),
+                if p.grpprf.is_empty() { "*NONE" } else { &p.grpprf },
+                if p.owner_grpprf { "*GRPPRF" } else { "*USRPRF" },
+                status,
+                p.spcaut.names().join(" ")
+            ),
+        });
+    }
+    Ok(lines)
+}
+
+/// `ANZPRFACT DAYS(n)`: disable every profile that has not signed on
+/// for `days` (never signed on: since it was created), except the
+/// system's `Q*` profiles and the caller; `*SECADM` is needed.
+pub fn anzprfact(txn: &mut Txn<'_>, env: &Env<'_>, days: u32) -> Result<String> {
+    env.actor.require(SpecialAuth::SECADM, "analyze profile activity")?;
+    let limit = u64::from(days) * 86_400;
+    let mut disabled = Vec::new();
+    for name in objects::list(txn, env.qsys)? {
+        if name.starts_with('Q') || name == env.actor.user {
+            continue;
+        }
+        let (id, mut p) = objects::read(txn, env.qsys, &name)?;
+        let last = if p.last_signon == 0 { p.created } else { p.last_signon };
+        if p.disabled || env.now < last.saturating_add(limit) {
+            continue;
+        }
+        p.disabled = true;
+        p.changed = env.now;
+        objects::write(txn, id, &p)?;
+        disabled.push(name);
+    }
+    Ok(if disabled.is_empty() {
+        format!("No profile inactive for {days} days.")
+    } else {
+        format!(
+            "{} profile(s) inactive for {days} days disabled: {}.",
+            disabled.len(),
+            disabled.join(" ")
+        )
+    })
+}

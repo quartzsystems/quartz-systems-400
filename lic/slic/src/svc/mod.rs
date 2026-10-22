@@ -9,6 +9,7 @@ mod authority;
 pub(crate) mod db;
 pub(crate) mod ile;
 mod jobq;
+pub mod neta;
 mod msgq;
 mod objects;
 mod sbs;

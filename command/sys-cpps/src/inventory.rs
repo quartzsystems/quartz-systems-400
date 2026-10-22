@@ -152,19 +152,24 @@ pub fn orphans() -> Vec<String> {
 /// The commands `lic/slic/src/cpp/direct.rs` implements on the library
 /// functions directly (kept in step with its match by hand).
 pub const DIRECT: &[&str] = &[
-    "CHGCMD", "CHGCMDDFT", "CHGDTAARA", "CHGOBJD", "CHGPRXCMD", "CHGSYSVAL", "CLRLIB", "CRTBNDCL",
-    "CRTCLMOD", "CRTCLPGM", "CRTCMD", "CRTDTAARA", "CRTDTAQ", "CRTLIB", "CRTPRXCMD", "DLTAUTL",
-    "DLTBNDDIR", "DLTCMD", "DLTDTAARA", "DLTDTAQ", "DLTLIB", "DLTMOD", "DLTMSGF", "DLTPGM",
-    "DLTPRXCMD", "DLTSRVPGM", "DSPCMD", "DSPDTAARA", "DSPLIB", "DSPOBJD", "DSPSYSVAL", "GO",
-    "MOVOBJ", "RCLSTG", "RCLTMPSTG", "RNMOBJ", "RTVCLSRC", "WRKLIB", "WRKOBJ", "WRKSYSVAL",
+    "ADDMSGD", "ALCOBJ", "CHGCMD", "CHGCMDDFT", "CHGDEVD", "CHGDTAARA", "CHGLF", "CHGLIB",
+    "CHGMSGD", "CHGMSGF", "CHGNETA", "CHGOBJD", "CHGPF", "CHGPFM", "CHGPRXCMD", "CHGSRCPF",
+    "CHGSYSVAL", "CLRLIB", "CPYSRCF", "CRTBNDCL", "CRTCLMOD", "CRTCLPGM", "CRTCMD", "CRTDTAARA",
+    "CRTDTAQ", "CRTLIB", "CRTMSGF", "CRTPRXCMD", "DLCOBJ", "DLTAUTL", "DLTBNDDIR", "DLTCMD",
+    "DLTDTAARA", "DLTDTAQ", "DLTLIB", "DLTMOD", "DLTMSGF", "DLTPGM", "DLTPRXCMD", "DLTSRVPGM",
+    "DSPCMD", "DSPDEVD", "DSPDTAARA", "DSPLIB", "DSPNETA", "DSPOBJD", "DSPOVR", "DSPPTF",
+    "DSPSFWRSC", "DSPSYSVAL", "GO", "MOVOBJ", "MRGMSGF", "RCLSTG", "RCLTMPSTG", "RMVBNDDIRE",
+    "RMVMSGD", "RNMM", "RNMOBJ", "RTVCLSRC", "RUNSQL", "RUNSQLSTM", "SNDJRNE", "UPDSRVPGM",
+    "VRYCFG", "WRKCFGSTS", "WRKJRN", "WRKJRNA", "WRKLIB", "WRKOBJ", "WRKOBJLCK", "WRKSYSVAL",
 ];
 
 /// The commands `work/qsjob` runs in the job (`command/jobsite.rs` and
 /// the job words it bridges to).
 pub const JOB_SITE: &[&str] = &[
     "ADDBKP", "CALL", "CHGPWD", "DLYJOB", "DSCJOB", "DSPBKP", "DSPJOBLOG", "ENDDBG",
-    "ENDSYS", "PWRDWNSYS", "RCLACTGRP", "RMVBKP", "RTVJOBA", "RTVOBJD", "RTVSYSVAL", "SBMJOB",
-    "SIGNOFF", "STRDBG", "STRSBS", "WRKJOB",
+    "ENDSYS", "PWRDWNSYS", "RCLACTGRP", "RCLRSC", "RMVBKP", "RTVCFGSTS", "RTVJOBA", "RTVMBRD",
+    "RTVMSG", "RTVNETA", "RTVOBJD", "RTVSYSVAL", "RTVUSRPRF", "SBMJOB", "SIGNOFF", "STRDBG",
+    "STRSBS", "WRKJOB",
 ];
 
 /// The CL statements: defined so the analyzer and the prompter know
@@ -181,8 +186,8 @@ pub const CL_STATEMENTS: &[&str] = &[
 /// hand a keyword form to.
 pub const BRIDGE_WORDS: &[&str] = &[
     "addaje", "addautle", "addbnddire", "addjobqe", "addjobscde", "addlible", "addpfm",
-    "addpje", "addrpyle", "addrtge", "addwse", "anzdftpwd", "apyjrnchg", "asp",
-    "chgautle", "chgcls", "chgcurlib", "chgjob", "chgjobd", "chgjobqe", "chgjobscde",
+    "addpje", "addrpyle", "addrtge", "addwse", "anzdftpwd", "anzprfact", "apyjrnchg", "asp",
+    "chgautle", "chgcls", "chgcurlib", "chgjob", "chgjobd", "chgjobq", "chgjobqe", "chgjobscde",
     "chgjrn", "chglibl", "chgmsgq", "chgobjaud", "chgobjown", "chgobjpgp", "chgoutq",
     "chgpje", "chgprtf", "chgrpyle", "chgrtge", "chgsbsd", "chgsecaud", "chgshrpool",
     "chgsplfa", "chgsyslibl", "chgusraud", "chgusrprf", "chgwtr", "chkobj", "chkstg",
@@ -197,10 +202,10 @@ pub const BRIDGE_WORDS: &[&str] = &[
     "dspmod", "dspmsg", "dspmsgd", "dspobjaut", "dsppfm", "dsppgm", "dsppgmref",
     "dspsbsd", "dspsecaud", "dspsplf", "dspsrvpgm", "dspusrprf", "dtaara", "dtaq",
     "edtobjaut", "endcmtctl", "endjob", "endjrnpf", "endsbs", "endwtr", "grtobjaut",
-    "grtusraut", "hldjob", "hldjobq", "hldjobscde", "hldoutq", "hldsplf", "hldwtr",
+    "grtusraut", "hldjob", "hldjobq", "hldjobscde", "hldoutq", "hldsplf", "hldwtr", "hw",
     "lib", "mirror", "naming", "obj", "ovrdbf", "ovrprtf", "prtadpobj",
     "prtcapture", "prtjobdaut", "prtpubaut", "prtpvtaut", "prtqaut", "prtsbsdaut", "prtsysseca",
-    "prtusrobj", "qir", "rclstg", "rcvmsg", "rgzpfm", "rla", "rlsjob",
+    "prtusrobj", "prtusrprf", "qir", "rclstg", "rcvmsg", "rgzpfm", "rla", "rlsjob",
     "rlsjobq", "rlsjobscde", "rlsoutq", "rlssplf", "rlswtr", "rmvaje", "rmvautle",
     "rmvjobqe", "rmvjobscde", "rmvjrnchg", "rmvlible", "rmvm", "rmvmsg", "rmvpje",
     "rmvrpyle", "rmvrtge", "rmvwse", "rollbck", "rvkobjaut", "sndbrkmsg", "sndmsg",
@@ -215,12 +220,6 @@ pub const BRIDGE_WORDS: &[&str] = &[
 /// analyzer accepts them and the service answers `CPF0006`
 /// (`docs/PHASE7.md` lists them under Blocked).
 pub const UNSUPPORTED: &[&str] = &[
-    "ADDMSGD", "ALCOBJ", "ANZPRFACT", "CHGDBG", "CHGDEVD", "CHGJOBQ", "CHGLF", "CHGLIB",
-    "CHGMSGD", "CHGMSGF", "CHGNETA", "CHGPF", "CHGPFM", "CHGSRCPF", "CLOF", "CPYLIB",
-    "CPYSRCF", "CRTDEVDSP", "CRTDSPF", "CRTMSGF", "DLCOBJ", "DSPDEVD", "DSPHDWRSC", "DSPMODSRC",
-    "DSPNETA", "DSPOVR", "DSPPTF", "DSPSFWRSC", "EDTAUTL", "EDTLIBL", "INZPFM", "MRGMSGF",
-    "OPNQRYF", "OVRMSGF", "POSDBF", "PRTUSRPRF", "RCLRSC", "RMVBNDDIRE", "RMVMSGD", "RNMM",
-    "RTVCFGSTS", "RTVMBRD", "RTVMSG", "RTVNETA", "RTVUSRPRF", "RUNSQL", "RUNSQLSTM", "SNDJRNE",
-    "STRSQL", "TFRJOB", "UPDSRVPGM", "VRYCFG", "WRKBNDDIR", "WRKCFGSTS", "WRKHDWRSC", "WRKJRN",
-    "WRKJRNA", "WRKOBJLCK",
+    "CHGDBG", "CLOF", "CPYLIB", "CRTDEVDSP", "CRTDSPF", "DSPMODSRC", "EDTLIBL", "INZPFM",
+    "OPNQRYF", "OVRMSGF", "POSDBF", "STRSQL", "TFRJOB",
 ];

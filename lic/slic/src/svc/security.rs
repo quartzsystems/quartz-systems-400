@@ -198,6 +198,23 @@ pub fn audit_command(system: &mut System, cmd: &str, line: &str) -> Option<Strin
             lines.and_then(|l| show(system, &p, "QPAUDENT", &l, false))
         }
         "cpyaudjrne" => cpyaudjrne(system, &p, &k),
+        "prtusrprf" => {
+            let kind = p.upper("TYPE").unwrap_or_else(|| "*AUTINFO".into());
+            let lines = in_store(system, |txn, env| sec::cmd::usrprf::prtusrprf(txn, env, &kind));
+            lines.and_then(|l| show(system, &p, "QPUSRPRF", &l, true))
+        }
+        "anzprfact" => {
+            let days: u32 = p
+                .upper("DAYS")
+                .and_then(|d| d.trim().parse().ok())
+                .unwrap_or(0);
+            if days == 0 {
+                Err("CPD0084 DAYS: 1 to 366 is needed".to_string())
+            } else {
+                in_store(system, |txn, env| sec::cmd::usrprf::anzprfact(txn, env, days))
+                    .map(|s| format!("{s}\n"))
+            }
+        }
         "prtadpobj" | "prtusrobj" => {
             let user = p.upper("USRPRF").unwrap_or_else(|| "*ALL".into());
             let lines = in_store(system, |txn, env| {

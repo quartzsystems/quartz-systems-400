@@ -72,3 +72,18 @@ now and what to check.
     nesting, source; the cross-reference columns) imitates IBM's shape
     with our words. A real `CRTBNDCL` listing would show the line
     widths and whether the cross-reference lists subroutines.
+
+12. **Message identifiers of the cleanup's commands.** `RUNSQL` ends
+    in `SQL9010` and `RUNSQLSTM` past `ERRLVL` in `SQL9006`; `ALCOBJ`
+    refuses with `CPF1002`, a missing message file is `CPF2407`, a
+    missing message `CPF2419`, a missing device description `CPF2702`,
+    a missing member `CPF9815`. All from recollection; the job logs of
+    the real box settle them.
+
+13. **`ALCOBJ WAIT`.** The service answers every job on one thread, so
+    a conflicting lock is refused at once whatever `WAIT` says. The
+    machine waits. Test: `ALCOBJ` with `WAIT(10)` against a held object
+    released after five seconds.
+
+14. **`CHGNETA SYSNAME`.** Takes effect at once and sets `QSYSNAME`;
+    the machine keeps it pending (`PNDSYSNAME`) until the next IPL.

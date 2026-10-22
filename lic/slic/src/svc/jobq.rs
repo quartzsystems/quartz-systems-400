@@ -34,6 +34,7 @@ pub fn command(system: &mut System, cmd: &str, line: &str) -> Option<String> {
             queue().and_then(|q| jobqs::create_delete(system, &q, &p.text("TEXT"), true, me))
         }
         "dltjobq" => queue().and_then(|q| jobqs::create_delete(system, &q, "", false, me)),
+        "chgjobq" => queue().and_then(|q| jobqs::chgjobq(system, &q, &p)),
         "hldjobq" => queue().and_then(|q| jobqs::queue_op(system, &q, "hold")),
         "rlsjobq" => queue().and_then(|q| jobqs::queue_op(system, &q, "release")),
         "clrjobq" => queue().and_then(|q| jobqs::queue_op(system, &q, "clear")),

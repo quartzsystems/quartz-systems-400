@@ -7,13 +7,15 @@
 /* file named on the call (one string per record, as strings.txt has    */
 /* them); each outcome is sent to message queue ORACLE in the same      */
 /* library: OK and the command as QCMDCHK accepted it, or the escape    */
-/* message identifier. README.md says how to gather the queue into     */
-/* expected.txt.                                                        */
+/* message identifier and the first diagnostic (QCMDCHK's escape is    */
+/* CPF0006; the CPDnnnn diagnostic says why). README.md says how to    */
+/* gather the queue into oracle.txt.                                    */
              PGM        PARM(&LIB)
              DCL        VAR(&LIB) TYPE(*CHAR) LEN(10)
              DCL        VAR(&CMD) TYPE(*CHAR) LEN(512)
              DCL        VAR(&LEN) TYPE(*DEC) LEN(15 5) VALUE(512)
              DCL        VAR(&MSGID) TYPE(*CHAR) LEN(7)
+             DCL        VAR(&DIAG) TYPE(*CHAR) LEN(7)
              DCL        VAR(&N) TYPE(*DEC) LEN(5 0) VALUE(0)
              DCLF       FILE(QCMDSRC) RCDFMT(QCMDSRC)
              OVRDBF     FILE(QCMDSRC) TOFILE(&LIB/QCMDSRC) MBR(STRINGS)
@@ -26,7 +28,12 @@
              CALL       PGM(QCMDCHK) PARM(&CMD &LEN)
              MONMSG     MSGID(CPF0000 CPD0000) EXEC(DO)
                RCVMSG     MSGTYPE(*EXCP) MSGID(&MSGID)
-               SNDMSG     MSG(%CHAR(&N) *BCAT &MSGID) TOMSGQ(&LIB/ORACLE)
+               CHGVAR     VAR(&DIAG) VALUE(' ')
+               RCVMSG     MSGTYPE(*DIAG) MSGID(&DIAG)
+               MONMSG     MSGID(CPF0000)
+               SNDMSG     MSG(%CHAR(&N) *BCAT &MSGID *BCAT &DIAG) +
+                            TOMSGQ(&LIB/ORACLE)
+               RMVMSG     CLEAR(*ALL)
                GOTO       NEXT
              ENDDO
              SNDMSG     MSG(%CHAR(&N) *BCAT 'OK' *BCAT %TRIM(&CMD)) +

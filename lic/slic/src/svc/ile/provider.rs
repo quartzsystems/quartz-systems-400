@@ -523,11 +523,28 @@ impl Provider for StoreProvider {
     }
 
     fn netattr(&mut self, name: &str) -> Option<SysVal> {
-        match name {
-            "SYSNAME" | "LCLCPNAME" => Some(SysVal::chars("QS400", 8)),
-            "LCLNETID" => Some(SysVal::chars("APPN", 8)),
-            _ => None,
+        use crate::svc::neta;
+        if !neta::is_attribute(name) {
+            return None;
         }
+        let sysname = self
+            .sysval("QSYSNAME")
+            .map_or_else(|| "QS400".to_string(), |v| ccsid::decode_trimmed(&v.data));
+        let value = self
+            .run(neta::AREA, "QSYS", types::DTAARA, |txn, id| neta::read_area(txn, id, &sysname))
+            .ok()
+            .and_then(|m| m.get(name).cloned())
+            .or_else(|| neta::defaults(&sysname).get(name).cloned())?;
+        Some(if neta::NUMERIC.contains(&name) {
+            SysVal::bin(value.trim().parse().unwrap_or(0))
+        } else {
+            let len = match name {
+                "MSGQ" | "OUTQ" | "DDMACC" | "PCSACC" | "ALRFTR" => 20,
+                "DFTCNNLST" | "NWSDOMAIN" => 10,
+                _ => 8,
+            };
+            SysVal::chars(&value, len.max(value.len()))
+        })
     }
 
     fn now(&mut self) -> LocalNow {

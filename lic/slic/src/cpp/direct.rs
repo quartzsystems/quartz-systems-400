@@ -183,12 +183,12 @@ pub(super) fn lib_or(l: &str) -> String {
 }
 
 /// A line of the old console table.
-fn old(system: &mut System, line: &str) -> String {
+pub(super) fn old(system: &mut System, line: &str) -> String {
     crate::stgsvc::exec::run(system, line)
 }
 
 /// Output alone.
-fn plain(text: String) -> CmdReply {
+pub(super) fn plain(text: String) -> CmdReply {
     match super::leading_msgid(text.lines().next().unwrap_or("").trim()) {
         Some(id) if !id.starts_with("CPC") && !id.starts_with("CPI") => CmdReply {
             escape: Some(stg::proto::CmdMsg {
@@ -207,7 +207,7 @@ fn plain(text: String) -> CmdReply {
 }
 
 /// Output with the completion message when it did not fail.
-fn finish(text: String, name: &str, comp: &str, fields: &[(&str, usize)]) -> CmdReply {
+pub(super) fn finish(text: String, name: &str, comp: &str, fields: &[(&str, usize)]) -> CmdReply {
     let _ = name;
     let r = plain(text);
     if r.escape.is_some() {
@@ -230,7 +230,7 @@ pub(super) fn in_store<T>(
 }
 
 /// A library by name, `*CURLIB` through the names.
-fn library(
+pub(super) fn library(
     txn: &mut Txn<'_>,
     qsys: ObjectId,
     names: &ops::NameContext,
@@ -245,7 +245,7 @@ fn library(
     }
 }
 
-fn ctx(system: &System) -> Ctx {
+pub(super) fn ctx(system: &System) -> Ctx {
     Ctx {
         now: now_unix(),
         owner: system.svc_user.clone().unwrap_or_else(|| "QSYS".into()),
@@ -253,7 +253,7 @@ fn ctx(system: &System) -> Ctx {
     }
 }
 
-fn failed(name: &str, e: &str) -> CmdReply {
+pub(super) fn failed(name: &str, e: &str) -> CmdReply {
     let id = super::leading_msgid(e).unwrap_or("CPF0006").to_string();
     let detail = e.strip_prefix(&id).unwrap_or(e).trim().to_string();
     escape(&id, name, &detail)

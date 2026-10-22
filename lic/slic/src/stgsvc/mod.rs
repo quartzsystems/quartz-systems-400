@@ -315,7 +315,8 @@ fn install(system: &mut System) -> Result<usize, String> {
         now: crate::ipl::system::now_unix(),
     };
     let mut txn = s.store.begin().map_err(|e| e.to_string())?;
-    let made = wm::obj::shipped::install(&mut txn, qsys, &stamp).map_err(|e| e.to_string())?;
+    let mut made = wm::obj::shipped::install(&mut txn, qsys, &stamp).map_err(|e| e.to_string())?;
+    made += usize::from(crate::svc::neta::ensure(&mut txn, qsys, stamp.now)?);
     txn.commit().map_err(|e| e.to_string())?;
     Ok(made)
 }

@@ -33,11 +33,11 @@ real box would settle.
 | Site | Commands | How |
 |---|---|---|
 | CL statements | 40 | compiled by `cl`; refused at a command line by `ALLOW` |
-| service, direct | 40 | `lic/slic/src/cpp/direct.rs` on the library functions |
-| service, bridged | 181 | the keyword form handed to a console word of Phases 2 to 6 |
-| job | 20 | `work/qsjob/src/command/jobsite.rs` |
+| service, direct | 72 | `lic/slic/src/cpp/direct.rs` on the library functions |
+| service, bridged | 188 | the keyword form handed to a console word of Phases 2 to 6 |
+| job | 26 | `work/qsjob/src/command/jobsite.rs` |
 | stub | 4 | `SAVLIB`, `RSTLIB`, `CHKTAP` (`CPF3700`), `STRSST` (`CPF0901`) |
-| unsupported | 58 | defined, prompted and analyzed; the service answers `CPF0006` (below) |
+| unsupported | 13 | defined, prompted and analyzed; the service answers `CPF0006` (below) |
 
 `command/sys-cpps/src/inventory.rs` keeps the lists, and
 `tests/inventory.rs` checks every command is in exactly one.
@@ -127,17 +127,19 @@ In memory, release build, one core of the development machine
 - **Save and restore** (`SAVLIB`, `RSTLIB`, `CHKTAP`) are stubs for
   Phase 11.
 - **Unsupported commands**, defined and analyzed but without a
-  processing program: `ADDMSGD ALCOBJ ANZPRFACT CHGDBG CHGDEVD CHGJOBQ
-  CHGLF CHGLIB CHGMSGD CHGMSGF CHGNETA CHGPF CHGPFM CHGSRCPF CLOF
-  CPYLIB CPYSRCF CRTDEVDSP CRTDSPF CRTMSGF DLCOBJ DSPDEVD DSPHDWRSC
-  DSPMODSRC DSPNETA DSPOVR DSPPTF DSPSFWRSC EDTAUTL EDTLIBL INZPFM
-  MRGMSGF OPNQRYF OVRMSGF POSDBF PRTUSRPRF RCLRSC RMVBNDDIRE RMVMSGD
-  RNMM RTVCFGSTS RTVMBRD RTVMSG RTVNETA RTVUSRPRF RUNSQL RUNSQLSTM
-  SNDJRNE STRSQL TFRJOB UPDSRVPGM VRYCFG WRKBNDDIR WRKCFGSTS WRKHDWRSC
-  WRKJRN WRKJRNA WRKOBJLCK`. The message file and SQL ones have library
-  functions (`msgf::store`, `sql::run`) that a later batch of direct
-  implementations can reach; the device, PTF and hardware ones wait
-  for their phases.
+  processing program: `CHGDBG` (the debugger's production-file guard),
+  `CLOF`, `OPNQRYF`, `POSDBF` (the database stream's shared query
+  path), `CPYLIB` (a generic object copy comes with save and restore),
+  `INZPFM` (default records), `OVRMSGF` (a per-job message file table
+  in the lookup), `TFRJOB`, and the display-bound `CRTDEVDSP`, `CRTDSPF`,
+  `DSPMODSRC`, `EDTLIBL` and `STRSQL`. The cleanup after Phase 7 gave
+  the other 45 processing programs: the message file, `CHGPF`/`CHGLF`/
+  member, `RUNSQL`/`RUNSQLSTM`, journal, lock, library, override
+  display, network attribute, device, software resource and PTF
+  commands run directly in the service; `RTVMBRD`, `RTVUSRPRF`,
+  `RTVNETA`, `RTVMSG`, `RTVCFGSTS` and `RCLRSC` in the job;
+  `PRTUSRPRF`, `ANZPRFACT`, `CHGJOBQ`, `DSPHDWRSC`/`WRKHDWRSC`,
+  `EDTAUTL` and `WRKBNDDIR` through the bridge.
 - **`PRDLIB` and `CURLIB` on a command definition** are kept in the
   object and not applied to the library list while the command runs.
 - **`QCAPCMD`'s retrieve option** (the previous command of the job) is

@@ -290,7 +290,7 @@ management: `wrkactjob [VIEW(1|2|3)]`, `wrkjob`, `dspjob`, `chgjob`, `dspjoblog`
 `crtmsgq`, `chgmsgq`, `dsplog`, `wrkrpyle`, `addrpyle`, `rmvrpyle`, `crtsbsd`,
 `dspsbsd`, `addrtge`, `addaje`, `addjobqe`, `chgjobqe`, `strsbs`, `endsbs`, `wrksbs`,
 `wrksbsjob`, `wrkshrpool`, `chgshrpool`, `sbmjob`, `wrkjobq`, `crtjobq`, `hldjobq`,
-`rlsjobq`, `clrjobq`, `hldjob`, `rlsjob`, `endjob`, `dlyjob`, `addjobscde`,
+`rlsjobq`, `clrjobq`, `hldjob`, `rlsjob`, `endjob`, `dlyjob`, `chgjobq`, `addjobscde`,
 `chgjobscde`, `rmvjobscde`, `hldjobscde`, `rlsjobscde`, `wrkjobscde`, `crtoutq`,
 `chgoutq`, `dltoutq`, `hldoutq`, `rlsoutq`, `clroutq`, `wrkoutq`, `wrkoutqd`,
 `wrksplf`, `wrksplfa`, `dspsplf`, `cpysplf`, `chgsplfa`, `hldsplf`, `rlssplf`,
@@ -302,7 +302,7 @@ management: `wrkactjob [VIEW(1|2|3)]`, `wrkjob`, `dspjob`, `chgjob`, `dspjoblog`
 `grtusraut`, `wrkobjown`, `crtautl`, `addautle`, `chgautle`, `rmvautle`, `dspautl`,
 `dspautlobj`, `chgsecaud`, `dspsecaud`, `chgobjaud`, `chgusraud`, `dspaudjrne`,
 `cpyaudjrne`, `prtadpobj`, `prtusrobj`, `prtpvtaut`, `prtpubaut`, `prtsysseca`,
-`prtjobdaut`, `prtsbsdaut`, `prtqaut`, and `dbgkill JOB()` (slic's debug hook:
+`prtjobdaut`, `prtsbsdaut`, `prtqaut`, `prtusrprf`, `anzprfact`, and `dbgkill JOB()` (slic's debug hook:
 SIGKILL a job). Parameters are IBM-style `KEYWORD(value)`. Boot parameters: `qs400.slot=A|B`, `qs400.mode=normal|manual`,
 `qs400.svc=1`, `qs400.ipl=D`, `qs400.media=iso`, `qs400.pace=MS` (each IPL code and
 install step stays up this long; 400 by default, 0 for none).

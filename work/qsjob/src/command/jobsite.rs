@@ -53,6 +53,12 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "RTVSYSVAL" => return rtvsysval(host, r, out),
         "RTVJOBA" => return rtvjoba(host, r, out),
         "RTVOBJD" => return rtvobjd(host, r, out),
+        "RTVMBRD" => return rtvmbrd(host, r, out),
+        "RTVUSRPRF" => return rtvusrprf(host, r, out),
+        "RTVNETA" => return rtvneta(host, r, out),
+        "RTVMSG" => return rtvmsg(host, r, out),
+        "RTVCFGSTS" => return rtvcfgsts(host, r, out),
+        "RCLRSC" => return Ok(rclrsc(job, host)),
         _ => {}
     }
     let line = sys_cpps::bridge::specified_line(&entry.word, &parms);
@@ -305,4 +311,334 @@ fn call(job: &mut Job, _host: &Host, parms: &cmd::Parms) -> Result<String, Fail>
         let _ = writeln!(out, "Parm {}: {}", i + 1, jobcmd::parm_text(b));
     }
     Ok(out)
+}
+
+/// A parameter's text, empty when absent.
+fn text_of(r: &Resolved, kw: &str) -> String {
+    r.get(kw)
+        .and_then(|b| b.value.as_ref())
+        .map(Value::source)
+        .unwrap_or_default()
+}
+
+/// A qualified parameter as `(name, library)`, the library `*LIBL`
+/// when not given.
+fn qual_of(r: &Resolved, kw: &str) -> (String, String) {
+    match r.get(kw).and_then(|b| b.value.as_ref()) {
+        Some(Value::Qual(parts)) => (
+            parts.first().map(Value::source).unwrap_or_default(),
+            parts
+                .get(1)
+                .map_or_else(|| "*LIBL".into(), Value::source),
+        ),
+        Some(v) => (v.source(), "*LIBL".into()),
+        None => (String::new(), "*LIBL".into()),
+    }
+}
+
+fn num(n: i64) -> Value {
+    Value::Num(qdecimal::Decimal::new(i128::from(n), 0).expect("small"))
+}
+
+fn chars(s: &str) -> Value {
+    Value::Char(s.to_string())
+}
+
+/// `CYYMMDD` of a Unix time; `*NONE` for zero.
+fn cyymmdd(secs: u64) -> String {
+    if secs == 0 {
+        return "*NONE".into();
+    }
+    let civil = sec::cmd::civil(secs);
+    let (y, rest) = civil.split_once('-').unwrap_or(("1970", "01-01"));
+    let year: u32 = y.parse().unwrap_or(1970);
+    format!(
+        "{}{:02}{}",
+        year.saturating_sub(1900) / 100,
+        year % 100,
+        rest.replace('-', "")
+    )
+}
+
+/// `RTVMBRD FILE(LIB/FILE) MBR(name)`: the member's description.
+fn rtvmbrd(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
+    let (name, lib) = qual_of(r, "FILE");
+    let want = text_of(r, "MBR").to_ascii_uppercase();
+    let (info, members) = host
+        .link
+        .borrow_mut()
+        .with(|l| (l.file(lib.clone(), name.clone()), l.members(lib.clone(), name.clone())));
+    let Some(f) = info else {
+        return Err(Fail {
+            msgid: "CPF9812".into(),
+            data: cmd::error::data(&[(&name, 10), (&lib, 10)]),
+            text: format!("CPF9812 file {name} in library {lib} not found."),
+        });
+    };
+    let m = match want.as_str() {
+        "" | "*FIRST" => members.first(),
+        "*LAST" => members.last(),
+        n => members.iter().find(|m| m.name == n),
+    };
+    let Some(m) = m else {
+        return Err(Fail {
+            msgid: "CPF9815".into(),
+            data: cmd::error::data(&[(&want, 10), (&name, 10), (&lib, 10)]),
+            text: format!("CPF9815 member {want} of file {name} in library {lib} not found."),
+        });
+    };
+    let values = [
+        ("RTNLIB", chars(&f.lib)),
+        ("RTNSYSTEM", chars("*LCL")),
+        ("RTNMBR", chars(&m.name)),
+        ("FILEATR", chars(&f.attr)),
+        ("FILETYPE", chars(if f.source { "*SRC" } else { "*DATA" })),
+        ("SRCTYPE", chars(if m.srctype.is_empty() { "*NONE" } else { &m.srctype })),
+        ("CRTDATE", chars(&m.created)),
+        ("EXPDATE", chars("*NONE")),
+        ("TEXT", chars(&m.text)),
+        ("NBRCURRCD", num(i64::from(m.records))),
+        ("NBRDLTRCD", num(i64::from(m.deleted))),
+        ("DTASPCSIZ", num(i64::from(m.records + m.deleted) * i64::from(f.rec_len))),
+        ("ACCPTHSIZ", num(0)),
+        ("NBRDTAMBRS", num(i64::from(f.attr == "LF"))),
+        ("CHGDATE", chars(&m.changed)),
+        ("SAVDATE", chars("")),
+        ("RSTDATE", chars("")),
+        ("NBRDAYUSED", num(0)),
+        ("USEDATE", chars("")),
+        ("SRCCHGDATE", chars(&m.changed)),
+        ("JOINMBR", chars("*NO")),
+    ];
+    returned(r, &values, out)
+}
+
+/// `RTVUSRPRF USRPRF(name)`: the profile's attributes.
+#[allow(clippy::too_many_lines)] // one entry per return parameter
+fn rtvusrprf(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
+    let mut user = text_of(r, "USRPRF").to_ascii_uppercase();
+    if user.is_empty() || user == "*CURRENT" {
+        user = host.start.user.clone();
+    }
+    let answer = host
+        .link
+        .borrow_mut()
+        .with(|l| l.sec_api(sec::api::Query::Profile { user: user.clone() }));
+    let p = match answer {
+        Ok(sec::api::Answer::Profile { data }) => sec::profile::UsrPrf::decode(&data)
+            .map_err(|e| Fail::new("CPF9999", e.to_string()))?,
+        Ok(_) => return Err(Fail::new("CPF9999", "unexpected answer".to_string())),
+        Err(e) => {
+            return Err(Fail {
+                msgid: e.msgid.clone(),
+                data: cmd::error::data(&[(&user, 10)]),
+                text: format!("{} user profile {user} not found.", e.msgid),
+            });
+        }
+    };
+    let qual = |t: &(String, String)| (chars(&t.0), chars(&t.1));
+    let (inlpgm, inlpgmlib) = qual(&p.inlpgm);
+    let (jobd, jobdlib) = qual(&p.jobd);
+    let (msgq, msgqlib) = qual(&p.msgq);
+    let (outq, outqlib) = qual(&p.outq);
+    let (inlmnu, inlmnulib) = qual(&p.inlmnu);
+    let (atnpgm, atnpgmlib) = qual(&p.atnpgm);
+    let (srtseq, srtseqlib) = qual(&p.srtseq);
+    let padded = |v: &[String]| {
+        let mut t = String::new();
+        for n in v {
+            let _ = write!(t, "{n:<10}");
+        }
+        t.trim_end().to_string()
+    };
+    let spcaut: Vec<String> = p.spcaut.names().iter().map(|s| (*s).to_string()).collect();
+    let yes_no = |b: bool| chars(if b { "*YES" } else { "*NO" });
+    let values = [
+        ("RTNUSRPRF", chars(&p.name)),
+        ("SPCAUT", chars(&padded(&spcaut))),
+        ("MAXSTG", num(p.maxstg)),
+        ("MAXSTGLRG", num(p.maxstglrg)),
+        ("STGUSED", num(i64::try_from(p.stg_used).unwrap_or(i64::MAX))),
+        ("STGUSEDLRG", num(i64::try_from(p.stg_used).unwrap_or(i64::MAX))),
+        ("PTYLMT", chars(&p.ptylmt.to_string())),
+        ("INLPGM", inlpgm),
+        ("INLPGMLIB", inlpgmlib),
+        ("JOBD", jobd),
+        ("JOBDLIB", jobdlib),
+        ("GRPPRF", chars(if p.grpprf.is_empty() { "*NONE" } else { &p.grpprf })),
+        ("OWNER", chars(if p.owner_grpprf { "*GRPPRF" } else { "*USRPRF" })),
+        ("GRPAUT", chars(&p.grpaut)),
+        ("GRPAUTTYP", chars(if p.grpauttyp_pgp { "*PGP" } else { "*PRIVATE" })),
+        ("ACGCDE", chars(&p.acgcde)),
+        ("MSGQ", msgq),
+        ("MSGQLIB", msgqlib),
+        ("DLVRY", chars(&p.dlvry)),
+        ("SEV", num(i64::from(p.sev))),
+        ("OUTQ", outq),
+        ("OUTQLIB", outqlib),
+        ("PRTDEV", chars(&p.prtdev)),
+        ("TEXT", chars(&p.text)),
+        ("SPCENV", chars(&p.spcenv)),
+        ("DSPSGNINF", chars(p.dspsgninf.name())),
+        ("PWDEXPITV", num(i64::from(p.pwdexpitv))),
+        ("PWDEXP", yes_no(p.pwdexp)),
+        ("USRCLS", chars(p.usrcls.name())),
+        ("STATUS", chars(if p.disabled { "*DISABLED" } else { "*ENABLED" })),
+        ("PWDCHGDAT", chars(&cyymmdd(p.pwd_changed))),
+        ("PRVSIGN", chars(&cyymmdd(p.prev_signon))),
+        ("NOTVLDSIGN", num(i64::from(p.signon_invalid))),
+        ("USROPT", chars(&padded(&p.usropt))),
+        ("CURLIB", chars(if p.curlib.is_empty() { "*CRTDFT" } else { &p.curlib })),
+        ("INLMNU", inlmnu),
+        ("INLMNULIB", inlmnulib),
+        ("LMTCPB", chars(p.lmtcpb.name())),
+        ("LMTDEVSSN", chars(p.lmtdevssn.name())),
+        ("KBDBUF", chars(&p.kbdbuf)),
+        ("ASTLVL", chars(&p.astlvl)),
+        ("ATNPGM", atnpgm),
+        ("ATNPGMLIB", atnpgmlib),
+        ("SRTSEQ", srtseq),
+        ("SRTSEQLIB", srtseqlib),
+        ("LANGID", chars(&p.langid)),
+        ("CNTRYID", chars(&p.cntryid)),
+        ("CCSID", num(i64::from(p.ccsid))),
+        ("CHRIDCTL", chars(&p.chridctl)),
+        ("SETJOBATR", chars(&padded(&p.setjobatr))),
+        ("LOCALE", chars(&p.locale)),
+        ("SUPGRPPRF", chars(&padded(&p.supgrpprf))),
+        ("OBJAUD", chars(&p.objaud)),
+        ("AUDLVL", chars(&padded(&p.audlvl))),
+        ("UID", num(i64::from(p.uid))),
+        ("GID", num(i64::from(p.gid))),
+        ("HOMEDIR", chars(&p.homedir)),
+        ("LCLPWDMGT", yes_no(p.lclpwdmgt)),
+        ("PWDCHGBLK", chars(&if p.pwdchgblk == 0 { "*NONE".to_string() } else { p.pwdchgblk.to_string() })),
+        ("USREXPDATE", chars(&cyymmdd(p.usrexpdate))),
+        ("USREXPITV", num(i64::from(p.usrexpitv))),
+    ];
+    returned(r, &values, out)
+}
+
+/// The network attributes `RTVNETA` returns, in its keyword order.
+const NETA_KEYWORDS: &[&str] = &[
+    "SYSNAME", "PNDSYSNAME", "LCLNETID", "LCLCPNAME", "LCLLOCNAME", "DFTMODE", "NODETYPE",
+    "DTACPR", "DTACPRINM", "MAXINTSSN", "RAR", "NETSERVER", "ALRSTS", "ALRPRIFP", "ALRDFTFP",
+    "ALRLOGSTS", "ALRBCKFP", "ALRRQSFP", "ALRCTLD", "ALRHLDCNT", "ALRFTR", "MSGQ", "OUTQ",
+    "JOBACN", "MAXHOP", "DDMACC", "PCSACC", "DFTCNNLST", "ALWANYNET", "NWSDOMAIN", "ALWVRTIP",
+    "ALWHPRTWR", "VRTAUTODEV", "HPRPTHTMR", "ALWADDCLU", "MDMCNTRYID",
+];
+
+/// `RTVNETA`: every attribute asked for, through the job's link.
+fn rtvneta(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
+    let mut values: Vec<(&str, Value)> = Vec::new();
+    for k in NETA_KEYWORDS {
+        let Some(v) = host.link.borrow_mut().with(|l| l.netattr((*k).to_string())) else {
+            continue;
+        };
+        match v.kind {
+            sysapi::SysValKind::Bin => {
+                let n = v
+                    .data
+                    .get(..4)
+                    .and_then(|b| b.try_into().ok())
+                    .map_or(0, i32::from_be_bytes);
+                values.push((k, num(i64::from(n))));
+            }
+            sysapi::SysValKind::Char => {
+                let text = ccsid::from_ebcdic(&v.data).trim_end().to_string();
+                match *k {
+                    "MSGQ" | "OUTQ" | "ALRFTR" | "DDMACC" | "PCSACC" => {
+                        let (lib, name) = text.split_once('/').unwrap_or(("", text.as_str()));
+                        let lib_kw: &'static str = match *k {
+                            "MSGQ" => "MSGQLIB",
+                            "OUTQ" => "OUTQLIB",
+                            "ALRFTR" => "ALRFTRLIB",
+                            "DDMACC" => "DDMACCLIB",
+                            _ => "PCSACCLIB",
+                        };
+                        values.push((k, chars(name)));
+                        values.push((lib_kw, chars(lib)));
+                    }
+                    _ => values.push((k, chars(&text))),
+                }
+            }
+        }
+    }
+    returned(r, &values, out)
+}
+
+/// `RTVMSG MSGID(id) MSGF(lib/file) MSGDTA(data)`: the message text.
+fn rtvmsg(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
+    let msgid = text_of(r, "MSGID").to_ascii_uppercase();
+    let (msgf, lib) = qual_of(r, "MSGF");
+    let data = match r.get("MSGDTA").and_then(|b| b.value.as_ref()) {
+        Some(Value::Hex(b)) => b.clone(),
+        Some(v) => ccsid::to_ebcdic(&v.source()).unwrap_or_default(),
+        None => Vec::new(),
+    };
+    let found = host
+        .link
+        .borrow_mut()
+        .with(|l| l.describe(msgid.clone(), msgf.clone(), lib.clone()));
+    let Some(d) = found else {
+        return Err(Fail {
+            msgid: "CPF2419".into(),
+            data: cmd::error::data(&[(&msgid, 7), (&msgf, 10), (&lib, 10)]),
+            text: format!("CPF2419 message {msgid} not found in message file {lib}/{msgf}."),
+        });
+    };
+    let msg = d.format(&data);
+    let help = d.format_help(&data);
+    let values = [
+        ("MSG", chars(&msg)),
+        ("MSGLEN", num(i64::try_from(msg.len()).unwrap_or(0))),
+        ("SECLVL", chars(&help)),
+        ("SECLVLLEN", num(i64::try_from(help.len()).unwrap_or(0))),
+        ("SEV", num(i64::from(d.severity))),
+        ("ALROPT", chars("*NO")),
+        ("LOGPRB", chars("*NO")),
+        ("CCSID", num(37)),
+        ("TXTCCSID", num(37)),
+    ];
+    returned(r, &values, out)
+}
+
+/// `RTVCFGSTS CFGD(name) CFGTYPE(*DEV)`: varied on (10) or off (0).
+fn rtvcfgsts(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
+    let name = text_of(r, "CFGD").to_ascii_uppercase();
+    let ty = text_of(r, "CFGTYPE").to_ascii_uppercase();
+    if ty != "*DEV" {
+        return Err(Fail::new("CPD0084", format!("CFGTYPE({ty}): only *DEV objects exist here")));
+    }
+    let b = host
+        .link
+        .borrow_mut()
+        .with(|l| l.wm_object(format!("QSYS/{name}"), "*DEVD".into()));
+    let online = b
+        .ok()
+        .and_then(|b| wm::obj::devd::Devd::decode(&b).ok())
+        .map(|d| d.online);
+    let Some(online) = online else {
+        return Err(Fail {
+            msgid: "CPF2702".into(),
+            data: cmd::error::data(&[(&name, 10)]),
+            text: format!("CPF2702 device description {name} not found."),
+        });
+    };
+    let values = [
+        ("STSCDE", num(if online { 10 } else { 0 })),
+        ("STS", chars(if online { "VARIED ON" } else { "VARIED OFF" })),
+    ];
+    returned(r, &values, out)
+}
+
+/// `RCLRSC`: the file overrides of call levels that have returned go;
+/// the files programs no longer on the stack left open wait for the
+/// runtime's per-program open ownership.
+fn rclrsc(job: &mut Job, host: &Host) -> String {
+    if job.ovr_top > job.depth {
+        let _ = host.exec(&format!("dltovr ENDLVL({})", job.depth + 1));
+        job.ovr_top = job.depth;
+    }
+    String::new()
 }

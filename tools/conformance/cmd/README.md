@@ -26,9 +26,11 @@ comparison file:
 4. `DSPMSG MSGQ(ORACLE/ORACLE) OUTPUT(*PRINT)` and keep the spooled
    file as `oracle.txt` beside this file.
 
-Each message reads `n OK command` or `n CPDxxxx`; `n` is the line
-number in `strings.txt`. The real box reports only the escape, while
-`expected.txt` also lists the diagnostics, so a comparison looks at
-the first identifier of each outcome and at the spelling of the
-accepted commands. No such capture is checked in yet
-(`docs/CMD_OPEN_QUESTIONS.md`).
+Each message reads `n OK command` or `n CPF0006 CPDxxxx` (`QCMDCHK`'s
+escape and the first diagnostic); `n` is the line number in
+`strings.txt`. `cargo test -p conformance --test cmd_oracle` reads
+`oracle.txt` beside this file, compares the box's first diagnostic with
+the identifier this analyzer sends for the same string and the accepted
+strings with ours, and reports itself skipped while the file is absent.
+`QCMDCHK` echoes the string as typed, so spellings are not compared. No
+such capture is checked in yet (`docs/CMD_OPEN_QUESTIONS.md`).

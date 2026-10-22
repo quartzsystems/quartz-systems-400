@@ -22,6 +22,14 @@ pub use version::Release;
 /// The current development stream.
 pub const RELEASE: Release = Release { v: 1, r: 0, m: 0 };
 
+/// The operating system's product identifier, IBM's for the operating
+/// system so that software checking for it finds it (`DSPSFWRSC`,
+/// `DSPPTF`, `QSZRTVPR`).
+pub const PRODUCT_ID: &str = "5770SS1";
+
+/// The product's description.
+pub const PRODUCT_TEXT: &str = "Quartz Systems/400 Operating System";
+
 /// The build ID captured at compile time: `git describe --always --dirty`,
 /// or `QS400_BUILD_ID` from the environment, else `unknown`.
 pub fn build_id() -> &'static str {

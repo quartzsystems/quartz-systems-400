@@ -498,6 +498,30 @@ pub fn wrkjobq(system: &mut System, which: Option<&str>) -> Result<String, Strin
     Ok(out)
 }
 
+/// `CHGJOBQ`: `TEXT`, `OPRCTL`, `AUTCHK`.
+pub fn chgjobq(system: &mut System, q: &str, p: &wm::cmd::Params) -> Result<String, String> {
+    let text = p.kw("TEXT").map(|_| p.text("TEXT"));
+    let oprctl = p.upper("OPRCTL").map(|v| v == "*YES");
+    let autchk = match p.upper("AUTCHK") {
+        None => None,
+        Some(v) if v == "*OWNER" || v == "*DTAAUT" => Some(v),
+        Some(v) => return Err(format!("CPD0084 AUTCHK({v}) is not *OWNER or *DTAAUT")),
+    };
+    with_jobq(system, q, |jq, _| {
+        if let Some(t) = text {
+            jq.text = if t == "*BLANK" { String::new() } else { t };
+        }
+        if let Some(o) = oprctl {
+            jq.oprctl = o;
+        }
+        if let Some(a) = autchk {
+            jq.autchk = a;
+        }
+        Ok(((), true))
+    })?;
+    Ok(format!("Job queue {} changed.\n", qual(q)))
+}
+
 /// `HLDJOBQ`, `RLSJOBQ`, `CLRJOBQ`.
 pub fn queue_op(system: &mut System, q: &str, op: &str) -> Result<String, String> {
     let gone = with_jobq(system, q, |jq, _| {
