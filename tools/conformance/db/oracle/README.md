@@ -1,8 +1,10 @@
 # Producing the oracle outputs on IBM i
 
 1. Send the kit to the machine: `dds/*` to `/home/QSTEST/dds/`, `data/*`
-   to `/home/QSTEST/data/`, `oracle/QSTEST.CLLE` and `oracle/RLATEST.RPGLE`
-   to a source file of your choice (record length 112).
+   to `/home/QSTEST/data/`, `oracle/RLATEST.RPGLE` and `oracle/QRESULTS.SQL`
+   to `/home/QSTEST/oracle/` (the CL reads both from there), and
+   `oracle/QSTEST.CLLE` to a source file of your choice with record
+   length 240 (its lines run past 112).
 2. `CRTBNDCL QSTEST/QSTEST` from `QSTEST.CLLE`, then `CALL QSTEST/QSTEST`.
    The program creates the library, loads the data, runs the script and
    writes every output to `/home/QSTEST/out/`.

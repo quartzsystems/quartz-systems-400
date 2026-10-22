@@ -1,0 +1,15 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the */
+/* root directory of this project.                                       */
+/* Q10: the USRI0300 receiver of QSYRUSRI for USRA. DMPCLPGM writes the  */
+/* program's variables in hex to spooled file QPPGMDMP; keep that beside */
+/* the oracle file as expected/usri0300.txt.                             */
+PGM
+  DCL &RCV *CHAR 1024
+  DCL &LEN *INT 4 VALUE(1024)
+  DCL &FMT *CHAR 8 VALUE('USRI0300')
+  DCL &USR *CHAR 10 VALUE('USRA')
+  DCL &ERR *CHAR 8 VALUE(X'0000000000000000')
+  CALL QSYRUSRI (&RCV &LEN &FMT &USR &ERR)
+  DMPCLPGM
+ENDPGM

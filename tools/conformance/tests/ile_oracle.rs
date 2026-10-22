@@ -33,6 +33,11 @@ fn ours() -> Vec<(&'static str, &'static str)> {
         ("CANCELTO", "caller got CEE9901 status 202"),
         ("DEEPREC", "got MCH0601 status 222"),
         ("CMDEXC", "received [from QCMDEXC]"),
+        ("PTRSTAT", "static neighbour read ok"),
+        ("PTRSTAT", "auto neighbour status 222"),
+        ("DECBLANK", "[12]"),
+        ("DIFFTS", "earlier time of day: months 0"),
+        ("DIFFTS", "later time of day: months 1"),
     ]
 }
 

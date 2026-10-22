@@ -23,9 +23,13 @@ To capture, signed on as `QSECOFR` with `*ALLOBJ` and `*SECADM`:
 4. `CPYTOIMPF FROMFILE(SECORA/ORACLE) TOSTMF('/tmp/sec-oracle.txt')
    STMFCODPAG(*PCASCII) RCDDLM(*LF) DTAFMT(*FIXED)`; save it as
    `expected/sec-oracle.txt`.
-5. For question 10, `CALL SECORA/USRI0300` is not provided: dump the
-   receiver of `QSYRUSRI USRI0300` for `USRA` with `DMPOBJ` or a short
-   RPG program and keep it beside the file; the comparison is by hand.
+5. For question 10, `CRTBNDCL USRI0300` and `CALL SECORA/USRI0300`: it
+   calls `QSYRUSRI USRI0300` for `USRA` and `DMPCLPGM` dumps the receiver
+   in hex to spooled file `QPPGMDMP`; keep it as `expected/usri0300.txt`.
+   The comparison is by hand. For question 1 beyond the four profiles
+   the driver records, `DSPUSRPRF USRPRF(*ALL) TYPE(*BASIC)
+   OUTPUT(*OUTFILE) OUTFILE(SECORA/USRPRF)` and `CPYTOIMPF` it to
+   `expected/usrprf.csv`.
 6. `DLTLIB SECORA` and `DLTUSRPRF` the three profiles afterwards.
 
 | Question | Program | What it records |
