@@ -49,7 +49,13 @@ extern proc _QSYSRAW($a: i32)
 static $a: i32 inz(1)
 proc RAW() entry {
 L0:
+  monitor M, MCH3401 -> NOBODY
   callb _QSYSRAW($a)
+  dsply \"not reached\"
+  endmon M
+  ret
+NOBODY:
+  dsply \"no provider\"
   ret
 }
 ";
@@ -428,8 +434,9 @@ impl Suite {
     }
 
     /// Step 44: `QSECURITY` 30: sign-on and adoption work, a privileged
-    /// import loads and fails at the call (`MCH3401`); 50: the load is
-    /// refused (`MCH6801`); then 40 for the rest.
+    /// import loads and its call finds no provider (`MCH3401`, which the
+    /// program monitors); 50: the load is refused (`MCH6801`); then 40
+    /// for the rest.
     pub(crate) fn security_levels(&self, s: &mut Session) -> Result<String, String> {
         let set = s.command("sysval QSECURITY 30", CMD)?;
         want(&set, "set to 30", "sysval QSECURITY 30")?;
@@ -441,7 +448,7 @@ impl Suite {
         entry_wait(s, "call QGPL/ADOPT", has(&["secret written"]))?;
         sign_off(s)?;
         let raw = s.command("call QGPL/RAW", CMD)?;
-        want(&raw, "MCH3401", "call RAW at 30")?;
+        want(&raw, "no provider", "call RAW at 30")?;
         refuse(&raw, "MCH6801", "call RAW at 30")?;
         let set = s.command("sysval QSECURITY 50", CMD)?;
         want(&set, "set to 50", "sysval QSECURITY 50")?;
@@ -451,7 +458,7 @@ impl Suite {
         let set = s.command("sysval QSECURITY 40", CMD)?;
         want(&set, "set to 40", "sysval QSECURITY 40")?;
         Ok(format!(
-            "30 (IPL {:.1}s): BOB signed on, NOADOPT refused, ADOPT wrote, RAW MCH3401; 50 (IPL {:.1}s): RAW MCH6801; back to 40",
+            "30 (IPL {:.1}s): BOB signed on, NOADOPT refused, ADOPT wrote, RAW ran to MCH3401; 50 (IPL {:.1}s): RAW MCH6801; back to 40",
             b30.as_secs_f64(),
             b50.as_secs_f64()
         ))
