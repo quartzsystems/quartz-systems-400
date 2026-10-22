@@ -24,7 +24,10 @@ pub fn now_micros() -> u64 {
 /// `LIB/NAME` of a queue, `*LIBL` when unqualified. `*SYSOPR` is
 /// `QSYS/QSYSOPR`.
 pub fn queue_name(q: &str) -> (String, String) {
-    match q.to_ascii_uppercase().as_str() {
+    let upper = q.to_ascii_uppercase();
+    // The analyzer spells an unqualified name `*LIBL/NAME`.
+    let bare = upper.strip_prefix("*LIBL/").unwrap_or(&upper);
+    match bare {
         "*SYSOPR" | "QSYSOPR" => ("QSYS".into(), "QSYSOPR".into()),
         "*HSTLOG" | "QHST" => ("QSYS".into(), "QHST".into()),
         other => qualified(other),
