@@ -361,14 +361,49 @@ L0:
 }
 
 #[test]
-fn unsupported_instructions_are_reported() {
-    let m = qir::parse(
-        "module U\nproc P() {\nL0:\n  %a = const.f64 1.5\n  %r = rem %a, %a\n  ret\n}\n",
-    )
-    .unwrap();
-    let err = codegen::compile(&m).unwrap_err().to_string();
-    assert!(
-        err.contains("rem of floats") && err.contains("not supported"),
-        "{err}"
+fn float_remainder_takes_the_dividend_sign() {
+    let mut r = Running::new(
+        "
+module FREM
+proc MAIN(byval $n: i32) -> i32 export {
+L0:
+  %n = load $n
+  %f = cvt.f64 %n
+  %r = rem %f, 4.0
+  %t = mul %r, 10.0
+  %i = cvt.i32 %t
+  ret %i
+}
+",
+        &[],
     );
+    let main: Fn1 = unsafe { f(r.addr("MAIN")) };
+    assert_eq!(main(r.env(), 1, 0, 7), 30);
+    assert_eq!(main(r.env(), 1, 0, -7), -30);
+    assert_eq!(main(r.env(), 1, 0, 8), 0);
+}
+
+#[test]
+fn a_signature_called_by_name_is_an_import() {
+    let mut r = Running::new(
+        "
+module SIG
+proto TWICE(byval $n: i32) -> i32
+proc MAIN(byval $n: i32) -> i32 export {
+L0:
+  %n = load $n
+  %t = callb TWICE(%n)
+  ret %t
+}
+",
+        &[("TWICE", twice as *const () as usize)],
+    );
+    assert!(
+        r.code
+            .relocs
+            .iter()
+            .any(|x| x.target == codegen::RelocTarget::ImportProc("TWICE".into()))
+    );
+    let main: Fn1 = unsafe { f(r.addr("MAIN")) };
+    assert_eq!(main(r.env(), 1, 0, 21), 42);
 }

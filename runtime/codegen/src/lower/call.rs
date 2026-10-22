@@ -44,7 +44,9 @@ impl Lowerer<'_, '_> {
             CallTarget::Proto(pr) => {
                 let proto = self.m.protos[pr.0 as usize].clone();
                 match &proto.linkage {
-                    Linkage::Import => {
+                    // A bare signature called by name is an import of
+                    // that name, resolved at bind time.
+                    Linkage::Import | Linkage::Signature => {
                         let fref = self.import_ref(&proto);
                         self.bound_call(fref, &proto.params, proto.ret.as_ref(), args, ret)
                     }
@@ -56,7 +58,6 @@ impl Lowerer<'_, '_> {
                         let (argc, argv) = self.argv(args, &proto.params)?;
                         self.call_pgm(&proto.name, "QSYS", argc, argv)
                     }
-                    Linkage::Signature => Err(self.unsupported("a call to a signature")),
                 }
             }
             CallTarget::PgmName { name, lib } => {

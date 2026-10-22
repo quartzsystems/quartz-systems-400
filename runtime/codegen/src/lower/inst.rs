@@ -53,7 +53,7 @@ impl Lowerer<'_, '_> {
                 } else {
                     self.value(b, &ty)?
                 };
-                let v = self.bin(*op, &ty, av, bv, *chk)?;
+                let v = self.bin(*op, &ty, av, bv, *chk);
                 self.b.def_var(self.vars[dst.0 as usize], v);
             }
             Inst::Un { dst, op, a } => {
@@ -239,11 +239,11 @@ impl Lowerer<'_, '_> {
         Ok(())
     }
 
-    fn bin(&mut self, op: BinOp, ty: &Type, a: Value, b: Value, chk: bool) -> Result<Value> {
+    fn bin(&mut self, op: BinOp, ty: &Type, a: Value, b: Value, chk: bool) -> Value {
         let float = ty.class() == TypeClass::Float;
         let signed = ty.class() == TypeClass::Int;
         let cl = abi::reg_type(ty);
-        Ok(match op {
+        match op {
             BinOp::Add if float => self.b.ins().fadd(a, b),
             BinOp::Sub if float => self.b.ins().fsub(a, b),
             BinOp::Mul if float => self.b.ins().fmul(a, b),
@@ -252,7 +252,30 @@ impl Lowerer<'_, '_> {
                 let bad = self.b.ins().fcmp(FloatCC::Equal, b, zero);
                 self.guard(bad, Cond::Mch1211, cl, |s| s.b.ins().fdiv(a, b))
             }
-            BinOp::Rem if float => return Err(self.unsupported("rem of floats")),
+            BinOp::Rem if float => {
+                // The remainder with the quotient truncated toward zero, so
+                // it takes the dividend's sign, as the integer form does.
+                let zero = self.zero(cl);
+                let bad = self.b.ins().fcmp(FloatCC::Equal, b, zero);
+                self.guard(bad, Cond::Mch1211, cl, |s| {
+                    let quot = s.b.ins().fdiv(a, b);
+                    // Truncation through i64 (no rounding libcall); past
+                    // the mantissa a float is integral already.
+                    let whole = s.b.ins().fcvt_to_sint_sat(types::I64, quot);
+                    let (integral, back) = if cl == types::F32 {
+                        let lim = s.b.ins().f32const(8_388_608.0);
+                        (lim, s.b.ins().fcvt_from_sint(types::F32, whole))
+                    } else {
+                        let lim = s.b.ins().f64const(4_503_599_627_370_496.0);
+                        (lim, s.b.ins().fcvt_from_sint(types::F64, whole))
+                    };
+                    let mag = s.b.ins().fabs(quot);
+                    let big = s.b.ins().fcmp(FloatCC::GreaterThanOrEqual, mag, integral);
+                    let trunc = s.b.ins().select(big, quot, back);
+                    let prod = s.b.ins().fmul(trunc, b);
+                    s.b.ins().fsub(a, prod)
+                })
+            }
             BinOp::Add | BinOp::Sub | BinOp::Mul if chk => {
                 let (v, of) = match (op, signed) {
                     (BinOp::Add, true) => self.b.ins().sadd_overflow(a, b),
@@ -296,7 +319,7 @@ impl Lowerer<'_, '_> {
             BinOp::Shl => self.b.ins().ishl(a, b),
             BinOp::Shr if signed => self.b.ins().sshr(a, b),
             BinOp::Shr => self.b.ins().ushr(a, b),
-        })
+        }
     }
 
     #[allow(clippy::too_many_lines)]

@@ -102,7 +102,7 @@ check happens at open (`CPF4131`), not at activation.
 extern proc NAME(params) [-> T] [opdesc]          ; a bound procedure, resolved at bind time
 extern pgm NAME(params) pgm(OBJECT) lib(*LIBL)     ; a program called dynamically
 extern sysapi NAME(params) [-> T]                 ; a system API in QSYS
-proto NAME(params) [-> T] [opdesc]                ; a signature for calls through a procedure pointer
+proto NAME(params) [-> T] [opdesc]                ; a signature: for calls through a procedure pointer, or by name as an import
 ```
 
 **Parameters** are `[byval] [const] $name: T [*NOPASS] [*OMIT] [*VARSIZE]`.

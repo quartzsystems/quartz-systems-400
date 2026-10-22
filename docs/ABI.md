@@ -280,6 +280,7 @@ deref places, `monitor`/`endmon`, `dsply`, `sndpgmmsg`, `rcvmsg`,
 `rmvmsg`, `alloc`/`realloc`/`dealloc`, `dbopen`/`dbio`/`dbclose`,
 `dspio`/`prtio`, `dtaara.*`, `dtaq.*`, `rslvsp`. Dynamic program calls,
 `sysapi` (a program call into `QSYS`), calls through procedure and
-system pointers and every I/O go through the runtime. Still
-`CodegenError::Unsupported`: `rem` of floats and calls to a bare
-signature.
+system pointers and every I/O go through the runtime. `rem` of floats
+is `a - b * trunc(a / b)`; a bare signature called by name is an
+import of that name. Nothing the verifier accepts is
+`CodegenError::Unsupported`.
