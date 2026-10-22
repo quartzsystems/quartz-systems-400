@@ -235,8 +235,12 @@ L0:
     let e2 = bytes(&p, "err2");
     assert_eq!(chars(&e2, 8, 7), "CPF22E2");
     let asked = asked.borrow().clone();
-    assert!(asked.contains(&Query::SetHandle { handle: vec![7; 12] }));
-    assert!(asked.contains(&Query::ReleaseHandle { handle: vec![7; 12] }));
+    assert!(asked.contains(&Query::SetHandle {
+        handle: vec![7; 12]
+    }));
+    assert!(asked.contains(&Query::ReleaseHandle {
+        handle: vec![7; 12]
+    }));
     let us = p
         .job()
         .usrspcs

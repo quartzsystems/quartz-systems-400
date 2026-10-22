@@ -156,7 +156,7 @@ fn qual(v: &str) -> (String, String) {
 }
 
 /// An object named by `OBJ(LIB/NAME) OBJTYPE(*T)`.
-fn object(txn: &mut store::Txn<'_>, qsys: ObjectId, p: &Params) -> sec::Result<ObjectId> {
+pub fn object(txn: &mut store::Txn<'_>, qsys: ObjectId, p: &Params) -> sec::Result<ObjectId> {
     let o = p
         .kw("OBJ")
         .map(str::to_string)

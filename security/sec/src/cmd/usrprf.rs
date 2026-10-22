@@ -403,11 +403,11 @@ pub fn rtvusrprf(txn: &mut Txn<'_>, env: &Env<'_>, name: &str) -> Result<UsrPrf>
     } else {
         name.to_ascii_uppercase()
     };
+    let (id, p) = objects::read(txn, env.qsys, &name)?;
     if name != env.actor.user {
-        env.actor
-            .require(SpecialAuth::SECADM, "retrieve another user's profile")?;
+        store::obj::guard::check_id(txn, "usrprf.display", id)?;
     }
-    Ok(objects::read(txn, env.qsys, &name)?.1)
+    Ok(p)
 }
 
 fn interval_text(v: u32, none: &str) -> String {

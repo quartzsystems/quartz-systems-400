@@ -261,21 +261,30 @@ wire_enum!(Answer {
     6 => Done,
 });
 
-fn object_id(txn: &mut Txn<'_>, qsys: ObjectId, (name, lib, ty): &(String, String, String)) -> Result<ObjectId> {
+fn object_id(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    (name, lib, ty): &(String, String, String),
+) -> Result<ObjectId> {
     let code = types::type_by_name(ty)
         .ok_or_else(|| SecError::msg("CPF9827", format!("{ty} is not an object type.")))?
         .code;
-    let n = qsname::Name::parse(name).map_err(|_| SecError::msg("CPF9801", format!("{name} not found.")))?;
+    let n = qsname::Name::parse(name)
+        .map_err(|_| SecError::msg("CPF9801", format!("{name} not found.")))?;
     let lib_id = if lib.is_empty() || lib == "QSYS" {
         qsys
     } else {
-        let l = qsname::Name::parse(lib).map_err(|_| SecError::msg("CPF9810", format!("{lib} not found.")))?;
+        let l = qsname::Name::parse(lib)
+            .map_err(|_| SecError::msg("CPF9810", format!("{lib} not found.")))?;
         ops::find_library(txn, qsys, l)?.id
     };
     let library = store::obj::library::Library::load(txn, lib_id)?;
-    library
-        .lookup(txn, code, n)?
-        .ok_or_else(|| SecError::msg("CPF9801", format!("Object {name} in {lib} type {ty} not found.")))
+    library.lookup(txn, code, n)?.ok_or_else(|| {
+        SecError::msg(
+            "CPF9801",
+            format!("Object {name} in {lib} type {ty} not found."),
+        )
+    })
 }
 
 fn row(txn: &mut Txn<'_>, id: ObjectId, bits: u32, owned: bool) -> Result<ObjRow> {
@@ -288,7 +297,9 @@ fn row(txn: &mut Txn<'_>, id: ObjectId, bits: u32, owned: bool) -> Result<ObjRow
     Ok(ObjRow {
         name: h.name.to_string(),
         lib,
-        ty: types::type_by_code(id.type_code).map_or("*UNKNOWN", |t| t.name).into(),
+        ty: types::type_by_code(id.type_code)
+            .map_or("*UNKNOWN", |t| t.name)
+            .into(),
         owner: text_of(&h.owner),
         bits,
         owned,
@@ -299,8 +310,19 @@ fn row(txn: &mut Txn<'_>, id: ObjectId, bits: u32, owned: bool) -> Result<ObjRow
 /// `None` for the ones the service answers itself (handles, password
 /// changes).
 #[allow(clippy::too_many_lines)] // one arm per query
-pub fn answer(txn: &mut Txn<'_>, qsys: ObjectId, me: &Principal, q: &Query) -> Result<Option<Answer>> {
-    let who = |u: &str| if u == "*CURRENT" || u.is_empty() { me.user.clone() } else { u.to_ascii_uppercase() };
+pub fn answer(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    me: &Principal,
+    q: &Query,
+) -> Result<Option<Answer>> {
+    let who = |u: &str| {
+        if u == "*CURRENT" || u.is_empty() {
+            me.user.clone()
+        } else {
+            u.to_ascii_uppercase()
+        }
+    };
     let other = |u: &str| who(u) != me.user;
     Ok(Some(match q {
         Query::Profile { user } => {
@@ -308,8 +330,19 @@ pub fn answer(txn: &mut Txn<'_>, qsys: ObjectId, me: &Principal, q: &Query) -> R
             let (id, p) = objects::read(txn, qsys, &u)?;
             if other(user) {
                 let h = ops::read_header(txn, id)?.1;
-                if !search::check(txn, qsys, me, &h, Need::Bits(Auth(store::obj::header::Authority::READ)))?.allowed {
-                    return Err(SecError::msg("CPF2217", format!("Not authorized to user profile {u}.")));
+                if !search::check(
+                    txn,
+                    qsys,
+                    me,
+                    &h,
+                    Need::Bits(Auth(store::obj::header::Authority::READ)),
+                )?
+                .allowed
+                {
+                    return Err(SecError::msg(
+                        "CPF2217",
+                        format!("Not authorized to user profile {u}."),
+                    ));
                 }
             }
             Answer::Profile { data: p.encode() }
@@ -322,7 +355,11 @@ pub fn answer(txn: &mut Txn<'_>, qsys: ObjectId, me: &Principal, q: &Query) -> R
                 yes: p.special().has(want),
             }
         }
-        Query::Check { user, object, auths } => {
+        Query::Check {
+            user,
+            object,
+            auths,
+        } => {
             let p = if other(user) {
                 Principal::load(txn, qsys, &who(user), me.qsecurity)?
             } else {
@@ -334,7 +371,10 @@ pub fn answer(txn: &mut Txn<'_>, qsys: ObjectId, me: &Principal, q: &Query) -> R
             let need = if refs == ["*ANY"] {
                 Need::Any
             } else {
-                Need::Bits(Auth::parse(&refs, id.type_code == types::AUTL).map_err(|e| SecError::msg("CPF2209", e))?)
+                Need::Bits(
+                    Auth::parse(&refs, id.type_code == types::AUTL)
+                        .map_err(|e| SecError::msg("CPF2209", e))?,
+                )
             };
             Answer::Yes {
                 yes: search::check(txn, qsys, &p, &h, need)?.allowed,
@@ -440,21 +480,30 @@ pub fn answer(txn: &mut Txn<'_>, qsys: ObjectId, me: &Principal, q: &Query) -> R
             Answer::Objects { rows }
         }
         Query::GetPassword { user } => {
-            me.require(SpecialAuth::ALLOBJ.union(SpecialAuth::SECADM), "retrieve password data")?;
+            me.require(
+                SpecialAuth::ALLOBJ.union(SpecialAuth::SECADM),
+                "retrieve password data",
+            )?;
             let p = objects::read(txn, qsys, user)?.1;
             Answer::Bytes {
                 data: password_blob(&p),
             }
         }
         Query::SetPassword { user, data } => {
-            me.require(SpecialAuth::ALLOBJ.union(SpecialAuth::SECADM), "set password data")?;
+            me.require(
+                SpecialAuth::ALLOBJ.union(SpecialAuth::SECADM),
+                "set password data",
+            )?;
             let (id, mut p) = objects::read(txn, qsys, user)?;
             p.hashes = blob_hashes(data)?;
             p.pwd_none = p.hashes.is_empty();
             objects::write(txn, id, &p)?;
             Answer::Done
         }
-        Query::GetHandle { .. } | Query::SetHandle { .. } | Query::ReleaseHandle { .. } | Query::ChangePassword { .. } => {
+        Query::GetHandle { .. }
+        | Query::SetHandle { .. }
+        | Query::ReleaseHandle { .. }
+        | Query::ChangePassword { .. } => {
             return Ok(None);
         }
     }))
@@ -486,7 +535,10 @@ fn blob_hashes(b: &[u8]) -> Result<Vec<crate::profile::PwdHash>> {
     let mut at = 0;
     while at < rest.len() {
         let form = *rest.get(at).ok_or_else(bad)?;
-        let n = rest.get(at + 1..at + 3).map(|l| usize::from(u16::from_le_bytes([l[0], l[1]]))).ok_or_else(bad)?;
+        let n = rest
+            .get(at + 1..at + 3)
+            .map(|l| usize::from(u16::from_le_bytes([l[0], l[1]])))
+            .ok_or_else(bad)?;
         let phc = rest.get(at + 3..at + 3 + n).ok_or_else(bad)?;
         out.push(crate::profile::PwdHash {
             form: if form == 0 {

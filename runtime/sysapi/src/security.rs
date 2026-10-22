@@ -45,7 +45,10 @@ fn yn(b: bool) -> char {
 
 /// The eight special authorities as `Y`/`N` flags and seven reserved.
 fn special_flags(s: SpecialAuth) -> String {
-    let mut out: String = SpecialAuth::NAMES.iter().map(|(_, a)| yn(s.has(*a))).collect();
+    let mut out: String = SpecialAuth::NAMES
+        .iter()
+        .map(|(_, a)| yn(s.has(*a)))
+        .collect();
     out.push_str("NNNNNNN");
     out
 }
@@ -55,9 +58,21 @@ fn special_flags(s: SpecialAuth) -> String {
 /// `*READ *ADD *UPD *DLT *EXECUTE`.
 fn auth_flags(bits: u32) -> String {
     let b = |m: u32| yn(bits & m != 0);
-    [b(0x01), b(0x02), b(0x04), b(0x08), b(0x10), 'N', b(0x20), b(0x40), b(0x80), b(0x100), b(0x200)]
-        .iter()
-        .collect()
+    [
+        b(0x01),
+        b(0x02),
+        b(0x04),
+        b(0x08),
+        b(0x10),
+        'N',
+        b(0x20),
+        b(0x40),
+        b(0x80),
+        b(0x100),
+        b(0x200),
+    ]
+    .iter()
+    .collect()
 }
 
 fn auth_name(bits: u32, autl: bool) -> &'static str {
@@ -137,7 +152,11 @@ fn usri0100(out: &mut Out, u: &UsrPrf) {
     out.blank(31, 1);
     out.bin4(32, i32::try_from(u.signon_invalid).unwrap_or(i32::MAX));
     out.char(36, 10, if u.disabled { "*DISABLED" } else { "*ENABLED" });
-    out.char(46, 8, &ts(u.pwd_changed).chars().take(8).collect::<String>());
+    out.char(
+        46,
+        8,
+        &ts(u.pwd_changed).chars().take(8).collect::<String>(),
+    );
     out.ch(54, yn(u.pwd_none));
     out.blank(55, 1);
     out.bin4(56, interval(u.pwdexpitv));
@@ -146,11 +165,15 @@ fn usri0100(out: &mut Out, u: &UsrPrf) {
     out.ch(72, yn(u.pwdexp));
     out.char(73, 10, u.dspsgninf.name());
     out.ch(83, yn(u.lclpwdmgt));
-    out.char(84, 10, &match u.pwdchgblk {
-        0 => "*SYSVAL".to_string(),
-        u32::MAX => "*NONE".to_string(),
-        n => n.to_string(),
-    });
+    out.char(
+        84,
+        10,
+        &match u.pwdchgblk {
+            0 => "*SYSVAL".to_string(),
+            u32::MAX => "*NONE".to_string(),
+            n => n.to_string(),
+        },
+    );
 }
 
 /// The `USRI0200` part from `at`: class, special authorities, groups.
@@ -158,10 +181,18 @@ fn usri0200(out: &mut Out, u: &UsrPrf, at: usize) {
     out.char(at, 10, u.usrcls.name());
     out.char(at + 10, 15, &special_flags(u.spcaut));
     out.char(at + 25, 10, &u.grpprf);
-    out.char(at + 35, 10, if u.owner_grpprf { "*GRPPRF" } else { "*USRPRF" });
+    out.char(
+        at + 35,
+        10,
+        if u.owner_grpprf { "*GRPPRF" } else { "*USRPRF" },
+    );
     out.char(at + 45, 10, &u.grpaut);
     out.char(at + 55, 10, u.lmtcpb.name());
-    out.char(at + 65, 10, if u.grpauttyp_pgp { "*PGP" } else { "*PRIVATE" });
+    out.char(
+        at + 65,
+        10,
+        if u.grpauttyp_pgp { "*PGP" } else { "*PRIVATE" },
+    );
     out.blank(at + 75, 3);
     out.bin4(at + 78, 0);
     out.bin4(at + 82, i32::try_from(u.supgrpprf.len()).unwrap_or(0));
@@ -211,7 +242,11 @@ fn usri0300(out: &mut Out, u: &UsrPrf) {
     out.bin4(off + 105, i32::try_from(u.stg_used).unwrap_or(i32::MAX));
     out.ch(off + 109, char::from(b'0' + u.ptylmt.min(9)));
     out.char(off + 110, 10, &u.objaud);
-    out.char(off + 120, 10, &ts(u.usrexpdate).chars().take(8).collect::<String>());
+    out.char(
+        off + 120,
+        10,
+        &ts(u.usrexpdate).chars().take(8).collect::<String>(),
+    );
     out.char(off + 130, 64, &u.homedir);
 }
 
@@ -298,7 +333,16 @@ fn obj_entry(r: &ObjRow, with_owner: bool) -> Vec<u8> {
     e
 }
 
-fn list_answer(j: &mut Job, a: &Args<'_>, errc: ErrCode, format: &str, api: &str, input: &[u8], entries: &[Vec<u8>], size: usize) {
+fn list_answer(
+    j: &mut Job,
+    a: &Args<'_>,
+    errc: ErrCode,
+    format: &str,
+    api: &str,
+    input: &[u8],
+    entries: &[Vec<u8>],
+    size: usize,
+) {
     match crate::obj::write_list(j, a, 0, format, api, input, &[], entries, size) {
         Ok(()) => errc.ok(),
         Err(f) => errc.fail(j, &f),
@@ -331,7 +375,14 @@ fn qsylobja(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
         })
         .map(|r| obj_entry(r, true))
         .collect();
-    let input = [a.bytes(0, 20), fixed(&format, 8), a.bytes(2, 10), a.bytes(3, 10), a.bytes(4, 10)].concat();
+    let input = [
+        a.bytes(0, 20),
+        fixed(&format, 8),
+        a.bytes(2, 10),
+        a.bytes(3, 10),
+        a.bytes(4, 10),
+    ]
+    .concat();
     list_answer(j, &a, errc, &format, "QSYLOBJA", &input, &entries, 62);
 }
 
@@ -355,7 +406,13 @@ fn qsylobjp(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
         .filter(|r| ty.is_empty() || ty == "*ALL" || r.ty == ty)
         .map(|r| obj_entry(r, true))
         .collect();
-    let input = [a.bytes(0, 20), fixed(&format, 8), a.bytes(2, 10), a.bytes(3, 10)].concat();
+    let input = [
+        a.bytes(0, 20),
+        fixed(&format, 8),
+        a.bytes(2, 10),
+        a.bytes(3, 10),
+    ]
+    .concat();
     list_answer(j, &a, errc, &format, "QSYLOBJP", &input, &entries, 62);
 }
 
@@ -385,7 +442,14 @@ fn qsyrautu(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     let (name, lib) = a.qual(4);
     let ty = a.char(5, 10);
     let autl = ty == "*AUTL";
-    let Some(Answer::Users { rows }) = ask(j, p, errc, Query::Holders { object: (name, lib, ty) }) else {
+    let Some(Answer::Users { rows }) = ask(
+        j,
+        p,
+        errc,
+        Query::Holders {
+            object: (name, lib, ty),
+        },
+    ) else {
         return;
     };
     let entries: Vec<u8> = rows.iter().flat_map(|r| user_entry(r, autl)).collect();
@@ -430,7 +494,13 @@ fn qsylautu(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
             e
         })
         .collect();
-    let input = [a.bytes(0, 20), fixed(&format, 8), a.bytes(2, 10), a.bytes(3, 10)].concat();
+    let input = [
+        a.bytes(0, 20),
+        fixed(&format, 8),
+        a.bytes(2, 10),
+        a.bytes(3, 10),
+    ]
+    .concat();
     list_answer(j, &a, errc, &format, "QSYLAUTU", &input, &entries, 62);
 }
 
@@ -534,7 +604,13 @@ fn qsychgpw(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
 }
 
 /// `QPWDVLDPGM`, when it names a program: `Ok(false)` when it refuses.
-fn validation(j: &mut Job, p: &mut dyn Provider, user: &str, new: &str, old: &str) -> Result<bool, ApiFail> {
+fn validation(
+    j: &mut Job,
+    p: &mut dyn Provider,
+    user: &str,
+    new: &str,
+    old: &str,
+) -> Result<bool, ApiFail> {
     let Some(v) = p.sysval("QPWDVLDPGM") else {
         return Ok(true);
     };
@@ -546,10 +622,16 @@ fn validation(j: &mut Job, p: &mut dyn Provider, user: &str, new: &str, old: &st
     if name.starts_with('*') {
         return Ok(true);
     }
-    let lib = w.next().map_or_else(|| "*LIBL".to_string(), str::to_ascii_uppercase);
+    let lib = w
+        .next()
+        .map_or_else(|| "*LIBL".to_string(), str::to_ascii_uppercase);
     let level = p
         .sysval("QPWDLVL")
-        .and_then(|v| v.data.get(..4).map(|b| i32::from_be_bytes([b[0], b[1], b[2], b[3]])))
+        .and_then(|v| {
+            v.data
+                .get(..4)
+                .map(|b| i32::from_be_bytes([b[0], b[1], b[2], b[3]]))
+        })
         .unwrap_or(3);
     let parm = |s: &str| -> Vec<u8> {
         let t = ccsid::to_ebcdic(s).unwrap_or_default();
@@ -588,7 +670,8 @@ fn qsyrupwd(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
         return;
     }
     let user = a.char(3, 10);
-    let Some(Answer::Bytes { data }) = ask(j, p, errc, Query::GetPassword { user: user.clone() }) else {
+    let Some(Answer::Bytes { data }) = ask(j, p, errc, Query::GetPassword { user: user.clone() })
+    else {
         return;
     };
     let mut out = Out::new();
@@ -608,9 +691,9 @@ fn qsysupwd(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
         return;
     }
     let head = a.bytes(0, 18);
-    let len = head
-        .get(..4)
-        .map_or(0, |b| usize::try_from(i32::from_be_bytes([b[0], b[1], b[2], b[3]])).unwrap_or(0));
+    let len = head.get(..4).map_or(0, |b| {
+        usize::try_from(i32::from_be_bytes([b[0], b[1], b[2], b[3]])).unwrap_or(0)
+    });
     let user = ccsid::decode_trimmed(head.get(8..18).unwrap_or(&[]));
     let all = a.bytes(0, len.max(18));
     let data = all.get(18..).unwrap_or(&[]).to_vec();

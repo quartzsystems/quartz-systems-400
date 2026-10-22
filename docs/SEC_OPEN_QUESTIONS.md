@@ -75,3 +75,9 @@ it. The tests that read those outputs skip while they are absent.
 
 11. **`QSYCHGPR`.** No IBM API by that name could be identified; it
     is not provided. Oracle: the IBM i API finder.
+
+12. **Authority command messages.** The escape and diagnostic
+    identifiers of `GRTOBJAUT`/`RVKOBJAUT` (`CPF2227`, `CPF2253`,
+    `CPF2254`), the list commands (`CPF2270`, `CPF2272`) and
+    `DLTUSRPRF` (`CPF2204`, `CPF2245`, `CPF2257`) are best recollection.
+    Oracle: run each refusal on IBM i and record the job log.

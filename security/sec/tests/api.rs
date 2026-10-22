@@ -44,11 +44,21 @@ fn queries_answer_from_the_store() {
         now: NOW,
         sysval: &sysval,
     };
-    usrprf::crtusrprf(&mut t, &env, &Keywords::new(&[("USRPRF", "CLERKS"), ("PASSWORD", "*NONE")])).unwrap();
     usrprf::crtusrprf(
         &mut t,
         &env,
-        &Keywords::new(&[("USRPRF", "ANNE"), ("PASSWORD", "SECRET77"), ("GRPPRF", "CLERKS"), ("TEXT", "'Anne'")]),
+        &Keywords::new(&[("USRPRF", "CLERKS"), ("PASSWORD", "*NONE")]),
+    )
+    .unwrap();
+    usrprf::crtusrprf(
+        &mut t,
+        &env,
+        &Keywords::new(&[
+            ("USRPRF", "ANNE"),
+            ("PASSWORD", "SECRET77"),
+            ("GRPPRF", "CLERKS"),
+            ("TEXT", "'Anne'"),
+        ]),
     )
     .unwrap();
     grant::set_private(&mut t, qsys, data, "ANNE", Some(Auth::CHANGE)).unwrap();
@@ -57,15 +67,38 @@ fn queries_answer_from_the_store() {
     let ask = |t: &mut store::txn::Txn<'_>, me: &Principal, q: Query| answer(t, qsys, me, &q);
 
     // QSYRUSRI: one's own profile, another's only with *READ to it.
-    let Some(Answer::Profile { data: d }) = ask(&mut t, &anne, Query::Profile { user: "*CURRENT".into() }).unwrap() else {
+    let Some(Answer::Profile { data: d }) = ask(
+        &mut t,
+        &anne,
+        Query::Profile {
+            user: "*CURRENT".into(),
+        },
+    )
+    .unwrap() else {
         panic!("not a profile");
     };
     let p = UsrPrf::decode(&d).unwrap();
     assert_eq!(p.name, "ANNE");
     assert_eq!(p.grpprf, "CLERKS");
-    let e = ask(&mut t, &anne, Query::Profile { user: "QSECOFR".into() }).unwrap_err();
+    let e = ask(
+        &mut t,
+        &anne,
+        Query::Profile {
+            user: "QSECOFR".into(),
+        },
+    )
+    .unwrap_err();
     assert_eq!(e.msgid(), Some("CPF2217"), "{e}");
-    assert!(ask(&mut t, &secofr, Query::Profile { user: "ANNE".into() }).is_ok());
+    assert!(
+        ask(
+            &mut t,
+            &secofr,
+            Query::Profile {
+                user: "ANNE".into()
+            }
+        )
+        .is_ok()
+    );
 
     // QSYCUSRS.
     let special = |t: &mut store::txn::Txn<'_>, user: &str| {
@@ -73,7 +106,10 @@ fn queries_answer_from_the_store() {
             user: user.into(),
             auths: vec!["*ALLOBJ".into()],
         };
-        matches!(answer(t, qsys, &anne, &q).unwrap(), Some(Answer::Yes { yes: true }))
+        matches!(
+            answer(t, qsys, &anne, &q).unwrap(),
+            Some(Answer::Yes { yes: true })
+        )
     };
     assert!(special(&mut t, "QSECOFR"));
     assert!(!special(&mut t, "ANNE"));
@@ -85,7 +121,10 @@ fn queries_answer_from_the_store() {
             object: obj("DATA"),
             auths: auths.iter().map(ToString::to_string).collect(),
         };
-        matches!(answer(t, qsys, &secofr, &q).unwrap(), Some(Answer::Yes { yes: true }))
+        matches!(
+            answer(t, qsys, &secofr, &q).unwrap(),
+            Some(Answer::Yes { yes: true })
+        )
     };
     assert!(check(&mut t, "ANNE", &["*CHANGE"]));
     assert!(!check(&mut t, "ANNE", &["*OBJEXIST"]));
@@ -93,7 +132,15 @@ fn queries_answer_from_the_store() {
     assert!(check(&mut t, "QSECOFR", &["*ALL"]));
 
     // QSYRUSRA: the source of ANNE's authority.
-    let Some(Answer::Auth { info }) = ask(&mut t, &secofr, Query::UserAuth { user: "ANNE".into(), object: obj("DATA") }).unwrap() else {
+    let Some(Answer::Auth { info }) = ask(
+        &mut t,
+        &secofr,
+        Query::UserAuth {
+            user: "ANNE".into(),
+            object: obj("DATA"),
+        },
+    )
+    .unwrap() else {
         panic!("no authority");
     };
     assert_eq!(info.bits & Auth::MASK, Auth::CHANGE.0);
@@ -101,24 +148,63 @@ fn queries_answer_from_the_store() {
     assert!(!info.source.is_empty());
 
     // QSYLOBJA: ANNE's private authority; QSECOFR owns DATA.
-    let Some(Answer::Objects { rows }) = ask(&mut t, &anne, Query::Objects { user: "*CURRENT".into(), kind: 0 }).unwrap() else {
+    let Some(Answer::Objects { rows }) = ask(
+        &mut t,
+        &anne,
+        Query::Objects {
+            user: "*CURRENT".into(),
+            kind: 0,
+        },
+    )
+    .unwrap() else {
         panic!("no objects");
     };
-    assert!(rows.iter().any(|r| r.name == "DATA" && r.lib == "APPLIB" && !r.owned));
-    let Some(Answer::Objects { rows }) = ask(&mut t, &secofr, Query::Objects { user: "*CURRENT".into(), kind: 0 }).unwrap() else {
+    assert!(
+        rows.iter()
+            .any(|r| r.name == "DATA" && r.lib == "APPLIB" && !r.owned)
+    );
+    let Some(Answer::Objects { rows }) = ask(
+        &mut t,
+        &secofr,
+        Query::Objects {
+            user: "*CURRENT".into(),
+            kind: 0,
+        },
+    )
+    .unwrap() else {
         panic!("no objects");
     };
     assert!(rows.iter().any(|r| r.name == "DATA" && r.owned));
-    assert!(ask(&mut t, &anne, Query::Objects { user: "QSECOFR".into(), kind: 0 }).is_err());
+    assert!(
+        ask(
+            &mut t,
+            &anne,
+            Query::Objects {
+                user: "QSECOFR".into(),
+                kind: 0
+            }
+        )
+        .is_err()
+    );
 
     // QSYRAUTU: the owner first, *PUBLIC last.
-    let Some(Answer::Users { rows }) = ask(&mut t, &anne, Query::Holders { object: obj("DATA") }).unwrap() else {
+    let Some(Answer::Users { rows }) = ask(
+        &mut t,
+        &anne,
+        Query::Holders {
+            object: obj("DATA"),
+        },
+    )
+    .unwrap() else {
         panic!("no holders");
     };
     assert_eq!(rows.first().unwrap().name, "QSECOFR");
     assert_eq!(rows.last().unwrap().name, "*PUBLIC");
     assert_eq!(rows.last().unwrap().bits & Auth::MASK, Auth::EXCLUDE.0);
-    assert!(rows.iter().any(|r| r.name == "ANNE" && r.bits & Auth::MASK == Auth::CHANGE.0));
+    assert!(
+        rows.iter()
+            .any(|r| r.name == "ANNE" && r.bits & Auth::MASK == Auth::CHANGE.0)
+    );
 
     // QSYLAUTU: groups and their members.
     let users = |t: &mut store::txn::Txn<'_>, select: &str| -> Vec<String> {
@@ -136,26 +222,71 @@ fn queries_answer_from_the_store() {
     assert!(!users(&mut t, "*USRPRF").contains(&"CLERKS".to_string()));
 
     // QSYLATLO.
-    autl::create(&mut t, qsys, "PAYROLL", "", "QSECOFR", Authority::EXCLUDE, NOW).unwrap();
+    autl::create(
+        &mut t,
+        qsys,
+        "PAYROLL",
+        "",
+        "QSECOFR",
+        Authority::EXCLUDE,
+        NOW,
+    )
+    .unwrap();
     grant::set_autl(&mut t, qsys, data, Some("PAYROLL")).unwrap();
-    let Some(Answer::Objects { rows }) = ask(&mut t, &anne, Query::ListObjects { list: "PAYROLL".into() }).unwrap() else {
+    let Some(Answer::Objects { rows }) = ask(
+        &mut t,
+        &anne,
+        Query::ListObjects {
+            list: "PAYROLL".into(),
+        },
+    )
+    .unwrap() else {
         panic!("no objects");
     };
-    assert_eq!(rows.iter().map(|r| r.name.as_str()).collect::<Vec<_>>(), ["DATA"]);
+    assert_eq!(
+        rows.iter().map(|r| r.name.as_str()).collect::<Vec<_>>(),
+        ["DATA"]
+    );
 
     // QSYRUPWD and QSYSUPWD: ANNE's data moved onto CLERKS.
-    assert!(ask(&mut t, &anne, Query::GetPassword { user: "ANNE".into() }).is_err());
-    let Some(Answer::Bytes { data: blob }) = ask(&mut t, &secofr, Query::GetPassword { user: "ANNE".into() }).unwrap() else {
+    assert!(
+        ask(
+            &mut t,
+            &anne,
+            Query::GetPassword {
+                user: "ANNE".into()
+            }
+        )
+        .is_err()
+    );
+    let Some(Answer::Bytes { data: blob }) = ask(
+        &mut t,
+        &secofr,
+        Query::GetPassword {
+            user: "ANNE".into(),
+        },
+    )
+    .unwrap() else {
         panic!("no data");
     };
     assert!(blob.starts_with(sec::api::PWD_MAGIC));
-    ask(&mut t, &secofr, Query::SetPassword { user: "CLERKS".into(), data: blob }).unwrap();
+    ask(
+        &mut t,
+        &secofr,
+        Query::SetPassword {
+            user: "CLERKS".into(),
+            data: blob,
+        },
+    )
+    .unwrap();
     let (_, clerks) = sec::profile::objects::read(&mut t, qsys, "CLERKS").unwrap();
     let (_, anne_p) = sec::profile::objects::read(&mut t, qsys, "ANNE").unwrap();
     assert!(!clerks.pwd_none);
     assert_eq!(clerks.hashes, anne_p.hashes);
 
     // The service's own questions are not answered here.
-    let q = Query::ReleaseHandle { handle: vec![1; 12] };
+    let q = Query::ReleaseHandle {
+        handle: vec![1; 12],
+    };
     assert!(ask(&mut t, &anne, q).unwrap().is_none());
 }

@@ -255,7 +255,13 @@ management: `wrkactjob [VIEW(1|2|3)]`, `wrkjob`, `dspjob`, `chgjob`, `dspjoblog`
 `wrksplf`, `wrksplfa`, `dspsplf`, `cpysplf`, `chgsplfa`, `hldsplf`, `rlssplf`,
 `dltsplf`, `crtprtf`, `chgprtf`, `ovrprtf`, `strprtwtr`, `endwtr`, `hldwtr`,
 `rlswtr`, `chgwtr`, `wrkwtr`, `prtcapture list|get|clear`, `wrksyssts`, `wrkdsksts`,
-`wrksysact`, `wmstats`, `pwrdwnsys`, `endsys`, and `dbgkill JOB()` (slic's debug hook:
+`wrksysact`, `wmstats`, `pwrdwnsys`, `endsys`; security: `whoami`, `crtusrprf`,
+`chgusrprf`, `dltusrprf`, `dspusrprf`, `wrkusrprf`, `dspautusr`, `anzdftpwd`,
+`grtobjaut`, `rvkobjaut`, `dspobjaut`, `edtobjaut`, `chgobjown`, `chgobjpgp`, `chkobj`,
+`grtusraut`, `wrkobjown`, `crtautl`, `addautle`, `chgautle`, `rmvautle`, `dspautl`,
+`dspautlobj`, `chgsecaud`, `dspsecaud`, `chgobjaud`, `chgusraud`, `dspaudjrne`,
+`cpyaudjrne`, `prtadpobj`, `prtusrobj`, `prtpvtaut`, `prtpubaut`, `prtsysseca`,
+`prtjobdaut`, `prtsbsdaut`, `prtqaut`, and `dbgkill JOB()` (slic's debug hook:
 SIGKILL a job). Parameters are IBM-style `KEYWORD(value)`. Boot parameters: `qs400.slot=A|B`, `qs400.mode=normal|manual`,
 `qs400.svc=1`, `qs400.ipl=D`, `qs400.media=iso`.
 

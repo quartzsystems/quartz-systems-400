@@ -8,6 +8,8 @@
 //! console, the Phase 7 command processor and the APIs share them.
 
 pub mod audit;
+pub mod dltusrprf;
+pub mod object;
 pub mod usrprf;
 
 use store::obj::ObjectId;

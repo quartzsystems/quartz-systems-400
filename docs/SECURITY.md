@@ -256,7 +256,7 @@ private one; the old owner keeps `*ALL` privately unless
 `CUROWNAUT(*REVOKE)`. The owner's storage moves with the object.
 `CHGOBJPGP` turns a private authority the new group had into its
 group authority; the old group keeps its authority privately unless
-`RVKOLDPGP(*YES)`. An object's owner cannot be its primary group.
+`RVKOLDAUT(*YES)`. An object's owner cannot be its primary group.
 
 ### Authorization lists
 
@@ -266,6 +266,40 @@ entries therefore live where any object's private authorities do.
 `*AUTLMGT` on the list lets a user add and remove entries. Tree root
 slot 0 indexes the objects the list secures (`DSPAUTLOBJ`). A list
 cannot secure another list.
+
+### The commands
+
+`sec::cmd::object` holds `GRTOBJAUT`, `RVKOBJAUT`, `DSPOBJAUT`
+(`EDTOBJAUT` shows the same list on the serial console), `CHGOBJOWN`,
+`CHGOBJPGP`, `CHKOBJ`, `GRTUSRAUT`, `WRKOBJOWN` and the list commands
+`CRTAUTL`, `ADDAUTLE`, `CHGAUTLE`, `RMVAUTLE`, `DSPAUTL`,
+`DSPAUTLOBJ`; `sec::cmd::dltusrprf` holds `DLTUSRPRF` and
+`ANZDFTPWD`. Each checks through the guard, so a job's session
+decides and a refusal is audited like any other:
+
+- `GRTOBJAUT` and `RVKOBJAUT` need `*OBJMGT` (`obj.grant`); a user who
+  is neither the owner nor `*ALLOBJ` may give only authorities it has
+  itself (`CPF2227`). `USER()` merges into an existing private
+  authority unless `REPLACE(*YES)`; a revoke that leaves nothing
+  removes the private authority. `AUTL()` secures or releases the
+  object, for the owner or `*ALLOBJ` only. `AUT(*AUTL)` gives
+  `*PUBLIC` from the list.
+- `DSPOBJAUT` shows every user to the owner and to `*OBJMGT`, and only
+  the user's own row otherwise.
+- `CHGOBJOWN` needs `*OBJEXIST` and `*ADD` to the new owner's profile;
+  `CUROWNAUT` defaults to `*REVOKE`.
+- `ADDAUTLE`, `CHGAUTLE` and `RMVAUTLE` need `*AUTLMGT` on the list,
+  with the same rule on what a non-owner may give.
+- `DLTUSRPRF` needs `*SECADM`; a shipped profile, one's own, or a group
+  with members cannot be deleted. Owned objects stop the delete under
+  `OWNOBJOPT(*NODLT)`, are deleted under `*DLT` or move under
+  `*CHGOWN user`; objects it is the primary group of stop it under
+  `PGPOPT(*NOCHG)` or get a new group (or `*NONE`) under `*CHGPGP`.
+  Its private authorities go with it.
+- `ANZDFTPWD` lists the profiles whose password is their name and, with
+  `ACTION(*DISABLE *PWDEXP)`, disables them or expires the password.
+- `DSPUSRPRF` of another user needs `*READ` and `*OBJOPR` to its
+  profile (`usrprf.display`), as `QSYRUSRI` does.
 
 ## 4. The authority search
 
