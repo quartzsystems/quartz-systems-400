@@ -1,0 +1,54 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the */
+/* root directory of this project.                                       */
+/* Run signed on as USRA (a plain user, PTYLMT(50)): the observations    */
+/* that need a user without special authority.                           */
+PGM
+  DCL &ID *CHAR 7
+  DCL &PTY *DEC (2 0)
+  DCL &LINE *CHAR 80
+  /* Q2: through the adopting program. */
+  CALL SECORA/ADOPTQ2
+  MONMSG CPF0000
+  /* Q4: a password breaking QPWDMINLEN (set it to 6 first). */
+  CHGPWD PASSWORD(ORACLE1) NEWPASSWORD(AB)
+  MONMSG CPF0000 EXEC(DO)
+    RCVMSG MSGTYPE(*EXCP) MSGID(&ID)
+    CHGVAR &LINE ('CHGPWD rule failure: ' *CAT &ID)
+    CALL SECORA/SORACLE PARM('Q4' &LINE)
+  ENDDO
+  /* Q5: a command needing *SECADM. */
+  CRTUSRPRF USRPRF(NOPE) PASSWORD(*NONE)
+  MONMSG CPF0000 EXEC(DO)
+    RCVMSG MSGTYPE(*EXCP) MSGID(&ID)
+    CHGVAR &LINE ('CRTUSRPRF without *SECADM: ' *CAT &ID)
+    CALL SECORA/SORACLE PARM('Q5' &LINE)
+  ENDDO
+  /* Q7: RUNPTY under PTYLMT. */
+  CHGJOB RUNPTY(10)
+  MONMSG CPF0000 EXEC(DO)
+    RCVMSG MSGTYPE(*EXCP) MSGID(&ID)
+    CHGVAR &LINE ('CHGJOB RUNPTY(10) with PTYLMT(50): ' *CAT &ID)
+    CALL SECORA/SORACLE PARM('Q7' &LINE)
+    GOTO Q9
+  ENDDO
+  RTVJOBA RUNPTY(&PTY)
+  CHGVAR &LINE ('CHGJOB RUNPTY(10) with PTYLMT(50): ' *CAT %CHAR(&PTY))
+  CALL SECORA/SORACLE PARM('Q7' &LINE)
+Q9:
+  /* Q9: ADDPFM with *OBJOPR *OBJALTER *READ and no *OBJMGT. */
+  ADDPFM FILE(SECORA/F) MBR(M9)
+  MONMSG CPF0000 EXEC(DO)
+    CALL SECORA/SORACLE PARM('Q9' 'ADDPFM with *OBJALTER only: refused')
+    GOTO Q12
+  ENDDO
+  CALL SECORA/SORACLE PARM('Q9' 'ADDPFM with *OBJALTER only: allowed')
+Q12:
+  /* Q12: granting more than one has. */
+  GRTOBJAUT OBJ(SECORA/F) OBJTYPE(*FILE) USER(GRPA) AUT(*ALL)
+  MONMSG CPF0000 EXEC(DO)
+    RCVMSG MSGTYPE(*EXCP) MSGID(&ID)
+    CHGVAR &LINE ('GRTOBJAUT beyond own: ' *CAT &ID)
+    CALL SECORA/SORACLE PARM('Q12' &LINE)
+  ENDDO
+ENDPGM

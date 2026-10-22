@@ -1,0 +1,14 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the */
+/* root directory of this project.                                       */
+/* Compiled USRPRF(*OWNER) and owned by OWNA, whose group GRPA has       */
+/* *CHANGE to SECORA/F while OWNA itself has none: does adoption bring   */
+/* the group's authority? Called by USRA, who has no authority to F.     */
+PGM
+  CHKOBJ OBJ(SECORA/F) OBJTYPE(*FILE) AUT(*CHANGE)
+  MONMSG CPF0000 EXEC(DO)
+    CALL SORACLE PARM('Q2' 'adopt through owner''s group: refused')
+    RETURN
+  ENDDO
+  CALL SORACLE PARM('Q2' 'adopt through owner''s group: allowed')
+ENDPGM

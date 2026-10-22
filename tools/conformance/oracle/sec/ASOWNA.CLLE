@@ -1,0 +1,14 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the */
+/* root directory of this project.                                       */
+/* Run signed on as OWNA: it owns SECORA/F3 with its own authority       */
+/* reduced to *USE while its group GRPA holds *ALL. Does the owner's     */
+/* entry decide, or do the groups add to it?                             */
+PGM
+  CHKOBJ OBJ(SECORA/F3) OBJTYPE(*FILE) AUT(*CHANGE)
+  MONMSG CPF0000 EXEC(DO)
+    CALL SECORA/SORACLE PARM('Q3' 'owner reduced, group *ALL: refused')
+    RETURN
+  ENDDO
+  CALL SECORA/SORACLE PARM('Q3' 'owner reduced, group *ALL: allowed')
+ENDPGM
