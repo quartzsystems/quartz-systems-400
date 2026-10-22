@@ -219,18 +219,24 @@ impl Provider for StoreProvider {
                     .map_err(|e| e.to_string())
             })
         } else {
+            let target = if lib_u == "*CURLIB" || lib_u == "*LIBL" {
+                "QGPL".to_string()
+            } else {
+                lib_u.clone()
+            };
+            let user_domain = super::sources::user_domain_allowed(&self.shared, &target);
             with_main(&self.shared, |txn, qsys| {
-                let target = if lib_u == "*CURLIB" || lib_u == "*LIBL" {
-                    "QGPL"
-                } else {
-                    &lib_u
-                };
                 let l =
-                    ops::find_library(txn, qsys, Name::parse(target).map_err(|e| e.to_string())?)
+                    ops::find_library(txn, qsys, Name::parse(&target).map_err(|e| e.to_string())?)
                         .map_err(|e| e.to_string())?;
-                usridx::create(txn, &params(l.id), attr.fixed, key_len, entry_len)
-                    .map(|_| ())
-                    .map_err(|e| e.to_string())
+                let id = usridx::create(txn, &params(l.id), attr.fixed, key_len, entry_len)
+                    .map_err(|e| e.to_string())?;
+                if !user_domain {
+                    let (page, mut h) = ops::read_header(txn, id).map_err(|e| e.to_string())?;
+                    h.domain = store::obj::header::Domain::System;
+                    ops::write_header(txn, page, &h).map_err(|e| e.to_string())?;
+                }
+                Ok(())
             })
         };
         r.map_err(|e| {

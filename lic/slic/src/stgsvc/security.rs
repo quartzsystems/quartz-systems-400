@@ -454,3 +454,17 @@ fn audit_force(system: &mut System) {
     let who = ("QSYSARB".to_string(), "QSYS".to_string(), 0);
     super::hist::system_message(system, "CPI2284", b"QAUDJRN   QSYS      ", "04", who);
 }
+
+/// Whether `QSYS/QAUDJRN` exists.
+pub fn audit_journal_exists(system: &mut System) -> bool {
+    let Some(s) = system.storage.as_mut() else {
+        return false;
+    };
+    let Some(qsys) = s.qsys else {
+        return false;
+    };
+    let Ok(mut txn) = s.store.begin() else {
+        return false;
+    };
+    matches!(sec::audit::write::journal(&mut txn, qsys), Ok(Some(_)))
+}

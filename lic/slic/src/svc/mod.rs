@@ -339,12 +339,14 @@ fn sysval(system: &mut System, args: &[&str]) -> String {
             let actor = crate::stgsvc::security::actor();
             let dst = crate::stgsvc::security::dst_allows_sysval_changes(system.lic.as_ref().map(|(_, r)| r));
             if let Err(e) = sec::sysval::require_change(actor.as_ref(), &name, security, dst) {
-                return format!("{e}
-");
+                return format!("{e}\n");
+            }
+            let journal = crate::stgsvc::security::audit_journal_exists(system);
+            if let Err(e) = sec::sysval::validate(&name, &rest.join(" "), journal) {
+                return format!("{e}\n");
             }
             let Some(vals) = system.sysvals.as_mut() else {
-                return "System values not loaded
-".to_string();
+                return "System values not loaded\n".to_string();
             };
             let before = vals.get(&name).map(|v| v.text()).unwrap_or_default();
             match vals.set_text(&name, &rest.join(" ")) {

@@ -143,7 +143,7 @@ impl StoreUserSpaces {
 
 /// Whether `QALWUSRDMN` lets library `lib` hold user-domain objects
 /// (`*ALL`, or the library listed; `QTEMP` always may).
-fn user_domain_allowed(shared: &Shared, lib: &str) -> bool {
+pub(crate) fn user_domain_allowed(shared: &Shared, lib: &str) -> bool {
     let b = shared.borrow();
     let Some(v) = b.as_ref().and_then(|l| l.sysvals.as_ref()) else {
         return true;

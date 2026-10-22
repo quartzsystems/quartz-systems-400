@@ -770,3 +770,25 @@ Object read.
 | 20 | 8 | ZROTYP | object type |
 | 28 | 1 | ZRACCY | `R` read |
 | 29 | 24 | ZROPER | operation |
+
+## 8. Security system values
+
+Changing a value in the `SEC` group needs `*ALLOBJ` and `*SECADM`; the
+auditing values (`QAUDCTL`, `QAUDENDACN`, `QAUDFRCLVL`, `QAUDLVL`,
+`QAUDLVL2`, `QCRTOBJAUD`) need `*AUDIT`; any other value `*ALLOBJ`
+until `CHGSYSVAL` is a command. DST's "Allow system value security
+changes" (`N`) refuses every security change (`CPF18B4`). Each change
+writes an `SV` entry and `CPF1806` in `QHST` with the old and new value.
+
+| Value | Behavior |
+|---|---|
+| `QSECURITY` | §6; takes effect at the next IPL |
+| `QALWUSRDMN` | user spaces and indexes created in a library it does not list are system domain |
+| `QAUDCTL`, `QAUDLVL`, `QAUDLVL2`, `QAUDENDACN`, `QCRTOBJAUD` | §7; `QAUDCTL` other than `*NONE` needs `QSYS/QAUDJRN` (`CPF2283`); the lists take only their tokens (`CPF1028`) |
+| `QAUDFRCLVL` | stored; every audit entry is written before the request answers |
+| `QCRTAUT` | `*PUBLIC` of new objects in a library whose `CRTAUT` is `*SYSVAL` |
+| `QDSPSGNINF`, `QINACTITV`, `QINACTMSGQ`, `QDSCJOBITV`, `QLMTDEVSSN`, `QLMTSECOFR`, `QMAXSIGN`, `QMAXSGNACN` | §9, sign-on |
+| `QPWD*`, `QPWDRULES` | §2; `QPWDRULES` takes only its tokens; `QPWDLVL` takes effect at the next IPL |
+| `QUSEADPAUT` | §5 |
+| `QALWOBJRST`, `QVFYOBJRST`, `QFRCCVNRST` | stored until restore (Phase 11) |
+| `QAUTOCFG`, `QAUTOVRT`, `QRMTSIGN`, `QRETSVRSEC`, `QSHRMEMCTL`, `QSCANFS`, `QSCANFSCTL`, `QSSLCSL`, `QSSLCSLCTL`, `QSSLPCL` | stored; their subjects (devices, servers, file system scans, TLS) come later |
