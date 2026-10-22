@@ -90,7 +90,7 @@ fn analyzer_agrees_with_the_box() {
         compared += 1;
         let same = match (ours.strip_prefix("OK "), theirs.strip_prefix("OK ")) {
             (Some(_), Some(_)) => true,
-            (None, None) => first_diagnostic(ours) == first_diagnostic(theirs),
+            (None, None) => first_diagnostic(ours) == first_diagnostic(&theirs),
             _ => false,
         };
         if !same {
