@@ -318,9 +318,10 @@ impl Parser {
         if self.m.proc_named(&name).is_some() || self.m.proto_named(&name).is_some() {
             return Err(self.err(format!("{name} is declared twice")));
         }
-        let (params, ret, _) = self.signature()?;
+        let (params, ret, opdesc) = self.signature()?;
         let mut p = Proc::new(&name);
         p.ret = ret;
+        p.opdesc = opdesc;
         for (i, param) in params.iter().enumerate() {
             p.vars.push(Var::new(
                 &param.name,

@@ -1,0 +1,42 @@
+; operational descriptors: CEEDOD in a procedure declared opdesc; CEE0820 in one that is not
+module API12
+extern proc CEEDOD($pos: i32, $t: i32, $dt: i32, $i1: i32, $i2: i32, $len: i32, $fc: char(12) *NOPASS)
+static $t: i32
+static $dt: i32
+static $i1: i32
+static $i2: i32
+static $len: i32
+static $fc: char(12)
+static $text: char(10) inz("HELLO")
+static $num: packed(5,2) inz(1.5)
+static $arr: array[4] of i16
+proc SHOW($s: char(10) *VARSIZE, $n: packed(5,2), $a: array[4] of i16 *NOPASS) opdesc {
+L0:
+  callb CEEDOD(1, $t, $dt, $i1, $i2, $len)
+  dsply $t
+  dsply $dt
+  dsply $len
+  callb CEEDOD(2, $t, $dt, $i1, $i2, $len)
+  dsply $dt
+  dsply $len
+  callb CEEDOD(3, $t, $dt, $i1, $i2, $len)
+  dsply $t
+  dsply $i1
+  dsply $len
+  ret
+}
+proc PLAIN($s: char(10)) {
+L0:
+  callb CEEDOD(1, $t, $dt, $i1, $i2, $len, $fc)
+  %a = addr $fc
+  %n = load [%a +2]:i16
+  dsply %n
+  ret
+}
+proc API12() entry {
+L0:
+  callb SHOW("ABC", $num)
+  callb SHOW($text, $num, $arr)
+  callb PLAIN($text)
+  ret
+}

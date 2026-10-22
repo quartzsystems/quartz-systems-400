@@ -292,7 +292,7 @@ The condition APIs (`CEEHDLR`, `CEEHDLU`, `CEERTX`, `CEEUTX`,
 |---|---|
 | `CEE4ABN` | none: cancel to the control boundary with `CEE9902` |
 | `CEETREC` | [return code `bin4`], [user return code `bin4`]: every entry ends with `CEE9903` pending, which no handler sees |
-| `CEEDOD` | position, type, datatype, info1, info2, length, fc: `CEE0820`, no operational descriptors exist |
+| `CEEDOD` | position, type, datatype, info1, info2, length, fc: the caller's descriptor of that argument (`ABI.md` §3); `CEE0820` when the caller passed none or the position is past them |
 | `CEEGPID` | version out (1), platform out (3), fc |
 | `CEETSTA` | presence out `bin4`, argument number `bin4`, fc |
 | `CEECRHP` | heap id out, initial size, increment, strategy, fc |

@@ -74,6 +74,75 @@ pub fn off32(v: u64) -> i32 {
 /// then `retbuf` when the procedure returns a storage type.
 pub const HIDDEN_PARAMS: usize = 3;
 
+/// An operational descriptor list, what `opdesc` addresses: a native
+/// `i32` entry count (one per declared parameter, or per argument when
+/// more are passed), 4 reserved bytes, then the entries.
+pub const OPDESC_HEADER: u32 = 8;
+/// One descriptor: five native `i32`s (`desc_type`, `datatype`,
+/// `info1`, `info2`, `length`) and 4 reserved bytes.
+pub const OPDESC_ENTRY: u32 = 24;
+
+/// The values a descriptor's words take (a QS/400 reading of the
+/// `CEEDOD` codes).
+pub mod opdesc {
+    /// `desc_type`: the argument was omitted or not passed.
+    pub const NONE: i32 = 0;
+    /// `desc_type`: one element; `length` is its size.
+    pub const ELEMENT: i32 = 2;
+    /// `desc_type`: an array; `info1` is the element count, `length`
+    /// one element's size.
+    pub const ARRAY: i32 = 3;
+    /// `datatype`: a structure, pointer or other untyped storage.
+    pub const UNTYPED: i32 = 0;
+    /// `datatype`: an integer, float, packed or zoned number.
+    pub const NUMERIC: i32 = 1;
+    /// `datatype`: fixed characters.
+    pub const CHAR: i32 = 2;
+    /// `datatype`: varying characters with a 2-byte length;
+    /// `length` is the maximum.
+    pub const VARCHAR: i32 = 3;
+    /// `datatype`: fixed UCS-2.
+    pub const UCS2: i32 = 4;
+    /// `datatype`: varying UCS-2.
+    pub const VARUCS2: i32 = 5;
+    /// `datatype`: graphic.
+    pub const GRAPHIC: i32 = 6;
+    /// `datatype`: a date, time or timestamp.
+    pub const DATETIME: i32 = 7;
+}
+
+/// The descriptor words of an argument passed as `ty`: `desc_type`,
+/// `datatype`, `info1`, `info2`, `length`.
+#[must_use]
+pub fn describe(ty: &Type) -> [i32; 5] {
+    let len = |t: &Type| i32::try_from(t.size()).unwrap_or(i32::MAX);
+    if let Some((elem, n)) = ty.array() {
+        let n = i32::try_from(n).unwrap_or(i32::MAX);
+        return [opdesc::ARRAY, datatype(elem), n, 0, len(elem)];
+    }
+    [opdesc::ELEMENT, datatype(ty), 0, 0, len(ty)]
+}
+
+fn datatype(ty: &Type) -> i32 {
+    use qir::TypeClass;
+    match ty {
+        Type::Char(_) => opdesc::CHAR,
+        Type::VarChar(_) => opdesc::VARCHAR,
+        Type::Ucs2(_) => opdesc::UCS2,
+        Type::VarUcs2(_) => opdesc::VARUCS2,
+        Type::Graphic(_) => opdesc::GRAPHIC,
+        Type::Date(_) | Type::Time(_) | Type::Timestamp(_) => opdesc::DATETIME,
+        t if matches!(
+            t.class(),
+            TypeClass::Int | TypeClass::UInt | TypeClass::Float | TypeClass::Decimal
+        ) =>
+        {
+            opdesc::NUMERIC
+        }
+        _ => opdesc::UNTYPED,
+    }
+}
+
 /// The Cranelift type a register type lowers to.
 #[must_use]
 pub fn reg_type(ty: &Type) -> types::Type {

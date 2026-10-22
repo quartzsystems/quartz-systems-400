@@ -20,7 +20,8 @@ pub enum RtFn {
     /// Returns when the condition was handled and execution resumes;
     /// otherwise sets the job's pending flag and returns.
     Raise = 0,
-    /// `enter(env, code)`: a procedure at code address `code` begins.
+    /// `enter(env, code, argc, opdesc)`: a procedure at code address
+    /// `code` begins with `argc` arguments and the descriptor list.
     Enter = 1,
     /// `leave(env)`: the procedure ends, normally or by percolation.
     Leave = 2,
@@ -317,7 +318,7 @@ impl RtFn {
     pub fn shape(self) -> (usize, Option<types::Type>) {
         match self {
             Self::Raise => (1, None),
-            Self::Enter => (2, None),
+            Self::Enter => (3, None),
             Self::Leave => (0, None),
             Self::Deref => (2, Some(types::I64)),
             Self::Copy => (2, None),

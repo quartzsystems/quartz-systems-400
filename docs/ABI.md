@@ -73,7 +73,19 @@ proc(env: i64, argc: i64, opdesc: i64, [retbuf: i64,] params...) -> [value]
   The prologue reads each parameter's address from it, null when not
   passed.
 - `opdesc`: the operational descriptor list, or 0 when the caller
-  passed none. *Phase 4, pending*: `CEEDOD` and `*VARSIZE` lengths.
+  passed none. A caller builds one for a callee declared `opdesc`
+  (a `proc`, `extern proc` or `proto` with the keyword): a native
+  `i32` entry count (one per declared parameter, or per argument when
+  more are passed) and 4 reserved bytes (`OPDESC_HEADER`, 8), then
+  24 bytes per argument (`OPDESC_ENTRY`): native `i32`s `desc_type`
+  (0 not passed or `*OMIT`, 2 element, 3 array), `datatype` (0
+  untyped, 1 numeric, 2 char, 3 varchar, 4 UCS-2, 5 varying UCS-2, 6
+  graphic, 7 date, time or timestamp), `info1` (an array's element
+  count), `info2` (reserved), `length` (the bytes of the argument, or
+  of one array element; a `*VARSIZE` literal's own length) and 4
+  reserved bytes. `enter` keeps the list in the call-stack entry and
+  `CEEDOD` answers from it (`codegen::abi::describe` and
+  `mi::opdesc`). The codes are a QS/400 reading of `CEEDOD`'s.
 - `retbuf`: present when the return type is not a register type; the
   caller provides storage of the type's size and the callee writes it.
 - Parameters in declaration order: a by-reference parameter is the
@@ -136,7 +148,7 @@ absent optional length is -1.
 | Index | Function | Operands after `env` | Returns |
 |---|---|---|---|
 | 0 | `raise` | `cond: i32` | |
-| 1 | `enter` | `code, argc` | |
+| 1 | `enter` | `code, argc, opdesc` | |
 | 2 | `leave` | | |
 | 3 | `deref` | `lo, hi` | native address |
 | 4 | `copy` | `dst, src, len` (no `env`) | |
@@ -201,9 +213,10 @@ the key fields' bytes in record layout, a prefix allowed; a relative
 record number is passed when there is no key.
 
 `enter` is called in every prologue with the procedure's own code
-address and its argument count, so the runtime can push a call-stack
-entry (with `%PARMS` for `CEETSTA`) and identify the procedure from
-the program's procedure table; `leave` is called before
+address, its argument count and its descriptor list, so the runtime
+can push a call-stack entry (with `%PARMS` for `CEETSTA` and the
+descriptors for `CEEDOD`) and identify the procedure from the
+program's procedure table; `leave` is called before
 every return, and the spaces of automatic storage the entry handed out
 die with it. `cond` is the number of the `MCHnnnn` message: `0601`,
 `0602`, `0603`, `1202`, `1210`, `1211`, `1602`, `3401`, `3402`, `3601`,

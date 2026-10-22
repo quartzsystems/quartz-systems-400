@@ -41,10 +41,10 @@ pub extern "sysv64" fn raise(env: *mut Env, cond: i32) {
     raise_on(j, c);
 }
 
-/// `enter(env, code, argc)`: a call-stack entry; the static area
-/// becomes the running program's activation in the group its attribute
-/// names.
-pub extern "sysv64" fn enter(env: *mut Env, code: i64, argc: i64) {
+/// `enter(env, code, argc, opdesc)`: a call-stack entry; the static
+/// area becomes the running program's activation in the group its
+/// attribute names.
+pub extern "sysv64" fn enter(env: *mut Env, code: i64, argc: i64, opdesc: i64) {
     let j = job(env);
     let e = env_of(env);
     j.depth += 1;
@@ -85,6 +85,7 @@ pub extern "sysv64" fn enter(env: *mut Env, code: i64, argc: i64) {
         msgq: crate::msg::MsgQueue::default(),
         control_boundary,
         argc: u32::try_from(argc).unwrap_or(0),
+        opdesc: opdesc.cast_unsigned(),
         region: 0,
         stmt: 0,
         handlers: Vec::new(),

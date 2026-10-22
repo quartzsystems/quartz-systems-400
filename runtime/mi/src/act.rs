@@ -386,6 +386,8 @@ pub struct Frame {
     pub control_boundary: bool,
     /// Arguments the entry was called with, `*OMIT` ones included.
     pub argc: u32,
+    /// The operational descriptor list the caller passed, 0 for none.
+    pub opdesc: u64,
     /// The `monitor` region the entry is suspended in, from the
     /// module's region table; 0 outside every region.
     pub region: u32,

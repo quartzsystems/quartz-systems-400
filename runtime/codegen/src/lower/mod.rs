@@ -290,6 +290,8 @@ pub(crate) struct Lowerer<'a, 'b> {
     pub slots: Vec<Option<StackSlot>>,
     pub env: Value,
     pub argc: Value,
+    /// The operational descriptor list the caller passed, or 0.
+    pub opdesc: Value,
     pub retbuf: Option<Value>,
     pub param_vals: Vec<Value>,
     pub unwind: Block,
@@ -330,6 +332,7 @@ impl<'a, 'b> Lowerer<'a, 'b> {
             slots: Vec::new(),
             env: zero,
             argc: zero,
+            opdesc: zero,
             retbuf: None,
             param_vals: Vec::new(),
             unwind: Block::from_u32(0),
@@ -383,6 +386,7 @@ impl<'a, 'b> Lowerer<'a, 'b> {
         let params: Vec<Value> = self.b.block_params(entry).to_vec();
         self.env = params[0];
         self.argc = params[1];
+        self.opdesc = params[2];
         let mut at = abi::HIDDEN_PARAMS;
         if self.p.entry {
             // A parameter list: argv[k] when passed, else null.
@@ -483,7 +487,8 @@ impl<'a, 'b> Lowerer<'a, 'b> {
         let code = self.b.ins().func_addr(types::I64, me);
         let enter = self.rt_ref(RtFn::Enter);
         let argc = self.argc;
-        self.b.ins().call(enter, &[self.env, code, argc]);
+        let opdesc = self.opdesc;
+        self.b.ins().call(enter, &[self.env, code, argc, opdesc]);
         self.check_pending();
         self.b.ins().jump(self.blocks[0], &[]);
     }

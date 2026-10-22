@@ -29,7 +29,7 @@ extern "sysv64" fn raise(env: *mut Env, cond: u32) {
     RAISED.with_borrow_mut(|r| r.push(cond));
 }
 
-extern "sysv64" fn enter(_env: *mut Env, _code: u64, _argc: i64) {
+extern "sysv64" fn enter(_env: *mut Env, _code: u64, _argc: i64, _opdesc: i64) {
     let (cur, max) = DEPTH.get();
     DEPTH.set((cur + 1, max.max(cur + 1)));
 }
