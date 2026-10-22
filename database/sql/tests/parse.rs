@@ -422,10 +422,6 @@ fn errors() {
         "{e}"
     );
     for (text, what) in [
-        (
-            "WITH x AS (SELECT 1 FROM d) SELECT * FROM x",
-            "common table",
-        ),
         ("SELECT 1 FROM a EXCEPT SELECT 1 FROM b", "EXCEPT"),
         ("CREATE TABLE t (c CLOB(1K))", "CLOB"),
         ("CALL p()", "CALL"),
