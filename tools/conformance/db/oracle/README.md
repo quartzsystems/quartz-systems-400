@@ -5,9 +5,10 @@
    to `/home/QSTEST/oracle/` (the CL reads both from there), and
    `oracle/QSTEST.CLLE` to a source file of your choice with record
    length 240 (its lines run past 112).
-2. `CRTBNDCL QSTEST/QSTEST` from `QSTEST.CLLE`, then `CALL QSTEST/QSTEST`.
-   The program creates the library, loads the data, runs the script and
-   writes every output to `/home/QSTEST/out/`.
+2. `CRTBNDCL PGM(QGPL/QSTEST)` from `QSTEST.CLLE`, outside `QSTEST`
+   because the program deletes and recreates that library, then
+   `CALL QGPL/QSTEST`. The program creates the library, loads the data,
+   runs the script and writes every output to `/home/QSTEST/out/`.
 3. Copy `/home/QSTEST/out/*` into `expected/` here, keeping the names:
 
 | expected file | from |
