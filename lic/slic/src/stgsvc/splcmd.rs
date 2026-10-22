@@ -235,7 +235,7 @@ fn queue_op(system: &mut System, cmd: &str, p: &Params) -> Result<String, String
 
 /// `WRKOUTQ`: every queue, or one queue's files.
 fn wrkoutq(system: &mut System, p: &Params) -> Result<String, String> {
-    let Some(q) = p.pos.first().map(|q| q.to_ascii_uppercase()) else {
+    let Some(q) = p.pos_or(0, "OUTQ").ok().map(|q| q.to_ascii_uppercase()) else {
         return all_queues(system);
     };
     let (real, oq, files) = spool::on_queue(system, &q)?;

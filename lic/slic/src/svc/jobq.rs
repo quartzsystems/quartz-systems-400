@@ -26,7 +26,10 @@ pub fn command(system: &mut System, cmd: &str, line: &str) -> Option<String> {
     let job = || p.pos_or(0, "JOB").map(|j| j.to_ascii_uppercase());
     let queue = || p.pos_or(0, "JOBQ").map(|q| q.to_ascii_uppercase());
     let r = match cmd {
-        "wrkjobq" => jobqs::wrkjobq(system, p.pos.first().map(String::as_str)),
+        "wrkjobq" => {
+            let q = p.pos_or(0, "JOBQ").ok().map(|q| q.to_ascii_uppercase());
+            jobqs::wrkjobq(system, q.as_deref())
+        }
         "crtjobq" => {
             queue().and_then(|q| jobqs::create_delete(system, &q, &p.text("TEXT"), true, me))
         }
