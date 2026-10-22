@@ -482,7 +482,7 @@ At offset 0 of the body. Text fields are CP037, space padded.
 
 Public authority bits: 0x0001 `*OBJOPR`, 0x0002 `*OBJMGT`, 0x0004
 `*OBJEXIST`, 0x0008 `*OBJALTER`, 0x0010 `*OBJREF`, 0x0020 `*READ`,
-0x0040 `*ADD`, 0x0080 `*UPD`, 0x0100 `*DLT`, 0x0200 `*EXECUTE`; 0 is
+0x0040 `*ADD`, 0x0080 `*UPD`, 0x0100 `*DLT`, 0x0200 `*EXECUTE`, 0x0400 `*AUTLMGT`; 0 is
 `*EXCLUDE`; 0x8000_0000 means the public authority comes from the
 authorization list. Phase 6 enforces them; `docs/SECURITY.md` has the
 search order. The private authority overflow tree's pages are B+tree

@@ -105,7 +105,6 @@ pub fn create(
     write(txn, id, p)?;
     let (page, mut h) = auth::load(txn, id)?;
     h.public_authority = public;
-    h.owner = store::obj::header::text(owner)?;
     auth::save_authority(txn, page, &mut h)?;
     Ok(id)
 }

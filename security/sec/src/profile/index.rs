@@ -183,3 +183,39 @@ pub fn all_objects(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<Vec<ObjectId>> {
     }
     Ok(out)
 }
+
+/// Where the indexes and the objects disagree, as text; empty when they
+/// agree. `CHKOBJITG`-style use and the deletion tests.
+pub fn verify(txn: &mut Txn<'_>, qsys: ObjectId) -> Result<Vec<String>> {
+    use std::collections::BTreeSet;
+    let mut want: BTreeSet<(String, u8, ObjectId, u64)> = BTreeSet::new();
+    for id in all_objects(txn, qsys)? {
+        let (_, h) = read_header(txn, id)?;
+        let owner = crate::rec::text_of(&h.owner);
+        if objects::exists(txn, qsys, &owner) {
+            want.insert((owner, Kind::Owned as u8, id, 0));
+        }
+        let pgp = crate::rec::text_of(&h.primary_group);
+        if !pgp.is_empty() {
+            want.insert((pgp, Kind::Group as u8, id, u64::from(h.group_authority.0)));
+        }
+        for pa in auth::private_list(txn, &h)? {
+            let who = crate::rec::text_of(&pa.profile);
+            want.insert((who, Kind::Private as u8, id, u64::from(pa.bits.0)));
+        }
+    }
+    let mut have = BTreeSet::new();
+    for name in objects::list(txn, qsys)? {
+        for kind in [Kind::Owned, Kind::Private, Kind::Group] {
+            for (id, v) in list(txn, qsys, &name, kind)? {
+                have.insert((name.clone(), kind as u8, id, v));
+            }
+        }
+    }
+    let mut out: Vec<String> = want
+        .difference(&have)
+        .map(|e| format!("missing from the index: {e:?}"))
+        .collect();
+    out.extend(have.difference(&want).map(|e| format!("indexed but not on the object: {e:?}")));
+    Ok(out)
+}

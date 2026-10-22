@@ -100,7 +100,7 @@ fn apply(p: &mut UsrPrf, k: &Keywords, env: &Env<'_>) -> Result<()> {
                 };
             }
             "ASTLVL" => {
-                p.astlvl = one_of(kw, &v, &["*SYSVAL", "*BASIC", "*INTERMED", "*ADVANCED"])?
+                p.astlvl = one_of(kw, &v, &["*SYSVAL", "*BASIC", "*INTERMED", "*ADVANCED"])?;
             }
             "CURLIB" => p.curlib = name_or(kw, &v, &["*CRTDFT"])?,
             "INLPGM" => p.inlpgm = qual_or(kw, &v, &["*NONE"])?,
@@ -127,7 +127,7 @@ fn apply(p: &mut UsrPrf, k: &Keywords, env: &Env<'_>) -> Result<()> {
             "GRPPRF" => p.grpprf = name_or(kw, &v, &["*NONE"])?,
             "OWNER" => p.owner_grpprf = one_of(kw, &v, &["*USRPRF", "*GRPPRF"])? == "*GRPPRF",
             "GRPAUT" => {
-                p.grpaut = one_of(kw, &v, &["*NONE", "*ALL", "*CHANGE", "*USE", "*EXCLUDE"])?
+                p.grpaut = one_of(kw, &v, &["*NONE", "*ALL", "*CHANGE", "*USE", "*EXCLUDE"])?;
             }
             "GRPAUTTYP" => p.grpauttyp_pgp = one_of(kw, &v, &["*PRIVATE", "*PGP"])? == "*PGP",
             "SUPGRPPRF" => {
@@ -155,7 +155,7 @@ fn apply(p: &mut UsrPrf, k: &Keywords, env: &Env<'_>) -> Result<()> {
             "OUTQ" => p.outq = qual_or(kw, &v, &["*WRKSTN", "*DEV"])?,
             "ATNPGM" => p.atnpgm = qual_or(kw, &v, &["*SYSVAL", "*NONE", "*ASSIST"])?,
             "SRTSEQ" => {
-                p.srtseq = qual_or(kw, &v, &["*SYSVAL", "*HEX", "*LANGIDUNQ", "*LANGIDSHR"])?
+                p.srtseq = qual_or(kw, &v, &["*SYSVAL", "*HEX", "*LANGIDUNQ", "*LANGIDSHR"])?;
             }
             "LANGID" => p.langid = v.trim().to_ascii_uppercase(),
             "CNTRYID" => p.cntryid = v.trim().to_ascii_uppercase(),
@@ -190,7 +190,7 @@ fn apply(p: &mut UsrPrf, k: &Keywords, env: &Env<'_>) -> Result<()> {
                     .split_whitespace()
                     .next()
                     .unwrap_or("*NOCHG")
-                    .to_ascii_uppercase()
+                    .to_ascii_uppercase();
             }
             "USREXPITV" => p.usrexpitv = u32::try_from(number(kw, &v, 1, 366)?).expect("range"),
             "USREXPDATE" => {
@@ -416,6 +416,7 @@ fn when(t: u64) -> String {
 }
 
 /// `DSPUSRPRF TYPE(*BASIC)` as text.
+#[allow(clippy::too_many_lines)]
 pub fn display_basic(p: &UsrPrf, pol: &Policy, now: u64) -> String {
     let mut o = String::new();
     let mut line = |label: &str, v: &str| {

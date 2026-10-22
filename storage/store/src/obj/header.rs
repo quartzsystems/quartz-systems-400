@@ -184,6 +184,8 @@ impl Authority {
     pub const DLT: u32 = 0x0100;
     /// `*EXECUTE`.
     pub const EXECUTE: u32 = 0x0200;
+    /// `*AUTLMGT`: managing an authorization list's entries.
+    pub const AUTLMGT: u32 = 0x0400;
     /// The public authority comes from the authorization list.
     pub const FROM_AUTL: u32 = 0x8000_0000;
 

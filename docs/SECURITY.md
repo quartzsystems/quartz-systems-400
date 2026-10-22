@@ -208,3 +208,61 @@ IBM's parameters: the new password, the old password, a one-character
 return code (`0` accepts) and the profile name. At levels 0 and 1 the
 passwords are `CHAR(10)`; at 2 and 3 each is a four-byte length, a
 four-byte CCSID and the characters.
+
+## 3. Authorities
+
+An authority set is the header's 32-bit field (`STORE_FORMAT.md` §8):
+
+| Bit | Authority | Kind |
+|---|---|---|
+| 0x0001 | `*OBJOPR` | object |
+| 0x0002 | `*OBJMGT` | object |
+| 0x0004 | `*OBJEXIST` | object |
+| 0x0008 | `*OBJALTER` | object |
+| 0x0010 | `*OBJREF` | object |
+| 0x0400 | `*AUTLMGT` | object, authorization lists only |
+| 0x0020 | `*READ` | data |
+| 0x0040 | `*ADD` | data |
+| 0x0080 | `*UPD` | data |
+| 0x0100 | `*DLT` | data |
+| 0x0200 | `*EXECUTE` | data |
+
+The combinations expand to exactly these bits and display back as the
+combination only when the bits match; any other set shows as `USER
+DEF`:
+
+| Combination | Bits |
+|---|---|
+| `*ALL` | every object and data authority (with `*AUTLMGT` on an authorization list) |
+| `*CHANGE` | `*OBJOPR` and every data authority |
+| `*USE` | `*OBJOPR *READ *EXECUTE` |
+| `*EXCLUDE` | none; as a private authority it still decides |
+
+An object carries:
+
+- its owner and the owner's authority, `*ALL` unless reduced (IBM
+  allows reducing it; `auth_flags` bit 0 records that it was);
+- `*PUBLIC`, or `*PUBLIC` taken from the authorization list (bit
+  0x8000_0000);
+- its primary group and that group's authority;
+- private authorities: sixteen in the header, the rest in the overflow
+  tree, each also in the profile's private index;
+- the authorization list securing it, by name;
+- an authority generation, bumped by every change, which cached
+  decisions compare.
+
+`CHGOBJOWN` gives the new owner the owner's authority and drops its
+private one; the old owner keeps `*ALL` privately unless
+`CUROWNAUT(*REVOKE)`. The owner's storage moves with the object.
+`CHGOBJPGP` turns a private authority the new group had into its
+group authority; the old group keeps its authority privately unless
+`RVKOLDPGP(*YES)`. An object's owner cannot be its primary group.
+
+### Authorization lists
+
+A `*AUTL` is an object in `QSYS` whose private authorities are the
+list's entries and whose `*PUBLIC` is the list's public authority; its
+entries therefore live where any object's private authorities do.
+`*AUTLMGT` on the list lets a user add and remove entries. Tree root
+slot 0 indexes the objects the list secures (`DSPAUTLOBJ`). A list
+cannot secure another list.
