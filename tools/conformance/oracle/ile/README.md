@@ -26,7 +26,7 @@ that differ; without the file the test reports itself skipped.
 | `CEEFC` | 12 | the feedback codes of `CEEHDLU` and `CEEMRCR` misuse |
 | `CANCELTO` | 13 | the message the caller of a cancelled program gets |
 | `DEEPREC` | 14 | the identifier a runaway recursion raises |
-| `CMDEXC` | 15 | the message `QCMDEXC`'s `SNDPGMMSG` left on the queue |
+| `CMDEXC` | 15 (closed) | the message `QCMDEXC`'s `SNDPGMMSG` left on the queue |
 | `PTRSTAT` | 4 | a pointer one byte past a static, then past an automatic, dereferenced |
 | `DECBLANK` | 5 | `%DEC` of `'1 2'` |
 | `DIFFTS` | 6 | `%DIFF` in months of timestamps a month apart, earlier and later time of day |

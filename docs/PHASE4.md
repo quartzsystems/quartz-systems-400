@@ -63,15 +63,8 @@ activation check and the argument vector.
 
 ## Unsupported, by design or for now
 
-- `rem` of floats and calls to a bare signature are not lowered.
 - Display and printer files (`dspio`, `prtio`) return status `01299`
   until Phase 8.
-- The IR's file I/O resolves files in ASP 1; `QTEMP` is a separate
-  store until Phase 5 gives each job a `QTEMP` in ASP 1.
-- `QCMDEXC` queues the command for the console to run after the call;
-  the command analyzer is Phase 7.
-- Operational descriptors are not built, so `CEEDOD` reports
-  `CEE0820`.
 - Service programs bind through the binder and the kit's in-memory
   programs, but the console has no `*SRVPGM` signature display beyond
   `dspsrvpgm`.
