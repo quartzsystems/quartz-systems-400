@@ -1,0 +1,24 @@
+                        Create User Profile (CRTUSRPRF)                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ User profile . . . . . . . . . . > ANNE          Name                          
+ User password  . . . . . . . . . > SECRET                                      
+ Set password to expired  . . . .   *NO           *NO, *YES                     
+ Status . . . . . . . . . . . . .   *ENABLED      *ENABLED, *DISABLED           
+ User class . . . . . . . . . . .   *USER         *USER, *SYSOPR, *PGMR, *SE... 
+ Assistance level . . . . . . . .   *SYSVAL       *SYSVAL, *BASIC, *INTERMED... 
+ Current library  . . . . . . . .   *CRTDFT       Name, *CRTDFT                 
+ Initial program to call  . . . .   *NONE         Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Initial menu . . . . . . . . . .   MAIN          Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Limit capabilities . . . . . . .   *NO           *NO, *PARTIAL, *YES           
+ Description  . . . . . . . . . .   *BLANK                                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               

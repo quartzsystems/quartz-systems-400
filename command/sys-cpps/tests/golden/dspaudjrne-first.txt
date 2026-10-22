@@ -1,0 +1,24 @@
+                   Display Audit Journal Entries (DSPAUDJRNE)                   
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Entry types  . . . . . . . . . . > AF            AD, AF, AP, AU, AX, CA, CD... 
+                       + for more values                                        
+ User profile . . . . . . . . . .   *ALL          Name, *ALL                    
+ Journal receiver . . . . . . . .   *CURRENT      Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Start time:                                                                    
+   Start date . . . . . . . . . .     *FIRST        Date, *FIRST                
+   Start time . . . . . . . . . .     *AVAIL        Time, *AVAIL                
+ End time:                                                                      
+   End date . . . . . . . . . . .     *LAST         Date, *LAST                 
+   End time . . . . . . . . . . .     *AVAIL        Time, *AVAIL                
+ Output . . . . . . . . . . . . .   *             *, *PRINT                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ F13=How to use this display        F24=More keys                               

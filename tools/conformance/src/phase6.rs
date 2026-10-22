@@ -103,7 +103,7 @@ fn refuse(out: &str, needle: &str, what: &str) -> Result<(), String> {
 }
 
 /// Type a line at Command Entry and press Enter.
-fn entry(s: &mut Session, line: &str) -> Result<(), String> {
+pub(crate) fn entry(s: &mut Session, line: &str) -> Result<(), String> {
     s.command(&format!("type {line}"), CMD)?;
     s.command("key enter", CMD)?;
     Ok(())
@@ -111,7 +111,7 @@ fn entry(s: &mut Session, line: &str) -> Result<(), String> {
 
 /// Type a line at Command Entry; the screen once one of its lines
 /// satisfies `done`.
-fn entry_wait(s: &mut Session, line: &str, done: impl Fn(&str) -> bool) -> Result<String, String> {
+pub(crate) fn entry_wait(s: &mut Session, line: &str, done: impl Fn(&str) -> bool) -> Result<String, String> {
     entry(s, line)?;
     let mut last = String::new();
     for _ in 0..80 {
@@ -127,12 +127,12 @@ fn entry_wait(s: &mut Session, line: &str, done: impl Fn(&str) -> bool) -> Resul
 }
 
 /// A line holding every word.
-fn has(words: &'static [&'static str]) -> impl Fn(&str) -> bool {
+pub(crate) fn has(words: &'static [&'static str]) -> impl Fn(&str) -> bool {
     move |l| words.iter().all(|w| l.contains(w))
 }
 
 /// Sign on at the console as `user` and reach Command Entry.
-fn sign_on(s: &mut Session, user: &str) -> Result<(), String> {
+pub(crate) fn sign_on(s: &mut Session, user: &str) -> Result<(), String> {
     screen_wait(s, "Sign On")?;
     let screen = console_sign_on_as(s, user, PASSWORD, PASSWORD)?;
     if screen.contains("Main Menu") {
@@ -141,7 +141,7 @@ fn sign_on(s: &mut Session, user: &str) -> Result<(), String> {
     screen_wait(s, "Command Entry").map(|_| ())
 }
 
-fn sign_off(s: &mut Session) -> Result<(), String> {
+pub(crate) fn sign_off(s: &mut Session) -> Result<(), String> {
     entry(s, "signoff")?;
     screen_wait(s, "Sign On").map(|_| ())
 }

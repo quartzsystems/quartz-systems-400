@@ -1,0 +1,24 @@
+                            Start Subsystem (STRSBS)                            
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Subsystem description  . . . . . > MYSBS         Name                          
+   Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ F13=How to use this display        F24=More keys                               

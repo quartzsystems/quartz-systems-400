@@ -1,0 +1,24 @@
+                        Start Printer Writer (STRPRTWTR)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Printer  . . . . . . . . . . . . > QSCAPTURE     Name, *ALL                    
+ Output queue . . . . . . . . . .   *DEV          Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Form type options:                                                             
+   Form type  . . . . . . . . . .     *ALL          *ALL, *STD, *FORMS          
+   Message option . . . . . . . .     *INQMSG       *INQMSG, *MSG, *NOMSG, *... 
+ File separators  . . . . . . . .   *FILE         0-9, *FILE                    
+ Drawer for separators  . . . . .   *DEVD         1-255, *DEVD, *FILE           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               

@@ -148,3 +148,79 @@ pub fn orphans() -> Vec<String> {
         .cloned()
         .collect()
 }
+
+/// The commands `lic/slic/src/cpp/direct.rs` implements on the library
+/// functions directly (kept in step with its match by hand).
+pub const DIRECT: &[&str] = &[
+    "CHGCMD", "CHGCMDDFT", "CHGDTAARA", "CHGOBJD", "CHGPRXCMD", "CHGSYSVAL", "CLRLIB", "CRTBNDCL",
+    "CRTCLMOD", "CRTCLPGM", "CRTCMD", "CRTDTAARA", "CRTDTAQ", "CRTLIB", "CRTPRXCMD", "DLTAUTL",
+    "DLTBNDDIR", "DLTCMD", "DLTDTAARA", "DLTDTAQ", "DLTLIB", "DLTMOD", "DLTMSGF", "DLTPGM",
+    "DLTPRXCMD", "DLTSRVPGM", "DSPCMD", "DSPDTAARA", "DSPLIB", "DSPOBJD", "DSPSYSVAL", "GO",
+    "MOVOBJ", "RCLSTG", "RCLTMPSTG", "RNMOBJ", "RTVCLSRC", "WRKLIB", "WRKOBJ", "WRKSYSVAL",
+];
+
+/// The commands `work/qsjob` runs in the job (`command/jobsite.rs` and
+/// the job words it bridges to).
+pub const JOB_SITE: &[&str] = &[
+    "ADDBKP", "CALL", "CHGPWD", "DLYJOB", "DSCJOB", "DSPBKP", "DSPJOBLOG", "ENDDBG",
+    "ENDSYS", "PWRDWNSYS", "RCLACTGRP", "RMVBKP", "RTVJOBA", "RTVOBJD", "RTVSYSVAL", "SBMJOB",
+    "SIGNOFF", "STRDBG", "STRSBS", "WRKJOB",
+];
+
+/// The CL statements: defined so the analyzer and the prompter know
+/// them, compiled by `cl`, never run as commands.
+pub const CL_STATEMENTS: &[&str] = &[
+    "CALLPRC", "CALLSUBR", "CHGVAR", "CLOSE", "DCL", "DCLF", "DCLPRCOPT", "DMPCLPGM",
+    "DO", "DOFOR", "DOUNTIL", "DOWHILE", "ELSE", "ENDDO", "ENDPGM", "ENDRCV",
+    "ENDSELECT", "ENDSUBR", "GOTO", "IF", "ITERATE", "LEAVE", "MONMSG", "OTHERWISE",
+    "PGM", "RCVF", "RCVMSG", "RETURN", "RMVMSG", "RTNSUBR", "RTVDTAARA", "SELECT",
+    "SNDF", "SNDPGMMSG", "SNDRCVF", "SNDUSRMSG", "SUBR", "TFRCTL", "WAIT", "WHEN",
+];
+
+/// The console words of the storage service's tables the bridge can
+/// hand a keyword form to.
+pub const BRIDGE_WORDS: &[&str] = &[
+    "addaje", "addautle", "addbnddire", "addjobqe", "addjobscde", "addlible", "addpfm",
+    "addpje", "addrpyle", "addrtge", "addwse", "anzdftpwd", "apyjrnchg", "asp",
+    "chgautle", "chgcls", "chgcurlib", "chgjob", "chgjobd", "chgjobqe", "chgjobscde",
+    "chgjrn", "chglibl", "chgmsgq", "chgobjaud", "chgobjown", "chgobjpgp", "chgoutq",
+    "chgpje", "chgprtf", "chgrpyle", "chgrtge", "chgsbsd", "chgsecaud", "chgshrpool",
+    "chgsplfa", "chgsyslibl", "chgusraud", "chgusrprf", "chgwtr", "chkobj", "chkstg",
+    "clrjobq", "clrmsgq", "clroutq", "clrpfm", "commit", "cpyaudjrne", "cpyf",
+    "cpyfrmimpf", "cpysplf", "cpytoimpf", "crtautl", "crtbnddir", "crtcls", "crtjobd",
+    "crtjobq", "crtjrn", "crtjrnrcv", "crtlf", "crtmsgq", "crtoutq", "crtpf",
+    "crtpgm", "crtprtf", "crtsbsd", "crtsrcpf", "crtsrvpgm", "crtusrprf", "curlib",
+    "dbbench", "dltcls", "dltf", "dltjobd", "dltjobq", "dltjrn", "dltjrnrcv",
+    "dltmsgq", "dltoutq", "dltovr", "dltsbsd", "dltsplf", "dltusrprf", "dspaudjrne",
+    "dspautl", "dspautlobj", "dspautusr", "dspbnddir", "dspcls", "dspdbr", "dspfd",
+    "dspffd", "dspjob", "dspjobd", "dspjrn", "dspjrnrcva", "dsplibl", "dsplog",
+    "dspmod", "dspmsg", "dspmsgd", "dspobjaut", "dsppfm", "dsppgm", "dsppgmref",
+    "dspsbsd", "dspsecaud", "dspsplf", "dspsrvpgm", "dspusrprf", "dtaara", "dtaq",
+    "edtobjaut", "endcmtctl", "endjob", "endjrnpf", "endsbs", "endwtr", "grtobjaut",
+    "grtusraut", "hldjob", "hldjobq", "hldjobscde", "hldoutq", "hldsplf", "hldwtr",
+    "lib", "mirror", "naming", "obj", "ovrdbf", "ovrprtf", "prtadpobj",
+    "prtcapture", "prtjobdaut", "prtpubaut", "prtpvtaut", "prtqaut", "prtsbsdaut", "prtsysseca",
+    "prtusrobj", "qir", "rclstg", "rcvmsg", "rgzpfm", "rla", "rlsjob",
+    "rlsjobq", "rlsjobscde", "rlsoutq", "rlssplf", "rlswtr", "rmvaje", "rmvautle",
+    "rmvjobqe", "rmvjobscde", "rmvjrnchg", "rmvlible", "rmvm", "rmvmsg", "rmvpje",
+    "rmvrpyle", "rmvrtge", "rmvwse", "rollbck", "rvkobjaut", "sndbrkmsg", "sndmsg",
+    "sndrpymsg", "sql", "sqlrun", "srcget", "srcput", "strcmtctl", "strjrnpf",
+    "strprtwtr", "strrmtwtr", "sysval", "txn", "unit", "updpgm", "usrspc",
+    "whoami", "wmstats", "wrkactjob", "wrkdsksts", "wrkjobq", "wrkjobscde", "wrkmsgd",
+    "wrkobjown", "wrkoutq", "wrkoutqd", "wrkrpyle", "wrksbs", "wrksbsjob", "wrkshrpool",
+    "wrksplf", "wrksplfa", "wrksysact", "wrksyssts", "wrkusrprf", "wrkwtr",
+];
+
+/// Defined commands with no processing program in this release: the
+/// analyzer accepts them and the service answers `CPF0006`
+/// (`docs/PHASE7.md` lists them under Blocked).
+pub const UNSUPPORTED: &[&str] = &[
+    "ADDMSGD", "ALCOBJ", "ANZPRFACT", "CHGDBG", "CHGDEVD", "CHGJOBQ", "CHGLF", "CHGLIB",
+    "CHGMSGD", "CHGMSGF", "CHGNETA", "CHGPF", "CHGPFM", "CHGSRCPF", "CLOF", "CPYLIB",
+    "CPYSRCF", "CRTDEVDSP", "CRTDSPF", "CRTMSGF", "DLCOBJ", "DSPDEVD", "DSPHDWRSC", "DSPMODSRC",
+    "DSPNETA", "DSPOVR", "DSPPTF", "DSPSFWRSC", "EDTAUTL", "EDTLIBL", "INZPFM", "MRGMSGF",
+    "OPNQRYF", "OVRMSGF", "POSDBF", "PRTUSRPRF", "RCLRSC", "RMVBNDDIRE", "RMVMSGD", "RNMM",
+    "RTVCFGSTS", "RTVMBRD", "RTVMSG", "RTVNETA", "RTVUSRPRF", "RUNSQL", "RUNSQLSTM", "SNDJRNE",
+    "STRSQL", "TFRJOB", "UPDSRVPGM", "VRYCFG", "WRKBNDDIR", "WRKCFGSTS", "WRKHDWRSC", "WRKJRN",
+    "WRKJRNA", "WRKOBJLCK",
+];

@@ -466,6 +466,11 @@ impl Suite {
         reports.push(self.step(&mut s, "43 delete profile", Self::delete_profile)?);
         reports.push(self.step(&mut s, "44 security levels", Self::security_levels)?);
         reports.push(self.step(&mut s, "45 security bench", Self::security_bench)?);
+        reports.push(self.step(&mut s, "46 command entry", Self::command_entry)?);
+        reports.push(self.step(&mut s, "47 CL program", Self::cl_program)?);
+        reports.push(self.step(&mut s, "48 limited user", Self::limited_user)?);
+        reports.push(self.step(&mut s, "49 startup program", Self::startup_program)?);
+        reports.push(self.step(&mut s, "50 analyzer console", Self::analyzer_console)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

@@ -1,0 +1,24 @@
+                        Display File Description (DSPFD)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ File . . . . . . . . . . . . . . > CUST          Name, generic*, *ALL          
+   Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB, *U... 
+ Type of information  . . . . . .   *ALL          *ALL, *BASATR, *ATR, *ACCP... 
+                       + for more values                                        
+ Output . . . . . . . . . . . . .   *             *, *PRINT, *OUTFILE           
+ File attributes  . . . . . . . .   *ALL          *ALL, *BSCF, *CMNF, *DDMF,... 
+                       + for more values                                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               

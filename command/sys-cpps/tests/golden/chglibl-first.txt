@@ -1,0 +1,24 @@
+                         Change Library List (CHGLIBL)                          
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Libraries for current thread . . > QGPL          Name, *NONE                   
+                                    QTEMP         Name, *NONE                   
+                       + for more values                                        
+ Current library  . . . . . . . .   *SAME         Name, *SAME, *CRTDFT          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ F13=How to use this display        F24=More keys                               

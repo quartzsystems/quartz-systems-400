@@ -1,0 +1,27 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+
+/* QSYS/QSTRUP: the startup program QSTRUPPGM names, which the           */
+/* controlling subsystem's autostart job QSTRUPJD calls. It starts the   */
+/* work every system starts with: the spooling, server and user work    */
+/* subsystems; the interactive, batch and communications subsystems     */
+/* when QCTL controls; the capture printer's writer when QSTRPRTWTR is   */
+/* 1; and it releases the System/36 evoke queue.                         */
+             PGM
+             DCL        VAR(&CTLSBSD) TYPE(*CHAR) LEN(20)
+             DCL        VAR(&WTR) TYPE(*CHAR) LEN(1)
+             MONMSG     MSGID(CPF0000)
+             STRSBS     SBSD(QSYS/QSPL)
+             STRSBS     SBSD(QSYS/QSERVER)
+             STRSBS     SBSD(QSYS/QUSRWRK)
+             RTVSYSVAL  SYSVAL(QCTLSBSD) RTNVAR(&CTLSBSD)
+             IF         COND(%SST(&CTLSBSD 1 10) *EQ 'QCTL') THEN(DO)
+               STRSBS     SBSD(QSYS/QINTER)
+               STRSBS     SBSD(QSYS/QBATCH)
+               STRSBS     SBSD(QSYS/QCMN)
+             ENDDO
+             RTVSYSVAL  SYSVAL(QSTRPRTWTR) RTNVAR(&WTR)
+             IF         COND(&WTR *EQ '1') THEN(STRPRTWTR DEV(QSCAPTURE))
+             RLSJOBQ    JOBQ(QGPL/QS36EVOKE)
+             ENDPGM

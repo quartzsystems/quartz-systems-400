@@ -1,0 +1,24 @@
+                         Power Down System (PWRDWNSYS)                          
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ How to end . . . . . . . . . . .   *CNTRLD       *CNTRLD, *IMMED               
+ Controlled end delay time  . . .   3600          1-99999, *NOLIMIT             
+ Restart:                                                                       
+   Restart after power down . . .     *NO           *NO, *YES                   
+   Restart type . . . . . . . . .     *IPLA         *IPLA, *SYS, *FULL          
+ IPL source . . . . . . . . . . .   *PANEL        *PANEL, A, B, D, *IMGCLG      
+ End subsystem option . . . . . .   *DFT          *DFT, *NOJOBLOG, *CHGPTY, ... 
+                       + for more values                                        
+ Timeout option . . . . . . . . .   *CONTINUE     *CONTINUE, *POWEROFF          
+ Confirm  . . . . . . . . . . . .   *YES          *YES, *NO                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ F13=How to use this display        F24=More keys                               

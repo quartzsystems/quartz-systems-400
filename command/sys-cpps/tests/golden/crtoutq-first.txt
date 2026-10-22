@@ -1,0 +1,24 @@
+                         Create Output Queue (CRTOUTQ)                          
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Output queue . . . . . . . . . . > REPORTS       Name                          
+   Library  . . . . . . . . . . .     QGPL          Name, *CURLIB               
+ Maximum spooled file size:                                                     
+   Pages  . . . . . . . . . . . .     *NONE         1-999999                    
+   Start time . . . . . . . . . .                   Time                        
+   End time . . . . . . . . . . .                   Time                        
+                       + for more values                                        
+ Writers to autostart . . . . . .   *NONE         1-10, *NONE                   
+ Display any file . . . . . . . .   *NO           *NO, *YES, *OWNER             
+ Job separators . . . . . . . . .   0             0-9, *MSG                     
+ Operator controlled  . . . . . .   *YES          *YES, *NO                     
+ Data queue . . . . . . . . . . .   *NONE         Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Authority to check . . . . . . .   *OWNER        *OWNER, *DTAAUT               
+ Public authority . . . . . . . .   *USE          Name, *USE, *ALL, *CHANGE,... 
+ Description  . . . . . . . . . .   *BLANK                                      
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               

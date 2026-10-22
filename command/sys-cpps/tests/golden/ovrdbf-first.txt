@@ -1,0 +1,24 @@
+                      Override With Database File (OVRDBF)                      
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ File being overridden  . . . . . > CUST          Name                          
+ Overriding to database file  . . > CUST2         Name                          
+   Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
+ Member . . . . . . . . . . . . .                 Name, *FIRST, *LAST, *ALL     
+ Starting position in file:                                                     
+   Retrieve order . . . . . . . .                   *RRN, *KEYB, *KEYBE, *KE... 
+   Record number or key fields  .                   1-4294967288                
+   Record format  . . . . . . . .                   Name                        
+   Key value  . . . . . . . . . .                                               
+                         + for more values                                      
+ Record format lock:                                                            
+   Record format  . . . . . . . .                   Name                        
+   Lock state . . . . . . . . . .                   *SHRRD, *SHRNUP, *SHRUPD... 
+                       + for more values                                        
+ Records to force a write . . . .                 1-32767, *NONE                
+ Format selector program  . . . .                 Name                          
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ F13=How to use this display        F24=More keys                               

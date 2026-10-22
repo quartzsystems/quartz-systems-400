@@ -1,0 +1,37 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+
+/* ORACLE: run the kit's strings through the command analyzer of a real */
+/* box. The strings are the records of source member STRINGS in the     */
+/* file named on the call (one string per record, as strings.txt has    */
+/* them); each outcome is sent to message queue ORACLE in the same      */
+/* library: OK and the command as QCMDCHK accepted it, or the escape    */
+/* message identifier. README.md says how to gather the queue into     */
+/* expected.txt.                                                        */
+             PGM        PARM(&LIB)
+             DCL        VAR(&LIB) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&CMD) TYPE(*CHAR) LEN(512)
+             DCL        VAR(&LEN) TYPE(*DEC) LEN(15 5) VALUE(512)
+             DCL        VAR(&MSGID) TYPE(*CHAR) LEN(7)
+             DCL        VAR(&N) TYPE(*DEC) LEN(5 0) VALUE(0)
+             DCLF       FILE(QCMDSRC) RCDFMT(QCMDSRC)
+             OVRDBF     FILE(QCMDSRC) TOFILE(&LIB/QCMDSRC) MBR(STRINGS)
+             CRTMSGQ    MSGQ(&LIB/ORACLE)
+             MONMSG     MSGID(CPF2112) EXEC(CLRMSGQ MSGQ(&LIB/ORACLE))
+ NEXT:       RCVF
+             MONMSG     MSGID(CPF0864) EXEC(GOTO DONE)
+             CHGVAR     VAR(&N) VALUE(&N + 1)
+             CHGVAR     VAR(&CMD) VALUE(&SRCDTA)
+             CALL       PGM(QCMDCHK) PARM(&CMD &LEN)
+             MONMSG     MSGID(CPF0000 CPD0000) EXEC(DO)
+               RCVMSG     MSGTYPE(*EXCP) MSGID(&MSGID)
+               SNDMSG     MSG(%CHAR(&N) *BCAT &MSGID) TOMSGQ(&LIB/ORACLE)
+               GOTO       NEXT
+             ENDDO
+             SNDMSG     MSG(%CHAR(&N) *BCAT 'OK' *BCAT %TRIM(&CMD)) +
+                          TOMSGQ(&LIB/ORACLE)
+             GOTO       NEXT
+ DONE:       DLTOVR     FILE(QCMDSRC)
+             SNDPGMMSG  MSG(%CHAR(&N) *BCAT 'strings checked') TOPGMQ(*EXT)
+             ENDPGM

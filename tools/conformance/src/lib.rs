@@ -11,12 +11,14 @@
 #![forbid(unsafe_code)]
 
 pub mod cl;
+pub mod cmdkit;
 pub mod db;
 mod dst;
 mod error;
 mod phase2;
 mod phase5;
 mod phase6;
+mod phase7;
 #[cfg(unix)]
 mod png;
 mod qemu;

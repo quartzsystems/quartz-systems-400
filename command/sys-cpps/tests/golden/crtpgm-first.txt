@@ -1,0 +1,24 @@
+                            Create Program (CRTPGM)                             
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Program  . . . . . . . . . . . . > HELLO         Name                          
+   Library  . . . . . . . . . . .     QGPL          Name, *CURLIB               
+ Module . . . . . . . . . . . . .   *PGM          Name, generic*, *ALL          
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB, *U... 
+                       + for more values                                        
+ Program entry module . . . . . .   *FIRST        Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB, *U... 
+ Bind service program:                                                          
+   Service program  . . . . . . .                   Name, generic*, *ALL        
+     Library  . . . . . . . . . .                     Name, *LIBL, *CURLIB, ... 
+   Activation . . . . . . . . . .                   *IMMED, *DEFER              
+                       + for more values                                        
+ Binding directory  . . . . . . .   *NONE         Name                          
+   Library  . . . . . . . . . . .                   Name, *LIBL, *CURLIB, *U... 
+                       + for more values                                        
+ Activation group . . . . . . . .   *NEW          Name, *NEW, *CALLER           
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               

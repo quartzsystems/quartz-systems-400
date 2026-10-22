@@ -1,0 +1,24 @@
+                            Create Command (CRTCMD)                             
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Command  . . . . . . . . . . . . > MYCMD         Name                          
+   Library  . . . . . . . . . . .     QGPL          Name, *CURLIB               
+ Program to process command . . . > MYPGM         Name                          
+   Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
+ Source file  . . . . . . . . . .   QCMDSRC       Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Source member  . . . . . . . . .   *CMD          Name, *CMD                    
+ Source stream file . . . . . . .                                               
+ Description  . . . . . . . . . .   *SRCMBRTXT                                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               

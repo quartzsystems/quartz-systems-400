@@ -1,0 +1,24 @@
+                     Start Journal Physical File (STRJRNPF)                     
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Physical file to be journaled  . > CUST          Name                          
+   Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
+                       + for more values                                        
+ Journal  . . . . . . . . . . . . > CUSTJRN       Name                          
+   Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
+ Record images  . . . . . . . . .   *AFTER        *AFTER, *BOTH                 
+ Journal entries to be omitted  .   *NONE         *NONE, *OPNCLO                
+ Logging level  . . . . . . . . .   *ERRORS       *ERRORS, *ALL                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ F13=How to use this display        F24=More keys                               

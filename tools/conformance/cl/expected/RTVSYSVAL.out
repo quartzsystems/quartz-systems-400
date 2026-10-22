@@ -7,5 +7,5 @@ pending: none
 replies: 
 dump: no
 ext:
-  CPF9898 sysval RTNVAR
+  CPF9898 sysval R
   CPF9898 owner OWNER TEXT

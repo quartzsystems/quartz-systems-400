@@ -1,0 +1,24 @@
+                     Reorganize Physical File Mbr (RGZPFM)                      
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ File . . . . . . . . . . . . . . > CUST          Name                          
+   Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
+ Member . . . . . . . . . . . . .   *FIRST        Name, *FIRST, *LAST           
+ Key file . . . . . . . . . . . .   *NONE         Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Source update options  . . . . .   *SAME         *SAME, *SEQNBR                
+                       + for more values                                        
+ Source sequence numbering:                                                     
+   Starting number  . . . . . . .     1.00          0.01-9999.99                
+   Increment  . . . . . . . . . .     1.00          0.01-9999.99                
+ Allow cancel . . . . . . . . . .   *NO           *NO, *YES                     
+ Lock state . . . . . . . . . . .   *EXCL         *EXCL, *EXCLRD, *SHRUPD       
+ Rebuild access paths . . . . . .   *YES          *YES, *NO, *OPTIMIZE          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ F13=How to use this display        F24=More keys                               

@@ -1,0 +1,24 @@
+                       Work with Spooled Files (WRKSPLF)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Select files for:                                                              
+   User . . . . . . . . . . . . .     *CURRENT      Name, *CURRENT, *ALL        
+   Print device . . . . . . . . .     *ALL          Name, *ALL, *OUTQ           
+   Form type  . . . . . . . . . .     *ALL          *ALL, *STD                  
+   User data  . . . . . . . . . .     *ALL          *ALL                        
+   ASP  . . . . . . . . . . . . .     *ALL          *ALL, *ASPDEV, *CURASPGR... 
+ Time period:                                                                   
+   Start:                                                                       
+     Start time . . . . . . . . .       *AVAIL        Time, *AVAIL              
+     Start date . . . . . . . . .       *BEGIN        Date, *BEGIN, *CURRENT    
+   End:                                                                         
+     End time . . . . . . . . . .       *AVAIL        Time, *AVAIL              
+     End date . . . . . . . . . .       *END          Date, *END, *CURRENT      
+ Job name . . . . . . . . . . . .   *             Name, *                       
+   User . . . . . . . . . . . . .                   Name                        
+   Number . . . . . . . . . . . .                   Character value             
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ F13=How to use this display        F24=More keys                               

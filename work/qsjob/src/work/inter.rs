@@ -276,8 +276,18 @@ fn main_menu(s: &mut Session<'_>) {
             continue;
         }
         let out = command_output(s, &typed, RunMode::Run);
-        message = last_line(&out);
+        message = first_line(&out);
     }
+}
+
+/// The first line of some output, for a message line: the most
+/// specific diagnostic comes first.
+fn first_line(out: &str) -> String {
+    out.lines()
+        .find(|l| !l.trim().is_empty())
+        .unwrap_or("")
+        .trim()
+        .to_string()
 }
 
 /// The last line of some output, for a message line.

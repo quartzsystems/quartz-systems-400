@@ -31,6 +31,29 @@ note = "the value through the job's link; RTNVAR gets text"
 site = "job"
 note = "the job's own names and attributes"
 
+[cmd.RTVOBJD]
+site = "job"
+note = "the description through the job's link"
+
+[cmd.WRKMSG]
+word = "dspmsg"
+alwlmtusr = true
+
+[cmd.WRKJOBD]
+word = "dspjobd"
+
+[cmd.WRKCLS]
+word = "dspcls"
+
+[cmd.WRKAUTL]
+word = "dspautl"
+
+[cmd.WRKSBMJOB]
+word = "wrkactjob"
+
+[cmd.WRKUSRJOB]
+word = "wrkactjob"
+
 [cmd.RCLACTGRP]
 site = "job"
 
@@ -85,9 +108,6 @@ alwlmtusr = true
 alwlmtusr = true
 
 [cmd.DSPJOB]
-alwlmtusr = true
-
-[cmd.WRKMSG]
 alwlmtusr = true
 
 [cmd.SNDMSG]

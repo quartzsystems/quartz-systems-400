@@ -1,0 +1,24 @@
+                       Grant Object Authority (GRTOBJAUT)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Object . . . . . . . . . . . . . > CUST          Name, generic*, *ALL          
+   Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB, *U... 
+ Object type  . . . . . . . . . . > *FILE         *ALL, *ALRTBL, *AUTL, *BND... 
+ ASP device . . . . . . . . . . .   *             Name, *, *SYSBAS, *CURASPGRP  
+ Users  . . . . . . . . . . . . . > ANNE          Name, *PUBLIC                 
+                       + for more values                                        
+ Authorization list . . . . . . .                 Name                          
+ Authority  . . . . . . . . . . . > *USE          *CHANGE, *ALL, *USE, *EXCL... 
+                       + for more values                                        
+ Reference object . . . . . . . .   *NONE         Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Reference object type  . . . . .   *OBJTYPE      *OBJTYPE, *ALRTBL, *AUTL, ... 
+ Reference ASP device . . . . . .   *             Name, *, *SYSBAS, *CURASPGRP  
+ Replace authority  . . . . . . .   *NO           *NO, *YES                     
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ F13=How to use this display        F24=More keys                               

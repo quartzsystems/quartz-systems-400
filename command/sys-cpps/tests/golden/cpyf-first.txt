@@ -1,0 +1,24 @@
+                                Copy File (CPYF)                                
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ From file  . . . . . . . . . . . > CUST          Name                          
+   Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
+ To file  . . . . . . . . . . . . > CUST2         Name, *PRINT                  
+   Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
+ From member  . . . . . . . . . .   *FIRST        Name, generic*, *FIRST, *ALL  
+ To member or label . . . . . . .   *FIRST        Name, *FIRST, *FROMMBR, *ALL  
+ Replace or add records . . . . .   *NONE         *NONE, *ADD, *REPLACE, *UP... 
+ Create file  . . . . . . . . . .   *NO           *NO, *YES                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               

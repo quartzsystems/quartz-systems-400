@@ -8,5 +8,5 @@
                           HLPPNLGRP(QHCLCMD) HLPID(RTVSYSVAL)
              PARM       KWD(SYSVAL) TYPE(*NAME) LEN(10) MIN(1) +
                           PROMPT('System value')
-             PARM       KWD(RTNVAR) TYPE(*CHAR) LEN(10) RTNVAL(*YES) +
+             PARM       KWD(RTNVAR) TYPE(*CHAR) LEN(1) MIN(1) RTNVAL(*YES) +
                           MIN(0) PROMPT('CL var for returned value')

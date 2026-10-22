@@ -1,0 +1,49 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   STRUP
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   STRUP
+Text . . . . . . . . . . . . . . :   corpus STRUP
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    
+                    /* QSYS/QSTRUP: the startup program QSTRUPPGM names, which the           */
+                    /* controlling subsystem's autostart job QSTRUPJD calls. It starts the   */
+                    /* work every system starts with: the spooling, server and user work    */
+                    /* subsystems; the interactive, batch and communications subsystems     */
+                    /* when QCTL controls; the capture printer's writer when QSTRPRTWTR is   */
+                    /* 1; and it releases the System/36 evoke queue.                         */
+        1        0               PGM
+        2        0               DCL        VAR(&CTLSBSD) TYPE(*CHAR) LEN(20)
+        3        0               DCL        VAR(&WTR) TYPE(*CHAR) LEN(1)
+        4        0               MONMSG     MSGID(CPF0000)
+        5        0               STRSBS     SBSD(QSYS/QSPL)
+        6        0               STRSBS     SBSD(QSYS/QSERVER)
+        7        0               STRSBS     SBSD(QSYS/QUSRWRK)
+        8        0               RTVSYSVAL  SYSVAL(QCTLSBSD) RTNVAR(&CTLSBSD)
+        9        0               IF         COND(%SST(&CTLSBSD 1 10) *EQ 'QCTL') THEN(DO)
+       10        1                 STRSBS     SBSD(QSYS/QINTER)
+       11        1                 STRSBS     SBSD(QSYS/QBATCH)
+       12        1                 STRSBS     SBSD(QSYS/QCMN)
+       13        0               ENDDO
+       14        0               RTVSYSVAL  SYSVAL(QSTRPRTWTR) RTNVAR(&WTR)
+       15        0               IF         COND(&WTR *EQ '1') THEN(STRPRTWTR DEV(QSCAPTURE))
+       16        0               RLSJOBQ    JOBQ(QGPL/QS36EVOKE)
+       17        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&CTLSBSD    *CHAR   20            12  8 9
+&WTR        *CHAR   1             13  14 15
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program STRUP created.
+End of compilation.

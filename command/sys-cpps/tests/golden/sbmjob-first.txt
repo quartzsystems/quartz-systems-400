@@ -1,0 +1,24 @@
+                              Submit Job (SBMJOB)                               
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Command to run . . . . . . . . . > CALL QGPL/HELLO                             
+ Job name . . . . . . . . . . . . > HELLO         Name, *JOBD                   
+ Job description  . . . . . . . .   *USRPRF       Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Job queue  . . . . . . . . . . .   *JOBD         Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Job priority (on JOBQ) . . . . .   *JOBD         1-9, *JOBD                    
+ Output priority (on OUTQ)  . . .   *JOBD         1-9, *JOBD                    
+ Print device . . . . . . . . . .   *CURRENT      Name, *CURRENT, *USRPRF, *... 
+ Output queue . . . . . . . . . .   *CURRENT      Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ User . . . . . . . . . . . . . .   *CURRENT      Name, *CURRENT, *JOBD         
+ Print text . . . . . . . . . . .   *CURRENT                        *CURRENT... 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               

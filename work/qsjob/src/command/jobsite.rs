@@ -52,6 +52,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "CALL" => return call(job, host, &parms),
         "RTVSYSVAL" => return rtvsysval(host, r, out),
         "RTVJOBA" => return rtvjoba(host, r, out),
+        "RTVOBJD" => return rtvobjd(host, r, out),
         _ => {}
     }
     let line = sys_cpps::bridge::specified_line(&entry.word, &parms);
@@ -182,6 +183,50 @@ fn rtvjoba(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail>
     returned(r, &values, out)
 }
 
+/// `RTVOBJD OBJ(LIB/NAME) OBJTYPE(*TYPE)`: the object's description
+/// through the job's link.
+fn rtvobjd(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
+    let (name, lib) = match r.get("OBJ").and_then(|b| b.value.as_ref()) {
+        Some(Value::Qual(parts)) => (
+            parts.first().map(Value::source).unwrap_or_default(),
+            parts
+                .get(1)
+                .map_or_else(|| "*LIBL".into(), Value::source),
+        ),
+        Some(v) => (v.source(), "*LIBL".into()),
+        None => return Err(Fail::new("CPD0015", "OBJ is required")),
+    };
+    let ty = r
+        .get("OBJTYPE")
+        .and_then(|b| b.value.as_ref())
+        .map(Value::source)
+        .unwrap_or_default();
+    let found = host
+        .link
+        .borrow_mut()
+        .with(|l| l.object(lib.clone(), name.clone(), ty.clone()));
+    let Some(o) = found else {
+        return Err(Fail {
+            msgid: "CPF9801".into(),
+            data: cmd::error::data(&[(&name, 10), (&lib, 10)]),
+            text: format!("CPF9801 {ty} {lib}/{name} was not found."),
+        });
+    };
+    let text = |s: &str| Value::Char(s.to_string());
+    let values = [
+        ("RTNLIB", text(&o.lib)),
+        ("OBJATR", text(&o.attr)),
+        ("TEXT", text(&o.text)),
+        ("OWNER", text(&o.owner)),
+        ("CRTDATE", text(&o.created)),
+        ("CHGDATE", text(&o.changed)),
+        ("CRTUSER", text(&o.owner)),
+        ("USRATR", text(&o.user_attr)),
+        ("OBJDMN", text("*U")),
+    ];
+    returned(r, &values, out)
+}
+
 /// `CALL PGM(LIB/NAME) PARM(values)`: character values as typed,
 /// numbers as `packed(15,5)`, hex as bytes.
 fn call(job: &mut Job, _host: &Host, parms: &cmd::Parms) -> Result<String, Fail> {
@@ -208,12 +253,22 @@ fn call(job: &mut Job, _host: &Host, parms: &cmd::Parms) -> Result<String, Fail>
     }
     let addrs: Vec<u64> = buffers.iter_mut().map(|b| b.as_mut_ptr() as u64).collect();
     let before = job.console.len();
+    let ext_before = job.ext_msgq.msgs.len();
     let r = job.call_program(&name, &lib, &addrs);
     let lines: Vec<String> = job.console.drain(before..).collect();
     let mut out = String::new();
     for l in lines {
         out.push_str(&l);
         out.push('\n');
+    }
+    // What the program sent to the job's external queue: shown as a
+    // user at Command Entry would see it.
+    for m in job.ext_msgq.msgs.iter().skip(ext_before) {
+        let text = m.text.trim_end();
+        if !text.is_empty() && m.msg_type != qir::MsgType::Escape {
+            out.push_str(text);
+            out.push('\n');
+        }
     }
     if let Err(e) = r {
         return Err(Fail {

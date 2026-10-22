@@ -1,0 +1,24 @@
+                          Create Logical File (CRTLF)                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ File . . . . . . . . . . . . . . > CUSTL1        Name                          
+   Library  . . . . . . . . . . .     QGPL          Name, *CURLIB               
+ Source file  . . . . . . . . . .   QDDSSRC       Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Source member  . . . . . . . . .   *FILE         Name, *FILE                   
+ Generation severity level  . . .   20            0-30                          
+ Flagging severity level  . . . .   0             0-30                          
+ File type  . . . . . . . . . . .   *DATA         *DATA, *SRC                   
+ Source listing options . . . . .   *SRC          *SRC, *SOURCE, *NOSRC, *NO... 
+                       + for more values                                        
+ System . . . . . . . . . . . . .   *LCL          *LCL, *RMT, *FILETYPE         
+ Physical file data members:                                                    
+   Physical file  . . . . . . . .                   Name                        
+     Library  . . . . . . . . . .                     Name, *CURRENT, *LIBL,... 
+   Members  . . . . . . . . . . .                   Name, *NONE                 
+                         + for more values                                      
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               

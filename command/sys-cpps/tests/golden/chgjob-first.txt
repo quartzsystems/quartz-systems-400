@@ -1,0 +1,24 @@
+                              Change Job (CHGJOB)                               
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Job name . . . . . . . . . . . .   *             Name, *                       
+   User . . . . . . . . . . . . .                   Name                        
+   Number . . . . . . . . . . . .                   Character value             
+ Job priority (on JOBQ) . . . . .   *SAME         0-9, *SAME                    
+ Output priority (on OUTQ)  . . .   *SAME         1-9, *SAME                    
+ Print device . . . . . . . . . .   *SAME         Name, *SAME, *USRPRF, *SYS... 
+ Output queue . . . . . . . . . .   *SAME         Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Run priority . . . . . . . . . .   *SAME         1-99, *SAME                   
+ Job queue  . . . . . . . . . . .   *SAME         Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Print text . . . . . . . . . . .   *SAME                           *SAME, *... 
+ Message logging:                                                               
+   Level  . . . . . . . . . . . .     *SAME         0-4, *SAME                  
+   Severity . . . . . . . . . . .     *SAME         0-99, *SAME                 
+   Text . . . . . . . . . . . . .     *SAME         *SAME, *MSG, *SECLVL, *N... 
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ F13=How to use this display        F24=More keys                               

@@ -808,3 +808,136 @@ id = "CPC2191"
 sev = 0
 text = "Object &1 in &2 of type &3 deleted."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+# The CL compiler (CPD07xx) and the CL commands.
+
+[[msg]]
+id = "CPD0700"
+sev = 30
+text = "Program &1 was not created in library &2."
+help = "The compiler found errors; the listing shows each statement in error. Correct the source and compile again."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPD0701"
+sev = 30
+text = "Statement is not a CL statement or a command."
+help = "The word at the start of the statement names neither a CL statement nor a command the compiler can find. Check the spelling and the library list."
+
+[[msg]]
+id = "CPD0728"
+sev = 30
+text = "Variable &1 is declared more than once."
+help = "A CL variable is declared once, by DCL or by DCLF. Remove the later declaration."
+vars = ["*CHAR 11"]
+
+[[msg]]
+id = "CPD0731"
+sev = 30
+text = "The value is not of the type the variable or the operation needs."
+help = "A logical value, a number or character data was expected and something else was given. Convert the value with %CHAR, %DEC or %INT, or declare the variable with the type the value has."
+
+[[msg]]
+id = "CPD0735"
+sev = 30
+text = "Label &1 is not defined, or is defined more than once."
+help = "GOTO, LEAVE and ITERATE name a label that must appear exactly once on a statement of the program."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPD0740"
+sev = 30
+text = "The statements are not nested correctly."
+help = "A DO, SELECT or SUBR is not ended, an END statement has no beginning, a LEAVE or ITERATE lies outside a loop, or a SUBR lies inside a group."
+
+[[msg]]
+id = "CPD0744"
+sev = 30
+text = "A value on the statement is not valid."
+help = "A parameter of the CL statement holds a value of the wrong form: an expression that does not parse, a name that is too long, or a special value the statement does not take."
+
+[[msg]]
+id = "CPD0745"
+sev = 30
+text = "A required parameter of the statement is missing."
+help = "The statement needs a parameter that was not given. The parameter is named in the detail of the message."
+
+[[msg]]
+id = "CPD0750"
+sev = 30
+text = "The expression is not valid."
+help = "An operand is missing, an operator is not known, or the operands are not of one type. Parentheses group an expression whose operators have different precedence."
+
+[[msg]]
+id = "CPD0751"
+sev = 30
+text = "The built-in function is not valid here."
+help = "The built-in function is not known, takes a different number of arguments, or has an argument of the wrong type."
+
+[[msg]]
+id = "CPD0756"
+sev = 30
+text = "Declarations must come before the first command."
+help = "DCL, DCLF and DCLPRCOPT statements come right after PGM, before any other statement."
+
+[[msg]]
+id = "CPD0760"
+sev = 10
+text = "No PGM statement; the program takes no parameters."
+help = "A program that receives parameters starts with PGM PARM(...). Without it the program is created with no parameters."
+
+[[msg]]
+id = "CPD0770"
+sev = 30
+text = "Errors were found on the command."
+help = "The command analyzer refused the command; the messages before this one say why."
+
+[[msg]]
+id = "CPD0790"
+sev = 10
+text = "The statement or parameter is not supported in this release."
+help = "The compiler accepted the statement but will not act on it. The detail of the message says what is left out."
+
+[[msg]]
+id = "CPD0795"
+sev = 30
+text = "A subroutine statement is misplaced or names an unknown subroutine."
+help = "CALLSUBR names a subroutine declared with SUBR; RTNSUBR and ENDSUBR lie inside a subroutine."
+
+[[msg]]
+id = "CPC5D07"
+sev = 0
+text = "Program &1 created in library &2."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC5D0B"
+sev = 0
+text = "Module &1 created in library &2."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF5D0D"
+sev = 40
+text = "Object &1 already exists in library &2."
+help = "REPLACE(*NO) was given and an object of that name and type is already there. Delete it, name another, or let REPLACE(*YES) replace it."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPC0570"
+sev = 0
+text = "Source of program &1 retrieved."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPF0575"
+sev = 40
+text = "Program &1 keeps no source."
+help = "The program was created with ALWRTVSRC(*NO), so RTVCLSRC has nothing to retrieve."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "CPC0901"
+sev = 0
+text = "Data area &1 changed."
+vars = ["*CHAR 10"]

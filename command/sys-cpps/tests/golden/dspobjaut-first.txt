@@ -1,0 +1,24 @@
+                      Display Object Authority (DSPOBJAUT)                      
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Object . . . . . . . . . . . . . > CUST          Name                          
+   Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
+ Object type  . . . . . . . . . . > *FILE         *ALRTBL, *AUTL, *BNDDIR, *... 
+ ASP device . . . . . . . . . . .   *             Name, *, *SYSBAS, *CURASPGRP  
+ Output . . . . . . . . . . . . .   *             *, *PRINT, *OUTFILE           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               

@@ -1,0 +1,13 @@
+console:
+  > STRSBS SBSD(QSYS/QSPL)
+  > STRSBS SBSD(QSYS/QSERVER)
+  > STRSBS SBSD(QSYS/QUSRWRK)
+  > RTVSYSVAL SYSVAL(QCTLSBSD)
+  > RTVSYSVAL SYSVAL(QSTRPRTWTR)
+  > RLSJOBQ JOBQ(QGPL/QS36EVOKE)
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+ext:

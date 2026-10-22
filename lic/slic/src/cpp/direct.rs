@@ -37,6 +37,23 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
         }
         "CRTBNDCL" | "CRTCLMOD" | "CRTCLPGM" | "RTVCLSRC" => super::clpgm::run(system, name, parms),
         "CLRLIB" => clrlib(system, &parms.name("LIB")),
+        "DLTPGM" | "DLTMOD" | "DLTSRVPGM" | "DLTMSGF" | "DLTBNDDIR" | "DLTAUTL" => {
+            let (kwd, ty) = match name {
+                "DLTPGM" => ("PGM", "*PGM"),
+                "DLTMOD" => ("MODULE", "*MODULE"),
+                "DLTSRVPGM" => ("SRVPGM", "*SRVPGM"),
+                "DLTMSGF" => ("MSGF", "*MSGF"),
+                "DLTBNDDIR" => ("BNDDIR", "*BNDDIR"),
+                _ => ("AUTL", "*AUTL"),
+            };
+            let (n, l) = if kwd == "AUTL" {
+                (parms.name("AUTL"), "QSYS".to_string())
+            } else {
+                parms.qual(kwd)
+            };
+            let out = old(system, &format!("obj dlt {ty} {}/{n}", lib_or(&l)));
+            finish(out, name, "CPC2191", &[(&n, 10), (&l, 10), (ty, 10)])
+        }
         "DSPLIB" | "WRKLIB" => {
             let lib = parms.name("LIB");
             if lib == "*ALL" || lib == "*LIBL" || lib == "*USRLIBL" || lib.is_empty() {

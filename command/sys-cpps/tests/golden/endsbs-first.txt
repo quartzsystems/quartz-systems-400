@@ -1,0 +1,24 @@
+                             End Subsystem (ENDSBS)                             
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Subsystem  . . . . . . . . . . . > MYSBS         Name, *ALL                    
+ How to end . . . . . . . . . . .   *CNTRLD       *CNTRLD, *IMMED               
+ Controlled end delay time  . . .   *NOLIMIT      1-99999, *NOLIMIT             
+ End subsystem option . . . . . .   *DFT          *DFT, *NOJOBLOG, *CHGPTY, ... 
+                       + for more values                                        
+ Batch time limit . . . . . . . .   *NONE         1-99999, *NONE                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ F13=How to use this display        F24=More keys                               

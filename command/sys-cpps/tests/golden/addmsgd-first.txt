@@ -1,0 +1,24 @@
+                       Add Message Description (ADDMSGD)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Message identifier . . . . . . . > USR0001       Name                          
+ Message file . . . . . . . . . . > MYMSGF        Name                          
+   Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
+ First-level message text . . . . > 'hello &1'                                  
+ Second-level message text  . . .   *NONE                                       
+ Severity code  . . . . . . . . .   0             0-99                          
+ Message data fields:                                                           
+   Data type  . . . . . . . . . .     *NONE         *QUAL, *CHAR, *CCHAR, *H... 
+   Length . . . . . . . . . . . .                   1-32767, *VARY              
+   Decimal positions  . . . . . .                   0-9                         
+                       + for more values                                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               

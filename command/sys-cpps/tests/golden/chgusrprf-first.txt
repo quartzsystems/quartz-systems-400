@@ -1,0 +1,24 @@
+                        Change User Profile (CHGUSRPRF)                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ User profile . . . . . . . . . . > ANNE          Name                          
+ User password  . . . . . . . . .   *SAME                                       
+ Set password to expired  . . . .   *SAME         *SAME, *NO, *YES              
+ Status . . . . . . . . . . . . .   *SAME         *SAME, *ENABLED, *DISABLED    
+ User class . . . . . . . . . . .   *SAME         *SAME, *USER, *SYSOPR, *PG... 
+ Assistance level . . . . . . . .   *SAME         *SAME, *SYSVAL, *BASIC, *I... 
+ Current library  . . . . . . . .   *SAME         Name, *SAME, *CRTDFT          
+ Initial program to call  . . . .   *SAME         Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Initial menu . . . . . . . . . .   *SAME         Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Limit capabilities . . . . . . .   *SAME         *SAME, *NO, *PARTIAL, *YES    
+ Description  . . . . . . . . . .   *SAME                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
