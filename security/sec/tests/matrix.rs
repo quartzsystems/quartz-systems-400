@@ -7,6 +7,8 @@
 //! step that decided it is what the search order says it must be. Then
 //! the precedence rules one by one.
 
+#![allow(clippy::many_single_char_names)]
+
 mod common;
 
 use common::{NOW, create, lib, open_new};
@@ -132,7 +134,7 @@ impl World {
             Source::Owner => grant::set_owner_authority(t, id, bits).unwrap(),
             Source::Private => grant::set_private(t, self.qsys, id, "USERA", Some(bits)).unwrap(),
             Source::GroupPrivate => {
-                grant::set_private(t, self.qsys, id, "GRPB", Some(bits)).unwrap()
+                grant::set_private(t, self.qsys, id, "GRPB", Some(bits)).unwrap();
             }
             Source::PrimaryGroup => {
                 grant::set_group(t, self.qsys, id, Some("GRPA"), true).unwrap();

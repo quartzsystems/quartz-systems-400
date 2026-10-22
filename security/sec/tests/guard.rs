@@ -6,6 +6,8 @@
 //! job's session, new objects get their owner and `*PUBLIC`, the
 //! indexes follow creation and deletion, decisions are cached.
 
+#![allow(clippy::many_single_char_names, clippy::too_many_lines)]
+
 mod common;
 
 use std::cell::RefCell;
