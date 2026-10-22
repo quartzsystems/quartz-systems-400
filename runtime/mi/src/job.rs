@@ -559,6 +559,29 @@ impl Job {
         Ok(())
     }
 
+    /// `RCLRSC`: close the files left open by programs of the default
+    /// activation group that are no longer on the call stack; how many
+    /// closed.
+    pub fn rclrsc(&mut self) -> usize {
+        let active: Vec<String> = self
+            .act
+            .frames
+            .iter()
+            .filter_map(|f| f.program.as_ref().map(|p| p.key.clone()))
+            .collect();
+        let bases: Vec<u64> = self
+            .act
+            .groups()
+            .filter(|g| g.kind == AgKind::Default)
+            .flat_map(|g| g.activations.iter())
+            .filter(|a| !active.contains(&a.program.key))
+            .map(|a| a.statics.as_ptr() as u64)
+            .collect();
+        let before = self.files.len();
+        self.close_files_of(&bases);
+        before - self.files.len()
+    }
+
     /// `RCLACTGRP(*ELIGIBLE)`.
     pub fn rclactgrp_eligible(&mut self) {
         for b in self.act.reclaim_eligible() {

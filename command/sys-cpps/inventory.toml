@@ -159,7 +159,7 @@ note = "UPDPROD: production files refuse update opens under debug"
 
 [cmd.RCLRSC]
 site = "job"
-note = "overrides of returned call levels; open files wait for per-program ownership"
+note = "files of inactive default-group programs closed, overrides of returned levels removed"
 
 [cmd.DSPHDWRSC]
 word = "hw"

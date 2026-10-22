@@ -637,13 +637,18 @@ fn rtvcfgsts(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fai
     returned(r, &values, out)
 }
 
-/// `RCLRSC`: the file overrides of call levels that have returned go;
-/// the files programs no longer on the stack left open wait for the
-/// runtime's per-program open ownership.
+/// `RCLRSC`: the files left open by default activation group programs
+/// no longer on the stack are closed, and the file overrides of call
+/// levels that have returned go.
 fn rclrsc(job: &mut Job, host: &Host) -> String {
+    let closed = job.rclrsc();
     if job.ovr_top > job.depth {
         let _ = host.exec(&format!("dltovr ENDLVL({})", job.depth + 1));
         job.ovr_top = job.depth;
     }
-    String::new()
+    if closed > 0 {
+        format!("{closed} file(s) closed.\n")
+    } else {
+        String::new()
+    }
 }
