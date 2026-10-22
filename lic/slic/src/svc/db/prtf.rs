@@ -157,7 +157,12 @@ pub fn ovrprtf(system: &mut System, line: &str) -> Result<String, String> {
     let p = Params::parse(line);
     let file = p.pos_or(0, "FILE")?.to_ascii_uppercase();
     qsname::Name::parse(&file).map_err(|e| format!("CPD0078 FILE({file}): {e}"))?;
-    Prtf::default().apply(&p).map_err(|e| err(&e))?;
+    // The override's own keywords are not the printer file's.
+    let mut attrs = Params::parse(line);
+    attrs
+        .kw
+        .retain(|(k, _)| !matches!(k.as_str(), "CALLLVL" | "SECURE" | "OVRSCOPE"));
+    Prtf::default().apply(&attrs).map_err(|e| err(&e))?;
     let scope = match p.upper("OVRSCOPE").as_deref() {
         Some("*JOB") => "*JOB".to_string(),
         None | Some("*ACTGRPDFN" | "*CALLLVL") => db::odp::ovrdbf::DFTACTGRP.to_string(),
