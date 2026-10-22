@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! `CHGPF` and `CHGLF`: attributes after the fact, and a re-created
-//! physical file format that keeps the data.
+//! physical file format that keeps or converts the data.
 
 use dds::PfDefinition;
 use qsname::MemberSpec;
@@ -11,10 +11,11 @@ use store::obj::{JobHandle, LockState, ObjectId, ops};
 use store::txn::Txn;
 
 use crate::error::{DbError, Result};
-use crate::file::{self, FileKind, Maint, Recover, Size, Wait};
+use crate::file::{self, FileDesc, FileKind, Maint, Recover, Size, Wait};
 use crate::format::FormatDef;
 use crate::member::Member;
 use crate::util::Hold;
+use crate::util::cpyf::{FmtOpt, map};
 
 /// `CHGPF` parameters; `None` leaves the attribute as it is.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -182,9 +183,11 @@ fn apply_lf(txn: &mut Txn<'_>, file: ObjectId, c: &ChgLf) -> Result<()> {
     Ok(())
 }
 
-/// `CHGPF SRCFILE(...)`: the file takes the new DDS when its record
-/// format has the same level identifier and keys, so the data stays.
-/// Anything else is refused: a conversion is a later phase's job.
+/// `CHGPF SRCFILE(...)`: the file takes the new DDS. When the record
+/// format kept its level identifier and keys the data stays as it is;
+/// otherwise every member's records are converted through a copy, field
+/// by field as `CPYF FMTOPT(*MAP *DROP)` maps them. A file with
+/// dependent logical files refuses a conversion.
 pub fn chgpf_srcfile(
     txn: &mut Txn<'_>,
     job: JobHandle,
@@ -200,14 +203,6 @@ pub fn chgpf_srcfile(
     }
     let new = FormatDef::new(def.format.clone(), def.unique, def.dup_order)?;
     let old = &desc.formats[0];
-    if new.level_id != old.level_id {
-        return Err(DbError::Definition {
-            what: format!(
-                "record format {} changed: level {} was {}; the data cannot be kept",
-                new.format.name, new.level_id, old.level_id
-            ),
-        });
-    }
     let key_of = |k: &dds::KeyField| (k.name, k.field, k.descend, k.transform, k.noaltseq);
     let same_keys = new.format.keys.len() == old.format.keys.len()
         && new
@@ -216,11 +211,16 @@ pub fn chgpf_srcfile(
             .iter()
             .zip(&old.format.keys)
             .all(|(a, b)| key_of(a) == key_of(b));
-    if !same_keys || new.unique != old.unique || new.dup_order != old.dup_order {
+    let same = new.level_id == old.level_id
+        && same_keys
+        && new.unique == old.unique
+        && new.dup_order == old.dup_order;
+    if !same && !desc.dependents.is_empty() {
         return Err(DbError::Definition {
             what: format!(
-                "access path of {} changed; delete and re-create the file",
-                new.format.name
+                "record format {} changed and {} has dependent logical files; delete them first",
+                new.format.name,
+                desc.name()
             ),
         });
     }
@@ -230,13 +230,53 @@ pub fn chgpf_srcfile(
         &[(file, LockState::Exclusive)],
         &desc.name().to_string(),
     )?;
-    let r = file::replace_formats(txn, file, &[new]);
+    let r = if same {
+        file::replace_formats(txn, file, &[new])
+    } else {
+        convert(txn, &desc, old, new)
+    };
     hold.release(txn);
     r?;
     // Every member must still open and read.
+    let desc = file::describe(txn, file)?;
     for e in &desc.members {
         Member::open(txn, &desc, e)?;
     }
     let _ = MemberSpec::First;
+    Ok(())
+}
+
+/// Every member's records into the new format, by field name.
+fn convert(txn: &mut Txn<'_>, desc: &FileDesc, old: &FormatDef, new: FormatDef) -> Result<()> {
+    let plan = map::plan(
+        old,
+        &new,
+        FileKind::Physical,
+        FileKind::Physical,
+        FmtOpt::MapDrop,
+    )?;
+    let mut converted = Vec::with_capacity(desc.members.len());
+    for e in &desc.members {
+        let mut m = Member::open(txn, desc, e)?;
+        let slots = m.scan(txn, 1, usize::MAX)?;
+        let mut rows = Vec::with_capacity(slots.len());
+        for s in &slots {
+            let mut rec = vec![0u8; usize::try_from(new.format.record_len).expect("fits")];
+            let mut nulls = vec![0u8; usize::from(new.null_map_len)];
+            plan.apply(old, &new, s, 0, &mut rec, &mut nulls)?;
+            rows.push((rec, nulls));
+        }
+        m.clear(txn)?;
+        converted.push((*e, rows));
+    }
+    file::replace_formats(txn, desc.id, &[new])?;
+    let desc = file::describe(txn, desc.id)?;
+    for (e, rows) in converted {
+        crate::member::reformat(txn, e.object, &desc.formats[0])?;
+        let mut m = Member::open(txn, &desc, &e)?;
+        for (rec, nulls) in rows {
+            m.write_new(txn, &rec, &nulls)?;
+        }
+    }
     Ok(())
 }

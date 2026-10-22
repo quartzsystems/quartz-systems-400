@@ -193,7 +193,7 @@ impl Parser {
         Ok(e)
     }
 
-    fn is_sym_at(&self, ahead: usize, s: &str) -> bool {
+    pub(crate) fn is_sym_at(&self, ahead: usize, s: &str) -> bool {
         matches!(self.tok_at(ahead), Tok::Sym(x) if *x == s)
     }
 

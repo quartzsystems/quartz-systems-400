@@ -19,7 +19,7 @@ use crate::error::{DbError, Result};
 use crate::lf::LogicalDef;
 
 /// Longest encoded key: the store's key less the format tag and RRN.
-pub const MAX_KEY_LEN: usize = 1014;
+pub const MAX_KEY_LEN: usize = 2000;
 
 /// A record format with the database's view of it.
 #[derive(Clone, Debug, PartialEq, Eq)]

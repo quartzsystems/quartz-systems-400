@@ -51,6 +51,35 @@ fn base_field<'a>(base: &'a FormatDef, name: &Name) -> Result<(usize, &'a dds::F
 /// A based-on record: its format, record bytes and null map.
 pub type BaseRecord<'a> = (&'a FormatDef, &'a [u8], &'a [u8]);
 
+/// What a field takes from a secondary record that was not found
+/// (`JDFTVAL`): zero or blank.
+fn absent(f: &dds::FieldDef) -> Value {
+    if f.data_type.is_numeric() {
+        Value::Num(qdecimal::Decimal::zero())
+    } else {
+        Value::Char(Vec::new())
+    }
+}
+
+/// Whether select/omit tests a field that comes from a secondary file,
+/// which a path built from the primary records alone cannot decide:
+/// the test then runs at read time.
+#[must_use]
+pub fn read_time_select(lf: &FormatDef, log: &LogicalDef) -> bool {
+    log.select_omit.iter().any(|g| {
+        g.conditions.iter().any(|c| {
+            lf.format
+                .field(&c.field)
+                .and_then(|(i, _)| log.sources.get(i))
+                .is_some_and(|s| match s {
+                    FieldSource::Base { file, .. }
+                    | FieldSource::Concat { file, .. }
+                    | FieldSource::Substring { file, .. } => *file != 0,
+                })
+        })
+    })
+}
+
 /// Derive the logical record from a based-on record of file 0 of the
 /// format. Fields of other files of a join format are blank or zero.
 pub fn derive(
@@ -64,7 +93,7 @@ pub fn derive(
 }
 
 /// Derive the logical record from the based-on records by file index.
-/// A file without a record gives blank or zero fields.
+/// A file without a record (`JDFTVAL`) gives blank or zero fields.
 pub fn derive_join(
     lf: &FormatDef,
     log: &LogicalDef,
@@ -83,7 +112,7 @@ pub fn derive_join(
                     let (bi, bf) = base_field(base, field)?;
                     record::read_field(bf, record, null_map, base.null_index(bi))?
                 }
-                None => Value::Char(Vec::new()),
+                None => absent(f),
             },
             FieldSource::Concat { file, fields } => match at(*file) {
                 Some((base, record, null_map)) => {
@@ -110,7 +139,7 @@ pub fn derive_join(
                         Value::Char(bytes)
                     }
                 }
-                None => Value::Char(Vec::new()),
+                None => absent(f),
             },
             FieldSource::Substring {
                 file,
@@ -129,7 +158,7 @@ pub fn derive_join(
                         Value::Char(data[from.min(to)..to].to_vec())
                     }
                 }
-                None => Value::Char(Vec::new()),
+                None => absent(f),
             },
         };
         if value == Value::Null {

@@ -629,7 +629,26 @@ impl Journal {
         new_rcv.append(txn, &pr.into_entry(seq, clock_now, micros))?;
         self.attr.next_seq = seq + 1;
         self.save(txn)?;
+        if self.attr.dltrcv {
+            self.delete_saved(txn)?;
+        }
         Ok(new_id)
+    }
+
+    /// `DLTRCV(*YES)`: every detached receiver that has been saved is
+    /// deleted; one never saved stays, as the machine keeps it.
+    pub fn delete_saved(&self, txn: &mut Txn<'_>) -> Result<usize> {
+        let mut gone = 0;
+        for d in self.receivers(txn)? {
+            let Ok(r) = Receiver::load(txn, d.receiver) else {
+                continue;
+            };
+            if r.attr.status == RcvStatus::Saved {
+                crate::rcv::dltjrnrcv(txn, JobHandle(0), d.receiver)?;
+                gone += 1;
+            }
+        }
+        Ok(gone)
     }
 
     /// The library name of a receiver and the journal's own.

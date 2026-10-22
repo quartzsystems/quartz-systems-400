@@ -537,27 +537,44 @@ fn constraints(which: &str, alias: &str, all: &[(Name, FileDesc)]) -> (Vec<ColIn
     };
     let mut rows = Vec::new();
     for (lib, d) in all {
-        if d.attr.kind == FileKind::Logical {
-            continue;
-        }
         let Some(fmt) = d.formats.first() else {
             continue;
         };
         if fmt.unique.is_none() || fmt.format.keys.is_empty() {
             continue;
         }
-        let cname = format!("Q_{lib}_{}_{}_00001", d.name(), fmt.format.keys[0].name);
+        // A unique index made for a UNIQUE constraint carries the
+        // constraint's name in its text and belongs to its based-on table.
+        let text = ccsid::decode_trimmed(&d.header.text);
+        let (cname, ctype, table) = match (d.attr.kind, text.strip_prefix(super::ddl::UNIQUE_TEXT))
+        {
+            (FileKind::Logical, Some(c)) => {
+                let base = fmt
+                    .logical
+                    .as_ref()
+                    .and_then(|l| l.based_on.first())
+                    .and_then(|(id, _)| all.iter().find(|(_, f)| f.id == *id))
+                    .map_or_else(|| d.name().to_string(), |(_, f)| f.name().to_string());
+                (c.to_string(), "UNIQUE", base)
+            }
+            (FileKind::Logical, None) => continue,
+            _ => (
+                format!("Q_{lib}_{}_{}_00001", d.name(), fmt.format.keys[0].name),
+                "PRIMARY KEY",
+                d.name().to_string(),
+            ),
+        };
         if which == "SYSCST" {
             rows.push(vec![
                 s(cname),
                 s(lib.to_string()),
-                s("PRIMARY KEY"),
+                s(ctype),
                 s(lib.to_string()),
-                s(d.name().to_string()),
+                s(table.clone()),
                 s("NO"),
                 s("NO"),
                 n(fmt.format.keys.len() as u64),
-                s(d.name().to_string()),
+                s(table),
                 s(lib.to_string()),
             ]);
         } else {
@@ -567,7 +584,7 @@ fn constraints(which: &str, alias: &str, all: &[(Name, FileDesc)]) -> (Vec<ColIn
                     s(lib.to_string()),
                     s(k.name.to_string()),
                     s(lib.to_string()),
-                    s(d.name().to_string()),
+                    s(table.clone()),
                 ];
                 if which == "SYSKEYCST" {
                     row.push(n(i as u64 + 1));

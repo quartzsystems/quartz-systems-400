@@ -325,6 +325,26 @@ fn joins_groups_and_subqueries() {
         db.rows("SELECT o.ordno FROM cust c RIGHT EXCEPTION JOIN orders o ON c.cusno = o.cusno"),
         [row(&["103"])]
     );
+    assert_eq!(
+        db.rows("SELECT c.cusno, o.ordno FROM cust c FULL OUTER JOIN orders o ON c.cusno = o.cusno ORDER BY 1, 2"),
+        [
+            row(&["1", "100"]),
+            row(&["1", "101"]),
+            row(&["2", "-"]),
+            row(&["3", "102"]),
+            row(&["4", "-"]),
+            row(&["-", "103"])
+        ]
+    );
+    // Common table expressions, in FROM and in a subquery.
+    assert_eq!(
+        db.rows("WITH big (who, total) AS (SELECT cusno, SUM(amount) FROM orders GROUP BY cusno) SELECT c.name, b.total FROM cust c JOIN big b ON b.who = c.cusno WHERE b.total > 10 ORDER BY 1"),
+        [row(&["Alice", "25.25"]), row(&["Carol", "1000.00"])]
+    );
+    assert_eq!(
+        db.rows("WITH rich AS (SELECT cusno FROM cust WHERE bal > 100) SELECT ordno FROM orders WHERE cusno IN (SELECT cusno FROM rich)"),
+        [row(&["102"])]
+    );
     assert_eq!(db.rows("SELECT COUNT(*) FROM cust, orders"), [row(&["16"])]);
     assert_eq!(
         db.rows("SELECT c.name FROM cust c, orders o WHERE c.cusno = o.cusno AND o.amount > 100"),
@@ -369,6 +389,176 @@ fn joins_groups_and_subqueries() {
         db.code("SELECT name FROM cust WHERE bal = (SELECT bal FROM cust)"),
         -811
     );
+}
+
+#[test]
+fn external_sort_spills_and_merges() {
+    let mut db = Db::new();
+    setup(&mut db);
+    db.ctx.sort_budget = 2;
+    let want = [
+        row(&["Carol"]),
+        row(&["Alice"]),
+        row(&["Bob"]),
+        row(&["Dave"]),
+    ];
+    // Four rows, two per run: two runs merged in memory.
+    assert_eq!(
+        db.rows("SELECT name FROM cust ORDER BY bal DESC, name"),
+        want
+    );
+    // The same through files in a directory.
+    let dir = std::env::temp_dir().join(format!("qsql-test-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    db.ctx.spill = Box::new(sql::exec::spill::FileSpill::new(dir.clone()));
+    assert_eq!(
+        db.rows("SELECT name FROM cust ORDER BY bal DESC, name"),
+        want
+    );
+    assert_eq!(
+        db.rows("SELECT cusno, name FROM cust WHERE bal >= 0 ORDER BY 2 DESC"),
+        [
+            row(&["4", "Dave"]),
+            row(&["3", "Carol"]),
+            row(&["2", "Bob"]),
+            row(&["1", "Alice"])
+        ]
+    );
+    assert!(
+        std::fs::read_dir(&dir).unwrap().next().is_none(),
+        "runs are removed"
+    );
+    let _ = std::fs::remove_dir(&dir);
+}
+
+#[test]
+fn opnqryf_selects_and_orders() {
+    use db::odp::{OpenOpts, Usage};
+    use sql::ast::{Ident, ObjectName};
+    use sql::exec::opnqryf::{OpnQryF, clof, opnqryf};
+    let mut db = Db::new();
+    setup(&mut db);
+    let cust = ObjectName {
+        schema: None,
+        name: Ident::new("CUST"),
+    };
+    let mut t = db.store.begin().unwrap();
+    let n = opnqryf(
+        &mut t,
+        &mut db.ctx,
+        &OpnQryF {
+            file: cust.clone(),
+            qryslt: "BAL *GE 0 *AND NAME *NE \"Dave\"".into(),
+            keyfld: vec![("BAL".into(), true), ("NAME".into(), false)],
+            usage: Usage::INPUT,
+        },
+    )
+    .unwrap();
+    assert_eq!(n, 3);
+    // The program's open with SHARE(*YES) reads the query's records.
+    let file_id = db.ctx.resolve_file(&mut t, &cust).unwrap();
+    let fr = dds::FileRef::parse("CUST").unwrap();
+    let o = db
+        .ctx
+        .session
+        .open(
+            &mut t,
+            &fr,
+            &mut |_| Ok(file_id),
+            OpenOpts {
+                share: true,
+                ..OpenOpts::input(JobHandle(1))
+            },
+        )
+        .unwrap();
+    let mut names = Vec::new();
+    loop {
+        let next = o.borrow_mut().read(&mut t, false).unwrap();
+        let Some(r) = next else { break };
+        let v = o.borrow().field(&r, "NAME").unwrap();
+        match v {
+            db::Value::Char(b) => names.push(ccsid::decode_trimmed(&b)),
+            v => panic!("{v:?}"),
+        }
+    }
+    assert_eq!(names, ["Carol", "Alice", "Bob"]);
+    // Positioning by the KEYFLD key, and a second query is refused.
+    o.borrow_mut()
+        .setll(
+            &mut t,
+            &db::KeyArg::one(db::Value::Num("10.50".parse().unwrap())),
+        )
+        .unwrap();
+    assert!(o.borrow().fb.equal);
+    let r = o.borrow_mut().read(&mut t, false).unwrap().unwrap();
+    assert_eq!(
+        o.borrow().field(&r, "CUSNO").unwrap(),
+        db::Value::Num("1".parse().unwrap())
+    );
+    assert!(
+        opnqryf(
+            &mut t,
+            &mut db.ctx,
+            &OpnQryF {
+                file: cust.clone(),
+                qryslt: "*ALL".into(),
+                keyfld: Vec::new(),
+                usage: Usage::INPUT,
+            },
+        )
+        .is_err()
+    );
+    db.ctx.session.close(&mut t, &o);
+    assert_eq!(clof(&mut t, &mut db.ctx, &cust).unwrap(), 1);
+    assert_eq!(clof(&mut t, &mut db.ctx, &cust).unwrap(), 0);
+    t.commit().unwrap();
+}
+
+#[test]
+fn identity_defaults_and_alter_table() {
+    let mut db = Db::new();
+    db.ok("CREATE TABLE qstest/log (id INTEGER GENERATED ALWAYS AS IDENTITY (START WITH 10 INCREMENT BY 5), note CHAR(10) NOT NULL, at DATE NOT NULL DEFAULT CURRENT DATE, who CHAR(10) NOT NULL DEFAULT USER)");
+    assert_eq!(db.count("INSERT INTO log (note) VALUES ('a'), ('b')"), 2);
+    assert_eq!(
+        db.count("INSERT INTO log (note, who) VALUES ('c', 'ME')"),
+        1
+    );
+    assert_eq!(db.code("INSERT INTO log (id, note) VALUES (1, 'x')"), -798);
+    assert_eq!(
+        db.rows("SELECT id, note, who, at = CURRENT DATE FROM log ORDER BY id"),
+        [
+            row(&["10", "a", "QSECOFR", "1"]),
+            row(&["15", "b", "QSECOFR", "1"]),
+            row(&["20", "c", "ME", "1"])
+        ]
+    );
+    // ALTER TABLE: a column added with a default, one dropped, a type
+    // widened, a unique constraint added and dropped.
+    db.ok("ALTER TABLE qstest/log ADD COLUMN qty DECIMAL(5, 0) NOT NULL DEFAULT 7");
+    db.ok("ALTER TABLE qstest/log DROP COLUMN who");
+    db.ok("ALTER TABLE qstest/log ALTER COLUMN note SET DATA TYPE CHAR(20)");
+    assert_eq!(
+        db.rows("SELECT id, note, qty FROM log ORDER BY id"),
+        [
+            row(&["10", "a", "7"]),
+            row(&["15", "b", "7"]),
+            row(&["20", "c", "7"])
+        ]
+    );
+    assert_eq!(
+        db.count("INSERT INTO log (note, qty) VALUES ('twenty characters!!!', 1)"),
+        1
+    );
+    assert_eq!(db.rows("SELECT MAX(id) FROM log"), [row(&["25"])]);
+    db.ok("ALTER TABLE qstest/log ADD CONSTRAINT onenote UNIQUE (note)");
+    assert_eq!(db.code("INSERT INTO log (note, qty) VALUES ('a', 1)"), -803);
+    db.ok("ALTER TABLE qstest/log DROP CONSTRAINT onenote");
+    assert_eq!(db.count("INSERT INTO log (note, qty) VALUES ('a', 1)"), 1);
+    assert_eq!(
+        db.code("ALTER TABLE qstest/log DROP CONSTRAINT nosuch"),
+        -204
+    );
+    db.ok("DROP TABLE qstest/log");
 }
 
 #[test]
@@ -424,6 +614,18 @@ fn indexes_and_plans() {
             row(&["Dave"])
         ]
     );
+    // A UNIQUE constraint is a unique index the catalog lists.
+    db.ok("CREATE TABLE qstest/tags (id INTEGER NOT NULL PRIMARY KEY, tag CHAR(10) NOT NULL UNIQUE, grp CHAR(5), CONSTRAINT grptag UNIQUE (grp, tag))");
+    assert_eq!(
+        db.count("INSERT INTO tags VALUES (1, 'a', 'x'), (2, 'b', 'x')"),
+        2
+    );
+    assert_eq!(db.code("INSERT INTO tags VALUES (3, 'a', 'y')"), -803);
+    assert_eq!(
+        db.rows("SELECT constraint_name, constraint_type FROM qsys2/syscst WHERE table_name = 'TAGS' ORDER BY 1"),
+        [row(&["GRPTAG", "UNIQUE"]), row(&["Q_QSTEST_TAGS_ID_00001", "PRIMARY KEY"]), row(&["Q_TAGS_1", "UNIQUE"])]
+    );
+    db.ok("DROP TABLE qstest/tags");
     // A unique index refuses a duplicate.
     db.ok("CREATE UNIQUE INDEX qstest/cusnote ON cust (note)");
     assert_eq!(

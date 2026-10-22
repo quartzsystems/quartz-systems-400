@@ -31,9 +31,9 @@ pub use lex::{Keyword, NameType, Parm, Spec};
 pub use lf::compile_lf;
 pub use model::{
     CompOp, Condition, DataType, DateFmt, DefaultValue, DupOrder, EditCode, FieldDef, FieldSource,
-    FileRef, FloatPrecision, Join, KeyField, KeyTransform, LfDefinition, LfFormat, Literal,
-    NullKeys, PfDefinition, RecordFormat, RefSource, Reference, SelectOmit, TimeFmt, Usage,
-    Validity, VarLen,
+    FileRef, FloatPrecision, IdentityDef, Join, KeyField, KeyTransform, LfDefinition, LfFormat,
+    Literal, NullKeys, PfDefinition, RecordFormat, RefSource, Reference, SelectOmit, TimeFmt,
+    Usage, Validity, VarLen,
 };
 pub use pf::compile_pf;
 pub use prtf::compile_prtf;

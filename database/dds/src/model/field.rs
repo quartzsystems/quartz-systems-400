@@ -378,6 +378,22 @@ pub enum DefaultValue {
     Hex(Vec<u8>),
     /// A numeric literal as written.
     Number(String),
+    /// An SQL expression evaluated when a row is inserted: a special
+    /// register such as `CURRENT DATE`. DDS has no keyword for it.
+    Expr(String),
+}
+
+/// `GENERATED ... AS IDENTITY` of an SQL column.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IdentityDef {
+    /// `GENERATED ALWAYS`: a given value is refused.
+    pub always: bool,
+    /// `START WITH`.
+    pub start: i64,
+    /// `INCREMENT BY`.
+    pub increment: i64,
+    /// `CYCLE`.
+    pub cycle: bool,
 }
 
 /// The relational operator of `COMP`/`CMP`.
@@ -510,6 +526,8 @@ pub struct FieldDef {
     pub colhdg: Vec<String>,
     /// `DFT`.
     pub default: Option<DefaultValue>,
+    /// An SQL identity column: the system generates its values.
+    pub identity: Option<IdentityDef>,
     /// `DATFMT`, dates only.
     pub date_fmt: Option<DateFmt>,
     /// The date separator in effect, dates only.
@@ -551,6 +569,7 @@ impl FieldDef {
             alias: None,
             colhdg: Vec::new(),
             default: None,
+            identity: None,
             date_fmt: None,
             date_sep: None,
             time_fmt: None,

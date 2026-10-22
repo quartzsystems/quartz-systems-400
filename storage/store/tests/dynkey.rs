@@ -108,6 +108,9 @@ fn medium_keys_with_rrn_tail() {
 fn keys_at_the_limit() {
     exercise(1024, 400, 0);
     exercise(1000, 300, 1024);
+    // A file's longest key: two entries per node.
+    exercise(2010, 300, 0);
+    exercise(2048, 200, 0);
 }
 
 #[test]

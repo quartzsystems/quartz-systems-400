@@ -97,14 +97,6 @@ write 32767 through SQL into a `B 4,0` column and read it back in RPG.
 
 ## Files and members
 
-**Keys longer than 1014 bytes.** The store's B+tree key is at most 1024
-bytes and the access path key ends in a 2-byte format tag and the 8-byte
-RRN, so a file whose encoded key exceeds 1014 bytes is refused at create;
-DDS allows 2000.
-Test: `CRTPF` with two `A 1000` key fields on the real machine works;
-here it fails. A raise needs the tree to accept keys over a quarter of
-the page.
-
 **Message for a full member.** `SIZE` reached is a typed error without a
 message ID. Test: fill a `SIZE(5 0 0)` member on the machine and note
 the CPF message the write fails with.
@@ -142,18 +134,16 @@ Test: `S A COMP(EQ 'X')` alone, and `O A COMP(EQ 'X')` alone, with
 records of both kinds.
 
 **Join logical files.** The path and key come from the primary file.
-A read joins each secondary by its `JFLD` pairs, scanning the secondary
-in arrival order and taking the first match; a primary record with no
-match is omitted (`JDFTVAL` is not kept by the compiled definition, so
-the default-value join is not available) and a second match is never
-returned. IBM returns one record per matching secondary record. Test:
-`ORDJOIN` in the kit against a customer with two orders, and a
-`JDFTVAL` join over an order with no customer.
-
-**Select/omit on secondary fields.** Static select/omit is evaluated
-when the path is built, from the primary record alone, so a statement
-on a secondary field never selects. Test: a join LF with `S` on a
-secondary field.
+A read joins each secondary by its `JFLD` pairs and returns one record
+per matching secondary record, in `JDUPSEQ` order when given, else the
+secondary's arrival order; without `JDFTVAL` an unmatched primary
+record is omitted, with it the secondary's fields are zero and blank.
+The secondary is searched through its own access path when the path
+leads with the `JFLD` fields, else scanned. A select/omit statement on a
+secondary field runs at read time. Test: `ORDJOIN` in the kit against a
+customer with two orders; the order IBM gives duplicates without
+`JDUPSEQ`, and whether `JDFTVAL` gives a date field blanks or
+`0001-01-01`.
 
 **Message for a keyed read of an invalid path.** `PathInvalid` carries
 CPF5090 as a placeholder. Test: open a `MAINT(*REBLD)` LF for keyed
@@ -183,8 +173,12 @@ Test: `SETLL` on a prefix, `READE` past its last record, then `READ`.
 `*STATUS`.
 
 **Writes through logical files.** `WRITE`, `UPDATE` and `DELETE` on an
-open data path over a logical file are refused for now; the machine
-allows them when every based-on field is mapped. Test: none yet.
+open data path over a logical file go to the based-on member when every
+field of the format is a based-on field (renamed or not) of one file; a
+join format or a derived field (`CONCAT`, `SST`) refuses. A write gives
+the based-on fields the format lacks their `DFT`, else zero or blank,
+never null. Test: `WRITE` through an LF over a PF with an `ALWNULL`
+field without `DFT`, then `DSPPFM` in hex: null or blank?
 
 **Messages.** `NoLockedRecord` carries CPF5035 as a placeholder for the
 condition RPG reports as 01221 (RNX1221); `FileLocked` carries CPF4128.
@@ -265,12 +259,11 @@ error carries CPF4128 like every allocation failure here; the machine
 reports CPF3156 for `CLRPFM`. Test: `CLRPFM` while a program has the
 member open.
 
-**`CHGPF SRCFILE` with a changed record format.** Refused when the
-level identifier, the keys, `UNIQUE` or the duplicate order changed; the
-machine converts the data through a temporary copy. Only text, headings,
-edit words, defaults and the like change in place here. Test: `CHGPF
-SRCFILE` adding a field; the data survives on the machine, here the
-command fails.
+**`CHGPF SRCFILE` with a changed record format.** The data is converted
+through a copy, field by field by name as `CPYF FMTOPT(*MAP *DROP)` maps
+it, new fields taking their defaults; a file with dependent logical
+files refuses the conversion, where the machine re-creates the logical
+files too. Test: `CHGPF SRCFILE` adding a field to a file with an LF.
 
 **`DSPDBR` based-on members.** The relations come from each logical
 member's based-on members, so an LF member over a named PF member shows
@@ -312,7 +305,9 @@ through the same path as `CLRPFM`, so it writes `F MC`; `RGZPFM` writes
 entry is written: when the attached receiver already holds at least
 `THRESHOLD` KiB, `J NR` closes it, a receiver named by the trailing
 digits plus one is created in its library and `J PR` opens it, and the
-entry follows. `DLTRCV(*YES)` is kept but nothing deletes receivers yet.
+entry follows. `DLTRCV(*YES)` deletes a detached receiver at the next
+swap once it has been saved; nothing saves one before Phase 9, so the
+attribute has nothing to delete until then.
 Test: `CHGJRN JRNRCV(*GEN)` name generation on the machine with `RCV9999`.
 
 **Deleted receivers in the directory.** `DLTJRNRCV` leaves the journal's
@@ -464,8 +459,15 @@ not the length-prefixed byte protocol first planned, because the serial
 reader hands slic whole lines. Binary data has no path until the IFS
 (`MIGRATE(phase10)`). Test: none.
 
-**`OPNQRYF`.** Not on the console yet; the `QRYSLT` grammar maps onto the
-SQL executor and will be added with the conformance kit. Test: none.
+**`OPNQRYF`.** `QRYSLT` (`*EQ` and the other operators, `*AND`, `*OR`,
+`*NOT`, `*CT`, `%RANGE`, `%VALUES`, `%WLDCRD`, `%SST`) maps onto the
+SQL executor; the selected records are put in `KEYFLD` order at open
+time and left as the job's shared open data path, which a program's
+`SHARE(*YES)` open reads and `CLOF` closes. `FORMAT`, `MAPFLD`,
+`GRPFLD`, `JFLD` and `OPTIMIZE` are not taken. A record deleted after
+the open is skipped; one changed is read as it is now. Test: `OPNQRYF`
+then `CHGPF`-free changes by another job: does the machine's ODP show
+them?
 
 ## Editing
 

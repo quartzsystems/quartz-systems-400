@@ -17,8 +17,8 @@ use std::fmt;
 use qsname::{LibSpec, Name};
 
 pub use field::{
-    CompOp, DataType, DateFmt, DefaultValue, EditCode, FieldDef, FloatPrecision, Literal,
-    RefSource, Reference, TimeFmt, Usage, Validity, VarLen,
+    CompOp, DataType, DateFmt, DefaultValue, EditCode, FieldDef, FloatPrecision, IdentityDef,
+    Literal, RefSource, Reference, TimeFmt, Usage, Validity, VarLen,
 };
 pub use format::RecordFormat;
 pub use key::{KeyField, KeyTransform};

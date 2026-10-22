@@ -42,7 +42,8 @@ pub static LAYOUT: Layout = Layout {
         field("file", 72, 16),
         field("last_save", 88, 8),
         field("last_restore", 96, 8),
-        field("reserved2", 104, 24),
+        field("identity_next", 104, 8),
+        field("reserved2", 112, 16),
     ],
 };
 
@@ -81,6 +82,8 @@ pub struct MbrAttr {
     pub last_save: u64,
     /// Unix seconds, 0 for never.
     pub last_restore: u64,
+    /// The next value of the format's identity column.
+    pub identity_next: i64,
 }
 
 impl MbrAttr {
@@ -106,6 +109,7 @@ impl MbrAttr {
         b[72..88].copy_from_slice(&self.file.to_bytes());
         b[88..96].copy_from_slice(&self.last_save.to_le_bytes());
         b[96..104].copy_from_slice(&self.last_restore.to_le_bytes());
+        b[104..112].copy_from_slice(&self.identity_next.to_le_bytes());
         b
     }
 
@@ -140,6 +144,7 @@ impl MbrAttr {
             file: ObjectId::from_bytes(&b[72..88]),
             last_save: u64_at(88),
             last_restore: u64_at(96),
+            identity_next: i64::from_le_bytes(b[104..112].try_into().expect("8")),
         })
     }
 }
@@ -172,6 +177,7 @@ mod tests {
             },
             last_save: 0,
             last_restore: 0,
+            identity_next: -3,
         };
         assert_eq!(MbrAttr::decode(&a.encode()).unwrap(), a);
         assert!(MbrAttr::decode(&[0u8; ATTR_LEN]).is_err());

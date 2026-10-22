@@ -564,6 +564,56 @@ fn multi_format_dynslt_and_maint() {
 }
 
 #[test]
+fn two_thousand_byte_keys() {
+    let (_d, mut store, lib) = open_new();
+    let def = pf(&[
+        rec("LONGREC", ""),
+        fld("A", "1000", "A", "", ""),
+        fld("B", "1000", "A", "", ""),
+        key("A", ""),
+        key("B", ""),
+    ]);
+    let mut t = store.begin().unwrap();
+    let id = file::create_pf(
+        &mut t,
+        lib,
+        name("LONGKEY"),
+        &def,
+        &CreateFileOpts {
+            now: 1,
+            ..CreateFileOpts::default()
+        },
+    )
+    .unwrap();
+    let mut m = Member::open_by(&mut t, id, MemberSpec::First).unwrap();
+    assert_eq!(m.attr().key_len, 2000);
+    for i in (0..40u32).rev() {
+        let mut r = vec![ccsid::SPACE; 2000];
+        let a = ccsid::to_ebcdic(&format!("{i:04}")).unwrap();
+        r[..4].copy_from_slice(&a);
+        r[1000..1004].copy_from_slice(&a);
+        m.write_new(&mut t, &r, &[]).unwrap();
+    }
+    let keys = m
+        .keys(&mut t, Bound::Unbounded, Bound::Unbounded, 100)
+        .unwrap();
+    assert_eq!(keys.len(), 40);
+    assert_eq!(rrns(&keys), (1..=40).rev().collect::<Vec<_>>());
+    for rrn in (1..=40).step_by(3) {
+        m.delete(&mut t, rrn).unwrap();
+    }
+    assert_eq!(m.attr().path_entries, 26);
+    m.rebuild_path(&mut t, &mut |_, _| {}).unwrap();
+    assert_eq!(
+        m.keys(&mut t, Bound::Unbounded, Bound::Unbounded, 100)
+            .unwrap()
+            .len(),
+        26
+    );
+    t.commit().unwrap();
+}
+
+#[test]
 fn excnull_and_null_keys() {
     let (_d, mut store, lib) = open_new();
     let def = pf(&[

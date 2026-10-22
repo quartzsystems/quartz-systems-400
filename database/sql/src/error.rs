@@ -128,6 +128,13 @@ pub enum SqlError {
         what: String,
     },
 
+    /// A value was given for a `GENERATED ALWAYS` identity column.
+    #[error("column {column} is an identity column the system generates")]
+    IdentityValue {
+        /// The column.
+        column: String,
+    },
+
     /// A scalar subquery with more than one row.
     #[error("the subquery returned more than one row")]
     TooManyRows,
@@ -166,6 +173,7 @@ impl SqlError {
             Self::AmbiguousColumn { .. } => -203,
             Self::TypeMismatch { .. } => -401,
             Self::NullNotAllowed { .. } => -407,
+            Self::IdentityValue { .. } => -798,
             Self::DuplicateKey { .. } => -803,
             Self::Locked { .. } => -913,
             Self::NotJournaled { .. } => -7008,
@@ -190,6 +198,7 @@ impl SqlError {
             Self::TypeMismatch { .. } => "42818",
             Self::Overflow { .. } | Self::DivideByZero => "22003",
             Self::NullNotAllowed { .. } => "23502",
+            Self::IdentityValue { .. } => "428C9",
             Self::DuplicateKey { .. } => "23505",
             Self::Locked { .. } => "57033",
             Self::NotJournaled { .. } => "55019",

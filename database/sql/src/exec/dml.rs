@@ -7,6 +7,7 @@
 
 use std::rc::Rc;
 
+use db::odp::Odp;
 use db::odp::Usage;
 use db::record;
 use db::{KeyArg, Value as DbValue};
@@ -20,21 +21,68 @@ use crate::ast::{Assignment, Delete, Expr, Insert, InsertSource, Update, Where};
 use crate::error::{Result, SqlError};
 use crate::value::Value;
 
+/// A column's default: a value, or an expression to evaluate.
+enum Dft {
+    Value(Value),
+    Expr(String),
+}
+
 /// A column's default value, and whether it is the null value.
-fn default_of(f: &FieldDef) -> Result<Option<Value>> {
+fn default_of(f: &FieldDef) -> Result<Option<Dft>> {
     Ok(match &f.default {
-        Some(DefaultValue::Null) => Some(Value::Null),
-        Some(DefaultValue::Quoted(q)) => Some(Value::Str(q.clone())),
-        Some(DefaultValue::Hex(h)) => Some(Value::Str(ccsid::from_ebcdic(h))),
-        Some(DefaultValue::Number(n)) => {
-            Some(Value::Num(qdecimal::Decimal::parse(n).map_err(|e| {
-                SqlError::Conversion {
-                    what: e.to_string(),
-                }
-            })?))
+        Some(DefaultValue::Null) => Some(Dft::Value(Value::Null)),
+        Some(DefaultValue::Quoted(q)) => Some(Dft::Value(Value::Str(q.clone()))),
+        Some(DefaultValue::Hex(h)) => Some(Dft::Value(Value::Str(ccsid::from_ebcdic(h)))),
+        Some(DefaultValue::Number(n)) => Some(Dft::Value(Value::Num(
+            qdecimal::Decimal::parse(n).map_err(|e| SqlError::Conversion {
+                what: e.to_string(),
+            })?,
+        ))),
+        Some(DefaultValue::Expr(e)) => Some(Dft::Expr(e.clone())),
+        None => None,
+    })
+}
+
+/// The default of `f` as a value, an expression evaluated now.
+fn default_value(txn: &mut Txn<'_>, ev: &mut Evaluator<'_>, f: &FieldDef) -> Result<Option<Value>> {
+    Ok(match default_of(f)? {
+        Some(Dft::Value(v)) => Some(v),
+        Some(Dft::Expr(text)) => {
+            let e = crate::parse::parse_expr(&text, ev.ctx.naming)?;
+            Some(ev.eval(txn, &e, &Env::default())?)
         }
         None => None,
     })
+}
+
+/// Fill what the system generates in a row about to be inserted: the
+/// identity column's next value and expression defaults.
+fn fill_generated(
+    txn: &mut Txn<'_>,
+    ctx: &mut SqlContext,
+    params: &[Value],
+    t: &TableInfo,
+    o: &mut Odp,
+    per_field: &mut [Option<Value>],
+) -> Result<()> {
+    for (fi, f) in t.format.format.fields.iter().enumerate() {
+        if let Some(id) = &f.identity {
+            if per_field[fi].is_some() {
+                if id.always {
+                    return Err(SqlError::IdentityValue {
+                        column: f.name.to_string(),
+                    });
+                }
+                continue;
+            }
+            let v = o.next_identity(txn)?.unwrap_or(id.start);
+            per_field[fi] = Some(Value::int(v));
+        } else if per_field[fi].is_none() && matches!(f.default, Some(DefaultValue::Expr(_))) {
+            let mut ev = Evaluator { ctx, params };
+            per_field[fi] = default_value(txn, &mut ev, f)?;
+        }
+    }
+    Ok(())
 }
 
 /// Write `values` (one per field, `None` for the default) into a record.
@@ -56,7 +104,13 @@ pub fn build_record(
             (Some(v), _) => v.clone(),
             (None, Some(_)) => continue,
             (None, None) => match default_of(f)? {
-                Some(d) => d,
+                Some(Dft::Value(d)) => d,
+                Some(Dft::Expr(_)) => {
+                    return Err(SqlError::Database {
+                        what: format!("default of {} was not evaluated", f.name),
+                        msgid: None,
+                    });
+                }
                 None if f.allow_null => Value::Null,
                 None => {
                     return Err(SqlError::NullNotAllowed {
@@ -143,20 +197,23 @@ pub fn insert(
     }
     let mut o = ctx.open(txn, &t, Usage::OUTPUT)?;
     let mut n = 0u64;
-    let result = (|| {
-        for r in rows {
-            let mut per_field: Vec<Option<Value>> = vec![None; t.format.format.fields.len()];
-            for (k, &fi) in idx.iter().enumerate() {
-                per_field[fi] = r.get(k).cloned().flatten();
-            }
-            let (rec, nulls) = build_record(&t, &per_field, None)?;
-            o.write(txn, &rec, &nulls)?;
-            n += 1;
+    let mut result = Ok(());
+    for r in rows {
+        let mut per_field: Vec<Option<Value>> = vec![None; t.format.format.fields.len()];
+        for (k, &fi) in idx.iter().enumerate() {
+            per_field[fi] = r.get(k).cloned().flatten();
         }
-        Ok(n)
-    })();
+        let written = fill_generated(txn, ctx, params, &t, &mut o, &mut per_field)
+            .and_then(|()| build_record(&t, &per_field, None))
+            .and_then(|(rec, nulls)| o.write(txn, &rec, &nulls).map_err(SqlError::from));
+        if let Err(e) = written {
+            result = Err(e);
+            break;
+        }
+        n += 1;
+    }
     o.close(txn);
-    result
+    result.map(|()| n)
 }
 
 /// Evaluate the `SET` assignments against a row: field index to value.
@@ -194,7 +251,12 @@ fn assignments(
             })?;
             let v = match v {
                 Some(v) => Some(v),
-                None => Some(match default_of(f)? {
+                None if f.identity.is_some() => {
+                    return Err(SqlError::Unsupported {
+                        what: "SET DEFAULT on an identity column".into(),
+                    });
+                }
+                None => Some(match default_value(txn, ev, f)? {
                     Some(d) => d,
                     None if f.allow_null => Value::Null,
                     None => {

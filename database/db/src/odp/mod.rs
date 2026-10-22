@@ -9,6 +9,7 @@
 
 pub mod feedback;
 pub mod keyarg;
+pub mod lfwrite;
 pub mod locks;
 pub mod ovrdbf;
 pub mod session;
@@ -28,6 +29,8 @@ use store::txn::Txn;
 use crate::cmt::{CommitRef, LckLvl};
 use crate::error::{DbError, Result};
 use crate::file::{self, FileKind, Wait};
+use crate::format::FormatDef;
+use crate::lf;
 use crate::member::{Core, Member};
 use crate::path::{self, PathKey};
 use crate::record::Value;
@@ -160,6 +163,15 @@ enum Pos {
     At(PathKey),
 }
 
+/// Where a read stands among the logical records one path entry of a
+/// join format expands to.
+#[derive(Debug)]
+struct JoinCursor {
+    entry: PathKey,
+    records: Vec<Record>,
+    at: usize,
+}
+
 /// An open data path.
 #[derive(Debug)]
 pub struct Odp {
@@ -172,6 +184,12 @@ pub struct Odp {
     locked: Option<(ObjectId, PathKey)>,
     /// Key of the last record read, for `READE` without a key.
     last_key: Option<Vec<u8>>,
+    /// The rest of a join entry's records, when it had several.
+    join: Option<JoinCursor>,
+    /// `OPNQRYF`: the entries read, in order, instead of the path.
+    plan: Option<Vec<PathKey>>,
+    /// The format whose keys the plan's entries are encoded over.
+    plan_fmt: Option<FormatDef>,
     /// The feedback.
     pub fb: IoFeedback,
     locks: SharedLocks,
@@ -295,6 +313,9 @@ impl Odp {
             pos: Pos::Start,
             locked: None,
             last_key: None,
+            join: None,
+            plan: None,
+            plan_fmt: None,
             fb,
             locks,
             file_lock,
@@ -335,6 +356,11 @@ impl Odp {
         &self.member
     }
 
+    /// The next identity value of the member's format, taken.
+    pub fn next_identity(&mut self, txn: &mut Txn<'_>) -> Result<Option<i64>> {
+        self.member.next_identity(txn)
+    }
+
     /// Put the path under the job's commit definition (`COMMIT(*YES)`).
     pub fn set_commit(&mut self, cmt: CommitRef) {
         self.cmt = Some(cmt);
@@ -346,6 +372,12 @@ impl Odp {
         self.cmt.is_some()
     }
 
+    /// The commit definition the path is under.
+    #[must_use]
+    pub fn commit_ref(&self) -> Option<&CommitRef> {
+        self.cmt.as_ref()
+    }
+
     /// The lock level in force, when under commitment control.
     fn lcklvl(&self) -> Option<LckLvl> {
         self.cmt.as_ref().map(|c| c.borrow().lcklvl())
@@ -354,7 +386,7 @@ impl Odp {
     /// Before a change: under commitment control the cycle is opened and
     /// the member journals under it.
     fn begin_change(&mut self, txn: &mut Txn<'_>) -> Result<()> {
-        let Some(c) = &self.cmt else {
+        let Some(c) = self.cmt.clone() else {
             return Ok(());
         };
         let r = c.borrow_mut().begin_change(txn, &self.member);
@@ -368,6 +400,88 @@ impl Odp {
                 Err(e)
             }
         }
+    }
+
+    /// `begin_change` for the based-on member a logical path writes.
+    fn begin_change_on(&mut self, txn: &mut Txn<'_>, m: &mut Member) -> Result<()> {
+        let Some(c) = self.cmt.clone() else {
+            return Ok(());
+        };
+        match c.borrow_mut().begin_change(txn, m) {
+            Ok(cycle) => {
+                m.jrn.commit_cycle = cycle;
+                Ok(())
+            }
+            Err(e) => {
+                self.fb.fail(&e);
+                Err(e)
+            }
+        }
+    }
+
+    /// The based-on member and format a logical path's changes go to.
+    fn base_for_change(
+        &self,
+        txn: &mut Txn<'_>,
+    ) -> Result<(Member, FormatDef, lf::LogicalDef, FormatDef)> {
+        let fi = usize::from(self.format_index_of());
+        let base = self.member.open_base(txn, fi)?;
+        let lf_fmt = self.member.format_at(fi).clone();
+        let log = self.member.logical(fi)?.clone();
+        let base_fmt = self.member.bases[fi].format.clone();
+        Ok((base, lf_fmt, log, base_fmt))
+    }
+
+    /// `WRITE` through a logical file: the record goes to the based-on
+    /// member with the fields the format lacks at their defaults.
+    fn write_logical(&mut self, txn: &mut Txn<'_>, data: &[u8], null_map: &[u8]) -> Result<u64> {
+        let (mut base, lf_fmt, log, base_fmt) = self.base_for_change(txn)?;
+        let (rec, nulls) = lfwrite::to_base(&lf_fmt, &log, &base_fmt, data, null_map, None)?;
+        self.begin_change_on(txn, &mut base)?;
+        let rrn = base.write_new(txn, &rec, &nulls)?;
+        self.hold_new(base.id(), rrn);
+        Ok(rrn)
+    }
+
+    /// `UPDATE` through a logical file: the based-on record keeps the
+    /// fields the format lacks.
+    fn update_logical(
+        &mut self,
+        txn: &mut Txn<'_>,
+        rrn: u64,
+        data: &[u8],
+        null_map: &[u8],
+    ) -> Result<()> {
+        let (mut base, lf_fmt, log, base_fmt) = self.base_for_change(txn)?;
+        let old = base
+            .read(txn, rrn)?
+            .ok_or(DbError::RecordNotFound { rrn })?;
+        let (rec, nulls) = lfwrite::to_base(
+            &lf_fmt,
+            &log,
+            &base_fmt,
+            data,
+            null_map,
+            Some((&old.record, &old.null_map)),
+        )?;
+        self.begin_change_on(txn, &mut base)?;
+        base.update(txn, rrn, &rec, &nulls)
+    }
+
+    /// `DELETE` through a logical file.
+    fn delete_logical(&mut self, txn: &mut Txn<'_>, rrn: u64) -> Result<()> {
+        let fi = usize::from(self.format_index_of());
+        if self.member.logical(fi)?.join {
+            return Err(DbError::Definition {
+                what: format!(
+                    "logical format {} cannot be written through: it is a join format",
+                    self.member.format_at(fi).format.name
+                ),
+            });
+        }
+        let mut base = self.member.open_base(txn, fi)?;
+        self.begin_change_on(txn, &mut base)?;
+        base.delete(txn, rrn)
     }
 
     /// After a change: the record lock goes to the commit definition, or
@@ -387,12 +501,12 @@ impl Odp {
         }
     }
 
-    /// A record just written stays locked until the cycle ends.
-    fn hold_new(&mut self, rrn: u64) {
+    /// A record just written to `member` stays locked until the cycle
+    /// ends.
+    fn hold_new(&mut self, member: ObjectId, rrn: u64) {
         let Some(c) = &self.cmt else {
             return;
         };
-        let member = self.member.id();
         let _ = self
             .locks
             .lock()
@@ -420,9 +534,17 @@ impl Odp {
         &self.opts
     }
 
+    /// `OPNQRYF`: reads follow `entries`, keyed over `fmt`'s keys, from
+    /// the start.
+    pub fn set_plan(&mut self, entries: Vec<PathKey>, fmt: FormatDef) {
+        self.plan = Some(entries);
+        self.plan_fmt = Some(fmt);
+        self.pos = Pos::Start;
+    }
+
     /// Whether reads go by key.
     fn keyed(&self) -> bool {
-        self.opts.keyed && self.member.attr().key_len > 0
+        self.plan.is_some() || (self.opts.keyed && self.member.attr().key_len > 0)
     }
 
     /// The format a key argument is encoded for.
@@ -483,7 +605,10 @@ impl Odp {
     fn prefix(&self, arg: &KeyArg) -> Result<Vec<u8>> {
         match arg {
             KeyArg::Values(values) => {
-                let fmt = &self.member.file.formats[self.key_format()];
+                let fmt = self
+                    .plan_fmt
+                    .as_ref()
+                    .unwrap_or(&self.member.file.formats[self.key_format()]);
                 if values.len() > fmt.format.keys.len() {
                     return Err(DbError::Definition {
                         what: format!(
@@ -503,32 +628,124 @@ impl Odp {
         }
     }
 
-    /// The record a path entry names, as a `Record`.
-    fn fetch(&self, txn: &mut Txn<'_>, k: &PathKey) -> Result<Option<Record>> {
-        let Some(slot) = self.member.read_entry(txn, k)? else {
-            return Ok(None);
-        };
+    /// The records a path entry names: one, or a join format's several.
+    fn fetch_all(&self, txn: &mut Txn<'_>, k: &PathKey) -> Result<Vec<Record>> {
+        let slots = self.member.read_entries(txn, k)?;
         let fi = if self.member.is_logical() || self.member.is_multi_format() {
             k.format
         } else {
             self.member.attr().format
         };
-        Ok(Some(Record {
-            format: self.member.format_at(usize::from(fi)).format.name,
-            format_index: fi,
-            rrn: k.rrn,
-            data: slot.record,
-            null_map: slot.null_map,
-        }))
+        let format = self.member.format_at(usize::from(fi)).format.name;
+        Ok(slots
+            .into_iter()
+            .map(|slot| Record {
+                format,
+                format_index: fi,
+                rrn: k.rrn,
+                data: slot.record,
+                null_map: slot.null_map,
+            })
+            .collect())
+    }
+
+    /// The record of entry `k` a read in this direction gives first; a
+    /// join entry's other records wait for the reads that follow.
+    fn take(&mut self, txn: &mut Txn<'_>, k: &PathKey, forward: bool) -> Result<Option<Record>> {
+        let mut records = self.fetch_all(txn, k)?;
+        if records.len() <= 1 {
+            self.join = None;
+            return Ok(records.pop());
+        }
+        let at = if forward { 0 } else { records.len() - 1 };
+        let r = records[at].clone();
+        self.join = Some(JoinCursor {
+            entry: k.clone(),
+            records,
+            at,
+        });
+        Ok(Some(r))
     }
 
     /// The next entry in the direction asked, honouring the record
-    /// format restriction and skipping records `DYNSLT` omits.
+    /// format restriction and skipping records `DYNSLT` omits. A join
+    /// entry with several records gives them one read at a time.
     fn step(&mut self, txn: &mut Txn<'_>, forward: bool) -> Result<Option<(PathKey, Record)>> {
+        if let Some(c) = &mut self.join
+            && matches!(&self.pos, Pos::At(k) if *k == c.entry)
+        {
+            let next = if forward {
+                c.at.checked_add(1).filter(|n| *n < c.records.len())
+            } else {
+                c.at.checked_sub(1)
+            };
+            if let Some(n) = next {
+                c.at = n;
+                return Ok(Some((c.entry.clone(), c.records[n].clone())));
+            }
+        }
+        if self.plan.is_some() {
+            return self.step_planned(txn, forward);
+        }
         if self.keyed() {
             return self.step_keyed(txn, forward);
         }
         self.step_arrival(txn, forward)
+    }
+
+    /// The next entry of an `OPNQRYF` plan from the position; a record
+    /// deleted since the plan was made is skipped.
+    fn step_planned(
+        &mut self,
+        txn: &mut Txn<'_>,
+        forward: bool,
+    ) -> Result<Option<(PathKey, Record)>> {
+        let plan = self.plan.clone().expect("planned");
+        let n = plan.len();
+        let same = |a: &PathKey, b: &PathKey| a.format == b.format && a.rrn == b.rrn;
+        let start: Option<usize> = match (&self.pos, forward) {
+            (Pos::Start, true) => (n > 0).then_some(0),
+            (Pos::Start, false) | (Pos::End, true) => None,
+            (Pos::End, false) => n.checked_sub(1),
+            (Pos::Before(p), true) => plan.iter().position(|k| k.key.as_slice() >= p.as_slice()),
+            (Pos::Before(p), false) => plan.iter().rposition(|k| k.key.as_slice() < p.as_slice()),
+            (Pos::After(p), true) => plan
+                .iter()
+                .position(|k| k.key.as_slice() > p.as_slice() && !k.key.starts_with(p)),
+            (Pos::After(p), false) => plan
+                .iter()
+                .rposition(|k| k.key.starts_with(p) || k.key.as_slice() < p.as_slice()),
+            (Pos::At(at), true) => plan
+                .iter()
+                .position(|k| same(k, at))
+                .map(|i| i + 1)
+                .filter(|i| *i < n),
+            (Pos::At(at), false) => plan
+                .iter()
+                .position(|k| same(k, at))
+                .and_then(|i| i.checked_sub(1)),
+        };
+        let Some(mut i) = start else {
+            return Ok(None);
+        };
+        loop {
+            let k = plan[i].clone();
+            self.pos = Pos::At(k.clone());
+            if let Some(r) = self.take(txn, &k, forward)? {
+                return Ok(Some((k, r)));
+            }
+            if forward {
+                i += 1;
+                if i >= n {
+                    return Ok(None);
+                }
+            } else {
+                let Some(prev) = i.checked_sub(1) else {
+                    return Ok(None);
+                };
+                i = prev;
+            }
+        }
     }
 
     fn step_keyed(
@@ -567,7 +784,7 @@ impl Odp {
                 if want.is_some_and(|w| w != k.format) {
                     continue;
                 }
-                if let Some(r) = self.fetch(txn, &k)? {
+                if let Some(r) = self.take(txn, &k, forward)? {
                     return Ok(Some((k, r)));
                 }
             }
@@ -608,7 +825,7 @@ impl Odp {
                 format: 0,
                 rrn,
             };
-            if let Some(r) = self.fetch(txn, &k)? {
+            if let Some(r) = self.take(txn, &k, forward)? {
                 return Ok(Some((k, r)));
             }
             if forward {
@@ -875,7 +1092,7 @@ impl Odp {
             let r = if self.member.is_logical() && self.keyed() {
                 None
             } else {
-                self.fetch(txn, &k)?
+                self.take(txn, &k, true)?
             };
             if let Some(r) = r {
                 Some((k, r))
@@ -916,17 +1133,23 @@ impl Odp {
             return Ok(0);
         }
         if self.member.is_logical() {
-            let e = DbError::Definition {
-                what: "writing through a logical file is not supported yet".into(),
+            return match self.write_logical(txn, data, null_map) {
+                Ok(rrn) => {
+                    self.fb.rrn = rrn;
+                    Ok(rrn)
+                }
+                Err(e) => {
+                    self.fb.fail(&e);
+                    Err(e)
+                }
             };
-            self.fb.fail(&e);
-            return Err(e);
         }
         self.begin_change(txn)?;
         match self.member.write_new(txn, data, null_map) {
             Ok(rrn) => {
                 self.fb.rrn = rrn;
-                self.hold_new(rrn);
+                let member = self.member.id();
+                self.hold_new(member, rrn);
                 Ok(rrn)
             }
             Err(e) => {
@@ -958,15 +1181,12 @@ impl Odp {
             self.fb.rrn = k.rrn;
             return Ok(());
         }
-        if self.member.is_logical() {
-            let e = DbError::Definition {
-                what: "updating through a logical file is not supported yet".into(),
-            };
-            self.fb.fail(&e);
-            return Err(e);
-        }
-        self.begin_change(txn)?;
-        let result = self.member.update(txn, k.rrn, data, null_map);
+        let result = if self.member.is_logical() {
+            self.update_logical(txn, k.rrn, data, null_map)
+        } else {
+            self.begin_change(txn)?;
+            self.member.update(txn, k.rrn, data, null_map)
+        };
         self.keep_or_unlock();
         self.fb.rrn = k.rrn;
         result.inspect_err(|e| self.fb.fail(e))
@@ -982,15 +1202,12 @@ impl Odp {
             self.fb.rrn = k.rrn;
             return Ok(());
         }
-        if self.member.is_logical() {
-            let e = DbError::Definition {
-                what: "deleting through a logical file is not supported yet".into(),
-            };
-            self.fb.fail(&e);
-            return Err(e);
-        }
-        self.begin_change(txn)?;
-        let result = self.member.delete(txn, k.rrn);
+        let result = if self.member.is_logical() {
+            self.delete_logical(txn, k.rrn)
+        } else {
+            self.begin_change(txn)?;
+            self.member.delete(txn, k.rrn)
+        };
         self.keep_or_unlock();
         self.fb.rrn = k.rrn;
         result.inspect_err(|e| self.fb.fail(e))

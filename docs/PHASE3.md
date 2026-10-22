@@ -301,20 +301,47 @@ cargo run -p build -- test                          # the disk suite with steps 
   are per caller-supplied job handle, with no call levels, activation
   groups or `OVRSCOPE`. Phase 5 made them per job, the overrides one
   table per job scoped by activation group.
+- Writes, updates and deletes through a logical file were refused; they
+  now go to the based-on member when every field of the format is a
+  based-on field (`odp::lfwrite`).
 - `WAITRCD` is kept but a locked record is not waited for. Since Phase
   5 the job waits, as `WAITRCD` says.
-- A join logical file takes the first matching secondary record and
-  omits an unmatched primary record; `JDFTVAL` is not kept and a
-  secondary with several matches yields one record. Static select/omit
-  on a secondary field never selects.
-- The query executor materializes rows between steps; there is no
-  streaming and no external sort, so a query is bounded by memory.
-- `OPNQRYF`, `ALTER TABLE`, aliases, constraints other than unique
-  indexes, identity columns, `FULL OUTER JOIN`, triggers, stored
-  procedures and functions, `LOB`, `DBCS` and `GRAPHIC` data are out.
-- `*ACTGRP` scoping of commitment control, `OMTJRNE` beyond
-  `*OPNCLO`, `MINENTDTA` and `FIXLENDTA` are kept in the attributes and
-  not acted on; audit (`T`) entries are never written.
+- A join logical file took the first matching secondary record only;
+  it now gives one record per match (`member::join`), in `JDUPSEQ`
+  order, honours `JDFTVAL`, searches a keyed secondary through its path
+  and tests select/omit on secondary fields at read time.
+- `ORDER BY` is an external merge sort (`sql::exec::sort`): rows past
+  the job's `sort_budget` (100,000 by default) go to the spill area as
+  sorted runs and are merged on the way out. The spill area
+  (`sql::exec::spill`) is memory-backed, as the temporary ASP is on
+  this system; `FileSpill` writes runs to a directory for a host whose
+  temporary storage is a file system. Keyed scans read their paths in
+  batches. Joins, grouping, projection and `DISTINCT` still hold their
+  rows between steps, so a query without a sort is bounded by memory.
+- `OPNQRYF` (`sql::exec::opnqryf`) selects and orders at open time
+  into the job's shared open data path; `FORMAT`, `MAPFLD`, `GRPFLD`
+  and `JFLD` are not taken. `ALTER TABLE` changes the format through
+  `CHGPF SRCFILE`'s conversion (so a table with indexes or views over
+  it refuses a format change), `UNIQUE` constraints are unique indexes
+  the catalog lists, identity columns count in the member's attributes
+  (`GENERATED ALWAYS` refuses a given value), a column default may be a
+  special register, common table expressions are substituted as derived
+  tables (not recursive) and `FULL OUTER JOIN` is a nested loop. Aliases,
+  foreign key and check constraints (parsed, not enforced), triggers,
+  stored procedures and functions, `LOB`, `DBCS` and `GRAPHIC` data are
+  out.
+- Commitment control is scoped: `STRCMTCTL CMTSCOPE(*ACTGRP)` gives the
+  activation group its own commit definition, `*JOB` the job's one that
+  every group without its own reaches; a group's definition ends with
+  the group. `OMTJRNE(*OPNCLO)` is acted on and is the only value IBM
+  has; `MINENTDTA` and `FIXLENDTA` are kept and not acted on: every
+  entry carries its full image and its job, user and program, which is
+  what `FIXLENDTA(*JOB *USR *PGM)` asks for. `DLTRCV(*YES)` deletes a
+  detached receiver once saved. `ALTSEQ` names a table this system has
+  no `*TBL` object for, so it is kept and not applied. `VARLEN` fields
+  are stored at their full length (`ALLOCATE` is kept, not applied).
+  `SEQONLY` and `NBRRCDS` are kept and ignored: no read ever misses
+  another job's write.
 - The console's `cpyfrmimpf` and `cpytoimpf` read and write UTF-8
   buffers; `STMFCODPAG` is not a parameter.
 - `tools/conformance/db/expected/` is empty until the kit has run on a

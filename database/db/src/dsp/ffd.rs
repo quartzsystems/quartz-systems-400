@@ -96,6 +96,17 @@ fn field_info(fmt: &FormatDef, i: usize, f: &FieldDef) -> FieldInfo {
             s
         }
         DefaultValue::Number(n) => n.clone(),
+        DefaultValue::Expr(e) => e.clone(),
+    });
+    let default = default.or_else(|| {
+        f.identity.as_ref().map(|i| {
+            format!(
+                "*IDENTITY {} START {} INCREMENT {}",
+                if i.always { "ALWAYS" } else { "BY DEFAULT" },
+                i.start,
+                i.increment
+            )
+        })
     });
     let format = match f.data_type {
         DataType::Date => Some(format!(

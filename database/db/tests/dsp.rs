@@ -306,24 +306,92 @@ fn changes() {
     let m = Member::open_by(&mut t, cust, MemberSpec::First).unwrap();
     assert_eq!(m.attr().record_count, 5);
     assert_eq!(m.scan(&mut t, 1, 10).unwrap().len(), 5);
-    // A changed field or key is refused.
+    // A changed field converts the data, field by field.
+    let names_of = |t: &mut Txn<'_>| -> Vec<String> {
+        let d = file::describe(t, cust).unwrap();
+        let f = d.formats[0].format.field(&name("NAME")).unwrap().1.clone();
+        let m = Member::open_by(t, cust, MemberSpec::First).unwrap();
+        m.scan(t, 1, 10)
+            .unwrap()
+            .iter()
+            .map(|s| ccsid::decode_trimmed(db::record::field_bytes(&f, &s.record)))
+            .collect()
+    };
+    // A file with dependent logical files refuses a conversion.
+    let deps: Vec<_> = file::describe(&mut t, cust)
+        .unwrap()
+        .dependents
+        .iter()
+        .map(|d| d.lf_file)
+        .collect();
+    assert!(!deps.is_empty());
     let mut longer = customer_def();
     longer.format.fields[1].length = 40;
     longer.format.fields[1].byte_len = 40;
     longer.format.lay_out();
     let e = chgpf_srcfile(&mut t, JOB, cust, &longer).unwrap_err();
-    assert!(matches!(e, DbError::Definition { .. }));
+    assert!(
+        matches!(e, DbError::Definition { ref what } if what.contains("dependent")),
+        "{e}"
+    );
+    for lf in deps {
+        if file::describe(&mut t, lf).is_ok() {
+            file::delete_file(&mut t, JOB, lf).unwrap();
+        }
+    }
+    let before = names_of(&mut t);
+    let mut longer = customer_def();
+    longer.format.fields[1].length = 40;
+    longer.format.fields[1].byte_len = 40;
+    longer.format.lay_out();
+    chgpf_srcfile(&mut t, JOB, cust, &longer).unwrap();
+    let d = file::describe(&mut t, cust).unwrap();
+    assert_eq!(d.formats[0].format.fields[1].byte_len, 40);
+    assert_eq!(d.attr.record_len, 161);
+    assert_eq!(names_of(&mut t), before);
+    let mut m = Member::open_by(&mut t, cust, MemberSpec::First).unwrap();
+    assert_eq!(m.attr().record_count, 5);
+    m.ensure_path(&mut t, &mut |_, _| {}).unwrap();
+    assert_eq!(
+        m.keys(
+            &mut t,
+            std::ops::Bound::Unbounded,
+            std::ops::Bound::Unbounded,
+            10
+        )
+        .unwrap()
+        .len(),
+        5
+    );
+    // A new key is taken too; a field the new format lacks is dropped.
     let rekeyed = pf(&[
         rec("CUSREC", "TEXT('Customer')"),
         fld("CUSNO", "7", "P", "0", "COLHDG('Customer')"),
         fld("NAME", "30", "A", "", "TEXT('Name')"),
         fld("BAL", "9", "P", "2", "DFT(0)"),
         fld("SINCE", "", "L", "", "ALWNULL"),
-        fld("NOTE", "100", "A", "", "VARLEN(20) ALWNULL"),
         key("NAME", ""),
     ]);
-    let e = chgpf_srcfile(&mut t, JOB, cust, &rekeyed).unwrap_err();
-    assert!(matches!(e, DbError::Definition { .. }));
+    chgpf_srcfile(&mut t, JOB, cust, &rekeyed).unwrap();
+    let mut m = Member::open_by(&mut t, cust, MemberSpec::First).unwrap();
+    assert_eq!(m.attr().key_len, 30);
+    m.ensure_path(&mut t, &mut |_, _| {}).unwrap();
+    assert_eq!(m.attr().record_count, 5);
+    let mut sorted = before.clone();
+    sorted.sort();
+    let keys = m
+        .keys(
+            &mut t,
+            std::ops::Bound::Unbounded,
+            std::ops::Bound::Unbounded,
+            10,
+        )
+        .unwrap();
+    let in_key_order: Vec<String> = keys
+        .iter()
+        .map(|k| ccsid::decode_trimmed(&k.key[..30]))
+        .collect();
+    assert_eq!(in_key_order, sorted);
     assert!(t.store().locks().holders(cust).is_empty());
     t.commit().unwrap();
 }

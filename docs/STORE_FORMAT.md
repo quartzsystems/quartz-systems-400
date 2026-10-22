@@ -75,7 +75,8 @@ The all-zero ID means "no object" and marks metadata pages.
 ## 3. B+tree nodes
 
 One page per node, page type 0x0010. Keys are fixed size per tree
-(at most 1024 bytes); values are variable (at most 1024 bytes). A tree may fix its key size at run time (file access paths do). Nodes are
+(at most 2048 bytes, so two entries fit a node at the limit); values are
+variable (at most 1024 bytes). A tree may fix its key size at run time (file access paths do). Nodes are
 never modified in place: a change rewrites the node to a fresh page, and
 its parent, up to the root, whose new page number is published through
 the transaction. There are no sibling pointers; range scans keep a stack
