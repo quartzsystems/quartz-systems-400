@@ -63,7 +63,12 @@ now and what to check.
    ends the request and shows the message at Command Entry; the
    inquiry a batch job gets instead is unverified.
 
-10. **The listing.** Our listing's column layout (statement number,
+10. **Eight-digit dates.** A `*DATE` value of eight digits that is not
+    a date in the job's format is taken as `YYYYMMDD` (the harness and
+    the displays spell dates so). Whether IBM accepts `20261022` in a
+    `*MDY` job is unverified; it may be a `CPD0084` there.
+
+11. **The listing.** Our listing's column layout (statement number,
     nesting, source; the cross-reference columns) imitates IBM's shape
     with our words. A real `CRTBNDCL` listing would show the line
     widths and whether the cross-reference lists subroutines.

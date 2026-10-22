@@ -370,7 +370,15 @@ fn date(env: &Env<'_>, kwd: &str, text: &str) -> Result<String, Diag> {
         }
         _ => return Err(bad()),
     };
-    cymd(&y, m, d).ok_or_else(bad)
+    // Eight digits that are not a date in the job's format are taken
+    // as `YYYYMMDD`, the form the system's own displays print.
+    cymd(&y, m, d)
+        .or_else(|| {
+            (digits.len() == 8)
+                .then(|| cymd(&digits[0..4], &digits[4..6], &digits[6..8]))
+                .flatten()
+        })
+        .ok_or_else(bad)
 }
 
 /// Two-digit years 40 to 99 are 19xx, 00 to 39 are 20xx.
