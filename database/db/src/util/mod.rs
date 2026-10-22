@@ -147,8 +147,8 @@ pub fn each_record(
     };
     let hi = order.to_rrn.map_or(slots, |t| t.min(slots));
     for rrn in order.from_rrn.max(1)..=hi {
-        let slot = if m.is_logical() {
-            m.read_entry(
+        let slots = if m.is_logical() {
+            m.read_entries(
                 txn,
                 &PathKey {
                     key: Vec::new(),
@@ -157,12 +157,15 @@ pub fn each_record(
                 },
             )?
         } else {
-            m.read(txn, rrn)?.filter(|s| !s.deleted)
+            m.read(txn, rrn)?
+                .filter(|s| !s.deleted)
+                .into_iter()
+                .collect()
         };
-        if let Some(s) = slot
-            && !f(txn, s)?
-        {
-            return Ok(());
+        for s in slots {
+            if !f(txn, s)? {
+                return Ok(());
+            }
         }
     }
     Ok(())
@@ -191,10 +194,10 @@ fn each_keyed(
             {
                 return Ok(());
             }
-            if let Some(s) = m.read_entry(txn, k)?
-                && !f(txn, s)?
-            {
-                return Ok(());
+            for s in m.read_entries(txn, k)? {
+                if !f(txn, s)? {
+                    return Ok(());
+                }
             }
         }
         batch = p.scan_from(txn, Bound::Excluded(&last), BATCH)?;

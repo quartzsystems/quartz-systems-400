@@ -306,10 +306,10 @@ cargo run -p build -- test                          # the disk suite with steps 
   based-on field (`odp::lfwrite`).
 - `WAITRCD` is kept but a locked record is not waited for. Since Phase
   5 the job waits, as `WAITRCD` says.
-- A join logical file takes the first matching secondary record and
-  omits an unmatched primary record; `JDFTVAL` is not kept and a
-  secondary with several matches yields one record. Static select/omit
-  on a secondary field never selects.
+- A join logical file took the first matching secondary record only;
+  it now gives one record per match (`member::join`), in `JDUPSEQ`
+  order, honours `JDFTVAL`, searches a keyed secondary through its path
+  and tests select/omit on secondary fields at read time.
 - The query executor materializes rows between steps; there is no
   streaming and no external sort, so a query is bounded by memory.
 - `OPNQRYF`, `ALTER TABLE`, aliases, constraints other than unique

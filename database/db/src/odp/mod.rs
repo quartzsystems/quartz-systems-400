@@ -163,6 +163,15 @@ enum Pos {
     At(PathKey),
 }
 
+/// Where a read stands among the logical records one path entry of a
+/// join format expands to.
+#[derive(Debug)]
+struct JoinCursor {
+    entry: PathKey,
+    records: Vec<Record>,
+    at: usize,
+}
+
 /// An open data path.
 #[derive(Debug)]
 pub struct Odp {
@@ -175,6 +184,8 @@ pub struct Odp {
     locked: Option<(ObjectId, PathKey)>,
     /// Key of the last record read, for `READE` without a key.
     last_key: Option<Vec<u8>>,
+    /// The rest of a join entry's records, when it had several.
+    join: Option<JoinCursor>,
     /// The feedback.
     pub fb: IoFeedback,
     locks: SharedLocks,
@@ -298,6 +309,7 @@ impl Odp {
             pos: Pos::Start,
             locked: None,
             last_key: None,
+            join: None,
             fb,
             locks,
             file_lock,
@@ -588,28 +600,62 @@ impl Odp {
         }
     }
 
-    /// The record a path entry names, as a `Record`.
-    fn fetch(&self, txn: &mut Txn<'_>, k: &PathKey) -> Result<Option<Record>> {
-        let Some(slot) = self.member.read_entry(txn, k)? else {
-            return Ok(None);
-        };
+    /// The records a path entry names: one, or a join format's several.
+    fn fetch_all(&self, txn: &mut Txn<'_>, k: &PathKey) -> Result<Vec<Record>> {
+        let slots = self.member.read_entries(txn, k)?;
         let fi = if self.member.is_logical() || self.member.is_multi_format() {
             k.format
         } else {
             self.member.attr().format
         };
-        Ok(Some(Record {
-            format: self.member.format_at(usize::from(fi)).format.name,
-            format_index: fi,
-            rrn: k.rrn,
-            data: slot.record,
-            null_map: slot.null_map,
-        }))
+        let format = self.member.format_at(usize::from(fi)).format.name;
+        Ok(slots
+            .into_iter()
+            .map(|slot| Record {
+                format,
+                format_index: fi,
+                rrn: k.rrn,
+                data: slot.record,
+                null_map: slot.null_map,
+            })
+            .collect())
+    }
+
+    /// The record of entry `k` a read in this direction gives first; a
+    /// join entry's other records wait for the reads that follow.
+    fn take(&mut self, txn: &mut Txn<'_>, k: &PathKey, forward: bool) -> Result<Option<Record>> {
+        let mut records = self.fetch_all(txn, k)?;
+        if records.len() <= 1 {
+            self.join = None;
+            return Ok(records.pop());
+        }
+        let at = if forward { 0 } else { records.len() - 1 };
+        let r = records[at].clone();
+        self.join = Some(JoinCursor {
+            entry: k.clone(),
+            records,
+            at,
+        });
+        Ok(Some(r))
     }
 
     /// The next entry in the direction asked, honouring the record
-    /// format restriction and skipping records `DYNSLT` omits.
+    /// format restriction and skipping records `DYNSLT` omits. A join
+    /// entry with several records gives them one read at a time.
     fn step(&mut self, txn: &mut Txn<'_>, forward: bool) -> Result<Option<(PathKey, Record)>> {
+        if let Some(c) = &mut self.join
+            && matches!(&self.pos, Pos::At(k) if *k == c.entry)
+        {
+            let next = if forward {
+                c.at.checked_add(1).filter(|n| *n < c.records.len())
+            } else {
+                c.at.checked_sub(1)
+            };
+            if let Some(n) = next {
+                c.at = n;
+                return Ok(Some((c.entry.clone(), c.records[n].clone())));
+            }
+        }
         if self.keyed() {
             return self.step_keyed(txn, forward);
         }
@@ -652,7 +698,7 @@ impl Odp {
                 if want.is_some_and(|w| w != k.format) {
                     continue;
                 }
-                if let Some(r) = self.fetch(txn, &k)? {
+                if let Some(r) = self.take(txn, &k, forward)? {
                     return Ok(Some((k, r)));
                 }
             }
@@ -693,7 +739,7 @@ impl Odp {
                 format: 0,
                 rrn,
             };
-            if let Some(r) = self.fetch(txn, &k)? {
+            if let Some(r) = self.take(txn, &k, forward)? {
                 return Ok(Some((k, r)));
             }
             if forward {
@@ -960,7 +1006,7 @@ impl Odp {
             let r = if self.member.is_logical() && self.keyed() {
                 None
             } else {
-                self.fetch(txn, &k)?
+                self.take(txn, &k, true)?
             };
             if let Some(r) = r {
                 Some((k, r))

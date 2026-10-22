@@ -142,18 +142,16 @@ Test: `S A COMP(EQ 'X')` alone, and `O A COMP(EQ 'X')` alone, with
 records of both kinds.
 
 **Join logical files.** The path and key come from the primary file.
-A read joins each secondary by its `JFLD` pairs, scanning the secondary
-in arrival order and taking the first match; a primary record with no
-match is omitted (`JDFTVAL` is not kept by the compiled definition, so
-the default-value join is not available) and a second match is never
-returned. IBM returns one record per matching secondary record. Test:
-`ORDJOIN` in the kit against a customer with two orders, and a
-`JDFTVAL` join over an order with no customer.
-
-**Select/omit on secondary fields.** Static select/omit is evaluated
-when the path is built, from the primary record alone, so a statement
-on a secondary field never selects. Test: a join LF with `S` on a
-secondary field.
+A read joins each secondary by its `JFLD` pairs and returns one record
+per matching secondary record, in `JDUPSEQ` order when given, else the
+secondary's arrival order; without `JDFTVAL` an unmatched primary
+record is omitted, with it the secondary's fields are zero and blank.
+The secondary is searched through its own access path when the path
+leads with the `JFLD` fields, else scanned. A select/omit statement on a
+secondary field runs at read time. Test: `ORDJOIN` in the kit against a
+customer with two orders; the order IBM gives duplicates without
+`JDUPSEQ`, and whether `JDFTVAL` gives a date field blanks or
+`0001-01-01`.
 
 **Message for a keyed read of an invalid path.** `PathInvalid` carries
 CPF5090 as a placeholder. Test: open a `MAINT(*REBLD)` LF for keyed

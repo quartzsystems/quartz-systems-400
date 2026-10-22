@@ -746,11 +746,15 @@ fn scan_table(
             )?
         };
         for k in keys {
-            let slot = match &base_pf {
-                Some(pf) => pf.read(txn, k.rrn)?.filter(|s| !s.deleted),
-                None => pm.read_entry(txn, &k)?,
+            let slots = match &base_pf {
+                Some(pf) => pf
+                    .read(txn, k.rrn)?
+                    .filter(|s| !s.deleted)
+                    .into_iter()
+                    .collect(),
+                None => pm.read_entries(txn, &k)?,
             };
-            if let Some(s) = slot {
+            for s in slots {
                 rows.push(row_of(&t.format, &s)?);
             }
         }

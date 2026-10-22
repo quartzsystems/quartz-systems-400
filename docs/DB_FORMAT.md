@@ -375,8 +375,12 @@ tried in order: a group whose conditions all hold (or `ALL`) decides;
 when none applies the record is selected if the last group is an omit
 and omitted if it is a select. Without `DYNSLT` only selected records
 enter the path; with it every record does and the test is applied on
-read. Join formats take their key and their path from the primary file;
-the secondary files are read at open time (`TODO(phase3)`).
+read. Join formats take their key and their path from the primary file,
+one entry per primary record; a read expands the entry into one record
+per matching secondary record, the secondaries read then (through their
+own path when it leads with the `JFLD` fields), `JDFTVAL` keeping an
+unmatched primary record with zero and blank secondary fields. A
+select/omit test on a secondary field runs at read time.
 
 ## 7. Journals
 
