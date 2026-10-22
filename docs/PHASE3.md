@@ -301,6 +301,9 @@ cargo run -p build -- test                          # the disk suite with steps 
   are per caller-supplied job handle, with no call levels, activation
   groups or `OVRSCOPE`. Phase 5 made them per job, the overrides one
   table per job scoped by activation group.
+- Writes, updates and deletes through a logical file were refused; they
+  now go to the based-on member when every field of the format is a
+  based-on field (`odp::lfwrite`).
 - `WAITRCD` is kept but a locked record is not waited for. Since Phase
   5 the job waits, as `WAITRCD` says.
 - A join logical file takes the first matching secondary record and

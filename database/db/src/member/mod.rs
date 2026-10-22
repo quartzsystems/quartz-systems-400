@@ -431,7 +431,37 @@ impl Member {
         &self.file.formats[index]
     }
 
-    fn logical(&self, index: usize) -> Result<&lf::LogicalDef> {
+    /// The based-on member behind format `fi` of a logical member, opened
+    /// to be written through; it journals as this member's job does.
+    pub fn open_base(&self, txn: &mut Txn<'_>, fi: usize) -> Result<Self> {
+        let base = self.bases.get(fi).ok_or_else(|| DbError::Corrupt {
+            what: format!("format {fi} has no based-on member"),
+        })?;
+        let (file, _) =
+            self.logical(fi)?
+                .based_on
+                .first()
+                .copied()
+                .ok_or_else(|| DbError::Corrupt {
+                    what: format!("format {fi} of {} has no based-on file", self.file.name()),
+                })?;
+        let desc = file::describe(txn, file)?;
+        let entry = desc
+            .members
+            .iter()
+            .find(|m| m.object == base.member)
+            .copied()
+            .ok_or_else(|| DbError::MemberNotFound {
+                file: desc.name().to_string(),
+                member: "*FIRST".into(),
+            })?;
+        let mut m = Self::open(txn, &desc, &entry)?;
+        m.jrn = self.jrn;
+        Ok(m)
+    }
+
+    /// What makes format `index` logical.
+    pub fn logical(&self, index: usize) -> Result<&lf::LogicalDef> {
         self.file.formats[index]
             .logical
             .as_ref()

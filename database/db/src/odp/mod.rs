@@ -9,6 +9,7 @@
 
 pub mod feedback;
 pub mod keyarg;
+pub mod lfwrite;
 pub mod locks;
 pub mod ovrdbf;
 pub mod session;
@@ -28,6 +29,8 @@ use store::txn::Txn;
 use crate::cmt::{CommitRef, LckLvl};
 use crate::error::{DbError, Result};
 use crate::file::{self, FileKind, Wait};
+use crate::format::FormatDef;
+use crate::lf;
 use crate::member::{Core, Member};
 use crate::path::{self, PathKey};
 use crate::record::Value;
@@ -354,7 +357,7 @@ impl Odp {
     /// Before a change: under commitment control the cycle is opened and
     /// the member journals under it.
     fn begin_change(&mut self, txn: &mut Txn<'_>) -> Result<()> {
-        let Some(c) = &self.cmt else {
+        let Some(c) = self.cmt.clone() else {
             return Ok(());
         };
         let r = c.borrow_mut().begin_change(txn, &self.member);
@@ -368,6 +371,88 @@ impl Odp {
                 Err(e)
             }
         }
+    }
+
+    /// `begin_change` for the based-on member a logical path writes.
+    fn begin_change_on(&mut self, txn: &mut Txn<'_>, m: &mut Member) -> Result<()> {
+        let Some(c) = self.cmt.clone() else {
+            return Ok(());
+        };
+        match c.borrow_mut().begin_change(txn, m) {
+            Ok(cycle) => {
+                m.jrn.commit_cycle = cycle;
+                Ok(())
+            }
+            Err(e) => {
+                self.fb.fail(&e);
+                Err(e)
+            }
+        }
+    }
+
+    /// The based-on member and format a logical path's changes go to.
+    fn base_for_change(
+        &self,
+        txn: &mut Txn<'_>,
+    ) -> Result<(Member, FormatDef, lf::LogicalDef, FormatDef)> {
+        let fi = usize::from(self.format_index_of());
+        let base = self.member.open_base(txn, fi)?;
+        let lf_fmt = self.member.format_at(fi).clone();
+        let log = self.member.logical(fi)?.clone();
+        let base_fmt = self.member.bases[fi].format.clone();
+        Ok((base, lf_fmt, log, base_fmt))
+    }
+
+    /// `WRITE` through a logical file: the record goes to the based-on
+    /// member with the fields the format lacks at their defaults.
+    fn write_logical(&mut self, txn: &mut Txn<'_>, data: &[u8], null_map: &[u8]) -> Result<u64> {
+        let (mut base, lf_fmt, log, base_fmt) = self.base_for_change(txn)?;
+        let (rec, nulls) = lfwrite::to_base(&lf_fmt, &log, &base_fmt, data, null_map, None)?;
+        self.begin_change_on(txn, &mut base)?;
+        let rrn = base.write_new(txn, &rec, &nulls)?;
+        self.hold_new(base.id(), rrn);
+        Ok(rrn)
+    }
+
+    /// `UPDATE` through a logical file: the based-on record keeps the
+    /// fields the format lacks.
+    fn update_logical(
+        &mut self,
+        txn: &mut Txn<'_>,
+        rrn: u64,
+        data: &[u8],
+        null_map: &[u8],
+    ) -> Result<()> {
+        let (mut base, lf_fmt, log, base_fmt) = self.base_for_change(txn)?;
+        let old = base
+            .read(txn, rrn)?
+            .ok_or(DbError::RecordNotFound { rrn })?;
+        let (rec, nulls) = lfwrite::to_base(
+            &lf_fmt,
+            &log,
+            &base_fmt,
+            data,
+            null_map,
+            Some((&old.record, &old.null_map)),
+        )?;
+        self.begin_change_on(txn, &mut base)?;
+        base.update(txn, rrn, &rec, &nulls)
+    }
+
+    /// `DELETE` through a logical file.
+    fn delete_logical(&mut self, txn: &mut Txn<'_>, rrn: u64) -> Result<()> {
+        let fi = usize::from(self.format_index_of());
+        if self.member.logical(fi)?.join {
+            return Err(DbError::Definition {
+                what: format!(
+                    "logical format {} cannot be written through: it is a join format",
+                    self.member.format_at(fi).format.name
+                ),
+            });
+        }
+        let mut base = self.member.open_base(txn, fi)?;
+        self.begin_change_on(txn, &mut base)?;
+        base.delete(txn, rrn)
     }
 
     /// After a change: the record lock goes to the commit definition, or
@@ -387,12 +472,12 @@ impl Odp {
         }
     }
 
-    /// A record just written stays locked until the cycle ends.
-    fn hold_new(&mut self, rrn: u64) {
+    /// A record just written to `member` stays locked until the cycle
+    /// ends.
+    fn hold_new(&mut self, member: ObjectId, rrn: u64) {
         let Some(c) = &self.cmt else {
             return;
         };
-        let member = self.member.id();
         let _ = self
             .locks
             .lock()
@@ -916,17 +1001,23 @@ impl Odp {
             return Ok(0);
         }
         if self.member.is_logical() {
-            let e = DbError::Definition {
-                what: "writing through a logical file is not supported yet".into(),
+            return match self.write_logical(txn, data, null_map) {
+                Ok(rrn) => {
+                    self.fb.rrn = rrn;
+                    Ok(rrn)
+                }
+                Err(e) => {
+                    self.fb.fail(&e);
+                    Err(e)
+                }
             };
-            self.fb.fail(&e);
-            return Err(e);
         }
         self.begin_change(txn)?;
         match self.member.write_new(txn, data, null_map) {
             Ok(rrn) => {
                 self.fb.rrn = rrn;
-                self.hold_new(rrn);
+                let member = self.member.id();
+                self.hold_new(member, rrn);
                 Ok(rrn)
             }
             Err(e) => {
@@ -958,15 +1049,12 @@ impl Odp {
             self.fb.rrn = k.rrn;
             return Ok(());
         }
-        if self.member.is_logical() {
-            let e = DbError::Definition {
-                what: "updating through a logical file is not supported yet".into(),
-            };
-            self.fb.fail(&e);
-            return Err(e);
-        }
-        self.begin_change(txn)?;
-        let result = self.member.update(txn, k.rrn, data, null_map);
+        let result = if self.member.is_logical() {
+            self.update_logical(txn, k.rrn, data, null_map)
+        } else {
+            self.begin_change(txn)?;
+            self.member.update(txn, k.rrn, data, null_map)
+        };
         self.keep_or_unlock();
         self.fb.rrn = k.rrn;
         result.inspect_err(|e| self.fb.fail(e))
@@ -982,15 +1070,12 @@ impl Odp {
             self.fb.rrn = k.rrn;
             return Ok(());
         }
-        if self.member.is_logical() {
-            let e = DbError::Definition {
-                what: "deleting through a logical file is not supported yet".into(),
-            };
-            self.fb.fail(&e);
-            return Err(e);
-        }
-        self.begin_change(txn)?;
-        let result = self.member.delete(txn, k.rrn);
+        let result = if self.member.is_logical() {
+            self.delete_logical(txn, k.rrn)
+        } else {
+            self.begin_change(txn)?;
+            self.member.delete(txn, k.rrn)
+        };
         self.keep_or_unlock();
         self.fb.rrn = k.rrn;
         result.inspect_err(|e| self.fb.fail(e))

@@ -183,8 +183,12 @@ Test: `SETLL` on a prefix, `READE` past its last record, then `READ`.
 `*STATUS`.
 
 **Writes through logical files.** `WRITE`, `UPDATE` and `DELETE` on an
-open data path over a logical file are refused for now; the machine
-allows them when every based-on field is mapped. Test: none yet.
+open data path over a logical file go to the based-on member when every
+field of the format is a based-on field (renamed or not) of one file; a
+join format or a derived field (`CONCAT`, `SST`) refuses. A write gives
+the based-on fields the format lacks their `DFT`, else zero or blank,
+never null. Test: `WRITE` through an LF over a PF with an `ALWNULL`
+field without `DFT`, then `DSPPFM` in hex: null or blank?
 
 **Messages.** `NoLockedRecord` carries CPF5035 as a placeholder for the
 condition RPG reports as 01221 (RNX1221); `FileLocked` carries CPF4128.
