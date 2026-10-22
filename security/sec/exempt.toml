@@ -29,7 +29,11 @@ fns = ["resolve_members", "undo", "apply"]
 
 [file."database/db/src/member/mod.rs"]
 reason = "members are reached through a file the caller checked (open, CLRPFM, RGZPFM, ADDPFM)"
-fns = ["load", "base_members", "read_slot", "invalidate", "create", "create_logical", "destroy", "open", "open_by", "read", "scan", "delete", "clear", "set_reuse_deleted", "set_limits", "refresh", "keys", "keys_back", "read_entry", "ensure_path", "rebuild_path"]
+fns = ["load", "base_members", "read_slot", "invalidate", "create", "create_logical", "destroy", "open", "open_by", "open_base", "next_identity", "read", "scan", "delete", "clear", "set_reuse_deleted", "set_limits", "refresh", "keys", "keys_back", "read_entry", "ensure_path", "rebuild_path"]
+
+[file."database/db/src/member/join.rs"]
+reason = "a join is read through the logical member the caller opened and checked"
+fns = ["expand"]
 
 [file."database/db/src/odp/mod.rs"]
 reason = "record I/O through an open data path: authority was checked when it opened (check_open)"
