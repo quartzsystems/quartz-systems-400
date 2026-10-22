@@ -591,7 +591,7 @@ fn console_input(system: &mut System, input: ::console::Input, tx: &mpsc::Sender
     use ::console::Input;
     match (system.procs.console.as_mut(), input) {
         (Some(j), Input::Enter(fields)) => j.input(0, fields),
-        (Some(j), Input::Function(n)) => j.input(n, Vec::new()),
+        (Some(j), Input::Function(n, fields)) => j.input(n, fields),
         (None, Input::SignOn(fields)) if system.procs.stg.is_some() => {
             procs::console::sign_on_entered(system, &fields, tx.clone());
         }

@@ -59,7 +59,7 @@ pub fn read(system: &mut System, rx: &Receiver<Event>) -> Option<Answer> {
     loop {
         match rx.recv() {
             Ok(Event::Console(Input::Enter(fields))) => return Some(Answer::Enter(fields)),
-            Ok(Event::Console(Input::Function(n))) => return Some(Answer::Function(n)),
+            Ok(Event::Console(Input::Function(n, _))) => return Some(Answer::Function(n)),
             Ok(Event::Line(line)) => {
                 if svc::during_menu(system, &line) {
                     continue;

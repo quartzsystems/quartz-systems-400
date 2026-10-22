@@ -65,8 +65,9 @@ pub enum Command {
 pub enum Input {
     /// Enter on an application screen, with every input field in order.
     Enter(Vec<String>),
-    /// A function key on any screen.
-    Function(u8),
+    /// A function key on any screen, with an application screen's
+    /// input fields in order (a prompt reads them on F10 as on Enter).
+    Function(u8, Vec<String>),
     /// Enter on the sign-on display: user, password, program, menu,
     /// current library.
     SignOn(Vec<String>),
@@ -223,7 +224,16 @@ impl Console {
             Outcome::Edited => true,
             Outcome::Enter => self.enter(),
             Outcome::Function(n) => {
-                self.send(Input::Function(n));
+                let fields = if self.kind == Kind::App {
+                    self.screen
+                        .fields
+                        .iter()
+                        .map(|f| self.screen.field_text(f))
+                        .collect()
+                } else {
+                    Vec::new()
+                };
+                self.send(Input::Function(n, fields));
                 false
             }
             Outcome::Reset | Outcome::Attention | Outcome::Ignored => false,
@@ -373,7 +383,7 @@ mod tests {
             Ok(Input::Enter(vec!["1".into(), "pw".into()]))
         );
         c.handle(Command::Virtual(Key::Function(12)));
-        assert_eq!(rx.try_recv(), Ok(Input::Function(12)));
+        assert_eq!(rx.try_recv(), Ok(Input::Function(12, Vec::new())));
         // No fields: Enter reports nothing.
         c.handle(Command::ShowScreen(Screen::new()));
         c.handle(Command::Virtual(Key::Enter));
