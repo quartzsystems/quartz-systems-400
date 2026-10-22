@@ -29,6 +29,7 @@ pub const OLD_JOB_WORDS: &[&str] = &[
     "rpy",
     "dmp",
     "strdbg",
+    "chgdbg",
     "enddbg",
     "addbkp",
     "rmvbkp",

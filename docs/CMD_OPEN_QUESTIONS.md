@@ -78,8 +78,9 @@ now and what to check.
     in `SQL9010` and `RUNSQLSTM` past `ERRLVL` in `SQL9006`; `ALCOBJ`
     refuses with `CPF1002`, a missing message file is `CPF2407`, a
     missing message `CPF2419`, a missing device description `CPF2702`,
-    a missing member `CPF9815`. All from recollection; the job logs of
-    the real box settle them.
+    a missing member `CPF9815`, a production file opened for update
+    under `UPDPROD(*NO)` `CPF4188`. All from recollection; the job logs
+    of the real box settle them.
 
 13. **`ALCOBJ WAIT`.** The service answers every job on one thread, so
     a conflicting lock is refused at once whatever `WAIT` says. The

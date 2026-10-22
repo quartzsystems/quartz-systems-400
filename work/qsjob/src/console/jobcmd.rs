@@ -27,6 +27,7 @@ pub fn command(job: &mut Job, host: &Host, cmd: &str, line: &str) -> String {
         "rpy" => rpy(job, &p),
         "dmp" => Ok(job.last_dump.clone().unwrap_or_else(|| job.dump(true))),
         "strdbg" => strdbg(job, &p),
+        "chgdbg" => Ok(chgdbg(job, &p)),
         "enddbg" => {
             job.enddbg();
             Ok("Debug ended.\n".to_string())
@@ -200,10 +201,31 @@ fn strdbg(job: &mut Job, p: &Params) -> Result<String, String> {
         .split_once('/')
         .map_or(("*LIBL", qual.as_str()), |(l, n)| (l, n));
     let (lib, name) = (lib.to_ascii_uppercase(), name.to_ascii_uppercase());
+    let updprod = p.upper("UPDPROD").is_some_and(|v| v == "*YES");
     Ok(match job.strdbg(&name, &lib) {
-        Ok(key) => format!("{key} is under debug; its next call runs the debug view.\n"),
+        Ok(key) => {
+            if let Some(d) = job.debug.as_mut() {
+                d.updprod = updprod;
+            }
+            format!("{key} is under debug; its next call runs the debug view.\n")
+        }
         Err(e) => format!("{e}\n"),
     })
+}
+
+/// `CHGDBG UPDPROD(*YES|*NO)`: whether production files may change
+/// under debug.
+fn chgdbg(job: &mut Job, p: &Params) -> Result<String, String> {
+    let Some(d) = job.debug.as_mut() else {
+        return Ok("CPF1999 the job is not in debug mode; STRDBG first.\n".into());
+    };
+    if let Some(v) = p.upper("UPDPROD") {
+        d.updprod = v == "*YES";
+    }
+    Ok(format!(
+        "Debug attributes changed: UPDPROD({}).\n",
+        if d.updprod { "*YES" } else { "*NO" }
+    ))
 }
 
 /// `ADDBKP STMT(n) [PGM(LIB/PGM)]` and `RMVBKP STMT(n|*ALL) [PGM(..)]`.

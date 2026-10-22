@@ -25,6 +25,7 @@ pub const APIS: &[(&str, crate::ApiFn)] = &[
     ("QSYLOBJA", qsylobja),
     ("QSYLOBJP", qsylobjp),
     ("QSYRAUTU", qsyrautu),
+    ("QSYRTVUA", qsyrtvua),
     ("QSYLAUTU", qsylautu),
     ("QSYLATLO", qsylatlo),
     ("QSYGETPH", qsygetph),
@@ -430,11 +431,30 @@ fn user_entry(r: &UserRow, autl: bool) -> Vec<u8> {
 /// `QSYRAUTU(receiver, len, format, feedback, object, type, errc)`:
 /// `RTUA0100`, one entry per profile holding authority, `*PUBLIC` last.
 /// The feedback is bytes returned and available, the entries and their
-/// length.
+/// length. (A QS/400 reading of the parameter order; IBM's API of this
+/// shape is `QSYRTVUA`.)
 fn qsyrautu(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
+    users_authorized(j, args, p, 2, 3);
+}
+
+/// `QSYRTVUA(receiver, len, feedback, format, object, type, errc)`:
+/// IBM's retrieve users authorized to an object, `RTUA0100`.
+fn qsyrtvua(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
+    users_authorized(j, args, p, 3, 2);
+}
+
+/// The two APIs' body: `format_at` and `feedback_at` say which
+/// parameter holds which.
+fn users_authorized(
+    j: &mut Job,
+    args: &[u64],
+    p: &mut dyn Provider,
+    format_at: usize,
+    feedback_at: usize,
+) {
     let a = Args(args);
     let errc = ErrCode::at(&a, 6);
-    let format = a.char(2, 8);
+    let format = a.char(format_at, 8);
     if format != "RTUA0100" {
         errc.fail(j, &bad_format(&format));
         return;
@@ -464,7 +484,7 @@ fn qsyrautu(j: &mut Job, args: &[u64], p: &mut dyn Provider) {
     fb.bin4(4, 16);
     fb.bin4(8, i32::try_from(rows.len()).unwrap_or(0));
     fb.bin4(12, size);
-    fb.deliver_raw(&a, 3, 16);
+    fb.deliver_raw(&a, feedback_at, 16);
     errc.ok();
 }
 

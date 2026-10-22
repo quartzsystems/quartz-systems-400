@@ -126,9 +126,9 @@ In memory, release build, one core of the development machine
 - **Save and restore** (`SAVLIB`, `RSTLIB`, `CHKTAP`) are stubs for
   Phase 11.
 - **Unsupported commands**, defined and analyzed but without a
-  processing program: `CHGDBG` (the debugger's production-file guard),
-  `CLOF`, `OPNQRYF`, `POSDBF` (the database stream's shared query
-  path), `CPYLIB` (a generic object copy comes with save and restore),
+  processing program: `CLOF`, `OPNQRYF`, `POSDBF` (the database
+  stream's shared query path), `CPYLIB` (a generic object copy comes
+  with save and restore),
   `INZPFM` (default records), `OVRMSGF` (a per-job message file table
   in the lookup), `TFRJOB`, and the display-bound `CRTDEVDSP`, `CRTDSPF`,
   `DSPMODSRC`, `EDTLIBL` and `STRSQL`. The cleanup after Phase 7 gave

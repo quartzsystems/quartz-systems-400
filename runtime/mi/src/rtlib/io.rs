@@ -231,6 +231,15 @@ pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc:
         member: None,
         actgrp: actgrp(j),
     };
+    // Under debug with UPDPROD(*NO), a production file is not changed.
+    if j.debug.as_ref().is_some_and(|d| !d.updprod)
+        && spec.usage != qir::FileUsage::Input
+        && !spec.lib.eq_ignore_ascii_case("QTEMP")
+    {
+        let f = IoFail::new(1299, "CPF4188", &[&fr.file, &fr.lib]);
+        escape(j, &f);
+        return i32::from(f.status);
+    }
     let Some(io) = j.io.as_mut() else {
         let f = IoFail::new(1299, "CPF4101", &[&fr.file, &fr.lib]);
         escape(j, &f);

@@ -153,6 +153,10 @@ note = "the description through the job's link, formatted with MSGDTA"
 site = "job"
 note = "the device description's varied-on flag"
 
+[cmd.CHGDBG]
+site = "job"
+note = "UPDPROD: production files refuse update opens under debug"
+
 [cmd.RCLRSC]
 site = "job"
 note = "overrides of returned call levels; open files wait for per-program ownership"

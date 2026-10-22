@@ -166,7 +166,7 @@ pub const DIRECT: &[&str] = &[
 /// The commands `work/qsjob` runs in the job (`command/jobsite.rs` and
 /// the job words it bridges to).
 pub const JOB_SITE: &[&str] = &[
-    "ADDBKP", "CALL", "CHGPWD", "DLYJOB", "DSCJOB", "DSPBKP", "DSPJOBLOG", "ENDDBG",
+    "ADDBKP", "CALL", "CHGDBG", "CHGPWD", "DLYJOB", "DSCJOB", "DSPBKP", "DSPJOBLOG", "ENDDBG",
     "ENDSYS", "PWRDWNSYS", "RCLACTGRP", "RCLRSC", "RMVBKP", "RTVCFGSTS", "RTVJOBA", "RTVMBRD",
     "RTVMSG", "RTVNETA", "RTVOBJD", "RTVSYSVAL", "RTVUSRPRF", "SBMJOB", "SIGNOFF", "STRDBG",
     "STRSBS", "WRKJOB",
@@ -220,6 +220,6 @@ pub const BRIDGE_WORDS: &[&str] = &[
 /// analyzer accepts them and the service answers `CPF0006`
 /// (`docs/PHASE7.md` lists them under Blocked).
 pub const UNSUPPORTED: &[&str] = &[
-    "CHGDBG", "CLOF", "CPYLIB", "CRTDEVDSP", "CRTDSPF", "DSPMODSRC", "EDTLIBL", "INZPFM",
+    "CLOF", "CPYLIB", "CRTDEVDSP", "CRTDSPF", "DSPMODSRC", "EDTLIBL", "INZPFM",
     "OPNQRYF", "OVRMSGF", "POSDBF", "STRSQL", "TFRJOB",
 ];

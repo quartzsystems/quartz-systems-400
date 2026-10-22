@@ -77,6 +77,9 @@ pub struct Debugger {
     pub hook: Option<Hook>,
     /// Every stop so far.
     pub stops: Vec<Stop>,
+    /// `UPDPROD(*YES)`: production files (outside `QTEMP`) may be
+    /// opened for update or output while under debug.
+    pub updprod: bool,
 }
 
 impl Default for Debugger {
@@ -87,6 +90,7 @@ impl Default for Debugger {
             step: Step::None,
             hook: None,
             stops: Vec::new(),
+            updprod: false,
         }
     }
 }

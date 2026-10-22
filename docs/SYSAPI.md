@@ -348,7 +348,8 @@ needs is checked where the objects are.
 | `QSYRUSRA` | receiver, length, format `USRA0100`, user, object `char(20)`, type, error code |
 | `QSYLOBJA` | user space, format `OBJA0100`/`0200`, user, type, `*ALL`/`*OBJOWN`/`*OBJAUT`, continuation handle `char(20)`, error code |
 | `QSYLOBJP` | user space, format `OBJP0100`, user, type, error code |
-| `QSYRAUTU` | receiver, length, format `RTUA0100`, feedback `char(16)`, object `char(20)`, type, error code |
+| `QSYRAUTU` | receiver, length, format `RTUA0100`, feedback `char(16)`, object `char(20)`, type, error code (a QS/400 reading) |
+| `QSYRTVUA` | receiver, length, feedback `char(16)`, format `RTUA0100`, object `char(20)`, type, error code (IBM's order) |
 | `QSYLAUTU` | user space, format `AUTU0100`, `*ALL`/`*USRPRF`/`*GROUP`/`*MEMBER`, group, error code |
 | `QSYLATLO` | user space, format `ATLO0100`, list `char(10)`, error code |
 | `QSYGETPH` | user, password `char(10)` (or `*NOPWD`, `*NOPWDCHK`, `*NOPWDSTS`), handle out `char(12)`, error code [, password length, CCSID] |

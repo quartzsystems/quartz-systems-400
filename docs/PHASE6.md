@@ -103,8 +103,8 @@ faster.
 
 ## Unsupported, by design or for now
 
-- `QSYCHGPR` (not identified), `QSYRTVUA`; `QSYRUPWD` data is not
-  IBM's format and moves between QS/400 systems only.
+- `QSYCHGPR` (not identified); `QSYRUPWD` data is not IBM's format and
+  moves between QS/400 systems only.
 - Level 10 is not offered; level 20 keeps everyone `*ALLOBJ` and the
   first IPL at 30 or above takes it back from every class but
   `*SECOFR`.
