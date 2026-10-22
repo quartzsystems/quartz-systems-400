@@ -221,6 +221,13 @@ impl Env<'_> {
         if let Some(vals) = self.system.sysvals.as_ref() {
             vals.store(&mut record).map_err(|e| e.to_string())?;
         }
+        // The console mode chosen in the media's DST follows the system.
+        let tag = svctools::dst::console_mode::TAG_CONSOLE_MODE;
+        if let Some(mode) = self.system.lic.as_ref().and_then(|(_, r)| r.tlv(tag)) {
+            record
+                .set_tlv(tag, mode.to_vec())
+                .map_err(|e| e.to_string())?;
+        }
         record.header.install_stage = 1;
         record.header.auto_install = auto;
         part_lic.write(&mut record).map_err(|e| e.to_string())?;

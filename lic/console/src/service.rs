@@ -96,11 +96,22 @@ impl Console {
     /// Open the framebuffer. Without one the console still keeps a screen,
     /// so `Dump` works over serial.
     pub fn open() -> (Self, Result<(), FbError>) {
-        let (renderer, status) =
-            match Framebuffer::open().and_then(|fb| Renderer::new(fb).map_err(FbError::from)) {
-                Ok(r) => (Some(r), Ok(())),
-                Err(e) => (None, Err(e)),
-            };
+        Self::open_with(true)
+    }
+
+    /// Open with or without the display: the serial console mode keeps
+    /// the screen in memory only and never touches the framebuffer.
+    pub fn open_with(display: bool) -> (Self, Result<(), FbError>) {
+        let opened = if display {
+            Framebuffer::open().and_then(|fb| Renderer::new(fb).map_err(FbError::from))
+        } else {
+            Err(FbError::NotWanted)
+        };
+        let (renderer, status) = match opened {
+            Ok(r) => (Some(r), Ok(())),
+            Err(FbError::NotWanted) => (None, Ok(())),
+            Err(e) => (None, Err(e)),
+        };
         (
             Self {
                 renderer,

@@ -2,14 +2,17 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! C1001050: start the console thread. Without a framebuffer the thread
-//! still runs so `screen` works over serial, and A6005008 is raised.
+//! C1001050: start the console thread. The LIC record's console mode
+//! says whether the display and keyboards are used at all; without a
+//! framebuffer the thread still runs so `screen` works over serial, and
+//! A6005008 is raised.
 
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
 pub use console::Command;
+use svctools::dst::console_mode::{ConsoleMode, TAG_CONSOLE_MODE};
 
 use crate::ipl::Event;
 use crate::ipl::system::System;
@@ -18,10 +21,13 @@ use crate::src;
 /// Open the display, start the console and keyboard threads, replay the
 /// codes emitted so far. Keyboard input comes back as `Event::Console`.
 pub fn attach(system: &mut System, events: mpsc::Sender<Event>) {
-    let (con, status) = console::Console::open();
-    system
-        .out
-        .serial(&format!("slic: display: {}\n", con.describe()));
+    let mode = console_mode(system);
+    let (con, status) = console::Console::open_with(mode == ConsoleMode::Local);
+    system.out.serial(&format!(
+        "slic: display: {} ({})\n",
+        con.describe(),
+        mode.text()
+    ));
     let (tx, rx) = mpsc::channel();
     let (input_tx, input_rx) = mpsc::channel::<console::Input>();
     thread::spawn(move || con.run(&rx, input_tx));
@@ -32,7 +38,11 @@ pub fn attach(system: &mut System, events: mpsc::Sender<Event>) {
             }
         }
     });
-    let keyboards = console::keyboard::spawn_readers(&tx);
+    let keyboards = if mode == ConsoleMode::Local {
+        console::keyboard::spawn_readers(&tx)
+    } else {
+        0
+    };
     system
         .out
         .serial(&format!("slic: {keyboards} keyboard device(s)\n"));
@@ -59,6 +69,17 @@ pub fn attach(system: &mut System, events: mpsc::Sender<Event>) {
             system.emit(&src::CONSOLE_MISSING);
         }
     }
+}
+
+/// The console mode the LIC record keeps; the local console when it
+/// says nothing.
+pub fn console_mode(system: &System) -> ConsoleMode {
+    system
+        .lic
+        .as_ref()
+        .and_then(|(_, r)| r.tlv(TAG_CONSOLE_MODE))
+        .and_then(ConsoleMode::decode)
+        .unwrap_or_default()
 }
 
 /// The screen as 24 lines of text, for the service console and the harness.

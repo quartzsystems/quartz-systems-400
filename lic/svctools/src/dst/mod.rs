@@ -7,8 +7,10 @@
 //! every sentence is Quartz's.
 
 pub mod common;
+pub mod console_mode;
 pub mod disk;
 pub mod environment;
+pub mod lic;
 pub mod menu;
 pub mod security;
 pub mod signon;

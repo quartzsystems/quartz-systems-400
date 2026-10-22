@@ -16,6 +16,9 @@ use thiserror::Error;
 /// Why the framebuffer could not be used.
 #[derive(Debug, Error)]
 pub enum FbError {
+    /// The console mode leaves the display alone.
+    #[error("framebuffer: not wanted in this console mode")]
+    NotWanted,
     /// `/dev/fb0` could not be opened or queried.
     #[error("framebuffer: {0}")]
     Io(#[from] io::Error),

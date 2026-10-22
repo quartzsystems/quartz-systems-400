@@ -371,9 +371,10 @@ cargo test -p store                       # unit, property and crash tests
   fields; nothing acts on them (`MIGRATE(phase6)`; journaling came with
   Phase 3, jobs with Phase 5).
 - DST implements the disk, environment, service tool and security
-  menus; `Work with Licensed Internal Code`, console mode, save and
-  restore storage, remote service, partitions, capacity and batch
-  restricted state are not available. Display/alter/dump displays only.
+  menus, the console mode choice and a display of the Licensed Internal
+  Code's identity; save and restore storage, remote service, partitions,
+  capacity and batch restricted state wait for their phases (DST.md
+  lists them). Display/alter/dump displays only.
 - One ASP; units are mirrored in pairs or unprotected. Device parity is
   a trait with no implementation (no capable controllers); software
   RAID is out of scope. Only the last unit can leave the configuration.

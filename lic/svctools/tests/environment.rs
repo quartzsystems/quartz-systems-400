@@ -69,6 +69,14 @@ fn env() -> MemEnv {
         code: "A6001255".into(),
         text: "Mirrored unit missing, protection suspended".into(),
     }];
+    e.lic = vec![
+        ("Release".into(), "V1R0M0".into()),
+        ("Build".into(), "2026-10-01-00000000".into()),
+        ("Slot of this IPL".into(), "A".into()),
+        ("Last good slot".into(), "A".into()),
+        ("IPLs".into(), "3 (1 abnormal)".into()),
+        ("Installed".into(), "2026-01-01 00:00:00".into()),
+    ];
     e
 }
 
@@ -113,6 +121,23 @@ fn environment_screens_match_their_golden_files() {
     walk(&mut e, &["7", "7", "1"], "hsm-packaging");
     walk(&mut e, &["7", "7", "3"], "hsm-failed");
     walk(&mut e, &["13"], "security");
+    walk(&mut e, &["3"], "lic-info");
+    walk(&mut e, &["6"], "console-mode");
+}
+
+#[test]
+fn console_mode_is_chosen_and_kept() {
+    use svctools::dst::console_mode::ConsoleMode;
+    let mut e = env();
+    let mut r = walk(&mut e, &["6"], "console-mode");
+    assert_eq!(r.enter(&f(&["2"]), &mut e), None);
+    let d = r.screen(&mut e).dump();
+    assert!(d.contains("Use Dedicated Service Tools"), "back on the menu");
+    assert!(d.contains("takes effect at the next IPL"));
+    assert_eq!(e.console_mode, ConsoleMode::Serial);
+    assert_eq!(e.actions, vec!["console Serial"]);
+    let r = walk(&mut e, &["5", "2"], "env-devices-serial");
+    assert!(r.screen(&mut e).dump().contains("Serial console (ttyS0)"));
 }
 
 #[test]
