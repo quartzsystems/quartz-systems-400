@@ -21,8 +21,13 @@
 )]
 
 pub mod ast;
+pub mod compile;
 pub mod diag;
 pub mod lex;
+pub mod lower;
 pub mod parse;
+pub mod sem;
 
+pub use compile::{Compiled, Options, compile};
 pub use diag::{Diag, Severity};
+pub use sem::{FieldDef, Files, Format, NoFiles};

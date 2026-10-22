@@ -68,5 +68,3 @@
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
-                        QUAL       TYPE(*NAME) LEN(10) DFT(*FIRST) +
-                          SPCVAL((*FIRST)) PROMPT('Member')

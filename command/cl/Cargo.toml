@@ -12,6 +12,7 @@ sys-cpps = { path = "../sys-cpps", version = "0.1.0" }
 qir = { path = "../../runtime/qir", version = "0.1.0" }
 qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+release = { path = "../../lic/release", version = "0.1.0" }
 thiserror.workspace = true
 
 [lints]
