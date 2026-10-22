@@ -6,10 +6,12 @@
 //! password (Change Password) and may show Sign-on Information; then
 //! the initial program runs, and the initial menu shows: the interim
 //! MAIN menu for `MAIN`, sign-off for `*SIGNOFF`, otherwise Command
-//! Entry (`MIGRATE(phase8)`: `*MENU` objects). Commands typed on either
-//! line run as the service console's do; `LMTCPB(*YES)` allows only the
-//! limited commands. `SIGNOFF`, option 90 or F3 at Command Entry ends
-//! the job.
+//! Entry (`MIGRATE(phase8)`: `*MENU` objects). Command Entry is `QCMD`:
+//! a line of up to 512 characters runs through the command analyzer,
+//! `F4` prompts it, `F9` brings back the previous commands, `F10` adds
+//! the second-level text of the messages, `F11` the full width of long
+//! lines, `F24` the other keys. `LMTCPB(*YES)` allows only the limited
+//! commands. `SIGNOFF`, option 90 or F3 at Command Entry ends the job.
 
 use ipc::chan::Chan;
 use sec::signon::{Next, SignedOn};
@@ -19,14 +21,30 @@ use wm::ctl::{FromJob, Panel, Start};
 use wm::job::Status;
 use wm::panels;
 
+use crate::command::RunMode;
 use crate::console::Console;
 
 /// Lines of previous commands and messages the panel shows.
 const SHOWN: usize = 14;
 /// The width a line of output wraps at.
 const WIDTH: usize = 76;
+/// The most characters a command line holds (`CPF0005` beyond).
+const LINE_MAX: usize = 512;
+/// Commands kept for `F9`.
+const RETRIEVED: usize = 25;
 /// The message for menu options that wait for menus.
 const NO_MENU: &str = "Menu not available in this release.";
+
+/// A line of the previous commands and messages.
+#[derive(Clone, Debug)]
+struct Line {
+    /// The text, with its leading marker.
+    text: String,
+    /// A command the user typed.
+    command: bool,
+    /// The message's second-level text, when `F10` is to show it.
+    help: Option<String>,
+}
 
 /// What a job's session keeps between its panels.
 struct Session<'a> {
@@ -34,9 +52,19 @@ struct Session<'a> {
     link: &'a Shared,
     system: String,
     signon: SignedOn,
-    /// Commands typed, for F9.
+    /// Commands typed, oldest first, for F9.
     commands: Vec<String>,
-    history: Vec<String>,
+    /// Where F9 is in `commands`; `commands.len()` after a command.
+    retrieve: usize,
+    history: Vec<Line>,
+    /// `F10`: second-level text shown.
+    detailed: bool,
+    /// `F11`: lines shown at their full width.
+    full: bool,
+    /// `F24`: the second set of keys shown.
+    more_keys: bool,
+    /// The first history line shown, after a roll; `None` at the end.
+    top: Option<usize>,
 }
 
 /// Run the job. Never returns.
@@ -67,7 +95,12 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
             ..SignedOn::default()
         }),
         commands: Vec::new(),
+        retrieve: 0,
         history: Vec::new(),
+        detailed: false,
+        full: false,
+        more_keys: false,
+        top: None,
     };
     if s.signon.next == Next::ChangePassword && !change_password(&mut s) {
         end(s, &mut ending);
@@ -79,7 +112,7 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     // The program named at sign-on, or the profile's, runs first.
     if !start.rqsdta.trim().is_empty() {
         let cmd = format!("call {}", start.rqsdta.trim());
-        run_command(&mut s, &cmd);
+        run_command(&mut s, &cmd, RunMode::Run);
     }
     match s.signon.inlmnu.as_str() {
         "*SIGNOFF" => {}
@@ -192,11 +225,17 @@ fn main_menu(s: &mut Session<'_>) {
             0 => {}
             3 | 12 => continue,
             4 => {
-                message = "Prompting not available in this release.".into();
+                let typed = fields.first().map_or("", |f| f.trim()).to_string();
+                if typed.is_empty() {
+                    message = "Type a command to prompt.".into();
+                } else {
+                    let out = command_output(s, &typed, RunMode::PromptRun);
+                    message = last_line(&out);
+                }
                 continue;
             }
             9 => {
-                field = s.commands.last().cloned().unwrap_or_default();
+                field = retrieve(s);
                 continue;
             }
             13 | 23 => {
@@ -220,7 +259,7 @@ fn main_menu(s: &mut Session<'_>) {
             }
             continue;
         }
-        s.commands.push(typed.clone());
+        remember(s, &typed);
         let word = typed
             .split_whitespace()
             .next()
@@ -236,15 +275,90 @@ fn main_menu(s: &mut Session<'_>) {
             }
             continue;
         }
-        let out = command_output(s, &typed);
-        message = out
-            .lines()
-            .rev()
-            .find(|l| !l.trim().is_empty())
-            .unwrap_or("")
-            .trim()
-            .to_string();
+        let out = command_output(s, &typed, RunMode::Run);
+        message = last_line(&out);
     }
+}
+
+/// The last line of some output, for a message line.
+fn last_line(out: &str) -> String {
+    out.lines()
+        .rev()
+        .find(|l| !l.trim().is_empty())
+        .unwrap_or("")
+        .trim()
+        .to_string()
+}
+
+/// Keep a command for F9: the last 25, the newest last.
+fn remember(s: &mut Session<'_>, cmd: &str) {
+    if s.commands.last().is_none_or(|l| l != cmd) {
+        s.commands.push(cmd.to_string());
+    }
+    if s.commands.len() > RETRIEVED {
+        s.commands.remove(0);
+    }
+    s.retrieve = s.commands.len();
+}
+
+/// F9: the previous command, older at each press.
+fn retrieve(s: &mut Session<'_>) -> String {
+    if s.commands.is_empty() {
+        return String::new();
+    }
+    s.retrieve = s.retrieve.saturating_sub(1);
+    s.commands[s.retrieve].clone()
+}
+
+/// What a function key at Command Entry leads to.
+enum Act {
+    /// Show the panel again.
+    Show,
+    /// Leave Command Entry.
+    Exit,
+}
+
+/// A function key at Command Entry; the field keeps what was typed
+/// unless the key replaces it.
+fn function_key(
+    s: &mut Session<'_>,
+    key: u8,
+    typed: &str,
+    field: &mut String,
+    message: &mut String,
+) -> Act {
+    *field = typed.to_string();
+    match key {
+        3 | 16 => return Act::Exit,
+        4 => {
+            if typed.is_empty() {
+                *message = "Type a command to prompt.".into();
+            } else {
+                s.top = None;
+                field.clear();
+                run_command(s, typed, RunMode::PromptRun);
+            }
+        }
+        7 => {
+            let shown = visible(s).0;
+            s.top = Some(shown.saturating_sub(SHOWN));
+        }
+        8 => {
+            let (from, _) = visible(s);
+            let next = from + SHOWN;
+            s.top = (next + SHOWN < s.history.len()).then_some(next);
+        }
+        9 => *field = retrieve(s),
+        10 => s.detailed = !s.detailed,
+        11 => s.full = !s.full,
+        12 => field.clear(),
+        13 => *message = "The assistant is not available in this release.".into(),
+        17 => s.top = Some(0),
+        18 => s.top = None,
+        24 => s.more_keys = !s.more_keys,
+        _ => *message = "Function key not allowed.".into(),
+    }
+    Act::Show
 }
 
 /// Command Entry until F3 (false) or sign-off (true).
@@ -252,117 +366,209 @@ fn command_entry(s: &mut Session<'_>) -> bool {
     let mut field = String::new();
     let mut message = String::new();
     loop {
-        s.c.show(panel(&s.system, &s.history, &field, &message));
+        s.c.show(panel(s, &field, &message));
         status(s.link, Status::Dspw, "PGM-QCMD");
         let Some((key, fields)) = s.c.wait_input() else {
             return true;
         };
         message.clear();
         field.clear();
-        match key {
-            3 => return false,
-            9 => {
-                field = s.commands.last().cloned().unwrap_or_default();
-                continue;
+        let typed = {
+            let mut t = String::new();
+            for f in &fields {
+                t.push_str(f);
             }
-            12 => continue,
-            4 | 10 | 11 | 13 | 16 | 24 => {
-                message = "That function key is not available yet.".into();
-                continue;
-            }
-            0 => {}
-            _ => {
-                message = "Function key not allowed.".into();
-                continue;
+            t.trim().to_string()
+        };
+        if key != 0 {
+            match function_key(s, key, &typed, &mut field, &mut message) {
+                Act::Show => continue,
+                Act::Exit => return false,
             }
         }
-        let cmd = fields.first().map_or("", |f| f.trim()).to_string();
-        if cmd.is_empty() {
+        if typed.is_empty() {
             continue;
         }
-        s.commands.push(cmd.clone());
-        s.history.push(format!(" > {cmd}"));
-        let word = cmd
+        if typed.chars().count() > LINE_MAX {
+            let (text, _, _) =
+                s.c.job()
+                    .describe_message("CPF0005", "QCPFMSG", "QSYS", &[]);
+            message = format!("CPF0005 {}", text.trim());
+            field = typed;
+            continue;
+        }
+        s.top = None;
+        let word = typed
             .split_whitespace()
             .next()
             .unwrap_or("")
             .to_ascii_lowercase();
         if word == "signoff" {
-            signoff(s, &cmd);
+            remember(s, &typed);
+            signoff(s, &typed);
             return true;
         }
-        run_command(s, &cmd);
+        run_command(s, &typed, RunMode::Run);
     }
 }
 
 /// `SIGNOFF LOG(*LIST)` keeps the job log; `DROP` and `ENDCNN` have no
 /// connection to drop at the console.
 fn signoff(s: &mut Session<'_>, cmd: &str) {
+    s.c.job().log_request(cmd, ("QCMD", "QSYS"));
     let p = wm::cmd::Params::parse(cmd.trim_start().get(7..).unwrap_or(""));
     if p.upper("LOG").as_deref() == Some("*LIST") {
         let _ = s.c.line("chgjob LOG(4 00 *SECLVL)");
     }
 }
 
-/// Run a command; its output.
-fn command_output(s: &mut Session<'_>, cmd: &str) -> String {
+/// Run a command as a request of `QCMD`; its output.
+fn command_output(s: &mut Session<'_>, cmd: &str, mode: RunMode) -> String {
     let word = cmd.split_whitespace().next().unwrap_or("");
     status(
         s.link,
         Status::Run,
-        &format!("CMD-{}", word.to_ascii_uppercase()),
+        &format!("CMD-{}", word.trim_start_matches('?').to_ascii_uppercase()),
     );
     s.c.job().log_request(cmd, ("QCMD", "QSYS"));
-    s.c.line(cmd)
+    s.c.run(cmd, mode).text
 }
 
-/// Run one command and add its output to the history.
-fn run_command(s: &mut Session<'_>, cmd: &str) {
-    let out = command_output(s, cmd);
-    for l in out.lines() {
-        let mut rest = l;
+/// Run one command and add it, its output and the messages' help to
+/// the previous commands and messages.
+fn run_command(s: &mut Session<'_>, cmd: &str, mode: RunMode) {
+    remember(s, cmd);
+    let before = s.c.job().joblog.len();
+    let word = cmd.split_whitespace().next().unwrap_or("");
+    status(
+        s.link,
+        Status::Run,
+        &format!("CMD-{}", word.trim_start_matches('?').to_ascii_uppercase()),
+    );
+    s.c.job().log_request(cmd, ("QCMD", "QSYS"));
+    let o = s.c.run(cmd, mode);
+    // The command as it ran: the prompter may have changed it.
+    let shown = if o.changed.is_empty() || o.escape.as_ref().is_some_and(|f| f.msgid == "CPF6801") {
+        cmd.to_string()
+    } else {
+        o.changed.clone()
+    };
+    s.history.push(Line {
+        text: format!(" > {shown}"),
+        command: true,
+        help: None,
+    });
+    let helps: Vec<(String, String)> =
+        s.c.job()
+            .joblog
+            .entries()
+            .skip(before)
+            .filter(|e| !e.help.trim().is_empty())
+            .map(|e| (e.msgid.clone(), e.help.clone()))
+            .collect();
+    for l in o.text.lines() {
+        let help = l
+            .get(..7)
+            .and_then(|id| helps.iter().find(|(m, _)| m == id))
+            .map(|(_, h)| h.clone());
+        s.history.push(Line {
+            text: format!("   {l}"),
+            command: false,
+            help,
+        });
+    }
+}
+
+/// The rows the panel can show, each at most one row wide: the text
+/// and whether it is a command the user typed.
+fn rows(s: &Session<'_>) -> Vec<(String, bool)> {
+    rows_of(&s.history, s.full, s.detailed)
+}
+
+fn rows_of(history: &[Line], full: bool, detailed: bool) -> Vec<(String, bool)> {
+    let mut out = Vec::new();
+    for l in history {
+        push_wrapped(&mut out, &l.text, l.command, full);
+        if detailed && let Some(h) = &l.help {
+            for para in h.lines() {
+                push_wrapped(&mut out, &format!("     {para}"), false, full);
+            }
+        }
+    }
+    out
+}
+
+fn push_wrapped(out: &mut Vec<(String, bool)>, text: &str, command: bool, full: bool) {
+    if full {
+        let mut rest = text;
         loop {
             let cut = rest
                 .char_indices()
                 .nth(WIDTH)
                 .map_or(rest.len(), |(i, _)| i);
-            s.history.push(format!("   {}", &rest[..cut]));
+            out.push((rest[..cut].to_string(), command));
             rest = &rest[cut..];
             if rest.is_empty() {
                 break;
             }
         }
+    } else {
+        out.push((text.chars().take(WIDTH).collect(), command));
     }
 }
 
+/// The rows shown: the first row's index and the rows.
+fn visible(s: &Session<'_>) -> (usize, Vec<(String, bool)>) {
+    let all = rows(s);
+    let from = match s.top {
+        Some(t) => t.min(all.len().saturating_sub(SHOWN)),
+        None => all.len().saturating_sub(SHOWN),
+    };
+    let to = (from + SHOWN).min(all.len());
+    (from, all[from..to].to_vec())
+}
+
 /// The Command Entry panel.
-fn panel(system: &str, history: &[String], field: &str, message: &str) -> Panel {
+fn panel(s: &Session<'_>, field: &str, message: &str) -> Panel {
     let mut p = Panel::default();
     p.text(1, 34, 1, "Command Entry");
-    p.text(1, 72, 0, system);
+    p.text(1, 72, 0, s.system.clone());
     p.text(2, 59, 0, "Request level:   1");
     p.text(4, 2, 0, "Previous commands and messages:");
-    let from = history.len().saturating_sub(SHOWN);
-    for (i, l) in history[from..].iter().enumerate() {
+    let (from, shown) = visible(s);
+    let total = rows(s).len();
+    for (i, (l, command)) in shown.iter().enumerate() {
         let row = u8::try_from(5 + i).unwrap_or(18);
-        let attr = u8::from(l.starts_with(" >"));
-        p.text(row, 2, attr, l.clone());
+        p.text(row, 2, u8::from(*command), l.clone());
     }
+    let at_end = from + shown.len() >= total;
+    p.text(18, 73, 0, if at_end { "Bottom" } else { "More..." });
     p.text(19, 2, 0, "Type command, press Enter.");
     p.text(20, 2, 1, "===>");
-    p.field(20, 7, 73, field);
-    p.text(
-        21,
-        2,
-        2,
-        "F3=Exit   F4=Prompt   F9=Retrieve   F10=Detailed messages",
-    );
-    p.text(
-        22,
-        2,
-        2,
-        "F11=Full display   F12=Cancel   F13=Assistant   F24=More keys",
-    );
+    let mut chars = field.chars();
+    let first: String = chars.by_ref().take(73).collect();
+    let second: String = chars.by_ref().take(78).collect();
+    let third: String = chars.take(78).collect();
+    p.field(20, 7, 73, first);
+    p.field(21, 2, 78, second);
+    p.field(22, 2, 78, third);
+    if s.more_keys {
+        p.text(23, 2, 2, "F16=Leave   F17=Top   F18=Bottom");
+        p.text(24, 2, 2, "F24=More keys");
+    } else {
+        p.text(
+            23,
+            2,
+            2,
+            "F3=Exit   F4=Prompt   F9=Retrieve   F10=Detailed messages",
+        );
+        p.text(
+            24,
+            2,
+            2,
+            "F11=Full display   F12=Cancel   F13=Assistant   F24=More keys",
+        );
+    }
     p.message = message.to_string();
     p.error = !message.is_empty();
     p
@@ -372,14 +578,32 @@ fn panel(system: &str, history: &[String], field: &str, message: &str) -> Panel 
 mod tests {
     use super::*;
 
+    fn lines(history: &[Line], full: bool, detailed: bool) -> Vec<String> {
+        rows_of(history, full, detailed)
+            .into_iter()
+            .map(|(t, _)| t)
+            .collect()
+    }
+
     #[test]
-    fn layout() {
-        let h: Vec<String> = (0..20).map(|i| format!(" > cmd{i}")).collect();
-        let lines = panel("QS400", &h, "wrk", "").lines();
-        assert_eq!(&lines[0][33..46], "Command Entry");
-        assert_eq!(&lines[0][71..76], "QS400");
-        assert!(lines[4].contains("cmd6"), "{}", lines[4]);
-        assert!(lines[17].contains("cmd19"));
-        assert!(lines[19].starts_with(" ===> wrk"));
+    fn wrapping_and_help() {
+        let h = vec![
+            Line {
+                text: " > crtlib x".into(),
+                command: true,
+                help: None,
+            },
+            Line {
+                text: format!("   CPC2102 {}", "x".repeat(100)),
+                command: false,
+                help: Some("Library X was created.".into()),
+            },
+        ];
+        assert_eq!(lines(&h, false, false).len(), 2);
+        assert_eq!(lines(&h, true, false).len(), 3);
+        let d = lines(&h, false, true);
+        assert_eq!(d.len(), 3);
+        assert!(d[2].starts_with("     Library X"));
+        assert!(h[0].command);
     }
 }

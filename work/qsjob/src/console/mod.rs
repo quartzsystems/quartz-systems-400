@@ -170,6 +170,27 @@ impl Console {
         out
     }
 
+    /// Run a command line in a mode (prompted first, checked only);
+    /// everything the run produced.
+    pub fn run(&mut self, text: &str, mode: crate::command::RunMode) -> crate::command::Outcome {
+        let host = self.host.clone();
+        let setting = cmd::analyze::Setting {
+            interactive: host.interactive(),
+            ..cmd::analyze::Setting::default()
+        };
+        let o = crate::command::run_with(self.job(), &host, text, mode, setting);
+        if let Some(p) = &o.prompt {
+            self.prompt.clone_from(p);
+        }
+        self.srcs.extend(o.srcs.iter().cloned());
+        if o.sysvals.is_some() {
+            self.sysvals.clone_from(&o.sysvals);
+        }
+        self.after(&o.name);
+        self.sync_log();
+        o
+    }
+
     /// Bring the storage service's copy of the job log up to date; it is
     /// the copy that is spooled when the job ends, however it ends.
     pub fn sync_log(&mut self) {

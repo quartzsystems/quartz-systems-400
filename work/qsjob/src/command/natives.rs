@@ -67,7 +67,9 @@ fn cpp(job: &mut Job, host: &Host, name: &str, args: &[u64]) {
             segments.push(None);
             continue;
         }
-        let n = block::segment_len(p, &mut |off, k| mi::storage::view(addr + off as u64, k).to_vec());
+        let n = block::segment_len(p, &mut |off, k| {
+            mi::storage::view(addr + off as u64, k).to_vec()
+        });
         segments.push(Some(mi::storage::view(addr, n).to_vec()));
     }
     let specified = vec![true; def.parms.len()];

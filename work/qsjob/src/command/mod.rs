@@ -226,7 +226,8 @@ fn dispatch(job: &mut Job, host: &Host, r: &Resolved, mut out: Outcome) -> Outco
         .then(|| sys_cpps::entry(&r.name))
         .flatten();
     let result = match entry.map(|e| e.site) {
-        Some(Site::Job) => jobsite::run(job, host, r),
+        Some(_) if lda::is_lda(r) => lda::command(host, r),
+        Some(Site::Job) => jobsite::run(job, host, r, &mut out),
         Some(Site::Service | Site::Stub) => service(job, host, r, &mut out),
         None => user_cpp(job, host, r),
     };
@@ -242,6 +243,120 @@ fn dispatch(job: &mut Job, host: &Host, r: &Resolved, mut out: Outcome) -> Outco
         }
     }
     out
+}
+
+/// The job's local data area at the command line: `DSPDTAARA` and
+/// `CHGDTAARA` on `*LDA` never leave the job.
+mod lda {
+    use std::fmt::Write as _;
+
+    use cmd::{Resolved, Value};
+    use stg::remote::LDA_LEN;
+
+    use super::Fail;
+    use crate::console::host::Host;
+
+    /// Whether the command's data area is `*LDA`.
+    pub fn is_lda(r: &Resolved) -> bool {
+        matches!(r.name.as_str(), "DSPDTAARA" | "CHGDTAARA")
+            && area(r).0.eq_ignore_ascii_case("*LDA")
+    }
+
+    /// The area's name and the substring asked for.
+    fn area(r: &Resolved) -> (String, Option<(usize, usize)>) {
+        let Some(v) = r.get("DTAARA").and_then(|b| b.value.as_ref()) else {
+            return (String::new(), None);
+        };
+        let name = |val: &Value| match val {
+            Value::Qual(parts) => parts.first().map(Value::source).unwrap_or_default(),
+            other => other.source(),
+        };
+        match v {
+            Value::Elems(items) => {
+                let nm = items
+                    .first()
+                    .cloned()
+                    .flatten()
+                    .map(|val| name(&val))
+                    .unwrap_or_default();
+                let sub = match items.get(1).cloned().flatten() {
+                    Some(Value::Elems(se)) => {
+                        let num = |ix: usize| {
+                            se.get(ix)
+                                .cloned()
+                                .flatten()
+                                .and_then(|val| val.source().parse::<usize>().ok())
+                        };
+                        match (num(0), num(1)) {
+                            (Some(st), Some(ln)) => Some((st, ln)),
+                            _ => None,
+                        }
+                    }
+                    _ => None,
+                };
+                (nm, sub)
+            }
+            other => (name(other), None),
+        }
+    }
+
+    /// The whole area as text.
+    pub fn text(host: &Host) -> String {
+        ccsid::from_ebcdic(&host.lda.borrow())
+    }
+
+    /// Put `value` at `start` (1-based), padded with blanks to the end
+    /// of the substring asked for, or the area.
+    pub fn set(host: &Host, start: usize, value: &str) {
+        set_sub(host, start, None, value);
+    }
+
+    fn set_sub(host: &Host, start: usize, len: Option<usize>, value: &str) {
+        let mut b = ccsid::to_ebcdic(value).unwrap_or_default();
+        let room = LDA_LEN.saturating_sub(start.saturating_sub(1));
+        let n = len.unwrap_or(room).min(room);
+        b.resize(n, 0x40);
+        let mut lda = host.lda.borrow_mut();
+        lda.resize(LDA_LEN, 0x40);
+        lda[start - 1..start - 1 + n].copy_from_slice(&b);
+    }
+
+    /// Run the command.
+    pub fn command(host: &Host, r: &Resolved) -> Result<String, Fail> {
+        let (_, sub) = area(r);
+        let (start, len) = sub.unwrap_or((1, LDA_LEN));
+        if start == 0 || start + len - 1 > LDA_LEN {
+            return Err(Fail::new(
+                "CPF1015",
+                "*LDA: the substring lies outside the area",
+            ));
+        }
+        if r.name == "CHGDTAARA" {
+            let value = r
+                .get("VALUE")
+                .and_then(|b| b.value.as_ref())
+                .map(Value::source)
+                .unwrap_or_default();
+            set_sub(host, start, Some(len), &value);
+            return Ok(String::new());
+        }
+        let all = text(host);
+        let part: String = all.chars().skip(start - 1).take(len).collect();
+        let mut out = String::new();
+        out.push_str("Data area . . . . . . . :   *LDA\n");
+        out.push_str("  Type  . . . . . . . . :   *CHAR\n");
+        let _ = writeln!(out, "  Length  . . . . . . . :   {LDA_LEN}");
+        out.push_str("  Text  . . . . . . . . :   Local data area\n");
+        out.push_str("           Value\n");
+        out.push_str("Offset      *...+....1....+....2....+....3....+....4....+....5\n");
+        let shown = part.trim_end();
+        let rows = shown.chars().count().div_ceil(50).max(1);
+        for i in 0..rows {
+            let chunk: String = shown.chars().skip(i * 50).take(50).collect();
+            let _ = writeln!(out, "{:>6}      '{chunk}'", start - 1 + i * 50);
+        }
+        Ok(out)
+    }
 }
 
 /// A system command in the storage service.
@@ -355,6 +470,22 @@ const OLD_SERVICE_WORDS: &[&str] = &[
 /// service's console table.
 fn passthrough(job: &mut Job, host: &Host, rest: &str) -> Outcome {
     let word = rest.split_whitespace().next().unwrap_or("");
+    let args: Vec<&str> = rest.split_whitespace().collect();
+    if word == "dtaara" && args.get(2).is_some_and(|a| a.eq_ignore_ascii_case("*LDA")) {
+        // The job's own area: `dtaara get *LDA`, `dtaara set *LDA TEXT`.
+        let text = match args.get(1).copied() {
+            Some("get") => format!("*LDA: '{}'\n", lda::text(host).trim_end()),
+            Some("set") => {
+                lda::set(host, 1, &args[3..].join(" "));
+                "*LDA changed.\n".into()
+            }
+            _ => "Usage: dtaara get *LDA | set *LDA TEXT\n".into(),
+        };
+        return Outcome {
+            text,
+            ..Outcome::default()
+        };
+    }
     if jobsite::OLD_JOB_WORDS.contains(&word) {
         return Outcome {
             text: crate::console::jobcmd::command(job, host, word, rest),

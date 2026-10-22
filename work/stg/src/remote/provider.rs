@@ -2,9 +2,9 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The APIs' provider, answered by the service. `QCMDEXC` stays in the
-//! job: the commands queue here and the job runs them after the call
-//! (`MIGRATE(phase7)`: the command analyzer runs them in place).
+//! The APIs' provider, answered by the service. `QCMDEXC` is the
+//! job's own: its hook on the runtime runs the command in place, so
+//! the provider's `exec_command` is never reached.
 
 use sysapi::{
     ApiFail, ApiResult, CommitInfo, DataArea, DataAreaType, DepInfo, DtaqEntry, DtaqInfo, FileInfo,
@@ -18,19 +18,13 @@ use crate::proto::Client;
 pub struct RemoteProvider {
     link: Shared,
     lda: super::data::Lda,
-    /// Commands `QCMDEXC` queued, oldest first.
-    pub pending: Vec<String>,
 }
 
 impl RemoteProvider {
     /// Over a link.
     #[must_use]
     pub fn new(link: Shared, lda: super::data::Lda) -> Self {
-        Self {
-            link,
-            lda,
-            pending: Vec::new(),
-        }
+        Self { link, lda }
     }
 }
 
@@ -237,12 +231,8 @@ impl Provider for RemoteProvider {
         self.link.borrow_mut().with(Client::now)
     }
 
-    fn exec_command(&mut self, text: &str) -> ApiResult<()> {
-        if text.trim().is_empty() {
-            return Err(ApiFail::id("CPF0006"));
-        }
-        self.pending.push(text.trim().to_string());
-        Ok(())
+    fn exec_command(&mut self, _text: &str) -> ApiResult<()> {
+        Err(ApiFail::id("CPF0006"))
     }
 
     fn check_command(&mut self, text: &str) -> ApiResult<()> {

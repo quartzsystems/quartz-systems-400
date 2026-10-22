@@ -115,8 +115,12 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
     jobqs::load(system);
     spool::load(system);
     wtr::clear_queues(system);
-    let strup = include_str!("shipped/QSTRUP.qir");
-    match crate::svc::ile::commands::ship_program(system, "QSYS", strup, "Startup program") {
+    // The startup program: CL source compiled here, against the shipped
+    // definitions.
+    let strup = include_str!("shipped/QSTRUP.clle");
+    match crate::cpp::clpgm::compile_shipped("QSTRUP", strup).and_then(|qir| {
+        crate::svc::ile::commands::ship_program(system, "QSYS", &qir, "Startup program")
+    }) {
         Ok(true) => made += 1,
         Ok(false) => {}
         Err(e) => eprintln!("qsstg: QSYS/QSTRUP: {e}"),

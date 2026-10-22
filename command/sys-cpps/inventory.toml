@@ -23,6 +23,14 @@ note = "no completion message; a refusal is the escape"
 [cmd.CALL]
 site = "job"
 
+[cmd.RTVSYSVAL]
+site = "job"
+note = "the value through the job's link; RTNVAR gets text"
+
+[cmd.RTVJOBA]
+site = "job"
+note = "the job's own names and attributes"
+
 [cmd.RCLACTGRP]
 site = "job"
 

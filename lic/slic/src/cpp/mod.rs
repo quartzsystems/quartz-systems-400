@@ -12,7 +12,7 @@
 //! command, and a command that succeeded sends the completion message
 //! the inventory gives it.
 
-mod clpgm;
+pub(crate) mod clpgm;
 mod direct;
 
 use cmd::block::Parms;
