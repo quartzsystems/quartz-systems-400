@@ -42,6 +42,8 @@ pub enum Command {
         subsystem: String,
         /// Display name.
         display: String,
+        /// Password level 2 or 3: the long password field.
+        long_password: bool,
     },
     /// Replace the message line.
     Message {
@@ -158,9 +160,10 @@ impl Console {
                 system,
                 subsystem,
                 display,
+                long_password,
             } => {
                 self.system = system;
-                self.screen = screens::sign_on(&self.system, &subsystem, &display);
+                self.screen = screens::sign_on(&self.system, &subsystem, &display, long_password);
                 self.kind = Kind::SignOn;
                 self.locked = false;
                 editor::home(&mut self.screen);
@@ -322,6 +325,7 @@ mod tests {
             system: "QS400".into(),
             subsystem: "QINTER".into(),
             display: "QSCONSOLE".into(),
+            long_password: false,
         });
         press(&mut c, 30); // a
         press(&mut c, 28); // Enter

@@ -100,6 +100,7 @@ pub fn run_install(env: &mut dyn DstEnv, language: &str) -> Result<(), String> {
     env.install_os(&mut |step, env| {
         progress.done(step);
         env.show(os_status(env, &progress));
+        env.pace();
     })
 }
 

@@ -284,6 +284,12 @@ impl DstEnv for Env<'_> {
         menu::show(self.system, screen);
     }
 
+    fn pace(&mut self) {
+        if !self.system.pace.is_zero() {
+            std::thread::sleep(self.system.pace);
+        }
+    }
+
     fn disks(&mut self) -> Vec<NonConfigured> {
         let mut out = Vec::new();
         for disk in diskimg::locate::whole_disks().unwrap_or_default() {

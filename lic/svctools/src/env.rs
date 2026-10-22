@@ -120,6 +120,10 @@ pub trait DstEnv {
     /// service tools user ID or password not valid).
     fn audit(&mut self, _kind: &str, _code: &str, _user: &str) {}
 
+    /// Let a progress display stay up long enough to be read; the
+    /// machine's pace, nothing in memory.
+    fn pace(&mut self) {}
+
     /// The configured disk units.
     fn disk_units(&mut self) -> Vec<DiskUnit> {
         Vec::new()

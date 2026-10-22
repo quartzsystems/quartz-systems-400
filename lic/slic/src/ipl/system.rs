@@ -6,7 +6,7 @@
 
 use std::rc::Rc;
 use std::sync::mpsc::{Receiver, Sender};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use licpart::{Device, IplMode, IplType, LicPart, Record, Slot};
 use sysval::SysVals;
@@ -32,6 +32,10 @@ pub enum Role {
     Storage,
 }
 
+/// Milliseconds an IPL code stays on the display when the command
+/// line does not say (`qs400.pace`).
+pub const DEFAULT_PACE_MS: u64 = 400;
+
 /// State of this IPL.
 #[allow(clippy::struct_excessive_bools)]
 pub struct System {
@@ -39,6 +43,9 @@ pub struct System {
     pub out: Outputs,
     /// Boot parameters.
     pub boot: Boot,
+    /// How long each IPL code and install step stays on the display: the
+    /// machine's pace, so the console can be read (`qs400.pace=MS`).
+    pub pace: Duration,
     /// Resolved keylock mode.
     pub mode: IplMode,
     /// Every SRC so far.
@@ -130,9 +137,11 @@ impl System {
     /// Fresh state before the LIC is attached.
     pub fn new(out: Outputs, boot: Boot) -> Self {
         let mode = boot.mode.unwrap_or(IplMode::Normal);
+        let pace = Duration::from_millis(boot.pace.unwrap_or(DEFAULT_PACE_MS));
         Self {
             out,
             boot,
+            pace,
             mode,
             log: IplLog::new(),
             lic: None,
@@ -219,6 +228,10 @@ impl System {
             code: src.code.to_string(),
             text: src.text.to_string(),
         });
+        // Each code stays up long enough to be read.
+        if !self.pace.is_zero() {
+            std::thread::sleep(self.pace);
+        }
     }
 
     /// Send a command to the console thread, if there is one.

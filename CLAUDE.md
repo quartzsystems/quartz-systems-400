@@ -278,7 +278,8 @@ management: `wrkactjob [VIEW(1|2|3)]`, `wrkjob`, `dspjob`, `chgjob`, `dspjoblog`
 `cpyaudjrne`, `prtadpobj`, `prtusrobj`, `prtpvtaut`, `prtpubaut`, `prtsysseca`,
 `prtjobdaut`, `prtsbsdaut`, `prtqaut`, and `dbgkill JOB()` (slic's debug hook:
 SIGKILL a job). Parameters are IBM-style `KEYWORD(value)`. Boot parameters: `qs400.slot=A|B`, `qs400.mode=normal|manual`,
-`qs400.svc=1`, `qs400.ipl=D`, `qs400.media=iso`.
+`qs400.svc=1`, `qs400.ipl=D`, `qs400.media=iso`, `qs400.pace=MS` (each IPL code and
+install step stays up this long; 400 by default, 0 for none).
 
 `QS400_TARGET_DIR` relocates `target/` (use an ext4 path when the repo is on
 `/mnt/c`; drvfs is far too slow for a kernel build). `-v` streams tool output;

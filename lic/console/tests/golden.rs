@@ -11,7 +11,7 @@ use std::path::PathBuf;
 fn sign_on_matches() {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../tools/conformance/golden/signon/sign-on.txt");
-    let got = console::screens::sign_on("QS400", "QBASE", "QSCONSOLE").dump();
+    let got = console::screens::sign_on("QS400", "QBASE", "QSCONSOLE", true).dump();
     if std::env::var_os("QS400_UPDATE_GOLDEN").is_some() {
         std::fs::write(&path, &got).unwrap();
         return;

@@ -34,7 +34,7 @@ pub fn src_screen(system: &str, current: &str, text: &str, recent: &[(String, St
 
 /// The sign-on display. Geometry follows the classic layout; the words are
 /// Quartz's.
-pub fn sign_on(system: &str, subsystem: &str, display: &str) -> Screen {
+pub fn sign_on(system: &str, subsystem: &str, display: &str, long_password: bool) -> Screen {
     let mut s = Screen::new();
     s.put(1, 36, "Sign On", Attr::WHITE);
     s.put(2, 48, "System  . . . . . :", Attr::GREEN);
@@ -46,7 +46,12 @@ pub fn sign_on(system: &str, subsystem: &str, display: &str) -> Screen {
     s.put(6, 17, "User  . . . . . . . . . . . . . .", Attr::GREEN);
     s.field(6, 53, 10, false);
     s.put(7, 17, "Password  . . . . . . . . . . . .", Attr::GREEN);
-    s.field(7, 53, 10, true);
+    if long_password {
+        // QDSIGNON2: 128 characters, nothing shown, no underline.
+        s.field_secret(7, 53, 28, 128);
+    } else {
+        s.field(7, 53, 10, true);
+    }
     s.put(8, 17, "Program/procedure . . . . . . . .", Attr::GREEN);
     s.field(8, 53, 10, false);
     s.put(9, 17, "Menu  . . . . . . . . . . . . . .", Attr::GREEN);
@@ -80,7 +85,7 @@ mod tests {
 
     #[test]
     fn sign_on_layout_matches_the_specification() {
-        let s = sign_on("QS400", "QINTER", "QSCONSOLE");
+        let s = sign_on("QS400", "QINTER", "QSCONSOLE", false);
         let d = s.dump();
         let lines: Vec<&str> = d.lines().collect();
         let at = |row: usize, col: usize, text: &str| {

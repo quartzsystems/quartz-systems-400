@@ -90,6 +90,12 @@ impl Attr {
         nondisplay: true,
         ..Self::color(Color::Green)
     };
+    /// A nondisplay field without the underline: the long password
+    /// field of the sign-on display at password level 2 and 3.
+    pub const INPUT_SECRET: Self = Self {
+        nondisplay: true,
+        ..Self::color(Color::Green)
+    };
 }
 
 /// One cell.
@@ -121,6 +127,9 @@ pub struct Field {
     pub len: usize,
     /// Typed characters show nothing.
     pub nondisplay: bool,
+    /// Characters the field accepts, `len` or more: past the cells the
+    /// rest is kept out of sight (a 128-character password).
+    pub capacity: usize,
 }
 
 /// The display.
@@ -129,6 +138,9 @@ pub struct Screen {
     cells: Vec<Cell>,
     /// Input fields in tab order.
     pub fields: Vec<Field>,
+    /// Per field, what was typed past its cells: `None` until the last
+    /// cell is typed.
+    pub hidden: Vec<Option<String>>,
     /// Cursor position, 0-based (row, col).
     pub cursor: (usize, usize),
     /// Insert mode (typing shifts the rest of the field right).
@@ -147,6 +159,7 @@ impl Screen {
         Self {
             cells: vec![Cell::default(); ROWS * COLS],
             fields: Vec::new(),
+            hidden: Vec::new(),
             cursor: (0, 0),
             insert: false,
         }
@@ -226,16 +239,42 @@ impl Screen {
             col,
             len,
             nondisplay,
+            capacity: len,
         });
+        self.hidden.push(None);
     }
 
-    /// Text of a field as typed (nondisplay included).
+    /// A nondisplay field without an underline that accepts `capacity`
+    /// characters while showing `len` cells: typing past the last cell
+    /// stays there and the rest is kept out of sight.
+    pub fn field_secret(&mut self, row: usize, col: usize, len: usize, capacity: usize) {
+        let len = len.min(COLS + 1 - col.min(COLS));
+        self.put(row, col, &" ".repeat(len), Attr::INPUT_SECRET);
+        self.fields.push(Field {
+            row,
+            col,
+            len,
+            nondisplay: true,
+            capacity: capacity.max(len),
+        });
+        self.hidden.push(None);
+    }
+
+    /// Text of a field as typed (nondisplay and the hidden part included).
     pub fn field_text(&self, f: &Field) -> String {
-        (0..f.len)
+        let cells: String = (0..f.len)
             .map(|i| self.cell(f.row - 1, f.col - 1 + i).ch)
-            .collect::<String>()
-            .trim_end()
-            .to_string()
+            .collect();
+        let hidden = self
+            .fields
+            .iter()
+            .position(|x| x == f)
+            .and_then(|i| self.hidden.get(i))
+            .and_then(Option::as_deref);
+        match hidden {
+            Some(h) if !h.is_empty() => format!("{cells}{h}"),
+            _ => cells.trim_end().to_string(),
+        }
     }
 
     /// The whole grid as 24 lines of exactly 80 characters. Nondisplay

@@ -63,10 +63,18 @@ pub fn controlling(system: &System) -> String {
 
 /// Show the sign-on display, with a message when one is given.
 pub fn sign_on(system: &System, message: &str) {
+    // QDSIGNON2 at password level 2 and 3: the long password field.
+    let long_password = system
+        .sysvals
+        .as_ref()
+        .and_then(|v| v.get("QPWDLVL").ok())
+        .and_then(|v| v.text().trim().parse::<u8>().ok())
+        .is_some_and(|l| l >= 2);
     system.show(::console::Command::ShowSignOn {
         system: system.system_name(),
         subsystem: controlling(system),
         display: DEVICE.into(),
+        long_password,
     });
     if !message.is_empty() {
         system.show(::console::Command::Message {

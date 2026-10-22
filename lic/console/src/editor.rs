@@ -42,13 +42,21 @@ pub fn apply(s: &mut Screen, key: Key) -> Outcome {
         Key::Char(c) => type_char(s, fi, pos, c),
         Key::FieldExit => {
             clear_from(s, fi, pos);
+            s.hidden[fi] = None;
             goto_field(s, next(s, fi));
         }
         Key::FieldAdvance | Key::Down => goto_field(s, next(s, fi)),
         Key::FieldBackspace | Key::Up => goto_field(s, prev(s, fi)),
         Key::Backspace => {
-            if pos > 0 {
-                let f = s.fields[fi];
+            let f = s.fields[fi];
+            if pos + 1 == f.len && s.hidden[fi].is_some() {
+                // The hidden tail goes first, then the last cell.
+                let h = s.hidden[fi].as_mut().expect("some");
+                if h.pop().is_none() {
+                    s.hidden[fi] = None;
+                    s.cell_mut(f.row - 1, f.col - 1 + pos).ch = ' ';
+                }
+            } else if pos > 0 {
                 shift_left(s, &f, pos - 1);
                 s.cursor = (f.row - 1, f.col - 1 + pos - 1);
             } else {
@@ -116,9 +124,19 @@ fn goto_field(s: &mut Screen, fi: usize) {
     s.cursor = (f.row - 1, f.col - 1);
 }
 
-/// Type one character; autoskip to the next field after the last cell.
+/// Type one character; autoskip to the next field after the last cell,
+/// unless the field holds more than it shows: then the cursor stays on
+/// the last cell and the rest is kept hidden.
 fn type_char(s: &mut Screen, fi: usize, pos: usize, c: char) {
     let f = s.fields[fi];
+    let deep = f.capacity > f.len;
+    if deep && pos + 1 == f.len && s.hidden[fi].is_some() {
+        let h = s.hidden[fi].as_mut().expect("some");
+        if f.len + h.chars().count() < f.capacity {
+            h.push(c);
+        }
+        return;
+    }
     if s.insert {
         for i in (pos + 1..f.len).rev() {
             let ch = s.cell(f.row - 1, f.col - 1 + i - 1).ch;
@@ -128,6 +146,8 @@ fn type_char(s: &mut Screen, fi: usize, pos: usize, c: char) {
     s.cell_mut(f.row - 1, f.col - 1 + pos).ch = c;
     if pos + 1 < f.len {
         s.cursor = (f.row - 1, f.col - 1 + pos + 1);
+    } else if deep {
+        s.hidden[fi] = Some(String::new());
     } else {
         goto_field(s, next(s, fi));
     }
@@ -138,6 +158,7 @@ fn clear_from(s: &mut Screen, fi: usize, pos: usize) {
     for i in pos..f.len {
         s.cell_mut(f.row - 1, f.col - 1 + i).ch = ' ';
     }
+    s.hidden[fi] = None;
 }
 
 /// Remove the character at `pos`, pulling the rest of the field left.
@@ -165,7 +186,7 @@ mod tests {
 
     #[test]
     fn typing_fills_fields_and_autoskips() {
-        let mut s = sign_on("QS400", "QINTER", "QSCONSOLE");
+        let mut s = sign_on("QS400", "QINTER", "QSCONSOLE", false);
         home(&mut s);
         typed(&mut s, "QSECOFR");
         assert_eq!(s.field_text(&s.fields[0]), "QSECOFR");
@@ -177,7 +198,7 @@ mod tests {
 
     #[test]
     fn field_exit_clears_and_advances() {
-        let mut s = sign_on("QS400", "QINTER", "QSCONSOLE");
+        let mut s = sign_on("QS400", "QINTER", "QSCONSOLE", false);
         home(&mut s);
         typed(&mut s, "ABCDEF");
         apply(&mut s, Key::Left);
@@ -189,7 +210,7 @@ mod tests {
 
     #[test]
     fn backspace_delete_insert() {
-        let mut s = sign_on("QS400", "QINTER", "QSCONSOLE");
+        let mut s = sign_on("QS400", "QINTER", "QSCONSOLE", false);
         home(&mut s);
         typed(&mut s, "ABC");
         apply(&mut s, Key::Backspace);
@@ -205,7 +226,7 @@ mod tests {
 
     #[test]
     fn navigation_and_outcomes() {
-        let mut s = sign_on("QS400", "QINTER", "QSCONSOLE");
+        let mut s = sign_on("QS400", "QINTER", "QSCONSOLE", false);
         home(&mut s);
         apply(&mut s, Key::FieldAdvance);
         assert_eq!(s.cursor, (6, 52));
@@ -224,11 +245,44 @@ mod tests {
 
     #[test]
     fn nondisplay_field_hides_text_but_keeps_it() {
-        let mut s = sign_on("QS400", "QINTER", "QSCONSOLE");
+        let mut s = sign_on("QS400", "QINTER", "QSCONSOLE", false);
         home(&mut s);
         apply(&mut s, Key::FieldAdvance);
         typed(&mut s, "secret");
         assert_eq!(s.field_text(&s.fields[1]), "secret");
         assert!(!s.dump().contains("secret"));
+    }
+
+    #[test]
+    fn a_long_password_keeps_typing_past_the_cells() {
+        let mut s = sign_on("QS400", "QINTER", "QSCONSOLE", true);
+        home(&mut s);
+        typed(&mut s, "ANNE");
+        apply(&mut s, Key::FieldExit);
+        let f = s.fields[1];
+        assert_eq!(f.capacity, 128);
+        let long: String = (b'a'..=b'z').cycle().take(40).map(char::from).collect();
+        typed(&mut s, &long);
+        assert_eq!(
+            s.cursor,
+            (f.row - 1, f.col - 1 + f.len - 1),
+            "stays on the last cell"
+        );
+        assert_eq!(s.field_text(&f), long);
+        apply(&mut s, Key::Backspace);
+        assert_eq!(s.field_text(&f), long[..39]);
+        for _ in 0..12 {
+            apply(&mut s, Key::Backspace);
+        }
+        assert_eq!(s.field_text(&f), long[..27]);
+        assert_eq!(
+            s.cursor,
+            (f.row - 1, f.col - 1 + f.len - 1),
+            "still on the last cell"
+        );
+        // Field Exit on the last cell clears it and moves on; the rest stays.
+        apply(&mut s, Key::FieldExit);
+        assert_eq!(s.field_text(&f), long[..27]);
+        assert_eq!(s.cursor, (s.fields[2].row - 1, s.fields[2].col - 1));
     }
 }

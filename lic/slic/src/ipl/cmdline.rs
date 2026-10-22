@@ -3,7 +3,8 @@
 // root directory of this project.
 
 //! Boot parameters from `/proc/cmdline`: `qs400.slot=A|B`,
-//! `qs400.mode=normal|manual`, `qs400.svc=1`, `qs400.ipl=D`, `qs400.media=iso`.
+//! `qs400.mode=normal|manual`, `qs400.svc=1`, `qs400.ipl=D`, `qs400.media=iso`,
+//! `qs400.pace=MS` (how long each IPL code and install step stays up).
 
 use std::fs;
 
@@ -24,6 +25,9 @@ pub struct Boot {
     pub ipl_d: bool,
     /// The media kind named on the command line (`iso`).
     pub media: Option<String>,
+    /// Milliseconds each IPL code and install step stays on the display
+    /// (`qs400.pace`); the default when absent.
+    pub pace: Option<u64>,
 }
 
 impl Boot {
@@ -42,6 +46,7 @@ impl Boot {
             svc: false,
             ipl_d: false,
             media: None,
+            pace: None,
         };
         for word in text.split_whitespace() {
             let Some((key, value)) = word.split_once('=') else {
@@ -67,6 +72,7 @@ impl Boot {
                 "qs400.svc" => boot.svc = value == "1",
                 "qs400.ipl" => boot.ipl_d = value.eq_ignore_ascii_case("d"),
                 "qs400.media" => boot.media = Some(value.to_string()),
+                "qs400.pace" => boot.pace = value.parse().ok(),
                 _ => {}
             }
         }

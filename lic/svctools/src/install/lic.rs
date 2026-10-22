@@ -123,11 +123,15 @@ pub fn run_install(env: &mut dyn DstEnv, device: &str, auto: bool) -> Result<(),
         match event {
             LicEvent::DiskPercent(p) => {
                 env.show(disk_status(&system, &device, p));
+                if p % 10 == 0 {
+                    env.pace();
+                }
                 return;
             }
             LicEvent::StepDone(i) => progress.done(i),
         }
         env.show(lic_status(env, &progress));
+        env.pace();
     })
 }
 
