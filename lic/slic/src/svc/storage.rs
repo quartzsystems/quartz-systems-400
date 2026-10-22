@@ -230,13 +230,44 @@ pub fn rclstg(system: &mut System, args: &[&str]) -> String {
         return "object store not open\n".to_string();
     };
     let start = Instant::now();
-    match s.store.reclaim(mode, now_unix()) {
+    let mut out = match s.store.reclaim(mode, now_unix()) {
         Ok(r) => format!(
             "RCLSTG {mode:?} in {:.2}s\n{r}\n",
             start.elapsed().as_secs_f64()
         ),
-        Err(e) => format!("RCLSTG failed: {e}\n"),
+        Err(e) => return format!("RCLSTG failed: {e}\n"),
+    };
+    // The profile indexes: verified by *CHECK, rebuilt otherwise.
+    if let Some(qsys) = s.qsys {
+        let r = (|| -> sec::Result<String> {
+            let mut txn = s.store.begin()?;
+            let line = if matches!(mode, ReclaimMode::Check) {
+                let problems = sec::profile::index::verify(&mut txn, qsys)?;
+                if problems.is_empty() {
+                    "profile indexes: no problems".to_string()
+                } else {
+                    format!(
+                        "profile indexes: {} problem(s)\n{}",
+                        problems.len(),
+                        problems.join("\n")
+                    )
+                }
+            } else {
+                let n = sec::profile::index::rebuild(&mut txn, qsys)?;
+                format!("profile indexes rebuilt: {n} entries")
+            };
+            txn.commit()?;
+            Ok(line)
+        })();
+        match r {
+            Ok(l) => out.push_str(&l),
+            Err(e) => {
+                let _ = write!(out, "profile indexes: {e}");
+            }
+        }
+        out.push('\n');
     }
+    out
 }
 
 /// `chkstg`: verify every allocated page's checksum.

@@ -1043,7 +1043,7 @@ pub(crate) fn secofr_command_entry(s: &mut Session) -> Result<(), String> {
     screen_wait(s, "Command Entry").map(|_| ())
 }
 
-fn screen_wait(s: &mut Session, want: &str) -> Result<String, String> {
+pub(crate) fn screen_wait(s: &mut Session, want: &str) -> Result<String, String> {
     let mut last = String::new();
     for _ in 0..80 {
         last = s.command("screen", CMD)?;

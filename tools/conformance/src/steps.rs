@@ -457,6 +457,15 @@ impl Suite {
         reports.push(self.step(&mut s, "34 end busy subsystem", Self::end_busy_subsystem)?);
         reports.push(self.step(&mut s, "35 killed job", Self::killed_job)?);
         reports.push(self.step(&mut s, "36 work management bench", Self::wm_bench)?);
+        reports.push(self.step(&mut s, "37 user profiles", Self::user_profiles)?);
+        reports.push(self.step(&mut s, "38 sign-on as a user", Self::user_sign_on)?);
+        reports.push(self.step(&mut s, "39 adopted authority", Self::adopted_authority)?);
+        reports.push(self.step(&mut s, "40 domain and state", Self::domain_state)?);
+        reports.push(self.step(&mut s, "41 auditing", Self::auditing)?);
+        reports.push(self.step(&mut s, "42 audit end action", Self::audit_end_action)?);
+        reports.push(self.step(&mut s, "43 delete profile", Self::delete_profile)?);
+        reports.push(self.step(&mut s, "44 security levels", Self::security_levels)?);
+        reports.push(self.step(&mut s, "45 security bench", Self::security_bench)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);
@@ -528,15 +537,15 @@ impl Suite {
         if !model.contains("QMODEL: QS40") {
             return Err(format!("sysval QMODEL: {model:?}"));
         }
-        let set = s.command("sysval QSECURITY 50", CMD)?;
-        if !set.contains("QSECURITY set to 50") {
-            return Err(format!("sysval QSECURITY 50: {set:?}"));
+        let set = s.command("sysval QSECURITY 40", CMD)?;
+        if !set.contains("QSECURITY set to 40") {
+            return Err(format!("sysval QSECURITY 40: {set:?}"));
         }
         let back = s.command("sysval QSECURITY", CMD)?;
-        if !back.contains("QSECURITY: 50") {
+        if !back.contains("QSECURITY: 40") {
             return Err(format!("sysval QSECURITY: {back:?}"));
         }
-        Ok("QMODEL is QS40; QSECURITY set and read back as 50".into())
+        Ok("QMODEL is QS40; QSECURITY set and read back as 40".into())
     }
 
     /// Step 4: `pwrdwn restart`, the power-down codes, a second IPL, two
@@ -569,7 +578,7 @@ impl Suite {
             return Err(format!("first history entry is not Normal: {}", entries[0]));
         }
         let security = s.command("sysval QSECURITY", CMD)?;
-        if !security.contains("QSECURITY: 50") {
+        if !security.contains("QSECURITY: 40") {
             return Err(format!(
                 "QSECURITY did not persist across restart: {security:?}"
             ));

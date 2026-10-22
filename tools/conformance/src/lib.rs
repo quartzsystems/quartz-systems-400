@@ -15,6 +15,7 @@ mod dst;
 mod error;
 mod phase2;
 mod phase5;
+mod phase6;
 #[cfg(unix)]
 mod png;
 mod qemu;
