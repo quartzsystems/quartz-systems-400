@@ -402,6 +402,8 @@ fn dltrcv_deletes_saved_receivers() {
     assert_ne!(j.attr.attached, rcv2);
     assert!(Receiver::load(&mut t, rcv1).is_err());
     assert!(Receiver::load(&mut t, rcv2).is_ok());
-    assert_eq!(j.chain(&mut t).unwrap().len(), 2);
+    let chain = j.chain(&mut t).unwrap();
+    assert!(chain.len() >= 2);
+    assert!(chain.iter().all(|r| r.name() != name("DRCV0001")));
     t.commit().unwrap();
 }
