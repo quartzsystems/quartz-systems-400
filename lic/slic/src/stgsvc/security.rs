@@ -175,6 +175,8 @@ pub fn as_user(req: &Request) -> bool {
             | R::Sbmjob { .. }
             | R::PrtOpen { .. }
             | R::SecApi { .. }
+            | R::CmdLookup { .. }
+            | R::RunCmd { .. }
     )
 }
 
