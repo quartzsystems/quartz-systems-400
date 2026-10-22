@@ -60,8 +60,10 @@ pub fn default_record(base: &FormatDef) -> Result<(Vec<u8>, Vec<u8>)> {
             Some(DefaultValue::Quoted(q)) => record::literal_value(f, &Literal::Quoted(q.clone()))?,
             Some(DefaultValue::Hex(h)) => Value::Char(h.clone()),
             Some(DefaultValue::Number(n)) => record::literal_value(f, &Literal::Word(n.clone()))?,
-            None if f.data_type.is_numeric() => Value::Num(Decimal::zero()),
-            None => Value::Char(Vec::new()),
+            Some(DefaultValue::Expr(_)) | None if f.data_type.is_numeric() => {
+                Value::Num(Decimal::zero())
+            }
+            Some(DefaultValue::Expr(_)) | None => Value::Char(Vec::new()),
         };
         if v == Value::Null
             && let Some(ni) = base.null_index(i)

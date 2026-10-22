@@ -359,6 +359,7 @@ impl Prepared {
             Statement::Delete(d) => dml::delete(txn, ctx, params, d).map(Outcome::Count),
             Statement::CreateTable(t) => ddl::create_table(txn, ctx, t).map(|()| Outcome::Done),
             Statement::CreateIndex(i) => ddl::create_index(txn, ctx, i).map(|()| Outcome::Done),
+            Statement::AlterTable(a) => ddl::alter_table(txn, ctx, a).map(|()| Outcome::Done),
             Statement::DropTable { name, cascade } => {
                 ddl::drop(txn, ctx, name, *cascade).map(|()| Outcome::Done)
             }

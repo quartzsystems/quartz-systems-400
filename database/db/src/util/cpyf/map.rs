@@ -125,7 +125,8 @@ fn default_of(f: &dds::FieldDef) -> Result<(Value, bool)> {
             })?),
             false,
         ),
-        None => (Value::Null, false),
+        // An expression default is SQL's to evaluate: the type's zero.
+        Some(DefaultValue::Expr(_)) | None => (Value::Null, false),
     })
 }
 

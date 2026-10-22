@@ -256,6 +256,7 @@ fn attributes(f: &FieldDef) -> String {
                 s
             }
             DefaultValue::Number(n) => format!("DFT({n})"),
+            DefaultValue::Expr(e) => format!("DFT({e})"),
         });
     }
     if let Some(e) = &f.edit_code {

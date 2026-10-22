@@ -350,3 +350,58 @@ fn many_objects_grow_the_tables() {
     assert_eq!(chain.last().unwrap().name(), name("R0012"));
     t.commit().unwrap();
 }
+
+#[test]
+fn dltrcv_deletes_saved_receivers() {
+    let (mut store, lib) = open_new();
+    let mut t = store.begin().unwrap();
+    let rcv1 = crtjrnrcv(
+        &mut t,
+        lib,
+        name("DRCV0001"),
+        &CrtJrnRcvOpts {
+            threshold_kb: 1,
+            now: NOW,
+            ..CrtJrnRcvOpts::default()
+        },
+    )
+    .unwrap();
+    let jid = crtjrn(
+        &mut t,
+        lib,
+        name("DLTJRN"),
+        rcv1,
+        &CrtJrnOpts {
+            dltrcv: true,
+            now: NOW,
+            ..CrtJrnOpts::default()
+        },
+    )
+    .unwrap();
+    let mut j = Journal::load(&mut t, jid).unwrap();
+    assert!(j.attr.dltrcv);
+    let fill = |j: &mut Journal, t: &mut store::txn::Txn<'_>| {
+        for i in 0..12u8 {
+            j.append(
+                t,
+                Draft::new(code::USER, "03", JobHandle(7)).data(vec![i; 100]),
+            )
+            .unwrap();
+        }
+    };
+    // The first swap: DRCV0001 is detached but never saved, so it stays.
+    fill(&mut j, &mut t);
+    let rcv2 = j.attr.attached;
+    assert_ne!(rcv2, rcv1);
+    assert!(Receiver::load(&mut t, rcv1).is_ok());
+    // Saved, it goes at the next swap; the unsaved DRCV0002 stays.
+    let mut r1 = Receiver::load(&mut t, rcv1).unwrap();
+    r1.attr.status = RcvStatus::Saved;
+    r1.save(&mut t).unwrap();
+    fill(&mut j, &mut t);
+    assert_ne!(j.attr.attached, rcv2);
+    assert!(Receiver::load(&mut t, rcv1).is_err());
+    assert!(Receiver::load(&mut t, rcv2).is_ok());
+    assert_eq!(j.chain(&mut t).unwrap().len(), 2);
+    t.commit().unwrap();
+}

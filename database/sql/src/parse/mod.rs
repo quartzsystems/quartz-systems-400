@@ -692,6 +692,11 @@ pub fn parse(text: &str, naming: Naming) -> Result<Statement> {
     Parser::new(text, naming)?.statement()
 }
 
+/// Parse one expression, as a column default is kept.
+pub fn parse_expr(text: &str, naming: Naming) -> Result<crate::ast::Expr> {
+    Parser::new(text, naming)?.expr()
+}
+
 /// Parse a `;`-separated script.
 pub fn parse_all(text: &str, naming: Naming) -> Result<Vec<Statement>> {
     Parser::new(text, naming)?.statements()

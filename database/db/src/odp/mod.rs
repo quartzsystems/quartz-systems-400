@@ -356,6 +356,11 @@ impl Odp {
         &self.member
     }
 
+    /// The next identity value of the member's format, taken.
+    pub fn next_identity(&mut self, txn: &mut Txn<'_>) -> Result<Option<i64>> {
+        self.member.next_identity(txn)
+    }
+
     /// Put the path under the job's commit definition (`COMMIT(*YES)`).
     pub fn set_commit(&mut self, cmt: CommitRef) {
         self.cmt = Some(cmt);

@@ -320,15 +320,28 @@ cargo run -p build -- test                          # the disk suite with steps 
   rows between steps, so a query without a sort is bounded by memory.
 - `OPNQRYF` (`sql::exec::opnqryf`) selects and orders at open time
   into the job's shared open data path; `FORMAT`, `MAPFLD`, `GRPFLD`
-  and `JFLD` are not taken. `ALTER TABLE`, aliases, constraints other
-  than unique indexes, identity columns, `FULL OUTER JOIN`, triggers,
+  and `JFLD` are not taken. `ALTER TABLE` changes the format through
+  `CHGPF SRCFILE`'s conversion (so a table with indexes or views over
+  it refuses a format change), `UNIQUE` constraints are unique indexes
+  the catalog lists, identity columns count in the member's attributes
+  (`GENERATED ALWAYS` refuses a given value), a column default may be a
+  special register, common table expressions are substituted as derived
+  tables (not recursive) and `FULL OUTER JOIN` is a nested loop. Aliases,
+  foreign key and check constraints (parsed, not enforced), triggers,
   stored procedures and functions, `LOB`, `DBCS` and `GRAPHIC` data are
   out.
 - Commitment control is scoped: `STRCMTCTL CMTSCOPE(*ACTGRP)` gives the
   activation group its own commit definition, `*JOB` the job's one that
   every group without its own reaches; a group's definition ends with
-  the group. `OMTJRNE` beyond `*OPNCLO`, `MINENTDTA` and `FIXLENDTA` are
-  kept in the attributes and not acted on.
+  the group. `OMTJRNE(*OPNCLO)` is acted on and is the only value IBM
+  has; `MINENTDTA` and `FIXLENDTA` are kept and not acted on: every
+  entry carries its full image and its job, user and program, which is
+  what `FIXLENDTA(*JOB *USR *PGM)` asks for. `DLTRCV(*YES)` deletes a
+  detached receiver once saved. `ALTSEQ` names a table this system has
+  no `*TBL` object for, so it is kept and not applied. `VARLEN` fields
+  are stored at their full length (`ALLOCATE` is kept, not applied).
+  `SEQONLY` and `NBRRCDS` are kept and ignored: no read ever misses
+  another job's write.
 - The console's `cpyfrmimpf` and `cpytoimpf` read and write UTF-8
   buffers; `STMFCODPAG` is not a parameter.
 - `tools/conformance/db/expected/` is empty until the kit has run on a

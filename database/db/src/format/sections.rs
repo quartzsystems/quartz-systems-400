@@ -112,7 +112,10 @@ pub static FIELD_LAYOUT: Layout = Layout {
         field("dft_kind", 178, 1),
         field("dft_len", 179, 1),
         field("dft", 180, 64),
-        field("reserved", 244, 12),
+        field("identity", 244, 1),
+        field("id_start", 245, 4),
+        field("id_incr", 249, 4),
+        field("reserved", 253, 3),
     ],
 };
 
@@ -568,11 +571,18 @@ fn encode_field(f: &FieldDef, null_index: Option<u16>) -> [u8; FIELD_LEN] {
         ),
         Some(DefaultValue::Hex(h)) => (3, h.clone()),
         Some(DefaultValue::Number(n)) => (4, n.as_bytes().to_vec()),
+        Some(DefaultValue::Expr(e)) => (5, e.as_bytes().to_vec()),
     };
     let n = bytes.len().min(DFT_MAX);
     b[178] = kind;
     b[179] = u8::try_from(n).expect("at most 64");
     b[180..180 + n].copy_from_slice(&bytes[..n]);
+    if let Some(id) = &f.identity {
+        b[244] = 1 | u8::from(id.always) << 1 | u8::from(id.cycle) << 2;
+        let clamp = |v: i64| i32::try_from(v).unwrap_or(if v < 0 { i32::MIN } else { i32::MAX });
+        b[245..249].copy_from_slice(&clamp(id.start).to_le_bytes());
+        b[249..253].copy_from_slice(&clamp(id.increment).to_le_bytes());
+    }
     b
 }
 
@@ -741,8 +751,20 @@ fn decode_field(b: &[u8]) -> Result<FieldDef> {
         4 => Some(DefaultValue::Number(
             String::from_utf8_lossy(dft).into_owned(),
         )),
+        5 => Some(DefaultValue::Expr(
+            String::from_utf8_lossy(dft).into_owned(),
+        )),
         k => return Err(corrupt(format!("default kind {k}"))),
     };
+    if b[244] & 1 != 0 {
+        let i32_at = |o: usize| i32::from_le_bytes(b[o..o + 4].try_into().expect("4"));
+        f.identity = Some(dds::IdentityDef {
+            always: b[244] & 2 != 0,
+            cycle: b[244] & 4 != 0,
+            start: i64::from(i32_at(245)),
+            increment: i64::from(i32_at(249)),
+        });
+    }
     Ok(f)
 }
 

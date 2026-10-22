@@ -515,6 +515,53 @@ fn opnqryf_selects_and_orders() {
 }
 
 #[test]
+fn identity_defaults_and_alter_table() {
+    let mut db = Db::new();
+    db.ok("CREATE TABLE qstest/log (id INTEGER GENERATED ALWAYS AS IDENTITY (START WITH 10 INCREMENT BY 5), note CHAR(10) NOT NULL, at DATE NOT NULL DEFAULT CURRENT DATE, who CHAR(10) NOT NULL DEFAULT USER)");
+    assert_eq!(db.count("INSERT INTO log (note) VALUES ('a'), ('b')"), 2);
+    assert_eq!(
+        db.count("INSERT INTO log (note, who) VALUES ('c', 'ME')"),
+        1
+    );
+    assert_eq!(db.code("INSERT INTO log (id, note) VALUES (1, 'x')"), -798);
+    assert_eq!(
+        db.rows("SELECT id, note, who, at = CURRENT DATE FROM log ORDER BY id"),
+        [
+            row(&["10", "a", "QSECOFR", "1"]),
+            row(&["15", "b", "QSECOFR", "1"]),
+            row(&["20", "c", "ME", "1"])
+        ]
+    );
+    // ALTER TABLE: a column added with a default, one dropped, a type
+    // widened, a unique constraint added and dropped.
+    db.ok("ALTER TABLE qstest/log ADD COLUMN qty DECIMAL(5, 0) NOT NULL DEFAULT 7");
+    db.ok("ALTER TABLE qstest/log DROP COLUMN who");
+    db.ok("ALTER TABLE qstest/log ALTER COLUMN note SET DATA TYPE CHAR(20)");
+    assert_eq!(
+        db.rows("SELECT id, note, qty FROM log ORDER BY id"),
+        [
+            row(&["10", "a", "7"]),
+            row(&["15", "b", "7"]),
+            row(&["20", "c", "7"])
+        ]
+    );
+    assert_eq!(
+        db.count("INSERT INTO log (note, qty) VALUES ('twenty characters!!!', 1)"),
+        1
+    );
+    assert_eq!(db.rows("SELECT MAX(id) FROM log"), [row(&["25"])]);
+    db.ok("ALTER TABLE qstest/log ADD CONSTRAINT onenote UNIQUE (note)");
+    assert_eq!(db.code("INSERT INTO log (note, qty) VALUES ('a', 1)"), -803);
+    db.ok("ALTER TABLE qstest/log DROP CONSTRAINT onenote");
+    assert_eq!(db.count("INSERT INTO log (note, qty) VALUES ('a', 1)"), 1);
+    assert_eq!(
+        db.code("ALTER TABLE qstest/log DROP CONSTRAINT nosuch"),
+        -204
+    );
+    db.ok("DROP TABLE qstest/log");
+}
+
+#[test]
 fn indexes_and_plans() {
     let mut db = Db::new();
     setup(&mut db);

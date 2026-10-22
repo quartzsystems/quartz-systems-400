@@ -305,7 +305,9 @@ through the same path as `CLRPFM`, so it writes `F MC`; `RGZPFM` writes
 entry is written: when the attached receiver already holds at least
 `THRESHOLD` KiB, `J NR` closes it, a receiver named by the trailing
 digits plus one is created in its library and `J PR` opens it, and the
-entry follows. `DLTRCV(*YES)` is kept but nothing deletes receivers yet.
+entry follows. `DLTRCV(*YES)` deletes a detached receiver at the next
+swap once it has been saved; nothing saves one before Phase 9, so the
+attribute has nothing to delete until then.
 Test: `CHGJRN JRNRCV(*GEN)` name generation on the machine with `RCV9999`.
 
 **Deleted receivers in the directory.** `DLTJRNRCV` leaves the journal's

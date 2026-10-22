@@ -232,7 +232,18 @@ fn new_attr(format: &FormatDef, file: ObjectId, mp: MemberParams) -> MbrAttr {
         file,
         last_save: 0,
         last_restore: 0,
+        identity_next: identity_start(format),
     }
+}
+
+/// Where the format's identity column starts, 0 without one.
+fn identity_start(format: &FormatDef) -> i64 {
+    format
+        .format
+        .fields
+        .iter()
+        .find_map(|f| f.identity.as_ref().map(|i| i.start))
+        .unwrap_or(0)
 }
 
 fn create_object(
@@ -310,6 +321,11 @@ pub fn reformat(txn: &mut Txn<'_>, member: ObjectId, format: &FormatDef) -> Resu
     core.attr.null_map_len = format.null_map_len;
     core.attr.path_entries = 0;
     core.attr.path_invalid = false;
+    // A counter already running keeps counting; a new identity column
+    // starts where it says.
+    if core.attr.identity_next == 0 {
+        core.attr.identity_next = identity_start(format);
+    }
     core.save(txn)
 }
 
@@ -519,6 +535,24 @@ impl Member {
         out.extend_from_slice(record);
         out.extend_from_slice(null_map);
         out
+    }
+
+    /// The next value of the format's identity column, taken; `None`
+    /// when the format has no identity column.
+    pub fn next_identity(&mut self, txn: &mut Txn<'_>) -> Result<Option<i64>> {
+        let Some(id) = self
+            .format()
+            .format
+            .fields
+            .iter()
+            .find_map(|f| f.identity.clone())
+        else {
+            return Ok(None);
+        };
+        let v = self.core.attr.identity_next;
+        self.core.attr.identity_next = v.wrapping_add(id.increment);
+        self.core.save(txn)?;
+        Ok(Some(v))
     }
 
     /// The slot at `rrn` of a physical member.

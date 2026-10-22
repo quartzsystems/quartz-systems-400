@@ -162,10 +162,13 @@ source order; the next `FORMAT` section starts the next format.
 | 38 | 50 | text | `TEXT`, CP037 |
 | 88 | 30 | alias | `ALIAS`, CP037 |
 | 118 | 60 | colhdg | `COLHDG`, three CP037 lines of 20 |
-| 178 | 1 | dft_kind | `DFT`: 0 none, 1 `*NULL`, 2 quoted, 3 hexadecimal, 4 numeric |
+| 178 | 1 | dft_kind | `DFT`: 0 none, 1 `*NULL`, 2 quoted, 3 hexadecimal, 4 numeric, 5 an SQL expression evaluated at insert (a special register) |
 | 179 | 1 | dft_len | bytes used in `dft` |
-| 180 | 64 | dft | the default: CP037 text, raw hex bytes or ASCII digits; longer defaults are cut |
-| 244 | 12 | reserved | 0 |
+| 180 | 64 | dft | the default: CP037 text, raw hex bytes, ASCII digits or ASCII SQL text; longer defaults are cut |
+| 244 | 1 | identity | bit 0 an SQL identity column, bit 1 `GENERATED ALWAYS`, bit 2 `CYCLE` |
+| 245 | 4 | id_start | `START WITH`, signed |
+| 249 | 4 | id_incr | `INCREMENT BY`, signed |
+| 253 | 3 | reserved | 0 |
 
 Validity keywords (`CHECK`, `VALUES`, `RANGE`, `COMP`) and `EDTWRD` are
 not kept in the file. `TODO(phase3)`: DSPFFD shows them when kept.
@@ -277,7 +280,8 @@ At offset 0 of the attribute area of a `*MBR`.
 | 72 | 16 | file | `ObjectId` of the owning file |
 | 88 | 8 | last_save | Unix seconds, 0 for never |
 | 96 | 8 | last_restore | Unix seconds, 0 for never |
-| 104 | 24 | reserved2 | 0 |
+| 104 | 8 | identity_next | the next value of the format's identity column, signed; 0 when it has none |
+| 112 | 16 | reserved2 | 0 |
 
 A logical member's based-on physical members follow at offset 128 of
 the attribute area, `base_count` × `ObjectId`, one per format of the
