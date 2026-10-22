@@ -64,17 +64,20 @@ users, 2026-10-22):
 | the authority search, cold | 5.2 µs |
 | a cached decision in a job's session | 0.2 µs |
 
-Step 45 of the QEMU suite (KVM on the development machine):
+Step 45 of the QEMU suite (KVM on the development machine,
+2026-10-22):
 
 | Benchmark | Result |
 |---|---|
-| sign-on from Enter to the first menu | SIGNON_MS |
-| `CHKOBJ` at Command Entry, cold then cached | CHKOBJ_MS |
+| sign-on from Enter to the first menu | 169 ms |
+| `CHKOBJ` at Command Entry, cold then cached | 429 ms, 449 ms |
 
 The sign-on time is the password check (Argon2id at its parameters),
 the job's start and the menu, seen through the console's screen
-polled every 20 ms; the `CHKOBJ` round trips are mostly the serial
-line and the screen.
+polled every 20 ms. The `CHKOBJ` round trips are the serial line, the
+job's line dispatch and the screen polled every 250 ms; the check
+itself is the microseconds above, which is why the cached run is no
+faster.
 
 ## Tests
 
