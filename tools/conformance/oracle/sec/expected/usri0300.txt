@@ -1,0 +1,68 @@
+ 5770SS1 V7R1M0 100423                                    CL Program Dump               S062B175 10/22/26   7:04:51        Page    1
+ Job name  . . . . . . . . :   QZRCSRVS    User name . . . . . . . . :   QSECOFR      Job number  . . . . . . . :   007608
+ Program name  . . . . . . :   USRI0300    Library . . . . . . . . . :   SECORA       Statement . . . . . . . . :   1400
+ Module name . . . . . . . :   USRI0300    Procedure name  . . . . . :   USRI0300
+                                                              Messages
+             Message                               Message                 From                         To
+ Time        ID                  Sev       Type    Text                    Program          Inst        Program          Inst
+ 070451                          00        CMD       1300 - CALL PGM(QSYRU QCLCLCPR         *N          USRI0300         *N
+                                                   SRI)          /* The CA
+                                                   LL command contains par
+                                                   ameters */
+ 070451                          00        CMD       1400 - DMPCLPGM       QCADRV           *N          USRI0300         *N
+                                                             Variables
+ Variable               Type        Length         Value                          Value in Hexadecimal
+                                                    *...+....1....+....2....+     * . . . + . . . . 1 . . . . + . . . . 2 . . . . +
+ &ERR                     *CHAR            8       '        '                     0000000000000000
+ &FMT                     *CHAR            8       'USRI0300'                     E4E2D9C9F0F3F0F0
+ &LEN                     *INT             4        1024                          00000400
+ &RCV                     *CHAR         1024       '   4   4USRA      1261022'    000002F4000002F4E4E2D9C1404040404040F1F2F6F1F0F2F2
+                                     +26           '070410     *ENABLED  ^ Ë¾'    F0F7F0F4F1F000000000005CC5D5C1C2D3C5C44040B01673B9
+                                     +51           'rå^ N                 N*U'    9947B001D500000000004040404040404040FFFFFFFFD55CE4
+                                     +76           'SER     NNNNNNNN       *N'    E2C5D94040404040D5D5D5D5D5D5D5D5404040404040405CD5
+                                     +101          'ONE     *USRPRF   *NONE  '    D6D5C540404040405CE4E2D9D7D9C64040405CD5D6D5C54040
+                                     +126          '   *SYSVAL   *CRTDFT   MA'    4040405CE2E8E2E5C1D34040405CC3D9E3C4C6E3404040D4C1
+                                     +151          'IN      *LIBL     *NONE  '    C9D54040404040405CD3C9C2D340404040405CD5D6D5C54040
+                                     +176          '             *NO         '    404040404040404040404040405CD5D6404040404040404040
+                                     +201          '                         '    40404040404040404040404040404040404040404040404040
+                                     +226          '                       *S'    40404040404040404040404040404040404040404040405CE2
+                                     +251          'YSVAL   *SYSVAL   *SYSVAL'    E8E2E5C1D34040405CE2E8E2E5C1D34040405CE2E8E2E5C1D3
+                                     +276          '             5QDFTJOBD  Q'    4040400000FFFFFFFF0000000CF5D8C4C6E3D1D6C2C44040D8
+                                     +301          'GPL                     U'    C7D7D3404040404040404040404040404040404040404040E4
+                                     +326          'SRA      QUSRSYS   *NOTIF'    E2D9C1404040404040D8E4E2D9E2E8E24040405CD5D6E3C9C6
+                                     +351          'Y         *WRKSTN        '    E84040400000000000005CE6D9D2E2E3D54040404040404040
+                                     +376          '     *WRKSTN   *SYSVAL   '    40404040405CE6D9D2E2E3D54040405CE2E8E2E5C1D3404040
+                                     +401          '*SYSVAL             *SYSV'    5CE2E8E2E5C1D3404040404040404040404040405CE2E8E2E5
+                                     +426          'AL   *SYSVAL      ÚNNNNNN'    C1D34040405CE2E8E2E5C1D3404040FFFFFFFED5D5D5D5D5D5
+                                     +451          'N                        '    D5404040404040404040404040404040404040404040404040
+                                     +476          '     *SYSVAL             '    40404040405CE2E8E2E5C1D340404040404040404040404040
+                                     +501          '*NONE     NNNNNNNNNNNNNNN'    5CD5D6D5C54040404040D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5
+                                     +526          'NNNNNNNNNNNNNNNN         '    D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5D5404040404040404040
+                                     +551          '                        *'    4040404040404040404040404040404040404040404040405C
+                                     +576          'PRIVATE             ,    '    D7D9C9E5C1E3C5404000000000000000000000006B00000000
+                                     +601          '   ¶    NYNNNNNN         '    000002B600000034D5E8D5D5D5D5D5D5404040404040404000
+                                     +626          '  ²    00*SYSVAL         '    0002EA0000000AF0F05CE2E8E2E5C1D3404040000000000000
+                                     +651          '          Y*SYSVAL   1   '    00000000000000000000E85CE2E8E2E5C1D3404040F1000000
+                                     +676          '         *NONE        ^US'    0040404040404040405CD5D6D5C54040404040000004B0E4E2
+                                     +701          'ENU                      '    C5D5E40000000000000200000014002F000000000000000000
+                                     +726          '    Ç ? _ Á   í ë ê  *SYS'    00002F0068006F006D0065002F00550053005200415CE2E8E2
+                                     +751          'VAL                      '    E5C1D340404040404040404040404040404040404040404040
+                                     +776          '                         '    40404040404040404040404040404040404040404040404040
+                                     +801          '                         '    40404040404040404040404040404040404040404040404040
+                                     +826          '                         '    40404040404040404040404040404040404040404040404040
+                                     +851          '                         '    40404040404040404040404040404040404040404040404040
+ 5770SS1 V7R1M0 100423                                    CL Program Dump               S062B175 10/22/26   7:04:51        Page    3
+ Job name  . . . . . . . . :   QZRCSRVS    User name . . . . . . . . :   QSECOFR      Job number  . . . . . . . :   007608
+ Program name  . . . . . . :   USRI0300    Library . . . . . . . . . :   SECORA       Statement . . . . . . . . :   1400
+ Module name . . . . . . . :   USRI0300    Procedure name  . . . . . :   USRI0300
+                                                             Variables
+ Variable               Type        Length         Value                          Value in Hexadecimal
+                                                    *...+....1....+....2....+     * . . . + . . . . 1 . . . . + . . . . 2 . . . . +
+                                     +876          '                         '    40404040404040404040404040404040404040404040404040
+                                     +901          '                         '    40404040404040404040404040404040404040404040404040
+                                     +926          '                         '    40404040404040404040404040404040404040404040404040
+                                     +951          '                         '    40404040404040404040404040404040404040404040404040
+                                     +976          '                         '    40404040404040404040404040404040404040404040404040
+                                     +1001         '                        '     404040404040404040404040404040404040404040404040
+ &USR                     *CHAR           10       'USRA      '                   E4E2D9C1404040404040
+                                          * * * * *   E N D   O F   D U M P   * * * * *

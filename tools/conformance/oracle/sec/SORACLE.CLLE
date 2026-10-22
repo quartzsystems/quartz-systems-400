@@ -1,0 +1,13 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the */
+/* root directory of this project.                                       */
+/* SORACLE for a box without an RPG compiler: one observation line,     */
+/* "tag: text", as a message on queue SECORA/ORACLE (CRTMSGQ it first,  */
+/* *PUBLIC *CHANGE); DSPMSG OUTPUT(*PRINT) gathers the lines.           */
+PGM PARM(&TAG &LINE)
+  DCL &TAG *CHAR 10
+  DCL &LINE *CHAR 80
+  DCL &MSG *CHAR 100
+  CHGVAR &MSG (&TAG *TCAT ': ' *CAT &LINE)
+  SNDMSG MSG(&MSG) TOMSGQ(SECORA/ORACLE)
+ENDPGM

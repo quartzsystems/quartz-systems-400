@@ -5,10 +5,13 @@
 /* reduced to *USE while its group GRPA holds *ALL. Does the owner's     */
 /* entry decide, or do the groups add to it?                             */
 PGM
+  DCL &LINE *CHAR 80
   CHKOBJ OBJ(SECORA/F3) OBJTYPE(*FILE) AUT(*CHANGE)
   MONMSG CPF0000 EXEC(DO)
-    CALL SECORA/SORACLE PARM('Q3' 'owner reduced, group *ALL: refused')
+    CHGVAR &LINE 'owner reduced, group *ALL: refused'
+    CALL SECORA/SORACLE PARM('Q3' &LINE)
     RETURN
   ENDDO
-  CALL SECORA/SORACLE PARM('Q3' 'owner reduced, group *ALL: allowed')
+  CHGVAR &LINE 'owner reduced, group *ALL: allowed'
+  CALL SECORA/SORACLE PARM('Q3' &LINE)
 ENDPGM

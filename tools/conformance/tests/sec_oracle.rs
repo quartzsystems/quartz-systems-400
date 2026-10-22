@@ -22,7 +22,7 @@ fn ours() -> Vec<(&'static str, &'static str)> {
         ("Q4", "CHGPWD rule failure: CPF4AA7"),
         ("Q5", "CRTUSRPRF without *SECADM: CPF2222"),
         ("Q6", "new profile owner QSECOFR"),
-        ("Q7", "CHGJOB RUNPTY(10) with PTYLMT(50): 50"),
+        ("Q7", "CHGJOB RUNPTY(10) with PTYLMT(5): 50"),
         ("Q9", "ADDPFM with *OBJALTER only: refused"),
         ("Q11", "QSYCHGPR: absent"),
         ("Q12", "DLTUSRPRF owner: CPF2204"),

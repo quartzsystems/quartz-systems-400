@@ -1,0 +1,16 @@
+Q1: QSYSOPR *JOBCTL *SAVSYS
+Q1: QPGMR *JOBCTL *SAVSYS
+Q1: QSRV *JOBCTL *SERVICE
+Q1: QTCP *JOBCTL
+Q6: new profile owner QSECOFR
+Q11: QSYCHGPR: present
+Q12: DLTUSRPRF owner: CPF2215
+Q12: ADDAUTLE duplicate: CPF2282
+Q12: RMVAUTLE absent: CPF2285
+Q2: adopt through owner's group: refused
+Q4: CHGPWD rule failure: CPF22C2
+Q5: CRTUSRPRF without *SECADM: CPF2292
+Q7: CHGJOB RUNPTY(10) with PTYLMT(5): CPF1337
+Q12: GRTOBJAUT beyond own: CPF2227
+Q3: owner reduced, group *ALL: refused
+Q9: ADDPFM with *OBJALTER only: allowed

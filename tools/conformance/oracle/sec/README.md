@@ -40,9 +40,24 @@ To capture, signed on as `QSECOFR` with `*ALLOBJ` and `*SECADM`:
 | 4 | `ASUSRA` | the message `CHGPWD` sends for a password breaking `QPWDMINLEN` |
 | 5 | `ASUSRA` | the message `CRTUSRPRF` sends without `*SECADM` |
 | 6 | `SECORACLE` | the owner and `*PUBLIC` of a profile just created |
-| 7 | `ASUSRA` | `RUNPTY` after `CHGJOB RUNPTY(10)` in a job whose user has `PTYLMT(50)` |
+| 7 | `ASUSRA` | `RUNPTY` after `CHGJOB RUNPTY(10)` in a job whose user has `PTYLMT(5)` |
 | 9 | `ASUSRA` | `ADDPFM` on `F` as a user with `*OBJOPR *OBJALTER` and no `*OBJMGT` |
 | 11 | `SECORACLE` | whether `QSYS/QSYCHGPR` exists |
 | 12 | both | the identifiers of `DLTUSRPRF` of an owner, `GRTOBJAUT` beyond one's own, `ADDAUTLE` of a user already on the list, `RMVAUTLE` of one who is not |
 
 Question 8 (level 20 to 30) needs two IPLs and is not scripted.
+
+## Captured 2026-10-22 on IBM i 7.1 (V7R1M0, QSECURITY 40, QPWDLVL 0)
+
+The box had no RPG compiler, so `SORACLE.CLLE` stood in for
+`SORACLE.RPGLE`: the lines went to message queue `SECORA/ORACLE` and
+`DSPMSG OUTPUT(*PRINT)` gathered them into `expected/sec-oracle.txt`.
+`expected/usri0300.txt` is the `DMPCLPGM` of `USRI0300`,
+`expected/usrprf.csv` the `DSPUSRPRF USRPRF(*ALL) TYPE(*BASIC)` outfile
+with its column names on the first line. Question 4 goes through
+`QSYCHGPW`, since `CHGPWD` has no parameters; question 7 uses
+`PTYLMT(5)`, the field's range being 1 to 9. Question 8 was not run.
+Answers that differ from this implementation's: QTCP's special
+authorities, the identifiers of questions 4, 5 and 12, `CHGJOB RUNPTY`
+below the limit is refused (`CPF1337`), `ADDPFM` with `*OBJALTER` is
+allowed, and `QSYCHGPR` exists.

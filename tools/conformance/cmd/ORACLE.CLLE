@@ -7,9 +7,8 @@
 /* file named on the call (one string per record, as strings.txt has    */
 /* them); each outcome is sent to message queue ORACLE in the same      */
 /* library: OK and the command as QCMDCHK accepted it, or the escape    */
-/* message identifier and the first diagnostic (QCMDCHK's escape is    */
-/* CPF0006; the CPDnnnn diagnostic says why). README.md says how to    */
-/* gather the queue into oracle.txt.                                    */
+/* message identifier. README.md says how to gather the queue into     */
+/* expected.txt.                                                        */
              PGM        PARM(&LIB)
              DCL        VAR(&LIB) TYPE(*CHAR) LEN(10)
              DCL        VAR(&CMD) TYPE(*CHAR) LEN(512)
@@ -17,28 +16,29 @@
              DCL        VAR(&MSGID) TYPE(*CHAR) LEN(7)
              DCL        VAR(&DIAG) TYPE(*CHAR) LEN(7)
              DCL        VAR(&N) TYPE(*DEC) LEN(5 0) VALUE(0)
+             DCL        VAR(&NC) TYPE(*CHAR) LEN(5)
+             DCL        VAR(&MSG) TYPE(*CHAR) LEN(512)
              DCLF       FILE(QCMDSRC) RCDFMT(QCMDSRC)
              OVRDBF     FILE(QCMDSRC) TOFILE(&LIB/QCMDSRC) MBR(STRINGS)
              CRTMSGQ    MSGQ(&LIB/ORACLE)
              MONMSG     MSGID(CPF2112) EXEC(CLRMSGQ MSGQ(&LIB/ORACLE))
- NEXT:       RCVF
+ NEXT:       RMVMSG     CLEAR(*ALL)
+             RCVF
              MONMSG     MSGID(CPF0864) EXEC(GOTO DONE)
              CHGVAR     VAR(&N) VALUE(&N + 1)
+             CHGVAR     VAR(&NC) VALUE(&N)
              CHGVAR     VAR(&CMD) VALUE(&SRCDTA)
              CALL       PGM(QCMDCHK) PARM(&CMD &LEN)
              MONMSG     MSGID(CPF0000 CPD0000) EXEC(DO)
                RCVMSG     MSGTYPE(*EXCP) MSGID(&MSGID)
                CHGVAR     VAR(&DIAG) VALUE(' ')
                RCVMSG     MSGTYPE(*DIAG) MSGID(&DIAG)
-               MONMSG     MSGID(CPF0000)
-               SNDMSG     MSG(%CHAR(&N) *BCAT &MSGID *BCAT &DIAG) +
-                            TOMSGQ(&LIB/ORACLE)
-               RMVMSG     CLEAR(*ALL)
+               SNDMSG     MSG(&NC *BCAT &MSGID *BCAT &DIAG) TOMSGQ(&LIB/ORACLE)
                GOTO       NEXT
              ENDDO
-             SNDMSG     MSG(%CHAR(&N) *BCAT 'OK' *BCAT %TRIM(&CMD)) +
-                          TOMSGQ(&LIB/ORACLE)
+             CHGVAR     VAR(&MSG) VALUE(&NC *BCAT 'OK' *BCAT &CMD)
+             SNDMSG     MSG(&MSG) TOMSGQ(&LIB/ORACLE)
              GOTO       NEXT
  DONE:       DLTOVR     FILE(QCMDSRC)
-             SNDPGMMSG  MSG(%CHAR(&N) *BCAT 'strings checked') TOPGMQ(*EXT)
+             SNDPGMMSG  MSG(&NC *BCAT 'strings checked') TOPGMQ(*EXT)
              ENDPGM

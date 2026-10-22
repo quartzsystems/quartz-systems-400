@@ -361,6 +361,26 @@ fn key(args: &[String]) -> String {
     }
 }
 
+/// How many items a `SELECT` list has: commas at depth 0 before `FROM`.
+/// `CREATE TABLE AS` needs a column list where an item has no name.
+fn select_items(query: &str) -> usize {
+    let mut depth = 0usize;
+    let mut items = 1;
+    let bytes = query.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        match bytes[i] {
+            b'(' => depth += 1,
+            b')' => depth = depth.saturating_sub(1),
+            b',' if depth == 0 => items += 1,
+            b' ' if depth == 0 && query[i..].to_ascii_uppercase().starts_with(" FROM ") => break,
+            _ => {}
+        }
+        i += 1;
+    }
+    items
+}
+
 /// `QRESULTS.SQL`: each fixed query materialized as `QSTEST/QRESnn`.
 pub fn generate_sql(kit: &Kit) -> Result<String, String> {
     let mut out = String::new();
@@ -375,8 +395,10 @@ pub fn generate_sql(kit: &Kit) -> Result<String, String> {
         let body = upper
             .rfind(" ORDER BY ")
             .map_or(q.as_str(), |p| q[..p].trim());
+        let cols: Vec<String> = (1..=select_items(body)).map(|n| format!("C{n}")).collect();
+        let cols = cols.join(", ");
         let _ = writeln!(out, "DROP TABLE {table};");
-        let _ = writeln!(out, "CREATE TABLE {table} AS ({body}) WITH NO DATA;");
+        let _ = writeln!(out, "CREATE TABLE {table} ({cols}) AS ({body}) WITH NO DATA;");
         let _ = writeln!(out, "INSERT INTO {table} {q};");
     }
     Ok(out)
@@ -406,6 +428,7 @@ mod tests {
         assert!(rpg.contains("%nullind(SINCE)"));
         assert!(rpg.contains("logline("));
         let sqls = generate_sql(&kit).unwrap();
-        assert!(sqls.contains("CREATE TABLE QSTEST/QRES01 AS ("));
+        assert!(sqls.contains("CREATE TABLE QSTEST/QRES01 (C1, C2, C3, C4, C5, C6, C7) AS ("));
+        assert_eq!(select_items("SELECT A, (SELECT B, C FROM T), SUM(D) FROM U"), 3);
     }
 }

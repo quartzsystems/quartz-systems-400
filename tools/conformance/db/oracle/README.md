@@ -31,3 +31,19 @@ names what is missing.
 script. It is a starting point: the machine's compiler may want tweaks,
 and the status codes it logs are the truth the script's `=>` column is
 then corrected to.
+
+## Captured 2026-10-22 on IBM i 7.1 (V7R1M0)
+
+The box had no RPG compiler, so `RLATEST` did not run: `rla.csv`,
+`dspjrn.csv` (no record entries) and the files the script rewrites
+(`PRODUCT`, `ORDBYCUS`, `ORDJOIN`, `PRDBYDESC`) are not in `expected/`.
+7.1 has no `ADDCOLNAM`, so the outfiles' column names come from
+`QHEADERS.SQL` (`*.hdr`, position and name) and were put on the first
+line by hand; `DSPFFD FILE(*ALL)` lists files alphabetically and
+includes the `QRESnn` tables and the outfiles themselves, so `ffd.csv`
+and `lvlid.csv` were cut to the kit's files and put in the kit's order.
+What differs from this implementation: a `TIMFMT(*USA)` time field
+keeps its seconds on the machine (`EVENTS`, `Q08`), `CPYTOIMPF` writes
+a hex (`H`) field's bytes unconverted (`TYPES`), `DSPFFD` reports 0
+digits for a character field (`WHFLDD`), and the format level
+identifiers (`RFID`) are IBM's own hash.

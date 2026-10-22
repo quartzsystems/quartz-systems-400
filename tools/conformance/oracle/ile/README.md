@@ -33,3 +33,6 @@ that differ; without the file the test reports itself skipped.
 
 `QS400_UPDATE_ORACLE_ILE=1` is not a thing: the expected file comes
 from the machine only.
+
+Not captured yet: the machine at hand (IBM i 7.1) has no RPG compiler
+(no `CRTBNDRPG` in any library), and every program here is RPG.

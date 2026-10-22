@@ -5,10 +5,13 @@
 /* *CHANGE to SECORA/F while OWNA itself has none: does adoption bring   */
 /* the group's authority? Called by USRA, who has no authority to F.     */
 PGM
+  DCL &LINE *CHAR 80
   CHKOBJ OBJ(SECORA/F) OBJTYPE(*FILE) AUT(*CHANGE)
   MONMSG CPF0000 EXEC(DO)
-    CALL SORACLE PARM('Q2' 'adopt through owner''s group: refused')
+    CHGVAR &LINE 'adopt through owner''s group: refused'
+    CALL SORACLE PARM('Q2' &LINE)
     RETURN
   ENDDO
-  CALL SORACLE PARM('Q2' 'adopt through owner''s group: allowed')
+  CHGVAR &LINE 'adopt through owner''s group: allowed'
+  CALL SORACLE PARM('Q2' &LINE)
 ENDPGM
