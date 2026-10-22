@@ -6,8 +6,8 @@
 //! authorities (programs and tools look for them) and Quartz's text;
 //! and the first IPL with security: profiles created, the existing
 //! objects re-owned per IBM's conventions, the profile indexes built.
-//! Values not settled against a machine are listed in
-//! `docs/SEC_OPEN_QUESTIONS.md`.
+//! The attributes are an IBM i 7.1's (`tests/shipped_csv.rs` checks
+//! them against the capture).
 
 use store::obj::header::{Authority, text};
 use store::obj::{ObjectId, auth, ops::read_header, types};
@@ -15,12 +15,13 @@ use store::txn::Txn;
 
 use crate::profile::index;
 use crate::profile::objects;
-use crate::profile::payload::UsrPrf;
+use crate::profile::payload::{LmtCpb, Tri, UsrPrf};
 use crate::profile::spcaut::{SpecialAuth as S, UserClass as C};
 use crate::rec::text_of;
 use crate::{Result, password};
 
-/// One shipped profile.
+/// One shipped profile: what `DSPUSRPRF` of an IBM i 7.1 shows for it
+/// (`tools/conformance/oracle/sec/expected/usrprf.csv`), the text ours.
 #[derive(Debug, Clone, Copy)]
 pub struct Shipped {
     /// Name.
@@ -31,6 +32,40 @@ pub struct Shipped {
     pub spcaut: S,
     /// Text, Quartz-written.
     pub text: &'static str,
+    /// `PTYLMT`.
+    pub ptylmt: u8,
+    /// `JOBD`: name and library.
+    pub jobd: (&'static str, &'static str),
+    /// `MSGQ`: name and library; `None` is the profile's own in `QUSRSYS`.
+    pub msgq: Option<(&'static str, &'static str)>,
+    /// `INLPGM`: name and library.
+    pub inlpgm: (&'static str, &'static str),
+    /// `INLMNU`: name and library.
+    pub inlmnu: (&'static str, &'static str),
+    /// `CURLIB`.
+    pub curlib: &'static str,
+    /// `DLVRY`.
+    pub dlvry: &'static str,
+    /// `SEV`.
+    pub sev: u8,
+    /// `SPCENV`.
+    pub spcenv: &'static str,
+    /// `ATNPGM`: name and library.
+    pub atnpgm: (&'static str, &'static str),
+    /// `ASTLVL`.
+    pub astlvl: &'static str,
+    /// `LMTCPB`.
+    pub lmtcpb: LmtCpb,
+    /// `STATUS(*DISABLED)`.
+    pub disabled: bool,
+    /// `DSPSGNINF(*SYSVAL) LMTDEVSSN(*SYSVAL)`; `false` is `*NO` for both.
+    pub signon_info: bool,
+    /// `ACGCDE`.
+    pub acgcde: &'static str,
+    /// `OUTQ`: name and library.
+    pub outq: (&'static str, &'static str),
+    /// `PWDEXPITV(*NOMAX)` rather than `*SYSVAL`.
+    pub pwdexpitv_nomax: bool,
 }
 
 const fn p(name: &'static str, class: C, spcaut: S, text: &'static str) -> Shipped {
@@ -39,97 +74,210 @@ const fn p(name: &'static str, class: C, spcaut: S, text: &'static str) -> Shipp
         class,
         spcaut,
         text,
+        ptylmt: 0,
+        jobd: ("QDFTJOBD", "QGPL"),
+        msgq: None,
+        inlpgm: ("*NONE", ""),
+        inlmnu: ("MAIN", "*LIBL"),
+        curlib: "*CRTDFT",
+        dlvry: "*NOTIFY",
+        sev: 0,
+        spcenv: "*SYSVAL",
+        atnpgm: ("*NONE", ""),
+        astlvl: "*SYSVAL",
+        lmtcpb: LmtCpb::No,
+        disabled: false,
+        signon_info: true,
+        acgcde: "*SYS",
+        outq: ("*WRKSTN", ""),
+        pwdexpitv_nomax: false,
+    }
+}
+
+impl Shipped {
+    const fn ptylmt(mut self, n: u8) -> Self {
+        self.ptylmt = n;
+        self
+    }
+    const fn jobd(mut self, name: &'static str, lib: &'static str) -> Self {
+        self.jobd = (name, lib);
+        self
+    }
+    const fn msgq(mut self, name: &'static str, lib: &'static str) -> Self {
+        self.msgq = Some((name, lib));
+        self
+    }
+    const fn inlpgm(mut self, name: &'static str, lib: &'static str) -> Self {
+        self.inlpgm = (name, lib);
+        self
+    }
+    const fn inlmnu(mut self, name: &'static str, lib: &'static str) -> Self {
+        self.inlmnu = (name, lib);
+        self
+    }
+    const fn curlib(mut self, lib: &'static str) -> Self {
+        self.curlib = lib;
+        self
+    }
+    const fn dlvry(mut self, d: &'static str) -> Self {
+        self.dlvry = d;
+        self
+    }
+    const fn sev(mut self, n: u8) -> Self {
+        self.sev = n;
+        self
+    }
+    const fn spcenv(mut self, e: &'static str) -> Self {
+        self.spcenv = e;
+        self
+    }
+    const fn atnpgm(mut self, name: &'static str, lib: &'static str) -> Self {
+        self.atnpgm = (name, lib);
+        self
+    }
+    const fn astlvl(mut self, a: &'static str) -> Self {
+        self.astlvl = a;
+        self
+    }
+    const fn lmtcpb(mut self, l: LmtCpb) -> Self {
+        self.lmtcpb = l;
+        self
+    }
+    const fn disabled(mut self) -> Self {
+        self.disabled = true;
+        self
+    }
+    const fn no_signon_info(mut self) -> Self {
+        self.signon_info = false;
+        self
+    }
+    const fn acgcde(mut self, a: &'static str) -> Self {
+        self.acgcde = a;
+        self
+    }
+    const fn outq(mut self, name: &'static str, lib: &'static str) -> Self {
+        self.outq = (name, lib);
+        self
+    }
+    const fn pwdexpitv_nomax(mut self) -> Self {
+        self.pwdexpitv_nomax = true;
+        self
     }
 }
 
 const JS: S = S(S::JOBCTL.0 | S::SAVSYS.0);
-const INSTALL: S = S(S::ALLOBJ.0 | S::JOBCTL.0 | S::SAVSYS.0 | S::SECADM.0);
+const INSTALL: S = S(S::ALLOBJ.0 | S::IOSYSCFG.0 | S::JOBCTL.0 | S::SAVSYS.0 | S::SECADM.0);
+const SERVICE: S = S(S::JOBCTL.0 | S::SERVICE.0);
+const AGENT: S = S(S::IOSYSCFG.0 | S::JOBCTL.0 | S::SERVICE.0);
+const PM: S = S(S::IOSYSCFG.0 | S::JOBCTL.0);
 
-/// Every shipped profile. Only `QSECOFR` has a password.
+/// Every shipped profile, as IBM i 7.1 ships them (`QSOC` and `QUMB`
+/// are older releases'). Only `QSECOFR` has a password.
 pub static PROFILES: &[Shipped] = &[
-    p(
-        "QSYS",
-        C::SecOfr,
-        S::ALL,
-        "Owner of the operating system's objects",
-    ),
-    p("QSECOFR", C::SecOfr, S::ALL, "Security officer"),
-    p("QSYSOPR", C::SysOpr, JS, "System operator"),
-    p("QPGMR", C::Pgmr, JS, "Programmer"),
-    p("QUSER", C::User, S::NONE, "Workstation user"),
-    p(
-        "QSRV",
-        C::Pgmr,
-        S(JS.0 | S::SERVICE.0),
-        "Service representative",
-    ),
-    p("QSRVBAS", C::User, S::NONE, "Basic service representative"),
-    p(
-        "QDFTOWN",
-        C::User,
-        S::NONE,
-        "Owner of objects whose owner was deleted",
-    ),
+    p("QSYS", C::SecOfr, S::ALL, "Owner of the operating system's objects"),
+    p("QSECOFR", C::SecOfr, S::ALL, "Security officer").atnpgm("*SYSVAL", ""),
+    p("QSYSOPR", C::SysOpr, JS, "System operator")
+        .msgq("QSYSOPR", "QSYS")
+        .inlmnu("SYSTEM", "*LIBL")
+        .dlvry("*BREAK")
+        .sev(40)
+        .atnpgm("*SYSVAL", ""),
+    p("QPGMR", C::Pgmr, JS, "Programmer")
+        .ptylmt(3)
+        .atnpgm("*SYSVAL", ""),
+    p("QUSER", C::User, S::NONE, "Workstation user")
+        .ptylmt(3)
+        .atnpgm("*SYSVAL", ""),
+    p("QSRV", C::Pgmr, SERVICE, "Service representative")
+        .atnpgm("QSCATTN", "QSYS")
+        .astlvl("*INTERMED"),
+    p("QSRVBAS", C::Pgmr, S::JOBCTL, "Basic service representative")
+        .atnpgm("QSCATTN", "QSYS")
+        .astlvl("*INTERMED"),
+    p("QDFTOWN", C::User, S::NONE, "Owner of objects whose owner was deleted").ptylmt(3),
     p("QSPL", C::User, S::NONE, "Spooling"),
     p("QSPLJOB", C::User, S::NONE, "Spooling jobs"),
-    p("QTCP", C::User, S(S::JOBCTL.0 | S::IOSYSCFG.0), "TCP/IP"),
+    p("QTCP", C::SysOpr, S::JOBCTL, "TCP/IP")
+        .curlib("QTCP")
+        .spcenv("*NONE")
+        .dlvry("*HOLD"),
     p("QDBSHR", C::User, S::NONE, "Database sharing"),
     p("QDBSHRDO", C::User, S::NONE, "Database sharing, data owner"),
     p("QDOC", C::User, S::NONE, "Documents"),
-    p(
-        "QLPAUTO",
-        C::User,
-        INSTALL,
-        "Licensed program automatic install",
-    ),
-    p("QLPINSTALL", C::User, INSTALL, "Licensed program install"),
+    p("QLPAUTO", C::SysOpr, INSTALL, "Licensed program automatic install")
+        .inlpgm("QLPINATO", "QSYS")
+        .msgq("QSYSOPR", "QSYS")
+        .inlmnu("*SIGNOFF", "")
+        .spcenv("*NONE")
+        .dlvry("*HOLD")
+        .sev(99),
+    p("QLPINSTALL", C::SysOpr, INSTALL, "Licensed program install")
+        .spcenv("*NONE")
+        .dlvry("*HOLD"),
+    p("QANZAGENT", C::SysOpr, S::NONE, "Trace analyzer agent server").no_signon_info(),
     p("QAUTPROF", C::User, S::NONE, "Authority profile"),
     p("QBRMS", C::User, S::NONE, "Backup and recovery"),
-    p("QCLUMGT", C::User, S::NONE, "Cluster management"),
-    p("QCLUSTER", C::User, S::NONE, "Clustering"),
-    p("QCOLSRV", C::User, S::JOBCTL, "Collection services"),
-    p("QDIRSRV", C::User, S::NONE, "Directory services"),
+    p("QCLUMGT", C::User, S::NONE, "Cluster management")
+        .spcenv("*NONE")
+        .disabled(),
+    p("QCLUSTER", C::User, S::IOSYSCFG, "Clustering").spcenv("*NONE"),
+    p("QCOLSRV", C::User, S::NONE, "Collection services"),
+    p("QDIRSRV", C::User, S::NONE, "Directory services")
+        .jobd("QBATCH", "QGPL")
+        .spcenv("*NONE")
+        .lmtcpb(LmtCpb::Yes)
+        .dlvry("*HOLD")
+        .no_signon_info(),
     p("QDLFM", C::User, S::NONE, "Data link file manager"),
-    p(
-        "QDSNX",
-        C::User,
-        S::NONE,
-        "Distributed systems node executive",
-    ),
-    p("QEJBSVR", C::User, S::NONE, "Application server"),
-    p("QFNC", C::User, S::NONE, "Finance"),
+    p("QDSNX", C::User, S::NONE, "Distributed systems node executive").ptylmt(3),
+    p("QEJB", C::User, S::NONE, "Enterprise beans"),
+    p("QEJBSVR", C::User, S::NONE, "Application server")
+        .spcenv("*NONE")
+        .no_signon_info(),
+    p("QFNC", C::User, S::NONE, "Finance").ptylmt(3),
     p("QGATE", C::User, S::NONE, "Gateway"),
+    p("QIBMHELP", C::SysOpr, S::NONE, "Online help server").no_signon_info(),
     p("QIPP", C::User, S::NONE, "Internet printing"),
-    p("QMGTC", C::User, S::NONE, "Management central"),
+    p("QLWISVR", C::User, S::NONE, "Integrated application servers").no_signon_info(),
+    p("QMGTC", C::User, S::NONE, "Management central")
+        .jobd("QYPSJOBD", "QSYS")
+        .spcenv("*NONE")
+        .no_signon_info(),
     p("QMSF", C::User, S::NONE, "Mail server framework"),
-    p("QNETSPLF", C::User, S::NONE, "Network spooled files"),
-    p(
-        "QNFSANON",
-        C::User,
-        S::NONE,
-        "Network file system anonymous user",
-    ),
-    p("QNTP", C::User, S::NONE, "Network time"),
-    p("QPEX", C::User, S::JOBCTL, "Performance explorer"),
-    p("QPM400", C::User, S::NONE, "Performance management"),
-    p("QRJE", C::User, S::NONE, "Remote job entry"),
-    p("QSNADS", C::User, S::JOBCTL, "SNA distribution services"),
+    p("QNETSPLF", C::User, S::NONE, "Network spooled files")
+        .spcenv("*NONE")
+        .dlvry("*HOLD"),
+    p("QNFSANON", C::User, S::NONE, "Network file system anonymous user"),
+    p("QNTP", C::User, S::NONE, "Network time")
+        .ptylmt(1)
+        .jobd("QTOTNTP", "QSYS"),
+    p("QPEX", C::User, S::NONE, "Performance explorer"),
+    p("QPM400", C::User, PM, "Performance management"),
+    p("QRJE", C::Pgmr, S::JOBCTL, "Remote job entry"),
+    p("QSNADS", C::User, S::NONE, "SNA distribution services"),
     p("QSOC", C::User, S::NONE, "Communications"),
-    p("QSRVAGT", C::User, S::NONE, "Service agent"),
-    p("QTCM", C::User, S::NONE, "Cluster resource services"),
+    p("QSRVAGT", C::SysOpr, AGENT, "Service agent")
+        .outq("QS9SRVAGT", "QSRVAGT")
+        .spcenv("*NONE")
+        .no_signon_info(),
+    p("QTCM", C::User, S::NONE, "Cluster resource services")
+        .spcenv("*NONE")
+        .disabled(),
     p("QTFTP", C::User, S::NONE, "Trivial file transfer"),
-    p("QTMHHTP1", C::User, S::NONE, "Web server, CGI jobs"),
+    p("QTMHHTP1", C::User, S::NONE, "Web server, CGI jobs").msgq("QTMHHTTP", "QUSRSYS"),
     p("QTMHHTTP", C::User, S::NONE, "Web server"),
-    p("QTMPLPD", C::User, S::NONE, "Line printer daemon"),
+    p("QTMPLPD", C::User, S::NONE, "Line printer daemon")
+        .ptylmt(3)
+        .acgcde("")
+        .msgq("QTMPLPD", "QTCP")
+        .atnpgm("*SYSVAL", "")
+        .pwdexpitv_nomax(),
     p("QTSTRQS", C::User, S::NONE, "Test request"),
     p("QUMB", C::User, S::NONE, "Ultimedia"),
+    p("QWEBADMIN", C::User, S::NONE, "Web administration").no_signon_info(),
+    p("QWSERVICE", C::User, S::NONE, "Integrated web services").no_signon_info(),
     p("QYCMCIMOM", C::User, S::NONE, "CIM object manager"),
-    p(
-        "QYPSJSVR",
-        C::User,
-        S::NONE,
-        "Management central Java server",
-    ),
+    p("QYPSJSVR", C::User, S::NONE, "Management central Java server"),
 ];
 
 /// The shipped profile `name`, if it is one.
@@ -165,15 +313,34 @@ pub struct Installed {
 #[must_use]
 pub fn profile_of(s: &Shipped, qsecurity: u8, pwdlvl: u8, now: u64) -> UsrPrf {
     let mut u = UsrPrf::new(s.name, qsecurity);
+    let pair = |(n, l): (&str, &str)| (n.to_string(), l.to_string());
     u.usrcls = s.class;
     u.spcaut = s.spcaut;
     u.text = s.text.into();
     u.created = now;
     u.changed = now;
-    u.ptylmt = 0;
-    u.jobd = ("QDFTJOBD".into(), "QGPL".into());
-    u.acgcde = "*SYS".into();
-    u.atnpgm = ("*NONE".into(), String::new());
+    u.ptylmt = s.ptylmt;
+    u.jobd = pair(s.jobd);
+    u.msgq = s.msgq.map_or_else(|| (s.name.to_string(), "QUSRSYS".to_string()), pair);
+    u.inlpgm = pair(s.inlpgm);
+    u.inlmnu = pair(s.inlmnu);
+    u.curlib = s.curlib.into();
+    u.dlvry = s.dlvry.into();
+    u.sev = s.sev;
+    u.spcenv = s.spcenv.into();
+    u.atnpgm = pair(s.atnpgm);
+    u.astlvl = s.astlvl.into();
+    u.lmtcpb = s.lmtcpb;
+    u.disabled = s.disabled;
+    if !s.signon_info {
+        u.dspsgninf = Tri::No;
+        u.lmtdevssn = Tri::No;
+    }
+    u.acgcde = s.acgcde.into();
+    u.outq = pair(s.outq);
+    if s.pwdexpitv_nomax {
+        u.pwdexpitv = crate::profile::payload::NOMAX;
+    }
     u.locale = "*NONE".into();
     u.pwdchgblk = crate::profile::payload::NOMAX;
     if s.name == "QSECOFR" {
