@@ -344,8 +344,11 @@ cargo run -p build -- test                          # the disk suite with steps 
   another job's write.
 - The console's `cpyfrmimpf` and `cpytoimpf` read and write UTF-8
   buffers; `STMFCODPAG` is not a parameter.
-- `tools/conformance/db/expected/` is empty until the kit has run on a
-  machine; the comparison is a skip, not a pass, until then.
+- `tools/conformance/db/expected/` holds the 2026-10-22 capture from
+  IBM i 7.1, made without an RPG compiler: the record-level script, the
+  journal entries and the files the script rewrites are still missing
+  and skipped. The format level identifiers are the machine's own hash
+  and are reported as a note, not compared.
 
 ## Acceptance evidence
 
