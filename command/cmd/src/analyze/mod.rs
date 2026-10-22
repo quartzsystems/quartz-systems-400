@@ -254,14 +254,22 @@ pub fn analyze_tokens(env: &mut Env<'_>, toks: &Tokens) -> Result<Resolved> {
     if !diags.is_empty() {
         return Err(CmdError::analysis(&name, diags));
     }
+    // `?CMD` or a selective prompt: what is missing comes from the
+    // display, so required parameters and dependencies wait.
+    let prompting = toks.prompt
+        || toks
+            .toks
+            .iter()
+            .any(|t| matches!(t, Tok::Kw { pfx: Some(_), .. }));
     let mut ctx = bind::Ctx {
         env,
         def: &def,
         diags: Vec::new(),
+        prompting,
     };
     let parms = ctx.bind_all(&toks.toks);
     let mut diags = ctx.diags;
-    if diags.is_empty() {
+    if diags.is_empty() && !prompting {
         dep::check(&def, &parms, &mut diags);
     }
     if !diags.is_empty() {
@@ -285,6 +293,7 @@ pub fn defaults(env: &mut Env<'_>, def: &CmdDef) -> Vec<Bound> {
         env,
         def,
         diags: Vec::new(),
+        prompting: true,
     };
     ctx.bind_all(&[])
 }

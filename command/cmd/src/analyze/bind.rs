@@ -20,6 +20,9 @@ pub(super) struct Ctx<'e, 'a> {
     pub def: &'e CmdDef,
     /// What went wrong.
     pub diags: Vec<Diag>,
+    /// The command is about to be prompted: a required parameter may
+    /// still be missing, the display will ask for it.
+    pub prompting: bool,
 }
 
 impl Ctx<'_, '_> {
@@ -100,7 +103,7 @@ impl Ctx<'_, '_> {
             let value = if specified {
                 self.bind_parm(parm, &parm.kwd, &args, false)
             } else {
-                if parm.required() && parm.constant.is_none() {
+                if parm.required() && parm.constant.is_none() && !self.prompting {
                     self.bad("CPD0015", &parm.kwd, format!("{} is required", parm.kwd));
                 }
                 self.default_of(parm, &parm.kwd)
