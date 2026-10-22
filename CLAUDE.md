@@ -25,7 +25,12 @@ security: user profiles and passwords (`sec`), the authority model with private
 authorities, authorization lists and IBM's search, enforced by a guard inside the
 store, adopted authority, `QSECURITY` 40 and 50 domain and state checks, the audit
 journal `QAUDJRN`, the security system values, a real console sign-on with the
-interim `MAIN` menu, the security APIs and the console's security commands. Code
+interim `MAIN` menu, the security APIs and the console's security commands. Phase 7 added
+commands: `*CMD` objects and the definition compiler, the one command analyzer
+behind every line (`cmd`), the prompter, the 343 shipped definitions and the
+inventory of where each runs (`sys-cpps`), the ILE CL compiler to the IR (`cl`),
+the service's and the job's processing programs, Command Entry as `QCMD`,
+`QCMDEXC`/`QCMDCHK`/`QCAPCMD`, `QSTRUP` in CL, the analyzer and CL kits. Code
 waiting for a later phase is marked `MIGRATE(phaseN)` or `TODO(phaseN)`.
 
 ## Ground rules
@@ -198,6 +203,20 @@ security/     users, authorities, auditing
                 writer and QAUDENDACN; sysval.rs; level.rs; signon.rs; api.rs the APIs'
                 questions; src/cmd/ the commands as library functions (usrprf, object,
                 dltusrprf, audit); required.toml, exempt.toml; tests/
+command/      commands and CL
+  cmd/          command definitions: src/token/ the tokenizer, src/def/ the model,
+                src/source/ the definition compiler (rules.toml), src/payload/ the *CMD
+                object, src/analyze/ the analyzer (bind, conv, dep, expr), src/block/ the
+                parameter block, src/store/ CRTCMD/CHGCMD/CHGCMDDFT/CRTPRXCMD, src/prompt/
+                the prompter (layout, session); tests/golden/ the prompt displays
+  sys-cpps/     the shipped definitions (cmds/*.cmd), inventory.toml and src/inventory.rs
+                (sites, stubs, bridge words, DIRECT/JOB_SITE/CL_STATEMENTS/UNSUPPORTED),
+                src/install.rs, src/bridge.rs, denylist.txt; tests/ (defs, the harness
+                tripwire, inventory, prompt goldens). The service's processing programs
+                are lic/slic/src/cpp/ (direct.rs, clpgm.rs), the job's
+                work/qsjob/src/command/ (jobsite.rs, natives.rs, prompt.rs)
+  cl/           the CL compiler: lex.rs, parse/, sem.rs, lower/ (statements, expr, cmds),
+                compile.rs the driver and listing, diag.rs the CPD07xx identifiers
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
               DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md,
               STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, SECURITY.md,
@@ -220,7 +239,7 @@ cargo run -p build -- manifest
 cargo run -p build -- all         # the whole pipeline (dev: service console on)
 cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media
-cargo run -p build -- test        # the QEMU suite: Phases 1 to 6, 45 steps
+cargo run -p build -- test        # the QEMU suite: Phases 1 to 7, 50 steps
 cargo run -p build -- test --media iso    # the media steps
 cargo run -p build -- test --media iso --install   # automatic install, boot, interactive reinstall
 cargo run -p build -- deny        # cargo-deny + links/cc lockfile check
@@ -235,11 +254,19 @@ cargo run -p qir --bin qirc -- asm|dis|check|fmt FILE   # IR assembler, disassem
 cargo test -p conformance --test qir_kit   # the IR kit in memory; outputs under target/conformance-qir/ours/
 QS400_UPDATE_QIR=1 cargo test -p conformance --test qir_kit   # rewrite conformance/qir/expected/
 cargo test --release -p conformance --test callbench -- --ignored --nocapture   # a million calls, timed
+cargo test -p conformance --test cl_kit    # the CL corpus in memory; QS400_UPDATE_CL=1 rewrites expected/
+cargo test -p conformance --test cmd_kit   # the analyzer kit; QS400_UPDATE_CMD=1 rewrites expected.txt
+cargo test -p sys-cpps                     # definitions, harness tripwire, inventory, prompt goldens
+cargo test --release -p conformance --test cmd_bench -- --ignored --nocapture   # analyzer, prompter, CL benches
 ```
 
 Lint the Linux-only crates for the musl target too: their real code is
 `cfg(target_os = "linux")` and the host build only sees stubs.
 
+A line at the service console is a CL command string run through the
+analyzer (`crtlib LIB(X) TEXT('made')`, `?crtpf`); the dev words below are
+reached with the `svc.` prefix (`svc.obj ls QGPL`, `svc.xfer put`), and for
+now also without it (the `CPD0030` fallback, `MIGRATE(phase7)`).
 Service console (serial, dev builds): `help`, `srcs [table]`, `hist`, `hw`,
 `lic`, `sysval NAME [VALUE]`, `mode manual|normal`, `screen`, `pwrdwn
 [restart]`, `release`; store: `asp`, `lib ls`, `obj ls|crt|dlt|rnm|mov|dsp|bench`,
