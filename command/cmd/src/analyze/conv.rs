@@ -354,25 +354,28 @@ fn date(env: &Env<'_>, kwd: &str, text: &str) -> Result<String, Diag> {
             .detail(format!("{kwd}: {text} is not a date in the job's format"))
     };
     let digits: String = text.chars().filter(char::is_ascii_digit).collect();
-    let fmt = env.datfmt.as_str();
-    let (y, m, d) = match (fmt, digits.len()) {
-        ("*ISO" | "*JIS" | "*YMD", 8) => (digits[0..4].to_string(), &digits[4..6], &digits[6..8]),
-        ("*USA" | "*MDY", 8) => (digits[4..8].to_string(), &digits[0..2], &digits[2..4]),
-        ("*EUR" | "*DMY", 8) => (digits[4..8].to_string(), &digits[2..4], &digits[0..2]),
-        ("*MDY", 6) => (century(&digits[4..6]), &digits[0..2], &digits[2..4]),
-        ("*DMY", 6) => (century(&digits[4..6]), &digits[2..4], &digits[0..2]),
-        ("*YMD", 6) => (century(&digits[0..2]), &digits[2..4], &digits[4..6]),
+    let fmt = env.datfmt.trim().to_ascii_uppercase();
+    let parts: Option<(String, &str, &str)> = match (fmt.as_str(), digits.len()) {
+        ("*ISO" | "*JIS" | "*YMD", 8) => {
+            Some((digits[0..4].to_string(), &digits[4..6], &digits[6..8]))
+        }
+        ("*USA" | "*MDY", 8) => Some((digits[4..8].to_string(), &digits[0..2], &digits[2..4])),
+        ("*EUR" | "*DMY", 8) => Some((digits[4..8].to_string(), &digits[2..4], &digits[0..2])),
+        ("*MDY", 6) => Some((century(&digits[4..6]), &digits[0..2], &digits[2..4])),
+        ("*DMY", 6) => Some((century(&digits[4..6]), &digits[2..4], &digits[0..2])),
+        ("*YMD", 6) => Some((century(&digits[0..2]), &digits[2..4], &digits[4..6])),
         ("*JUL", 5) => {
             let y = century(&digits[0..2]);
             let doy: u32 = digits[2..5].parse().map_err(|_| bad())?;
             let (m, d) = from_julian(y.parse().map_err(|_| bad())?, doy).ok_or_else(bad)?;
             return cymd(&y, &format!("{m:02}"), &format!("{d:02}")).ok_or_else(bad);
         }
-        _ => return Err(bad()),
+        _ => None,
     };
     // Eight digits that are not a date in the job's format are taken
     // as `YYYYMMDD`, the form the system's own displays print.
-    cymd(&y, m, d)
+    parts
+        .and_then(|(y, m, d)| cymd(&y, m, d))
         .or_else(|| {
             (digits.len() == 8)
                 .then(|| cymd(&digits[0..4], &digits[4..6], &digits[6..8]))
