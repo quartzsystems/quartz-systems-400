@@ -363,10 +363,15 @@ mod lda {
 fn service(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
     let built = block::build(&r.def, &r.parms).map_err(|e| Fail::new(e.msgid(), e.to_string()))?;
     let specified: Vec<bool> = r.parms.iter().map(|b| b.specified).collect();
+    // The keyword form as typed, for the service's bridge: the block
+    // alone cannot tell a given element from its default.
+    let typed = sys_cpps::entry(&r.name)
+        .map(|e| sys_cpps::bridge::specified_line(&e.word, &parms_of(r)))
+        .unwrap_or_default();
     let reply: CmdReply = host
         .link
         .borrow_mut()
-        .with(|l| l.run_cmd(r.name.clone(), built.segments, specified));
+        .with(|l| l.run_cmd(r.name.clone(), built.segments, specified, typed));
     for m in &reply.messages {
         log(job, &m.msgid, &m.data, kind_of(m.kind), None);
     }

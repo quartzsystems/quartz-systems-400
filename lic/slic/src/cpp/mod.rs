@@ -22,7 +22,9 @@ use sys_cpps::{Entry, Site};
 use crate::ipl::system::System;
 
 /// Run command `name` with `parms`; the text, messages and escape.
-pub fn run(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
+/// `typed` is the keyword form as the caller typed it, for the bridge;
+/// empty when the block is all there is.
+pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdReply {
     let Some(e) = sys_cpps::entry(name) else {
         return escape(
             "CPF0006",
@@ -42,14 +44,19 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> CmdReply {
         ),
         Site::Service => match direct::run(system, name, parms) {
             Some(r) => r,
-            None => bridge(system, e, parms),
+            None => bridge(system, e, parms, typed),
         },
     }
 }
 
-/// The bridge: the keyword form into the console table.
-fn bridge(system: &mut System, e: &Entry, parms: &Parms) -> CmdReply {
-    let line = sys_cpps::bridge::specified_line(&e.word, parms);
+/// The bridge: the keyword form into the console table, as typed when
+/// the caller typed it.
+fn bridge(system: &mut System, e: &Entry, parms: &Parms, typed: &str) -> CmdReply {
+    let line = if typed.is_empty() {
+        sys_cpps::bridge::specified_line(&e.word, parms)
+    } else {
+        typed.to_string()
+    };
     let text = crate::stgsvc::exec::run(system, &line);
     classify(text, e, parms)
 }

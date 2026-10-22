@@ -337,5 +337,5 @@ ipc::rpc! {
     /// Run a system command's processing program in the service: the
     /// resolved command, its parameter block and which parameters the
     /// caller gave.
-    131 => fn run_cmd / RunCmd (name: String, segments: Vec<Option<Vec<u8>>>, specified: Vec<bool>) -> CmdReply;
+    131 => fn run_cmd / RunCmd (name: String, segments: Vec<Option<Vec<u8>>>, specified: Vec<bool>, typed: String) -> CmdReply;
 }

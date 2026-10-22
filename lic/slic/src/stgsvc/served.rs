@@ -959,7 +959,13 @@ impl Service for Served<'_> {
         r
     }
 
-    fn run_cmd(&mut self, name: String, segments: Vec<Option<Vec<u8>>>, specified: Vec<bool>) -> stg::proto::CmdReply {
+    fn run_cmd(
+        &mut self,
+        name: String,
+        segments: Vec<Option<Vec<u8>>>,
+        specified: Vec<bool>,
+        typed: String,
+    ) -> stg::proto::CmdReply {
         let def = match sys_cpps::install::object(&name, 0) {
             Ok(o) => o.def,
             Err(_) => {
@@ -974,7 +980,7 @@ impl Service for Served<'_> {
         self.system.current_job = self.ctx.job.number;
         self.own_libl();
         std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
-        let mut reply = crate::cpp::run(self.system, &name, &parms);
+        let mut reply = crate::cpp::run(self.system, &name, &parms, &typed);
         reply.prompt = svc::db::prompt(self.system).to_string();
         std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
         if matches!(name.as_str(), "OVRDBF" | "DLTOVR")
