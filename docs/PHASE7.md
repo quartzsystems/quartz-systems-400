@@ -60,7 +60,7 @@ real box would settle.
 | 46 command entry | QSECOFR creates a library through the analyzer; `?CRTPF` and F4 prompt; Enter runs the prompted command; `DSPJOBLOG` lists the requests; F9 retrieves; a bad keyword gives `CPD0012` |
 | 47 CL program | `CRTCLPGM` from a source member; `CALL` with a parameter prints the program's messages (`RTVJOBA`, `DOWHILE`, `MONMSG`); `SBMJOB` submits it; `WRKACTJOB`; `RTVCLSRC` gives the source back |
 | 48 limited user | `LMTCPB(*YES)` refuses `CRTLIB` with `CPD0043`, allows sign-off |
-| 49 startup program | the subsystems `QSTRUP` names are active; `QSYS/QSTRUP` is a `CLLE` program |
+| 49 startup program | the subsystems `QSTRUP` starts under `QBASE` are active; `QSYS/QSTRUP` is a `CLLE` program |
 | 50 analyzer console | `CPD0015`, `CPD0030`, `CPD0012` at the service console; `svc.` words still work |
 
 The suite is 50 steps.

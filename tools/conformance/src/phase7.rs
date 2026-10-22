@@ -176,7 +176,7 @@ impl Suite {
     #[allow(clippy::unused_self)] // every step has the same shape
     pub(crate) fn startup_program(&self, s: &mut Session) -> Result<String, String> {
         let sbs = s.command("wrksbs", CMD)?;
-        for name in ["QSPL", "QSERVER", "QUSRWRK", "QINTER", "QBATCH"] {
+        for name in ["QSPL", "QSERVER", "QUSRWRK"] {
             if !sbs.contains(name) {
                 return Err(format!("QSTRUP did not start {name}:\n{sbs}"));
             }
@@ -185,7 +185,7 @@ impl Suite {
         if !pgm.contains("CLLE") {
             return Err(format!("QSTRUP is not the CL program:\n{pgm}"));
         }
-        Ok("QSPL, QSERVER, QUSRWRK, QINTER and QBATCH active; QSYS/QSTRUP is a CLLE program".into())
+        Ok("QSPL, QSERVER and QUSRWRK active under QBASE; QSYS/QSTRUP is a CLLE program".into())
     }
 
     /// Step 50: the analyzer at the service console: the refusals and
