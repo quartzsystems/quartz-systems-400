@@ -11,7 +11,7 @@
 mod common;
 
 use common::{customer_def, name, open_new, record, reopen};
-use db::cmt::LckLvl;
+use db::cmt::{CmtScope, LckLvl};
 use db::file::{self, CreateFileOpts};
 use db::journal::{JrnRange, apyjrnchg, recover_all, recover_journal, rmvjrnchg, strjrnpf};
 use db::odp::{self, OpenOpts, Session, Usage, session::resolve_in};
@@ -501,4 +501,115 @@ fn apply_remove_and_recover() {
     .unwrap();
     assert_eq!(r.applied, 0);
     t.commit().unwrap();
+}
+
+#[test]
+fn activation_group_scope() {
+    let (_d, mut store, lib) = open_new();
+    let (cust, jid) = setup(&mut store, lib, true);
+    let locks = odp::new_shared();
+    let mut s = Session::new(JobHandle(1), locks.clone());
+    let mut resolve = resolve_in(name("QSTEST"), vec![(name("CUST"), cust)]);
+    let fr = FileRef::parse("CUST").unwrap();
+    let with_commit = OpenOpts {
+        usage: Usage::ALL,
+        commit: true,
+        ..OpenOpts::input(JobHandle(0))
+    };
+    let mut t = store.begin().unwrap();
+    // The job's definition, then one of the group's own.
+    s.strcmtctl(&mut t, LckLvl::Chg, Some(jid), NOW).unwrap();
+    let job_def = s.commit_def().unwrap().clone();
+    s.set_opener("GRP1");
+    assert!(
+        std::rc::Rc::ptr_eq(s.commit_def().unwrap(), &job_def),
+        "no own definition: the job's"
+    );
+    s.strcmtctl_in(
+        &mut t,
+        LckLvl::All,
+        None,
+        NOW,
+        CmtScope::ActGrp("GRP1".into()),
+    )
+    .unwrap();
+    assert!(matches!(
+        s.strcmtctl_in(
+            &mut t,
+            LckLvl::All,
+            None,
+            NOW,
+            CmtScope::ActGrp("GRP1".into())
+        ),
+        Err(DbError::CommitActive)
+    ));
+    assert!(!std::rc::Rc::ptr_eq(s.commit_def().unwrap(), &job_def));
+    assert_eq!(s.commit_def().unwrap().borrow().lcklvl(), LckLvl::All);
+    // A change from the group goes into the group's cycle, not the job's.
+    let o = s
+        .open(&mut t, &fr, &mut resolve, with_commit.clone())
+        .unwrap();
+    o.borrow_mut()
+        .write(&mut t, &record(4, "Dave"), &[0])
+        .unwrap();
+    assert_eq!(s.commit_def().unwrap().borrow().changes(), 1);
+    assert_eq!(job_def.borrow().changes(), 0);
+    // ENDCMTCTL from the group is refused while its file is open; the
+    // job's definition is untouched by it.
+    assert!(matches!(
+        s.endcmtctl(&mut t, None),
+        Err(DbError::CommitFilesOpen)
+    ));
+    s.close(&mut t, &o);
+    let r = s.endcmtctl(&mut t, Some(NOW + 5)).unwrap();
+    assert_eq!(r.applied, 1, "the open cycle was rolled back");
+    assert!(std::rc::Rc::ptr_eq(s.commit_def().unwrap(), &job_def));
+    // Back at the default group the job's definition still runs.
+    s.set_opener("*DFTACTGRP");
+    let o = s.open(&mut t, &fr, &mut resolve, with_commit).unwrap();
+    o.borrow_mut()
+        .write(&mut t, &record(5, "Eve"), &[0])
+        .unwrap();
+    assert_eq!(job_def.borrow().changes(), 1);
+    s.commit(&mut t, Some(NOW + 6)).unwrap();
+    s.close(&mut t, &o);
+    // A group that ends takes its definition with it, rolled back.
+    s.set_opener("GRP2");
+    s.strcmtctl_in(
+        &mut t,
+        LckLvl::Chg,
+        None,
+        NOW,
+        CmtScope::ActGrp("GRP2".into()),
+    )
+    .unwrap();
+    let o = s
+        .open(
+            &mut t,
+            &fr,
+            &mut resolve,
+            OpenOpts {
+                usage: Usage::ALL,
+                commit: true,
+                ..OpenOpts::input(JobHandle(0))
+            },
+        )
+        .unwrap();
+    o.borrow_mut()
+        .write(&mut t, &record(6, "Fay"), &[0])
+        .unwrap();
+    s.close(&mut t, &o);
+    s.reclaim_in(&mut t, "GRP2");
+    assert!(std::rc::Rc::ptr_eq(s.commit_def().unwrap(), &job_def));
+    s.end(&mut t);
+    t.commit().unwrap();
+    assert_eq!(
+        names(&mut store, cust),
+        [
+            (1, "Alice".into()),
+            (2, "Bob".into()),
+            (3, "Carol".into()),
+            (5, "Eve".into())
+        ]
+    );
 }

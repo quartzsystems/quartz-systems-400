@@ -20,7 +20,7 @@ use store::txn::Txn;
 
 use super::ovrdbf::{Override, Position};
 use super::{KeyArg, Odp, OpenOpts, SharedLocks, Usage, status};
-use crate::cmt::{CommitDef, CommitRef, LckLvl};
+use crate::cmt::{CmtScope, CommitDef, CommitRef, LckLvl};
 use crate::error::{DbError, Result};
 use crate::file::{self, Resolve};
 use crate::journal::ChangeReport;
@@ -46,7 +46,10 @@ pub struct Session {
     /// The activation group opening files now.
     opener: String,
     shared: HashMap<(ObjectId, Name), Shared>,
+    /// The job-scoped commit definition.
     cmt: Option<CommitRef>,
+    /// `CMTSCOPE(*ACTGRP)` definitions by activation group.
+    actgrp_cmt: HashMap<String, CommitRef>,
     odps: Vec<Weak<RefCell<Odp>>>,
 }
 
@@ -61,6 +64,7 @@ impl Session {
             opener: super::ovrdbf::DFTACTGRP.into(),
             shared: HashMap::new(),
             cmt: None,
+            actgrp_cmt: HashMap::new(),
             odps: Vec::new(),
         }
     }
@@ -105,6 +109,12 @@ impl Session {
     /// The activation group the next opens come from.
     pub fn set_opener(&mut self, actgrp: &str) {
         actgrp.clone_into(&mut self.opener);
+    }
+
+    /// The activation group the next opens come from.
+    #[must_use]
+    pub fn opener(&self) -> &str {
+        &self.opener
     }
 
     /// Replace the overrides: the job's one table, as its command level
@@ -164,7 +174,7 @@ impl Session {
             s.uses += 1;
             return Ok(Rc::clone(&s.odp));
         }
-        if opts.commit && self.cmt.is_none() {
+        if opts.commit && self.commit_def().is_none() {
             return Err(DbError::CommitOpen);
         }
         let share = opts.share;
@@ -177,8 +187,8 @@ impl Session {
             odp.close(txn);
             return Err(e);
         }
-        if let Some(c) = &self.cmt
-            && odp.opts().commit
+        if odp.opts().commit
+            && let Some(c) = self.commit_def()
         {
             odp.set_commit(Rc::clone(c));
         }
@@ -244,7 +254,7 @@ impl Session {
         self.shared.get(&(file, member)).map_or(0, |s| s.uses)
     }
 
-    /// `STRCMTCTL`.
+    /// `STRCMTCTL CMTSCOPE(*JOB)`.
     pub fn strcmtctl(
         &mut self,
         txn: &mut Txn<'_>,
@@ -252,24 +262,50 @@ impl Session {
         dft_jrn: Option<ObjectId>,
         now: u64,
     ) -> Result<()> {
-        if self.cmt.is_some() {
+        self.strcmtctl_in(txn, lcklvl, dft_jrn, now, CmtScope::Job)
+    }
+
+    /// `STRCMTCTL` with its scope: the job's definition, or the named
+    /// activation group's own.
+    pub fn strcmtctl_in(
+        &mut self,
+        txn: &mut Txn<'_>,
+        lcklvl: LckLvl,
+        dft_jrn: Option<ObjectId>,
+        now: u64,
+        scope: CmtScope,
+    ) -> Result<()> {
+        let active = match &scope {
+            CmtScope::Job => self.cmt.is_some(),
+            CmtScope::ActGrp(g) => self.actgrp_cmt.contains_key(g),
+        };
+        if active {
             return Err(DbError::CommitActive);
         }
-        self.cmt = Some(CommitDef::start(
-            txn,
-            self.job,
-            lcklvl,
-            Arc::clone(&self.locks),
-            dft_jrn,
-            now,
-        )?);
+        let def = CommitDef::start(txn, self.job, lcklvl, Arc::clone(&self.locks), dft_jrn, now)?;
+        match scope {
+            CmtScope::Job => self.cmt = Some(def),
+            CmtScope::ActGrp(g) => {
+                self.actgrp_cmt.insert(g, def);
+            }
+        }
         Ok(())
     }
 
-    /// The commit definition, when `STRCMTCTL` ran.
+    /// The commit definition in effect for the opening activation
+    /// group: its own under `CMTSCOPE(*ACTGRP)`, else the job's.
     #[must_use]
     pub fn commit_def(&self) -> Option<&CommitRef> {
-        self.cmt.as_ref()
+        self.actgrp_cmt.get(&self.opener).or(self.cmt.as_ref())
+    }
+
+    /// Whose the definition in effect is.
+    fn scope_in_effect(&self) -> Option<CmtScope> {
+        if self.actgrp_cmt.contains_key(&self.opener) {
+            Some(CmtScope::ActGrp(self.opener.clone()))
+        } else {
+            self.cmt.as_ref().map(|_| CmtScope::Job)
+        }
     }
 
     fn refresh_odps(&mut self, txn: &mut Txn<'_>) -> Result<()> {
@@ -284,7 +320,7 @@ impl Session {
 
     /// `COMMIT`: the cycle committed, 0 when none was open.
     pub fn commit(&mut self, txn: &mut Txn<'_>, now: Option<u64>) -> Result<u64> {
-        let c = Rc::clone(self.cmt.as_ref().ok_or(DbError::CommitNotActive)?);
+        let c = Rc::clone(self.commit_def().ok_or(DbError::CommitNotActive)?);
         let cycle = c.borrow_mut().commit(txn, now)?;
         self.refresh_odps(txn)?;
         Ok(cycle)
@@ -292,38 +328,60 @@ impl Session {
 
     /// `ROLLBCK`.
     pub fn rollbck(&mut self, txn: &mut Txn<'_>, now: Option<u64>) -> Result<ChangeReport> {
-        let c = Rc::clone(self.cmt.as_ref().ok_or(DbError::CommitNotActive)?);
+        let c = Rc::clone(self.commit_def().ok_or(DbError::CommitNotActive)?);
         let r = c.borrow_mut().rollback(txn, now)?;
         self.refresh_odps(txn)?;
         Ok(r)
     }
 
-    /// `ENDCMTCTL`: an open cycle is rolled back.
+    /// `ENDCMTCTL` of the definition in effect: an open cycle is rolled
+    /// back; refused while a path opened under it is open.
     pub fn endcmtctl(&mut self, txn: &mut Txn<'_>, now: Option<u64>) -> Result<ChangeReport> {
-        if self.cmt.is_none() {
-            return Err(DbError::CommitNotActive);
-        }
+        let scope = self.scope_in_effect().ok_or(DbError::CommitNotActive)?;
+        let def = Rc::clone(self.commit_def().expect("in effect"));
         self.odps.retain(|w| w.strong_count() > 0);
         let open = self.odps.iter().filter_map(Weak::upgrade).any(|o| {
             let o = o.borrow();
-            o.is_open() && o.has_commit()
+            o.is_open() && o.commit_ref().is_some_and(|c| Rc::ptr_eq(c, &def))
         });
         if open {
             return Err(DbError::CommitFilesOpen);
         }
-        let c = self.cmt.take().ok_or(DbError::CommitNotActive)?;
-        let r = c.borrow_mut().end(txn, now)?;
+        match scope {
+            CmtScope::Job => self.cmt = None,
+            CmtScope::ActGrp(g) => {
+                self.actgrp_cmt.remove(&g);
+            }
+        }
+        let r = def.borrow_mut().end(txn, now)?;
         self.refresh_odps(txn)?;
         Ok(r)
+    }
+
+    /// An activation group ended: its commit definition, if any, is
+    /// rolled back and gone with its overrides.
+    pub fn reclaim_in(&mut self, txn: &mut Txn<'_>, actgrp: &str) {
+        if let Some(c) = self.actgrp_cmt.remove(actgrp)
+            && let Err(e) = c.borrow_mut().end(txn, None)
+        {
+            tracing::warn!("rollback at the end of activation group {actgrp}: {e}");
+        }
+        self.reclaim(actgrp);
     }
 
     /// Release everything the job holds: an open commit cycle (rolled
     /// back), shared paths, overrides, record and object locks.
     pub fn end(&mut self, txn: &mut Txn<'_>) {
-        if let Some(c) = self.cmt.take()
-            && let Err(e) = c.borrow_mut().end(txn, None)
-        {
-            tracing::warn!("rollback at the end of the job: {e}");
+        let defs: Vec<CommitRef> = self
+            .cmt
+            .take()
+            .into_iter()
+            .chain(self.actgrp_cmt.drain().map(|(_, c)| c))
+            .collect();
+        for c in defs {
+            if let Err(e) = c.borrow_mut().end(txn, None) {
+                tracing::warn!("rollback at the end of the job: {e}");
+            }
         }
         for s in self.shared.values() {
             s.odp.borrow_mut().release(txn);

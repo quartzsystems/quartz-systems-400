@@ -238,7 +238,9 @@ pub fn apply(system: &mut System, p: &Params, forward: bool) -> Result<String, S
     })
 }
 
-/// `strcmtctl [LCKLVL(*CHG|*CS|*ALL)] [DFTJRN(LIB/JRN)]`.
+/// `strcmtctl [LCKLVL(*CHG|*CS|*ALL)] [DFTJRN(LIB/JRN)] [CMTSCOPE(*JOB|*ACTGRP)]
+/// [ACTGRP(name)]`: under `*ACTGRP` the definition belongs to the named
+/// activation group, else to the one opening files now.
 pub fn strcmtctl(system: &mut System, p: &Params) -> Result<String, String> {
     let lcklvl = match p.upper("LCKLVL").as_deref() {
         None | Some("*CHG") => LckLvl::Chg,
@@ -247,14 +249,28 @@ pub fn strcmtctl(system: &mut System, p: &Params) -> Result<String, String> {
         Some(x) => return Err(format!("LCKLVL({x}) is not *CHG, *CS or *ALL")),
     };
     let dft = p.kw("DFTJRN").map(str::to_string);
+    let actgrp = p.upper("ACTGRP");
+    let by_group = match p.upper("CMTSCOPE").as_deref() {
+        None | Some("*ACTGRP") => true,
+        Some("*JOB") => false,
+        Some(x) => return Err(format!("CPD0084 CMTSCOPE({x}) is not *ACTGRP or *JOB")),
+    };
     let (store, ctx) = db(system)?;
     with_txn(store, |txn| {
         let dft_jrn = match &dft {
             Some(j) => Some(typed_id(txn, ctx, j, jrn::JRN)?),
             None => None,
         };
+        // A console command line is the default activation group's, whose
+        // definition is the job's.
+        let group = actgrp.clone().unwrap_or_else(|| ctx.session.opener().to_string());
+        let scope = if by_group && group != db::odp::ovrdbf::DFTACTGRP {
+            db::cmt::CmtScope::ActGrp(group)
+        } else {
+            db::cmt::CmtScope::Job
+        };
         ctx.session
-            .strcmtctl(txn, lcklvl, dft_jrn, now())
+            .strcmtctl_in(txn, lcklvl, dft_jrn, now(), scope)
             .map_err(|e| db_err(&e))?;
         Ok(
             format!("Commitment control started with LCKLVL({lcklvl:?}).")

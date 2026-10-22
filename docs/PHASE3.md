@@ -321,9 +321,11 @@ cargo run -p build -- test                          # the disk suite with steps 
 - `OPNQRYF`, `ALTER TABLE`, aliases, constraints other than unique
   indexes, identity columns, `FULL OUTER JOIN`, triggers, stored
   procedures and functions, `LOB`, `DBCS` and `GRAPHIC` data are out.
-- `*ACTGRP` scoping of commitment control, `OMTJRNE` beyond
-  `*OPNCLO`, `MINENTDTA` and `FIXLENDTA` are kept in the attributes and
-  not acted on; audit (`T`) entries are never written.
+- Commitment control is scoped: `STRCMTCTL CMTSCOPE(*ACTGRP)` gives the
+  activation group its own commit definition, `*JOB` the job's one that
+  every group without its own reaches; a group's definition ends with
+  the group. `OMTJRNE` beyond `*OPNCLO`, `MINENTDTA` and `FIXLENDTA` are
+  kept in the attributes and not acted on.
 - The console's `cpyfrmimpf` and `cpytoimpf` read and write UTF-8
   buffers; `STMFCODPAG` is not a parameter.
 - `tools/conformance/db/expected/` is empty until the kit has run on a

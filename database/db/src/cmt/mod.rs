@@ -2,10 +2,11 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Commitment control: one commit definition per job. Changes under it
-//! are journaled with a commit cycle identifier, record locks stay until
-//! the cycle ends, and a rollback undoes the cycle from the journal's
-//! before images. `*ACTGRP` scoping is `MIGRATE(phase4)`.
+//! Commitment control: a commit definition per job, and one per
+//! activation group under `CMTSCOPE(*ACTGRP)` (the session keeps them
+//! apart). Changes under a definition are journaled with a commit cycle
+//! identifier, record locks stay until the cycle ends, and a rollback
+//! undoes the cycle from the journal's before images.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -61,6 +62,16 @@ impl LckLvl {
 
 /// A job's commit definition, shared with its open data paths.
 pub type CommitRef = Rc<RefCell<CommitDef>>;
+
+/// `CMTSCOPE`: whose the commit definition is.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum CmtScope {
+    /// `*JOB`: the job's one definition, reached from every activation
+    /// group without one of its own.
+    Job,
+    /// `*ACTGRP`: the named activation group's own definition.
+    ActGrp(String),
+}
 
 /// The commit definition.
 pub struct CommitDef {

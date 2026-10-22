@@ -361,6 +361,12 @@ impl Odp {
         self.cmt.is_some()
     }
 
+    /// The commit definition the path is under.
+    #[must_use]
+    pub fn commit_ref(&self) -> Option<&CommitRef> {
+        self.cmt.as_ref()
+    }
+
     /// The lock level in force, when under commitment control.
     fn lcklvl(&self) -> Option<LckLvl> {
         self.cmt.as_ref().map(|c| c.borrow().lcklvl())
