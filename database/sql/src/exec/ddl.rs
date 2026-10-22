@@ -596,6 +596,7 @@ pub fn label(txn: &mut Txn<'_>, ctx: &mut SqlContext, l: &crate::ast::Label) -> 
         LabelTarget::Column(n, c) => (n, Some(c)),
     };
     let id = ctx.resolve_file(txn, name)?;
+    db::auth::check(txn, "file.change", id)?;
     if column.is_none() && l.columns.is_empty() {
         let text = l.text.clone().unwrap_or_default();
         store::obj::ops::change_text(

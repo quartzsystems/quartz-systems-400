@@ -25,6 +25,10 @@ pub fn put_lines(
     lines: &[String],
     replace: bool,
 ) -> Result<u64> {
+    crate::auth::check(txn, "file.open-output", file)?;
+    if replace {
+        crate::auth::check(txn, "file.clear", file)?;
+    }
     let desc = file::describe(txn, file)?;
     physical(&desc, "CPYSPLF")?;
     let entry = member_of(&desc, member)?;

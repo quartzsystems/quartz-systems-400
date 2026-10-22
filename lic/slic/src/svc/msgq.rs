@@ -346,6 +346,12 @@ rmvrpyle SEQNBR(n) | wrkrpyle
 /// The reply list commands; `None` when `cmd` is not one.
 pub fn rpyl_command(system: &mut System, cmd: &str, line: &str) -> Option<String> {
     let p = Params::parse(line);
+    if matches!(cmd, "addrpyle" | "chgrpyle" | "rmvrpyle")
+        && let Err(e) = super::security::actor()
+            .require(sec::profile::SpecialAuth::JOBCTL, "change the reply list")
+    {
+        return Some(format!("{e}\n"));
+    }
     let r = match cmd {
         "addrpyle" => rpyle(system, &p, Edit::Add),
         "chgrpyle" => rpyle(system, &p, Edit::Change),

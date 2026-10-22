@@ -1,0 +1,120 @@
+# Store, database, journal and work management functions that reach
+# the store without checking authority themselves, and why.
+# security/sec/tests/exempt.rs fails on a function that checks nothing
+# and is not here, and on an entry here that no longer needs to be.
+
+[file."database/db/src/cmt/mod.rs"]
+reason = "commitment control acts on the job's own commitment definition; the files were checked when opened"
+fns = ["start", "begin_change", "commit", "rollback", "end"]
+
+[file."database/db/src/file/change.rs"]
+reason = "called by CHGPF/CHGLF after they check the file (file.change)"
+fns = ["change_attr", "replace_formats"]
+
+[file."database/db/src/file/mod.rs"]
+reason = "creation is checked by the store's create (lib.create-in on the library); describe and dependents are called after the caller's check"
+fns = ["create_pf", "create_pf_rcdlen", "create_pf_fields", "create_srcpf", "describe", "add_lf_member", "add_dependent"]
+
+[file."database/db/src/journal/mod.rs"]
+reason = "journal entries written on behalf of an operation already checked"
+fns = ["cycle_entry", "record", "member_event", "member_entry"]
+
+[file."database/db/src/journal/recover.rs"]
+reason = "IPL recovery runs as the system"
+fns = ["recover_journal", "recover_all"]
+
+[file."database/db/src/journal/undo.rs"]
+reason = "APYJRNCHG/RMVJRNCHG check the journal and files before they call these"
+fns = ["resolve_members", "undo", "apply"]
+
+[file."database/db/src/member/mod.rs"]
+reason = "members are reached through a file the caller checked (open, CLRPFM, RGZPFM, ADDPFM)"
+fns = ["load", "base_members", "read_slot", "invalidate", "create", "create_logical", "destroy", "open", "open_by", "read", "scan", "delete", "clear", "set_reuse_deleted", "set_limits", "refresh", "keys", "keys_back", "read_entry", "ensure_path", "rebuild_path"]
+
+[file."database/db/src/odp/mod.rs"]
+reason = "record I/O through an open data path: authority was checked when it opened (check_open)"
+fns = ["allocate", "deallocate", "close", "after_commit", "setll", "setgt", "read", "readp", "reade", "readpe", "chain", "write", "update", "delete", "delete_key", "unlock_op", "feod"]
+
+[file."database/db/src/odp/session.rs"]
+reason = "the job's own session: its opens were checked"
+fns = ["close", "clof", "strcmtctl", "commit", "rollbck", "endcmtctl", "end"]
+
+[file."database/db/src/source/mod.rs"]
+reason = "source reads for a member the caller checked"
+fns = ["records", "source_of"]
+
+[file."database/db/src/util/chkpath.rs"]
+reason = "access path verification runs as the system at IPL and in RCLSTG"
+fns = ["verify_all", "verify_file"]
+
+[file."database/db/src/util/mod.rs"]
+reason = "helpers of CPYF and the import commands, which check their files"
+fns = ["take", "release", "each_record"]
+
+[file."database/jrn/src/dsp/mod.rs"]
+reason = "a cursor over receivers the caller checked (jrn.read)"
+fns = ["new", "next", "seek"]
+
+[file."database/jrn/src/journal/mod.rs"]
+reason = "journal plumbing: the db commands check the journal (jrn.attach, jrn.change) before calling"
+fns = ["crtjrn", "load", "save", "receivers", "objects", "object", "add_object", "remove_object", "attached", "append", "sndjrne", "chain"]
+
+[file."database/jrn/src/rcv/mod.rs"]
+reason = "receiver plumbing under a checked journal"
+fns = ["crtjrnrcv", "load", "save", "entries", "next"]
+
+[file."storage/store/src/obj/auth.rs"]
+reason = "the authority fields themselves: the search and the grant commands use them"
+fns = ["private_get", "private_list", "private_set", "save_authority", "load", "overflow_pages"]
+
+[file."storage/store/src/obj/dir.rs"]
+reason = "the object directory: internal to the store"
+fns = ["objdir", "header_page", "objdir_insert", "objdir_update", "objdir_remove", "objdir_entries"]
+
+[file."storage/store/src/obj/dtaara.rs"]
+reason = "descriptions and lock state for a data area the caller checked"
+fns = ["describe", "set_locked"]
+
+[file."storage/store/src/obj/dtaq.rs"]
+reason = "creation is checked by the store's create; descriptions for a queue the caller checked"
+fns = ["create", "describe", "entry_count"]
+
+[file."storage/store/src/obj/guard.rs"]
+reason = "the guard's own hooks"
+fns = ["creating", "created", "deleting", "sizing"]
+
+[file."storage/store/src/obj/library.rs"]
+reason = "library internals; lib.* checks are in ops"
+fns = ["load", "save", "lookup", "add", "remove", "list", "free_dir"]
+
+[file."storage/store/src/obj/ops.rs"]
+reason = "headers, bootstrap and attributes: internal, or checked by the caller"
+fns = ["read_header", "write_header", "bootstrap", "bootstrap_root", "find_library", "create_owned", "set_tree_root", "libraries", "all_extents", "read_attr", "write_attr"]
+
+[file."storage/store/src/obj/space.rs"]
+reason = "an object's space, reached through an object the caller checked"
+fns = ["load", "read", "write", "ensure", "truncate"]
+
+[file."storage/store/src/obj/usridx.rs"]
+reason = "creation is checked by the store's create; descriptions for an index the caller checked"
+fns = ["create", "describe"]
+
+[file."storage/store/src/obj/usrspc.rs"]
+reason = "creation is checked by the store's create; descriptions for a space the caller checked"
+fns = ["create", "describe"]
+
+[file."work/wm/src/obj/mod.rs"]
+reason = "payload plumbing for work management objects; the storage service checks wmobj.* first"
+fns = ["create", "create_attr", "write", "read", "find", "library"]
+
+[file."work/wm/src/obj/rpyl.rs"]
+reason = "the reply list: the console checks *JOBCTL before ADDRPYLE, CHGRPYLE and RMVRPYLE"
+fns = ["find", "load", "save"]
+
+[file."work/wm/src/obj/shipped.rs"]
+reason = "the first IPL's objects, as the system"
+fns = ["install"]
+
+[file."work/wm/src/obj/splf.rs"]
+reason = "spooled file data: the storage service checks the queue and the file (may_spool)"
+fns = ["init", "read_attrs", "write_attrs", "append", "read_data"]

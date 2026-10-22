@@ -191,6 +191,7 @@ pub fn chgpf_srcfile(
     file: ObjectId,
     def: &PfDefinition,
 ) -> Result<()> {
+    crate::auth::check(txn, "file.change", file)?;
     let desc = file::describe(txn, file)?;
     if desc.attr.kind != FileKind::Physical {
         return Err(DbError::Definition {

@@ -350,6 +350,14 @@ group with `GRPAUTTYP(*PRIVATE)`. It indexes the object under its
 owner, and charges its storage to the owner as it grows (refused past
 `MAXSTG`, `CPF1151`). Deletion takes the object out of every index.
 
+`security/sec/exempt.toml` lists every public store, database,
+journal and work management function that takes a transaction yet
+checks nothing itself, with the reason (its caller checks, it runs as
+the system, it is the store's own plumbing). `tests/exempt.rs` scans
+the sources: an unchecked function missing from the list fails, and so
+does an entry that has started checking or no longer exists. The same
+test holds `Job::call_program` and `load_program` to their state check.
+
 ### The cache
 
 A job's session (`sec::auth::cache::Session`) keeps, per object, what
