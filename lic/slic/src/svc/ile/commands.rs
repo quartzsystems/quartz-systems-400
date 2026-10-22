@@ -438,7 +438,14 @@ fn addbnddire(system: &mut System, p: &Params) -> Result<String, String> {
 
 /// `dsppgm`, `dspsrvpgm`, `dspmod`, `dsppgmref`, `dspbnddir`.
 fn display(system: &mut System, p: &Params, type_code: u16) -> Result<String, String> {
-    let qual = p.pos_or(0, "OBJ")?;
+    // The command's own keyword, or the dev word's `OBJ`.
+    let kw = match type_code {
+        types::SRVPGM => "SRVPGM",
+        types::MODULE => "MODULE",
+        types::BNDDIR => "BNDDIR",
+        _ => "PGM",
+    };
+    let qual = p.pos_or(0, kw).or_else(|_| p.pos_or(0, "OBJ"))?;
     let (lib, name) = qualified(&qual)?;
     if type_code == u16::MAX {
         let (id, _) =

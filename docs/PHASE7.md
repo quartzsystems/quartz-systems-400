@@ -95,6 +95,10 @@ In memory, release build, one core of the development machine
   thin: the bridge turns the keyword form back into the console word
   of the library function that already existed; `direct.rs` holds the
   commands the old words could not express.
+- The service runs a command as the job's user: `cmd_lookup` and
+  `run_cmd` are among the requests the security session checks as the
+  job, so `CHKOBJ AUT(*CHANGE)` from ANNE is refused as it was when the
+  console word ran for her.
 - Exact-length character results. CL's `*CAT` semantics need the
   padding of a variable and the exact text of a literal or a built-in;
   the compiler keeps intermediate results in `varchar` temps and
