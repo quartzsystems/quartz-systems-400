@@ -67,7 +67,9 @@ guest's own screens with the same files.
 | Work with Mirrored Protection, Start, Stop | `mirror.txt`, `mirror-start.txt`, `mirror-start-confirm.txt`, `mirror-stop.txt` |
 | Work with Device Parity Protection | `disk-parity.txt` |
 | Work with Disk Unit Recovery, Replace, Procedures, Suspend, Resume | `disk-recovery.txt`, `replace-unit.txt`, `disk-procedures.txt`, `suspend.txt`, `resume.txt` |
-| Work with DST Environment, Active Service Tools, System Devices | `env.txt`, `env-active.txt`, `env-devices.txt` |
+| Work with Licensed Internal Code | `lic-info.txt` |
+| Select DST Console Mode | `console-mode.txt` |
+| Work with DST Environment, Active Service Tools, System Devices | `env.txt`, `env-active.txt`, `env-devices.txt`, `env-devices-serial.txt` |
 | Work with Service Tools User IDs, Display, Privileges, Create | `users.txt`, `user-display.txt`, `user-privileges.txt`, `user-create.txt` |
 | Work with System Values | `sysvals.txt` |
 | Start a Service Tool, Product Activity Log, Display/Alter/Dump, LIC Log, Hardware Service Manager | `tools.txt`, `pal.txt`, `dad.txt`, `lic-log.txt`, `hsm.txt`, `hsm-packaging.txt`, `hsm-failed.txt` |
@@ -86,15 +88,23 @@ sequence they form is described in PHASE2.md.
 Use Dedicated Service Tools (DST)
   1. Perform an IPL                      -> re-IPL (restart)
   2. Install the operating system        -> the installer, on media
-  3. Work with Licensed Internal Code    not available
+  3. Work with Licensed Internal Code    -> release, build, slots (display)
   4. Work with disk units
   5. Work with DST environment
-  6. Select DST console mode             not available
+  6. Select DST console mode             -> local or serial, for the next IPL
   7. Start a service tool
   8. Perform automatic installation      -> the installer without prompts
   9..12, 14                              not available
  13. Work with system security
 ```
+
+`Select DST console mode` keeps its choice in the LIC record (TLV
+`0x0105`, one byte: 1 local, 2 serial). At the next IPL `slic` opens the
+framebuffer and the keyboards only for the local console; in serial
+mode the screens exist in memory, are echoed on `ttyS0` and are driven
+from the service console as described above. The installer carries the
+mode chosen in the media's DST into the record it writes on the load
+source.
 
 `Work with disk units`: 1 disk configuration, 2 disk unit recovery;
 3 and 4 are not available.
@@ -116,6 +126,18 @@ available.
 `Start a service tool`: 1 product activity log, 4 display/alter/dump
 (display only), 5 LIC log, 7 hardware service manager (packaging,
 logical, failed views); 2, 3 and 6 not available.
+
+The options still answering `Option not available in this release`
+wait for what they work on: save and restore storage, save and restore
+of a disk unit's data (Phase 9); remote service support, service tools
+device IDs, communications trace (Phase 10); fixes to the Licensed
+Internal Code, system partitions and capacity (Phase 11 and hardware
+this system has none of); disk unit tracing, problem recovery, missing
+unit assignment, configuration recovery, checksum protection, disk
+compression, remote load source mirroring and the ASP moves (one ASP,
+no capable controllers); LIC and main storage dumps (Phase 8's job
+dumps feed them); batch restricted state (a subsystem matter, Phase 5
+owns it from a job).
 
 ## Disk configuration
 

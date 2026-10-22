@@ -340,6 +340,15 @@ mod tests {
     }
 
     #[test]
+    fn user_tlvs_round_trip() {
+        let mut r = Record::new(0);
+        r.set_tlv(0x0105, vec![2]).unwrap();
+        let back = Record::decode(&r.encode().unwrap()).unwrap();
+        assert_eq!(back.tlv(0x0105), Some(&[2u8][..]));
+        assert_eq!(back.tlv(0x0106), None);
+    }
+
+    #[test]
     fn reserved_tags_are_refused() {
         let mut r = Record::new(0);
         assert!(matches!(

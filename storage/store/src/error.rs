@@ -95,6 +95,18 @@ pub enum StoreError {
         op: &'static str,
     },
 
+    /// The store cannot be quiesced: jobs hold object locks.
+    #[error("{objects} object(s) are locked by jobs; reclaim storage needs the system otherwise idle")]
+    Busy {
+        /// Objects with a lock held.
+        objects: usize,
+    },
+
+    /// The store is quiesced for reclaim storage: no transaction starts
+    /// until it is released.
+    #[error("the store is quiesced for reclaim storage")]
+    Quiesced,
+
     /// The ASP has no free pages.
     #[error("no space left in ASP {asp}")]
     NoSpace {
@@ -232,6 +244,7 @@ impl StoreError {
             Self::InvalidName { .. } => "CPF0001",
             Self::NoSpace { .. } => "CPF3202",
             Self::ReleaseMismatch { .. } => "CPF3294",
+            Self::Busy { .. } => "CPF8201",
             _ => return None,
         })
     }

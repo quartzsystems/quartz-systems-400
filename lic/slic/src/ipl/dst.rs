@@ -8,6 +8,7 @@
 use std::sync::mpsc::Receiver;
 
 pub use svctools::Outcome;
+use svctools::dst::console_mode::{ConsoleMode, TAG_CONSOLE_MODE};
 use svctools::dst::security::{TAG_SECURITY, decode as decode_flags, encode as encode_flags};
 use svctools::env::{DiskUnit, LogEntry, NonConfigured, ResourceRow, SecurityFlags};
 use svctools::install::lic::LicEvent;
@@ -376,6 +377,53 @@ impl DstEnv for Env<'_> {
             .and_then(|(_, r)| r.tlv(TAG_IPL_OPTIONS))
             .and_then(IplOptions::decode)
             .unwrap_or_default()
+    }
+
+    fn console_mode(&self) -> ConsoleMode {
+        crate::ipl::display::console_mode(self.system)
+    }
+
+    fn set_console_mode(&mut self, mode: ConsoleMode) -> Result<(), String> {
+        let Some((part, record)) = self.system.lic.as_mut() else {
+            return Err("The Licensed Internal Code record is not open".into());
+        };
+        record
+            .set_tlv(TAG_CONSOLE_MODE, mode.encode())
+            .map_err(|e| e.to_string())?;
+        part.write(record).map_err(|e| e.to_string())?;
+        self.system
+            .out
+            .serial(&format!("slic: console mode {mode:?} from the next IPL\n"));
+        Ok(())
+    }
+
+    fn lic_info(&mut self) -> Vec<(String, String)> {
+        let mut info = vec![
+            (
+                "Release".to_string(),
+                release::full()
+                    .split_whitespace()
+                    .next()
+                    .unwrap_or_default()
+                    .to_string(),
+            ),
+            ("Build".to_string(), release::build_id().to_string()),
+        ];
+        if let Some((_, r)) = self.system.lic.as_ref() {
+            let h = &r.header;
+            let (y, mo, d, hh, mm, ss) = crate::platform::rtc::unix_to_civil(h.install_time);
+            info.push(("Slot of this IPL".into(), format!("{:?}", self.system.boot.slot)));
+            info.push(("Last good slot".into(), format!("{:?}", h.last_good_slot)));
+            info.push((
+                "IPLs".into(),
+                format!("{} ({} abnormal)", h.ipl_count, h.abnormal_count),
+            ));
+            info.push((
+                "Installed".into(),
+                format!("{y:04}-{mo:02}-{d:02} {hh:02}:{mm:02}:{ss:02}"),
+            ));
+        }
+        info
     }
 
     fn set_ipl_options(&mut self, options: &IplOptions) -> Result<(), String> {

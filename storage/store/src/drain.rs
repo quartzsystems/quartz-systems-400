@@ -206,9 +206,24 @@ fn move_object(
     } else if h.id.type_code == types::USRIDX {
         let mut attr = usridx::describe(txn, id)?;
         let tree: BTree<usridx::IdxKey, Vec<u8>> = BTree::open(attr.root, id);
-        if any_on_span(&tree, txn, span)? {
-            let items: Vec<(usridx::IdxKey, Vec<u8>)> =
-                tree.entries(txn)?.collect::<Result<_>>()?;
+        let mut items: Vec<(usridx::IdxKey, Vec<u8>)> =
+            tree.entries(txn)?.collect::<Result<_>>()?;
+        // A long entry whose overflow pages touch the span is written
+        // again elsewhere; its value changes, so the tree is rebuilt.
+        let mut values_moved = false;
+        for (_, raw) in &mut items {
+            let pages = usridx::overflow_pages(txn, raw)?;
+            if pages.iter().any(|p| on_span(txn, span, *p)) {
+                let data = usridx::decode_value(txn, raw)?;
+                for p in pages {
+                    txn.free_run(p, 1)?;
+                    report.pages_moved += 1;
+                }
+                *raw = usridx::encode_value(txn, id, &data)?;
+                values_moved = true;
+            }
+        }
+        if values_moved || any_on_span(&tree, txn, span)? {
             let new = BTree::bulk_load(txn, id, items)?;
             let mut old = tree;
             old.free_all(txn)?;

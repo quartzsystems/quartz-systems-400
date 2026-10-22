@@ -3,12 +3,13 @@
 // root directory of this project.
 
 //! An object's extents as one byte space of 4064-byte pages, read in
-//! any span and changed in place through patches. See the format spec
-//! §10.
+//! any span. A write changes partial pages in place through patches; a
+//! span of whole pages long enough goes to fresh pages that take the
+//! old ones' place in the extent list. See the format spec §10.
 
 use crate::alloc::Run;
 use crate::obj::ObjectId;
-use crate::obj::header::ObjectHeader;
+use crate::obj::header::{self, ObjectHeader};
 use crate::obj::ops;
 use crate::page::pager::{PageNo, Pager};
 use crate::page::{BODY_SIZE, Page, PageType};
@@ -17,6 +18,12 @@ use crate::{Result, StoreError};
 
 /// Bytes per page of a byte space.
 pub const PAGE_BYTES: u64 = BODY_SIZE as u64;
+/// A whole-page span at least this long is relocated rather than
+/// patched: fresh pages cost one write each, a patch that and the WAL.
+pub const RELOCATE_MIN_PAGES: u64 = 4;
+/// Extents an object may have in all: the inline slots and one
+/// overflow page.
+pub const MAX_EXTENTS: usize = header::EXTENT_SLOTS + header::OVERFLOW_SLOTS;
 
 /// The byte space of one object.
 #[derive(Debug, Clone)]
@@ -101,7 +108,38 @@ impl Space {
         Ok(out)
     }
 
-    /// Change bytes at `off` in place.
+    /// Change bytes at `off`, moving whole pages. Partial pages are
+    /// patched in place; a span of at least `RELOCATE_MIN_PAGES` whole
+    /// pages is written to fresh pages that replace the old ones in the
+    /// extent list, unless the list would then not fit, when it is
+    /// patched too. The space is current afterwards; any other copy of
+    /// it is stale.
+    pub fn write_relocating(&mut self, txn: &mut Txn<'_>, off: u64, bytes: &[u8]) -> Result<()> {
+        let end = off + bytes.len() as u64;
+        if end > self.bytes() {
+            return Err(self.out_of_space(off, bytes.len()));
+        }
+        let first_full = off.div_ceil(PAGE_BYTES);
+        let end_full = end / PAGE_BYTES;
+        if end_full <= first_full || end_full - first_full < RELOCATE_MIN_PAGES {
+            return self.write(txn, off, bytes);
+        }
+        let at = |index: u64| usize::try_from(index * PAGE_BYTES - off).expect("in bytes");
+        if !self.relocate(txn, first_full, end_full, &bytes[at(first_full)..at(end_full)])? {
+            return self.write(txn, off, bytes);
+        }
+        let head = at(first_full);
+        if head > 0 {
+            self.write(txn, off, &bytes[..head])?;
+        }
+        let tail = at(end_full);
+        if tail < bytes.len() {
+            self.write(txn, end_full * PAGE_BYTES, &bytes[tail..])?;
+        }
+        Ok(())
+    }
+
+    /// Change bytes at `off` in place, page by page, through patches.
     pub fn write(&self, txn: &mut Txn<'_>, off: u64, bytes: &[u8]) -> Result<()> {
         if off + bytes.len() as u64 > self.bytes() {
             return Err(self.out_of_space(off, bytes.len()));
@@ -114,6 +152,82 @@ impl Space {
             done += take;
         }
         Ok(())
+    }
+
+    /// Write pages `first..end` of the space, whose new contents are
+    /// `bytes`, to fresh pages and put those in the extent list in the
+    /// old pages' place; the old pages are freed. `Ok(false)` when the
+    /// list would outgrow its slots, with nothing changed.
+    fn relocate(&mut self, txn: &mut Txn<'_>, first: u64, end: u64, bytes: &[u8]) -> Result<bool> {
+        let mut extents: Vec<Run> = Vec::new();
+        // Fresh runs and the index of the first space page each holds.
+        let mut fresh: Vec<(Run, u64)> = Vec::new();
+        let mut freed: Vec<Run> = Vec::new();
+        let mut base = 0;
+        for r in &self.extents {
+            let lo = first.max(base);
+            let hi = end.min(base + r.len);
+            if lo >= hi {
+                push_run(&mut extents, *r);
+                base += r.len;
+                continue;
+            }
+            if lo > base {
+                push_run(
+                    &mut extents,
+                    Run {
+                        start: r.start,
+                        len: lo - base,
+                    },
+                );
+            }
+            let mut index = lo;
+            while index < hi {
+                let run = match txn.alloc_run(hi - index) {
+                    Ok(run) => run,
+                    Err(e) => {
+                        give_back(txn, &fresh)?;
+                        return Err(e);
+                    }
+                };
+                push_run(&mut extents, run);
+                fresh.push((run, index));
+                index += run.len;
+            }
+            freed.push(Run {
+                start: r.start + (lo - base),
+                len: hi - lo,
+            });
+            if hi < base + r.len {
+                push_run(
+                    &mut extents,
+                    Run {
+                        start: r.start + (hi - base),
+                        len: base + r.len - hi,
+                    },
+                );
+            }
+            base += r.len;
+        }
+        if extents.len() > MAX_EXTENTS {
+            give_back(txn, &fresh)?;
+            return Ok(false);
+        }
+        for (run, index) in &fresh {
+            for i in 0..run.len {
+                let from = usize::try_from((index + i - first) * PAGE_BYTES).expect("in bytes");
+                let mut p = Page::zeroed();
+                p.body_mut().copy_from_slice(&bytes[from..from + BODY_SIZE]);
+                txn.write(run.start + i, &mut p, PageType::ObjectData, self.id)?;
+            }
+        }
+        for r in &freed {
+            txn.free_run(r.start, r.len)?;
+        }
+        let (page, mut h) = ops::read_header(txn, self.id)?;
+        ops::save_extents(txn, page, &mut h, &extents)?;
+        self.extents = extents;
+        Ok(true)
     }
 
     /// Grow the space to hold at least `bytes`, filling new pages with
@@ -143,4 +257,23 @@ impl Space {
         }
         Ok(Self::load(txn, id)?.0)
     }
+}
+
+/// Append a run, merging it with the last when they are adjacent.
+fn push_run(extents: &mut Vec<Run>, run: Run) {
+    if run.len == 0 {
+        return;
+    }
+    match extents.last_mut() {
+        Some(last) if last.start + last.len == run.start => last.len += run.len,
+        _ => extents.push(run),
+    }
+}
+
+/// Return fresh runs the relocation will not use.
+fn give_back(txn: &mut Txn<'_>, fresh: &[(Run, u64)]) -> Result<()> {
+    for (run, _) in fresh {
+        txn.free_run(run.start, run.len)?;
+    }
+    Ok(())
 }

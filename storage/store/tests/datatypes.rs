@@ -444,6 +444,111 @@ fn user_spaces() {
     t.commit().unwrap();
 }
 
+/// A user space as the test expects it, byte for byte.
+fn expect_space(t: &mut store::Txn<'_>, id: ObjectId, model: &[u8]) {
+    let got = usrspc::read(t, id, 0, model.len()).unwrap();
+    assert!(got == model, "user space differs from the model");
+}
+
+#[test]
+fn user_space_whole_pages_relocate() {
+    use store::obj::space::{MAX_EXTENTS, PAGE_BYTES, RELOCATE_MIN_PAGES};
+    let (d, mut store, _qsys, lib) = open_new(32768);
+    let size = 1 << 20;
+    let mut model = vec![0u8; size];
+    let id = {
+        let mut t = store.begin().unwrap();
+        let id =
+            usrspc::create(&mut t, &params_for(lib, "BIG", 0), size as u64, false, 0).unwrap();
+        t.commit().unwrap();
+        id
+    };
+    let extents_of = |t: &mut store::Txn<'_>| {
+        let h = ops::describe(t, id).unwrap();
+        (h.size_pages, ops::all_extents(t, &h).unwrap())
+    };
+    // An unaligned write over 600 KiB: a patched head and tail around
+    // whole pages that move.
+    {
+        let mut t = store.begin().unwrap();
+        let (pages, before) = extents_of(&mut t);
+        let data: Vec<u8> = (0..600 * 1024u32)
+            .map(|i| u8::try_from(i % 251).unwrap())
+            .collect();
+        usrspc::write(&mut t, id, 100, &data).unwrap();
+        model[100..100 + data.len()].copy_from_slice(&data);
+        let (pages_after, after) = extents_of(&mut t);
+        assert_eq!(pages, pages_after, "the space keeps its size");
+        assert_ne!(before, after, "the whole pages moved");
+        assert!(after.len() >= 3);
+        expect_space(&mut t, id, &model);
+        t.commit().unwrap();
+    }
+    let mut store = pull(&d, store);
+    {
+        let mut t = store.begin().unwrap();
+        expect_space(&mut t, id, &model);
+        // An aborted relocation leaves nothing behind.
+        usrspc::write(&mut t, id, 0, &vec![0xEE; 100 * 1024]).unwrap();
+        t.abort();
+    }
+    let mut store = pull(&d, store);
+    {
+        let mut t = store.begin().unwrap();
+        expect_space(&mut t, id, &model);
+        t.commit().unwrap();
+    }
+    let report = store.reclaim(store::ReclaimMode::Check, 1_767_225_800).unwrap();
+    assert_eq!(report.problems(), 0, "{report}");
+    // Short whole-page spans are patched, not moved.
+    {
+        let mut t = store.begin().unwrap();
+        let (_, before) = extents_of(&mut t);
+        let span = usize::try_from((RELOCATE_MIN_PAGES - 1) * PAGE_BYTES).unwrap();
+        let at = usize::try_from(10 * PAGE_BYTES).unwrap();
+        usrspc::write(&mut t, id, at as u64, &vec![0x11; span]).unwrap();
+        model[at..at + span].fill(0x11);
+        assert_eq!(before, extents_of(&mut t).1);
+        expect_space(&mut t, id, &model);
+        t.commit().unwrap();
+    }
+    // Scattered writes fragment the list until it is full; then the
+    // writes are patched and everything still reads back.
+    let big = 12 << 20;
+    let mut big_model = vec![0u8; big];
+    let big_id = {
+        let mut t = store.begin().unwrap();
+        let id = usrspc::create(&mut t, &params_for(lib, "BIGGER", 0), big as u64, false, 0)
+            .unwrap();
+        t.commit().unwrap();
+        id
+    };
+    let span = usize::try_from(RELOCATE_MIN_PAGES * PAGE_BYTES).unwrap();
+    let stride = usize::try_from(8 * PAGE_BYTES).unwrap();
+    let mut most = 0;
+    for (n, at) in (0..big - span).step_by(stride).enumerate() {
+        let mut t = store.begin().unwrap();
+        let fill = u8::try_from(n % 200).unwrap() + 1;
+        usrspc::write(&mut t, big_id, at as u64, &vec![fill; span]).unwrap();
+        big_model[at..at + span].fill(fill);
+        let h = ops::describe(&mut t, big_id).unwrap();
+        let count = ops::all_extents(&mut t, &h).unwrap().len();
+        assert!(count <= MAX_EXTENTS);
+        most = most.max(count);
+        t.commit().unwrap();
+    }
+    assert!(most + 2 > MAX_EXTENTS, "the list filled up: {most}");
+    let mut store = pull(&d, store);
+    {
+        let mut t = store.begin().unwrap();
+        expect_space(&mut t, big_id, &big_model);
+        expect_space(&mut t, id, &model);
+        t.commit().unwrap();
+    }
+    let report = store.reclaim(store::ReclaimMode::Check, 1_767_225_900).unwrap();
+    assert_eq!(report.problems(), 0, "{report}");
+}
+
 #[test]
 fn user_indexes() {
     let (d, mut store, _qsys, lib) = open_new(8192);
@@ -541,6 +646,83 @@ fn user_indexes() {
     usridx::drop_entries(&mut t, idx).unwrap();
     ops::delete(&mut t, JobHandle(1), idx).unwrap();
     t.commit().unwrap();
+}
+
+#[test]
+fn user_index_long_entries() {
+    let (d, mut store, _qsys, lib) = open_new(8192);
+    let idx = {
+        let mut t = store.begin().unwrap();
+        assert!(matches!(
+            usridx::create(&mut t, &params_for(lib, "TOOLONG", 0), false, 10, 2001),
+            Err(StoreError::BadValue { .. })
+        ));
+        let idx = usridx::create(&mut t, &params_for(lib, "LONG", 0), false, 10, 2000).unwrap();
+        t.commit().unwrap();
+        idx
+    };
+    let entry = |key: &str, len: usize, fill: u8| -> Vec<u8> {
+        let mut e = format!("{key:<10}").into_bytes();
+        e.resize(len, fill);
+        e
+    };
+    let (a, b, c) = (
+        entry("ALPHA", 2000, b'a'),
+        entry("BETA", 1500, b'b'),
+        entry("GAMMA", 40, b'c'),
+    );
+    {
+        let mut t = store.begin().unwrap();
+        usridx::insert(&mut t, idx, &a).unwrap();
+        usridx::insert(&mut t, idx, &b).unwrap();
+        usridx::insert(&mut t, idx, &c).unwrap();
+        assert!(matches!(
+            usridx::insert(&mut t, idx, &a),
+            Err(StoreError::AlreadyExists { .. })
+        ));
+        assert_eq!(
+            usridx::find(&mut t, idx, KeyOp::Eq, b"ALPHA     ", 1).unwrap(),
+            vec![a.clone()]
+        );
+        t.commit().unwrap();
+    }
+    let mut store = pull(&d, store);
+    {
+        let mut t = store.begin().unwrap();
+        assert_eq!(
+            usridx::first(&mut t, idx, 3).unwrap(),
+            vec![a.clone(), b.clone(), c.clone()]
+        );
+        assert_eq!(usridx::last(&mut t, idx, 1).unwrap(), vec![c.clone()]);
+        assert_eq!(
+            usridx::find(&mut t, idx, KeyOp::Ge, b"BETA      ", 10).unwrap(),
+            vec![b.clone(), c.clone()]
+        );
+        t.commit().unwrap();
+    }
+    let report = store.reclaim(store::ReclaimMode::Check, 1_767_225_800).unwrap();
+    assert_eq!(report.problems(), 0, "{report}");
+    {
+        let mut t = store.begin().unwrap();
+        let free = t.store().asp().total_free();
+        assert_eq!(
+            usridx::remove(&mut t, idx, KeyOp::Eq, b"BETA      ", 1).unwrap(),
+            vec![b.clone()]
+        );
+        t.commit().unwrap();
+        store.checkpoint().unwrap();
+        assert!(store.asp().total_free() > free, "the overflow page came back");
+    }
+    let report = store.reclaim(store::ReclaimMode::Check, 1_767_225_900).unwrap();
+    assert_eq!(report.problems(), 0, "{report}");
+    let mut t = store.begin().unwrap();
+    assert_eq!(usridx::describe(&mut t, idx).unwrap().entry_count, 2);
+    usridx::drop_entries(&mut t, idx).unwrap();
+    ops::delete(&mut t, JobHandle(1), idx).unwrap();
+    t.commit().unwrap();
+    store.checkpoint().unwrap();
+    let report = store.reclaim(store::ReclaimMode::Check, 1_767_226_000).unwrap();
+    assert_eq!(report.problems(), 0, "{report}");
 }
 
 #[test]

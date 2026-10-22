@@ -64,7 +64,7 @@ impl Panel for MainMenu {
         )
     }
 
-    fn enter(&mut self, fields: &[String], _env: &mut dyn DstEnv) -> Flow {
+    fn enter(&mut self, fields: &[String], env: &mut dyn DstEnv) -> Flow {
         let Some(n) = selection(fields) else {
             return Flow::Error(INVALID_SELECTION.into());
         };
@@ -91,10 +91,12 @@ impl Panel for MainMenu {
             7 => Flow::Push(Box::new(crate::dst::tools::start_a_service_tool(
                 self.privileges,
             ))),
+            3 => Flow::Push(Box::new(crate::dst::lic::work_with_lic(env))),
+            6 => Flow::Push(Box::new(crate::dst::console_mode::SelectConsoleMode)),
             13 => self
                 .needs(Privilege::SECURITY)
                 .unwrap_or_else(|| Flow::Push(Box::new(crate::dst::security::Security))),
-            3 | 6 | 9..=12 | 14 => Flow::Message(NOT_AVAILABLE.into()),
+            9..=12 | 14 => Flow::Message(NOT_AVAILABLE.into()),
             _ => Flow::Error(INVALID_SELECTION.into()),
         }
     }

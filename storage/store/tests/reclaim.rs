@@ -11,8 +11,10 @@ use std::sync::Arc;
 use blockdev::{BlockDev, MemBlockDev};
 use qsname::Name;
 use store::obj::dtaara::{DataAreaType, DataAreaValue};
-use store::obj::{CreateParams, JobHandle, ObjectId, dtaara, ops, types, usridx, usrspc};
-use store::{FormatParams, ReclaimMode, Store, StoreConfig};
+use store::obj::{
+    CreateParams, JobHandle, LockState, ObjectId, dtaara, ops, types, usridx, usrspc,
+};
+use store::{FormatParams, ReclaimMode, Store, StoreConfig, StoreError};
 
 fn name(s: &str) -> Name {
     Name::parse(s).unwrap()
@@ -273,4 +275,37 @@ fn objects_of_a_lost_library_move_to_qrcl() {
     t.abort();
     let r = store.reclaim(ReclaimMode::Check, 6).unwrap();
     assert_eq!(r.problems(), 0, "{r}");
+}
+
+#[test]
+fn a_rebuild_needs_the_store_quiesced() {
+    let mut f = fixture();
+    // Another job holds an object: no rebuild, but *CHECK still runs.
+    f.store
+        .locks_mut()
+        .lock(JobHandle(2), f.area, LockState::Exclusive)
+        .unwrap();
+    assert!(matches!(
+        f.store.reclaim(ReclaimMode::All, 1),
+        Err(StoreError::Busy { objects: 1 })
+    ));
+    assert!(matches!(f.store.quiesce(), Err(StoreError::Busy { .. })));
+    assert!(!f.store.is_quiesced());
+    let r = f.store.reclaim(ReclaimMode::Check, 1).unwrap();
+    assert_eq!(r.problems(), 0, "{r}");
+    f.store.locks_mut().release_job(JobHandle(2));
+    // Quiesced by the service: jobs cannot start transactions, the
+    // rebuild runs, and the mode stays until released.
+    f.store.quiesce().unwrap();
+    assert!(matches!(f.store.begin(), Err(StoreError::Quiesced)));
+    let r = f.store.reclaim(ReclaimMode::All, 2).unwrap();
+    assert!(r.rebuilt);
+    assert!(f.store.is_quiesced());
+    f.store.release();
+    let mut t = f.store.begin().unwrap();
+    assert_eq!(usridx::describe(&mut t, f.index).unwrap().entry_count, 500);
+    t.abort();
+    // A rebuild on its own quiesces for its duration only.
+    let r = f.store.reclaim(ReclaimMode::All, 3).unwrap();
+    assert!(r.rebuilt && !f.store.is_quiesced());
 }

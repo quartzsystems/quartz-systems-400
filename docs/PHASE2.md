@@ -371,22 +371,25 @@ cargo test -p store                       # unit, property and crash tests
   fields; nothing acts on them in this phase (journaling came with
   Phase 3, jobs with Phase 5, authority with Phase 6).
 - DST implements the disk, environment, service tool and security
-  menus; `Work with Licensed Internal Code`, console mode, save and
-  restore storage, remote service, partitions, capacity and batch
-  restricted state are not available. Display/alter/dump displays only.
+  menus, the console mode choice and a display of the Licensed Internal
+  Code's identity; save and restore storage, remote service, partitions,
+  capacity and batch restricted state wait for their phases (DST.md
+  lists them). Display/alter/dump displays only.
 - One ASP; units are mirrored in pairs or unprotected. Device parity is
   a trait with no implementation (no capable controllers); software
   RAID is out of scope. Only the last unit can leave the configuration.
 - The installer offers optical media only and the English language
   group; the IPL options other than `Start print writers` are kept for
   Phase 5.
-- `*USRIDX` entries are at most the key plus 1024 bytes; user spaces at
-  most 16 MiB; a queue reclaims space only when it empties.
+- User spaces are at most 16 MiB; a queue reclaims space only when it
+  empties.
 - Locks are in-process and per caller-supplied job handle.
-- Payload writes are always in-place patches; there is no copy-on-write
-  relocation of whole pages for large user space writes.
-- RCLSTG runs with the store otherwise idle and treats a valid header on
-  a free page as a deleted object.
+- RCLSTG quiesces the store for a rebuild (`Store::quiesce`: refused
+  with `CPF8201`, a placeholder identifier, while any job holds an
+  object lock; `begin` fails with `Quiesced` until `release`), and
+  treats a valid header on a free page as a deleted object. The storage
+  service's own quiesce ahead of the command, holding the jobs' requests
+  back, is its wiring to add.
 
 ## Acceptance evidence
 
@@ -437,10 +440,12 @@ power pull, and the four RCLSTG scenarios.
   the bitmaps rather than edited in place; editing frees its own old
   nodes recursively and ran out of pages on a nearly full ASP. The free
   log holds only chunk tails.
-- Large user space writes are patches, not copy-on-write page
-  rewrites, so the extent list never changes under a write.
+- A payload write of at least 4 whole pages relocates them to fresh
+  pages and rewrites the extent list; shorter and partial writes are
+  patches (a list that would outgrow its slots falls back to patches).
 - `*USRIDX` keys are 128 bytes in the tree (120 zero-padded plus the
-  insertion sequence); entries beyond key plus 1024 bytes are refused.
+  insertion sequence); an entry's data beyond 1023 bytes lives on
+  overflow pages chained from the tree value, up to IBM's 2000 bytes.
 - `C1001085` and `C1001087` are informational and are followed by the
   fatal B-codes B1001040 and B1001050.
 - `StoreError` reports message IDs through `msgid()` rather than a

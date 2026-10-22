@@ -309,7 +309,7 @@ pub fn send(
         let space = Space::ensure(txn, id, attr.tail + need, 0)?;
         attr.space_bytes = space.bytes();
     }
-    let (space, _) = Space::load(txn, id)?;
+    let (mut space, _) = Space::load(txn, id)?;
     let mut rec = vec![0u8; usize::try_from(need).expect("entry fits")];
     put_u64(&mut rec, E_SEQ, attr.next_seq);
     put_u32(&mut rec, E_LEN, u32::try_from(data.len()).expect("checked"));
@@ -325,7 +325,7 @@ pub fn send(
     });
     rec[ENTRY_LEN..ENTRY_LEN + key.len()].copy_from_slice(key);
     rec[ENTRY_LEN + key.len()..ENTRY_LEN + key.len() + data.len()].copy_from_slice(data);
-    space.write(txn, attr.tail, &rec)?;
+    space.write_relocating(txn, attr.tail, &rec)?;
     let seq = attr.next_seq;
     attr.tail += need;
     attr.entry_count += 1;

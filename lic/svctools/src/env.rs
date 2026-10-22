@@ -10,6 +10,7 @@
 
 use console::Screen;
 
+use crate::dst::console_mode::ConsoleMode;
 use crate::install::lic::LicEvent;
 use crate::install::options::{IplOptions, MajorOptions};
 use crate::users::UserDb;
@@ -247,9 +248,23 @@ pub trait DstEnv {
         let _ = (name, value);
         Err("not available".into())
     }
-    /// The console in use.
+    /// The console in use, as the mode names it.
     fn console_type(&self) -> String {
-        "Local console".into()
+        self.console_mode().text().to_string()
+    }
+    /// The console mode the LIC record keeps for the next IPL.
+    fn console_mode(&self) -> ConsoleMode {
+        ConsoleMode::Local
+    }
+    /// Record the console mode for the next IPL.
+    fn set_console_mode(&mut self, mode: ConsoleMode) -> Result<(), String> {
+        let _ = mode;
+        Err("not available".into())
+    }
+    /// The Licensed Internal Code's identity and slots, label and
+    /// value each, for `Work with Licensed Internal Code`.
+    fn lic_info(&mut self) -> Vec<(String, String)> {
+        Vec::new()
     }
     /// The product activity log, newest last.
     fn activity_log(&mut self) -> Vec<LogEntry> {
@@ -305,6 +320,10 @@ pub struct MemEnv {
     pub log: Vec<LogEntry>,
     /// Flags.
     pub flags: SecurityFlags,
+    /// The console mode.
+    pub console_mode: ConsoleMode,
+    /// LIC identity lines to report.
+    pub lic: Vec<(String, String)>,
     /// Actions taken, for assertions.
     pub actions: Vec<String>,
     /// Screens shown during long actions, as dumps.
@@ -377,6 +396,17 @@ impl DstEnv for MemEnv {
     fn stop_mirror(&mut self, keep: u16) -> Result<(), String> {
         self.actions.push(format!("stop {keep}"));
         Ok(())
+    }
+    fn console_mode(&self) -> ConsoleMode {
+        self.console_mode
+    }
+    fn set_console_mode(&mut self, mode: ConsoleMode) -> Result<(), String> {
+        self.actions.push(format!("console {mode:?}"));
+        self.console_mode = mode;
+        Ok(())
+    }
+    fn lic_info(&mut self) -> Vec<(String, String)> {
+        self.lic.clone()
     }
     fn suspend(&mut self, unit: u16) -> Result<(), String> {
         self.actions.push(format!("suspend {unit}"));

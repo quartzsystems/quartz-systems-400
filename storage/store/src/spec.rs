@@ -70,6 +70,8 @@ pub fn layouts() -> Vec<&'static Layout> {
         &crate::obj::usrspc::LAYOUT,
         &crate::obj::usridx::LAYOUT,
         &crate::obj::usridx::KEY_LAYOUT,
+        &crate::obj::usridx::OVERFLOW_LAYOUT,
+        &crate::obj::usridx::OVERFLOW_REF_LAYOUT,
         &crate::obj::sysval::LAYOUT,
     ]
 }

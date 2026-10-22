@@ -90,6 +90,8 @@ pub struct Store {
     txns_since_checkpoint: u64,
     last_checkpoint_at: u64,
     broken: Option<&'static str>,
+    /// Reclaim storage's exclusive mode: `begin` refuses until released.
+    quiesced: bool,
     stats: StoreStats,
     locks: LockTable,
     guard: Option<Arc<dyn Guard>>,
@@ -293,6 +295,7 @@ impl Store {
             txns_since_checkpoint: 0,
             last_checkpoint_at: 0,
             broken: None,
+            quiesced: false,
             stats: StoreStats::default(),
             locks: LockTable::default(),
             guard: None,
@@ -353,11 +356,46 @@ impl Store {
         }
     }
 
-    /// Start a transaction.
+    /// Start a transaction. Refused while the store is quiesced.
     pub fn begin(&mut self) -> Result<Txn<'_>> {
+        if self.quiesced {
+            return Err(StoreError::Quiesced);
+        }
+        self.begin_exclusive()
+    }
+
+    /// Start a transaction for the one that quiesced the store.
+    pub(crate) fn begin_exclusive(&mut self) -> Result<Txn<'_>> {
         self.check()?;
         let id = self.next_txn;
         Ok(Txn::new(self, id))
+    }
+
+    /// Enter the exclusive mode reclaim storage needs: from here until
+    /// `release`, `begin` fails with `Quiesced`. Refused with `Busy`
+    /// while any job holds an object lock, since a rebuild under an
+    /// open path or a held object would pull the ground from under it.
+    /// `reclaim` calls this itself; the storage service calls it ahead
+    /// of time to hold the jobs' requests back while it prepares.
+    pub fn quiesce(&mut self) -> Result<()> {
+        self.check()?;
+        let objects = self.locks.locked_objects().len();
+        if objects > 0 {
+            return Err(StoreError::Busy { objects });
+        }
+        self.quiesced = true;
+        Ok(())
+    }
+
+    /// Leave the exclusive mode.
+    pub fn release(&mut self) {
+        self.quiesced = false;
+    }
+
+    /// Whether the store is in the exclusive mode.
+    #[must_use]
+    pub fn is_quiesced(&self) -> bool {
+        self.quiesced
     }
 
     /// Commit: write the transaction's new pages, log the record, then

@@ -48,8 +48,8 @@ pub fn work_with_dst_environment(privileges: Privilege) -> Submenu {
                         vec![
                             format!("Console type . . . . . :  {}", env.console_type()),
                             String::new(),
-                            "Only the local console exists in this release; an operations".into(),
-                            "console over the LAN comes with a later phase.".into(),
+                            "Option 6 of the DST menu chooses the local or the serial console;".into(),
+                            "an operations console over the LAN comes with a later phase.".into(),
                         ],
                     )))
                 })),

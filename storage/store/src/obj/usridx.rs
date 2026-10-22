@@ -2,17 +2,21 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `*USRIDX`: keyed entries in a B+tree owned by the index. See the
-//! format spec §10.
+//! `*USRIDX`: keyed entries in a B+tree owned by the index. The tree
+//! value holds the bytes after the key when they fit, else it names a
+//! chain of overflow pages that hold them. See the format spec §10.
 
 use std::ops::Bound;
 
 use crate::btree::BTree;
 use crate::btree::codec::FixedKey;
+use crate::btree::node::MAX_VALUE_LEN;
 use crate::bytes::{get_u16, get_u64, put_u16, put_u64};
 use crate::obj::ObjectId;
 use crate::obj::ops::{self, CreateParams};
 use crate::obj::types;
+use crate::page::pager::{PageNo, Pager};
+use crate::page::{BODY_SIZE, Page, PageType};
 use crate::spec::{Layout, field};
 use crate::txn::Txn;
 use crate::{Result, StoreError};
@@ -23,8 +27,22 @@ pub use crate::obj::dtaq::KeyOp;
 pub const ATTR_LEN: usize = 32;
 /// Longest key.
 pub const MAX_KEY: u16 = 120;
-/// Longest entry beyond the key.
-pub const MAX_DATA: usize = 1024;
+/// Longest entry, IBM's limit.
+pub const MAX_ENTRY: usize = 2000;
+/// Longest data kept in the tree value itself; longer data goes to
+/// overflow pages.
+pub const INLINE_MAX: usize = MAX_VALUE_LEN - 1;
+/// Bytes of an overflow page's header.
+pub const OVERFLOW_HEADER: usize = 16;
+/// Data bytes one overflow page holds.
+pub const OVERFLOW_DATA: usize = BODY_SIZE - OVERFLOW_HEADER;
+
+/// Tag of a tree value holding the data itself.
+const TAG_INLINE: u8 = 0;
+/// Tag of a tree value naming overflow pages.
+const TAG_OVERFLOW: u8 = 1;
+/// Bytes of an overflow reference value.
+const OVERFLOW_REF: usize = 11;
 
 const OFF_KIND: usize = 0;
 const OFF_KEY_LEN: usize = 2;
@@ -54,6 +72,24 @@ pub static KEY_LAYOUT: Layout = Layout {
     name: "IdxKey",
     size: Some(128),
     fields: &[field("key", 0, 120), field("seq", 120, 8)],
+};
+
+/// The spec layout of an overflow page header.
+pub static OVERFLOW_LAYOUT: Layout = Layout {
+    name: "IdxOverflowHeader",
+    size: Some(OVERFLOW_HEADER),
+    fields: &[
+        field("next", 0, 8),
+        field("len", 8, 2),
+        field("reserved", 10, 6),
+    ],
+};
+
+/// The spec layout of a tree value that names overflow pages.
+pub static OVERFLOW_REF_LAYOUT: Layout = Layout {
+    name: "IdxOverflowRef",
+    size: Some(OVERFLOW_REF),
+    fields: &[field("tag", 0, 1), field("page", 1, 8), field("len", 9, 2)],
 };
 
 /// Tree key: the entry key zero padded, then the insertion sequence.
@@ -150,7 +186,7 @@ pub fn create(
 ) -> Result<ObjectId> {
     if !(1..=MAX_KEY).contains(&key_len)
         || entry_len < key_len
-        || usize::from(entry_len - key_len) > MAX_DATA
+        || usize::from(entry_len) > MAX_ENTRY
     {
         return Err(StoreError::BadValue {
             what: format!("index with key {key_len} and entry {entry_len}"),
@@ -233,15 +269,20 @@ pub fn insert(txn: &mut Txn<'_>, id: ObjectId, entry: &[u8]) -> Result<()> {
     check_entry(&attr, entry)?;
     let (key, data) = entry.split_at(usize::from(attr.key_len));
     let mut tree = Tree::open(attr.root, id);
-    for found in tree.range(txn, IdxKey::new(key, 0)..=IdxKey::new(key, u64::MAX))? {
-        if found?.1 == data {
+    let same: Vec<Vec<u8>> = tree
+        .range(txn, IdxKey::new(key, 0)..=IdxKey::new(key, u64::MAX))?
+        .map(|r| r.map(|(_, v)| v))
+        .collect::<Result<_>>()?;
+    for raw in &same {
+        if decode_value(txn, raw)? == data {
             return Err(StoreError::AlreadyExists {
                 name: format!("index entry {}", hex(key)),
                 library: String::new(),
             });
         }
     }
-    tree.insert(txn, IdxKey::new(key, attr.next_seq), &data.to_vec())?;
+    let value = encode_value(txn, id, data)?;
+    tree.insert(txn, IdxKey::new(key, attr.next_seq), &value)?;
     attr.root = tree.root();
     attr.next_seq += 1;
     attr.entry_count += 1;
@@ -275,10 +316,22 @@ pub fn find(
     let attr = describe(txn, id)?;
     bad_key(&attr, key)?;
     let found = search(txn, id, &attr, op, key, max)?;
-    Ok(found
-        .into_iter()
-        .map(|(k, d)| entry_of(usize::from(attr.key_len), &k, &d))
-        .collect())
+    entries(txn, &attr, found)
+}
+
+/// The entries of raw tree items, their data read from overflow pages
+/// where it lives there.
+fn entries(
+    txn: &mut Txn<'_>,
+    attr: &IndexAttr,
+    found: Vec<(IdxKey, Vec<u8>)>,
+) -> Result<Vec<Vec<u8>>> {
+    let mut out = Vec::with_capacity(found.len());
+    for (k, raw) in found {
+        let data = decode_value(txn, &raw)?;
+        out.push(entry_of(usize::from(attr.key_len), &k, &data));
+    }
+    Ok(out)
 }
 
 fn search(
@@ -361,12 +414,8 @@ pub fn first(txn: &mut Txn<'_>, id: ObjectId, n: usize) -> Result<Vec<Vec<u8>>> 
     crate::obj::guard::check_id(txn, "usridx.read", id)?;
     let attr = describe(txn, id)?;
     let tree = Tree::open(attr.root, id);
-    let mut out = Vec::new();
-    for r in tree.entries(txn)?.take(n) {
-        let (k, d) = r?;
-        out.push(entry_of(usize::from(attr.key_len), &k, &d));
-    }
-    Ok(out)
+    let found: Vec<(IdxKey, Vec<u8>)> = tree.entries(txn)?.take(n).collect::<Result<_>>()?;
+    entries(txn, &attr, found)
 }
 
 /// The last `n` entries, last first.
@@ -374,20 +423,20 @@ pub fn last(txn: &mut Txn<'_>, id: ObjectId, n: usize) -> Result<Vec<Vec<u8>>> {
     crate::obj::guard::check_id(txn, "usridx.read", id)?;
     let attr = describe(txn, id)?;
     let tree = Tree::open(attr.root, id);
-    let mut out = Vec::new();
+    let mut found = Vec::new();
     let mut probe = Some(IdxKey {
         key: [0xFF; 120],
         seq: u64::MAX,
     });
-    while out.len() < n {
+    while found.len() < n {
         let Some(p) = probe else { break };
-        let Some((k, d)) = tree.floor(txn, &p)? else {
+        let Some(item) = tree.floor(txn, &p)? else {
             break;
         };
-        probe = pred(&k);
-        out.push(entry_of(usize::from(attr.key_len), &k, &d));
+        probe = pred(&item.0);
+        found.push(item);
     }
-    Ok(out)
+    entries(txn, &attr, found)
 }
 
 /// Remove up to `max` entries matching `op key`. Returns them.
@@ -404,10 +453,12 @@ pub fn remove(
     let found = search(txn, id, &attr, op, key, max)?;
     let mut tree = Tree::open(attr.root, id);
     let mut out = Vec::new();
-    for (k, d) in found {
+    for (k, raw) in found {
+        let data = decode_value(txn, &raw)?;
         tree.delete(txn, &k)?;
+        free_value(txn, &raw)?;
         attr.entry_count -= 1;
-        out.push(entry_of(usize::from(attr.key_len), &k, &d));
+        out.push(entry_of(usize::from(attr.key_len), &k, &data));
     }
     attr.root = tree.root();
     save(txn, id, &attr)?;
@@ -419,10 +470,102 @@ pub fn drop_entries(txn: &mut Txn<'_>, id: ObjectId) -> Result<()> {
     crate::obj::guard::check_id(txn, "usridx.write", id)?;
     let mut attr = describe(txn, id)?;
     let mut tree = Tree::open(attr.root, id);
+    let raws: Vec<Vec<u8>> = tree
+        .entries(txn)?
+        .map(|r| r.map(|(_, v)| v))
+        .collect::<Result<_>>()?;
+    for raw in &raws {
+        free_value(txn, raw)?;
+    }
     tree.free_all(txn)?;
     attr.root = None;
     attr.entry_count = 0;
     save(txn, id, &attr)
+}
+
+/// The tree value for `data`: the bytes themselves when they fit, else
+/// a reference to the overflow pages written here, owned by `id`.
+pub(crate) fn encode_value(txn: &mut Txn<'_>, id: ObjectId, data: &[u8]) -> Result<Vec<u8>> {
+    if data.len() <= INLINE_MAX {
+        let mut v = Vec::with_capacity(data.len() + 1);
+        v.push(TAG_INLINE);
+        v.extend_from_slice(data);
+        return Ok(v);
+    }
+    let chunks: Vec<&[u8]> = data.chunks(OVERFLOW_DATA).collect();
+    let mut pages = Vec::with_capacity(chunks.len());
+    for _ in &chunks {
+        pages.push(txn.alloc()?);
+    }
+    for (i, chunk) in chunks.iter().enumerate() {
+        let mut p = Page::zeroed();
+        let body = p.body_mut();
+        put_u64(body, 0, pages.get(i + 1).copied().unwrap_or(0));
+        put_u16(body, 8, u16::try_from(chunk.len()).expect("fits a page"));
+        body[OVERFLOW_HEADER..OVERFLOW_HEADER + chunk.len()].copy_from_slice(chunk);
+        txn.write(pages[i], &mut p, PageType::IndexOverflow, id)?;
+    }
+    let mut v = vec![0u8; OVERFLOW_REF];
+    v[0] = TAG_OVERFLOW;
+    put_u64(&mut v, 1, pages[0]);
+    put_u16(&mut v, 9, u16::try_from(data.len()).expect("entry limit"));
+    Ok(v)
+}
+
+fn bad_value(what: &str) -> StoreError {
+    StoreError::Corrupt {
+        page: 0,
+        what: format!("index entry value: {what}"),
+    }
+}
+
+/// The data a tree value holds or names.
+pub fn decode_value(p: &mut dyn Pager, raw: &[u8]) -> Result<Vec<u8>> {
+    match raw.first() {
+        Some(&TAG_INLINE) => Ok(raw[1..].to_vec()),
+        Some(&TAG_OVERFLOW) if raw.len() == OVERFLOW_REF => {
+            let want = usize::from(get_u16(raw, 9));
+            let mut out = Vec::with_capacity(want);
+            for page in overflow_pages(p, raw)? {
+                let pg = p.read(page)?;
+                let len = usize::from(get_u16(pg.body(), 8)).min(OVERFLOW_DATA);
+                out.extend_from_slice(&pg.body()[OVERFLOW_HEADER..OVERFLOW_HEADER + len]);
+            }
+            if out.len() != want {
+                return Err(bad_value("overflow pages hold the wrong length"));
+            }
+            Ok(out)
+        }
+        _ => Err(bad_value("unknown tag")),
+    }
+}
+
+/// The overflow pages a tree value names, in chain order; none for an
+/// inline value.
+pub fn overflow_pages(p: &mut dyn Pager, raw: &[u8]) -> Result<Vec<PageNo>> {
+    if raw.first() != Some(&TAG_OVERFLOW) || raw.len() != OVERFLOW_REF {
+        return Ok(Vec::new());
+    }
+    let mut pages = Vec::new();
+    let mut next = get_u64(raw, 1);
+    while next != 0 {
+        if pages.len() > MAX_ENTRY / OVERFLOW_DATA + 1 {
+            return Err(bad_value("overflow chain too long"));
+        }
+        let pg = p.read(next)?;
+        pg.verify_type(next, PageType::IndexOverflow)?;
+        pages.push(next);
+        next = get_u64(pg.body(), 0);
+    }
+    Ok(pages)
+}
+
+/// Free the overflow pages a tree value names.
+fn free_value(txn: &mut Txn<'_>, raw: &[u8]) -> Result<()> {
+    for page in overflow_pages(txn, raw)? {
+        txn.free_run(page, 1)?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]

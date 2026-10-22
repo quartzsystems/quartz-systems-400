@@ -1,10 +1,10 @@
                                  System Devices                                 
                                                                  System:  QS400 
                                                                                 
- Console type . . . . . :  Local console                                        
+ Console type . . . . . :  Local console (display and keyboard)                 
                                                                                 
- Only the local console exists in this release; an operations                   
- console over the LAN comes with a later phase.                                 
+ Option 6 of the DST menu chooses the local or the serial console;              
+ an operations console over the LAN comes with a later phase.                   
                                                                                 
                                                                                 
                                                                                 
