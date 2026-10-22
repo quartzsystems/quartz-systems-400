@@ -492,6 +492,12 @@ impl Store {
         Ok(())
     }
 
+    /// Size the page cache: `QMCHPOOL` in pages, read once the system
+    /// values are.
+    pub fn resize_cache(&mut self, pages: usize) {
+        self.cache.resize(pages);
+    }
+
     pub(crate) fn cache_remove(&mut self, pno: PageNo) {
         self.cache.remove(pno);
     }

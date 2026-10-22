@@ -142,7 +142,3 @@ In memory, release build, one core of the development machine
   object and not applied to the library list while the command runs.
 - **`QCAPCMD`'s retrieve option** (the previous command of the job) is
   not kept; F9 at Command Entry is the job's own list.
-- **The `CPD0030` fallback** to the old console words without `svc.`
-  stays (`MIGRATE(phase7)` in `work/qsjob/src/command/mod.rs`) until
-  every script of the harness and every note of the docs says `svc.`;
-  the harness already does.

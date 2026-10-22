@@ -206,7 +206,7 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
             super::jobs::apply_class(system, &mut a, &job.class);
             a
         }
-        None => super::jobs::resolve_attrs(system, &job.jobd, &job.class),
+        None => super::jobs::resolve_attrs(system, &job.jobd, &job.class, &job.user.clone()),
     };
     system.attrs.insert(job.number, attrs);
     system.job_seen.insert(job.name.clone(), 1);

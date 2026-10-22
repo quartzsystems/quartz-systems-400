@@ -66,10 +66,6 @@ activation check and the argument vector.
 - `rem` of floats and calls to a bare signature are not lowered.
 - Display and printer files (`dspio`, `prtio`) return status `01299`
   until Phase 8.
-- The IR's file I/O resolves files in ASP 1; `QTEMP` is a separate
-  store until Phase 5 gives each job a `QTEMP` in ASP 1.
-- `QCMDEXC` queues the command for the console to run after the call;
-  the command analyzer is Phase 7.
 - Operational descriptors are not built, so `CEEDOD` reports
   `CEE0820`.
 - Condition handler result codes 30 and 31 (promote) act as percolate.

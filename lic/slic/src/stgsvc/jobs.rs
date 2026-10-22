@@ -173,10 +173,34 @@ pub fn initial_status() -> u8 {
     Status::Run.byte()
 }
 
+/// What `user`'s profile supplies for `*USRPRF`; the shipped defaults
+/// when the profile cannot be read.
+pub fn user_dft(system: &mut System, user: &str) -> wm::job::UserDft {
+    super::spool::with_store(system, |txn, qsys| {
+        sec::profile::objects::read(txn, qsys, user).map_err(|e| e.to_string())
+    })
+    .map(|(_, p)| wm::job::UserDft {
+        outq: if p.outq.0.starts_with('*') {
+            p.outq.0
+        } else {
+            format!("{}/{}", p.outq.1, p.outq.0)
+        },
+        prtdev: p.prtdev,
+    })
+    .unwrap_or_default()
+}
+
 /// A job's attributes from its job description and class, `lib/name`
-/// each; a missing object falls back to the command defaults.
-pub fn resolve_attrs(system: &mut System, jobd: &str, class: &str) -> wm::job::JobAttrs {
+/// each, for `user`; a missing object falls back to the command
+/// defaults.
+pub fn resolve_attrs(
+    system: &mut System,
+    jobd: &str,
+    class: &str,
+    user: &str,
+) -> wm::job::JobAttrs {
     use wm::obj::{cls::Cls, jobd::JobD, params::qualified};
+    let prf = user_dft(system, user);
     let load = |system: &mut System, qual: &str, type_code: u16| -> Option<Vec<u8>> {
         let s = system.storage.as_mut()?;
         let qsys = s.qsys?;
@@ -200,7 +224,7 @@ pub fn resolve_attrs(system: &mut System, jobd: &str, class: &str) -> wm::job::J
             .map(|v| v.text())
             .unwrap_or_default()
     };
-    wm::job::JobAttrs::resolve(jobd, &d, &c, &sv)
+    wm::job::JobAttrs::resolve_for(jobd, &d, &c, &sv, &prf)
 }
 
 /// `CHGJOB`: `job` blank for `self_number`'s own job.

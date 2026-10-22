@@ -300,7 +300,16 @@ pub fn endcmtctl(system: &mut System) -> Result<String, String> {
     })
 }
 
-/// `ovrdbf FILE(F) [TOFILE(LIB/F) MBR(M) SHARE(*YES) LVLCHK(*NO) INHWRT(*YES) POSITION(*START|*END|*RRN n)]`.
+/// `CALLLVL(n)`: the call level the job says issued the command; 0,
+/// command level, when typed at a console.
+pub fn call_level(p: &Params) -> u32 {
+    p.kw("CALLLVL")
+        .and_then(|n| n.trim().parse().ok())
+        .unwrap_or(0)
+}
+
+/// `ovrdbf FILE(F) [TOFILE(LIB/F) MBR(M) SHARE(*YES) LVLCHK(*NO) INHWRT(*YES)
+/// POSITION(*START|*END|*RRN n) SECURE(*YES) OVRSCOPE(*JOB) CALLLVL(n)]`.
 pub fn ovrdbf(system: &mut System, p: &Params) -> Result<String, String> {
     let file = p.pos_or(0, "FILE")?;
     let fname = Name::parse(&file).map_err(|e| format!("FILE({file}): {e}"))?;
@@ -339,6 +348,15 @@ pub fn ovrdbf(system: &mut System, p: &Params) -> Result<String, String> {
             _ => return Err(format!("POSITION({pos}) is not *START, *END or *RRN n")),
         });
     }
+    if p.upper("SECURE").as_deref() == Some("*YES") {
+        o = o.secure();
+    }
+    match p.upper("OVRSCOPE").as_deref() {
+        None | Some("*ACTGRPDFN" | "*CALLLVL") => {}
+        Some("*JOB") => o = o.scope("*JOB"),
+        Some(s) => return Err(format!("CPD0084 OVRSCOPE({s}) is not valid")),
+    }
+    o = o.level(call_level(p));
     let (_, ctx) = db(system)?;
     ctx.session.ovrdbf(o);
     Ok(format!(
@@ -347,16 +365,33 @@ pub fn ovrdbf(system: &mut System, p: &Params) -> Result<String, String> {
     ))
 }
 
-/// `dltovr FILE(F|*ALL)`.
+/// `dltovr FILE(F|*ALL) [LVL(*|*JOB) CALLLVL(n)]`, or `dltovr ENDLVL(n)`
+/// from the job when call level `n` returned.
 pub fn dltovr(system: &mut System, p: &Params) -> Result<String, String> {
+    if let Some(n) = p.kw("ENDLVL") {
+        let level: u32 = n
+            .trim()
+            .parse()
+            .map_err(|_| format!("CPD0084 ENDLVL({n}) is not valid"))?;
+        let (_, ctx) = db(system)?;
+        let k = ctx.session.end_level(level);
+        let k = k + super::prtf::end_level(system, level);
+        return Ok(format!("{k} override(s) deleted."));
+    }
     let file = p.pos_or(0, "FILE")?;
-    let (_, ctx) = db(system)?;
-    let n = if file.eq_ignore_ascii_case("*ALL") {
-        ctx.session.dltovr(None)
+    let level = call_level(p);
+    let every_level = matches!(p.upper("LVL").as_deref(), Some("*JOB" | "*ALL"));
+    let fname = if file.eq_ignore_ascii_case("*ALL") {
+        None
     } else {
-        let fname = Name::parse(&file).map_err(|e| format!("FILE({file}): {e}"))?;
-        ctx.session.dltovr(Some(fname))
+        Some(Name::parse(&file).map_err(|e| format!("FILE({file}): {e}"))?)
     };
-    let n = n + super::prtf::dltovr(system, &file);
+    let (_, ctx) = db(system)?;
+    let n = if every_level {
+        ctx.session.dltovr(fname)
+    } else {
+        ctx.session.dltovr_at(fname, level)
+    };
+    let n = n + super::prtf::dltovr(system, &file, (!every_level).then_some(level));
     Ok(format!("{n} override(s) deleted."))
 }

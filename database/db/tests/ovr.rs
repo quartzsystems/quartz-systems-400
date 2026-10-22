@@ -487,3 +487,40 @@ fn inhwrt_lvlchk_and_member_allocation() {
     odp::deallocate(&mut t, JobHandle(2), member, LockState::Exclusive);
     s.end(&mut t);
 }
+
+#[test]
+fn call_levels_merge_and_end() {
+    let mut s = Session::new(JobHandle(1), odp::new_shared());
+    // Command level redirects; a program two levels down picks a member.
+    s.ovrdbf(Override::new(name("CUST")).tofile(fileref("QSTEST/CUST2")));
+    s.ovrdbf(
+        Override::new(name("CUST"))
+            .member(MemberSpec::Name(name("ARCH")))
+            .level(2),
+    );
+    let o = s.override_for(name("CUST")).unwrap();
+    assert_eq!(o.tofile, Some(fileref("QSTEST/CUST2")), "merged from level 0");
+    assert_eq!(o.member, Some(MemberSpec::Name(name("ARCH"))));
+    assert_eq!(o.level, 2);
+    // The deeper level's value wins where both say something.
+    s.ovrdbf(Override::new(name("CUST")).tofile(fileref("QSTEST/CUST3")).level(3));
+    assert_eq!(
+        s.override_for(name("CUST")).unwrap().tofile,
+        Some(fileref("QSTEST/CUST3"))
+    );
+    // SECURE(*YES) at level 3 hides the levels below.
+    s.ovrdbf(Override::new(name("CUST")).share(true).secure().level(3));
+    let o = s.override_for(name("CUST")).unwrap();
+    assert_eq!(o.share, Some(true));
+    assert!(o.tofile.is_none() && o.member.is_none());
+    // Level 3 returned: its override goes, the merge resumes.
+    assert_eq!(s.end_level(3), 1);
+    let o = s.override_for(name("CUST")).unwrap();
+    assert_eq!(o.tofile, Some(fileref("QSTEST/CUST2")));
+    assert_eq!(o.member, Some(MemberSpec::Name(name("ARCH"))));
+    // DLTOVR at level 2 leaves command level's alone.
+    assert_eq!(s.dltovr_at(None, 2), 1);
+    assert_eq!(s.overrides().len(), 1);
+    assert_eq!(s.dltovr_at(Some(name("CUST")), 0), 1);
+    assert!(s.overrides().is_empty());
+}

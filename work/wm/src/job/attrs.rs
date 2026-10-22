@@ -284,25 +284,50 @@ fn words(s: &str) -> Vec<String> {
     s.split_whitespace().map(str::to_string).collect()
 }
 
+/// What the user profile supplies where a job description says
+/// `*USRPRF`.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct UserDft {
+    /// `OUTQ`: `lib/name`, or a special value such as `*WRKSTN`.
+    pub outq: String,
+    /// `PRTDEV`: a device, or `*WRKSTN` or `*SYSVAL`.
+    pub prtdev: String,
+}
+
 impl JobAttrs {
-    /// Resolve a job description and a class for `user`: `*SYSVAL`
-    /// through `sv`, `*USRPRF` through the user's defaults
-    /// (`MIGRATE(phase6)`: the profile's own values).
+    /// Resolve a job description and a class with no profile at hand:
+    /// `*SYSVAL` through `sv`, `*USRPRF` as the shipped profile defaults.
     #[must_use]
     pub fn resolve(jobd_name: &str, d: &JobD, c: &Cls, sv: SysvalFn<'_>) -> Self {
+        Self::resolve_for(jobd_name, d, c, sv, &UserDft::default())
+    }
+
+    /// Resolve a job description and a class for a user: `*SYSVAL`
+    /// through `sv`, `*USRPRF` through the profile's values in `prf`.
+    #[must_use]
+    pub fn resolve_for(
+        jobd_name: &str,
+        d: &JobD,
+        c: &Cls,
+        sv: SysvalFn<'_>,
+        prf: &UserDft,
+    ) -> Self {
         let num = |name: &str, dft: u32| sv(name).trim().parse().unwrap_or(dft);
+        let qualified = |lib: &str, n: &str| {
+            format!("{}/{n}", if lib.is_empty() { "*LIBL" } else { lib })
+        };
         let outq = match d.outq.1.as_str() {
-            "*USRPRF" | "*DEV" | "*WRKSTN" | "" => "QGPL/QPRINT".to_string(),
-            n => format!(
-                "{}/{n}",
-                if d.outq.0.is_empty() {
-                    "*LIBL"
-                } else {
-                    &d.outq.0
-                }
-            ),
+            "*USRPRF" => match prf.outq.split_once('/') {
+                Some((lib, n)) if !n.starts_with('*') && !n.is_empty() => qualified(lib, n),
+                _ => "QGPL/QPRINT".to_string(),
+            },
+            "*DEV" | "*WRKSTN" | "" => "QGPL/QPRINT".to_string(),
+            n => qualified(&d.outq.0, n),
         };
         let prtdev = match d.prtdev.as_str() {
+            "*USRPRF" if !prf.prtdev.is_empty() && !prf.prtdev.starts_with('*') => {
+                prf.prtdev.clone()
+            }
             "*USRPRF" | "*SYSVAL" | "*WRKSTN" => sv("QPRTDEV"),
             p => p.to_string(),
         };

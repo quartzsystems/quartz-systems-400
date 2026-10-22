@@ -15,6 +15,7 @@ pub mod jobsite;
 pub mod natives;
 pub mod prompt;
 
+use std::fmt::Write as _;
 use std::rc::Rc;
 
 use cmd::analyze::{Env, Setting};
@@ -151,12 +152,6 @@ pub fn run_with(
     };
     let r = match resolved {
         Ok(r) => r,
-        // A line of the old console table, until every harness script
-        // says `svc.` (`MIGRATE(phase7)`: the shim goes at the end of
-        // the phase).
-        Err(e) if e.msgid() == "CPD0030" && is_old_word(text) => {
-            return passthrough(job, host, text);
-        }
         Err(e) => return failed(job, &e),
     };
     let mut out = Outcome {
@@ -365,9 +360,16 @@ fn service(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
     let specified: Vec<bool> = r.parms.iter().map(|b| b.specified).collect();
     // The keyword form as typed, for the service's bridge: the block
     // alone cannot tell a given element from its default.
-    let typed = sys_cpps::entry(&r.name)
+    let mut typed = sys_cpps::entry(&r.name)
         .map(|e| sys_cpps::bridge::specified_line(&e.word, &parms_of(r)))
         .unwrap_or_default();
+    // An override belongs to the call level that issued it.
+    if matches!(r.name.as_str(), "OVRDBF" | "OVRPRTF" | "DLTOVR") {
+        let _ = write!(typed, " CALLLVL({})", job.depth);
+        if r.name != "DLTOVR" {
+            job.ovr_top = job.ovr_top.max(job.depth);
+        }
+    }
     let reply: CmdReply = host
         .link
         .borrow_mut()
@@ -446,47 +448,6 @@ fn user_cpp(job: &mut Job, _host: &Host, r: &Resolved) -> Result<String, Fail> {
     }
     Ok(text)
 }
-
-/// Whether a line starts with a word of the old console tables.
-fn is_old_word(text: &str) -> bool {
-    let word = text.split_whitespace().next().unwrap_or("");
-    jobsite::OLD_JOB_WORDS.contains(&word) || OLD_SERVICE_WORDS.contains(&word)
-}
-
-/// The words of the storage service's console table that have no
-/// command of their own (the development commands).
-const OLD_SERVICE_WORDS: &[&str] = &[
-    "asp",
-    "unit",
-    "mirror",
-    "lib",
-    "obj",
-    "dtaara",
-    "dtaq",
-    "usrspc",
-    "rclstg",
-    "chkstg",
-    "txn",
-    "xfer",
-    "srcput",
-    "srcget",
-    "sql",
-    "sqlrun",
-    "naming",
-    "curlib",
-    "rla",
-    "dbbench",
-    "qir",
-    "prtcapture",
-    "whoami",
-    "wmstats",
-    "sysval",
-    "fuzzptr",
-    "callbench",
-    "help",
-    "release",
-    "dsplog",
-];
 
 /// A `svc.` line: a job command of the old table, else the storage
 /// service's console table.
@@ -610,8 +571,14 @@ pub fn parms_of(r: &Resolved) -> Parms {
 }
 
 /// Install the `QCMDEXC` hook: command strings a program runs go
-/// through the analyzer with the same reach as a typed line.
+/// through the analyzer with the same reach as a typed line. A call
+/// level's file overrides go when it returns.
 pub fn install_hook(job: &mut Job, host: &Host) {
+    let ovr_host = host.clone();
+    job.ovr_end = Some(Rc::new(move |job: &mut Job| {
+        let _ = ovr_host.exec(&format!("dltovr ENDLVL({})", job.depth + 1));
+        job.ovr_top = job.depth;
+    }));
     let host = host.clone();
     job.cmdexc = Some(Rc::new(move |job: &mut Job, text: &str, mode: u8| {
         let o = run_exec(job, &host, text, RunMode::from_code(mode));

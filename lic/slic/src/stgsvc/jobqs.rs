@@ -114,6 +114,15 @@ fn sv(system: &System) -> impl Fn(&str) -> String + '_ {
     }
 }
 
+/// The user `SBMJOB` runs the job as: `USER`, or the submitter.
+fn sbm_user(r: &SbmJob, me: &str) -> String {
+    if r.user.is_empty() || r.user == "*CURRENT" {
+        me.to_string()
+    } else {
+        r.user.clone()
+    }
+}
+
 /// `SBMJOB`: the job's number and the message to the submitter.
 pub fn sbmjob(system: &mut System, me: u32, r: &SbmJob) -> Result<(u32, String), String> {
     let mine = system.attrs.get(&me).cloned().unwrap_or_default();
@@ -125,7 +134,15 @@ pub fn sbmjob(system: &mut System, me: u32, r: &SbmJob) -> Result<(u32, String),
     };
     let b = super::sbs::wm_object(system, &jobd, "*JOBD")?;
     let d = JobD::decode(&b).map_err(|e| e.to_string())?;
-    let mut attrs = JobAttrs::resolve(&jobd, &d, &wm::obj::cls::Cls::default(), &sv(system));
+    let user = sbm_user(r, &me_info.user);
+    let prf = super::jobs::user_dft(system, &user);
+    let mut attrs = JobAttrs::resolve_for(
+        &jobd,
+        &d,
+        &wm::obj::cls::Cls::default(),
+        &sv(system),
+        &prf,
+    );
     match &r.inllibl {
         None => attrs.libl.usr.clone_from(&mine.libl.usr),
         Some(l) if l.is_empty() => {}
@@ -143,11 +160,6 @@ pub fn sbmjob(system: &mut System, me: u32, r: &SbmJob) -> Result<(u32, String),
             .change(kw, v)
             .map_err(|e| format!("{} {e}", e.msgid().unwrap_or("CPD0084")))?;
     }
-    let user = if r.user.is_empty() || r.user == "*CURRENT" {
-        me_info.user.clone()
-    } else {
-        r.user.clone()
-    };
     if user != me_info.user {
         // Running as another user needs *USE to its profile.
         super::spool::with_store(system, |txn, qsys| {

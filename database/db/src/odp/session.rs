@@ -5,8 +5,9 @@
 //! A job's view of the database: its overrides and the open data paths
 //! it shares. An override reaches the opens of the activation group
 //! that issued it, or every open for `OVRSCOPE(*JOB)` and for one
-//! issued at command level; call-level scoping within a group waits for
-//! commands run in place (`MIGRATE(phase7)`).
+//! issued at command level. Within its reach the overrides of the file
+//! merge from the deepest call level outwards, a `SECURE(*YES)` one
+//! ending the merge, and a call level's overrides go when it returns.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -71,14 +72,16 @@ impl Session {
         self.job
     }
 
-    /// `OVRDBF`: a second override of the same file replaces the first.
+    /// `OVRDBF`: a second override of the same file at the same scope
+    /// and call level replaces the first.
     pub fn ovrdbf(&mut self, ovr: Override) {
         self.overrides
-            .retain(|o| o.file != ovr.file || o.scope != ovr.scope);
+            .retain(|o| o.file != ovr.file || o.scope != ovr.scope || o.level != ovr.level);
         self.overrides.push(ovr);
     }
 
-    /// `DLTOVR FILE(name)`, or `FILE(*ALL)` with `None`; how many went.
+    /// `DLTOVR FILE(name) LVL(*JOB)`, or `FILE(*ALL)` with `None`: every
+    /// call level's; how many went.
     pub fn dltovr(&mut self, file: Option<Name>) -> usize {
         let before = self.overrides.len();
         match file {
@@ -88,18 +91,52 @@ impl Session {
         before - self.overrides.len()
     }
 
+    /// `DLTOVR` at call level `level`: the overrides that level issued,
+    /// of `file` or all of them; how many went.
+    pub fn dltovr_at(&mut self, file: Option<Name>, level: u32) -> usize {
+        let before = self.overrides.len();
+        self.overrides
+            .retain(|o| o.level != level || file.is_some_and(|f| o.file != f));
+        before - self.overrides.len()
+    }
+
+    /// Call level `level` returned: its overrides and any deeper level's
+    /// go; how many went.
+    pub fn end_level(&mut self, level: u32) -> usize {
+        let before = self.overrides.len();
+        self.overrides.retain(|o| o.level < level);
+        before - self.overrides.len()
+    }
+
     /// The overrides in effect, in the order they were issued.
     #[must_use]
     pub fn overrides(&self) -> &[Override] {
         &self.overrides
     }
 
-    /// The override for a file name, if any.
+    /// The override in effect for a file name, if any: the deepest call
+    /// level's, filled in from the levels below it down to a
+    /// `SECURE(*YES)` one.
     #[must_use]
-    pub fn override_for(&self, file: Name) -> Option<&Override> {
-        self.overrides
+    pub fn override_for(&self, file: Name) -> Option<Override> {
+        let mut mine: Vec<&Override> = self
+            .overrides
             .iter()
-            .find(|o| o.file == file && super::ovrdbf::reaches(&o.scope, &self.opener))
+            .rev()
+            .filter(|o| o.file == file && super::ovrdbf::reaches(&o.scope, &self.opener))
+            .collect();
+        mine.sort_by_key(|o| std::cmp::Reverse(o.level));
+        let mut it = mine.into_iter();
+        let mut merged = it.next()?.clone();
+        if !merged.secure {
+            for o in it {
+                merged.merge_under(o);
+                if o.secure {
+                    break;
+                }
+            }
+        }
+        Some(merged)
     }
 
     /// The activation group the next opens come from.
@@ -128,7 +165,7 @@ impl Session {
         resolve: Resolve<'_>,
         mut opts: OpenOpts,
     ) -> Result<OdpRef> {
-        let ovr = self.override_for(file.file).cloned();
+        let ovr = self.override_for(file.file);
         let target = ovr
             .as_ref()
             .and_then(|o| o.tofile.clone())

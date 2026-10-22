@@ -701,9 +701,13 @@ with the text again.
 `OVRPRTF` takes the `CRTPRTF` keywords and `TOFILE`, `OVRSCOPE`. An
 override reaches the opens of the activation group that issued it, all
 of the job's for `*JOB` and for one issued at command level; the
-console's `OVRDBF` and a program's database opens now share one table.
-Commands a program runs through `QCMDEXC` take effect after the call
-(`MIGRATE(phase7)`), so for now every override is a command-level one.
+console's `OVRDBF` and a program's database opens share one table.
+Within its reach an override belongs to the call level that issued it:
+the deepest level's values apply, filled in from the levels below down
+to one with `SECURE(*YES)`, and a level's overrides go when it returns
+(the job adds `CALLLVL(n)` to the line and sends `DLTOVR ENDLVL(n)`
+when the call stack drops below `n`). `DLTOVR` deletes the current
+level's, `LVL(*JOB)` every level's.
 
 ### Writers and the capture device
 

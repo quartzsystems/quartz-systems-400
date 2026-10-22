@@ -91,10 +91,10 @@ checkpoints. The ring is 64 MiB; a transaction that would not fit is
 refused and the store stays usable; a full ring forces a checkpoint.
 Checkpoints also run every 256 transactions and every 30 seconds.
 
-**Page cache.** CLOCK replacement, 256 MiB by default, write-through, so
-it never holds dirty committed data. Since Phase 5 it lives in the
-storage service; sizing it as the *MACHINE pool from `QMCHPOOL` is
-`MIGRATE(phase6)`.
+**Page cache.** CLOCK replacement, write-through, so it never holds
+dirty committed data. Since Phase 5 it lives in the storage service,
+which sizes it as the *MACHINE pool from `QMCHPOOL` once the system
+values are read (256 MiB before that).
 
 **Objects.** IDs are 128 bits: ASP, type code, a serial that is never
 reused, and a generation. The object directory (ID to header page) is a
@@ -368,8 +368,8 @@ cargo test -p store                       # unit, property and crash tests
 - One ASP with one unit; the unit table and headers allow more, but
   nothing adds a unit or mirrors (`mirror_of` is stored and ignored).
 - No journaling, no authority enforcement, no jobs: headers carry the
-  fields; nothing acts on them (`MIGRATE(phase6)`; journaling came with
-  Phase 3, jobs with Phase 5).
+  fields; nothing acts on them in this phase (journaling came with
+  Phase 3, jobs with Phase 5, authority with Phase 6).
 - DST implements the disk, environment, service tool and security
   menus; `Work with Licensed Internal Code`, console mode, save and
   restore storage, remote service, partitions, capacity and batch

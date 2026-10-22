@@ -91,8 +91,17 @@ fn open(system: &mut System, start: &Start) -> Result<String, String> {
         devs.push(Box::new(dev));
         paths.push(PathBuf::from(d));
     }
-    let (store, recovery) =
+    let (mut store, recovery) =
         store::Store::open(devs, storage::config()).map_err(|e| format!("open ASP 1: {e}"))?;
+    // The page cache is the *MACHINE pool.
+    if let Some(kb) = system
+        .sysvals
+        .as_ref()
+        .and_then(|v| v.get("QMCHPOOL").ok())
+        .and_then(|v| v.text().trim().parse::<usize>().ok())
+    {
+        store.resize_cache(kb * 1024 / store::page::PAGE_SIZE);
+    }
     let sb = store.asp().superblock();
     let qsys = (!sb.qsys.is_none()).then_some(sb.qsys);
     let text = format!(

@@ -2,9 +2,9 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Command lines as the service console types them: positional words,
-//! then IBM-style `KEYWORD(value)` parameters. `MIGRATE(phase7)`: the
-//! command analyzer replaces this with command definitions.
+//! Command lines as the bridged console words take them: positional
+//! words, then IBM-style `KEYWORD(value)` parameters. The analyzer in
+//! front of every line spells a bridged command this way.
 
 /// Positional words and `KEYWORD(value)` parameters of a command line.
 #[derive(Debug, Default)]

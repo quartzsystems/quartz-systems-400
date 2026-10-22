@@ -156,7 +156,7 @@ A D IPL opens the store on demand when a disk option needs it.
 ## Service tools user IDs
 
 Users live in the LIC record (TLV `0x0102`), separate from the
-operating system's user profiles (`MIGRATE(phase6)`). Passwords are
+operating system's user profiles, as on IBM i. Passwords are
 Argon2id hashes in PHC form. Three wrong passwords disable the ID; a
 user with the user ID privilege enables it again. A new or reset
 password is expired: the first sign-on goes through `Change Service

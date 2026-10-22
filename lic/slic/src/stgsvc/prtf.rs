@@ -25,6 +25,10 @@ pub struct PrtOverride {
     pub file: String,
     /// `OVRSCOPE`: `*JOB`, or the issuing activation group.
     pub scope: String,
+    /// The call level that issued it; 0 at a command line.
+    pub level: u32,
+    /// `SECURE(*YES)`: lower call levels' overrides are not merged.
+    pub secure: bool,
     /// The command line, for its keywords.
     pub line: String,
 }
@@ -112,11 +116,17 @@ pub fn open(
     actgrp: &str,
 ) -> Result<(u32, Prtf), String> {
     let file = file.to_ascii_uppercase();
-    let mine: Vec<Params> = overrides
+    // Outer call levels first, the deepest last; a SECURE(*YES) one
+    // hides those below it.
+    let mut mine: Vec<&PrtOverride> = overrides
         .iter()
         .filter(|o| o.file == file && db::odp::ovrdbf::reaches(&o.scope, actgrp))
-        .map(|o| Params::parse(&o.line))
         .collect();
+    mine.sort_by_key(|o| o.level);
+    if let Some(i) = mine.iter().rposition(|o| o.secure) {
+        mine.drain(..i);
+    }
+    let mine: Vec<Params> = mine.iter().map(|o| Params::parse(&o.line)).collect();
     let target = mine
         .iter()
         .rev()

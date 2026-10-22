@@ -3,10 +3,8 @@
 // root directory of this project.
 
 //! A routed job: the program its routing entry names runs first.
-//! `QSYS/QCMD` runs the request data as a command; any other program is
-//! called. When it returns the job ends. `MIGRATE(phase7)`: `QCMD` is
-//! the command processor; here the request data is a service console
-//! command line or `CALL LIB/PGM`.
+//! `QSYS/QCMD` runs the request data as a command through the analyzer;
+//! any other program is called. When it returns the job ends.
 
 use ipc::chan::Chan;
 use stg::Shared;

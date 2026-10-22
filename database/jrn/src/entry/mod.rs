@@ -55,7 +55,7 @@ pub mod code {
     pub const COMMIT: u8 = b'C';
     /// User entries (`U`).
     pub const USER: u8 = b'U';
-    /// Audit (`T`); nothing emits it yet (`MIGRATE(phase6)`).
+    /// Audit (`T`): the audit journal's entries, written by `sec::audit`.
     pub const AUDIT: u8 = b'T';
 }
 

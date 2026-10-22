@@ -5,8 +5,7 @@
 //! Who may change a system value. Security values need `*ALLOBJ` and
 //! `*SECADM`; the auditing values `*AUDIT`; and DST's "allow system
 //! value security changes" must be on for either. The rest need
-//! `*ALLOBJ` until `CHGSYSVAL` is a command with its own authority
-//! (`MIGRATE(phase7)`).
+//! `*ALLOBJ`, the rule `CHGSYSVAL` applies.
 
 use crate::auth::principal::Principal;
 use crate::profile::spcaut::SpecialAuth;

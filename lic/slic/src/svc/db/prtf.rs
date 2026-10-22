@@ -151,7 +151,8 @@ pub fn dspfd(system: &mut System, qual: &str) -> Option<Result<String, String>> 
     r.transpose()
 }
 
-/// `ovrprtf FILE(F) [TOFILE(LIB/F)] [OVRSCOPE(*ACTGRPDFN|*JOB)] keywords...`.
+/// `ovrprtf FILE(F) [TOFILE(LIB/F)] [OVRSCOPE(*ACTGRPDFN|*JOB)] [SECURE(*YES)]
+/// [CALLLVL(n)] keywords...`.
 pub fn ovrprtf(system: &mut System, line: &str) -> Result<String, String> {
     let p = Params::parse(line);
     let file = p.pos_or(0, "FILE")?.to_ascii_uppercase();
@@ -159,14 +160,17 @@ pub fn ovrprtf(system: &mut System, line: &str) -> Result<String, String> {
     Prtf::default().apply(&p).map_err(|e| err(&e))?;
     let scope = match p.upper("OVRSCOPE").as_deref() {
         Some("*JOB") => "*JOB".to_string(),
-        None | Some("*ACTGRPDFN") => db::odp::ovrdbf::DFTACTGRP.to_string(),
+        None | Some("*ACTGRPDFN" | "*CALLLVL") => db::odp::ovrdbf::DFTACTGRP.to_string(),
         Some(s) => return Err(format!("CPD0084 OVRSCOPE({s}) is not valid")),
     };
+    let level = super::journal::call_level(&p);
     let table = &mut system.svc.prt_overrides;
-    table.retain(|o| o.file != file || o.scope != scope);
+    table.retain(|o| o.file != file || o.scope != scope || o.level != level);
     table.push(PrtOverride {
         file: file.clone(),
         scope,
+        level,
+        secure: p.upper("SECURE").as_deref() == Some("*YES"),
         line: line.to_string(),
     });
     Ok(format!(
@@ -175,14 +179,23 @@ pub fn ovrprtf(system: &mut System, line: &str) -> Result<String, String> {
     ))
 }
 
-/// `DLTOVR` of printer file overrides: how many went.
-pub fn dltovr(system: &mut System, file: &str) -> usize {
+/// `DLTOVR` of printer file overrides, at call level `level` or at
+/// every level: how many went.
+pub fn dltovr(system: &mut System, file: &str, level: Option<u32>) -> usize {
     let table = &mut system.svc.prt_overrides;
     let before = table.len();
-    if file.eq_ignore_ascii_case("*ALL") {
-        table.clear();
-    } else {
-        table.retain(|o| !o.file.eq_ignore_ascii_case(file));
-    }
+    let all = file.eq_ignore_ascii_case("*ALL");
+    table.retain(|o| {
+        level.is_some_and(|l| o.level != l) || (!all && !o.file.eq_ignore_ascii_case(file))
+    });
+    before - table.len()
+}
+
+/// Call level `level` returned: its printer overrides and any deeper
+/// level's go; how many went.
+pub fn end_level(system: &mut System, level: u32) -> usize {
+    let table = &mut system.svc.prt_overrides;
+    let before = table.len();
+    table.retain(|o| o.level < level);
     before - table.len()
 }

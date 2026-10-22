@@ -249,8 +249,8 @@ changes `char(1)` 28, journal 29 and library 39; no commitment
 definition is `CPF83E4`. `SBSI0100`: name 8, library 18, status 28
 (`*INACTIVE`), jobs `bin4` 38, storage pools 42. `JBST0100`: status
 `char(10)` at 8. `QUSLSPL` lists nothing; `QCMDEXC`, `QCMDCHK` and
-`QCAPCMD` hand the command to the provider (`MIGRATE(phase7)`: the
-command analyzer; `CPF0006` when none).
+`QCAPCMD` hand the command to the job's analyzer hook, else to the
+provider (`CPF0006` when it has none).
 
 ## 7. Database descriptions
 

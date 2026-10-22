@@ -54,6 +54,10 @@ pub type NativeFn = Rc<dyn Fn(&mut Job, &[u64])>;
 /// job process installs it over the command analyzer.
 pub type CmdExecFn = Rc<dyn Fn(&mut Job, &str, u8) -> Result<String, (String, Vec<u8>)>>;
 
+/// Told when the call stack drops below the deepest level holding a
+/// file override.
+pub type OvrEndFn = Rc<dyn Fn(&mut Job)>;
+
 /// An open file's owner: the activation (by its static area), the
 /// module and the file declaration.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -202,6 +206,12 @@ pub struct Job {
     /// Who runs command strings for `QCMDEXC` and its kin; without one
     /// the APIs' provider takes them.
     pub cmdexc: Option<CmdExecFn>,
+    /// The deepest call level that issued a file override still in
+    /// effect; 0 when only command level did.
+    pub ovr_top: u32,
+    /// Told when the call stack drops below `ovr_top`: that level's
+    /// overrides go.
+    pub ovr_end: Option<OvrEndFn>,
     next_key: u32,
     env: Box<Env>,
 }
@@ -246,6 +256,8 @@ impl Job {
             log_outbox: Vec::new(),
             inquiry: None,
             cmdexc: None,
+            ovr_top: 0,
+            ovr_end: None,
             next_key: 1,
             env: Box::new(Env {
                 statics: std::ptr::null_mut(),

@@ -4,9 +4,8 @@
 
 //! `*JOBSCD`: the job schedule, `QUSRSYS/QDFTJOBSCD`. Each entry is a
 //! command to submit once, weekly or monthly at a time of day; the
-//! system job `QSYSSCD` submits each when it falls due. Times are UTC
-//! seconds; dates are civil dates in UTC (`MIGRATE(phase6)`: the time
-//! zone of `QTIMZON` for the schedule's local time).
+//! system job `QSYSSCD` submits each when it falls due. Entries name
+//! local dates and times of day, `QTIMZON`'s; `next` is Unix seconds.
 
 use std::fmt::Write as _;
 
@@ -202,6 +201,21 @@ wire_struct!(ScdEntry {
     last_job
 });
 
+/// The UTC offset in seconds in effect at a Unix time: the zone
+/// `QTIMZON` names. `&|_| 0` is UTC.
+pub type UtcOffset<'a> = &'a dyn Fn(u64) -> i32;
+
+/// `t` moved by `by` seconds, never below zero.
+fn shift(t: u64, by: i32) -> u64 {
+    u64::try_from(i64::try_from(t).unwrap_or(0) + i64::from(by)).unwrap_or(0)
+}
+
+/// The Unix time of a local time, through the offset in effect then.
+fn to_utc(local: u64, off: UtcOffset<'_>) -> u64 {
+    let guess = shift(local, -off(local));
+    shift(local, -off(guess))
+}
+
 /// Days since 1970-01-01 of a civil date.
 #[must_use]
 pub fn days_from_civil(y: i64, m: u32, d: u32) -> i64 {
@@ -291,11 +305,20 @@ impl ScdEntry {
         }
     }
 
-    /// The first time it is due after `after` (Unix seconds); `None`
-    /// when it will not run again.
+    /// The first time it is due after `after` (Unix seconds) with the
+    /// entry's dates and time of day read as UTC; `None` when it will
+    /// not run again.
     #[must_use]
     pub fn next_after(&self, after: u64) -> Option<u64> {
-        let start = i64::try_from(after / 86_400).unwrap_or(0);
+        self.next_after_in(after, &|_| 0)
+    }
+
+    /// `next_after` with the entry's dates and time of day read in the
+    /// zone `off` describes.
+    #[must_use]
+    pub fn next_after_in(&self, after: u64, off: UtcOffset<'_>) -> Option<u64> {
+        let local_after = shift(after, off(after));
+        let start = i64::try_from(local_after / 86_400).unwrap_or(0);
         let first = match (self.frequency, self.date_kind) {
             (_, DateKind::Date) => start.max(day_of(self.date)),
             _ => start,
@@ -306,7 +329,7 @@ impl ScdEntry {
             if !self.runs_on(day) {
                 continue;
             }
-            let at = u64::try_from(day).ok()? * 86_400 + u64::from(self.time);
+            let at = to_utc(u64::try_from(day).ok()? * 86_400 + u64::from(self.time), off);
             if at > after {
                 return Some(at);
             }
@@ -513,9 +536,16 @@ impl JobScd {
         Ok(first)
     }
 
-    /// `WRKJOBSCDE`'s list.
+    /// `WRKJOBSCDE`'s list, the next submit times in UTC.
     #[must_use]
     pub fn display(&self) -> String {
+        self.display_in(&|_| 0)
+    }
+
+    /// `WRKJOBSCDE`'s list, the next submit times in the zone `off`
+    /// describes.
+    #[must_use]
+    pub fn display_in(&self, off: UtcOffset<'_>) -> String {
         let mut out = String::from(
             "Job         Entry   Status  Schedule Date  Time      Frequency  Next Submit\n",
         );
@@ -530,8 +560,9 @@ impl JobScd {
             let next = if e.next == 0 {
                 "*NONE".to_string()
             } else {
-                let d = i64::try_from(e.next / 86_400).unwrap_or(0);
-                let t = e.next % 86_400;
+                let local = shift(e.next, off(e.next));
+                let d = i64::try_from(local / 86_400).unwrap_or(0);
+                let t = local % 86_400;
                 format!(
                     "{} {:02}:{:02}:{:02}",
                     ymd(d),
@@ -605,8 +636,14 @@ fn scd_time(text: &str) -> Option<u32> {
 }
 
 /// `ADDJOBSCDE` (over the defaults) or `CHGJOBSCDE` (over the entry):
-/// the keywords of `p`. `now` is for `*CURRENT`.
-pub fn apply(mut e: ScdEntry, p: &Params, now: u64) -> Result<ScdEntry> {
+/// the keywords of `p`, dates and times read as UTC. `now` is for
+/// `*CURRENT`.
+pub fn apply(e: ScdEntry, p: &Params, now: u64) -> Result<ScdEntry> {
+    apply_in(e, p, now, &|_| 0)
+}
+
+/// `apply` with dates and times read in the zone `off` describes.
+pub fn apply_in(mut e: ScdEntry, p: &Params, now: u64, off: UtcOffset<'_>) -> Result<ScdEntry> {
     let bad = |k: &str, v: &str| Error::value("CPD0084", format!("{k}({v}) is not valid"));
     for (k, raw) in &p.kw {
         let v = raw.trim();
@@ -625,7 +662,7 @@ pub fn apply(mut e: ScdEntry, p: &Params, now: u64) -> Result<ScdEntry> {
             "SCDDATE" => match up.as_str() {
                 "*CURRENT" => {
                     e.date_kind = DateKind::Current;
-                    e.date = ymd(i64::try_from(now / 86_400).unwrap_or(0));
+                    e.date = ymd(i64::try_from(shift(now, off(now)) / 86_400).unwrap_or(0));
                 }
                 "*MONTHSTR" => e.date_kind = DateKind::MonthStart,
                 "*MONTHEND" => e.date_kind = DateKind::MonthEnd,
@@ -677,7 +714,7 @@ pub fn apply(mut e: ScdEntry, p: &Params, now: u64) -> Result<ScdEntry> {
             "a weekly entry needs SCDDAY or a date",
         ));
     }
-    e.next = e.next_after(now).unwrap_or(0);
+    e.next = e.next_after_in(now, off).unwrap_or(0);
     Ok(e)
 }
 
@@ -723,6 +760,40 @@ mod tests {
         assert_eq!(late.next, DAY + 86_400 + 8 * 3600);
         let fixed = entry("x T CMD('a') SCDDATE(20261020) SCDTIME(080000)", now);
         assert_eq!(fixed.next, 0, "a past date never runs");
+    }
+
+    #[test]
+    fn local_time() {
+        // Two hours east: 12:00 local is 10:00 UTC.
+        let east = |_: u64| 7200;
+        let now = DAY + 3600;
+        let e = apply_in(
+            defaults("T", 1),
+            &Params::parse("x T CMD('a') SCDTIME(120000)"),
+            now,
+            &east,
+        )
+        .unwrap();
+        assert_eq!(e.next, DAY + 10 * 3600);
+        // 01:00 local is already past at 03:00 local: tomorrow.
+        let late = apply_in(
+            defaults("T", 1),
+            &Params::parse("x T CMD('a') SCDTIME(010000)"),
+            now,
+            &east,
+        )
+        .unwrap();
+        assert_eq!(late.next, DAY + 86_400 - 3600);
+        // *CURRENT just before local midnight names the local day.
+        let eve = DAY + 86_400 - 3600;
+        let c = apply_in(
+            defaults("T", 1),
+            &Params::parse("x T CMD('a') SCDDATE(*CURRENT) SCDTIME(233000)"),
+            eve,
+            &east,
+        )
+        .unwrap();
+        assert_eq!(c.date, 20_261_022);
     }
 
     #[test]

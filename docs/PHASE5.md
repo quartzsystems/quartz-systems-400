@@ -86,8 +86,6 @@ before it is taken.
 - User profiles: a job's user is whatever the job description, the
   sign-on or `SBMJOB` says; nothing is validated or authorized
   (`MIGRATE(phase6)`).
-- Commands a program runs through `QCMDEXC` run after the call returns,
-  so overrides are command-level ones (`MIGRATE(phase7)`).
 - Prestart and communications entries are kept and never start a job;
   `STRRMTWTR`, real printer devices and `RMTSYS` output queues wait for
   communications and devices (`MIGRATE(phase10)`).
@@ -95,8 +93,6 @@ before it is taken.
   console's Command Entry is `QCMD`'s own panel.
 - `DEVTYPE` is `*SCS` only; `CHLVAL` channels are not supported (FCFC
   channels map to fixed lines).
-- A program's file I/O does not reach its job's `QTEMP`, which lives in
-  the temporary ASP (`MIGRATE(phase6)`).
 - Break messages arrive at a job's wait points, not in the middle of a
   running program.
 - `PWRDWNSYS IPLSRC` is `*PANEL` only; DB and non-DB faults are a

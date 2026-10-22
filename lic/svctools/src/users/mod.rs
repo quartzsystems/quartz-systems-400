@@ -4,8 +4,8 @@
 
 //! Service tools user IDs: names, privileges, Argon2 password hashes,
 //! expired and disabled states, kept as one TLV in the LIC record. These
-//! are not the operating system's user profiles (`MIGRATE(phase6)`);
-//! they exist before the object store does.
+//! are not the operating system's user profiles, as on IBM i; they
+//! exist before the object store does.
 
 pub mod privilege;
 

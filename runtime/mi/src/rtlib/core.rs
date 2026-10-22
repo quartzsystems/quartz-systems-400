@@ -120,6 +120,11 @@ pub extern "sysv64" fn leave(env: *mut Env) {
     j.depth = j.depth.saturating_sub(1);
     let depth = j.depth;
     j.spaces.leave(depth);
+    if j.ovr_top > depth
+        && let Some(end) = j.ovr_end.clone()
+    {
+        end(j);
+    }
     if j.resume_depth == Some(depth) {
         crate::except::resume(j);
     }

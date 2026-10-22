@@ -66,10 +66,12 @@ pub struct Override {
     pub lvlchk: Option<bool>,
     /// `INHWRT`.
     pub inhwrt: Option<bool>,
-    /// `SECURE(*YES)`: overrides from higher call levels are ignored.
-    /// Kept; overrides come from command level until programs run
-    /// commands in place (`MIGRATE(phase7)`).
+    /// `SECURE(*YES)`: overrides from lower call levels are not merged
+    /// under this one.
     pub secure: bool,
+    /// The call level that issued it: 0 at a command line, the depth of
+    /// the program otherwise. A program's overrides go when it returns.
+    pub level: u32,
     /// `OVRSCOPE`: `*JOB`, or the activation group that issued it
     /// (`*ACTGRPDFN`). One issued from the default activation group
     /// (command level) reaches every open in the job.
@@ -92,8 +94,42 @@ impl Override {
             lvlchk: None,
             inhwrt: None,
             secure: false,
+            level: 0,
             scope: DFTACTGRP.into(),
         }
+    }
+
+    /// `OVRSCOPE(*JOB)` or the activation group that issued it.
+    #[must_use]
+    pub fn scope(mut self, scope: &str) -> Self {
+        scope.clone_into(&mut self.scope);
+        self
+    }
+
+    /// Issued at call level `level`.
+    #[must_use]
+    pub fn level(mut self, level: u32) -> Self {
+        self.level = level;
+        self
+    }
+
+    /// Take from `outer`, an override of a lower call level, what this
+    /// one does not say.
+    pub fn merge_under(&mut self, outer: &Self) {
+        fn fill<T: Clone>(mine: &mut Option<T>, theirs: Option<&T>) {
+            if mine.is_none() {
+                *mine = theirs.cloned();
+            }
+        }
+        fill(&mut self.tofile, outer.tofile.as_ref());
+        fill(&mut self.member, outer.member.as_ref());
+        fill(&mut self.position, outer.position.as_ref());
+        fill(&mut self.seqonly, outer.seqonly.as_ref());
+        fill(&mut self.nbrrcds, outer.nbrrcds.as_ref());
+        fill(&mut self.share, outer.share.as_ref());
+        fill(&mut self.wait_rcd, outer.wait_rcd.as_ref());
+        fill(&mut self.lvlchk, outer.lvlchk.as_ref());
+        fill(&mut self.inhwrt, outer.inhwrt.as_ref());
     }
 
     /// `TOFILE(lib/file)`.

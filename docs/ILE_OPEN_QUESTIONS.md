@@ -99,15 +99,11 @@ is in `expected/` and the test passes.
     not certain. Oracle: `DEEPREC` recurses without end under `MONMSG
     MCH0000` and prints the identifier.
 
-15. **`QCMDEXC` from a program.** Implemented: the command is queued
-    and the console runs it after the program returns, since Phase 4
-    has no command analyzer (`MIGRATE(phase7)`). The machine runs it
-    at once. Oracle: `CMDEXC` calls `QCMDEXC` with `SNDPGMMSG` and
-    prints what it receives afterwards.
+15. **`QCMDEXC` from a program.** Closed: since Phase 7 the command
+    runs at once through the job's analyzer hook, as on the machine.
+    The oracle `CMDEXC` stays in the kit to confirm what the program
+    sees afterwards (the message `SNDPGMMSG` left on its queue).
 
-16. **Files in `QTEMP` from the IR.** Implemented: the IR's file I/O
-    resolves names in ASP 1 only. Phase 5 gives every job a `QTEMP` of
-    its own, but in the temporary ASP, which a program's file I/O does
-    not reach (`MIGRATE(phase6)`). Oracle: none; a limit, not a
-    reading.
+16. **Files in `QTEMP` from the IR.** Closed: since Phase 5 each job's
+    `QTEMP` is its own library and a program's file I/O resolves it.
 

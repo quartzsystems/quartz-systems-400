@@ -5,8 +5,8 @@
 //! A bounded page cache with CLOCK replacement. It only ever holds
 //! pages as they are on the device: every write goes through to the
 //! device and updates the copy here, so nothing in the cache is dirty.
-//! It lives in the storage service; `MIGRATE(phase6)`: sized as the
-//! *MACHINE pool, from `QMCHPOOL`.
+//! It lives in the storage service, sized as the *MACHINE pool from
+//! `QMCHPOOL` once the system values are read.
 
 use std::collections::HashMap;
 
@@ -115,6 +115,19 @@ impl PageCache {
     pub fn remove(&mut self, page: PageNo) {
         if let Some(i) = self.index.remove(&page) {
             self.slots[i] = None;
+        }
+    }
+
+    /// Hold at most `capacity` pages from now on (at least 1). Shrinking
+    /// below what is held forgets everything.
+    pub fn resize(&mut self, capacity: usize) {
+        let capacity = capacity.max(1);
+        if capacity < self.index.len() {
+            self.clear();
+        }
+        self.capacity = capacity;
+        if self.hand >= self.slots.len() {
+            self.hand = 0;
         }
     }
 

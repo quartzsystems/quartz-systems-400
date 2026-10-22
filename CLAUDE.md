@@ -265,8 +265,7 @@ Lint the Linux-only crates for the musl target too: their real code is
 
 A line at the service console is a CL command string run through the
 analyzer (`crtlib LIB(X) TEXT('made')`, `?crtpf`); the dev words below are
-reached with the `svc.` prefix (`svc.obj ls QGPL`, `svc.xfer put`), and for
-now also without it (the `CPD0030` fallback, `MIGRATE(phase7)`).
+reached with the `svc.` prefix only (`svc.obj ls QGPL`, `svc.xfer put`).
 Service console (serial, dev builds): `help`, `srcs [table]`, `hist`, `hw`,
 `lic`, `sysval NAME [VALUE]`, `mode manual|normal`, `screen`, `pwrdwn
 [restart]`, `release`; store: `asp`, `lib ls`, `obj ls|crt|dlt|rnm|mov|dsp|bench`,

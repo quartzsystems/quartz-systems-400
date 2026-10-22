@@ -42,11 +42,23 @@ fn with_scd<T>(
     Ok(r)
 }
 
+/// The UTC offset `QTIMZON` gives at a Unix time; UTC when the value
+/// names no zone.
+fn utc_offset(system: &System) -> impl Fn(u64) -> i32 + use<> {
+    let zone = system
+        .sysvals
+        .as_ref()
+        .and_then(|v| v.get("QTIMZON").ok())
+        .and_then(|v| sysval::tz::find(v.text().trim()));
+    move |t| zone.map_or(0, |z| z.offset_at(t))
+}
+
 /// `ADDJOBSCDE`, `CHGJOBSCDE`, `RMVJOBSCDE`, `HLDJOBSCDE`,
 /// `RLSJOBSCDE`, `WRKJOBSCDE`.
 pub fn command(system: &mut System, me: u32, cmd: &str, line: &str) -> Result<String, String> {
     let p = Params::parse(line);
     let now = now_unix();
+    let off = utc_offset(system);
     let job = p
         .pos_or(0, "JOB")
         .map(|j| j.to_ascii_uppercase())
@@ -68,7 +80,7 @@ pub fn command(system: &mut System, me: u32, cmd: &str, line: &str) -> Result<St
             qsname::Name::parse(&job).map_err(|e| format!("CPD0078 JOB({job}): {e}"))?;
             let mut e = jobscd::defaults(&job, scd.next_entry.max(1));
             e.user = user;
-            let e = jobscd::apply(e, &p, now).map_err(err)?;
+            let e = jobscd::apply_in(e, &p, now, &off).map_err(err)?;
             let n = e.number;
             scd.next_entry = n + 1;
             scd.entries.push(e);
@@ -79,7 +91,7 @@ pub fn command(system: &mut System, me: u32, cmd: &str, line: &str) -> Result<St
         }
         "chgjobscde" => {
             let e = scd.find_mut(&job, number).map_err(err)?;
-            *e = jobscd::apply(e.clone(), &p, now).map_err(err)?;
+            *e = jobscd::apply_in(e.clone(), &p, now, &off).map_err(err)?;
             Ok((
                 format!("Job schedule entry {job} number {:06} changed.\n", e.number),
                 true,
@@ -98,7 +110,7 @@ pub fn command(system: &mut System, me: u32, cmd: &str, line: &str) -> Result<St
             let e = scd.find_mut(&job, number).map_err(err)?;
             e.held = hold;
             if !hold && e.next != 0 && e.next <= now {
-                e.next = e.next_after(now).unwrap_or(0);
+                e.next = e.next_after_in(now, &off).unwrap_or(0);
             }
             let what = if hold { "held" } else { "released" };
             Ok((
@@ -106,7 +118,7 @@ pub fn command(system: &mut System, me: u32, cmd: &str, line: &str) -> Result<St
                 true,
             ))
         }
-        _ => Ok((scd.display(), false)),
+        _ => Ok((scd.display_in(&off), false)),
     })
 }
 
@@ -114,6 +126,7 @@ pub fn command(system: &mut System, me: u32, cmd: &str, line: &str) -> Result<St
 /// scheduler's job log.
 pub fn tick(system: &mut System, me: u32) -> Vec<String> {
     let now = now_unix();
+    let off = utc_offset(system);
     let ipl = system.start_time;
     let r = with_scd(system, |scd, system| {
         let mut out = Vec::new();
@@ -126,7 +139,7 @@ pub fn tick(system: &mut System, me: u32) -> Vec<String> {
             changed = true;
             let missed = e.next < ipl;
             if missed && e.rcyacn == RcyAcn::NoSbm {
-                e.next = e.next_after(now).unwrap_or(0);
+                e.next = e.next_after_in(now, &off).unwrap_or(0);
                 out.push(format!(
                     "Job schedule entry {} missed, not submitted.",
                     e.job
@@ -172,7 +185,7 @@ pub fn tick(system: &mut System, me: u32) -> Vec<String> {
             e.next = if e.frequency == Frequency::Once {
                 0
             } else {
-                e.next_after(now).unwrap_or(0)
+                e.next_after_in(now, &off).unwrap_or(0)
             };
             if e.next == 0 && !e.save {
                 done.push(e.number);

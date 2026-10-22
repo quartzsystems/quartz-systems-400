@@ -112,5 +112,5 @@ closes when the machine's answer is recorded here and the code agrees.
 
 15. **`PWRDWNSYS IPLSRC`.** Implemented: only `*PANEL`; the slot the
     next IPL uses is the panel's (`qs400.slot`, DST). The machine
-    switches the IPL source. `MIGRATE(phase6)`, with the system
-    service tools.
+    switches the IPL source; here that needs the firmware's `BootNext`
+    and the Work with Licensed Internal Code tools (`MIGRATE(phase11)`).

@@ -2,15 +2,12 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! What a profile limits: `LMTCPB` at sign-on and on the command line,
-//! `PTYLMT`, `MAXSTG`, `USREXPDATE`.
+//! What a profile limits: `LMTCPB` at sign-on (the command line's
+//! limit is each `*CMD` object's `ALLOW(*LIMITED)`), `PTYLMT`, `MAXSTG`,
+//! `USREXPDATE`.
 
 use crate::profile::payload::{LmtCpb, UsrPrf};
 use crate::{Result, SecError};
-
-/// The commands a `LMTCPB(*YES)` user may run until `*CMD` objects carry
-/// `ALLOW(*LIMITED)` (`MIGRATE(phase7)`).
-pub const LIMITED_COMMANDS: &[&str] = &["SIGNOFF", "DSPMSG", "DSPJOB", "DSPJOBLOG", "WRKMSG"];
 
 /// Which sign-on fields the user may fill in.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -48,24 +45,6 @@ pub fn sign_on_fields(p: &UsrPrf) -> SignOnFields {
             curlib: false,
             atnpgm: false,
         },
-    }
-}
-
-/// Whether the user may run command `cmd` from a command line.
-#[must_use]
-pub fn command_allowed(p: &UsrPrf, cmd: &str) -> bool {
-    p.lmtcpb != LmtCpb::Yes || LIMITED_COMMANDS.iter().any(|c| c.eq_ignore_ascii_case(cmd))
-}
-
-/// `CPF2213`-style refusal for a limited user's command.
-pub fn require_command(p: &UsrPrf, cmd: &str) -> Result<()> {
-    if command_allowed(p, cmd) {
-        Ok(())
-    } else {
-        Err(SecError::msg(
-            "CPD0032",
-            format!("{} is limited and may not run {cmd}.", p.name),
-        ))
     }
 }
 
@@ -107,11 +86,8 @@ mod tests {
     #[test]
     fn limits() {
         let mut p = UsrPrf::new("BOB", 40);
-        assert!(command_allowed(&p, "CRTLIB"));
+        assert!(sign_on_fields(&p).menu);
         p.lmtcpb = LmtCpb::Yes;
-        assert!(!command_allowed(&p, "CRTLIB"));
-        assert!(command_allowed(&p, "signoff"));
-        assert!(require_command(&p, "CALL").is_err());
         assert!(!sign_on_fields(&p).menu);
         p.lmtcpb = LmtCpb::Partial;
         assert!(sign_on_fields(&p).menu && !sign_on_fields(&p).program);
