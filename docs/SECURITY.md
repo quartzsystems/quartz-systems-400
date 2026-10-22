@@ -146,3 +146,65 @@ parameters: version 19, 19 MiB, two passes, one lane) of the password
 as the form canonicalizes it, with sixteen salt bytes of its own from
 `/dev/urandom`, stored as the PHC string. No IBM hash format is ever
 stored or produced; `QSYRUPWD` returns these strings.
+
+### Rules
+
+When `QPWDRULES` is `*PWDSYSVAL` the classic values apply:
+`QPWDMINLEN`, `QPWDMAXLEN`, `QPWDLMTAJC`, `QPWDLMTREP` (1 no character
+twice, 2 not twice in a row), `QPWDPOSDIF`, `QPWDRQDDGT` and
+`QPWDLMTCHR`. Otherwise those are ignored and the `QPWDRULES` tokens
+rule: `*ALLCRTCHG`, `*CHRLMTAJC`, `*CHRLMTREP`, `*DGTLMTAJC`,
+`*DGTLMTFST`, `*DGTLMTLST`, `*DGTMAXn`, `*DGTMINn`, `*LTRLMTAJC`,
+`*LTRLMTFST`, `*LTRLMTLST`, `*LTRMAXn`, `*LTRMINn`, `*LMTSAMPOS`,
+`*LMTPRFNAME`, `*LWRMAXn`, `*LWRMINn`, `*MAXLENn`, `*MINLENn`,
+`*MIXCASEn`, `*REQANY3`, `*SPCCHRLMTAJC`, `*SPCCHRLMTFST`,
+`*SPCCHRLMTLST`, `*SPCCHRMAXn`, `*SPCCHRMINn`, `*UPRMAXn`, `*UPRMINn`.
+Levels 0 and 1 never take more than ten characters whatever the rules
+say. The rules bind a user changing their own password; `CRTUSRPRF`
+and `CHGUSRPRF PASSWORD` are bound only with `*ALLCRTCHG` (otherwise
+only the level's form is checked).
+
+A composition failure is `CPF4AA7` with IBM's reason code:
+
+| Reason | Rule |
+|---|---|
+| 1, 2, 3 | too few letters, digits, special characters |
+| 4, 5, 6 | too many letters (or upper, or lower case), digits, special characters |
+| 7, 8, 9 | starts with a letter, digit, special character |
+| 10, 11, 12 | ends with a letter, digit, special character |
+| 13, 14, 15 | two letters, digits, special characters side by side |
+| 16 | too few upper or lower case letters (`*MIXCASE`, `*UPRMIN`, `*LWRMIN`) |
+| 17 | fewer than three kinds (`*REQANY3`) |
+| 18 | contains the profile name |
+| 19, 20 | too short, too long |
+| 21 | a character used twice |
+| 22 | a character twice in a row |
+| 23 | a character in the same position as in the old password |
+| 24 | a `QPWDLMTCHR` character (Quartz's code; IBM's classic message is unsettled) |
+
+The other refusals:
+
+| Message | When |
+|---|---|
+| `CPF2362` | `CHGPWD`: the current password typed is wrong |
+| `CPF22C3` | the new password is the current one, or one of the last `QPWDRQDDIF` passwords (1-8 keep 32, 24, 18, 12, 10, 8, 6, 4) |
+| `CPF22C5` | `PWDCHGBLK`/`QPWDCHGBLK` hours have not passed since the last change (an expired password may always change) |
+| `CPF22C6` | `QPWDVLDPGM` refused it |
+| `CPF22E2` | an API's password is wrong for the profile |
+| `CPF22E3` | the profile is disabled |
+| `CPF22E4` | the password has expired |
+| `CPF22E5` | the profile has `PASSWORD(*NONE)` |
+
+History keeps the hashes of up to 64 previous forms, newest first; a
+new password is compared with the current one and the last
+`QPWDRQDDIF` count in the form the level checks.
+
+A password expires when `PWDEXP(*YES)` is set, or when its age reaches
+`PWDEXPITV` days (`*SYSVAL` is `QPWDEXPITV`; `*NOMAX` never). Within
+`QPWDEXPWRN` days of that, sign-on warns.
+
+`QPWDVLDPGM` names a program called through the ILE call path with
+IBM's parameters: the new password, the old password, a one-character
+return code (`0` accepts) and the profile name. At levels 0 and 1 the
+passwords are `CHAR(10)`; at 2 and 3 each is a four-byte length, a
+four-byte CCSID and the characters.

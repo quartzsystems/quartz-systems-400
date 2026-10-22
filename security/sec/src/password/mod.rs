@@ -6,6 +6,9 @@
 //! salt per hash, and checking one at sign-on. Nothing here is an IBM
 //! hash format; `docs/SECURITY.md` says what is stored.
 
+pub mod policy;
+pub mod rules;
+
 use argon2::Argon2;
 use argon2::password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString};
 
