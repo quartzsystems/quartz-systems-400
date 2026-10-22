@@ -217,6 +217,33 @@ pub fn create_pf_rcdlen(
     )
 }
 
+/// A physical file of character fields, as the system makes them for
+/// output files (`CPYAUDJRNE`).
+pub fn create_pf_fields(
+    txn: &mut Txn<'_>,
+    library: ObjectId,
+    name: Name,
+    fields: &[(Name, u32)],
+    opts: &CreateFileOpts,
+) -> Result<ObjectId> {
+    let mut f = RecordFormat::new(name);
+    f.fields = fields
+        .iter()
+        .map(|(n, len)| FieldDef::new(*n, DataType::Char, *len, 0))
+        .collect();
+    f.lay_out();
+    let format = FormatDef::new(f, None, None)?;
+    create_file(
+        txn,
+        library,
+        name,
+        FileKind::Physical,
+        &[format],
+        opts,
+        (false, false),
+    )
+}
+
 /// `CRTSRCPF`.
 pub fn create_srcpf(
     txn: &mut Txn<'_>,

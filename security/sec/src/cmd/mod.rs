@@ -7,6 +7,7 @@
 //! position, who runs it, the time and the system values. The service
 //! console, the Phase 7 command processor and the APIs share them.
 
+pub mod audit;
 pub mod usrprf;
 
 use store::obj::ObjectId;

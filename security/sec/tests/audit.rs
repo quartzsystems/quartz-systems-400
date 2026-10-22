@@ -80,3 +80,70 @@ fn write_read_full() {
     }
     assert!(full);
 }
+
+#[test]
+fn audit_commands() {
+    use sec::auth::principal::Principal;
+    use sec::cmd::audit as cmd;
+    use sec::cmd::{Env, Keywords};
+    let (mut store, qsys) = open_new();
+    let mut t = store.begin().unwrap();
+    sec::profile::shipped::install(&mut t, qsys, 40, 3, NOW).unwrap();
+    let secofr = Principal::load(&mut t, qsys, "QSECOFR", 40).unwrap();
+    let get = |n: &str| {
+        if n == "QAUDCTL" {
+            "*AUDLVL".to_string()
+        } else {
+            String::new()
+        }
+    };
+    let env = Env {
+        qsys,
+        actor: &secofr,
+        now: NOW,
+        sysval: &get,
+    };
+    let (out, changes) = cmd::chgsecaud(
+        &mut t,
+        &env,
+        &Keywords::new(&[("QAUDCTL", "*AUDLVL *OBJAUD"), ("QAUDLVL", "*DFTSET")]),
+    )
+    .unwrap();
+    assert!(out.contains("QAUDJRN"), "{out}");
+    assert_eq!(changes[0], ("QAUDCTL".into(), "*AUDLVL *OBJAUD".into()));
+    assert!(changes[1].1.contains("*SECURITY"));
+    assert!(sec::audit::write::journal(&mut t, qsys).unwrap().is_some());
+    let shown = cmd::dspsecaud(&mut t, &env).unwrap();
+    assert!(shown.contains("AUDRCV0001"), "{shown}");
+
+    let user = Principal {
+        user: "BOB".into(),
+        qsecurity: 40,
+        ..Principal::default()
+    };
+    let benv = Env {
+        qsys,
+        actor: &user,
+        now: NOW,
+        sysval: &get,
+    };
+    let lib = common::lib(&mut t, qsys, "QGPL");
+    assert_eq!(
+        cmd::chgobjaud(&mut t, &benv, lib, "*ALL")
+            .unwrap_err()
+            .msgid(),
+        Some("CPF2222")
+    );
+    cmd::chgobjaud(&mut t, &env, lib, "*ALL").unwrap();
+    let ev = Event::new(Kind::Ad)
+        .set("ETYP", "O")
+        .object("QGPL", "QSYS", "*LIB");
+    write::write(&mut t, qsys, &[(ev, job())]).unwrap();
+    let sel = cmd::Selection::from_keywords(&Keywords::new(&[("ENTTYP", "AD")])).unwrap();
+    let lines = cmd::dspaudjrne(&mut t, &env, &sel).unwrap();
+    assert!(lines.iter().any(|l| l.contains("QGPL")), "{lines:?}");
+    let fields = cmd::outfile_fields(Kind::Af);
+    assert_eq!(fields[0].0, "AFENTL");
+    assert!(fields.iter().any(|(n, _)| n == "AFVIOL"));
+    assert_eq!(cmd::outfile_name("QAUDIT", Kind::Cp), "QAUDITCP");
+}

@@ -234,6 +234,8 @@ pub enum Domain {
 /// Everything in the fixed part.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ObjectHeader {
+    /// Flag bits ([`ObjectHeader::ADOPTS`]).
+    pub flags: u32,
     /// The object.
     pub id: ObjectId,
     /// Its library.
@@ -326,10 +328,14 @@ fn opt(v: u64) -> Option<PageNo> {
 }
 
 impl ObjectHeader {
+    /// `flags`: a program that adopts its owner's authority.
+    pub const ADOPTS: u32 = 1;
+
     /// A fresh header with every optional field blank or zero.
     #[must_use]
     pub fn new(id: ObjectId, library: ObjectId, name: Name, now: u64) -> Self {
         Self {
+            flags: 0,
             id,
             library,
             name,
@@ -374,6 +380,7 @@ impl ObjectHeader {
         b.fill(0);
         b[OFF_MAGIC..OFF_MAGIC + 8].copy_from_slice(MAGIC);
         put_u32(b, OFF_VERSION, HEADER_VERSION);
+        put_u32(b, OFF_FLAGS, self.flags);
         b[OFF_ID..OFF_ID + 16].copy_from_slice(&self.id.to_bytes());
         b[OFF_LIBRARY..OFF_LIBRARY + 16].copy_from_slice(&self.library.to_bytes());
         b[OFF_NAME..OFF_NAME + 10].copy_from_slice(self.name.as_bytes());
@@ -465,6 +472,7 @@ impl ObjectHeader {
             })
             .collect();
         Ok(Self {
+            flags: get_u32(body, OFF_FLAGS),
             id: ObjectId::from_bytes(&body[OFF_ID..OFF_ID + 16]),
             library: ObjectId::from_bytes(&body[OFF_LIBRARY..OFF_LIBRARY + 16]),
             name: Name::from_bytes(body[OFF_NAME..OFF_NAME + 10].try_into().expect("10")),

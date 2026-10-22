@@ -434,7 +434,7 @@ At offset 0 of the body. Text fields are CP037, space padded.
 |---|---|---|---|
 | 0 | 8 | magic | `QS400OBJ` |
 | 8 | 4 | header_version | 1 |
-| 12 | 4 | flags | reserved, 0 |
+| 12 | 4 | flags | bit 0: a program that adopts its owner's authority (`USRPRF(*OWNER)`) |
 | 16 | 16 | id | `ObjectId` |
 | 32 | 16 | library | `ObjectId` of the containing library; QSYS contains itself |
 | 48 | 10 | name | |

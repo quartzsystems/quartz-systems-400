@@ -212,6 +212,9 @@ pub fn crtpgm(
     // The header carries the program's domain and state too.
     let (page, mut h) = ops::read_header(txn, id)?;
     h.user_state = program.attr.user_state;
+    if program.attr.usrprf == crate::object::UserProfile::Owner {
+        h.flags |= store::obj::header::ObjectHeader::ADOPTS;
+    }
     h.domain = if program.attr.user_domain {
         store::obj::header::Domain::User
     } else {
