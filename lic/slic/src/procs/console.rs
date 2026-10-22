@@ -299,14 +299,24 @@ pub fn screen(p: &Panel) -> Screen {
     for (row, col, len, hidden, value) in &p.fields {
         let (r, c) = (usize::from(*row), usize::from(*col));
         s.field(r, c, usize::from(*len), *hidden);
-        if !value.is_empty() {
-            let a = if *hidden {
-                Attr::INPUT_HIDDEN
-            } else {
-                Attr::INPUT
-            };
-            s.put(r, c, value, a);
+        let reverse = p.reverse.contains(&(*row, *col));
+        let a = if *hidden {
+            Attr::INPUT_HIDDEN
+        } else if reverse {
+            Attr {
+                reverse: true,
+                ..Attr::INPUT
+            }
+        } else {
+            Attr::INPUT
+        };
+        if !value.is_empty() || reverse {
+            let shown = format!("{value:<width$}", width = usize::from(*len));
+            s.put(r, c, &shown, a);
         }
+    }
+    if let Some((row, col)) = p.cursor {
+        s.cursor = (usize::from(row), usize::from(col));
     }
     s
 }

@@ -12,6 +12,7 @@
 //! own console table (the development commands).
 
 pub mod jobsite;
+pub mod prompt;
 
 use std::rc::Rc;
 
@@ -191,11 +192,9 @@ pub fn run_with(
 }
 
 /// A prompted command: the resolved command after the user changed
-/// it, `None` when the prompt was cancelled. `MIGRATE(phase7)`: the
-/// prompter arrives in the next checkpoint; until then a prompt needs a
-/// display it does not have.
+/// it, `None` when the prompt was cancelled.
 fn prompt(
-    _job: &mut Job,
+    job: &mut Job,
     host: &Host,
     r: Resolved,
     _mode: RunMode,
@@ -203,7 +202,7 @@ fn prompt(
     if !host.has_display() {
         return Err(Fail::new("CPF6802", ""));
     }
-    Ok(Some(r))
+    prompt::session(job, host, &r)
 }
 
 /// Run a resolved command where its processing program lives.

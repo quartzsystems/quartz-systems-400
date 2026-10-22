@@ -62,8 +62,8 @@ impl Suite {
         if !svc.contains("RUN") || !svc.contains("CMD-WRKACTJOB") {
             return Err(format!("QSVCJOB is not running wrkactjob: {svc}"));
         }
-        let made = s.command("obj crt *DTAARA QTEMP/WMQTEMP", CMD)?;
-        let shown = s.command("obj ls QTEMP", CMD)?;
+        let made = s.command("svc.obj crt *DTAARA QTEMP/WMQTEMP", CMD)?;
+        let shown = s.command("svc.obj ls QTEMP", CMD)?;
         if !shown.contains("WMQTEMP") {
             return Err(format!("QTEMP does not hold the area:\n{made}{shown}"));
         }
@@ -155,19 +155,19 @@ impl Suite {
         if !cur.contains("changed") {
             return Err(format!("chgcurlib: {cur}"));
         }
-        let made = s.command("obj crt *DTAARA *CURLIB/WMCUR", CMD)?;
-        let listed = s.command("obj ls QRCL", CMD)?;
+        let made = s.command("svc.obj crt *DTAARA *CURLIB/WMCUR", CMD)?;
+        let listed = s.command("svc.obj ls QRCL", CMD)?;
         let second = s.command("dsplibl", CMD)?;
         s.command("chgcurlib *CRTDFT", CMD)?;
-        s.command("obj dlt *DTAARA QRCL/WMCUR", CMD)?;
+        s.command("svc.obj dlt *DTAARA QRCL/WMCUR", CMD)?;
         if part(&second, "QRCL").as_deref() != Some("CUR") {
             return Err(format!("QRCL is not the current library:\n{second}"));
         }
         if !listed.contains("WMCUR") {
             return Err(format!("*CURLIB did not go to QRCL:\n{made}{listed}"));
         }
-        s.command("dtaara set *LDA HELLO FROM THE JOB", CMD)?;
-        let lda = s.command("dtaara get *LDA", CMD)?;
+        s.command("svc.dtaara set *LDA HELLO FROM THE JOB", CMD)?;
+        let lda = s.command("svc.dtaara get *LDA", CMD)?;
         if !lda.contains("'HELLO FROM THE JOB'") {
             return Err(format!("*LDA: {lda}"));
         }
@@ -297,7 +297,7 @@ impl Suite {
         )?;
         s.command("chgjob INQMSGRPY(*SYSRPYL)", CMD)?;
         s.command("call QGPL/FAILPGM", CMD)?;
-        let q = s.command("dspmsgq *EXT", CMD)?;
+        let q = s.command("svc.dspmsgq *EXT", CMD)?;
         s.command("chgjob INQMSGRPY(*DFT)", CMD)?;
         s.command("rmvrpyle SEQNBR(1)", CMD)?;
         let newest = q
@@ -753,7 +753,7 @@ impl Suite {
         crate::qir::qemu::push(s, "KITDDS", crate::qir::KITPRT)?;
         s.command("crtsrcpf QGPL/WMSRC", CMD)?;
         s.command(
-            "srcput QGPL/WMSRC KITPRT SRCTYPE(PRTF) FROMSTMF(KITDDS)",
+            "svc.srcput QGPL/WMSRC KITPRT SRCTYPE(PRTF) FROMSTMF(KITDDS)",
             CMD,
         )?;
         let made = s.command("crtprtf QGPL/KITPRT SRCFILE(QGPL/WMSRC)", CMD)?;
@@ -769,7 +769,7 @@ impl Suite {
         let program = std::fs::read_to_string(kit.root.join("programs").join("PRT02.qir"))
             .map_err(|e| e.to_string())?;
         crate::qir::qemu::push(s, "PRT02M0", &program)?;
-        s.command("qir asm PRT02M0 MODULE(QGPL/PRT02)", CMD)?;
+        s.command("svc.qir asm PRT02M0 MODULE(QGPL/PRT02)", CMD)?;
         s.command("crtpgm QGPL/PRT02 MODULE(QGPL/PRT02) ACTGRP(*CALLER)", CMD)?;
         let out = s.command("call QGPL/PRT02", CMD)?;
         let files = s.command("wrksplf SELECT(*ALL) JOB(QSVCJOB)", CMD)?;
@@ -880,14 +880,14 @@ impl Suite {
 {files}"
             ));
         }
-        let text = s.command("prtcapture get QSYSPRT JOB(QSVCJOB)", CMD)?;
+        let text = s.command("svc.prtcapture get QSYSPRT JOB(QSVCJOB)", CMD)?;
         if !text.contains("00A") || !text.contains("06E") {
             return Err(format!(
                 "the captured text:
 {text}"
             ));
         }
-        let pdf_out = s.command("prtcapture get QSYSPRT JOB(QSVCJOB) FORMAT(*PDF)", CMD)?;
+        let pdf_out = s.command("svc.prtcapture get QSYSPRT JOB(QSVCJOB) FORMAT(*PDF)", CMD)?;
         let b64: String = pdf_out
             .lines()
             .skip_while(|l| !l.starts_with("-----BEGIN PDF"))
@@ -910,7 +910,7 @@ impl Suite {
         }
         s.command("endsbs QSPL OPTION(*IMMED)", CMD)?;
         s.command("dltsplf QSYSPRT JOB(QSVCJOB) SPLNBR(*LAST)", CMD)?;
-        s.command("prtcapture clear", CMD)?;
+        s.command("svc.prtcapture clear", CMD)?;
         if !held
             .lines()
             .any(|l| l.contains("QSCAPTURE") && l.contains("HLD"))
@@ -1093,7 +1093,7 @@ impl Suite {
         if !before.contains("Normal") {
             return Err(format!("the powered-down IPL is not Normal: {before}"));
         }
-        let sts = s.command("sysval QIPLSTS", CMD)?;
+        let sts = s.command("svc.sysval QIPLSTS", CMD)?;
         if !sts.contains("QIPLSTS: 2") {
             return Err(format!("QIPLSTS after the restart: {sts}"));
         }
@@ -1164,7 +1164,7 @@ impl Suite {
     #[allow(clippy::unused_self)] // every step has the same shape
     pub(crate) fn statistics(&self, s: &mut Session) -> Result<String, String> {
         crate::qir::qemu::push(s, "MEMHOG", MEMHOG)?;
-        s.command("qir asm MEMHOG MODULE(QGPL/MEMHOG)", CMD)?;
+        s.command("svc.qir asm MEMHOG MODULE(QGPL/MEMHOG)", CMD)?;
         s.command("crtpgm QGPL/MEMHOG MODULE(QGPL/MEMHOG)", CMD)?;
         s.command("wrksyssts RESET(*YES)", CMD)?;
         s.command("strsbs QSYS/QBATCH", CMD)?;
@@ -1221,7 +1221,7 @@ impl Suite {
             ));
         }
         crate::qir::qemu::push(s, "WMSSTS", WMSSTS)?;
-        s.command("qir asm WMSSTS MODULE(QGPL/WMSSTS)", CMD)?;
+        s.command("svc.qir asm WMSSTS MODULE(QGPL/WMSSTS)", CMD)?;
         s.command("crtpgm QGPL/WMSSTS MODULE(QGPL/WMSSTS)", CMD)?;
         let api = s.command("call QGPL/WMSSTS", CMD)?;
         let nums: Vec<i64> = api.lines().filter_map(|l| l.trim().parse().ok()).collect();
@@ -1303,7 +1303,7 @@ L0:
 /// Assemble and bind a program into `QGPL`.
 fn build(s: &mut Session, name: &str, text: &str) -> Result<(), String> {
     crate::qir::qemu::push(s, name, text)?;
-    let m = s.command(&format!("qir asm {name} MODULE(QGPL/{name})"), CMD)?;
+    let m = s.command(&format!("svc.qir asm {name} MODULE(QGPL/{name})"), CMD)?;
     let p = s.command(&format!("crtpgm QGPL/{name} MODULE(QGPL/{name})"), CMD)?;
     if !m.contains("created") || !p.contains("created") {
         return Err(format!("{name}:\n{m}\n{p}"));
@@ -1386,13 +1386,13 @@ impl Suite {
             &format!("chgsplfa QSYSPRT JOB({job}) OUTQ(QUSRSYS/QSCAPTURE)"),
             CMD,
         )?;
-        let caps = poll(s, "prtcapture list", 80, |o| o.contains(&job))?;
+        let caps = poll(s, "svc.prtcapture list", 80, |o| o.contains(&job))?;
         if !caps.contains(&job) {
             return Err(format!("the writer did not print WMRPT:\n{caps}"));
         }
-        let text = s.command(&format!("prtcapture get QSYSPRT JOB({job})"), CMD)?;
+        let text = s.command(&format!("svc.prtcapture get QSYSPRT JOB({job})"), CMD)?;
         let pdf_out = s.command(
-            &format!("prtcapture get QSYSPRT JOB({job}) FORMAT(*PDF)"),
+            &format!("svc.prtcapture get QSYSPRT JOB({job}) FORMAT(*PDF)"),
             CMD,
         )?;
         let b64: String = pdf_out
@@ -1501,8 +1501,8 @@ impl Suite {
             return Err(format!("jobs survived ENDSBS *IMMED:\n{after}"));
         }
         let check = s.command("call QGPL/CHECKER", Duration::from_secs(90))?;
-        let chk = s.command("chkstg", Duration::from_secs(300))?;
-        let rcl = s.command("rclstg *CHECK", Duration::from_secs(300))?;
+        let chk = s.command("svc.chkstg", Duration::from_secs(300))?;
+        let rcl = s.command("svc.rclstg *CHECK", Duration::from_secs(300))?;
         s.command("dltf QGPL/WMLCK", CMD)?;
         if !check.lines().any(|l| l.trim() == "0") {
             return Err(format!("the record is still locked:\n{check}"));
@@ -1528,7 +1528,7 @@ impl Suite {
             .to_string();
         let lib = crate::db::kit::LIBRARY;
         let sum = |s: &mut Session| -> Result<String, String> {
-            let out = s.command(&format!("sql SELECT SUM(BAL) FROM {lib}/CUSTOMER;"), CMD)?;
+            let out = s.command(&format!("svc.sql SELECT SUM(BAL) FROM {lib}/CUSTOMER;"), CMD)?;
             let lines: Vec<&str> = out.lines().map(str::trim).collect();
             lines
                 .iter()
@@ -1540,7 +1540,7 @@ impl Suite {
         let before = sum(s)?;
         s.command("strcmtctl LCKLVL(*CHG)", CMD)?;
         s.command(
-            &format!("sql UPDATE {lib}/CUSTOMER SET BAL = BAL + 1000;"),
+            &format!("svc.sql UPDATE {lib}/CUSTOMER SET BAL = BAL + 1000;"),
             CMD,
         )?;
         let during = sum(s)?;
@@ -1560,7 +1560,7 @@ impl Suite {
         }
         let after = sum(s)?;
         let log = s.command(&format!("dspsplf QPJOBLOG JOB({old}/QSYS/QSVCJOB)"), CMD)?;
-        let chk = s.command("chkstg", Duration::from_secs(300))?;
+        let chk = s.command("svc.chkstg", Duration::from_secs(300))?;
         if after != before {
             return Err(format!(
                 "not rolled back: {before} before, {during} during, {after} after"
@@ -1635,7 +1635,7 @@ impl Suite {
         })?;
         let drained = poll(s, "wrkactjob", 240, |o| !o.contains("WMB0"))?;
         let life = t.elapsed().as_secs_f64();
-        let stats = s.command("wmstats", CMD)?;
+        let stats = s.command("svc.wmstats", CMD)?;
         s.command("endsbs QBATCH OPTION(*IMMED)", CMD)?;
         poll(s, "wrkactjob", 60, |o| active_row(o, "QBATCH").is_none())?;
         s.command("chgjobqe QSYS/QBATCH JOBQ(QGPL/QBATCH) MAXACT(1)", CMD)?;

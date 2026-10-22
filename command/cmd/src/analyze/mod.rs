@@ -165,6 +165,9 @@ pub struct Bound {
     pub specified: bool,
     /// The selective-prompt prefix on the keyword.
     pub sel: Option<Sel>,
+    /// The value as the caller wrote it, for the prompter; empty when
+    /// the default was taken.
+    pub given: Vec<Tok>,
 }
 
 /// A command string analyzed: the command and its bound parameters.

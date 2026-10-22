@@ -1,0 +1,24 @@
+                              Submit Job (SBMJOB)                               
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Command to run . . . . . . . . . > CRTLIB LIB(X)                               
+ Job name . . . . . . . . . . . . > NIGHT         Name, *JOBD                   
+ Job description  . . . . . . . .   *USRPRF       Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Job queue  . . . . . . . . . . .   *JOBD         Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               

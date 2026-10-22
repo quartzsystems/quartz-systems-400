@@ -49,7 +49,7 @@ fn first_sign_on(s: &mut Session) -> Result<(), String> {
 fn wait_resume(s: &mut Session) -> Result<(), String> {
     let deadline = std::time::Instant::now() + Duration::from_secs(600);
     loop {
-        let out = s.command("mirror status", CMD)?;
+        let out = s.command("svc.mirror status", CMD)?;
         if out.contains("no resume running") {
             return Ok(());
         }
@@ -210,11 +210,11 @@ impl Suite {
             s.send("key enter")?;
             s.expect(SRC_IPL_COMPLETE, self.boot_timeout)?;
             s.expect(crate::PROMPT, CMD)?;
-            let asp = s.command("asp", CMD)?;
+            let asp = s.command("svc.asp", CMD)?;
             if !asp.contains("protection: mirrored") || asp.matches("Active").count() != 2 {
-                return Err(format!("asp after the install:\n{asp}"));
+                return Err(format!("svc.asp after the install:\n{asp}"));
             }
-            let chk = s.command("chkstg", Duration::from_secs(300))?;
+            let chk = s.command("svc.chkstg", Duration::from_secs(300))?;
             if !chk.contains(": 0 bad") {
                 return Err(format!("chkstg:\n{chk}"));
             }
@@ -255,7 +255,7 @@ impl Suite {
         s.expect("Display Disk Configuration Status", CMD)?;
         let shown = s.expect("Press Enter to continue", CMD)?;
         if !shown.contains("Missing") {
-            return Err(format!("unit 2 is not shown missing:\n{shown}"));
+            return Err(format!("svc.unit 2 is not shown missing:\n{shown}"));
         }
         s.send("key f3")?;
         s.expect("Use Dedicated Service Tools (DST)", CMD)?;
@@ -314,13 +314,13 @@ impl Suite {
         s.expect(SRC_IPL_COMPLETE, self.boot_timeout)?;
         s.expect(crate::PROMPT, CMD)?;
         wait_resume(s)?;
-        let chk = s.command("chkstg", Duration::from_secs(300))?;
+        let chk = s.command("svc.chkstg", Duration::from_secs(300))?;
         if !chk.contains(": 0 bad") {
-            return Err(format!("chkstg after the resume:\n{chk}"));
+            return Err(format!("svc.chkstg after the resume:\n{chk}"));
         }
-        let asp = s.command("asp", CMD)?;
+        let asp = s.command("svc.asp", CMD)?;
         if asp.matches("Active").count() != 2 {
-            return Err(format!("asp after the resume:\n{asp}"));
+            return Err(format!("svc.asp after the resume:\n{asp}"));
         }
         Ok("QSRV disabled after three wrong passwords and enabled by QSECOFR; unit 2 resumed from DST; halves agree".into())
     }

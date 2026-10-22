@@ -105,7 +105,7 @@ fn wait_resume(s: &mut Session) -> Result<String, String> {
     let deadline = std::time::Instant::now() + Duration::from_secs(600);
     let mut last = String::new();
     loop {
-        let out = s.command("mirror status", CMD)?;
+        let out = s.command("svc.mirror status", CMD)?;
         if out.contains("no resume running") {
             return Ok(if last.is_empty() {
                 "at once".into()
@@ -145,7 +145,7 @@ impl Suite {
         if !s.log.contains("SRC C6001007") {
             return Err("C6001007 (ASP 1 initialized) did not appear on the first boot".into());
         }
-        let listing = s.command("lib ls", CMD)?;
+        let listing = s.command("svc.lib ls", CMD)?;
         let names: Vec<&str> = listing
             .lines()
             .skip(1)
@@ -162,7 +162,7 @@ impl Suite {
     /// carries only the IPL subset.
     #[allow(clippy::unused_self)] // every step has the same shape
     pub(crate) fn sysval_in_store(&self, s: &mut Session) -> Result<String, String> {
-        let security = s.command("sysval QSECURITY", CMD)?;
+        let security = s.command("svc.sysval QSECURITY", CMD)?;
         if !security.contains("QSECURITY: 40") {
             return Err(format!("QSECURITY is not 40: {security}"));
         }
@@ -183,15 +183,15 @@ impl Suite {
     pub(crate) fn object_bench(&self, s: &mut Session) -> Result<String, String> {
         let n = self.bench;
         let timeout = Duration::from_secs(120 + n / 100);
-        let out = s.command(&format!("obj bench {n}"), timeout)?;
+        let out = s.command(&format!("svc.obj bench {n}"), timeout)?;
         let line = out
             .lines()
             .find(|l| l.starts_with("created "))
             .ok_or_else(|| format!("no bench result:\n{out}"))?
             .to_string();
-        let check = s.command("rclstg *CHECK", Duration::from_secs(300))?;
+        let check = s.command("svc.rclstg *CHECK", Duration::from_secs(300))?;
         if !check.contains("0 problem(s)") {
-            return Err(format!("rclstg *CHECK after the bench:\n{check}"));
+            return Err(format!("svc.rclstg *CHECK after the bench:\n{check}"));
         }
         s.send("pwrdwn restart")?;
         s.expect("SRC D1001010", CMD)?;
@@ -256,26 +256,26 @@ impl Suite {
 
     fn pair_and_sync(&self, s: &mut Session) -> Result<String, String> {
         s.expect(crate::PROMPT, self.boot_timeout)?;
-        let out = s.command("mirror start 0 /dev/vdb", CMD)?;
+        let out = s.command("svc.mirror start 0 /dev/vdb", CMD)?;
         if !out.contains("paired with new unit 1") {
-            return Err(format!("mirror start: {out}"));
+            return Err(format!("svc.mirror start: {out}"));
         }
-        let out = s.command("mirror resume 1", CMD)?;
+        let out = s.command("svc.mirror resume 1", CMD)?;
         if !out.contains("resuming in the background") {
-            return Err(format!("mirror resume: {out}"));
+            return Err(format!("svc.mirror resume: {out}"));
         }
         let sync = wait_resume(s)?;
-        let asp = s.command("asp", CMD)?;
+        let asp = s.command("svc.asp", CMD)?;
         if !asp.contains("protection: mirrored") || asp.matches("Active").count() != 2 {
             return Err(format!(
-                "asp after the sync:
+                "svc.asp after the sync:
 {asp}"
             ));
         }
-        let chk = s.command("chkstg", Duration::from_secs(300))?;
+        let chk = s.command("svc.chkstg", Duration::from_secs(300))?;
         if !chk.contains(": 0 bad") {
             return Err(format!(
-                "chkstg after the sync:
+                "svc.chkstg after the sync:
 {chk}"
             ));
         }
@@ -283,10 +283,10 @@ impl Suite {
         s.expect("SRC D1001090", CMD)?;
         s.expect_in_order(SRC_SEQUENCE, self.boot_timeout)?;
         s.expect(crate::PROMPT, CMD)?;
-        let chk = s.command("chkstg", Duration::from_secs(300))?;
+        let chk = s.command("svc.chkstg", Duration::from_secs(300))?;
         if !chk.contains(": 0 bad") {
             return Err(format!(
-                "chkstg after the restart:
+                "svc.chkstg after the restart:
 {chk}"
             ));
         }
@@ -296,14 +296,14 @@ impl Suite {
     fn run_degraded(&self, s: &mut Session) -> Result<(), String> {
         s.expect("SRC A6001255", self.boot_timeout)?;
         s.expect(crate::PROMPT, self.boot_timeout)?;
-        let asp = s.command("asp", CMD)?;
+        let asp = s.command("svc.asp", CMD)?;
         if !asp.contains("Missing") {
             return Err(format!(
-                "asp without the second disk:
+                "svc.asp without the second disk:
 {asp}"
             ));
         }
-        let out = s.command("obj crt *DTAARA QGPL/MIRRTEST written on one half", CMD)?;
+        let out = s.command("svc.obj crt *DTAARA QGPL/MIRRTEST written on one half", CMD)?;
         if !out.contains("created") {
             return Err(format!("create while degraded: {out}"));
         }
@@ -312,30 +312,30 @@ impl Suite {
 
     fn resume_stale(&self, s: &mut Session) -> Result<String, String> {
         s.expect(crate::PROMPT, self.boot_timeout)?;
-        let asp = s.command("asp", CMD)?;
+        let asp = s.command("svc.asp", CMD)?;
         if !asp.contains("Suspended") {
             return Err(format!(
-                "asp with the stale half:
+                "svc.asp with the stale half:
 {asp}"
             ));
         }
-        s.command("mirror resume 1", CMD)?;
+        s.command("svc.mirror resume 1", CMD)?;
         let sync = wait_resume(s)?;
-        let chk = s.command("chkstg", Duration::from_secs(300))?;
+        let chk = s.command("svc.chkstg", Duration::from_secs(300))?;
         if !chk.contains(": 0 bad") {
             return Err(format!(
-                "chkstg after the resume:
+                "svc.chkstg after the resume:
 {chk}"
             ));
         }
-        let rcl = s.command("rclstg *CHECK", Duration::from_secs(300))?;
+        let rcl = s.command("svc.rclstg *CHECK", Duration::from_secs(300))?;
         if !rcl.contains("0 problem(s)") {
             return Err(format!(
-                "rclstg after the resume:
+                "svc.rclstg after the resume:
 {rcl}"
             ));
         }
-        let dsp = s.command("obj dsp QGPL/MIRRTEST", CMD)?;
+        let dsp = s.command("svc.obj dsp QGPL/MIRRTEST", CMD)?;
         if !dsp.contains("written on one half") {
             return Err(format!(
                 "object written while degraded is gone:
@@ -438,7 +438,7 @@ impl Suite {
             if let Err(e) = s.expect(crate::PROMPT, self.boot_timeout) {
                 return Err(fail(&s, e));
             }
-            if let Err(e) = s.send(&format!("obj bench {PULL_BENCH}")) {
+            if let Err(e) = s.send(&format!("svc.obj bench {PULL_BENCH}")) {
                 return Err(fail(&s, e));
             }
             thread::sleep(delay);
@@ -464,18 +464,18 @@ impl Suite {
                 return Err(fail(&s, e));
             }
             let chk = s
-                .command("chkstg", Duration::from_secs(300))
+                .command("svc.chkstg", Duration::from_secs(300))
                 .map_err(|e| fail(&s, e))?;
             if !chk.contains(": 0 bad") {
-                return Err(fail(&s, format!("chkstg after the pull:\n{chk}")));
+                return Err(fail(&s, format!("svc.chkstg after the pull:\n{chk}")));
             }
             let rcl = s
-                .command("rclstg *CHECK", Duration::from_secs(300))
+                .command("svc.rclstg *CHECK", Duration::from_secs(300))
                 .map_err(|e| fail(&s, e))?;
             if !rcl.contains("0 problem(s)") {
-                return Err(fail(&s, format!("rclstg *CHECK after the pull:\n{rcl}")));
+                return Err(fail(&s, format!("svc.rclstg *CHECK after the pull:\n{rcl}")));
             }
-            let listing = s.command("lib ls", CMD).map_err(|e| fail(&s, e))?;
+            let listing = s.command("svc.lib ls", CMD).map_err(|e| fail(&s, e))?;
             let counts = bench_counts(&listing);
             let total: u64 = counts.iter().sum();
             if !whole_batches(&counts) || total > PULL_BENCH {

@@ -1,0 +1,24 @@
+                              Submit Job (SBMJOB)                               
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Hold on job queue  . . . . . . .   *JOBD         *JOBD, *NO, *YES              
+ Schedule date  . . . . . . . . .   *CURRENT      Date, *CURRENT, *MONTHSTR,... 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ F13=How to use this display        F24=More keys                               

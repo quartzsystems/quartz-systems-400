@@ -1,0 +1,24 @@
+                            Create Library (CRTLIB)                             
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Library  . . . . . . . . . . . . > TESTLIB       Name                          
+ Library type . . . . . . . . . .   *PROD         *PROD, *TEST                  
+ Description  . . . . . . . . . . > 'Test library'                              
+                                                                                
+                             Additional Parameters                              
+                                                                                
+ Auxiliary storage pool . . . . .   1             1-32                          
+ Public authority . . . . . . . .   *LIBCRTAUT    Name, *LIBCRTAUT, *CHANGE,... 
+ Authority for new objects  . . .   *SYSVAL       Name, *SYSVAL, *CHANGE, *A... 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F9=All parameters   F11=Keywords   F14=Command string   F15=Error messages     
+ F16=Command complete   F24=More keys                                           

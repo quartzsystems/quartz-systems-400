@@ -26,6 +26,7 @@ pub mod block;
 pub mod def;
 pub mod error;
 pub mod payload;
+pub mod prompt;
 pub mod rules;
 pub mod source;
 pub mod store;

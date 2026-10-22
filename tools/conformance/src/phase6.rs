@@ -149,7 +149,7 @@ fn sign_off(s: &mut Session) -> Result<(), String> {
 /// Assemble and bind a program into `QGPL`, with more `CRTPGM` keywords.
 fn build(s: &mut Session, name: &str, text: &str, extra: &str) -> Result<(), String> {
     crate::qir::qemu::push(s, name, text)?;
-    let m = s.command(&format!("qir asm {name} MODULE(QGPL/{name})"), CMD)?;
+    let m = s.command(&format!("svc.qir asm {name} MODULE(QGPL/{name})"), CMD)?;
     let p = s.command(
         &format!("crtpgm QGPL/{name} MODULE(QGPL/{name}) {extra}"),
         CMD,
@@ -178,9 +178,9 @@ impl Suite {
     /// the profile changes are audited.
     #[allow(clippy::unused_self)] // every step has the same shape
     pub(crate) fn user_profiles(&self, s: &mut Session) -> Result<String, String> {
-        let me = s.command("whoami", CMD)?;
-        want(&me, "QSYS", "whoami")?;
-        want(&me, "*ALLOBJ", "whoami")?;
+        let me = s.command("svc.whoami", CMD)?;
+        want(&me, "QSYS", "svc.whoami")?;
+        want(&me, "*ALLOBJ", "svc.whoami")?;
         for cmd in [
             "crtjrnrcv QSYS/AUDRCV0 THRESHOLD(64)",
             "crtjrn QSYS/QAUDJRN JRNRCV(QSYS/AUDRCV0) MNGRCV(*USER)",
@@ -197,14 +197,14 @@ impl Suite {
             "crtusrprf USRPRF(STAFF) PASSWORD(*NONE) TEXT('Staff group')",
             &format!("crtusrprf USRPRF(ANNE) PASSWORD({PASSWORD}) GRPPRF(STAFF) TEXT('Anne')"),
             &format!("crtusrprf USRPRF(BOB) PASSWORD({PASSWORD}) TEXT('Bob')"),
-            "obj crt *DTAARA QGPL/SECRET payroll figures",
-            "dtaara set QGPL/SECRET 42",
+            "svc.obj crt *DTAARA QGPL/SECRET payroll figures",
+            "svc.dtaara set QGPL/SECRET 42",
             "grtobjaut OBJ(QGPL/SECRET) OBJTYPE(*DTAARA) USER(*PUBLIC) AUT(*EXCLUDE)",
             "grtobjaut OBJ(QGPL/SECRET) OBJTYPE(*DTAARA) USER(ANNE) AUT(*USE)",
             "crtautl AUTL(PAYROLL) TEXT('Payroll')",
             "addautle AUTL(PAYROLL) USER(BOB) AUT(*CHANGE)",
-            "obj crt *DTAARA QGPL/LEDGER ledger",
-            "dtaara set QGPL/LEDGER ledger77",
+            "svc.obj crt *DTAARA QGPL/LEDGER ledger",
+            "svc.dtaara set QGPL/LEDGER ledger77",
             "grtobjaut OBJ(QGPL/LEDGER) OBJTYPE(*DTAARA) AUTL(PAYROLL)",
             "grtobjaut OBJ(QGPL/LEDGER) OBJTYPE(*DTAARA) USER(*PUBLIC) AUT(*AUTL)",
         ] {
@@ -250,25 +250,25 @@ impl Suite {
         s.command("key enter", CMD)?;
         screen_any(s, &["not correct"])?;
         sign_on(s, "ANNE")?;
-        let me = entry_wait(s, "whoami", has(&["User", "ANNE"]))?;
-        want(&me, "STAFF", "whoami as ANNE")?;
-        entry_wait(s, "dtaara get QGPL/SECRET", |l| {
-            l.contains("42") && !l.contains("dtaara")
+        let me = entry_wait(s, "svc.whoami", has(&["User", "ANNE"]))?;
+        want(&me, "STAFF", "svc.whoami as ANNE")?;
+        entry_wait(s, "svc.dtaara get QGPL/SECRET", |l| {
+            l.contains("42") && !l.contains("svc.dtaara")
         })?;
-        entry_wait(s, "dtaara set QGPL/SECRET 43", has(&["CPF2189"]))?;
-        entry_wait(s, "dtaara get QGPL/LEDGER", has(&["CPF2189", "LEDGER"]))?;
+        entry_wait(s, "svc.dtaara set QGPL/SECRET 43", has(&["CPF2189"]))?;
+        entry_wait(s, "svc.dtaara get QGPL/LEDGER", has(&["CPF2189", "LEDGER"]))?;
         entry_wait(
             s,
             "chkobj OBJ(QGPL/SECRET) OBJTYPE(*DTAARA) AUT(*CHANGE)",
             has(&["CPF9802"]),
         )?;
         entry_wait(s, "crtusrprf USRPRF(EVE)", has(&["CPF2222"]))?;
-        entry_wait(s, "obj crt *DTAARA QGPL/ANNEDTA mine", |l| {
-            l.contains("ANNEDTA") && !l.contains("obj crt")
+        entry_wait(s, "svc.obj crt *DTAARA QGPL/ANNEDTA mine", |l| {
+            l.contains("ANNEDTA") && !l.contains("svc.obj crt")
         })?;
         sign_off(s)?;
         sign_on(s, "BOB")?;
-        entry_wait(s, "dtaara get QGPL/LEDGER", has(&["ledger77"]))?;
+        entry_wait(s, "svc.dtaara get QGPL/LEDGER", has(&["ledger77"]))?;
         sign_off(s)?;
         let af = s.command("dspaudjrne ENTTYP(AF) USRPRF(ANNE)", CMD)?;
         want(&af, "SECRET", "dspaudjrne AF")?;
@@ -291,7 +291,7 @@ impl Suite {
         entry_wait(s, "call QGPL/NOADOPT", has(&["secret refused"]))?;
         entry_wait(s, "call QGPL/ADOPT", has(&["secret written"]))?;
         sign_off(s)?;
-        let v = s.command("dtaara get QGPL/SECRET", CMD)?;
+        let v = s.command("svc.dtaara get QGPL/SECRET", CMD)?;
         want(&v, "adopted", "SECRET after ADOPT")?;
         Ok("NOADOPT refused for ANNE, ADOPT (USRPRF(*OWNER), owner QSYS) wrote SECRET".into())
     }
@@ -322,9 +322,9 @@ impl Suite {
     pub(crate) fn auditing(&self, s: &mut Session) -> Result<String, String> {
         for cmd in [
             "chgobjaud OBJ(QGPL/SECRET) OBJTYPE(*DTAARA) OBJAUD(*ALL)",
-            "dtaara get QGPL/SECRET",
-            "obj crt *DTAARA QGPL/TEMPA short lived",
-            "obj dlt *DTAARA QGPL/TEMPA",
+            "svc.dtaara get QGPL/SECRET",
+            "svc.obj crt *DTAARA QGPL/TEMPA short lived",
+            "svc.obj dlt *DTAARA QGPL/TEMPA",
         ] {
             let out = s.command(cmd, CMD)?;
             if out.contains("CPF") || out.contains("CPD") {
@@ -362,8 +362,8 @@ impl Suite {
             }
         }
         for i in 0..12 {
-            s.command(&format!("obj crt *DTAARA QGPL/TEMPB{i} filler"), CMD)?;
-            s.command(&format!("obj dlt *DTAARA QGPL/TEMPB{i}"), CMD)?;
+            s.command(&format!("svc.obj crt *DTAARA QGPL/TEMPB{i} filler"), CMD)?;
+            s.command(&format!("svc.obj dlt *DTAARA QGPL/TEMPB{i}"), CMD)?;
         }
         let mut opr = String::new();
         for _ in 0..40 {
@@ -371,14 +371,14 @@ impl Suite {
             if opr.contains("CPI2283") {
                 break;
             }
-            s.command("obj crt *DTAARA QGPL/TEMPC filler", CMD)?;
-            s.command("obj dlt *DTAARA QGPL/TEMPC", CMD)?;
+            s.command("svc.obj crt *DTAARA QGPL/TEMPC filler", CMD)?;
+            s.command("svc.obj dlt *DTAARA QGPL/TEMPC", CMD)?;
             std::thread::sleep(Duration::from_millis(250));
         }
         want(&opr, "CPI2283", "QSYSOPR after the receiver filled")?;
         // The change itself is audited (SV): with the receiver full,
         // that entry is the one that powers the system down.
-        s.send("sysval QAUDENDACN *PWRDWNSYS")?;
+        s.send("svc.sysval QAUDENDACN *PWRDWNSYS")?;
         s.expect("SRC D1001090", Duration::from_secs(60))?;
         if !s.wait_exit(Duration::from_secs(30)) {
             return Err("the system did not power off".into());
@@ -388,7 +388,7 @@ impl Suite {
         s.expect_in_order(crate::steps::SRC_SEQUENCE, self.boot_timeout)?;
         s.expect(crate::PROMPT, CMD)?;
         let boot = s.elapsed().saturating_sub(t0);
-        let ctl = s.command("sysval QAUDCTL", CMD)?;
+        let ctl = s.command("svc.sysval QAUDCTL", CMD)?;
         want(&ctl, "*NONE", "QAUDCTL after the forced power down")?;
         let hist = s.command("dsplog MSGID(CPI2284)", CMD)?;
         want(&hist, "CPI2284", "QHST")?;
@@ -397,7 +397,7 @@ impl Suite {
             "crtjrnrcv QSYS/AUDRCV2 THRESHOLD(0)",
             "chgjrn QSYS/QAUDJRN JRNRCV(QSYS/AUDRCV2)",
             "chgsecaud QAUDCTL(*AUDLVL *OBJAUD)",
-            "sysval QAUDENDACN *NOTIFY",
+            "svc.sysval QAUDENDACN *NOTIFY",
         ] {
             let out = s.command(cmd, CMD)?;
             if out.contains("CPF") || out.contains("CPD") {
@@ -428,8 +428,8 @@ impl Suite {
         refuse(&secret, "ANNE", "SECRET's authorities")?;
         let group = s.command("dltusrprf USRPRF(STAFF)", CMD)?;
         want(&group, "deleted", "DLTUSRPRF of the empty group")?;
-        let check = s.command("rclstg *CHECK", CMD)?;
-        want(&check, "profile indexes: no problems", "rclstg *CHECK")?;
+        let check = s.command("svc.rclstg *CHECK", CMD)?;
+        want(&check, "profile indexes: no problems", "svc.rclstg *CHECK")?;
         Ok("ANNE kept by CPF2204, deleted with *CHGOWN BOB; her private authority gone; STAFF deleted; indexes verify".into())
     }
 
@@ -438,11 +438,11 @@ impl Suite {
     /// program monitors); 50: the load is refused (`MCH6801`); then 40
     /// for the rest.
     pub(crate) fn security_levels(&self, s: &mut Session) -> Result<String, String> {
-        let set = s.command("sysval QSECURITY 30", CMD)?;
-        want(&set, "set to 30", "sysval QSECURITY 30")?;
+        let set = s.command("svc.sysval QSECURITY 30", CMD)?;
+        want(&set, "set to 30", "svc.sysval QSECURITY 30")?;
         let b30 = self.reipl(s)?;
-        let me = s.command("whoami", CMD)?;
-        want(&me, "30", "whoami at 30")?;
+        let me = s.command("svc.whoami", CMD)?;
+        want(&me, "30", "svc.whoami at 30")?;
         sign_on(s, "BOB")?;
         entry_wait(s, "call QGPL/NOADOPT", has(&["secret refused"]))?;
         entry_wait(s, "call QGPL/ADOPT", has(&["secret written"]))?;
@@ -450,13 +450,13 @@ impl Suite {
         let raw = s.command("call QGPL/RAW", CMD)?;
         want(&raw, "no provider", "call RAW at 30")?;
         refuse(&raw, "MCH6801", "call RAW at 30")?;
-        let set = s.command("sysval QSECURITY 50", CMD)?;
-        want(&set, "set to 50", "sysval QSECURITY 50")?;
+        let set = s.command("svc.sysval QSECURITY 50", CMD)?;
+        want(&set, "set to 50", "svc.sysval QSECURITY 50")?;
         let b50 = self.reipl(s)?;
         let raw = s.command("call QGPL/RAW", CMD)?;
         want(&raw, "MCH6801", "call RAW at 50")?;
-        let set = s.command("sysval QSECURITY 40", CMD)?;
-        want(&set, "set to 40", "sysval QSECURITY 40")?;
+        let set = s.command("svc.sysval QSECURITY 40", CMD)?;
+        want(&set, "set to 40", "svc.sysval QSECURITY 40")?;
         Ok(format!(
             "30 (IPL {:.1}s): BOB signed on, NOADOPT refused, ADOPT wrote, RAW ran to MCH3401; 50 (IPL {:.1}s): RAW MCH6801; back to 40",
             b30.as_secs_f64(),

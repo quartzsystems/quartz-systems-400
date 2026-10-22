@@ -254,9 +254,9 @@ impl Suite {
         if !dump.contains("Sign On") {
             return Err("sign-on display is not showing".into());
         }
-        let asp = s.command("asp", CMD)?;
+        let asp = s.command("svc.asp", CMD)?;
         if !asp.contains("created by V1R0M0") {
-            return Err(format!("asp did not report the store: {asp}"));
+            return Err(format!("svc.asp did not report the store: {asp}"));
         }
         Ok("LIC written by option 4, re-IPL, operating system installed, sign-on".into())
     }
@@ -318,7 +318,7 @@ impl Suite {
         if !dump.contains("Sign On") {
             return Err("sign-on display is not showing".into());
         }
-        let vals = s.command("sysval QAUTOCFG", CMD)?;
+        let vals = s.command("svc.sysval QAUTOCFG", CMD)?;
         if !vals.contains("QAUTOCFG: 1") {
             return Err(format!("major options not applied: {vals}"));
         }
@@ -333,9 +333,9 @@ impl Suite {
         if !dump.contains("Sign On") {
             return Err("sign-on display is not showing".into());
         }
-        let asp = s.command("asp", CMD)?;
+        let asp = s.command("svc.asp", CMD)?;
         if !asp.contains("created by V1R0M0") {
-            return Err(format!("asp did not report the store: {asp}"));
+            return Err(format!("svc.asp did not report the store: {asp}"));
         }
         let last = seen.last().map_or(0.0, |(_, t)| t.as_secs_f64());
         Ok(format!("C1001080 and C6001005 seen, sign-on at {last:.1}s"))
@@ -533,17 +533,17 @@ impl Suite {
 
     /// Step 3: read QMODEL, change and read back QSECURITY.
     fn sysvals(&self, s: &mut Session) -> Result<String, String> {
-        let model = s.command("sysval QMODEL", CMD)?;
+        let model = s.command("svc.sysval QMODEL", CMD)?;
         if !model.contains("QMODEL: QS40") {
-            return Err(format!("sysval QMODEL: {model:?}"));
+            return Err(format!("svc.sysval QMODEL: {model:?}"));
         }
-        let set = s.command("sysval QSECURITY 40", CMD)?;
+        let set = s.command("svc.sysval QSECURITY 40", CMD)?;
         if !set.contains("QSECURITY set to 40") {
-            return Err(format!("sysval QSECURITY 40: {set:?}"));
+            return Err(format!("svc.sysval QSECURITY 40: {set:?}"));
         }
-        let back = s.command("sysval QSECURITY", CMD)?;
+        let back = s.command("svc.sysval QSECURITY", CMD)?;
         if !back.contains("QSECURITY: 40") {
-            return Err(format!("sysval QSECURITY: {back:?}"));
+            return Err(format!("svc.sysval QSECURITY: {back:?}"));
         }
         Ok("QMODEL is QS40; QSECURITY set and read back as 40".into())
     }
@@ -577,7 +577,7 @@ impl Suite {
         if first.get(7) != Some(&"Normal") {
             return Err(format!("first history entry is not Normal: {}", entries[0]));
         }
-        let security = s.command("sysval QSECURITY", CMD)?;
+        let security = s.command("svc.sysval QSECURITY", CMD)?;
         if !security.contains("QSECURITY: 40") {
             return Err(format!(
                 "QSECURITY did not persist across restart: {security:?}"
@@ -664,7 +664,7 @@ impl Suite {
         if let Err(e) = s.expect(crate::PROMPT, CMD) {
             return Err(fail(&s, e));
         }
-        let sw = match s.command("sysval QABNORMSW", CMD) {
+        let sw = match s.command("svc.sysval QABNORMSW", CMD) {
             Ok(t) => t,
             Err(e) => return Err(fail(&s, e)),
         };

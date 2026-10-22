@@ -338,6 +338,7 @@ pub fn read(def: &CmdDef, segments: &[Segment], specified: &[bool]) -> Result<Pa
                             value: None,
                             specified: false,
                             sel: None,
+            given: Vec::new(),
                         });
                         continue;
                     }
@@ -348,6 +349,7 @@ pub fn read(def: &CmdDef, segments: &[Segment], specified: &[bool]) -> Result<Pa
                     value: Some(v),
                     specified: specified_atr,
                     sel: None,
+            given: Vec::new(),
                 });
                 continue;
             }
@@ -357,6 +359,7 @@ pub fn read(def: &CmdDef, segments: &[Segment], specified: &[bool]) -> Result<Pa
             value,
             specified: spec,
             sel: None,
+            given: Vec::new(),
         });
     }
     Ok(Parms {

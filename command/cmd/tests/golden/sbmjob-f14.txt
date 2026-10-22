@@ -1,0 +1,24 @@
+                                 Command String                                 
+                                                                                
+ SBMJOB CMD(CRTLIB LIB(X)) JOBD(QGPL/QBATCH) HOLD(CRTLIB LIB(X))                
+ SCDDATE(*JOBD)                                                                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Press Enter to continue.                                                       
+                                                                                

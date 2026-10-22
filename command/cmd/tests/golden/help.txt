@@ -1,0 +1,24 @@
+                         How to Use the Command Prompt                          
+                                                                                
+ Type a value in each field you want to set and press Enter.                    
+ A value shown is the default; leave it to keep it.                             
+ A field with > before it was given on the command line.                        
+ F10 shows the parameters most calls leave at their defaults;                   
+ F9 shows every parameter the command has.                                      
+ F11 shows the keyword of each parameter instead of its choices.                
+ F14 shows the command string the display stands for.                           
+ F15 lists the errors the last Enter found.                                     
+ F16 runs the command with the remaining parameters at their defaults.          
+ F3 or F12 leaves without running the command.                                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Press Enter to continue.                                                       
+                                                                                

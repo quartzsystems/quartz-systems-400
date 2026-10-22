@@ -21,7 +21,7 @@ pub(crate) fn push(s: &mut Session, name: &str, text: &str) -> Result<(), String
     if lines.is_empty() {
         return Err(format!("{name}: nothing to push"));
     }
-    s.send(&format!("xfer put {name} {}", lines.len()))?;
+    s.send(&format!("svc.xfer put {name} {}", lines.len()))?;
     for l in &lines {
         s.send(l)?;
         if !l.trim().is_empty() {
@@ -30,7 +30,7 @@ pub(crate) fn push(s: &mut Session, name: &str, text: &str) -> Result<(), String
     }
     let out = s.expect(crate::PROMPT, CMD)?;
     if !out.contains("lines stored") {
-        return Err(format!("xfer put {name}: {out}"));
+        return Err(format!("svc.xfer put {name}: {out}"));
     }
     Ok(())
 }
@@ -105,7 +105,7 @@ impl Suite {
                 let (name, actgrp) = header(m);
                 let buf = format!("{}M{i}", &case.name[..case.name.len().min(7)]);
                 push(s, &buf, m)?;
-                let out = s.command(&format!("qir asm {buf} MODULE(QGPL/{name})"), CMD)?;
+                let out = s.command(&format!("svc.qir asm {buf} MODULE(QGPL/{name})"), CMD)?;
                 if !out.contains("created") {
                     return Err(format!("{}: qir asm {name}:\n{out}", case.name));
                 }
@@ -124,7 +124,7 @@ impl Suite {
             }
             let main = main.ok_or_else(|| format!("{}: no module", case.name))?;
             for r in &case.replies {
-                s.command(&format!("rpy {r}"), CMD)?;
+                s.command(&format!("svc.rpy {r}"), CMD)?;
             }
             let out = s.command(&format!("call QGPL/{main} {}", case.parms), CMD)?;
             let got = mask_job_number(call_lines(&out));

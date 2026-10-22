@@ -195,13 +195,20 @@ pub struct Panel {
     pub message: String,
     /// The message is an error.
     pub error: bool,
+    /// Where the cursor goes: row, column (1-based); the first field
+    /// when `None`.
+    pub cursor: Option<(u8, u8)>,
+    /// Fields shown in reverse image (in error), by row and column.
+    pub reverse: Vec<(u8, u8)>,
 }
 
 wire_struct!(Panel {
     texts,
     fields,
     message,
-    error
+    error,
+    cursor,
+    reverse
 });
 
 impl Panel {

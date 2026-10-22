@@ -1,0 +1,24 @@
+                              Submit Job (SBMJOB)                               
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Command to run . . . . . . . . . > CRTLIB LIB(X)                               
+ Job name . . . . . . . . . . . .   *JOBD         Name, *JOBD                   
+ Job description  . . . . . . . . > QBATCH        Name                          
+   Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
+ Job queue  . . . . . . . . . . .   *JOBD         Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Job priority . . . . . . . . . .   *JOBD         1-9, *JOBD                    
+                                                                                
+                             Additional Parameters                              
+                                                                                
+ Message logging:                                                               
+   Level  . . . . . . . . . . . .     *JOBD         0-4                         
+   Severity . . . . . . . . . . .     0             0-99                        
+   Text . . . . . . . . . . . . .     *NOLIST       *MSG, *SECLVL, *NOLIST      
+ Initial library list . . . . . .   *JOBD         Name, *JOBD, *SYSVAL, *NON... 
+                       + for more values                                        
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ F13=How to use this display        F24=More keys                               

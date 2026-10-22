@@ -1,0 +1,24 @@
+                            Create Library (CRTLIB)                             
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Library  . . . . . . . . . . . . > TESTLIB       Name                          
+ Library type . . . . . . . . . .   *NOPE         *PROD, *TEST                  
+ Description  . . . . . . . . . . > 'Test library'                              
+                                                                                
+                             Additional Parameters                              
+                                                                                
+ Auxiliary storage pool . . . . .   1             1-32                          
+ Public authority . . . . . . . .   *LIBCRTAUT    Name, *LIBCRTAUT, *CHANGE,... 
+ Authority for new objects  . . .   *SYSVAL       Name, *SYSVAL, *CHANGE, *A... 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+CPD0084 TYPE: *NOPE is not one of the values allowed                            

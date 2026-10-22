@@ -27,7 +27,7 @@ fn push(s: &mut Session, name: &str, text: &str) -> Result<(), String> {
     if lines.is_empty() {
         return Err(format!("{name}: nothing to push"));
     }
-    s.send(&format!("xfer put {name} {}", lines.len()))?;
+    s.send(&format!("svc.xfer put {name} {}", lines.len()))?;
     for l in &lines {
         s.send(l)?;
         if !l.trim().is_empty() {
@@ -36,7 +36,7 @@ fn push(s: &mut Session, name: &str, text: &str) -> Result<(), String> {
     }
     let out = s.expect(crate::PROMPT, CMD)?;
     if !out.contains("lines stored") {
-        return Err(format!("xfer put {name}: {out}"));
+        return Err(format!("svc.xfer put {name}: {out}"));
     }
     Ok(())
 }
@@ -92,7 +92,7 @@ impl Suite {
         let queries = local.run_queries(&kit)?;
 
         let out = s.command(
-            &format!("obj crt *LIB QSYS/{} Database conformance", kit::LIBRARY),
+            &format!("svc.obj crt *LIB QSYS/{} Database conformance", kit::LIBRARY),
             CMD,
         )?;
         ok(&out, "create library", "created")?;
@@ -102,13 +102,13 @@ impl Suite {
             push(s, &name, &text)?;
             let out = s.command(
                 &format!(
-                    "srcput {}/{} {name} SRCTYPE({kind})",
+                    "svc.srcput {}/{} {name} SRCTYPE({kind})",
                     kit::LIBRARY,
                     kit::SRCFILE
                 ),
                 CMD,
             )?;
-            ok(&out, &format!("srcput {name}"), "written")?;
+            ok(&out, &format!("svc.srcput {name}"), "written")?;
             let reuse = if kit::reuse_deleted(&name) {
                 " REUSEDLT(*YES)"
             } else {
@@ -164,9 +164,9 @@ impl Suite {
 
         let script = kit.rla_lines().map_err(|e| e.to_string())?.join("\n");
         push(s, "RLA", &script)?;
-        let out = s.command("rla RLA", LONG)?;
+        let out = s.command("svc.rla RLA", LONG)?;
         if !out.contains("0 mismatch(es)") {
-            return Err(format!("rla over the console:\n{out}"));
+            return Err(format!("svc.rla over the console:\n{out}"));
         }
 
         let mut compared = 0u32;
@@ -188,7 +188,7 @@ impl Suite {
         }
         for (i, (q, r)) in queries.iter().enumerate() {
             let rs = r.as_ref().map_err(|e| format!("query {}: {e}", i + 1))?;
-            let out = s.command(&format!("sql {q};"), LONG)?;
+            let out = s.command(&format!("svc.sql {q};"), LONG)?;
             let want = rs.render();
             if !out.contains(want.trim_end()) {
                 return Err(format!(
@@ -198,15 +198,15 @@ impl Suite {
             }
         }
         let n = self.bench;
-        let out = s.command(&format!("dbbench {n}"), Duration::from_secs(300 + n / 50))?;
+        let out = s.command(&format!("svc.dbbench {n}"), Duration::from_secs(300 + n / 50))?;
         let bench = out
             .lines()
             .find(|l| l.starts_with("insert"))
             .ok_or_else(|| format!("no bench result:\n{out}"))?
             .to_string();
-        let check = s.command("chkstg", LONG)?;
+        let check = s.command("svc.chkstg", LONG)?;
         if !check.contains("access path(s): 0 problem(s)") {
-            return Err(format!("chkstg after the kit:\n{check}"));
+            return Err(format!("svc.chkstg after the kit:\n{check}"));
         }
         Ok(format!(
             "{} files from DDS, {loaded} loaded, script {} ok, {compared} exports and {} queries match memory; {bench}; access paths clean",
@@ -249,7 +249,7 @@ impl Suite {
 
     fn balance(s: &mut Session) -> Result<String, String> {
         let out = s.command(
-            &format!("sql SELECT SUM(BAL) FROM {}/CUSTOMER;", kit::LIBRARY),
+            &format!("svc.sql SELECT SUM(BAL) FROM {}/CUSTOMER;", kit::LIBRARY),
             CMD,
         )?;
         // The value line precedes the row count; the column header
@@ -270,7 +270,7 @@ impl Suite {
         let out = s.command("strcmtctl LCKLVL(*CHG)", CMD)?;
         ok(&out, "strcmtctl", "started")?;
         let out = s.command(
-            &format!("sql UPDATE {}/CUSTOMER SET BAL = BAL + 1000;", kit::LIBRARY),
+            &format!("svc.sql UPDATE {}/CUSTOMER SET BAL = BAL + 1000;", kit::LIBRARY),
             CMD,
         )?;
         ok(&out, "update under commitment control", "row(s) affected")?;
@@ -312,9 +312,9 @@ impl Suite {
         if after.parse::<f64>().ok() != want.parse::<f64>().ok() {
             return Err(format!("balance after recovery is {after}, want {want}"));
         }
-        let check = s.command("chkstg", LONG)?;
+        let check = s.command("svc.chkstg", LONG)?;
         if !check.contains("access path(s): 0 problem(s)") {
-            return Err(format!("chkstg after recovery:\n{check}"));
+            return Err(format!("svc.chkstg after recovery:\n{check}"));
         }
         let jrn = s.command(
             &format!("dspjrn {}/{} JRNCDE(C)", kit::LIBRARY, kit::JOURNAL),
