@@ -28,8 +28,9 @@ pub(crate) fn job_opt(env: *mut codegen::abi::Env) -> Option<&'static mut crate:
     (!env.is_null()).then(|| mem::job(env))
 }
 pub use core::{
-    call_pgm, call_pgm_ptr, call_pgm_var, copy, deref, dsply, enter, leave, monitor_match, mov_str,
-    proc_addr, proc_target, ptr_add, ptr_addr, ptr_diff, raise, unresolved,
+    ATTN, attention, call_pgm, call_pgm_ptr, call_pgm_var, copy, deref, dsply, enter, leave,
+    monitor_match, mov_str, note_stack_fault, proc_addr, proc_target, ptr_add, ptr_addr, ptr_diff,
+    raise, unresolved,
 };
 pub use date::{dt_add, dt_diff, dt_extract, dt_now, dt_test};
 pub use debug::{dbg_stmt, dbg_var};
@@ -104,6 +105,7 @@ pub fn table() -> Vec<usize> {
             RtFn::Rslvsp => rslvsp as *const () as usize,
             RtFn::DbgStmt => dbg_stmt as *const () as usize,
             RtFn::DbgVar => dbg_var as *const () as usize,
+            RtFn::Attn => attention as *const () as usize,
         })
         .collect()
 }

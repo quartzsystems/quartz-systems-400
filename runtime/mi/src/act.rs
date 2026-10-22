@@ -300,6 +300,7 @@ pub(crate) fn load(
         let resolver = |t: &RelocTarget| -> codegen::Result<u64> {
             match t {
                 RelocTarget::Runtime(f) => Ok(table[f.index() as usize] as u64),
+                RelocTarget::AttnFlag => Ok(std::ptr::addr_of!(rtlib::ATTN) as u64),
                 RelocTarget::StaticFrame => Ok(bm.frame_offset),
                 RelocTarget::ImportProc(name) => {
                     let imp = object.imports.iter().find(|i| {

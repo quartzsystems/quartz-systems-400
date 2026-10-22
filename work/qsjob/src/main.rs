@@ -8,12 +8,14 @@
 //! programs here, in its own address space. A job that crashes takes
 //! nothing with it: the service releases what it held.
 
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
 
 #[cfg(target_os = "linux")]
 mod command;
 #[cfg(target_os = "linux")]
 mod console;
+#[cfg(target_os = "linux")]
+mod platform;
 #[cfg(target_os = "linux")]
 mod start;
 #[cfg(target_os = "linux")]

@@ -39,6 +39,7 @@ pub(crate) fn encode(w: &mut W, c: &ModuleCode) {
                 w.u8(3);
                 w.str(n);
             }
+            RelocTarget::AttnFlag => w.u8(4),
         }
         w.i64(r.addend);
     });
@@ -105,6 +106,7 @@ pub(crate) fn decode(r: &mut R<'_>) -> Result<ModuleCode> {
             1 => RelocTarget::ImportProc(r.str()?),
             2 => RelocTarget::StaticFrame,
             3 => RelocTarget::ImportData(r.str()?),
+            4 => RelocTarget::AttnFlag,
             v => return Err(r.err(format!("{v} is not a relocation target"))),
         };
         let addend = r.i64()?;

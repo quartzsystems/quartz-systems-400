@@ -72,9 +72,6 @@ activation check and the argument vector.
   the command analyzer is Phase 7.
 - Operational descriptors are not built, so `CEEDOD` reports
   `CEE0820`.
-- A stack overflow is caught by a budget check in `enter`, not by the
-  guard page; the job's own thread, and the signal handler on its
-  alternate stack, come with Phase 5.
 - Service programs bind through the binder and the kit's in-memory
   programs, but the console has no `*SRVPGM` signature display beyond
   `dspsrvpgm`.

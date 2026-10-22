@@ -115,12 +115,18 @@ impl Lowerer<'_, '_> {
                 self.b.def_var(self.vars[dst.0 as usize], v);
             }
             Inst::Br(l) => {
+                if self.is_back_edge(*l) {
+                    self.poll_attn();
+                }
                 self.b.ins().jump(self.blocks[l.0 as usize], &[]);
             }
             Inst::BrIf { c, t, f } => {
                 let cty = operand_type(self.m, self.p, c, Some(&Type::Ind))
                     .map_err(|e| self.unsupported(e))?;
                 let cv = self.value(c, &cty)?;
+                if self.is_back_edge(*t) || self.is_back_edge(*f) {
+                    self.poll_attn();
+                }
                 self.b.ins().brif(
                     cv,
                     self.blocks[t.0 as usize],
@@ -133,6 +139,9 @@ impl Lowerer<'_, '_> {
                 let ty = operand_type(self.m, self.p, v, None).map_err(|e| self.unsupported(e))?;
                 let val = self.value(v, &ty)?;
                 let bits = ty.int_bits().unwrap_or(64);
+                if self.is_back_edge(*default) || cases.iter().any(|(_, l)| self.is_back_edge(*l)) {
+                    self.poll_attn();
+                }
                 for (k, l) in cases {
                     let fits =
                         bits == 64 || (-(1i64 << (bits - 1))..(1i64 << (bits - 1))).contains(k);

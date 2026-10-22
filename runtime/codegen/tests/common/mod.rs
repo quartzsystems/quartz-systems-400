@@ -21,6 +21,9 @@ thread_local! {
     static DEPTH: Cell<(i64, i64)> = const { Cell::new((0, 0)) };
 }
 
+/// The attention flag generated code polls; never set here.
+static ATTN: u64 = 0;
+
 extern "sysv64" fn raise(env: *mut Env, cond: u32) {
     // SAFETY: generated code passes the environment the test built.
     unsafe {
@@ -108,6 +111,7 @@ impl Running {
             RelocTarget::ImportData(name) => {
                 Err(codegen::CodegenError::Load(format!("data {name}")))
             }
+            RelocTarget::AttnFlag => Ok(std::ptr::addr_of!(ATTN) as u64),
         })
         .unwrap_or_else(|e| panic!("{e}"));
         let mut statics = code.static_init.clone();

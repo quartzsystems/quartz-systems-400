@@ -44,6 +44,7 @@ const NS_RT: u32 = 1;
 const NS_IMPORT_PROC: u32 = 2;
 const NS_STATIC_FRAME: u32 = 3;
 const NS_IMPORT_DATA: u32 = 4;
+const NS_ATTN: u32 = 5;
 
 /// The target: `x86_64`, System V, no position independence, no probes.
 pub fn target() -> Result<OwnedTargetIsa> {
@@ -150,6 +151,7 @@ fn compile_with(m: &Module, debug: bool) -> Result<ModuleCode> {
                         NS_IMPORT_DATA => {
                             RelocTarget::ImportData(names[name.index as usize].clone())
                         }
+                        NS_ATTN => RelocTarget::AttnFlag,
                         ns => {
                             return Err(CodegenError::Backend {
                                 proc: p.name.clone(),
@@ -292,6 +294,8 @@ pub(crate) struct Lowerer<'a, 'b> {
     pub argc: Value,
     /// The operational descriptor list the caller passed, or 0.
     pub opdesc: Value,
+    /// The IR block being lowered, for back-edge polls.
+    pub cur_block: usize,
     pub retbuf: Option<Value>,
     pub param_vals: Vec<Value>,
     pub unwind: Block,
@@ -299,6 +303,7 @@ pub(crate) struct Lowerer<'a, 'b> {
     local_refs: HashMap<u32, FuncRef>,
     import_refs: HashMap<String, FuncRef>,
     static_gv: Option<GlobalValue>,
+    attn_gv: Option<GlobalValue>,
     import_gvs: HashMap<String, GlobalValue>,
     /// Open `monitor` regions, innermost last.
     pub(crate) regions: Vec<storage::Region>,
@@ -333,6 +338,7 @@ impl<'a, 'b> Lowerer<'a, 'b> {
             env: zero,
             argc: zero,
             opdesc: zero,
+            cur_block: 0,
             retbuf: None,
             param_vals: Vec::new(),
             unwind: Block::from_u32(0),
@@ -340,6 +346,7 @@ impl<'a, 'b> Lowerer<'a, 'b> {
             local_refs: HashMap::new(),
             import_refs: HashMap::new(),
             static_gv: None,
+            attn_gv: None,
             import_gvs: HashMap::new(),
             regions: Vec::new(),
             closed_regions: Vec::new(),
@@ -367,6 +374,7 @@ impl<'a, 'b> Lowerer<'a, 'b> {
         self.prologue();
         for (bi, blk) in p.blocks.iter().enumerate() {
             self.b.switch_to_block(self.blocks[bi]);
+            self.cur_block = bi;
             for i in &blk.insts {
                 self.inst(i)?;
             }
@@ -737,10 +745,50 @@ impl<'a, 'b> Lowerer<'a, 'b> {
         let job = self.b.ins().load(types::I64, le(), self.env, abi::ENV_JOB);
         let v = self.b.ins().iconst(types::I32, i64::from(n));
         self.b.ins().store(le(), v, job, abi::JOB_STMT);
+        self.poll_attn();
         if self.debug {
             let nv = self.i64(i64::from(n));
             self.rt_call(RtFn::DbgStmt, &[nv]);
         }
+    }
+
+    /// Whether a branch to `label` goes backwards: a loop's back-edge.
+    pub(crate) fn is_back_edge(&self, label: qir::Label) -> bool {
+        label.0 as usize <= self.cur_block
+    }
+
+    /// Poll the runtime's attention flag: a break message waiting for
+    /// the job is taken here, at a statement boundary, through `attn`.
+    pub(crate) fn poll_attn(&mut self) {
+        let gv = if let Some(gv) = self.attn_gv {
+            gv
+        } else {
+            let name = self
+                .b
+                .func
+                .declare_imported_user_function(UserExternalName {
+                    namespace: NS_ATTN,
+                    index: 0,
+                });
+            let gv = self.b.create_global_value(GlobalValueData::Symbol {
+                name: ExternalName::user(name),
+                offset: 0.into(),
+                colocated: false,
+                tls: false,
+            });
+            self.attn_gv = Some(gv);
+            gv
+        };
+        let addr = self.b.ins().symbol_value(types::I64, gv);
+        let flag = self.b.ins().load(types::I64, le(), addr, 0);
+        let slow = self.b.create_block();
+        let cont = self.b.create_block();
+        self.b.ins().brif(flag, slow, &[], cont, &[]);
+        self.b.switch_to_block(slow);
+        self.b.set_cold_block(slow);
+        self.rt_call(RtFn::Attn, &[]);
+        self.b.ins().jump(cont, &[]);
+        self.b.switch_to_block(cont);
     }
 
     /// Store raw bytes at an address, in 8, 4, 2 and 1 byte pieces.

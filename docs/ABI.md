@@ -129,6 +129,7 @@ loader, in `ModuleCode::relocs`:
 | `ImportProc(name)` | `Abs8` | the address of the exported procedure |
 | `StaticFrame` | `Abs8` | this module's frame offset in the program's static area |
 | `ImportData(name)` | `Abs8` | the frame offset of the exporting module plus the variable's offset |
+| `AttnFlag` | `Abs8` | the address of the runtime's attention flag (`mi::rtlib::ATTN`) |
 
 `Abs8` sites are the 8-byte immediate of a `movabs`; the loader writes
 the value plus the addend. `Loaded::new` does this for a `ModuleCode`
@@ -200,6 +201,7 @@ absent optional length is -1.
 | 50 | `rslvsp` | `out, type, name, lib` | 16 bytes at `out` |
 | 51 | `dbg_stmt` | `n` | debug variant only |
 | 52 | `dbg_var` | `name, addr, desc` | debug variant only |
+| 53 | `attn` | | the attention flag was set |
 
 `file` is the index of the module's file declaration; the runtime
 finds the declaration through the running entry's program and keeps
@@ -211,6 +213,14 @@ reclaimed. Operation codes: `db_io` 1 `READ`, 2 `READP`, 3 `READE`, 4
 `EXFMT`; `dtaara` 1 lock, 2 read, 3 write, 4 unlock. A key operand is
 the key fields' bytes in record layout, a prefix allowed; a relative
 record number is passed when there is no key.
+
+Generated code polls the attention flag at every `debug.stmt` and
+before every branch back to an earlier block (a loop's back-edge): a
+load through the `AttnFlag` relocation and a branch to a cold block
+that calls `attn`, which clears the flag and runs the job's attention
+hook. The job process raises the flag on a timer so a running program
+takes its break messages between statements; the in-memory runtime
+never raises it.
 
 `enter` is called in every prologue with the procedure's own code
 address, its argument count and its descriptor list, so the runtime

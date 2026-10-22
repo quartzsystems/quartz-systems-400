@@ -54,6 +54,9 @@ pub type NativeFn = Rc<dyn Fn(&mut Job, &[u64])>;
 /// job process installs it over the command analyzer.
 pub type CmdExecFn = Rc<dyn Fn(&mut Job, &str, u8) -> Result<String, (String, Vec<u8>)>>;
 
+/// A hook the job process installs and the runtime calls with the job.
+pub type JobHook = Rc<dyn Fn(&mut Job)>;
+
 /// An open file's owner: the activation (by its static area), the
 /// module and the file declaration.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -144,6 +147,9 @@ pub struct Job {
     pub console: Vec<String>,
     /// Replies `dsply` reads, oldest first.
     pub replies: VecDeque<String>,
+    /// Run when generated code finds the attention flag set: the job
+    /// process takes the break messages waiting for the job.
+    pub attn: Option<JobHook>,
     /// Programs, activation groups and the call stack.
     pub act: Activator,
     /// Native programs by name, found before any object (`QSYS`).
@@ -222,6 +228,7 @@ impl Job {
             spaces: Spaces::default(),
             console: Vec::new(),
             replies: VecDeque::new(),
+            attn: None,
             act: Activator::new(source),
             natives: HashMap::new(),
             table: crate::rtlib::table(),
