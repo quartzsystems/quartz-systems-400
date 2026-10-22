@@ -89,6 +89,12 @@ fn cpp(job: &mut Job, host: &Host, name: &str, args: &[u64]) {
         prompt: false,
         parms: parms.values.clone(),
     };
+    // `LOGCLPGM(*YES)`: the command is a request of the program in the
+    // job log, as a typed one would be.
+    if host.attrs().logclpgm == "*YES" {
+        let (from, _) = job.frame_where(job.act.frames.len().checked_sub(1));
+        job.log_request(&r.text(), (&from.0, &from.1));
+    }
     let o = dispatch_resolved(job, host, &r);
     for l in o.text.lines() {
         job.console.push(l.to_string());

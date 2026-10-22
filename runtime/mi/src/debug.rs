@@ -192,6 +192,8 @@ impl Job {
             Some((n, m)) => (n.trim(), m.trim().to_ascii_lowercase()),
             None => (expr.trim(), String::new()),
         };
+        // A CL variable is spelled `&NAME`; its place is `$NAME`.
+        let name = name.strip_prefix('&').unwrap_or(name);
         let f = self
             .act
             .frames

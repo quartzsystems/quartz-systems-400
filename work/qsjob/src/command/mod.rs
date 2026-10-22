@@ -398,6 +398,23 @@ fn user_cpp(job: &mut Job, _host: &Host, r: &Resolved) -> Result<String, Fail> {
         .iter_mut()
         .map(|b| b.as_mut().map_or(0, |v| v.as_mut_ptr() as u64))
         .collect();
+    // `VLDCKR`: the validity checking program sees the block first and
+    // refuses with an escape.
+    if let Some(v) = &r.def.vldckr {
+        if let Err(e) = job.call_program(&v.name, &v.lib, &addrs) {
+            return Err(Fail::new(
+                &e.msgid(),
+                format!("validity checking program {}/{} could not be called", v.lib, v.name),
+            ));
+        }
+        if let Some(e) = job.clear() {
+            return Err(Fail {
+                msgid: e.msgid.clone(),
+                data: e.data.clone(),
+                text: String::new(),
+            });
+        }
+    }
     let cpp = &r.def.cpp;
     let before = job.console.len();
     let called = job.call_program(&cpp.name, &cpp.lib, &addrs);

@@ -779,7 +779,9 @@ impl Job {
 impl Job {
     /// The program, library and statement of call-stack entry `i`
     /// (0 is the oldest); `*N` for a native or unknown entry.
-    fn frame_where(&self, i: Option<usize>) -> ((String, String), String) {
+    /// The program and library of frame `i`, and its statement, as the
+    /// job log names them.
+    pub fn frame_where(&self, i: Option<usize>) -> ((String, String), String) {
         let unknown = || (("*N".to_string(), String::new()), "*N".to_string());
         let Some(i) = i else {
             return unknown();
