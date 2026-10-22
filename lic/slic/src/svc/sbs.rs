@@ -177,9 +177,9 @@ fn dspsbsd(system: &mut System, p: &Params) -> Result<String, String> {
     let (lib, name) = target(p)?;
     let b = sbs::wm_object(system, &format!("{lib}/{name}"), "*SBSD")?;
     let d = Sbsd::decode(&b).map_err(|e| err(&e))?;
-    let option = match p.kw("OPTION").map(|o| o.trim().to_ascii_uppercase()) {
+    let option = match p.kw("OPTION").map(|v| v.trim().to_ascii_uppercase()) {
         None => None,
-        Some(o) => match o.as_str() {
+        Some(opt) => match opt.as_str() {
             "*ALL" => None,
             "*OPRATR" => Some(1),
             "*POOLS" => Some(2),
@@ -191,11 +191,11 @@ fn dspsbsd(system: &mut System, p: &Params) -> Result<String, String> {
             "*CMNE" => Some(8),
             "*RMTLE" => Some(9),
             "*PJE" => Some(10),
-            n => Some(
-                n.parse::<u8>()
+            num => Some(
+                num.parse::<u8>()
                     .ok()
-                    .filter(|n| (1..=10).contains(n))
-                    .ok_or_else(|| format!("CPD0084 OPTION({o}) is not valid"))?,
+                    .filter(|k| (1..=10).contains(k))
+                    .ok_or_else(|| format!("CPD0084 OPTION({opt}) is not valid"))?,
             ),
         },
     };
