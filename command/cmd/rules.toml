@@ -1,0 +1,219 @@
+# The rules a command definition must satisfy, each with the diagnostic
+# it sends. Identifiers in the CPD02xx range are ours until the machine
+# settles them (CMD_OPEN_QUESTIONS.md); the text is Quartz-written and
+# "{0}", "{1}" take the details.
+
+[[rule]]
+id = "statement-unknown"
+msgid = "CPD0243"
+text = "Statement {0} is not one of CMD, PARM, ELEM, QUAL, DEP or PMTCTL."
+
+[[rule]]
+id = "keyword-unknown"
+msgid = "CPD0242"
+text = "Keyword {0} is not valid on a {1} statement."
+
+[[rule]]
+id = "value-bad"
+msgid = "CPD0244"
+text = "Value {1} is not valid for {0}."
+
+[[rule]]
+id = "cmd-missing"
+msgid = "CPD0237"
+text = "The source needs exactly one CMD statement."
+
+[[rule]]
+id = "too-many-parms"
+msgid = "CPD0212"
+text = "More than 99 parameters are defined."
+
+[[rule]]
+id = "kwd-bad"
+msgid = "CPD0213"
+text = "Keyword {0} must be 1 to 10 characters: a letter, then letters, digits, $, # or @."
+
+[[rule]]
+id = "kwd-dup"
+msgid = "CPD0214"
+text = "Keyword {0} is defined more than once."
+
+[[rule]]
+id = "kwd-required"
+msgid = "CPD0211"
+text = "A PARM statement needs KWD."
+
+[[rule]]
+id = "maxpos-over"
+msgid = "CPD0215"
+text = "MAXPOS({0}) is more than the parameters defined."
+
+[[rule]]
+id = "type-unknown"
+msgid = "CPD0216"
+text = "TYPE({0}) is not a type or a label."
+
+[[rule]]
+id = "label-missing"
+msgid = "CPD0217"
+text = "TYPE({0}) names no ELEM or QUAL statement."
+
+[[rule]]
+id = "label-dup"
+msgid = "CPD0218"
+text = "Label {0} is used more than once."
+
+[[rule]]
+id = "elem-depth"
+msgid = "CPD0219"
+text = "Lists nest more than three levels deep at {0}."
+
+[[rule]]
+id = "qual-count"
+msgid = "CPD0220"
+text = "A qualified name has at most five parts; {0} has more."
+
+[[rule]]
+id = "elem-count"
+msgid = "CPD0221"
+text = "A list has at most 300 elements; {0} has more."
+
+[[rule]]
+id = "len-bad"
+msgid = "CPD0222"
+text = "LEN({1}) is not valid for TYPE({0})."
+
+[[rule]]
+id = "dec-len"
+msgid = "CPD0223"
+text = "LEN({0} {1}): decimal positions must not exceed the digits, and the digits must not exceed 24."
+
+[[rule]]
+id = "rtnval-type"
+msgid = "CPD0224"
+text = "RTNVAL(*YES) needs TYPE *CHAR, *DEC or *LGL; {0} is {1}."
+
+[[rule]]
+id = "rtnval-attrs"
+msgid = "CPD0225"
+text = "RTNVAL(*YES) on {0} allows no DFT, MIN, VALUES, REL, RANGE, SPCVAL or SNGVAL."
+
+[[rule]]
+id = "cmdstr-attrs"
+msgid = "CPD0226"
+text = "TYPE(*CMDSTR) on {0} allows no list, RSTD, VALUES, REL, RANGE, SPCVAL or SNGVAL."
+
+[[rule]]
+id = "cmd-list"
+msgid = "CPD0227"
+text = "TYPE(*CMD) on {0} cannot be a list."
+
+[[rule]]
+id = "min-max"
+msgid = "CPD0228"
+text = "MIN({0}) and MAX({1}) on {2}: MIN must not exceed MAX, and MAX is at most 300."
+
+[[rule]]
+id = "dft-with-min"
+msgid = "CPD0229"
+text = "{0} is required (MIN above zero) and has a default."
+
+[[rule]]
+id = "rstd-values"
+msgid = "CPD0230"
+text = "RSTD(*YES) on {0} needs VALUES, SPCVAL or SNGVAL."
+
+[[rule]]
+id = "rel-range"
+msgid = "CPD0231"
+text = "{0} has both REL and RANGE."
+
+[[rule]]
+id = "range-order"
+msgid = "CPD0232"
+text = "RANGE on {0}: the lower value is above the upper one."
+
+[[rule]]
+id = "sngval-scalar"
+msgid = "CPD0233"
+text = "SNGVAL on {0} needs a list or a group type."
+
+[[rule]]
+id = "pmtctl-missing"
+msgid = "CPD0234"
+text = "PMTCTL({0}) on {1} names no PMTCTL statement."
+
+[[rule]]
+id = "pmtctl-ctl"
+msgid = "CPD0235"
+text = "PMTCTL CTL({0}) names no parameter."
+
+[[rule]]
+id = "dep-kwd"
+msgid = "CPD0236"
+text = "DEP names parameter {0}, which is not defined."
+
+[[rule]]
+id = "keyparm-order"
+msgid = "CPD0238"
+text = "KEYPARM(*YES) parameters must come before the others; {0} does not."
+
+[[rule]]
+id = "constant-attrs"
+msgid = "CPD0239"
+text = "CONSTANT on {0} allows no DFT, MIN, RSTD, VALUES or RTNVAL."
+
+[[rule]]
+id = "vary-type"
+msgid = "CPD0240"
+text = "VARY on {0} needs TYPE *CHAR or *PNAME."
+
+[[rule]]
+id = "prompt-len"
+msgid = "CPD0241"
+text = "PROMPT text on {0} is over 30 characters."
+
+[[rule]]
+id = "elem-kwd"
+msgid = "CPD0245"
+text = "An ELEM or QUAL statement has no KWD."
+
+[[rule]]
+id = "dep-nbrtrue"
+msgid = "CPD0246"
+text = "NBRTRUE({0}) is more than the PARM entries of the DEP."
+
+[[rule]]
+id = "dft-type"
+msgid = "CPD0247"
+text = "{0} has a default but its type takes none."
+
+[[rule]]
+id = "label-kind"
+msgid = "CPD0248"
+text = "TYPE({0}) names a PMTCTL label; a type needs an ELEM or QUAL label."
+
+[[rule]]
+id = "qual-first"
+msgid = "CPD0249"
+text = "The qualifiers of {0} must be *NAME, *GENERIC, *CHAR, *PNAME, *SNAME or *CNAME."
+
+[[rule]]
+id = "cmd-first"
+msgid = "CPD0250"
+text = "The CMD statement must come before any other."
+
+[[rule]]
+id = "maxpos-value"
+msgid = "CPD0251"
+text = "MAXPOS({0}) must be *NONE or 0 to 99."
+
+[[rule]]
+id = "lglrel-first"
+msgid = "CPD0252"
+text = "LGLREL on the first PMTCTL statement of label {0}."
+
+[[rule]]
+id = "group-orphan"
+msgid = "CPD0253"
+text = "An unlabelled {0} statement follows no labelled one."

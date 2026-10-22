@@ -38,6 +38,8 @@ members = [
     "work/stg",
     # Security: profiles, passwords, authority, auditing.
     "security/sec",
+    # Commands: definitions, the analyzer, the prompter, CL, the system command set.
+    "command/cmd",
 ]
 
 [workspace.package]

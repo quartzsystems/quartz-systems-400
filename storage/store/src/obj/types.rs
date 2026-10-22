@@ -68,6 +68,8 @@ const fn t(
 
 /// Code of `*LIB`.
 pub const LIB: u16 = 0x0001;
+/// Code of `*CMD`.
+pub const CMD: u16 = 0x0010;
 /// Code of `*DTAARA`.
 pub const DTAARA: u16 = 0x0002;
 /// Code of `*DTAQ`.

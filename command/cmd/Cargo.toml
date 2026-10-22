@@ -1,0 +1,23 @@
+[package]
+name = "cmd"
+description = "QS/400 commands: command definitions, the *CMD payload, the command analyzer, parameter blocks and the prompter"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0" }
+ipc = { path = "../../work/ipc", version = "0.1.0" }
+serde.workspace = true
+toml = { version = "1.1.8", default-features = false, features = ["parse", "serde"] }
+thiserror.workspace = true
+
+[dev-dependencies]
+blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
+
+[lints]
+workspace = true
