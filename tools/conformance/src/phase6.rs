@@ -151,7 +151,7 @@ fn build(s: &mut Session, name: &str, text: &str, extra: &str) -> Result<(), Str
     crate::qir::qemu::push(s, name, text)?;
     let m = s.command(&format!("svc.qir asm {name} MODULE(QGPL/{name})"), CMD)?;
     let p = s.command(
-        &format!("crtpgm QGPL/{name} MODULE(QGPL/{name}) {extra}"),
+        &format!("svc.crtpgm QGPL/{name} MODULE(QGPL/{name}) {extra}"),
         CMD,
     )?;
     if !m.contains("created") || !p.contains("created") {
