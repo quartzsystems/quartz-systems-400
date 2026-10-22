@@ -62,18 +62,19 @@ pub fn install(system: &mut System) -> Result<sec::profile::shipped::Installed, 
 /// job's.
 pub fn guard(system: &mut System) {
     system.qsecurity = sysval_num(system, "QSECURITY", 40);
+    if let Some(s) = system.storage.as_mut() {
+        let g = SecGuard::new(s.qsys);
+        s.store.set_guard(Some(g.clone()));
+        system.guard = Some(g);
+    }
+    refresh(system);
+    // The level's data area and the forced audit state: under the
+    // guard, as the system, so the profile indexes follow them.
     level_change(system);
     audit_force(system);
     // What the IPL itself did is not audited.
     let _ = sec::audit::take();
     let _ = sec::guard::take_failures();
-    let Some(s) = system.storage.as_mut() else {
-        return;
-    };
-    let g = SecGuard::new(s.qsys);
-    s.store.set_guard(Some(g.clone()));
-    system.guard = Some(g);
-    refresh(system);
 }
 
 /// Give the guard the current system values.
