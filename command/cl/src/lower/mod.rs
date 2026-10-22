@@ -85,7 +85,7 @@ pub struct Gen<'a, 'e> {
     labels: usize,
     in_block: bool,
     frames: Vec<Frame>,
-    pgm_monmsg: Vec<(Vec<String>, Option<Box<Stmt>>)>,
+    pgm_monmsg: Vec<Monitor>,
     subr_returns: Vec<String>,
     /// Diagnostics.
     pub diags: Vec<Diag>,
@@ -223,14 +223,7 @@ impl Gen<'_, '_> {
         let first = self.t.first_exec.unwrap_or(usize::MAX);
         for s in &p.stmts {
             if let (Kind::MonMsg(ids, cmp, exec), true) = (&s.kind, s.n < first) {
-                if cmp.is_some() {
-                    self.warn(
-                        s.line,
-                        ids::UNSUPPORTED,
-                        "CMPDTA is not compared in this release",
-                    );
-                }
-                self.pgm_monmsg.push((ids.clone(), exec.clone()));
+                self.pgm_monmsg.push((ids.clone(), cmp.clone(), exec.clone()));
             }
         }
         self.declare_vars();
@@ -249,14 +242,7 @@ impl Gen<'_, '_> {
             while let Some(m) = p.stmts.get(j) {
                 match &m.kind {
                     Kind::MonMsg(ids, cmp, exec) if s.n >= first => {
-                        if cmp.is_some() {
-                            self.warn(
-                                m.line,
-                                ids::UNSUPPORTED,
-                                "CMPDTA is not compared in this release",
-                            );
-                        }
-                        monitors.push((ids.clone(), exec.clone()));
+                        monitors.push((ids.clone(), cmp.clone(), exec.clone()));
                         j += 1;
                     }
                     _ => break,
@@ -437,7 +423,7 @@ impl Gen<'_, '_> {
     fn statement(
         &mut self,
         s: &Stmt,
-        monitors: &[(Vec<String>, Option<Box<Stmt>>)],
+        monitors: &[Monitor],
         next_else: Option<&Stmt>,
     ) {
         let l = Self::stmt_label(s.n);
@@ -473,14 +459,14 @@ impl Gen<'_, '_> {
                 | Kind::CallSubr(..)
                 | Kind::RtnSubr(_)
         );
-        let mut all: Vec<(Vec<String>, Option<Box<Stmt>>)> = monitors.to_vec();
+        let mut all: Vec<Monitor> = monitors.to_vec();
         if monitored {
-            for (ids, exec) in &self.pgm_monmsg {
+            for (ids, cmp, exec) in &self.pgm_monmsg {
                 if !all
                     .iter()
-                    .any(|(own, _)| own.iter().any(|i| ids.contains(i)))
+                    .any(|(own, _, _)| own.iter().any(|i| ids.contains(i)))
                 {
-                    all.push((ids.clone(), exec.clone()));
+                    all.push((ids.clone(), cmp.clone(), exec.clone()));
                 }
             }
         }
@@ -491,29 +477,84 @@ impl Gen<'_, '_> {
         // The monitor region around the statement, the handlers after.
         let region = self.fresh("M");
         let next = self.fresh("N");
-        let mut handlers: Vec<(String, Option<Box<Stmt>>)> = Vec::new();
+        let mut handlers: Vec<(String, Monitor)> =
+            Vec::new();
         let mut sels = Vec::new();
-        for (ids, exec) in &all {
+        for (ids, cmp, exec) in &all {
             let h = self.fresh("H");
             for id in ids {
                 sels.push(format!("{} -> {h}", selector(id)));
             }
-            handlers.push((h, exec.clone()));
+            handlers.push((h, (ids.clone(), cmp.clone(), exec.clone())));
         }
         self.ins(&format!("monitor {region}, {}", sels.join(", ")));
         self.kind(s, next_else);
         self.ins(&format!("endmon {region}"));
         self.term(&format!("br {next}"));
-        for (h, exec) in handlers {
-            self.label(&h);
+        for (i, (h, (_, cmp, exec))) in handlers.iter().enumerate() {
+            self.label(h);
+            if let Some(c) = cmp {
+                let later: Vec<(String, Vec<String>)> = handlers[i + 1..]
+                    .iter()
+                    .map(|(h, (ids, _, _))| (h.clone(), ids.clone()))
+                    .collect();
+                self.cmpdta(c, &later);
+            }
             if let Some(e) = exec {
-                self.nested(&e);
+                self.nested(e);
             }
             if self.in_block {
                 self.term(&format!("br {next}"));
             }
         }
         self.label(&next);
+    }
+
+    /// `MONMSG CMPDTA`: the handler keeps the message only when its data
+    /// starts with the comparison data. Otherwise the statement's next
+    /// monitor that names the message takes it, and failing that the
+    /// message is sent again as an escape from the handler, outside
+    /// the region, where no monitor applies.
+    fn cmpdta(&mut self, cmp: &str, later: &[(String, Vec<String>)]) {
+        let mid = self.temp(&Ty::Char(7));
+        let data = self.temp(&Ty::Char(512));
+        let got = self.reg("g");
+        self.ins(&format!(
+            "{got} = rcvmsg pgmq(*SAME) type(*ESCAPE) msgid({mid}) data({data})"
+        ));
+        let n = u32::try_from(cmp.len()).unwrap_or(1).max(1);
+        let head = self.temp_varying(n);
+        self.ins(&format!("str.subst {head}, {data}, 1, {n}"));
+        let eq = self.reg("c");
+        self.ins(&format!("{eq} = str.cmp.eq {head}, {}", expr::qstr(cmp)));
+        let keep = self.fresh("C");
+        let miss = self.fresh("X");
+        self.term(&format!("brif {eq}, {keep}, {miss}"));
+        self.label(&miss);
+        for (h, ids) in later {
+            for id in ids {
+                let id = id.to_ascii_uppercase();
+                let len = if id.len() == 7 && id.ends_with("0000") {
+                    3
+                } else if id.len() == 7 && id.ends_with("00") {
+                    5
+                } else {
+                    id.len().min(7)
+                };
+                let part = self.temp_varying(7);
+                self.ins(&format!("str.subst {part}, {mid}, 1, {len}"));
+                let same = self.reg("c");
+                self.ins(&format!("{same} = str.cmp.eq {part}, {}", expr::qstr(&id[..len])));
+                let no = self.fresh("X");
+                self.term(&format!("brif {same}, {h}, {no}"));
+                self.label(&no);
+            }
+        }
+        self.ins(&format!(
+            "sndpgmmsg msgid({mid}) msgf(\"QCPFMSG\") data({data}) type(*ESCAPE) to(*SAME)"
+        ));
+        self.term(&format!("br {keep}"));
+        self.label(&keep);
     }
 
     /// A nested statement (`THEN`, `ELSE`, `EXEC`, `OTHERWISE`): the
@@ -939,6 +980,9 @@ impl Gen<'_, '_> {
         m
     }
 }
+
+/// A `MONMSG`: its identifiers, `CMPDTA` and `EXEC`.
+type Monitor = (Vec<String>, Option<String>, Option<Box<Stmt>>);
 
 /// A `MONMSG` identifier as a monitor selector: `CPF0000` is every
 /// `CPF` message, `CPF2200` every `CPF22nn`.

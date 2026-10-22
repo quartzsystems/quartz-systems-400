@@ -5,8 +5,8 @@
 //! The job log at a job's end: the service's copy, printed as the job's
 //! `LOG` keeps it into a `QPJOBLOG` spooled file. `*NOLIST` prints
 //! nothing unless the job ended abnormally; `LOGOUTPUT(*PND)` leaves it
-//! unprinted. `*JOBLOGSVR` prints it here too (`MIGRATE(phase6)`: a job
-//! log server).
+//! unprinted. `*JOBLOGSVR` leaves it for the job log server: `QSPLMAINT`
+//! prints the pending logs on its next pass.
 
 use spool::{Control, PageFormat, Printer};
 use wm::joblog::{self, Header};
@@ -76,11 +76,35 @@ pub fn lines(system: &System, ctx: &JobCtx, abnormal: bool) -> Option<Vec<String
     Some(joblog::print(&header, &kept, a.log_text != "*MSG"))
 }
 
-/// Spool the job log as `QPJOBLOG`, if the job's `LOG` says to.
+/// Spool the job log as `QPJOBLOG`, if the job's `LOG` says to; under
+/// `*JOBLOGSVR` it waits for the server's pass.
 pub fn spool(system: &mut System, ctx: &JobCtx, abnormal: bool) {
     let Some(lines) = lines(system, ctx, abnormal) else {
         return;
     };
+    let deferred = system
+        .attrs
+        .get(&ctx.job.number)
+        .is_some_and(|a| output(system, a) == "*JOBLOGSVR");
+    if deferred {
+        system.joblog_pending.push((ctx.job.clone(), lines));
+        return;
+    }
+    print(system, &ctx.job, &lines);
+}
+
+/// The job log server's pass: every pending log printed; how many.
+pub fn serve_pending(system: &mut System) -> usize {
+    let pending = std::mem::take(&mut system.joblog_pending);
+    let n = pending.len();
+    for (job, lines) in pending {
+        print(system, &job, &lines);
+    }
+    n
+}
+
+/// Print a job's log lines as its `QPJOBLOG`.
+fn print(system: &mut System, j: &wm::table::JobInfo, lines: &[String]) {
     let prtf = super::prtf::resolve(system, PRTF, &[]).unwrap_or_default();
     let fmt = PageFormat {
         len: prtf.page_len,
@@ -91,7 +115,7 @@ pub fn spool(system: &mut System, ctx: &JobCtx, abnormal: bool) {
         fold: false,
     };
     let mut p = Printer::new(fmt);
-    for l in &lines {
+    for l in lines {
         let ctl = if l.starts_with("QS400 V") {
             Control {
                 skip_before: 1,
@@ -102,7 +126,6 @@ pub fn spool(system: &mut System, ctx: &JobCtx, abnormal: bool) {
         };
         p.write_str(l, ctl);
     }
-    let j = &ctx.job;
     let attrs = SplfAttrs {
         name: "QPJOBLOG".into(),
         job: (j.name.clone(), j.user.clone(), j.number),

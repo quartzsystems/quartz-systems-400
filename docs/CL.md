@@ -77,8 +77,10 @@ matching handler; `EXEC` runs the handler's command, without `EXEC`
 the message is handled and the next statement runs; a `GOTO` in a
 handler leaves the region. An escape no `MONMSG` takes becomes a
 function check (`CPF9999`) with the inquiry `CEE9901`, as any
-program's does. `CMPDTA` is accepted but not compared in this
-release.
+program's does. `CMPDTA` keeps the handler only when the message data
+starts with the comparison data: otherwise the statement's next
+`MONMSG` naming the message takes it, else the message is sent again as
+an escape from the handler, where no monitor of the statement applies.
 
 ## The commands
 
@@ -106,7 +108,7 @@ conformance --test cl_kit` compares; `QS400_UPDATE_CL=1` rewrites.
 
 ## Not in this release
 
-`CMPDTA` on `MONMSG`; `DCLPRCOPT` beyond parsing; `%OFFSET`; `CALLPRC`
+`DCLPRCOPT` beyond parsing; `%OFFSET`; `CALLPRC`
 with a return value to a bound procedure of another module (the IR's
 `callb` only); `WAIT` and `ENDRCV` on display files; `TFRCTL`'s
 activation group semantics (a plain call that returns); `OPTION(*SRC)`

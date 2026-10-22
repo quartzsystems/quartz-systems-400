@@ -359,6 +359,7 @@ pub fn find(system: &System, file: &str, job: &str, splnbr: &str) -> Result<u32,
 /// (`QRCLSPLSTG` reclaims nothing more: a file's storage goes with it);
 /// what was done.
 pub fn maintain(system: &mut System) -> String {
+    let logs = super::joblog::serve_pending(system);
     let days = i64::try_from(now_unix() / 86_400).unwrap_or(0);
     let (y, m, d) = wm::obj::jobscd::civil_from_days(days);
     let today = u32::try_from(y * 10_000 + i64::from(m) * 100 + i64::from(d)).unwrap_or(0);
@@ -377,11 +378,14 @@ pub fn maintain(system: &mut System) -> String {
         .iter()
         .filter(|id| delete(system, **id).is_ok())
         .count();
-    if n == 0 {
-        String::new()
-    } else {
-        format!("{n} expired spooled file(s) deleted")
+    let mut parts = Vec::new();
+    if n > 0 {
+        parts.push(format!("{n} expired spooled file(s) deleted"));
     }
+    if logs > 0 {
+        parts.push(format!("{logs} job log(s) printed"));
+    }
+    parts.join("; ")
 }
 
 /// The files on a queue, in queue order.

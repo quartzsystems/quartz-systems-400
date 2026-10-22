@@ -38,10 +38,11 @@ now and what to check.
    `LEN(1)` so a variable of the system value's length passes; IBM's
    definition may differ.
 
-6. **`MONMSG CMPDTA`.** Accepted and not compared (warning CPD0790).
-   IBM compares the first characters of the message data; where the
-   data starts for the common messages (CPF9801's object name at
-   offset 0?) decides which captures match.
+6. **`MONMSG CMPDTA`.** Compared with the first characters of the
+   message data, as IBM documents; a mismatch passes the message to
+   the statement's next `MONMSG` that names it, else it is unmonitored.
+   Where the data starts for the common messages (CPF9801's object
+   name at offset 0?) decides which captures match.
 
 7. **The direct path's block.** When a CL program calls a system
    command's processing program directly, IBM passes exactly the

@@ -120,7 +120,6 @@ In memory, release build, one core of the development machine
   outcomes and the listing layout are this system's own; the
   comparison with an IBM i (`CMD_OPEN_QUESTIONS.md` 1, 2, 10) waits
   for captures.
-- **`MONMSG CMPDTA`** is accepted and not compared (`CPD0790`).
 - **Display files** in CL (`SNDRCVF`, `SNDF`, `WAIT`, `ENDRCV`) end in
   `CPF4101` until Phase 8 brings displays; `STRSST` is a stub for the
   same reason.
@@ -140,7 +139,5 @@ In memory, release build, one core of the development machine
   `RTVNETA`, `RTVMSG`, `RTVCFGSTS` and `RCLRSC` in the job;
   `PRTUSRPRF`, `ANZPRFACT`, `CHGJOBQ`, `DSPHDWRSC`/`WRKHDWRSC`,
   `EDTAUTL` and `WRKBNDDIR` through the bridge.
-- **`PRDLIB` and `CURLIB` on a command definition** are kept in the
-  object and not applied to the library list while the command runs.
 - **`QCAPCMD`'s retrieve option** (the previous command of the job) is
   not kept; F9 at Command Entry is the job's own list.

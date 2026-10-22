@@ -120,6 +120,9 @@ pub struct System {
     pub jobs: wm::table::JobTable,
     /// Every spooled file (storage service).
     pub spool: crate::stgsvc::spool::Spool,
+    /// Job logs waiting for the job log server (`LOGOUTPUT(*JOBLOGSVR)`):
+    /// the job and its printed lines (storage service).
+    pub joblog_pending: Vec<(wm::table::JobInfo, Vec<String>)>,
     /// The last state of each job name this IPL: 1 active, 2 ended
     /// (storage service).
     pub job_seen: std::collections::BTreeMap<String, u8>,
@@ -165,6 +168,7 @@ impl System {
             procs: crate::procs::Procs::default(),
             jobs: wm::table::JobTable::default(),
             spool: crate::stgsvc::spool::Spool::default(),
+            joblog_pending: Vec::new(),
             writers: std::collections::BTreeMap::new(),
             stats: crate::stgsvc::stats::Stats::default(),
             job_seen: std::collections::BTreeMap::new(),

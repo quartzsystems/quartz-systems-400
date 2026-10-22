@@ -182,6 +182,10 @@ count, then ten-byte names) and the request data (`RqsDtaLen` bytes).
 | 298 | 50 | Text | |
 | 348 | 4 | RqsDtaLen | |
 
+`LOGOUTPUT(*JOBEND)` prints the job log as the job ends; `*JOBLOGSVR`
+leaves it for the job log server, which here is `QSPLMAINT`'s next pass
+(within a minute); `*PND` leaves it unprinted.
+
 ### `Class` (84 bytes)
 
 `*CLS`. Four-byte limits use `0xFFFFFFFF` for `*NOMAX`.

@@ -220,12 +220,14 @@ fn dispatch(job: &mut Job, host: &Host, r: &Resolved, mut out: Outcome) -> Outco
     let entry = (r.lib == "QSYS")
         .then(|| sys_cpps::entry(&r.name))
         .flatten();
+    let libs = DefLibs::enter(host, r);
     let result = match entry.map(|e| e.site) {
         Some(_) if lda::is_lda(r) => lda::command(host, r),
         Some(Site::Job) => jobsite::run(job, host, r, &mut out),
         Some(Site::Service | Site::Stub) => service(job, host, r, &mut out),
         None => user_cpp(job, host, r),
     };
+    libs.leave(host);
     match result {
         Ok(text) => out.text.push_str(&text),
         Err(f) => {
@@ -238,6 +240,61 @@ fn dispatch(job: &mut Job, host: &Host, r: &Resolved, mut out: Outcome) -> Outco
         }
     }
     out
+}
+
+/// A definition's `PRDLIB` and `CURLIB`: in the job's library list
+/// while the command runs, the list as it was afterwards.
+struct DefLibs {
+    prd: Option<Vec<String>>,
+    /// Whether `CURLIB` was changed, and what it was.
+    cur_changed: bool,
+    cur: Option<String>,
+}
+
+impl DefLibs {
+    fn enter(host: &Host, r: &Resolved) -> Self {
+        let mut saved = Self {
+            prd: None,
+            cur_changed: false,
+            cur: None,
+        };
+        if r.def.prdlib.is_none() && r.def.curlib.is_none() {
+            return saved;
+        }
+        let before = host.link.borrow_mut().with(stg::Client::rtvjoba).libl;
+        if let Some(p) = &r.def.prdlib {
+            let reply = host.exec(&format!("prdlib LIB({p})"));
+            if reply.text.trim().is_empty() {
+                saved.prd = Some(before.prd.clone());
+            }
+        }
+        if let Some(c) = &r.def.curlib {
+            let reply = host.exec(&format!("chgcurlib CURLIB({c})"));
+            if reply.text.trim().is_empty() {
+                saved.cur_changed = true;
+                saved.cur.clone_from(&before.cur);
+            }
+        }
+        if saved.prd.is_some() || saved.cur_changed {
+            host.attrs_changed();
+        }
+        saved
+    }
+
+    fn leave(self, host: &Host) {
+        let changed = self.prd.is_some() || self.cur_changed;
+        if let Some(prd) = self.prd {
+            let lib = prd.first().map_or("*NONE", String::as_str);
+            let _ = host.exec(&format!("prdlib LIB({lib})"));
+        }
+        if self.cur_changed {
+            let lib = self.cur.as_deref().unwrap_or("*CRTDFT");
+            let _ = host.exec(&format!("chgcurlib CURLIB({lib})"));
+        }
+        if changed {
+            host.attrs_changed();
+        }
+    }
 }
 
 /// The job's local data area at the command line: `DSPDTAARA` and

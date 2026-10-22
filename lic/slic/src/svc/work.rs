@@ -302,6 +302,7 @@ pub fn libl_command(system: &mut System, cmd: &str, line: &str) -> Option<String
         "rmvlible" => rmvlible(system, &p),
         "chgcurlib" => chgcurlib(system, &p),
         "chgsyslibl" => chgsyslibl(system, &p),
+        "prdlib" => prdlib(system, &p),
         _ => return None,
     };
     Some(match r {
@@ -326,6 +327,22 @@ fn with_libl<T>(
     a.libl = l.clone();
     super::ile::set_libl(Some(l));
     Ok(r)
+}
+
+/// `prdlib LIB(name|*NONE)`: the product library a command definition
+/// names while its command runs (the job sends it around the command).
+fn prdlib(system: &mut System, p: &Params) -> Result<String, String> {
+    let lib = p.pos_or(0, "LIB")?.to_ascii_uppercase();
+    let lib = if lib == "*NONE" {
+        None
+    } else {
+        Some(check_lib(system, &lib)?)
+    };
+    with_libl(system, |l| {
+        l.prd = lib.into_iter().collect();
+        Ok(())
+    })?;
+    Ok(String::new())
 }
 
 /// A library must exist (`QTEMP` always does).

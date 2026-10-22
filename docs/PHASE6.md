@@ -119,8 +119,10 @@ faster.
   `MIGRATE(phase10)`).
 - Validation lists, function usage (`WRKFCNUSG`), Kerberos, SSL and
   the digital certificate manager are out of scope.
-- `QSECURITY` changes take effect at the next IPL; the first IPL after
-  a change does not scan programs for state, since every program on
-  the system was made here.
+- `QSECURITY` changes take effect at the next IPL. The first IPL after
+  a change needs no scan of programs for state and domain: every
+  program on the system was bound here, and the binder sets both from
+  the creator's authority at the time, so there is nothing a scan could
+  find that the call-time checks do not.
 
 `SEC_OPEN_QUESTIONS.md` lists the readings the machine must settle.

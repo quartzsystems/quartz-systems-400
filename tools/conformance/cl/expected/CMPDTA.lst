@@ -17,10 +17,8 @@ Statement  Nesting  Source
         1        0               PGM
         2        0               CRTLIB     LIB(ONE)
         3        0               MONMSG     MSGID(CPF2111) CMPDTA('ZZZ') EXEC(SNDPGMMSG MSG('zzz') +
-                    * CPD0790 10 CMPDTA is not compared in this release
                                               TOPGMQ(*EXT))
         4        0               MONMSG     MSGID(CPF2111) CMPDTA('CRTLIB') EXEC(SNDPGMMSG +
-                    * CPD0790 10 CMPDTA is not compared in this release
                                               MSG('matched by data') TOPGMQ(*EXT))
         5        0               ENDPGM
 
@@ -28,9 +26,7 @@ Cross-reference
 Variable    Type    Length  Declared  Referenced
 
 Message summary
-  Informational 0   Warning 2   Error 0   Terminal 0
-  CPD0790 10 CMPDTA is not compared in this release  (statement at line 8)
-  CPD0790 10 CMPDTA is not compared in this release  (statement at line 10)
+  Informational 0   Warning 0   Error 0   Terminal 0
 
 Program CMPDTA created.
 End of compilation.

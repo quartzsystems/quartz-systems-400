@@ -1,5 +1,3 @@
-diag: CPD0790 10 CMPDTA is not compared in this release
-diag: CPD0790 10 CMPDTA is not compared in this release
 console:
   > CRTLIB LIB(ONE)
 raised: CPF2111
@@ -8,4 +6,4 @@ pending: none
 replies: 
 dump: no
 ext:
-  CPF9898 zzz
+  CPF9898 matched by data
