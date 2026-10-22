@@ -105,7 +105,7 @@ impl Suite {
     #[allow(clippy::unused_self)] // every step has the same shape
     pub(crate) fn cl_program(&self, s: &mut Session) -> Result<String, String> {
         secofr_command_entry(s)?;
-        entry_wait(s, "crtsrcpf FILE(QGPL/QCLSRC)", has(&["QCLSRC"]))?;
+        entry_wait(s, "crtsrcpf FILE(QGPL/QCLSRC)", has(&["QCLSRC", "created"]))?;
         crate::qir::qemu::push(s, "HELLOSRC", HELLO)?;
         let put = s.command(
             "svc.srcput QGPL/QCLSRC HELLO SRCTYPE(CLLE) FROMSTMF(HELLOSRC)",
@@ -130,7 +130,7 @@ impl Suite {
         entry_wait(
             s,
             "sbmjob CMD(CALL PGM(CLTEST/HELLO) PARM('batch')) JOB(HELLOB)",
-            has(&["HELLOB"]),
+            has(&["HELLOB", "submitted"]),
         )?;
         let active = entry_wait(s, "wrkactjob", has(&["QINTER"]))?;
         entry_wait(
