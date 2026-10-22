@@ -6,6 +6,7 @@
 //! lent store, its open files and console state, and the answers to its
 //! requests.
 
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use ::ile::PgmKind;
@@ -74,6 +75,8 @@ pub struct JobCtx {
     provider: StoreProvider,
     /// Console state: modes, transfer buffers, the SQL context.
     pub svc: svc::db::State,
+    /// Its security session: who it is and the decisions made.
+    pub session: Rc<RefCell<sec::auth::cache::Session>>,
 }
 
 impl JobCtx {
@@ -109,6 +112,7 @@ impl JobCtx {
             joblog: wm::joblog::JobLog::default(),
             joblog_wrapped: Vec::new(),
             splfs: Vec::new(),
+            session: Rc::new(RefCell::new(sec::auth::cache::Session::default())),
             job,
         }
     }
@@ -146,8 +150,20 @@ pub fn handle(system: &mut System, conns: &mut [Conn], i: usize, req: Request) -
     if !quiet {
         *system.stats.aux_io.entry(ctx.job.number).or_default() += 1;
     }
+    let user = super::security::as_user(&req);
+    let session = Rc::clone(&ctx.session);
+    super::security::freshen(system, &session);
     let mut served = Served { system, ctx };
-    stg::dispatch(&mut served, req)
+    let reply = if user {
+        sec::guard::as_job(&session, || stg::dispatch(&mut served, req))
+    } else {
+        stg::dispatch(&mut served, req)
+    };
+    let failures = sec::guard::take_failures();
+    if !failures.is_empty() && system.audit_pending.len() < 10_000 {
+        system.audit_pending.extend(failures);
+    }
+    reply
 }
 
 /// A job said hello: into the active table, with a `QTEMP` of its own.
@@ -199,6 +215,7 @@ pub fn begin_job(system: &mut System, mut job: JobInfo) -> Result<JobCtx, String
     );
     super::hist::system_message(system, "CPF1124", &data, "04", who);
     let mut ctx = JobCtx::new(system, job);
+    ctx.session = super::security::session(system, &ctx.job.user);
     ctx.qtemp = Some(qtemp);
     if let Some(a) = system.attrs.get(&ctx.job.number) {
         ctx.joblog = wm::joblog::JobLog::new(a.jobmsgqmx, wm::joblog::Full::parse(&a.jobmsgqfl));
@@ -369,6 +386,9 @@ impl Service for Served<'_> {
             .into_iter()
             .map(|s| s.code.to_string())
             .collect();
+        if self.system.sysvals_changed {
+            super::security::refresh(self.system);
+        }
         let sysvals = if std::mem::take(&mut self.system.sysvals_changed) {
             self.system.sysvals.as_ref().map(sysval::SysVals::to_blob)
         } else {

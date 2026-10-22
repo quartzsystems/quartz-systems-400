@@ -149,6 +149,7 @@ fn field_info(fmt: &FormatDef, i: usize, f: &FieldDef) -> FieldInfo {
 
 /// Describe the fields.
 pub fn dspffd(txn: &mut Txn<'_>, file: ObjectId) -> Result<FieldDescription> {
+    crate::auth::check(txn, "file.describe", file)?;
     let desc = file::describe(txn, file)?;
     let formats = desc
         .formats

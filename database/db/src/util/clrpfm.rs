@@ -21,6 +21,7 @@ pub fn clrpfm(
     file: ObjectId,
     member: MemberSpec,
 ) -> Result<u64> {
+    crate::auth::check(txn, "file.clear", file)?;
     let desc = file::describe(txn, file)?;
     physical(&desc, "CLRPFM")?;
     let entry = member_of(&desc, member)?;

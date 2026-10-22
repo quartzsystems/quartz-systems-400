@@ -159,6 +159,7 @@ pub fn cpyf(
     to: &Target,
     opts: &CpyfOpts,
 ) -> Result<CpyfReport> {
+    crate::auth::check(txn, "file.open-input", from)?;
     if opts.fromkey.is_some() && opts.fromrcd.is_some()
         || opts.tokey.is_some() && opts.torcd.is_some()
     {
@@ -170,7 +171,10 @@ pub fn cpyf(
     let from_entry = member_of(&from_desc, opts.from_member)?;
     let mut from_m = Member::open(txn, &from_desc, &from_entry)?;
     let (to_id, created) = match to {
-        Target::File(id) => (*id, None),
+        Target::File(id) => {
+            crate::auth::check(txn, "file.open-output", *id)?;
+            (*id, None)
+        }
         Target::Create { library, name } => {
             if !opts.crtfile {
                 return Err(DbError::Copy {

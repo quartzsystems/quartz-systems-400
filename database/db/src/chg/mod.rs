@@ -87,6 +87,7 @@ fn set<T>(slot: &mut T, v: Option<T>) {
 /// Change a physical file's attributes. `REUSEDLT` rebuilds or drops
 /// every member's free-slot tree; `SIZE` applies to every member.
 pub fn chgpf(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId, c: &ChgPf) -> Result<()> {
+    crate::auth::check(txn, "file.change", file)?;
     let desc = file::describe(txn, file)?;
     if desc.attr.kind == FileKind::Logical {
         return Err(DbError::Definition {
@@ -142,6 +143,7 @@ fn apply_pf(txn: &mut Txn<'_>, file: ObjectId, c: &ChgPf) -> Result<()> {
 /// Change a logical file's attributes. Going to `MAINT(*IMMED)` rebuilds
 /// every invalid path now.
 pub fn chglf(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId, c: &ChgLf) -> Result<()> {
+    crate::auth::check(txn, "file.change", file)?;
     let desc = file::describe(txn, file)?;
     if desc.attr.kind != FileKind::Logical {
         return Err(DbError::Definition {

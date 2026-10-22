@@ -118,6 +118,7 @@ fn outside(off: u64, len: usize, size: u64) -> StoreError {
 
 /// Read `len` bytes at `offset`.
 pub fn read(txn: &mut Txn<'_>, id: ObjectId, offset: u64, len: usize) -> Result<Vec<u8>> {
+    crate::obj::guard::check_id(txn, "usrspc.read", id)?;
     let attr = describe(txn, id)?;
     if offset + len as u64 > attr.size {
         return Err(outside(offset, len, attr.size));
@@ -128,6 +129,7 @@ pub fn read(txn: &mut Txn<'_>, id: ObjectId, offset: u64, len: usize) -> Result<
 
 /// Write `bytes` at `offset`, growing an extendable space as needed.
 pub fn write(txn: &mut Txn<'_>, id: ObjectId, offset: u64, bytes: &[u8]) -> Result<()> {
+    crate::obj::guard::check_id(txn, "usrspc.write", id)?;
     let attr = describe(txn, id)?;
     let end = offset + bytes.len() as u64;
     if end > attr.size {
@@ -142,6 +144,7 @@ pub fn write(txn: &mut Txn<'_>, id: ObjectId, offset: u64, bytes: &[u8]) -> Resu
 
 /// Resize. Growth is filled with the initial value.
 pub fn change_size(txn: &mut Txn<'_>, id: ObjectId, size: u64) -> Result<()> {
+    crate::obj::guard::check_id(txn, "usrspc.write", id)?;
     if size > MAX_SIZE {
         return Err(too_big(size));
     }

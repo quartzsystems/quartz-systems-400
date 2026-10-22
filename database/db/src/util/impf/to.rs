@@ -27,6 +27,7 @@ pub fn cpytoimpf(
     member: MemberSpec,
     opts: &ImpfOpts,
 ) -> Result<Vec<u8>> {
+    crate::auth::check(txn, "file.open-input", file)?;
     let desc = file::describe(txn, file)?;
     let entry = member_of(&desc, member)?;
     let hold = Hold::take(

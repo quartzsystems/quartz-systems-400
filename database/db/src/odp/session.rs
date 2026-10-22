@@ -134,6 +134,8 @@ impl Session {
             .and_then(|o| o.tofile.clone())
             .unwrap_or_else(|| file.clone());
         let id = resolve(&target)?;
+        // A shared open is checked too: each opener needs the authority.
+        crate::auth::check_open(txn, id, opts.usage)?;
         let desc = file::describe(txn, id)?;
         opts.job = self.job;
         opts.share |= desc.attr.share;

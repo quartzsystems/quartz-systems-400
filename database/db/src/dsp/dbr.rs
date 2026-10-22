@@ -51,6 +51,7 @@ pub fn dspdbr(
     file: ObjectId,
     member: Option<MemberSpec>,
 ) -> Result<DbRelations> {
+    crate::auth::check(txn, "file.describe", file)?;
     let desc = file::describe(txn, file)?;
     let member = member
         .map(|m| crate::util::member_of(&desc, m))

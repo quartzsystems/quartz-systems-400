@@ -261,6 +261,7 @@ pub fn create_lf(
         let mut base_formats = Vec::new();
         for (i, fr) in lf.based_on.iter().enumerate() {
             let id = resolve(fr)?;
+            crate::auth::check(txn, "file.base-on", id)?;
             let desc = describe(txn, id)?;
             if desc.attr.kind == FileKind::Logical {
                 return Err(definition(format!("{fr} is a logical file")));
@@ -513,6 +514,7 @@ pub fn add_member(
     srctype: Option<Name>,
     now: u64,
 ) -> Result<ObjectId> {
+    crate::auth::check(txn, "file.member", file)?;
     let mut desc = describe(txn, file)?;
     if desc.attr.kind == FileKind::Logical {
         return add_lf_member(txn, file, name, text, None, now);
@@ -706,6 +708,7 @@ fn has_dependents(desc: &FileDesc, member: Option<ObjectId>) -> Result<()> {
 
 /// `RMVM`.
 pub fn remove_member(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId, name: Name) -> Result<()> {
+    crate::auth::check(txn, "file.remove-member", file)?;
     let mut desc = describe(txn, file)?;
     let at = desc
         .members
@@ -739,6 +742,7 @@ pub fn rename_member(
     to: Name,
     now: u64,
 ) -> Result<()> {
+    crate::auth::check(txn, "file.member", file)?;
     let mut desc = describe(txn, file)?;
     if desc.members.iter().any(|m| m.name == to) {
         return Err(DbError::MemberExists {
@@ -766,6 +770,7 @@ pub fn rename_member(
 /// `DLTF`: the members, then the file. A physical file with dependent
 /// logical members is refused.
 pub fn delete_file(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId) -> Result<()> {
+    crate::auth::check(txn, "obj.delete", file)?;
     let desc = describe(txn, file)?;
     if desc.attr.kind == FileKind::Logical {
         for m in &desc.members {

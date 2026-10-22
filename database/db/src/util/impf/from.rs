@@ -29,6 +29,7 @@ pub fn cpyfrmimpf(
     text: &[u8],
     opts: &ImpfOpts,
 ) -> Result<ImpfReport> {
+    crate::auth::check(txn, "file.open-output", file)?;
     let desc = file::describe(txn, file)?;
     physical(&desc, "CPYFRMIMPF")?;
     let entry = member_of(&desc, member)?;

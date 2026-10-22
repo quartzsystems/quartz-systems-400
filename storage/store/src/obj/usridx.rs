@@ -228,6 +228,7 @@ fn bad_key(attr: &IndexAttr, key: &[u8]) -> Result<()> {
 /// Insert an entry (its first `key_len` bytes are the key). Equal
 /// keys may repeat; an identical whole entry is refused.
 pub fn insert(txn: &mut Txn<'_>, id: ObjectId, entry: &[u8]) -> Result<()> {
+    crate::obj::guard::check_id(txn, "usridx.write", id)?;
     let mut attr = describe(txn, id)?;
     check_entry(&attr, entry)?;
     let (key, data) = entry.split_at(usize::from(attr.key_len));
@@ -270,6 +271,7 @@ pub fn find(
     key: &[u8],
     max: usize,
 ) -> Result<Vec<Vec<u8>>> {
+    crate::obj::guard::check_id(txn, "usridx.read", id)?;
     let attr = describe(txn, id)?;
     bad_key(&attr, key)?;
     let found = search(txn, id, &attr, op, key, max)?;
@@ -356,6 +358,7 @@ fn pred(k: &IdxKey) -> Option<IdxKey> {
 
 /// The first `n` entries in key order.
 pub fn first(txn: &mut Txn<'_>, id: ObjectId, n: usize) -> Result<Vec<Vec<u8>>> {
+    crate::obj::guard::check_id(txn, "usridx.read", id)?;
     let attr = describe(txn, id)?;
     let tree = Tree::open(attr.root, id);
     let mut out = Vec::new();
@@ -368,6 +371,7 @@ pub fn first(txn: &mut Txn<'_>, id: ObjectId, n: usize) -> Result<Vec<Vec<u8>>> 
 
 /// The last `n` entries, last first.
 pub fn last(txn: &mut Txn<'_>, id: ObjectId, n: usize) -> Result<Vec<Vec<u8>>> {
+    crate::obj::guard::check_id(txn, "usridx.read", id)?;
     let attr = describe(txn, id)?;
     let tree = Tree::open(attr.root, id);
     let mut out = Vec::new();
@@ -394,6 +398,7 @@ pub fn remove(
     key: &[u8],
     max: usize,
 ) -> Result<Vec<Vec<u8>>> {
+    crate::obj::guard::check_id(txn, "usridx.write", id)?;
     let mut attr = describe(txn, id)?;
     bad_key(&attr, key)?;
     let found = search(txn, id, &attr, op, key, max)?;
@@ -411,6 +416,7 @@ pub fn remove(
 
 /// Free the tree before the object is deleted.
 pub fn drop_entries(txn: &mut Txn<'_>, id: ObjectId) -> Result<()> {
+    crate::obj::guard::check_id(txn, "usridx.write", id)?;
     let mut attr = describe(txn, id)?;
     let mut tree = Tree::open(attr.root, id);
     tree.free_all(txn)?;

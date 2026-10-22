@@ -10,6 +10,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod auth;
 pub mod chg;
 pub mod cmt;
 pub mod dsp;

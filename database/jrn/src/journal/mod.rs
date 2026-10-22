@@ -568,6 +568,7 @@ impl Journal {
     /// entry naming the next, attach the new one with a `J PR` entry
     /// naming the previous.
     pub fn chgjrn(&mut self, txn: &mut Txn<'_>, new: NewReceiver, now: u64) -> Result<ObjectId> {
+        store::obj::guard::check_id(txn, "jrn.change", self.id)?;
         let old = self.attached(txn)?;
         let new_id = match new {
             NewReceiver::Named(id) => {
@@ -663,6 +664,7 @@ impl Journal {
 /// `DLTJRN`: refused while objects are journaled; the attached receiver
 /// is detached and left online.
 pub fn dltjrn(txn: &mut Txn<'_>, job: JobHandle, jrn: ObjectId, now: u64) -> Result<()> {
+    store::obj::guard::check_id(txn, "obj.delete", jrn)?;
     let mut j = Journal::load(txn, jrn)?;
     if j.attr.object_count > 0 {
         return Err(JrnError::ObjectsJournaled {

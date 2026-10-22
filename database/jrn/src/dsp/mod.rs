@@ -161,6 +161,7 @@ impl ChainCursor {
 
 /// `DSPJRN`: the entries that pass the filter.
 pub fn dspjrn(txn: &mut Txn<'_>, jrn: ObjectId, filter: &Filter) -> Result<Vec<Entry>> {
+    store::obj::guard::check_id(txn, "jrn.read", jrn)?;
     let j = Journal::load(txn, jrn)?;
     let mut c = ChainCursor::new(txn, &j, filter)?;
     if let Some(from) = filter.from_seq {
@@ -234,6 +235,7 @@ pub fn render(entries: &[Entry]) -> String {
 
 /// `DSPJRNRCVA`: the receiver's attributes as text.
 pub fn dspjrnrcva(txn: &mut Txn<'_>, rcv: ObjectId) -> Result<String> {
+    store::obj::guard::check_id(txn, "obj.describe", rcv)?;
     let r = Receiver::load(txn, rcv)?;
     let (_, lib) = store::obj::ops::read_header(txn, r.header.library)?;
     let name_of = |txn: &mut Txn<'_>, id: ObjectId| -> String {

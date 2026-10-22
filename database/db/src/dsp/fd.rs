@@ -120,6 +120,7 @@ pub struct FileDescription {
 
 /// Describe the file.
 pub fn dspfd(txn: &mut Txn<'_>, file: ObjectId) -> Result<FileDescription> {
+    crate::auth::check(txn, "file.describe", file)?;
     let desc = file::describe(txn, file)?;
     let mut members = Vec::new();
     for e in &desc.members {

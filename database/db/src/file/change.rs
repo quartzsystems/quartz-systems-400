@@ -79,6 +79,7 @@ pub fn chgpfm(
     srctype: Option<Option<Name>>,
     now: u64,
 ) -> Result<()> {
+    crate::auth::check(txn, "file.member", file)?;
     let mut desc = describe(txn, file)?;
     let at = desc
         .members

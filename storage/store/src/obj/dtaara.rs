@@ -251,6 +251,7 @@ pub fn describe(txn: &mut Txn<'_>, id: ObjectId) -> Result<(DataAreaType, bool)>
 
 /// The value.
 pub fn read(txn: &mut Txn<'_>, id: ObjectId) -> Result<DataAreaValue> {
+    crate::obj::guard::check_id(txn, "dtaara.read", id)?;
     let (kind, _) = describe(txn, id)?;
     let raw = read_value(txn, id, kind, 0, kind.value_len())?;
     Ok(match kind {
@@ -278,6 +279,7 @@ fn check_dec(kind: DataAreaType, scaled: i128) -> Result<()> {
 
 /// Replace the whole value.
 pub fn write(txn: &mut Txn<'_>, id: ObjectId, value: &DataAreaValue) -> Result<()> {
+    crate::obj::guard::check_id(txn, "dtaara.write", id)?;
     let (kind, _) = describe(txn, id)?;
     let bytes = match (kind, value) {
         (DataAreaType::Char { len }, DataAreaValue::Char(s)) => {
@@ -309,6 +311,7 @@ pub fn write_substring(
     len: u16,
     s: &str,
 ) -> Result<()> {
+    crate::obj::guard::check_id(txn, "dtaara.write", id)?;
     let (kind, _) = describe(txn, id)?;
     let DataAreaType::Char { len: total } = kind else {
         return Err(StoreError::BadValue {

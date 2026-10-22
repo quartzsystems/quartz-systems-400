@@ -293,6 +293,7 @@ pub fn send(
     data: &[u8],
     sender: Option<[u8; 26]>,
 ) -> Result<u64> {
+    crate::obj::guard::check_id(txn, "dtaq.send", id)?;
     let mut attr = describe(txn, id)?;
     if data.len() > attr.max_entry_len as usize || key.len() != attr.key_len() {
         return Err(StoreError::BadValue {
@@ -377,6 +378,7 @@ fn live_slots(txn: &mut Txn<'_>, space: &Space, attr: &QueueAttr) -> Result<Vec<
 /// Take one entry. `wait` is always zero in Phase 2: `None` when
 /// nothing matches.
 pub fn receive(txn: &mut Txn<'_>, id: ObjectId, select: &Select<'_>) -> Result<Option<Entry>> {
+    crate::obj::guard::check_id(txn, "dtaq.receive", id)?;
     let mut attr = describe(txn, id)?;
     if attr.entry_count == 0 {
         return Ok(None);
@@ -422,6 +424,7 @@ pub fn receive(txn: &mut Txn<'_>, id: ObjectId, select: &Select<'_>) -> Result<O
 
 /// Remove every entry.
 pub fn clear(txn: &mut Txn<'_>, id: ObjectId) -> Result<()> {
+    crate::obj::guard::check_id(txn, "dtaq.clear", id)?;
     let mut attr = describe(txn, id)?;
     attr.head = 0;
     attr.tail = 0;

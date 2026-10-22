@@ -279,6 +279,7 @@ pub fn apyjrnchg(
     cmtbdy: bool,
     now: u64,
 ) -> Result<ChangeReport> {
+    crate::auth::check(txn, "jrn.read", journal)?;
     let j = check_journal(txn, journal)?;
     let map = resolve_members(txn, &j, files)?;
     let entries = select(txn, journal, range, cmtbdy)?;
@@ -302,6 +303,7 @@ pub fn rmvjrnchg(
     cmtbdy: bool,
     now: u64,
 ) -> Result<ChangeReport> {
+    crate::auth::check(txn, "jrn.read", journal)?;
     let j = check_journal(txn, journal)?;
     let map = resolve_members(txn, &j, files)?;
     let entries = select(txn, journal, range, cmtbdy)?;

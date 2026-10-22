@@ -355,6 +355,7 @@ impl Cursor {
 
 /// `DLTJRNRCV`: an attached receiver is refused.
 pub fn dltjrnrcv(txn: &mut Txn<'_>, job: JobHandle, rcv: ObjectId) -> Result<()> {
+    store::obj::guard::check_id(txn, "obj.delete", rcv)?;
     let r = Receiver::load(txn, rcv)?;
     if r.attr.status == RcvStatus::Attached {
         let jname = ops::read_header(txn, r.attr.journal)

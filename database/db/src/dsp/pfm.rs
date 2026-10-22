@@ -49,6 +49,7 @@ pub fn dsppfm(
     max: usize,
     with_deleted: bool,
 ) -> Result<Vec<RecordView>> {
+    crate::auth::check(txn, "file.open-input", file)?;
     let desc = crate::file::describe(txn, file)?;
     let entry = member_of(&desc, member)?;
     let m = Member::open(txn, &desc, &entry)?;

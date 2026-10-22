@@ -153,3 +153,67 @@ ibm = "QUSADDUI, QUSRMVUI: *CHANGE"
 [op."sysval.read"]
 need = []
 ibm = "RTVSYSVAL: none"
+
+# ---------------------------------------------------------------- files
+
+[op."file.open-input"]
+need = ["*OBJOPR", "*READ"]
+ibm = "open for input, DSPPFM, CPYF from-file: *OBJOPR and *READ"
+
+[op."file.open-output"]
+need = ["*OBJOPR", "*ADD"]
+ibm = "open for output, CPYF to-file: *OBJOPR and *ADD"
+
+[op."file.open-update"]
+need = ["*OBJOPR", "*UPD"]
+ibm = "open for update: *OBJOPR and *UPD"
+
+[op."file.open-delete"]
+need = ["*OBJOPR", "*DLT"]
+ibm = "open for delete: *OBJOPR and *DLT"
+
+[op."file.describe"]
+need = ["*OBJOPR"]
+ibm = "DSPFD, DSPFFD, DSPDBR: *OBJOPR"
+
+[op."file.base-on"]
+need = ["*OBJOPR"]
+ibm = "CRTLF: *OBJOPR to each based-on file"
+
+[op."file.member"]
+need = ["*OBJOPR", "*OBJMGT"]
+ibm = "ADDPFM, ADDLFM, CHGPFM, RNMM: *OBJOPR and *OBJMGT (IBM also takes *OBJALTER for some)"
+
+[op."file.remove-member"]
+need = ["*OBJEXIST"]
+ibm = "RMVM: *OBJEXIST"
+
+[op."file.change"]
+need = ["*OBJOPR", "*OBJALTER"]
+ibm = "CHGPF, CHGLF: *OBJOPR and *OBJALTER (or *OBJMGT)"
+
+[op."file.clear"]
+need = ["*OBJOPR", "*OBJMGT", "*DLT"]
+ibm = "CLRPFM: *OBJOPR, *OBJMGT and *DLT"
+
+[op."file.reorganize"]
+need = ["*CHANGE", "*OBJMGT"]
+ibm = "RGZPFM: *OBJOPR, *OBJMGT, *READ, *ADD, *UPD, *DLT"
+
+[op."file.journal"]
+need = ["*OBJMGT"]
+ibm = "STRJRNPF, ENDJRNPF: *OBJMGT (or *OBJALTER) to the file"
+
+# ------------------------------------------------------------- journals
+
+[op."jrn.attach"]
+need = ["*OBJOPR", "*OBJMGT"]
+ibm = "STRJRNPF: *OBJOPR and *OBJMGT to the journal"
+
+[op."jrn.read"]
+need = ["*USE"]
+ibm = "DSPJRN, APYJRNCHG, RMVJRNCHG: *USE to the journal"
+
+[op."jrn.change"]
+need = ["*OBJOPR", "*OBJMGT"]
+ibm = "CHGJRN: *OBJOPR and *OBJMGT to the journal"

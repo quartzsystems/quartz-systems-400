@@ -161,6 +161,8 @@ pub fn strjrnpf(
     omit_open_close: bool,
     now: u64,
 ) -> Result<()> {
+    crate::auth::check(txn, "file.journal", file)?;
+    crate::auth::check(txn, "jrn.attach", journal)?;
     let desc = file::describe(txn, file)?;
     if desc.attr.kind == FileKind::Logical {
         return Err(DbError::Definition {
@@ -216,6 +218,7 @@ pub fn strjrnpf(
 
 /// `ENDJRNPF`: stop journaling the file.
 pub fn endjrnpf(txn: &mut Txn<'_>, job: JobHandle, file: ObjectId, now: u64) -> Result<()> {
+    crate::auth::check(txn, "file.journal", file)?;
     let desc = file::describe(txn, file)?;
     if desc.attr.journal.is_none() {
         return Err(jrn::JrnError::NotJournaled {

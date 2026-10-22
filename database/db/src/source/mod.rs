@@ -44,6 +44,7 @@ pub fn srcput(
     srctype: Option<Name>,
     now: u64,
 ) -> Result<u64> {
+    crate::auth::check(txn, "file.open-output", file)?;
     let desc = source_file(txn, file)?;
     let entry = member_of(&desc, member)?;
     let hold = Hold::take(
@@ -116,6 +117,7 @@ pub fn records(
 
 /// The member as UTF-8 text, one line per record, trailing blanks gone.
 pub fn srcget(txn: &mut Txn<'_>, file: ObjectId, member: MemberSpec) -> Result<String> {
+    crate::auth::check(txn, "file.open-input", file)?;
     let mut out = String::new();
     for (_, _, data) in records(txn, file, member)? {
         out.push_str(ccsid::from_ebcdic(&data).trim_end());

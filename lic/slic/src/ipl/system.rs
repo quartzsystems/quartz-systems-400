@@ -80,6 +80,10 @@ pub struct System {
     pub attrs: std::collections::BTreeMap<u32, wm::job::JobAttrs>,
     /// The job a console command runs for (storage service).
     pub current_job: u32,
+    /// The authority guard on ASP 1 (storage service).
+    pub guard: Option<std::sync::Arc<sec::guard::SecGuard>>,
+    /// Refused authority checks not yet in the audit journal.
+    pub audit_pending: Vec<sec::guard::Failure>,
     /// Message queues in break delivery, by the job they are allocated
     /// to (storage service).
     pub break_alloc: std::collections::HashMap<store::obj::ObjectId, u32>,
@@ -157,6 +161,8 @@ impl System {
             break_pending: std::collections::BTreeMap::new(),
             attrs: std::collections::BTreeMap::new(),
             current_job: 0,
+            guard: None,
+            audit_pending: Vec::new(),
         }
     }
 

@@ -50,6 +50,7 @@ pub fn rgzpfm(
     member: MemberSpec,
     keyfile: &KeyFile,
 ) -> Result<RgzReport> {
+    crate::auth::check(txn, "file.reorganize", file)?;
     let desc = file::describe(txn, file)?;
     physical(&desc, "RGZPFM")?;
     let entry = member_of(&desc, member)?;

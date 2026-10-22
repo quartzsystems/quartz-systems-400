@@ -220,6 +220,7 @@ impl Odp {
         file: ObjectId,
         opts: OpenOpts,
     ) -> Result<Self> {
+        crate::auth::check_open(txn, file, opts.usage)?;
         let desc = file::describe(txn, file)?;
         if let Some(want) = &opts.lvlchk
             && desc.attr.lvlchk
