@@ -383,8 +383,6 @@ cargo test -p store                       # unit, property and crash tests
 - `*USRIDX` entries are at most the key plus 1024 bytes; user spaces at
   most 16 MiB; a queue reclaims space only when it empties.
 - Locks are in-process and per caller-supplied job handle.
-- Payload writes are always in-place patches; there is no copy-on-write
-  relocation of whole pages for large user space writes.
 - RCLSTG runs with the store otherwise idle and treats a valid header on
   a free page as a deleted object.
 
@@ -437,8 +435,9 @@ power pull, and the four RCLSTG scenarios.
   the bitmaps rather than edited in place; editing frees its own old
   nodes recursively and ran out of pages on a nearly full ASP. The free
   log holds only chunk tails.
-- Large user space writes are patches, not copy-on-write page
-  rewrites, so the extent list never changes under a write.
+- A payload write of at least 4 whole pages relocates them to fresh
+  pages and rewrites the extent list; shorter and partial writes are
+  patches (a list that would outgrow its slots falls back to patches).
 - `*USRIDX` keys are 128 bytes in the tree (120 zero-padded plus the
   insertion sequence); entries beyond key plus 1024 bytes are refused.
 - `C1001085` and `C1001087` are informational and are followed by the

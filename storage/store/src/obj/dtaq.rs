@@ -309,7 +309,7 @@ pub fn send(
         let space = Space::ensure(txn, id, attr.tail + need, 0)?;
         attr.space_bytes = space.bytes();
     }
-    let (space, _) = Space::load(txn, id)?;
+    let (mut space, _) = Space::load(txn, id)?;
     let mut rec = vec![0u8; usize::try_from(need).expect("entry fits")];
     put_u64(&mut rec, E_SEQ, attr.next_seq);
     put_u32(&mut rec, E_LEN, u32::try_from(data.len()).expect("checked"));
@@ -383,7 +383,7 @@ pub fn receive(txn: &mut Txn<'_>, id: ObjectId, select: &Select<'_>) -> Result<O
     if attr.entry_count == 0 {
         return Ok(None);
     }
-    let (space, _) = Space::load(txn, id)?;
+    let (mut space, _) = Space::load(txn, id)?;
     let slots = live_slots(txn, &space, &attr)?;
     let pick = match (select, attr.order) {
         (Select::Next, Order::Lifo) => slots.len().checked_sub(1),

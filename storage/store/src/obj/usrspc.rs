@@ -138,7 +138,7 @@ pub fn write(txn: &mut Txn<'_>, id: ObjectId, offset: u64, bytes: &[u8]) -> Resu
         }
         change_size(txn, id, end)?;
     }
-    let (space, _) = Space::load(txn, id)?;
+    let (mut space, _) = Space::load(txn, id)?;
     space.write(txn, offset, bytes)
 }
 

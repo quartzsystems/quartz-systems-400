@@ -80,7 +80,7 @@ pub fn write(txn: &mut Txn<'_>, id: ObjectId, blob: &[u8]) -> Result<()> {
         });
     }
     check(txn, id)?;
-    let space = Space::ensure(txn, id, blob.len() as u64, 0)?;
+    let mut space = Space::ensure(txn, id, blob.len() as u64, 0)?;
     if !blob.is_empty() {
         space.write(txn, 0, blob)?;
     }
