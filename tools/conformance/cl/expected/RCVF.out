@@ -1,0 +1,13 @@
+console:
+raised: CPF0864
+handled: CPF0864
+pending: none
+replies: 
+dump: no
+ext:
+  CPF9898 1 Alice 12.50
+  CPF9898 3 Carol 12.50
+  CPF9898 3 Bob 12.50
+  CPF9898 7 Grace 12.50
+  CPF9898 10 Judy 12.50
+  CPF9898 records 5

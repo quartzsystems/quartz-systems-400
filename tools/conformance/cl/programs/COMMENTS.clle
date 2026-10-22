@@ -1,0 +1,14 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* Comments, continuations and labels in odd places. */
+             PGM /* a trailing comment */
+             DCL        VAR(&A) TYPE(*CHAR) +
+                          LEN(10) +   /* continued with a comment */
+                          VALUE('plus')
+             DCL        VAR(&B) TYPE(*CHAR) LEN(10) VALUE('min-
+us')
+ L1:         SNDPGMMSG  MSG(&A *BCAT &B) TOPGMQ(*EXT)
+             /* a whole-line comment */
+             SNDPGMMSG  MSG('done /* not a comment */') TOPGMQ(*EXT)
+             ENDPGM

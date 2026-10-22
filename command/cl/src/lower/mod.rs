@@ -92,6 +92,8 @@ pub struct Gen<'a, 'e> {
     file_open: HashMap<usize, String>,
     has_subr: bool,
     consumed: HashSet<usize>,
+    /// Varying temps: exact-length intermediate results.
+    varying: HashSet<String>,
 }
 
 /// Generate the module text.
@@ -115,6 +117,7 @@ pub fn module(p: &Program, t: &Tables, env: &mut Env<'_>, opts: &Options) -> (St
         file_open: HashMap::new(),
         has_subr: p.stmts.iter().any(|s| matches!(s.kind, Kind::Subr(_))),
         consumed: HashSet::new(),
+        varying: HashSet::new(),
     };
     g.program(p);
     let text = g.assemble();
@@ -177,7 +180,23 @@ impl Gen<'_, '_> {
         let name = format!("$_v{}", self.temps);
         self.decls
             .push(format!("  auto {name}: varchar({})", n.max(1)));
+        self.varying.insert(name.clone());
         name
+    }
+
+    /// A character operand as fixed storage, for an instruction that
+    /// takes the bytes as they lie: a varying temp is copied, padded.
+    pub(super) fn fixed(&mut self, s: String, ty: &Ty) -> String {
+        if !self.varying.contains(&s) {
+            return s;
+        }
+        let n = match ty {
+            Ty::Char(n) => *n,
+            _ => 1,
+        };
+        let t = self.temp(&Ty::Char(n));
+        self.ins(&format!("mov {t}, {s}"));
+        t
     }
 
     /// A new register name.
@@ -252,6 +271,15 @@ impl Gen<'_, '_> {
         }
         if self.in_block {
             self.term("ret");
+        }
+        if let Some(f) = self.frames.last() {
+            let what = match f {
+                Frame::Do { .. } | Frame::Loop { .. } => "a DO group",
+                Frame::Select { .. } => "a SELECT",
+                Frame::Subr { .. } => "a subroutine",
+            };
+            let line = p.stmts.last().map_or(1, |s| s.line);
+            self.err(line, ids::STRUCTURE, format!("{what} is not ended"));
         }
         if self.has_subr {
             self.subr_dispatch();
@@ -611,6 +639,9 @@ impl Gen<'_, '_> {
                 ),
             },
             Kind::Subr(name) => {
+                if !self.frames.is_empty() {
+                    self.err(s.line, ids::STRUCTURE, "SUBR lies inside a group");
+                }
                 let past = self.fresh("P");
                 self.term(&format!("br {past}"));
                 self.label(&format!("SUBR_{name}"));

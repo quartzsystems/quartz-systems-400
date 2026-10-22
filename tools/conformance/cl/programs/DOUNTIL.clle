@@ -1,0 +1,15 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* DOUNTIL runs its body once before the test. */
+             PGM
+             DCL        VAR(&I) TYPE(*DEC) LEN(3 0) VALUE(100)
+             DOUNTIL    COND(&I *GT 50)
+               SNDPGMMSG  MSG('once') TOPGMQ(*EXT)
+               CHGVAR     VAR(&I) VALUE(&I + 1)
+             ENDDO
+             DOUNTIL    COND(&I *GE 104)
+               CHGVAR     VAR(&I) VALUE(&I + 1)
+               SNDPGMMSG  MSG('i=' *CAT %CHAR(&I)) TOPGMQ(*EXT)
+             ENDDO
+             ENDPGM

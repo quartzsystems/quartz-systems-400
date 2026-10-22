@@ -35,6 +35,9 @@ ile = { path = "../../runtime/ile", version = "0.1.0" }
 mi = { path = "../../runtime/mi", version = "0.1.0" }
 sec = { path = "../../security/sec", version = "0.1.0" }
 sysapi = { path = "../../runtime/sysapi", version = "0.1.0" }
+cmd = { path = "../../command/cmd", version = "0.1.0" }
+cl = { path = "../../command/cl", version = "0.1.0" }
+sys-cpps = { path = "../../command/sys-cpps", version = "0.1.0" }
 
 [lints]
 workspace = true

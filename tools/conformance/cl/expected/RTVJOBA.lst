@@ -1,0 +1,39 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   RTVJOBA
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   RTVJOBA
+Text . . . . . . . . . . . . . . :   corpus RTVJOBA
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* RTVJOBA fills its return variables (the double marks them). */
+        1        0               PGM
+        2        0               DCL        VAR(&JOB) TYPE(*CHAR) LEN(10)
+        3        0               DCL        VAR(&USER) TYPE(*CHAR) LEN(10)
+        4        0               DCL        VAR(&NBR) TYPE(*CHAR) LEN(6)
+        5        0               DCL        VAR(&TYPE) TYPE(*CHAR) LEN(1)
+        6        0               DCL        VAR(&SWS) TYPE(*CHAR) LEN(8)
+        7        0               RTVJOBA    JOB(&JOB) USER(&USER) NBR(&NBR) TYPE(&TYPE) SWS(&SWS)
+        8        0               SNDPGMMSG  MSG(&JOB *BCAT &USER *BCAT &NBR *BCAT &TYPE *BCAT &SWS) +
+                                              TOPGMQ(*EXT)
+        9        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&JOB        *CHAR   10             6  7 8
+&NBR        *CHAR   6              8  7 8
+&SWS        *CHAR   8             10  7 8
+&TYPE       *CHAR   1              9  7 8
+&USER       *CHAR   10             7  7 8
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program RTVJOBA created.
+End of compilation.

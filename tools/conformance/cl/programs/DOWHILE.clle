@@ -1,0 +1,14 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* DOWHILE with LEAVE and ITERATE. */
+             PGM
+             DCL        VAR(&I) TYPE(*DEC) LEN(3 0) VALUE(0)
+             DOWHILE    COND(&I *LT 10)
+               CHGVAR     VAR(&I) VALUE(&I + 1)
+               IF         COND(&I *EQ 3) THEN(ITERATE)
+               IF         COND(&I *EQ 6) THEN(LEAVE)
+               SNDPGMMSG  MSG('i=' *CAT %CHAR(&I)) TOPGMQ(*EXT)
+             ENDDO
+             SNDPGMMSG  MSG('end ' *CAT %CHAR(&I)) TOPGMQ(*EXT)
+             ENDPGM

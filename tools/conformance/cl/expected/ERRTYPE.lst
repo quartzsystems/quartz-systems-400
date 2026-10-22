@@ -1,0 +1,42 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   ERRTYPE
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   ERRTYPE
+Text . . . . . . . . . . . . . . :   corpus ERRTYPE
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* Errors: type mismatches and a bad command parameter. */
+        1        0               PGM
+        2        0               DCL        VAR(&L) TYPE(*LGL)
+        3        0               DCL        VAR(&N) TYPE(*DEC) LEN(5 0)
+        4        0               CHGVAR     VAR(&L) VALUE(&N + 1)
+                    * CPD0731 30 a logical value is needed
+        5        0               CRTLIB     LIB(TOOLONGNAME1) TEXT(&N)
+                    * CPD0770 30 CPD0074 LIB: TOOLONGNAME1 is longer than 10
+                    * CPD0770 30 CPD0084 TEXT: &N is not of the type the parameter takes
+        6        0               DCL        VAR(&LATE) TYPE(*CHAR) LEN(1)
+                    * CPD0756 30 declarations come before the first command
+        7        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&L          *LGL    1              6  4 6
+&LATE       *CHAR   1             10  
+&N          *DEC    5 0            7  4 5
+
+Message summary
+  Informational 0   Warning 0   Error 4   Terminal 0
+  CPD0731 30 a logical value is needed  (statement at line 8)
+  CPD0770 30 CPD0074 LIB: TOOLONGNAME1 is longer than 10  (statement at line 9)
+  CPD0770 30 CPD0084 TEXT: &N is not of the type the parameter takes  (statement at line 9)
+  CPD0756 30 declarations come before the first command  (statement at line 10)
+
+Program ERRTYPE not created: the errors above.
+End of compilation.

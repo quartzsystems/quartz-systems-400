@@ -1,0 +1,14 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* RTVJOBA fills its return variables (the double marks them). */
+             PGM
+             DCL        VAR(&JOB) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&USER) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&NBR) TYPE(*CHAR) LEN(6)
+             DCL        VAR(&TYPE) TYPE(*CHAR) LEN(1)
+             DCL        VAR(&SWS) TYPE(*CHAR) LEN(8)
+             RTVJOBA    JOB(&JOB) USER(&USER) NBR(&NBR) TYPE(&TYPE) SWS(&SWS)
+             SNDPGMMSG  MSG(&JOB *BCAT &USER *BCAT &NBR *BCAT &TYPE *BCAT &SWS) +
+                          TOPGMQ(*EXT)
+             ENDPGM

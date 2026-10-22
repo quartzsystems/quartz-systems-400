@@ -1,0 +1,40 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   SELECT
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   SELECT
+Text . . . . . . . . . . . . . . :   corpus SELECT
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* SELECT with WHEN and OTHERWISE. */
+        1        0               PGM
+        2        0               DCL        VAR(&I) TYPE(*DEC) LEN(3 0) VALUE(0)
+        3        0               DOWHILE    COND(&I *LT 4)
+        4        1                 CHGVAR     VAR(&I) VALUE(&I + 1)
+        5        1                 SELECT
+        6        2                 WHEN       COND(&I *EQ 1) THEN(SNDPGMMSG MSG('one') TOPGMQ(*EXT))
+        7        2                 WHEN       COND(&I *EQ 2) THEN(DO)
+        8        3                   SNDPGMMSG  MSG('two') TOPGMQ(*EXT)
+        9        3                   SNDPGMMSG  MSG('still two') TOPGMQ(*EXT)
+       10        2                 ENDDO
+       11        2                 WHEN       COND(&I *EQ 3)
+       12        2                 OTHERWISE  CMD(SNDPGMMSG MSG('other ' *CAT %CHAR(&I)) TOPGMQ(*EXT))
+       13        1                 ENDSELECT
+       14        0               ENDDO
+       15        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&I          *DEC    3 0            6  3 4 6 7 11 12
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program SELECT created.
+End of compilation.

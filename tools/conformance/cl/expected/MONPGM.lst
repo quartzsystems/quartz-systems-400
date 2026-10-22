@@ -1,0 +1,39 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   MONPGM
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   MONPGM
+Text . . . . . . . . . . . . . . :   corpus MONPGM
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /*; fail: DLTLIB CPF2110 */
+                    /* Program-level MONMSG applies to every later command. */
+        1        0               PGM
+        2        0               DCL        VAR(&MSGID) TYPE(*CHAR) LEN(7)
+        3        0               MONMSG     MSGID(CPF0000) EXEC(GOTO ERR)
+        4        0               SNDPGMMSG  MSG('start') TOPGMQ(*EXT)
+        5        0               DLTLIB     LIB(NOPE)
+        6        0               SNDPGMMSG  MSG('not reached') TOPGMQ(*EXT)
+        7        0               RETURN
+        8        0   ERR:        RCVMSG     MSGTYPE(*EXCP) MSGID(&MSGID)
+        9        0               SNDPGMMSG  MSG('caught ' *CAT &MSGID) TOPGMQ(*EXT)
+       10        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&MSGID      *CHAR   7              7  8 9
+
+Label       Defined   Referenced
+ERR               8   
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program MONPGM created.
+End of compilation.

@@ -1,0 +1,36 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   DOUNTIL
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   DOUNTIL
+Text . . . . . . . . . . . . . . :   corpus DOUNTIL
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* DOUNTIL runs its body once before the test. */
+        1        0               PGM
+        2        0               DCL        VAR(&I) TYPE(*DEC) LEN(3 0) VALUE(100)
+        3        0               DOUNTIL    COND(&I *GT 50)
+        4        1                 SNDPGMMSG  MSG('once') TOPGMQ(*EXT)
+        5        1                 CHGVAR     VAR(&I) VALUE(&I + 1)
+        6        0               ENDDO
+        7        0               DOUNTIL    COND(&I *GE 104)
+        8        1                 CHGVAR     VAR(&I) VALUE(&I + 1)
+        9        1                 SNDPGMMSG  MSG('i=' *CAT %CHAR(&I)) TOPGMQ(*EXT)
+       10        0               ENDDO
+       11        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&I          *DEC    3 0            6  3 5 7 8 9
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program DOUNTIL created.
+End of compilation.

@@ -1,0 +1,9 @@
+console:
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+ext:
+  CPF9898 rcv CPF9898 hello there
+  CPF9898 after clear [CPF9898]

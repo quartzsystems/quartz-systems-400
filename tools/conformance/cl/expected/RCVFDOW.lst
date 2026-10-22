@@ -1,0 +1,40 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   RCVFDOW
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   RCVFDOW
+Text . . . . . . . . . . . . . . :   corpus RCVFDOW
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* RCVF inside DOWHILE with a logical end flag. */
+        1        0               PGM
+        2        0               DCLF       FILE(CUST)
+        3        0               DCL        VAR(&EOF) TYPE(*LGL)
+        4        0               DCL        VAR(&TOTAL) TYPE(*DEC) LEN(11 2) VALUE(0)
+        5        0               DOWHILE    COND(*NOT &EOF)
+        6        1                 RCVF
+        7        1                 MONMSG     MSGID(CPF0864) EXEC(CHGVAR VAR(&EOF) VALUE('1'))
+        8        1                 IF         COND(*NOT &EOF) THEN(CHGVAR VAR(&TOTAL) VALUE(&TOTAL + &BAL))
+        9        0               ENDDO
+       10        0               SNDPGMMSG  MSG('total ' *CAT %CHAR(&TOTAL)) TOPGMQ(*EXT)
+       11        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&BAL        *DEC    9 2            6  8
+&CUSNO      *DEC    7 0            6  
+&EOF        *LGL    1              7  5 7 8
+&NAME       *CHAR   30             6  
+&TOTAL      *DEC    11 2           8  8 10
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program RCVFDOW created.
+End of compilation.

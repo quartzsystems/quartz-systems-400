@@ -1,0 +1,32 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   SSTTARGET
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   SSTTARGET
+Text . . . . . . . . . . . . . . :   corpus SSTTARGET
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* %SST on the left of CHGVAR. */
+        1        0               PGM
+        2        0               DCL        VAR(&A) TYPE(*CHAR) LEN(10) VALUE('0000000000')
+        3        0               CHGVAR     VAR(%SST(&A 3 2)) VALUE('XY')
+        4        0               SNDPGMMSG  MSG(&A) TOPGMQ(*EXT)
+        5        0               CHGVAR     VAR(%SST(&A 9 2)) VALUE('ZZZZ')
+        6        0               SNDPGMMSG  MSG(&A) TOPGMQ(*EXT)
+        7        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&A          *CHAR   10             6  3 4 5 6
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program SSTTARGET created.
+End of compilation.

@@ -233,7 +233,8 @@ fn dispatch(job: &mut Job, host: &Host, r: &Resolved, mut out: Outcome) -> Outco
     match result {
         Ok(text) => out.text.push_str(&text),
         Err(f) => {
-            log(job, &f.msgid, &f.data, MsgType::Escape, Some(&f.text));
+            let last = f.text.lines().last().unwrap_or("");
+            log(job, &f.msgid, &f.data, MsgType::Escape, Some(last));
             if out.text.is_empty() {
                 out.text = shown(job, &f);
             }
@@ -408,11 +409,17 @@ fn shown_diag(job: &mut Job, d: &Diag) -> String {
 /// A failure as the console shows it.
 fn shown(job: &mut Job, f: &Fail) -> String {
     if !f.text.is_empty() {
+        // Output before the escape stands as it is; the last line is
+        // the escape's.
         let t = f.text.trim_end();
-        if t.starts_with(&f.msgid) {
-            return format!("{t}\n");
+        let (head, last) = match t.rsplit_once('\n') {
+            Some((h, l)) => (format!("{h}\n"), l),
+            None => (String::new(), t),
+        };
+        if last.starts_with(&f.msgid) {
+            return format!("{head}{last}\n");
         }
-        return format!("{} {t}\n", f.msgid);
+        return format!("{head}{} {last}\n", f.msgid);
     }
     let (text, _, _) = job.describe_message(&f.msgid, "QCPFMSG", "*LIBL", &f.data);
     format!("{} {}\n", f.msgid, text.trim_end())

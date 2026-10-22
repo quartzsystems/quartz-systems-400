@@ -1,0 +1,31 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   COMPMSG
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   COMPMSG
+Text . . . . . . . . . . . . . . :   corpus COMPMSG
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* Completion and status messages. */
+        1        0               PGM
+        2        0               SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) MSGDTA('finished') +
+                                              MSGTYPE(*COMP)
+        3        0               SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('working') +
+                                              TOPGMQ(*EXT) MSGTYPE(*STATUS)
+        4        0               SNDPGMMSG  MSG('text only') TOPGMQ(*EXT)
+        5        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program COMPMSG created.
+End of compilation.

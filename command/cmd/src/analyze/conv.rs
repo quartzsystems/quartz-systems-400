@@ -332,7 +332,8 @@ fn variable(env: &Env<'_>, parm: &Parm, kwd: &str, v: &str) -> Result<Value, Dia
         let len = parm.length();
         let fits = match parm.ty {
             ParmType::Dec => info.len == len.len && u32::from(info.dec) == u32::from(len.dec),
-            ParmType::Char => info.len >= len.len || len.len == 0,
+            // A long return area (message data, replies) takes any length.
+            ParmType::Char => info.len >= len.len || len.len == 0 || len.len > 100,
             _ => true,
         };
         if !fits {

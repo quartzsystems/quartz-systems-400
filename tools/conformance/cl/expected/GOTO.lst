@@ -1,0 +1,38 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   GOTO
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   GOTO
+Text . . . . . . . . . . . . . . :   corpus GOTO
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* GOTO forward and back. */
+        1        0               PGM
+        2        0               DCL        VAR(&I) TYPE(*DEC) LEN(3 0) VALUE(0)
+        3        0   AGAIN:      CHGVAR     VAR(&I) VALUE(&I + 1)
+        4        0               IF         COND(&I *LT 3) THEN(GOTO AGAIN)
+        5        0               SNDPGMMSG  MSG('i=' *CAT %CHAR(&I)) TOPGMQ(*EXT)
+        6        0               GOTO       CMDLBL(DONE)
+        7        0               SNDPGMMSG  MSG('skipped') TOPGMQ(*EXT)
+        8        0   DONE:       SNDPGMMSG  MSG('done') TOPGMQ(*EXT)
+        9        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&I          *DEC    3 0            6  3 4 5
+
+Label       Defined   Referenced
+AGAIN             3   
+DONE              8   6
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program GOTO created.
+End of compilation.

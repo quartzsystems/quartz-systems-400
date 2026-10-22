@@ -299,12 +299,51 @@ impl Lexer {
                         Some('|') => "*CAT",
                         Some('<') => "*BCAT",
                         Some('>') => "*TCAT",
-                        _ => return Err(Diag::new("CPD0019").data(&[("|", 1)]).into()),
+                        _ => "*OR",
                     };
-                    self.at += 1;
+                    if op != "*OR" {
+                        self.at += 1;
+                    }
                     out.push(Tok::Op(op));
                 }
-                '+' | '-' | '*' | '/' if self.standalone() => {
+                '=' => {
+                    self.at += 1;
+                    out.push(Tok::Op("*EQ"));
+                }
+                '>' | '<' => {
+                    self.at += 1;
+                    let op = match (c, self.peek()) {
+                        ('>', Some('=')) => "*GE",
+                        ('<', Some('=')) => "*LE",
+                        ('>', _) => "*GT",
+                        _ => "*LT",
+                    };
+                    if op.ends_with('E') {
+                        self.at += 1;
+                    }
+                    out.push(Tok::Op(op));
+                }
+                '\u{AC}' | '^' => {
+                    self.at += 1;
+                    let op = match self.peek() {
+                        Some('=') => "*NE",
+                        Some('>') => "*NG",
+                        Some('<') => "*NL",
+                        _ => "*NOT",
+                    };
+                    if op != "*NOT" {
+                        self.at += 1;
+                    }
+                    out.push(Tok::Op(op));
+                }
+                '&' => {
+                    self.at += 1;
+                    out.push(Tok::Op("*AND"));
+                }
+                '+' | '-' | '*' | '/'
+                    if self.standalone()
+                        || matches!(self.peek2(), Some('&' | '%' | '(')) =>
+                {
                     self.at += 1;
                     out.push(Tok::Op(match c {
                         '+' => "+",

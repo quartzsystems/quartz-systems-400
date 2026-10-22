@@ -10,6 +10,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod cl;
 pub mod db;
 mod dst;
 mod error;

@@ -1,0 +1,19 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* SELECT with WHEN and OTHERWISE. */
+             PGM
+             DCL        VAR(&I) TYPE(*DEC) LEN(3 0) VALUE(0)
+             DOWHILE    COND(&I *LT 4)
+               CHGVAR     VAR(&I) VALUE(&I + 1)
+               SELECT
+               WHEN       COND(&I *EQ 1) THEN(SNDPGMMSG MSG('one') TOPGMQ(*EXT))
+               WHEN       COND(&I *EQ 2) THEN(DO)
+                 SNDPGMMSG  MSG('two') TOPGMQ(*EXT)
+                 SNDPGMMSG  MSG('still two') TOPGMQ(*EXT)
+               ENDDO
+               WHEN       COND(&I *EQ 3)
+               OTHERWISE  CMD(SNDPGMMSG MSG('other ' *CAT %CHAR(&I)) TOPGMQ(*EXT))
+               ENDSELECT
+             ENDDO
+             ENDPGM

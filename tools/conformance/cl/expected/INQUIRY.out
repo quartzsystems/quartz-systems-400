@@ -1,0 +1,12 @@
+console:
+  Continue? (G C)
+  Say something
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+ext:
+  CPF9898 reply G
+  CPF9898 word yes
+  CPF9898 just a note

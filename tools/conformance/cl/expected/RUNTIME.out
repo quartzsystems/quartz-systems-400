@@ -1,0 +1,10 @@
+console:
+  >> CRTLIB LIB(RTLIB) TEXT('number 2')
+  >> DLTLIB LIB(RTX)
+  > CLRLIB LIB(RT)
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+ext:

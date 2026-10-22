@@ -1,0 +1,10 @@
+console:
+  > SNDMSG MSG('a note') TOUSR(*SYSOPR)
+  > SNDBRKMSG MSG('break') TOMSGQ(QSYS/QSYSOPR)
+  > CHGJOB LOG(4 0 *SECLVL) LOGCLPGM(*YES)
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+ext:

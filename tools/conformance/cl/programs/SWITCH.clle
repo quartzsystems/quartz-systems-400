@@ -1,0 +1,11 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* %SWITCH against the job switches (all off in the kit). */
+             PGM
+             IF         COND(%SWITCH(0XXXXXXX)) THEN(SNDPGMMSG MSG('switch 1 off') +
+                          TOPGMQ(*EXT))
+             IF         COND(%SWITCH(1XXXXXXX)) THEN(SNDPGMMSG MSG('switch 1 on') +
+                          TOPGMQ(*EXT))
+             ELSE       CMD(SNDPGMMSG MSG('switch 1 not on') TOPGMQ(*EXT))
+             ENDPGM

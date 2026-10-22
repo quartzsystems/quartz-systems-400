@@ -67,11 +67,8 @@ fn cpp(job: &mut Job, host: &Host, name: &str, args: &[u64]) {
             segments.push(None);
             continue;
         }
-        let n = block::max_len(p);
-        // SAFETY-free view: the runtime's storage view bounds the read
-        // to the caller's frame, which holds the block it built.
-        let bytes = mi::storage::view(addr, n).to_vec();
-        segments.push(Some(bytes));
+        let n = block::segment_len(p, &mut |off, k| mi::storage::view(addr + off as u64, k).to_vec());
+        segments.push(Some(mi::storage::view(addr, n).to_vec()));
     }
     let specified = vec![true; def.parms.len()];
     let parms = match block::read(&def, &segments, &specified) {
@@ -108,8 +105,10 @@ fn cpp(job: &mut Job, host: &Host, name: &str, args: &[u64]) {
             let (Some(addr), Some(Some(seg))) = (args.get(i).copied(), back.get(i)) else {
                 continue;
             };
-            if addr != 0 {
-                mi::storage::view(addr, seg.len()).copy_from_slice(seg);
+            let held = segments.get(i).and_then(|s| s.as_ref()).map_or(0, Vec::len);
+            let n = seg.len().min(held);
+            if addr != 0 && n > 0 {
+                mi::storage::view(addr, n).copy_from_slice(&seg[..n]);
             }
         }
     }
@@ -159,7 +158,7 @@ fn escape(job: &mut Job, f: &Fail) {
         "QSYS",
         f.data.clone(),
         MsgType::Escape,
-        mi::QueueRef::Prv,
+        mi::QueueRef::Same, // a native has no frame: the caller is on top
     );
 }
 

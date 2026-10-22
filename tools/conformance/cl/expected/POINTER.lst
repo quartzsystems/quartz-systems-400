@@ -1,0 +1,36 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   POINTER
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   POINTER
+Text . . . . . . . . . . . . . . :   corpus POINTER
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* Pointers: %ADDRESS and based variables. */
+        1        0               PGM
+        2        0               DCL        VAR(&BUF) TYPE(*CHAR) LEN(20) VALUE('abcdefghij')
+        3        0               DCL        VAR(&P) TYPE(*PTR)
+        4        0               DCL        VAR(&VIEW) TYPE(*CHAR) LEN(5) STG(*BASED) BASPTR(&P)
+        5        0               CHGVAR     VAR(&P) VALUE(%ADDRESS(&BUF))
+        6        0               SNDPGMMSG  MSG('view ' *CAT &VIEW) TOPGMQ(*EXT)
+        7        0               CHGVAR     VAR(&VIEW) VALUE('XY')
+        8        0               SNDPGMMSG  MSG('buf ' *CAT &BUF) TOPGMQ(*EXT)
+        9        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&BUF        *CHAR   20             6  5 8
+&P          *PTR    16             7  4 5
+&VIEW       *CHAR   5              8  6 7
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program POINTER created.
+End of compilation.

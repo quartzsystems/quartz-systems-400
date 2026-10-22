@@ -1,0 +1,37 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   MONMSG
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   MONMSG
+Text . . . . . . . . . . . . . . :   corpus MONMSG
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /*; fail: CRTLIB CPF2111 */
+                    /* Command-level MONMSG with EXEC, then without. */
+        1        0               PGM
+        2        0               CRTLIB     LIB(MYLIB)
+        3        0               MONMSG     MSGID(CPF2111) EXEC(SNDPGMMSG MSG('exists') TOPGMQ(*EXT))
+        4        0               CRTLIB     LIB(MYLIB)
+        5        0               MONMSG     MSGID(CPF0000)
+        6        0               SNDPGMMSG  MSG('ignored') TOPGMQ(*EXT)
+        7        0               CRTLIB     LIB(MYLIB)
+        8        0               MONMSG     MSGID(CPF2111) EXEC(DO)
+        9        0                 SNDPGMMSG  MSG('group one') TOPGMQ(*EXT)
+       10        0                 SNDPGMMSG  MSG('group two') TOPGMQ(*EXT)
+       11        0               ENDDO
+       12        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program MONMSG created.
+End of compilation.

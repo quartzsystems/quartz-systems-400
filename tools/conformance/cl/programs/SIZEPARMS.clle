@@ -1,0 +1,18 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/*; parms: 'one' 'two' */
+/* %SIZE and %PARMS. */
+             PGM        PARM(&A &B &C)
+             DCL        VAR(&A) TYPE(*CHAR) LEN(3)
+             DCL        VAR(&B) TYPE(*CHAR) LEN(3)
+             DCL        VAR(&C) TYPE(*CHAR) LEN(3)
+             DCL        VAR(&D) TYPE(*DEC) LEN(9 2)
+             DCL        VAR(&N) TYPE(*INT) LEN(4)
+             CHGVAR     VAR(&N) VALUE(%SIZE(&D))
+             SNDPGMMSG  MSG('size ' *CAT %CHAR(&N)) TOPGMQ(*EXT)
+             CHGVAR     VAR(&N) VALUE(%PARMS())
+             SNDPGMMSG  MSG('parms ' *CAT %CHAR(&N)) TOPGMQ(*EXT)
+             IF         COND(%PARMS() *GE 3) THEN(SNDPGMMSG MSG(&C) TOPGMQ(*EXT))
+             ELSE       CMD(SNDPGMMSG MSG('no third') TOPGMQ(*EXT))
+             ENDPGM

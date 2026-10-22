@@ -1,0 +1,5 @@
+not created:
+  CPD0731 30 a logical value is needed
+  CPD0770 30 CPD0074 LIB: TOOLONGNAME1 is longer than 10
+  CPD0770 30 CPD0084 TEXT: &N is not of the type the parameter takes
+  CPD0756 30 declarations come before the first command

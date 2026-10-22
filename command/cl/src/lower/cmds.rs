@@ -267,18 +267,21 @@ impl Gen<'_, '_> {
             },
         };
         let rec = format!("$_r{}_{k}", f.n);
-        let open = self.file_open[&f.n].clone();
-        // Open on first use.
-        let o = self.reg("o");
-        self.ins(&format!("{o} = load {open}"));
-        let opened = self.fresh("O");
-        let go = self.fresh("G");
-        self.term(&format!("brif {o}, {go}, {opened}"));
-        self.label(&opened);
-        let st = self.reg("s");
-        self.ins(&format!("{st} = dbopen {fname}"));
-        self.ins(&format!("store {open}, *ON"));
-        self.label(&go);
+        // A database file opens on first use; a display file opens
+        // with its first operation.
+        if !f.display {
+            let open = self.file_open[&f.n].clone();
+            let o = self.reg("o");
+            self.ins(&format!("{o} = load {open}"));
+            let opened = self.fresh("O");
+            let go = self.fresh("G");
+            self.term(&format!("brif {o}, {go}, {opened}"));
+            self.label(&opened);
+            let st = self.reg("s");
+            self.ins(&format!("{st} = dbopen {fname}"));
+            self.ins(&format!("store {open}, *ON"));
+            self.label(&go);
+        }
         if f.display {
             let verb = match op {
                 FileOp::Rcvf => "READ",
@@ -721,8 +724,8 @@ impl Gen<'_, '_> {
             Some(Value::Char(t)) => Some(qstr(&t)),
             Some(Value::Var(v)) => Some(format!("${v}")),
             Some(Value::Expr(toks)) => match crate::parse::expr::parse(&toks) {
-                Ok(e) => match self.chr(&e) {
-                    Ok(c) => Some(c),
+                Ok(e) => match self.chr(&e).and_then(|c| Ok((c, self.ty(&e)?))) {
+                    Ok((c, ty)) => Some(self.fixed(c, &ty)),
                     Err(err) => {
                         self.err(s.line, ids::EXPRESSION, err);
                         return;
@@ -818,6 +821,8 @@ impl Gen<'_, '_> {
             _ => "*SAME".into(),
         };
         let ty = match get("MSGTYPE") {
+            // `*EXCP` is the last exception: an escape here.
+            Some(Value::Char(t)) if t == "*EXCP" => "*ESCAPE".into(),
             Some(Value::Char(t)) => t,
             _ => "*ANY".into(),
         };
@@ -960,12 +965,20 @@ fn template(t: &Tok, pieces: &mut Vec<Expr>) -> String {
             }
         }
         Tok::Kw { name, pfx, args } => {
+            let sel = pfx.map_or("", cmd::token::Sel::text);
+            // A value that is one expression over variables becomes one
+            // placeholder; anything else is templated piece by piece.
+            let simple = args.len() > 1
+                && cmd::analyze::expr::has_vars(args)
+                && !args
+                    .iter()
+                    .any(|i| matches!(i, Tok::Kw { .. } | Tok::Paren(_)));
+            if simple && let Ok(e) = crate::parse::expr::parse(args) {
+                pieces.push(e);
+                return format!("{sel}{name}(&{})", pieces.len());
+            }
             let inner: Vec<String> = args.iter().map(|i| template(i, pieces)).collect();
-            format!(
-                "{}{name}({})",
-                pfx.map_or("", cmd::token::Sel::text),
-                inner.join(" ")
-            )
+            format!("{sel}{name}({})", inner.join(" "))
         }
         other => other.text(),
     }

@@ -1,0 +1,12 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/*; fail: CRTLIB CPF2111 */
+/* MONMSG with CMPDTA: only the matching message is handled. */
+             PGM
+             CRTLIB     LIB(ONE)
+             MONMSG     MSGID(CPF2111) CMPDTA('ZZZ') EXEC(SNDPGMMSG MSG('zzz') +
+                          TOPGMQ(*EXT))
+             MONMSG     MSGID(CPF2111) CMPDTA('CRTLIB') EXEC(SNDPGMMSG +
+                          MSG('matched by data') TOPGMQ(*EXT))
+             ENDPGM

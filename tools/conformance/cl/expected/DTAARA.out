@@ -1,0 +1,11 @@
+console:
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+ext:
+  CPF9898 counter 41
+  CPF9898 now 42
+  CPF9898 lda [lda text]
+  CPF9898 lda [lda XYZt]

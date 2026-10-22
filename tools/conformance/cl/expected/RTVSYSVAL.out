@@ -1,0 +1,11 @@
+console:
+  > RTVSYSVAL SYSVAL(QDATE)
+  > RTVOBJD OBJ(QGPL/CUST) OBJTYPE(*FILE)
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+ext:
+  CPF9898 sysval RTNVAR
+  CPF9898 owner OWNER TEXT

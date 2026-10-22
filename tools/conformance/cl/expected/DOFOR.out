@@ -1,0 +1,15 @@
+console:
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+ext:
+  CPF9898 sum 22
+  CPF9898 down 3
+  CPF9898 down 2
+  CPF9898 down 1
+  CPF9898 1,1
+  CPF9898 1,2
+  CPF9898 1,3
+  CPF9898 2,1

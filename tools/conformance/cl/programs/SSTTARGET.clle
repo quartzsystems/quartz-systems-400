@@ -1,0 +1,11 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* %SST on the left of CHGVAR. */
+             PGM
+             DCL        VAR(&A) TYPE(*CHAR) LEN(10) VALUE('0000000000')
+             CHGVAR     VAR(%SST(&A 3 2)) VALUE('XY')
+             SNDPGMMSG  MSG(&A) TOPGMQ(*EXT)
+             CHGVAR     VAR(%SST(&A 9 2)) VALUE('ZZZZ')
+             SNDPGMMSG  MSG(&A) TOPGMQ(*EXT)
+             ENDPGM

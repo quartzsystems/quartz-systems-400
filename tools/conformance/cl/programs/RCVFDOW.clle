@@ -1,0 +1,15 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* RCVF inside DOWHILE with a logical end flag. */
+             PGM
+             DCLF       FILE(CUST)
+             DCL        VAR(&EOF) TYPE(*LGL)
+             DCL        VAR(&TOTAL) TYPE(*DEC) LEN(11 2) VALUE(0)
+             DOWHILE    COND(*NOT &EOF)
+               RCVF
+               MONMSG     MSGID(CPF0864) EXEC(CHGVAR VAR(&EOF) VALUE('1'))
+               IF         COND(*NOT &EOF) THEN(CHGVAR VAR(&TOTAL) VALUE(&TOTAL + &BAL))
+             ENDDO
+             SNDPGMMSG  MSG('total ' *CAT %CHAR(&TOTAL)) TOPGMQ(*EXT)
+             ENDPGM

@@ -1,0 +1,11 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* Completion and status messages. */
+             PGM
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) MSGDTA('finished') +
+                          MSGTYPE(*COMP)
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('working') +
+                          TOPGMQ(*EXT) MSGTYPE(*STATUS)
+             SNDPGMMSG  MSG('text only') TOPGMQ(*EXT)
+             ENDPGM

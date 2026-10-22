@@ -1,0 +1,42 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   ARITH
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   ARITH
+Text . . . . . . . . . . . . . . :   corpus ARITH
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* Arithmetic: the four operators, precedence, decimals. */
+        1        0               PGM
+        2        0               DCL        VAR(&A) TYPE(*DEC) LEN(7 2) VALUE(10.5)
+        3        0               DCL        VAR(&B) TYPE(*DEC) LEN(7 2) VALUE(3)
+        4        0               DCL        VAR(&R) TYPE(*DEC) LEN(15 5)
+        5        0               DCL        VAR(&I) TYPE(*INT) LEN(4) VALUE(7)
+        6        0               CHGVAR     VAR(&R) VALUE(&A + &B * 2 - 1)
+        7        0               SNDPGMMSG  MSG('sum ' *CAT %CHAR(&R)) TOPGMQ(*EXT)
+        8        0               CHGVAR     VAR(&R) VALUE((&A + &B) / 4)
+        9        0               SNDPGMMSG  MSG('div ' *CAT %CHAR(&R)) TOPGMQ(*EXT)
+       10        0               CHGVAR     VAR(&I) VALUE(&I * &I - 1)
+       11        0               SNDPGMMSG  MSG('int ' *CAT %CHAR(&I)) TOPGMQ(*EXT)
+       12        0               CHGVAR     VAR(&R) VALUE(-&A)
+       13        0               SNDPGMMSG  MSG('neg ' *CAT %CHAR(&R)) TOPGMQ(*EXT)
+       14        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&A          *DEC    7 2            6  6 8 12
+&B          *DEC    7 2            7  6 8
+&I          *INT    4              9  10 11
+&R          *DEC    15 5           8  6 7 8 9 12 13
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program ARITH created.
+End of compilation.

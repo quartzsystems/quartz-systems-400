@@ -1,0 +1,9 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* Errors: a command the compiler cannot find stops creation. */
+             PGM
+             MYCMD      PARM1(abc) PARM2(12)
+             MONMSG     MSGID(CPF0006) EXEC(SNDPGMMSG MSG('no such command') +
+                          TOPGMQ(*EXT))
+             ENDPGM

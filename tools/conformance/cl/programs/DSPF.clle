@@ -1,0 +1,10 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* A display file: SNDRCVF has no display in this job. */
+             PGM
+             DCLF       FILE(QGPL/KITDSP)
+             CHGVAR     VAR(&ANSWER) VALUE('?')
+             SNDRCVF    RCDFMT(PROMPT)
+             MONMSG     MSGID(CPF4101) EXEC(SNDPGMMSG MSG('no display') TOPGMQ(*EXT))
+             ENDPGM

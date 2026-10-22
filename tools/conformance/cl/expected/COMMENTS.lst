@@ -1,0 +1,39 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   COMMENTS
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   COMMENTS
+Text . . . . . . . . . . . . . . :   corpus COMMENTS
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* Comments, continuations and labels in odd places. */
+        1        0               PGM /* a trailing comment */
+        2        0               DCL        VAR(&A) TYPE(*CHAR) +
+                                              LEN(10) +   /* continued with a comment */
+                                              VALUE('plus')
+        3        0               DCL        VAR(&B) TYPE(*CHAR) LEN(10) VALUE('min-
+                    us')
+        4        0   L1:         SNDPGMMSG  MSG(&A *BCAT &B) TOPGMQ(*EXT)
+                                 /* a whole-line comment */
+        5        0               SNDPGMMSG  MSG('done /* not a comment */') TOPGMQ(*EXT)
+        6        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&A          *CHAR   10             6  4
+&B          *CHAR   10             9  4
+
+Label       Defined   Referenced
+L1                4   
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program COMMENTS created.
+End of compilation.

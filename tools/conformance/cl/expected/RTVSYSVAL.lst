@@ -1,0 +1,36 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   RTVSYSVAL
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   RTVSYSVAL
+Text . . . . . . . . . . . . . . :   corpus RTVSYSVAL
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* RTVSYSVAL and RTVOBJD return values. */
+        1        0               PGM
+        2        0               DCL        VAR(&V) TYPE(*CHAR) LEN(10)
+        3        0               DCL        VAR(&OWN) TYPE(*CHAR) LEN(10)
+        4        0               DCL        VAR(&TXT) TYPE(*CHAR) LEN(50)
+        5        0               RTVSYSVAL  SYSVAL(QDATE) RTNVAR(&V)
+        6        0               SNDPGMMSG  MSG('sysval ' *CAT &V) TOPGMQ(*EXT)
+        7        0               RTVOBJD    OBJ(QGPL/CUST) OBJTYPE(*FILE) OWNER(&OWN) TEXT(&TXT)
+        8        0               SNDPGMMSG  MSG('owner ' *CAT &OWN *BCAT %TRIM(&TXT)) TOPGMQ(*EXT)
+        9        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&OWN        *CHAR   10             7  7 8
+&TXT        *CHAR   50             8  7 8
+&V          *CHAR   10             6  5 6
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program RTVSYSVAL created.
+End of compilation.

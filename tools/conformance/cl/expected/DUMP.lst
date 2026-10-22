@@ -1,0 +1,30 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   DUMP
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   DUMP
+Text . . . . . . . . . . . . . . :   corpus DUMP
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* DMPCLPGM leaves a dump. */
+        1        0               PGM
+        2        0               DCL        VAR(&X) TYPE(*CHAR) LEN(5) VALUE('dump')
+        3        0               DMPCLPGM
+        4        0               SNDPGMMSG  MSG('dumped') TOPGMQ(*EXT)
+        5        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&X          *CHAR   5              6  
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program DUMP created.
+End of compilation.

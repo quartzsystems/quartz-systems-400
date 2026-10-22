@@ -109,9 +109,10 @@ fn target(toks: &[Tok]) -> Result<Target, String> {
             };
             let (s, l) = match args.len() {
                 3 => (expr::parse(&args[1..2])?, expr::parse(&args[2..3])?),
+                // The whole variable: its own length, known later.
                 1 if name.starts_with('B') => (
                     Expr::Lit(Lit::Num("1".into())),
-                    Expr::Lit(Lit::Num("2".into())),
+                    Expr::Lit(Lit::Num("0".into())),
                 ),
                 _ => return Err(format!("%{name} takes a variable, a start and a length")),
             };

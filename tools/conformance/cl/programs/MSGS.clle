@@ -1,0 +1,17 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* SNDPGMMSG to the caller, RCVMSG back, RMVMSG. */
+             PGM
+             DCL        VAR(&DATA) TYPE(*CHAR) LEN(20)
+             DCL        VAR(&ID) TYPE(*CHAR) LEN(7)
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('hello there') +
+                          TOPGMQ(*SAME) MSGTYPE(*INFO)
+             RCVMSG     PGMQ(*SAME) MSGTYPE(*INFO) MSGDTA(&DATA) MSGID(&ID)
+             SNDPGMMSG  MSG('rcv ' *CAT &ID *BCAT &DATA) TOPGMQ(*EXT)
+             SNDPGMMSG  MSG('plain') TOPGMQ(*SAME)
+             RMVMSG     PGMQ(*SAME) CLEAR(*ALL)
+             RCVMSG     PGMQ(*SAME) MSGTYPE(*ANY) MSGDTA(&DATA) MSGID(&ID) +
+                          WAIT(0)
+             SNDPGMMSG  MSG('after clear [' *CAT &ID *TCAT ']') TOPGMQ(*EXT)
+             ENDPGM

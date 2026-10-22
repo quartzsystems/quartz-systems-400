@@ -1,0 +1,11 @@
+console:
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+ext:
+  CPF9898 sum 15.50000
+  CPF9898 div 3.37500
+  CPF9898 int 48
+  CPF9898 neg -10.50000

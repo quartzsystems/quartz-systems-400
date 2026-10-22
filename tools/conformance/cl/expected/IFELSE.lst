@@ -1,0 +1,41 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   IFELSE
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   IFELSE
+Text . . . . . . . . . . . . . . :   corpus IFELSE
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* IF, ELSE, nested groups. */
+        1        0               PGM
+        2        0               DCL        VAR(&N) TYPE(*DEC) LEN(3 0) VALUE(5)
+        3        0               IF         COND(&N *GT 3) THEN(SNDPGMMSG MSG('big') TOPGMQ(*EXT))
+        4        0               ELSE       CMD(SNDPGMMSG MSG('small') TOPGMQ(*EXT))
+        5        0               IF         COND(&N *LT 3) THEN(DO)
+        6        1                 SNDPGMMSG  MSG('not here') TOPGMQ(*EXT)
+        7        0               ENDDO
+        8        0               ELSE       CMD(DO)
+        9        1                 SNDPGMMSG  MSG('else group') TOPGMQ(*EXT)
+       10        1                 IF         COND(&N *EQ 5) THEN(DO)
+       11        2                   SNDPGMMSG  MSG('nested five') TOPGMQ(*EXT)
+       12        1                 ENDDO
+       13        0               ENDDO
+       14        0               IF         COND(&N = 5 *AND *NOT (&N > 9)) THEN(SNDPGMMSG +
+                                              MSG('symbols') TOPGMQ(*EXT))
+       15        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&N          *DEC    3 0            6  3 5 10 14
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program IFELSE created.
+End of compilation.

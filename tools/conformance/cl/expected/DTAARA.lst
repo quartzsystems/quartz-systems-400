@@ -1,0 +1,41 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   DTAARA
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   DTAARA
+Text . . . . . . . . . . . . . . :   corpus DTAARA
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* RTVDTAARA and CHGDTAARA on the kit's counter and *LDA. */
+        1        0               PGM
+        2        0               DCL        VAR(&N) TYPE(*DEC) LEN(5 0)
+        3        0               DCL        VAR(&L) TYPE(*CHAR) LEN(10)
+        4        0               RTVDTAARA  DTAARA(QGPL/COUNTER) RTNVAR(&N)
+        5        0               SNDPGMMSG  MSG('counter ' *CAT %CHAR(&N)) TOPGMQ(*EXT)
+        6        0               CHGDTAARA  DTAARA(QGPL/COUNTER) VALUE(&N + 1)
+        7        0               RTVDTAARA  DTAARA(QGPL/COUNTER) RTNVAR(&N)
+        8        0               SNDPGMMSG  MSG('now ' *CAT %CHAR(&N)) TOPGMQ(*EXT)
+        9        0               CHGDTAARA  DTAARA(*LDA (1 10)) VALUE('lda text')
+       10        0               RTVDTAARA  DTAARA(*LDA (1 10)) RTNVAR(&L)
+       11        0               SNDPGMMSG  MSG('lda [' *CAT &L *TCAT ']') TOPGMQ(*EXT)
+       12        0               CHGDTAARA  DTAARA(*LDA (5 3)) VALUE('XYZ')
+       13        0               RTVDTAARA  DTAARA(*LDA (1 10)) RTNVAR(&L)
+       14        0               SNDPGMMSG  MSG('lda [' *CAT &L *TCAT ']') TOPGMQ(*EXT)
+       15        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&L          *CHAR   10             7  10 11 13 14
+&N          *DEC    5 0            6  4 5 6 7 8
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program DTAARA created.
+End of compilation.

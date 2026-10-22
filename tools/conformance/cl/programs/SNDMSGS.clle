@@ -1,0 +1,9 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* SNDMSG, SNDBRKMSG and SNDUSRMSG to a queue go to their doubles. */
+             PGM
+             SNDMSG     MSG('a note') TOUSR(*SYSOPR)
+             SNDBRKMSG  MSG('break') TOMSGQ(QSYS/QSYSOPR)
+             CHGJOB     LOG(4 00 *SECLVL) LOGCLPGM(*YES)
+             ENDPGM

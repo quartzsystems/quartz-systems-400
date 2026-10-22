@@ -1,0 +1,12 @@
+console:
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+ext:
+  CPF9898 dec 123.45
+  CPF9898 int 42
+  CPF9898 mov 123.45
+  CPF9898 chr [123.45]
+  CPF9898 trunc 123

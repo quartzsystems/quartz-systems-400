@@ -1,0 +1,15 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* DCLF and RCVF over the kit's customers until end of file. */
+             PGM
+             DCLF       FILE(QGPL/CUST)
+             DCL        VAR(&COUNT) TYPE(*DEC) LEN(3 0) VALUE(0)
+ NEXT:       RCVF
+             MONMSG     MSGID(CPF0864) EXEC(GOTO DONE)
+             CHGVAR     VAR(&COUNT) VALUE(&COUNT + 1)
+             SNDPGMMSG  MSG(%CHAR(&CUSNO) *BCAT %TRIM(&NAME) *BCAT +
+                          %CHAR(&BAL)) TOPGMQ(*EXT)
+             GOTO       NEXT
+ DONE:       SNDPGMMSG  MSG('records ' *CAT %CHAR(&COUNT)) TOPGMQ(*EXT)
+             ENDPGM

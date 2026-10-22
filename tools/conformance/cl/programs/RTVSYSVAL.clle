@@ -1,0 +1,13 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* RTVSYSVAL and RTVOBJD return values. */
+             PGM
+             DCL        VAR(&V) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&OWN) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&TXT) TYPE(*CHAR) LEN(50)
+             RTVSYSVAL  SYSVAL(QDATE) RTNVAR(&V)
+             SNDPGMMSG  MSG('sysval ' *CAT &V) TOPGMQ(*EXT)
+             RTVOBJD    OBJ(QGPL/CUST) OBJTYPE(*FILE) OWNER(&OWN) TEXT(&TXT)
+             SNDPGMMSG  MSG('owner ' *CAT &OWN *BCAT %TRIM(&TXT)) TOPGMQ(*EXT)
+             ENDPGM

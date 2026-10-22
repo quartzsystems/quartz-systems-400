@@ -1,0 +1,44 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   CONVERT
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   CONVERT
+Text . . . . . . . . . . . . . . :   corpus CONVERT
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* %CHAR, %DEC, %INT, character to decimal moves. */
+        1        0               PGM
+        2        0               DCL        VAR(&C) TYPE(*CHAR) LEN(10) VALUE('123.45')
+        3        0               DCL        VAR(&D) TYPE(*DEC) LEN(9 2)
+        4        0               DCL        VAR(&I) TYPE(*INT) LEN(4)
+        5        0               DCL        VAR(&R) TYPE(*CHAR) LEN(20)
+        6        0               CHGVAR     VAR(&D) VALUE(%DEC(&C 9 2))
+        7        0               SNDPGMMSG  MSG('dec ' *CAT %CHAR(&D)) TOPGMQ(*EXT)
+        8        0               CHGVAR     VAR(&I) VALUE(%INT('42'))
+        9        0               SNDPGMMSG  MSG('int ' *CAT %CHAR(&I)) TOPGMQ(*EXT)
+       10        0               CHGVAR     VAR(&D) VALUE(&C)
+       11        0               SNDPGMMSG  MSG('mov ' *CAT %CHAR(&D)) TOPGMQ(*EXT)
+       12        0               CHGVAR     VAR(&R) VALUE(&D)
+       13        0               SNDPGMMSG  MSG('chr [' *CAT &R *TCAT ']') TOPGMQ(*EXT)
+       14        0               CHGVAR     VAR(&I) VALUE(&D)
+       15        0               SNDPGMMSG  MSG('trunc ' *CAT %CHAR(&I)) TOPGMQ(*EXT)
+       16        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&C          *CHAR   10             6  6 10
+&D          *DEC    9 2            7  6 7 10 11 12 14
+&I          *INT    4              8  8 9 14 15
+&R          *CHAR   20             9  12 13
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program CONVERT created.
+End of compilation.

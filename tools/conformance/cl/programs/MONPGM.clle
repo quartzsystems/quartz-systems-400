@@ -1,0 +1,15 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/*; fail: DLTLIB CPF2110 */
+/* Program-level MONMSG applies to every later command. */
+             PGM
+             DCL        VAR(&MSGID) TYPE(*CHAR) LEN(7)
+             MONMSG     MSGID(CPF0000) EXEC(GOTO ERR)
+             SNDPGMMSG  MSG('start') TOPGMQ(*EXT)
+             DLTLIB     LIB(NOPE)
+             SNDPGMMSG  MSG('not reached') TOPGMQ(*EXT)
+             RETURN
+ ERR:        RCVMSG     MSGTYPE(*EXCP) MSGID(&MSGID)
+             SNDPGMMSG  MSG('caught ' *CAT &MSGID) TOPGMQ(*EXT)
+             ENDPGM

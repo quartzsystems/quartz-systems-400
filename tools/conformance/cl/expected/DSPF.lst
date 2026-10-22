@@ -1,0 +1,31 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   DSPF
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   DSPF
+Text . . . . . . . . . . . . . . :   corpus DSPF
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* A display file: SNDRCVF has no display in this job. */
+        1        0               PGM
+        2        0               DCLF       FILE(QGPL/KITDSP)
+        3        0               CHGVAR     VAR(&ANSWER) VALUE('?')
+        4        0               SNDRCVF    RCDFMT(PROMPT)
+        5        0               MONMSG     MSGID(CPF4101) EXEC(SNDPGMMSG MSG('no display') TOPGMQ(*EXT))
+        6        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&ANSWER     *CHAR   20             6  3
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program DSPF created.
+End of compilation.

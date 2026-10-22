@@ -1,0 +1,45 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   SUBR
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   SUBR
+Text . . . . . . . . . . . . . . :   corpus SUBR
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* Subroutines with return values. */
+        1        0               PGM
+        2        0               DCL        VAR(&RC) TYPE(*INT) LEN(4)
+        3        0               DCL        VAR(&N) TYPE(*DEC) LEN(3 0) VALUE(0)
+        4        0               CALLSUBR   SUBR(COUNT)
+        5        0               CALLSUBR   SUBR(COUNT) RTNVAL(&RC)
+        6        0               SNDPGMMSG  MSG('rc ' *CAT %CHAR(&RC) *BCAT 'n ' *CAT %CHAR(&N)) +
+                                              TOPGMQ(*EXT)
+        7        0               CALLSUBR   SUBR(EARLY) RTNVAL(&RC)
+        8        0               SNDPGMMSG  MSG('early rc ' *CAT %CHAR(&RC)) TOPGMQ(*EXT)
+        9        0               RETURN
+       10        0               SUBR       SUBR(COUNT)
+       11        1                 CHGVAR     VAR(&N) VALUE(&N + 1)
+       12        1                 IF         COND(&N *EQ 2) THEN(RTNSUBR RTNVAL(22))
+       13        0               ENDSUBR    RTNVAL(11)
+       14        0               SUBR       SUBR(EARLY)
+       15        1                 RTNSUBR    RTNVAL(-1)
+       16        1                 SNDPGMMSG  MSG('never') TOPGMQ(*EXT)
+       17        0               ENDSUBR
+       18        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&N          *DEC    3 0            7  6 11 12
+&RC         *INT    4              6  5 6 7 8
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program SUBR created.
+End of compilation.

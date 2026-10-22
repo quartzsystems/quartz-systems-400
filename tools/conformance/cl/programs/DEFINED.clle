@@ -1,0 +1,12 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* STG(*DEFINED) overlays. */
+             PGM
+             DCL        VAR(&DATE) TYPE(*CHAR) LEN(8) VALUE('20261021')
+             DCL        VAR(&YEAR) TYPE(*CHAR) LEN(4) STG(*DEFINED) DEFVAR(&DATE 1)
+             DCL        VAR(&MONTH) TYPE(*CHAR) LEN(2) STG(*DEFINED) DEFVAR(&DATE 5)
+             SNDPGMMSG  MSG(&YEAR *BCAT &MONTH) TOPGMQ(*EXT)
+             CHGVAR     VAR(&MONTH) VALUE('12')
+             SNDPGMMSG  MSG(&DATE) TOPGMQ(*EXT)
+             ENDPGM

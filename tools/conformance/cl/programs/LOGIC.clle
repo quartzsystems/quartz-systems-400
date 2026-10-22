@@ -1,0 +1,18 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* Logical variables and operators. */
+             PGM
+             DCL        VAR(&T) TYPE(*LGL) VALUE('1')
+             DCL        VAR(&F) TYPE(*LGL)
+             DCL        VAR(&X) TYPE(*LGL)
+             CHGVAR     VAR(&X) VALUE(&T *AND &F)
+             IF         COND(&X) THEN(SNDPGMMSG MSG('and on') TOPGMQ(*EXT))
+             ELSE       CMD(SNDPGMMSG MSG('and off') TOPGMQ(*EXT))
+             CHGVAR     VAR(&X) VALUE(&T *OR &F)
+             IF         COND(&X) THEN(SNDPGMMSG MSG('or on') TOPGMQ(*EXT))
+             CHGVAR     VAR(&X) VALUE(*NOT &T)
+             IF         COND(*NOT &X) THEN(SNDPGMMSG MSG('not works') TOPGMQ(*EXT))
+             IF         COND(&T *EQ '1') THEN(SNDPGMMSG MSG('lgl compare') +
+                          TOPGMQ(*EXT))
+             ENDPGM

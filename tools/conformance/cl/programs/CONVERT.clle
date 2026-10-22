@@ -1,0 +1,20 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* %CHAR, %DEC, %INT, character to decimal moves. */
+             PGM
+             DCL        VAR(&C) TYPE(*CHAR) LEN(10) VALUE('123.45')
+             DCL        VAR(&D) TYPE(*DEC) LEN(9 2)
+             DCL        VAR(&I) TYPE(*INT) LEN(4)
+             DCL        VAR(&R) TYPE(*CHAR) LEN(20)
+             CHGVAR     VAR(&D) VALUE(%DEC(&C 9 2))
+             SNDPGMMSG  MSG('dec ' *CAT %CHAR(&D)) TOPGMQ(*EXT)
+             CHGVAR     VAR(&I) VALUE(%INT('42'))
+             SNDPGMMSG  MSG('int ' *CAT %CHAR(&I)) TOPGMQ(*EXT)
+             CHGVAR     VAR(&D) VALUE(&C)
+             SNDPGMMSG  MSG('mov ' *CAT %CHAR(&D)) TOPGMQ(*EXT)
+             CHGVAR     VAR(&R) VALUE(&D)
+             SNDPGMMSG  MSG('chr [' *CAT &R *TCAT ']') TOPGMQ(*EXT)
+             CHGVAR     VAR(&I) VALUE(&D)
+             SNDPGMMSG  MSG('trunc ' *CAT %CHAR(&I)) TOPGMQ(*EXT)
+             ENDPGM

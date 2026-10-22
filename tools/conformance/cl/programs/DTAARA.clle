@@ -1,0 +1,19 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* RTVDTAARA and CHGDTAARA on the kit's counter and *LDA. */
+             PGM
+             DCL        VAR(&N) TYPE(*DEC) LEN(5 0)
+             DCL        VAR(&L) TYPE(*CHAR) LEN(10)
+             RTVDTAARA  DTAARA(QGPL/COUNTER) RTNVAR(&N)
+             SNDPGMMSG  MSG('counter ' *CAT %CHAR(&N)) TOPGMQ(*EXT)
+             CHGDTAARA  DTAARA(QGPL/COUNTER) VALUE(&N + 1)
+             RTVDTAARA  DTAARA(QGPL/COUNTER) RTNVAR(&N)
+             SNDPGMMSG  MSG('now ' *CAT %CHAR(&N)) TOPGMQ(*EXT)
+             CHGDTAARA  DTAARA(*LDA (1 10)) VALUE('lda text')
+             RTVDTAARA  DTAARA(*LDA (1 10)) RTNVAR(&L)
+             SNDPGMMSG  MSG('lda [' *CAT &L *TCAT ']') TOPGMQ(*EXT)
+             CHGDTAARA  DTAARA(*LDA (5 3)) VALUE('XYZ')
+             RTVDTAARA  DTAARA(*LDA (1 10)) RTNVAR(&L)
+             SNDPGMMSG  MSG('lda [' *CAT &L *TCAT ']') TOPGMQ(*EXT)
+             ENDPGM

@@ -1,0 +1,32 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   ERRUNDECL
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   ERRUNDECL
+Text . . . . . . . . . . . . . . :   corpus ERRUNDECL
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* Errors: an undeclared variable and a missing label stop creation. */
+        1        0               PGM
+        2        0               CHGVAR     VAR(&NOPE) VALUE(1)
+                    * CPD0727 30 &NOPE is not declared
+        3        0               GOTO       CMDLBL(NOWHERE)
+                    * CPD0735 30 label NOWHERE is not defined
+        4        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+
+Message summary
+  Informational 0   Warning 0   Error 2   Terminal 0
+  CPD0727 30 &NOPE is not declared  (statement at line 6)
+  CPD0735 30 label NOWHERE is not defined  (statement at line 7)
+
+Program ERRUNDECL not created: the errors above.
+End of compilation.

@@ -1,0 +1,17 @@
+console:
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+ext:
+  CPF9898 cat  [abc         xyz]
+  CPF9898 bcat [abc   xyz]
+  CPF9898 tcat [abc  xyz]
+  CPF9898 sst  [bc]
+  CPF9898 trim [xyz]
+  CPF9898 triml[xyz]
+  CPF9898 upper[ABC]
+  CPF9898 len 40
+  CPF9898 scan 3
+  CPF9898 check 3

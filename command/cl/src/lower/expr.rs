@@ -64,7 +64,8 @@ impl Gen<'_, '_> {
         match self.value(e)? {
             Val::Storage(s, Ty::Char(_)) => Ok(s),
             Val::Storage(s, Ty::Dec(d, sc)) => {
-                let t = self.temp(&Ty::Char(u32::from(d) + 2 + u32::from(sc > 0)));
+                // Exact length, as %CHAR gives it: no padding.
+                let t = self.temp_varying(u32::from(d) + 2 + u32::from(sc > 0));
                 self.ins(&format!("cvt {t}, {s}"));
                 Ok(t)
             }
@@ -170,7 +171,13 @@ impl Gen<'_, '_> {
             }
             Op::Cat | Op::Bcat | Op::Tcat => {
                 let (l, r) = (self.chr(a)?, self.chr(b)?);
-                let t = self.temp(&ty);
+                // The result keeps the operands' lengths as they are:
+                // a variable's padding, a literal's or a built-in's
+                // exact text.
+                let t = self.temp_varying(match ty {
+                    Ty::Char(n) => n,
+                    _ => 1,
+                });
                 if op == Op::Cat {
                     self.ins(&format!("str.cat {t}, {l}, {r}"));
                 } else {
@@ -203,7 +210,9 @@ impl Gen<'_, '_> {
                     _ => "le",
                 };
                 let r = self.reg("c");
-                match self.ty(a)? {
+                let (ta, tb) = (self.ty(a)?, self.ty(b)?);
+                let ta = if tb == Ty::Lgl { Ty::Lgl } else { ta };
+                match ta {
                     Ty::Char(_) => {
                         let (l, rr) = (self.chr(a)?, self.chr(b)?);
                         self.ins(&format!("{r} = str.cmp.{cond} {l}, {rr}"));
@@ -306,7 +315,10 @@ impl Gen<'_, '_> {
                 let src = self.chr(&args[0])?;
                 let start = self.int(&args[1])?;
                 let len = self.int(&args[2])?;
-                let t = self.temp(&ty);
+                let t = self.temp_varying(match ty {
+                    Ty::Char(n) => n,
+                    _ => 1,
+                });
                 self.ins(&format!("str.subst {t}, {src}, {start}, {len}"));
                 Val::Storage(t, ty)
             }
@@ -328,7 +340,8 @@ impl Gen<'_, '_> {
                         },
                     )
                 } else {
-                    ("1".into(), "2".into())
+                    let whole = if var.len == 4 { "4" } else { "2" };
+                    ("1".into(), whole.into())
                 };
                 let p = self.reg("p");
                 self.ins(&format!("{p} = addr {}", var.place()));
@@ -424,7 +437,10 @@ impl Gen<'_, '_> {
             "TRIM" | "TRIML" | "TRIMR" => {
                 let ty = self.ty(&args[0])?;
                 let src = self.chr(&args[0])?;
-                let t = self.temp(&ty);
+                let t = self.temp_varying(match ty {
+                    Ty::Char(n) => n,
+                    _ => 1,
+                });
                 let f = match name {
                     "TRIM" => "trim",
                     "TRIML" => "triml",
@@ -461,9 +477,14 @@ impl Gen<'_, '_> {
                 // The job switches, as `QCLSWS` reads them: a mask of
                 // 0, 1 and X against the eight switches.
                 let mask = match &args[0] {
-                    Expr::Lit(Lit::Str(s)) => s.clone(),
+                    Expr::Lit(Lit::Str(s) | Lit::Num(s)) | Expr::Word(s) => {
+                        s.to_ascii_uppercase()
+                    }
                     _ => return Err("%SWITCH takes a mask of 0, 1 and X".into()),
                 };
+                if mask.len() != 8 || !mask.chars().all(|c| matches!(c, '0' | '1' | 'X')) {
+                    return Err("%SWITCH takes a mask of eight 0, 1 and X".into());
+                }
                 let m = self.temp(&Ty::Char(8));
                 self.ins(&format!("mov {m}, {}", qstr(&mask)));
                 let out = self.temp(&Ty::Lgl);
@@ -516,7 +537,17 @@ impl Gen<'_, '_> {
         let Expr::Lit(Lit::Num(n)) = len else {
             return Err("%SST as a target needs a constant length".into());
         };
-        let s = self.chr(e)?;
+        let width: usize = n.parse().map_err(|_| "%SST needs a whole length".to_string())?;
+        // A constant is cut or padded here; a value goes through a
+        // field of the target's length, as CHGVAR pads or truncates.
+        let t = if let Expr::Lit(Lit::Str(text)) = e {
+            qstr(&format!("{:<width$}", text.chars().take(width).collect::<String>()))
+        } else {
+            let s = self.chr(e)?;
+            let t = self.temp(&Ty::Char(u32::try_from(width).unwrap_or(1).max(1)));
+            self.ins(&format!("mov {t}, {s}"));
+            t
+        };
         let st = self.int(start)?;
         let p = self.reg("p");
         self.ins(&format!("{p} = addr {}", v.place()));
@@ -524,7 +555,7 @@ impl Gen<'_, '_> {
         self.ins(&format!("{q} = ptradd {p}, {st}"));
         let q2 = self.reg("q");
         self.ins(&format!("{q2} = ptradd {q}, -1"));
-        self.ins(&format!("mov [{q2}]:char({n}), {s}"));
+        self.ins(&format!("mov [{q2}]:char({n}), {t}"));
         Ok(())
     }
 
@@ -538,6 +569,7 @@ impl Gen<'_, '_> {
     ) -> Result<(), String> {
         let n = match len {
             Expr::Lit(Lit::Num(n)) if n == "2" || n == "4" => n.clone(),
+            Expr::Lit(Lit::Num(n)) if n == "0" => if v.len == 4 { "4" } else { "2" }.to_string(),
             _ => return Err("%BIN takes a length of 2 or 4".into()),
         };
         let val = self.num(e)?;
@@ -549,8 +581,11 @@ impl Gen<'_, '_> {
         let q2 = self.reg("q");
         self.ins(&format!("{q2} = ptradd {q}, -1"));
         let ity = if n == "4" { "i32" } else { "i16" };
+        // Through a wide decimal: a literal keeps no type of its own.
+        let t = self.temp(&Ty::Dec(15, 0));
+        self.ins(&format!("dec.mov {t}, {val}"));
         let r = self.reg("v");
-        self.ins(&format!("{r} = cvt.{ity} {val}"));
+        self.ins(&format!("{r} = cvt.{ity} {t}"));
         self.ins(&format!("store [{q2}]:{ity}, {r}"));
         Ok(())
     }

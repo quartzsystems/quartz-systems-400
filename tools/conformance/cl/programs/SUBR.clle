@@ -1,0 +1,23 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* Subroutines with return values. */
+             PGM
+             DCL        VAR(&RC) TYPE(*INT) LEN(4)
+             DCL        VAR(&N) TYPE(*DEC) LEN(3 0) VALUE(0)
+             CALLSUBR   SUBR(COUNT)
+             CALLSUBR   SUBR(COUNT) RTNVAL(&RC)
+             SNDPGMMSG  MSG('rc ' *CAT %CHAR(&RC) *BCAT 'n ' *CAT %CHAR(&N)) +
+                          TOPGMQ(*EXT)
+             CALLSUBR   SUBR(EARLY) RTNVAL(&RC)
+             SNDPGMMSG  MSG('early rc ' *CAT %CHAR(&RC)) TOPGMQ(*EXT)
+             RETURN
+             SUBR       SUBR(COUNT)
+               CHGVAR     VAR(&N) VALUE(&N + 1)
+               IF         COND(&N *EQ 2) THEN(RTNSUBR RTNVAL(22))
+             ENDSUBR    RTNVAL(11)
+             SUBR       SUBR(EARLY)
+               RTNSUBR    RTNVAL(-1)
+               SNDPGMMSG  MSG('never') TOPGMQ(*EXT)
+             ENDSUBR
+             ENDPGM

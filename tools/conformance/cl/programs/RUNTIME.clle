@@ -1,0 +1,11 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* Commands on the run-time path: expressions in parameters. */
+             PGM
+             DCL        VAR(&LIB) TYPE(*CHAR) LEN(10) VALUE('RT')
+             DCL        VAR(&N) TYPE(*DEC) LEN(3 0) VALUE(2)
+             CRTLIB     LIB(&LIB *TCAT 'LIB') TEXT('number ' *CAT %CHAR(&N))
+             DLTLIB     LIB(%SST(&LIB 1 2) *CAT 'X')
+             CLRLIB     LIB(&LIB)
+             ENDPGM

@@ -1,0 +1,12 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/*; parms: 'hello     ' 12 */
+/* Parameters in and out. */
+             PGM        PARM(&TEXT &NUM)
+             DCL        VAR(&TEXT) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&NUM) TYPE(*DEC) LEN(15 5)
+             SNDPGMMSG  MSG('got ' *CAT &TEXT *BCAT %CHAR(&NUM)) TOPGMQ(*EXT)
+             CHGVAR     VAR(&TEXT) VALUE('changed')
+             CHGVAR     VAR(&NUM) VALUE(&NUM * 2)
+             ENDPGM

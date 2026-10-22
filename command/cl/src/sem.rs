@@ -394,7 +394,8 @@ pub fn type_of(t: &Tables, e: &Expr) -> Result<Ty, String> {
                         (&ta, &tb),
                         (Ty::Char(_), Ty::Char(_))
                             | (Ty::Dec(..), Ty::Dec(..))
-                            | (Ty::Lgl, Ty::Lgl)
+                            | (Ty::Lgl, Ty::Lgl | Ty::Char(1))
+                            | (Ty::Char(1), Ty::Lgl)
                             | (Ty::Ptr, Ty::Ptr)
                     );
                     if !same {

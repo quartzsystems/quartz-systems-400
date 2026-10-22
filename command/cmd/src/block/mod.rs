@@ -634,6 +634,54 @@ pub fn max_len(p: &Parm) -> usize {
     body + usize::from(p.passatr)
 }
 
+/// The bytes a segment holds, read through `fetch(offset, n)` from a
+/// processing program's raw address: the counts inside the block bound
+/// the read, where [`max_len`] is the most there could be.
+pub fn segment_len(p: &Parm, fetch: &mut dyn FnMut(usize, usize) -> Vec<u8>) -> usize {
+    let mut at = usize::from(p.passatr);
+    held(p, fetch, &mut at);
+    at
+}
+
+fn held_count(fetch: &mut dyn FnMut(usize, usize) -> Vec<u8>, at: &mut usize) -> usize {
+    let b = fetch(*at, 2);
+    *at += 2;
+    match b.as_slice() {
+        [h, l] => usize::from(u16::from_be_bytes([*h, *l])),
+        _ => 0,
+    }
+}
+
+fn held(p: &Parm, fetch: &mut dyn FnMut(usize, usize) -> Vec<u8>, at: &mut usize) {
+    let one = |p: &Parm| match &p.ty {
+        ParmType::Qual { .. } => p.items.iter().map(scalar_size).sum(),
+        _ => scalar_size(p),
+    };
+    if p.is_list() {
+        let n = held_count(fetch, at).min(usize::from(p.max).max(1));
+        if matches!(p.ty, ParmType::Elem { .. }) {
+            *at += 2 * n;
+            for _ in 0..n {
+                held_group(p, fetch, at);
+            }
+        } else {
+            *at += n * one(p);
+        }
+        return;
+    }
+    match &p.ty {
+        ParmType::Elem { .. } => held_group(p, fetch, at),
+        _ => *at += one(p),
+    }
+}
+
+fn held_group(p: &Parm, fetch: &mut dyn FnMut(usize, usize) -> Vec<u8>, at: &mut usize) {
+    let n = held_count(fetch, at);
+    for item in p.items.iter().take(n) {
+        held(item, fetch, at);
+    }
+}
+
 fn group_len(p: &Parm) -> usize {
     match &p.ty {
         ParmType::Qual { .. } => p.items.iter().map(scalar_size).sum(),

@@ -1,0 +1,11 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* CALL with constants and variables; the called program is the double. */
+             PGM
+             DCL        VAR(&V) TYPE(*CHAR) LEN(5) VALUE('abc')
+             CALL       PGM(QGPL/CALLPGM2) PARM(&V 'xyz' 7)
+             MONMSG     MSGID(MCH3401 CPF0001) EXEC(SNDPGMMSG MSG('call failed') +
+                          TOPGMQ(*EXT))
+             SNDPGMMSG  MSG('after call') TOPGMQ(*EXT)
+             ENDPGM

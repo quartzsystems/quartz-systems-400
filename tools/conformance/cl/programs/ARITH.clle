@@ -1,0 +1,18 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* Arithmetic: the four operators, precedence, decimals. */
+             PGM
+             DCL        VAR(&A) TYPE(*DEC) LEN(7 2) VALUE(10.5)
+             DCL        VAR(&B) TYPE(*DEC) LEN(7 2) VALUE(3)
+             DCL        VAR(&R) TYPE(*DEC) LEN(15 5)
+             DCL        VAR(&I) TYPE(*INT) LEN(4) VALUE(7)
+             CHGVAR     VAR(&R) VALUE(&A + &B * 2 - 1)
+             SNDPGMMSG  MSG('sum ' *CAT %CHAR(&R)) TOPGMQ(*EXT)
+             CHGVAR     VAR(&R) VALUE((&A + &B) / 4)
+             SNDPGMMSG  MSG('div ' *CAT %CHAR(&R)) TOPGMQ(*EXT)
+             CHGVAR     VAR(&I) VALUE(&I * &I - 1)
+             SNDPGMMSG  MSG('int ' *CAT %CHAR(&I)) TOPGMQ(*EXT)
+             CHGVAR     VAR(&R) VALUE(-&A)
+             SNDPGMMSG  MSG('neg ' *CAT %CHAR(&R)) TOPGMQ(*EXT)
+             ENDPGM

@@ -73,7 +73,7 @@ fn call_lines(out: &str) -> Vec<String> {
             !l.is_empty()
                 && !l.starts_with("call ")
                 && !l.starts_with("Parm ")
-                && !l.starts_with("Exception ")
+                && !l.ends_with("left for the caller.")
                 && !l.starts_with("Program ended")
                 && !l.starts_with(crate::PROMPT.trim_end())
         })
@@ -126,7 +126,12 @@ impl Suite {
             for r in &case.replies {
                 s.command(&format!("svc.rpy {r}"), CMD)?;
             }
-            let out = s.command(&format!("call QGPL/{main} {}", case.parms), CMD)?;
+            let line = if case.parms.is_empty() {
+                format!("call QGPL/{main}")
+            } else {
+                format!("call QGPL/{main} PARM({})", case.parms)
+            };
+            let out = s.command(&line, CMD)?;
             let got = mask_job_number(call_lines(&out));
             let want = mask_job_number(want);
             ran += 1;

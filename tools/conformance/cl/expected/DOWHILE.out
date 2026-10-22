@@ -1,0 +1,12 @@
+console:
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+ext:
+  CPF9898 i=1
+  CPF9898 i=2
+  CPF9898 i=4
+  CPF9898 i=5
+  CPF9898 end 6

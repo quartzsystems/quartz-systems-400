@@ -1,0 +1,13 @@
+console:
+  > CRTLIB LIB(FIXED) TEXT('fixed text')
+  > CRTLIB LIB(WORKLIB) TEXT('made by DIRECT')
+  > DLTLIB LIB(WORKLIB)
+  > CHKOBJ OBJ(QGPL/CUST) OBJTYPE(*FILE) AUT(*USE)
+  > CRTDTAARA DTAARA(QGPL/FLAG) TYPE(*LGL) VALUE(1)
+  > CRTPF FILE(QGPL/NEWPF) RCDLEN(80) SIZE(0 0 0)
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+ext:

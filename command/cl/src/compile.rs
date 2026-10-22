@@ -131,7 +131,7 @@ fn listing(
     out.push(w(format!(
         "{:<40}{}",
         "QS/400 ILE CL compiler",
-        release::full()
+        release::RELEASE
     )));
     out.push(String::new());
     out.push(w(format!(

@@ -1,0 +1,10 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* The program ends with an escape to its caller. */
+             PGM
+             SNDPGMMSG  MSG('about to fail') TOPGMQ(*EXT)
+             SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) MSGDTA('my escape') +
+                          MSGTYPE(*ESCAPE)
+             SNDPGMMSG  MSG('not reached') TOPGMQ(*EXT)
+             ENDPGM

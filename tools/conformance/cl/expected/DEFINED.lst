@@ -1,0 +1,35 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   DEFINED
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   DEFINED
+Text . . . . . . . . . . . . . . :   corpus DEFINED
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* STG(*DEFINED) overlays. */
+        1        0               PGM
+        2        0               DCL        VAR(&DATE) TYPE(*CHAR) LEN(8) VALUE('20261021')
+        3        0               DCL        VAR(&YEAR) TYPE(*CHAR) LEN(4) STG(*DEFINED) DEFVAR(&DATE 1)
+        4        0               DCL        VAR(&MONTH) TYPE(*CHAR) LEN(2) STG(*DEFINED) DEFVAR(&DATE 5)
+        5        0               SNDPGMMSG  MSG(&YEAR *BCAT &MONTH) TOPGMQ(*EXT)
+        6        0               CHGVAR     VAR(&MONTH) VALUE('12')
+        7        0               SNDPGMMSG  MSG(&DATE) TOPGMQ(*EXT)
+        8        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&DATE       *CHAR   8              6  3 4 7
+&MONTH      *CHAR   2              8  5 6
+&YEAR       *CHAR   4              7  5
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program DEFINED created.
+End of compilation.

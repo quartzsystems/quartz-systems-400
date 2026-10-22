@@ -558,6 +558,9 @@ impl Job {
         let frame = |i: Option<usize>| i.map(QueueTarget::Frame).ok_or(Cond::Mch3601);
         match q {
             QueueRef::Same => frame(n.checked_sub(1)),
+            // The first entry's caller is the job itself: its external
+            // queue.
+            QueueRef::Prv if n == 1 => Ok(QueueTarget::Ext),
             QueueRef::Prv => frame(n.checked_sub(2)),
             QueueRef::Up(k) => frame(n.checked_sub(1 + k as usize)),
             QueueRef::CtlBdy => {
@@ -671,14 +674,26 @@ impl Job {
         };
         self.log_message(&m, target);
         self.queue_mut(target).push(m);
-        if msg_type == MsgType::Escape
-            && let QueueTarget::Frame(i) = target
-        {
-            let depth = u32::try_from(i + 1).expect("few frames");
-            let mut e = Exception::message(msgid, msgf, data, depth);
-            e.key = key;
-            self.raised.push(e.clone());
-            crate::except::dispatch(self, &e);
+        if msg_type == MsgType::Escape {
+            match target {
+                QueueTarget::Frame(i) => {
+                    let depth = u32::try_from(i + 1).expect("few frames");
+                    let mut e = Exception::message(msgid, msgf, data, depth);
+                    e.key = key;
+                    self.raised.push(e.clone());
+                    crate::except::dispatch(self, &e);
+                }
+                // The first entry's escape to its caller ends every
+                // entry; the job finds it pending when the call returns.
+                QueueTarget::Ext if !self.act.frames.is_empty() => {
+                    let mut e = Exception::message(msgid, msgf, data, 0);
+                    e.key = key;
+                    self.raised.push(e.clone());
+                    self.exception = Some(e);
+                    self.abi.pending = 1;
+                }
+                _ => {}
+            }
         }
         key
     }

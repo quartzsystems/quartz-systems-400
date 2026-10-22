@@ -1,0 +1,29 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   TFRCTL
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   TFRCTL
+Text . . . . . . . . . . . . . . :   corpus TFRCTL
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* TFRCTL hands control to another program. */
+        1        0               PGM
+        2        0               SNDPGMMSG  MSG('before transfer') TOPGMQ(*EXT)
+        3        0               TFRCTL     PGM(QGPL/OTHER) PARM('x')
+        4        0               SNDPGMMSG  MSG('not reached') TOPGMQ(*EXT)
+        5        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program TFRCTL created.
+End of compilation.

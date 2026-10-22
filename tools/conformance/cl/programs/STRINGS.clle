@@ -1,0 +1,30 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* Character operators and built-ins. */
+             PGM
+             DCL        VAR(&A) TYPE(*CHAR) LEN(10) VALUE('abc')
+             DCL        VAR(&B) TYPE(*CHAR) LEN(10) VALUE('  xyz ')
+             DCL        VAR(&R) TYPE(*CHAR) LEN(40)
+             DCL        VAR(&N) TYPE(*DEC) LEN(5 0)
+             CHGVAR     VAR(&R) VALUE(&A *CAT &B)
+             SNDPGMMSG  MSG('cat  [' *CAT &R *TCAT ']') TOPGMQ(*EXT)
+             CHGVAR     VAR(&R) VALUE(&A *BCAT &B)
+             SNDPGMMSG  MSG('bcat [' *CAT &R *TCAT ']') TOPGMQ(*EXT)
+             CHGVAR     VAR(&R) VALUE(&A *TCAT &B)
+             SNDPGMMSG  MSG('tcat [' *CAT &R *TCAT ']') TOPGMQ(*EXT)
+             CHGVAR     VAR(&R) VALUE(%SST(&A 2 2))
+             SNDPGMMSG  MSG('sst  [' *CAT &R *TCAT ']') TOPGMQ(*EXT)
+             CHGVAR     VAR(&R) VALUE(%TRIM(&B))
+             SNDPGMMSG  MSG('trim [' *CAT &R *TCAT ']') TOPGMQ(*EXT)
+             CHGVAR     VAR(&R) VALUE(%TRIML(&B))
+             SNDPGMMSG  MSG('triml[' *CAT &R *TCAT ']') TOPGMQ(*EXT)
+             CHGVAR     VAR(&R) VALUE(%UPPER(&A))
+             SNDPGMMSG  MSG('upper[' *CAT &R *TCAT ']') TOPGMQ(*EXT)
+             CHGVAR     VAR(&N) VALUE(%LEN(&R))
+             SNDPGMMSG  MSG('len ' *CAT %CHAR(&N)) TOPGMQ(*EXT)
+             CHGVAR     VAR(&N) VALUE(%SCAN('c' &A))
+             SNDPGMMSG  MSG('scan ' *CAT %CHAR(&N)) TOPGMQ(*EXT)
+             CHGVAR     VAR(&N) VALUE(%CHECK(' ' &B))
+             SNDPGMMSG  MSG('check ' *CAT %CHAR(&N)) TOPGMQ(*EXT)
+             ENDPGM

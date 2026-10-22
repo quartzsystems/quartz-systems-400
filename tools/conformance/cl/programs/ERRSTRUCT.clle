@@ -1,0 +1,11 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* Errors: unbalanced groups and a SUBR in the wrong place. */
+             PGM
+             DO
+             IF         COND('1') THEN(DO)
+             ENDDO
+             SUBR       SUBR(S1)
+             ENDSUBR
+             ENDPGM

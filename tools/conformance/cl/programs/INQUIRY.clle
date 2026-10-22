@@ -1,0 +1,14 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/*; dsply: G yes */
+/* SNDUSRMSG with a reply. */
+             PGM
+             DCL        VAR(&REPLY) TYPE(*CHAR) LEN(1)
+             DCL        VAR(&WORD) TYPE(*CHAR) LEN(10)
+             SNDUSRMSG  MSG('Continue? (G C)') VALUES(G C) DFT(C) MSGRPY(&REPLY)
+             SNDPGMMSG  MSG('reply ' *CAT &REPLY) TOPGMQ(*EXT)
+             SNDUSRMSG  MSG('Say something') MSGRPY(&WORD)
+             SNDPGMMSG  MSG('word ' *CAT &WORD) TOPGMQ(*EXT)
+             SNDUSRMSG  MSG('just a note') MSGTYPE(*INFO)
+             ENDPGM

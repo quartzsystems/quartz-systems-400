@@ -1,0 +1,36 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   INQUIRY
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   INQUIRY
+Text . . . . . . . . . . . . . . :   corpus INQUIRY
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /*; dsply: G yes */
+                    /* SNDUSRMSG with a reply. */
+        1        0               PGM
+        2        0               DCL        VAR(&REPLY) TYPE(*CHAR) LEN(1)
+        3        0               DCL        VAR(&WORD) TYPE(*CHAR) LEN(10)
+        4        0               SNDUSRMSG  MSG('Continue? (G C)') VALUES(G C) DFT(C) MSGRPY(&REPLY)
+        5        0               SNDPGMMSG  MSG('reply ' *CAT &REPLY) TOPGMQ(*EXT)
+        6        0               SNDUSRMSG  MSG('Say something') MSGRPY(&WORD)
+        7        0               SNDPGMMSG  MSG('word ' *CAT &WORD) TOPGMQ(*EXT)
+        8        0               SNDUSRMSG  MSG('just a note') MSGTYPE(*INFO)
+        9        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&REPLY      *CHAR   1              7  4 5
+&WORD       *CHAR   10             8  6 7
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program INQUIRY created.
+End of compilation.

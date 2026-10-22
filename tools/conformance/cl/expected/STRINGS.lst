@@ -1,0 +1,54 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   STRINGS
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   STRINGS
+Text . . . . . . . . . . . . . . :   corpus STRINGS
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* Character operators and built-ins. */
+        1        0               PGM
+        2        0               DCL        VAR(&A) TYPE(*CHAR) LEN(10) VALUE('abc')
+        3        0               DCL        VAR(&B) TYPE(*CHAR) LEN(10) VALUE('  xyz ')
+        4        0               DCL        VAR(&R) TYPE(*CHAR) LEN(40)
+        5        0               DCL        VAR(&N) TYPE(*DEC) LEN(5 0)
+        6        0               CHGVAR     VAR(&R) VALUE(&A *CAT &B)
+        7        0               SNDPGMMSG  MSG('cat  [' *CAT &R *TCAT ']') TOPGMQ(*EXT)
+        8        0               CHGVAR     VAR(&R) VALUE(&A *BCAT &B)
+        9        0               SNDPGMMSG  MSG('bcat [' *CAT &R *TCAT ']') TOPGMQ(*EXT)
+       10        0               CHGVAR     VAR(&R) VALUE(&A *TCAT &B)
+       11        0               SNDPGMMSG  MSG('tcat [' *CAT &R *TCAT ']') TOPGMQ(*EXT)
+       12        0               CHGVAR     VAR(&R) VALUE(%SST(&A 2 2))
+       13        0               SNDPGMMSG  MSG('sst  [' *CAT &R *TCAT ']') TOPGMQ(*EXT)
+       14        0               CHGVAR     VAR(&R) VALUE(%TRIM(&B))
+       15        0               SNDPGMMSG  MSG('trim [' *CAT &R *TCAT ']') TOPGMQ(*EXT)
+       16        0               CHGVAR     VAR(&R) VALUE(%TRIML(&B))
+       17        0               SNDPGMMSG  MSG('triml[' *CAT &R *TCAT ']') TOPGMQ(*EXT)
+       18        0               CHGVAR     VAR(&R) VALUE(%UPPER(&A))
+       19        0               SNDPGMMSG  MSG('upper[' *CAT &R *TCAT ']') TOPGMQ(*EXT)
+       20        0               CHGVAR     VAR(&N) VALUE(%LEN(&R))
+       21        0               SNDPGMMSG  MSG('len ' *CAT %CHAR(&N)) TOPGMQ(*EXT)
+       22        0               CHGVAR     VAR(&N) VALUE(%SCAN('c' &A))
+       23        0               SNDPGMMSG  MSG('scan ' *CAT %CHAR(&N)) TOPGMQ(*EXT)
+       24        0               CHGVAR     VAR(&N) VALUE(%CHECK(' ' &B))
+       25        0               SNDPGMMSG  MSG('check ' *CAT %CHAR(&N)) TOPGMQ(*EXT)
+       26        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&A          *CHAR   10             6  6 8 10 12 18 22
+&B          *CHAR   10             7  6 8 10 14 16 24
+&N          *DEC    5 0            9  20 21 22 23 24 25
+&R          *CHAR   40             8  6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program STRINGS created.
+End of compilation.

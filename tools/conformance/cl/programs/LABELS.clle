@@ -1,0 +1,18 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* Labels on groups and ITERATE to a label. */
+             PGM
+             DCL        VAR(&I) TYPE(*INT) LEN(4) VALUE(0)
+             DCL        VAR(&J) TYPE(*INT) LEN(4)
+ LOOP:       DOWHILE    COND(&I *LT 3)
+               CHGVAR     VAR(&I) VALUE(&I + 1)
+               CHGVAR     VAR(&J) VALUE(0)
+               DOWHILE    COND(&J *LT 3)
+                 CHGVAR     VAR(&J) VALUE(&J + 1)
+                 IF         COND(&J *EQ 2) THEN(ITERATE LOOP)
+                 SNDPGMMSG  MSG(%CHAR(&I) *CAT '.' *CAT %CHAR(&J)) TOPGMQ(*EXT)
+               ENDDO
+               SNDPGMMSG  MSG('inner done') TOPGMQ(*EXT)
+             ENDDO
+             ENDPGM

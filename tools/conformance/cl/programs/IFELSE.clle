@@ -1,0 +1,20 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* IF, ELSE, nested groups. */
+             PGM
+             DCL        VAR(&N) TYPE(*DEC) LEN(3 0) VALUE(5)
+             IF         COND(&N *GT 3) THEN(SNDPGMMSG MSG('big') TOPGMQ(*EXT))
+             ELSE       CMD(SNDPGMMSG MSG('small') TOPGMQ(*EXT))
+             IF         COND(&N *LT 3) THEN(DO)
+               SNDPGMMSG  MSG('not here') TOPGMQ(*EXT)
+             ENDDO
+             ELSE       CMD(DO)
+               SNDPGMMSG  MSG('else group') TOPGMQ(*EXT)
+               IF         COND(&N *EQ 5) THEN(DO)
+                 SNDPGMMSG  MSG('nested five') TOPGMQ(*EXT)
+               ENDDO
+             ENDDO
+             IF         COND(&N = 5 *AND *NOT (&N > 9)) THEN(SNDPGMMSG +
+                          MSG('symbols') TOPGMQ(*EXT))
+             ENDPGM

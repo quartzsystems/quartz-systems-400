@@ -1,0 +1,15 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* %BIN both ways. */
+             PGM
+             DCL        VAR(&B2) TYPE(*CHAR) LEN(2)
+             DCL        VAR(&B4) TYPE(*CHAR) LEN(4)
+             DCL        VAR(&N) TYPE(*DEC) LEN(10 0)
+             CHGVAR     VAR(%BIN(&B2)) VALUE(300)
+             CHGVAR     VAR(%BIN(&B4)) VALUE(-70000)
+             CHGVAR     VAR(&N) VALUE(%BIN(&B2))
+             SNDPGMMSG  MSG('b2 ' *CAT %CHAR(&N)) TOPGMQ(*EXT)
+             CHGVAR     VAR(&N) VALUE(%BIN(&B4))
+             SNDPGMMSG  MSG('b4 ' *CAT %CHAR(&N)) TOPGMQ(*EXT)
+             ENDPGM

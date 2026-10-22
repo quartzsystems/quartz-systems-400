@@ -1,0 +1,9 @@
+console:
+  > CHKOBJ OBJ(QGPL/NOPE) OBJTYPE(*FILE)
+raised: CPF9801
+handled: CPF9801
+pending: none
+replies: 
+dump: no
+ext:
+  CPF9898 missing

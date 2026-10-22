@@ -1,0 +1,11 @@
+console:
+  > DLTF FILE(QGPL/NOPE)
+raised: CPF2105 CPF9999 CEE9901
+handled: 
+pending: CEE9901
+replies: C
+dump: no
+ext:
+  CPF9898 before
+  CEE9901 Program UNHANDLED ended because of an unhandled exception CPF2105. Reply C, D, F, G, I or R.
+  CEE9901 Program UNHANDLED ended because of an unhandled exception CPF2105. Reply C, D, F, G, I or R.

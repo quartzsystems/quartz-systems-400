@@ -519,7 +519,17 @@ pub fn run(case: &Case) -> Result<String, String> {
 
 /// Call `main` in a job made by [`job_for`], with the kit's spool and
 /// `KITPRT` attached; the rendered outcome, spooled files included.
-pub fn call(case: &Case, mut job: Box<Job>, main: &str) -> Result<String, String> {
+pub fn call(case: &Case, job: Box<Job>, main: &str) -> Result<String, String> {
+    call_with(case, job, main, &|_| {})
+}
+
+/// [`call`] with a look at the job after the call, before it renders.
+pub fn call_with(
+    case: &Case,
+    mut job: Box<Job>,
+    main: &str,
+    after: &dyn Fn(&mut Job),
+) -> Result<String, String> {
     let spool = KitSpool::default();
     spool
         .0
@@ -533,6 +543,7 @@ pub fn call(case: &Case, mut job: Box<Job>, main: &str) -> Result<String, String
         job.console.push(format!("call failed: {}", c.msgid()));
     }
     job.close_printers();
+    after(&mut job);
     sysapi::uninstall(&job);
     Ok(render(&job, &buffers) + &render_spool(&spool.0.borrow()))
 }

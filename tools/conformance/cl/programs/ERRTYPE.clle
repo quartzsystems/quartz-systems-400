@@ -1,0 +1,11 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* Errors: type mismatches and a bad command parameter. */
+             PGM
+             DCL        VAR(&L) TYPE(*LGL)
+             DCL        VAR(&N) TYPE(*DEC) LEN(5 0)
+             CHGVAR     VAR(&L) VALUE(&N + 1)
+             CRTLIB     LIB(TOOLONGNAME1) TEXT(&N)
+             DCL        VAR(&LATE) TYPE(*CHAR) LEN(1)
+             ENDPGM

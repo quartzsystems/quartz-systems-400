@@ -1,0 +1,34 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   PARMS
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   PARMS
+Text . . . . . . . . . . . . . . :   corpus PARMS
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /*; parms: 'hello     ' 12 */
+                    /* Parameters in and out. */
+        1        0               PGM        PARM(&TEXT &NUM)
+        2        0               DCL        VAR(&TEXT) TYPE(*CHAR) LEN(10)
+        3        0               DCL        VAR(&NUM) TYPE(*DEC) LEN(15 5)
+        4        0               SNDPGMMSG  MSG('got ' *CAT &TEXT *BCAT %CHAR(&NUM)) TOPGMQ(*EXT)
+        5        0               CHGVAR     VAR(&TEXT) VALUE('changed')
+        6        0               CHGVAR     VAR(&NUM) VALUE(&NUM * 2)
+        7        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&NUM        *DEC    15 5           8  1 4 6
+&TEXT       *CHAR   10             7  1 4 5
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program PARMS created.
+End of compilation.

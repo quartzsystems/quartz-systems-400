@@ -1,0 +1,35 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   MONGOTO
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   MONGOTO
+Text . . . . . . . . . . . . . . :   corpus MONGOTO
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /*; fail: CHKOBJ CPF9801 */
+                    /* MONMSG that leaves the statement with GOTO, and the escape left unhandled. */
+        1        0               PGM
+        2        0               CHKOBJ     OBJ(QGPL/NOPE) OBJTYPE(*FILE)
+        3        0               MONMSG     MSGID(CPF9801) EXEC(GOTO MISSING)
+        4        0               SNDPGMMSG  MSG('found') TOPGMQ(*EXT)
+        5        0               RETURN
+        6        0   MISSING:    SNDPGMMSG  MSG('missing') TOPGMQ(*EXT)
+        7        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+
+Label       Defined   Referenced
+MISSING           6   
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program MONGOTO created.
+End of compilation.

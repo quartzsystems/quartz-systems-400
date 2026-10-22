@@ -1,0 +1,35 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   ERRSTRUCT
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   ERRSTRUCT
+Text . . . . . . . . . . . . . . :   corpus ERRSTRUCT
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* Errors: unbalanced groups and a SUBR in the wrong place. */
+        1        0               PGM
+        2        0               DO
+        3        1               IF         COND('1') THEN(DO)
+        4        1               ENDDO
+        5        1               SUBR       SUBR(S1)
+                    * CPD0740 30 SUBR lies inside a group
+        6        1               ENDSUBR
+        7        1               ENDPGM
+                    * CPD0740 30 a DO group is not ended
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+
+Message summary
+  Informational 0   Warning 0   Error 2   Terminal 0
+  CPD0740 30 SUBR lies inside a group  (statement at line 9)
+  CPD0740 30 a DO group is not ended  (statement at line 11)
+
+Program ERRSTRUCT not created: the errors above.
+End of compilation.

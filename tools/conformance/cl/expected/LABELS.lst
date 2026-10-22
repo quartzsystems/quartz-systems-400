@@ -1,0 +1,43 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   LABELS
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   LABELS
+Text . . . . . . . . . . . . . . :   corpus LABELS
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* Labels on groups and ITERATE to a label. */
+        1        0               PGM
+        2        0               DCL        VAR(&I) TYPE(*INT) LEN(4) VALUE(0)
+        3        0               DCL        VAR(&J) TYPE(*INT) LEN(4)
+        4        0   LOOP:       DOWHILE    COND(&I *LT 3)
+        5        1                 CHGVAR     VAR(&I) VALUE(&I + 1)
+        6        1                 CHGVAR     VAR(&J) VALUE(0)
+        7        1                 DOWHILE    COND(&J *LT 3)
+        8        2                   CHGVAR     VAR(&J) VALUE(&J + 1)
+        9        2                   IF         COND(&J *EQ 2) THEN(ITERATE LOOP)
+       10        2                   SNDPGMMSG  MSG(%CHAR(&I) *CAT '.' *CAT %CHAR(&J)) TOPGMQ(*EXT)
+       11        1                 ENDDO
+       12        1                 SNDPGMMSG  MSG('inner done') TOPGMQ(*EXT)
+       13        0               ENDDO
+       14        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&I          *INT    4              6  4 5 10
+&J          *INT    4              7  6 7 8 9 10
+
+Label       Defined   Referenced
+LOOP              4   
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program LABELS created.
+End of compilation.

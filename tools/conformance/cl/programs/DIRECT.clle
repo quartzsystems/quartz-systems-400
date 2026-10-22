@@ -1,0 +1,14 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* Commands on the direct path: constants only, variables patched. */
+             PGM
+             DCL        VAR(&LIB) TYPE(*CHAR) LEN(10) VALUE('WORKLIB')
+             DCL        VAR(&TXT) TYPE(*CHAR) LEN(50) VALUE('made by DIRECT')
+             CRTLIB     LIB(FIXED) TEXT('fixed text')
+             CRTLIB     LIB(&LIB) TEXT(&TXT)
+             DLTLIB     LIB(&LIB)
+             CHKOBJ     OBJ(QGPL/CUST) OBJTYPE(*FILE) AUT(*USE)
+             CRTDTAARA  DTAARA(QGPL/FLAG) TYPE(*LGL) VALUE('1')
+             CRTPF      FILE(QGPL/NEWPF) RCDLEN(80) SIZE(*NOMAX)
+             ENDPGM

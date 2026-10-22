@@ -277,6 +277,18 @@ pub fn analyze_tokens(env: &mut Env<'_>, toks: &Tokens) -> Result<Resolved> {
     })
 }
 
+/// Every parameter of a definition bound to its default, as a call
+/// with nothing given would bind it (required parameters come back
+/// without a value).
+pub fn defaults(env: &mut Env<'_>, def: &CmdDef) -> Vec<Bound> {
+    let mut ctx = bind::Ctx {
+        env,
+        def,
+        diags: Vec::new(),
+    };
+    ctx.bind_all(&[])
+}
+
 /// Follow proxies to the command `name` names; the object and its
 /// library.
 pub fn resolve(env: &mut Env<'_>, name: &str, lib: Option<&str>) -> Result<(CmdObject, String)> {

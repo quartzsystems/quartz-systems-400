@@ -1,0 +1,13 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* Pointers: %ADDRESS and based variables. */
+             PGM
+             DCL        VAR(&BUF) TYPE(*CHAR) LEN(20) VALUE('abcdefghij')
+             DCL        VAR(&P) TYPE(*PTR)
+             DCL        VAR(&VIEW) TYPE(*CHAR) LEN(5) STG(*BASED) BASPTR(&P)
+             CHGVAR     VAR(&P) VALUE(%ADDRESS(&BUF))
+             SNDPGMMSG  MSG('view ' *CAT &VIEW) TOPGMQ(*EXT)
+             CHGVAR     VAR(&VIEW) VALUE('XY')
+             SNDPGMMSG  MSG('buf ' *CAT &BUF) TOPGMQ(*EXT)
+             ENDPGM

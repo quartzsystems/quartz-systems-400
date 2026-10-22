@@ -1,0 +1,13 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* GOTO forward and back. */
+             PGM
+             DCL        VAR(&I) TYPE(*DEC) LEN(3 0) VALUE(0)
+ AGAIN:      CHGVAR     VAR(&I) VALUE(&I + 1)
+             IF         COND(&I *LT 3) THEN(GOTO AGAIN)
+             SNDPGMMSG  MSG('i=' *CAT %CHAR(&I)) TOPGMQ(*EXT)
+             GOTO       CMDLBL(DONE)
+             SNDPGMMSG  MSG('skipped') TOPGMQ(*EXT)
+ DONE:       SNDPGMMSG  MSG('done') TOPGMQ(*EXT)
+             ENDPGM

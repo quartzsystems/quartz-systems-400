@@ -1,0 +1,35 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   DOWHILE
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   DOWHILE
+Text . . . . . . . . . . . . . . :   corpus DOWHILE
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /* DOWHILE with LEAVE and ITERATE. */
+        1        0               PGM
+        2        0               DCL        VAR(&I) TYPE(*DEC) LEN(3 0) VALUE(0)
+        3        0               DOWHILE    COND(&I *LT 10)
+        4        1                 CHGVAR     VAR(&I) VALUE(&I + 1)
+        5        1                 IF         COND(&I *EQ 3) THEN(ITERATE)
+        6        1                 IF         COND(&I *EQ 6) THEN(LEAVE)
+        7        1                 SNDPGMMSG  MSG('i=' *CAT %CHAR(&I)) TOPGMQ(*EXT)
+        8        0               ENDDO
+        9        0               SNDPGMMSG  MSG('end ' *CAT %CHAR(&I)) TOPGMQ(*EXT)
+       10        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&I          *DEC    3 0            6  3 4 5 6 7 9
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program DOWHILE created.
+End of compilation.

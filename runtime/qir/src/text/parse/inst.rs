@@ -29,6 +29,11 @@ pub(crate) fn remap_labels(i: &mut Inst, map: &[Label]) {
             }
             f(default);
         }
+        Inst::Monitor { handlers, .. } => {
+            for h in handlers {
+                f(&mut h.target);
+            }
+        }
         _ => {}
     }
 }

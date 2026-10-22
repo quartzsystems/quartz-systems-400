@@ -1,0 +1,43 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   SIZEPARMS
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   SIZEPARMS
+Text . . . . . . . . . . . . . . :   corpus SIZEPARMS
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /*; parms: 'one' 'two' */
+                    /* %SIZE and %PARMS. */
+        1        0               PGM        PARM(&A &B &C)
+        2        0               DCL        VAR(&A) TYPE(*CHAR) LEN(3)
+        3        0               DCL        VAR(&B) TYPE(*CHAR) LEN(3)
+        4        0               DCL        VAR(&C) TYPE(*CHAR) LEN(3)
+        5        0               DCL        VAR(&D) TYPE(*DEC) LEN(9 2)
+        6        0               DCL        VAR(&N) TYPE(*INT) LEN(4)
+        7        0               CHGVAR     VAR(&N) VALUE(%SIZE(&D))
+        8        0               SNDPGMMSG  MSG('size ' *CAT %CHAR(&N)) TOPGMQ(*EXT)
+        9        0               CHGVAR     VAR(&N) VALUE(%PARMS())
+       10        0               SNDPGMMSG  MSG('parms ' *CAT %CHAR(&N)) TOPGMQ(*EXT)
+       11        0               IF         COND(%PARMS() *GE 3) THEN(SNDPGMMSG MSG(&C) TOPGMQ(*EXT))
+       12        0               ELSE       CMD(SNDPGMMSG MSG('no third') TOPGMQ(*EXT))
+       13        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+&A          *CHAR   3              7  1
+&B          *CHAR   3              8  1
+&C          *CHAR   3              9  1 11
+&D          *DEC    9 2           10  7
+&N          *INT    4             11  7 8 9 10
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program SIZEPARMS created.
+End of compilation.

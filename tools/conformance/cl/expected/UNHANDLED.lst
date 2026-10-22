@@ -1,0 +1,30 @@
+QS/400 ILE CL compiler                  V1R0M0
+
+Program  . . . . . . . . . . . . :   UNHANDLED
+Source file  . . . . . . . . . . :   QGPL/QCLSRC
+Source member  . . . . . . . . . :   UNHANDLED
+Text . . . . . . . . . . . . . . :   corpus UNHANDLED
+Options  . . . . . . . . . . . . :   *XREF *GEN *NOSECLVL
+Debugging view . . . . . . . . . :   *STMT
+Activation group . . . . . . . . :   *CALLER
+
+Statement  Nesting  Source
+                    /* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+                    /* licensed under the terms of the MIT license which can be found in the  */
+                    /* root directory of this project.                                       */
+                    /*; fail: DLTF CPF2105 */
+                    /* An escape nobody monitors becomes a function check. */
+        1        0               PGM
+        2        0               SNDPGMMSG  MSG('before') TOPGMQ(*EXT)
+        3        0               DLTF       FILE(QGPL/NOPE)
+        4        0               SNDPGMMSG  MSG('after') TOPGMQ(*EXT)
+        5        0               ENDPGM
+
+Cross-reference
+Variable    Type    Length  Declared  Referenced
+
+Message summary
+  Informational 0   Warning 0   Error 0   Terminal 0
+
+Program UNHANDLED created.
+End of compilation.

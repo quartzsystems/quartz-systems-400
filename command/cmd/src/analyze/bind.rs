@@ -7,7 +7,7 @@
 //! replacements, defaults where nothing was given.
 
 use super::{Bound, Env, conv, default_tokens, expr, is_elem, is_qual, positional_ok};
-use crate::def::{CmdDef, Parm, Special};
+use crate::def::{CmdDef, Parm, ParmType, Special};
 use crate::error::Diag;
 use crate::token::{Sel, Tok};
 use crate::value::Value;
@@ -229,7 +229,22 @@ impl Ctx<'_, '_> {
         if parm.ty == crate::def::ParmType::CmdStr {
             return self.cmdstr(parm, kwd, toks);
         }
-        if !parm.expr {
+        // Character, numeric and logical scalars take an expression
+        // whether or not the definition says `EXPR(*YES)`: IBM's own
+        // definitions say it nearly everywhere, ours leave it out
+        // (see `docs/CMD_OPEN_QUESTIONS.md`).
+        let takes_expr = parm.expr
+            || !matches!(
+                parm.ty,
+                ParmType::Elem { .. }
+                    | ParmType::Qual { .. }
+                    | ParmType::Null
+                    | ParmType::ZeroElem
+                    | ParmType::Cmd
+                    | ParmType::CmdStr
+                    | ParmType::X
+            );
+        if !takes_expr {
             self.bad(
                 "CPD0016",
                 kwd,

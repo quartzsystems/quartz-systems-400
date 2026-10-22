@@ -1,0 +1,15 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* RETURN inside a group leaves the program. */
+             PGM
+             DCL        VAR(&I) TYPE(*INT) LEN(4) VALUE(0)
+             DOWHILE    COND('1')
+               CHGVAR     VAR(&I) VALUE(&I + 1)
+               IF         COND(&I *EQ 4) THEN(DO)
+                 SNDPGMMSG  MSG('leaving at ' *CAT %CHAR(&I)) TOPGMQ(*EXT)
+                 RETURN
+               ENDDO
+             ENDDO
+             SNDPGMMSG  MSG('not reached') TOPGMQ(*EXT)
+             ENDPGM
