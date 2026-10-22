@@ -14,9 +14,9 @@ Test: `CRTPF` a field `L DATFMT(*MDY) DATSEP(*JOB)` and see whether the
 compile fails and, if not, what `DSPFFD` reports as the separator.
 
 **Binary fields of 10 to 18 digits.** Accepted and stored in 8 bytes
-(`B 1-4` is 2 bytes, `5-9` is 4). Test: `CRTPF` with `B 18 0`, then
-`DSPFFD` for the buffer length, and write `99999999999999999` through
-RPG to see what the record holds.
+(`B 1-4` is 2 bytes, `5-9` is 4); the 2026-10-22 capture's `DSPFFD`
+agrees (`FB18 B 18` has buffer length 8). What the record holds after
+RPG writes `99999999999999999` still needs an RPG compiler.
 
 **Floating point longer than 9 digits without FLTPCN.** Error DDS1032:
 `*SINGLE` is the default and takes at most 9 digits. Test: `CRTPF` with
@@ -240,12 +240,33 @@ with two duplicates and note the completion message counts.
 1.00, 2.00, ... and dated 0. Test: `CPYF` from a data file into a source
 file and `DSPPFM` the sequence and date columns.
 
-**`CPYTOIMPF` defaults.** `RCDDLM(*EOR)` writes CR LF; `RMVBLANK(*NONE)`
-keeps a character field at its full length; a null field under
-`NULLS(*NO)` is written as its stored bytes (blanks, zero, an empty
-`VARLEN`); under `NULLS(*YES)` it is empty and unquoted. Dates and
-times are written as stored unless `DATFMT`/`TIMFMT` convert them.
-Test: `CPYTOIMPF` of a file with a null date and compare the stream file.
+**`CPYTOIMPF` defaults.** Settled by the 2026-10-22 capture where the
+kit exercises them: a null date or text field is written empty and
+unquoted, a character field keeps its full length, dates and times
+follow `DATFMT`/`TIMFMT`, and a hexadecimal (`H`) field's bytes are
+written unconverted (`C1 C2 C3 C4` reads as `ÁÂÃÄ` in Latin-1), which
+`CPYFRMIMPF` does not mirror: it converts the text into the field as
+for a character field. The machine pads numbers to their field width
+and writes `.00` for zero, which the comparer reads by value. Still
+unseen: `RCDDLM(*EOR)`, `RMVBLANK(*NONE)` and `NULLS(*NO)`.
+
+**`TIMFMT(*USA)` keeps its seconds.** Settled by the capture: a `*USA`
+time field exported with `TIMFMT(*ISO)` shows the seconds it was loaded
+with. Here the field stores `hh:mm:ss` and renders `hh:mm AM` on the
+way out of `CPYTOIMPF`, `DSPPFM` and SQL. Open: what an RPG program
+sees in the record buffer of a `*USA` field (here `hh:mm:ss`; the
+machine shows `hh:mm AM`, so its storage is not the buffer form). Test:
+an RPG program dumping the buffer of `EVENTS`, once there is a compiler.
+
+**`DSPFFD` digits of a character field.** Settled: `WHFLDD` is 0 for a
+character, hexadecimal, graphic, date, time or timestamp field, the
+length being `WHFLDB`; the kit's `ffd.csv` says so.
+
+**Record format level identifiers.** The machine's `RFID` is a hash of
+its own (undocumented); ours is the SHA-256-based one of
+`DB_FORMAT.md` §5. The kit reports the difference as a note. Test:
+none settles an algorithm; a program whose `LVLCHK` was bound on the
+machine fails its level check here.
 
 **`CPYFRMIMPF` and `VARLEN`.** Trailing blanks of a `VARLEN` field are
 dropped, so a `*FIXED` import gives the data length, not the column
@@ -432,19 +453,25 @@ out differently. Test: none.
 
 ## Conformance kit
 
-**Compared outputs.** `tools/conformance/db/expected/` is empty until the kit
-has run on a machine; the comparer skips a missing file. Journal entries
-compare on the record entries (`R`) only, by type, object and count,
-since the machine's sequence numbers and its `J` entries are its own.
-Field descriptions compare on name, type, digits, decimals, bytes,
-position and null capability through the `QADSPFFD` columns.
+**Compared outputs.** `tools/conformance/db/expected/` holds the
+2026-10-22 capture from IBM i 7.1 (no RPG compiler: `rla.csv`,
+`rla.log`, `dspjrn.csv` and the files the script rewrites are missing
+and skipped). Journal entries compare on the record entries (`R`) only,
+by type, object and count, since the machine's sequence numbers and its
+`J` entries are its own. Field descriptions compare on name, type,
+digits (0 for non-numeric), decimals, bytes, position and null
+capability through the `QADSPFFD` columns; the level identifiers are
+noted, not compared. Every data file and query the box produced
+matches.
 
 **The oracle program.** `RLATEST.RPGLE` is generated from the script. A
 file the script opens for `UPDATE` is declared with `*delete` too, every
 file with `alwnull(*usrctl)`, and a `WRITE` sets the null indicator of
 every null-capable field it does not assign. `%status`, `%found`,
 `%equal` and `%eof` are logged after every operation; whether `%equal`
-is reset by a `READ` on the machine is to be seen from `rla.csv`.
+is reset by a `READ` on the machine is to be seen from `rla.csv`. The
+2026-10-22 box had no RPG compiler, so the record-level, journal and
+commitment control entries above wait for one.
 
 **Dates in the exports.** The machine's `CPYTOIMPF` writes dates in the
 field's format unless `DATFMT` is given; the CL gives `*ISO` on every

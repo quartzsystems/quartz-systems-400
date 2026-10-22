@@ -299,7 +299,7 @@ is `1 + record_len + null_map_len`.
 | Offset | Size | Field | Notes |
 |---|---|---|---|
 | 0 | 1 | status | 0 never written, 1 active, 2 deleted |
-| 1 | record_len | record | the record, every field at its format offset; a `VARLEN` field is its 2-byte length then its bytes, blank padded to the maximum |
+| 1 | record_len | record | the record, every field at its format offset; a `VARLEN` field is its 2-byte length then its bytes, blank padded to the maximum; a date or time field holds its text in the field's format, except that a `TIMFMT(*USA)` time holds `hh:mm:ss` (the machine keeps the seconds `hh:mm AM` has no room for) |
 | 1 + record_len | null_map_len | null_map | bit `null_index` of each null-capable field set when it is null |
 
 `TODO(perf)`: a `VARLEN` field is stored at its maximum length; the
@@ -315,7 +315,11 @@ CP037), the DDS type letter (1, ASCII), `length` (4, big-endian),
 digits the level check compares and `DSPFD` shows. The format name and
 text are not part of it. Every path that makes a format (DDS, SQL DDL,
 later RPG) calls the one function; the algorithm does not change within
-V1R.
+V1R. IBM's identifier for the same DDS is a different, undocumented
+hash (the 2026-10-22 capture shows `2D5B350355447` where this gives
+`63630AC565408` for `CUSTOMER`); the kit reports the difference as a
+note, and a program bound against a machine's level identifiers fails
+its level check here.
 
 ## 6. Access paths
 

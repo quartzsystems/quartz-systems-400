@@ -329,7 +329,12 @@ impl Local {
                         f.name,
                         x.name,
                         x.data_type,
-                        x.length,
+                        // `WHFLDD`: digits, 0 for a character field.
+                        if matches!(x.data_type, 'A' | 'H' | 'G' | 'O' | 'L' | 'T' | 'Z' | 'J' | 'E') {
+                            0
+                        } else {
+                            x.length
+                        },
                         x.decimals,
                         x.byte_len,
                         x.position,

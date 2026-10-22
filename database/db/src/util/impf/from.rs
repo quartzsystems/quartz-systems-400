@@ -161,7 +161,7 @@ fn field_value(f: &FieldDef, text: &str, opts: &ImpfOpts) -> Result<Value> {
         DataType::Time => {
             let own = f.time_fmt.unwrap_or_default();
             let t = Time::parse(text, opts.timfmt.unwrap_or(own)).ok_or_else(|| bad(f, text))?;
-            t.render(own, f.time_sep)
+            t.stored(own, f.time_sep)
         }
         // A VARLEN field keeps no trailing blanks: its length is the data.
         _ if f.varlen.is_some() => text.trim_end().to_string(),

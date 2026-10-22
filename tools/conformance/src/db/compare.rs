@@ -22,6 +22,9 @@ pub struct Comparison {
     pub missing: Vec<String>,
     /// Files that differ, with the first difference.
     pub mismatched: Vec<(String, String)>,
+    /// Files compared apart from a column that is the machine's own
+    /// (the record format level identifiers), and what that was.
+    pub noted: Vec<(String, String)>,
 }
 
 impl Comparison {
@@ -37,6 +40,9 @@ impl Comparison {
         }
         for (m, why) in &self.mismatched {
             let _ = writeln!(out, "  DIFFERS  {m}: {why}");
+        }
+        for (m, why) in &self.noted {
+            let _ = writeln!(out, "  noted    {m}: {why}");
         }
         out
     }
@@ -82,7 +88,11 @@ fn aliases(file: &str) -> &'static [(&'static str, &'static str)] {
 
 /// Columns compared by position only, never by value (sequence numbers
 /// and cycle identifiers are the machine's own).
-const UNCOMPARED: &[&str] = &["SEQ", "CYCLE"];
+const UNCOMPARED: &[&str] = &["SEQ", "CYCLE", "LEVELID"];
+
+/// Columns compared apart: the machine's own identifiers, reported
+/// as a note when they differ rather than a mismatch.
+const NOTED: &[(&str, &str)] = &[("lvlid.csv", "LEVELID")];
 
 /// Parse CSV: quoted fields with doubled quotes, comma separated.
 fn parse_csv(text: &str) -> Vec<Vec<String>> {
@@ -261,11 +271,27 @@ pub fn compare(ours: &Path, expected: &Path) -> Comparison {
             compare_table(&rel, &a, &b)
         };
         match result {
-            Ok(()) => c.matched.push(rel),
+            Ok(()) => {
+                if let Some((_, col)) = NOTED.iter().find(|(f, _)| *f == rel)
+                    && let Err(why) = compare_table_column(&rel, col, &a, &b)
+                {
+                    c.noted.push((rel.clone(), why));
+                }
+                c.matched.push(rel);
+            }
             Err(why) => c.mismatched.push((rel, why)),
         }
     }
     c
+}
+
+/// Compare one column of a header table on its own.
+fn compare_table_column(file: &str, column: &str, ours: &str, theirs: &str) -> Result<(), String> {
+    let a = parse_csv(ours);
+    let b = parse_csv(theirs);
+    let pa = project(&a, &[column], &[])?;
+    let pb = project(&b, &[column], aliases(file))?;
+    compare_rows(&pa, &pb).map_err(|e| format!("{column} is the machine's own: {e}"))
 }
 
 fn walk(root: &Path, dir: &Path, out: &mut Vec<String>) {
@@ -304,7 +330,11 @@ mod tests {
         let ours = "FILE,FORMAT,LEVELID\nCUSTOMER,CUSREC,3A1B2C3D4E5F6\n";
         let theirs = "RFFILE,RFLIB,RFNAME,RFID\nCUSTOMER,QSTEST,CUSREC,3A1B2C3D4E5F6\n";
         assert!(compare_table("lvlid.csv", ours, theirs).is_ok());
-        let wrong = "RFFILE,RFLIB,RFNAME,RFID\nCUSTOMER,QSTEST,CUSREC,0\n";
+        // The level identifier is the machine's own: noted, not compared.
+        let other_id = "RFFILE,RFLIB,RFNAME,RFID\nCUSTOMER,QSTEST,CUSREC,0\n";
+        assert!(compare_table("lvlid.csv", ours, other_id).is_ok());
+        assert!(compare_table_column("lvlid.csv", "LEVELID", ours, other_id).is_err());
+        let wrong = "RFFILE,RFLIB,RFNAME,RFID\nCUSTOMER,QSTEST,OTHER,3A1B2C3D4E5F6\n";
         assert!(compare_table("lvlid.csv", ours, wrong).is_err());
     }
 

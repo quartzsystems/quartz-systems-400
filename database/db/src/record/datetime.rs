@@ -229,6 +229,17 @@ impl Time {
         )
     }
 
+    /// The text a field of `fmt` stores. `*USA` is `hh:mm:ss`: the
+    /// machine keeps a `*USA` time's seconds, which `hh:mm AM` has no
+    /// room for; every other format stores its rendering.
+    #[must_use]
+    pub fn stored(self, fmt: TimeFmt, sep: Option<char>) -> String {
+        if fmt == TimeFmt::Usa {
+            return format!("{:02}:{:02}:{:02}", self.hour, self.minute, self.second);
+        }
+        self.render(fmt, sep)
+    }
+
     /// Render in `fmt` with `sep` (`:` when the format has none and
     /// none is given).
     #[must_use]
@@ -313,5 +324,10 @@ mod tests {
             "12:00 AM"
         );
         assert!(Time::parse("24:00:00", TimeFmt::Hms).is_none());
+        // A *USA field stores its seconds and reads them back.
+        let t = Time::new(13, 5, 9).unwrap();
+        assert_eq!(t.stored(TimeFmt::Usa, None), "13:05:09");
+        assert_eq!(Time::parse("13:05:09", TimeFmt::Usa), Some(t));
+        assert_eq!(t.stored(TimeFmt::Hms, Some('.')), "13.05.09");
     }
 }
