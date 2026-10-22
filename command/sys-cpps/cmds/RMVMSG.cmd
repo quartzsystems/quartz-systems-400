@@ -8,7 +8,7 @@
              PARM       KWD(PGMQ) TYPE(E1) +
                           PROMPT('Call stack entry message queue')
              PARM       KWD(MSGQ) TYPE(Q1) PROMPT('Message queue')
-             PARM       KWD(MSGKEY) TYPE(*CHAR) LEN(4) +
+             PARM       KWD(MSGKEY) TYPE(*CHAR) LEN(8) +
                           PROMPT('Message key')
              PARM       KWD(CLEAR) TYPE(*CHAR) LEN(10) RSTD(*YES) +
                           DFT(*BYKEY) VALUES(*BYKEY *ALL *KEEPUNANS +

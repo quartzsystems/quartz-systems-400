@@ -14,7 +14,7 @@
                           DFT(*ANY) VALUES(*ANY *NEXT *PRV *INFO *INQ +
                           *RPY *COMP *DIAG *NOTIFY *COPY *EXCP *FIRST +
                           *LAST *RQS) PROMPT('Message type')
-             PARM       KWD(MSGKEY) TYPE(*CHAR) LEN(4) DFT(*NONE) +
+             PARM       KWD(MSGKEY) TYPE(*CHAR) LEN(8) DFT(*NONE) +
                           SPCVAL((*NONE) (*TOP)) PROMPT('Message key')
              PARM       KWD(WAIT) TYPE(*DEC) LEN(7 0) DFT(0) +
                           RANGE(0 9999999) SPCVAL((*MAX -1)) +

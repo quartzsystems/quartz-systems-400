@@ -5,7 +5,7 @@
 /* SNDRPYMSG: answer an inquiry message by its key. */
              CMD        PROMPT('Send Reply Message') MAXPOS(2) +
                           ALLOW(*ALL) HLPPNLGRP(QHMHCMD) HLPID(SNDRPYMSG)
-             PARM       KWD(MSGKEY) TYPE(*CHAR) LEN(4) MIN(1) +
+             PARM       KWD(MSGKEY) TYPE(*CHAR) LEN(8) MIN(1) +
                           PROMPT('Message key')
              PARM       KWD(MSGQ) TYPE(Q1) MIN(1) PROMPT('Message queue')
              PARM       KWD(RPY) TYPE(*CHAR) LEN(132) DFT(*DFT) +
