@@ -4,10 +4,11 @@
 
 //! UIM for QS/400: the panel-group tag language as `CRTPNLGRP` and
 //! `CRTMNU TYPE(*UIM)` read it, the model a renderer walks, the
-//! checks, the listing, the `*PNLGRP` payload and the panel renderer
-//! ([`render`]).
+//! checks, the listing, the `*PNLGRP` payload, the panel renderer
+//! ([`render`]) and the dialog engine ([`engine`]) that shows panels on
+//! a [`engine::Terminal`].
 //!
-//! The crate never renders and never touches the store. Imbedded
+//! The crate makes no data stream and never touches the store. Imbedded
 //! members come through [`Imbed`] and the names other groups export
 //! through [`Imports`]; [`MapImbeds`] and [`MapImports`] serve tests.
 //! `docs/UIM.md` is the reference.
@@ -17,6 +18,7 @@
 
 pub mod compile;
 pub mod diag;
+pub mod engine;
 pub mod expr;
 pub mod lex;
 pub mod listing;

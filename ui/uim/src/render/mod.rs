@@ -17,11 +17,18 @@ mod keys;
 mod layout;
 mod list;
 mod menu;
+mod print;
 mod screen;
+mod window;
 
 pub use dialog::{Dialog, ListState, MapDialog};
+pub use doc::link_target;
+pub use help::{FULL_KEYS, HelpPart, HelpView, HelpWindow, help_lines, help_title, render_view};
+pub use print::render_print;
+pub use window::{frame, is_window, place, place_popup, render_window};
 pub use layout::options_prompt;
-pub use screen::{Attr, Field, More, Screen, Target, Text};
+pub use list::{position_columns, position_var};
+pub use screen::{Attr, Field, HelpArea, More, Screen, Target, Text};
 
 use ctx::Ctx;
 
@@ -98,10 +105,20 @@ pub fn render(
     let p = group
         .panel(panel)
         .ok_or_else(|| RenderError::NoPanel(panel.to_string()))?;
-    let cols = p.width as usize;
-    if cols > 80 && !opts.wide {
+    if p.width > 80 && !opts.wide {
         return Err(RenderError::TooWide(p.name.clone()));
     }
+    render_sized(group, p, dialog, opts)
+}
+
+/// Render a panel at its own size.
+pub(crate) fn render_sized(
+    group: &PanelGroup,
+    p: &Panel,
+    dialog: &dyn Dialog,
+    opts: &Options,
+) -> Result<Screen, RenderError> {
+    let cols = p.width as usize;
     let keyl = group
         .key_list(&p.keyl)
         .ok_or_else(|| RenderError::NoKeyList(p.keyl.clone()))?;
@@ -109,8 +126,13 @@ pub fn render(
         group,
         dialog,
         opts,
+        window: is_window(p),
     };
     let mut s = Screen::new(p.depth as usize, cols);
+    // F1 where nothing more specific is: the panel's help.
+    for r in 1..=s.rows {
+        s.help(r, 1, cols, p.help.as_deref());
+    }
 
     // R1, R2: the title block.
     let title = ctx.text(&p.title);
@@ -169,6 +191,7 @@ pub fn condition(group: &PanelGroup, dialog: &dyn Dialog, name: &str) -> bool {
         group,
         dialog,
         opts: &opts,
+        window: false,
     };
     ctx.cond(Some(name))
 }
@@ -192,6 +215,7 @@ fn bottom_block(ctx: &Ctx, p: &Panel, keyl: &KeyList, s: &mut Screen) -> usize {
         for (col, text) in row {
             s.put(key_top + i, *col, Attr::Blue, text);
         }
+        s.help(key_top + i, 1, s.cols, keyl.help.as_deref());
     }
     let botinst = p.areas.iter().find_map(|a| match a {
         Area::BotInst(t) => Some(ctx.text(t)),

@@ -1,0 +1,24 @@
+ Help                       Work with Objects - Help                            
+                                                                                
+     more parameter values.  When you type parameters and select more           
+     than one option, the parameters are used for all of the options you        
+     type.                                                                      
+                                                                                
+     To run a command immediately, type the command on the command line         
+     and press the Enter key.  For assistance in entering the command,          
+     type the command and press F4 (Prompt).                                    
+                                                                                
+     If you see More... in the bottom right corner of your display, there       
+     is more information to view.  Press the Page Down (or Roll Up) key         
+     to move toward the end of the information.  Press the Page Up (or          
+     Roll Down) key to move toward the beginning of the information.            
+                                                                                
+     If you see Bottom instead of More..., you are at the end of the            
+     information.                                                               
+                                                                                
+ Options                                                                        
+                                                                                
+                                                                        More... 
+ F3=Exit help   F10=Move to top   F12=Cancel   F13=Information Assistant        
+ F14=Print help                                                                 
+                                                                                

@@ -39,6 +39,7 @@ cmd = { path = "../../command/cmd", version = "0.1.0" }
 cl = { path = "../../command/cl", version = "0.1.0" }
 sys-cpps = { path = "../../command/sys-cpps", version = "0.1.0" }
 tn5250 = { path = "../../ui/tn5250", version = "0.1.0" }
+uim = { path = "../../ui/uim", version = "0.1.0" }
 tn5250-driver = { path = "../tn5250-driver", version = "0.1.0" }
 
 [lints]

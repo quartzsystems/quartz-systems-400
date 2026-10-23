@@ -1,0 +1,24 @@
+                            Work with User Profiles                             
+                                                                                
+ Type options, press Enter.                                                     
+   N=Create   N=Change   N=Copy   N=Delete   N=Display                          
+   N =Work with objects by owner                                                
+                                                                                
+      User                                                                      
+ Opt  Profile     Text                                                          
+                                                                                
+      USERNAME    Wellman,Cody                                                  
+      ENGMTZ      Mohammed,Moataz                                               
+      QDBSHR      Internal Data Base User Profile                               
+      QDBSHRDO    Internal Data Base User Profile                               
+      QTMPLPD     ALLOW REMOTE LPR REQUESTERS                                   
+      SANDEP981   Anonym,sandeep                                                
+      VENSUJA     Prakash,Suja                                                  
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Parameters for options N, N, N, N and N or command                             
+ ===>                                                                           
+ F3=Exit   F5=Refresh   F12=Cancel   F16=Repeat position to   F17=Position to   
+ F21=Select assistance level         F24=More keys                              
+                                                                                

@@ -46,7 +46,7 @@ fn escape(j: &mut Job, f: &ApiFail) {
 /// hook (the analyzer), or the provider when the job has none. Mode 0
 /// runs, 1 checks, 2 prompts then runs, 3 prompts and returns the
 /// string.
-fn command(j: &mut Job, p: &mut dyn Provider, text: &str, mode: u8) -> Result<String, ApiFail> {
+pub(crate) fn command(j: &mut Job, p: &mut dyn Provider, text: &str, mode: u8) -> Result<String, ApiFail> {
     if text.trim().is_empty() {
         return Err(ApiFail::id("CPF0006"));
     }

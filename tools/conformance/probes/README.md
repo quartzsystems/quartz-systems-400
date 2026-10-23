@@ -34,6 +34,8 @@ panel shows values that change between runs.
 | `work2-panels.tn` | panels batch 2: `WRKSBMJOB`, `WRKDSKSTS`, `WRKOUTQD`, `DSPSPLF` and its keys and `Control` line, `WRKLIB`, `WRKOBJLCK`, `DSPPFM` (F10 side-by-side hex, F11 vertical hex, F20, F24), `WRKJRN`, `DSPOVR`, `WRKSBSD`, the third `WRKACTJOB` key page (2026-10-23: `WRKSHRPOOL`, `WRKSYSSTS`, `WRKSYSACT`, `WRKPRB` and the `QPGMR` group refused; no `QSQJRN` in the user's library, so no `WRKJRNA`, `DSPJRN`, `DSPJRNRCVA`) |
 | `work2-wide.tn` | `WRKACTJOB` at a 27x132 display (`--model m3477`; 2026-10-23: pub400 drew the 80-column panel, snapshots dropped) |
 | `batch8-system2.tn` | `DSPPGM` (OPM and ILE, displays 1 to 5), `DSPSRVPGM` (1 to 5), `DSPPGMREF`, `DSPBNDDIR`, `DSPCMD`, `WRKDEVD`, `WRKHDWRSC`, `DSPUSRPRF` `TYPE(*OBJAUT *OBJOWN *OBJPGP *CMDAUT *DEVAUT)`, `EDTLIBL`, `EDTOBJAUT` with F11 and F6 (displayed only); refused there: `DSPHDWRSC`, `DSPPTF`, `DSPAUDJRNE`, `CHGRPYLE`, and `DSPAUTLOBJ`/`EDTAUTL` (no list of that name) |
+| `batch8-uim.tn` | the UIM engine's displays on `WRKOBJ`: field help, extended help, keys help, F1 on the title, an option that is not valid; `WRKUSRPRF`, `WRKMSGF` |
+| `batch9-uimpos.tn` | the F17 position-to windows of `WRKOBJ` and `WRKUSRPRF` |
 
 A command the pub400 account is not authorized to (`WRKSYSSTS`,
 `WRKOUTQ`, `WRKJOBQ`, `WRKJOBSCDE`, `WRKSYSVAL`) leaves a message

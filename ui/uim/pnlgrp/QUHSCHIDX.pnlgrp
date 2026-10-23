@@ -1,0 +1,63 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* The help search index: F11 in help asks for words, then lists the
+.* topics of the panel group's *SCHIDX they find. The dialog engine
+.* fills TOPICS and shows a topic's help module for option 5.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=WORDSCL BASETYPE='CHAR 50'.
+:ECLASS.
+:CLASS NAME=TOPICCL BASETYPE='CHAR 70'.
+:ECLASS.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=SCHIDX CLASS=NAMECL.
+:VAR NAME=WORDS CLASS=WORDSCL.
+:VAR NAME=TOPIC CLASS=TOPICCL.
+:LISTDEF NAME=TOPICS VARS='OPT TOPIC'.
+:KEYL NAME=SCHKEYS HELP=SCHKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit help
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=SEARCH KEYL=SCHKEYS HELP=SEARCH ENTER='RETURN 1' TOPSEP=SYSNAM.Search Help Index
+:TOPINST.Type the words to look for, press Enter.  Leave them blank for every topic.
+:DATA DEPTH='*'.
+:DATAI VAR=SCHIDX USAGE=OUTPUT.Search index
+:DATAI VAR=WORDS USAGE=INPUT HELP=WORDS.Words to search for
+:EDATA.
+:EPANEL.
+:PANEL NAME=TOPICS KEYL=SCHKEYS HELP=TOPICS ENTER='RETURN 1' TOPSEP=SYSNAM.Search Help Index
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=TOPICS.No topic has these words.
+:LISTACT OPTION=5 ENTER='RETURN 5'.5=Display topic
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=TOPIC USAGE=OUTPUT.Topic
+:ELIST.
+:EPANEL.
+:HELP NAME=SEARCH.Search Help Index
+:P.The help of a panel group can be gathered in a search index. Type
+one or more words here; the topics whose index words begin with any
+of them are listed next, and option 5 shows a topic's help.
+:EHELP.
+:HELP NAME=WORDS.Words to search for
+:P.One or more words, separated by blanks. A topic is listed when one
+of its index words begins with one of them.
+:EHELP.
+:HELP NAME=TOPICS.Search Help Index topics
+:P.The topics found. Type 5 next to a topic and press Enter to read
+its help; F12 goes back to the words.
+:EHELP.
+:HELP NAME=SCHKEYS.Function keys
+:P.F3 leaves help, F12 goes back one display.
+:EHELP.
+:EPNLGRP.

@@ -67,7 +67,7 @@ QS/400 UIM compiler
       **  UIM2004 20  Condition NOCOND is not defined
   003900              :EKEYL.
   004000              :PANEL NAME=P1 KEYL=NOKEYL HELP=NOHELP DEPTH=25 WIDTH=80.Errors
-      **  UIM3003 20  Panel size 25x80 is not one of 24x80, 27x132 or 24x132
+      **  UIM3003 20  Panel size 25x80 is not a screen (24x80, 27x132 or 24x132) or a pop-up window (5 to 25 rows, 20 to 128 columns)
       **  UIM1011 20  Area depths add up to 42 lines; the panel has 22 for areas
       **  UIM2005 20  Key list NOKEYL is not defined
       **  UIM2006 20  Help module NOHELP is not defined
@@ -179,7 +179,7 @@ QS/400 UIM compiler
   003700  UIM2007 20  Panel NOPANEL is not defined
   003800  UIM2006 20  Help module NOHELP is not defined
   003800  UIM2004 20  Condition NOCOND is not defined
-  004000  UIM3003 20  Panel size 25x80 is not one of 24x80, 27x132 or 24x132
+  004000  UIM3003 20  Panel size 25x80 is not a screen (24x80, 27x132 or 24x132) or a pop-up window (5 to 25 rows, 20 to 128 columns)
   004000  UIM1011 20  Area depths add up to 42 lines; the panel has 22 for areas
   004000  UIM2005 20  Key list NOKEYL is not defined
   004000  UIM2006 20  Help module NOHELP is not defined

@@ -1,0 +1,24 @@
+ Help                            Options - Help                                 
+                                                                                
+         (RNMOBJ) command.                                                      
+                                                                                
+     N=Display description                                                      
+         Displays the names and   attributes of the selected objects            
+         using the   Display Object Description (DSPOBJD) command.              
+                                                                                
+     N =Change description                                                      
+         Changes the text that describes the object using the   Change          
+         Object Description (CHGOBJD) command.                                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F2=Extended help   F3=Exit help   F10=Move to top   F12=Cancel                 
+ F13=Information Assistant         F14=Print help                               
+ Function key not allowed.                                                      

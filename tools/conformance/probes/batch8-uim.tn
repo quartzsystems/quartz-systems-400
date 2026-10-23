@@ -1,0 +1,73 @@
+# Batch 8: the UIM engine's own displays on a shipped list panel:
+# field help (full screen for this profile: its help is not in a
+# window), its second page and keys, the extended help, the function
+# keys' help, F1 on the title, an option that is not valid, the F17
+# position-to window; WRKUSRPRF and WRKMSGF as further list
+# panels. Nothing is changed: every panel is left with F3 or F12.
+wait "Main Menu"
+continue
+timeout 60000
+type wrkobj qgpl/*all
+key enter
+wait "Work with Objects"
+cursor 8 3
+key f1
+settle 1200
+snap uim-help-field +number
+key pgdn
+settle 800
+snap uim-help-field-2 +number
+key f24
+settle 800
+snap uim-help-field-f24 +number
+key f2
+settle 1200
+snap uim-exthelp +number
+key pgdn
+settle 800
+snap uim-exthelp-2 +number
+key f3
+wait "Work with Objects"
+cursor 22 3
+key f1
+settle 1200
+snap uim-help-keys +number
+key f3
+wait "Work with Objects"
+cursor 1 40
+key f1
+settle 1200
+snap uim-help-title +number
+key f3
+wait "Work with Objects"
+field 8 3 99
+key enter
+settle 1000
+snap uim-option-not-valid +number
+key reset
+key f12
+settle 800
+key f3
+wait "Main Menu"
+type wrkobj qgpl/*all
+key enter
+wait "Work with Objects"
+key f17
+settle 1000
+snap uim-position-window +number
+key f12
+settle 800
+key f3
+wait "Main Menu"
+type wrkusrprf *all
+key enter
+settle 1500
+snap uim-wrkusrprf +number
+key f3
+wait "Main Menu"
+type wrkmsgf qsys/qcpf*
+key enter
+settle 1500
+snap uim-wrkmsgf +number
+key f3
+wait "Main Menu"

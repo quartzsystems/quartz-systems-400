@@ -111,6 +111,14 @@ note = "a panel at a display; the text form in the service otherwise"
 
 # --- UIM APIs (work/qsjob/src/command/uiapi.rs)
 
+[cmd.CRTSCHIDX]
+site = "job"
+note = "a *SCHIDX for help's F11; the storage service makes it"
+
+[cmd.ADDSCHIDXE]
+site = "job"
+note = "a panel group's :ISCH. topics into a *SCHIDX"
+
 # --- panels batch 2: work, spool, journals (panels/work2.rs)
 [cmd.WRKSHRPOOL]
 site = "job"

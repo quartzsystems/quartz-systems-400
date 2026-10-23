@@ -3025,3 +3025,98 @@ release = "V7R5M0"
 date = "2026-10-23"
 script = "batch8-system2"
 width = 80
+name = "uim-help-field"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-uim"
+width = 80
+
+[[golden]]
+name = "uim-help-field-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-uim"
+width = 80
+
+[[golden]]
+name = "uim-help-field-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-uim"
+width = 80
+
+[[golden]]
+name = "uim-exthelp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-uim"
+width = 80
+
+[[golden]]
+name = "uim-exthelp-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-uim"
+width = 80
+
+[[golden]]
+name = "uim-help-keys"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-uim"
+width = 80
+
+[[golden]]
+name = "uim-help-title"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-uim"
+width = 80
+
+[[golden]]
+name = "uim-option-not-valid"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-uim"
+width = 80
+
+[[golden]]
+name = "uim-wrkusrprf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-uim"
+width = 80
+
+[[golden]]
+name = "uim-wrkmsgf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-uim"
+width = 80
+
+[[golden]]
+name = "uim-position-window"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch9-uimpos"
+width = 80
+
+[[golden]]
+name = "uim-position-window-usrprf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch9-uimpos"
+width = 80
+

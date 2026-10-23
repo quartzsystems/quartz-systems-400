@@ -375,6 +375,7 @@ dependencies = [
  "thiserror",
  "tn5250",
  "tn5250-driver",
+ "uim",
  "wm",
 ]
 
@@ -2450,9 +2451,11 @@ dependencies = [
  "qir",
  "release",
  "sec",
+ "spool",
  "sysval",
  "thiserror",
  "tracing",
+ "uim",
 ]
 
 [[package]]

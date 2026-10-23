@@ -941,3 +941,216 @@ id = "CPC0901"
 sev = 0
 text = "Data area &1 changed."
 vars = ["*CHAR 10"]
+
+# UIM APIs (QUIOPNDA, QUIDSPP, the list and help APIs). Data: the
+# panel group, its library, the application handle, the panel, list or
+# record, and a variable.
+
+[[msg]]
+id = "CPF6A0B"
+sev = 40
+text = "No application is open with handle &3."
+help = "The handle is not one QUIOPNDA or QUIOPNPA gave this job, or the application was closed."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A12"
+sev = 40
+text = "Panel group &1 in &2 could not be opened."
+help = "The panel group does not exist, cannot be read, or is not a panel group this release can show."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A1B"
+sev = 40
+text = "The panel could not be printed."
+help = "The job has no spooled output to write the panel image to."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A1E"
+sev = 40
+text = "Panels cannot be shown: the job has no display."
+help = "A batch job, or a job whose display went away, can open a print application but cannot show panels."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A28"
+sev = 40
+text = "The option for updating list &4 is not SAME or HNDL."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A29"
+sev = 40
+text = "The receiver is shorter than eight bytes."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A2A"
+sev = 40
+text = "The application scope must be -1 or -2."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A2B"
+sev = 40
+text = "The option for adding to list &4 is not FRST, LAST, NEXT or PREV."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A2C"
+sev = 40
+text = "The positioning option for list &4 is not FRST, LAST, NEXT, PREV, SAME or HNDL."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A2D"
+sev = 40
+text = "The selection criteria for list &4 are not ALL or ACTION."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A2E"
+sev = 40
+text = "The exit program parameter interface must be 0, 1 or 2."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A2F"
+sev = 40
+text = "Full-screen help must be Y or N."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A35"
+sev = 40
+text = "Panel group &1 in &2 declares no variable &5."
+help = "A variable record names a variable the panel group does not have."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A36"
+sev = 40
+text = "Variable &5 of record &4 holds bytes that are not a value of its type."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A37"
+sev = 40
+text = "The value of variable &5 does not fit its type in record &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A38"
+sev = 40
+text = "Panel group &1 in &2 has no variable record &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A39"
+sev = 40
+text = "The buffer is shorter than variable record &4."
+help = "The buffer length given is less than the lengths of the record's variables added up."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A3E"
+sev = 40
+text = "The application was opened for printing and shows no panels."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A3F"
+sev = 40
+text = "Panel group &1 in &2 has no panel &4."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A4B"
+sev = 40
+text = "The redisplay option must be Y or N."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A4C"
+sev = 40
+text = "A parameter value is not one the API takes."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A50"
+sev = 40
+text = "The display went away while panel &4 was shown."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A90"
+sev = 40
+text = "The list contents for list &4 are not ALL, MORE or SAME."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A91"
+sev = 40
+text = "List &4 does not exist in the application."
+help = "Add an entry to make the list, or check that the panel group defines it."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A93"
+sev = 40
+text = "List &4 has no current entry."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A98"
+sev = 40
+text = "No entry of list &4 matches the request."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A99"
+sev = 40
+text = "Panel group &1 in &2 declares no variable &5."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A9C"
+sev = 40
+text = "No entry of list &4 has the handle given."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6A9E"
+sev = 40
+text = "The trim option must be Y or N."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 8", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6E0A"
+sev = 40
+text = "The number of help identifiers or the help type is not valid."
+
+[[msg]]
+id = "CPF6E3B"
+sev = 40
+text = "No help could be found for the identifiers given."
+
+[[msg]]
+id = "CPF6E11"
+sev = 40
+text = "Search index &1 was not created in library &2."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6E12"
+sev = 40
+text = "Panel group &1 in &2 was not added to search index &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "CPF6E62"
+sev = 40
+text = "Panel group &1 in &2 is in search index &3 already."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10"]

@@ -1,0 +1,24 @@
+ Help                       Work with Objects - Help                            
+                                                                                
+     The Work with Objects (WRKOBJ) display shows a list of   objects you       
+     have   authority to use.  You can use this list to do some common          
+     tasks related to   object authority.                                       
+                                                                                
+     The next list of objects shown is based on the value you enter for         
+     the object (OBJ) parameter.  For example, if you type T* in the            
+     library QGPL, a list of all the objects starting with T in library         
+     QGPL is displayed.                                                         
+                                                                                
+     Type the option number next to a specific object, and press the            
+     Enter key.  You can type option numbers next to more than one object       
+     at a time to do more than one task, one after the other.                   
+                                                                                
+     To specify different parameter values for a command that runs when         
+     you select an option, type the option number and press F4 (Prompt).        
+                                                                                
+     You can also type parameters on the command line and press the Enter       
+     key to run the command immediately, or press F4 (Prompt) to specify        
+                                                                        More... 
+ F3=Exit help   F10=Move to top   F12=Cancel   F13=Information Assistant        
+ F14=Print help                                                                 
+                                                                                

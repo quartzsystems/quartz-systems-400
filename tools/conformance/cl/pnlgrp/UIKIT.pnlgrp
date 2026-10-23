@@ -1,0 +1,54 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* The CL kit's panel group for UIAPI.clle: a header record, a list of
+.* objects with option 5, and a pop-up to position the list.
+:PNLGRP.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=NUMCL BASETYPE='BIN 31'.
+:ECLASS.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=OBJ CLASS=NAMECL.
+:VAR NAME=TYPE CLASS=NAMECL.
+:VAR NAME=OWNER CLASS=NAMECL.
+:VAR NAME=COUNT CLASS=NUMCL.
+:VARRCD NAME=HDR VARS='OWNER COUNT'.
+:VARRCD NAME=ROW VARS='OPT OBJ TYPE'.
+:LISTDEF NAME=OBJS VARS='OPT OBJ TYPE'.
+:KEYL NAME=KEYS HELP=KEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=LIST KEYL=KEYS HELP=LIST ENTER='RETURN 1' TOPSEP=SYSNAM.Work with Kit Objects
+:DATA DEPTH=2.
+:DATAI VAR=OWNER USAGE=OUTPUT.Owner
+:DATAI VAR=COUNT USAGE=OUTPUT.Objects
+:EDATA.
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=OBJS HELP=OPTS.No objects are listed.
+:LISTACT OPTION=5 ENTER='RETURN 5' HELP=OPTS.5=Display
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=OBJ USAGE=OUTPUT.Object
+:LISTCOL VAR=TYPE USAGE=OUTPUT.Type
+:ELIST.
+:EPANEL.
+:HELP NAME=LIST.Work with Kit Objects
+:P.The objects the kit's program listed.
+:EHELP.
+:HELP NAME=OPTS.Options
+:P.Option 5 shows an object.
+:EHELP.
+:HELP NAME=KEYS.Function keys
+:P.F3 leaves, F5 shows the list again, F12 goes back.
+:EHELP.
+:EPNLGRP.

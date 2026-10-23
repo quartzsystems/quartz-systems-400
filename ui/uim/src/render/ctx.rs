@@ -17,6 +17,8 @@ pub(super) struct Ctx<'a> {
     pub dialog: &'a dyn Dialog,
     /// The options.
     pub opts: &'a Options,
+    /// The panel is a pop-up window (R25 applies to its input fields).
+    pub window: bool,
 }
 
 impl Ctx<'_> {

@@ -10,6 +10,9 @@
 //! through the error code parameter (`ERRC0100`/`ERRC0200`) or an
 //! escape message when none was given (`SYSAPI.md`).
 //!
+//! The UIM APIs (`QUIOPNDA`, `QUIDSPP`, ...) are installed apart by
+//! [`uiapi::install`]: they also need the job's display.
+//!
 //! Objects the APIs touch (data queues, data areas, files, system
 //! values, user indexes, commands) come from a [`Provider`]: the
 //! service console supplies one over the store, tests use
@@ -42,6 +45,7 @@ pub mod param;
 pub mod picture;
 mod provider;
 mod security;
+pub mod uiapi;
 mod usrspc;
 mod wire;
 

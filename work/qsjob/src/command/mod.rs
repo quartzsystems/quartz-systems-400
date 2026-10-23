@@ -14,6 +14,7 @@
 pub mod jobsite;
 pub mod natives;
 pub mod prompt;
+pub mod uiapi;
 
 use std::fmt::Write as _;
 use std::rc::Rc;

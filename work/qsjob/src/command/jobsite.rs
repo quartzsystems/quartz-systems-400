@@ -71,6 +71,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "STRPDM" | "WRKLIBPDM" | "WRKOBJPDM" | "WRKMBRPDM" | "FNDSTRPDM" => {
             return crate::devtools::pdm::run(job, host, r, out);
         }
+        "CRTSCHIDX" | "ADDSCHIDXE" => return super::uiapi::command(host, r),
         _ => {}
     }
     // A panel's command in a job that shows none: the service's text.

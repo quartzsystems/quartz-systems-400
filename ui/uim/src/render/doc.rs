@@ -16,6 +16,8 @@ pub(super) struct Seg {
     pub col: usize,
     pub attr: Attr,
     pub text: String,
+    /// The help module a `:LINK.` shows.
+    pub link: Option<String>,
 }
 
 /// One row of a flowed document.
@@ -46,6 +48,15 @@ pub(super) fn put_rows(s: &mut Screen, rows: &[Row], top: usize) {
     for (i, row) in rows.iter().enumerate() {
         for seg in row {
             s.put(top + i, seg.col, seg.attr, &seg.text);
+            if let Some(module) = &seg.link {
+                let len = seg.text.trim_end().chars().count().max(1);
+                s.links.push(super::screen::HelpArea {
+                    row: top + i,
+                    col: seg.col,
+                    end: seg.col + len - 1,
+                    module: module.clone(),
+                });
+            }
         }
     }
 }
@@ -103,6 +114,7 @@ impl Flow<'_> {
                     col: self.heading_col,
                     attr: Attr::HighIntensity,
                     text: t.trim().to_string(),
+                    link: None,
                 }]);
             }
             Block::Para(spans) => {
@@ -122,6 +134,7 @@ impl Flow<'_> {
                             col,
                             attr: Attr::Normal,
                             text: cut.trim_end().to_string(),
+                            link: None,
                         }]
                     });
                 }
@@ -180,11 +193,13 @@ impl Flow<'_> {
                             col,
                             attr: Attr::HighIntensity,
                             text: t.trim().to_string(),
+                            link: None,
                         },
                         Seg {
                             col: col + 10,
                             attr: Attr::HighIntensity,
                             text: d.trim().to_string(),
+                            link: None,
                         },
                     ]);
                 }
@@ -230,6 +245,7 @@ impl Flow<'_> {
             col,
             attr,
             text: label.to_string(),
+            link: None,
         };
         let fits = col + label.chars().count() < inner;
         if label.is_empty() {
@@ -244,28 +260,32 @@ impl Flow<'_> {
 
     /// A paragraph wrapped at the width, highlights kept per segment.
     fn para(&mut self, spans: &[Span], col: usize) {
-        let mut chars: Vec<(char, Attr)> = Vec::new();
-        self.chars(spans, Attr::Normal, &mut chars);
+        let mut chars: Vec<Ch> = Vec::new();
+        let mut links: Vec<String> = Vec::new();
+        self.chars(spans, (Attr::Normal, 0), &mut chars, &mut links);
         let width = self.limit + 1 - col;
         for line in wrap_attr(&chars, width) {
-            self.rows.push(segments(&line, col));
+            self.rows.push(segments(&line, col, &links));
         }
     }
 
-    fn chars(&self, spans: &[Span], attr: Attr, out: &mut Vec<(char, Attr)>) {
+    fn chars(&self, spans: &[Span], (attr, link): (Attr, usize), out: &mut Vec<Ch>, links: &mut Vec<String>) {
         for s in spans {
             match s {
-                Span::Text(t) => out.extend(t.chars().map(|c| (c, attr))),
+                Span::Text(t) => out.extend(t.chars().map(|c| (c, attr, link))),
                 Span::Var(v) => {
                     let val = self.ctx.shown(v);
-                    out.extend(val.trim_end().chars().map(|c| (c, attr)));
+                    out.extend(val.trim_end().chars().map(|c| (c, attr, link)));
                 }
-                Span::Hp(n, inner) => self.chars(inner, highlight(*n), out),
-                Span::Pk(inner) => self.chars(inner, Attr::HighIntensity, out),
-                Span::Pv(inner) | Span::Link { text: inner, .. } => {
-                    self.chars(inner, Attr::Underline, out);
+                Span::Hp(n, inner) => self.chars(inner, (highlight(*n), link), out, links),
+                Span::Pk(inner) => self.chars(inner, (Attr::HighIntensity, link), out, links),
+                Span::Pv(inner) => self.chars(inner, (Attr::Underline, link), out, links),
+                Span::Link { text, perform } => {
+                    links.push(link_target(perform));
+                    let id = links.len();
+                    self.chars(text, (Attr::Underline, id), out, links);
                 }
-                Span::Rt(inner) => self.chars(inner, Attr::Reverse, out),
+                Span::Rt(inner) => self.chars(inner, (Attr::Reverse, link), out, links),
             }
         }
     }
@@ -284,9 +304,9 @@ fn highlight(n: u8) -> Attr {
 
 /// Words packed into rows of at most `width` characters, blank runs
 /// kept, each character with its attribute.
-fn wrap_attr(chars: &[(char, Attr)], width: usize) -> Vec<Vec<(char, Attr)>> {
-    let mut rows: Vec<Vec<(char, Attr)>> = Vec::new();
-    let mut row: Vec<(char, Attr)> = Vec::new();
+fn wrap_attr(chars: &[Ch], width: usize) -> Vec<Vec<Ch>> {
+    let mut rows: Vec<Vec<Ch>> = Vec::new();
+    let mut row: Vec<Ch> = Vec::new();
     let mut i = 0;
     while i < chars.len() {
         let mut blanks = 0;
@@ -305,8 +325,8 @@ fn wrap_attr(chars: &[(char, Attr)], width: usize) -> Vec<Vec<(char, Attr)>> {
         if row.is_empty() {
             row.extend_from_slice(word);
         } else if row.len() + blanks + word.len() <= width {
-            let attr = row.last().map_or(Attr::Normal, |c| c.1);
-            row.extend(std::iter::repeat_n((' ', attr), blanks));
+            let (attr, link) = row.last().map_or((Attr::Normal, 0), |c| (c.1, c.2));
+            row.extend(std::iter::repeat_n((' ', attr, link), blanks));
             row.extend_from_slice(word);
         } else {
             rows.push(std::mem::take(&mut row));
@@ -322,18 +342,44 @@ fn wrap_attr(chars: &[(char, Attr)], width: usize) -> Vec<Vec<(char, Attr)>> {
     rows
 }
 
-/// Consecutive same-attribute characters as segments from `col`.
-fn segments(line: &[(char, Attr)], col: usize) -> Row {
+/// Consecutive same-attribute characters as segments from `col`; a
+/// link's characters are a segment of their own.
+fn segments(line: &[Ch], col: usize, links: &[String]) -> Row {
     let mut out: Row = Vec::new();
-    for (i, (ch, attr)) in line.iter().enumerate() {
+    let mut last_link = 0;
+    for (i, (ch, attr, link)) in line.iter().enumerate() {
         match out.last_mut() {
-            Some(seg) if seg.attr == *attr => seg.text.push(*ch),
+            Some(seg) if seg.attr == *attr && last_link == *link => seg.text.push(*ch),
             _ => out.push(Seg {
                 col: col + i,
                 attr: *attr,
                 text: ch.to_string(),
+                link: link.checked_sub(1).and_then(|k| links.get(k).cloned()),
             }),
         }
+        last_link = *link;
     }
     out
+}
+
+/// A character with its attribute and link (0 for none, else the
+/// link's index plus one).
+type Ch = (char, Attr, usize);
+
+/// The help module a `:LINK PERFORM=` names: `DSPHELP module [group]`
+/// gives `group/module`; any other value is taken as the module.
+#[must_use]
+pub fn link_target(perform: &str) -> String {
+    let mut w = perform.split_whitespace();
+    match w.next() {
+        Some(verb) if verb.eq_ignore_ascii_case("DSPHELP") => {
+            let module = w.next().unwrap_or_default().to_ascii_uppercase();
+            match w.next() {
+                Some(g) => format!("{}/{module}", g.to_ascii_uppercase()),
+                None => module,
+            }
+        }
+        Some(_) => perform.trim().to_ascii_uppercase(),
+        None => String::new(),
+    }
 }

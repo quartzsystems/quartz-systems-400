@@ -27,6 +27,7 @@ pub(crate) mod splcmd;
 pub(crate) mod spool;
 pub(crate) mod stats;
 mod work2;
+mod uiapi;
 pub(crate) mod wtr;
 
 pub use jobs::chgjob;

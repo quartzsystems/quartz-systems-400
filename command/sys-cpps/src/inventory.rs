@@ -294,6 +294,8 @@ pub const JOB_SITE: &[&str] = &[
     "DSPSECAUD",
     // --- system displays (work/qsjob/src/sysdsp/)
     // --- UIM APIs (work/qsjob/src/command/uiapi.rs)
+    "CRTSCHIDX",
+    "ADDSCHIDXE",
     // --- panels batch 2: work, spool, journals (panels/work2.rs)
     "WRKSBMJOB",
     "WRKSHRPOOL",

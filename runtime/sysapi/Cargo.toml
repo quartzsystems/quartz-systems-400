@@ -17,10 +17,12 @@ sysval = { path = "../../lic/sysval", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
 ipc = { path = "../../work/ipc", version = "0.1.0" }
 sec = { path = "../../security/sec", version = "0.1.0" }
+uim = { path = "../../ui/uim", version = "0.1.0" }
 thiserror.workspace = true
 tracing.workspace = true
 
 [dev-dependencies]
+spool = { path = "../../work/spool", version = "0.1.0" }
 ile = { path = "../../runtime/ile", version = "0.1.0" }
 
 [lints]

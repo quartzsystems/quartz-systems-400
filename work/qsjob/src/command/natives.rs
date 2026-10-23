@@ -49,6 +49,8 @@ pub fn install(job: &mut Job, host: &Host) {
             job.last_dump = Some(text);
         }),
     );
+    // The UIM APIs, over the job's display.
+    super::uiapi::install(job, host);
 }
 
 /// A processing program called with the block's addresses.

@@ -86,6 +86,13 @@ pub(super) fn render(
         let visible = c.rows.iter().filter(|r| !matches!(r, Row::Hidden(..)));
         for (i, r) in visible.skip(page * per).take(per).enumerate() {
             put_row(ctx, s, row + i, c.start, end, colon, r);
+            s.help(row + i, c.start, end, area.help.as_deref());
+            let help = match r {
+                Row::Field { field, .. } => field.help.as_deref(),
+                Row::Select { select, .. } => select.help.as_deref(),
+                _ => None,
+            };
+            s.help(row + i, c.start, end, help);
         }
     }
     if overflow {
@@ -135,6 +142,7 @@ fn colon_of(ctx: &Ctx, c: &Column) -> usize {
     layout::colon_col(longest)
 }
 
+#[allow(clippy::too_many_lines)] // one arm per row kind
 fn put_row(ctx: &Ctx, s: &mut Screen, row: usize, start: usize, end: usize, colon: usize, r: &Row) {
     match r {
         Row::Blank | Row::Hidden(..) => {}
@@ -147,10 +155,19 @@ fn put_row(ctx: &Ctx, s: &mut Screen, row: usize, start: usize, end: usize, colo
             field,
         } => {
             let label = ctx.text(&field.prompt);
-            let value_col =
-                label_and_colon(s, row, *label_col, end, colon, *shift, *compact, &label);
-            // R14: an entry field's leaders end in a dot, not a colon.
-            if field.usage.is_input() && !*compact && !label.trim().is_empty() {
+            let input = field.usage.is_input();
+            let value_col = label_and_colon(
+                s,
+                row,
+                (*label_col, end),
+                colon,
+                *shift,
+                (*compact, input && ctx.window),
+                &label,
+            );
+            // R14: on a full panel an entry field's leaders end in a
+            // dot, not a colon (wrkdevd, edtobjaut); R25 in a window.
+            if input && !ctx.window && !*compact && !label.trim().is_empty() {
                 s.put(row, colon, Attr::Normal, ".");
             }
             let width = field_width(ctx, &field.var, field.maxwidth, field.minwidth);
@@ -181,8 +198,16 @@ fn put_row(ctx: &Ctx, s: &mut Screen, row: usize, start: usize, end: usize, colo
             select,
         } => {
             let label = ctx.text(&select.prompt);
-            let value_col =
-                label_and_colon(s, row, *label_col, end, colon, *shift, *compact, &label);
+            let input = select.usage.is_input();
+            let value_col = label_and_colon(
+                s,
+                row,
+                (*label_col, end),
+                colon,
+                *shift,
+                (*compact, input && ctx.window),
+                &label,
+            );
             let choices: Vec<String> = select
                 .choices
                 .iter()
@@ -229,23 +254,24 @@ fn put_row(ctx: &Ctx, s: &mut Screen, row: usize, start: usize, end: usize, colo
     }
 }
 
-/// The label, its leaders and colon; returns the value column.
-#[allow(clippy::too_many_arguments)]
+/// The label, its leaders and colon; returns the value column. An
+/// input field in a window has no colon and starts two columns past
+/// it (R25).
 fn label_and_colon(
     s: &mut Screen,
     row: usize,
-    label_col: usize,
-    end: usize,
+    (label_col, end): (usize, usize),
     colon: usize,
     shift: usize,
-    compact: bool,
+    (compact, input): (bool, bool),
     label: &str,
 ) -> usize {
     let label = label.trim_end();
     let len = label.chars().count();
+    let gap = if input { 2 } else { 4 };
     if len == 0 && !compact {
         // A row without a label continues the value above it.
-        return colon + 4 + shift;
+        return colon + gap + shift;
     }
     if compact {
         // R16: `Label:   value`.
@@ -254,9 +280,13 @@ fn label_and_colon(
         label_col + len + 4
     } else {
         let label_end = label_col + len - 1;
-        let text = format!("{label}{}", layout::leaders(label_end, colon));
+        let mut lead = layout::leaders(label_end, colon);
+        if input {
+            lead.pop();
+        }
+        let text = format!("{label}{lead}");
         put_cut(s, row, label_col, end, Attr::Normal, &text);
-        colon + 4 + shift
+        colon + gap + shift
     }
 }
 

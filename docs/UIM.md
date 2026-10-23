@@ -250,7 +250,7 @@ Severities: 10 warning (the group is created), 20 error (not created),
 | UIM2011 | 20 | import of a name the other group does not export |
 | UIM3001 | 10 | panel with no areas |
 | UIM3002 | 20 | second command line |
-| UIM3003 | 20 | panel size not 24x80, 27x132 or 24x132 |
+| UIM3003 | 20 | panel size neither a screen (24x80, 27x132, 24x132) nor a pop-up window (5 to 25 rows, 20 to 128 columns) |
 | UIM3004 | 10 | help module with no text |
 
 Depth rule: the fixed `DEPTH`s of a panel's areas, plus one line per
@@ -342,6 +342,11 @@ or 132) and the last usable column is `W-1`.
 | R19 | Conditions: `:KEYI.`, `:MENUI.` and `:DATASLTC.` with a `COND` that evaluates false are left out. The tree evaluates with the dialog's values: `%LIST(l)` is the list's count, `%NODE(l)` whether it has entries, a comparison is numeric when both sides are numbers and by characters with trailing blanks ignored otherwise; a condition the group does not define is asked of the dialog. `:LISTACT.` has no `COND`. | |
 | R20 | A help panel: `Help` at column 2 of row 1 (blue) with the module's title centered (high intensity); the text from row 3: headings at column 2 (high intensity), paragraphs at column 6 wrapped so no row passes column `W-7`, a blank row between blocks, list markers (`o`, `1.`) at column 6, definition and parameter terms at column 6 with their text at column 16, `Note:` at column 6; 18 text rows per page (`W` 80, 24 rows); the indicator on row 21; `F3=Exit help   F10=Move to top   F12=Cancel   F13=Information Assistant` and `F14=Print help` on rows 22-23. `&name.` shows the variable's declared `VALUE`. | main-menu-help |
 | R21 | Attributes: titles, headings, the indicator and the message line high intensity; instructions, legends, keys and the panel identifier blue; input fields underlined; `:HP2.`, `:PK.` high intensity, `:HP1.`, `:PV.`, `:LINK.` underlined, `:HP3.`, `:RT.` reverse, `:HP4.` blue; everything else normal. | main-menu, wrkobj, main-menu-help attribute grids |
+| R22 | Help displays: field help is the module's title with ` - Help`; extended help (F2, and F1 on the title row) the panel's title with ` - Help`, the panel's module first and every module its areas, items and key list name after it, each under its title as a heading at column 2 with a blank row above and below. Keys: field help `F2=Extended help F3=Exit help F10=Move to top F12=Cancel F13=Information Assistant F14=Print help` (with `F11=Search index` after F10 when the group has `SCHIDX`); extended help the same without F2. The second key row's items move right to the next column the first row has. A help window instead shows `F2 F10 (F11) F12 F13 F20=Enlarge F24=More keys`, and `F3 F14 F24` as its second set. | uim-help-field, uim-help-field-2, uim-exthelp, uim-help-title, uim-help-keys; uim-help-field-f24 (F24 not allowed full screen) |
+| R23 | A help window (help not full screen): 72 columns inside its borders, 12 rows, centered, under the cursor's row when it fits; the title centered on its first row, text from its third, the indicator and two key rows at its foot. | none: pub400's profile shows help full screen (Blocked) |
+| R24 | A pop-up panel (`DEPTH` under 24 or `WIDTH` under 80) is laid out at its own size and drawn in a box over the panel under it: top border row 2, the box centered, a row of dots above, colons at the sides, `:` dots `:` below; one attribute column inside each side, so panel column `c` is screen column `left + 1 + c` and panel row `r` screen row `2 + r`. The panel under it keeps its texts outside the box. | uim-position-window (a 10 by 74 panel: borders at columns 2 and 79, rows 2 and 13) |
+| R25 | In a pop-up window an input data item has no colon: its leaders end on the dot before the colon column and its field starts two columns past it (`C+2`; an output value is at `C+4`). On a full panel R14 holds: the leaders end in a dot at the colon column and the field is at `C+4` (wrkdevd, edtobjaut). | uim-position-window `Position to` 32, `Type` 34 |
+| R26 | An option no `:LISTACT.` has: the field shows underlined and reversed and the message line says so; every such entry is marked, and the page shows the first. | uim-option-not-valid (attribute 0x25 on both fields) |
 
 The area heights: a `DEPTH` number is the area's rows; `DEPTH='*'`
 areas share what the fixed ones leave; `:TEXT.` without a depth takes
@@ -386,6 +391,81 @@ A `:CMDLINE.` without `NAME` shows the dialog's `*CMDLINE` variable, so
 model by position: input variables, list cells, list options (by
 entry index), the command line and the menu selection.
 
+### Additions (second wave)
+
+The engine lives in the `uim` crate (`uim::engine`): `Engine` holds the
+dialog and `show(&mut impl Terminal, panel)` runs it; the job's
+`display::uim` implements `Terminal` for its `Surface` and keeps
+`UimDialog` as the engine's name. What it adds:
+
+- F1 (`HELP`, `FLDHELP`) shows the help module of the region under the
+  cursor (`Screen::helps`: data items, list columns and legends, menu
+  items, the key rows, the title row, the panel), in a window or full
+  screen (`full_screen_help`); the title row and the panel's own module
+  give extended help (R22). In help: Enter on a `:LINK.` follows it
+  (`PERFORM='DSPHELP module [group]'`), F12 goes back one display, F3
+  leaves help, F10 moves to the top, F2 extended help, F11 the search
+  index, F13 the Information Assistant (`QUIINFO`), F14 prints, F20
+  enlarges a window, F24 its second keys. `ABOUT` shows the panel and
+  the group's copyright.
+- `PRINT` (F6) prints the panel as shown to `QSYSPRT` when the terminal
+  prints (the job's does); otherwise `Response::Print` as before.
+- Options no `:LISTACT.` has are refused (R26) before anything returns.
+  An option whose action has `CONFIRM=panel` shows that panel with only
+  the entries carrying the option: Enter goes on, F12 goes back with the
+  options kept.
+- `ACTION='PANEL name'` naming a pop-up panel shows it over the current
+  one (R24); Enter there positions the panel's lists from the variables
+  of their `:LIST PARMS=` record: the first goes with the list's first
+  column (the first entry at or after it), the next with the next
+  columns (a match). F12 leaves the pop-up.
+- A data input field whose variable is also a column of a list on the
+  panel is a subset: only entries whose column matches show (blank and
+  `*ALL` match all, `ABC*` is a prefix).
+- `TOP`/`BOTTOM` (F17/F18 where a key list binds them) move every list.
+- A menu item with `ACTION='HELP module'` shows that module and the
+  menu stays.
+- With `incomplete_returns`, paging past the end of a list that is not
+  complete (`QUISETLA ... MORE`) returns `Event::More(list)` to the
+  caller (the APIs' -6) instead of stopping.
+
+## 10. The APIs
+
+`runtime/sysapi/src/uiapi` holds the APIs as natives of `QSYS`, installed
+into a job with `sysapi::uiapi::install` over a `UimHost` (the panel
+groups and the display: the job's storage service and `Surface`; in the
+CL kit compiled sources and a scripted display). Parameters are IBM's
+order; binary values are big-endian; entry handles are four binary
+bytes; the error code is `ERRC0100`. Applications are kept per job and
+taken out of the table while an API runs, so an action's command may
+call the APIs again.
+
+| API | Parameters | Notes |
+|---|---|---|
+| QUIOPNDA | handle out, panel group, scope (-1, -2), exit interface (0-2), full-screen help (Y/N), errc | CPF6A12, CPF6A2A, CPF6A2E, CPF6A2F |
+| QUIOPNPA | handle out, panel group, scope, exit interface, printer file, alternative name, share, user data, errc | output spooled at close (`QSYSPRT` by default) |
+| QUICLOA | handle, option (M/A), errc | CPF6A0B |
+| QUIPUTV / QUIGETV | handle, buffer, length, variable record, errc | `NOPUT`/`NOGET` variables skipped/blank; CPF6A38, CPF6A39, CPF6A35, CPF6A36 |
+| QUIADDLE | handle, buffer, length, record, list, option (FRST LAST NEXT PREV), entry handle in/out, errc | the new entry is current; CPF6A2B, CPF6A9C, CPF6A91 |
+| QUIINSLE | handle, buffer, length, record, list, entry handle in/out, errc | ours: insert before the handle (0: top) |
+| QUIUPDLE | handle, buffer, length, record, list, option (SAME HNDL), entry handle, errc | CPF6A28, CPF6A93 |
+| QUIGETLE | handle, buffer out, length, record, list, positioning (FRST LAST NEXT PREV SAME HNDL), copy (Y/N), criteria (ALL, ACTION), selection handle, extend, entry handle out, errc | `ACTION`: entries with an option typed; the option column holds it; CPF6A98, CPF6A2C, CPF6A2D |
+| QUIRMVLE | handle, list, extend, entry handle in/out, errc | the entry before becomes current |
+| QUIDLTL | handle, list, errc | CPF6A91 |
+| QUISETLA | handle, list, contents (ALL MORE SAME), display position (TOP BOT SAME or a handle), trim, errc | CPF6A90 |
+| QUIGETLA | handle, receiver, length, format, list, errc | `LIST0100`: 8 contents, 12 top entry's handle, 16 entries, 20 entries with an option, 24 current handle |
+| QUIDSPP | handle, function requested out, panel, redisplay (Y/N), errc | `RETURN n` gives n, F3 -4, F12 -8, more entries -6; `CMD` options and command-line commands run on the way; CPF6A3E, CPF6A3F, CPF6A1E (no display), CPF6A50 |
+| QUISETSA | handle, variable, errc | ours: the next show's cursor field |
+| QUIPRTP | handle, panel, eject (Y/N), errc | a print application prints the `:PRTPNL.`; a display application spools the panel's image |
+| QUIDSPH | handle, help identifiers, count, help type (0 field, 1 extended), full screen (Y/N), errc | identifiers 52 bytes: group, library, module |
+| QUHDSPH | help identifiers, count, help type, search index, display type (Y full, N window), corners, cursor, errc | CPF6E0A, CPF6E3B |
+| QUHPRTH | help identifiers, count, errc | spooled to `QSYSPRT` |
+
+`*SCHIDX` objects (type 0x0023) hold search topics: `CRTSCHIDX` makes an
+empty one, `ADDSCHIDXE` copies a panel group's `:ISCH.` topics into it
+(CPF6E11, CPF6E12, CPF6E62); requests 220-222 of the storage service.
+The search panels are the shipped `QUHSCHIDX` group.
+
 ## 9. Open questions
 
 - The condition grammar accepts a bare name as a variable because the
@@ -414,6 +494,12 @@ entry index), the command line and the menu selection.
   WRKBNDDIR.
 - The keys of a set are flowed over two rows and cut there; the real
   behaviour of a set that needs a third row is unverified.
+- The QUIDSPP function codes -4, -8 and -6 and the incomplete-list
+  protocol (IBM calls a list exit program) are ours; `QUIINSLE` and
+  `QUISETSA` are not IBM's layouts.
+- A pop-up's box position (R24) comes from one golden; a narrower
+  pop-up's position, and help windows (R23), wait for a profile that
+  shows help in windows.
 - `:DATASLT.` shows its choices as `n=text` after the field; the real
   presentation is unverified. `:LIST BOTINST=` is not rendered.
 - The copyright line's rule (which panels show it) is the caller's

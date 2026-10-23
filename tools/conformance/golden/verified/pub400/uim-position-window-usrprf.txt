@@ -1,0 +1,24 @@
+                            Work with User Profiles                             
+ .............................................................................. 
+ :                             Position the List                              : 
+ :                                                                            : 
+ :  Position to  . . . . . .                Starting characters               : 
+ :                                                                            : 
+ :                                                                            : 
+ :                                                                            : 
+ :                                                                            : 
+ :                                                                            : 
+ :  F6=Retrieve previous   F12=Cancel   F16=Repeat position to                : 
+ :                                                                            : 
+ :............................................................................: 
+      QTMPLPD     ALLOW REMOTE LPR REQUESTERS                                   
+      SANDEP981   Anonym,sandeep                                                
+      VENSUJA     Prakash,Suja                                                  
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Parameters for options N, N, N, N and N or command                             
+ ===>                                                                           
+ F3=Exit   F5=Refresh   F12=Cancel   F16=Repeat position to   F17=Position to   
+ F21=Select assistance level         F24=More keys                              
+                                                                                

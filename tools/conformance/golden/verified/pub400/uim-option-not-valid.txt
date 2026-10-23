@@ -1,0 +1,24 @@
+                               Work with Objects                                
+                                                                                
+ Type options, press Enter.                                                     
+   N=Edit authority        N=Copy   N=Delete   N=Display authority   N=Rename   
+   N=Display description   N =Change description                                
+                                                                                
+ Opt  Object      Type      Library     Attribute   Text                        
+  N   SETUSER     *PGM      QGPL        CLP         set users to 4G             
+ N    EXCELAFBA   *SQLPKG   QGPL                                                
+      MSACCEAFBA  *SQLPKG   QGPL                                                
+      MSCS001     *SQLPKG   QGPL        PACKAGE                                 
+      MSNC001     *SQLPKG   QGPL        PACKAGE                                 
+      MSQRY3AFBA  *SQLPKG   QGPL                                                
+      MSRR001     *SQLPKG   QGPL        PACKAGE                                 
+      MSRS001     *SQLPKG   QGPL        PACKAGE                                 
+      MSUR001     *SQLPKG   QGPL        PACKAGE                                 
+      QSQCLIPKGC  *SQLPKG   QGPL        PACKAGE                                 
+      QSQCLIPKGN  *SQLPKG   QGPL        PACKAGE                                 
+                                                                        More... 
+ Parameters for options N, N and N  or command                                  
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F9=Retrieve   F11=Display names and types   
+ F12=Cancel   F16=Repeat position to   F17=Position to                          
+ Specified option number is not allowed.                                      + 

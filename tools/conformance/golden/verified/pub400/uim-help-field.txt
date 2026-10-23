@@ -1,0 +1,24 @@
+ Help                            Options - Help                                 
+                                                                                
+     Type the option number you want and press the Enter key.                   
+                                                                                
+     N=Edit authority                                                           
+         Add, change, or delete a user's authorization to an object.            
+                                                                                
+     N=Copy                                                                     
+         Copies the object using the   Create Duplicate Object                  
+         (CRTDUPOBJ) command.                                                   
+                                                                                
+     N=Delete                                                                   
+         Deletes an object.                                                     
+                                                                                
+     N=Display authority                                                        
+         Displays a list of the users authorized to work with the               
+         selected objects.                                                      
+                                                                                
+     N=Rename                                                                   
+         Changes the name of an object by using the   Rename Object             
+                                                                        More... 
+ F2=Extended help   F3=Exit help   F10=Move to top   F12=Cancel                 
+ F13=Information Assistant         F14=Print help                               
+                                                                                

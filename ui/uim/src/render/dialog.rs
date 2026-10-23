@@ -39,6 +39,16 @@ pub trait Dialog {
     fn cond(&self, _name: &str) -> bool {
         false
     }
+    /// The option typed on an entry, by its index among the entries
+    /// shown; `None` shows the entry's own value.
+    fn option(&self, _list: &str, _index: usize) -> Option<String> {
+        None
+    }
+    /// Whether the option typed on an entry is not valid (shown in
+    /// reverse image).
+    fn option_error(&self, _list: &str, _index: usize) -> bool {
+        false
+    }
 }
 
 /// A dialog from maps, for tests and simple callers.

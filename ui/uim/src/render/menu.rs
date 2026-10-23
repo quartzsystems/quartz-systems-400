@@ -12,7 +12,7 @@ use crate::model::{Area, MenuArea, MenuItem, MenuNode, MenuOption, Panel};
 enum Row {
     Blank,
     Heading(String),
-    Item(u16, String, Option<String>),
+    Item(u16, String, Option<String>, Option<String>),
 }
 
 /// The width of the selection field: the digits of the largest option.
@@ -34,6 +34,9 @@ pub(super) fn render(ctx: &Ctx, area: &MenuArea, s: &mut Screen, top: usize, hei
     let limit = s.limit();
     let title = ctx.text(&area.title);
     s.put(top, 2, Attr::Blue, title.trim_end());
+    for r in top..top + height {
+        s.help(r, 2, limit, area.help.as_deref());
+    }
     let rows = rows(ctx, area);
     let body = height.saturating_sub(2);
     let (per, overflow) = if rows.len() > body {
@@ -49,7 +52,8 @@ pub(super) fn render(ctx: &Ctx, area: &MenuArea, s: &mut Screen, top: usize, hei
         match r {
             Row::Blank => {}
             Row::Heading(h) => s.put(row, 4, Attr::Normal, h),
-            Row::Item(n, text, right) => {
+            Row::Item(n, text, right, help) => {
+                s.help(row, 5, limit, help.as_deref());
                 s.put(row, 5, Attr::Normal, &format!("{n:>3}."));
                 let end = right.as_ref().map_or(limit, |_| limit - 11);
                 let cut: String = text.chars().take(end + 1 - 10).collect();
@@ -131,7 +135,7 @@ fn push_item(ctx: &Ctx, out: &mut Vec<Row>, prev: &mut Option<u16>, item: &MenuI
     if text.trim().is_empty() {
         out.push(Row::Blank);
     } else {
-        out.push(Row::Item(n, text, right));
+        out.push(Row::Item(n, text, right, item.help.clone()));
     }
     *prev = Some(n);
 }

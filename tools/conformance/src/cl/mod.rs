@@ -14,7 +14,12 @@
 //! Header comments steer a case, as the IR kit's do:
 //! `/*; parms: 'abc' 12 */`, `/*; replies: C G */`, `/*; dsply: yes */`
 //! and `/*; fail: CRTLIB CPF2111 */` (the double of `CRTLIB` escapes
-//! with `CPF2111`; several may be given).
+//! with `CPF2111`; several may be given). `/*; pnlgrp: NAME */` serves
+//! `conformance/cl/pnlgrp/NAME.pnlgrp` to the UIM APIs as if
+//! `CRTPNLGRP` had made it, and `/*; display: 5@1 enter */` is the
+//! operator at a scripted display (type option 5 on the second entry,
+//! press Enter; `f3`, `f12`, `pgdn`, `pgup` are keys too); the screens
+//! shown go into the outcome.
 
 use std::cell::RefCell;
 use std::fmt::Write as _;
@@ -30,6 +35,8 @@ use mi::{Job, QueueRef};
 use qir::MsgType;
 
 use crate::qir as irkit;
+
+mod uikit;
 
 /// Where the corpus lives.
 pub struct Kit {
@@ -97,6 +104,10 @@ pub struct Case {
     pub dsply: Vec<String>,
     /// Commands whose doubles escape, with the message.
     pub fail: Vec<(String, String)>,
+    /// Panel groups the UIM APIs open.
+    pub pnlgrps: Vec<String>,
+    /// The scripted display's steps.
+    pub display: Vec<String>,
 }
 
 impl Case {
@@ -119,6 +130,10 @@ impl Case {
                 c.replies = r.split_whitespace().map(str::to_string).collect();
             } else if let Some(r) = h.strip_prefix("dsply:") {
                 c.dsply = r.split_whitespace().map(str::to_string).collect();
+            } else if let Some(r) = h.strip_prefix("pnlgrp:") {
+                c.pnlgrps = r.split_whitespace().map(str::to_ascii_uppercase).collect();
+            } else if let Some(r) = h.strip_prefix("display:") {
+                c.display = r.split_whitespace().map(str::to_ascii_lowercase).collect();
             } else if let Some(r) = h.strip_prefix("fail:") {
                 let mut w = r.split_whitespace();
                 if let (Some(cmd), Some(id)) = (w.next(), w.next()) {
@@ -502,6 +517,7 @@ pub fn run(case: &Case) -> Result<(String, Vec<String>), String> {
         fail: case.fail.clone(),
     });
     install(&mut job, &d);
+    let display = (!case.pnlgrps.is_empty()).then(|| uikit::install(&mut job, case));
     let mut out = String::new();
     for d in &c.diags {
         let _ = writeln!(out, "diag: {d}");
@@ -510,7 +526,8 @@ pub fn run(case: &Case) -> Result<(String, Vec<String>), String> {
         eprintln!("{}", c.qir);
     }
     let (text, ext) = call(&ir_case, job, &main)?;
-    Ok((out + &text + &ext, c.listing))
+    let screens = display.map(|d| uikit::screens(&d)).unwrap_or_default();
+    Ok((out + &text + &ext + &screens, c.listing))
 }
 
 /// The IR kit's call, with the external message queue rendered after

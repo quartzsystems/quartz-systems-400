@@ -103,6 +103,20 @@ pub struct More {
     pub bottom: bool,
 }
 
+/// A stretch of a row and the help module for it (F1 there), or the
+/// help module a link shows.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HelpArea {
+    /// Row.
+    pub row: usize,
+    /// First column.
+    pub col: usize,
+    /// Last column.
+    pub end: usize,
+    /// The help module.
+    pub module: String,
+}
+
 /// A rendered screen.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Screen {
@@ -120,6 +134,10 @@ pub struct Screen {
     pub more: Option<More>,
     /// How many entries of each list the page shows, by list name.
     pub list_shown: std::collections::BTreeMap<String, usize>,
+    /// Help modules by region, later regions over earlier ones.
+    pub helps: Vec<HelpArea>,
+    /// The links of a help screen (`:LINK.`).
+    pub links: Vec<HelpArea>,
 }
 
 impl Screen {
@@ -163,6 +181,22 @@ impl Screen {
         let n = text.chars().count();
         if n <= end {
             self.put(row, end + 1 - n, attr, text);
+        }
+    }
+
+    /// A help region, when there is a module for it.
+    pub fn help(&mut self, row: usize, col: usize, end: usize, module: Option<&str>) {
+        if let Some(m) = module
+            && row >= 1
+            && row <= self.rows
+            && col <= end
+        {
+            self.helps.push(HelpArea {
+                row,
+                col,
+                end,
+                module: m.to_string(),
+            });
         }
     }
 

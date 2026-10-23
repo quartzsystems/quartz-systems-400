@@ -1,0 +1,23 @@
+console:
+  > CRTPNLGRP PNLGRP(QGPL/UIKIT) SRCFILE(QGPL/QPNLSRC)
+raised: 
+handled: 
+pending: none
+replies: 
+dump: no
+ext:
+  CPF9898 Function requested 5
+  CPF9898 Option 5 on BETA
+screen 1:
+   1 |                             Work with Kit Objects|
+   2 |                                                             System:   QS400|
+   3 | Owner . . . . . . :   QPGMR|
+   4 | Objects . . . . . :             3|
+   5 | Type options, press Enter.|
+   6 |   5=Display|
+   8 | Opt  Object      Type|
+   9 |      ALPHA       *FILE|
+  10 |      BETA        *PGM|
+  11 |      GAMMA       *DTAARA|
+  21 |                                                                         Bottom|
+  23 | F3=Exit   F5=Refresh   F12=Cancel|

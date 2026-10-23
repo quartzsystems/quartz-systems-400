@@ -424,6 +424,13 @@ ipc::rpc! {
     191 => fn devd_panel / DevdPanel (name: String) -> Result<Vec<(String, String)>, String>;
     // --- system displays (200-219)
     // --- UIM APIs (220-239)
+    /// A search index's entries: title, root words, panel group
+    /// (`LIB/NAME`) and help module of each topic.
+    220 => fn schidx_entries / SchidxEntries (name: String, lib: String) -> Result<Vec<SchidxEntry>, String>;
+    /// `CRTSCHIDX`: an empty search index.
+    221 => fn schidx_create / SchidxCreate (name: String, lib: String, text: String, replace: bool) -> Result<String, String>;
+    /// `ADDSCHIDXE`: a panel group's `:ISCH.` topics into a search index.
+    222 => fn schidx_add / SchidxAdd (name: String, lib: String, pnlgrp: String, pnlgrp_lib: String) -> Result<String, String>;
     // --- panels batch 2: work, spool, journals (240-269)
     /// A batch 2 display's data (`work/qsjob/src/panels/work2.rs`):
     /// `what` names the display (`SBMJOB`, `SHRPOOL`, `SYSSTS`, ...),
@@ -459,6 +466,10 @@ ipc::rpc! {
     // --- STRSQL (400-419)
     // --- STRSST (420-439)
 }
+
+/// A search index topic: title, root words, panel group (`LIB/NAME`)
+/// and help module.
+pub type SchidxEntry = (String, Vec<String>, String, String);
 
 /// A system reply list entry for `rpyl_entries`: sequence, message
 /// identifier, compare data, its start, reply, dump.

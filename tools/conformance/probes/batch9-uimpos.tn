@@ -1,0 +1,25 @@
+# Batch 9: the F17 position-to pop-up window of WRKOBJ and
+# WRKUSRPRF (left with F12; nothing is changed).
+wait "Main Menu"
+continue
+timeout 60000
+type wrkobj qgpl/*all
+key enter
+wait "Work with Objects"
+key f17
+settle 1000
+snap uim-position-window +number
+key f12
+settle 800
+key f3
+wait "Main Menu"
+type wrkusrprf *all
+key enter
+settle 1500
+key f17
+settle 1000
+snap uim-position-window-usrprf +number
+key f12
+settle 800
+key f3
+wait "Main Menu"

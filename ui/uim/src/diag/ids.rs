@@ -444,12 +444,15 @@ pub fn second_cmdline(line: usize) -> Diagnostic {
     )
 }
 
-/// A panel whose depth is not 24 or 27 or whose width is not 80 or 132.
+/// A panel that is neither a screen (24x80, 27x132, 24x132) nor a
+/// pop-up window (5 to 25 rows, 20 to 128 columns).
 pub fn bad_panel_size(line: usize, depth: u32, width: u32) -> Diagnostic {
     err(
         "UIM3003",
         line,
-        format!("Panel size {depth}x{width} is not one of 24x80, 27x132 or 24x132"),
+        format!(
+            "Panel size {depth}x{width} is not a screen (24x80, 27x132 or 24x132) or a pop-up window (5 to 25 rows, 20 to 128 columns)"
+        ),
     )
 }
 

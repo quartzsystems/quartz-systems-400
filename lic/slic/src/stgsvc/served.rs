@@ -1339,6 +1339,28 @@ impl Service for Served<'_> {
 
     // --- UIM APIs (220-239)
 
+    fn schidx_entries(&mut self, name: String, lib: String) -> Result<Vec<stg::proto::SchidxEntry>, String> {
+        self.own_libl();
+        let r = super::uiapi::schidx_entries(self.system, &name, &lib);
+        ile::set_libl(None);
+        r
+    }
+
+    fn schidx_create(&mut self, name: String, lib: String, text: String, replace: bool) -> Result<String, String> {
+        self.own_libl();
+        let owner = self.ctx.job.user.clone();
+        let r = super::uiapi::schidx_create(self.system, (&name, &lib), &text, replace, &owner);
+        ile::set_libl(None);
+        r
+    }
+
+    fn schidx_add(&mut self, name: String, lib: String, pnlgrp: String, pnlgrp_lib: String) -> Result<String, String> {
+        self.own_libl();
+        let r = super::uiapi::schidx_add(self.system, (&name, &lib), (&pnlgrp, &pnlgrp_lib));
+        ile::set_libl(None);
+        r
+    }
+
     // --- panels batch 2: work, spool, journals (240-269)
 
     fn panel2_data(&mut self, what: String, args: Vec<String>) -> Result<stg::proto::PanelData, String> {

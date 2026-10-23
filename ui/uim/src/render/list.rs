@@ -8,7 +8,7 @@
 use super::ctx::Ctx;
 use super::layout;
 use super::screen::{Attr, Field, Screen, Target};
-use crate::model::{BaseType, Display, ListArea, ListColNode, ListColumn, Shift};
+use crate::model::{BaseType, Display, ListArea, ListColNode, ListColumn, PanelGroup, Shift};
 
 /// A column as laid out.
 struct Col<'a> {
@@ -27,24 +27,32 @@ struct Col<'a> {
     option: bool,
 }
 
+#[allow(clippy::too_many_lines)] // legends, headings, entries, indicator
 pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, height: usize) {
     let limit = s.limit();
     let last = top + height - 1;
     let mut row = top;
 
+    // F1 anywhere in the area: the list's help, else the panel's.
+    for r in top..=last {
+        s.help(r, 2, limit, area.help.as_deref());
+    }
+
     // R5: the legends.
-    let legends: Vec<String> = area
+    let legends: Vec<(String, Option<&str>)> = area
         .actions
         .iter()
         .filter(|a| a.option.is_some())
-        .map(|a| ctx.text(&a.text))
-        .filter(|t| !t.trim().is_empty())
+        .map(|a| (ctx.text(&a.text), a.help.as_deref().or(area.help.as_deref())))
+        .filter(|(t, _)| !t.trim().is_empty())
         .collect();
     if !legends.is_empty() {
-        let widths: Vec<usize> = legends.iter().map(|t| t.chars().count()).collect();
+        let widths: Vec<usize> = legends.iter().map(|(t, _)| t.chars().count()).collect();
         for r in layout::flow(&widths, 4, limit) {
             for (i, col) in r {
-                s.put(row, col, Attr::Blue, &legends[i]);
+                let (text, help) = &legends[i];
+                s.put(row, col, Attr::Blue, text);
+                s.help(row, col, col + widths[i] - 1, *help);
             }
             row += 1;
         }
@@ -69,6 +77,14 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
     );
     let shared = if area.maxhead.is_some() { Some(grouped) } else { None };
     headings(s, &cols, row, head_rows, shared, limit);
+    let entries_end = last.saturating_sub(1);
+    for c in &cols {
+        let end = (c.start + c.width - 1).min(limit);
+        let help = c.column.help.as_deref().or(area.help.as_deref());
+        for r in row..=entries_end.max(row) {
+            s.help(r, c.start, end, help);
+        }
+    }
     row += head_rows;
 
     // The entries.
@@ -86,17 +102,23 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
             let end = (c.start + c.width - 1).min(limit);
             if c.option {
                 let col = c.start + (c.width - c.field) / 2;
-                s.field(field(
+                let typed = ctx.dialog.option(&area.listdef, index);
+                let mut f = field(
                     r,
                     col,
                     c.field,
-                    raw,
+                    typed.unwrap_or(raw),
                     Target::ListOption {
                         list: area.listdef.clone(),
                         row_index: index,
                     },
                     c.column,
-                ));
+                );
+                // An option that is not valid shows in reverse image.
+                if ctx.dialog.option_error(&area.listdef, index) {
+                    f.attr = Attr::Reverse;
+                }
+                s.field(f);
             } else if c.column.usage.is_input() {
                 // An entry field narrower than its heading is centered
                 // under it (edtobjaut's X fields); a number sits at the
@@ -320,4 +342,32 @@ fn columns<'a>(ctx: &Ctx, area: &'a ListArea, limit: usize) -> Vec<Col<'a>> {
         start += width + 2;
     }
     out
+}
+
+/// The position-to variable of a list: the first variable of the
+/// `PARMS` variable record (the others narrow the search).
+#[must_use]
+pub fn position_var(group: &PanelGroup, area: &ListArea) -> Option<String> {
+    let rec = area.parms.as_deref()?;
+    group
+        .var_records
+        .iter()
+        .find(|r| r.name == rec)
+        .and_then(|r| r.vars.first().cloned())
+}
+
+/// The columns a position-to record's variables go with, in order: the
+/// list's columns without the option column.
+#[must_use]
+pub fn position_columns(group: &PanelGroup, area: &ListArea) -> Vec<String> {
+    area.all_columns()
+        .into_iter()
+        .filter(|c| {
+            group
+                .variable(&c.var)
+                .and_then(|v| group.class(&v.class))
+                .is_none_or(|k| k.basetype != BaseType::Action)
+        })
+        .map(|c| c.var.clone())
+        .collect()
 }

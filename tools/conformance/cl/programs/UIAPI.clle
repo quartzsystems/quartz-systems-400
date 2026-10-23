@@ -1,0 +1,50 @@
+/* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is */
+/* licensed under the terms of the MIT license which can be found in the  */
+/* root directory of this project.                                       */
+/* The UIM APIs from CL: a panel group made with CRTPNLGRP is opened,    */
+/* its header and list filled, the panel shown, the option the operator  */
+/* typed read back, the application closed.                              */
+/*; pnlgrp: UIKIT */
+/*; display: 5@1 enter */
+             PGM
+             DCL        VAR(&HANDLE) TYPE(*CHAR) LEN(8)
+             DCL        VAR(&PNLGRP) TYPE(*CHAR) LEN(20) VALUE('UIKIT     QGPL')
+             DCL        VAR(&SCOPE) TYPE(*INT) LEN(4) VALUE(-1)
+             DCL        VAR(&ZERO) TYPE(*INT) LEN(4) VALUE(0)
+             DCL        VAR(&ERR) TYPE(*CHAR) LEN(8) VALUE(X'0000000000000000')
+             DCL        VAR(&HDR) TYPE(*CHAR) LEN(14) +
+                          VALUE(X'D8D7C7D4D9404040404000000003')
+             DCL        VAR(&HDRLEN) TYPE(*INT) LEN(4) VALUE(14)
+             DCL        VAR(&ROW) TYPE(*CHAR) LEN(22)
+             DCL        VAR(&ROWLEN) TYPE(*INT) LEN(4) VALUE(22)
+             DCL        VAR(&EH) TYPE(*CHAR) LEN(4)
+             DCL        VAR(&SH) TYPE(*CHAR) LEN(4)
+             DCL        VAR(&FUNC) TYPE(*INT) LEN(4)
+             DCL        VAR(&FUNCC) TYPE(*CHAR) LEN(4)
+
+             CRTPNLGRP  PNLGRP(QGPL/UIKIT) SRCFILE(QGPL/QPNLSRC)
+             CALL       PGM(QUIOPNDA) PARM(&HANDLE &PNLGRP &SCOPE &ZERO 'N' &ERR)
+             CALL       PGM(QUIPUTV) PARM(&HANDLE &HDR &HDRLEN 'HDR' &ERR)
+             CHGVAR     VAR(&ROW) VALUE('  ALPHA     *FILE')
+             CALL       PGM(QUIADDLE) PARM(&HANDLE &ROW &ROWLEN 'ROW' 'OBJS' 'LAST' &EH +
+                          &ERR)
+             CHGVAR     VAR(&ROW) VALUE('  BETA      *PGM')
+             CALL       PGM(QUIADDLE) PARM(&HANDLE &ROW &ROWLEN 'ROW' 'OBJS' 'LAST' &EH +
+                          &ERR)
+             CHGVAR     VAR(&ROW) VALUE('  GAMMA     *DTAARA')
+             CALL       PGM(QUIADDLE) PARM(&HANDLE &ROW &ROWLEN 'ROW' 'OBJS' 'LAST' &EH +
+                          &ERR)
+             CALL       PGM(QUISETLA) PARM(&HANDLE 'OBJS' 'ALL' 'TOP' 'N' &ERR)
+             CALL       PGM(QUIDSPP) PARM(&HANDLE &FUNC 'LIST' 'N' &ERR)
+             CHGVAR     VAR(&FUNCC) VALUE(&FUNC)
+             SNDPGMMSG  MSG('Function requested' *BCAT &FUNCC) TOPGMQ(*EXT)
+             IF         COND(&FUNC *EQ 5) THEN(DO)
+             CALL       PGM(QUIGETLE) PARM(&HANDLE &ROW &ROWLEN 'ROW' 'OBJS' 'FRST' 'Y' +
+                          'ACTION' &SH 'N' &EH &ERR)
+             SNDPGMMSG  MSG('Option' *BCAT %SST(&ROW 1 2) *BCAT 'on' *BCAT %SST(&ROW +
+                          3 10)) TOPGMQ(*EXT)
+             ENDDO
+             CALL       PGM(QUICLOA) PARM(&HANDLE 'M' &ERR)
+             MONMSG     MSGID(CPF6A00) EXEC(SNDPGMMSG MSG('a UIM API failed') +
+                          TOPGMQ(*EXT))
+             ENDPGM
