@@ -42,6 +42,9 @@ members = [
     "command/cmd",
     "command/sys-cpps",
     "command/cl",
+    # User interface: TN5250E, display files, UIM, menus, developer tools.
+    "ui/tn5250",
+    "tools/tn5250-driver",
 ]
 
 [workspace.package]

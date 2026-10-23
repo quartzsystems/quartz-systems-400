@@ -2,3 +2,4 @@
 *.img
 *.log
 .claude/
+tools/conformance/oracle/.env
