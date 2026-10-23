@@ -1,0 +1,14 @@
+[package]
+name = "rpgspecs"
+description = "QS/400 ILE RPG specification layouts: the column tables the front end and SEU share"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+serde.workspace = true
+toml = { version = "1.1.8", default-features = false, features = ["parse", "serde"] }
+
+[lints]
+workspace = true

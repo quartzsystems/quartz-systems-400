@@ -59,6 +59,8 @@ members = [
     "devtools/dbg",
     "devtools/isql",
     "devtools/sst",
+    # ILE RPG: the spec tables, the compiler, its runtime.
+    "rpg/specs",
 ]
 
 [workspace.package]

@@ -253,133 +253,43 @@ fn columns(fmt: &str) -> Option<&'static [Col]> {
             ];
             T
         }
-        "H" => {
-            const T: &[Col] = &[c(6, 6, "H"), c(7, 80, "Keywords"), c(81, 100, "Comments")];
-            T
-        }
-        "F" => {
-            const T: &[Col] = &[
-                c(6, 6, "F"),
-                c(7, 16, "Filename"),
-                c(17, 17, "I"),
-                c(18, 18, "P"),
-                c(19, 19, "E"),
-                c(20, 20, "A"),
-                c(21, 21, "S"),
-                c(22, 22, "F"),
-                c(23, 27, "Rlen"),
-                c(28, 28, "L"),
-                c(29, 33, "Klen"),
-                c(34, 34, "A"),
-                c(35, 35, "I"),
-                c(36, 42, "Device"),
-                c(44, 80, "Keywords"),
-                c(81, 100, "Comments"),
-            ];
-            T
-        }
-        "D" => {
-            const T: &[Col] = &[
-                c(6, 6, "D"),
-                c(7, 21, "Name"),
-                c(22, 22, "E"),
-                c(23, 23, "T"),
-                c(24, 25, "Ds"),
-                c(26, 32, "From"),
-                c(33, 39, "To/L"),
-                c(40, 40, "I"),
-                c(41, 42, "Dc"),
-                c(44, 80, "Keywords"),
-                c(81, 100, "Comments"),
-            ];
-            T
-        }
-        "I" => {
-            const T: &[Col] = &[
-                c(6, 6, "I"),
-                c(7, 16, "Filename"),
-                c(17, 18, "Sq"),
-                c(19, 19, "N"),
-                c(20, 20, "O"),
-                c(21, 22, "Id"),
-                c(23, 27, "Pos1"),
-                c(28, 28, "N"),
-                c(29, 29, "C"),
-                c(30, 30, "C"),
-                c(31, 35, "Pos2"),
-                c(36, 36, "N"),
-                c(37, 37, "C"),
-                c(38, 38, "C"),
-                c(39, 43, "Pos3"),
-                c(44, 44, "N"),
-                c(45, 45, "C"),
-                c(46, 46, "C"),
-                c(81, 100, "Comments"),
-            ];
-            T
-        }
-        "C" => {
-            const T: &[Col] = &[
-                c(6, 6, "C"),
-                c(7, 8, "L0"),
-                c(9, 11, "N01"),
-                c(12, 25, "Factor1"),
-                c(26, 35, "Opcode(E)"),
-                c(36, 49, "Factor2"),
-                c(50, 63, "Result"),
-                c(64, 68, "Len"),
-                c(69, 70, "D"),
-                c(71, 72, "Hi"),
-                c(73, 74, "Lo"),
-                c(75, 76, "Eq"),
-                c(81, 100, "Comments"),
-            ];
-            T
-        }
-        "CX" => {
-            const T: &[Col] = &[
-                c(6, 6, "C"),
-                c(7, 8, "L0"),
-                c(9, 11, "N01"),
-                c(12, 25, "Factor1"),
-                c(26, 35, "Opcode(E)"),
-                c(36, 80, "Extended-factor2"),
-                c(81, 100, "Comments"),
-            ];
-            T
-        }
-        "O" => {
-            const T: &[Col] = &[
-                c(6, 6, "O"),
-                c(7, 16, "Filename"),
-                c(17, 17, "D"),
-                c(18, 20, "Add"),
-                c(21, 29, "N01N02N03"),
-                c(30, 39, "Excnam"),
-                c(40, 42, "B"),
-                c(43, 45, "A"),
-                c(46, 48, "Sb"),
-                c(49, 51, "Sa"),
-                c(81, 100, "Comments"),
-            ];
-            T
-        }
-        "P" => {
-            const T: &[Col] = &[
-                c(6, 6, "O"),
-                c(21, 29, "N01N02N03"),
-                c(30, 43, "Field"),
-                c(44, 44, "Y"),
-                c(45, 45, "B"),
-                c(47, 51, "End"),
-                c(52, 52, "P"),
-                c(53, 80, "Constant/editword"),
-                c(81, 100, "Comments"),
-            ];
-            T
-        }
+        "H" | "F" | "D" | "I" | "C" | "CX" | "O" | "P" => return rpg_columns(fmt),
         _ => return None,
     })
+}
+
+/// The ruler columns of an RPG format from the shared spec table
+/// (`rpgspecs`): the letter in column 6, then each field that has a
+/// ruler of its own. SEU's `P` is the output field line.
+fn rpg_columns(fmt: &str) -> Option<&'static [Col]> {
+    use std::collections::HashMap;
+    use std::sync::OnceLock;
+    static COLS: OnceLock<HashMap<&'static str, Vec<Col>>> = OnceLock::new();
+    let all = COLS.get_or_init(|| {
+        let mut m = HashMap::new();
+        for (seu, id) in [
+            ("H", "H"),
+            ("F", "F"),
+            ("D", "D"),
+            ("I", "I"),
+            ("C", "C"),
+            ("CX", "CX"),
+            ("O", "O"),
+            ("P", "OF"),
+        ] {
+            let Some(form) = rpgspecs::form(id) else {
+                continue;
+            };
+            let letter: &'static str = Box::leak(form.letter.clone().into_boxed_str());
+            let mut v = vec![c(6, 6, letter)];
+            for f in form.fields.iter().filter(|f| !f.ruler.is_empty()) {
+                v.push(c(f.from, f.to, Box::leak(f.ruler.clone().into_boxed_str())));
+            }
+            m.insert(seu, v);
+        }
+        m
+    });
+    all.get(fmt).map(Vec::as_slice)
 }
 
 /// The numbered ruler character of a column: the tens digit on tens,
