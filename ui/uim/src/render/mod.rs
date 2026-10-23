@@ -169,7 +169,8 @@ pub fn render_help(
 /// R3: the keys, the command line or the selection and instruction
 /// rows above them; returns the first row the bottom block uses.
 fn bottom_block(ctx: &Ctx, p: &Panel, keyl: &KeyList, s: &mut Screen) -> usize {
-    let key_rows = keys::rows(ctx, keyl, s.limit());
+    // R6: a key row ends by column W-2 (dspsfwrsc wraps a row that would reach W-1).
+    let key_rows = keys::rows(ctx, keyl, s.limit() - 1);
     let key_top = s.rows - key_rows.len();
     for (i, row) in key_rows.iter().enumerate() {
         for (col, text) in row {
@@ -287,6 +288,14 @@ fn place_areas(ctx: &Ctx, p: &Panel, s: &mut Screen, top: usize, bottom: usize) 
     let (each, mut extra) = spare
         .checked_div(fills)
         .map_or((0, 0), |each| (each, spare % fills));
+    // R14: one-column data areas share the colon column.
+    let shared = areas
+        .iter()
+        .filter_map(|a| match a {
+            Area::Data(d) => data::single_colon(ctx, d, s.limit()),
+            _ => None,
+        })
+        .max();
     let mut row = top;
     for (area, h) in areas.iter().zip(heights) {
         let height = h.unwrap_or_else(|| {
@@ -299,7 +308,7 @@ fn place_areas(ctx: &Ctx, p: &Panel, s: &mut Screen, top: usize, bottom: usize) 
         }
         match area {
             Area::TopInst(t) => s.put(row, 2, Attr::Blue, &ctx.text(t)),
-            Area::Data(a) => data::render(ctx, a, s, row, height),
+            Area::Data(a) => data::render(ctx, a, s, row, height, shared),
             Area::List(a) => list::render(ctx, a, s, row, height),
             Area::Menu(a) => menu::render(ctx, a, s, row, height),
             Area::Info(a) => doc::render_area(ctx, &a.body, s, row, height, true),

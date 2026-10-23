@@ -23,6 +23,35 @@ note = "no completion message; a refusal is the escape"
 # --- work management (work/qsjob/src/panels/work.rs)
 # --- messages and objects (panels/objects.rs)
 # --- system and security (panels/system.rs)
+
+[cmd.DSPSYSVAL]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.WRKSYSVAL]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.DSPNETA]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.DSPSFWRSC]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.DSPUSRPRF]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.WRKUSRPRF]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.DSPAUTUSR]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
 # ---
 
 [cmd.CALL]

@@ -412,7 +412,7 @@ mod lda {
 }
 
 /// A system command in the storage service.
-fn service(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
+pub(crate) fn service(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
     let built = block::build(&r.def, &r.parms).map_err(|e| Fail::new(e.msgid(), e.to_string()))?;
     let specified: Vec<bool> = r.parms.iter().map(|b| b.specified).collect();
     // The keyword form as typed, for the service's bridge: the block

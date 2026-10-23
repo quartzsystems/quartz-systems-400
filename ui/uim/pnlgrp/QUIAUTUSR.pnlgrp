@@ -1,0 +1,53 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QUIAUTUSR: DSPAUTUSR, the user profiles with their groups and when
+.* their passwords last changed.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=DATECL BASETYPE='CHAR 8'.
+:ECLASS.
+:CLASS NAME=FLAGCL BASETYPE='CHAR 1'.
+:ECLASS.
+:CLASS NAME=TEXTCL BASETYPE='CHAR 50'.
+:ECLASS.
+:VAR NAME=AUUSER CLASS=NAMECL.
+:VAR NAME=AUGROUP CLASS=NAMECL.
+:VAR NAME=AUPWDCHG CLASS=DATECL.
+:VAR NAME=AUNOPWD CLASS=FLAGCL.
+:VAR NAME=AUTEXT CLASS=TEXTCL.
+:LISTDEF NAME=USERS VARS='AUUSER AUGROUP AUPWDCHG AUNOPWD AUTEXT'.
+:KEYL NAME=AUTKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F11 ACTION='RETURN 11'.F11=Password Level Information
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F17 ACTION=TOP.F17=Top
+:KEYI KEY=F18 ACTION=BOTTOM.F18=Bottom
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:PANEL NAME=DSPAUTUSR HELP=HLPAUT KEYL=AUTKEYS.Display Authorized Users
+:LIST DEPTH='*' LISTDEF=USERS SCROLL=YES.
+:LISTCOL VAR=AUUSER USAGE=OUTPUT.User Profile
+:LISTCOL VAR=AUGROUP USAGE=OUTPUT.Group Profile
+:LISTGRP.Password
+:LISTCOL VAR=AUPWDCHG USAGE=OUTPUT.Last Changed
+:LISTCOL VAR=AUNOPWD USAGE=OUTPUT.No Password
+:ELISTGRP.
+:LISTCOL VAR=AUTEXT USAGE=OUTPUT.Text
+:ELIST.
+:BOTINST.Press Enter to continue.
+:EPANEL.
+:HELP NAME=HLPAUT.Display Authorized Users - Help
+:P.This display lists every user profile with the group it belongs to,
+the date its password was last changed and its text. An X under No
+Password marks a profile that has no password and so cannot sign on.
+:P.SEQ(*GRPPRF) on the command lists the profiles by group.
+:EHELP.
+:EPNLGRP.

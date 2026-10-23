@@ -362,4 +362,21 @@ ipc::rpc! {
     // --- panel data: work management (140-159)
     // --- panel data: messages and objects (160-179)
     // --- panel data: system and security (180-199)
+    /// A system value for `DSPSYSVAL`: its text, its type (`*SEC` ...)
+    /// and the value's elements as shown.
+    180 => fn sysval_panel / SysvalPanel (name: String) -> Option<(String, String, Vec<String>)>;
+    /// Every system value for `WRKSYSVAL`: name, type and text.
+    181 => fn sysval_panel_list / SysvalPanelList () -> Vec<(String, String, String)>;
+    /// The network attributes for `DSPNETA`, by keyword.
+    182 => fn neta_panel / NetaPanel () -> Result<Vec<(String, String)>, String>;
+    /// `DSPUSRPRF TYPE(*BASIC)`: the panel's variables and values.
+    183 => fn usrprf_panel / UsrprfPanel (name: String) -> Result<Vec<(String, String)>, String>;
+    /// `WRKUSRPRF`: name, class and text of every profile.
+    184 => fn usrprf_panel_list / UsrprfPanelList () -> Result<Vec<(String, String, String)>, String>;
+    /// `DSPAUTUSR`: user, group, password change date, `X` for no
+    /// password and text, by user or by group.
+    185 => fn autusr_panel / AutusrPanel (by_group: bool) -> Result<Vec<Vec<String>>, String>;
+    /// `DSPSFWRSC`: resource ID, option, feature, description, feature
+    /// type, library and release of each installed product.
+    186 => fn sfwrsc_panel / SfwrscPanel () -> Vec<Vec<String>>;
 }
