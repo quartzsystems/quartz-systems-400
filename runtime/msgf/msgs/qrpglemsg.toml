@@ -397,3 +397,21 @@ id = "RNF0334"
 sev = 30
 text = "%DECPOS needs a decimal or integer value; &1 is not one."
 vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0599"
+sev = 20
+text = "The format &1 is not valid for this built-in function."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7510"
+sev = 30
+text = "The value &1 is too short for a complete date in its format."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7519"
+sev = 30
+text = "The value &1 is too short for a complete timestamp."
+vars = ["*CHAR 50"]

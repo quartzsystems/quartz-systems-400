@@ -30,6 +30,10 @@ pub struct Cx<'a> {
     pub datfmt: DatFmt,
     /// The default time format.
     pub timfmt: TimFmt,
+    /// The default date separator (`'\0'` for none).
+    pub datsep: char,
+    /// The default time separator.
+    pub timsep: char,
 }
 
 fn diag(cx: &mut Cx<'_>, id: &'static str, sev: u8, at: Pos, arg: &str) {
@@ -73,28 +77,14 @@ pub fn str_arg(k: &Keyword, i: usize) -> Option<String> {
 /// A date format and separator from keyword tokens (`*ISO`, `*MDY/`).
 fn datfmt_arg(k: &Keyword) -> Option<(DatFmt, char)> {
     let a = k.arg(0)?;
-    let first = a.toks.first()?.text().to_ascii_uppercase();
-    let f = DatFmt::parse(&first)?;
-    let sep = a
-        .toks
-        .get(1)
-        .map(rpgfront::lex::Tok::text)
-        .and_then(|s| s.chars().next())
-        .map_or(f.sep(), |c| if c == '0' { '\0' } else { c });
-    Some((f, sep))
+    let text: String = a.toks.iter().map(rpgfront::lex::Tok::text).collect();
+    crate::dtfmt::field_date(&text)
 }
 
 fn timfmt_arg(k: &Keyword) -> Option<(TimFmt, char)> {
     let a = k.arg(0)?;
-    let first = a.toks.first()?.text().to_ascii_uppercase();
-    let f = TimFmt::parse(&first)?;
-    let sep = a
-        .toks
-        .get(1)
-        .map(rpgfront::lex::Tok::text)
-        .and_then(|s| s.chars().next())
-        .map_or(f.sep(), |c| if c == '0' { '\0' } else { c });
-    Some((f, sep))
+    let text: String = a.toks.iter().map(rpgfront::lex::Tok::text).collect();
+    crate::dtfmt::field_time(&text)
 }
 
 /// The type a definition's keywords or columns give, and its `DIM`.
@@ -143,11 +133,11 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
                 Ty::Float(b)
             }
             "DATE" => {
-                let (f, s) = datfmt_arg(k).unwrap_or((cx.datfmt, cx.datfmt.sep()));
+                let (f, s) = datfmt_arg(k).unwrap_or((cx.datfmt, cx.datsep));
                 Ty::Date(f, s)
             }
             "TIME" => {
-                let (f, s) = timfmt_arg(k).unwrap_or((cx.timfmt, cx.timfmt.sep()));
+                let (f, s) = timfmt_arg(k).unwrap_or((cx.timfmt, cx.timsep));
                 Ty::Time(f, s)
             }
             "TIMESTAMP" => Ty::Timestamp(u8::try_from(n(0).unwrap_or(6)).unwrap_or(6)),
@@ -272,14 +262,18 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
             Ty::Float(u8::try_from(n).ok()?)
         }
         "D" => {
-            let (f, s) = d.kw("DATFMT").and_then(datfmt_arg).unwrap_or((cx.datfmt, cx.datfmt.sep()));
+            let (f, s) = d.kw("DATFMT").and_then(datfmt_arg).unwrap_or((cx.datfmt, cx.datsep));
             Ty::Date(f, s)
         }
         "T" => {
-            let (f, s) = d.kw("TIMFMT").and_then(timfmt_arg).unwrap_or((cx.timfmt, cx.timfmt.sep()));
+            let (f, s) = d.kw("TIMFMT").and_then(timfmt_arg).unwrap_or((cx.timfmt, cx.timsep));
             Ty::Time(f, s)
         }
-        "Z" => Ty::Timestamp(6),
+        "Z" => Ty::Timestamp(match cols.to.trim().parse::<u32>() {
+            Ok(n) if n > 20 => u8::try_from(n - 20).unwrap_or(6),
+            Ok(19) => 0,
+            _ => 6,
+        }),
         "*" => {
             if d.kw("PROCPTR").is_some() {
                 Ty::ProcPtr

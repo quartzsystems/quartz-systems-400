@@ -15,6 +15,7 @@ pub mod arrays;
 pub mod bif;
 pub mod cycle;
 pub mod dbio;
+pub mod dates;
 pub mod emit;
 pub mod exc;
 pub mod expr;

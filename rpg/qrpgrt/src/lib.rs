@@ -13,6 +13,8 @@
 pub mod cvt;
 pub mod exc;
 pub mod arrays;
+pub mod dates;
+pub mod dtnat;
 pub mod fmt;
 pub mod mov;
 pub mod natives;
@@ -25,6 +27,13 @@ pub mod value;
 pub fn procedures() -> Vec<(&'static str, usize)> {
     vec![
         ("_QRNX_CHARNUM", natives::charnum as *const () as usize),
+        ("_QRNX_DTADD", dtnat::add as *const () as usize),
+        ("_QRNX_DTCMP", dtnat::cmp as *const () as usize),
+        ("_QRNX_DTCVT", dtnat::cvt as *const () as usize),
+        ("_QRNX_DTDIFF", dtnat::diff as *const () as usize),
+        ("_QRNX_DTNOW", dtnat::now as *const () as usize),
+        ("_QRNX_DTSUB", dtnat::sub as *const () as usize),
+        ("_QRNX_DTTEST", dtnat::test as *const () as usize),
         ("_QRNX_EDITC", natives::editc as *const () as usize),
         ("_QRNX_EDITW", natives::editw as *const () as usize),
         ("_QRNX_MOVE", natives::move_ as *const () as usize),

@@ -514,7 +514,10 @@ impl Gen<'_> {
                 }
                 Ty::Ind => self.b.ins(format!("store {p}, *OFF")),
                 ty if ty.is_numeric() => self.b.ins(format!("mov {p}, *ZEROS")),
-                Ty::Date(..) | Ty::Time(..) | Ty::Timestamp(_) => self.b.ins(format!("mov {p}, *LOVAL")),
+                ty if ty.is_datetime() => {
+                    let v = Self::dt_default(ty).unwrap_or_default();
+                    self.b.ins(format!("mov {p}, {v}"));
+                }
                 ty if ty.is_varying() => self.b.ins(format!("mov {p}, \"\"")),
                 _ => self.b.ins(format!("mov {p}, *BLANKS")),
             }

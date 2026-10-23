@@ -34,6 +34,7 @@ pub mod ctl;
 pub mod decl;
 pub mod extfiles;
 pub mod diag;
+pub mod dtfmt;
 pub mod files;
 pub mod codegen;
 pub mod listing;

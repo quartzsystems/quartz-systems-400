@@ -170,6 +170,8 @@ pub enum Ty {
     Time(TimFmt, char),
     /// `Z`: fractional digits.
     Timestamp(u8),
+    /// A duration (`%DAYS(n)`): its unit (`codegen::dates`).
+    Dur(u8),
     /// `*`.
     Ptr,
     /// `*` with `PROCPTR`.
@@ -219,6 +221,7 @@ impl Ty {
                 }
             }
             Self::Ptr | Self::ProcPtr | Self::Object => 16,
+            Self::Dur(_) => 8,
             Self::Ds(i) => ds_len(*i),
         }
     }
@@ -313,9 +316,9 @@ impl Ty {
             Self::Int(d) => int_ir('i', *d),
             Self::Uns(d) => int_ir('u', *d),
             Self::Float(b) => format!("f{}", u32::from(*b) * 8),
-            Self::Date(f, _) => format!("date({})", f.name()),
-            Self::Time(f, _) => format!("time({})", f.name()),
-            Self::Timestamp(p) => format!("timestamp({p})"),
+            // Dates are their characters (`codegen::dates`).
+            Self::Date(..) | Self::Time(..) | Self::Timestamp(_) => format!("char({})", self.size(&|_| 0)),
+            Self::Dur(_) => "i64".into(),
             Self::Ptr | Self::Object => "ptr".into(),
             Self::ProcPtr => "procptr".into(),
             Self::Ds(i) => ds_ir(*i),
@@ -344,6 +347,7 @@ impl Ty {
             Self::Timestamp(p) => format!("Z({})", self.size(&|_| 0).max(19 + u32::from(*p))),
             Self::Ptr | Self::ProcPtr => "*(16)".into(),
             Self::Object => "O(16)".into(),
+            Self::Dur(_) => "**UNDEF**".into(),
             Self::Ds(i) => format!("DS({})", ds_len(*i)),
         }
     }

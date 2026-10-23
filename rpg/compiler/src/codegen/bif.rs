@@ -76,6 +76,9 @@ impl Gen<'_> {
         if let Some(v) = self.db_bif(name, args) {
             return v;
         }
+        if let Some(v) = self.dt_bif(name, args) {
+            return v;
+        }
         match name {
             "%LEN" => {
                 if !self.bif_arity(name, args, 1, 1) {
@@ -290,20 +293,7 @@ impl Gen<'_> {
                     return Some(self.char_of_number(&v));
                 }
                 if v.ty.is_datetime() {
-                    let n = self.t.size(&v.ty).max(26);
-                    let t = self.tmp(&Ty::VarChar(n, 2));
-                    let fmt = args.get(1).and_then(|e| match e {
-                        Expr::Special { word, .. } => Some(word.clone()),
-                        _ => None,
-                    });
-                    match (&v.ty, fmt) {
-                        (Ty::Date(..), Some(f)) => self.b.ins(format!("cvt {}, {} datfmt({})", t.op, v.op, f.trim_end_matches(['/', '-', '.', ',', '&', '0']))),
-                        (Ty::Time(..), Some(f)) => self.b.ins(format!("cvt {}, {} timfmt({})", t.op, v.op, f.trim_end_matches([':', '.', ',', '&', '0']))),
-                        (Ty::Date(f, _), None) => self.b.ins(format!("cvt {}, {} datfmt({})", t.op, v.op, f.name())),
-                        (Ty::Time(f, _), None) => self.b.ins(format!("cvt {}, {} timfmt({})", t.op, v.op, f.name())),
-                        _ => self.b.ins(format!("mov {}, {}", t.op, v.op)),
-                    }
-                    return Some(t);
+                    return self.dt_char(&v, args.get(1));
                 }
                 if v.ty == Ty::Ind {
                     let t = self.tmp(&Ty::Char(1));
@@ -475,7 +465,7 @@ impl Gen<'_> {
                         let i = (d1 - s1).max(d2 - s2);
                         Ty::Packed((i + s).min(63), s)
                     } else {
-                        best.ty.clone()
+                        Self::dt_result(&best.ty)
                     };
                     let t = self.tmp(&ty);
                     let take = self.b.label();
@@ -602,6 +592,9 @@ impl Gen<'_> {
             return None;
         }
         let v = self.expr(&args[0], Want::default())?;
+        if v.ty.is_datetime() {
+            return self.dt_dec(&v, args.get(1));
+        }
         let num = |e: Option<&Expr>| -> Option<u8> {
             match e? {
                 Expr::Lit(Lit::Num(n), _) => n.parse().ok(),
@@ -628,8 +621,6 @@ impl Gen<'_> {
         } else if v.ty.is_numeric() {
             let o = self.dec_operand(&v);
             self.b.ins(format!("dec.mov {}, {o}{half}", t.op));
-        } else if v.ty.is_datetime() {
-            self.b.ins(format!("cvt {}, {}", t.op, v.op));
         } else {
             self.err(ids::BIF_ARGS, 30, name.to_string());
             return None;

@@ -1,0 +1,31 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s d date;
+dcl-s e date(*mdy) inz(d'1999-12-31');
+dcl-s n int(10) inz(45);
+d = d'2024-01-31' + %months(1);
+line = %char(d) + ' ' + %char(d'2024-02-29' + %years(1)) + ' ' + %char(d'2024-02-29' -
+      %years(4));
+write QSYSPRT line;
+line = %char(d'2026-03-31' - %months(1)) + ' ' + %char(d'2026-01-01' + %days(365));
+write QSYSPRT line;
+line = %char(d'2026-01-01' - %days(1)) + ' ' + %char(d'2026-03-05' + %days(-10));
+write QSYSPRT line;
+d = d'2026-03-05';
+d += %days(30);
+line = %char(d);
+write QSYSPRT line;
+d -= %months(13);
+line = %char(d);
+write QSYSPRT line;
+d = d + %days(n) - %months(2) + %years(1);
+line = %char(d);
+write QSYSPRT line;
+e = e + %days(1);
+line = %char(e) + ' ' + %char(e - %months(25)) + ' ' + %char(e + %days(n * 2));
+write QSYSPRT line;
+line = %char(d'2026-05-31' + %months(1)) + ' ' + %char(d'2026-12-31' + %months(2));
+write QSYSPRT line;
+*inlr = *on;

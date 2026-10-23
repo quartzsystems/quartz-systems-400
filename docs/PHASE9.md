@@ -177,3 +177,11 @@ members of batch 4, pub400 V7R5M0.
   a source file, an RPG object or anything named `HLINV`, and pub400's
   account has none either. The HLINV harness skips with a message
   until its source is placed in `tools/conformance/hlinv/src/`.
+
+## Intentional differences
+
+- **`*JOBRUN`** is the job's date and time format on IBM i. QS/400
+  jobs have no date format yet, so `*JOBRUN` is `*MDY/` for dates and
+  `*HMS:` for times, and `TIME` into a 12- or 14-digit field appends
+  the date as `*MDY` (`mmddyy`, `mmddyyyy`). The corpus tests these
+  only by round trip, never by printing them.

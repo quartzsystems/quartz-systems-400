@@ -1,0 +1,16 @@
+# DTE024 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 2 seq 000200
+diag: RNF3530 00 line 3 seq 000300
+run: ok
+spool: QSYSPRT
+  |1/1   iso 0
+  |1/2   ymd 1
+  |1/3   ymd0 0
+  |1/4   mdy num 0
+  |1/5   cymd num 1
+  |1/6   hms 1
+  |1/7   stamp 0
+  |1/8   field 1
+  |1/9   field 0

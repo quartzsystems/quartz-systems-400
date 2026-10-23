@@ -124,6 +124,10 @@ pub struct Ctl {
     pub datfmt: DatFmt,
     /// `TIMFMT`.
     pub timfmt: TimFmt,
+    /// `DATFMT`'s separator when one is given (`'\0'` for none).
+    pub datsep: Option<char>,
+    /// `TIMFMT`'s separator when one is given.
+    pub timsep: Option<char>,
     /// `DECEDIT`: the decimal point and the thousands separator.
     pub decedit: (char, char),
     /// `EXPROPTS(*RESDECPOS)`.
@@ -201,13 +205,15 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
             }
             "NOMAIN" => c.nomain = true,
             "DATFMT" => {
-                if let Some(f) = word_arg(k, 0).and_then(|w| DatFmt::parse(&w)) {
+                if let Some((f, s)) = word_arg(k, 0).and_then(|w| crate::dtfmt::field_date(&w)) {
                     c.datfmt = f;
+                    c.datsep = Some(s);
                 }
             }
             "TIMFMT" => {
-                if let Some(f) = word_arg(k, 0).and_then(|w| TimFmt::parse(&w)) {
+                if let Some((f, s)) = word_arg(k, 0).and_then(|w| crate::dtfmt::field_time(&w)) {
                     c.timfmt = f;
+                    c.timsep = Some(s);
                 }
             }
             "DECEDIT" => {

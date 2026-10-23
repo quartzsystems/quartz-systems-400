@@ -124,15 +124,7 @@ impl Gen<'_> {
                     }
                 }
             }
-            (Ty::Date(..) | Ty::Time(..) | Ty::Timestamp(_), _) => {
-                if src.fig.is_some() || src.ty == dst.ty {
-                    self.b.ins(format!("mov {}, {}", dst.op, src.op));
-                } else if src.ty.is_datetime() {
-                    self.b.ins(format!("cvt {}, {}", dst.op, src.op));
-                } else {
-                    self.err(ids::TYPE_MISMATCH, 30, "");
-                }
-            }
+            (Ty::Date(..) | Ty::Time(..) | Ty::Timestamp(_), _) => self.dt_assign(&dst, &src),
             (Ty::Ptr | Ty::ProcPtr, _) => {
                 if src.fig == Some(Fig::Null) {
                     let r = self.b.reg();
@@ -693,6 +685,7 @@ impl Gen<'_> {
             ("SND-MSG", _) => self.snd_msg(op),
             ("AND" | "OR", _) => self.err(ids::UNBALANCED, 30, op.code.clone()),
             _ if self.strop(base, s) => {}
+            (b, _) if self.dt_op(b, op) => {}
             _ => self.err(ids::UNSUPPORTED, 30, op.code.clone()),
         }
         used
@@ -1337,7 +1330,7 @@ fn default_value(g: &mut Gen<'_>, ty: &Ty, dim: u32, place: &str) {
     let lit = match ty {
         t if t.is_numeric() => "*ZEROS",
         Ty::Ind => "*OFF",
-        Ty::Date(..) | Ty::Time(..) | Ty::Timestamp(_) => "*LOVAL",
+        t if t.is_datetime() => &Gen::dt_default(t).unwrap_or_default(),
         Ty::Ptr | Ty::ProcPtr | Ty::Object => "",
         Ty::Ds(_) => "",
         _ => "*BLANKS",
@@ -1520,6 +1513,9 @@ fn inz_fits(ty: &Ty, v: &V) -> bool {
 
 /// An `INZ(value)`: the value into every element.
 fn inz_value(g: &mut Gen<'_>, ty: &Ty, dim: u32, place: &str, e: &Expr) {
+    if dim == 0 && g.dt_inz(ty, place, e) {
+        return;
+    }
     let Some(v) = g.expr(e, Want::default()) else { return };
     if !inz_fits(ty, &v) {
         g.err(ids::INZ_TOO_LONG, 20, String::new());

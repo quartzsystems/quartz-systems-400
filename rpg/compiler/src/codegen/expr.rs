@@ -17,7 +17,7 @@ use crate::diag::ids;
 use crate::codegen::emit::quote;
 use crate::codegen::{Gen, place_of};
 use crate::syms::{ConstVal, Kind, SymId};
-use crate::types::{DatFmt, Ty};
+use crate::types::Ty;
 
 /// How a value is held.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -164,21 +164,7 @@ impl Gen<'_> {
                 let n = u32::try_from(h.len() / 2).unwrap_or(0);
                 V::lit(Ty::Char(n), format!("x\"{}\"", h.to_ascii_uppercase()))
             }
-            Lit::Date(s) => {
-                let t = self.b.temp("date(*ISO)");
-                self.b.ins(format!("cvt {t}, {} datfmt(*ISO)", quote(s)));
-                V::place(Ty::Date(DatFmt::Iso, '-'), t)
-            }
-            Lit::Time(s) => {
-                let t = self.b.temp("time(*ISO)");
-                self.b.ins(format!("cvt {t}, {} timfmt(*ISO)", quote(s)));
-                V::place(Ty::Time(crate::types::TimFmt::Iso, '.'), t)
-            }
-            Lit::Timestamp(s) => {
-                let t = self.b.temp("timestamp(6)");
-                self.b.ins(format!("mov {t}, {}", quote(s)));
-                V::place(Ty::Timestamp(6), t)
-            }
+            Lit::Date(_) | Lit::Time(_) | Lit::Timestamp(_) => return self.dt_literal(l),
             Lit::Graph(_) | Lit::Ucs2(_) => {
                 self.err(ids::UNSUPPORTED, 30, "literal");
                 return None;
@@ -500,6 +486,9 @@ impl Gen<'_> {
             self.err(ids::UNDEFINED_OPERAND, 30, "");
             return None;
         }
+        if va.ty.is_datetime() || vb.ty.is_datetime() || matches!(va.ty, Ty::Dur(_)) || matches!(vb.ty, Ty::Dur(_)) {
+            return self.dt_arith(op, va, vb);
+        }
         if !va.ty.is_numeric() || !vb.ty.is_numeric() {
             self.err(ids::TYPE_MISMATCH, 30, "");
             return None;
@@ -704,11 +693,8 @@ impl Gen<'_> {
             return Some(V::reg(Ty::Ind, r));
         }
         if va.ty.is_datetime() || vb.ty.is_datetime() {
-            // Dates, times and timestamps compare by value: as *ISO text.
-            let a = self.iso_text(&va);
-            let b = self.iso_text(&vb);
-            self.b.ins(format!("{r} = str.cmp.{c} {a}, {b}"));
-            return Some(V::reg(Ty::Ind, r));
+            // Dates, times and timestamps compare by value.
+            return self.dt_compare(c, &va, &vb);
         }
         if (va.ty.is_string() || va.fig.is_some()) && (vb.ty.is_string() || vb.fig.is_some()) {
             // The IR compares a literal only against storage.
@@ -737,7 +723,7 @@ impl Gen<'_> {
     /// comparison; anything else as it is.
     fn fig_as(&mut self, v: &V, other: &V) -> V {
         let Some(f) = &v.fig else { return v.clone() };
-        if other.fig.is_some() || !(other.ty.is_numeric() || other.ty.is_datetime()) {
+        if other.fig.is_some() || !other.ty.is_numeric() {
             return v.clone();
         }
         if matches!(f, Fig::On | Fig::Off | Fig::Null) {
@@ -778,23 +764,6 @@ impl Gen<'_> {
         let c = self.b.temp("char(1)");
         self.b.ins(format!("cvt {c}, {t}"));
         c
-    }
-
-    /// A date, time or timestamp as `*ISO` text.
-    fn iso_text(&mut self, v: &V) -> String {
-        match &v.ty {
-            Ty::Date(f, _) if *f != DatFmt::Iso => {
-                let t = self.b.temp("date(*ISO)");
-                self.b.ins(format!("cvt {t}, {}", v.op));
-                t
-            }
-            Ty::Time(f, _) if *f != crate::types::TimFmt::Iso => {
-                let t = self.b.temp("time(*ISO)");
-                self.b.ins(format!("cvt {t}, {}", v.op));
-                t
-            }
-            _ => v.op.clone(),
-        }
     }
 
     /// A pointer value as a register.

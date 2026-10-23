@@ -58,6 +58,15 @@ fn kept(f: &File, fmt: &str) -> bool {
     !f.ignore.iter().any(|i| i == fmt)
 }
 
+/// The type a file's field has in the program: zoned and binary
+/// numbers are packed there, as IBM brings them in.
+fn program_type(t: &Ty) -> Ty {
+    match t {
+        Ty::Zoned(d, s) => Ty::Packed(*d, *s),
+        other => other.clone(),
+    }
+}
+
 /// Declare the record formats and fields of a scope's files, and the
 /// fields of its program-described input specifications.
 pub fn declare_files(t: &mut Table, diags: &mut Vec<Diag>, scope: usize, prefix: &str, files: &[File], first: usize, inputs: &[Input]) {
@@ -99,7 +108,7 @@ pub fn declare_files(t: &mut Table, diags: &mut Vec<Diag>, scope: usize, prefix:
                 let _ = t.add(Sym {
                     name: pname.clone(),
                     kind: Some(Kind::Field),
-                    ty: fd.ty.clone(),
+                    ty: program_type(&fd.ty),
                     ir: format!("${prefix}{}", mangle(&pname)),
                     scope,
                     storage: if scope == 0 { Storage::Static } else { Storage::Auto },

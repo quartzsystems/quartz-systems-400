@@ -110,6 +110,8 @@ fn declare_scope(
         prefix: prefix.to_string(),
         datfmt: ctl.datfmt,
         timfmt: ctl.timfmt,
+        datsep: ctl.datsep.unwrap_or(ctl.datfmt.sep()),
+        timsep: ctl.timsep.unwrap_or(ctl.timfmt.sep()),
     };
     for d in defs {
         decl::declare(&mut cx, d);
@@ -164,6 +166,8 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
                 prefix: prefix.clone(),
                 datfmt: ctl.datfmt,
                 timfmt: ctl.timfmt,
+                datsep: ctl.datsep.unwrap_or(ctl.datfmt.sep()),
+                timsep: ctl.timsep.unwrap_or(ctl.timfmt.sep()),
             };
             let mut pr = decl::proto(&mut cx, &iface);
             pr.name.clone_from(&pname);

@@ -23,6 +23,7 @@ const TEXTS: &[(&str, &str)] = &[
     ("RNF0267", "A character literal has no closing apostrophe; one is assumed."),
     ("RNF0280", "A continued name has no continuation."),
     ("RNF0308", "The float literal is not valid."),
+    ("RNF0599", "The format &1 is not valid for this built-in function."),
     ("RNF0618", "The length or number of digits for &1 is not valid."),
     ("RNF0955", "This item cannot be the target of an assignment."),
     ("RNF2109", "No external description was found for file &1."),
@@ -56,6 +57,8 @@ const TEXTS: &[(&str, &str)] = &[
     ("RNF7404", "An index or position is out of range."),
     ("RNF7419", "An expression of this type is not allowed here."),
     ("RNF7421", "The types of the operands do not match."),
+    ("RNF7510", "The value &1 is too short for a complete date in its format."),
+    ("RNF7519", "The value &1 is too short for a complete timestamp."),
     ("RNF7535", "The number of parameters for &1 does not match its prototype."),
     ("RNF7536", "A parameter does not match its prototype."),
 ];

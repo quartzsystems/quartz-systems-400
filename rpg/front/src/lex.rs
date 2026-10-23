@@ -219,6 +219,12 @@ pub fn lex(segments: &[Segment<'_>], diags: &mut Vec<Diag>) -> Vec<Tok> {
                 while j < chars.len() && name_char(chars[j]) {
                     j += 1;
                 }
+                // A date or time format's separator before `)`: `*MDY-`, `*HMS&`.
+                if matches!(chars.get(j), Some('/' | '-' | '.' | ',' | '&' | ':'))
+                    && chars[j + 1..].iter().find(|c| **c != ' ').is_none_or(|c| *c == ')')
+                {
+                    j += 1;
+                }
                 let w: String = chars[i..j].iter().collect::<String>().to_ascii_uppercase();
                 // *ALL'x', *ALLX'..', *ALLG'..'
                 if matches!(w.as_str(), "*ALL" | "*ALLX" | "*ALLG") && chars.get(j) == Some(&'\'') {

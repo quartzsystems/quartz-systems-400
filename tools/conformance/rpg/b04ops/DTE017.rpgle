@@ -1,0 +1,21 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s d date;
+dcl-s e date(*mdy) inz(d'2000-02-29');
+dcl-s t time inz(t'01.02.03');
+dcl-s z timestamp inz(z'2026-03-05-14.30.05.123456');
+dcl-s y timestamp(3);
+d = %date(z) + %days(%diff(z:z'2026-01-01-00.00.00':*days));
+line = %char(d) + ' ' + %char(%diff(d:e:*years) + 1);
+write QSYSPRT line;
+y = z + %days(1) + %hours(1) + %minutes(1) + %seconds(1) + %mseconds(1000);
+line = %char(y);
+write QSYSPRT line;
+e = e + %years(1);
+line = %char(e) + ' ' + %char(e - %years(1)) + ' ' + %char(d'2000-02-29' + %years(100));
+write QSYSPRT line;
+line = %char(%timestamp(%date(z)) + %hours(%subdt(t:*h)));
+write QSYSPRT line;
+*inlr = *on;

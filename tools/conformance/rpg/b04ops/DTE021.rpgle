@@ -1,0 +1,28 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s z0 timestamp(0) inz(z'2026-03-05-14.30.05');
+dcl-s z1 timestamp(1) inz(z'2026-03-05-14.30.05.9');
+dcl-s z9 timestamp(9) inz(z'2026-03-05-14.30.05.123456789');
+dcl-s z12 timestamp(12) inz(z'2026-03-05-14.30.05.000000000001');
+dcl-s z timestamp;
+line = %char(z0) + ' ' + %char(z1) + ' ' + %char(z9);
+write QSYSPRT line;
+line = %char(z12) + ' ' + %char(%len(%char(z12))) + ' ' + %char(%size(z9));
+write QSYSPRT line;
+z = z9;
+line = %char(z) + ' ' + %char(%subdt(z9:*ms)) + ' ' + %char(%subdt(z12:*ms));
+write QSYSPRT line;
+line = %char(%diff(z12:z0:*ms)) + ' ' + %char(%diff(z9:z1:*ms));
+write QSYSPRT line;
+line = %char(z12 + %mseconds(1)) + ' ' + %char(z1 + %mseconds(100000));
+write QSYSPRT line;
+if z12 > z0 and z1 > z9;
+  line = 'precision compares';
+write QSYSPRT line;
+endif;
+z9 = z12;
+line = %char(z9);
+write QSYSPRT line;
+*inlr = *on;

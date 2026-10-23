@@ -1,0 +1,15 @@
+# DTE011 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 3 seq 000300
+diag: RNF3530 00 line 4 seq 000400
+run: ok
+spool: QSYSPRT
+  |1/1   00.30.00 00.15.00 22.29.59
+  |1/2   00.30.00 23.30.00 15.30.00
+  |1/3   4 269
+  |1/4   16185 -5
+  |1/5   -5 -300
+  |1/6   23 30 0
+  |1/7   14 30 0
+  |1/8   23.30.59

@@ -198,6 +198,53 @@ a structure to it prints one line and spaces one after; output records
 print with their space and skip entries through `prtio ... ctl(sb, sa,
 kb, ka)` (`QIR.md`), one line after when none is given.
 
+## Dates, times and timestamps
+
+A date, time or timestamp is held as IBM holds it: its characters in
+the field's format (`03/05/26`, `14.30.05`, `2026-03-05-14.30.05.123456`),
+`char(n)` in the IR. The IR's own `date`/`time`/`timestamp` types and
+`dt.*` instructions are not used: they have no separators of the
+programmer's choice, no century or long Julian forms, microseconds
+only, and no RPG statuses. Format names (`*MDY-`, `*CYMD0`, `*HMS&`,
+`*JOBRUN`) are parsed by `rpgc::dtfmt` into a **format word**: the
+format code in bits 0-7, the separator in bits 8-15 (0 for none), a
+timestamp's fractional digits in bits 16-23. The lexer keeps a
+separator before `)` with its special word (`*MDY-)`).
+
+`codegen/dates.rs` renders what is known at compile time: literals
+(`d'...'` and `t'...'` in the control specification's `DATFMT` and
+`TIMFMT`, `*ISO` by default; a timestamp literal is always `*ISO`, its
+precision its fractional digits), `*LOVAL`/`*HIVAL` and the defaults
+in the field's format (`*LOVAL` of a two-digit-year format is
+1940-01-01, `*HIVAL` 2039-12-31; a time's `*HIVAL` is 24.00.00, which
+`*USA` writes `12:00 AM`, its midnight being `00:00 AM`). The result of
+date or time arithmetic, `%MAX` and `%MIN` is `*ISO`, whatever the
+operands' formats.
+Everything else calls `qrpgrt` with each operand's address, descriptor
+and format word; for a character or numeric operand the format word
+says how to read or write it. A duration (`%DAYS(n)`) is an `i64`
+register of type `Ty::Dur`; `+`/`-` with a date and a duration, `%DIFF`
+and `%SUBDT` (and `ADDDUR`, `SUBDUR`, `EXTRCT`) go to the runtime.
+`DATFMT`/`TIMFMT` on the control specification set the default of
+fields and of `%DATE`/`%TIME`/`TEST` on character and numeric data.
+QS/400 has no job date format yet: `*JOBRUN` is `*MDY/` and `*HMS:`,
+and `TIME` into a 12- or 14-digit field appends the date as `*MDY`.
+
+| Procedure | Does |
+|---|---|
+| `_QRNX_DTCVT` | assignment between formats, `%DATE`, `%TIME`, `%TIMESTAMP`, `%CHAR`, `%DEC` |
+| `_QRNX_DTCMP` | comparison by value (a date against a timestamp is its midnight) |
+| `_QRNX_DTADD` | date arithmetic, `ADDDUR`, `SUBDUR`: months and years keep the day or cut it to the month's end |
+| `_QRNX_DTDIFF` | `%DIFF`, `SUBDUR`'s difference form: whole units, the rest below the unit decides |
+| `_QRNX_DTSUB` | `%SUBDT`, `EXTRCT` |
+| `_QRNX_DTTEST` | `TEST` |
+| `_QRNX_DTNOW` | `%DATE()`, `INZ(*SYS)`, `INZ(*JOB)`, `TIME` |
+
+Values are days since 0001-01-01, seconds and picoseconds
+(`qrpgrt::dates`); a failure signals `RNX0112` (not a valid value),
+`RNX0113` (arithmetic outside 0001-01-01 to 9999-12-31) or `RNX0114`
+(a year the target's format cannot hold), status 112, 113, 114.
+
 ## The runtime library (`qrpgrt`)
 
 Procedures generated code binds to by name; the binder resolves any

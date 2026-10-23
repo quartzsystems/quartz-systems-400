@@ -1,0 +1,37 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s c10 char(10) inz('2026-03-05');
+dcl-s n8 packed(8:0) inz(20260305);
+dcl-s n6 zoned(6:0) inz(030526);
+dcl-s n7 packed(7:0) inz(1260305);
+dcl-s z timestamp inz(z'2026-03-05-14.30.05.123456');
+dcl-s d date;
+line = %char(%date('2026-03-05':*iso)) + ' ' + %char(%date('03/05/2026':*usa));
+write QSYSPRT line;
+line = %char(%date('05.03.2026':*eur)) + ' ' + %char(%date('26/03/05':*ymd));
+write QSYSPRT line;
+line = %char(%date('26/064':*jul)) + ' ' + %char(%date('20260305':*iso0));
+write QSYSPRT line;
+line = %char(%date('030526':*mdy0)) + ' ' + %char(%date('126/03/05':*cymd));
+write QSYSPRT line;
+line = %char(%date('1260305':*cymd0)) + ' ' + %char(%date('2026/064':*longjul));
+write QSYSPRT line;
+line = %char(%date(n8:*iso)) + ' ' + %char(%date(n6:*mdy)) + ' ' + %char(%date(n7:*cymd));
+write QSYSPRT line;
+line = %char(%date(26064:*jul)) + ' ' + %char(%date(2026064:*longjul)) + ' ' +
+      %char(%date(n8));
+write QSYSPRT line;
+line = %char(%date(c10)) + ' ' + %char(%date(z)) + ' ' + %char(%date('991231':*ymd0));
+write QSYSPRT line;
+line = %char(%date('400101':*ymd0)) + ' ' + %char(%date('391231':*ymd0));
+write QSYSPRT line;
+line = %char(%date('2026-03-05':*iso):*mdy) + ' ' + %char(%date(1991231:*cymd));
+write QSYSPRT line;
+d = %date('2026-03-05':*iso);
+if %date(%char(d:*jobrun):*jobrun) = d;
+  line = 'jobrun round trip';
+write QSYSPRT line;
+endif;
+*inlr = *on;

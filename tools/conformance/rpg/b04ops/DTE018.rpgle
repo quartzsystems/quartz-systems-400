@@ -1,0 +1,25 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-ds ds qualified;
+  d date(*iso) inz(d'2026-03-05');
+  t time(*hms) inz(t'14.30.05');
+  z timestamp(0) inz(z'2026-03-05-14.30.05');
+end-ds;
+dcl-s list date dim(3);
+dcl-s i int(10);
+list(1) = d'2026-01-01';
+for i = 2 to 3;
+  list(i) = list(i - 1) + %months(i);
+endfor;
+line = %char(list(1)) + ' ' + %char(list(2)) + ' ' + %char(list(3));
+write QSYSPRT line;
+ds.d += %days(1);
+ds.t -= %hours(15);
+ds.z += %years(1);
+line = '[' + ds + ']';
+write QSYSPRT line;
+line = %char(ds.d:*mdy) + ' ' + %char(ds.t:*usa) + ' ' + %char(ds.z);
+write QSYSPRT line;
+*inlr = *on;
