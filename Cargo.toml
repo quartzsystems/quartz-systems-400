@@ -61,6 +61,7 @@ members = [
     "devtools/sst",
     # ILE RPG: the spec tables, the compiler, its runtime.
     "rpg/specs",
+    "rpg/front",
 ]
 
 [workspace.package]

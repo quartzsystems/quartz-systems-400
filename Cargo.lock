@@ -1949,6 +1949,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "rpgfront"
+version = "0.1.0"
+dependencies = [
+ "rpgspecs",
+]
+
+[[package]]
 name = "rpgspecs"
 version = "0.1.0"
 dependencies = [

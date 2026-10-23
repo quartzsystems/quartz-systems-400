@@ -28,6 +28,7 @@ pub fn diags(lines: &[String]) -> Vec<Diag> {
     let mut out = Vec::new();
     let mut current: u32 = 0;
     let mut in_source = false;
+    let mut in_additional = false;
     for raw in lines {
         let body = raw.get(1..).unwrap_or("");
         let t = body.trim_start();
@@ -35,15 +36,22 @@ pub fn diags(lines: &[String]) -> Vec<Diag> {
             in_source = true;
             continue;
         }
-        if t.starts_with("* * * * *   E N D   O F   S O U R C E") {
+        if t.starts_with("A d d i t i o n a l   D i a g n o s t i c") {
+            in_additional = true;
+            continue;
+        }
+        if t.starts_with("* * * * *   E N D   O F") {
             in_source = false;
+            in_additional = false;
             continue;
         }
         if in_source && let Some(n) = source_line_number(body) {
             current = n;
             continue;
         }
-        if let Some(d) = diag_line(t, current) {
+        if (in_source || in_additional)
+            && let Some(d) = diag_line(t, current)
+        {
             out.push(d);
         }
     }
@@ -177,8 +185,12 @@ mod tests {
             "      2        dcl-f",
             " *RNF5501 20      5 000500  The comment entry ...",
             "0       * * * * *   E N D   O F   S O U R C E   * * * * *",
+            "0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s",
             " *RNF7030 30      2 000200  The name ...",
             " *RNF7023 40      0         The Compiler ...",
+            "0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S",
+            "0                          M e s s a g e   S u m m a r y",
+            " *RNF2318 00      1 No overflow ...",
         ]
         .iter()
         .map(|s| (*s).to_string())

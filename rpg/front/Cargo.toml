@@ -1,0 +1,13 @@
+[package]
+name = "rpgfront"
+description = "QS/400 ILE RPG front end: source reading, directives, /COPY, fixed and free form, the syntax tree"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+rpgspecs = { path = "../specs", version = "0.1.0" }
+
+[lints]
+workspace = true
