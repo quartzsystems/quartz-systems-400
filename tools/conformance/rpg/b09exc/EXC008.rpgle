@@ -1,0 +1,20 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s a char(2) dim(3);
+dcl-s i int(10) inz(4);
+monitor;
+  a(i) = 'x';
+on-error 121;
+  line = 'index 121';
+  write QSYSPRT line;
+endmon;
+monitor;
+  i = 0;
+  a(i) = 'y';
+on-error;
+  line = 'index ' + %char(%status);
+  write QSYSPRT line;
+endmon;
+*inlr = *on;

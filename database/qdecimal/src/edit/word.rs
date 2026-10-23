@@ -80,9 +80,42 @@ fn parse(word: &str, digits: usize) -> Result<Parsed> {
     })
 }
 
-/// Edit `value` as a field of `shape` with `word`.
+/// The digit positions of a word's body: every blank, and the first
+/// zero or asterisk, before the status (`CR`, or a `-` with no blank
+/// after it). The body ends at the rightmost of them, which is why an
+/// expansion writes its blanks as `&`.
+fn digit_positions(word: &str) -> usize {
+    let chars: Vec<char> = word.chars().collect();
+    let cr = (0..chars.len().saturating_sub(1)).find(|&i| chars[i] == 'C' && chars[i + 1] == 'R');
+    let minus = chars
+        .iter()
+        .rposition(|&c| c == '-')
+        .filter(|&k| !chars[k + 1..].contains(&' '));
+    let limit = cr.or(minus).unwrap_or(chars.len());
+    let mut stop = false;
+    let mut n = 0;
+    for &c in &chars[..limit] {
+        if c == ' ' {
+            n += 1;
+        } else if matches!(c, '0' | '*') && !stop {
+            stop = true;
+            n += 1;
+        }
+    }
+    n
+}
+
+/// Edit `value` as a field of `shape` with `word`. A body with more
+/// digit positions than the field has digits takes the value right
+/// aligned, the extra positions leading zeros (pub400).
 pub fn edit_word(value: &Decimal, shape: Shape, word: &str) -> Result<String> {
-    let (neg, digits) = digits_of(value, shape)?;
+    let (neg, mut digits) = digits_of(value, shape)?;
+    let positions = digit_positions(word);
+    if positions > digits.len() {
+        let mut padded = vec![0; positions - digits.len()];
+        padded.extend(digits);
+        digits = padded;
+    }
     let p = parse(word, digits.len())?;
     // An asterisk as the stop makes asterisks the fill.
     let fill = if p.stop.is_some_and(|s| p.body[s] == '*') {
@@ -165,6 +198,9 @@ mod tests {
         assert_eq!(edit("12", 5, 0, " *   "), "**012");
         assert_eq!(edit("12", 5, 0, "0    "), " 0012");
         assert_eq!(edit("0", 7, 0, "     0 &DAYS"), "      0 DAYS");
+        // More positions than digits: the value right aligned (pub400).
+        assert_eq!(edit("1234.56", 7, 2, "   ,  0.  "), "  1,234.56");
+        assert_eq!(edit("-12.3", 7, 2, "   ,  0.  CR"), "     12.30CR");
     }
 
     #[test]

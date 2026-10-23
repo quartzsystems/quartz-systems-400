@@ -45,6 +45,18 @@ impl Gen<'_> {
         self.int_reg(&v)
     }
 
+    /// A literal in a temporary of its own length, for a `*VARSIZE`
+    /// parameter (the IR would place it in one of the parameter's).
+    pub fn lit_storage(&mut self, v: &V) -> String {
+        if v.kind != Vk::Lit {
+            return v.op.clone();
+        }
+        let n = v.ty.str_len().unwrap_or(1).max(1);
+        let t = self.b.temp(&format!("char({n})"));
+        self.b.ins(format!("mov {t}, {}", v.op));
+        t
+    }
+
     /// A temporary of a type.
     fn tmp(&mut self, ty: &Ty) -> V {
         let t = self.b.temp(&self.ir_ty(ty));
@@ -215,6 +227,14 @@ impl Gen<'_> {
                 }
                 let repl = self.str_arg(&args[0])?;
                 let src = self.str_arg(&args[1])?;
+                // An empty replacement: a varying temporary of length 0.
+                let repl = if repl.kind == Vk::Lit && repl.ty.str_len() == Some(0) {
+                    let t = self.tmp(&Ty::VarChar(1, 2));
+                    self.b.ins(format!("str.setlen {}, 0", t.op));
+                    t
+                } else {
+                    repl
+                };
                 let n = repl.ty.str_len().unwrap_or(0) + src.ty.str_len().unwrap_or(0);
                 let t = self.tmp(&Ty::VarChar(n.max(1), 2));
                 let start = match args.get(2) {
@@ -623,7 +643,8 @@ impl Gen<'_> {
             "_QRNX_EDITW",
             "($dst: char(1) *VARSIZE, byval $dlen: i32, $src: bytes(1) *VARSIZE, byval $desc: i64, const $word: char(1) *VARSIZE, byval $wlen: i32)",
         );
-        self.b.ins(format!("callb _QRNX_EDITW({}, {n}, {}, {desc}, {}, {n})", t.op, src.op, word.op));
+        let w = self.lit_storage(&word);
+        self.b.ins(format!("callb _QRNX_EDITW({}, {n}, {}, {desc}, {w}, {n})", t.op, src.op));
         Some(t)
     }
 

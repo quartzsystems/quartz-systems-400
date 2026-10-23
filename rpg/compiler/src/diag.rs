@@ -29,6 +29,10 @@ pub mod ids {
     pub const BAD_EXPRESSION_TYPE: &str = "RNF7419";
     /// An operation's structure is unbalanced (ENDIF without IF...).
     pub const UNBALANCED: &str = "RNF5012";
+    /// A constant divisor of zero.
+    pub const DIVIDE_BY_ZERO: &str = "RNF7504";
+    /// A calculation after the subroutines.
+    pub const AFTER_ENDSR: &str = "RNF5005";
     /// The program has no way to end.
     pub const NO_END: &str = "RNF7023";
     /// A data structure has no subfields that count.

@@ -40,15 +40,15 @@ pub fn char_of(v: &Decimal, shape: Shape, point: char) -> String {
     out
 }
 
-/// `%CHAR` of a float: one digit, the point, 15 (8-byte) or 6 (4-byte)
-/// decimals, `E`, the exponent's sign and three digits.
+/// `%CHAR` of a float: the sign, one digit, the point, 15 (8-byte) or 6
+/// (4-byte) decimals, `E`, the exponent's sign and three digits.
 #[must_use]
 pub fn char_of_float(f: f64, single: bool) -> String {
     let decimals = if single { 6 } else { 15 };
     if f == 0.0 {
-        return format!("0.{}E+000", "0".repeat(decimals));
+        return format!("+0.{}E+000", "0".repeat(decimals));
     }
-    let s = format!("{f:.decimals$e}");
+    let s = format!("{f:+.decimals$e}");
     let (mant, exp) = s.split_once('e').unwrap_or((&s, "0"));
     let e: i32 = exp.parse().unwrap_or(0);
     let sign = if e < 0 { '-' } else { '+' };
@@ -73,7 +73,7 @@ mod tests {
         assert_eq!(char_of(&d("0"), sh(5, 0), '.'), "0");
         assert_eq!(char_of(&d("-42"), sh(5, 0), '.'), "-42");
         assert_eq!(char_of(&d("3.25"), sh(5, 2), ','), "3,25");
-        assert_eq!(char_of_float(1.5, false), "1.500000000000000E+000");
+        assert_eq!(char_of_float(1.5, false), "+1.500000000000000E+000");
         assert_eq!(char_of_float(-0.000125, false), "-1.250000000000000E-004");
     }
 }

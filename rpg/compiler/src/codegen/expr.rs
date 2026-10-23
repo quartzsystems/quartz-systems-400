@@ -457,6 +457,11 @@ impl Gen<'_> {
             self.err(ids::TYPE_MISMATCH, 30, "");
             return None;
         }
+        // A constant zero divisor is refused at compile time.
+        if op == BinOp::Div && vb.kind == Vk::Lit && vb.op.trim_start_matches('-').chars().all(|c| c == '0' || c == '.') {
+            self.err(ids::DIVIDE_BY_ZERO, 30, String::new());
+            return None;
+        }
         let float = matches!(va.ty, Ty::Float(_)) || matches!(vb.ty, Ty::Float(_)) || op == BinOp::Pow;
         if float {
             let fa = self.float_reg(va);
@@ -617,7 +622,15 @@ impl Gen<'_> {
                 let fb = self.float_reg(&vb);
                 self.b.ins(format!("{r} = cmp.{c} {fa}, {fb}"));
             } else {
-                let a = self.dec_operand(&va);
+                let a = if va.kind == Vk::Lit && vb.kind == Vk::Lit {
+                    // The IR compares a literal only against storage.
+                    let (d, s) = va.ty.shape().unwrap_or((1, 0));
+                    let t = self.b.temp(&format!("packed({d},{s})"));
+                    self.b.ins(format!("dec.mov {t}, {}", va.op));
+                    t
+                } else {
+                    self.dec_operand(&va)
+                };
                 let b = self.dec_operand(&vb);
                 self.b.ins(format!("{r} = dec.cmp.{c} {a}, {b}"));
             }

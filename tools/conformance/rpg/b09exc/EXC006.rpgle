@@ -1,0 +1,23 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s r packed(5:0);
+monitor;
+  r = fail(0);
+  line = 'no';
+  write QSYSPRT line;
+on-error 202;
+  line = 'caught 202 ' + %char(%status);
+  write QSYSPRT line;
+on-error;
+  line = 'other ' + %char(%status);
+  write QSYSPRT line;
+endmon;
+*inlr = *on;
+dcl-proc fail;
+  dcl-pi *n packed(5:0);
+    d packed(5:0) value;
+  end-pi;
+  return 100 / d;
+end-proc;

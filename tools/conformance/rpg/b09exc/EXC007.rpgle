@@ -1,0 +1,28 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s z packed(3:0) inz(0);
+dcl-s r packed(5:0);
+dcl-s c char(5) inz('abc');
+dcl-s n int(10) inz(9);
+monitor;
+  monitor;
+    r = 1 / z;
+  on-error 103;
+    line = 'inner 103';
+    write QSYSPRT line;
+  endmon;
+  line = 'after inner';
+  write QSYSPRT line;
+on-error 102;
+  line = 'outer 102';
+  write QSYSPRT line;
+endmon;
+monitor;
+  c = %subst(c:n:2);
+on-error;
+  line = 'subst ' + %char(%status);
+  write QSYSPRT line;
+endmon;
+*inlr = *on;

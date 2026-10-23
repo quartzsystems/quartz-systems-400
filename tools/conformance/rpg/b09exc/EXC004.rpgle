@@ -1,0 +1,24 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-ds pgmsts psds qualified;
+  proc *proc;
+  status *status;
+  prvsts zoned(5:0) pos(16);
+  stmt char(8) pos(21);
+  routine *routine;
+  parms *parms;
+  msgtype char(3) pos(40);
+  msgnum char(4) pos(43);
+  pgmlib char(10) pos(81);
+  excid char(7) pos(40);
+end-ds;
+exsr *pssr;
+line = 'back';
+write QSYSPRT line;
+*inlr = *on;
+begsr *pssr;
+  line = 'in pssr ' + %char(pgmsts.status) + ' [' + pgmsts.routine + ']';
+  write QSYSPRT line;
+endsr;

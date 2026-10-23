@@ -1431,9 +1431,22 @@ fn inz_value(g: &mut Gen<'_>, ty: &Ty, dim: u32, place: &str, e: &Expr) {
 }
 
 /// Generate calculations, from start to end, with their structure.
+/// Subroutines come last: a calculation outside `BEGSR`..`ENDSR` after
+/// the first subroutine is `RNF5005` and ignored.
 pub fn calcs(g: &mut Gen<'_>, stmts: &[&Stmt]) {
     let mut k = 0;
+    let mut in_subrs = false;
     while k < stmts.len() {
+        let code = stmts[k].op.code.as_str();
+        if code == "BEGSR" {
+            in_subrs = true;
+        }
+        let inside = g.open.iter().any(|o| matches!(o, Open::Subr(_)));
+        if in_subrs && !inside && code != "BEGSR" {
+            g.diags.push(rpgfront::Diag::new(ids::AFTER_ENDSR, 30, stmts[k].at));
+            k += 1;
+            continue;
+        }
         k = g.statement(stmts, k);
     }
     while let Some(o) = g.open.pop() {

@@ -193,7 +193,9 @@ impl Gen<'_> {
                 "_QRNX_EDITW",
                 "($dst: char(1) *VARSIZE, byval $dlen: i32, $src: bytes(1) *VARSIZE, byval $desc: i64, const $word: char(1) *VARSIZE, byval $wlen: i32)",
             );
-            self.b.ins(format!("callb _QRNX_EDITW({t}, {n}, {}, {desc}, {}, {n})", src.op, quote(word)));
+            let wl = V::lit(Ty::Char(n), quote(word));
+            let w = self.lit_storage(&wl);
+            self.b.ins(format!("callb _QRNX_EDITW({t}, {n}, {}, {desc}, {w}, {n})", src.op));
             return Some((t, n));
         }
         if !fld.edit.is_empty() {

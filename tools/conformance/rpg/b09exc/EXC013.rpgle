@@ -1,0 +1,20 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s c char(5) inz('12x');
+dcl-s n packed(5:0);
+dcl-s i int(5);
+monitor;
+  n = %dec(c:5:0);
+on-error;
+  line = 'dec ' + %char(%status);
+  write QSYSPRT line;
+endmon;
+monitor;
+  i = 99999;
+on-error;
+  line = 'int ' + %char(%status);
+  write QSYSPRT line;
+endmon;
+*inlr = *on;
