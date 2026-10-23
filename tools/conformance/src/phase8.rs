@@ -111,16 +111,22 @@ impl Suite {
             &mut ctx,
             "wait \"Main Menu\"\ntype call qcmd\nkey enter\nwait \"Command Entry\"\ntype wrkactjob\nkey enter\n",
         )?;
-        // The list is long: the server's jobs are at its end, which
-        // Command Entry shows; the session's own job is checked through
-        // the configuration status below.
-        run(&mut d, &mut ctx, "wait \"QTVTELNET\"\n")?;
-        if !d.term.contains("QTVDEVICE") {
+        // The Work with Active Jobs panel: the server's jobs are under
+        // QSYSWRK, a few pages down; F3 leaves it.
+        run(&mut d, &mut ctx, "wait \"Work with Active Jobs\"\n")?;
+        for _ in 0..8 {
+            if d.term.contains("QTVTELNET") {
+                break;
+            }
+            run(&mut d, &mut ctx, "key pagedown\nsettle 500\n")?;
+        }
+        if !d.term.contains("QTVTELNET") || !d.term.contains("QTVDEVICE") {
             return Err(format!(
-                "WRKACTJOB does not list the session job:\n{}",
+                "WRKACTJOB does not list the server and session jobs:\n{}",
                 d.term.text()
             ));
         }
+        run(&mut d, &mut ctx, "key f3\nwait \"Command Entry\"\n")?;
         let cfg = s.command("WRKCFGSTS CFGTYPE(*DEV)", CMD)?;
         let line = cfg
             .lines()
@@ -215,7 +221,7 @@ impl Suite {
         run(
             &mut d,
             &mut ctx,
-            "wait \"Main Menu\"\ntype call qcmd\nkey enter\nwait \"Command Entry\"\ntype dsplibl\nkey enter\nwait \"> dsplibl\"\n",
+            "wait \"Main Menu\"\ntype call qcmd\nkey enter\nwait \"Command Entry\"\ntype dsplibl\nkey enter\nwait \"Display Library List\"\n",
         )?;
         let device = device_of(s)?;
         d.disconnect();
@@ -234,8 +240,8 @@ impl Suite {
         }
         let mut d = connect_display(port)?;
         secofr(&mut d, &mut ctx)?;
-        run(&mut d, &mut ctx, "wait \"Command Entry\"\n")?;
-        if !d.term.contains("> dsplibl") {
+        run(&mut d, &mut ctx, "wait \"Display Library List\"\n")?;
+        if !d.term.contains("QSYS") {
             return Err(format!(
                 "the disconnected job did not come back with its screen:\n{}",
                 d.term.text()
@@ -244,7 +250,7 @@ impl Suite {
         run(
             &mut d,
             &mut ctx,
-            "type signoff\nkey enter\nwait \"Sign On\"\n",
+            "key f3\nwait \"Command Entry\"\ntype signoff\nkey enter\nwait \"Sign On\"\n",
         )?;
         d.disconnect();
         drop(d);
