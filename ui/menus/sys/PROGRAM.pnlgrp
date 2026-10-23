@@ -1,0 +1,47 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* PROGRAM: the task menu for the programmer's tasks.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='PROGRAM'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F13 ACTION='MENU INFO'.F13=Information Assistant
+:KEYI KEY=F16 ACTION='MENU MAIN'.F16=System Main menu
+:EKEYL.
+:PANEL NAME=PROGRAM HELP=HLPPROGRAM KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Programming
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=1 ACTION='CMD STRPGMMNU'.Programmer menu
+:MENUI OPTION=2 ACTION='CMD STRPDM'.Programming Development Manager (PDM)
+:MENUI OPTION=3 ACTION='MENU UTILITIES'.Utilities
+:MENUI OPTION=4 ACTION='CMD ?STRDBG'.Programming language debug
+:MENUI OPTION=5 ACTION='MENU CMDSQL'.Structured Query Language (SQL) pre-compiler
+:MENUI OPTION=6 ACTION='CMD ASKQST'.Question and answer
+:MENUI OPTION=8 ACTION='CMD ?STRCPYSCN'.Copy screen image
+:MENUI OPTION=9 ACTION='CMD STRCSP'.Cross System Product/Application Execution (CSP/AE)
+:MENUI OPTION=50 ACTION='MENU PROGRAMS36'.System/36 programming
+:MENUI OPTION=70 ACTION='MENU CMDPGM'.Related commands
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:HELP NAME=HLPPROGRAM.Programming - Help
+:P.Tools for writing, building and debugging programs. Option 4 prompts the
+debugger's start command; option 70 lists the program commands.
+:P.Type an option number or a command and press Enter. F4 prompts the
+command, F9 brings the previous one back, F12 returns to the menu shown
+before this one.
+:EHELP.
+:EPNLGRP.

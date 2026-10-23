@@ -1,0 +1,44 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* SUPPORT: the task menu for user support.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='SUPPORT'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F16 ACTION='MENU MAJOR'.F16=Major menu
+:EKEYL.
+:PANEL NAME=SUPPORT HELP=HLPSUPPORT KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.User Support and Education
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=1 ACTION='CMD DSPHLP'.How to use help
+:MENUI OPTION=2 ACTION='CMD STRSCHIDX'.Search system help index
+:MENUI OPTION=3 ACTION='MENU MAJOR'.How to use commands
+:MENUI OPTION=4 ACTION='CMD ASKQST'.Question and answer
+:MENUI OPTION=5 ACTION='MENU INFO'.IBM i publications
+:MENUI OPTION=7 ACTION='MENU USERHELP'.How to handle system problems
+:MENUI OPTION=8 ACTION='MENU PROBLEM'.Problem handling
+:MENUI OPTION=9 ACTION='CMD STREDU'.Online education
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:HELP NAME=HLPSUPPORT.User Support and Education - Help
+:P.Where to learn the system: the help, the command menus and what to do
+when something fails.
+:P.Type an option number or a command and press Enter. F4 prompts the
+command, F9 brings the previous one back, F12 returns to the menu shown
+before this one.
+:EHELP.
+:EPNLGRP.

@@ -1,0 +1,41 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* CFG: the task menu for configuration.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='CFG'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F13 ACTION='MENU INFO'.F13=Information Assistant
+:KEYI KEY=F16 ACTION='MENU MAIN'.F16=System Main menu
+:EKEYL.
+:PANEL NAME=CFG HELP=HLPCFG KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Configuration
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=1 ACTION='MENU CFGDEVCMN'.Configure devices and communications
+:MENUI OPTION=2 ACTION='MENU NETCFG'.Network configuration
+:MENUI OPTION=3 ACTION='MENU HARDWARE'.Hardware resources
+:MENUI OPTION=4 ACTION='MENU NETWORK'.Network management
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:HELP NAME=HLPCFG.Configuration - Help
+:P.Descriptions of the devices, lines and network the system uses, and the
+hardware they run on.
+:P.Type an option number or a command and press Enter. F4 prompts the
+command, F9 brings the previous one back, F12 returns to the menu shown
+before this one.
+:EHELP.
+:EPNLGRP.

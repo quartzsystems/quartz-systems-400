@@ -1,0 +1,69 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* RESTORE: the task menu for restoring.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='RESTORE'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F13 ACTION='MENU INFO'.F13=Information Assistant
+:KEYI KEY=F16 ACTION='MENU MAIN'.F16=System Main menu
+:EKEYL.
+:PANEL NAME=RESTORE HELP=HLPRESTORE KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Restore
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUGRP.Restore Data
+:MENUI OPTION=1 ACTION='CMD ?RSTOBJ OBJTYPE(*FILE)'.Files
+:MENUI OPTION=2 ACTION='CMD ?RSTLIB'.Libraries
+:MENUI OPTION=3 ACTION='CMD ?RSTDLO'.Documents and folders
+:MENUI OPTION=4 ACTION='CMD ?RSTOBJ OBJTYPE(*PGM)'.Programs
+:MENUI OPTION=5 ACTION='CMD ?RSTOBJ'.Other objects
+:MENUI OPTION=6 ACTION='CMD ?RSTLICPGM'.Licensed programs
+:MENUI OPTION=7 ACTION='CMD ?RSTCFG'.Configuration
+:MENUI OPTION=8 ACTION='CMD ?RSTUSRPRF'.User profiles
+:MENUI OPTION=9 ACTION='CMD ?RST'.Objects in directories
+:EMENUGRP.
+:MENUGRP.Restore System and User Data
+:MENUI OPTION=21 ACTION='CMD ?RSTLIB SAVLIB(*NONSYS)'.System and user data
+:MENUI OPTION=22 ACTION='CMD ?RSTUSRPRF'.System data only
+:MENUI OPTION=23 ACTION='CMD ?RSTLIB SAVLIB(*ALLUSR)'.All user data
+:EMENUGRP.
+:MENUGRP.Restore Office Data
+:MENUI OPTION=30 ACTION='CMD ?RSTDLO DLO(*ALL)'.All documents, folders, and mail
+:MENUI OPTION=31 ACTION='CMD ?RSTDLO'.Documents and folders
+:MENUI OPTION=32 ACTION='CMD ?RSTDLO DLO(*MAIL)'.Mail only
+:EMENUGRP.
+:MENUGRP.Restore Libraries
+:MENUI OPTION=40 ACTION='CMD ?RSTLIB SAVLIB(*NONSYS)'.All libraries other than system library
+:MENUI OPTION=41 ACTION='CMD ?RSTLIB SAVLIB(*IBM)'.All IBM libraries other than system library
+:MENUI OPTION=42 ACTION='CMD ?RSTLIB SAVLIB(*ALLUSR)'.All user libraries
+:EMENUGRP.
+:MENUGRP.Restore for Different Systems
+:MENUI OPTION=50 ACTION='MENU RSTS36FMT'.Restore from System/36 format
+:EMENUGRP.
+:MENUGRP.
+:MENUI OPTION=70 ACTION='MENU CMDRST'.Related commands
+:EMENUGRP.
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:HELP NAME=HLPRESTORE.Restore - Help
+:P.Bringing saved objects back from media, one kind at a time or the whole
+system. Prompted options show what will be restored before it starts.
+:P.Type an option number or a command and press Enter. F4 prompts the
+command, F9 brings the previous one back, F12 returns to the menu shown
+before this one.
+:EHELP.
+:EPNLGRP.
