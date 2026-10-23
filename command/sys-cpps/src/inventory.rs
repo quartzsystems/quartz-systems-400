@@ -247,6 +247,21 @@ pub fn in_service_too(name: &str) -> bool {
 /// the job words it bridges to).
 pub const JOB_SITE: &[&str] = &[
     // --- panels: work management (work/qsjob/src/panels/work.rs)
+    "WRKACTJOB",
+    "DSPJOB",
+    "WRKUSRJOB",
+    "WRKSBSJOB",
+    "WRKSBS",
+    "DSPSBSD",
+    "WRKJOBD",
+    "DSPJOBD",
+    "WRKCLS",
+    "DSPCLS",
+    "WRKSPLF",
+    "WRKOUTQ",
+    "WRKJOBQ",
+    "WRKWTR",
+    "WRKJOBSCDE",
     // --- panels: messages and objects (panels/objects.rs)
     "DSPDBR",
     "DSPDTAARA",

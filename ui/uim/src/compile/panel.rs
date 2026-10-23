@@ -419,6 +419,7 @@ impl Build {
             layout: self.layout(el, "LAYOUT"),
             select: self.choice(el, "SELECT", &["SINGLE", "MULTI", "NONE"]),
             actlen: self.u32(el, "ACTLEN"),
+            compact: self.flag(el, "COMPACT"),
             help,
             actions,
             columns,

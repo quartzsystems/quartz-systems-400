@@ -272,7 +272,7 @@ pub static TAGS: &[TagDef] = &[
         Container,
         [
             "DEPTH", "LISTDEF", "VIEWS", "ACTOR", "EXTACT", "MAXHEAD", "PARMS", "SCROLL",
-            "BOTINST", "ENTER", "LAYOUT", "SELECT", "ACTLEN", "HELP"
+            "BOTINST", "ENTER", "LAYOUT", "SELECT", "ACTLEN", "HELP", "COMPACT"
         ],
         ["DEPTH", "LISTDEF"],
         &["PANEL", "PRTPNL"],

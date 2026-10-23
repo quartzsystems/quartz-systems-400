@@ -351,6 +351,58 @@ pub fn wrkactjob(system: &mut System, view: &str) -> String {
     out
 }
 
+/// A percentage in tenths.
+#[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // 0 to 1000
+fn tenths(pct: f64) -> u32 {
+    (pct * 10.0).round().max(0.0) as u32
+}
+
+/// `WRKACTJOB`'s panel: every view's figures for the jobs in display
+/// order, measured from the display's base, which moves to now when
+/// `advance` (the panel's start and F10).
+pub fn actjob_data(system: &mut System, advance: bool) -> stg::proto::ActJobs {
+    let (now, base) = interval(system, |s| &mut s.actjob, advance);
+    let d = Delta {
+        now: &now,
+        base: &base,
+    };
+    let ticks = d.ticks();
+    let jobs = tree(system)
+        .into_iter()
+        .map(|(under, j)| {
+            let p = now.procs.get(&j.number).copied().unwrap_or_default();
+            stg::proto::ActJob {
+                under,
+                cpu: tenths(percent(d.job_ticks(j.number), ticks)),
+                // Clock ticks are hundredths of a second.
+                cpu_secs: p.cpu() / 10,
+                pool: system.pools.get(&j.pool).map_or(0, |p| p.number),
+                runpty: system.attrs.get(&j.number).map_or(0, |a| a.runpty),
+                aux_io: d.job_aux(j.number),
+                threads: p.threads.max(1),
+                tmp_mb: p.rss_pages * 4 / 1024,
+                job: j,
+            }
+        })
+        .collect();
+    stg::proto::ActJobs {
+        cpu: tenths(d.cpu_used()),
+        elapsed: d.whole_secs(),
+        jobs,
+    }
+}
+
+/// `DSPJOB`'s figures for one job: CPU milliseconds, threads,
+/// temporary storage (M) and auxiliary I/O.
+pub fn job_figures(system: &System, number: u32) -> (u64, u32, u64, u64) {
+    let pid = system.jobs.get(number).map_or(0, |j| j.pid);
+    let p = read(&format!("/proc/{pid}/stat"))
+        .and_then(|t| stats::proc_stat(&t))
+        .unwrap_or_default();
+    let aux = system.stats.aux_io.get(&number).copied().unwrap_or(0);
+    (p.cpu() * 10, p.threads.max(1), p.rss_pages * 4 / 1024, aux)
+}
+
 /// `WRKSYSACT`: the jobs that used the most CPU since its last use.
 pub fn wrksysact(system: &mut System) -> String {
     let (now, base) = interval(system, |s| &mut s.sysact, true);

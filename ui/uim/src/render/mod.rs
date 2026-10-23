@@ -27,6 +27,10 @@ use ctx::Ctx;
 
 use crate::model::{Area, CmdLineSize, Depth, KeyList, Panel, PanelGroup, Separator, Shift, Usage};
 
+/// The variable `TOPSEP=DATETIME` shows on the second line: the date,
+/// time and zone as the program formats them.
+pub const DATETIME_VAR: &str = "*DATETIME";
+
 /// How the screen is shown.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Options {
@@ -127,6 +131,14 @@ pub fn render(
             s.put(2, cols - 8, Attr::Normal, opts.system.trim_end());
             3
         }
+        Separator::DateTime => {
+            // The system name ends the title line; the date and time
+            // (the `*DATETIME` variable) end the line under it.
+            s.put(1, cols - 8, Attr::Normal, opts.system.trim_end());
+            let stamp = ctx.value(DATETIME_VAR);
+            s.put_right(2, cols - 1, Attr::Normal, stamp.trim_end());
+            3
+        }
     };
 
     let bottom = bottom_block(&ctx, p, keyl, &mut s);
@@ -225,7 +237,7 @@ fn bottom_block(ctx: &Ctx, p: &Panel, keyl: &KeyList, s: &mut Screen) -> usize {
                 bottom -= 1;
                 rule(s, bottom);
             }
-            Separator::Space | Separator::SysName => bottom -= 1,
+            Separator::Space | Separator::SysName | Separator::DateTime => bottom -= 1,
         }
         if has_menu {
             // R12: `Selection` and a field on the next row.

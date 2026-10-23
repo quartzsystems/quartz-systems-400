@@ -21,6 +21,39 @@ note = "no completion message; a refusal is the escape"
 # ----------------------------------------------------------- the job's
 # Panels (the displays shown as UIM panels by an interactive job):
 # --- work management (work/qsjob/src/panels/work.rs)
+[cmd.WRKACTJOB]
+site = "job"
+
+[cmd.WRKSBSJOB]
+site = "job"
+
+[cmd.WRKSBS]
+site = "job"
+
+[cmd.DSPSBSD]
+site = "job"
+
+[cmd.DSPJOBD]
+site = "job"
+
+[cmd.DSPCLS]
+site = "job"
+
+[cmd.WRKSPLF]
+site = "job"
+
+[cmd.WRKOUTQ]
+site = "job"
+
+[cmd.WRKJOBQ]
+site = "job"
+
+[cmd.WRKWTR]
+site = "job"
+
+[cmd.WRKJOBSCDE]
+site = "job"
+
 # --- messages and objects (panels/objects.rs)
 [cmd.DSPLIBL]
 site = "job"
@@ -143,9 +176,11 @@ alwlmtusr = true
 site = "job"
 
 [cmd.WRKJOBD]
+site = "job"
 word = "dspjobd"
 
 [cmd.WRKCLS]
+site = "job"
 word = "dspcls"
 
 [cmd.WRKAUTL]
@@ -157,6 +192,7 @@ note = "a panel when the job shows panels; else the service's text"
 word = "wrkactjob"
 
 [cmd.WRKUSRJOB]
+site = "job"
 word = "wrkactjob"
 
 [cmd.RCLACTGRP]
@@ -225,6 +261,7 @@ alwlmtusr = true
 site = "job"
 
 [cmd.DSPJOB]
+site = "job"
 alwlmtusr = true
 
 [cmd.SNDMSG]

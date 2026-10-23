@@ -31,6 +31,9 @@ enum Row<'a> {
         compact: bool,
         select: &'a DataSelect,
     },
+    /// A `DISPLAY=NO` field: no row, but its label counts for the
+    /// colon column (R14).
+    Hidden(usize, &'a DataField),
 }
 
 /// A column of the area: its start, width, prompt width and rows.
@@ -59,7 +62,8 @@ pub(super) fn render(
     }
     let columns = columns(ctx, area, limit);
     let body = top + height - row;
-    let longest = columns.iter().map(|c| c.rows.len()).max().unwrap_or(0);
+    let shown = |c: &Column<'_>| c.rows.iter().filter(|r| !matches!(r, Row::Hidden(..))).count();
+    let longest = columns.iter().map(shown).max().unwrap_or(0);
     // R10: pages only when the content overflows.
     let (per, overflow) = if longest > body {
         (body.saturating_sub(1), true)
@@ -79,7 +83,8 @@ pub(super) fn render(
             colon = colon.max(sh);
         }
         let end = (c.start + c.width - 1).min(limit);
-        for (i, r) in c.rows.iter().skip(page * per).take(per).enumerate() {
+        let visible = c.rows.iter().filter(|r| !matches!(r, Row::Hidden(..)));
+        for (i, r) in visible.skip(page * per).take(per).enumerate() {
             put_row(ctx, s, row + i, c.start, end, colon, r);
         }
     }
@@ -112,7 +117,8 @@ fn colon_of(ctx: &Ctx, c: &Column) -> usize {
                 field,
                 compact: false,
                 ..
-            } => (*label_col, &field.prompt),
+            }
+            | Row::Hidden(label_col, field) => (*label_col, &field.prompt),
             Row::Select {
                 label_col,
                 select,
@@ -131,7 +137,7 @@ fn colon_of(ctx: &Ctx, c: &Column) -> usize {
 
 fn put_row(ctx: &Ctx, s: &mut Screen, row: usize, start: usize, end: usize, colon: usize, r: &Row) {
     match r {
-        Row::Blank => {}
+        Row::Blank | Row::Hidden(..) => {}
         Row::Rule => s.put(row, start, Attr::Normal, &"-".repeat(end + 1 - start)),
         Row::Text(col, text) => put_cut(s, row, *col, end, Attr::Normal, text),
         Row::Field {
@@ -429,6 +435,8 @@ fn walk<'a>(
                     compact,
                     field: f,
                 });
+            } else if !compact {
+                rows.push(Row::Hidden(label_col, f));
             }
         }
         DataNode::Const(c) => {
@@ -449,7 +457,7 @@ fn walk<'a>(
         DataNode::Group(g) => {
             if !rows.is_empty() {
                 match g.grpsep {
-                    Separator::Space | Separator::SysName => rows.push(Row::Blank),
+                    Separator::Space | Separator::SysName | Separator::DateTime => rows.push(Row::Blank),
                     Separator::Rule => rows.push(Row::Rule),
                     Separator::None => {}
                 }
