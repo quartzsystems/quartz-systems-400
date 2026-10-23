@@ -1,4 +1,4 @@
-; varying strings and MCH0603 for a position outside the string
+; varying strings and RNX0100 for a position outside the string
 module STR02
 static $v: varchar(20)
 static $d: char(20)
@@ -18,7 +18,7 @@ L0:
   dsply $d
   str.replace $d, $s, "XY", 2, 3
   dsply $d
-  monitor M, MCH0603 -> RANGE
+  monitor M, RNX0100 -> RANGE
   str.subst $d, $s, 5, 4
   dsply "not reached"
   endmon M

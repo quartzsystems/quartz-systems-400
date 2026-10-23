@@ -11,10 +11,6 @@ use std::path::Path;
 
 /// What this implementation observes for each oracle line, keyed by
 /// the program and the start of its line.
-/// Readings the machine settled that the implementation does not match
-/// yet: program and line.
-const OPEN: &[(&str, usize)] = &[("SUBSTBAD", 1), ("PTRSTAT", 2)];
-
 fn ours() -> Vec<(&'static str, &'static str)> {
     vec![
         ("CVTCHAR", "[1.50]"),
@@ -22,7 +18,7 @@ fn ours() -> Vec<(&'static str, &'static str)> {
         ("CVTCHAR", "[100]"),
         ("CVTCHAR", "[-.50]"),
         ("DATEBAD", "status 112"),
-        ("SUBSTBAD", "status 121"),
+        ("SUBSTBAD", "status 100"),
         ("RESUMEG", "after, z=0"),
         ("REPLYR", "after, z=0"),
         ("STATMAP", "MCH1211 status 102"),
@@ -38,7 +34,7 @@ fn ours() -> Vec<(&'static str, &'static str)> {
         ("DEEPREC", "got MCH4429 status 202"),
         ("CMDEXC", "received [from QCMDEXC]"),
         ("PTRSTAT", "static neighbour read ok"),
-        ("PTRSTAT", "auto neighbour status 222"),
+        ("PTRSTAT", "auto neighbour read ok"),
         ("DECBLANK", "[12]"),
         ("DIFFTS", "earlier time of day: months 0"),
         ("DIFFTS", "later time of day: months 1"),
@@ -72,12 +68,6 @@ fn machine_observations_match_when_captured() {
         *n += 1;
         match theirs {
             Some((_, ml)) if ml == line => {}
-            // Settled by the capture but not yet implemented: the string
-            // operation's RNX0100 (status 100) and a readable neighbour of
-            // an automatic variable (ILE_OPEN_QUESTIONS.md 3 and 4).
-            Some((_, ml)) if OPEN.contains(&(pgm, *n)) => {
-                eprintln!("still open: {pgm} line {n}: ours `{line}`, machine `{ml}`");
-            }
             Some((_, ml)) => differ.push(format!("{pgm}: ours `{line}`, machine `{ml}`")),
             // A program the box could not run (the inquiry replies need a
             // reply list the account cannot change) leaves no line.

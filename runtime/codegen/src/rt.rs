@@ -75,7 +75,8 @@ pub enum RtFn {
     DtTest = 25,
     /// `dt_now(env, dst, dty)`.
     DtNow = 26,
-    /// `ptr_addr(env, out, native, len)`: a space pointer to storage,
+    /// `ptr_addr(env, out, native, len, frame)`: a space pointer to
+    /// storage, `frame` 1 for the procedure's automatic storage,
     /// written to the 16 bytes at `out`.
     PtrAddr = 27,
     /// `ptr_add(env, out, ptr, n)`: `n` bytes on, written to `out`.
@@ -349,7 +350,7 @@ impl RtFn {
             Self::DtExtract => (3, Some(types::I32)),
             Self::DtTest => (4, Some(types::I32)),
             Self::DtNow => (2, None),
-            Self::PtrAddr => (3, None),
+            Self::PtrAddr => (4, None),
             Self::PtrAdd => (3, None),
             Self::PtrDiff => (2, Some(types::I64)),
             Self::ProcAddr => (2, None),

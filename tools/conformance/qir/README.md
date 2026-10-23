@@ -26,7 +26,7 @@ Every run sees the same world: `QGPL/CUST` (five customers keyed on
 |---|---|
 | ARITH, CVT, IND, LOOP | integer and float arithmetic, `.chk` overflow, conversions, indicators, branches and `switch` |
 | DEC | decimal precision and half-adjust, `MCH1210`/`MCH1202`/`MCH1211`, `%DEC`/`%CHAR`, the 63-digit edge |
-| STR, DATE | every string instruction, varying strings, `MCH0603`; date arithmetic, formats, `MCH1602` |
+| STR, DATE | every string instruction, varying strings, `RNX0100`; date arithmetic, formats, `MCH1602` |
 | STOR, PTR | storage classes, structures and arrays, space pointers and their conditions, heaps, user space pointers |
 | PARM, CALL, ACTGRP, SYSPTR, STACK | parameter passing, `%PARMS`, recursion, procedure and system pointers, dynamic calls, activation groups |
 | MON, EXC | monitor selectors and nesting, the function check, every inquiry reply, condition and cancel handlers, `CEESGL`, `CEE9901` and `CEE9902` to the caller |

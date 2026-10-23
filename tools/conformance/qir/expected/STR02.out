@@ -6,8 +6,8 @@ console:
   aXYdef
   aXYef
   outside the string
-raised: MCH0603
-handled: MCH0603
+raised: RNX0100
+handled: RNX0100
 pending: none
 replies: 
 dump: no

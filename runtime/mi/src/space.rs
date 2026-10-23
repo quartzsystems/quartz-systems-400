@@ -4,9 +4,16 @@
 
 //! Fat pointers and the spaces they address. A pointer names a space by
 //! number and generation; a deref checks the kind, that the space is
-//! still live and that the offset is inside it, so a pointer into a
+//! still live and that the address is inside it, so a pointer into a
 //! returned frame or a freed allocation fails instead of reaching
 //! whatever is there now.
+//!
+//! A static area, a heap block and a mapped user space are each one
+//! space with exact bounds. An entry's automatic storage is one space
+//! per call-stack depth, as the machine's stack is one space: it grows
+//! over every automatic address the entry takes, so a pointer advanced
+//! past one automatic variable reads its neighbour, and it dies when the
+//! entry returns.
 
 use codegen::Cond;
 
@@ -48,7 +55,8 @@ pub struct FatPtr {
     pub generation: u16,
     /// Space number, or the code address's low half for procedures.
     pub space: u32,
-    /// Byte offset in the space, or a code address for procedures.
+    /// Byte offset from the space's base, wrapping below it in a frame
+    /// that grew down, or a code address for procedures.
     pub offset: u64,
 }
 
@@ -115,21 +123,60 @@ impl FatPtr {
     pub fn kind(self) -> Option<PtrKind> {
         PtrKind::from_byte(self.kind)
     }
+
+    fn space(space: usize, generation: u16, offset: u64) -> Self {
+        Self {
+            kind: PtrKind::Space as u8,
+            flags: 0,
+            generation,
+            space: u32::try_from(space).expect("few spaces"),
+            offset,
+        }
+    }
 }
 
 /// A region of storage a pointer can address.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Space {
-    /// Native address of the first byte.
+    /// Native address pointer offsets count from.
     pub base: u64,
-    /// Bytes.
-    pub len: u64,
+    /// First byte covered; below `base` only in a frame that grew down.
+    pub lo: u64,
+    /// One past the last byte covered.
+    pub hi: u64,
     /// Generation; bumped when the space dies so stale pointers fail.
     pub generation: u16,
     /// Alive.
     pub live: bool,
     /// Call-stack depth that owns it; 0 for static storage.
     pub owner_depth: u32,
+    /// An entry's automatic storage: one per depth, growing over every
+    /// automatic address the entry takes.
+    pub frame: bool,
+}
+
+impl Space {
+    fn new(base: u64, len: u64, owner_depth: u32, frame: bool) -> Self {
+        Self {
+            base,
+            lo: base,
+            hi: base + len,
+            generation: 1,
+            live: true,
+            owner_depth,
+            frame,
+        }
+    }
+
+    /// The native address a pointer into this space names.
+    fn native(&self, p: FatPtr) -> u64 {
+        self.base.wrapping_add(p.offset)
+    }
+
+    fn die(&mut self) {
+        self.live = false;
+        self.generation = self.generation.wrapping_add(1);
+    }
 }
 
 /// The job's space table.
@@ -168,28 +215,15 @@ impl Spaces {
     /// A space over storage the runtime owns (a heap block, a mapped
     /// user space): lives until [`Spaces::kill`].
     pub fn add_region(&mut self, base: u64, len: u64) -> FatPtr {
-        self.spaces.push(Space {
-            base,
-            len,
-            generation: 1,
-            live: true,
-            owner_depth: 0,
-        });
-        FatPtr {
-            kind: PtrKind::Space as u8,
-            flags: 0,
-            generation: 1,
-            space: u32::try_from(self.spaces.len() - 1).expect("few spaces"),
-            offset: 0,
-        }
+        self.spaces.push(Space::new(base, len, 0, false));
+        FatPtr::space(self.spaces.len() - 1, 1, 0)
     }
 
     /// Kill the runtime-owned space at a base address, if any.
     pub fn kill_at(&mut self, base: u64) {
         for s in &mut self.spaces {
             if s.live && s.owner_depth == 0 && s.base == base {
-                s.live = false;
-                s.generation = s.generation.wrapping_add(1);
+                s.die();
             }
         }
     }
@@ -199,15 +233,14 @@ impl Spaces {
         if let Some(s) = self.spaces.get_mut(space as usize)
             && s.live
         {
-            s.live = false;
-            s.generation = s.generation.wrapping_add(1);
+            s.die();
         }
     }
 
     /// The space a pointer names, when live: its number and length.
     pub fn space_info(&self, p: FatPtr) -> Result<(u32, u64), Cond> {
         let s = self.space_of(p)?;
-        Ok((p.space, s.len))
+        Ok((p.space, s.hi - s.lo))
     }
 
     /// Forget a static area: the spaces inside it die, so pointers into
@@ -217,8 +250,7 @@ impl Spaces {
         self.system.retain(|(b, _)| *b != base);
         for s in &mut self.spaces {
             if s.live && s.owner_depth == 0 && s.base == base {
-                s.live = false;
-                s.generation = s.generation.wrapping_add(1);
+                s.die();
             }
         }
     }
@@ -230,8 +262,13 @@ impl Spaces {
     }
 
     /// A space pointer to `len` bytes at a native address, owned by the
-    /// call-stack entry at `depth` unless the storage is static.
-    pub fn addr(&mut self, native: u64, len: u64, depth: u32) -> FatPtr {
+    /// call-stack entry at `depth` unless the storage is static. `frame`
+    /// marks the entry's automatic storage, which shares the one frame
+    /// space of that depth.
+    pub fn addr(&mut self, native: u64, len: u64, depth: u32, frame: bool) -> FatPtr {
+        if frame {
+            return self.frame_addr(native, len, depth);
+        }
         let owner = if self.in_statics(native, len) {
             0
         } else {
@@ -240,17 +277,12 @@ impl Spaces {
         // Reuse a live space that already covers the bytes.
         for (i, s) in self.spaces.iter().enumerate() {
             if s.live
+                && !s.frame
                 && s.owner_depth == owner
-                && native >= s.base
-                && native + len <= s.base + s.len
+                && native >= s.lo
+                && native + len <= s.hi
             {
-                return FatPtr {
-                    kind: PtrKind::Space as u8,
-                    flags: 0,
-                    generation: s.generation,
-                    space: u32::try_from(i).expect("few spaces"),
-                    offset: native - s.base,
-                };
+                return FatPtr::space(i, s.generation, native.wrapping_sub(s.base));
             }
         }
         // Grow a static space to cover the whole area when possible.
@@ -261,35 +293,27 @@ impl Spaces {
                 .find(|(b, l)| native >= *b && native + len <= b + l)
         {
             let (b, l) = (*b, *l);
-            self.spaces.push(Space {
-                base: b,
-                len: l,
-                generation: 1,
-                live: true,
-                owner_depth: 0,
-            });
-            return FatPtr {
-                kind: PtrKind::Space as u8,
-                flags: 0,
-                generation: 1,
-                space: u32::try_from(self.spaces.len() - 1).expect("few spaces"),
-                offset: native - b,
-            };
+            self.spaces.push(Space::new(b, l, 0, false));
+            return FatPtr::space(self.spaces.len() - 1, 1, native - b);
         }
-        self.spaces.push(Space {
-            base: native,
-            len,
-            generation: 1,
-            live: true,
-            owner_depth: owner,
-        });
-        FatPtr {
-            kind: PtrKind::Space as u8,
-            flags: 0,
-            generation: 1,
-            space: u32::try_from(self.spaces.len() - 1).expect("few spaces"),
-            offset: 0,
+        self.spaces.push(Space::new(native, len, owner, false));
+        FatPtr::space(self.spaces.len() - 1, 1, 0)
+    }
+
+    /// The frame space of `depth`, grown over the bytes.
+    fn frame_addr(&mut self, native: u64, len: u64, depth: u32) -> FatPtr {
+        let found = self
+            .spaces
+            .iter_mut()
+            .enumerate()
+            .find(|(_, s)| s.live && s.frame && s.owner_depth == depth);
+        if let Some((i, s)) = found {
+            s.lo = s.lo.min(native);
+            s.hi = s.hi.max(native + len);
+            return FatPtr::space(i, s.generation, native.wrapping_sub(s.base));
         }
+        self.spaces.push(Space::new(native, len, depth, true));
+        FatPtr::space(self.spaces.len() - 1, 1, 0)
     }
 
     fn space_of(&self, p: FatPtr) -> Result<&Space, Cond> {
@@ -308,42 +332,44 @@ impl Spaces {
     /// The native address a pointer addresses.
     pub fn deref(&self, p: FatPtr) -> Result<u64, Cond> {
         let s = self.space_of(p)?;
-        if p.offset >= s.len {
+        let n = s.native(p);
+        if n < s.lo || n >= s.hi {
             return Err(Cond::Mch0601);
         }
-        Ok(s.base + p.offset)
+        Ok(n)
     }
 
     /// The pointer `n` bytes on; one past the end is allowed, as the
     /// machine allows, but not beyond.
     pub fn add(&self, p: FatPtr, n: i64) -> Result<FatPtr, Cond> {
         let s = self.space_of(p)?;
-        let off = i128::from(p.offset) + i128::from(n);
-        if off < 0 || off > i128::from(s.len) {
+        let at = i128::from(s.native(p)) + i128::from(n);
+        if at < i128::from(s.lo) || at > i128::from(s.hi) {
             return Err(Cond::Mch0601);
         }
+        let at = u64::try_from(at).expect("in range");
         Ok(FatPtr {
-            offset: u64::try_from(off).expect("in range"),
+            offset: at.wrapping_sub(s.base),
             ..p
         })
     }
 
     /// `p - q` in bytes, within one space.
     pub fn diff(&self, p: FatPtr, q: FatPtr) -> Result<i64, Cond> {
-        self.space_of(p)?;
+        let s = self.space_of(p)?;
         self.space_of(q)?;
         if p.space != q.space {
             return Err(Cond::Mch0601);
         }
-        Ok(i64::try_from(i128::from(p.offset) - i128::from(q.offset)).expect("fits"))
+        let d = i128::from(s.native(p)) - i128::from(s.native(q));
+        Ok(i64::try_from(d).expect("fits"))
     }
 
     /// Kill the spaces owned by call-stack entries deeper than `depth`.
     pub fn leave(&mut self, depth: u32) {
         for s in &mut self.spaces {
             if s.live && s.owner_depth > depth {
-                s.live = false;
-                s.generation = s.generation.wrapping_add(1);
+                s.die();
             }
         }
     }
@@ -363,8 +389,8 @@ mod tests {
     fn frames_die_on_leave() {
         let mut sp = Spaces::default();
         sp.register_static(1000, 100);
-        let st = sp.addr(1010, 4, 3);
-        let fr = sp.addr(5000, 8, 3);
+        let st = sp.addr(1010, 4, 3, false);
+        let fr = sp.addr(5000, 8, 3, true);
         assert_eq!(sp.deref(st).unwrap(), 1010);
         assert_eq!(sp.deref(fr).unwrap(), 5000);
         assert_eq!(sp.add(fr, 8).unwrap().offset, 8);
@@ -376,8 +402,42 @@ mod tests {
         assert_eq!(sp.deref(fr), Err(Cond::Mch3402));
         assert_eq!(sp.deref(FatPtr::null()), Err(Cond::Mch3601));
         assert_eq!(sp.deref(FatPtr::procedure(7)), Err(Cond::Mch3602));
-        let again = sp.addr(5000, 8, 3);
+        let again = sp.addr(5000, 8, 3, true);
         assert_ne!((again.space, again.generation), (fr.space, fr.generation));
         assert_eq!(FatPtr::from_bytes(&again.to_bytes()), again);
+    }
+
+    #[test]
+    fn a_frame_covers_the_entry_s_automatics() {
+        let mut sp = Spaces::default();
+        let first = sp.addr(5000, 8, 3, true);
+        // A neighbour above joins the frame: one past `first` reads it.
+        let above = sp.addr(5008, 4, 3, true);
+        assert_eq!(above.space, first.space);
+        assert_eq!(sp.deref(sp.add(first, 8).unwrap()).unwrap(), 5008);
+        assert_eq!(sp.deref(sp.add(first, 11).unwrap()).unwrap(), 5011);
+        assert_eq!(sp.add(first, 13), Err(Cond::Mch0601));
+        assert_eq!(sp.diff(above, first).unwrap(), 8);
+        // A neighbour below grows the frame down past the base.
+        let below = sp.addr(4990, 4, 3, true);
+        assert_eq!(below.space, first.space);
+        assert_eq!(sp.deref(below).unwrap(), 4990);
+        assert_eq!(sp.deref(sp.add(first, -10).unwrap()).unwrap(), 4990);
+        assert_eq!(sp.add(first, -11), Err(Cond::Mch0601));
+        assert_eq!(sp.diff(below, first).unwrap(), -10);
+        assert_eq!(sp.diff(sp.add(below, 10).unwrap(), first).unwrap(), 0);
+        assert_eq!(sp.space_info(first).unwrap().1, 22);
+        // Another depth is another frame; heap blocks keep exact bounds.
+        let deeper = sp.addr(5012, 4, 4, true);
+        assert_ne!(deeper.space, first.space);
+        assert_eq!(sp.diff(deeper, first), Err(Cond::Mch0601));
+        let heap = sp.add_region(7000, 8);
+        assert_eq!(sp.add(heap, 9), Err(Cond::Mch0601));
+        sp.leave(3);
+        assert_eq!(sp.deref(deeper), Err(Cond::Mch3402));
+        assert_eq!(sp.deref(below).unwrap(), 4990);
+        sp.leave(2);
+        assert_eq!(sp.deref(below), Err(Cond::Mch3402));
+        assert_eq!(sp.deref(heap).unwrap(), 7000);
     }
 }

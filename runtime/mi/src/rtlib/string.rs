@@ -135,10 +135,10 @@ fn range(start: i64, len: i64, total: usize) -> Result<(usize, usize), Cond> {
     let s = usize::try_from(start)
         .ok()
         .filter(|s| *s >= 1)
-        .ok_or(Cond::Mch0603)?;
-    let l = usize::try_from(len).map_err(|_| Cond::Mch0603)?;
+        .ok_or(Cond::Rnx0100)?;
+    let l = usize::try_from(len).map_err(|_| Cond::Rnx0100)?;
     if s - 1 + l > total {
-        return Err(Cond::Mch0603);
+        return Err(Cond::Rnx0100);
     }
     Ok((s - 1, l))
 }
@@ -199,7 +199,7 @@ pub extern "sysv64" fn str_scan(
     let n = to_width(&n, h.wide);
     let from = if start == 0 { 1 } else { start };
     let Ok((at, _)) = range(from, 0, h.units.len()) else {
-        raise_on(job(env), Cond::Mch0603);
+        raise_on(job(env), Cond::Rnx0100);
         return 0;
     };
     if n.is_empty() || n.len() > h.units.len() {
@@ -231,7 +231,7 @@ pub extern "sysv64" fn str_check(
         (n, _) => n,
     };
     let Ok((at, _)) = range(from, 0, s.units.len()) else {
-        raise_on(job(env), Cond::Mch0603);
+        raise_on(job(env), Cond::Rnx0100);
         return 0;
     };
     let bad = |u: &u16| !set.contains(u);
@@ -264,7 +264,7 @@ pub extern "sysv64" fn str_xlate(
     let t = to_width(&read_text(to, tty), s.wide);
     let from_at = if start == 0 { 1 } else { start };
     let Ok((at, _)) = range(from_at, 0, s.units.len()) else {
-        raise_on(job(env), Cond::Mch0603);
+        raise_on(job(env), Cond::Rnx0100);
         return;
     };
     let mut units = s.units.clone();
@@ -361,11 +361,11 @@ pub extern "sysv64" fn str_setlen(env: *mut Env, dst: i64, dty: i64, n: i64) {
     let (b, t) = typed(dst, dty);
     let max = t.string_len().unwrap_or(0);
     let Ok(len) = u16::try_from(n) else {
-        raise_on(job(env), Cond::Mch0603);
+        raise_on(job(env), Cond::Rnx0100);
         return;
     };
     if u32::from(len) > max || !t.is_varying() {
-        raise_on(job(env), Cond::Mch0603);
+        raise_on(job(env), Cond::Rnx0100);
         return;
     }
     b[..2].copy_from_slice(&len.to_be_bytes());
@@ -392,7 +392,7 @@ pub extern "sysv64" fn str_replace(
         len
     };
     let Ok((at, n)) = range(start, len, s.units.len()) else {
-        raise_on(job(env), Cond::Mch0603);
+        raise_on(job(env), Cond::Rnx0100);
         return;
     };
     let mut units = s.units[..at].to_vec();
