@@ -1,0 +1,24 @@
+                               Work with Journals                               
+                                                                                
+ Type options, press Enter.                                                     
+   2=Forward recovery          3=Backout recovery   5=Display journal status    
+   6=Recover damaged journal   7=Recover damaged journal receivers              
+   8=Work with journal attributes   9=Associate receivers with journal          
+                                                                                
+                              ASP                                               
+ Opt  Journal     Library     Device      Text                                  
+                                                                                
+   (No journals match specified name)                                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F9=Retrieve   F12=Cancel                    
+                                                                                

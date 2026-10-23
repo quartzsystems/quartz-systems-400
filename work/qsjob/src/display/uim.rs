@@ -150,6 +150,9 @@ pub struct UimDialog {
     pub page: usize,
     /// `F24` pressed: the second set of keys shows.
     pub more_keys: bool,
+    /// How many times `F24` was pressed: the key set that shows, for a
+    /// key list with more than two.
+    pub key_set: usize,
     /// The message for the message line, and whether it is an error.
     pub message: Option<(String, bool)>,
     /// The system name for `TOPSEP=SYSNAM`.
@@ -204,6 +207,7 @@ impl UimDialog {
             view: 0,
             page: 0,
             more_keys: false,
+            key_set: 0,
             message: None,
             system: system.to_string(),
             copyright: false,
@@ -310,6 +314,7 @@ impl UimDialog {
             wide,
             view: self.view,
             more_keys: self.more_keys,
+            key_set: self.key_set,
             message: self.message.take(),
             page: self.page,
         }
@@ -602,7 +607,10 @@ impl UimDialog {
                         }
                     }
                 }
-                Action::MoreKeys => self.more_keys = !self.more_keys,
+                Action::MoreKeys => {
+                    self.more_keys = !self.more_keys;
+                    self.key_set += 1;
+                }
                 Action::Help | Action::ExtHelp | Action::FldHelp => {
                     let module = panel.help.clone();
                     if self.help(surface, module.as_deref()).is_none() {

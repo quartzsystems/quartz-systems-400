@@ -1,0 +1,24 @@
+                        Work with Subsystem Descriptions                        
+                                                                                
+ Type options, press Enter.                                                     
+   1=Create   2=Change   4=Delete   5=Display   8=Work with subsystem jobs      
+   9=Start subsystem     10=End subsystem                                       
+                                                                                
+ Opt  Subsystem   Library     Text                                              
+                                                                                
+      QBASE       QSYS        Basic controlling subsystem                       
+      QBATCH      QSYS        Batch Subsystem                                   
+      QBATCH2     QSYS        Batch Subsystem                                   
+      QBATCH3     QSYS                                                          
+      QBATCH4     QSYS                                                          
+      QCMN        QSYS        Communications Subsystem                          
+      QCTL        QSYS        Controlling Subsystem                             
+      QINTER      QSYS        Interactive Subsystem                             
+      QINTERX     QSYS        Interactive Subsystem restricted                  
+      QINTER2     QSYS        Interactive Subsystem                             
+                                                                        More... 
+ Parameters for options 1, 2, 5, 8 and 10 or command                            
+ ===>                                                                           
+ F3=Exit      F4=Prompt   F5=Refresh   F9=Retrieve   F11=Display names only     
+ F12=Cancel   F16=Repeat position to   F17=Position to                          
+                                                                                

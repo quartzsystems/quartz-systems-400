@@ -1,0 +1,185 @@
+# Panels batch 2: work management, spool, files and journals, run from
+# MAIN's command line (F3 from a panel comes back to MAIN). Commands the
+# account may not run leave a message on MAIN; their snapshots are
+# dropped afterwards. Nothing here creates or changes an object.
+wait "Main Menu"
+continue
+timeout 40000
+type wrksbmjob
+key enter
+wait "Work with Submitted Jobs"
+snap wrksbmjob +jobnum
+key f3
+wait "Main Menu"
+type wrkshrpool
+key enter
+wait "Work with Shared Pools"
+snap wrkshrpool +number
+key f11
+settle 800
+snap wrkshrpool-f11 +number
+key f3
+wait "Main Menu"
+type wrksyssts
+key enter
+wait "Work with System Status"
+snap wrksyssts +cpu +number
+key f3
+wait "Main Menu"
+type wrkdsksts
+key enter
+wait "Work with Disk Status"
+snap wrkdsksts +cpu +number
+key f3
+wait "Main Menu"
+type wrksysact
+key enter
+wait "Work with System Activity"
+snap wrksysact +cpu +number
+key f3
+wait "Main Menu"
+type wrkoutqd qgpl/qprint
+key enter
+wait "Output Queue Description"
+snap wrkoutqd
+key pgdn
+settle 600
+snap wrkoutqd-2
+key f3
+wait "Main Menu"
+type wrksplf
+key enter
+wait "Work with All Spooled Files"
+type 5
+key enter
+wait "Display Spooled File"
+snap dspsplf +number
+key f20
+settle 800
+snap dspsplf-f20 +number
+key f19
+settle 800
+key f24
+settle 800
+snap dspsplf-f24 +number
+key f24
+settle 800
+type +5
+key enter
+settle 800
+snap dspsplf-control +number
+type b
+key enter
+settle 800
+snap dspsplf-bottom +number
+type t
+key enter
+settle 800
+key f12
+wait "Work with All Spooled Files"
+key f3
+wait "Main Menu"
+type wrklib qgpl
+key enter
+wait "Work with Libraries"
+snap wrklib
+key f3
+wait "Main Menu"
+type wrkobjlck qgpl *lib
+key enter
+wait "Work with Object Locks"
+snap wrkobjlck +jobnum
+key f3
+wait "Main Menu"
+type wrkobjpgp qpgmr
+key enter
+wait "Primary Group"
+snap wrkobjpgp
+key f3
+wait "Main Menu"
+type dsppfm qiws/qcustcdt
+key enter
+wait "Display Physical File Member"
+snap dsppfm
+key f20
+settle 800
+snap dsppfm-f20
+key f19
+settle 800
+key f10
+settle 800
+snap dsppfm-f10
+key f11
+settle 800
+snap dsppfm-f11
+key f24
+settle 800
+snap dsppfm-f24
+key f3
+wait "Main Menu"
+type wrkjrn *curlib/*all
+key enter
+wait "Work with Journals"
+snap wrkjrn
+key f3
+wait "Main Menu"
+type wrkjrna *curlib/qsqjrn
+key enter
+wait "Work with Journal Attributes"
+snap wrkjrna +number
+key f15
+settle 1000
+snap wrkjrna-f15 +number
+type 8
+key enter
+settle 1000
+snap dspjrnrcva +number
+key f3
+wait "Main Menu"
+type dspjrn *curlib/qsqjrn
+key enter
+wait "Display Journal Entries"
+snap dspjrn +number
+key f3
+wait "Main Menu"
+type ovrdbf qcustcdt qiws/qcustcdt
+key enter
+settle 800
+type dspovr
+key enter
+wait "Display Override"
+snap dspovr
+key f3
+wait "Main Menu"
+type wrksbsd qsys/*all
+key enter
+wait "Work with Subsystem Descriptions"
+snap wrksbsd
+key f3
+wait "Main Menu"
+type wrkprb
+key enter
+wait "Work with Problems"
+snap wrkprb
+key f3
+wait "Main Menu"
+type wrkactjob
+key enter
+wait "Work with Active Jobs"
+key f24
+settle 800
+key f24
+settle 800
+snap wrkactjob-f24-3 +cpu +number
+key f14
+settle 1000
+snap wrkactjob-f14 +cpu +number
+key f12
+settle 800
+key f20
+settle 1000
+snap wrkactjob-f20 +cpu +number
+key f12
+settle 800
+key f3
+wait "Main Menu"

@@ -1,0 +1,55 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* WRKJRN: the journals a name selects, with the recovery options.
+:PNLGRP.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=TEXTCL BASETYPE='CHAR 50'.
+:ECLASS.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=JRN CLASS=NAMECL.
+:VAR NAME=JRNLIB CLASS=NAMECL.
+:VAR NAME=ASPDEV CLASS=NAMECL.
+:VAR NAME=JRNTEXT CLASS=TEXTCL.
+:LISTDEF NAME=JRNS VARS='OPT JRN JRNLIB ASPDEV JRNTEXT'.
+:KEYL NAME=WJKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=WRKJRN KEYL=WJKEYS HELP=WRKJRN ENTER='RETURN 1' TOPSEP=SPACE.Work with Journals
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=JRNS.(No journals match specified name)
+:LISTACT OPTION=2 ENTER='CMD ?APYJRNCHG JRN(&JRNLIB./&JRN.)'.2=Forward recovery
+:LISTACT OPTION=3 ENTER='CMD ?RMVJRNCHG JRN(&JRNLIB./&JRN.)'.3=Backout recovery
+:LISTACT OPTION=5 ENTER='CMD WRKJRNA JRN(&JRNLIB./&JRN.)'.5=Display journal status
+:LISTACT OPTION=6 ENTER='RETURN 6'.6=Recover damaged journal
+:LISTACT OPTION=7 ENTER='RETURN 7'.7=Recover damaged journal receivers
+:LISTACT OPTION=8 ENTER='CMD WRKJRNA JRN(&JRNLIB./&JRN.)'.8=Work with journal attributes
+:LISTACT OPTION=9 ENTER='RETURN 9'.9=Associate receivers with journal
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=JRN USAGE=OUTPUT.Journal
+:LISTCOL VAR=JRNLIB USAGE=OUTPUT.Library
+:LISTGRP COL=ASPGRP.ASP
+:LISTCOL VAR=ASPDEV USAGE=OUTPUT.Device
+:ELISTGRP.
+:LISTCOL VAR=JRNTEXT USAGE=OUTPUT.Text
+:ELIST.
+:CMDLINE SIZE=SHORT.Command
+:EPANEL.
+:HELP NAME=WRKJRN.Work with Journals - Help
+:P.The journals the name selects. Option 2 applies journaled changes
+to the files, option 3 takes them back out; options 5 and 8 show the
+journal's receivers and the objects it covers.
+:EHELP.
+:EPNLGRP.

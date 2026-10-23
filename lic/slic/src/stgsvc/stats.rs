@@ -700,3 +700,170 @@ pub fn qwcrssts(system: &mut System, format: &str, reset: bool) -> Result<Vec<u8
     out[4..8].copy_from_slice(&u32::try_from(n).unwrap_or(0).to_be_bytes());
     Ok(out)
 }
+
+/// One `(variable, value)` pair of a panel's data.
+#[allow(clippy::needless_pass_by_value)] // numbers and strings alike
+fn pair(k: &str, v: impl ToString) -> (String, String) {
+    (k.to_string(), v.to_string())
+}
+
+/// `WRKSYSSTS` as panel data: the header figures and one entry per
+/// pool, measured from the display's base (moved by `reset`).
+pub fn syssts_panel(system: &mut System, reset: bool) -> stg::proto::PanelData {
+    let (now, base) = interval(system, |s| &mut s.syssts, reset);
+    let d = Delta {
+        now: &now,
+        base: &base,
+    };
+    let (asp_mb, asp_pct, temp_mb) = asp_figures(system);
+    let main = read("/proc/meminfo")
+        .and_then(|t| stats::mem_total_kb(&t))
+        .unwrap_or(0);
+    let gb = |m: u64| format!("{:.1} G", mb(m * 1024) / 1024.0);
+    let vars = vec![
+        pair("CPUPCT", format!("{:.1}", d.cpu_used())),
+        pair("DBCAP", ".0"),
+        pair("ELAPSED", hms(d.whole_secs())),
+        pair("JOBS", system.jobs.all().len()),
+        pair("PERMADR", ".007"),
+        pair("TEMPADR", ".012"),
+        pair("SYSASP", gb(asp_mb)),
+        pair("ASPPCT", format!("{asp_pct:.4}")),
+        pair("TOTAUX", gb(asp_mb)),
+        pair("CURUNP", format!("{temp_mb} M")),
+        pair("MAXUNP", format!("{temp_mb} M")),
+        pair("MAINSTG", format!("{:.2}", mb(main))),
+    ];
+    let rows = system
+        .pools
+        .info()
+        .into_iter()
+        .map(|p| {
+            let (db, ndb) = d.faults(&p.name);
+            let (aw, wi, ai) = d.counters(&p.name);
+            vec![
+                pair("POOL", p.number),
+                pair("POOLNAME", &p.name),
+                pair("SIZE", format!("{:.2}", mb(p.size_kb))),
+                pair("RESV", format!("{:.2}", mb(p.reserved_kb))),
+                pair(
+                    "MAXACT",
+                    if p.actlvl == 0 {
+                        "+++++".to_string()
+                    } else {
+                        p.actlvl.to_string()
+                    },
+                ),
+                pair("DBF", format!("{db:.1}")),
+                pair("DBP", format!("{db:.1}")),
+                pair("NDBF", format!("{ndb:.1}")),
+                pair("NDBP", format!("{ndb:.1}")),
+                pair("AW", aw),
+                pair("WI", wi),
+                pair("AI", ai),
+            ]
+        })
+        .collect();
+    (vars, rows)
+}
+
+/// `WRKDSKSTS` as panel data: the elapsed time and one entry per unit.
+#[allow(clippy::cast_precision_loss)] // counters far below 2^52
+pub fn dsksts_panel(system: &mut System, reset: bool) -> stg::proto::PanelData {
+    let (now, base) = interval(system, |s| &mut s.dsksts, reset);
+    let d = Delta {
+        now: &now,
+        base: &base,
+    };
+    let secs = d.secs();
+    let ms = u64::try_from(d.now.at.duration_since(d.base.at).as_millis()).unwrap_or(u64::MAX);
+    let units = system
+        .storage
+        .as_ref()
+        .map(|s| s.store.units())
+        .unwrap_or_default();
+    let rows = units
+        .iter()
+        .enumerate()
+        .map(|(i, u)| {
+            let x = now
+                .disks
+                .get(i)
+                .copied()
+                .unwrap_or_default()
+                .since(&base.disks.get(i).copied().unwrap_or_default());
+            let rqs = x.reads + x.writes;
+            let per_s = |n: u64| format!("{:.1}", (n as f64 / secs * 10.0).round() / 10.0);
+            let kb = |sectors: u64, n: u64| {
+                format!(
+                    "{:.1}",
+                    if n == 0 {
+                        0.0
+                    } else {
+                        sectors as f64 / 2.0 / n as f64
+                    }
+                )
+            };
+            vec![
+                pair("UNIT", u.unit + 1),
+                pair("TYPE", "VIRT"),
+                pair("SIZE", (u.entry.pages * 4096) >> 30),
+                pair(
+                    "USED",
+                    format!("{:.1}", percent(u.used_pages, u.entry.usable_pages.max(1))),
+                ),
+                pair("IORQS", per_s(rqs)),
+                pair("RQSSIZE", kb(x.read_sectors + x.write_sectors, rqs)),
+                pair("READRQS", per_s(x.reads)),
+                pair("WRITERQS", per_s(x.writes)),
+                pair("READK", kb(x.read_sectors, x.reads)),
+                pair("WRITEK", kb(x.write_sectors, x.writes)),
+                pair("BUSY", format!("{:.0}", percent(x.busy_ms, ms))),
+            ]
+        })
+        .collect();
+    (vec![pair("ELAPSED", hms(d.whole_secs()))], rows)
+}
+
+/// `WRKSYSACT` as panel data: the interval, the machine's CPU and the
+/// jobs by CPU used, most first.
+pub fn sysact_panel(system: &mut System) -> stg::proto::PanelData {
+    let (now, base) = interval(system, |s| &mut s.sysact, true);
+    let d = Delta {
+        now: &now,
+        base: &base,
+    };
+    let ticks = d.ticks();
+    let mut jobs = system.jobs.all();
+    jobs.sort_by_key(|j| std::cmp::Reverse(d.job_ticks(j.number)));
+    let cpu = format!("{:.1}", d.cpu_used());
+    let vars = vec![
+        pair("ELAPSED", hms(d.whole_secs())),
+        pair("OVERALL", &cpu),
+        pair("AVGCPU", &cpu),
+        pair("MAXCPU", &cpu),
+        pair("MINCPU", &cpu),
+        pair(
+            "VPROCS",
+            std::thread::available_parallelism().map_or(1, std::num::NonZero::get),
+        ),
+    ];
+    let rows = jobs
+        .iter()
+        .map(|j| {
+            let pty = system.attrs.get(&j.number).map_or(0, |a| a.runpty);
+            vec![
+                pair("JOB", &j.name),
+                pair("USER", &j.user),
+                pair("NUMBER", format!("{:06}", j.number)),
+                pair("THREAD", "00000001"),
+                pair("PTY", pty),
+                pair("CPU", format!("{:.1}", percent(d.job_ticks(j.number), ticks))),
+                pair("SYNCIO", 0),
+                pair("ASYNCIO", d.job_aux(j.number)),
+                pair("CPUDB", ".0"),
+            ]
+        })
+        .collect();
+    (vars, rows)
+}

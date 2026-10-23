@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   QCUSTCDT            Library  . . . . :   QIWS             
+ Member . . . . . :   CUSTCDT             Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   1                
+ Find . . . . . . .                                                             
+ *...+....1....+....2....+....3....+....4....+....5....+....6                   
+ 938472Henning G K4859 Elm Ave DallasTX7521750003003700000000                   
+ 839283Jones   B D21B NW 135 StClay  NY1304104001010000000000                   
+ 392859Vine    S SPO Box 79    BrotonVT0504607001043900000000                   
+ 938485Johnson J A3 Alpine Way Helen GA3054599992398750003350                   
+ 397267Tyron   W E13 Myrtle Dr HectorNY1484110001000000000000                   
+ 389572Stevens K L208 Snow PassDenverCO8022604001005875000150                   
+ 846283Alison  J S787 Lake Dr  Isle  MN5634250003001000000000                   
+ 475938Doe     J W59 Archer Rd SutterCA9568507002025000010000                   
+ 693829Thomas  A N3 Dove CircleCasperWY8260999992000000000000                   
+ 593029WilliamsE D485 SE 2 Ave DallasTX7521802001002500000000                   
+ 192837Lee     F L5963 Oak St  HectorNY1484107002048950000050                   
+ 583990Abraham M T392 Mill St  Isle  MN5634299993050000000000                   
+                           ****** END OF DATA ******                            
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+ End of record shown.                                                           

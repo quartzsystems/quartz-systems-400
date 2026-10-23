@@ -1,0 +1,24 @@
+                            Work with Submitted Jobs                   PUB400   
+                                                         MM/DD/YY  HH:MM:SS UTC 
+ Submitted from . . . . . . . . :   *USER                                       
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change   3=Hold   4=End   5=Work with   6=Release   7=Display message      
+   8=Work with spooled files                                                    
+                                                                                
+                                                                                
+ Opt  Job         User        Type     -----Status-----  Function               
+                                                                                
+   (No jobs to display)                                                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit      F4=Prompt   F5=Refresh   F9=Retrieve   F11=Display schedule data  
+ F12=Cancel   F17=Top     F18=Bottom                                            
+                                                                                

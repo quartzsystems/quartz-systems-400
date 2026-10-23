@@ -1,0 +1,17 @@
+# Panels batch 2 at a 27x132 display (`--model m3477`): WRKACTJOB's
+# wide views and keys.
+wait "Main Menu"
+continue
+timeout 40000
+type wrkactjob
+key enter
+wait "Work with Active Jobs"
+snap wrkactjob-132 +cpu +number
+key f11
+settle 800
+snap wrkactjob-132-f11 +cpu +number
+key f24
+settle 800
+snap wrkactjob-132-f24 +cpu +number
+key f3
+wait "Main Menu"

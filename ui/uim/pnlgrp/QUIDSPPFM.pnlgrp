@@ -1,0 +1,80 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* DSPPFM: a member's records through a window the program moves, as
+.* characters or in hexadecimal side by side (F10) or under the
+.* characters (F11).
+:PNLGRP.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=CTLCL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=FINDCL BASETYPE='CHAR 30'.
+:ECLASS.
+:CLASS NAME=NBRCL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=LINECL BASETYPE='CHAR 78'.
+:ECLASS.
+:CLASS NAME=FLAGCL BASETYPE='CHAR 1'.
+:ECLASS.
+:VAR NAME=FILE CLASS=NAMECL.
+:VAR NAME=LIB CLASS=NAMECL.
+:VAR NAME=MBR CLASS=NAMECL.
+:VAR NAME=RECORD CLASS=NBRCL.
+:VAR NAME=COLUMN CLASS=NBRCL.
+:VAR NAME=CTL CLASS=CTLCL.
+:VAR NAME=FIND CLASS=FINDCL.
+:VAR NAME=RULER CLASS=LINECL.
+:VAR NAME=LINE CLASS=LINECL.
+:VAR NAME=MODE CLASS=FLAGCL VALUE='C'.
+:LISTDEF NAME=LINES VARS='LINE'.
+:COND NAME=CHARS EXPR='&MODE. EQ "C"'.
+:COND NAME=SIDE EXPR='&MODE. EQ "S"'.
+:COND NAME=VERT EXPR='&MODE. EQ "V"'.
+:COND NAME=HEX EXPR='&MODE. NE "C"'.
+:COND NAME=NOTVERT EXPR='&MODE. NE "V"'.
+:KEYL NAME=PFKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F19 ACTION='RETURN 19'.F19=Left
+:KEYI KEY=F20 ACTION='RETURN 20'.F20=Right
+:KEYI KEY=F24 ACTION=MOREKEYS.F24=More keys
+:KEYI KEY=F10 ACTION='RETURN 10' COND=CHARS.F10=Display hexadecimal
+:KEYI KEY=F10 ACTION='RETURN 10' COND=HEX.F10=Display character
+:KEYI KEY=F11 ACTION='RETURN 11' COND=NOTVERT.F11=Display vertical
+:KEYI KEY=F11 ACTION='RETURN 11' COND=VERT.F11=Display side-by-side
+:EKEYL.
+:PANEL NAME=DSPPFM KEYL=PFKEYS HELP=DSPPFM ENTER='RETURN 1' TOPSEP=NONE BOTSEP=NONE.Display Physical File Member
+:DATA DEPTH=4.
+:DATACOL WIDTH=17.
+:DATACOL WIDTH=41.
+:DATAC.File . . . . . . :   &FILE.
+:DATAC.Member . . . . . :   &MBR.
+:DATAI VAR=CTL USAGE=INPUT CSRLOC.Control
+:DATAI VAR=FIND USAGE=INPUT.Find
+:DATACOL WIDTH=38.
+:DATAC.Library  . . . . :   &LIB.
+:DATAC.Record . . . . . :   &RECORD.
+:DATAC.Column . . . . . :   &COLUMN.
+:EDATA.
+:DATA DEPTH=1.
+:DATAC.&RULER.
+:EDATA.
+:LIST DEPTH='*' LISTDEF=LINES COMPACT.
+:LISTCOL VAR=LINE USAGE=OUTPUT.
+:ELIST.
+:EPANEL.
+:HELP NAME=DSPPFM.Display Physical File Member - Help
+:P.The records of a database file member in arrival order. Page up and
+down move by a screen, F19 and F20 move the window left and right. On
+the Control line, +n and -n move by records, a number goes to that
+record, Wn starts the window at column n, and T and B go to the top and
+the bottom. F10 shows the bytes in hexadecimal beside the characters,
+F11 under them. F16 finds the text typed on the Find line.
+:EHELP.
+:EPNLGRP.

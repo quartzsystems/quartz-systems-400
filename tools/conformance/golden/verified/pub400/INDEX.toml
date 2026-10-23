@@ -2660,5 +2660,154 @@ source = "pub400"
 release = "V7R5M0"
 date = "2026-10-23"
 script = "pdm2"
+name = "wrksbmjob"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "wrkdsksts"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "wrkoutqd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "wrkoutqd-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "dspsplf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "dspsplf-f20"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "dspsplf-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "dspsplf-control"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "wrklib"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "wrkobjlck"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "dsppfm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "dsppfm-f20"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "dsppfm-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "dsppfm-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "dsppfm-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "wrkjrn"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "dspovr"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "wrksbsd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
+width = 80
+
+[[golden]]
+name = "wrkactjob-f24-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "work2-panels"
 width = 80
 

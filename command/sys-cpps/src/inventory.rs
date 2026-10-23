@@ -295,6 +295,25 @@ pub const JOB_SITE: &[&str] = &[
     // --- system displays (work/qsjob/src/sysdsp/)
     // --- UIM APIs (work/qsjob/src/command/uiapi.rs)
     // --- panels batch 2: work, spool, journals (panels/work2.rs)
+    "WRKSBMJOB",
+    "WRKSHRPOOL",
+    "WRKSYSSTS",
+    "WRKDSKSTS",
+    "WRKSYSACT",
+    "WRKOUTQD",
+    "DSPSPLF",
+    "WRKLIB",
+    "WRKOBJLCK",
+    "DSPPFM",
+    "DSPJRN",
+    "WRKJRN",
+    "WRKJRNA",
+    "DSPJRNRCVA",
+    "DSPOVR",
+    "WRKOBJPGP",
+    "WRKSBSD",
+    "DSPSAVF",
+    "WRKPRB",
     // --- panels batch 2: programs, config, security, editors (panels/system2.rs)
     // --- SEU (devtools/seu)
     // --- PDM (devtools/pdm)

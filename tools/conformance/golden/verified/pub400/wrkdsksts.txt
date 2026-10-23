@@ -1,0 +1,24 @@
+                             Work with Disk Status                     PUB400   
+                                                         MM/DD/YY  HH:MM:SS UTC 
+ Elapsed time:   HH:MM:SS                                                       
+                                                                                
+                Size    %     I/O   Request   Read  Write   Read  Write    %    
+ Unit  Type      (G)  Used    Rqs  Size (K)    Rqs   Rqs     (K)   (K)   Busy   
+    N  N         N    N.N     N.N      N.N     N.N    N.N    N.N    N.N     N   
+    N  N         N    N.N     N.N      N.N     N.N    N.N    N.N    N.N     N   
+    N  N         N    N.N     N.N      N.N     N.N    N.N    N.N    N.N     N   
+    N  N         N    N.N     N.N      N.N     N.N    N.N    N.N    N.N     N   
+    N  N         N    N.N     N.N      N.N     N.N    N.N    N.N    N.N     N   
+    N  N         N    N.N     N.N      N.N     N.N    N.N    N.N    N.N     N   
+    N  N         N    N.N     N.N      N.N     N.N    N.N    N.N    N.N     N   
+    N  N         N    N.N     N.N      N.N     N.N    N.N    N.N    N.N     N   
+    N  N         N    N.N     N.N      N.N     N.N    N.N    N.N    N.N     N   
+   N   N         N    N.N     N.N      N.N     N.N    N.N    N.N    N.N     N   
+   N   N         N    N.N     N.N      N.N     N.N    N.N    N.N    N.N     N   
+   N   N         N    N.N     N.N      N.N     N.N    N.N    N.N    N.N     N   
+   N   N         N    N.N     N.N      N.N     N.N    N.N    N.N    N.N     N   
+                                                                         Bottom 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F5=Refresh   F12=Cancel   F24=More keys                              
+                                                                                

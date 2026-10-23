@@ -1,0 +1,73 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* DSPOVR: the file overrides in effect for the job, merged over its
+.* call levels; F11 shows each one where it was issued.
+:PNLGRP.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=TYPECL BASETYPE='CHAR 4'.
+:ECLASS.
+:CLASS NAME=LVLCL BASETYPE='CHAR 5'.
+:ECLASS.
+:CLASS NAME=KWDCL BASETYPE='CHAR 60'.
+:ECLASS.
+:VAR NAME=LVL CLASS=LVLCL VALUE='*'.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=FILE CLASS=NAMECL.
+:VAR NAME=TYPE CLASS=TYPECL.
+:VAR NAME=LEVEL CLASS=LVLCL.
+:VAR NAME=KWDS CLASS=KWDCL.
+:VAR NAME=MERGED CLASS=LVLCL VALUE='1'.
+:LISTDEF NAME=OVRS VARS='OPT FILE TYPE LEVEL KWDS'.
+:COND NAME=MERGED EXPR='&MERGED. EQ "1"'.
+:COND NAME=ALL EXPR='&MERGED. NE "1"'.
+:KEYL NAME=OVKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F11 ACTION='RETURN 11' COND=MERGED.F11=All file overrides
+:KEYI KEY=F11 ACTION='RETURN 11' COND=ALL.F11=Merged file overrides
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=DSPOVR KEYL=OVKEYS HELP=DSPOVR ENTER='RETURN 1' TOPSEP=SPACE.Display All Merged File Overrides
+:DATA DEPTH=2.
+:DATAI VAR=LVL USAGE=OUTPUT.Call level
+.* Not shown: it sets the colon column.
+:DATAI VAR=MERGED USAGE=OUTPUT DISPLAY=NO.Call level of overrides
+:EDATA.
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=OVRS VIEWS=2 MAXHEAD=2.(No overrides in effect)
+:LISTACT OPTION=5 ENTER='RETURN 5'.5=Display override details
+:LISTACT OPTION=8 ENTER='RETURN 8'.8=Display contributing file overrides
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=FILE USAGE=OUTPUT.File
+:LISTCOL VAR=TYPE USAGE=OUTPUT.Type
+:LISTCOL VAR=LEVEL USAGE=OUTPUT.Level
+:LISTCOL VAR=KWDS USAGE=OUTPUT.Keyword Specifications
+:LISTVIEW COLS='OPT FILE TYPE KWDS'.
+:LISTVIEW COLS='OPT FILE TYPE LEVEL KWDS'.
+:ELIST.
+:EPANEL.
+:PANEL NAME=DSPOVRD KEYL=OVKEYS HELP=DSPOVR ENTER='RETURN 1' TOPSEP=SPACE.Display Override Details
+:DATA DEPTH='*'.
+:DATAI VAR=FILE USAGE=OUTPUT.File
+:DATAI VAR=TYPE USAGE=OUTPUT.Type
+:DATAI VAR=LEVEL USAGE=OUTPUT.Call level
+:DATAI VAR=KWDS USAGE=OUTPUT.Keywords
+:EDATA.
+:BOTINST.Press Enter to continue.
+:EPANEL.
+:HELP NAME=DSPOVR.Display Overrides - Help
+:P.The overrides that open operations of this job would use now, one
+line per file with the keywords that apply, merged over the call
+levels. F11 lists every override where it was issued instead; option
+5 shows one in full.
+:EHELP.
+:EPNLGRP.

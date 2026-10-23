@@ -112,6 +112,78 @@ note = "a panel at a display; the text form in the service otherwise"
 # --- UIM APIs (work/qsjob/src/command/uiapi.rs)
 
 # --- panels batch 2: work, spool, journals (panels/work2.rs)
+[cmd.WRKSHRPOOL]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.WRKSYSSTS]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.WRKDSKSTS]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.WRKSYSACT]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.WRKOUTQD]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPSPLF]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.WRKLIB]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.WRKOBJLCK]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPPFM]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPJRN]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.WRKJRN]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.WRKJRNA]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPJRNRCVA]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPOVR]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.WRKOBJPGP]
+site = "job"
+note = "a panel only: no text form outside a display"
+
+[cmd.WRKSBSD]
+site = "job"
+note = "a panel only: no text form outside a display"
+
+[cmd.DSPSAVF]
+site = "job"
+note = "a panel only: no text form outside a display"
+
+[cmd.WRKPRB]
+site = "job"
+note = "a panel only: no text form outside a display"
+
 
 # --- panels batch 2: programs, config, security, editors (panels/system2.rs)
 
@@ -230,7 +302,9 @@ site = "job"
 note = "a panel when the job shows panels; else the service's text"
 
 [cmd.WRKSBMJOB]
+site = "job"
 word = "wrkactjob"
+note = "a panel at a display; the active jobs as text otherwise"
 
 [cmd.WRKUSRJOB]
 site = "job"

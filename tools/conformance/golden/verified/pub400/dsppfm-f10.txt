@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   QCUSTCDT            Library  . . . . :   QIWS             
+ Member . . . . . :   CUSTCDT             Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   1                
+ Find . . . . . . .                                                             
+ * . . .  + . . .  . 1 . .  . . + .  . . . 2     *...+....1....+....2           
+ F9F3F8F4 F7F2C885 95958995 8740C740 D2F4F8F5   *938472Henning G K485*          
+ F8F3F9F2 F8F3D196 9585A240 4040C240 C4F2F1C2   *839283Jones   B D21B*          
+ F3F9F2F8 F5F9E589 95854040 4040E240 E2D7D640   *392859Vine    S SPO *          
+ F9F3F8F4 F8F5D196 8895A296 9540D140 C1F340C1   *938485Johnson J A3 A*          
+ F3F9F7F2 F6F7E3A8 99969540 4040E640 C5F1F340   *397267Tyron   W E13 *          
+ F3F8F9F5 F7F2E2A3 85A58595 A240D240 D3F2F0F8   *389572Stevens K L208*          
+ F8F4F6F2 F8F3C193 89A29695 4040D140 E2F7F8F7   *846283Alison  J S787*          
+ F4F7F5F9 F3F8C496 85404040 4040D140 E6F5F940   *475938Doe     J W59 *          
+ F6F9F3F8 F2F9E388 969481A2 4040C140 D5F340C4   *693829Thomas  A N3 D*          
+ F5F9F3F0 F2F9E689 93938981 94A2C540 C4F4F8F5   *593029WilliamsE D485*          
+ F1F9F2F8 F3F7D385 85404040 4040C640 D3F5F9F6   *192837Lee     F L596*          
+ F5F8F3F9 F9F0C182 99818881 9440D440 E3F3F9F2   *583990Abraham M T392*          
+                           ****** END OF DATA ******                            
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

@@ -1,0 +1,24 @@
+                    Display All Merged File Overrides                           
+                                                                                
+ Call level  . . . . . . . . . . . :   *                                        
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display override details   8=Display contributing file overrides           
+                                                                                
+                                                                                
+ Opt  File        Type  Keyword Specifications                                  
+      QCUSTCDT    DB    TOFILE(QIWS/QCUSTCDT)                                   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F5=Refresh   F11=All file overrides   F12=Cancel                     
+                                                                                

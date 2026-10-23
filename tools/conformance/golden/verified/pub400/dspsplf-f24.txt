@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QDFUZZIN                         Page/Line   N/N           
+ Control . . . . .                                    Columns     N - N         
+ Find  . . . . . .                                                              
+ *...+....N....+....N....+....N....+....N....+....N....+....N....+....N....+... 
+  5770SS1 V7R5M0  N                       Data Description               USERNA 
+  File name . . . . . . . . . . . . . . . . . . . . . :   QDFUZZIN              
+    Library name  . . . . . . . . . . . . . . . . . . :   USERNAME1             
+  File attribute  . . . . . . . . . . . . . . . . . . :   Physical              
+  Source file containing DDS  . . . . . . . . . . . . :   QDDSSRC               
+    Library name  . . . . . . . . . . . . . . . . . . :   USERNAME1             
+  Source member containing DDS  . . . . . . . . . . . :   QDFUZZIN              
+  Source member last changed  . . . . . . . . . . . . :   MM/DD/YY  HH:MM:SS    
+  Source listing options  . . . . . . . . . . . . . . :   *SOURCE    *LIST      
+  DDS generation severity level . . . . . . . . . . . :   N                     
+  DDS flagging severity level . . . . . . . . . . . . :   N                     
+  File type . . . . . . . . . . . . . . . . . . . . . :   *DATA                 
+  Authority . . . . . . . . . . . . . . . . . . . . . :   *LIBCRTAUT            
+  Replace file  . . . . . . . . . . . . . . . . . . . :   *NO                   
+  Text  . . . . . . . . . . . . . . . . . . . . . . . :                         
+  Compiler  . . . . . . . . . . . . . . . . . . . . . :   IBM System i5 Data De 
+                                                                        More... 
+ F11=Folded   F14=Find options   F16=Find   F24=More keys                       
+                                                                                

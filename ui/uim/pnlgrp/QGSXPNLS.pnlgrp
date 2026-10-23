@@ -1,0 +1,49 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* WRKPRB: the problem log. The system logs no problems yet, so the
+.* list is empty. No golden: pub400 refuses the command.
+:PNLGRP.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=IDCL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=STSCL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=TEXTCL BASETYPE='CHAR 50'.
+:ECLASS.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=PRBID CLASS=IDCL.
+:VAR NAME=PRBSTS CLASS=STSCL.
+:VAR NAME=PRBTEXT CLASS=TEXTCL.
+:LISTDEF NAME=PRBS VARS='OPT PRBID PRBSTS PRBTEXT'.
+:KEYL NAME=PBKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F16 ACTION='RETURN 16'.F16=Report prepared problems
+:EKEYL.
+:PANEL NAME=WRKPRB KEYL=PBKEYS HELP=WRKPRB ENTER='RETURN 1' TOPSEP=SYSNAM.Work with Problems
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=PRBS.(No problems logged)
+:LISTACT OPTION=2 ENTER='RETURN 2'.2=Change
+:LISTACT OPTION=4 ENTER='RETURN 4'.4=Delete
+:LISTACT OPTION=5 ENTER='RETURN 5'.5=Display details
+:LISTACT OPTION=6 ENTER='RETURN 6'.6=Print details
+:LISTACT OPTION=8 ENTER='RETURN 8'.8=Work with problem
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=PRBID USAGE=OUTPUT.Problem ID
+:LISTCOL VAR=PRBSTS USAGE=OUTPUT.Status
+:LISTCOL VAR=PRBTEXT USAGE=OUTPUT.Problem Description
+:ELIST.
+:EPANEL.
+:HELP NAME=WRKPRB.Work with Problems - Help
+:P.The problems the system has logged, with their status. This
+release logs none, so the list is empty.
+:EHELP.
+:EPNLGRP.

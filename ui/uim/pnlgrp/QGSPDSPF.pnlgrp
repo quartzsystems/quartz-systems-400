@@ -1,0 +1,72 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* DSPSPLF: a spooled file's lines through a window the program moves
+.* (F19/F20, the Control line), as text or in hexadecimal.
+:PNLGRP.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=CTLCL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=FINDCL BASETYPE='CHAR 30'.
+:ECLASS.
+:CLASS NAME=POSCL BASETYPE='CHAR 14'.
+:ECLASS.
+:CLASS NAME=LINECL BASETYPE='CHAR 78'.
+:ECLASS.
+:CLASS NAME=FLAGCL BASETYPE='CHAR 1'.
+:ECLASS.
+:VAR NAME=FILE CLASS=NAMECL.
+:VAR NAME=CTL CLASS=CTLCL.
+:VAR NAME=FIND CLASS=FINDCL.
+:VAR NAME=PAGELINE CLASS=POSCL.
+:VAR NAME=COLS CLASS=POSCL.
+:VAR NAME=RULER CLASS=LINECL.
+:VAR NAME=LINE CLASS=LINECL.
+:VAR NAME=FOLD CLASS=FLAGCL VALUE='N'.
+:LISTDEF NAME=LINES VARS='LINE'.
+:COND NAME=TRUNC EXPR='&FOLD. NE "Y"'.
+:COND NAME=FOLDED EXPR='&FOLD. EQ "Y"'.
+:KEYL NAME=SPKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F19 ACTION='RETURN 19'.F19=Left
+:KEYI KEY=F20 ACTION='RETURN 20'.F20=Right
+:KEYI KEY=F24 ACTION=MOREKEYS.F24=More keys
+:KEYI KEY=F11 ACTION='RETURN 11' COND=TRUNC.F11=Folded
+:KEYI KEY=F11 ACTION='RETURN 11' COND=FOLDED.F11=Truncated
+:KEYI KEY=F14 ACTION='RETURN 14'.F14=Find options
+:KEYI KEY=F16 ACTION='RETURN 16'.F16=Find
+:EKEYL.
+:PANEL NAME=DSPSPLF KEYL=SPKEYS HELP=DSPSPLF ENTER='RETURN 1' TOPSEP=NONE BOTSEP=NONE.Display Spooled File
+:DATA DEPTH=3.
+:DATACOL WIDTH=16.
+:DATACOL WIDTH=53.
+:DATAC.File  . . . . . :   &FILE.
+:DATAI VAR=CTL USAGE=INPUT CSRLOC.Control
+:DATAI VAR=FIND USAGE=INPUT.Find
+:DATACOL WIDTH=26.
+:DATAC.Page/Line   &PAGELINE.
+:DATAC.Columns     &COLS.
+:EDATA.
+:DATA DEPTH=1.
+:DATAC.&RULER.
+:EDATA.
+:LIST DEPTH='*' LISTDEF=LINES COMPACT.
+:LISTCOL VAR=LINE USAGE=OUTPUT.
+:ELIST.
+:EPANEL.
+:HELP NAME=DSPSPLF.Display Spooled File - Help
+:P.The lines of a spooled file, page after page. Page up and down move
+by a screen; F19 and F20 move the window left and right. On the
+Control line, +n and -n move by lines, Pn goes to page n, Wn starts the
+window at column n, T and B go to the top and the bottom, and *HEX
+shows the bytes in hexadecimal (*CHAR goes back). F16 finds the text
+typed on the Find line.
+:EHELP.
+:EPNLGRP.

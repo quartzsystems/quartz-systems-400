@@ -1,0 +1,24 @@
+                          Display Physical File Member                          
+ File . . . . . . :   QCUSTCDT            Library  . . . . :   QIWS             
+ Member . . . . . :   CUSTCDT             Record . . . . . :   1                
+ Control  . . . . .                       Column . . . . . :   1                
+ Find . . . . . . .                                                             
+ *...+....1....+....2....+....3....+....4....+....5....+....6                   
+ 938472Henning G K4859 Elm Ave DallasTX7521750003003700000000                   
+ FFFFFFC8998984C4DFFFF4C994CA84C8998AEEFFFFFFFFFFFFFFFFFFFFFF                   
+ 938472855595707024859053401550413312377521750003003700000000                   
+                                                                                
+ 839283Jones   B D21B NW 135 StClay  NY1304104001010000000000                   
+ FFFFFFD998A444C4CFFC4DE4FFF4EAC98A44DEFFFFFFFFFFFFFFFFFFFFFF                   
+ 839283165520002042120560135023331800581304104001010000000000                   
+                                                                                
+ 392859Vine    S SPO Box 79    BrotonVT0504607001043900000000                   
+ FFFFFFE8984444E4EDD4C9A4FF4444C99A99EEFFFFFFFFFFFFFFFFFFFFFF                   
+ 392859595500002027602670790000296365530504607001043900000000                   
+                                                                                
+ 938485Johnson J A3 Alpine Way Helen GA3054599992398750003350                   
+ FFFFFFD989A994D4CF4C998984E8A4C89894CCFFFFFFFFFFFFFFFFFFFFFF                   
+ 938485168526501013013795506180853550713054599992398750003350                   
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

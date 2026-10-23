@@ -1,0 +1,24 @@
+                       Work with Output Queue Description                       
+                                                                                
+ Queue:   QPRINT         Library:   QGPL                                        
+                                                                                
+ Status:                                                                        
+   Writer active  . . . . . . . . . . . :   N                                   
+   Writer name(s) if active . . . . . . :                                       
+   Output queue held  . . . . . . . . . :   N                                   
+ Maximum spooled file size:                                                     
+   Number of pages  . . . . . . . . . . :   *NONE                               
+   Starting time  . . . . . . . . . . . :                                       
+   Ending time  . . . . . . . . . . . . :                                       
+ Writers to autostart . . . . . . . . . :   1                                   
+ Display any file . . . . . . . . . . . :   *NO                                 
+ Job separators . . . . . . . . . . . . :   0                                   
+ Operator controlled  . . . . . . . . . :   *YES                                
+ Order of files on queue  . . . . . . . :   *FIFO                               
+ Data queue . . . . . . . . . . . . . . :   *NONE                               
+   Library  . . . . . . . . . . . . . . :                                       
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F5=Refresh   F12=Cancel   F13=Change                                 
+                                                                                

@@ -425,6 +425,11 @@ ipc::rpc! {
     // --- system displays (200-219)
     // --- UIM APIs (220-239)
     // --- panels batch 2: work, spool, journals (240-269)
+    /// A batch 2 display's data (`work/qsjob/src/panels/work2.rs`):
+    /// `what` names the display (`SBMJOB`, `SHRPOOL`, `SYSSTS`, ...),
+    /// `args` its parameters; the header's variables and the list's
+    /// entries as `(variable, value)` pairs of the display's panel group.
+    240 => fn panel2_data / Panel2Data (what: String, args: Vec<String>) -> Result<PanelData, String>;
     // --- panels batch 2: programs, config, security, editors (270-299)
     // --- SEU (300-319)
     // --- PDM (320-339)
@@ -532,3 +537,7 @@ wire_struct!(JobDetail {
     aux_io,
     sbs_pool
 });
+
+/// A display's data for `panel2_data`: the header's variables, then
+/// the list's entries.
+pub type PanelData = (Vec<(String, String)>, Vec<Vec<(String, String)>>);

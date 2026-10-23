@@ -46,6 +46,9 @@ pub struct Options {
     pub view: usize,
     /// `F24=More keys` was pressed: show the keys after it.
     pub more_keys: bool,
+    /// How many times `F24=More keys` was pressed, for a key list with
+    /// more than two sets (it wins over `more_keys` when not 0).
+    pub key_set: usize,
     /// The message line: text and whether it is an error.
     pub message: Option<(String, bool)>,
     /// The page of a data, menu, information or help area, from 0.
@@ -61,6 +64,7 @@ impl Default for Options {
             wide: false,
             view: 0,
             more_keys: false,
+            key_set: 0,
             message: None,
             page: 0,
         }

@@ -25,8 +25,9 @@ pub(super) fn rows(ctx: &Ctx, keyl: &KeyList, limit: usize) -> Vec<Vec<(usize, S
     out
 }
 
-/// The texts of the set to show: the keys before `F24=More keys` with
-/// it, or the keys after it with it.
+/// The texts of the set to show: the key list is cut into sets at
+/// each `F24=More keys`; F24 moves to the next set and comes back to
+/// the first after the last. Each set ends with the key.
 fn set(ctx: &Ctx, keyl: &KeyList) -> Vec<String> {
     let visible: Vec<(&Action, String)> = keyl
         .keys
@@ -34,19 +35,28 @@ fn set(ctx: &Ctx, keyl: &KeyList) -> Vec<String> {
         .filter(|k| !k.text.trim().is_empty() && ctx.cond(k.cond.as_deref()))
         .map(|k| (&k.action, k.text.trim().to_string()))
         .collect();
-    let Some(split) = visible.iter().position(|(a, _)| **a == Action::MoreKeys) else {
+    let Some(first) = visible.iter().position(|(a, _)| **a == Action::MoreKeys) else {
         return visible.into_iter().map(|(_, t)| t).collect();
     };
-    let more = visible[split].1.clone();
-    let after: Vec<String> = visible[split + 1..]
-        .iter()
-        .map(|(_, t)| t.clone())
-        .collect();
-    let mut chosen: Vec<String> = if ctx.opts.more_keys && !after.is_empty() {
-        after
+    let more = visible[first].1.clone();
+    let mut sets: Vec<Vec<String>> = vec![Vec::new()];
+    for (a, t) in &visible {
+        if **a == Action::MoreKeys {
+            sets.push(Vec::new());
+        } else {
+            sets.last_mut().expect("a set").push(t.clone());
+        }
+    }
+    sets.retain(|s| !s.is_empty());
+    if sets.is_empty() {
+        return vec![more];
+    }
+    let pressed = if ctx.opts.key_set > 0 {
+        ctx.opts.key_set
     } else {
-        visible[..split].iter().map(|(_, t)| t.clone()).collect()
+        usize::from(ctx.opts.more_keys)
     };
+    let mut chosen = sets[pressed % sets.len()].clone();
     chosen.push(more);
     chosen
 }

@@ -214,7 +214,7 @@ pub static TAGS: &[TagDef] = &[
         Container,
         ["GRPSEP", "HELP", "COMPACT", "NOGUI"],
         [],
-        &["DATA"],
+        DATA_HOST,
         true
     ),
     tag!("DATACOL", Empty, ["WIDTH"], ["WIDTH"], DATA_HOST, false),

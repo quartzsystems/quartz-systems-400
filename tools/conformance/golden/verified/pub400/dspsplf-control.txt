@@ -1,0 +1,24 @@
+                              Display Spooled File                              
+ File  . . . . . :   QDFUZZIN                         Page/Line   N/N           
+ Control . . . . .   +N                               Columns     N - N         
+ Find  . . . . . .                                                              
+ *...+....N....+....N....+....N....+....N....+....N....+....N....+....N....+... 
+    Library name  . . . . . . . . . . . . . . . . . . :   USERNAME1             
+  Source member containing DDS  . . . . . . . . . . . :   QDFUZZIN              
+  Source member last changed  . . . . . . . . . . . . :   MM/DD/YY  HH:MM:SS    
+  Source listing options  . . . . . . . . . . . . . . :   *SOURCE    *LIST      
+  DDS generation severity level . . . . . . . . . . . :   N                     
+  DDS flagging severity level . . . . . . . . . . . . :   N                     
+  File type . . . . . . . . . . . . . . . . . . . . . :   *DATA                 
+  Authority . . . . . . . . . . . . . . . . . . . . . :   *LIBCRTAUT            
+  Replace file  . . . . . . . . . . . . . . . . . . . :   *NO                   
+  Text  . . . . . . . . . . . . . . . . . . . . . . . :                         
+  Compiler  . . . . . . . . . . . . . . . . . . . . . :   IBM System i5 Data De 
+                                       Data Description Source                  
+  SEQNBR  *...+....N....+....N....+....N....+....N....+....N....+....N....+.... 
+     N         A          R QDFUZZINR                                           
+     N         A            IID            9S N                                 
+     N         A            OP             2A                                   
+                                                                        More... 
+ F3=Exit   F12=Cancel   F19=Left   F20=Right   F24=More keys                    
+                                                                                

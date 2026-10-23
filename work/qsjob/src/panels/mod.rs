@@ -12,6 +12,7 @@
 pub mod objects;
 pub mod system;
 pub mod work;
+pub mod work2;
 
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -92,6 +93,10 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Optio
     }
     // --- system and security (system.rs)
     if let Some(res) = system::run(job, host, &mut surface, r, out) {
+        return Some(res);
+    }
+    // --- panels batch 2: work, spool, journals (work2.rs)
+    if let Some(res) = work2::run(job, host, &mut surface, r, out) {
         return Some(res);
     }
     None

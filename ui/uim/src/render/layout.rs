@@ -17,7 +17,8 @@ pub fn center(width: usize, len: usize) -> usize {
 
 /// Items flowed left to right from `start`, `GAP` blanks apart, none
 /// passing `limit`; an item that would wraps to a new row. Returns rows
-/// of `(item index, column)`. Two rows are column-aligned (R7).
+/// of `(item index, column)`. The first two rows are column-aligned
+/// (R7).
 #[must_use]
 pub fn flow(widths: &[usize], start: usize, limit: usize) -> Vec<Vec<(usize, usize)>> {
     let mut rows: Vec<Vec<(usize, usize)>> = Vec::new();
@@ -31,8 +32,9 @@ pub fn flow(widths: &[usize], start: usize, limit: usize) -> Vec<Vec<(usize, usi
         rows.last_mut().unwrap().push((i, col));
         col += w + GAP;
     }
-    if rows.len() == 2 {
-        align(&mut rows, widths, limit);
+    // R7: the first two rows align; a third row stays as flowed.
+    if rows.len() >= 2 {
+        align(&mut rows[..2], widths, limit);
     }
     rows
 }

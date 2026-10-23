@@ -8,8 +8,8 @@
 //! `DSPJOBLOG`, `WRKOUTQ`, `WRKJOBQ`, `WRKWTR`, `WRKJOBSCDE`. Each
 //! driver fetches its data through the storage service, fills a dialog
 //! and shows a shipped panel group; the list options run their
-//! commands, F5 fetches again, F3 and F12 leave. `TODO(phase8)`:
-//! `WRKSYSSTS`, `WRKDSKSTS`, `WRKSYSACT`, `WRKSHRPOOL` as panels.
+//! commands, F5 fetches again, F3 and F12 leave. The statistics
+//! displays are in `work2`.
 
 mod actjob;
 mod job;
@@ -91,7 +91,7 @@ fn render_fail(e: &UimError) -> Fail {
 
 /// The date, time and zone for `TOPSEP=DATETIME`, in the job's date
 /// format: `MM/DD/YY  HH:MM:SS UTC`.
-fn stamp(host: &Host) -> String {
+pub(crate) fn stamp(host: &Host) -> String {
     let now = host.link.borrow_mut().with(Client::now);
     let a = host.attrs();
     let (date, time) = date_time(now.unix, now.offset_min, &a.datfmt, &a.datsep);

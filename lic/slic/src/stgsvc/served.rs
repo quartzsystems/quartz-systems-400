@@ -1341,6 +1341,18 @@ impl Service for Served<'_> {
 
     // --- panels batch 2: work, spool, journals (240-269)
 
+    fn panel2_data(&mut self, what: String, args: Vec<String>) -> Result<stg::proto::PanelData, String> {
+        let root = self.own_qtemp();
+        self.system.current_job = self.ctx.job.number;
+        self.own_libl();
+        std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
+        let r = super::work2::data(self.system, &self.ctx.job, &what, &args);
+        std::mem::swap(&mut self.system.svc, &mut self.ctx.svc);
+        ile::set_libl(None);
+        self.root_qtemp(root);
+        r
+    }
+
     // --- panels batch 2: programs, config, security, editors (270-299)
 
     // --- SEU (300-319)

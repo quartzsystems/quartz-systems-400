@@ -556,3 +556,54 @@ pub fn command(
         _ => return None,
     })
 }
+
+/// `DSPSPLF` as panel data (`work2`): the file's name, job and pages,
+/// then one entry per line with its page and line number, or per
+/// sixteen bytes of the data stream in hexadecimal.
+pub fn panel_lines(
+    system: &mut System,
+    me: u32,
+    file: &str,
+    job: &str,
+    splnbr: &str,
+    hex: bool,
+) -> Result<stg::proto::PanelData, String> {
+    let mut line = format!("dspsplf {}", file.trim());
+    if !job.trim().is_empty() {
+        let _ = write!(line, " JOB({})", job.trim());
+    }
+    if !splnbr.trim().is_empty() {
+        let _ = write!(line, " SPLNBR({})", splnbr.trim());
+    }
+    let p = Params::parse(&line);
+    let id = target(system, me, &p)?;
+    may_spool(system, id, true)?;
+    sf(system, id, "R");
+    let (a, data) = spool::data(system, id)?;
+    let pair = |k: &str, v: String| (k.to_string(), v);
+    let vars = vec![
+        pair("FILE", a.name.clone()),
+        pair("JOB", a.job_text()),
+        pair("SPLNBR", a.number.to_string()),
+        pair("PAGES", a.pages.to_string()),
+    ];
+    let rows = if hex {
+        ::spool::view::hex(&data)
+            .lines()
+            .map(|l| vec![pair("PAGE", "0".into()), pair("LNO", "0".into()), pair("TEXT", l.to_string())])
+            .collect()
+    } else {
+        let (pages, _) = ::spool::scs::decode(&data);
+        ::spool::view::rows(&pages)
+            .into_iter()
+            .map(|(pg, ln, text)| {
+                vec![
+                    pair("PAGE", pg.to_string()),
+                    pair("LNO", ln.to_string()),
+                    pair("TEXT", text),
+                ]
+            })
+            .collect()
+    };
+    Ok((vars, rows))
+}

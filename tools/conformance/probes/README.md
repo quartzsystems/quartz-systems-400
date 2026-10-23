@@ -31,6 +31,8 @@ panel shows values that change between runs.
 | `batch6-prompts.tn` | 68 command prompts, with F10 (additional parameters), F11 (keywords) and F24 (more keys) where they differ |
 | `batch7-sysdsp.tn` | the System Request menu and options 3 to 7 and 80, the Attention program, a break message, `DSPSGNINF`, `CHGPWD`, `GO CMDSIGNOFF`, the `SIGNOFF` prompt (2026-10-23: only the menu, its help and option 3 came back before the keyboard stayed locked) |
 | `pdm.tn`, `pdm2.tn` | PDM: `STRPDM` and its help, the Specify panels, Change Defaults, the three list panels over the account's own library and `QSYSINC/QRPGLESRC` with every option and key set, names only, the date view, the subset panels, Work with User-Defined Options, the Find String panel (read-only: every panel left with F3 or F12) |
+| `work2-panels.tn` | panels batch 2: `WRKSBMJOB`, `WRKDSKSTS`, `WRKOUTQD`, `DSPSPLF` and its keys and `Control` line, `WRKLIB`, `WRKOBJLCK`, `DSPPFM` (F10 side-by-side hex, F11 vertical hex, F20, F24), `WRKJRN`, `DSPOVR`, `WRKSBSD`, the third `WRKACTJOB` key page (2026-10-23: `WRKSHRPOOL`, `WRKSYSSTS`, `WRKSYSACT`, `WRKPRB` and the `QPGMR` group refused; no `QSQJRN` in the user's library, so no `WRKJRNA`, `DSPJRN`, `DSPJRNRCVA`) |
+| `work2-wide.tn` | `WRKACTJOB` at a 27x132 display (`--model m3477`; 2026-10-23: pub400 drew the 80-column panel, snapshots dropped) |
 
 A command the pub400 account is not authorized to (`WRKSYSSTS`,
 `WRKOUTQ`, `WRKJOBQ`, `WRKJOBSCDE`, `WRKSYSVAL`) leaves a message
