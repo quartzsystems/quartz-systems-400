@@ -238,7 +238,7 @@ impl Suite {
 
     /// Step 38: a wrong password is refused at the sign-on display; ANNE
     /// signs on, sees who she is, reads the data area she may, is refused
-    /// what she may not (`CPF2189`, `CPF9802`, `CPF2222`), creates an
+    /// what she may not (`CPF2189`, `CPF9802`, `CPF2292`), creates an
     /// object of her own; BOB reads through his list entry; the refusals
     /// are `AF` entries.
     #[allow(clippy::unused_self)] // every step has the same shape
@@ -262,7 +262,7 @@ impl Suite {
             "chkobj OBJ(QGPL/SECRET) OBJTYPE(*DTAARA) AUT(*CHANGE)",
             has(&["CPF9802"]),
         )?;
-        entry_wait(s, "crtusrprf USRPRF(EVE)", has(&["CPF2222"]))?;
+        entry_wait(s, "crtusrprf USRPRF(EVE)", has(&["CPF2292"]))?;
         entry_wait(s, "svc.obj crt *DTAARA QGPL/ANNEDTA mine", |l| {
             l.contains("ANNEDTA") && !l.contains("svc.obj crt")
         })?;
@@ -417,7 +417,7 @@ impl Suite {
     #[allow(clippy::unused_self)] // every step has the same shape
     pub(crate) fn delete_profile(&self, s: &mut Session) -> Result<String, String> {
         let stop = s.command("dltusrprf USRPRF(ANNE)", CMD)?;
-        want(&stop, "CPF2204", "DLTUSRPRF of an owner")?;
+        want(&stop, "CPF2215", "DLTUSRPRF of an owner")?;
         let gone = s.command("dltusrprf USRPRF(ANNE) OWNOBJOPT(*CHGOWN BOB)", CMD)?;
         want(&gone, "deleted", "DLTUSRPRF *CHGOWN")?;
         let users = s.command("dspautusr", CMD)?;
@@ -430,7 +430,7 @@ impl Suite {
         want(&group, "deleted", "DLTUSRPRF of the empty group")?;
         let check = s.command("svc.rclstg *CHECK", CMD)?;
         want(&check, "profile indexes: no problems", "svc.rclstg *CHECK")?;
-        Ok("ANNE kept by CPF2204, deleted with *CHGOWN BOB; her private authority gone; STAFF deleted; indexes verify".into())
+        Ok("ANNE kept by CPF2215, deleted with *CHGOWN BOB; her private authority gone; STAFF deleted; indexes verify".into())
     }
 
     /// Step 44: `QSECURITY` 30: sign-on and adoption work, a privileged
