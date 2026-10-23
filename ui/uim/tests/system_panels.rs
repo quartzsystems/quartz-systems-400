@@ -629,3 +629,36 @@ fn dspcls() {
     let s = render(&shipped("QUIWRKCLS"), "DSPCLS", &d, &opts("SYSNAME")).expect("render");
     compare(&golden("dspcls"), &s);
 }
+
+#[test]
+#[ignore = "a display file on the oracle: the second legend row and the single key row sit on its own grid"]
+fn wrksplf() {
+    let files = [
+        ("QDFUZZIN", "3"),
+        ("QDFUZZOUT", "3"),
+        ("QDFUZZ", "178"),
+        ("QDFUZZ", "178"),
+        ("QORACLE", "8"),
+        ("CVTCHAR", "8"),
+        ("DATEBAD", "8"),
+        ("SUBSTBAD", "8"),
+        ("RESUMEG", "8"),
+    ];
+    let rows: Vec<Vec<(&str, &str)>> = files
+        .iter()
+        .map(|(f, p)| {
+            vec![
+                ("FILE", *f),
+                ("USER", "USERNAME"),
+                ("DEVQ", "USERNAME"),
+                ("STS", "RDY"),
+                ("PAGES", *p),
+                ("COPIES", "1"),
+            ]
+        })
+        .collect();
+    let mut d = MapDialog::new();
+    d.set_list("FILES", partial(&rows));
+    let s = render(&shipped("QUIWRKSPLF"), "WRKSPLF", &d, &opts("SYSNAME")).expect("render");
+    compare(&golden("wrksplf"), &s);
+}

@@ -14,6 +14,7 @@ mod job;
 mod jobs;
 mod objs;
 mod sbs;
+mod splf;
 
 use cmd::{Resolved, Value};
 use mi::Job;
@@ -44,6 +45,7 @@ pub fn run(
         "DSPJOBD" => objs::dspjobd(job, host, surface, r),
         "WRKCLS" => objs::wrkcls(job, host, surface, r),
         "DSPCLS" => objs::dspcls(job, host, surface, r),
+        "WRKSPLF" => splf::wrksplf(job, host, surface, r),
         "DSPJOB" => job::dspjob(job, host, surface, r),
         "DSPJOBLOG" => job::dspjoblog(job, host, surface, r),
         _ => return None,

@@ -247,6 +247,7 @@ pub const JOB_SITE: &[&str] = &[
     "DSPJOBD",
     "WRKCLS",
     "DSPCLS",
+    "WRKSPLF",
     // --- panels: messages and objects (panels/objects.rs)
     // --- panels: system and security (panels/system.rs)
     "ADDBKP",
