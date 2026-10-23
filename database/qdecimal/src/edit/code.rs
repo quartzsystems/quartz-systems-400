@@ -93,7 +93,7 @@ pub fn edit_code(value: &Decimal, shape: Shape, code: char, opts: &EditOpts) -> 
         return Ok(numeric(&digits, neg, shape, s, opts));
     }
     match code {
-        'X' => Ok(digits.iter().map(|&d| digit_char(d)).collect()),
+        'X' => Ok(zoned(&digits, neg)),
         'Z' => Ok(suppress(&digits)),
         'Y' => date(&digits, opts),
         _ => Err(bad(format!("{code:?} is not an edit code"))),
@@ -115,15 +115,22 @@ fn suppress(digits: &[u8]) -> String {
 fn numeric(digits: &[u8], neg: bool, shape: Shape, s: Spec, opts: &EditOpts) -> String {
     let width = code_width(shape, '1', opts).expect("valid") + s.sign.width()
         - usize::from(!s.commas) * comma_count(shape.integer());
-    let zero = digits.iter().all(|&d| d == 0);
-    if zero && !s.zero_balance {
-        return " ".repeat(width);
-    }
     let (fill, currency) = match opts.fill {
         Fill::Blank => (' ', None),
         Fill::Asterisk => ('*', None),
         Fill::Currency(c) => (' ', Some(c)),
     };
+    let zero = digits.iter().all(|&d| d == 0);
+    if zero && !s.zero_balance {
+        // Asterisks fill a suppressed zero balance too, every position
+        // but a trailing sign's (pub400).
+        let blanks = match s.sign {
+            Sign::Cr | Sign::Trailing => s.sign.width(),
+            Sign::None | Sign::Leading => 0,
+        };
+        let filled = fill.to_string().repeat(width - blanks);
+        return format!("{filled}{}", " ".repeat(blanks));
+    }
     let integer = usize::from(shape.integer());
     let (int, frac) = digits.split_at(integer);
     let mut body = String::with_capacity(width);
@@ -153,9 +160,26 @@ fn numeric(digits: &[u8], neg: bool, shape: Shape, s: Spec, opts: &EditOpts) -> 
         Sign::None => {}
         Sign::Cr => body.push_str(if neg { "CR" } else { "  " }),
         Sign::Trailing => body.push(if neg { '-' } else { ' ' }),
-        Sign::Leading => body.insert(first, if neg { '-' } else { ' ' }),
+        // A leading sign's position is one more to fill when positive.
+        Sign::Leading => body.insert(first, if neg { '-' } else { fill }),
     }
     body
+}
+
+/// Edit code `X`: the digits as zoned decimal shows them, the sign in
+/// the last digit's zone (`}` and `J` to `R` for a negative value).
+fn zoned(digits: &[u8], neg: bool) -> String {
+    let mut out: String = digits.iter().map(|&d| digit_char(d)).collect();
+    if neg && !digits.is_empty() {
+        let last = digits[digits.len() - 1];
+        out.pop();
+        out.push(if last == 0 {
+            '}'
+        } else {
+            char::from(b'J' + last - 1)
+        });
+    }
+    out
 }
 
 /// Digit group sizes of edit code `Y` for a field of `n` digits.
@@ -174,24 +198,27 @@ fn date_groups(n: u8, fmt: DateEditFmt) -> Result<Vec<usize>> {
     })
 }
 
-/// Edit code `Y`: separators between the groups, the first zero blank.
+/// Edit code `Y`: separators between the groups; leading zeros of the
+/// first group are blank, except the digit before the separator.
 fn date(digits: &[u8], opts: &EditOpts) -> Result<String> {
     let n = u8::try_from(digits.len()).expect("at most 63");
     let groups = date_groups(n, opts.date_fmt)?;
     let mut out = String::new();
     let mut at = 0;
+    let mut significant = false;
     for (g, &len) in groups.iter().enumerate() {
         if g > 0 {
             out.push(opts.separator());
         }
-        for &d in &digits[at..at + len] {
-            out.push(if at == 0 && d == 0 && out.is_empty() {
+        for (i, &d) in digits[at..at + len].iter().enumerate() {
+            significant |= d != 0;
+            out.push(if g == 0 && !significant && i + 1 < len {
                 ' '
             } else {
                 digit_char(d)
             });
-            at += 1;
         }
+        at += len;
     }
     Ok(out)
 }
@@ -287,15 +314,30 @@ mod tests {
             edit_with("-12.34", 7, 2, 'N', Fill::Currency('$')),
             "    -$12.34"
         );
-        assert_eq!(edit_with("0", 7, 2, '2', Fill::Asterisk), "         ");
+        // pub400: asterisks fill a suppressed zero balance and a positive
+        // value's leading sign position.
+        assert_eq!(edit_with("0", 7, 2, '2', Fill::Asterisk), "*********");
+        assert_eq!(edit_with("0", 5, 2, 'B', Fill::Asterisk), "******  ");
+        assert_eq!(edit_with("0", 5, 2, 'K', Fill::Asterisk), "****** ");
+        assert_eq!(edit_with("0", 5, 2, 'O', Fill::Asterisk), "*******");
+        assert_eq!(edit_with("1", 5, 2, 'N', Fill::Asterisk), "***1.00");
+        assert_eq!(edit_with("-1", 5, 2, 'N', Fill::Asterisk), "**-1.00");
+        assert_eq!(edit_with("0", 5, 2, 'B', Fill::Currency('$')), "         ");
     }
 
     #[test]
     fn x_y_z() {
-        assert_eq!(edit("-123", 5, 0, 'X'), "00123");
+        assert_eq!(edit("123", 5, 0, 'X'), "00123");
+        // A negative value carries its sign in the last digit's zone.
+        assert_eq!(edit("-123", 5, 0, 'X'), "0012L");
+        assert_eq!(edit("-120", 5, 0, 'X'), "0012}");
+        assert_eq!(edit("-999.99", 5, 2, 'X'), "9999R");
         assert_eq!(edit("12.3", 5, 1, 'Z'), "  123");
         assert_eq!(edit("0", 5, 1, 'Z'), "     ");
         assert_eq!(edit("10526", 6, 0, 'Y'), " 1/05/26");
+        assert_eq!(edit("0", 7, 0, 'Y'), "  0/00/00");
+        assert_eq!(edit("12", 7, 0, 'Y'), "  0/00/12");
+        assert_eq!(edit("1", 8, 0, 'Y'), " 0/00/0001");
         assert_eq!(edit("123199", 6, 0, 'Y'), "12/31/99");
         assert_eq!(edit("20260101", 8, 0, 'Y'), "20/26/0101");
         let shape = Shape::new(8, 0).unwrap();

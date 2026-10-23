@@ -34,6 +34,10 @@ pub struct Report {
     pub mismatches: Vec<Mismatch>,
     /// Cases the machine did not answer.
     pub missing: Vec<u32>,
+    /// Cases whose machine row is blank: the compiler dropped the
+    /// statement (an edit word it rejects), so there is nothing to
+    /// compare.
+    pub unanswered: Vec<u32>,
 }
 
 impl fmt::Display for Report {
@@ -47,6 +51,9 @@ impl fmt::Display for Report {
         }
         if !self.missing.is_empty() {
             writeln!(f, "{} case(s) without a result row", self.missing.len())?;
+        }
+        if !self.unanswered.is_empty() {
+            writeln!(f, "{} case(s) with a blank result row", self.unanswered.len())?;
         }
         write!(
             f,
@@ -72,6 +79,12 @@ fn same_number(ours: &str, theirs: &str) -> bool {
     }
 }
 
+/// The machine's edited text as CP037 would show it: the capture's job
+/// ran in CCSID 273, where the negative zero zone `}` (x'D0') is `ü`.
+fn edited_text(theirs: &str) -> String {
+    theirs.replace('ü', "}")
+}
+
 /// Compare every case that has a machine row.
 #[must_use]
 pub fn diff(cases: &[Case], results: &[Row]) -> Report {
@@ -82,6 +95,13 @@ pub fn diff(cases: &[Case], results: &[Row]) -> Report {
             report.missing.push(c.id);
             continue;
         };
+        if [&t.inter, &t.r1, &t.rh, &t.rr]
+            .iter()
+            .all(|s| s.trim().is_empty())
+        {
+            report.unanswered.push(c.id);
+            continue;
+        }
         report.compared += 1;
         let ours = expected(c);
         let fields: [(&'static str, &String, &String, bool); 4] = [
@@ -91,7 +111,11 @@ pub fn diff(cases: &[Case], results: &[Row]) -> Report {
             ("rr", &ours.rr, &t.rr, true),
         ];
         for (field, o, m, numeric) in fields {
-            let agree = if numeric { same_number(o, m) } else { o == m };
+            let agree = if numeric {
+                same_number(o, m)
+            } else {
+                *o == edited_text(m)
+            };
             if !agree {
                 report.mismatches.push(Mismatch {
                     id: c.id,
@@ -124,10 +148,16 @@ mod tests {
         assert!(!same_number("E00103", "1"));
         let mut bent = rows.clone();
         bent[0].inter = "E00103".into();
+        bent[1] = Row {
+            id: bent[1].id,
+            ..Row::default()
+        };
         bent.pop();
         let r = diff(&cases, &bent);
         assert_eq!(r.mismatches.len(), 1);
         assert_eq!(r.missing.len(), 1);
+        assert_eq!(r.unanswered.len(), 1);
         assert!(r.to_string().contains("1 mismatch(es)"));
+        assert_eq!(edited_text("[0010ü]"), "[0010}]");
     }
 }

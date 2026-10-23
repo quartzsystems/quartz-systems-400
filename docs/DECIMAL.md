@@ -152,17 +152,22 @@ field without decimals prints its units digit, so a zero balance is `0`.
 `CR` and `-` after the number are blanks when it is positive. Width is
 digits, plus one comma per three integer digits beyond the first, plus
 the point, plus the sign, plus one for a currency symbol. `*ASTFILL`
-puts `*` in every suppressed position; `*CURSYM` puts the symbol just
+puts `*` in every suppressed position, the floating minus's position
+included when the value is positive; `*CURSYM` puts the symbol just
 left of the first printed character, and a floating minus goes left of
-that. A blank-balance code prints blanks for zero whatever the fill.
+that. A blank-balance code prints blanks for zero, or under `*ASTFILL`
+asterisks in every position but a trailing sign's.
 
-`X` prints the digits with their leading zeros and no sign. `Z` prints
-the digits with leading zeros blank, no sign and no point; zero prints
-blank. `Y` prints a date: the first zero blank, separators between the
-groups, which for 3 to 9 digits are `n/nn`, `nn/nn`, `n/nn/nn`,
-`nn/nn/nn`, `nnn/nn/nn`, `nn/nn/nnnn` (`nnnn/nn/nn` under `*YMD`) and
-`nnn/nn/nnnn` (`nnnnn/nn/nn` under `*YMD`); format and separator come
-from `DATEDIT`.
+`X` prints the digits with their leading zeros, the sign of a negative
+value in the last digit's zone as zoned decimal shows it: `}` for 0,
+`J` to `R` for 1 to 9. `Z` prints the digits with leading zeros blank,
+no sign and no point; zero prints blank. `Y` prints a date: separators
+between the groups, which for 3 to 9 digits are `n/nn`, `nn/nn`,
+`n/nn/nn`, `nn/nn/nn`, `nnn/nn/nn`, `nn/nn/nnnn` (`nnnn/nn/nn` under
+`*YMD`) and `nnn/nn/nnnn` (`nnnnn/nn/nn` under `*YMD`); leading zeros
+of the first group are blank except the digit before the separator, so
+7 digits print 0 as `  0/00/00`. Format and separator come from
+`DATEDIT`. The fill, `X` and `Y` rules are as pub400 shows them.
 
 ## 7. Edit words
 
@@ -170,17 +175,23 @@ from `DATEDIT`.
 `EDTWRD` produce; the result is as long as the word.
 
 The body runs from the first character through the digit position that
-takes the last digit. A blank, `0` or `*` is a digit position; the first
-`0` is the zero-suppression stop: the digit there and every digit to its
-right print even when zero. Before the first significant digit (and
-before the stop), digit positions and insertion characters print the
-fill, which is `*` when any digit position is an asterisk and a blank
+takes the last digit. A blank is a digit position, and so is the first
+`0` or `*`, the zero-suppression stop; a later `0` or `*` is a constant
+(pub400's compiler rejects `**0.  ` for a 5-digit field: three digit
+positions). A word with fewer digit positions than the field has
+digits is an error. Suppression ends after the stop: a leading zero in
+the stop's own position is still blank, and every digit to its right
+prints even when zero, so `  0.  ` edits 0.00 as `   .00` and
+`     0 &DAYS` edits 0 as `      0 DAYS`. Before the first significant
+digit (and through the stop), digit positions and insertion characters
+print the fill, which is `*` when the stop is an asterisk and a blank
 otherwise. `&` prints a blank wherever it is. A `$` as the first
 character is a fixed currency symbol and prints as is; a `$` just left
 of the stop floats: its position is given to the digits and the symbol
-prints just left of the first printed digit. Other characters are
-insertion characters and print once a digit has printed, or at and
-after the stop.
+prints just left of the first printed character, a digit or a constant
+after the stop (`  $0.  ` edits 0.00 as `   $.00`). Other characters
+are insertion characters and print once a digit has printed, or after
+the stop.
 
 The status follows the body: `CR` or `-`, optionally after `&` blanks,
 printed for a negative value and blank otherwise. Everything after the
