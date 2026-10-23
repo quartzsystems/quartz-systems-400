@@ -1,0 +1,74 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* SAVE: the task menu for saving.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='SAVE'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F13 ACTION='MENU INFO'.F13=Information Assistant
+:KEYI KEY=F16 ACTION='MENU MAIN'.F16=System Main menu
+:EKEYL.
+:PANEL NAME=SAVE HELP=HLPSAVE KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Save
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUGRP.Save Data
+:MENUI OPTION=1 ACTION='CMD ?SAVOBJ OBJTYPE(*FILE)'.Files
+:MENUI OPTION=2 ACTION='CMD ?SAVLIB'.Libraries
+:MENUI OPTION=3 ACTION='CMD ?SAVDLO'.Documents and folders
+:MENUI OPTION=4 ACTION='CMD ?SAVOBJ OBJTYPE(*PGM)'.Programs
+:MENUI OPTION=5 ACTION='CMD ?SAVOBJ'.Other objects
+:MENUI OPTION=6 ACTION='CMD ?SAVCHGOBJ'.Changed objects only
+:MENUI OPTION=7 ACTION='CMD ?SAVLICPGM'.Licensed programs
+:MENUI OPTION=8 ACTION='CMD ?SAVSECDTA'.Security data
+:MENUI OPTION=10 ACTION='CMD ?SAVCFG'.Configuration
+:MENUI OPTION=11 ACTION='CMD ?SAV'.Objects in directories
+:EMENUGRP.
+:MENUGRP.Save System and User Data
+:MENUI OPTION=20 ACTION='CMD ?CHGBCKUP'.Define save system and user data defaults
+:MENUI OPTION=21 ACTION='CMD ?SAVSYS'.Entire system
+:MENUI OPTION=22 ACTION='CMD ?SAVSYS'.System data only
+:MENUI OPTION=23 ACTION='CMD ?SAVLIB LIB(*ALLUSR)'.All user data
+:EMENUGRP.
+:MENUGRP.Save Document Library Objects
+:MENUI OPTION=30 ACTION='CMD ?SAVDLO DLO(*ALL)'.All documents, folders, and mail
+:MENUI OPTION=31 ACTION='CMD ?SAVDLO DLO(*CHG)'.New and changed documents, new folders, all mail
+:MENUI OPTION=32 ACTION='CMD ?SAVDLO'.Documents and folders
+:MENUI OPTION=33 ACTION='CMD ?SAVDLO DLO(*MAIL)'.Mail only
+:MENUI OPTION=34 ACTION='CMD ?SAVDLO'.
+:EMENUGRP.
+:MENUGRP.Save Libraries
+:MENUI OPTION=40 ACTION='CMD ?SAVLIB LIB(*NONSYS)'.All libraries other than system library
+:MENUI OPTION=41 ACTION='CMD ?SAVLIB LIB(*IBM)'.All IBM libraries other than system library
+:MENUI OPTION=42 ACTION='CMD ?SAVLIB LIB(*ALLUSR)'.All user libraries
+:EMENUGRP.
+:MENUGRP.Save for Different Systems
+:MENUI OPTION=50 ACTION='MENU SAVS36FMT'.Save in System/36 format
+:EMENUGRP.
+:MENUGRP.
+:MENUI OPTION=70 ACTION='MENU CMDSAV'.Related commands
+:EMENUGRP.
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:HELP NAME=HLPSAVE.Save - Help
+:P.Copying objects to media so they can be restored later, one kind at a
+time or the whole system. Prompted options show what will be saved
+before it starts.
+:P.Type an option number or a command and press Enter. F4 prompts the
+command, F9 brings the previous one back, F12 returns to the menu shown
+before this one.
+:EHELP.
+:EPNLGRP.

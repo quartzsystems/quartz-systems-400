@@ -1,0 +1,41 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* TECHHELP: the task menu for technical support.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='TECHHELP'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.F1=Help
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F9 ACTION='CMD CALL QCMD'.F9=Command line
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=TECHHELP HELP=HLPTECHHELP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Technical Support Tasks
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.To select one of the following, type its number below and press Enter:
+:MENUI OPTION=1 ACTION='CMD DSPMSG MSGQ(*SYSOPR)'.Display messages for the system operator
+:MENUI OPTION=10 ACTION='CMD WRKPRB'.Work with problems with the system
+:MENUI OPTION=11 ACTION='MENU PTF'.Work with PTF(s)
+:MENUI OPTION=12 ACTION='CMD ?STRCPYSCN'.Copy your screen on another display station
+:MENUI OPTION=13 ACTION='CMD ENDCPYSCN'.Stop copying your screen
+:MENUI OPTION=20 ACTION='CMD ?STRRMTSPT'.Connect to technical support
+:MENUI OPTION=21 ACTION='CMD ENDRMTSPT'.Disconnect from technical support
+:MENUI OPTION=80 ACTION='CMD SIGNOFF'.Temporary sign-off
+:EMENU.
+:BOTINST.Type a menu option below
+:EPANEL.
+:HELP NAME=HLPTECHHELP.Technical Support Tasks - Help
+:P.Working with whoever supports this system: reporting problems, fixes and
+sharing the screen.
+:P.Type an option number and press Enter. F9 opens a command line, F3
+leaves the menu and F12 returns to the one before it.
+:EHELP.
+:EPNLGRP.

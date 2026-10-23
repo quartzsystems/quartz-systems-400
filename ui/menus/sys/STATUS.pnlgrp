@@ -1,0 +1,47 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* STATUS: the task menu for status.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='STATUS'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F13 ACTION='MENU INFO'.F13=Information Assistant
+:KEYI KEY=F16 ACTION='MENU MAIN'.F16=System Main menu
+:EKEYL.
+:PANEL NAME=STATUS HELP=HLPSTATUS KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Status
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=1 ACTION='CMD WRKWTR'.Work with printers
+:MENUI OPTION=2 ACTION='CMD WRKUSRJOB'.Work with jobs
+:MENUI OPTION=3 ACTION='CMD WRKSBMJOB'.Work with submitted jobs
+:MENUI OPTION=4 ACTION='CMD WRKACTJOB'.Work with all active job statistics
+:MENUI OPTION=5 ACTION='CMD WRKSBS'.Work with active subsystems
+:MENUI OPTION=6 ACTION='CMD WRKSYSSTS'.Display system status
+:MENUI OPTION=7 ACTION='CMD ?WRKCFGSTS'.Work with configuration status
+:MENUI OPTION=8 ACTION='CMD WRKDSKSTS'.Work with disk status
+:MENUI OPTION=9 ACTION='MENU CMNSTS'.Communications status
+:MENUI OPTION=10 ACTION='CMD WRKSHRPOOL'.Work with shared pools
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:HELP NAME=HLPSTATUS.Status - Help
+:P.How the system is doing right now: jobs, subsystems, storage pools,
+disks and devices.
+:P.Type an option number or a command and press Enter. F4 prompts the
+command, F9 brings the previous one back, F12 returns to the menu shown
+before this one.
+:EHELP.
+:EPNLGRP.

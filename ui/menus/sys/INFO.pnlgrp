@@ -1,0 +1,35 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* INFO: the task menu for the information assistant.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='INFO'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.F1=Help
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F9 ACTION='CMD CALL QCMD'.F9=Command line
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=INFO HELP=HLPINFO KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Information Assistant Options
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.To select one of the following, type its number below and press Enter:
+:MENUI OPTION=1 ACTION='MENU SUPPORT'.Where do I look for information?
+:MENUI OPTION=2 ACTION='CMD ?SNDMSG TOUSR(QSYSOPR)'.How can I comment on information?
+:EMENU.
+:BOTINST.Type a menu option below
+:EPANEL.
+:HELP NAME=HLPINFO.Information Assistant Options - Help
+:P.Pointers to the system's own documentation and a way to send a comment
+on it.
+:P.Type an option number and press Enter. F9 opens a command line, F3
+leaves the menu and F12 returns to the one before it.
+:EHELP.
+:EPNLGRP.

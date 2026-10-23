@@ -1,0 +1,40 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* SETUP: the task menu for customizing the system.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='SETUP'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.F1=Help
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F9 ACTION='CMD CALL QCMD'.F9=Command line
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=SETUP HELP=HLPSETUP KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Customize Your System, Users, and Devices
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.To select an option, type its number below and press Enter:
+:MENUI OPTION=1 ACTION='CMD WRKSYSVAL'.Change system options
+:MENUI OPTION=2 ACTION='MENU CLEANUP'.Cleanup tasks
+:MENUI OPTION=3 ACTION='MENU POWER'.Power on and off tasks
+:MENUI OPTION=4 ACTION='MENU DISKTASKS'.Disk space tasks
+:MENUI OPTION=5 ACTION='MENU BACKUP'.Backup tasks
+:MENUI OPTION=11 ACTION='CMD ?CHGUSRPRF USRPRF(QSECOFR)'.Change passwords for IBM-supplied users
+:MENUI OPTION=20 ACTION='MENU CMNCFG'.Communications configuration tasks
+:EMENU.
+:BOTINST.Type a menu option below
+:EPANEL.
+:HELP NAME=HLPSETUP.Customize Your System, Users, and Devices - Help
+:P.Setting the system up the way this site wants it: options, cleanup,
+power, backup and the passwords of the shipped profiles.
+:P.Type an option number and press Enter. F9 opens a command line, F3
+leaves the menu and F12 returns to the one before it.
+:EHELP.
+:EPNLGRP.
