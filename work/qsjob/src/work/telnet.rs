@@ -514,7 +514,15 @@ fn session(
         auto,
         &peer,
     );
-    let _ = link.device_status(device.clone(), 1);
+    // A device whose job waits disconnected stays in recovery pending.
+    let kept = disconnected()
+        .lock()
+        .expect("list")
+        .iter()
+        .any(|d| d.device == device);
+    if !kept {
+        let _ = link.device_status(device.clone(), 1);
+    }
     r
 }
 
