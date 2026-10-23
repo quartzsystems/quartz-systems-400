@@ -5,14 +5,17 @@
 //! Work-management displays: `WRKACTJOB` and its views, `WRKUSRJOB`,
 //! `WRKSBSJOB`, `WRKJOB` and its options, `DSPJOB`, `WRKSBS`,
 //! `DSPSBSD`, `WRKJOBD`/`DSPJOBD`, `WRKCLS`/`DSPCLS`, `WRKSPLF`,
-//! `DSPJOBLOG`. Each driver fetches its data through the storage
-//! service, fills a dialog and shows a shipped panel group; the list
-//! options run their commands, F5 fetches again, F3 and F12 leave.
+//! `DSPJOBLOG`, `WRKOUTQ`, `WRKJOBQ`, `WRKWTR`, `WRKJOBSCDE`. Each
+//! driver fetches its data through the storage service, fills a dialog
+//! and shows a shipped panel group; the list options run their
+//! commands, F5 fetches again, F3 and F12 leave. `TODO(phase8)`:
+//! `WRKSYSSTS`, `WRKDSKSTS`, `WRKSYSACT`, `WRKSHRPOOL` as panels.
 
 mod actjob;
 mod job;
 mod jobs;
 mod objs;
+mod queues;
 mod sbs;
 mod splf;
 
@@ -46,6 +49,10 @@ pub fn run(
         "WRKCLS" => objs::wrkcls(job, host, surface, r),
         "DSPCLS" => objs::dspcls(job, host, surface, r),
         "WRKSPLF" => splf::wrksplf(job, host, surface, r),
+        "WRKOUTQ" => queues::wrkoutq(job, host, surface, r),
+        "WRKJOBQ" => queues::wrkjobq(job, host, surface, r),
+        "WRKWTR" => queues::wrkwtr(job, host, surface, r),
+        "WRKJOBSCDE" => queues::wrkjobscde(job, host, surface, r),
         "DSPJOB" => job::dspjob(job, host, surface, r),
         "DSPJOBLOG" => job::dspjoblog(job, host, surface, r),
         _ => return None,

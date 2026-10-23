@@ -369,6 +369,11 @@ ipc::rpc! {
     /// Spooled files, oldest first: of a user (blank for any) and a
     /// job (`number/user/name`, blank for any).
     142 => fn splf_list / SplfList (user: String, job: String) -> Vec<SplfAttrs>;
+    /// The job queues subsystems hold: `lib/name` and the subsystem.
+    143 => fn jobq_attach / JobqAttach () -> Vec<(String, String)>;
+    /// The writers: name, device, status (`STR`, `WTR`, `HLD`, `END`,
+    /// `JOBQ`), form type, output queue `lib/name`, files printed.
+    144 => fn wtr_list / WtrList () -> Vec<(String, String, String, String, String, u32)>;
     // --- panel data: messages and objects (160-179)
     // --- panel data: system and security (180-199)
 }

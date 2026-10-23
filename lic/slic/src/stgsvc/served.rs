@@ -720,6 +720,42 @@ impl Service for Served<'_> {
         })
     }
 
+    fn jobq_attach(&mut self) -> Vec<(String, String)> {
+        self.system
+            .jobq_attach
+            .iter()
+            .map(|(q, s)| (q.clone(), s.clone()))
+            .collect()
+    }
+
+    fn wtr_list(&mut self) -> Vec<(String, String, String, String, String, u32)> {
+        self.system
+            .writers
+            .iter()
+            .map(|(name, w)| {
+                let status = if w.ending {
+                    "END"
+                } else if w.held {
+                    "HLD"
+                } else if w.current.is_some() {
+                    "WTR"
+                } else if self.system.jobs.get(w.job).is_some() {
+                    "STR"
+                } else {
+                    "JOBQ"
+                };
+                (
+                    name.clone(),
+                    w.dev.clone(),
+                    status.to_string(),
+                    w.formtype.clone(),
+                    w.outq.clone(),
+                    w.printed,
+                )
+            })
+            .collect()
+    }
+
     fn splf_list(&mut self, user: String, job: String) -> Vec<wm::obj::splf::SplfAttrs> {
         let user = user.trim().to_ascii_uppercase();
         let job = job.trim().to_ascii_uppercase();

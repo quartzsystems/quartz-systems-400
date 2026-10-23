@@ -662,3 +662,38 @@ fn wrksplf() {
     let s = render(&shipped("QUIWRKSPLF"), "WRKSPLF", &d, &opts("SYSNAME")).expect("render");
     compare(&golden("wrksplf"), &s);
 }
+
+/// A panel without a golden: its title on row 1 and its keys above
+/// the message line.
+fn title_and_keys(group: &str, panel: &str, title: &str) {
+    let s = render(&shipped(group), panel, &MapDialog::new(), &opts("QS400")).expect("render");
+    let rows = s.text_rows();
+    assert!(rows[0].contains(title), "{panel}: {}", rows[0]);
+    assert!(rows[22].contains("F3=Exit") || rows[21].contains("F3=Exit"), "{panel}: keys");
+}
+
+#[test]
+#[ignore = "no golden"]
+fn wrkoutq() {
+    title_and_keys("QUIWRKOUTQ", "QUEUES", "Work with All Output Queues");
+    title_and_keys("QUIWRKOUTQ", "FILES", "Work with Output Queue");
+}
+
+#[test]
+#[ignore = "no golden"]
+fn wrkjobq() {
+    title_and_keys("QUIWRKJOBQ", "QUEUES", "Work with All Job Queues");
+    title_and_keys("QUIWRKJOBQ", "JOBS", "Work with Job Queue");
+}
+
+#[test]
+#[ignore = "no golden"]
+fn wrkwtr() {
+    title_and_keys("QUIWRKWTR", "WRKWTR", "Work with All Printers");
+}
+
+#[test]
+#[ignore = "no golden"]
+fn wrkjobscde() {
+    title_and_keys("QUIWRKJSCD", "WRKJOBSCDE", "Work with Job Schedule Entries");
+}

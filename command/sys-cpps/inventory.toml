@@ -42,6 +42,18 @@ site = "job"
 [cmd.WRKSPLF]
 site = "job"
 
+[cmd.WRKOUTQ]
+site = "job"
+
+[cmd.WRKJOBQ]
+site = "job"
+
+[cmd.WRKWTR]
+site = "job"
+
+[cmd.WRKJOBSCDE]
+site = "job"
+
 # --- messages and objects (panels/objects.rs)
 # --- system and security (panels/system.rs)
 # ---
