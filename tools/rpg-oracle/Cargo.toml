@@ -1,0 +1,23 @@
+[package]
+name = "rpg-oracle"
+description = "QS/400 RPG differential oracle: compiles and runs corpus members on an IBM i and writes normalized outcomes"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "rpg-oracle"
+path = "src/main.rs"
+
+[dependencies]
+tn5250-driver = { path = "../tn5250-driver", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+anyhow.workspace = true
+clap.workspace = true
+
+[lints]
+workspace = true

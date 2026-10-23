@@ -1939,6 +1939,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "rpg-oracle"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "ccsid",
+ "clap",
+ "tn5250-driver",
+]
+
+[[package]]
 name = "rustc-hash"
 version = "2.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
