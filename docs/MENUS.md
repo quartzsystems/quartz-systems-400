@@ -167,7 +167,7 @@ Counts of 2026-10-23 (`genmenus` prints them):
 | hand-written later | 11 of `MAJOR`'s groups whose contents IBM curates: `CMDOBJMGT`, `CMDFILE`, `CMDSAVRST`, `CMDWRKMGT`, `CMDDTAMGT`, `CMDSYSCTL`, `CMDCMNMGT`, `CMDDSTSRV`, `CMDPRBMGT`, `CMDMSGHDL`, `CMDS36` (`CMDS38` and `CMDOFC` are on `MAJOR` but in no inventory) |
 | generated but empty | 22 whose code starts or tokenizes no command of the list: `CMDADMDMN`, `CMDAMT`, `CMDBGU`, `CMDCPH`, `CMDCRSDMN`, `CMDDEVMGT`, `CMDDPR`, `CMDENC`, `CMDGDF`, `CMDINST`, `CMDIWS`, `CMDJS`, `CMDLBL`, `CMDMAC`, `CMDMGD`, `CMDMGR`, `CMDOBJTYPE`, `CMDRJECTL`, `CMDRQS`, `CMDUBC`, `CMDWG`, `CMDWLCGRP` |
 | commands considered | 2218 (`QSYS` and `QTCP`, both releases) |
-| options placed | 5171, of which 758 show a title (a command we ship); a command is on 2.3 menus on average |
+| options placed | 5171, of which 831 show a title (a command we ship); a command is on 2.3 menus on average |
 | commands on no menu | 31: IFS and TCP/IP aliases (`MD`, `RD`, `DEL`, `REN`, `MOUNT`, `DIG`, `NSLOOKUP`, `TRACEROUTE`, `JAVA`, ...) and the 7.1 oracle's proxies (`BLDHELP`, `GETBLDOPTE`, `REPOBJ`, ...) |
 | our commands not in IBM's list | 3: `CHGDEVD`, `DLTPRXCMD`, `SNDRPYMSG` |
 

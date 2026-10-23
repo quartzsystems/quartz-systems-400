@@ -316,12 +316,35 @@ the date; this is the one acceptance item only Cody can sign off.
 | 9 | Drop the connection, reconnect, sign on | the job comes back under `QDEVRCYACN *DSCMSG` | |
 | 10 | Record a packet trace of 1 and 2 | traces to `tools/conformance/probes/` for `docs/UI_OPEN_QUESTIONS.md` items 4 and 8 | |
 
+## Golden provenance
+
+| Source | Release | Screen goldens | Where |
+|---|---|---|---|
+| pub400.com | V7R5M0 | 618 (163 menus, 80 SEU, 68 prompts, 52 STRDBG, 37 STRSQL, 32 PDM, 25 SDA, 24 DFU, 4 RLU, 12 UIM engine, 8 System Request and Attention, 113 system panels) | `golden/verified/pub400/`, `INDEX.toml` per golden |
+| Cody's box | V7R1M0 | none: no telnet reaches it | its inventories and kit outputs only |
+| QS/400 itself | V1R0M0 | 46 DST, 10 SST, the sign-on, the installer | `golden/dst/`, `golden/sst/`, `golden/signon/`, `golden/install/` |
+
+Panels the pub400 account may not reach are laid out by the same rules
+and tested for title and keys only; each area's section above names
+them.
+
+## Menu inventory
+
+`MENUS.md` §4: IBM's lists hold 520 `CMDxxx` menus (506 on 7.1); 512
+are generated (509 command menus and `MAJOR`, `VERB`, `SUBJECT`), 11
+of `MAJOR`'s curated groups wait to be written by hand, 22 are empty
+(no command of the list). 2218 commands give 5171 options, 831 of them
+commands QS/400 ships; 31 commands are on no menu. 43 task menus are
+hand-written; every task-menu golden matches.
+
 ## Acceptance checklist
+
+State on 2026-10-23.
 
 | Item | State |
 |---|---|
-| 1 tests and goldens green, `build test`, ACS checklist | in progress |
-| 2 documents | in progress |
-| 3 `missing_docs = deny`, clippy, deny, static binaries | `tn5250`, `dspf`, `uim`, `menus` deny missing docs; clippy clean |
-| 4 no IBM text outside goldens; tripwire extended | pending |
-| 5 `.env` untracked, no credential in the tree, `QSTEST` empty | `.env` untracked (2026-10-23) |
+| 1 tests and goldens green, `build test`, ACS checklist | pass: `cargo test --workspace` 1197 passed, 0 failed, 60 ignored (each with its reason); `build test` 55 of 55 steps; the 200-session load run. The ACS checklist needs Cody |
+| 2 documents | pass: `TN5250.md`, `DSPF.md`, `UIM.md`, `MENUS.md`, `TOOLS.md`, this file, `UI_OPEN_QUESTIONS.md`; spec-vs-const tests for display-file, panel-group and menu payloads (`ui/*/tests/spec.rs`) |
+| 3 `missing_docs = deny`, clippy, deny, static binaries | pass: `tn5250`, `dspf`, `uim`, `menus` deny missing docs; clippy clean on the host and for `slic` and `qsjob` on musl; `build deny` clean on both targets (no links keys, no C build helpers); `slic` and `qsjob` static-pie |
+| 4 no IBM text outside goldens; tripwire extended | pass: `phase8_hygiene` fails on any golden line outside the goldens and on the Phase 7 denylist in panel groups, shipped display files, menus and the developer tools |
+| 5 `.env` untracked, no credential in the tree, `QSTEST` empty | pass: `.env` untracked; `phase8_hygiene` checks the user names and passwords in any case (probe scripts write the account as `{user}`); `QSTEST` emptied 2026-10-23 (`CLRLIB`, `/tmp/qstest` removed; `DSPOBJD` finds nothing). The pub400 account name remains in commits made before the scrub |
