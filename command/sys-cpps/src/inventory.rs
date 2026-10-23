@@ -238,6 +238,17 @@ pub const DIRECT: &[&str] = &[
 pub const JOB_SITE: &[&str] = &[
     // --- panels: work management (work/qsjob/src/panels/work.rs)
     // --- panels: messages and objects (panels/objects.rs)
+    "DSPLIB",
+    "DSPLIBL",
+    "DSPLOG",
+    "DSPMSG",
+    "DSPMSGD",
+    "DSPOBJAUT",
+    "DSPOBJD",
+    "WRKBNDDIR",
+    "WRKMSG",
+    "WRKOBJ",
+    "WRKRPYLE",
     // --- panels: system and security (panels/system.rs)
     "ADDBKP",
     "CALL",

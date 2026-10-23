@@ -1141,6 +1141,187 @@ impl Service for Served<'_> {
     fn user_info(&mut self, name: String) -> Option<UserInfo> {
         self.lent(|c| c.provider.user_info(&name))
     }
+
+    // --- panel data: messages and objects (160-179)
+
+    fn obj_detail(&mut self, lib: String, name: String, ty: String) -> Option<Vec<(String, String)>> {
+        self.own_libl();
+        let r = panel_objects::detail(self.system, &lib, &name, &ty);
+        ile::set_libl(None);
+        r
+    }
+
+    fn obj_sizes(&mut self, lib: String, name: String, ty: String) -> Vec<(String, String, String, u64)> {
+        self.own_libl();
+        let r = panel_objects::sizes(self.system, &lib, &name, &ty);
+        ile::set_libl(None);
+        r
+    }
+
+    fn rpyl_entries(&mut self) -> Result<Vec<stg::proto::RpyRow>, String> {
+        let s = self.system.storage.as_mut().ok_or("object store not open")?;
+        let qsys = s.qsys.ok_or("object store not initialized")?;
+        let mut txn = s.store.begin().map_err(|e| e.to_string())?;
+        let list = wm::obj::rpyl::load(&mut txn, qsys).map_err(|e| e.to_string());
+        txn.abort();
+        Ok(list?
+            .entries
+            .into_iter()
+            .map(|e| (e.seq, e.msgid, e.cmpdta, e.start, e.reply, e.dump))
+            .collect())
+    }
+
+    fn hst_entries(&mut self) -> Result<Vec<Vec<String>>, String> {
+        Ok(super::hist::read_all(self.system)?
+            .into_iter()
+            .map(|r| {
+                vec![
+                    r.date, r.time, r.msgid, r.severity, r.kind, r.job.0, r.job.1, r.job.2, r.text,
+                ]
+            })
+            .collect())
+    }
+
+    fn msgf_list(&mut self, msgf: String, lib: String) -> Result<Vec<(String, String)>, String> {
+        self.own_libl();
+        let r = panel_objects::messages(self.system, &msgf, &lib);
+        ile::set_libl(None);
+        r
+    }
+}
+
+/// The store reads behind the message and object panels.
+mod panel_objects {
+    use store::obj::header::{Domain, text_of};
+    use store::obj::{ObjectId, ops, types};
+    use store::txn::Txn;
+
+    use crate::ipl::system::System;
+    use crate::svc::ile::name_context;
+
+    /// Unix seconds as `CYYMMDDHHMMSS`, blank for none.
+    fn stamp(unix: u64) -> String {
+        if unix == 0 {
+            return String::new();
+        }
+        sysapi::picture::render(sysapi::Civil::of_unix(unix), "YYYYMMDDHHMISS")
+            .map(|s| {
+                let c = if unix >= 946_684_800 { "1" } else { "0" };
+                format!("{c}{}", &s[2..])
+            })
+            .unwrap_or_default()
+    }
+
+    /// Run `f` in a read-only transaction over the main store.
+    fn read<T>(system: &mut System, f: impl FnOnce(&mut Txn<'_>, ObjectId) -> Option<T>) -> Option<T> {
+        let s = system.storage.as_mut()?;
+        let qsys = s.qsys?;
+        let mut txn = s.store.begin().ok()?;
+        let r = f(&mut txn, qsys);
+        txn.abort();
+        r
+    }
+
+    /// The libraries `lib` names: one, or the library list.
+    fn libraries(txn: &mut Txn<'_>, qsys: ObjectId, lib: &str) -> Vec<(String, ObjectId)> {
+        match lib {
+            "*LIBL" | "*ALL" | "" => name_context(txn, qsys)
+                .libl
+                .iter()
+                .filter_map(|id| ops::describe(txn, *id).ok().map(|h| (h.name.to_string(), *id)))
+                .collect(),
+            l => qsname::Name::parse(l)
+                .ok()
+                .and_then(|n| ops::find_library(txn, qsys, n).ok())
+                .map(|f| vec![(l.to_string(), f.id)])
+                .unwrap_or_default(),
+        }
+    }
+
+    fn matches(name: &str, pattern: &str) -> bool {
+        match pattern.strip_suffix('*') {
+            _ if pattern == "*ALL" => true,
+            Some(p) => name.starts_with(p),
+            None => name == pattern,
+        }
+    }
+
+    /// `obj_detail`.
+    pub fn detail(system: &mut System, lib: &str, name: &str, ty: &str) -> Option<Vec<(String, String)>> {
+        let code = types::type_by_name(ty)?.code;
+        read(system, |txn, qsys| {
+            let names = name_context(txn, qsys);
+            let id = wm::obj::find(txn, qsys, &names, lib, name, code).ok()?;
+            let h = ops::describe(txn, id).ok()?;
+            let none = |s: String| if s.is_empty() { "*NONE".to_string() } else { s };
+            let mut lib_attrs = Vec::new();
+            if code == types::LIB
+                && let Ok(l) = store::obj::library::Library::load(txn, id)
+            {
+                let kind = match l.attr.lib_type {
+                    store::obj::LibType::Prod => "PROD",
+                    store::obj::LibType::Test => "TEST",
+                };
+                lib_attrs = vec![
+                    ("LIBTYPE".to_string(), kind.to_string()),
+                    ("CRTAUT".to_string(), text_of(&l.attr.create_authority)),
+                    ("ASPNUM".to_string(), l.attr.asp_number.to_string()),
+                    ("OBJECTS".to_string(), l.attr.object_count.to_string()),
+                ];
+            }
+            Some(lib_attrs.into_iter().chain([
+                ("CREATOR".into(), text_of(&h.creator)),
+                ("SYSTEM".into(), text_of(&h.system)),
+                ("RELEASE".into(), h.release.to_string()),
+                ("SIZE".into(), (h.size_pages * store::page::PAGE_SIZE as u64).to_string()),
+                (
+                    "DOMAIN".into(),
+                    match h.domain {
+                        Domain::System => "*SYSTEM".into(),
+                        Domain::User => "*USER".into(),
+                    },
+                ),
+                ("DAMAGED".into(), if h.damaged { "YES" } else { "NO" }.into()),
+                ("PGP".into(), none(text_of(&h.primary_group))),
+                ("AUDIT".into(), none(text_of(&h.audit))),
+                ("LASTUSED".into(), stamp(h.last_used)),
+                ("DAYSUSED".into(), h.days_used.to_string()),
+                ("RESET".into(), stamp(h.reset_date)),
+            ]).collect())
+        })
+    }
+
+    /// `obj_sizes`.
+    pub fn sizes(system: &mut System, lib: &str, name: &str, ty: &str) -> Vec<(String, String, String, u64)> {
+        let wanted = if ty == "*ALL" { None } else { types::type_by_name(ty).map(|t| t.code) };
+        read(system, |txn, qsys| {
+            let mut out = Vec::new();
+            for (lname, lid) in libraries(txn, qsys, lib) {
+                for (key, id) in ops::list(txn, lid, wanted).ok()? {
+                    let n = key.name.to_string();
+                    if !matches(&n, name) {
+                        continue;
+                    }
+                    let size = ops::describe(txn, id).map_or(0, |h| h.size_pages * store::page::PAGE_SIZE as u64);
+                    let t = types::type_by_code(key.type_code).map_or_else(String::new, |t| t.name.to_string());
+                    out.push((lname.clone(), n, t, size));
+                }
+            }
+            Some(out)
+        })
+        .unwrap_or_default()
+    }
+
+    /// `msgf_list`.
+    pub fn messages(system: &mut System, msgf: &str, lib: &str) -> Result<Vec<(String, String)>, String> {
+        read(system, |txn, qsys| {
+            let names = name_context(txn, qsys);
+            let id = wm::obj::find(txn, qsys, &names, lib, msgf, types::MSGF).ok()?;
+            let f = msgf::store::load(txn, id).ok()?;
+            Some(f.msgs.into_iter().map(|d| (d.id, d.text)).collect())
+        })
+        .ok_or_else(|| format!("CPF2407 message file {lib}/{msgf} not found"))
+    }
 }
 
 /// `CPF1241` (normal) or `CPF1240` (abnormal: end code 20 and up, or no
