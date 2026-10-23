@@ -146,6 +146,8 @@ pub enum Separator {
     Rule,
     /// `NONE`.
     None,
+    /// `SYSNAM`: a line with `System:` and the system name (panels).
+    SysName,
 }
 
 /// `LAYOUT`: columns of a data or list area.
@@ -621,8 +623,8 @@ pub struct MenuItem {
 /// A menu option.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MenuOption {
-    /// 1 to 99.
-    Number(u8),
+    /// 1 to 999.
+    Number(u16),
     /// `*`: the command line's entry.
     Star,
 }

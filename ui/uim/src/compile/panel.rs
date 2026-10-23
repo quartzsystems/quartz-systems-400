@@ -578,8 +578,8 @@ impl Build {
         let option = if text == "*" {
             MenuOption::Star
         } else {
-            match text.parse::<u8>() {
-                Ok(n) if (1..=99).contains(&n) => MenuOption::Number(n),
+            match text.parse::<u16>() {
+                Ok(n) if (1..=999).contains(&n) => MenuOption::Number(n),
                 _ => {
                     self.diags.push(ids::bad_menu_option(el.line, &text));
                     return None;

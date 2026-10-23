@@ -155,14 +155,25 @@ pub enum Action {
     Msg(String),
     /// `HELP name`: show one help module.
     HelpModule(String),
+    /// `CMD string`: run the command string, as a `*MENU` option does;
+    /// a leading `?` prompts it. The string keeps its case.
+    Cmd(String),
 }
 
 impl Action {
     /// Parse `RETURN 3`, `CALL pgm`, `EXIT`, ...
     pub fn parse(text: &str) -> Result<Self, String> {
-        let t = text.trim().to_ascii_uppercase();
+        let raw = text.trim();
+        let t = raw.to_ascii_uppercase();
         let mut parts = t.split_whitespace();
         let word = parts.next().ok_or_else(|| "empty".to_string())?;
+        if word == "CMD" {
+            let rest = raw[3..].trim();
+            if rest.is_empty() {
+                return Err("CMD needs a command string".to_string());
+            }
+            return Ok(Self::Cmd(rest.to_string()));
+        }
         let arg = parts.next();
         if parts.next().is_some() {
             return Err("more than two words".to_string());
@@ -251,6 +262,7 @@ impl Action {
             Self::Menu(m) => format!("MENU {m}"),
             Self::Msg(v) => format!("MSG {v}"),
             Self::HelpModule(h) => format!("HELP {h}"),
+            Self::Cmd(s) => format!("CMD {s}"),
         }
     }
 }
@@ -268,6 +280,11 @@ mod tests {
         assert!(Action::parse("EXIT now").is_err());
         assert!(Action::parse("RETURN x").is_err());
         assert!(Action::parse("JUMP").is_err());
+        assert_eq!(
+            Action::parse("cmd ?AddJobScde"),
+            Ok(Action::Cmd("?AddJobScde".into()))
+        );
+        assert!(Action::parse("CMD").is_err());
         assert_eq!(Key::parse("f12"), Some(Key::F(12)));
         assert_eq!(Key::parse("F25"), None);
         assert_eq!(Key::parse("rollup"), Some(Key::PageDown));

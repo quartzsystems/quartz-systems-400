@@ -268,13 +268,13 @@ pub fn duplicate_option(line: usize, option: &str) -> Diagnostic {
     )
 }
 
-/// A menu option outside 1 to 99.
+/// A menu option outside 1 to 999.
 pub fn bad_menu_option(line: usize, option: &str) -> Diagnostic {
     err(
         "UIM1007",
         line,
         format!(
-            "Menu option {option:?} must be a number from 1 to 99, or * on a menu with a command line"
+            "Menu option {option:?} must be a number from 1 to 999, or * on a menu with a command line"
         ),
     )
 }

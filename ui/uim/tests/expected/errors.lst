@@ -104,10 +104,10 @@ QS/400 UIM compiler
   005800              :MENUI OPTION=1 ACTION=EXIT.One
   005900              :MENUI OPTION=1 ACTION=EXIT.One again
       **  UIM1006 20  Option 1 is already used in this area
-  006000              :MENUI OPTION=100 ACTION=EXIT.Too big
-      **  UIM1007 20  Menu option "100" must be a number from 1 to 99, or * on a menu with a command line
+  006000              :MENUI OPTION=1000 ACTION=EXIT.Too big
+      **  UIM1007 20  Menu option "1000" must be a number from 1 to 999, or * on a menu with a command line
   006100              :MENUI OPTION=0 ACTION=EXIT.Zero
-      **  UIM1007 20  Menu option "0" must be a number from 1 to 99, or * on a menu with a command line
+      **  UIM1007 20  Menu option "0" must be a number from 1 to 999, or * on a menu with a command line
   006200              :MENUI OPTION='*' ACTION=CMDLINE.Star without a command line
       **  UIM1013 20  Option * needs a command line on the panel
   006300              :EMENU.
@@ -197,8 +197,8 @@ QS/400 UIM compiler
   005300  UIM1009 20  COLS names column NOCOL, which the list does not define
   005500  UIM1008 20  List area has no :LISTCOL and no :LISTVIEW; it would show nothing
   005900  UIM1006 20  Option 1 is already used in this area
-  006000  UIM1007 20  Menu option "100" must be a number from 1 to 99, or * on a menu with a command line
-  006100  UIM1007 20  Menu option "0" must be a number from 1 to 99, or * on a menu with a command line
+  006000  UIM1007 20  Menu option "1000" must be a number from 1 to 999, or * on a menu with a command line
+  006100  UIM1007 20  Menu option "0" must be a number from 1 to 999, or * on a menu with a command line
   006200  UIM1013 20  Option * needs a command line on the panel
   006400  UIM0204 20  Tag :P is not allowed inside :PANEL
   006800  UIM3002 20  A panel has at most one command line
