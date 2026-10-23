@@ -69,10 +69,6 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "CHGTELNA" => return chgtelna(job, host, r),
         _ => {}
     }
-    // A panel display without a display: its text form in the service.
-    if crate::panels::objects::COMMANDS.contains(&r.name.as_str()) {
-        return super::service(job, host, r, out);
-    }
     let line = sys_cpps::bridge::specified_line(&entry.word, &parms);
     let out = jobcmd::command(job, host, &entry.word, &line);
     // A display's first line may well start with a message identifier

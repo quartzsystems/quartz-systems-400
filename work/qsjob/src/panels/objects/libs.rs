@@ -96,7 +96,7 @@ fn objects(host: &Host, lib: &str, name: &str, ty: &str) -> Vec<ObjInfo> {
 }
 
 /// The command that deletes an object of a type, prompted.
-fn delete_command(name: &str, lib: &str, ty: &str) -> Option<String> {
+pub(super) fn delete_command(name: &str, lib: &str, ty: &str) -> Option<String> {
     let (cmd, kwd, qualified) = match ty {
         "*PGM" => ("DLTPGM", "PGM", true),
         "*SRVPGM" => ("DLTSRVPGM", "SRVPGM", true),

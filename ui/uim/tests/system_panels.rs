@@ -345,6 +345,54 @@ fn wrkrpyle() {
     compare("wrkrpyle", &render(&g, "WRKRPYLE", &d, &opts()).unwrap());
 }
 
+/// A panel without a golden: its title centered on row 1 and every
+/// key text on the key rows.
+fn title_and_keys(group: &str, panel: &str, title: &str, keys: &[&str]) {
+    let g = shipped(group);
+    let s = render(&g, panel, &MapDialog::new(), &opts()).unwrap();
+    let rows = s.text_rows();
+    assert_eq!(rows[0].trim(), title, "{panel} title");
+    let col = rows[0].find(title).unwrap() + 1;
+    assert_eq!(col, 1 + (80 - title.len()) / 2, "{panel} title column");
+    let bottom = format!("{}{}", rows[21], rows[22]);
+    for k in keys {
+        assert!(bottom.contains(k), "{panel} misses {k}:\n{bottom}");
+    }
+}
+
+#[test]
+#[ignore = "no golden"]
+fn dspfd() {
+    title_and_keys(
+        "QUIDSPFD",
+        "SPLF",
+        "Display Spooled File",
+        &["F3=Exit", "F12=Cancel", "F16=Repeat find", "F17=Top", "F18=Bottom"],
+    );
+}
+
+#[test]
+#[ignore = "no golden"]
+fn dspdtaara() {
+    title_and_keys(
+        "QUIDSPDTAA",
+        "DSPDTAARA",
+        "Display Data Area",
+        &["F3=Exit", "F12=Cancel"],
+    );
+}
+
+#[test]
+#[ignore = "no golden"]
+fn wrkobjown() {
+    title_and_keys(
+        "QUIWRKOOWN",
+        "WRKOBJOWN",
+        "Work with Objects by Owner",
+        &["F3=Exit", "F4=Prompt", "F5=Refresh", "F9=Retrieve", "F12=Cancel", "F17=Top", "F18=Bottom"],
+    );
+}
+
 #[test]
 fn dsplog() {
     let g = shipped("QUIDSPLOG");

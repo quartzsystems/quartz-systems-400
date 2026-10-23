@@ -42,26 +42,18 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             let id = e.stub.clone().unwrap_or_else(|| "CPF3700".into());
             escape(&id, name, "")
         }
-        Site::Job if !in_service(e) => escape(
+        Site::Job => escape(
             "CPF0006",
             name,
             &format!("{name} runs in the job, not the service"),
         ),
-        // A display the job shows as a panel keeps its text form here
-        // for a job without a display.
-        Site::Service | Site::Job => direct::run(system, name, parms)
+        Site::Service => direct::run(system, name, parms)
             .or_else(|| msgfcmd::run(system, name, parms))
             .or_else(|| dbcmd::run(system, name, parms))
             .or_else(|| objcmd::run(system, name, parms))
             .or_else(|| sysinfo::run(system, name, parms))
             .unwrap_or_else(|| bridge(system, e, parms, typed)),
     }
-}
-
-/// Whether a job-site command also has a processing program here.
-fn in_service(e: &Entry) -> bool {
-    sys_cpps::inventory::DIRECT.contains(&e.name.as_str())
-        || sys_cpps::inventory::BRIDGE_WORDS.contains(&e.word.as_str())
 }
 
 /// The bridge: the keyword form into the console table, as typed when

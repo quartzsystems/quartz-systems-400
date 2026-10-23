@@ -5,11 +5,13 @@
 //! Message and object displays: `DSPMSG`/`WRKMSG` with Additional
 //! Message Information, `DSPMSGD`, `WRKRPYLE`, `DSPLOG` (`msgs`);
 //! `DSPLIBL`, `WRKOBJ`, `DSPLIB`, `DSPOBJD`, `DSPOBJAUT`, `WRKBNDDIR`
-//! (`libs`). The helpers here are theirs.
+//! (`libs`); `DSPFD`, `DSPFFD`, `DSPDBR`, `DSPDTAARA`, `WRKOBJOWN`
+//! (`files`). The helpers here are theirs.
 
 // Throughout: `d` the dialog, `r` the command, `l` the link.
 #![allow(clippy::many_single_char_names)]
 
+mod files;
 mod libs;
 mod msgs;
 
@@ -22,22 +24,6 @@ use crate::console::host::Host;
 use crate::display::surface::Surface;
 use crate::display::uim::{CMDLINE_VAR, Choice, Response, UimDialog};
 use uim::model::Action;
-
-/// The commands these drivers show; without a display each runs its
-/// text form in the storage service.
-pub const COMMANDS: &[&str] = &[
-    "DSPMSG",
-    "WRKMSG",
-    "DSPMSGD",
-    "WRKRPYLE",
-    "DSPLOG",
-    "DSPLIBL",
-    "WRKOBJ",
-    "DSPLIB",
-    "DSPOBJD",
-    "DSPOBJAUT",
-    "WRKBNDDIR",
-];
 
 /// The driver of a message or object command, if it has one.
 pub fn run(
@@ -58,6 +44,11 @@ pub fn run(
         "DSPOBJD" => libs::dspobjd(job, host, surface, r),
         "DSPOBJAUT" => libs::dspobjaut(host, surface, r),
         "WRKBNDDIR" => libs::wrkbnddir(job, host, surface, r),
+        "DSPFD" => files::splf(host, surface, r, "QPDSPFD"),
+        "DSPFFD" => files::splf(host, surface, r, "QPDSPFFD"),
+        "DSPDBR" => files::splf(host, surface, r, "QPDSPDBR"),
+        "DSPDTAARA" => files::dspdtaara(host, surface, r),
+        "WRKOBJOWN" => files::wrkobjown(job, host, surface, r),
         _ => return None,
     })
 }

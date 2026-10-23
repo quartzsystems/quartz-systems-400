@@ -54,6 +54,26 @@ note = "a panel at a display; the text form in the service otherwise"
 site = "job"
 note = "a panel at a display; the text form in the service otherwise"
 
+[cmd.DSPFD]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPFFD]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPDBR]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPDTAARA]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.WRKOBJOWN]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
 # --- system and security (panels/system.rs)
 # ---
 
