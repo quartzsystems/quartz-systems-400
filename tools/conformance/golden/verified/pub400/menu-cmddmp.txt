@@ -1,0 +1,24 @@
+ CMDDMP                          Dump Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Copy From Main Storage Dump                                 CPYFRMMSD  
+      2. Copy To Main Storage Dump                                   CPYTOMSD   
+      3. Dump Object                                                 DMP        
+                                                                                
+      5. Dump CL Program                                             DMPCLPGM   
+      6. Dump Cluster Trace                                          DMPCLUTRC  
+      7. Dump Communications Trace                                   DMPCMNTRC  
+      8. Dump Document Library Object                                DMPDLO     
+      9. Dump DNS Journal File                                       DMPDNSJRNF 
+     10. Dump Job                                                    DMPJOB     
+     11. Dump Job Internal                                           DMPJOBINT  
+     12. Dump Main Memory Information                                DMPMEMINF  
+     13. Dump Object                                                 DMPOBJ     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

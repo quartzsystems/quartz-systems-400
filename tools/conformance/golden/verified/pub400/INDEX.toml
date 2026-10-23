@@ -550,3 +550,1307 @@ date = "2026-10-23"
 script = "batch4-misc"
 width = 80
 
+[[golden]]
+name = "menu-major"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-major-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-verb"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-verb-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-subject"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-subject-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-user"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-system"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-data"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-program"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmn"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-define"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-problem"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-techhelp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-status"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-security"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-file"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-library"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-job"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-message"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-printer"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-device"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-devicests"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-power"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-save"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-save-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-restore"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-restore-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-backup"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cleanup"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-setup"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-assist"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-support"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-ptf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-ptf-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-software"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-tcpadm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-network"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-network-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cfg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-hardware"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-recovery"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-recovery-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-disktasks"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-document"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-ofctsk"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-user2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-system2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-job2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-problem2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-file2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdadd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdadd-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdjob"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdjob-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdpf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdpf-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdchg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdchg-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmddsp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmddsp-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdcrt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdcrt-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmddlt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmddlt-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdstr"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdstr-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdend"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdend-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdlib"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdlib-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdobj"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdobj-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdmsg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdmsg-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdsbs"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdsbs-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdusr"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdusr-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrmv"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrmv-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdsav"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdsav-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrst"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrst-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdsnd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdsnd-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrcv"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrcv-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdcpy"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdcpy-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdmov"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdmov-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrnm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrnm-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdhld"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdhld-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrls"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrls-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdclr"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdclr-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdgrt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdgrt-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrvk"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrvk-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdopn"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdopn-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdclo"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdclo-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdchk"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdchk-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdvfy"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdvfy-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdalc"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdalc-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmddlc"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmddlc-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdedt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdedt-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdprt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdprt-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrtv"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrtv-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdsbm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdsbm-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdtfr"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdtfr-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdinz"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdinz-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrgz"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrgz-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrcl"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdrcl-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdvry"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdvry-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmddmp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmddmp-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdtrc"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdtrc-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdanz"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdanz-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdcvt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdcvt-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdapy"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdapy-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdmrg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdmrg-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdovr"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdovr-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdpos"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdpos-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdcall"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdcall-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmddsc"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmddsc-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdset"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdset-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdmon"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdmon-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdupd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdupd-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdcmp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+
+[[golden]]
+name = "menu-cmdcmp-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch5-menus"
+width = 80
+

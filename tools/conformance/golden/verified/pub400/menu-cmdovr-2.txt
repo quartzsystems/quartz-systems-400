@@ -1,0 +1,24 @@
+ CMDOVR                        Override Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Delete Override                                             DLTOVR     
+      2. Delete Override Pgm Dev Entry                               DLTOVRDEVE 
+      3. Display Override                                            DSPOVR     
+      4. Override with Data Base File                                OVRDBF     
+      5. Override with Display File                                  OVRDSPF    
+      6. Override ICF Pgm Device Entry                               OVRICFDEVE 
+      7. Override ICF File                                           OVRICFF    
+      8. Override Message File                                       OVRMSGF    
+      9. Override with Printer File                                  OVRPRTF    
+     10. Override with Save File                                     OVRSAVF    
+     11. Override with Tape File                                     OVRTAPF    
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ Already at bottom of area.                                                     

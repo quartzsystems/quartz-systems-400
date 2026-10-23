@@ -1,0 +1,24 @@
+ CMDUPD                         Update Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Run DNS Update                                              NSUPDATE   
+      2. Run DNS Update                                              RUNDNSUPD  
+      3. Update Data Using Temp Program                              UPDDTA     
+      4. Update Program                                              UPDPGM     
+      5. Update PTF Information                                      UPDPTFINF  
+      6. Update Service Program                                      UPDSRVPGM  
+      7. Update System Information                                   UPDSYSINF  
+      8. Update TCP/IP Information                                   UPDTCPINF  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ Already at bottom of area.                                                     

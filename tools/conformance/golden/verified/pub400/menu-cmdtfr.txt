@@ -1,0 +1,24 @@
+ CMDTFR                        Transfer Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Transfer Batch Job                                          TFRBCHJOB  
+      2. Transfer Control                                            TFRCTL     
+      3. Transfer to Group Job                                       TFRGRPJOB  
+      4. Transfer Job                                                TFRJOB     
+      5. Transfer Pass-Through                                       TFRPASTHR  
+      6. Transfer Secondary Job                                      TFRSECJOB  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

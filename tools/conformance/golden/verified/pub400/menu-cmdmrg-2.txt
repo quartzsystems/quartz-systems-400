@@ -1,0 +1,24 @@
+ CMDMRG                          Merge Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Generate Message Catalog                                    GENCAT     
+      2. Merge Form Description                                      MRGFORMD   
+      3. Merge Message Catalog                                       MRGMSGCLG  
+      4. Merge Message File                                          MRGMSGF    
+                                                                                
+      6. Merge Source                                                MRGSRC     
+      7. Merge TCP/IP Host Table                                     MRGTCPHT   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ Already at bottom of area.                                                     

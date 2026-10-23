@@ -1,0 +1,24 @@
+ CMDRTV                        Retrieve Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     19. Retrieve Document                                           RTVDOC     
+                                                                                
+     21. Retrieve Disk Information                                   RTVDSKINF  
+     22. Retrieve Data Area                                          RTVDTAARA  
+     23. Retrieve Group Attributes                                   RTVGRPA    
+     24. Retrieve Image Catalog                                      RTVIMGCLG  
+     25. Retrieve Job Attributes                                     RTVJOBA    
+     26. Retrieve Journal Entry                                      RTVJRNE    
+     27. Retrieve Library Description                                RTVLIBD    
+     28. Retrieve Member Description                                 RTVMBRD    
+     29. Retrieve Message                                            RTVMSG     
+     30. Retrieve Network Attributes                                 RTVNETA    
+     31. Retrieve Object Description                                 RTVOBJD    
+     32. Retrieve PDG Profile                                        RTVPDGPRF  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

@@ -1,0 +1,24 @@
+ CMDTRC                          Trace Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Add Trace                                                   ADDTRC     
+      2. Add Trace Filter                                            ADDTRCFTR  
+      3. Change User Trace                                           CHGUSRTRC  
+      4. Check Communications Trace                                  CHKCMNTRC  
+      5. Clear Trace Data                                            CLRTRCDTA  
+      6. Delete Communications Trace                                 DLTCMNTRC  
+      7. Delete Trace                                                DLTTRC     
+      8. Delete User Trace                                           DLTUSRTRC  
+      9. Dump Cluster Trace                                          DMPCLUTRC  
+     10. Dump Communications Trace                                   DMPCMNTRC  
+     11. Dump Trace                                                  DMPTRC     
+     12. Dump User Trace                                             DMPUSRTRC  
+     13. Display Trace                                               DSPTRC     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

@@ -1,0 +1,24 @@
+ CMDSBM                         Submit Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      2. Submit Data Base Jobs                                       SBMDBJOB   
+      3. Submit Finance Job                                          SBMFNCJOB  
+      4. Submit Job                                                  SBMJOB     
+                                                                                
+      6. Submit Network Job                                          SBMNETJOB  
+      7. Submit Network Server Command                               SBMNWSCMD  
+      8. Submit RJE Job                                              SBMRJEJOB  
+      9. Submit Remote Command                                       SBMRMTCMD  
+     10. Work with Submitted Jobs                                    WRKSBMJOB  
+                                                                                
+   Related Command Menus                                                        
+     11. Job Commands                                                CMDJOB     
+     12. Job Queue Commands                                          CMDJOBQ    
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

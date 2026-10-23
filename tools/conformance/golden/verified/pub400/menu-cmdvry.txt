@@ -1,0 +1,24 @@
+ CMDVRY                          Vary Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Vary Configuration                                          VRYCFG     
+                                                                                
+   Related Command Menus                                                        
+      2. Network Server Commands                                     CMDNWS     
+      3. Network Server Desc Commands                                CMDNWSD    
+      4. Network Host Adapter Commands                               CMDNWSH    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

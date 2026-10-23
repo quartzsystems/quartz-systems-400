@@ -1,0 +1,24 @@
+ CMDSET                           Set Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Set ASP Group                                               SETASPGRP  
+      2. Set Attention Program                                       SETATNPGM  
+      3. Set Customization Data                                      SETCSTDTA  
+                                                                                
+      6. Set DNSSEC REVOKE Bit                                       SETDNSRVK  
+      7. Set Keyboard Map                                            SETKBDMAP  
+                                                                                
+      9. Set Master Key                                              SETMSTKEY  
+     10. Set Object Access                                           SETOBJACC  
+     11. Set Program Information                                     SETPGMINF  
+                                                                                
+     14. Set Tape Category                                           SETTAPCGY  
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

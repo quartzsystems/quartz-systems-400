@@ -1,0 +1,24 @@
+ CMDRCL                         Reclaim Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Reclaim Activation Group                                    RCLACTGRP  
+      2. Reclaim APPN                                                RCLAPPN    
+      3. Reclaim DB Cross-Reference                                  RCLDBXREF  
+      4. Reclaim DDM Conversations                                   RCLDDMCNV  
+      5. Reclaim Document Lib Object                                 RCLDLO     
+      6. Reclaim Library                                             RCLLIB     
+      7. Reclaim Object Links                                        RCLLNK     
+      8. Reclaim Objects by Owner                                    RCLOBJOWN  
+      9. Reclaim Optical                                             RCLOPT     
+     10. Reclaim Resources                                           RCLRSC     
+     11. Reclaim Spool Storage                                       RCLSPLSTG  
+     12. Reclaim Storage                                             RCLSTG     
+     13. Reclaim Temporary Storage                                   RCLTMPSTG  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

@@ -1,0 +1,24 @@
+ CMDSET                           Set Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     16. Set VT Keyboard Map                                         SETVTMAP   
+     17. Set VT Mapping Tables                                       SETVTTBL   
+                                                                                
+   Related Command Menus                                                        
+     18. Group Commands                                              CMDGRP     
+     19. Job Commands                                                CMDJOB     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

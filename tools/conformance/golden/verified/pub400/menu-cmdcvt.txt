@@ -1,0 +1,24 @@
+ CMDCVT                         Convert Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Convert CL Source                                           CVTCLSRC   
+      2. Convert Performance Collection                              CVTPFRCOL  
+      3. Convert Date                                                CVTDAT     
+      4. Convert Directory                                           CVTDIR     
+      5. Convert Education                                           CVTEDU     
+      6. Convert Optical Backup                                      CVTOPTBKU  
+      7. Convert Overlay to PFM                                      CVTOVLPFM  
+      8. Convert Page Segment to PFM                                 CVTPAGSPFM 
+      9. Convert PCD to Page Segment                                 CVTPCDPAGS 
+     10. Convert PFM to Page Segment                                 CVTPFMPAGS 
+     11. Convert Pfr Thread Data                                     CVTPFRTHD  
+     12. Convert PPFA Source                                         CVTPPFASRC 
+     13. Convert RJE Data                                            CVTRJEDTA  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

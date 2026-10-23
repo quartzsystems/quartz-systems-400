@@ -1,0 +1,24 @@
+ CMDCVT                         Convert Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Convert RPC Source                                          CVTRPCSRC  
+     15. Convert RPG Source                                          CVTRPGSRC  
+     16. Convert To Folder                                           CVTTOFLR   
+     17. Convert User Certificate                                    CVTUSRCERT 
+     18. Convert RPC Source                                          RPCGEN     
+                                                                                
+   Related Command Menus                                                        
+     19. Conversion Commands                                         CMDCVN     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

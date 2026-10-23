@@ -1,0 +1,24 @@
+ CMDINZ                       Initialize Commands                               
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      2. Initialize CICS Tables                                      INZCICS    
+      3. Initialize DLFM                                             INZDLFM    
+                                                                                
+      5. Initialize Distribution Queue                               INZDSTQ    
+                                                                                
+      7. Initialize NWS Configuration                                INZNWSCFG  
+      8. Initialize Optical                                          INZOPT     
+      9. Initialize IBM i PC Support                                 INZPCS     
+     10. Initialize Physical File Mbr                                INZPFM     
+     11. Initialize Tape                                             INZTAP     
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

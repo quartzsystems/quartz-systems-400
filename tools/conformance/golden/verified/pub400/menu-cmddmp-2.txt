@@ -1,0 +1,24 @@
+ CMDDMP                          Dump Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Dump System Object                                          DMPSYSOBJ  
+     15. Dump Tape                                                   DMPTAP     
+     16. Dump Trace                                                  DMPTRC     
+     17. Dump User Profile                                           DMPUSRPRF  
+     18. Dump User Trace                                             DMPUSRTRC  
+     19. Generate JVM Dump                                           GENJVMDMP  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

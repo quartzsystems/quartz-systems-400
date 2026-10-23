@@ -1,0 +1,24 @@
+ CMDMON                         Monitor Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      3. End Database Monitor                                        ENDDBMON   
+                                                                                
+      5. Monitor Message                                             MONMSG     
+                                                                                
+      8. Start Database Monitor                                      STRDBMON   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

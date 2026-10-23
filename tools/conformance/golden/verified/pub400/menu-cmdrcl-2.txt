@@ -1,0 +1,24 @@
+ CMDRCL                         Reclaim Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Start Spool Reclaim                                         STRSPLRCL  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                
