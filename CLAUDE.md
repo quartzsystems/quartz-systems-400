@@ -30,7 +30,15 @@ commands: `*CMD` objects and the definition compiler, the one command analyzer
 behind every line (`cmd`), the prompter, the 343 shipped definitions and the
 inventory of where each runs (`sys-cpps`), the ILE CL compiler to the IR (`cl`),
 the service's and the job's processing programs, Command Entry as `QCMD`,
-`QCMDEXC`/`QCMDCHK`/`QCAPCMD`, `QSTRUP` in CL, the analyzer and CL kits. Code
+`QCMDEXC`/`QCMDCHK`/`QCAPCMD`, `QSTRUP` in CL, the analyzer and CL kits. Phase 8
+added the display interface: a TN5250E server (`QTVTELNET`, virtual devices,
+printer sessions, TLS) with the console as its client, display files (`dspf`:
+DDS compiler and runtime, `SNDRCVF`, the shipped sign-on), UIM (`uim`: panel
+groups, the renderer and dialog engine, the `QUI*` APIs) with the system's
+panels, menus (`menus`: `*MENU`, `GO`, generated command menus, task menus),
+System Request, Attention and group jobs, the developer tools (SEU, PDM, SDA,
+DFU, RLU, STRDBG, STRSQL, STRSST), the oracle driver and the 200-session load
+run. Code
 waiting for a later phase is marked `MIGRATE(phaseN)` or `TODO(phaseN)`.
 
 ## Ground rules
@@ -218,10 +226,26 @@ command/      commands and CL
                 work/qsjob/src/command/ (jobsite.rs, natives.rs, prompt.rs)
   cl/           the CL compiler: lex.rs, parse/, sem.rs, lower/ (statements, expr, cmds),
                 compile.rs the driver and listing, diag.rs the CPD07xx identifiers
+ui/           the display interface
+  tn5250/       TN5250E: src/telnet/ negotiation, src/ds/ the 5250 data stream (orders,
+                attributes, fields), src/screen/ ScreenModel and its diffing, src/term/ the
+                client terminal, record.rs; tests/fuzz.rs
+  dspf/         display files: src/compile/ the DDS compiler, src/model/, src/payload/ the
+                *FILE descriptors, src/rt/ the runtime (open, write, read, subfiles,
+                windows), listing.rs, sys.rs and sys/ the shipped display files
+  uim/          UIM: src/lex/, src/tags/, src/compile/ CRTPNLGRP, src/payload/, src/render/
+                the renderer rules, src/engine/ the dialog engine behind a Terminal trait,
+                shipped.rs; pnlgrp/ the system's panel groups; tests/ the panel goldens
+  menus/        menus: src/payload/ *MENU, src/stack/ GO, src/generate/ and bin/genmenus
+                (command menus from the inventories), sys/ task menus, pnlgrp/ generated
+devtools/     developer tools, pure logic (drivers in work/qsjob/src/devtools/): seu/, pdm/,
+              sda/, dfu/ (DFU and RLU), dbg/ (STRDBG screens), isql/ (STRSQL), sst/
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
               DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md,
               STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, SECURITY.md,
-              SEC_OPEN_QUESTIONS.md, PHASE6.md, SYSAPI.md, images/
+              SEC_OPEN_QUESTIONS.md, PHASE6.md, SYSAPI.md, PHASE7.md, CL.md, CMD.md,
+              CMD_OPEN_QUESTIONS.md, PHASE8.md, TN5250.md, DSPF.md, UIM.md, MENUS.md,
+              TOOLS.md, UI_OPEN_QUESTIONS.md, images/
 ```
 
 ## Commands
@@ -240,7 +264,7 @@ cargo run -p build -- manifest
 cargo run -p build -- all         # the whole pipeline (dev: service console on)
 cargo run -p build -- all --release       # no qs400.svc=1 on the cmdline
 cargo run -p build -- iso         # UEFI-bootable installation media
-cargo run -p build -- test        # the QEMU suite: Phases 1 to 7, 50 steps
+cargo run -p build -- test        # the QEMU suite: Phases 1 to 8, 55 steps
 cargo run -p build -- test --media iso    # the media steps
 cargo run -p build -- test --media iso --install   # automatic install, boot, interactive reinstall
 cargo run -p build -- deny        # cargo-deny + links/cc lockfile check
@@ -259,6 +283,11 @@ cargo test -p conformance --test cl_kit    # the CL corpus in memory; QS400_UPDA
 cargo test -p conformance --test cmd_kit   # the analyzer kit; QS400_UPDATE_CMD=1 rewrites expected.txt
 cargo test -p sys-cpps                     # definitions, harness tripwire, inventory, prompt goldens
 cargo test --release -p conformance --test cmd_bench -- --ignored --nocapture   # analyzer, prompter, CL benches
+cargo run -p conformance -- --load 200    # 200 TN5250 sessions under QEMU, timings to PHASE8.md
+cargo run -p tn5250-driver -- run --target pub400 [--golden DIR --update] SCRIPT.tn   # oracle captures
+cargo run -p menus --bin genmenus         # regenerate the command menus in ui/menus/pnlgrp/
+cargo test -p uim -p dspf -p menus        # panel, display-file and menu goldens
+cargo test -p seu -p pdm -p sda -p dfu -p dbg -p isql -p sst   # the developer tools' screens
 ```
 
 Lint the Linux-only crates for the musl target too: their real code is
@@ -346,6 +375,10 @@ otherwise logs go to `target/logs/`.
   they are coded; `storage/store/tests/spec.rs` compares the code's `Layout`s with
   the spec tables, so both change together. `docs/DB_FORMAT.md` and
   `database/db/tests/spec.rs` do the same for the database layouts.
+- Oracle credentials live only in `tools/conformance/oracle/.env`
+  (gitignored); tools read them from the environment, probe scripts
+  write the account as `{user}`, and `phase8_hygiene` fails on any
+  value of it (in any case) in the tree.
 - Framebuffer writes: one `pwrite` per frame spanning every line, then
   `fsync`. Partial-line writes lose damage at line ends and `mmap` never
   flushes under simpledrm's fbdev emulation (see docs/PHASE1.md).

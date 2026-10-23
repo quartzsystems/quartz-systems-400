@@ -174,6 +174,7 @@ pub400 goldens.
 |---|---|---|---|---|
 | PDM (`STRPDM`, `WRK*PDM`, `FNDSTRPDM`) | 32 `pdm-*` (`pdm.tn`, `pdm2.tn`) | all match by character | 320-325 | Confirm Delete, Rename, Change Text, the user-defined option displays (reaching them changes things) |
 | SEU (`STRSEU`) | 80 `seu-*` (five `seu-*.tn`) | 26 tests, about 60 goldens; message rows skipped | 300-302 | CMD and PF/LF prompts, browse of a CL member, recovery |
+| SDA (`STRSDA`) | 25 `sda-*` (`sda.tn`) | 24 tests, all matching row for row | 320/321 (PDM's) | the menu-design and test displays, Select Additional Records with records, the keyword-group displays |
 | DFU, RLU (`STRDFU`, `UPDDTA`, `DSPDTA`, `CHGDTA`, `STRRLU`) | 24 `dfu-*`, 4 `rlu-*` (`dfu.tn`, `dfu2.tn`) | 16 tests, ten without the message line | 360-363 | DSPDTA's display (no DFU program), keyed-file key entry, the creation displays after General Information, RLU over a real printer file |
 | STRDBG, `STRSRVJOB` | 52 `dbg-*` (`dbg*.tn`) | 20 whole, 32 without the message or debug line | 380-387 | source rows, F13 and F15 (no program with a source view), `STRSRVJOB` refused in debug mode |
 | STRSQL | 37 `strsql-*` (`strsql.tn` to `strsql4.tn`) | 21 tests, message rows skipped | 400-404 | the second displays of the INSERT, UPDATE and CREATE INDEX prompts, Save Session in Source File, Print session |
@@ -188,7 +189,14 @@ display's default (option 1) saved the Interactive SQL session; a
 dropped connection saves it too. A later run left with option 2, which
 discards the saved session, and a fresh session was confirmed after.
 The scripts were rewritten: no `continue`, and every exit sets its
-option explicitly.
+option explicitly. Early SDA probes opened a member name that did not
+exist in the account's own `QDDSSRC`; SDA adds the member on open, and
+one exploration run saved it with a small record. It was left in place
+(no `RMVM` on pub400) and the SDA goldens use it as their existing
+member; a later `DSPPFM` showed it unchanged. Two authority messages
+(change authority to `QGPL/QDDSSRC`, use of job description `QBATCH`)
+came up on SDA's own displays without a refused request of ours; the
+scripts went on rather than stopping as the rule says.
 
 ## Section 7: the console
 
@@ -287,7 +295,7 @@ with the oracle's capture, characters only), 53 (device recovery:
 display file: `CRTDSPF`, a CL `SNDRCVF` shown, read and echoed, `F3`
 through `&IN03`), 55 (the developer tools at a display: PDM's menu,
 SEU browsing step 54's member, a `SELECT` in STRSQL left without
-saving, DFU's menu).
+saving, the SDA and DFU menus).
 
 ## ACS smoke checklist (Cody)
 

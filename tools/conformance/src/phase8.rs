@@ -401,7 +401,7 @@ impl Suite {
 
     /// Step 55: the developer tools at a display, over step 54's
     /// source member: PDM's menu, SEU browsing the member, a query in
-    /// STRSQL left without saving, DFU's menu.
+    /// STRSQL left without saving, the SDA and DFU menus.
     pub(crate) fn telnet_tools(&self, _s: &mut Session) -> Result<String, String> {
         let port = self
             .launch
@@ -412,7 +412,7 @@ impl Suite {
         let mut ctx = Context::new(&connect, &options);
         let mut d = connect_display(port)?;
         secofr(&mut d, &mut ctx)?;
-        let steps: [(&str, &str); 4] = [
+        let steps: [(&str, &str); 5] = [
             (
                 "STRPDM",
                 "wait \"Main Menu\"\ntype strpdm\nkey enter\nwait \"Programming Development Manager\"\nkey f3\nwait \"Main Menu\"\n",
@@ -424,6 +424,10 @@ impl Suite {
             (
                 "STRSQL",
                 "type strsql\nkey enter\nwait \"Enter SQL Statements\"\ntype select srcdta from qgpl/qddssrc\nkey enter\nwait \"Display Data\"\nwait \"Customer prompt\"\nkey f3\nwait \"Enter SQL Statements\"\nkey f3\nwait \"Exit Interactive SQL\"\ntype 2\nkey enter\nwait \"Main Menu\"\n",
+            ),
+            (
+                "STRSDA",
+                "type strsda\nkey enter\nwait \"Screen Design Aid\"\nkey f3\nwait \"Main Menu\"\n",
             ),
             (
                 "STRDFU",
@@ -440,7 +444,7 @@ impl Suite {
             "type signoff\nkey enter\nwait \"Sign On\"\n",
         )?;
         d.disconnect();
-        Ok("PDM's menu; SEU browsed CUSTDSP; STRSQL showed its rows and left without saving; DFU's menu".into())
+        Ok("PDM's menu; SEU browsed CUSTDSP; STRSQL showed its rows and left without saving; SDA's and DFU's menus".into())
     }
 }
 

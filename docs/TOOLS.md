@@ -14,6 +14,7 @@ shipped DDS in `ui/dspf/sys/`, and tests them against pub400 goldens
 |---|---|---|---|---|
 | SEU | `devtools/seu` | `devtools/seu.rs`, `seu/` | 300-302 | 80 `seu-*` |
 | PDM | `devtools/pdm` | `devtools/pdm/` | 320-339 | 32 `pdm-*` |
+| SDA | `devtools/sda` | `devtools/sda/` | 320/321 (PDM's) | 25 `sda-*` |
 | DFU, RLU | `devtools/dfu` | `devtools/dfu/`, `rlu.rs` | 360-363 | 24 `dfu-*`, 4 `rlu-*` |
 | STRDBG | `devtools/dbg` | `devtools/dbg/` | 380-387 | 52 `dbg-*` |
 | STRSQL | `devtools/isql` | `devtools/isql/` | 400-404 | 37 `strsql-*` |
@@ -104,6 +105,45 @@ layouts (no golden), field help.
 **Find string.** Option 25 and `FNDSTRPDM` search the members' source between two columns, matching case or not. They then run an option (or a user-defined one) on each member that holds the string, prompted if asked, and print the list or the matching records. Without a display, `FNDSTRPDM` gives the report as its output.
 
 **Known gaps.** F10 does not start Command Entry from PDM. No file list for F4 on Specify Members. The library list has no subset panel. Member option 3 prompts `CPYSRCF` instead of IBM's Copy Members panel. 54 and 55 (`CMPPFM`, `MRGSRC`), 9 and 10 (`SAVOBJ`/`RSTOBJ`) and 16 on REXX members have no command behind them yet. No help on the lists. Print format, mark record and overflow on Find String are accepted but not used.
+
+## SDA
+
+`STRSDA` shows the menu: Design Screens, Design Menus, Test Display
+File. Members are read and written through PDM's requests; Save DDS
+writes the member, then runs `CRTDSPF` directly, prompted or through
+`SBMJOB`. PDM option 17 on a DSPF member opens it, on an `MNUDDS`
+member menu design.
+
+**Screens.** The STRSDA menu; Work with Display Records (two key sets,
+F11 text view; options 1, 2, 3, 4, 7, 8, 12, order numbers); Add New
+Record; Subset Records; Change Defaults; Select File, Record and Field
+Keywords with the attribute and color lists and the keyword-text
+displays; the comments editor (SEU's layout) and its Exit; the design
+image; Work with Fields; Select Database Files; Exit SDA Work Screen;
+Save DDS - Create Display File; Specify Menu Functions, Define Menu
+Commands, Save Menu; Set Test Output Data and Display Test Input Data
+(tests run through `dspf::rt`).
+
+**The image.** Enter applies what was typed: `+I`, `+O`, `+B`, `+3`,
+`+6`, `+9` with a repeated letter or `(len[,dec])`, words and
+`'quoted'` constants, `H R U B C N` attributes, `CB` to `CY` colors,
+`D` delete, `*` keywords, `-` with `=` to move, `&n` database fields.
+F3 exit choice, F4 fields, F9 records shown with this one, F10
+database files, F11 the list on or off, F12 keep and return, F14 ruler
+at the cursor, F17 print to `QSYSPRT`, F20 hidden fields, F21 extra
+records on or off.
+
+**Round trip.** Unchanged records and elements are written as read;
+an edit touches only its own columns and lines (a moved element its
+location, a reshaped field columns 19-38, keywords line by line with
+conditioned lines kept); a changed record gets a new `%%TS` stamp.
+
+**Known gaps.** The image is one input field, so display attributes
+do not show on it, and F20 lists hidden fields instead of reverse
+imaging constants; no Recover SDA Session; database fields are placed
+with their own length and type rather than `R` and `REFFLD`; option 1
+on Select Database Files acts as 4; comments on a brand-new field are
+not written; `GO` does not show `*DSPF` menus yet.
 
 ## DFU
 
