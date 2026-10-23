@@ -492,6 +492,7 @@ impl Suite {
         )?);
         reports.push(self.step(&mut s, "53 telnet device recovery", Self::telnet_recovery)?);
         reports.push(self.step(&mut s, "54 display file", Self::telnet_display_file)?);
+        reports.push(self.step(&mut s, "55 developer tools", Self::telnet_tools)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

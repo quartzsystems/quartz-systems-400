@@ -285,7 +285,9 @@ Harness steps over TN5250: 51 (sign-on, MAIN, Command Entry,
 with the oracle's capture, characters only), 53 (device recovery:
 `*DSCMSG` keeps and resumes the job, `*ENDJOB` ends it), 54 (a
 display file: `CRTDSPF`, a CL `SNDRCVF` shown, read and echoed, `F3`
-through `&IN03`).
+through `&IN03`), 55 (the developer tools at a display: PDM's menu,
+SEU browsing step 54's member, a `SELECT` in STRSQL left without
+saving, DFU's menu).
 
 ## ACS smoke checklist (Cody)
 

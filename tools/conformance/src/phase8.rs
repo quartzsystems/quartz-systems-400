@@ -374,19 +374,73 @@ impl Suite {
         )?;
         let rows = d.term.text_rows();
         if !rows[4].contains("Quartz") {
-            return Err(format!("the field the program filled is not shown:\n{}", rows.join("\n")));
+            return Err(format!(
+                "the field the program filled is not shown:\n{}",
+                rows.join("\n")
+            ));
         }
         if d.term.cursor() != (5, 20) {
-            return Err(format!("the cursor is not in the input field: {:?}", d.term.cursor()));
+            return Err(format!(
+                "the cursor is not in the input field: {:?}",
+                d.term.cursor()
+            ));
         }
         run(
             &mut d,
             &mut ctx,
             "type Cody\nkey fieldexit\nkey enter\nwait \"You typed CODY\"\nkey f3\nwait \"Display file done\"\n",
         )?;
-        run(&mut d, &mut ctx, "type signoff\nkey enter\nwait \"Sign On\"\n")?;
+        run(
+            &mut d,
+            &mut ctx,
+            "type signoff\nkey enter\nwait \"Sign On\"\n",
+        )?;
         d.disconnect();
         Ok("CRTDSPF compiled CUSTDSP; SNDRCVF showed it, read the name and echoed it; F3 set &IN03".into())
+    }
+
+    /// Step 55: the developer tools at a display, over step 54's
+    /// source member: PDM's menu, SEU browsing the member, a query in
+    /// STRSQL left without saving, DFU's menu.
+    pub(crate) fn telnet_tools(&self, _s: &mut Session) -> Result<String, String> {
+        let port = self
+            .launch
+            .telnet_port
+            .ok_or("the launch has no telnet port")?;
+        let connect = Connect::qs400(port, "QSECOFR", SECOFR_PASSWORD);
+        let options = ScriptOptions::default();
+        let mut ctx = Context::new(&connect, &options);
+        let mut d = connect_display(port)?;
+        secofr(&mut d, &mut ctx)?;
+        let steps: [(&str, &str); 4] = [
+            (
+                "STRPDM",
+                "wait \"Main Menu\"\ntype strpdm\nkey enter\nwait \"Programming Development Manager\"\nkey f3\nwait \"Main Menu\"\n",
+            ),
+            (
+                "STRSEU",
+                "type strseu srcfile(qgpl/qddssrc) srcmbr(custdsp) option(5)\nkey enter\nwait \"Customer prompt\"\nkey f3\nwait \"Main Menu\"\n",
+            ),
+            (
+                "STRSQL",
+                "type strsql\nkey enter\nwait \"Enter SQL Statements\"\ntype select srcdta from qgpl/qddssrc\nkey enter\nwait \"Display Data\"\nwait \"Customer prompt\"\nkey f3\nwait \"Enter SQL Statements\"\nkey f3\nwait \"Exit Interactive SQL\"\ntype 2\nkey enter\nwait \"Main Menu\"\n",
+            ),
+            (
+                "STRDFU",
+                "type strdfu\nkey enter\nwait \"Data File Utility\"\nkey f3\nwait \"Main Menu\"\n",
+            ),
+        ];
+        for (tool, text) in steps {
+            run(&mut d, &mut ctx, text)
+                .map_err(|e| format!("{tool}: {e}\n{}", d.term.text_rows().join("\n")))?;
+        }
+        run(
+            &mut d,
+            &mut ctx,
+            "type signoff\nkey enter\nwait \"Sign On\"\n",
+        )?;
+        d.disconnect();
+        Ok("PDM's menu; SEU browsed CUSTDSP; STRSQL showed its rows and left without saving; DFU's menu".into())
     }
 }
 
