@@ -98,10 +98,19 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
                     c.column,
                 ));
             } else if c.column.usage.is_input() {
+                // An entry field narrower than its heading is centered
+                // under it (edtobjaut's X fields); a number sits at the
+                // right of its field (edtlibl's sequence numbers).
+                let col = c.start + (c.width - c.field) / 2;
+                let raw = if c.numeric {
+                    format!("{:>w$}", raw.trim(), w = c.field)
+                } else {
+                    raw
+                };
                 s.field(field(
                     r,
-                    c.start,
-                    c.field.min(end + 1 - c.start),
+                    col,
+                    c.field.min(end + 1 - col),
                     raw,
                     Target::ListCell {
                         list: area.listdef.clone(),

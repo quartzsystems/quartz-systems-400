@@ -1,0 +1,24 @@
+                          Display Program Information                           
+                                                                                
+ Program  . . . . . . . :   QCMD          Library  . . . . . . . :   QSYS       
+ Owner  . . . . . . . . :   QSYS                                                
+ Program attribute  . . :                                                       
+                                                                                
+ Program creation information:                                                  
+   Program creation date/time . . . . . . . . . . . :   MM/DD/YY  HH:MM:SS      
+   Type of program  . . . . . . . . . . . . . . . . :   OPM                     
+   Source file  . . . . . . . . . . . . . . . . . . :                           
+     Library  . . . . . . . . . . . . . . . . . . . :                           
+   Source member  . . . . . . . . . . . . . . . . . :                           
+   Source file change date/time . . . . . . . . . . :                           
+   Observable information . . . . . . . . . . . . . :   *NONE                   
+   User profile . . . . . . . . . . . . . . . . . . :   *USER                   
+   Use adopted authority  . . . . . . . . . . . . . :   *YES                    
+   Fix decimal data . . . . . . . . . . . . . . . . :   *NO                     
+   Teraspace enabled  . . . . . . . . . . . . . . . :   *YES                    
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

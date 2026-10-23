@@ -1,0 +1,24 @@
+                          Display Authorized Commands                           
+                                                                                
+ User profile . . . . . :   USERNAME                                            
+                                                                                
+                                                                                
+   (User does not have specific authority to any commands.)                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

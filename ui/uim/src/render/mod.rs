@@ -187,7 +187,7 @@ pub fn render_help(
 fn bottom_block(ctx: &Ctx, p: &Panel, keyl: &KeyList, s: &mut Screen) -> usize {
     // R6: a key row ends by column W-2 (dspsfwrsc wraps a row that would reach W-1).
     let key_rows = keys::rows(ctx, keyl, s.limit() - 1);
-    let key_top = s.rows - key_rows.len();
+    let key_top = s.rows - keys::reserved(keyl, s.limit() - 1, key_rows.len());
     for (i, row) in key_rows.iter().enumerate() {
         for (col, text) in row {
             s.put(key_top + i, *col, Attr::Blue, text);

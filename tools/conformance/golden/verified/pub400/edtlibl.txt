@@ -1,0 +1,24 @@
+                               Edit Library List                                
+                                                             System:   SYSNAME  
+ Type new/changed information, press Enter.                                     
+                                                                                
+ Sequence                   Sequence                   Sequence                 
+  Number   Library           Number   Library           Number   Library        
+      0                        150                        300                   
+     10    QGPL                160                        310                   
+     20    QTEMP               170                        320                   
+     30    GAMES400            180                        330                   
+     40                        190                        340                   
+     50                        200                        350                   
+     60                        210                        360                   
+     70                        220                        370                   
+     80                        230                        380                   
+     90                        240                        390                   
+    100                        250                        400                   
+    110                        260                        410                   
+    120                        270                        420                   
+    130                        280                        430                   
+    140                        290                        440                   
+                                                                        More... 
+ F3=Exit   F5=Refresh   F12=Cancel                                              
+                                                                                

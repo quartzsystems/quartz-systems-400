@@ -25,6 +25,25 @@ pub(super) fn rows(ctx: &Ctx, keyl: &KeyList, limit: usize) -> Vec<Vec<(usize, S
     out
 }
 
+/// The rows the key area keeps: two when the keys with a condition,
+/// shown or not, would need them (dspusrprf-objaut keeps row 23 blank
+/// under one row of keys because F11 has two texts); else the rows
+/// shown.
+pub(super) fn reserved(keyl: &KeyList, limit: usize, shown: usize) -> usize {
+    if keyl.keys.iter().any(|k| k.action == Action::MoreKeys)
+        || !keyl.keys.iter().any(|k| k.cond.is_some())
+    {
+        return shown;
+    }
+    let widths: Vec<usize> = keyl
+        .keys
+        .iter()
+        .filter(|k| !k.text.trim().is_empty())
+        .map(|k| k.text.trim().chars().count())
+        .collect();
+    layout::flow(&widths, 2, limit).len().clamp(shown, 2)
+}
+
 /// The texts of the set to show: the key list is cut into sets at
 /// each `F24=More keys`; F24 moves to the next set and comes back to
 /// the first after the last. Each set ends with the key.

@@ -1,0 +1,55 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QUIEDTLIBL: EDTLIBL, the user part of the library list as sequence
+.* numbers and names, three pairs to a row. The driver orders the
+.* names by their sequence numbers and applies them with CHGLIBL.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=SEQCL BASETYPE='PACKED 3 0'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=SEQ1 CLASS=SEQCL.
+:VAR NAME=LIB1 CLASS=NAMECL.
+:VAR NAME=SEQ2 CLASS=SEQCL.
+:VAR NAME=LIB2 CLASS=NAMECL.
+:VAR NAME=SEQ3 CLASS=SEQCL.
+:VAR NAME=LIB3 CLASS=NAMECL.
+:LISTDEF NAME=LIBS VARS='SEQ1 LIB1 SEQ2 LIB2 SEQ3 LIB3'.
+:KEYL NAME=KEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:PANEL NAME=EDTLIBL KEYL=KEYS HELP=EDTLIBLH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Edit Library List
+:TOPINST.Type new/changed information, press Enter.
+:DATA DEPTH=1.
+:DATAC.
+:EDATA.
+:LIST DEPTH='*' LISTDEF=LIBS SCROLL=YES.
+:LISTCOL VAR=SEQ1 USAGE=INOUT.Sequence Number
+:LISTCOL VAR=LIB1 USAGE=INOUT MAXWIDTH=15.Library
+:LISTCOL VAR=SEQ2 USAGE=INOUT.Sequence Number
+:LISTCOL VAR=LIB2 USAGE=INOUT MAXWIDTH=15.Library
+:LISTCOL VAR=SEQ3 USAGE=INOUT.Sequence Number
+:LISTCOL VAR=LIB3 USAGE=INOUT.Library
+:ELIST.
+:EPANEL.
+:HELP NAME=EDTLIBLH.Edit Library List - Help
+:P.The user part of the job's library list, searched in sequence
+number order. Type a name next to a free number to add a library,
+blank a name to remove it, or change a number to move it. The new
+list takes effect when you press Enter.
+:EHELP.
+:HELP NAME=KEYSHLP.Function keys - Help
+:P.F5 shows the list as it is now, dropping what was typed; F3 and F12
+leave without changing it.
+:EHELP.
+:EPNLGRP.

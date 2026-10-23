@@ -431,6 +431,11 @@ ipc::rpc! {
     /// entries as `(variable, value)` pairs of the display's panel group.
     240 => fn panel2_data / Panel2Data (what: String, args: Vec<String>) -> Result<PanelData, String>;
     // --- panels batch 2: programs, config, security, editors (270-299)
+    /// A display of the second panel batch, `what` naming it (`PGM`,
+    /// `SRVPGM`, `MODULE`, `BNDDIR`, `CMD`: library and name; `DEVD`;
+    /// `HDWRSC`: the type; `UPRF`: the user and the display type): the
+    /// panel's variables and its lists' entries.
+    270 => fn sys2_panel / Sys2Panel (what: String, args: Vec<String>) -> Result<Sys2Data, String>;
     // --- SEU (300-319)
     // --- PDM (320-339)
     /// PDM: a source member's lines; `None` when the file or member is
@@ -541,3 +546,9 @@ wire_struct!(JobDetail {
 /// A display's data for `panel2_data`: the header's variables, then
 /// the list's entries.
 pub type PanelData = (Vec<(String, String)>, Vec<Vec<(String, String)>>);
+
+// --- panels batch 2: programs, config, security, editors types
+
+/// A panel's data: its variables, then each list's name and entries
+/// as `(variable, value)` pairs.
+pub type Sys2Data = (Vec<(String, String)>, Vec<(String, Vec<Vec<(String, String)>>)>);

@@ -60,9 +60,9 @@ bright: 1,34 20,74
 |                                 Change Widget                                  |
 |                                                                                |
 | Type the new values, press Enter.                                              |
-| Widget . . . . . . :   GADGET           Owner  . . . . . :   QPGMR             |
-| Library  . . . . . :   QGPL             Active . . . . . :   N                 |
-| Quantity . . . . . :   120              Note . . . . . . :   Nothing to note   |
+| Widget . . . . . . .   GADGET           Owner  . . . . . :   QPGMR             |
+| Library  . . . . . .   QGPL             Active . . . . . .   N                 |
+| Quantity . . . . . .   120              Note . . . . . . .   Nothing to note   |
 | Color  . . . . . . :   2   1=Red                                               |
 |                            2=Blue                                              |
 |                                                                                |

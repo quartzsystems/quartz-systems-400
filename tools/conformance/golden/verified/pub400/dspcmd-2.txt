@@ -1,0 +1,24 @@
+                          Display Command Information                           
+                                                                                
+ Command  . . . . . . . :   WRKACTJOB     Library  . . . . . . . :   QSYS       
+                                                                                
+ Message file for prompt text . . . . . :   QCPFPMT                             
+   Library  . . . . . . . . . . . . . . :     *LIBL                             
+   Message text . . . . . . . . . . . . :     *DYNAMIC                          
+ Message file . . . . . . . . . . . . . :   QCPFMSG                             
+   Library  . . . . . . . . . . . . . . :     *LIBL                             
+ Current library  . . . . . . . . . . . :   *NOCHG                              
+ Product library  . . . . . . . . . . . :   *NOCHG                              
+ Help panel group . . . . . . . . . . . :   QHWCCMD                             
+   Library  . . . . . . . . . . . . . . :     *LIBL                             
+ Help identifier  . . . . . . . . . . . :   WRKACTJOB                           
+ Prompt override program  . . . . . . . :   *NONE                               
+ Enabled for graphical user interface . :   *YES                                
+ Threadsafe . . . . . . . . . . . . . . :   *NO                                 
+ Multithreaded job action . . . . . . . :   *SYSVAL                             
+ Coded character set ID . . . . . . . . :   37                                  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

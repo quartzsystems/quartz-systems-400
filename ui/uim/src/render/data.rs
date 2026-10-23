@@ -149,6 +149,10 @@ fn put_row(ctx: &Ctx, s: &mut Screen, row: usize, start: usize, end: usize, colo
             let label = ctx.text(&field.prompt);
             let value_col =
                 label_and_colon(s, row, *label_col, end, colon, *shift, *compact, &label);
+            // R14: an entry field's leaders end in a dot, not a colon.
+            if field.usage.is_input() && !*compact && !label.trim().is_empty() {
+                s.put(row, colon, Attr::Normal, ".");
+            }
             let width = field_width(ctx, &field.var, field.maxwidth, field.minwidth);
             let mut col = value_col;
             put_field(

@@ -1,0 +1,24 @@
+                                 Add New Users                                  
+                                                                                
+ Object . . . . . . . :   USERNAME1       Owner  . . . . . . . :   USERNAME     
+   Library  . . . . . :     QSYS          Primary group  . . . :   *NONE        
+ Object type  . . . . :   *LIB            ASP device . . . . . :   *SYSBAS      
+                                                                                
+ Type new users, press Enter.                                                   
+                                                                                
+              Object    ----------Object-----------                             
+ User        Authority  Opr  Mgt  Exist  Alter  Ref                             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ F3=Exit   F11=Display data authorities   F12=Cancel   F17=Top   F18=Bottom     
+                                                                                
+                                                                                

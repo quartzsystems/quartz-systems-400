@@ -1,0 +1,73 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QUIWRKDEVD: WRKDEVD, the device descriptions with their options.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=HINTCL BASETYPE='CHAR 19'.
+:ECLASS.
+:CLASS NAME=TEXTCL BASETYPE='CHAR 50'.
+:ECLASS.
+:VAR NAME=POSTO CLASS=NAMECL.
+:VAR NAME=POSHINT CLASS=HINTCL VALUE='Starting characters'.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=DEVD CLASS=NAMECL.
+:VAR NAME=DEVTYPE CLASS=NAMECL.
+:VAR NAME=DEVTEXT CLASS=TEXTCL.
+:LISTDEF NAME=DEVS VARS='OPT DEVD DEVTYPE DEVTEXT'.
+:KEYL NAME=KEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F6 ACTION='RETURN 6'.F6=Create
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F14 ACTION='RETURN 14'.F14=Work with status
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:PANEL NAME=WRKDEVD KEYL=KEYS HELP=WRKDEVDH ENTER='RETURN 0' TOPSEP=SYSNAM.Work with Device Descriptions
+:DATA DEPTH=2.
+:DATACOL WIDTH=22.
+:DATACOL WIDTH=78.
+:DATAI VAR=POSTO USAGE=INPUT.Position to
+:DATAIX VAR=POSHINT USAGE=OUTPUT.
+:EDATA.
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=DEVS SCROLL=YES.(No device descriptions)
+:LISTACT OPTION=2 ENTER='CMD ?CHGDEVD DEVD(&DEVD.)'.2=Change
+:LISTACT OPTION=3 ENTER='CMD ?CRTDEVDSP'.3=Copy
+:LISTACT OPTION=4 ENTER='CMD DLTDEVD DEVD(&DEVD.)'.4=Delete
+:LISTACT OPTION=5 ENTER='CMD DSPDEVD DEVD(&DEVD.)'.5=Display
+:LISTACT OPTION=6 ENTER='CMD DSPDEVD DEVD(&DEVD.) OUTPUT(*PRINT)'.6=Print
+:LISTACT OPTION=7 ENTER='CMD ?RNMOBJ OBJ(QSYS/&DEVD.) OBJTYPE(*DEVD)'.7=Rename
+:LISTACT OPTION=8 ENTER='CMD WRKCFGSTS CFGTYPE(*DEV) CFGD(&DEVD.)'.8=Work with status
+:LISTACT OPTION=9 ENTER='RETURN 109'.9=Retrieve source
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=DEVD USAGE=OUTPUT.Device
+:LISTCOL VAR=DEVTYPE USAGE=OUTPUT.Type
+:LISTCOL VAR=DEVTEXT USAGE=OUTPUT.Text
+:ELIST.
+:CMDLINE SIZE=SHORT.Parameters or command
+:EPANEL.
+:HELP NAME=WRKDEVDH.Work with Device Descriptions - Help
+:P.The device descriptions in name order, with their type and text.
+Type an option next to a device to change, copy, delete, display,
+print or rename its description, see its status or get the command
+that would create it. Type a name in Position to and press Enter to
+start the list there.
+:EHELP.
+:HELP NAME=KEYSHLP.Function keys - Help
+:P.F5 shows the list again, F6 creates a description, F14 shows the
+status of every device, F9 brings back the last command, F3 and F12
+leave.
+:EHELP.
+:EPNLGRP.

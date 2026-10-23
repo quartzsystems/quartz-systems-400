@@ -1,0 +1,24 @@
+                      Display Service Program Information                       
+                                                                Display 1 of 10 
+ Service program  . . . . . . . . . . . . :   QLEAWI                            
+   Library  . . . . . . . . . . . . . . . :     QSYS                            
+ Owner  . . . . . . . . . . . . . . . . . :   QSECOFR                           
+ Service program attribute  . . . . . . . :   CPPLE                             
+ Detail . . . . . . . . . . . . . . . . . :   *BASIC                            
+                                                                                
+ Service program creation information:                                          
+   Service program creation date/time . . . . . . . :   MM/DD/YY  HH:MM:SS      
+   Export source file . . . . . . . . . . . . . . . :   S000028822              
+     Library  . . . . . . . . . . . . . . . . . . . :     $BLDSS1               
+   Export member  . . . . . . . . . . . . . . . . . :   S000028822              
+   Export source stream file  . . . . . . . . . . . :                           
+   Activation group attribute . . . . . . . . . . . :   *CALLER                 
+   Shared activation group  . . . . . . . . . . . . :   *NO                     
+   Current export signature . . . . . . . . . . . . :   44F70FABA08585397BDF0CF1
+95F82EC1                                                                        
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display character signature   F12=Cancel                         
+                                                                                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

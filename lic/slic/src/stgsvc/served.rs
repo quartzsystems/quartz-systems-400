@@ -1354,6 +1354,12 @@ impl Service for Served<'_> {
     }
 
     // --- panels batch 2: programs, config, security, editors (270-299)
+    fn sys2_panel(&mut self, what: String, args: Vec<String>) -> Result<stg::proto::Sys2Data, String> {
+        self.own_libl();
+        let r = super::system2::panel(self.system, &what, &args);
+        svc::ile::set_libl(None);
+        r
+    }
 
     // --- SEU (300-319)
 

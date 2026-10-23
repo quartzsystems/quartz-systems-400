@@ -127,6 +127,8 @@ pub fn wrksysval(
                 Ok(a) => a,
                 Err(e) => return Some(Err(Fail::new("CPF6A98", e.to_string()))),
             };
+            // Option 2 changes the value on its change panel.
+            let answer = crate::panels::system2::change_options(job, host, surface, &d, answer);
             match work_answer(job, host, &mut d, "SYSVALS", answer) {
                 Next::Stay => {}
                 Next::Refresh => break,

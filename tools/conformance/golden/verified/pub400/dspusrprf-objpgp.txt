@@ -1,0 +1,24 @@
+                         Display Primary Group Objects                          
+                                                                                
+ User profile . . . . . . . :   USERNAME                                        
+ Total objects  . . . . . . :   0                                               
+                                                                                
+                                   ASP         ----------Object-----------      
+ Object      Library     Type      Device      Opr  Mgt  Exist  Alter  Ref      
+                                                                                
+   (There are no objects for this primary group.)                               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display data authorities   F12=Cancel   F17=Top   F18=Bottom     
+                                                                                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

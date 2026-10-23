@@ -1,0 +1,24 @@
+                          Display Command Information                           
+                                                                                
+ Command  . . . . . . . :   WRKACTJOB     Library  . . . . . . . :   QSYS       
+                                                                                
+ Program to process command . . . . . . :   QWCCDSAC                            
+   Library  . . . . . . . . . . . . . . :     QSYS                              
+   State used to call program . . . . . :     *SYSTEM                           
+ Source file  . . . . . . . . . . . . . :   S000023563                          
+   Library  . . . . . . . . . . . . . . :     QTEMP                             
+ Source file member . . . . . . . . . . :   WRKACTJOB                           
+ Validity checking program  . . . . . . :   *NONE                               
+ Mode(s) in which valid . . . . . . . . :   *PROD                               
+                                            *DEBUG                              
+                                            *SERVICE                            
+ Where allowed to run . . . . . . . . . :   *IMOD      *BMOD      *IREXX        
+                                            *BREXX     *BPGM      *IPGM         
+                                            *EXEC      *INTERACT  *BATCH        
+ Allow limited user . . . . . . . . . . :   *NO                                 
+ Maximum positional parameters  . . . . :   2                                   
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

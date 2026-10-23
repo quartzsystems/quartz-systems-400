@@ -1,0 +1,24 @@
+                          Display Program Information                           
+                                                                 Display 4 of 7 
+ Program  . . . . . . . :   QZDASOINIT    Library  . . . . . . . :   QSYS       
+ Owner  . . . . . . . . :   QSYS                                                
+ Program attribute  . . :   CPPLE                                               
+ Detail . . . . . . . . :   *SRVPGM                                             
+                                                                                
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display                                                                    
+                                                                                
+      Service                                                                   
+ Opt  Program     Library     Activation  Signature                             
+      QZDASRV     QSYS        *IMMED      D8E9C4C1E2D9E5404040404040404040      
+      QC2UTIL1    QSYS        *IMMED      CB1F803582C31AC25B4DCBDD1B6D0948      
+      QLEAWI      QSYS        *IMMED      44F70FABA08585397BDF0CF195F82EC1      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F11=Display character signature   F12=Cancel   F17=Top   
+ F18=Bottom                                                                     
+                                                                                

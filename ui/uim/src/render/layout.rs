@@ -39,21 +39,27 @@ pub fn flow(widths: &[usize], start: usize, limit: usize) -> Vec<Vec<(usize, usi
     rows
 }
 
-/// R7: for each item index both rows hold, the row whose item starts
-/// earlier moves it (and what follows) to the other's column when the
-/// row still ends within `limit`; otherwise both stay.
+/// R7: each lower item after the first pairs with an upper item that
+/// starts within three columns of it (edtobjaut: F12 under F10,
+/// wrkdevd: 9=Retrieve under 4=Delete), else with the upper item of
+/// its index; the item of a pair that starts earlier moves (and what
+/// follows it in its row) to the other's column when its row still
+/// ends within `limit`; otherwise both stay.
 fn align(rows: &mut [Vec<(usize, usize)>], widths: &[usize], limit: usize) {
-    let n = rows[0].len().min(rows[1].len());
-    for k in 1..n {
-        let (a, b) = (rows[0][k].1, rows[1][k].1);
+    for k in 1..rows[1].len() {
+        let b = rows[1][k].1;
+        let near = (1..rows[0].len()).find(|&j| rows[0][j].1.abs_diff(b) <= 3);
+        let Some(j) = near.or((k < rows[0].len()).then_some(k)) else {
+            continue;
+        };
+        let a = rows[0][j].1;
         if a == b {
             continue;
         }
-        let (r, delta) = if a < b { (0, b - a) } else { (1, a - b) };
-        let row = &rows[r];
-        let (last, lc) = *row.last().unwrap();
+        let (r, from, delta) = if a < b { (0, j, b - a) } else { (1, k, a - b) };
+        let (last, lc) = *rows[r].last().unwrap();
         if lc + delta + widths[last] <= limit + 1 {
-            for item in &mut rows[r][k..] {
+            for item in &mut rows[r][from..] {
                 item.1 += delta;
             }
         }

@@ -1,0 +1,24 @@
+                      Display Service Program Information                       
+                                                                Display 3 of 10 
+ Service program  . . . . . . . . . . . . :   QLEAWI                            
+   Library  . . . . . . . . . . . . . . . :     QSYS                            
+ Owner  . . . . . . . . . . . . . . . . . :   QSECOFR                           
+ Service program attribute  . . . . . . . :   CPPLE                             
+ Detail . . . . . . . . . . . . . . . . . :   *MODULE                           
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display description   6=Print description                                  
+                                                                                
+                                          Creation  Optimization  Debug         
+ Opt  Module      Library     Attribute   Date         Level      Data          
+      QLEDEH      QBUILDSS1   CPPLE       MM/DD/YY  40            *NO           
+      QLETOOL     QBUILDSS1   CPPLE       MM/DD/YY  40            *NO           
+      QLEPM       QBUILDSS1   CPPLE       MM/DD/YY  40            *NO           
+      QLETREC     QBUILDSS1   CPPLE       MM/DD/YY  40            *NO           
+      QLESCAW     QBUILDSS1   CPPLE       MM/DD/YY  40            *NO           
+      QLESC       QBUILDSS1   CPPLE       MM/DD/YY  40            *NO           
+      QLERTX      QBUILDSS1   CPPLE       MM/DD/YY  40            *NO           
+      QLENCOD     QBUILDSS1   CPPLE       MM/DD/YY  40            *NO           
+                                                                        More... 
+ F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    
+                                                                                

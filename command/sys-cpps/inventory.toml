@@ -187,6 +187,54 @@ note = "a panel only: no text form outside a display"
 
 # --- panels batch 2: programs, config, security, editors (panels/system2.rs)
 
+[cmd.DSPPGM]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.DSPSRVPGM]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.DSPMOD]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.DSPBNDDIR]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.DSPCMD]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.DSPPGMREF]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.DSPPTF]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.DSPAUTLOBJ]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.DSPAUDJRNE]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.EDTOBJAUT]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.WRKDEVD]
+site = "job"
+note = "a panel at a display; no text form yet"
+
+[cmd.EDTLIBL]
+site = "job"
+note = "the editor at a display; CHGLIBL otherwise"
+
 # --- SEU (devtools/seu)
 
 # --- PDM (devtools/pdm)
@@ -432,13 +480,18 @@ note = "files of inactive default-group programs closed, overrides of returned l
 
 [cmd.DSPHDWRSC]
 word = "hw"
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
 
 [cmd.WRKHDWRSC]
 word = "hw"
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
 
 [cmd.EDTAUTL]
 word = "dspautl"
-note = "the editor waits for display files; the list is shown"
+site = "job"
+note = "the editor at a display; the list is shown otherwise"
 
 [cmd.WRKBNDDIR]
 word = "dspbnddir"

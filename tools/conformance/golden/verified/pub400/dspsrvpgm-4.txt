@@ -1,0 +1,24 @@
+                      Display Service Program Information                       
+                                                                Display 4 of 10 
+ Service program  . . . . . . . . . . . . :   QLEAWI                            
+   Library  . . . . . . . . . . . . . . . :     QSYS                            
+ Owner  . . . . . . . . . . . . . . . . . :   QSECOFR                           
+ Service program attribute  . . . . . . . :   CPPLE                             
+ Detail . . . . . . . . . . . . . . . . . :   *SRVPGM                           
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display                                                                    
+                                                                                
+      Service                                                                   
+ Opt  Program     Library     Activation  Signature                             
+      QLESYS      QSYS        *IMMED      D8D3C5E2E8E240404040404040404040      
+      QP0WEXIT    QSYS        *DEFER      D8D7F0E6C5E7C9E34040404040404040      
+      QLECWI      QSYS        *DEFER      FFB714CFF747ECD0DB3DFAFB271C4C8E      
+      QLESSNFP    QSYS        *IMMED      D8D3C5E2E2D5C6D74040404040404040      
+      QLESPI      QSYS        *IMMED      D8D3C5E2D7C940404040404040404040      
+      QC2UTIL1    QSYS        *IMMED      CB1F803582C31AC25B4DCBDD1B6D0948      
+      QC2UTIL2    QSYS        *DEFER      A11653CED63C16950B06C44C1F6E95C2      
+                                                                        More... 
+ F3=Exit   F4=Prompt   F11=Display character signature   F12=Cancel   F17=Top   
+ F18=Bottom                                                                     
+                                                                                

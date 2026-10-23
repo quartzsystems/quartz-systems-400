@@ -1,0 +1,24 @@
+                           Display Binding Directory                            
+                                                                                
+ Binding Directory:   QC2LE          Library:   QSYS                            
+                                                                                
+                                                     -------Creation--------    
+ Object       Type         Library      Activation   Date         Time          
+ QC2SYS       *SRVPGM      QSYS         *IMMED       MM/DD/YY     HH:MM:SS      
+ QC2IO        *SRVPGM      QSYS         *IMMED       MM/DD/YY     HH:MM:SS      
+ QC2NIO       *SRVPGM      QSYS         *IMMED       MM/DD/YY     HH:MM:SS      
+ QC2UTIL1     *SRVPGM      QSYS         *IMMED       MM/DD/YY     HH:MM:SS      
+ QC2UTIL2     *SRVPGM      QSYS         *IMMED       MM/DD/YY     HH:MM:SS      
+ QC2UTIL3     *SRVPGM      QSYS         *IMMED       MM/DD/YY     HH:MM:SS      
+ QC2IFS       *SRVPGM      QSYS         *IMMED       MM/DD/YY     HH:MM:SS      
+ QC2NIFS      *SRVPGM      QSYS         *IMMED       MM/DD/YY     HH:MM:SS      
+ QC2POSIX     *SRVPGM      QSYS         *IMMED       MM/DD/YY     HH:MM:SS      
+ QC2NPOSX     *SRVPGM      QSYS         *IMMED       MM/DD/YY     HH:MM:SS      
+ QC2LOCAL     *SRVPGM      QSYS         *IMMED       MM/DD/YY     HH:MM:SS      
+ QC2ULOCL     *SRVPGM      QSYS         *IMMED       MM/DD/YY     HH:MM:SS      
+ QC2VLOCC     *SRVPGM      QSYS         *IMMED       MM/DD/YY     HH:MM:SS      
+ QC2VLOCL     *SRVPGM      QSYS         *IMMED       MM/DD/YY     HH:MM:SS      
+ QC2ASYSIG    *SRVPGM      QSYS         *IMMED       MM/DD/YY     HH:MM:SS      
+                                                                        More... 
+ F3=Exit   F10=Refresh to top   F12=Cancel   F17=Top   F18=Bottom               
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

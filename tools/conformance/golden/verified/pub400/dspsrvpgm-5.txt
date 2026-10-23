@@ -1,0 +1,24 @@
+                      Display Service Program Information                       
+                                                                Display 5 of 10 
+ Service program  . . . . . . . . . . . . :   QLEAWI                            
+   Library  . . . . . . . . . . . . . . . :     QSYS                            
+ Owner  . . . . . . . . . . . . . . . . . :   QSECOFR                           
+ Service program attribute  . . . . . . . :   CPPLE                             
+ Detail . . . . . . . . . . . . . . . . . :   *PROCEXP                          
+                                                                                
+                               Procedure Exports:                               
+                                                                                
+ Procedure Name                                                          ARGOPT 
+ Q LE leDefaultEh                                                        *NO    
+ CEEMRCR                                                                 *NO    
+ CEEMGET                                                                 *NO    
+ CEEMOUT                                                                 *NO    
+ CEEMSG                                                                  *NO    
+ CEENCOD                                                                 *NO    
+ CEEDCOD                                                                 *NO    
+ Q LE leBdyCh                                                            *NO    
+ Q LE leBdyEpilog                                                        *NO    
+ CEE4FCB                                                                 *NO    
+                                                                        More... 
+ F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    
+                                                                                

@@ -1,0 +1,24 @@
+                           Display Authorized Objects                           
+                                                                                
+ User profile . . . . . :   USERNAME                                            
+                                                                                
+                                   ASP         ----------Object-----------      
+ Object      Library     Type      Device      Opr  Mgt  Exist  Alter  Ref      
+ USERNAME    QSYS        *USRPRF   *SYSBAS      X    X                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display data authorities   F12=Cancel   F17=Top   F18=Bottom     
+                                                                                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

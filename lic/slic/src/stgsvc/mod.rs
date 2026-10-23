@@ -32,6 +32,7 @@ pub(crate) mod wtr;
 pub use jobs::chgjob;
 mod served;
 mod sysdata;
+mod system2;
 
 use std::fs;
 use std::os::unix::net::UnixListener;

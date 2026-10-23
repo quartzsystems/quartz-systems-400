@@ -1,0 +1,24 @@
+                       Work with Communication Resources                        
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   5=Work with configuration descriptions   7=Display resource detail           
+                                                                                
+ Opt  Resource        Type  Status                Text                          
+      CMB09           6B03  Operational           Comm Processor                
+        LIN03         6B03  Operational           Comm Adapter                  
+          CMN01       6B03  Operational           Comm Port                     
+      CMB10           6B03  Operational           Comm Processor                
+        LIN01         6B03  Operational           Comm Adapter                  
+          CMN02       6B03  Operational           Comm Port                     
+      CMB11           268C  Not detected          Comm Processor                
+        LIN02         268C  Not detected          LAN Adapter                   
+          CMN03       268C  Not detected          Ethernet Port                 
+      CMB12           268C  Operational           Combined function IOP         
+        LIN04         6B26  Operational           Comm Adapter                  
+      CMB17           268C  Operational           Comm Processor                
+        LIN05         268C  Operational           LAN Adapter                   
+          CMN04       268C  Operational           Ethernet Port                 
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F5=Refresh   F6=Print   F12=Cancel                                   
+                                                                                

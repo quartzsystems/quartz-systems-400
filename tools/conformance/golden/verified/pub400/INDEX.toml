@@ -2811,3 +2811,217 @@ date = "2026-10-23"
 script = "work2-panels"
 width = 80
 
+name = "dsppgm-opm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dsppgm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dsppgm-pgdn"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dsppgm-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dsppgm-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dsppgm-4"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dsppgm-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dspsrvpgm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dspsrvpgm-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dspsrvpgm-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dspsrvpgm-4"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dspsrvpgm-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dsppgmref"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dspbnddir"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dspcmd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dspcmd-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "wrkdevd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "wrkhdwrsc"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dspusrprf-objaut"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dspusrprf-objown"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dspusrprf-objpgp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dspusrprf-cmdaut"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "dspusrprf-devaut"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "edtlibl"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "edtobjaut"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "edtobjaut-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80
+
+[[golden]]
+name = "edtobjaut-f6"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-system2"
+width = 80

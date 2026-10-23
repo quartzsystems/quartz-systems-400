@@ -315,6 +315,21 @@ pub const JOB_SITE: &[&str] = &[
     "DSPSAVF",
     "WRKPRB",
     // --- panels batch 2: programs, config, security, editors (panels/system2.rs)
+    "DSPPGM",
+    "DSPSRVPGM",
+    "DSPMOD",
+    "DSPBNDDIR",
+    "DSPCMD",
+    "DSPPGMREF",
+    "WRKDEVD",
+    "WRKHDWRSC",
+    "DSPHDWRSC",
+    "DSPPTF",
+    "DSPAUTLOBJ",
+    "DSPAUDJRNE",
+    "EDTLIBL",
+    "EDTOBJAUT",
+    "EDTAUTL",
     // --- SEU (devtools/seu)
     // --- PDM (devtools/pdm)
     "STRPDM",
@@ -626,7 +641,6 @@ pub const BRIDGE_WORDS: &[&str] = &[
 pub const UNSUPPORTED: &[&str] = &[
     "CPYLIB",
     "DSPMODSRC",
-    "EDTLIBL",
     "POSDBF",
     "STRSQL",
     "TFRJOB",

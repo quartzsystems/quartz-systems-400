@@ -1,0 +1,24 @@
+                             Edit Object Authority                              
+                                                                                
+ Object . . . . . . . :   USERNAME1       Owner  . . . . . . . :   USERNAME     
+   Library  . . . . . :     QSYS          Primary group  . . . :   *NONE        
+ Object type  . . . . :   *LIB            ASP device . . . . . :   *SYSBAS      
+                                                                                
+ Type changes to current authorities, press Enter.                              
+                                                                                
+   Object secured by authorization list  . . . . . . . . . . . .   *NONE        
+                                                                                
+                          Object                                                
+ User        Group       Authority                                              
+ *PUBLIC                 *EXCLUDE                                               
+ USERNAME                *ALL                                                   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F5=Refresh   F6=Add new users   F10=Grant with reference object      
+ F11=Display detail object authorities     F12=Cancel   F17=Top   F18=Bottom    
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

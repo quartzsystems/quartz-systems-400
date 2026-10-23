@@ -1,0 +1,72 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QUICHGSV: WRKSYSVAL option 2, a system value changed in place. CHGSV
+.* takes one value, CHGSVL a list of them (library lists, the values
+.* that hold several words); the driver applies them with CHGSYSVAL.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=TEXTCL BASETYPE='CHAR 50'.
+:ECLASS.
+:CLASS NAME=VALCL BASETYPE='CHAR 50'.
+:ECLASS.
+:CLASS NAME=ELEMCL BASETYPE='CHAR 15'.
+:ECLASS.
+:VAR NAME=SVNAME CLASS=NAMECL.
+:VAR NAME=SVTEXT CLASS=TEXTCL.
+:VAR NAME=SVTYPE CLASS=NAMECL.
+:VAR NAME=SVVALUE CLASS=VALCL.
+:VAR NAME=SVELEM CLASS=ELEMCL.
+:LISTDEF NAME=ELEMS VARS='SVELEM'.
+:KEYL NAME=KEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:PANEL NAME=CHGSV KEYL=KEYS HELP=CHGSVH ENTER='RETURN 0' TOPSEP=SYSNAM.Change System Value
+:DATA DEPTH=4.
+:DATAI VAR=SVNAME USAGE=OUTPUT.System value
+:DATAI VAR=SVTEXT USAGE=OUTPUT.Description
+:DATAI VAR=SVTYPE USAGE=OUTPUT.Type
+:EDATA.
+:TOPINST.Type choice, press Enter.
+:DATA DEPTH='*'.
+:DATAC.
+:DATAI VAR=SVVALUE USAGE=INOUT CSRLOC.Value
+:EDATA.
+:EPANEL.
+:PANEL NAME=CHGSVL KEYL=KEYS HELP=CHGSVLH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Change System Value
+:DATA DEPTH=4.
+:DATAI VAR=SVNAME USAGE=OUTPUT.System value
+:DATAI VAR=SVTEXT USAGE=OUTPUT.Description
+:DATAI VAR=SVTYPE USAGE=OUTPUT.Type
+:EDATA.
+:TOPINST.Type choices, press Enter.
+:DATA DEPTH=1.
+:DATAC.
+:EDATA.
+:LIST DEPTH='*' LISTDEF=ELEMS SCROLL=YES.
+:LISTCOL VAR=SVELEM USAGE=INOUT.Value
+:ELIST.
+:EPANEL.
+:HELP NAME=CHGSVH.Change System Value - Help
+:P.Type the new value and press Enter; the value is checked and set
+as CHGSYSVAL would set it. Some values take effect at the next IPL.
+:EHELP.
+:HELP NAME=CHGSVLH.Change System Value - Help
+:P.The value is a list: type, change or blank its elements in order
+and press Enter. Blank entries are dropped.
+:EHELP.
+:HELP NAME=KEYSHLP.Function keys - Help
+:P.F5 shows the value as it is now; F3 and F12 leave without changing
+it.
+:EHELP.
+:EPNLGRP.

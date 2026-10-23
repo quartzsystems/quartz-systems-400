@@ -1,0 +1,24 @@
+                          Display Program Information                           
+                                                                 Display 1 of 7 
+ Program  . . . . . . . :   QZDASOINIT    Library  . . . . . . . :   QSYS       
+ Owner  . . . . . . . . :   QSYS                                                
+ Program attribute  . . :   CPPLE                                               
+ Detail . . . . . . . . :   *BASIC                                              
+                                                                                
+                                                                                
+ Program creation information:                                                  
+   Program creation date/time . . . . . . . . . . :   MM/DD/YY  HH:MM:SS        
+   Type of program  . . . . . . . . . . . . . . . :   ILE                       
+   Program entry procedure module . . . . . . . . :   QZDASOIT                  
+     Library  . . . . . . . . . . . . . . . . . . :     QBUILDSS1               
+   Activation group attribute . . . . . . . . . . :   *CALLER                   
+   Shared activation group  . . . . . . . . . . . :   *NO                       
+   User profile . . . . . . . . . . . . . . . . . :   *USER                     
+   Use adopted authority  . . . . . . . . . . . . :   *YES                      
+   Coded character set identifier . . . . . . . . :   65535                     
+   Number of modules  . . . . . . . . . . . . . . :   1                         
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

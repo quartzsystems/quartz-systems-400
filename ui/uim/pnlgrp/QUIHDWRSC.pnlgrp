@@ -1,0 +1,85 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QUIHDWRSC: WRKHDWRSC and DSPHDWRSC, the hardware resources of one
+.* kind (RSCKIND names it in the title). A resource under another is
+.* indented in RSCNAME by the driver.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=KINDCL BASETYPE='CHAR 30'.
+:ECLASS.
+:CLASS NAME=RSCCL BASETYPE='CHAR 14'.
+:ECLASS.
+:CLASS NAME=TYPECL BASETYPE='CHAR 4'.
+:ECLASS.
+:CLASS NAME=STSCL BASETYPE='CHAR 20'.
+:ECLASS.
+:CLASS NAME=TEXTCL BASETYPE='CHAR 28'.
+:ECLASS.
+:VAR NAME=RSCKIND CLASS=KINDCL.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=RSCNAME CLASS=RSCCL.
+:VAR NAME=RSCTYPE CLASS=TYPECL.
+:VAR NAME=RSCSTS CLASS=STSCL.
+:VAR NAME=RSCTEXT CLASS=TEXTCL.
+:LISTDEF NAME=RSCS VARS='OPT RSCNAME RSCTYPE RSCSTS RSCTEXT'.
+:KEYL NAME=WRKKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+:KEYI KEY=F6 ACTION=PRINT.F6=Print
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:KEYL NAME=DSPKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F6 ACTION=PRINT.F6=Print
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:PANEL NAME=WRKHDWRSC KEYL=WRKKEYS HELP=WRKHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Work with &RSCKIND. Resources
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=RSCS SCROLL=YES.(No resources of this kind)
+:LISTACT OPTION=5 ENTER='RETURN 105'.5=Work with configuration descriptions
+:LISTACT OPTION=7 ENTER='RETURN 107'.7=Display resource detail
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL VAR=RSCTYPE USAGE=OUTPUT.Type
+:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL VAR=RSCTEXT USAGE=OUTPUT.Text
+:ELIST.
+:EPANEL.
+:PANEL NAME=DSPHDWRSC KEYL=DSPKEYS HELP=DSPHDWH ENTER='RETURN 0' TOPSEP=SYSNAM BOTSEP=NONE.Display &RSCKIND. Resources
+:LIST DEPTH='*' LISTDEF=RSCS SCROLL=YES.(No resources of this kind)
+:LISTCOL VAR=RSCNAME USAGE=OUTPUT.Resource
+:LISTCOL VAR=RSCTYPE USAGE=OUTPUT.Type
+:LISTCOL VAR=RSCSTS USAGE=OUTPUT.Status
+:LISTCOL VAR=RSCTEXT USAGE=OUTPUT.Text
+:ELIST.
+:EPANEL.
+:HELP NAME=WRKHDWH.Work with Hardware Resources - Help
+:P.The resources of one kind the system found, each under the resource
+it is attached to, with its type, whether it is working and what it
+is. Type 5 to see the configuration descriptions that use a resource
+or 7 for its details.
+:EHELP.
+:HELP NAME=DSPHDWH.Display Hardware Resources - Help
+:P.The resources of one kind the system found, each under the resource
+it is attached to, with its type, whether it is working and what it
+is.
+:EHELP.
+:HELP NAME=KEYSHLP.Function keys - Help
+:P.F5 looks at the hardware again, F6 prints the list, F3 and F12
+leave.
+:EHELP.
+:EPNLGRP.

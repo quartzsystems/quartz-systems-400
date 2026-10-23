@@ -1,0 +1,24 @@
+                          Display Program Information                           
+                                                                 Display 1 of 7 
+ Program  . . . . . . . :   QZDASOINIT    Library  . . . . . . . :   QSYS       
+ Owner  . . . . . . . . :   QSYS                                                
+ Program attribute  . . :   CPPLE                                               
+ Detail . . . . . . . . :   *BASIC                                              
+                                                                                
+                                                                                
+   Number of service programs . . . . . . . . . . :   3                         
+   Number of unresolved references  . . . . . . . :   0                         
+   Number of copyrights . . . . . . . . . . . . . :   1                         
+   All creation data  . . . . . . . . . . . . . . :   *NO                       
+   Observable information compressed  . . . . . . :   *NO                       
+   Run time information compressed  . . . . . . . :   *NO                       
+   Allow update . . . . . . . . . . . . . . . . . :   *YES                      
+   Allow bound *SRVPGM library name update  . . . :   *NO                       
+   Profiling data . . . . . . . . . . . . . . . . :   *NOCOL                    
+   Teraspace storage enabled PEP  . . . . . . . . :   Ö                         
+   Teraspace storage enabled modules  . . . . . . :   Ö                         
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

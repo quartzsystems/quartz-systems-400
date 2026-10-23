@@ -1,0 +1,194 @@
+# Batch 8: programs, configuration, security displays and the editors,
+# run from MAIN's command line. Editors are displayed and left with F12;
+# nothing is changed. Refusals leave a message on MAIN and their
+# snapshots are dropped afterwards.
+wait "Main Menu"
+continue
+timeout 90000
+type dsppgm qsys/qcmd
+key enter
+settle 1500
+snap dsppgm-opm
+key enter
+settle 1000
+snap dsppgm-opm-2
+key f3
+wait "Main Menu"
+type dsppgm qsys/qzdasoinit
+key enter
+settle 1500
+snap dsppgm
+key pgdn
+settle 800
+snap dsppgm-pgdn
+key enter
+settle 1000
+snap dsppgm-2
+key enter
+settle 1000
+snap dsppgm-3
+key enter
+settle 1000
+snap dsppgm-4
+key enter
+settle 1000
+snap dsppgm-5
+key f3
+wait "Main Menu"
+type dspsrvpgm qsys/qleawi
+key enter
+settle 1500
+snap dspsrvpgm
+key enter
+settle 1000
+snap dspsrvpgm-2
+key enter
+settle 1000
+snap dspsrvpgm-3
+key enter
+settle 1000
+snap dspsrvpgm-4
+key enter
+settle 1000
+snap dspsrvpgm-5
+key f3
+wait "Main Menu"
+type dsppgmref qsys/qcmd
+key enter
+settle 2000
+snap dsppgmref
+key f3
+wait "Main Menu"
+type dspbnddir qsys/qc2le
+key enter
+settle 1500
+snap dspbnddir
+key f3
+wait "Main Menu"
+type dspcmd wrkactjob
+key enter
+settle 1500
+snap dspcmd
+key pgdn
+settle 800
+snap dspcmd-2
+key f3
+wait "Main Menu"
+type wrkdevd *prt
+key enter
+settle 2000
+snap wrkdevd
+key f3
+wait "Main Menu"
+type wrkhdwrsc *cmn
+key enter
+settle 2500
+snap wrkhdwrsc
+key f3
+wait "Main Menu"
+type dsphdwrsc *cmn
+key enter
+settle 2500
+snap dsphdwrsc
+key f3
+wait "Main Menu"
+type dsphdwrsc *prc
+key enter
+settle 2500
+snap dsphdwrsc-prc
+key f3
+wait "Main Menu"
+type dspptf
+key enter
+settle 3000
+snap dspptf
+key f3
+wait "Main Menu"
+type dspautlobj qpwfservsd
+key enter
+settle 2000
+snap dspautlobj
+key f3
+wait "Main Menu"
+type dspusrprf cwellman *objaut
+key enter
+settle 2000
+snap dspusrprf-objaut
+key f3
+wait "Main Menu"
+type dspusrprf cwellman *objown
+key enter
+settle 2000
+snap dspusrprf-objown
+key f3
+wait "Main Menu"
+type dspusrprf cwellman *objpgp
+key enter
+settle 2000
+snap dspusrprf-objpgp
+key f3
+wait "Main Menu"
+type dspusrprf cwellman *cmdaut
+key enter
+settle 2000
+snap dspusrprf-cmdaut
+key f3
+wait "Main Menu"
+type dspusrprf cwellman *devaut
+key enter
+settle 2000
+snap dspusrprf-devaut
+key f3
+wait "Main Menu"
+type dspusrprf cwellman *grpmbr
+key enter
+settle 2000
+snap dspusrprf-grpmbr
+key f3
+wait "Main Menu"
+type dspaudjrne
+key enter
+settle 2000
+snap dspaudjrne
+key f3
+wait "Main Menu"
+type edtlibl
+key enter
+settle 1500
+snap edtlibl
+key f12
+wait "Main Menu"
+type edtobjaut qsys/cwellman1 *lib
+key enter
+settle 2000
+snap edtobjaut
+key f11
+settle 1000
+snap edtobjaut-f11
+key f24
+settle 800
+snap edtobjaut-f24
+key f6
+settle 1000
+snap edtobjaut-f6
+key f12
+settle 1000
+key f12
+wait "Main Menu"
+type edtautl qpwfservsd
+key enter
+settle 2000
+snap edtautl
+key f12
+wait "Main Menu"
+type wrkrpyle
+key enter
+settle 2000
+field 8 3 2
+key enter
+settle 1500
+snap wrkrpyle-2-chgrpyle
+key f12
+settle 1000
+key f3
+wait "Main Menu"
