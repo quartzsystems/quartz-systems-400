@@ -79,6 +79,9 @@ pub struct Setting {
     pub exec: bool,
     /// Compiling a CL module rather than a program.
     pub module: bool,
+    /// Syntax only, as `QCMDCHK` checks: the definition's `ALLOW` and
+    /// `MODE` are not applied.
+    pub syntax_only: bool,
 }
 
 impl Setting {
@@ -242,14 +245,16 @@ pub fn analyze_tokens(env: &mut Env<'_>, toks: &Tokens) -> Result<Resolved> {
         return Err(Diag::new("CPD0043").data(&[(&name, 10)]).into());
     }
     let mut diags = Vec::new();
-    for need in env.setting.needs() {
-        if !def.allow.has(need) {
-            diags.push(Diag::new("CPD0031").data(&[(&name, 10)]));
-            break;
+    if !env.setting.syntax_only {
+        for need in env.setting.needs() {
+            if !def.allow.has(need) {
+                diags.push(Diag::new("CPD0031").data(&[(&name, 10)]));
+                break;
+            }
         }
-    }
-    if def.mode.0 & env.mode == 0 {
-        diags.push(Diag::new("CPD0032").data(&[(&name, 10)]));
+        if def.mode.0 & env.mode == 0 {
+            diags.push(Diag::new("CPD0032").data(&[(&name, 10)]));
+        }
     }
     if !diags.is_empty() {
         return Err(CmdError::analysis(&name, diags));

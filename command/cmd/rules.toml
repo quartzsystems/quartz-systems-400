@@ -96,7 +96,7 @@ text = "RTNVAL(*YES) needs TYPE *CHAR, *DEC or *LGL; {0} is {1}."
 [[rule]]
 id = "rtnval-attrs"
 msgid = "CPD0225"
-text = "RTNVAL(*YES) on {0} allows no DFT, MIN, VALUES, REL, RANGE, SPCVAL or SNGVAL."
+text = "RTNVAL(*YES) on {0} allows no DFT, VALUES, REL, RANGE, SPCVAL or SNGVAL."
 
 [[rule]]
 id = "cmdstr-attrs"

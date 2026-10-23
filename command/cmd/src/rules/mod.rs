@@ -167,7 +167,6 @@ fn check_parm(def: &CmdDef, p: &Parm, kwd: &str, depth: u32, out: &mut Vec<Diag>
             out.push(diag("rtnval-type", &[kwd, &ty]));
         }
         if p.dft.is_some()
-            || p.min > 0
             || !p.values.is_empty()
             || p.rel.is_some()
             || p.range.is_some()

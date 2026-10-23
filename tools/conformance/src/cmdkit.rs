@@ -14,7 +14,7 @@
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-use cmd::analyze::{Env, MemSource, Setting, VarInfo, VarType};
+use cmd::analyze::{Env, MemSource, Setting};
 
 /// Where the kit lives.
 #[must_use]
@@ -45,29 +45,6 @@ pub fn defs() -> MemSource {
     s
 }
 
-/// The variables the strings name: numbers for `&P` (a priority) and
-/// `&RC` (a return code), ten characters otherwise.
-#[allow(clippy::unnecessary_wraps)] // the analyzer's lookup may say "not declared"
-fn var(name: &str) -> Option<VarInfo> {
-    Some(match name {
-        "P" => VarInfo {
-            ty: VarType::Dec,
-            len: 2,
-            dec: 0,
-        },
-        "RC" => VarInfo {
-            ty: VarType::Int,
-            len: 4,
-            dec: 0,
-        },
-        _ => VarInfo {
-            ty: VarType::Char,
-            len: 10,
-            dec: 0,
-        },
-    })
-}
-
 /// Analyze every string; the outcome lines.
 #[must_use]
 pub fn run(strings: &[String]) -> Vec<String> {
@@ -79,15 +56,20 @@ pub fn run(strings: &[String]) -> Vec<String> {
             interactive: true,
             program: true,
             exec: false,
-            module: false,
+            module: true,
+            syntax_only: true,
         };
-        env.vars = Some(&var);
+        env.vars = None;
         let line = match cmd::analyze(&mut env, s) {
             Ok(r) => format!("OK {}", r.text()),
             Err(e) => {
                 let mut l = e.escape.msgid.clone();
+                let detail = std::env::var_os("QS400_CMD_DETAIL").is_some();
                 for d in &e.diags {
                     let _ = write!(l, " {}", d.msgid);
+                    if detail {
+                        let _ = write!(l, " [{}]", d.detail);
+                    }
                 }
                 l
             }

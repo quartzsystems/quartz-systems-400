@@ -56,7 +56,7 @@ pub fn scalar(
         return variable(env, parm, kwd, v);
     }
     if parm.rtnval {
-        return Err(bad("CPD0084").detail(format!("{kwd} returns a value and needs a CL variable")));
+        return Err(bad("CPD0102").detail(format!("{kwd} returns a value and needs a CL variable")));
     }
     let len = parm.length();
     let value = match &parm.ty {
@@ -88,6 +88,7 @@ pub fn scalar(
             let w = match tok {
                 Tok::Word(w) => w.clone(),
                 Tok::Str(s) => s.clone(),
+                Tok::Op("*") => "*".to_string(),
                 other => {
                     return Err(
                         bad("CPD0078").detail(format!("{kwd}: {} is not a name", other.text()))
@@ -97,11 +98,15 @@ pub fn scalar(
             name(parm, kwd, &w, trusted)?
         }
         ParmType::VarName => {
-            return Err(bad("CPD0084").detail(format!("{kwd} needs a CL variable name")));
+            return Err(match tok {
+                Tok::Builtin { .. } => bad("CPD0105")
+                    .detail(format!("{kwd}: a built-in function is not a CL variable name")),
+                _ => bad("CPD0081").detail(format!("{kwd} needs a CL variable name")),
+            });
         }
         ParmType::Dec => {
             let Tok::Num(n) = tok else {
-                return Err(bad("CPD0084").detail(format!("{kwd}: {} is not a number", tok.text())));
+                return Err(bad("CPD0076").detail(format!("{kwd}: {} is not a number", tok.text())));
             };
             let d =
                 Decimal::parse(&n.replace(env.opts.point(), ".")).map_err(|_| bad("CPD0084"))?;
@@ -116,7 +121,7 @@ pub fn scalar(
         }
         ParmType::Int2 | ParmType::Int4 | ParmType::Uint2 | ParmType::Uint4 => {
             let Tok::Num(n) = tok else {
-                return Err(bad("CPD0084").detail(format!("{kwd}: {} is not a number", tok.text())));
+                return Err(bad("CPD0076").detail(format!("{kwd}: {} is not a number", tok.text())));
             };
             let d = Decimal::parse(n).map_err(|_| bad("CPD0084"))?;
             if d.scale() != 0 {
@@ -140,8 +145,22 @@ pub fn scalar(
             }
             _ => return Err(bad("CPD0084").detail(format!("{kwd}: a logical value is '0' or '1'"))),
         },
-        ParmType::Date => Value::Char(date(env, kwd, tok.text().trim_matches('\''))?),
-        ParmType::Time => Value::Char(time(kwd, tok.text().trim_matches('\''))?),
+        ParmType::Date | ParmType::Time => {
+            if let Tok::Word(w) = tok
+                && w.contains(['/', '-', ':', '.'])
+            {
+                return Err(bad("CPD0104").detail(format!(
+                    "{kwd}: {w} reads as an expression; quote a date with separators"
+                )));
+            }
+            let text = tok.text();
+            let text = text.trim_matches('\'');
+            if parm.ty == ParmType::Date {
+                Value::Char(date(env, kwd, text)?)
+            } else {
+                Value::Char(time(kwd, text)?)
+            }
+        }
         ParmType::Null | ParmType::ZeroElem => Value::Null,
         ParmType::Elem { .. } | ParmType::Qual { .. } => {
             return Err(bad("CPD0084").detail(format!("{kwd}: a group needs its parts")));
@@ -181,7 +200,10 @@ fn restrictions(
         if let Some((op, lim)) = &parm.rel {
             let l = Decimal::parse(lim).map_err(|_| bad("CPD0084"))?;
             if !op.holds(d.cmp(&l)) {
-                return Err(bad("CPD0094").detail(format!("{kwd}: {d} is not {} {lim}", op.text())));
+                return Err(bad(rel_msgid(*op)).detail(format!(
+                    "{kwd}: {d} is not {} {lim}",
+                    op.text()
+                )));
             }
         }
         if let Some((lo, hi)) = &parm.range {
@@ -190,25 +212,32 @@ fn restrictions(
                 Decimal::parse(hi).map_err(|_| bad("CPD0084"))?,
             );
             if *d < l || *d > h {
-                return Err(bad("CPD0093").detail(format!("{kwd}: {d} is outside {lo} to {hi}")));
+                return Err(bad("CPD0085").detail(format!("{kwd}: {d} is outside {lo} to {hi}")));
             }
         }
     } else if let Value::Char(s) = value {
-        // REL and RANGE on character values compare as text.
+        // REL and RANGE on character values compare as text; a range
+        // of digits wants digits (a job number).
         if let Some((op, lim)) = &parm.rel {
             let lim = lim.trim_matches('\'');
             if !op.holds(ccsid::ebcdic_cmp_str(s, lim)) {
-                return Err(bad("CPD0094").detail(format!("{kwd}: {s} is not {} {lim}", op.text())));
+                return Err(bad(rel_msgid(*op)).detail(format!(
+                    "{kwd}: {s} is not {} {lim}",
+                    op.text()
+                )));
             }
         }
-        if let Some((lo, hi)) = &parm.range
-            && !(Decimal::parse(lo).is_ok() && Decimal::parse(hi).is_ok())
-        {
+        if let Some((lo, hi)) = &parm.range {
             let (lo, hi) = (lo.trim_matches('\''), hi.trim_matches('\''));
-            if RelOp::Lt.holds(ccsid::ebcdic_cmp_str(s, lo))
+            let digits = |t: &str| !t.is_empty() && t.bytes().all(|b| b.is_ascii_digit());
+            if digits(lo) && digits(hi) {
+                if !digits(s.trim_end()) {
+                    return Err(bad("CPD0012").detail(format!("{kwd}: {s} is not a number")));
+                }
+            } else if RelOp::Lt.holds(ccsid::ebcdic_cmp_str(s, lo))
                 || RelOp::Gt.holds(ccsid::ebcdic_cmp_str(s, hi))
             {
-                return Err(bad("CPD0093").detail(format!("{kwd}: {s} is outside {lo} to {hi}")));
+                return Err(bad("CPD0085").detail(format!("{kwd}: {s} is outside {lo} to {hi}")));
             }
         }
     }
@@ -230,6 +259,16 @@ fn restrictions(
     Ok(())
 }
 
+/// The diagnostic a failed `REL` sends, as the box does: `CPD0086`
+/// for `*GT`, `CPD0088` for `*GE`, `CPD0087` for the rest.
+fn rel_msgid(op: RelOp) -> &'static str {
+    match op {
+        RelOp::Gt => "CPD0086",
+        RelOp::Ge => "CPD0088",
+        _ => "CPD0087",
+    }
+}
+
 /// Case folding of an unquoted value.
 fn fold(parm: &Parm, w: &str) -> String {
     match parm.case {
@@ -247,15 +286,32 @@ fn name(parm: &Parm, kwd: &str, w: &str, trusted: bool) -> Result<Value, Diag> {
             .detail(format!("{kwd}: {w} is not a valid name"))
     };
     if w.starts_with('*') {
-        if trusted {
+        if trusted || (parm.rstd && parm.values.iter().any(|v| v == w)) {
             return Ok(Value::Char(w.to_string()));
         }
-        return Err(Diag::new("CPD0084")
+        let id = if parm.ty == ParmType::Generic {
+            "CPD0079"
+        } else {
+            "CPD0078"
+        };
+        return Err(Diag::new(id)
             .data(&[(kwd, 10)])
             .parm(kwd)
             .detail(format!("{kwd}: {w} is not a value allowed here")));
     }
+    if w.contains('/') {
+        return Err(Diag::new("CPD0049")
+            .data(&[(kwd, 10)])
+            .parm(kwd)
+            .detail(format!("{kwd}: {w} may not be qualified")));
+    }
     let max = parm.length().len as usize;
+    if kwd == "MSGID" && !w.ends_with('*') && w.chars().count() <= max && !msgid_ok(w) {
+        return Err(Diag::new("CPD0075")
+            .data(&[(kwd, 10)])
+            .parm(kwd)
+            .detail(format!("{kwd}: {w} is not a message identifier")));
+    }
     let core = match parm.ty {
         ParmType::Generic => w.strip_suffix('*').unwrap_or(w),
         _ => w,
@@ -298,17 +354,27 @@ fn name(parm: &Parm, kwd: &str, w: &str, trusted: bool) -> Result<Value, Diag> {
     ))
 }
 
+/// `AAAnnnn`: three letters and four letters or digits.
+fn msgid_ok(w: &str) -> bool {
+    let b = w.as_bytes();
+    b.len() == 7
+        && b[..3].iter().all(u8::is_ascii_alphabetic)
+        && b[3..].iter().all(u8::is_ascii_alphanumeric)
+}
+
 /// A `&VAR` value.
 fn variable(env: &Env<'_>, parm: &Parm, kwd: &str, v: &str) -> Result<Value, Diag> {
     let bad = |id: &str| Diag::new(id).data(&[(kwd, 10)]).parm(kwd);
+    // A variable name, or a variable that receives a value, is syntax;
+    // any other use needs the declarations.
+    if parm.ty == ParmType::VarName || (parm.rtnval && env.vars.is_none()) {
+        return Ok(Value::Var(v.to_string()));
+    }
     let Some(vars) = env.vars else {
-        return Err(bad("CPD0084").detail(format!(
+        return Err(bad("CPD0103").detail(format!(
             "{kwd}: &{v} is a variable; variables are for CL programs"
         )));
     };
-    if parm.ty == ParmType::VarName {
-        return Ok(Value::Var(v.to_string()));
-    }
     if !parm.alwvar {
         return Err(bad("CPD0084").detail(format!("{kwd} does not take a variable")));
     }
@@ -348,7 +414,7 @@ fn variable(env: &Env<'_>, parm: &Parm, kwd: &str, v: &str) -> Result<Value, Dia
 /// A date in the job's format into `CYMD`.
 fn date(env: &Env<'_>, kwd: &str, text: &str) -> Result<String, Diag> {
     let bad = || {
-        Diag::new("CPD0084")
+        Diag::new("CPD0082")
             .data(&[(kwd, 10)])
             .parm(kwd)
             .detail(format!("{kwd}: {text} is not a date in the job's format"))
@@ -433,7 +499,7 @@ fn from_julian(y: u32, doy: u32) -> Option<(u32, u32)> {
 /// `hhmmss` or `hh:mm:ss` into `HMS`.
 fn time(kwd: &str, text: &str) -> Result<String, Diag> {
     let bad = || {
-        Diag::new("CPD0084")
+        Diag::new("CPD0083")
             .data(&[(kwd, 10)])
             .parm(kwd)
             .detail(format!("{kwd}: {text} is not a time"))
@@ -496,7 +562,7 @@ mod tests {
             )
             .unwrap_err()
             .msgid,
-            "CPD0084"
+            "CPD0078"
         );
         assert_eq!(
             scalar(
@@ -575,7 +641,7 @@ mod tests {
                 &e,
                 &p(ParmType::Date),
                 "K",
-                &Tok::Word("12/31/99".into()),
+                &Tok::Str("12/31/99".into()),
                 false
             )
             .unwrap(),
@@ -587,19 +653,19 @@ mod tests {
                 &e,
                 &p(ParmType::Date),
                 "K",
-                &Tok::Word("2026-02-29".into()),
+                &Tok::Str("2026-02-29".into()),
                 false
             )
             .unwrap_err()
             .msgid,
-            "CPD0084"
+            "CPD0082"
         );
         assert_eq!(
             scalar(
                 &e,
                 &p(ParmType::Time),
                 "K",
-                &Tok::Word("13:05:09".into()),
+                &Tok::Str("13:05:09".into()),
                 false
             )
             .unwrap(),
@@ -609,7 +675,7 @@ mod tests {
             scalar(&e, &p(ParmType::Time), "K", &Tok::Num("2500".into()), false)
                 .unwrap_err()
                 .msgid,
-            "CPD0084"
+            "CPD0083"
         );
     }
 
@@ -633,7 +699,7 @@ mod tests {
             scalar(&e, &n, "K", &Tok::Num("100".into()), false)
                 .unwrap_err()
                 .msgid,
-            "CPD0093"
+            "CPD0085"
         );
         n.range = None;
         n.rel = Some((RelOp::Gt, "0".into()));
@@ -641,7 +707,7 @@ mod tests {
             scalar(&e, &n, "K", &Tok::Num("0".into()), false)
                 .unwrap_err()
                 .msgid,
-            "CPD0094"
+            "CPD0086"
         );
         let mut v = p(ParmType::Char);
         v.alwvar = true;
@@ -649,7 +715,7 @@ mod tests {
             scalar(&e, &v, "K", &Tok::Var("X".into()), false)
                 .unwrap_err()
                 .msgid,
-            "CPD0084"
+            "CPD0103"
         );
     }
 }

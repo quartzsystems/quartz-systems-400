@@ -426,7 +426,7 @@ impl Lexer {
         let mut s = String::new();
         loop {
             match self.peek() {
-                None => return Err(Diag::new("CPD0013").into()),
+                None => return Err(Diag::new("CPD0014").into()),
                 Some('\'') => {
                     self.at += 1;
                     if self.peek() == Some('\'') {
@@ -596,7 +596,7 @@ mod tests {
         let e = tokenize("CRTLIB LIB(X", Options::default()).unwrap_err();
         assert_eq!(e.msgid(), "CPD0014");
         let e = tokenize("CRTLIB TEXT('x)", Options::default()).unwrap_err();
-        assert_eq!(e.msgid(), "CPD0013");
+        assert_eq!(e.msgid(), "CPD0014");
         let e = tokenize("CRTLIB X'1'", Options::default()).unwrap_err();
         assert_eq!(e.msgid(), "CPD0017");
         assert_eq!(t("").name, "");
