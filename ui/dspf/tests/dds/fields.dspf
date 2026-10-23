@@ -1,0 +1,40 @@
+     A* Customer maintenance: fields, constants, editing and checks
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      REF(QGPL/CUSTMAST)
+     A                                      INDTXT(50 'Protect the key')
+     A                                      CF03(03 'Exit') CF12(12 'Cancel')
+     A                                      CA05(05 'Refresh')
+     A                                      PRINT HELP ALTHELP(CA01)
+     A                                      CHGINPDFT(UL)
+     A          R CUSTREC                   TEXT('Customer maintenance')
+     A                                      OVERLAY PUTOVR KEEP
+     A  51                                  ALARM
+     A                                  1  2DATE EDTCDE(Y)
+     A                                  1 30'Customer maintenance' DSPATR(HI)
+     A                                  1 71TIME
+     A                                  2  2USER
+     A                                  2 71SYSNAME
+     A            CUSNO     R        B  4 15REFFLD(CUSNO) CHECK(RZ)
+     A  50                                  DSPATR(PR)
+     A                                      ERRMSG('Customer not found' 90)
+     A                                  4  2'Number . :'
+     A            CUSNM     R        B  5 15TEXT('Name')
+     A                                  5  2'Name . . :'
+     A            BALANCE        9S 2O  6 15EDTCDE(J)
+     A                                  6  2'Balance  :'
+     A            CREDIT         7Y 2B  7 15EDTWRD('   ,   .  ') RANGE(0 99999)
+     A                                  7  2'Credit . :'
+     A            STATUS         1A  B  8 15VALUES('A' 'I' 'D') DFT('A')
+     A N50                                  DSPATR(UL)
+     A  50                                  COLOR(RED)
+     A                                  8  2'Status . :'
+     A                                  9  2'Since  . :'
+     A            SINCE           L  B  9 15DATFMT(*MDY) DATSEP('/')
+     A            LASTTM          T  O  9 +3TIMFMT(*HMS)
+     A            AMOUNT         7P 0H
+     A            COUNT          9B 0H
+     A            NOTE          40A  I 11 15CHECK(LC) AUTO(RAB) DUP(60)
+     A                                      BLANKS(61) CHANGE(62) COMP(NE ' ')
+     A                                 11  2'Note . . :'
+     A                                 23  2'F3=Exit   F12=Cancel' COLOR(BLU)
+     A            MSG           78A  O 24  2DSPATR(HI)

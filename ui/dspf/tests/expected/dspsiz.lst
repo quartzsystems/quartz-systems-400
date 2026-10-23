@@ -1,0 +1,57 @@
+QS/400 DDS compiler
+  File . . . . . . . . . . . :  QGPL/DSPSIZ
+  Source . . . . . . . . . . :  QGPL/QDDSSRC(DSPSIZ)
+  Type . . . . . . . . . . . :  Display file (DSPF)
+
+  SEQNBR  ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8  DATE
+    1.00       A* Two display sizes with alternate locations and pages
+    2.00       A                                      DSPSIZ(*DS3 *DS4)
+    3.00       A                                      CF03(03 'Exit')
+    4.00       A          R SFL2                      SFL
+    5.00       A            LINE          70A  O  5  3
+    6.00       A *DS4                             5  3
+    7.00       A          R CTL2                      SFLCTL(SFL2)
+    8.00       A                                      SFLSIZ(100) SFLDSP SFLDSPCTL
+    9.00       A *DS3                                 SFLPAG(15)
+   10.00       A *DS4                                 SFLPAG(18)
+   11.00       A N30                                  SFLEND(*MORE)
+   12.00       A                                  1 30'Wide and narrow' DSPATR(HI)
+   13.00       A *DS4                             1 56
+   14.00       A            TITLE         40A  O  2  3
+   15.00       A *DS4                             2 40
+   16.00       A          R FOOT                      OVERLAY
+   17.00       A                                 23  2'F3=Exit'
+   18.00       A *DS4                            26  2
+
+  Display sizes: 24x80 (*DS3), 27x132 (*DS4)
+  Indicators at the front of each record buffer
+  File keywords: CF03(03 'Exit')
+
+  Record format SFL2    (subfile record)
+    Record keywords: SFL
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+  LINE        A         70       O      5    3    70      0                       [*DS4:5,3]
+    Output buffer 70 bytes (option indicators none); input buffer 1 bytes (response indicators 03); level identifier 311088853A52F
+
+  Record format CTL2    (subfile control record)
+    Subfile SFL2: SFLSIZ 100 SFLPAG 15 on lines 5-19 (*DS3); SFLSIZ 100 SFLPAG 18 on lines 5-22 (*DS4); SFLEND(*MORE)
+    Record keywords: SFLCTL(SFL2) SFLSIZ(100) SFLDSP SFLDSPCTL SFLPAG(15)<*DS3> SFLPAG(18)<*DS4> SFLEND(*MORE)<N30>
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+                                        1   30    15                              'Wide and narrow' DSPATR(HI) [*DS4:1,56]
+  TITLE       A         40       O      2    3    40      1                       [*DS4:2,40]
+    Output buffer 41 bytes (option indicators 30); input buffer 1 bytes (response indicators 03); level identifier D8A69CF939623
+
+  Record format FOOT
+    Record keywords: OVERLAY
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+                                       23    2     7                              'F3=Exit' [*DS4:26,2]
+    Output buffer 0 bytes (option indicators none); input buffer 1 bytes (response indicators 03); level identifier E3B0C44298FC1
+
+  Indicator usage
+  Ind  Option at                                 Response at                               Text
+    3                                            3.00
+   30  11.00
+
+  No messages.
+  Totals by severity: 00 0  10 0  20 0  30 0
+  0 message(s); compilation ended with severity 00.

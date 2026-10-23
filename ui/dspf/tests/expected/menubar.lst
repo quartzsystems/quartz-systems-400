@@ -1,0 +1,101 @@
+QS/400 DDS compiler
+  File . . . . . . . . . . . :  QGPL/MENUBAR
+  Source . . . . . . . . . . :  QGPL/QDDSSRC(MENUBAR)
+  Type . . . . . . . . . . . :  Display file (DSPF)
+
+  SEQNBR  ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8  DATE
+    1.00       A* A menu bar with pull-downs and push buttons
+    2.00       A                                      DSPSIZ(24 80 *DS3)
+    3.00       A                                      MNUCNL(CA12 12)
+    4.00       A                                      CF03(03 'Exit')
+    5.00       A          R MENUBAR                   MNUBAR
+    6.00       A            MNUFLD         2Y 0B  1  2MNUBARCHC(1 PULLFILE 'File')
+    7.00       A                                      MNUBARCHC(2 PULLEDIT 'Edit')
+    8.00       A                                      MNUBARCHC(3 PULLHELP 'Help')
+    9.00       A          R PULLFILE                  PULLDOWN
+   10.00       A            FILECHC        2Y 0B  1  1SNGCHCFLD
+      **  DDS6210 00  Keyword SNGCHCFLD is kept with the file and has no effect yet
+   11.00       A                                      CHOICE(1 '>Open')
+      **  DDS6210 00  Keyword CHOICE is kept with the file and has no effect yet
+   12.00       A                                      CHOICE(2 '>Save')
+      **  DDS6210 00  Keyword CHOICE is kept with the file and has no effect yet
+   13.00       A                                      CHOICE(3 'E>xit')
+      **  DDS6210 00  Keyword CHOICE is kept with the file and has no effect yet
+   14.00       A          R PULLEDIT                  PULLDOWN
+   15.00       A            EDITCHC        2Y 0B  1  1SNGCHCFLD
+      **  DDS6210 00  Keyword SNGCHCFLD is kept with the file and has no effect yet
+   16.00       A                                      CHOICE(1 '>Copy') CHOICE(2 '>Paste')
+      **  DDS6210 00  Keyword CHOICE is kept with the file and has no effect yet
+      **  DDS6210 00  Keyword CHOICE is kept with the file and has no effect yet
+   17.00       A          R PULLHELP                  PULLDOWN
+   18.00       A            HELPCHC        2Y 0B  1  1SNGCHCFLD CHOICE(1 '>About')
+      **  DDS6210 00  Keyword SNGCHCFLD is kept with the file and has no effect yet
+      **  DDS6210 00  Keyword CHOICE is kept with the file and has no effect yet
+   19.00       A          R APPREC                    MNUBARDSP(MENUBAR &MNUCHC)
+   20.00       A                                      OVERLAY
+   21.00       A            MNUCHC         2Y 0H
+   22.00       A                                  5  2'Application area'
+   23.00       A            BTN            2Y 0B 20  2PSHBTNFLD
+      **  DDS6210 00  Keyword PSHBTNFLD is kept with the file and has no effect yet
+   24.00       A                                      PSHBTNCHC(1 '>Ok' CF03)
+      **  DDS6210 00  Keyword PSHBTNCHC is kept with the file and has no effect yet
+   25.00       A                                      PSHBTNCHC(2 '>Cancel' CA12)
+      **  DDS6210 00  Keyword PSHBTNCHC is kept with the file and has no effect yet
+
+  Display sizes: 24x80 (*DS3)
+  Indicators at the front of each record buffer
+  File keywords: MNUCNL(CA12 12) CF03(03 'Exit')
+
+  Record format MENUBAR    (menu bar record)
+    Record keywords: MNUBAR
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+  MNUFLD      Y          2    0  B      1    2     3      0      2                MNUBARCHC(1 PULLFILE 'File') MNUBARCHC(2 PULLED...
+    Output buffer 2 bytes (option indicators none); input buffer 4 bytes (response indicators 03 12); level identifier D311D73D350A5
+
+  Record format PULLFILE    (pull-down record)
+    Record keywords: PULLDOWN
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+  FILECHC     Y          2    0  B      1    1     3      0      2                SNGCHCFLD CHOICE(1 '>Open') CHOICE(2 '>Save') C...
+    Output buffer 2 bytes (option indicators none); input buffer 4 bytes (response indicators 03 12); level identifier 2D1A8296B4A6B
+
+  Record format PULLEDIT    (pull-down record)
+    Record keywords: PULLDOWN
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+  EDITCHC     Y          2    0  B      1    1     3      0      2                SNGCHCFLD CHOICE(1 '>Copy') CHOICE(2 '>Paste')
+    Output buffer 2 bytes (option indicators none); input buffer 4 bytes (response indicators 03 12); level identifier 4DEFFFB5F6067
+
+  Record format PULLHELP    (pull-down record)
+    Record keywords: PULLDOWN
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+  HELPCHC     Y          2    0  B      1    1     3      0      2                SNGCHCFLD CHOICE(1 '>About')
+    Output buffer 2 bytes (option indicators none); input buffer 4 bytes (response indicators 03 12); level identifier A4D2270473E5A
+
+  Record format APPREC
+    Record keywords: MNUBARDSP(MENUBAR &MNUCHC) OVERLAY
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+  MNUCHC      Y          2    0  H                        0      2
+                                        5    2    16                              'Application area'
+  BTN         Y          2    0  B     20    2     3      2      4                PSHBTNFLD PSHBTNCHC(1 '>Ok' CF03) PSHBTNCHC(2 '...
+    Output buffer 4 bytes (option indicators none); input buffer 6 bytes (response indicators 03 12); level identifier 7B7DDFC368310
+
+  Indicator usage
+  Ind  Option at                                 Response at                               Text
+    3                                            4.00
+   12                                            3.00
+
+  Messages
+  ID       Sev       Seq  Text
+  DDS6210  00      10.00  Keyword SNGCHCFLD is kept with the file and has no effect yet
+  DDS6210  00      11.00  Keyword CHOICE is kept with the file and has no effect yet
+  DDS6210  00      12.00  Keyword CHOICE is kept with the file and has no effect yet
+  DDS6210  00      13.00  Keyword CHOICE is kept with the file and has no effect yet
+  DDS6210  00      15.00  Keyword SNGCHCFLD is kept with the file and has no effect yet
+  DDS6210  00      16.00  Keyword CHOICE is kept with the file and has no effect yet
+  DDS6210  00      16.00  Keyword CHOICE is kept with the file and has no effect yet
+  DDS6210  00      18.00  Keyword SNGCHCFLD is kept with the file and has no effect yet
+  DDS6210  00      18.00  Keyword CHOICE is kept with the file and has no effect yet
+  DDS6210  00      23.00  Keyword PSHBTNFLD is kept with the file and has no effect yet
+  DDS6210  00      24.00  Keyword PSHBTNCHC is kept with the file and has no effect yet
+  DDS6210  00      25.00  Keyword PSHBTNCHC is kept with the file and has no effect yet
+  Totals by severity: 00 12  10 0  20 0  30 0
+  12 message(s); compilation ended with severity 00.

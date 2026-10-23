@@ -1,0 +1,18 @@
+     A* Two display sizes with alternate locations and pages
+     A                                      DSPSIZ(*DS3 *DS4)
+     A                                      CF03(03 'Exit')
+     A          R SFL2                      SFL
+     A            LINE          70A  O  5  3
+     A *DS4                             5  3
+     A          R CTL2                      SFLCTL(SFL2)
+     A                                      SFLSIZ(100) SFLDSP SFLDSPCTL
+     A *DS3                                 SFLPAG(15)
+     A *DS4                                 SFLPAG(18)
+     A N30                                  SFLEND(*MORE)
+     A                                  1 30'Wide and narrow' DSPATR(HI)
+     A *DS4                             1 56
+     A            TITLE         40A  O  2  3
+     A *DS4                             2 40
+     A          R FOOT                      OVERLAY
+     A                                 23  2'F3=Exit'
+     A *DS4                            26  2

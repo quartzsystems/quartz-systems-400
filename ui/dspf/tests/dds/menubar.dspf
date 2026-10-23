@@ -1,0 +1,25 @@
+     A* A menu bar with pull-downs and push buttons
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      MNUCNL(CA12 12)
+     A                                      CF03(03 'Exit')
+     A          R MENUBAR                   MNUBAR
+     A            MNUFLD         2Y 0B  1  2MNUBARCHC(1 PULLFILE 'File')
+     A                                      MNUBARCHC(2 PULLEDIT 'Edit')
+     A                                      MNUBARCHC(3 PULLHELP 'Help')
+     A          R PULLFILE                  PULLDOWN
+     A            FILECHC        2Y 0B  1  1SNGCHCFLD
+     A                                      CHOICE(1 '>Open')
+     A                                      CHOICE(2 '>Save')
+     A                                      CHOICE(3 'E>xit')
+     A          R PULLEDIT                  PULLDOWN
+     A            EDITCHC        2Y 0B  1  1SNGCHCFLD
+     A                                      CHOICE(1 '>Copy') CHOICE(2 '>Paste')
+     A          R PULLHELP                  PULLDOWN
+     A            HELPCHC        2Y 0B  1  1SNGCHCFLD CHOICE(1 '>About')
+     A          R APPREC                    MNUBARDSP(MENUBAR &MNUCHC)
+     A                                      OVERLAY
+     A            MNUCHC         2Y 0H
+     A                                  5  2'Application area'
+     A            BTN            2Y 0B 20  2PSHBTNFLD
+     A                                      PSHBTNCHC(1 '>Ok' CF03)
+     A                                      PSHBTNCHC(2 '>Cancel' CA12)

@@ -1,0 +1,20 @@
+     A* Conditioning: And/Or lines, INDARA, SETOF and CHANGE
+     A                                      INDARA RSTDSP
+     A                                      VLDCMDKEY(99 'Key pressed')
+     A                                      CA03(03)
+     A          R HEADER                    SETOF(40 'Reset') CHANGE(41)
+     A                                  1 30'Order entry'
+     A  20N21                           3  2'Rush order'
+     AA 22                                  DSPATR(BL)
+     A  30
+     AO 31                                  COLOR(PNK)
+     A            ORDNO          7S 0B  5 15
+     A  50                                  DSPATR(PR)
+     A N50                                  DSPATR(HI)
+     A                                  5  2'Order  . :'
+     A            QTY            5Y 0B  6 15
+     A  60                                  ERRMSG('Quantity is not valid' 60)
+     A                                  6  2'Quantity :'
+     A          R FOOTER                    OVERLAY CLRL(*NO)
+     A  90                                  PROTECT
+     A                                 23  2'F3=Exit'

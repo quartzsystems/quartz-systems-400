@@ -1,0 +1,17 @@
+     A* Windows: placed, default and borrowed
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA12(12 'Cancel')
+     A          R WIN1                      WINDOW(8 10 10 60)
+     A                                      WDWTITLE((*TEXT 'Confirm'))
+     A                                      WDWBORDER((*COLOR BLU) +
+     A                                      (*CHAR '........'))
+     A                                      RMVWDW
+     A                                  2  2'Delete this customer?'
+     A            ANSWER         1A  B  4  2VALUES('Y' 'N') DFT('N')
+     A                                  4  5'Y=Yes, N=No'
+     A                                  9  2'F12=Cancel' COLOR(BLU)
+     A          R WIN2                      WINDOW(*DFT 5 40) USRRSTDSP
+     A                                  1  1'Please wait...' DSPATR(BL)
+     A          R WIN3                      WINDOW(WIN1)
+     A                                  2  2'Customer deleted' DSPATR(HI)
+     A                                  9  2'Press Enter to continue'

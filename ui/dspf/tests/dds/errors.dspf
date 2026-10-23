@@ -1,0 +1,30 @@
+     A* Everything the compiler refuses
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      MSGLOC(30)
+     A                                      CF25(25)
+     A                                      BOGUS
+     A                                      SFLDSP
+     A          R BAD                       TEXT('Everything wrong')
+     A                                  1  1'Top left is not allowed'
+     A            FLD1          10A  B  3  2
+     A            FLD2          10A  O  3  8
+     A  5X                                  DSPATR(HI) OVERLAY
+     A            FLD1           5A  O  5  2
+     A            FLD3           5A  I 24 76
+     A            FLD4          15A  O 24 70
+     A            HID            5A  H  7  2
+     A            NOLOC          5A  O
+     A            TXT            5A  O  8  2EDTCDE(J) CHECK(RB)
+     A                                      DSPATR(XX) COLOR(BLK)
+     A            NUM            7S 2O  9  2DSPATR(PR)
+     A            QQ             5Q  O 10  2
+     A            FLD5           3A  O 10 +2
+     A          R SFLONLY                   SFL
+     A            X              1A  O  5  2
+     A          R WIN                       WINDOW(20 70 10 60)
+     A                                  1  1'x'
+     A          R CTLBAD                    SFLCTL(SFLONLY)
+     A          R SFL9                      SFL
+     A            Y              1A  O  5  2
+     A          R CTL9                      SFLCTL(SFL9) SFLSIZ(5) SFLPAG(10)
+     A          R LOST                      SFLCTL(NOWHERE) SFLSIZ(1) SFLPAG(1)
