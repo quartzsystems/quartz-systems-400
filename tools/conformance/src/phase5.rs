@@ -1505,7 +1505,13 @@ impl Suite {
         let rcl = s.command("svc.rclstg *CHECK", Duration::from_secs(300))?;
         s.command("dltf QGPL/WMLCK", CMD)?;
         if !check.lines().any(|l| l.trim() == "0") {
-            return Err(format!("the record is still locked:\n{check}"));
+            // What went wrong: the console job's log and the inquiries
+            // the batch jobs left at the operator queue.
+            let log = s.command("dspjoblog", CMD).unwrap_or_default();
+            let opr = s.command("dspmsg QSYSOPR", CMD).unwrap_or_default();
+            return Err(format!(
+                "the record is still locked:\n{check}\n--- job log\n{log}\n--- QSYSOPR\n{opr}"
+            ));
         }
         if !chk.contains(": 0 bad") || !rcl.contains("0 problem(s)") {
             return Err(format!("the store after ENDSBS:\n{chk}\n{rcl}"));
