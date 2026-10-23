@@ -20,12 +20,11 @@ is in `expected/` and the test passes.
    `ADDDUR` on an invalid date under `MONMSG MCH0000` and prints the
    identifier.
 
-3. **Message identifier of a string operation out of range.** The
-   machine answers status `00100` (the RPG runtime's `RNX0100`), not
-   `00121`. Still open here: the runtime raises `MCH0603` for `%SUBST`,
-   `%SCAN` and `%REPLACE` out of range, which the IR kit and `QIR.md`
-   describe; moving them to `RNX0100` (the condition exists in
-   `codegen::Cond`) changes the STR and MON kit cases with it.
+3. **Message identifier of a string operation out of range.** Settled
+   on pub400: status `00100`, the RPG runtime's `RNX0100`, not the
+   machine's `MCH0603`. Implemented: `%SUBST`, `%SCAN`, `%REPLACE` and a
+   varying length outside the string raise `RNX0100`; an array index out
+   of range stays `MCH0603` (status `00121`), as `STATMAP` confirms.
 
 4. **Pointer arithmetic within static storage.** The machine reads one
    byte past a static *and* past an automatic variable without error:

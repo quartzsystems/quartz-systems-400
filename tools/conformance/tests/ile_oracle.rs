@@ -13,7 +13,7 @@ use std::path::Path;
 /// the program and the start of its line.
 /// Readings the machine settled that the implementation does not match
 /// yet: program and line.
-const OPEN: &[(&str, usize)] = &[("SUBSTBAD", 1), ("PTRSTAT", 2)];
+const OPEN: &[(&str, usize)] = &[("PTRSTAT", 2)];
 
 fn ours() -> Vec<(&'static str, &'static str)> {
     vec![
@@ -22,7 +22,7 @@ fn ours() -> Vec<(&'static str, &'static str)> {
         ("CVTCHAR", "[100]"),
         ("CVTCHAR", "[-.50]"),
         ("DATEBAD", "status 112"),
-        ("SUBSTBAD", "status 121"),
+        ("SUBSTBAD", "status 100"),
         ("RESUMEG", "after, z=0"),
         ("REPLYR", "after, z=0"),
         ("STATMAP", "MCH1211 status 102"),
