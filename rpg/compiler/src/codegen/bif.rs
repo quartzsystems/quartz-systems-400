@@ -297,7 +297,7 @@ impl Gen<'_> {
                 let t = self.tmp(&ty);
                 let half = if name.ends_with('H') { " halfadj" } else { "" };
                 if v.ty.is_string() {
-                    self.b.ins(format!("cvt {}, {}{half}", t.op, v.op));
+                    self.char_to_num(&t, &v, name.ends_with('H'));
                 } else if v.ty.is_numeric() {
                     let s = self.dec_operand(&v);
                     self.b.ins(format!("dec.mov {}, {s}{half}", t.op));
@@ -364,6 +364,8 @@ impl Gen<'_> {
             }
             "%EDITC" => self.editc(args),
             "%EDITW" => self.editw(args),
+            "%STATUS" if args.is_empty() => Some(V::place(Ty::Zoned(5, 0), "$status")),
+            "%ERROR" if args.is_empty() => Some(V::place(Ty::Ind, "$errind")),
             "%PARMS" => {
                 let r = self.b.reg();
                 self.b.ins(format!("{r} = parms"));
@@ -500,6 +502,28 @@ impl Gen<'_> {
         }
     }
 
+    /// Character data to a number by RPG's rules (blanks around it, a
+    /// sign before or after, the `DECEDIT` point); anything else is
+    /// status 105.
+    pub fn char_to_num(&mut self, dst: &V, src: &V, half: bool) {
+        let s = self.lit_storage(src);
+        let n = src.ty.str_len().unwrap_or(1);
+        let sv = V::place(src.ty.clone(), s.clone());
+        let sd = self.desc_of(&sv);
+        let dd = self.desc_of(dst);
+        self.rt_proc(
+            "_QRNX_CHARTONUM",
+            "($dst: bytes(1) *VARSIZE, byval $dd: i64, $src: bytes(1) *VARSIZE, byval $sd: i64, byval $flags: i32)",
+        );
+        let point = i32::from(u8::try_from(self.ctl.decedit.0).unwrap_or(b'.'));
+        let _ = n;
+        self.b.ins(format!(
+            "callb _QRNX_CHARTONUM({}, {dd}, {s}, {sd}, {})",
+            dst.op,
+            point | (i32::from(half) << 8)
+        ));
+    }
+
     /// `%CHAR` of a number: IBM's form (no leading zeros, a leading
     /// minus, the `DECEDIT` point) through the runtime library.
     pub fn char_of_number(&mut self, v: &V) -> V {
@@ -563,7 +587,7 @@ impl Gen<'_> {
         let t = self.tmp(&Ty::Packed(d, s));
         let half = if name == "%DECH" { " halfadj" } else { "" };
         if v.ty.is_string() {
-            self.b.ins(format!("cvt {}, {}{half}", t.op, v.op));
+            self.char_to_num(&t, &v, name == "%DECH");
         } else if v.ty.is_numeric() {
             let o = self.dec_operand(&v);
             self.b.ins(format!("dec.mov {}, {o}{half}", t.op));

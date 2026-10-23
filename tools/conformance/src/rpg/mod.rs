@@ -232,9 +232,11 @@ fn program(c: &rpgc::Compiled, name: &str) -> Result<ile::ProgramObject, String>
 
 /// The spooled files as page/line rows of printed lines.
 fn spooled(spool: &MemSpool) -> Vec<Spooled> {
+    // A spooled file nothing was printed in is not kept (pub400).
     spool
         .files
         .values()
+        .filter(|f| f.records > 0)
         .map(|f| {
             let (pages, _) = spool::scs::decode(&f.data);
             Spooled {
@@ -261,6 +263,7 @@ pub fn notes(c: &rpgc::Compiled) -> String {
 }
 
 /// Compile and run a case: its outcome, listing and notes.
+#[allow(clippy::many_single_char_names)]
 pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
     let c = compile(case);
     let notes = notes(&c);
@@ -299,9 +302,11 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
         let r = job.call_program(&case.name, "QGPL", &[]);
         DEADLINE.store(0, std::sync::atomic::Ordering::Relaxed);
         job.close_printers();
-        o.run = match r {
-            Ok(()) => Run::Ok,
-            Err(c) => Run::Escape(c.msgid()),
+        // An exception left pending ended the program with an escape.
+        o.run = match (r, &job.exception) {
+            (Err(c), _) => Run::Escape(c.msgid()),
+            (Ok(()), Some(e)) => Run::Escape(e.msgid.clone()),
+            (Ok(()), None) => Run::Ok,
         };
         sysapi::uninstall(&job);
         o.spool = spooled(&spool.0.borrow());

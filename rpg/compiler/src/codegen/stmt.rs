@@ -297,6 +297,29 @@ impl Gen<'_> {
         self.subrs.get_mut(name).expect("just made")
     }
 
+    /// `EXSR name` of a main-procedure subroutine: a call; a `RETURN`
+    /// inside it ends the main procedure.
+    pub fn exsr_call(&mut self, name: &str) {
+        let rc = self.b.reg();
+        self.b.ins(format!("{rc} = callb {}()", Gen::subr_proc(name)));
+        let cont = self.b.label();
+        let back = self.b.label();
+        let one = self.b.reg();
+        self.b.ins(format!("{one} = cmp.eq {rc}, {}", crate::codegen::exc::rp::RETURN));
+        self.b.term(format!("brif {one}, {back}, {cont}"));
+        self.b.place(&back);
+        if self.in_subr_proc {
+            self.b.term(format!("ret {rc}"));
+        } else {
+            let exit = self.main_exit.clone().unwrap_or_default();
+            self.b.term(format!("br {exit}"));
+        }
+        self.b.place(&cont);
+        if !self.defined_subrs.contains(name) {
+            self.called_subrs.insert(name.to_string());
+        }
+    }
+
     /// `EXSR name`.
     pub fn exsr(&mut self, name: &str) {
         let back = self.b.label();
@@ -327,6 +350,30 @@ impl Gen<'_> {
             self.b.place(&run);
             Some(skip)
         };
+        let op = &s.op;
+        // The (E) extender: the operation in a monitor region of its own.
+        if op.ext.contains('E') && !self.in_error_extender {
+            self.in_error_extender = true;
+            let mut used = 1;
+            self.with_error_extender(|g| used = g.statement_body(stmts, k));
+            self.in_error_extender = false;
+            if let Some(skip) = skip {
+                self.b.place(&skip);
+            }
+            return k + used;
+        }
+        let used = self.statement_body(stmts, k);
+        if let Some(skip) = skip {
+            self.b.place(&skip);
+        }
+        k + used
+    }
+
+    /// One statement's operation, after its conditioning; how many
+    /// statements it took.
+    #[allow(clippy::too_many_lines)]
+    fn statement_body(&mut self, stmts: &[&Stmt], k: usize) -> usize {
+        let s = stmts[k];
         let op = &s.op;
         let (base, sfx) = rpgfront::parse::ops::split_suffix(&op.code);
         let half = op.ext.contains('H');
@@ -498,7 +545,11 @@ impl Gen<'_> {
                     Expr::Special { word, .. } => Some(word.clone()),
                     _ => None,
                 })) {
-                    self.exsr(&n);
+                    if self.subr_procs {
+                        self.exsr_call(&n);
+                    } else {
+                        self.exsr(&n);
+                    }
                 }
             }
             ("BEGSR", _) => {
@@ -535,6 +586,7 @@ impl Gen<'_> {
                     self.err(ids::UNBALANCED, 30, "ENDSR");
                 }
             }
+            ("LEAVESR", _) if self.in_subr_proc => self.b.term(format!("ret {}", crate::codegen::exc::rp::NONE)),
             ("LEAVESR", _) => {
                 let n = self.open.iter().rev().find_map(|o| match o {
                     Open::Subr(n) => Some(n.clone()),
@@ -581,6 +633,7 @@ impl Gen<'_> {
                     }
                 }
             }
+            ("RETURN", _) if self.in_subr_proc => self.b.term(format!("ret {}", crate::codegen::exc::rp::RETURN)),
             ("RETURN", _) => self.return_op(op.xf2.as_ref()),
             ("CALLP", _) => {
                 if let Some(e) = &op.xf2 {
@@ -639,13 +692,11 @@ impl Gen<'_> {
             }
             ("ON-ERROR" | "ON-EXCP", _) => self.on_error(op, base == "ON-EXCP"),
             ("ENDMON", _) => self.end_monitor(),
+            ("SND-MSG", _) => self.snd_msg(op),
             ("AND" | "OR", _) => self.err(ids::UNBALANCED, 30, op.code.clone()),
             _ => self.err(ids::UNSUPPORTED, 30, op.code.clone()),
         }
-        if let Some(skip) = skip {
-            self.b.place(&skip);
-        }
-        k + used
+        used
     }
 
     /// `ON-ERROR` (status codes, `*PROGRAM`, `*FILE`, `*ALL`) or
@@ -662,6 +713,7 @@ impl Gen<'_> {
         self.b.term(format!("br {end}"));
         let label = self.b.label();
         self.b.place(&label);
+        self.psds_error();
         let items: Vec<Expr> = match &op.xf2 {
             Some(Expr::List(v, _)) => v.clone(),
             Some(e) => vec![e.clone()],
@@ -704,12 +756,69 @@ impl Gen<'_> {
             self.b.ins(format!("endmon {name}"));
         }
         self.b.place(&end);
+        // The status is cleared once the group is done.
+        self.b.ins("dec.mov $status, 0");
         let list: Vec<String> = if handlers.is_empty() {
             vec![format!("*ALL -> {end}")]
         } else {
             handlers.iter().map(|(s, l)| format!("{s} -> {l}")).collect()
         };
         self.b.lines[line] = format!("  monitor {name}, {}", list.join(", "));
+    }
+
+    fn snd_msg(&mut self, op: &rpgfront::ast::Op) {
+        let items: Vec<Expr> = match &op.xf2 {
+            Some(Expr::List(v, _)) => v.clone(),
+            Some(e) => vec![e.clone()],
+            None => Vec::new(),
+        };
+        let mut kind = "*INFO";
+        let mut msg = None;
+        let mut target = None;
+        for it in items {
+            match it {
+                Expr::Special { ref word, .. } if word == "*INFO" || word == "*ESCAPE" => {
+                    kind = if word == "*ESCAPE" { "*ESCAPE" } else { "*INFO" };
+                }
+                Expr::Bif { ref name, ref args, .. } if name == "%TARGET" => target = args.first().cloned(),
+                e => msg = Some(e),
+            }
+        }
+        let to = match (&target, kind) {
+            (Some(Expr::Special { word, .. }), _) if word == "*SELF" => "*SAME",
+            (Some(Expr::Special { word, .. }), _) if word == "*EXT" => "*EXT",
+            (_, "*ESCAPE") => "*PRV",
+            _ => "*SAME",
+        };
+        let (msgid, msgf, data) = match msg {
+            Some(Expr::Bif { name, args, .. }) if name == "%MSG" => {
+                let id = args.first().and_then(|a| self.expr(a, Want::default()));
+                let f = args.get(1).and_then(|a| self.expr(a, Want::default()));
+                let d = args.get(2).and_then(|a| self.expr(a, Want::default()));
+                (id, f, d)
+            }
+            Some(e) => {
+                // Text: an immediate message, as CPF9897's data.
+                let d = self.expr(&e, Want::default());
+                (Some(V::lit(Ty::Char(7), quote("CPF9897"))), Some(V::lit(Ty::Char(10), quote("QCPFMSG"))), d)
+            }
+            None => return,
+        };
+        let (Some(id), Some(f)) = (msgid, msgf) else { return };
+        // The identifier as char(7), the file as char(10).
+        let idt = self.b.temp("char(7)");
+        let idv = self.as_chars(&id);
+        self.b.ins(format!("mov {idt}, {}", idv.op));
+        let ft = self.b.temp("char(10)");
+        let fv = self.as_chars(&f);
+        self.b.ins(format!("mov {ft}, {}", fv.op));
+        let (id, f) = (idt, ft);
+        let data = data.map(|d| {
+            let d = self.as_chars(&d);
+            self.lit_storage(&d)
+        });
+        let d = data.map(|d| format!(" data({d})")).unwrap_or_default();
+        self.b.ins(format!("sndpgmmsg msgid({id}) msgf({f}){d} type({kind}) to({to})"));
     }
 
     fn tag_label(&mut self, name: &str) -> String {
@@ -1005,6 +1114,20 @@ impl Gen<'_> {
     fn return_op(&mut self, v: Option<&Expr>) {
         if let Some(exit) = self.main_exit.clone() {
             // The main procedure: the cycle's end of calculations.
+            self.b.term(format!("br {exit}"));
+            return;
+        }
+        // With ON-EXIT, the value waits while the exit section runs.
+        if let Some((exit, temp)) = self.on_exit.clone() {
+            if let (Some(e), Some(t), Some(rt)) = (v, &temp, self.ret.clone()) {
+                let mode = qdecimal::Mode {
+                    result_scale: rt.shape().map_or(0, |(_, s)| s),
+                    ..qdecimal::Mode::default()
+                };
+                if let Some(val) = self.expr(e, Want { mode }) {
+                    self.assign(&V::place(rt, t.clone()), &val, false);
+                }
+            }
             self.b.term(format!("br {exit}"));
             return;
         }
@@ -1476,6 +1599,84 @@ fn inz_value(g: &mut Gen<'_>, ty: &Ty, dim: u32, place: &str, e: &Expr) {
     }
 }
 
+/// The main procedure's mainline calculations, and its subroutines by
+/// name with their bodies (without `BEGSR`, with the `ENDSR`).
+pub fn split_subroutines<'a>(g: &mut Gen<'_>, stmts: &[&'a Stmt]) -> (Vec<&'a Stmt>, Vec<(String, Vec<&'a Stmt>)>) {
+    let mut main = Vec::new();
+    let mut after: Vec<&'a Stmt> = Vec::new();
+    let mut subrs: Vec<(String, Vec<&'a Stmt>)> = Vec::new();
+    let mut cur: Option<(String, Vec<&'a Stmt>)> = None;
+    for s in stmts {
+        match s.op.code.as_str() {
+            "BEGSR" => {
+                if let Some(c) = cur.take() {
+                    subrs.push(c);
+                }
+                let name = s.op.f1.first().and_then(|e| match e {
+                    Expr::Ref { name, .. } => Some(name.clone()),
+                    Expr::Special { word, .. } => Some(word.clone()),
+                    _ => None,
+                });
+                cur = Some((name.unwrap_or_default(), vec![*s]));
+            }
+            "ENDSR" => {
+                if let Some(mut c) = cur.take() {
+                    c.1.push(*s);
+                    subrs.push(c);
+                } else {
+                    main.push(*s);
+                }
+            }
+            _ => match &mut cur {
+                Some(c) => c.1.push(*s),
+                None if subrs.is_empty() => main.push(*s),
+                // After the subroutines: an error, and ignored.
+                None => after.push(*s),
+            },
+        }
+    }
+    if let Some(c) = cur {
+        subrs.push(c);
+    }
+    for s in after {
+        g.diags.push(rpgfront::Diag::new(ids::AFTER_ENDSR, 30, s.at));
+    }
+    (main, subrs)
+}
+
+/// A main-procedure subroutine as a procedure: `-> i32`, the code of
+/// its return point (`codegen::exc::rp`).
+pub fn subroutine_proc(g: &mut Gen<'_>, name: &str, body: &[&Stmt]) {
+    let saved = std::mem::replace(&mut g.b, Body::new());
+    let saved_open = std::mem::take(&mut g.open);
+    g.in_subr_proc = true;
+    g.defined_subrs.insert(name.to_string());
+    let inner: Vec<&Stmt> = body
+        .iter()
+        .copied()
+        .filter(|s| s.op.code != "BEGSR" && s.op.code != "ENDSR")
+        .collect();
+    if let Some(b) = body.first() {
+        g.mark(b.at);
+    }
+    calcs(g, &inner);
+    let end = body.iter().find(|s| s.op.code == "ENDSR");
+    let code = end
+        .and_then(|e| match e.op.f2.first() {
+            Some(Expr::Lit(Lit::Char(s), _)) => Some(crate::codegen::exc::return_point(s)),
+            _ => None,
+        })
+        .unwrap_or(crate::codegen::exc::rp::NONE);
+    if let Some(e) = end {
+        g.mark(e.at);
+    }
+    g.b.term(format!("ret {code}"));
+    g.in_subr_proc = false;
+    let b = std::mem::replace(&mut g.b, saved);
+    g.open = saved_open;
+    g.subr_bodies.push(b.finish(&format!("proc {}() -> i32", Gen::subr_proc(name)), "ret 0"));
+}
+
 /// Generate calculations, from start to end, with their structure.
 /// Subroutines come last: a calculation outside `BEGSR`..`ENDSR` after
 /// the first subroutine is `RNF5005` and ignored.
@@ -1536,6 +1737,67 @@ fn fill_switch(g: &mut Gen<'_>, idx: usize, s: &Subr) {
     let arms: Vec<String> = s.returns.iter().enumerate().map(|(i, l)| format!("{}: {l}", i + 1)).collect();
     let dft = s.returns[0].clone();
     g.b.lines[idx] = format!("  {r} = load {}\n  switch {r}, [{}], default {dft}", s.slot, arms.join(", "));
+}
+
+/// A procedure body with an `ON-EXIT` section: the body in a monitor
+/// region; `RETURN`, the end, or an exception go to the section; then
+/// the value is returned, or the exception sent on.
+fn on_exit_body(g: &mut Gen<'_>, body: &[&Stmt], at: &Stmt, exit: &[&Stmt]) {
+    let value = g.ret.clone().map(|rt| {
+        let t = g.b.temp(&g.ir_ty(&rt));
+        default_value(g, &rt, 0, &t);
+        t
+    });
+    let abnormal = g.b.temp("ind");
+    g.b.ins(format!("store {abnormal}, *OFF"));
+    g.monitors += 1;
+    let name = format!("X{}", g.monitors);
+    let handler = g.b.label();
+    let exit_l = g.b.label();
+    g.b.ins(format!("monitor {name}, *ALL -> {handler}"));
+    g.on_exit = Some((exit_l.clone(), value.clone()));
+    calcs(g, body);
+    g.on_exit = None;
+    if g.b.is_open() {
+        g.b.term(format!("br {exit_l}"));
+    }
+    let close = g.b.label();
+    g.b.place(&close);
+    g.b.ins(format!("endmon {name}"));
+    g.b.term(format!("br {exit_l}"));
+    g.b.place(&handler);
+    g.psds_error();
+    g.b.ins(format!("store {abnormal}, *ON"));
+    g.b.term(format!("br {exit_l}"));
+    g.b.place(&exit_l);
+    g.mark(at.at);
+    // ON-EXIT ind: whether the procedure ended abnormally.
+    if let Some(e) = &at.op.xf2
+        && let Some(t) = g.target(e)
+    {
+        g.b.ins(format!("mov {}, {abnormal}", t.op));
+    }
+    calcs(g, exit);
+    if g.b.is_open() {
+        let again = g.b.label();
+        let normal = g.b.label();
+        let r = g.b.reg();
+        g.b.ins(format!("{r} = load {abnormal}"));
+        g.b.term(format!("brif {r}, {again}, {normal}"));
+        g.b.place(&again);
+        g.reraise();
+        g.b.term(format!("br {normal}"));
+        g.b.place(&normal);
+        match (value, g.ret.clone()) {
+            (Some(t), Some(rt)) if is_reg_type(&rt) => {
+                let r = g.b.reg();
+                g.b.ins(format!("{r} = load {t}"));
+                g.b.term(format!("ret {r}"));
+            }
+            (Some(t), Some(_)) => g.b.term(format!("ret {t}")),
+            _ => g.b.term("ret"),
+        }
+    }
 }
 
 /// A subprocedure.
@@ -1603,7 +1865,11 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
         }
     }
     let stmts: Vec<&Stmt> = p.calcs.iter().collect();
-    calcs(g, &stmts);
+    if let Some(k) = stmts.iter().position(|s| s.op.code == "ON-EXIT") {
+        on_exit_body(g, &stmts[..k], stmts[k], &stmts[k + 1..]);
+    } else {
+        calcs(g, &stmts);
+    }
     if g.b.is_open() {
         match g.ret.clone() {
             None => g.b.term("ret"),

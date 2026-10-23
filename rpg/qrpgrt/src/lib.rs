@@ -10,6 +10,8 @@
 #![deny(missing_docs)]
 #![allow(clippy::too_many_arguments, clippy::many_single_char_names, clippy::trivially_copy_pass_by_ref, clippy::unreadable_literal)]
 
+pub mod cvt;
+pub mod exc;
 pub mod fmt;
 pub mod mov;
 pub mod natives;
@@ -25,6 +27,10 @@ pub fn procedures() -> Vec<(&'static str, usize)> {
         ("_QRNX_MOVE", natives::move_ as *const () as usize),
         ("_QRNX_POW", natives::pow as *const () as usize),
         ("_QRNX_SQRT", natives::sqrt as *const () as usize),
+        ("_QRNX_PSDSINIT", exc::psds_init as *const () as usize),
+        ("_QRNX_PSDSERR", exc::psds_err as *const () as usize),
+        ("_QRNX_RERAISE", exc::reraise as *const () as usize),
+        ("_QRNX_CHARTONUM", cvt::char_to_num as *const () as usize),
     ]
 }
 

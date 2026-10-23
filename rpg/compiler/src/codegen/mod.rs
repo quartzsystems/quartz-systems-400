@@ -13,6 +13,7 @@
 
 pub mod bif;
 pub mod emit;
+pub mod exc;
 pub mod expr;
 pub mod output;
 pub mod stmt;
@@ -173,6 +174,21 @@ pub struct Gen<'a> {
     pub undefined_at: BTreeSet<u32>,
     /// Where the reference being resolved is.
     pub ref_at: Pos,
+    /// Main-procedure subroutines are procedures (`EXSR` calls them).
+    pub subr_procs: bool,
+    /// Generating a subroutine's procedure.
+    pub in_subr_proc: bool,
+    /// The subroutine procedures made, as IR text.
+    pub subr_bodies: Vec<String>,
+    /// Subroutines with a procedure.
+    pub defined_subrs: BTreeSet<String>,
+    /// Subroutines called.
+    pub called_subrs: BTreeSet<String>,
+    /// Generating an operation inside its `(E)` region.
+    pub in_error_extender: bool,
+    /// Inside a procedure with `ON-EXIT`: where `RETURN` goes, and the
+    /// temporary holding the value.
+    pub on_exit: Option<(String, Option<String>)>,
 }
 
 impl Gen<'_> {
@@ -201,10 +217,11 @@ impl Gen<'_> {
         self.t.ir_type(t)
     }
 
-    /// Mark the start of a statement.
+    /// Mark the start of a statement: the runtime keeps the statement
+    /// running for the PSDS, dumps and the debugger.
     pub fn mark(&mut self, at: Pos) {
         self.at = at;
-        if self.debug && self.marked.insert(at.line) {
+        if self.marked.insert(at.line) {
             self.b.ins(format!("debug.stmt {}", at.line));
         }
     }
@@ -276,6 +293,13 @@ pub fn module(
         undefined: BTreeSet::new(),
         undefined_at: BTreeSet::new(),
         ref_at: Pos::default(),
+        subr_procs: false,
+        in_subr_proc: false,
+        subr_bodies: Vec::new(),
+        defined_subrs: BTreeSet::new(),
+        called_subrs: BTreeSet::new(),
+        in_error_extender: false,
+        on_exit: None,
     };
     let mut out = String::new();
     let actgrp = if ctl.dftactgrp {
@@ -331,6 +355,9 @@ pub fn module(
         let _ = writeln!(out, "static ${}: ind", n.to_ascii_lowercase());
     }
     out.push_str("static $init_done: ind\n");
+    out.push_str("static $status: zoned(5,0)\n");
+    out.push_str("static $errind: ind\n");
+    out.push_str("static $psds_none: char(1)\n");
     for (id, s) in g.t.syms.iter().enumerate() {
         if s.scope != 0 || s.template || s.parent.is_some() {
             continue;
@@ -352,13 +379,24 @@ pub fn module(
     }
     // Procedures: the main one, then the subprocedures.
     let mut procs = String::new();
-    if !ctl.nomain {
+    if let Some(main) = &ctl.main {
+        procs.push_str(&linear_entry(&mut g, main));
+    } else if !ctl.nomain {
         procs.push_str(&main_proc(&mut g, m));
+        procs.push_str(&pep(&g.opts.name, &mangle(&g.opts.name)));
+    }
+    if ctl.main.is_some() || ctl.nomain {
+        for f in files.iter().filter(|f| f.scope == 0 && !f.template) {
+            g.diags.push(rpgfront::Diag::new(ids::CLOSE_EXPLICITLY, 10, Pos { line: f.def_line, col: 7 }).arg(f.name.clone()));
+        }
     }
     for (i, p) in m.procs.iter().enumerate() {
         procs.push_str(&stmt::subprocedure(&mut g, p, locals.get(i).copied().unwrap_or(0)));
     }
     procs.push_str(&init_proc(&mut g));
+    for s in std::mem::take(&mut g.subr_bodies) {
+        procs.push_str(&s);
+    }
     for p in &g.pages {
         let _ = writeln!(out, "static {p}: zoned(4,0)");
     }
@@ -399,6 +437,8 @@ fn init_proc(g: &mut Gen<'_>) -> String {
         stmt::init_symbol(g, id);
     }
     g.b.ins("mov $in.all_, *ZEROS".to_string());
+    g.b.ins("dec.mov $status, 0".to_string());
+    g.b.ins("store $errind, *OFF".to_string());
     for p in g.pages.clone() {
         g.b.ins(format!("mov {p}, *ZEROS"));
     }
@@ -430,15 +470,31 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
         g.b.ins(format!("{r} = dbopen {}", mangle(&f.name)));
     }
     g.b.ins("store $init_done, *ON");
+    g.psds_init(&g.opts.name.clone());
     g.b.place(&start);
     g.b.ins("store $in1p, *ON");
     // Where RETURN goes: the end, closing when LR is on.
     let finish = g.b.label();
     g.main_exit = Some(finish.clone());
     let (detail, total): (Vec<&Stmt>, Vec<&Stmt>) = m.calcs.iter().partition(|s| !is_total(&s.level));
+    // Subroutines become procedures of their own.
+    let (detail, subrs) = stmt::split_subroutines(g, &detail);
+    g.subr_procs = true;
+    let has_pssr = subrs.iter().any(|(n, _)| n == "*PSSR");
+    for (name, body) in &subrs {
+        stmt::subroutine_proc(g, name, body);
+    }
     let outputs = g.outputs.clone();
     let top = g.b.label();
     g.b.place(&top);
+    // With a *PSSR, the cycle is one monitor region; its handler runs
+    // the subroutine and resumes at the top (re-entering the region)
+    // or hands the exception on.
+    let pssr_handler = g.b.label();
+    if has_pssr {
+        g.b.ins(format!("monitor PSSR, *ALL -> {pssr_handler}"));
+    }
+    g.psds_routine("*DETL");
     g.output(&outputs, output::Step::HeadingDetail);
     g.b.ins("store $in1p, *OFF");
     // Total time: calculations conditioned by LR run when it is on.
@@ -447,6 +503,7 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b.ins("%lr0 = load $inlr");
     g.b.term(format!("brif %lr0, {tot}, {after_tot}"));
     g.b.place(&tot);
+    g.psds_routine("*TOTC");
     stmt::calcs(g, &total);
     g.b.place(&after_tot);
     g.output(&outputs, output::Step::Total);
@@ -455,6 +512,7 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b.ins("%lr = load $inlr");
     g.b.term(format!("brif %lr, {end}, {detail_l}"));
     g.b.place(&detail_l);
+    g.psds_routine("*DETC");
     stmt::calcs(g, &detail);
     let ret = g.b.label();
     g.b.ins("%rt = load $inrt");
@@ -463,10 +521,43 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b.place(&finish);
     g.b.ins("%lr2 = load $inlr");
     g.b.term(format!("brif %lr2, {end}, {ret}"));
+    if has_pssr {
+        let close = g.b.label();
+        g.b.place(&close);
+        g.b.ins("endmon PSSR");
+        g.b.term("unreachable");
+        g.b.place(&pssr_handler);
+        g.psds_error();
+        let rc = g.b.reg();
+        g.b.ins(format!("{rc} = callb {}()", Gen::subr_proc("*PSSR")));
+        let again = g.b.label();
+        let on = g.b.label();
+        // RETURN in *PSSR: the end decided by LR, outside the region.
+        let finish_out = g.b.label();
+        g.b.term(format!(
+            "switch {rc}, [{}: {top}, {}: {top}, {}: {finish_out}], default {on}",
+            exc::rp::GETIN,
+            exc::rp::OTHER,
+            exc::rp::RETURN
+        ));
+        g.b.place(&finish_out);
+        g.b.ins("%lr3 = load $inlr");
+        g.b.term(format!("brif %lr3, {end}, {ret}"));
+        g.b.place(&on);
+        g.reraise();
+        g.b.term(format!("br {again}"));
+        g.b.place(&again);
+        g.b.term("ret");
+    }
     g.b.place(&end);
     for f in g.files.iter().filter(|f| f.scope == 0 && !f.template) {
         let r = g.b.reg();
         g.b.ins(format!("{r} = dbclose {}", mangle(&f.name)));
+    }
+    for name in g.called_subrs.clone() {
+        if !g.defined_subrs.contains(&name) {
+            g.err(ids::NOT_DEFINED, 30, name);
+        }
     }
     g.b.ins("store $init_done, *OFF");
     g.b.term("ret");
@@ -475,7 +566,44 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b.term("ret");
     stmt::finish_subrs(g);
     let body = std::mem::take(&mut g.b);
-    body.finish(&format!("proc {}() entry", mangle(&g.opts.name)), "ret")
+    body.finish(&format!("proc {}()", mangle(&g.opts.name)), "ret")
+}
+
+/// The program entry procedure, `_QRNP_PEP_name`, as IBM names it: it
+/// calls the main procedure, so an escape the main procedure sends to
+/// its caller, or one it leaves unhandled, ends at a control boundary
+/// of its own.
+fn pep(name: &str, main: &str) -> String {
+    format!("proc _QRNP_PEP_{}() entry {{\nL0:\n  callb {main}()\n  ret\n}}\n", mangle(name))
+}
+
+/// The program entry of a linear-main module: global storage and files
+/// on the first call, then the main procedure; nothing is closed when
+/// it returns.
+fn linear_entry(g: &mut Gen<'_>, main: &str) -> String {
+    g.b = Body::new();
+    g.scope = 0;
+    let start = g.b.label();
+    let init = g.b.label();
+    g.b.ins("%first = load $init_done");
+    g.b.term(format!("brif %first, {start}, {init}"));
+    g.b.place(&init);
+    g.b.ins("callb _qrni_init()");
+    for f in g.files.iter().filter(|f| f.scope == 0 && !f.usropn && !f.template) {
+        let r = g.b.reg();
+        g.b.ins(format!("{r} = dbopen {}", mangle(&f.name)));
+    }
+    g.b.ins("store $init_done, *ON");
+    g.psds_init(&g.opts.name.clone());
+    g.b.place(&start);
+    let up = main.to_ascii_uppercase();
+    if !g.local_procs.contains(&up) {
+        g.err(ids::NOT_DEFINED, 30, up.clone());
+    }
+    g.b.ins(format!("callb {}()", mangle(&up)));
+    g.b.term("ret");
+    let body = std::mem::take(&mut g.b);
+    body.finish(&format!("proc _QRNP_PEP_{}() entry", mangle(&g.opts.name)), "ret")
 }
 
 /// Whether a control level puts a calculation at total time.

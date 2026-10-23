@@ -36,6 +36,8 @@ pub mod ids {
     pub const DECIMALS_LOST: &str = "RNF7551";
     /// The initial value does not fit the field.
     pub const INZ_TOO_LONG: &str = "RNF3431";
+    /// A global file of a module without a cycle is not closed for it.
+    pub const CLOSE_EXPLICITLY: &str = "RNF7534";
     /// A constant divisor of zero.
     pub const DIVIDE_BY_ZERO: &str = "RNF7504";
     /// A calculation after the subroutines.

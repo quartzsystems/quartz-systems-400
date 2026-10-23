@@ -339,7 +339,19 @@ pub fn extended_operand(code: &str, toks: &[lex::Tok], end: Pos, diags: &mut Vec
             (e, Vec::new())
         }
         "FOR" => for_operand(toks, end, diags),
-        "ON-ERROR" | "ON-EXCP" | "SND-MSG" | "XML-INTO" | "XML-SAX" | "DATA-INTO" | "DATA-GEN" | "WHEN-IN" => {
+        // Blank-separated operands: type, message, %TARGET.
+        "SND-MSG" => {
+            let mut c = expr::Cursor::new(toks, end);
+            let mut list = Vec::new();
+            while !c.done() {
+                match expr::expr(&mut c, diags) {
+                    Some(e) => list.push(e),
+                    None => c.skip_all(),
+                }
+            }
+            (Some(Expr::List(list, toks.first().map_or(end, |t| t.at))), Vec::new())
+        }
+        "ON-ERROR" | "ON-EXCP" | "XML-INTO" | "XML-SAX" | "DATA-INTO" | "DATA-GEN" | "WHEN-IN" => {
             let list = expr::operands(toks, end, diags);
             (Some(Expr::List(list, toks.first().map_or(end, |t| t.at))), Vec::new())
         }

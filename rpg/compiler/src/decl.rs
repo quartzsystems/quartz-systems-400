@@ -88,6 +88,25 @@ fn timfmt_arg(k: &Keyword) -> Option<(TimFmt, char)> {
     Some((f, sep))
 }
 
+/// A PSDS subfield's special keyword (free form) or From entry
+/// (fixed form): its type and position.
+fn psds_special(d: &Def) -> Option<(Ty, u32)> {
+    let word = d
+        .kws
+        .iter()
+        .map(|k| k.name.as_str())
+        .find(|n| n.starts_with('*'))
+        .map(str::to_string)
+        .or_else(|| d.fixed.as_ref().map(|c| c.from.clone()).filter(|f| f.starts_with('*')))?;
+    Some(match word.as_str() {
+        "*PROC" => (Ty::Char(10), 1),
+        "*STATUS" => (Ty::Zoned(5, 0), 11),
+        "*ROUTINE" => (Ty::Char(8), 29),
+        "*PARMS" => (Ty::Zoned(3, 0), 37),
+        _ => return None,
+    })
+}
+
 /// The type a definition's keywords or columns give, and its `DIM`.
 /// `None` when the type comes from elsewhere (`LIKEDS`, an external
 /// description) or is in error.
@@ -537,9 +556,14 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     let mut next: u32 = 0;
     let mut end: u32 = 0;
     let mut overlay_next: std::collections::HashMap<SymId, u32> = std::collections::HashMap::new();
+    let is_psds = cx.t.ds[ds_index].psds;
     for c in &d.children {
         let cname = c.name.to_ascii_uppercase();
-        let ty = type_of(cx, c, true);
+        let special = if is_psds { psds_special(c) } else { None };
+        let ty = match &special {
+            Some((t, _)) => Some(t.clone()),
+            None => type_of(cx, c, true),
+        };
         let sdim = dim_of(cx, c);
         let (ty, size) = match ty {
             Some(t) => {
@@ -564,7 +588,11 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         let is_ptr = matches!(ty, Ty::Ptr | Ty::ProcPtr | Ty::Object)
             || matches!(&ty, Ty::Ds(i) if cx.t.ds[*i].has_ptr);
         // Where it goes.
-        let from = c.fixed.as_ref().and_then(|f| f.from.parse::<u32>().ok());
+        let from = c
+            .fixed
+            .as_ref()
+            .and_then(|f| f.from.parse::<u32>().ok())
+            .or_else(|| special.as_ref().map(|(_, p)| *p));
         let pos_kw = c.kw("POS").and_then(|k| int_arg(k, 0)).and_then(|v| u32::try_from(v).ok());
         let overlay = c.kw("OVERLAY").cloned();
         let offset = if let Some(f) = from.or(pos_kw) {

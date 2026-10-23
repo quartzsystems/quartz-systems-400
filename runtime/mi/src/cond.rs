@@ -60,6 +60,8 @@ impl Exception {
         let status = match msgid {
             "CEE9901" | "CEE9902" => 202,
             "CPF9999" => 9999,
+            // The RPG runtime's own escapes carry their status.
+            _ if msgid.starts_with("RNX") => msgid[3..].parse().unwrap_or(0),
             _ => cond.map_or(0, status_of),
         };
         Self {
@@ -112,9 +114,11 @@ pub fn status_of(c: Cond) -> u16 {
         Cond::Mch0603 => 121,
         Cond::Mch1202 => 907,
         Cond::Mch1602 => 112,
+        // A program or procedure that cannot be resolved (pub400:
+        // CALLP of a missing EXTPGM is 00211).
+        Cond::Mch3401 => 211,
         Cond::Mch0601
         | Cond::Mch0602
-        | Cond::Mch3401
         | Cond::Mch3402
         | Cond::Mch3601
         | Cond::Mch3602

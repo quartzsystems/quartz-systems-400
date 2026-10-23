@@ -9,6 +9,7 @@ publish.workspace = true
 [dependencies]
 mi = { path = "../../runtime/mi", version = "0.1.0" }
 codegen = { path = "../../runtime/codegen", version = "0.1.0" }
+qir = { path = "../../runtime/qir", version = "0.1.0" }
 qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 
