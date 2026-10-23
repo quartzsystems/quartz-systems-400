@@ -1,0 +1,909 @@
+# IBM i *PNLGRP objects (QSYS and the others on 7.1; QSYS and QHLPSYS on 7.5; 7.1 has no QHLPSYS).
+# Columns: library, name, attribute, releases, text. 71 = the primary oracle (V7R1M0),
+# 75 = pub400.com (V7R5M0); both listed on 2026-10-23. The text is the object text.
+
+QGY        QHGYECMD          71     
+QHLPSYS    QGSXHLP           75     HELP MODULES FOR SX PANELS
+QHLPSYS    QGTIHLP           75     
+QHLPSYS    QGUPHLP           75     
+QHLPSYS    QH1PCMD           75     
+QHLPSYS    QH5BCMD           75     
+QHLPSYS    QH5BCMDEX         75     
+QHLPSYS    QHAHACMD          75     
+QHLPSYS    QHAL              75     HELP PANEL GROUP OBJECT FOR ALERTS
+QHLPSYS    QHALCMD           75     
+QHLPSYS    QHALCMDEX         75     
+QHLPSYS    QHBN              75     
+QHLPSYS    QHBNCMD           75     
+QHLPSYS    QHBNCMDEX         75     
+QHLPSYS    QHC3              75     
+QHLPSYS    QHC3CMD           75     
+QHLPSYS    QHCACMD           75     
+QHLPSYS    QHCC              75     
+QHLPSYS    QHCD              75     Help panel for CD
+QHLPSYS    QHCDCMD           75     
+QHLPSYS    QHCDCMDEX         75     
+QHLPSYS    QHCI              75     
+QHLPSYS    QHCICMD           75     
+QHLPSYS    QHCICMDEX         75     
+QHLPSYS    QHCJ              75     
+QHLPSYS    QHCJCMD           75     
+QHLPSYS    QHCJCMDEX         75     
+QHLPSYS    QHCL              75     Help panel for CL
+QHLPSYS    QHCLCMD           75     
+QHLPSYS    QHCLCMD1          75     
+QHLPSYS    QHCLCMDEX         75     
+QHLPSYS    QHCM              75     
+QHLPSYS    QHCM0CMD          75     
+QHLPSYS    QHCM0CMDEX        75     
+QHLPSYS    QHCNCMD           75     
+QHLPSYS    QHCNCMDEX         75     
+QHLPSYS    QHCPCMD           75     
+QHLPSYS    QHCPCMD1          75     
+QHLPSYS    QHCPCMDEX         75     
+QHLPSYS    QHCSTCMD          75     
+QHLPSYS    QHCSTCMDEX        75     
+QHLPSYS    QHCU              75     
+QHLPSYS    QHCUCMD           75     
+QHLPSYS    QHCUCMDEX         75     
+QHLPSYS    QHDB              75     Panel group for DB panel help.
+QHLPSYS    QHDBCMD           75     
+QHLPSYS    QHDBCMD1          75     
+QHLPSYS    QHDBCMDEX         75     
+QHLPSYS    QHDC              75     
+QHLPSYS    QHDCCMD           75     
+QHLPSYS    QHDCCMD1          75     
+QHLPSYS    QHDCCMDEX         75     
+QHLPSYS    QHDCCNL           75     
+QHLPSYS    QHDCCTL           75     
+QHLPSYS    QHDCCTLD          75     
+QHLPSYS    QHDCDEV           75     
+QHLPSYS    QHDCDEVD          75     
+QHLPSYS    QHDCIPXD          75     
+QHLPSYS    QHDCLIN           75     
+QHLPSYS    QHDCLIND          75     
+QHLPSYS    QHDCNTBD          75     
+QHLPSYS    QHDCNWI           75     
+QHLPSYS    QHDCNWID          75     
+QHLPSYS    QHDCNWSD          75     
+QHLPSYS    QHDDCMD           75     
+QHLPSYS    QHDDCMD1          75     
+QHLPSYS    QHDDCMDEX         75     
+QHLPSYS    QHDK              75     
+QHLPSYS    QHDKCMD           75     
+QHLPSYS    QHDKCMD1          75     
+QHLPSYS    QHDKCMDEX         75     
+QHLPSYS    QHDM              75     
+QHLPSYS    QHDMCMD           75     
+QHLPSYS    QHDMCMD1          75     
+QHLPSYS    QHDMCMDEX         75     
+QHLPSYS    QHDR              75     
+QHLPSYS    QHDVCMD           75     
+QHLPSYS    QHDVCMDEX         75     
+QHLPSYS    QHDX              75     
+QHLPSYS    QHDXCMD           75     
+QHLPSYS    QHDXCMDEX         75     
+QHLPSYS    QHDZCMD           75     
+QHLPSYS    QHDZDF1           75     
+QHLPSYS    QHEA              75     
+QHLPSYS    QHEACMD           75     
+QHLPSYS    QHEACMDEX         75     
+QHLPSYS    QHEC              75     
+QHLPSYS    QHECCMD           75     
+QHLPSYS    QHECCMDEX         75     
+QHLPSYS    QHED              75     
+QHLPSYS    QHEDCMD           75     
+QHLPSYS    QHEDCMDEX         75     
+QHLPSYS    QHEM              75     
+QHLPSYS    QHEMCMD           75     
+QHLPSYS    QHEMCMD1          75     
+QHLPSYS    QHEMCMDEX         75     
+QHLPSYS    QHENGCMD          75     
+QHLPSYS    QHES              75     
+QHLPSYS    QHESCMD           75     
+QHLPSYS    QHESCMDEX         75     
+QHLPSYS    QHEXCMD           75     
+QHLPSYS    QHEXCMDEX         75     
+QHLPSYS    QHEZ              75     
+QHLPSYS    QHEZCMD           75     
+QHLPSYS    QHEZCMDEX         75     
+QHLPSYS    QHEZHYP           75     
+QHLPSYS    QHFN              75     
+QHLPSYS    QHFNCMD           75     
+QHLPSYS    QHFNCMDEX         75     
+QHLPSYS    QHFP              75     
+QHLPSYS    QHFPACMD          75     
+QHLPSYS    QHFPACMDEX        75     
+QHLPSYS    QHFPR             75     
+QHLPSYS    QHFPRCMD          75     
+QHLPSYS    QHFSCMD           75     
+QHLPSYS    QHFSFMA           75     
+QHLPSYS    QHFV              75     HELP PANEL GROUP OBJECT FOR NODE LISTS
+QHLPSYS    QHFVCMD           75     
+QHLPSYS    QHFVCMDEX         75     
+QHLPSYS    QHGDCMD           75     
+QHLPSYS    QHGDCMDEX         75     
+QHLPSYS    QHGLDCMD          75     
+QHLPSYS    QHGS              75     
+QHLPSYS    QHGSCMD           75     
+QHLPSYS    QHGSCMDEX         75     
+QHLPSYS    QHHCHLP           75     QHHCHLP panel group
+QHLPSYS    QHHEHLP           75     QHHEHLP panel group
+QHLPSYS    QHHF              75     
+QHLPSYS    QHHFCMD           75     
+QHLPSYS    QHHFCMDEX         75     
+QHLPSYS    QHIA              75     
+QHLPSYS    QHIACMD           75     
+QHLPSYS    QHIACMDEX         75     
+QHLPSYS    QHIC              75     
+QHLPSYS    QHID              75     
+QHLPSYS    QHIDCMD           75     
+QHLPSYS    QHIDCMDEX         75     
+QHLPSYS    QHIFCMD           75     
+QHLPSYS    QHIFCMDEX         75     
+QHLPSYS    QHIGCCMD          75     
+QHLPSYS    QHII              75     
+QHLPSYS    QHIPX             75     
+QHLPSYS    QHIPX2            75     
+QHLPSYS    QHIZACMD          75     
+QHLPSYS    QHIZACMDEX        75     
+QHLPSYS    QHJO              75     Panel group for JO panel help.
+QHLPSYS    QHJOCMD           75     
+QHLPSYS    QHJOCMDEX         75     
+QHLPSYS    QHJVAWRKPN        75     
+QHLPSYS    QHKJ              75     
+QHLPSYS    QHKJCMD           75     
+QHLPSYS    QHKJCMDEX         75     
+QHLPSYS    QHKRB             75     
+QHLPSYS    QHKRBCMD          75     
+QHLPSYS    QHLG              75     
+QHLPSYS    QHLGCMD           75     
+QHLPSYS    QHLGCMDEX         75     
+QHLPSYS    QHLI              75     
+QHLPSYS    QHLICMD           75     
+QHLPSYS    QHLICMD1          75     
+QHLPSYS    QHLICMDEX         75     
+QHLPSYS    QHLIOTYPE         75     
+QHLPSYS    QHLM              75     
+QHLPSYS    QHLMCMD           75     
+QHLPSYS    QHLMCMDEX         75     
+QHLPSYS    QHLNGCMD          75     
+QHLPSYS    QHLP              75     QHLP panel group
+QHLPSYS    QHLP1             75     QHLP1 panel group
+QHLPSYS    QHLPCMD           75     
+QHLPSYS    QHLPCMDEX         75     
+QHLPSYS    QHLS              75     
+QHLPSYS    QHLSCMD           75     
+QHLPSYS    QHLSCMDEX         75     
+QHLPSYS    QHLSWRKA          75     
+QHLPSYS    QHLZ              75     QHLZ panel group
+QHLPSYS    QHLZACMD          75     
+QHLPSYS    QHLZACMDEX        75     
+QHLPSYS    QHMA              75     
+QHLPSYS    QHMACMD           75     
+QHLPSYS    QHMACMDEX         75     
+QHLPSYS    QHMH              75     
+QHLPSYS    QHMHCMD           75     
+QHLPSYS    QHMHCMD1          75     
+QHLPSYS    QHMHCMDEX         75     
+QHLPSYS    QHMN              75     MENU COMPONENT HELP
+QHLPSYS    QHMN1             75     QHMN1 panel group
+QHLPSYS    QHMN2             75     QHMN2 panel group
+QHLPSYS    QHMN3             75     QHMN3 panel group
+QHLPSYS    QHMN4             75     
+QHLPSYS    QHMNCMD           75     
+QHLPSYS    QHMNCMD1          75     
+QHLPSYS    QHMNCMDEX         75     
+QHLPSYS    QHMO              75     
+QHLPSYS    QHMOCMD           75     
+QHLPSYS    QHMOCMDEX         75     
+QHLPSYS    QHMOOPNL          75     This is the Help Text for QGMOOPNL.
+QHLPSYS    QHMOPNLS          75     This is the help for QGMOPNLS
+QHLPSYS    QHMRDB            75     
+QHLPSYS    QHMRDBCM          75     
+QHLPSYS    QHMRDCMDEX        75     
+QHLPSYS    QHNDCMD           75     
+QHLPSYS    QHNDCMDEX         75     
+QHLPSYS    QHNF              75     
+QHLPSYS    QHNFCMD           75     
+QHLPSYS    QHNFCMD1          75     
+QHLPSYS    QHNFCMDEX         75     
+QHLPSYS    QHNM              75     HELP PANEL GROUP OBJECT FOR NET MGT
+QHLPSYS    QHNMACMD          75     
+QHLPSYS    QHNMCMD           75     
+QHLPSYS    QHNMCMDEX         75     
+QHLPSYS    QHOCCMD           75     
+QHLPSYS    QHOCCMDEX         75     
+QHLPSYS    QHOCDPRD          75     
+QHLPSYS    QHOD              75     Help for OD panels
+QHLPSYS    QHODCMD           75     
+QHLPSYS    QHODCMDEX         75     
+QHLPSYS    QHOECMD           75     
+QHLPSYS    QHOECMDEX         75     
+QHLPSYS    QHOECS            75     
+QHLPSYS    QHOEDL            75     
+QHLPSYS    QHOEED            75     
+QHLPSYS    QHOEFM            75     
+QHLPSYS    QHOEIN            75     
+QHLPSYS    QHOEOL            75     
+QHLPSYS    QHOEPF            75     
+QHLPSYS    QHOFCMD           75     
+QHLPSYS    QHOFCMDEX         75     
+QHLPSYS    QHOFPCO           75     
+QHLPSYS    QHOHCMD           75     
+QHLPSYS    QHOHCMDEX         75     
+QHLPSYS    QHOJCMD           75     
+QHLPSYS    QHOJCMDEX         75     
+QHLPSYS    QHOK              75     
+QHLPSYS    QHOKCMD           75     
+QHLPSYS    QHOKCMDEX         75     
+QHLPSYS    QHON              75     
+QHLPSYS    QHONCMD           75     
+QHLPSYS    QHONCMDEX         75     
+QHLPSYS    QHOP              75     
+QHLPSYS    QHOS              75     Help for OS panel groups
+QHLPSYS    QHOSCMD           75     
+QHLPSYS    QHOSCMD1          75     
+QHLPSYS    QHOSCMDEX         75     
+QHLPSYS    QHP0L             75     
+QHLPSYS    QHP0LCMD          75     
+QHLPSYS    QHP0LCMDEX        75     
+QHLPSYS    QHP0MS            75     
+QHLPSYS    QHP0Z             75     
+QHLPSYS    QHP0ZCMD          75     
+QHLPSYS    QHP0ZCMDEX        75     
+QHLPSYS    QHPACMD           75     
+QHLPSYS    QHPACMDEX         75     
+QHLPSYS    QHPD              75     
+QHLPSYS    QHPI              75     
+QHLPSYS    QHPKCMD           75     
+QHLPSYS    QHPKCMDEX         75     
+QHLPSYS    QHPMCMD           75     
+QHLPSYS    QHPMCMDEX         75     
+QHLPSYS    QHPMPFR           75     
+QHLPSYS    QHPMWC            75     
+QHLPSYS    QHPMWCMD          75     
+QHLPSYS    QHPT              75     
+QHLPSYS    QHPUIMBED         75     
+QHLPSYS    QHPY              75     
+QHLPSYS    QHPYCMD           75     
+QHLPSYS    QHPYCMDP          75     
+QHLPSYS    QHPYJWCMD         75     
+QHLPSYS    QHPYPFR           75     
+QHLPSYS    QHPZ              75     
+QHLPSYS    QHPZCMD           75     
+QHLPSYS    QHPZCMDEX         75     
+QHLPSYS    QHQA              75     
+QHLPSYS    QHQACMD           75     
+QHLPSYS    QHQACMDEX         75     
+QHLPSYS    QHQCTCMD          75     
+QHLPSYS    QHQCTCMDEX        75     
+QHLPSYS    QHQE              75     
+QHLPSYS    QHQQCMD           75     
+QHLPSYS    QHQQCMDEX         75     
+QHLPSYS    QHQRM             75     
+QHLPSYS    QHQU2             75     
+QHLPSYS    QHQUCMD           75     
+QHLPSYS    QHQUCMDEX         75     
+QHLPSYS    QHQXCMD           75     
+QHLPSYS    QHQXCMDEX         75     
+QHLPSYS    QHRACMD           75     
+QHLPSYS    QHRACMDEX         75     
+QHLPSYS    QHRCCMD           75     
+QHLPSYS    QHRCCMDEX         75     
+QHLPSYS    QHRECMD           75     
+QHLPSYS    QHRECMDEX         75     
+QHLPSYS    QHRFCMD           75     
+QHLPSYS    QHRFCMDEX         75     
+QHLPSYS    QHRUCMD           75     
+QHLPSYS    QHRUCMDEX         75     
+QHLPSYS    QHRW              75     
+QHLPSYS    QHRWCMD           75     
+QHLPSYS    QHRWCMDEX         75     
+QHLPSYS    QHRZ              75     
+QHLPSYS    QHRZCMD           75     
+QHLPSYS    QHRZCMDEX         75     
+QHLPSYS    QHRZLBL           75     Help Modules for Label Location Panels
+QHLPSYS    QHS9CMD           75     
+QHLPSYS    QHS9MNU           75     
+QHLPSYS    QHS9PNL           75     
+QHLPSYS    QHSC              75     
+QHLPSYS    QHSCACMD          75     
+QHLPSYS    QHSCACMDEX        75     
+QHLPSYS    QHSCAPNL          75     
+QHLPSYS    QHSCCMD           75     
+QHLPSYS    QHSCCMDEX         75     
+QHLPSYS    QHSEC             75     
+QHLPSYS    QHSECCMD          75     
+QHLPSYS    QHSECCMDEX        75     
+QHLPSYS    QHSHCMD           75     
+QHLPSYS    QHSHCMDEX         75     
+QHLPSYS    QHSJMNU           75     
+QHLPSYS    QHSJPNL           75     
+QHLPSYS    QHSK              75     
+QHLPSYS    QHSM              75     
+QHLPSYS    QHSMCMD           75     
+QHLPSYS    QHSMCMDEX         75     
+QHLPSYS    QHSOCCMD          75     
+QHLPSYS    QHSOCCMDEX        75     
+QHLPSYS    QHSP              75     
+QHLPSYS    QHSPCMD           75     
+QHLPSYS    QHSPCMD1          75     
+QHLPSYS    QHSPCMDEX         75     
+QHLPSYS    QHSQ              75     
+QHLPSYS    QHSQCMDEX         75     
+QHLPSYS    QHSQCMDX          75     
+QHLPSYS    QHSR              75     
+QHLPSYS    QHSRCMD           75     
+QHLPSYS    QHSRCMDEX         75     
+QHLPSYS    QHSS1GLS          75     
+QHLPSYS    QHSS1IDU          75     
+QHLPSYS    QHSS1OPR          75     
+QHLPSYS    QHSS1SDE          75     
+QHLPSYS    QHSUCMD           75     
+QHLPSYS    QHSUHELP          75     Help Modules for WRKHDWPRD Panels
+QHLPSYS    QHSVRCMD          75     
+QHLPSYS    QHSVRCMDEX        75     
+QHLPSYS    QHSW              75     HELP PANEL GROUP OBJECT FOR SW PAR
+QHLPSYS    QHSWCMD           75     
+QHLPSYS    QHSWCMDEX         75     
+QHLPSYS    QHSXCMD           75     
+QHLPSYS    QHSXCMDEX         75     
+QHLPSYS    QHSY              75     
+QHLPSYS    QHSYCMD           75     
+QHLPSYS    QHSYCMD1          75     
+QHLPSYS    QHSYCMDEX         75     
+QHLPSYS    QHSZ              75     
+QHLPSYS    QHSZCMD           75     
+QHLPSYS    QHSZCMDEX         75     
+QHLPSYS    QHTA              75     
+QHLPSYS    QHTACMD           75     
+QHLPSYS    QHTACMD1          75     
+QHLPSYS    QHTACMD2          75     
+QHLPSYS    QHTACMDEX         75     
+QHLPSYS    QHTAPTF           75     
+QHLPSYS    QHTB              75     
+QHLPSYS    QHTBCMD           75     
+QHLPSYS    QHTBCMDEX         75     
+QHLPSYS    QHTE              75     
+QHLPSYS    QHTECMD           75     
+QHLPSYS    QHTECMDEX         75     
+QHLPSYS    QHTES             75     
+QHLPSYS    QHTHM             75     
+QHLPSYS    QHTICMD           75     
+QHLPSYS    QHTICMDEX         75     
+QHLPSYS    QHTN              75     Panel group for TN panel help.
+QHLPSYS    QHTNCMD           75     
+QHLPSYS    QHTNCMDEX         75     
+QHLPSYS    QHTOBCMD          75     
+QHLPSYS    QHTOC             75     
+QHLPSYS    QHTOCCMD          75     
+QHLPSYS    QHTOCCMDEX        75     
+QHLPSYS    QHTOCPP           75     
+QHLPSYS    QHTOCPPCMD        75     
+QHLPSYS    QHTOD             75     
+QHLPSYS    QHTODCMD          75     
+QHLPSYS    QHTODCMDEX        75     
+QHLPSYS    QHTOFCMD          75     
+QHLPSYS    QHTOFCMDEX        75     
+QHLPSYS    QHTON             75     
+QHLPSYS    QHTONCMD          75     
+QHLPSYS    QHTONCMDEX        75     
+QHLPSYS    QHTOO             75     Panel Group for OSPF and RIP help Displays
+QHLPSYS    QHTOOCMD          75     
+QHLPSYS    QHTOOCMDEX        75     
+QHLPSYS    QHTOR             75     
+QHLPSYS    QHTORCMD          75     
+QHLPSYS    QHTORCMDEX        75     
+QHLPSYS    QHTOTCMD          75     
+QHLPSYS    QHTOTCMDEX        75     
+QHLPSYS    QHTOVCMD          75     
+QHLPSYS    QHTOVCMDEX        75     
+QHLPSYS    QHTS              75     
+QHLPSYS    QHTSCMD           75     
+QHLPSYS    QHTSCMDEX         75     
+QHLPSYS    QHTV              75     
+QHLPSYS    QHUCCMD           75     
+QHLPSYS    QHUCCMDEX         75     
+QHLPSYS    QHUH              75     
+QHLPSYS    QHUHCMD           75     
+QHLPSYS    QHUHCMDEX         75     
+QHLPSYS    QHUHR             75     
+QHLPSYS    QHUI              75     
+QHLPSYS    QHUIB             75     
+QHLPSYS    QHUICMD           75     
+QHLPSYS    QHUICMDEX         75     
+QHLPSYS    QHUNCMD           75     
+QHLPSYS    QHUPCMD           75     
+QHLPSYS    QHUPCMDEX         75     
+QHLPSYS    QHURCMD           75     
+QHLPSYS    QHURCMDEX         75     
+QHLPSYS    QHUS              75     
+QHLPSYS    QHUSCMD           75     
+QHLPSYS    QHUSCMDEX         75     
+QHLPSYS    QHVFY             75     
+QHLPSYS    QHVOI             75     
+QHLPSYS    QHVOICMD          75     
+QHLPSYS    QHVOICMDEX        75     
+QHLPSYS    QHWC              75     
+QHLPSYS    QHWCCMD           75     
+QHLPSYS    QHWCCMD1          75     
+QHLPSYS    QHWCCMDEX         75     
+QHLPSYS    QHWCSVAL          75     
+QHLPSYS    QHWD              75     
+QHLPSYS    QHWDCMD           75     
+QHLPSYS    QHWDCMD1          75     
+QHLPSYS    QHWDCMDEX         75     
+QHLPSYS    QHWHCMD           75     
+QHLPSYS    QHWHCMD1          75     
+QHLPSYS    QHWHCMDEX         75     
+QHLPSYS    QHWT              75     
+QHLPSYS    QHWTCMD           75     
+QHLPSYS    QHWTCMD1          75     
+QHLPSYS    QHWTCMDEX         75     
+QHLPSYS    QHWV              75     
+QHLPSYS    QHWVCMD           75     
+QHLPSYS    QHWVCMDEX         75     
+QHLPSYS    QHY1              75     
+QHLPSYS    QHY1CMD           75     
+QHLPSYS    QHY1CMDEX         75     
+QHLPSYS    QHYASCMDEX        75     
+QHLPSYS    QHYASP            75     
+QHLPSYS    QHYASP1           75     
+QHLPSYS    QHYASPCM          75     
+QHLPSYS    QHYPE             75     
+QHLPSYS    QHYPECMD          75     
+QHLPSYS    QHYPECMDEX        75     
+QHLPSYS    QHYPSCMD          75     
+QHLPSYS    QHYPSCMDEX        75     
+QHLPSYS    QHYPSPCMD         75     
+QHLPSYS    QHYSD1            75     
+QHLPSYS    QHYSDCMD          75     
+QHLPSYS    QHZD              75     
+QHLPSYS    QHZDCMD           75     
+QHLPSYS    QHZDCMDEX         75     
+QHLPSYS    QHZIPCMD          75     
+QHLPSYS    QHZMFCMD          75     
+QHLPSYS    QHZMFCMDEX        75     
+QHLPSYS    QHZRU             75     
+QHLPSYS    QHZRUCMD          75     
+QHLPSYS    QHZRUCMDEX        75     
+QHLPSYS    QHZXCMD           75     
+QHLPSYS    QHZXCMDEX         75     
+QHTTPSVR   QGZHBCFG          71     Configure TCP/IP HTTP
+QHTTPSVR   QHZHB             71     
+QHTTPSVR   QHZHBCMD          71     
+QIWA2      QHXHHLP2          71     
+QIWS       QGHIPCM           71     Panel group for IBM i Access Host install
+QIWS       QGORPROF          71     Panel group for Change PCO Profile
+QIWS       QGPCSTPN          71     
+QIWS       QHHUCMD           71     
+QIWS       QHORCMD           71     
+QIWS       QHORPROF          71     Panel group for Change PCO Profile
+QIWS       QHPCSTCM          71     
+QJAVA      QHJVACM2          71     
+QSHELL     QHZSHCMD          71     
+QSYS       DSPASPINF         75     Panel group for DSPASPINF
+QSYS       QG1PAO            71,75  
+QSYS       QG1PCNT           71,75  
+QSYS       QG1PINST          71,75  
+QSYS       QG1PMON           71,75  
+QSYS       QG1PMR            71,75  
+QSYS       QG1PRO            71,75  
+QSYS       QG1PRS            71,75  
+QSYS       QG1PSC            71,75  
+QSYS       QG1PST            71,75  
+QSYS       QGALPALR          71,75  Displays for WRKALR command
+QSYS       QGALPWAD          71,75  Displays for WRKALRD command
+QSYS       QGBNDSBD          71,75  Panel group for Display Binding Directory
+QSYS       QGBNDSPM          71,75  Panel group for Display Module
+QSYS       QGBNDSPP          71,75  Panel group for Display Program
+QSYS       QGBNDSPS          71,75  Panel group for DSPSRVPGM
+QSYS       QGBNPRTB          71,75  Panel group for binder listing
+QSYS       QGBNWKBE          71,75  Panel group for Work with Binding Directory
+QSYS       QGC3CKM           71,75  Panel group for DSPCKMKSFE command
+QSYS       QGCCWRCC          71,75  Panel group for communications configuration
+QSYS       QGCDDSPC          71,75  Panel group for DSPCMD
+QSYS       QGCIPGMA          71,75  Edit S/36 pgm attrs panel group
+QSYS       QGCIPRCA          71,75  Edit S/36 proc attrs panel group
+QSYS       QGCISRCA          71,75  Edit S/36 src attrs panel group
+QSYS       QGCJDSPPF         71,75  
+QSYS       QGCLDSPG          71,75  Panel group for DSPPGM
+QSYS       QGCM0TRC          71,75  Panel group for TRCCPIC command
+QSYS       QGCMWRK           71,75  Panel group for WRKJOB
+QSYS       QGCUCSI           71,75  Panel group for DSPCSI
+QSYS       QGDBAPAN          71,75  Panel group for edit rebuild of access paths.
+QSYS       QGDBCPAN          71,75  Panel group for edit check pending constraints.
+QSYS       QGDBDAUT          71,75  panel group for display field auth
+QSYS       QGDBDPAN          71,75  Panel group for Edit DataLink File Attributes.
+QSYS       QGDBDSNG          71,75  Panel group for Display Node Group
+QSYS       QGDBJRL           71,75  Panel group for display job rcd locks.
+QSYS       QGDBRLK           71,75  Panel group for display rcd locks.
+QSYS       QGDBWKCT          71,75  Panel group for work with physical file cst.
+QSYS       QGDBWKDL          71,75  Panel group for Work with PF DataLinks.
+QSYS       QGDCCFGL          71,75  Panel group for Configuration list panels
+QSYS       QGDCCNNL          71,75  Panel group for Configuration DSPCNNL displays
+QSYS       QGDCCOSD          71,75  Panel group for Configuration DSPCOSD displays
+QSYS       QGDCCTLD          71,75  Panel group for Configuration DSPCTLD displays
+QSYS       QGDCDEVD          71,75  Panel group for Configuration DSPDEVD displays
+QSYS       QGDCIPXD          71,75  Panel group for Configuration DSPIPXD displays
+QSYS       QGDCLIND          71,75  Panel group for Configuration DSPLIND displays
+QSYS       QGDCLX25          71,75  Panel group for Configuration CRT/CHG X25 LGLCHLE
+QSYS       QGDCMODD          71,75  Panel group for Configuration DSPMODD displays
+QSYS       QGDCNTBD          71,75  Panel group for Configuration DSPNTBD displays
+QSYS       QGDCNWID          71,75  Panel group for Configuration DSPNWID displays
+QSYS       QGDCNWSD          71,75  Panel group for Configuration DSPNWSD displays
+QSYS       QGDCPTCA          71,75  Panel group for print device address *RWS support
+QSYS       QGDCWKFO          71,75  Panel group for work with configuration displays
+QSYS       QGDCWKLB          71,75  Panel group for Configuration WRKMLBSTS displays
+QSYS       QGDCWKWH          71,75  Panel group for Configuration work with displays
+QSYS       QGDKDSPY          71,75  Displays for display diskette
+QSYS       QGDRDRU           71,75  Panels for diskette data recovery
+QSYS       QGDSPAAU          71,75  Panel group for DSPACCAUT command
+QSYS       QGDSPACC          71,75  Panel group for DSPACC command
+QSYS       QGDSPAUD          71,75  Panel group for DLO audit level
+QSYS       QGDSPPR           71,75  Panel group for office authority
+QSYS       QGDSPUPU          71,75  Panel group for DSPUSRPMN command
+QSYS       QGDXWRKD          71,75  WORK WITH DISTRIBUTION TO PC QUEUE PANELS
+QSYS       QGDZDFU           71,75  
+QSYS       QGEAPNLS          71,75  PANEL GROUP OBJECT FOR SDE PANELS
+QSYS       QGECECDD          71,75  Panel group for Configuration DSPEDTD displays
+QSYS       QGEDPNLS          71,75  PANEL GROUP OBJECT FOR CONTACT DATA BASE
+QSYS       QGEMPNL           71,75  Panel group for 3270 Emulation panels
+QSYS       QGESSRVA          71,75  Panel group for display service attributes
+QSYS       QGESUPD           71,75  PANEL GROUP OBJECT FOR SSF UPDATE DISPLAYS
+QSYS       QGEZAST           71,75  Panel group for assistance level
+QSYS       QGEZATNW          71,75  OA Attention key pop-up
+QSYS       QGEZBACK          71,75  OA Backup panel group
+QSYS       QGEZBKSC          71,75  Backup schedule
+QSYS       QGEZCLNU          71,75  Panel group for OA Cleanup function
+QSYS       QGEZDCSC          71,75  Schedule disk data collection
+QSYS       QGEZDSST          71,75  Panel group for Display System Status
+QSYS       QGEZDTSK          71,75  Panel group for disk task information
+QSYS       QGEZMAIN          71,75  OA ASSIST menu panel group
+QSYS       QGEZPOWR          71,75  Panel group for Power On/Off Schedule function
+QSYS       QGEZRPDI          71,75  Panel group for directory space information
+QSYS       QGEZSAVA          71,75  Save info for problem handling panel group
+QSYS       QGEZSET           71,75  Panel group for changing OS/400 options
+QSYS       QGEZSNDM          71,75  OA Send Message panel group
+QSYS       QGEZUSRP          71,75  panel group for OA SY commands
+QSYS       QGEZWKJB          71,75  OA Work with Jobs panel group
+QSYS       QGEZWKPR          71,75  Panel group for working with printer output
+QSYS       QGEZWKSU          71,75  Panel group for Work with Signed-On Users
+QSYS       QGEZWRDV          71,75  Panel group for work with devices
+QSYS       QGFNPNL           71,75  Displays for WRKDEVTBL, WRKPGMTBL, WRKUSRTBL
+QSYS       QGFPAPNL          71,75  Panel group for FPAD
+QSYS       QGFPRWKPNL        71,75  
+QSYS       QGFVNODL          71,75  Displays for Node List commands
+QSYS       QGGSDSPF          71,75  Panel group for Display Font Resource Attributes
+QSYS       QGHCPCS           71,75  QGHCPCS panel group
+QSYS       QGHCWKQR          71,75  Panel Group for Query Line Status
+QSYS       QGHEPCS           71,75  QGHEPCS panel group
+QSYS       QGHFPNLS          71,75  Panel group for Display Hierarchical File Systems
+QSYS       QGIAPNL           71,75  PANEL GROUP OBJECT FOR TIA
+QSYS       QGIC              71,75  Panel Group for ICF DSPJOB/WRKJOB
+QSYS       QGIZAINP          71,75  UPGRADE ASSISTANT FOR OS/400 DISPLAYS
+QSYS       QGJOJRNA          71,75  Panel group for Work with Journal Att.
+QSYS       QGJOJRNE          71,75  Panel group for display journal.
+QSYS       QGJORCV           71,75  Panel group for display jrn receiver.
+QSYS       QGJORCY           71,75  Panel group for Recovery options
+QSYS       QGJORYAP          71,75  Panel group for EDT/DSPRCYAP
+QSYS       QGJOWKMN          71,75  Panel group for Work with Journal.
+QSYS       QGJVAANZ          71     
+QSYS       QGJVADP           71     Panel group for Display JAVA Program
+QSYS       QGJVADSPJB        71,75  
+QSYS       QGJVAQT           71,75  Panel group for Java Shell Quit display
+QSYS       QGJVAWRKPN        71,75  
+QSYS       QGKRBDSP          71,75  panel group for KERBEROS commands
+QSYS       QGLGLANG          71,75  Panel group for country/language ID selection
+QSYS       QGLGNLS           71,75  Panel group for country/language ID selection
+QSYS       QGLIDLBD          71,75  Panel group for DSPLIBD command
+QSYS       QGLIDLIB          71,75  panel group for DSPLIB command
+QSYS       QGLIDOBJ          71,75  panel group for DSPOBJD commands
+QSYS       QGLIEDLL          71,75  Panel group for Edit Library List
+QSYS       QGLIEPTT          71,75  
+QSYS       QGLMPNLG          71,75  Panel group for LAN manager
+QSYS       QGLPINP           71,75  INSTALL PREPARATION DISPLAYS
+QSYS       QGLPINST          71,75  DISPLAYS FOR INSTALL LICENSED PROGRAMS
+QSYS       QGLPRST           71,75  RSTLICPGM DISPLAYS
+QSYS       QGLPWRKP          71,75  DISPLAYS FOR WORK WITH INSTALLATION PROFILES
+QSYS       QGLSMODE          71,75  PANEL GROUP OBJECT FOR DSPMODSTS
+QSYS       QGLSPNLG          71,75  PANEL GROUP OBJECT FOR DSPAPPNINF
+QSYS       QGLSWRKA          71,75  PANEL GROUP OBJECT FOR WRKAPPNSTS
+QSYS       QGLZA             71,75  Panel group for WRKLICINF
+QSYS       QGMAREQO          71,75  Panel Group Object for RQSORDAST
+QSYS       QGMAUOP           71,75  Panel Group Object for UOP Displays
+QSYS       QGMAWKOR          71,75  Panel Group Object for WRKORD
+QSYS       QGMHGSD           71,75  Panel group for Command Entry and EOJ display
+QSYS       QGMHMSGD          71,75  Panel group for message descriptions
+QSYS       QGMHRPYL          71,75  Panel group for Reply List Entry
+QSYS       QGMHSLVL          71,75  Panel group for additional message information
+QSYS       QGMHWMSG          71,75  Work with Messages panel group
+QSYS       QGMNDWS           71,75  QGMNDWS panel group
+QSYS       QGMNINFO          71,75  QGMNINFO panel group
+QSYS       QGMNSYSR          71,75  QGMNSYSR panel group
+QSYS       QGMNWRK           71,75  QGMNWRK panel group
+QSYS       QGMNWRK1          71,75  QGMNWRK1 panel group
+QSYS       QGMOOPNL          71,75  Panel Group for Held Optical Files
+QSYS       QGMOPNLS          71,75  Panel Group for Optical
+QSYS       QGMRDBMIG         75     Panels for WRKMIGSTS command
+QSYS       QGNFDNTF          71,75  Panel group for WRKNETF
+QSYS       QGNFNJE           71,75  Panel group for WRKNETJOBE
+QSYS       QGNMAM            71,75  Displays for SOC processing
+QSYS       QGNMFR            71,75  Displays for filter commands
+QSYS       QGNSLZKY          75     Panel group for license management
+QSYS       QGNSPZWP          75     Panel group for Work with PTFs
+QSYS       QGNSWKSP          75     Panel group for Work with Supported Products
+QSYS       QGOCDPRD          71,75  Display Remote Definition Pnl Group
+QSYS       QGOCWKRD          71,75  Work with Remote Definition Pnl Group
+QSYS       QGODCDN           71,75  Print panels for CVTDLSNAM
+QSYS       QGODDLONAM        71,75  Display & print panels for RTVDLONAM & DSPDLONAM
+QSYS       QGOESWL           71,75  Panel group for CRTSPADCT command
+QSYS       QGOKDEPT          71,75  Directory Department Panel Group
+QSYS       QGOKDSOR          71,75  Directory Display X.400 Panel Group
+QSYS       QGOKLOC           71,75  Directory Locations Panel Group
+QSYS       QGOKLOCD          71,75  Display Location Details Panel Group
+QSYS       QGOKLOCS          71,75  Select Directory Locations Panel Group
+QSYS       QGOKNDTL          71,75  Nickname Details Panel Group
+QSYS       QGOKNICK          71,75  Work With Nicknames Panel Group
+QSYS       QGOKSRCH          71,75  Address Book Search Panel Group
+QSYS       QGOKWRKS          71,75  Work With Directory Shadow Systems Pnl Group
+QSYS       QGONCNST          71,75  Panel group for Display Connection Status
+QSYS       QGOSCYDE          71,75  Change Your Directory Entry Pnl Group
+QSYS       QGOSDALO          71,75  Panel group for DSPAUTLDLO command
+QSYS       QGOSDIRL          71,75  Display/Select DIR, DSTL and NCK Panel Group
+QSYS       QGOSDSPD          71,75  Display Directory Details Pnl Group
+QSYS       QGOSRDLS          71,75  CREATE PANEL GROUP FOR RDLS SCREENS
+QSYS       QGOSWRKD          71,75  Work With Directory Panel Group
+QSYS       QGOSWRKL          71,75  Work With Distribution Lists Panel Group
+QSYS       QGP0LDMN          71,75  Panel group for DSPMNTSTS command
+QSYS       QGP0LDSC          71,75  Panel group for Display Current Directory
+QSYS       QGP0LDUD          71,75  Panel group for DSPUDFS command
+QSYS       QGP0LSLO          71,75  Panel group for select object
+QSYS       QGP0LWLN          71,75  Panel group for work with object links
+QSYS       QGP0MSLK          71,75  Panel group for Mutex Status
+QSYS       QGPDPNLS          71,75  Panel group object for PAR panels
+QSYS       QGPMPG            71,75  QGPMPG panel group
+QSYS       QGPMSUM           71,75  Panel group for CRTPFRSUM
+QSYS       QGPMWWRKAJ        71,75  Panel group for work with ARM jobs
+QSYS       QGPQDCF           71,75  Panel group for display coded font
+QSYS       QGPQDFT           71,75  Panel group for Display Font Table
+QSYS       QGPQDPSF          71,75  Panel group for display PSF configuration
+QSYS       QGPRTPR           71,75  Panel group for office authority print function
+QSYS       QGPYCPY           71,75  Panel group for Copy Performance Collection
+QSYS       QGPYDLT           71,75  Panel group for Delete Performance Collection
+QSYS       QGPYMON           71,75  Panel group for Work with System Activity
+QSYS       QGPYMOV           75     Panel group for Move Performance Collection
+QSYS       QGPYPG            71,75  QGYPEPG panel group
+QSYS       QGPYSAV           71,75  Panel group for Save Performance Collection
+QSYS       QGPZDAPY          75     PANEL GROUP OBJECT FOR PZ
+QSYS       QGPZDPTF          71,75  PANEL GROUP OBJECT FOR PZ
+QSYS       QGPZINST          71,75  PANEL GROUP OBJECT FOR PZ
+QSYS       QGPZWRKG          71,75  PANEL GROUP OBJECT FOR PZ
+QSYS       QGQAPNLE          71,75  PANEL GROUP OBJECT FOR Q&A EDIT FUNCTION
+QSYS       QGQAPNLS          71,75  PANEL GROUP OBJECT FOR QUESTION N ANSWER
+QSYS       QGQXFRMP          71,75  Print Form Panel Group
+QSYS       QGQXPRT           71,75  Print Query and Proc Panel Group
+QSYS       QGQXRPTS          71,75  Report Screen Panel Group
+QSYS       QGRCTRK           71     Panel group for tracking panel
+QSYS       QGRZDHRP          71,75  Panel Group for SRM External interface
+QSYS       QGRZLBL           71,75  Panel Group Object for Descr. Label Loc.
+QSYS       QGRZWHRP          71,75  Panel Group for SRM External interface
+QSYS       QGS9ACT           71     
+QSYS       QGS9CRPT          71     
+QSYS       QGS9CTY           71     
+QSYS       QGS9ERRCLS        71     
+QSYS       QGS9PALE          71     
+QSYS       QGS9PM            71     
+QSYS       QGS9PRBRPT        71     
+QSYS       QGS9SE            71     
+QSYS       QGS9TTE           71     
+QSYS       QGSCAPAR          71,75  Panel Group for enhanced APAR data collection
+QSYS       QGSCAPNL          71,75  Panel group object for SCA LPDA-2 panels
+QSYS       QGSCDMP           71,75  Panel group for DMP command
+QSYS       QGSCDSSP          71,75  Panel group for Display Service Status
+QSYS       QGSCSTHD          71,75  Panel group for Slt Thread
+QSYS       QGSCWRTRC         71,75  
+QSYS       QGSECACT          71,75  
+QSYS       QGSECADP          71,75  
+QSYS       QGSECATL          71,75  
+QSYS       QGSECCDP          71,75  
+QSYS       QGSECCMN          71,75  
+QSYS       QGSECCSS          71,75  
+QSYS       QGSECDLO          71,75  
+QSYS       QGSECDOC          71,75  
+QSYS       QGSECDSA          71,75  
+QSYS       QGSECEXP          71,75  
+QSYS       QGSECFLR          71,75  
+QSYS       QGSECIDL          71,75  
+QSYS       QGSECJBD          71,75  
+QSYS       QGSECOBJ          71,75  
+QSYS       QGSECPPI          71,75  
+QSYS       QGSECPUF          71,75  
+QSYS       QGSECPUO          71,75  
+QSYS       QGSECPVF          71,75  
+QSYS       QGSECPVT          71,75  
+QSYS       QGSECQ            71,75  
+QSYS       QGSECRPA          71,75  
+QSYS       QGSECSAT          71,75  
+QSYS       QGSECSBD          71,75  
+QSYS       QGSECTGR          71,75  
+QSYS       QGSECUSR          71,75  
+QSYS       QGSJDSPCOL        71     
+QSYS       QGSJREG           71     
+QSYS       QGSMPG            75     
+QSYS       QGSOCCVT          71,75  CVTIPSIFC and CVTIPSLOC panels
+QSYS       QGSOCIFC          71,75  Work with IP over SNA interfaces panels
+QSYS       QGSOCPIP          71,75  PRTIPSCFG panel
+QSYS       QGSOCRTE          71,75  Work with IP over SNA routes panels
+QSYS       QGSOPIPS          71,75  PANEL GROUP OBJECT FOR SOCKETS
+QSYS       QGSPDSJQD         71,75  
+QSYS       QGSPDSPF          71,75  
+QSYS       QGSPDSPFA         71,75  
+QSYS       QGSPDSPJ          71,75  
+QSYS       QGSPDSPPI         71,75  
+QSYS       QGSPDSPQ          71,75  
+QSYS       QGSPDSPQD         71,75  
+QSYS       QGSPDSPR          71,75  
+QSYS       QGSPDSPRW         71,75  
+QSYS       QGSPDSPW          71,75  
+QSYS       QGSPSELWJ         71,75  
+QSYS       QGSPWRKF          71,75  
+QSYS       QGSPWRKS          71,75  
+QSYS       QGSRDSP           71,75  QGSRDSP panel group
+QSYS       QGSRPNLS          71,75  QGSRPNLS panel group
+QSYS       QGSUIMA           71,75  Panel Group Object for WRKHDWPRD Displays
+QSYS       QGSWPSWL          71,75  Displays for Switched Lines PAR
+QSYS       QGSXPNLS          71,75  PANEL GROUP OBJECT FOR PROBLEM LOG DISPLAYS
+QSYS       QGSYCDAU          71,75  Panel group for DSPAUT command
+QSYS       QGSYCWAU          71,75  Panel group for WRKAUT command
+QSYS       QGSYDALO          71,75  panel group for DSPAUTLOBJ command
+QSYS       QGSYDAUT          71,75  panel group for DSPOBJAUT/DSPAUTL commands
+QSYS       QGSYDHLR          71,75  panel group for DSPAUTHLR command
+QSYS       QGSYDSPFU         71,75  Panel group for DSPFCNUSG command
+QSYS       QGSYDSPPR         75     Password rules from CHGPWD F9 key
+QSYS       QGSYDSPSTU        71,75  Panel group for DSPSSTUSR command
+QSYS       QGSYDSPSVR        71,75  Panel group for DSPSVRAUTE command
+QSYS       QGSYDUP           71,75  panel group for DSPUSRPRF command
+QSYS       QGSYDUSR          71,75  panel group for DSPAUTUSR command
+QSYS       QGSYEAUT          71,75  panel group for EDTOBJAUT and EDTAUTL commands
+QSYS       QGSYPGMA          71,75  panel group for DSPPGMADP command
+QSYS       QGSYSATR          71,75  panel group for DSPSECA command
+QSYS       QGSYSIGN          71,75  panel group for sign on information
+QSYS       QGSYSSTSEC        75     panel group for DSPSECA command
+QSYS       QGSYWRKA          71,75  Panel group for WRKOBJPVT command
+QSYS       QGSYWRKO          71,75  panel group for WRKOBJOWN commands
+QSYS       QGSYWRKP          71,75  Panel group for WRKOBJPGP command
+QSYS       QGSZSWIN          71,75  Panel group for software inventory
+QSYS       QGTADSPC          71,75  Displays for Display tape category
+QSYS       QGTADSPL          71,75  DISPLAY LAN MEDIA LIBRARY INFORMATION
+QSYS       QGTADSPY          71,75  Displays for display tape
+QSYS       QGTADVOL          71,75  Displays for display tape cartridge
+QSYS       QGTAINFO          71,75  Displays for display tape status
+QSYS       QGTAWJMA          71,75  Displays for WRKJOB/DSPJOB MLB attributes
+QSYS       QGTAWMRQ          71,75  Displays for WRKMLBRSCQ
+QSYS       QGTAWVOL          71,75  Displays for work with tape cartridge
+QSYS       QGTBTBL           71,75  Panel group for create/display table
+QSYS       QGTEDSWP          71,75  Panel group for Display Debug Watch
+QSYS       QGTEPDBG          71,75  Panel group for Source Debugger
+QSYS       QGTHMWRK          71,75  Work with threads panel group
+QSYS       QGTIPNLS          71,75  PANEL GROUP OBJECT FOR TIE DISPLAYS
+QSYS       QGTNDSP           71,75  Panel group for Commit Display Support
+QSYS       QGTOCAPP          71,75  Menu for TCP/IP Applications
+QSYS       QGTOCCFG          71,75  Main menu for TCP/IP
+QSYS       QGTOCETCP         71,75  End TCP/IP Confirmation Panel
+QSYS       QGTOCHTE          71,75  Work with TCP/IP host table entries panels
+QSYS       QGTOCIFC          71,75  Work with TCP/IP interfaces panels
+QSYS       QGTOCP1           71,75  Panel group for WRKxxxTBLE configuration
+QSYS       QGTOCPOR          71,75  Work with TCP/IP ports panels
+QSYS       QGTOCPP           71,75  Point-to-Point TCP/IP
+QSYS       QGTOCRSI          71     Work with TCP/IP remote system information panels
+QSYS       QGTOCRTE          71,75  Work with TCP/IP routes panels
+QSYS       QGTODBPT          71,75  Work with BOOTP Table
+QSYS       QGTODCFG          71,75  Configure TCP/IP BOOTPD
+QSYS       QGTONSTA          71,75  Panels for NETSTAT command
+QSYS       QGTOOPNL          71,75  
+QSYS       QGTORCFG          71,75  Configure TCP/IP RouteD
+QSYS       QGTORWRK          71,75  Work with RTD  Configuration
+QSYS       QGTOSNMP          71,75  
+QSYS       QGTVCTLF          71,75  Panel group for TELNET control functions
+QSYS       QGUHHELP          71,75  Panel Group for Help Facility
+QSYS       QGUHHLPR          71,75  Panel Group for Help Facility
+QSYS       QGUHWKIX          71,75  WRKSCHIDXE panel group
+QSYS       QGUICLIN          71,75  Command Line pop-up
+QSYS       QGUICLRL          71,75  BiDi Command Line pop-up
+QSYS       QGUILIST          71,75  Panel group for UIM tag language listing
+QSYS       QGUILNGN          71,75  Panel group for long name pop-up
+QSYS       QGUIMNUA          71,75  Panel group for Display Menu Attributes
+QSYS       QGUPPNLS          71,75  PANEL GROUP OBJECT FOR UPPR PANELS
+QSYS       QGUPSSG           71,75  PANEL GROUP OBJECT FOR SSG - SSF DISPLAYS
+QSYS       QGUPVFY           71,75  PANEL GROUP OBJECT FOR VFYCMN PANELS
+QSYS       QGUS2RPT          71,75  
+QSYS       QGUSWRK           71,75  Panel group for Work with Registration Information
+QSYS       QGVOIPNLS         71,75  QGVOIPNLS panel group
+QSYS       QGWCAJOB          71,75  Panel group for work with active jobs
+QSYS       QGWCCLS           71,75  Panel group for DSPCLS
+QSYS       QGWCDSKS          71,75  Panel group for work with disk status
+QSYS       QGWCDTAA          71,75  Panel group for display data area
+QSYS       QGWCIPLO          71,75  Panel group for Display IPL Attributes
+QSYS       QGWCJLCK          71,75  Panel group for Job Locks
+QSYS       QGWCJLOG          71,75  Panel group for work with job logs
+QSYS       QGWCJOB           71,75  Panel group for DSP, WRKJOB
+QSYS       QGWCJSCE          71,75  Panel group for Work with Job Schedule Entries
+QSYS       QGWCNET           71,75  Panel group for display network attributes
+QSYS       QGWCOLCK          71,75  Panel group for WRKOBJLCK
+QSYS       QGWCPOOL          71,75  Panel group for display system status
+QSYS       QGWCSBS           71,75  Panel group for Work with Subsystems
+QSYS       QGWCSBSJ          71,75  Panel group for WRKSBSJOB, WRKSBMJOB, WRKUSRJOB
+QSYS       QGWCSLTJ          71,75  Panel group for Select Job
+QSYS       QGWCSSTS          71,75  Panel group for display system status
+QSYS       QGWCSYSV          71,75  Panel group for work with system values
+QSYS       QGWCTIMZ          71,75  Panel group for Work with Time Zone Descriptions
+QSYS       QGWCUSRB          71,75  Panel group for user based pricing.
+QSYS       QGWCWCBT          71,75  Panel group for Display Job Tables
+QSYS       QGWDJOBD          71,75  Panel group for display job description
+QSYS       QGWDSBSD          71,75  Panel group for display subsystem
+QSYS       QGWTAPJ           71,75  Panel group for display active prestart jobs
+QSYS       QGWTEOJD          71,75  Panel group for end of job display
+QSYS       QGWTERP           71,75  Panel group for device error recovery
+QSYS       QGWTFRGJ          71,75  Panel group for Transfer Group Job Selection
+QSYS       QGWVJOB           71,75  Panel group for WV DSP, WRKJOB
+QSYS       QGYASPCFGD        75     Panel group for CFGDEVASP
+QSYS       QGYASPVRYP        71,75  Panel group for DSPASPSTS
+QSYS       QGYASPWRKJ        71,75  Panel group for WRKASPJOB
+QSYS       QGYPEPG           71,75  QGYPEPG panel group
+QSYS       QGYSDWKSRV        71,75  
+QSYS       QGZSPCAF          71,75  Main menu for Configure AF-INET
+QSYS       QGZSPCIP          71,75  CFGIPX and Work with Circuit menus
+QSYS       QGZSPRTE          71,75  Circuit routes panel group object
+QSYS       QGZSPSRV          71,75  Circuit services panel group object
+QSYS       QGZSPSTA          71,75  WRKIPXSTS panel group object
+QSYS       QHCZCCMD          71,75  
+QSYS       QHFF              75     Help Panel
+QSYS       QHIZA             71,75  UPGRADE ASSISTANT FOR OS/400 DISPLAY HELP
+QSYS       QHIZAANZ          71,75  
+QSYS       QHIZAANZEX        71,75  
+QSYS       QHIZAPTF          71,75  
+QSYS       QHIZAR            71,75  UPGRADE ASSISTANT FOR OS/400 DISPLAY HELP
+QSYS       QHJVA             71     
+QSYS       QHJVACM2          71,75  
+QSYS       QHJVACMD          71     
+QSYS       QHLP2             71,75  QHLP2 panel group
+QSYS       QHLP3             71,75  PREPARE FOR INSTALL FOR OS/400 DISPLAY HELP
+QSYS       QHMN5             71,75  QHMN5 panel group
+QSYS       QHPQCMD           71     
+QSYS       QHS9HELP          71     
+QSYS       QHXXCMD           71,75  
+QSYS       QHZSOCMD          71,75  
+QSYS       QLPDSPTM          71,75  DISPLAY FOR TRADEMARK INFORMATION
+QSYS       QP0ZENV           71,75  Panel Group Object for WRKENVVAR Displays
+QSYS       QPSZPNLS          71,75  PANEL GROUP OBJECT FOR Select Product ID
+QSYS       QRZPNLS           71,75  Panel Group for RZ outfile support
+QSYS       QSQICOLL          71,75  
+QSYS       QSQILVL1          71,75  
+QSYS       QSQILVL2          71,75  
+QSYS       QSQILVL3          71,75  
+QSYS       QSQINODL          71,75  
+QSYS       QSQIOBJL          71,75  
+QSYS       QSQIPOP           71,75  
+QSYS       QSQIPRPT          71,75  
+QSYS       QSQIRDBL          71,75  
+QSYS       QSQITABL          71,75  
+QSYS       QTEPG             71,75  Panel group for Test Debug
+QSYS       QUDSDDM           71,75  Panel group for Display DDM files
+QSYS       QUDSPDE           71,75  Panel group for Display RDB Directory Entries
+QSYS       QUSY2RPT          71,75  
+QSYS       QUWKDDM           71,75  Panelgrp for Work with DDM files
+QSYS       QUWRKDE           71,75  Panel group for Work with RDB Directory Entries
+QTCP       QGTGTELN          71     Main menu for TELNET Configuration
+QTCP       QGTMFTP           71     Main menu for FTP Configuration
+QTCP       QGTMPLPD          71     Main menu for LPD Configuration
+QTCP       QGTMRXC           71     Main menu for REXEC Configuration
+QTCP       QGTMSMTP          71     Main menu for SMTP
+QTCP       QHTGCMD           71     
+QTCP       QHTM              71     Help panels for TCP
+QTCP       QHTMCMD           71     
+QTCP       QHTMF             71     FTP Help panels for TCP
+QTCP       QTGDVT1M          71     DSPVTMAP screen for TCP/IP
+
+# 381 on both, 43 only on 7.1, 479 only on 7.5.

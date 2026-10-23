@@ -1,0 +1,2288 @@
+# IBM i *CMD objects, as the oracle systems list them.
+# Columns: library, name, attribute, releases, text. 71 = the primary oracle (V7R1M0),
+# 75 = pub400.com (V7R5M0); both listed on 2026-10-23. The text is the object text.
+
+QGY        EDTWSOAUT         71     Edit Workstation Object Aut
+QGY        GRTWSOAUT         71     Grant Workstation Object Aut
+QGY        RVKWSOAUT         71     Revoke Workstation Object Aut
+QGY        SETCSTDTA         71     Set Customization Data
+QHTTPSVR   CFGTCPHTTP        71     Configure TCP/IP HTTP
+QHTTPSVR   CHGHTTPA          71     Change HTTP Attributes
+QIWA2      CFGACCWEB2        71     Configure Access for Web
+QIWA2      ENDACCWEB2        71     End Access for Web
+QIWA2      RMVACCWEB2        71     Remove Access for Web
+QIWA2      STRACCWEB2        71     Start Access for Web
+QIWS       ANZUSRPC3         71     ANALYZE IBM I ACCESS USERS
+QIWS       CHGPCOPRF         71     Change PC Organizer Profile
+QIWS       CPYFRMPCD         71     Copy From PC Document
+QIWS       CPYTOPCD          71     Copy To PC Document
+QIWS       CVTTOFLR          71     Convert To Folder
+QIWS       INZPCS            71     Initialize IBM i Access
+QIWS       STRPCCMD          71     Start PC Command
+QIWS       STRPCO            71     Start PC Organizer
+QJAVA      JAVA              71     Run Java Program
+QJAVA      RUNJVA            71     Run Java Program
+QSHELL     QSH               71     Start QSH
+QSHELL     STRQSH            71     Start QSH
+QSYS       ADDACC            71     Add Access Code
+QSYS       ADDAJE            71,75  Add Autostart Job Entry
+QSYS       ADDALRACNE        71,75  Add Alert Action Entry
+QSYS       ADDALRD           71,75  Add Alert Description
+QSYS       ADDALRSLTE        71,75  Add Alert Selection Entry
+QSYS       ADDASPCPYD PRX    75     
+QSYS       ADDAUTLE          71,75  Add Authorization List Entry
+QSYS       ADDBKP            71,75  Add Breakpoint
+QSYS       ADDBLDOPTE PRX    71     
+QSYS       ADDBNDDIRE        71,75  Add Binding Directory Entry
+QSYS       ADDBUILDER PRX    71     
+QSYS       ADDCADMRE  PRX    75     
+QSYS       ADDCADNODE PRX    75     
+QSYS       ADDCCSCLT  PRX    75     Add CC Server Client
+QSYS       ADDCFGLE          71,75  Add Configuration List Entries
+QSYS       ADDCICSCVT PRX    75     Add CICS CVT Entry
+QSYS       ADDCICSDCT PRX    75     Add CICS DCT Entry
+QSYS       ADDCICSFCT PRX    75     Add CICS FCT Entry
+QSYS       ADDCICSGLT PRX    75     Add CICS GLT Entry
+QSYS       ADDCICSJCT PRX    75     Add CICS JCT Entry
+QSYS       ADDCICSPCT PRX    75     Add CICS PCT Entry
+QSYS       ADDCICSPPT PRX    75     Add CICS PPT Entry
+QSYS       ADDCICSSIT PRX    75     Add CICS SIT Entry
+QSYS       ADDCICSTCS PRX    75     Add CICS TCS Entry
+QSYS       ADDCICSTCT PRX    75     Add CICS TCT Entry
+QSYS       ADDCICSTST PRX    75     Add CICS TST Entry
+QSYS       ADDCKMKSFE        71,75  Add Keystore File Entry
+QSYS       ADDCLUMON  PRX    75     
+QSYS       ADDCLUNODE PRX    75     
+QSYS       ADDCMDCRQA PRX    75     Add Command CRQ Activity
+QSYS       ADDCMNE           71,75  Add Communications Entry
+QSYS       ADDCOMSNMP        71,75  Add Community for SNMP
+QSYS       ADDCRGDEVE PRX    75     
+QSYS       ADDCRGNODE PRX    75     
+QSYS       ADDCRQA    PRX    75     Add CRQ Activity
+QSYS       ADDDEVDMNE PRX    75     
+QSYS       ADDDIRE           71,75  Add Directory Entry
+QSYS       ADDDIRSHD         71,75  Add Directory Shadow System
+QSYS       ADDDLOAUT         71,75  Add DLO Authority
+QSYS       ADDDNSSIG  PRX    75     Add DNS Signature
+QSYS       ADDDSTCLGE PRX    75     Add DST Catalog Entry
+QSYS       ADDDSTLE          71,75  Add Distribution List Entry
+QSYS       ADDDSTQ           71     Add Distribution Queue
+QSYS       ADDDSTRTE         71     Add Distribution Route
+QSYS       ADDDSTSYSN        71     Add Secondary System Name
+QSYS       ADDDTADFN         71,75  Add Data Definition
+QSYS       ADDDWDFN          71     Add Disk Watcher Definition
+QSYS       ADDEMLCFGE        71,75  Add Configuration Entry
+QSYS       ADDENVVAR         71,75  Add Environment Variable
+QSYS       ADDEWCBCDE        71,75  Add EWC Barcode Entry
+QSYS       ADDEWCM           71,75  Add Wireless Ctl Member
+QSYS       ADDEWCPTCE        71,75  Add EWC PTC Entry
+QSYS       ADDEWLM           71,75  Add Wireless Line Member
+QSYS       ADDEXITPGM        71     Add Exit Program
+QSYS       ADDFCTE    PRX    75     Add Forms Control Entry
+QSYS       ADDFNTTBLE        71,75  Add Font Table Entry
+QSYS       ADDHACFGD  PRX    75     
+QSYS       ADDHAPCY   PRX    75     
+QSYS       ADDHDBDLFM        71,75  Add Host Database to DLFM
+QSYS       ADDICFDEVE        71,75  Add ICF Device Entry
+QSYS       ADDIMGCLGE        71,75  Add Image Catalog Entry
+QSYS       ADDIPSIFC         71     Add IP over SNA Interface
+QSYS       ADDIPSLOC         71     Add IP over SNA Location
+QSYS       ADDIPSRTE         71     Add IP over SNA Route
+QSYS       ADDJOBQE          71,75  Add Job Queue Entry
+QSYS       ADDJOBSCDE        71     Add Job Schedule Entry
+QSYS       ADDJWDFN          71     Add Job Watcher Definition
+QSYS       ADDKRBKTE         71,75  Add Kerberos Keytab Entry
+QSYS       ADDKRBTKT         71,75  Add Kerberos Ticket
+QSYS       ADDLANADPI        71,75  Add LAN Adapter Information
+QSYS       ADDLFM            71,75  Add Logical File Member
+QSYS       ADDLIBLE          71,75  Add Library List Entry
+QSYS       ADDLICCRQA PRX    75     Add License CRQ Activity
+QSYS       ADDLICKEY         71     Add License Key Information
+QSYS       ADDLNK            71,75  Add Link
+QSYS       ADDMFS            71     Add Mounted FS
+QSYS       ADDMSGD           71,75  Add Message Description
+QSYS       ADDMSTPART        71     Add Master Key Part
+QSYS       ADDNCK            71,75  Add Nickname
+QSYS       ADDNETJOBE        71     Add Network Job Entry
+QSYS       ADDNETTBLE        71,75  Add Network Table Entry
+QSYS       ADDNODLE          71,75  Add Node List Entry
+QSYS       ADDNWSSTGL        71,75  Add Server Storage Link
+QSYS       ADDOBJCRQA PRX    75     Add Object CRQ Activity
+QSYS       ADDOPTCTG         71     Add Optical Cartridge
+QSYS       ADDOPTSVR         71     Add Optical Server
+QSYS       ADDOSPFARA        71,75  Add OSPF Area
+QSYS       ADDOSPFIFC        71,75  Add OSPF Interface
+QSYS       ADDOSPFLNK        71,75  Add OSPF Virtual Link
+QSYS       ADDOSPFRNG        71,75  Add OSPF Range
+QSYS       ADDPCLTBLE        71,75  Add Protocol Table Entry
+QSYS       ADDPEXDFN         71     Add PEX Definition
+QSYS       ADDPEXFTR         71     Add PEX Filter
+QSYS       ADDPFCST          71,75  Add PF Constraint
+QSYS       ADDPFM            71,75  Add Physical File Member
+QSYS       ADDPFTRG          71     Add Physical File Trigger
+QSYS       ADDPFVLM          71,75  Add Phy File Variable Len Mbr
+QSYS       ADDPFXDLFM        71,75  Add Prefix to DLFM
+QSYS       ADDPGM            71,75  Add Program
+QSYS       ADDPJE            71,75  Add Prestart Job Entry
+QSYS       ADDPRBACNE        71,75  Add Problem Action Entry
+QSYS       ADDPRBSLTE        71,75  Add Problem Selection Entry
+QSYS       ADDPRDBPR  PRX    71     
+QSYS       ADDPRDCRQA PRX    75     Add Product CRQ Activity
+QSYS       ADDPRDLICI        75     Add License Information
+QSYS       ADDPTFCRQA PRX    75     Add PTF CRQ Activity
+QSYS       ADDRDBDIRE        71,75  Add RDB Directory Entry
+QSYS       ADDREXBUF         71,75  Add REXX Buffer
+QSYS       ADDRIPACP         71,75  Add RIP Accepted Route
+QSYS       ADDRIPFLT         71,75  Add RIP Filter
+QSYS       ADDRIPIFC         71,75  Add RIP Interface
+QSYS       ADDRIPIGN         71,75  Add Ignored RIP Neighbor
+QSYS       ADDRJECMNE PRX    75     Add RJE Communication Entry
+QSYS       ADDRJERDRE PRX    75     Add RJE Reader Entry
+QSYS       ADDRJEWTRE PRX    75     Add RJE Writer Entry
+QSYS       ADDRMTDFN         71     Add Remote Definition
+QSYS       ADDRMTJRN         71,75  Add Remote Journal
+QSYS       ADDRPYLE          71     Add Reply List Entry
+QSYS       ADDRSCCRQA PRX    75     Add Resource CRQ Activity
+QSYS       ADDRTGE           71,75  Add Routing Entry
+QSYS       ADDSCHIDXE        71,75  Add Search Index Entry
+QSYS       ADDSDSTLE  PRX    75     Add SMTP Dist List Entry
+QSYS       ADDSMTPLE  PRX    71,75  Add SMTP List Entry
+QSYS       ADDSMTPRLE        75     Add Remote Login Entry
+QSYS       ADDSOCE           71,75  Add Sphere of Control Entry
+QSYS       ADDSRVTBLE        71,75  Add Service Table Entry
+QSYS       ADDSVCCPYD PRX    75     
+QSYS       ADDSVRAUTE        71,75  Add Server Auth Entry
+QSYS       ADDTAPCTG         71,75  Add Tape Cartridge
+QSYS       ADDTCPHTE         71,75  Add TCP/IP Host Table Entry
+QSYS       ADDTCPIFC         71,75  Add TCP/IP Interface
+QSYS       ADDTCPPORT        71,75  Add TCP/IP Port Restriction
+QSYS       ADDTCPPTP         71,75  Add Point-to-Point Profile
+QSYS       ADDTCPRSI         71     Add TCP/IP Remote System
+QSYS       ADDTCPRTE         71,75  Add TCP/IP Route
+QSYS       ADDTCPSVR         71,75  Add TCP/IP Server
+QSYS       ADDTEFE    PRX    71     
+QSYS       ADDTRC            71,75  Add Trace
+QSYS       ADDTRCFTR         71     Add Trace Filter
+QSYS       ADDUSRSMTP PRX    75     Add User SMTP
+QSYS       ADDUSRSNMP        71,75  Add User for SNMP
+QSYS       ADDVACSNMP        75     Add VACM for SNMP
+QSYS       ADDWSE            71,75  Add Work Station Entry
+QSYS       ALCOBJ            71,75  Allocate Object
+QSYS       ANSLIN            71,75  Answer Line
+QSYS       ANSQST            71     Answer Questions
+QSYS       ANZCADPRF  PRX    75     
+QSYS       ANZCMDPFR         71     Analyze Command Performance
+QSYS       ANZDBF     PRX    75     Analyze Database Files
+QSYS       ANZDBFKEY  PRX    75     Analyze Database File Keys
+QSYS       ANZDFTPWD         71     Analyze Default Passwords
+QSYS       ANZJVAPGM         71     Analyze Java Program
+QSYS       ANZJVM            71     Analyze Java Virtual Machine
+QSYS       ANZOBJCVN         71     Analyze Object Conversion
+QSYS       ANZPFRDTA  PRX    75     Analyze Performance Data
+QSYS       ANZPGM     PRX    75     Analyze Programs
+QSYS       ANZPRB            71     Analyze Problem
+QSYS       ANZPRFACT         71     Analyze Profile Activity
+QSYS       ANZQRY            71,75  Analyze Query
+QSYS       ANZUSROBJ         71     Analyze User Objects
+QSYS       APING             71,75  Verify APPC Connection
+QSYS       APYJRNCHG         71     Apply Journaled Changes
+QSYS       APYJRNCHGX        71     Apply Journaled Changes Extend
+QSYS       APYPTF            71     Apply Program Temporary Fix
+QSYS       APYRMTPTF  PRX    75     Apply Remote PTF
+QSYS       AREXEC            71,75  Run Remote Command
+QSYS       ARPING            71,75  Send ARP Request
+QSYS       ASKQST            71,75  Ask Question
+QSYS       BCHJOB            71,75  Batch Job
+QSYS       BLDHELP    PRX    71     
+QSYS       CALL              71,75  Call Program
+QSYS       CALLPRC           71,75  Call Bound Procedure
+QSYS       CALLSUBR          71,75  Call Subroutine
+QSYS       CD                71,75  Change Current Directory
+QSYS       CFGACCWEB  PRX    75     Configure Access for Web
+QSYS       CFGCRGCNR  PRX    75     
+QSYS       CFGDEVMLB         71,75  Configure Device Media Library
+QSYS       CFGDSTSRV         71     Configure Distribution Service
+QSYS       CFGGEOMIR  PRX    75     
+QSYS       CFGIPS            71     Configure IP over SNA
+QSYS       CFGPFRCOL         71     Configure Perf Collection
+QSYS       CFGPM400          71,75  Configure PM Agent
+QSYS       CFGPMAGT          71,75  Configure PM Agent
+QSYS       CFGRPDS    PRX    75     Configure VM/MVS Bridge
+QSYS       CFGRTG            71,75  Configure Routing Protocols
+QSYS       CFGSYSSEC         71     Configure System Security
+QSYS       CFGTCP            71,75  Configure TCP/IP
+QSYS       CFGTCPAPP         71,75  Configure TCP/IP Applications
+QSYS       CFGTCPBP          71,75  Configure TCP/IP BOOTP
+QSYS       CFGTCPFTP  PRX    71,75  Configure TCP/IP FTP
+QSYS       CFGTCPHTTP PRX    71,75  Configure TCP/IP HTTP
+QSYS       CFGTCPLPD  PRX    71,75  Configure TCP/IP LPD
+QSYS       CFGTCPPTP         71,75  Configure Point-to-Point TCPIP
+QSYS       CFGTCPRTD         71,75  Configure TCP/IP RouteD
+QSYS       CFGTCPRXC  PRX    71,75  Configure TCP/IP REXEC
+QSYS       CFGTCPSMTP PRX    71,75  Configure TCP/IP SMTP
+QSYS       CFGTCPSNMP        71,75  Configure TCP/IP SNMP
+QSYS       CFGTCPTELN PRX    71,75  Configure TCP/IP TELNET
+QSYS       CHDIR             71,75  Change Current Directory
+QSYS       CHGACGCDE         71,75  Change Accounting Code
+QSYS       CHGACTPRFL        71     Change Active Profile List
+QSYS       CHGACTSCDE        71     Change Activation Scd Entry
+QSYS       CHGAJE            71,75  Change Autostart Job Entry
+QSYS       CHGALRACNE        71,75  Change Alert Action Entry
+QSYS       CHGALRD           71,75  Change Alert Description
+QSYS       CHGALRSLTE        71,75  Change Alert Selection Entry
+QSYS       CHGALRTBL         71,75  Change Alert Table
+QSYS       CHGASPA           71     Change ASP Attribute
+QSYS       CHGASPACT         71     Change ASP Activity
+QSYS       CHGASPCPYD PRX    75     
+QSYS       CHGASPSSN  PRX    75     
+QSYS       CHGATR            71,75  Change Attribute
+QSYS       CHGAUD            71,75  Change Auditing Value
+QSYS       CHGAUT            71,75  Change Authority
+QSYS       CHGAUTLE          71,75  Change Auth List Entry
+QSYS       CHGBCKUP          71,75  Change Backup Options
+QSYS       CHGBLDMSG  PRX    71     
+QSYS       CHGBLDOPTE PRX    71     
+QSYS       CHGBPA            71,75  Change BOOTP Attributes
+QSYS       CHGBPR     PRX    71     
+QSYS       CHGBUILDER PRX    71     
+QSYS       CHGCAD     PRX    75     
+QSYS       CHGCCSA    PRX    75     Change CC Server Attributes
+QSYS       CHGCDEFNT         71,75  Change Coded Font
+QSYS       CHGCFGL           71,75  Change Configuration List
+QSYS       CHGCFGLE          71,75  Change Cfg List Entries
+QSYS       CHGCICSCVT PRX    75     Change CICS CVT Entry
+QSYS       CHGCICSDCT PRX    75     Change CICS DCT Entry
+QSYS       CHGCICSFCT PRX    75     Change CICS FCT Entry
+QSYS       CHGCICSGRP PRX    75     Change CICS Group
+QSYS       CHGCICSJCT PRX    75     Change CICS JCT Entry
+QSYS       CHGCICSPCT PRX    75     Change CICS PCT Entry
+QSYS       CHGCICSPPT PRX    75     Change CICS PPT Entry
+QSYS       CHGCICSSIT PRX    75     Change CICS SIT Entry
+QSYS       CHGCICSSTS PRX    75     Change CICS Status
+QSYS       CHGCICSTCS PRX    75     Change CICS TCS Entry
+QSYS       CHGCICSTCT PRX    75     Change CICS TCT Entry
+QSYS       CHGCICSTST PRX    75     Change CICS TST Entry
+QSYS       CHGCLNUP          71,75  Change Cleanup
+QSYS       CHGCLS            71,75  Change Class
+QSYS       CHGCLU     PRX    75     
+QSYS       CHGCLUMON  PRX    75     
+QSYS       CHGCLUNODE PRX    75     
+QSYS       CHGCLURCY         71     Change Cluster Recovery
+QSYS       CHGCLUVER  PRX    75     
+QSYS       CHGCMD            71,75  Change Command
+QSYS       CHGCMDCRQA PRX    75     Change Command CRQ Activity
+QSYS       CHGCMDDFT         71,75  Change Command Default
+QSYS       CHGCMNE           71,75  Change Communications Entry
+QSYS       CHGCNTINF         71     Change Contact Information
+QSYS       CHGCOMSNMP        71,75  Change Community for SNMP
+QSYS       CHGCOSD           71,75  Change Class-of-Service Desc
+QSYS       CHGCRG     PRX    75     
+QSYS       CHGCRGCNR  PRX    75     
+QSYS       CHGCRGDEVE PRX    75     
+QSYS       CHGCRGPRI  PRX    75     
+QSYS       CHGCRQA    PRX    75     Change CRQ Activity
+QSYS       CHGCRQD           71,75  Change CRQ Description
+QSYS       CHGCSI            71,75  Change Comm Side Information
+QSYS       CHGCSMSSN  PRX    75     
+QSYS       CHGCTLAPPC        71,75  Change Ctl Desc (APPC)
+QSYS       CHGCTLASC         71,75  Change Ctl Desc (Async)
+QSYS       CHGCTLBSC         71,75  Change Ctl Desc (BSC)
+QSYS       CHGCTLFNC         71     Change Ctl Desc (Finance)
+QSYS       CHGCTLHOST        71,75  Change Ctl Desc (SNA Host)
+QSYS       CHGCTLLWS         71,75  Change Ctl Desc (Local WS)
+QSYS       CHGCTLNET         71,75  Change Ctl Desc (Network)
+QSYS       CHGCTLRTL         71     Change Ctl Desc (Retail)
+QSYS       CHGCTLRWS         71     Change Ctl Desc (Remote WS)
+QSYS       CHGCTLTAP         71,75  Change Ctl Desc (Tape)
+QSYS       CHGCTLVWS         71,75  Change Ctl Desc (Virtual WS)
+QSYS       CHGCURDIR         71,75  Change Current Directory
+QSYS       CHGCURLIB         71,75  Change Current Library
+QSYS       CHGDBG            71,75  Change Debug
+QSYS       CHGDDMF           71,75  Change DDM File
+QSYS       CHGDDMTCPA        71,75  Change DDM TCP/IP Attributes
+QSYS       CHGDEVAPPC        71,75  Change Device Desc (APPC)
+QSYS       CHGDEVASC         71,75  Change Device Desc (Async)
+QSYS       CHGDEVASP         71,75  Change Device Desc (ASP)
+QSYS       CHGDEVBSC         71,75  Change Device Desc (BSC)
+QSYS       CHGDEVCRP         71,75  Change Device Desc (Crypto)
+QSYS       CHGDEVDKT         71,75  Change Device Desc (Diskette)
+QSYS       CHGDEVDSP         71,75  Change Device Desc (Display)
+QSYS       CHGDEVFNC         71     Change Device Desc (Finance)
+QSYS       CHGDEVHOST        71,75  Change Device Desc (SNA Host)
+QSYS       CHGDEVINTR        71,75  Change Device Desc (Intra)
+QSYS       CHGDEVMLB         71,75  Change Device Desc (Media Lib)
+QSYS       CHGDEVNET         71,75  Change Device Desc (Network)
+QSYS       CHGDEVNWSH        71,75  Change Device Desc (NWSH)
+QSYS       CHGDEVOPT         71,75  Change Device Desc (Optical)
+QSYS       CHGDEVPRT         71,75  Change Device Desc (Printer)
+QSYS       CHGDEVRTL         71     Change Device Desc (Retail)
+QSYS       CHGDEVSNPT        71,75  Change Device Desc (SNPT)
+QSYS       CHGDEVSNUF        71,75  Change Device Desc (SNUF)
+QSYS       CHGDEVTAP         71,75  Change Device Desc (Tape)
+QSYS       CHGDHCPA          71,75  Change DHCP Attributes
+QSYS       CHGDHCPSVR        71     Change DHCP Server
+QSYS       CHGDIRE           71,75  Change Directory Entry
+QSYS       CHGDIRSHD         71,75  Change Directory Shadow System
+QSYS       CHGDIRSVRA        71     Change Directory Server Attr
+QSYS       CHGDKTF           71,75  Change Diskette File
+QSYS       CHGDLOAUD         71,75  Change DLO Auditing Level
+QSYS       CHGDLOAUT         71,75  Change DLO Authority
+QSYS       CHGDLOOWN         71,75  Change DLO Owner
+QSYS       CHGDLOPGP         71,75  Change DLO Primary Group
+QSYS       CHGDNSA    PRX    71,75  Change DNS Server Attributes
+QSYS       CHGDOCD           71,75  Change Document Description
+QSYS       CHGDSPF           71,75  Change Display File
+QSYS       CHGDSTA           71,75  Change Distribution Attributes
+QSYS       CHGDSTD           71,75  Change Distribution
+QSYS       CHGDSTL           71,75  Change Distribution List
+QSYS       CHGDSTPWD         71,75  Change IBM Service Tools Pwd
+QSYS       CHGDSTQ           71     Change Distribution Queue
+QSYS       CHGDSTRTE         71     Change Distribution Route
+QSYS       CHGDTA            71,75  Change Data
+QSYS       CHGDTAARA         71,75  Change Data Area
+QSYS       CHGEMLCFGE        71,75  Change Configuration Entry
+QSYS       CHGENVVAR         71,75  Change Environment Variable
+QSYS       CHGEWCBCDE        71,75  Change EWC Barcode Entry
+QSYS       CHGEWCM           71,75  Change Wireless Ctl Member
+QSYS       CHGEWCPTCE        71,75  Change EWC PTC Entry
+QSYS       CHGEWLM           71,75  Change Wireless Line Member
+QSYS       CHGEXPSCDE        71     Change Expiration Scd Entry
+QSYS       CHGFCNARA  PRX    75     Change Functional Area
+QSYS       CHGFCNUSG         71,75  Change Function Usage
+QSYS       CHGFCT     PRX    75     Change Forms Control Table
+QSYS       CHGFCTE    PRX    75     Change Forms Control Entry
+QSYS       CHGFNTRSC         71,75  Change Font Resource
+QSYS       CHGFNTTBLE        71,75  Change Font Table Entry
+QSYS       CHGFTPA    PRX    71,75  Change FTP Attributes
+QSYS       CHGFTR            71,75  Change Filter
+QSYS       CHGGPHFMT  PRX    75     Change Graph Format
+QSYS       CHGGPHPKG  PRX    75     Change Graph Package
+QSYS       CHGGRPA           71,75  Change Group Attributes
+QSYS       CHGHACFGD  PRX    75     
+QSYS       CHGHAPCY   PRX    75     
+QSYS       CHGHAWEB   PRX    75     
+QSYS       CHGHLLPTR         71,75  Change HLL Pointer
+QSYS       CHGHTTPA   PRX    71,75  Change HTTP Attributes
+QSYS       CHGHYSSTS  PRX    75     
+QSYS       CHGICFDEVE        71,75  Change ICF Device Entry
+QSYS       CHGICFF           71,75  Change ICF File
+QSYS       CHGIMGCLG         71,75  Change Image Catalog
+QSYS       CHGIMGCLGE        71,75  Change Image Catalog Entry
+QSYS       CHGIPLA           71     Change IPL Attributes
+QSYS       CHGIPSIFC         71     Change IP over SNA Interface
+QSYS       CHGIPSLOC         71     Change IP over SNA Location
+QSYS       CHGIPSTOS         71     Change IP over SNA TOS
+QSYS       CHGJOB            71,75  Change Job
+QSYS       CHGJOBD           71,75  Change Job Description
+QSYS       CHGJOBMLBA        71,75  Change Job MLB Attributes
+QSYS       CHGJOBQ           71,75  Change Job Queue
+QSYS       CHGJOBQE          71,75  Change Job Queue Entry
+QSYS       CHGJOBSCDE        71     Change Job Schedule Entry
+QSYS       CHGJOBTYP  PRX    75     Change Job Type
+QSYS       CHGJRN            71,75  Change Journal
+QSYS       CHGJRNA           71     Change Journal Attributes
+QSYS       CHGJRNOBJ         71,75  Change Journaled Object
+QSYS       CHGJVAPGM         71     Change Java Program
+QSYS       CHGKBDMAP         71,75  Change Keyboard Map
+QSYS       CHGKRBPWD         71,75  Change Kerberos Password
+QSYS       CHGLANADPI        71,75  Change LAN Adapter Information
+QSYS       CHGLF             71,75  Change Logical File
+QSYS       CHGLFM            71,75  Change Logical File Member
+QSYS       CHGLIB            71,75  Change Library
+QSYS       CHGLIBL           71,75  Change Library List
+QSYS       CHGLICCRQA PRX    75     Change License CRQ Activity
+QSYS       CHGLICINF         71     Change License Information
+QSYS       CHGLINASC         71,75  Change Line Desc (Async)
+QSYS       CHGLINBSC         71,75  Change Line Desc (BSC)
+QSYS       CHGLINDDI         71     Change Line Desc (DDI)
+QSYS       CHGLINETH         71,75  Change Line Desc (Ethernet)
+QSYS       CHGLINFAX         71     Change Line Desc (Fax)
+QSYS       CHGLINFR          71     Change Line Desc (Frame Relay)
+QSYS       CHGLINPPP         71,75  Change Line Desc (PPP)
+QSYS       CHGLINSDLC        71     Change Line Desc (SDLC)
+QSYS       CHGLINTDLC        71     Change Line Desc (TDLC)
+QSYS       CHGLINTRN         71     Change Line Desc (Token-Ring)
+QSYS       CHGLINWLS         71     Change Line Desc (Wireless)
+QSYS       CHGLINX25         71     Change Line Desc (X.25)
+QSYS       CHGLPDA    PRX    71,75  Change LPD Attributes
+QSYS       CHGMGDSYSA PRX    75     Change Managed System Atr
+QSYS       CHGMGRSRVA PRX    75     Change Manager Services Atr
+QSYS       CHGMGTCOL         71     Change Management Collection
+QSYS       CHGMNU            71,75  Change Menu
+QSYS       CHGMOD            71,75  Change Module
+QSYS       CHGMODD           71,75  Change Mode Description
+QSYS       CHGMSGD           71,75  Change Message Description
+QSYS       CHGMSGF           71,75  Change Message File
+QSYS       CHGMSGQ           71,75  Change Message Queue
+QSYS       CHGNCK            71,75  Change Nickname
+QSYS       CHGNETA           71     Change Network Attributes
+QSYS       CHGNETJOBE        71     Change Network Job Entry
+QSYS       CHGNFSEXP         71     Change NFS Export
+QSYS       CHGNODGRPA        71,75  Change Node Group Attributes
+QSYS       CHGNTBD           71,75  Change NetBIOS Description
+QSYS       CHGNTPA           71,75  Change SNTP Attributes
+QSYS       CHGNWIFR          71     Change Network Interface (FR)
+QSYS       CHGNWSA           71     Change NWS Attributes
+QSYS       CHGNWSCFG         71     Change NWS Configuration
+QSYS       CHGNWSD           71,75  Change Network Server Desc
+QSYS       CHGNWSSTG         71,75  Change NWS Storage Space
+QSYS       CHGNWSUSRA        71,75  Change NWS User Attributes
+QSYS       CHGOBJAUD         71,75  Change Object Auditing
+QSYS       CHGOBJCA   PRX    75     Change ObjectConnect Attrs
+QSYS       CHGOBJCRQA PRX    75     Change Object CRQ Activity
+QSYS       CHGOBJD           71,75  Change Object Description
+QSYS       CHGOBJOWN         71,75  Change Object Owner
+QSYS       CHGOBJPGP         71,75  Change Object Primary Group
+QSYS       CHGOPTA           71     Change Optical Attributes
+QSYS       CHGOPTVOL         71,75  Change Optical Volume
+QSYS       CHGOSPFA          71,75  Change OSPF Attributes
+QSYS       CHGOSPFARA        71,75  Change OSPF Area
+QSYS       CHGOSPFIFC        71,75  Change OSPF Interface
+QSYS       CHGOSPFLNK        71,75  Change OSPF Virtual Link
+QSYS       CHGOSPFRNG        71,75  Change OSPF Range
+QSYS       CHGOUTQ           71,75  Change Output Queue
+QSYS       CHGOWN            71,75  Change Owner
+QSYS       CHGPCOPRF  PRX    71,75  Change PC Organizer Profile
+QSYS       CHGPDGPRF         71,75  Change PDG Profile
+QSYS       CHGPDMDFT  PRX    75     Change PDM Defaults
+QSYS       CHGPEXDFN         71     Change PEX Definition
+QSYS       CHGPF             71,75  Change Physical File
+QSYS       CHGPFCST          71,75  Change PF Constraint
+QSYS       CHGPFM            71,75  Change Physical File Member
+QSYS       CHGPFTRG          71,75  Change PF Trigger
+QSYS       CHGPGM            71,75  Change Program
+QSYS       CHGPGMVAR         71,75  Change Program Variable
+QSYS       CHGPGP            71,75  Change Primary Group
+QSYS       CHGPJ             71,75  Change Prestart Job
+QSYS       CHGPJE            71,75  Change Prestart Job Entry
+QSYS       CHGPOPA    PRX    71,75  Change POP Server Attributes
+QSYS       CHGPRB            71     Change Problem
+QSYS       CHGPRBACNE        71,75  Change Problem Action Entry
+QSYS       CHGPRBSLTE        71,75  Change Problem Selection Entry
+QSYS       CHGPRDCRQA PRX    75     Change Product CRQ Activity
+QSYS       CHGPRDOBJD        75     Change Product Object Desc
+QSYS       CHGPRF            71,75  Change Profile
+QSYS       CHGPRTF           71,75  Change Printer File
+QSYS       CHGPRXCMD         71,75  Change Proxy Command
+QSYS       CHGPSFCFG         71,75  Change PSF Configuration
+QSYS       CHGPTFCRQA PRX    75     Change PTF CRQ Activity
+QSYS       CHGPTR            71     Change Pointer
+QSYS       CHGPWD            71,75  Change Password
+QSYS       CHGPWRSCD         71,75  Change Power On/Off Schedule
+QSYS       CHGPWRSCDE        71,75  Change Power Schedule Entry
+QSYS       CHGQRYA           71,75  Change Query Attributes
+QSYS       CHGQSTDB          71     Change Q/A Database
+QSYS       CHGRCYAP          71     Chg Recovery for Access Paths
+QSYS       CHGRDBDIRE        71,75  Change RDB Directory Entry
+QSYS       CHGRIPA           71,75  Change RIP Attributes
+QSYS       CHGRIPFLT         71,75  Change RIP Filter
+QSYS       CHGRIPIFC         71,75  Change RIP Interface
+QSYS       CHGRJECMNE PRX    75     Change RJE Communication Entry
+QSYS       CHGRJERDRE PRX    75     Change RJE Reader Entry
+QSYS       CHGRJEWTRE PRX    75     Change RJE Writer Entry
+QSYS       CHGRMTDFN         71     Change Remote Definition
+QSYS       CHGRMTJRN         71,75  Change Remote Journal
+QSYS       CHGRPYLE          71     Change Reply List Entry
+QSYS       CHGRSCCRQA PRX    75     Change Resource CRQ Activity
+QSYS       CHGRTDA           71,75  Change RouteD Attributes
+QSYS       CHGRTGE           71,75  Change Routing Entry
+QSYS       CHGRWSPWD         71,75  Change RWS Controller Password
+QSYS       CHGRXCA    PRX    71,75  Change REXEC Attributes
+QSYS       CHGS36     PRX    71     
+QSYS       CHGS36A    PRX    71     
+QSYS       CHGS36MSGL PRX    71     
+QSYS       CHGS36PGMA        71,75  Change S/36 Program Attributes
+QSYS       CHGS36PRCA        71,75  Change S/36 Proc Attributes
+QSYS       CHGS36SRCA        71,75  Change S/36 Source Attributes
+QSYS       CHGSAVF           71,75  Change Save File
+QSYS       CHGSBSD           71,75  Change Subsystem Description
+QSYS       CHGSCHIDX         71,75  Change Search Index
+QSYS       CHGSDSTL   PRX    75     Change SMTP Dist List
+QSYS       CHGSECA           71,75  Change Security Attributes
+QSYS       CHGSECAUD         71     Change Security Auditing
+QSYS       CHGSHRPOOL        71     Change Shared Storage Pool
+QSYS       CHGSMTPA   PRX    71,75  Change SMTP Attributes
+QSYS       CHGSMTPRLE        75     Change Remote Login Entry
+QSYS       CHGSNMPA          71,75  Change SNMP Attributes
+QSYS       CHGSPLFA          71,75  Change Spooled File Attributes
+QSYS       CHGSRCPF          71,75  Change Source Physical File
+QSYS       CHGSRVA           71     Change Service Attributes
+QSYS       CHGSRVAGT         71     Change Service Agent
+QSYS       CHGSRVAGTA        71     Change Service Agent Attr
+QSYS       CHGSRVCFG         71,75  Change Service Configuration
+QSYS       CHGSRVPGM         71,75  Change Service Program
+QSYS       CHGSRVPVDA PRX    75     Change Service Provider Attr
+QSYS       CHGSSND    PRX    75     Change Session Description
+QSYS       CHGSSNMAX         71,75  Change Session Maximum
+QSYS       CHGSSTSECA        75     Change SST Security Attributes
+QSYS       CHGSSTUSR         75     Change Service Tools User ID
+QSYS       CHGSVCCPYD PRX    75     
+QSYS       CHGSVCSSN  PRX    75     
+QSYS       CHGSVRAUTE        71,75  Change Server Auth Entry
+QSYS       CHGSYSDIRA        71,75  Change System Dir Attributes
+QSYS       CHGSYSJOB         71     Change System Job
+QSYS       CHGSYSLIBL        71     Change System Library List
+QSYS       CHGSYSVAL         71     Change System Value
+QSYS       CHGTAPCTG         71,75  Change Tape Cartridge
+QSYS       CHGTAPF           71,75  Change Tape File
+QSYS       CHGTCPA           71,75  Change TCP/IP Attributes
+QSYS       CHGTCPDMN         71,75  Change TCP/IP Domain
+QSYS       CHGTCPHTE         71,75  Change TCP/IP Host Table Entry
+QSYS       CHGTCPIFC         71,75  Change TCP/IP Interface
+QSYS       CHGTCPRTE         71,75  Change TCP/IP Route
+QSYS       CHGTCPSVR         71,75  Change TCP/IP Server
+QSYS       CHGTEFE    PRX    71     
+QSYS       CHGTELNA   PRX    71,75  Change Telnet Attributes
+QSYS       CHGTFTPA          71,75  Change TFTP Attributes
+QSYS       CHGTIMZON         71,75  Change Time Zone Description
+QSYS       CHGUSRAUD         71,75  Change User Auditing
+QSYS       CHGUSRPRF         71,75  Change User Profile
+QSYS       CHGUSRPRTI        71,75  Change User Print Info
+QSYS       CHGUSRSMTP PRX    75     Change User SMTP
+QSYS       CHGUSRSNMP        71,75  Change User for SNMP
+QSYS       CHGUSRTRC         71,75  Change User Trace
+QSYS       CHGVACSNMP        75     Change VACM for SNMP
+QSYS       CHGVAR            71,75  Change Variable
+QSYS       CHGVFYLIST PRX    71     
+QSYS       CHGVTMAP   PRX    71,75  Change VT Keyboard Map
+QSYS       CHGWSE            71,75  Change Work Station Entry
+QSYS       CHGWTR            71,75  Change Writer
+QSYS       CHKASPBAL         71     Check ASP Balance
+QSYS       CHKBLDJOB  PRX    71     
+QSYS       CHKBLDSVR  PRX    71     
+QSYS       CHKCMNTRC         71     Check Communications Trace
+QSYS       CHKDKT            71,75  Check Diskette
+QSYS       CHKDLO            71,75  Check Document Library Object
+QSYS       CHKDNSCFG  PRX    71,75  Check DNS Configuration
+QSYS       CHKDNSZNE  PRX    71,75  Check DNS Zone
+QSYS       CHKIGCTBL         71,75  Check DBCS Font Table
+QSYS       CHKIN             71,75  Check In Object
+QSYS       CHKMSTKVV         71     Check Master KVV
+QSYS       CHKOBJ            71,75  Check Object
+QSYS       CHKOBJITG         71,75  Check Object Integrity
+QSYS       CHKOPTVOL         71,75  Check Optical Volume
+QSYS       CHKOUT            71,75  Check Out Object
+QSYS       CHKPFRCOL         71     Check Performance Collection
+QSYS       CHKPRDOPT         71     Check Product Option
+QSYS       CHKPWD            71,75  Check Password
+QSYS       CHKRCDLCK         71,75  Check Record Locks
+QSYS       CHKTAP            71,75  Check Tape
+QSYS       CHKVFYLIST PRX    71     
+QSYS       CLOF              71,75  Close File
+QSYS       CLOSE             71,75  Close Database File
+QSYS       CLRBPR     PRX    71     
+QSYS       CLRDKT            71,75  Clear Diskette
+QSYS       CLRJOBQ           71,75  Clear Job Queue
+QSYS       CLRLIB            71,75  Clear Library
+QSYS       CLRMSGQ           71,75  Clear Message Queue
+QSYS       CLRMSTKEY         71     Clear Master Key
+QSYS       CLROUTQ           71,75  Clear Output Queue
+QSYS       CLRPFM            71,75  Clear Physical File Member
+QSYS       CLRPOOL           71,75  Clear Pool
+QSYS       CLRSAVF           71,75  Clear Save File
+QSYS       CLRSVRSEC         71,75  Clear Server Security Data
+QSYS       CLRTRCDTA         71,75  Clear Trace Data
+QSYS       CMD               71,75  Command Definition
+QSYS       CMPJRNIMG         71,75  Compare Journal Images
+QSYS       CMPPFM     PRX    75     Compare Physical File Member
+QSYS       CNLRJERDR  PRX    75     Cancel RJE Reader
+QSYS       CNLRJEWTR  PRX    75     Cancel RJE Writer
+QSYS       CODECOV    PRX    75     Code coverage
+QSYS       COMMIT            71,75  Commit
+QSYS       COPY              71,75  Copy Object
+QSYS       COPYRIGHT         71,75  Copyright
+QSYS       CPROBJ            71,75  Compress Object
+QSYS       CPY               71,75  Copy Object
+QSYS       CPYAUDJRNE        71,75  Copy Audit Journal Entries
+QSYS       CPYCFGL           71,75  Copy Configuration List
+QSYS       CPYDOC            71,75  Copy Document
+QSYS       CPYDSTRPSO PRX    75     Copy DST Repository Object
+QSYS       CPYF              71,75  Copy File
+QSYS       CPYFCNARA  PRX    75     Copy Functional Area
+QSYS       CPYFRMARCF        75     Copy From Archive File
+QSYS       CPYFRMDIR         71,75  Copy From Directory
+QSYS       CPYFRMDKT         71,75  Copy From Diskette
+QSYS       CPYFRMIMPF        71,75  Copy From Import File
+QSYS       CPYFRMLDIF        71     Copy From LDIF
+QSYS       CPYFRMPCD  PRX    71,75  Copy From PC Document
+QSYS       CPYFRMPCFF        71     Copy From PCF File
+QSYS       CPYFRMQRYF        71,75  Copy From Query File
+QSYS       CPYFRMSTMF        71,75  Copy From Stream File
+QSYS       CPYFRMTAP         71,75  Copy From Tape
+QSYS       CPYGPHFMT  PRX    75     Copy Graph Format
+QSYS       CPYGPHPKG  PRX    75     Copy Graph Package
+QSYS       CPYIGCSRT  PRX    75     Copy DBCS Master Sort Table
+QSYS       CPYIGCTBL         71     Copy DBCS Font Table
+QSYS       CPYLIB            71,75  Copy Library
+QSYS       CPYOPT            71,75  Copy Optical
+QSYS       CPYPFRCOL         71     Copy Performance Collection
+QSYS       CPYPFRDTA  PRX    75     Copy Performance Data
+QSYS       CPYPTF            71     Copy Program Temporary Fix
+QSYS       CPYPTFCVR         71     Copy PTF Cover Letter
+QSYS       CPYPTFGRP         71     Copy PTF Group
+QSYS       CPYPTFSAVF        75     Copy PTF to Save File
+QSYS       CPYSPLF           71,75  Copy Spooled File
+QSYS       CPYSRCF           71,75  Copy Source File
+QSYS       CPYTCPHT          71,75  Copy TCP/IP Host Table
+QSYS       CPYTEF     PRX    71     
+QSYS       CPYTEFE    PRX    71     
+QSYS       CPYTOARCF         75     Copy To Archive File
+QSYS       CPYTODIR          71,75  Copy To Directory
+QSYS       CPYTODKT          71,75  Copy To Diskette
+QSYS       CPYTOIMPF         71,75  Copy To Import File
+QSYS       CPYTOLDIF         71     Copy To LDIF
+QSYS       CPYTOPCD   PRX    71,75  Copy To PC Document
+QSYS       CPYTOPCFF         71     Copy To PCF File
+QSYS       CPYTOSTMF         71,75  Copy To Stream File
+QSYS       CPYTOTAP          71,75  Copy To Tape
+QSYS       CPYVPNCFGF        75     Copy VPN Configuration File
+QSYS       CRTAFPDTA  PRX    75     Create AFP Data
+QSYS       CRTALRTBL         71,75  Create Alert Table
+QSYS       CRTAUTHLR         71     Create Authority Holder
+QSYS       CRTAUTL           71,75  Create Authorization List
+QSYS       CRTBLDEVT  PRX    71     
+QSYS       CRTBNDC    PRX    75     Create Bound C Program
+QSYS       CRTBNDCBL  PRX    75     Create Bound COBOL Program
+QSYS       CRTBNDCL          71,75  Create Bound CL Program
+QSYS       CRTBNDCPP  PRX    75     Create Bound C++ Program
+QSYS       CRTBNDDIR         71,75  Create Binding Directory
+QSYS       CRTBNDRPG  PRX    75     Create Bound RPG Program
+QSYS       CRTCAD     PRX    75     
+QSYS       CRTCBLMOD  PRX    75     Create COBOL Module
+QSYS       CRTCBLPGM  PRX    75     Create COBOL Program
+QSYS       CRTCFGL           71,75  Create Configuration List
+QSYS       CRTCICSC   PRX    75     Create CICS ILE C object
+QSYS       CRTCICSCBL PRX    75     Create CICS Program
+QSYS       CRTCICSGRP PRX    75     Create CICS Group
+QSYS       CRTCICSMAP PRX    75     Create CICS Map
+QSYS       CRTCKMKSF         71,75  Create Keystore File
+QSYS       CRTCLD            71,75  Create C Locale Description
+QSYS       CRTCLMOD          71,75  Create CL Module
+QSYS       CRTCLPGM          71,75  Create CL Program
+QSYS       CRTCLS            71     Create Class
+QSYS       CRTCLU     PRX    75     
+QSYS       CRTCMD            71,75  Create Command
+QSYS       CRTCMOD    PRX    75     Create C Module
+QSYS       CRTCOSD           71,75  Create Class-of-Service Desc
+QSYS       CRTCPPMOD  PRX    75     Create C++ Module
+QSYS       CRTCRG     PRX    75     
+QSYS       CRTCRGCNR  PRX    75     
+QSYS       CRTCRQD           71,75  Create CRQ Description
+QSYS       CRTCSI            71,75  Create Comm Side Information
+QSYS       CRTCTLAPPC        71,75  Create Ctl Desc (APPC)
+QSYS       CRTCTLASC         71,75  Create Ctl Desc (Async)
+QSYS       CRTCTLBSC         71,75  Create Ctl Desc (BSC)
+QSYS       CRTCTLFNC         71     Create Ctl Desc (Finance)
+QSYS       CRTCTLHOST        71,75  Create Ctl Desc (SNA Host)
+QSYS       CRTCTLLWS         71,75  Create Ctl Desc (Local WS)
+QSYS       CRTCTLNET         71,75  Create Ctl Desc (Network)
+QSYS       CRTCTLRTL         71     Create Ctl Desc (Retail)
+QSYS       CRTCTLRWS         71     Create Ctl Desc (Remote WS)
+QSYS       CRTCTLTAP         71,75  Create Ctl Desc (Tape)
+QSYS       CRTCTLVWS         71,75  Create Ctl Desc (Virtual WS)
+QSYS       CRTDDMF           71,75  Create DDM File
+QSYS       CRTDDNSCFG PRX    75     Create DDNS Configuration
+QSYS       CRTDEVAPPC        71,75  Create Device Desc (APPC)
+QSYS       CRTDEVASC         71,75  Create Device Desc (Async)
+QSYS       CRTDEVASP         71,75  Create Device Desc (ASP)
+QSYS       CRTDEVBSC         71,75  Create Device Desc (BSC)
+QSYS       CRTDEVCRP         71,75  Create Device Desc (Crypto)
+QSYS       CRTDEVDKT         71,75  Create Device Desc (Diskette)
+QSYS       CRTDEVDSP         71,75  Create Device Desc (Display)
+QSYS       CRTDEVFNC         71     Create Device Desc (Finance)
+QSYS       CRTDEVHOST        71,75  Create Device Desc (SNA Host)
+QSYS       CRTDEVINTR        71,75  Create Device Desc (Intra)
+QSYS       CRTDEVMLB         71,75  Create Device Desc (Media Lib)
+QSYS       CRTDEVNET         71,75  Create Device Desc (Network)
+QSYS       CRTDEVNWSH        71,75  Create Device Desc (NWSH)
+QSYS       CRTDEVOPT         71,75  Create Device Desc (Optical)
+QSYS       CRTDEVPRT         71,75  Create Device Desc (Printer)
+QSYS       CRTDEVRTL         71     Create Device Desc (Retail)
+QSYS       CRTDEVSNPT        71,75  Create Device Desc (SNPT)
+QSYS       CRTDEVSNUF        71,75  Create Device Desc (SNUF)
+QSYS       CRTDEVTAP         71,75  Create Device Desc (Tape)
+QSYS       CRTDFUDSPF PRX    75     Create DFU Display File
+QSYS       CRTDIR            71,75  Create Directory
+QSYS       CRTDKTF           71,75  Create Diskette File
+QSYS       CRTDOC            71,75  Create Document
+QSYS       CRTDSPF           71,75  Create Display File
+QSYS       CRTDSTL           71,75  Create Distribution List
+QSYS       CRTDTAARA         71,75  Create Data Area
+QSYS       CRTDTADCT         71,75  Create Data Dictionary
+QSYS       CRTDTAQ           71,75  Create Data Queue
+QSYS       CRTDUPOBJ         71,75  Create Duplicate Object
+QSYS       CRTEDTD           71,75  Create Edit Description
+QSYS       CRTERRRPT  PRX    71     
+QSYS       CRTFCNARA  PRX    75     Create Functional Area
+QSYS       CRTFCT     PRX    75     Create Forms Control Table
+QSYS       CRTFLR            71,75  Create Folder
+QSYS       CRTFMWPRD         71     Create Firmware Product
+QSYS       CRTFNTRSC         71,75  Create Font Resource
+QSYS       CRTFNTTBL         71,75  Create Font Table
+QSYS       CRTFORMDF         71,75  Create Form Definition
+QSYS       CRTFTR            71,75  Create Filter
+QSYS       CRTGPHFMT  PRX    75     Create Graph Format
+QSYS       CRTGPHPKG  PRX    75     Create Graph Package
+QSYS       CRTGSS            71,75  Create Graphics Symbol Set
+QSYS       CRTHSTDTA  PRX    75     Create Historical Data
+QSYS       CRTICFF           71,75  Create ICF File
+QSYS       CRTIGCDCT         71,75  Create DBCS Conversion Dict
+QSYS       CRTIMGCLG         71,75  Create Image Catalog
+QSYS       CRTJOBD           71     Create Job Description
+QSYS       CRTJOBQ           71,75  Create Job Queue
+QSYS       CRTJRN            71,75  Create Journal
+QSYS       CRTJRNRCV         71,75  Create Journal Receiver
+QSYS       CRTJVAPGM         71     Create Java Program
+QSYS       CRTLF             71,75  Create Logical File
+QSYS       CRTLIB            71     Create Library
+QSYS       CRTLINASC         71,75  Create Line Desc (Async)
+QSYS       CRTLINBSC         71,75  Create Line Desc (BSC)
+QSYS       CRTLINDDI         71     Create Line Desc (DDI)
+QSYS       CRTLINETH         71,75  Create Line Desc (Ethernet)
+QSYS       CRTLINFAX         71     Create Line Desc (Fax)
+QSYS       CRTLINFR          71     Create Line Desc (Frame Relay)
+QSYS       CRTLINPPP         71,75  Create Line Desc (PPP)
+QSYS       CRTLINSDLC        71     Create Line Desc (SDLC)
+QSYS       CRTLINTDLC        71     Create Line Desc (TDLC)
+QSYS       CRTLINTRN         71     Create Line Desc (Token-Ring)
+QSYS       CRTLINWLS         71     Create Line Desc (Wireless)
+QSYS       CRTLINX25         71     Create Line Desc (X.25)
+QSYS       CRTLOCALE         71,75  Create Locale
+QSYS       CRTMNU            71,75  Create Menu
+QSYS       CRTMODD           71,75  Create Mode Description
+QSYS       CRTMSGF           71,75  Create Message File
+QSYS       CRTMSGFMNU PRX    71     
+QSYS       CRTMSGQ           71,75  Create Message Queue
+QSYS       CRTNODGRP         71,75  Create Node Group
+QSYS       CRTNODL           71,75  Create Node List
+QSYS       CRTNTBD           71,75  Create NetBIOS Description
+QSYS       CRTNWIFR          71     Create Network Interface (FR)
+QSYS       CRTNWSCFG         71     Create NWS Configuration
+QSYS       CRTNWSD           71,75  Create Network Server Desc
+QSYS       CRTNWSSTG         71,75  Create NWS Storage Space
+QSYS       CRTOBJLIST PRX    71     
+QSYS       CRTOUTQ           71,75  Create Output Queue
+QSYS       CRTOVL            71,75  Create Overlay
+QSYS       CRTPAGDFN         71,75  Create Page Definition
+QSYS       CRTPAGSEG         71,75  Create Page Segment
+QSYS       CRTPDFMAP  PRX    75     Create PDF Map
+QSYS       CRTPDG            71,75  Create Print Descriptor Group
+QSYS       CRTPEXDTA         71     Create PEX Data
+QSYS       CRTPF             71,75  Create Physical File
+QSYS       CRTPFRDTA         71     Create Performance Data
+QSYS       CRTPFRSUM         71     Create Performance Summary
+QSYS       CRTPGM            71,75  Create Program
+QSYS       CRTPKGF    PRX    71     
+QSYS       CRTPNLGRP         71,75  Create Panel Group
+QSYS       CRTPRDBPR  PRX    71     
+QSYS       CRTPRDDFN         75     Create Product Definition
+QSYS       CRTPRDLOD         75     Create Product Load
+QSYS       CRTPRTF           71,75  Create Printer File
+QSYS       CRTPRXCMD         71,75  Create Proxy Command
+QSYS       CRTPSFCFG         71,75  Create PSF Configuration
+QSYS       CRTPTF            75     Create Program Temporary Fix
+QSYS       CRTPTFPKG         75     Create PTF Package
+QSYS       CRTQMFORM         71,75  Create Query Management Form
+QSYS       CRTQMQRY          71,75  Create Query Management Query
+QSYS       CRTQSTDB          71     Create Q/A Database
+QSYS       CRTQSTLOD         71     Create Q/A Database Load
+QSYS       CRTRJEBSCF PRX    75     Create RJE BSC File
+QSYS       CRTRJECFG  PRX    75     Create RJE Configuration
+QSYS       CRTRJECMNF PRX    75     Create RJE Communication File
+QSYS       CRTRNDCCFG PRX    71,75  Create RNDC Configuration
+QSYS       CRTRPGMOD  PRX    75     Create RPG Module
+QSYS       CRTRPGPGM  PRX    75     Create RPG/400 Program
+QSYS       CRTRPTPGM  PRX    75     Create Auto Report RPG Program
+QSYS       CRTS36CBL  PRX    75     Create S/36 COBOL Program
+QSYS       CRTS36DSPF PRX    71     
+QSYS       CRTS36MNU  PRX    71     
+QSYS       CRTS36MSGF PRX    71     
+QSYS       CRTS36RPG  PRX    75     Create RPG II Program
+QSYS       CRTS36RPGR PRX    75     Create Console Display File
+QSYS       CRTS36RPT  PRX    75     Create S/36 RPG II Auto Report
+QSYS       CRTSAVF           71,75  Create Save File
+QSYS       CRTSBOM    PRX    71     
+QSYS       CRTSBSD           71     Create Subsystem Description
+QSYS       CRTSCHIDX         71,75  Create Search Index
+QSYS       CRTSDSTL   PRX    75     Create SMTP Dist List
+QSYS       CRTSPADCT         71,75  Create Spelling Aid Dictionary
+QSYS       CRTSQLCBL  PRX    75     Create SQL COBOL Program
+QSYS       CRTSQLCBLI PRX    75     Create SQL ILE COBOL Object
+QSYS       CRTSQLCI   PRX    75     Create SQL ILE C object
+QSYS       CRTSQLCPPI PRX    75     Create SQL ILE C++ Object
+QSYS       CRTSQLPKG         71,75  Create SQL Package
+QSYS       CRTSQLPLI  PRX    75     Create SQL PL/I Program
+QSYS       CRTSQLRPG  PRX    75     Create SQL RPG Program
+QSYS       CRTSQLRPGI PRX    75     Create SQL ILE RPG Object
+QSYS       CRTSRCPF          71,75  Create Source Physical File
+QSYS       CRTSRVCFG         71,75  Create Service Configuration
+QSYS       CRTSRVPGM         71,75  Create Service Program
+QSYS       CRTSSND    PRX    75     Create Session Description
+QSYS       CRTSSTUSR         75     Create Service Tools User ID
+QSYS       CRTTAPCGY         71,75  Create Tape Category
+QSYS       CRTTAPF           71,75  Create Tape File
+QSYS       CRTTBL            71,75  Create Table
+QSYS       CRTTEF     PRX    71     
+QSYS       CRTTIMZON         71,75  Create Time Zone Description
+QSYS       CRTUDFS           71     Create User-Defined FS
+QSYS       CRTUSRPRF         71,75  Create User Profile
+QSYS       CRTVFYLIST PRX    71     
+QSYS       CRTVLDL           71     Create Validation List
+QSYS       CRTWSCST          71,75  Create WSCST
+QSYS       CVTCLSRC          71,75  Convert CL Source
+QSYS       CVTDAT            71,75  Convert Date
+QSYS       CVTDIR            71     Convert Directory
+QSYS       CVTDLSNAM         71,75  Convert DLS Name
+QSYS       CVTEDU            71,75  Convert Education
+QSYS       CVTIPSIFC         71     Convert IP Address
+QSYS       CVTIPSLOC         71     Convert Network ID / Location
+QSYS       CVTNAMSMTP PRX    71,75  Convert SMTP Names
+QSYS       CVTOPTBKU         71,75  Convert Optical Backup
+QSYS       CVTOVLPFM  PRX    75     Convert Overlay to PFM
+QSYS       CVTPAGSPFM PRX    75     Convert Page Segment to PFM
+QSYS       CVTPCDPAGS PRX    75     Convert PCD to Page Segment
+QSYS       CVTPFMPAGS PRX    75     Convert PFM to Page Segment
+QSYS       CVTPFRCOL         71     Convert Performance Collection
+QSYS       CVTPFRDTA         71     Convert Performance Data
+QSYS       CVTPFRTHD         71     Convert Pfr Thread Data
+QSYS       CVTRJEDTA  PRX    75     Convert RJE Data
+QSYS       CVTRPCSRC         71,75  Convert RPC Source
+QSYS       CVTRPGSRC  PRX    75     Convert RPG Source
+QSYS       CVTTCPCL          71     Convert TCP/IP CL Source
+QSYS       CVTTOFLR   PRX    71,75  Convert To Folder
+QSYS       CVTUSRCERT        71,75  Convert User Certificate
+QSYS       DATA              71,75  Data
+QSYS       DB2LDIF           71     Copy To LDIF
+QSYS       DCL               71,75  Declare CL Variable
+QSYS       DCLF              71,75  Declare File
+QSYS       DCLPRCOPT         71,75  Declare Processing Options
+QSYS       DCPOBJ            71,75  Decompress Object
+QSYS       DEL               71,75  Remove Link
+QSYS       DEP               71,75  Dependent Definition
+QSYS       DIG        PRX    71,75  Start DIG Query
+QSYS       DLCOBJ            71,75  Deallocate Object
+QSYS       DLTALR            71,75  Delete Alert
+QSYS       DLTALRTBL         71,75  Delete Alert Table
+QSYS       DLTAPARDTA        71     Delete APAR Data
+QSYS       DLTAUTHLR         71,75  Delete Authority Holder
+QSYS       DLTAUTL           71,75  Delete Authorization List
+QSYS       DLTBLDEVT  PRX    71     
+QSYS       DLTBNDDIR         71,75  Delete Binding Directory
+QSYS       DLTCAD     PRX    75     
+QSYS       DLTCFGL           71,75  Delete Configuration List
+QSYS       DLTCICSGRP PRX    75     Delete CICS Group
+QSYS       DLTCLD            71,75  Delete C Locale Description
+QSYS       DLTCLS            71,75  Delete Class
+QSYS       DLTCLU     PRX    75     
+QSYS       DLTCMD            71,75  Delete Command
+QSYS       DLTCMNTRC         71     Delete Communications Trace
+QSYS       DLTCNNL           71,75  Delete Connection List
+QSYS       DLTCOSD           71,75  Delete Class-of-Service Desc
+QSYS       DLTCRG            71,75  Delete Cluster Resource Group
+QSYS       DLTCRGCLU  PRX    75     
+QSYS       DLTCRGCNR  PRX    75     
+QSYS       DLTCRQD           71,75  Delete CRQ Description
+QSYS       DLTCSI            71,75  Delete Comm Side Information
+QSYS       DLTCTLD           71,75  Delete Controller Description
+QSYS       DLTDEVD           71,75  Delete Device Description
+QSYS       DLTDEVMLB         71,75  Delete Device Media Library
+QSYS       DLTDFUPGM         71,75  Delete DFU Program
+QSYS       DLTDKTLBL         71,75  Delete Diskette Label
+QSYS       DLTDLO            71,75  Delete Document Library Object
+QSYS       DLTDOCL           71,75  Delete Document List
+QSYS       DLTDST            71,75  Delete Distribution
+QSYS       DLTDSTL           71,75  Delete Distribution List
+QSYS       DLTDTAARA         71,75  Delete Data Area
+QSYS       DLTDTADCT         71,75  Delete Data Dictionary
+QSYS       DLTDTAQ           71,75  Delete Data Queue
+QSYS       DLTEDTD           71,75  Delete Edit Description
+QSYS       DLTEXPSPLF        71     Delete Expired Spooled files
+QSYS       DLTF              71,75  Delete File
+QSYS       DLTFAXF    PRX    75     
+QSYS       DLTFCNARA  PRX    75     Delete Functional Area
+QSYS       DLTFCT     PRX    75     Delete Forms Control Table
+QSYS       DLTFNTRSC         71,75  Delete Font Resource
+QSYS       DLTFNTTBL         71,75  Delete Font Table
+QSYS       DLTFORMDF         71,75  Delete Form Definition
+QSYS       DLTFTR            71,75  Delete Filter
+QSYS       DLTGPHFMT  PRX    75     Delete Graph Format
+QSYS       DLTGPHPKG  PRX    75     Delete Graph Package
+QSYS       DLTGSS            71,75  Delete Graphic Symbol Set
+QSYS       DLTHSTDTA  PRX    75     Delete Historical Data
+QSYS       DLTIGCDCT         71,75  Delete DBCS Conversion Dict
+QSYS       DLTIGCSRT         71,75  Delete DBCS Sort Table
+QSYS       DLTIGCTBL         71,75  Delete DBCS Font Table
+QSYS       DLTIMGCLG         71,75  Delete Image Catalog
+QSYS       DLTINTSVR  PRX    71     
+QSYS       DLTIPXD           71,75  Delete IPX Description
+QSYS       DLTJOBD           71,75  Delete Job Description
+QSYS       DLTJOBQ           71,75  Delete Job Queue
+QSYS       DLTJRN            71,75  Delete Journal
+QSYS       DLTJRNRCV         71,75  Delete Journal Receiver
+QSYS       DLTJVAPGM         71     Delete Java Program
+QSYS       DLTKRBCCF         71,75  Delete Credentials Cache File
+QSYS       DLTLIB            71,75  Delete library
+QSYS       DLTLICPGM         71     Delete Licensed Program
+QSYS       DLTLIND           71,75  Delete Line Description
+QSYS       DLTLNXSVR  PRX    71     
+QSYS       DLTLOCALE         71,75  Delete Locale
+QSYS       DLTMEDDFN         71,75  Delete Media Definition
+QSYS       DLTMGTCOL         71,75  Delete Management Collection
+QSYS       DLTMNU            71,75  Delete Menu
+QSYS       DLTMOD            71,75  Delete Module
+QSYS       DLTMODD           71,75  Delete Mode Description
+QSYS       DLTMSGF           71,75  Delete Message File
+QSYS       DLTMSGQ           71,75  Delete Message Queue
+QSYS       DLTNETF           71,75  Delete Network File
+QSYS       DLTNODGRP         71,75  Delete Node Group
+QSYS       DLTNODL           71,75  Delete Node List
+QSYS       DLTNTBD           71,75  Delete NetBIOS Descriptions
+QSYS       DLTNWID           71,75  Delete Network Interface Desc
+QSYS       DLTNWSCFG         71     Delete NWS Configuration
+QSYS       DLTNWSD           71,75  Delete Network Server Desc
+QSYS       DLTNWSSTG         71,75  Delete NWS Storage Space
+QSYS       DLTOBJ            71,75  Delete Object
+QSYS       DLTOUTQ           71,75  Delete Output Queue
+QSYS       DLTOVL            71,75  Delete Overlay
+QSYS       DLTOVR            71,75  Delete Override
+QSYS       DLTOVRDEVE        71,75  Delete Override Pgm Dev Entry
+QSYS       DLTPAGDFN         71,75  Delete Page Definition
+QSYS       DLTPAGSEG         71,75  Delete Page Segment
+QSYS       DLTPDFMAP         71,75  Delete PDF Map
+QSYS       DLTPDG            71,75  Delete Print Descriptor Group
+QSYS       DLTPEXDTA         71     Delete PEX Data
+QSYS       DLTPFRCOL         71     Delete Performance Collection
+QSYS       DLTPFRDTA  PRX    75     Delete Performance Data
+QSYS       DLTPGM            71,75  Delete Program
+QSYS       DLTPNLGRP         71,75  Delete Panel Group
+QSYS       DLTPRB            71     Delete Problem
+QSYS       DLTPRDDFN         75     Delete Product Definition
+QSYS       DLTPRDLOD         75     Delete Product Load
+QSYS       DLTPSFCFG         71,75  Delete PSF Configuration
+QSYS       DLTPTF            71     Delete Program Temporary Fix
+QSYS       DLTQMFORM         71,75  Delete Query Management Form
+QSYS       DLTQMQRY          71,75  Delete Query Management Query
+QSYS       DLTQRY            71,75  Delete Query
+QSYS       DLTQST            71     Delete Questions and Answers
+QSYS       DLTQSTDB          71     Delete Q/A Database
+QSYS       DLTRJECFG  PRX    75     Delete RJE Configuration
+QSYS       DLTRMTPTF  PRX    75     Delete Remote PTF
+QSYS       DLTSBMCRQ  PRX    75     Delete Submitted CRQ
+QSYS       DLTSBSD           71,75  Delete Subsystem Description
+QSYS       DLTSCHIDX         71,75  Delete Search Index
+QSYS       DLTSDSTL   PRX    75     Delete SMTP Dist List
+QSYS       DLTSMGOBJ  PRX    75     Delete SMG Object
+QSYS       DLTSPADCT         71,75  Delete Spelling Aid Dictionary
+QSYS       DLTSPLF           71,75  Delete Spooled File
+QSYS       DLTSQLPKG         71,75  Delete SQL Package
+QSYS       DLTSRVCFG         71,75  Delete Service Configuration
+QSYS       DLTSRVPGM         71,75  Delete Service Program
+QSYS       DLTSSND    PRX    75     Delete Session Description
+QSYS       DLTSSTUSR         75     Delete Service Tools User ID
+QSYS       DLTTAPCGY         71,75  Delete Tape Category
+QSYS       DLTTBL            71,75  Delete Table
+QSYS       DLTTEF     PRX    71     
+QSYS       DLTTIMZON         71,75  Delete Time Zone Description
+QSYS       DLTTRC            71     Delete Trace
+QSYS       DLTUDFS           71     Delete User-Defined FS
+QSYS       DLTUSRIDX         71,75  Delete User Index
+QSYS       DLTUSRPRF         71,75  Delete User Profile
+QSYS       DLTUSRQ           71,75  Delete User Queue
+QSYS       DLTUSRSPC         71,75  Delete User Space
+QSYS       DLTUSRTRC         71,75  Delete User Trace
+QSYS       DLTVFYLIST PRX    71     
+QSYS       DLTVLDL           71     Delete Validation List
+QSYS       DLTWNTSVR  PRX    71     
+QSYS       DLTWSCST          71,75  Delete WSCST
+QSYS       DLYJOB            71,75  Delay Job
+QSYS       DLYSRVAGTP        71     Delay SRVAGT Problem Reporting
+QSYS       DMP               71     Dump Object
+QSYS       DMPCICS    PRX    75     Dump CICS
+QSYS       DMPCLPGM          71,75  Dump CL Program
+QSYS       DMPCLUTRC         71,75  Dump Cluster Trace
+QSYS       DMPCMNTRC         71     Dump Communications Trace
+QSYS       DMPDLO            71     Dump Document Library Object
+QSYS       DMPDNSJRNF PRX    75     Dump DNS Journal File
+QSYS       DMPJOB            71     Dump Job
+QSYS       DMPJOBINT         71     Dump Job Internal
+QSYS       DMPJVM            71     Dump Java Virtual Machine
+QSYS       DMPMEMINF         71     Dump Main Memory Information
+QSYS       DMPOBJ            71     Dump Object
+QSYS       DMPSYSOBJ         71     Dump System Object
+QSYS       DMPTAP            71     Dump Tape
+QSYS       DMPTRC            71     Dump Trace
+QSYS       DMPUSRPRF         71     Dump User Profile
+QSYS       DMPUSRTRC         71,75  Dump User Trace
+QSYS       DO                71,75  Do Group
+QSYS       DOFOR             71,75  Do For
+QSYS       DOUNTIL           71,75  Do Until
+QSYS       DOWHILE           71,75  Do While
+QSYS       DSCJOB            71,75  Disconnect Job
+QSYS       DSPACC            71,75  Display Access Code
+QSYS       DSPACCAUT         71,75  Display Access Code Authority
+QSYS       DSPACTPJ          71,75  Display Active Prestart Jobs
+QSYS       DSPACTPRFL        71     Display Active Profile List
+QSYS       DSPACTSCD         71     Display Activation Schedule
+QSYS       DSPAPPNINF        71,75  Display APPN Information
+QSYS       DSPASPCPYD PRX    75     
+QSYS       DSPASPINF         75     Display ASP Information
+QSYS       DSPASPSSN  PRX    75     
+QSYS       DSPASPSTS         71,75  Display ASP Status
+QSYS       DSPATR            75     Display Attributes
+QSYS       DSPAUDJRNE        71,75  Display Audit Journal Entries
+QSYS       DSPAUT            71,75  Display Authority
+QSYS       DSPAUTHLR         71,75  Display Authority Holder
+QSYS       DSPAUTL           71,75  Display Authorization List
+QSYS       DSPAUTLDLO        71,75  Display Authorization List DLO
+QSYS       DSPAUTLOBJ        71,75  Display Authorization List Obj
+QSYS       DSPAUTUSR         71,75  Display Authorized Users
+QSYS       DSPBCKSTS         71,75  Display Backup Status
+QSYS       DSPBCKUP          71,75  Display Backup Options
+QSYS       DSPBCKUPL         71,75  Display Backup List
+QSYS       DSPBKP            71,75  Display Breakpoints
+QSYS       DSPBNDDIR         71,75  Display Binding Directory
+QSYS       DSPCCSA    PRX    75     Display CC Server Attributes
+QSYS       DSPCDEFNT         71,75  Display Coded Font
+QSYS       DSPCFGL           71,75  Display Configuration List
+QSYS       DSPCICSCVT PRX    75     Display CICS CVT
+QSYS       DSPCICSDCT PRX    75     Display CICS DCT
+QSYS       DSPCICSFCT PRX    75     Display CICS FCT
+QSYS       DSPCICSGLT PRX    75     Display CICS GLT
+QSYS       DSPCICSJCT PRX    75     Display CICS JCT
+QSYS       DSPCICSPCT PRX    75     Display CICS PCT
+QSYS       DSPCICSPPT PRX    75     Display CICS PPT
+QSYS       DSPCICSSIT PRX    75     Display CICS SIT
+QSYS       DSPCICSSTS PRX    75     Display CICS Status
+QSYS       DSPCICSTCS PRX    75     Display CICS TCS
+QSYS       DSPCICSTCT PRX    75     Display CICS TCT
+QSYS       DSPCICSTST PRX    75     Display CICS TST
+QSYS       DSPCKMKSFE        71,75  Display Keystore File Entry
+QSYS       DSPCLS            71,75  Display Class
+QSYS       DSPCLUINF  PRX    75     
+QSYS       DSPCMD            71,75  Display Command
+QSYS       DSPCNNL           71,75  Display Connection List
+QSYS       DSPCNNSTS         71,75  Display Connection Status
+QSYS       DSPCOSD           71,75  Display Class-of-Service Desc
+QSYS       DSPCPCST          71,75  Display CHKPND Constraint
+QSYS       DSPCRGACT  PRX    75     
+QSYS       DSPCRGCNR  PRX    75     
+QSYS       DSPCRGINF  PRX    75     
+QSYS       DSPCSI            71,75  Display Comm Side Information
+QSYS       DSPCSMSSN  PRX    75     
+QSYS       DSPCTLD           71,75  Display Controller Description
+QSYS       DSPCURDIR         71,75  Display Current Directory
+QSYS       DSPDBG            71,75  Display Debug
+QSYS       DSPDBGWCH         71,75  Display Debug Watch
+QSYS       DSPDBR            71,75  Display Data Base Relations
+QSYS       DSPDDMF           71,75  Display DDM File
+QSYS       DSPDEVD           71,75  Display Device Description
+QSYS       DSPDIRE           71,75  Display Directory Entries
+QSYS       DSPDKT            71,75  Display Diskette
+QSYS       DSPDLFA           71,75  Display DL File Attributes
+QSYS       DSPDLOAUD         71,75  Display DLO Auditing Level
+QSYS       DSPDLOAUT         71,75  Display DLO Authority
+QSYS       DSPDLONAM         71,75  Display DLO Name
+QSYS       DSPDOC            71,75  Display Document
+QSYS       DSPDSTCLGE PRX    75     Display DST Catalog Entries
+QSYS       DSPDSTL           71,75  Display Distribution List
+QSYS       DSPDSTLOG         71     Display Distribution Log
+QSYS       DSPDSTSRV         71,75  Display Distribution Services
+QSYS       DSPDTA            71,75  Display Data
+QSYS       DSPDTAARA         71,75  Display Data Area
+QSYS       DSPDTADCT         71,75  Display Data Dictionary
+QSYS       DSPEDTD           71,75  Display Edit Description
+QSYS       DSPEWCBCDE        71,75  Display EWC Barcode Entry
+QSYS       DSPEWCM           71,75  Display Wireless Ctl Member
+QSYS       DSPEWCPTCE        71,75  Display EWC PTC Entry
+QSYS       DSPEWLM           71,75  Display Wireless Line Member
+QSYS       DSPEXPSCD         71     Display Expiration Schedule
+QSYS       DSPF              71,75  Display File
+QSYS       DSPFCNUSG         71,75  Display Function Usage
+QSYS       DSPFD             71,75  Display File Description
+QSYS       DSPFFD            71,75  Display File Field Description
+QSYS       DSPFLR            71,75  Display Folder
+QSYS       DSPFMWSTS         71,75  Display Firmware Status
+QSYS       DSPFNTRSCA        71,75  Display Font Resource Attr
+QSYS       DSPFNTTBL         71,75  Display Font Table
+QSYS       DSPHACFGD  PRX    75     
+QSYS       DSPHAPCY   PRX    75     
+QSYS       DSPHDWRSC         71     Display Hardware Resources
+QSYS       DSPHFS            71,75  Display Hierarchical File Sys.
+QSYS       DSPHLPDOC         71,75  Display Help Document
+QSYS       DSPHSTGPH  PRX    75     Display Historical Graph
+QSYS       DSPHYSSTS  PRX    75     
+QSYS       DSPIGCDCT         71,75  Display DBCS Conversion Dict
+QSYS       DSPIPLA           71,75  Display IPL Attributes
+QSYS       DSPIPXD           71,75  Display IPX Description
+QSYS       DSPJOB            71,75  Display Job
+QSYS       DSPJOBD           71,75  Display Job Description
+QSYS       DSPJOBLOG         71,75  Display Job Log
+QSYS       DSPJOBTBL         71,75  Display Job Tables
+QSYS       DSPJRN            71,75  Display Journal
+QSYS       DSPJRNRCVA        71,75  Display Journal Receiver Atr
+QSYS       DSPJVAPGM         71     Display Java Program
+QSYS       DSPJVMJOB  PRX    71,75  Display JVM Jobs
+QSYS       DSPKBDMAP         71,75  Display Keyboard Map
+QSYS       DSPKRBCCF         71,75  Display Credentials Cache File
+QSYS       DSPKRBKTE         71,75  Display Keytab Entries
+QSYS       DSPLANADPP        71,75  Display LAN Adapter Profile
+QSYS       DSPLANMLB         71,75  Display LAN Media Library
+QSYS       DSPLANSTS         71,75  Display LAN Status
+QSYS       DSPLIB            71,75  Display Library
+QSYS       DSPLIBD           71,75  Display Library Description
+QSYS       DSPLIBL           71,75  Display Library List
+QSYS       DSPLICKEY         71     Display License Key Info
+QSYS       DSPLIND           71,75  Display Line Description
+QSYS       DSPLNK            71,75  Display Object Links
+QSYS       DSPLOG            71,75  Display Log
+QSYS       DSPMFSINF         71,75  Display Mounted FS Information
+QSYS       DSPMGDSYSA PRX    75     Display Managed System Atr
+QSYS       DSPMNUA           71,75  Display Menu Attributes
+QSYS       DSPMOD            71,75  Display Module
+QSYS       DSPMODD           71,75  Display Mode Description
+QSYS       DSPMODSRC         71,75  Display Module Source
+QSYS       DSPMODSTS         71,75  Display Mode Status
+QSYS       DSPMSG            71,75  Display Messages
+QSYS       DSPMSGD           71,75  Display Message Description
+QSYS       DSPNCK            71,75  Display Nickname
+QSYS       DSPNETA           71,75  Display Network Attributes
+QSYS       DSPNODGRP         71,75  Display Node Group
+QSYS       DSPNTBD           71,75  Display NetBIOS Description
+QSYS       DSPNWID           71,75  Display Network Interface Desc
+QSYS       DSPNWSA           71,75  Display NWS Attributes
+QSYS       DSPNWSCFG         71     Display NWS Configuration
+QSYS       DSPNWSD           71,75  Display Network Server Desc
+QSYS       DSPNWSSTG         71,75  Display NWS Storage Space
+QSYS       DSPNWSUSRA        71,75  Display NWS User Attributes
+QSYS       DSPOBJAUT         71,75  Display Object Authority
+QSYS       DSPOBJD           71,75  Display Object Description
+QSYS       DSPOPCLNK  PRX    71,75  Display OptiConnect Link Sts
+QSYS       DSPOPT            71,75  Display Optical
+QSYS       DSPOPTLCK         71,75  Display Optical Locks
+QSYS       DSPOPTSVR         71,75  Display Optical Server
+QSYS       DSPOSPF           71,75  Display OSPF
+QSYS       DSPOVR            71,75  Display Override
+QSYS       DSPPDFMAPE PRX    75     Display PDF Map Entries
+QSYS       DSPPDGPRF         71,75  Display PDG Profile
+QSYS       DSPPFM            71,75  Display Physical File Member
+QSYS       DSPPFRDTA  PRX    75     Display Performance Data
+QSYS       DSPPFRGPH  PRX    75     Display Performance Graph
+QSYS       DSPPGM            71,75  Display Program
+QSYS       DSPPGMADP         71,75  Display Program Adopt
+QSYS       DSPPGMREF         71,75  Display Program References
+QSYS       DSPPGMVAR         71,75  Display Program Variable
+QSYS       DSPPRB            71,75  Display Problems
+QSYS       DSPPSFCFG         71,75  Display PSF Configuration
+QSYS       DSPPTF            71     Display Program Temporary Fix
+QSYS       DSPPTFCVR         71     Display PTF Cover Letter
+QSYS       DSPPWRSCD         71,75  Display Power On/Off Schedule
+QSYS       DSPRCDLCK         71,75  Display Record Locks
+QSYS       DSPRCVCMD  PRX    75     Display Received Commands
+QSYS       DSPRCYAP          71,75  Dsp Recovery for Access Paths
+QSYS       DSPRDBDIRE        71,75  Display RDB Directory Entries
+QSYS       DSPRIP            71,75  Display RIP Information
+QSYS       DSPRJECFG  PRX    75     Display RJE Configuration
+QSYS       DSPRMTDFN         71,75  Display Remote Definition
+QSYS       DSPS36     PRX    71     
+QSYS       DSPSAVF           71,75  Display Save File
+QSYS       DSPSBMCRQ  PRX    75     Display Submitted CRQs
+QSYS       DSPSBMCRQA PRX    75     Display Submitted CRQ Act
+QSYS       DSPSBMCRQM PRX    75     Display Submitted CRQ Messages
+QSYS       DSPSBSD           71,75  Display Subsystem Description
+QSYS       DSPSDSTL   PRX    75     Display SMTP Dist List
+QSYS       DSPSECA           71,75  Display Security Attributes
+QSYS       DSPSECAUD         71,75  Display Security Auditing
+QSYS       DSPSFWRSC         71,75  Display Software Resources
+QSYS       DSPSOCSTS         71,75  Display Sphere of Control Sts
+QSYS       DSPSPLF           71,75  Display Spooled File
+QSYS       DSPSRVA           71,75  Display Service Attributes
+QSYS       DSPSRVAGT         71     Display Service Agent
+QSYS       DSPSRVPGM         71,75  Display Service Program
+QSYS       DSPSRVPVDA PRX    75     Display Service Provider Attr
+QSYS       DSPSRVSTS         71     Display Service Status
+QSYS       DSPSSTSECA        75     Display SST Security Attrs
+QSYS       DSPSSTUSR         71,75  Display Service Tools User ID
+QSYS       DSPSVCCPYD PRX    75     
+QSYS       DSPSVCSSN  PRX    75     
+QSYS       DSPSVRAUTE        71,75  Display Server Auth Entries
+QSYS       DSPSYSSTS         71,75  Display System Status
+QSYS       DSPSYSVAL         71,75  Display System Value
+QSYS       DSPTAP            71,75  Display Tape
+QSYS       DSPTAPCGY         71,75  Display Tape Category
+QSYS       DSPTAPCTG         71,75  Display Tape Cartridge
+QSYS       DSPTAPSTS         71,75  Display Tape Status
+QSYS       DSPTM             71,75  Display Trademarks
+QSYS       DSPTRC            71,75  Display Trace
+QSYS       DSPTRCDTA         71,75  Display Trace Data
+QSYS       DSPUDFS           71,75  Display User-Defined FS
+QSYS       DSPUSRPMN         71,75  Display User Permission
+QSYS       DSPUSRPRF         71,75  Display User Profile
+QSYS       DSPUSRPRTI        71,75  Display User Print Info
+QSYS       DSPVFYLIST PRX    71     
+QSYS       DSPVTMAP   PRX    71,75  Display VT Keyboard Map
+QSYS       DSPWSUSR          71,75  Display Work Station User
+QSYS       DUPDKT            71,75  Duplicate Diskette
+QSYS       DUPOPT            71,75  Duplicate Optical
+QSYS       DUPTAP            71,75  Duplicate Tape
+QSYS       EDTAUTL           71,75  Edit Authorization List
+QSYS       EDTBCKUPL         71,75  Edit Backup List
+QSYS       EDTCPCST          71     Edit CHKPND Constraints
+QSYS       EDTDLFA           71     Edit DL File Attributes
+QSYS       EDTDLOAUT         71,75  Edit DLO Authority
+QSYS       EDTDOC            71,75  Edit Document
+QSYS       EDTF              71,75  Edit File
+QSYS       EDTIGCDCT         71,75  Edit DBCS Conversion Dict
+QSYS       EDTLIBL           71,75  Edit Library List
+QSYS       EDTOBJAUT         71,75  Edit Object Authority
+QSYS       EDTQST            71     Edit Questions and Answers
+QSYS       EDTRBDAP          71     Edit Rebuild of Access Paths
+QSYS       EDTRCYAP          71     Edit Recovery for Access Paths
+QSYS       EDTS36PGMA        71,75  Edit S/36 Program Attributes
+QSYS       EDTS36PRCA        71,75  Edit S/36 Procedure Attributes
+QSYS       EDTS36SRCA        71,75  Edit S/36 Source Attributes
+QSYS       EDTWSOAUT  PRX    71,75  Edit Workstation Object Aut
+QSYS       EJTEMLOUT         71,75  Eject Emulation Output
+QSYS       ELEM              71,75  Element Definition
+QSYS       ELSE              71,75  Else
+QSYS       EMLPRTKEY         71,75  Emulate Printer Keys
+QSYS       ENDACCWEB  PRX    75     End Access for Web
+QSYS       ENDAGTSRV         71,75  End Agent Services
+QSYS       ENDASPBAL         71     End ASP Balance
+QSYS       ENDASPSSN  PRX    75     
+QSYS       ENDBCHJOB         71,75  End Batch Job
+QSYS       ENDBLDIMPT PRX    71     
+QSYS       ENDCAD     PRX    75     
+QSYS       ENDCBLDBG  PRX    75     End COBOL Debug
+QSYS       ENDCHTSVR         71     End CHT Server
+QSYS       ENDCICS    PRX    75     End CICS
+QSYS       ENDCICSUSR PRX    75     End CICS User
+QSYS       ENDCLNUP          71,75  End Cleanup
+QSYS       ENDCLUNOD  PRX    75     
+QSYS       ENDCMNSVR         71     End Communications Server
+QSYS       ENDCMNTRC         71     End Communications Trace
+QSYS       ENDCMTCTL         71,75  End Commitment Control
+QSYS       ENDCPYSCN         71,75  End Copy Screen
+QSYS       ENDCRG     PRX    75     
+QSYS       ENDCRGCNR  PRX    75     
+QSYS       ENDCSMSSN  PRX    75     
+QSYS       ENDCTLRCY         71,75  End Controller Recovery
+QSYS       ENDDBG            71,75  End Debug Mode
+QSYS       ENDDBGSVR         71     End Debug Server
+QSYS       ENDDBMON          71,75  End Database Monitor
+QSYS       ENDDEVRCY         71,75  End Device Recovery
+QSYS       ENDDIRSHD         71,75  End Directory Shadowing
+QSYS       ENDDO             71,75  End Do Group
+QSYS       ENDDSKRGZ         71     End Disk Reorganization
+QSYS       ENDDW             71     End Disk Watcher
+QSYS       ENDEPMENV         71,75  End EPM Environments
+QSYS       ENDFNTDWN  PRX    75     End Font Downloader
+QSYS       ENDGRPJOB         71,75  End Group Job
+QSYS       ENDHOSTSVR        71     End Host Server
+QSYS       ENDINP            71,75  End Input
+QSYS       ENDIPSIFC         71     End IP over SNA Interface
+QSYS       ENDISDB    PRX    75     End ISDB
+QSYS       ENDJOB            71,75  End Job
+QSYS       ENDJOBABN         71     End Job Abnormal
+QSYS       ENDJOBTRC  PRX    75     End Job Trace
+QSYS       ENDJRN            71,75  End Journal
+QSYS       ENDJRNAP          71,75  End Journal Access Path
+QSYS       ENDJRNLIB         71,75  End Journal Library
+QSYS       ENDJRNOBJ         71,75  End Journal Object
+QSYS       ENDJRNPF          71,75  End Journal Physical File
+QSYS       ENDJW             71     End Job Watcher
+QSYS       ENDLINRCY         71,75  End Line Recovery
+QSYS       ENDLOGSVR         71,75  End Job Log Server
+QSYS       ENDMGDSYS  PRX    75     End Managed System Services
+QSYS       ENDMGRSRV  PRX    75     End Manager Services
+QSYS       ENDMOD            71,75  End Mode
+QSYS       ENDMSF            71     End Mail Server Framework
+QSYS       ENDNFSSVR         71     End NFS Server
+QSYS       ENDNWIRCY         71     End Network Interface Recovery
+QSYS       ENDPASTHR         71,75  End Pass-Through
+QSYS       ENDPEX            71     End Performance Explorer
+QSYS       ENDPFRCOL         71     End Performance Collection
+QSYS       ENDPFRTRC         71     End Performance Trace
+QSYS       ENDPGM            71,75  End Program
+QSYS       ENDPGMEXP         71,75  End Program Export List
+QSYS       ENDPGMPRF         71     End Program Profiling
+QSYS       ENDPJ             71,75  End Prestart Jobs
+QSYS       ENDPRTEML         71,75  End Printer Emulation
+QSYS       ENDRCV            71,75  End Receive
+QSYS       ENDRDR            71,75  End Reader
+QSYS       ENDREPBPR  PRX    71     
+QSYS       ENDRJESSN  PRX    75     End RJE Session
+QSYS       ENDRMTSPT         71     End Remote Support
+QSYS       ENDRPCBIND        71     End RPC Binder Daemon
+QSYS       ENDRQS            71,75  End Request
+QSYS       ENDS36     PRX    71     
+QSYS       ENDSAVSYNC        75     End Save Synchronization
+QSYS       ENDSBMCRQA PRX    75     End Submitted CRQ Activity
+QSYS       ENDSBS            71     End Subsystem
+QSYS       ENDSELECT         71,75  End Select
+QSYS       ENDSRVAGT         71     End Service Agent
+QSYS       ENDSRVJOB         71,75  End Service Job
+QSYS       ENDSUBR           71,75  End Subroutine
+QSYS       ENDSVCSSN  PRX    75     
+QSYS       ENDSYS            71,75  End System
+QSYS       ENDSYSMGR  PRX    75     End System Manager
+QSYS       ENDTCP            71     End TCP/IP
+QSYS       ENDTCPABN         71     End TCP/IP Abnormal
+QSYS       ENDTCPCNN         71     End TCP/IP Connection
+QSYS       ENDTCPIFC         71     End TCP/IP Interface
+QSYS       ENDTCPPTP         71     End Point-to-Point TCP/IP
+QSYS       ENDTCPSVR         71     End TCP/IP Server
+QSYS       ENDTFMMGR  PRX    75     End Transform Manager
+QSYS       ENDTIESSN         71,75  End TIE Session
+QSYS       ENDTRC            71     End Trace
+QSYS       ENDTRPMGR         71     End Trap Manager
+QSYS       ENDVFYMON  PRX    71     
+QSYS       ENDVPNCNN         75     End VPN Connection
+QSYS       ENDWCH            71     End Watch
+QSYS       ENDWTR            71,75  End Writer
+QSYS       EOF        PRX    75     End of File
+QSYS       ERASE             71,75  Remove Link
+QSYS       EXPORT            71,75  Export a Program Symbol
+QSYS       EXPORTFS          71     Change NFS Export
+QSYS       EXTPGMINF         71,75  Extract Program Information
+QSYS       FILDOC            71,75  File Document
+QSYS       FMTDTA            71,75  Format Data
+QSYS       FNDSTRPDM  PRX    75     Find String Using PDM
+QSYS       FNDSTRPDM2 PRX    75     Find String with List
+QSYS       FTP        PRX    71,75  Start TCP/IP File Transfer
+QSYS       GENCAT            71,75  Generate Message Catalog
+QSYS       GENCKMKSFE        71,75  Generate Keystore File Entry
+QSYS       GENCMDDOC         71,75  Generate Command Documentation
+QSYS       GENCSRC    PRX    75     Generate C/C++ Source
+QSYS       GENDNSDSRR PRX    75     Generate DNSSEC DS RR
+QSYS       GENDNSKEY  PRX    75     Generate DNS Key
+QSYS       GENJVMDMP  PRX    71,75  Generate JVM Dump
+QSYS       GENLICKEY         75     Generate License Key
+QSYS       GETBLDOPTE PRX    71     
+QSYS       GETTEFE    PRX    71     
+QSYS       GO                71,75  Go to Menu
+QSYS       GOTO              71,75  Go To
+QSYS       GRTACCAUT         71     Grant Access Code Authority
+QSYS       GRTOBJAUT         71,75  Grant Object Authority
+QSYS       GRTUSRAUT         71,75  Grant User Authority
+QSYS       GRTUSRPMN         71,75  Grant User Permission
+QSYS       GRTWSOAUT  PRX    71,75  Grant Workstation Object Aut
+QSYS       HLDCMNDEV         71     Hold Communications Device
+QSYS       HLDDSTQ           71     Hold Distribution Queue
+QSYS       HLDJOB            71,75  Hold Job
+QSYS       HLDJOBQ           71,75  Hold Job Queue
+QSYS       HLDJOBSCDE        71,75  Hold Job Schedule Entry
+QSYS       HLDOUTQ           71,75  Hold Output Queue
+QSYS       HLDPTF            75     Hold Program Temporary Fix
+QSYS       HLDRDR            71,75  Hold Reader
+QSYS       HLDSBMCRQA PRX    75     Hold Submitted CRQ Activity
+QSYS       HLDSPLF           71,75  Hold Spooled File
+QSYS       HLDWTR            71,75  Hold Writer
+QSYS       HOST       PRX    71,75  Start HOST Query
+QSYS       IF                71,75  If
+QSYS       INCLUDE           71,75  Include CL Source
+QSYS       INSCICSGRP PRX    75     Install CICS Group
+QSYS       INSINTSVR  PRX    71     
+QSYS       INSPTF            71     Install Program Temporary Fix
+QSYS       INSRMTPRD  PRX    75     Install Remote Product
+QSYS       INSWNTSVR  PRX    71     
+QSYS       INZCICS    PRX    75     Initialize CICS Tables
+QSYS       INZDKT            71,75  Initialize Diskette
+QSYS       INZDLFM           71,75  Initialize DLFM
+QSYS       INZDSTQ           71     Initialize Distribution Queue
+QSYS       INZNWSCFG         71     Initialize NWS Configuration
+QSYS       INZOPT            71,75  Initialize Optical
+QSYS       INZPCS     PRX    71,75  Initialize IBM i Access
+QSYS       INZPFM            71,75  Initialize Physical File Mbr
+QSYS       INZSYS            71     Initialize System
+QSYS       INZTAP            71,75  Initialize Tape
+QSYS       ITERATE           71,75  Iterate
+QSYS       JAVA       PRX    71,75  Run Java Program
+QSYS       LDIF2DB           71     Copy From LDIF
+QSYS       LEAVE             71,75  Leave
+QSYS       LNKDTADFN         71,75  Link/Unlink Data Definition
+QSYS       LODIMGCLG         71,75  Load or Unload Image Catalog
+QSYS       LODIMGCLGE        71,75  Load/Unload/Mount IMGCLG Entry
+QSYS       LODIPFTR          75     Load/Unload IP Filter
+QSYS       LODOPTFMW         71     Load Optical Firmware
+QSYS       LODPTF            71     Load Program Temporary Fix
+QSYS       LODQSTDB          71     Load Q/A Database
+QSYS       LODRUN            71,75  Load and Run
+QSYS       LPR        PRX    71,75  Send TCP/IP Spooled File
+QSYS       MD                71,75  Create Directory
+QSYS       MKDIR             71,75  Create Directory
+QSYS       MONMSG            71,75  Monitor Message
+QSYS       MOUNT             71     Add Mounted FS
+QSYS       MOV               71,75  Move Object
+QSYS       MOVDOC            71,75  Move Document
+QSYS       MOVE              71,75  Move Object
+QSYS       MOVOBJ            71,75  Move Object
+QSYS       MRGFORMD   PRX    75     Merge Form Description
+QSYS       MRGMSGCLG         71,75  Merge Message Catalog
+QSYS       MRGMSGF           71,75  Merge Message File
+QSYS       MRGPKG     PRX    71     
+QSYS       MRGSRC     PRX    75     Merge Source
+QSYS       MRGTCPHT          71,75  Merge TCP/IP Host Table
+QSYS       NDPING            75     Send Neighbor Solicitation
+QSYS       NETSTAT           71,75  Work with TCP/IP Network Sts
+QSYS       NSLOOKUP   PRX    71,75  Start NSLOOKUP Query
+QSYS       NSUPDATE   PRX    71,75  Run DNS Update
+QSYS       OPNDBF            71,75  Open Data Base File
+QSYS       OPNQRYF           71,75  Open Query File
+QSYS       ORDSPTPTF  PRX    75     Order Supported Product PTFs
+QSYS       OTHERWISE         71,75  Otherwise
+QSYS       OVRDBF            71,75  Override with Data Base File
+QSYS       OVRDKTF           71,75  Override with Diskette File
+QSYS       OVRDSPF           71,75  Override with Display File
+QSYS       OVRICFDEVE        71,75  Override ICF Pgm Device Entry
+QSYS       OVRICFF           71,75  Override ICF File
+QSYS       OVRMSGF           71,75  Override Message File
+QSYS       OVRPRTF           71,75  Override with Printer File
+QSYS       OVRSAVF           71,75  Override with Save File
+QSYS       OVRTAPF           71,75  Override with Tape File
+QSYS       PARM              71,75  Parameter Definition
+QSYS       PGM               71,75  Program
+QSYS       PING              71,75  Verify TCP/IP Connection
+QSYS       PKGINSOBJ  PRX    75     Package Installable Object
+QSYS       PKGPRDDST  PRX    75     Package Product for DST
+QSYS       PKGPRDOPT         75     Package Product Option
+QSYS       PMTCTL            71,75  Prompt Control Definition
+QSYS       POSDBF            71,75  Position Data Base File
+QSYS       PRTACTRPT  PRX    75     Print Activity Report
+QSYS       PRTADPOBJ         71,75  Print Adopting Objects
+QSYS       PRTAFPDTA         71,75  Print AFP Data
+QSYS       PRTCADMRE  PRX    75     
+QSYS       PRTCICSTRC PRX    75     Print CICS Trace
+QSYS       PRTCMDUSG         71,75  Print Command Usage
+QSYS       PRTCMNSEC         71,75  Print Communications Security
+QSYS       PRTCMNTRC         71     Print Communications Trace
+QSYS       PRTCPTRPT  PRX    75     Print Component Report
+QSYS       PRTDEVADR         71,75  Print Device Addresses
+QSYS       PRTDIRINF         71     Print Directory Information
+QSYS       PRTDOC            71,75  Print Document
+QSYS       PRTDSKINF         71     Print Disk Information
+QSYS       PRTERRLOG         71     Print Error Log
+QSYS       PRTINTDTA         71     Print Internal Data
+QSYS       PRTIPSCFG         71     Print IP over SNA
+QSYS       PRTJOBDAUT        71,75  Print JOBD Authority
+QSYS       PRTJOBRPT  PRX    75     Print Job Interval Report
+QSYS       PRTJOBTRC  PRX    75     Print Job Trace
+QSYS       PRTJVMJOB  PRX    71,75  Print JVM Job
+QSYS       PRTLCKRPT  PRX    75     Print Lock Report
+QSYS       PRTOPCACT  PRX    71,75  Print OptiConnect Activity
+QSYS       PRTOPCJOB  PRX    71,75  Print OptiConnect Jobs
+QSYS       PRTPEXRPT         71     Print PEX Report
+QSYS       PRTPFDDTA  PRX    75     Print PFD Data
+QSYS       PRTPOLRPT  PRX    75     Print Pool Report
+QSYS       PRTPRFINT         71     Print Profile Internals
+QSYS       PRTPUBAUT         71,75  Print Publicly Auth Objects
+QSYS       PRTPVTAUT         71,75  Print Private Authorities
+QSYS       PRTQAUT           71,75  Print Queue Authority
+QSYS       PRTRSCRPT  PRX    75     Print Resource Report
+QSYS       PRTSBSDAUT        71,75  Print Subsystem Description
+QSYS       PRTSQLINF         71,75  Print SQL Information
+QSYS       PRTSWL            71,75  Print Stop Word List
+QSYS       PRTSYSINF         71     Print System Information
+QSYS       PRTSYSRPT  PRX    75     Print System Report
+QSYS       PRTSYSSECA        71,75  Print System Security Attr
+QSYS       PRTTCPPTP         71,75  Print Point-to-Point Profile
+QSYS       PRTTNSRPT  PRX    75     Print Transaction Report
+QSYS       PRTTRC            71     Print Trace Data
+QSYS       PRTTRCRPT  PRX    75     Print Job Trace Report
+QSYS       PRTTRGPGM         71,75  Print Trigger Programs
+QSYS       PRTUSROBJ         71,75  Print User Objects
+QSYS       PRTUSRPRF         71,75  Print User Profile
+QSYS       PWRDWNSYS         71     Power Down System
+QSYS       QRYDOCLIB         71,75  Query Document Library
+QSYS       QRYDST            71,75  Query Distributions
+QSYS       QRYPRBSTS         71     Query Problem Status
+QSYS       QRYTIEF           71,75  Query TIE Files
+QSYS       QSH        PRX    71,75  Start QSH
+QSYS       QUAL              71,75  Qualifier Definition
+QSYS       RADBKP            71     Restore APAR Data
+QSYS       RCLACTGRP         71,75  Reclaim Activation Group
+QSYS       RCLDBXREF         71     Reclaim DB Cross-Reference
+QSYS       RCLDDMCNV         71,75  Reclaim DDM Conversations
+QSYS       RCLDLO            71,75  Reclaim Document Lib Object
+QSYS       RCLLIB            71,75  Reclaim Library
+QSYS       RCLLNK            71,75  Reclaim Object Links
+QSYS       RCLOBJOWN         71     Reclaim Objects by Owner
+QSYS       RCLOPT            71     Reclaim Optical
+QSYS       RCLRSC            71,75  Reclaim Resources
+QSYS       RCLSPLSTG         71     Reclaim Spool Storage
+QSYS       RCLSTG            71     Reclaim Storage
+QSYS       RCLTMPSTG         71     Reclaim Temporary Storage
+QSYS       RCVDST            71,75  Receive Distribution
+QSYS       RCVF              71,75  Receive File
+QSYS       RCVJRNE           71,75  Receive Journal Entry
+QSYS       RCVMSG            71,75  Receive Message
+QSYS       RCVNETF           71,75  Receive Network File
+QSYS       RCVTIEF           71,75  Receive TIE File
+QSYS       RD                71,75  Remove Directory
+QSYS       READFILE   PRX    75     Read a File
+QSYS       REN               71,75  Rename Object
+QSYS       REPBPR     PRX    71     
+QSYS       REPOBJ     PRX    71     
+QSYS       RETURN            71,75  Return
+QSYS       RGZDLO            71,75  Reorganize Document Lib Object
+QSYS       RGZPFM            71,75  Reorganize Physical File Mbr
+QSYS       RLSCMNDEV         71     Release Communications Device
+QSYS       RLSDSTQ           71     Release Distribution Queue
+QSYS       RLSIFSLCK         71     Release File System Locks
+QSYS       RLSJOB            71,75  Release Job
+QSYS       RLSJOBQ           71,75  Release Job Queue
+QSYS       RLSJOBSCDE        71,75  Release Job Schedule Entry
+QSYS       RLSOUTQ           71,75  Release Output Queue
+QSYS       RLSPTF            75     Release Program Temporary Fix
+QSYS       RLSRDR            71,75  Release Reader
+QSYS       RLSRMTPHS         71     Release Remote Phase
+QSYS       RLSSBMCRQA PRX    75     Release Submitted CRQ Activity
+QSYS       RLSSPLF           71,75  Release Spooled File
+QSYS       RLSWTR            71,75  Release Writer
+QSYS       RMDIR             71,75  Remove Directory
+QSYS       RMVACC            71     Remove Access Code
+QSYS       RMVACCWEB  PRX    75     Remove Access for Web
+QSYS       RMVAJE            71,75  Remove Autostart Job Entry
+QSYS       RMVALRD           71,75  Remove Alert Description
+QSYS       RMVASPCPYD PRX    75     
+QSYS       RMVAUTLE          71,75  Remove Auth List Entry
+QSYS       RMVBKP            71,75  Remove Breakpoint
+QSYS       RMVBLDOPTE PRX    71     
+QSYS       RMVBNDDIRE        71,75  Remove Binding Directory Entry
+QSYS       RMVBUILDER PRX    71     
+QSYS       RMVCADMRE  PRX    75     
+QSYS       RMVCADNODE PRX    75     
+QSYS       RMVCCSCLT  PRX    75     Remove CC Server Client
+QSYS       RMVCFGLE          71,75  Remove Cfg List Entries
+QSYS       RMVCICSCVT PRX    75     Remove CICS CVT Entry
+QSYS       RMVCICSDCT PRX    75     Remove CICS DCT Entry
+QSYS       RMVCICSFCT PRX    75     Remove CICS FCT Entry
+QSYS       RMVCICSGLT PRX    75     Remove CICS GLT Entry
+QSYS       RMVCICSJCT PRX    75     Remove CICS JCT Entry
+QSYS       RMVCICSPCT PRX    75     Remove CICS PCT Entry
+QSYS       RMVCICSPPT PRX    75     Remove CICS PPT Entry
+QSYS       RMVCICSSIT PRX    75     Remove CICS SIT Entry
+QSYS       RMVCICSTCS PRX    75     Remove CICS TCS Entry
+QSYS       RMVCICSTCT PRX    75     Remove CICS TCT Entry
+QSYS       RMVCICSTST PRX    75     Remove CICS TST Entry
+QSYS       RMVCKMKSFE        71,75  Remove Keystore File Entry
+QSYS       RMVCLUMON  PRX    75     
+QSYS       RMVCLUNODE PRX    75     
+QSYS       RMVCMNE           71,75  Remove Communications Entry
+QSYS       RMVCOMSNMP        71,75  Remove Community for SNMP
+QSYS       RMVCRGDEVE PRX    75     
+QSYS       RMVCRGNODE PRX    75     
+QSYS       RMVCRQDA   PRX    75     Remove CRQD Activity
+QSYS       RMVDEVDMNE PRX    75     
+QSYS       RMVDFRID          71     Remove Defer ID
+QSYS       RMVDIR            71,75  Remove Directory
+QSYS       RMVDIRE           71,75  Remove Directory Entry
+QSYS       RMVDIRSHD         71,75  Remove Directory Shadow System
+QSYS       RMVDLOAUT         71,75  Remove DLO Authority
+QSYS       RMVDSTCLGE PRX    75     Remove DST Catalog Entry
+QSYS       RMVDSTLE          71,75  Remove Distribution List Entry
+QSYS       RMVDSTQ           71     Remove Distribution Queue
+QSYS       RMVDSTRTE         71     Remove Distribution Route
+QSYS       RMVDSTSYSN        71     Remove Secondary System Name
+QSYS       RMVDWDFN          71     Remove Disk Watcher Definition
+QSYS       RMVEMLCFGE        71,75  Remove Configuration Entry
+QSYS       RMVENVVAR         71,75  Remove Environment Variable
+QSYS       RMVEWCBCDE        71,75  Remove EWC Barcode Entry
+QSYS       RMVEWCPTCE        71,75  Remove EWC PTC Entry
+QSYS       RMVEXITPGM        71     Remove Exit Program
+QSYS       RMVFCTE    PRX    75     Remove Forms Control Entry
+QSYS       RMVFNTTBLE        71,75  Remove Font Table Entry
+QSYS       RMVFTRACNE        71,75  Remove Filter Action Entry
+QSYS       RMVFTRSLTE        71,75  Remove Filter Selection Entry
+QSYS       RMVHACFGD  PRX    75     
+QSYS       RMVHAPCY   PRX    75     
+QSYS       RMVICFDEVE        71,75  Remove ICF Device Entry
+QSYS       RMVIMGCLGE        71,75  Remove Image Catalog Entry
+QSYS       RMVIPSIFC         71     Remove IP over SNA Interface
+QSYS       RMVIPSLOC         71     Remove IP over SNA Location
+QSYS       RMVIPSRTE         71     Remove IP over SNA Route
+QSYS       RMVJOBQE          71,75  Remove Job Queue Entry
+QSYS       RMVJOBSCDE        71     Remove Job Schedule Entry
+QSYS       RMVJRNCHG         71     Remove Journaled Changes
+QSYS       RMVJWDFN          71     Remove Job Watcher Definition
+QSYS       RMVKRBKTE         71,75  Remove Kerberos Keytab Entry
+QSYS       RMVLANADPI        71,75  Remove LAN Adapter Information
+QSYS       RMVLANADPT        71     Remove LAN Adapter
+QSYS       RMVLIBLE          71,75  Remove Library List Entry
+QSYS       RMVLICKEY         71     Remove License Key Information
+QSYS       RMVLNK            71,75  Remove Link
+QSYS       RMVM              71,75  Remove Member
+QSYS       RMVMFS            71     Remove Mounted FS
+QSYS       RMVMSG            71,75  Remove Message
+QSYS       RMVMSGD           71,75  Remove Message Description
+QSYS       RMVNCK            71,75  Remove Nickname
+QSYS       RMVNETJOBE        71     Remove Network Job Entry
+QSYS       RMVNETTBLE        71,75  Remove Network Table Entry
+QSYS       RMVNODLE          71,75  Remove Node List Entry
+QSYS       RMVNWSSTGL        71,75  Remove Server Storage Link
+QSYS       RMVOPTCTG         71     Remove Optical Cartridge
+QSYS       RMVOPTSVR         71     Remove Optical Server
+QSYS       RMVOSPFARA        71,75  Remove OSPF Area
+QSYS       RMVOSPFIFC        71,75  Remove OSPF Interface
+QSYS       RMVOSPFLNK        71,75  Remove OSPF Virtual Link
+QSYS       RMVOSPFRNG        71,75  Remove OSPF Range
+QSYS       RMVPCLTBLE        71,75  Remove Protocol Table Entry
+QSYS       RMVPEXDFN         71     Remove PEX Definition
+QSYS       RMVPEXFTR         71     Remove PEX Filter
+QSYS       RMVPFCST          71,75  Remove PF Constraint
+QSYS       RMVPFTRG          71,75  Remove Physical File Trigger
+QSYS       RMVPGM            71,75  Remove Program
+QSYS       RMVPJE            71,75  Remove Prestart Job Entry
+QSYS       RMVPRDBPR  PRX    71     
+QSYS       RMVPTF            71     Remove Program Temporary Fix
+QSYS       RMVRDBDIRE        71,75  Remove RDB Directory Entry
+QSYS       RMVREXBUF         71,75  Remove REXX Buffer
+QSYS       RMVRIPACP         71,75  Remove RIP Accepted Route
+QSYS       RMVRIPFLT         71,75  Remove RIP Filter
+QSYS       RMVRIPIFC         71,75  Remove RIP Interface
+QSYS       RMVRIPIGN         71,75  Remove Ignored RIP Neighbor
+QSYS       RMVRJECMNE PRX    75     Remove RJE Communication Entry
+QSYS       RMVRJERDRE PRX    75     Remove RJE Reader Entry
+QSYS       RMVRJEWTRE PRX    75     Remove RJE Writer Entry
+QSYS       RMVRMTDFN         71     Remove Remote Definition
+QSYS       RMVRMTJRN         71,75  Remove Remote Journal
+QSYS       RMVRMTPTF  PRX    75     Remove Remote PTF
+QSYS       RMVRPYLE          71     Remove Reply List Entry
+QSYS       RMVRTGE           71,75  Remove Routing Entry
+QSYS       RMVSCHIDXE        71,75  Remove Search Index Entry
+QSYS       RMVSDSTLE  PRX    75     Remove SMTP Dist List Entry
+QSYS       RMVSMTPLE  PRX    71,75  Remove SMTP List Entry
+QSYS       RMVSMTPRLE        75     Remove Remote Login Entry
+QSYS       RMVSOCE           71,75  Remove Sphere of Control Entry
+QSYS       RMVSRVTBLE        71,75  Remove Service Table Entry
+QSYS       RMVSVCCPYD PRX    75     
+QSYS       RMVSVRAUTE        71,75  Remove Server Auth Entry
+QSYS       RMVTAPCTG         71,75  Remove Tape Cartridge
+QSYS       RMVTCPHTE         71,75  Remove TCP/IP Host Table Entry
+QSYS       RMVTCPIFC         71,75  Remove TCP/IP Interface
+QSYS       RMVTCPPORT        71,75  Remove TCP/IP Port Restriction
+QSYS       RMVTCPPTP         71,75  Remove Point-to-Point Profile
+QSYS       RMVTCPRSI         71     Remove TCP/IP Remote System
+QSYS       RMVTCPRTE         71,75  Remove TCP/IP Route
+QSYS       RMVTCPSVR         71,75  Remove TCP/IP Server
+QSYS       RMVTCPTBL         71,75  Remove TCP/IP Table
+QSYS       RMVTEFE    PRX    71     
+QSYS       RMVTRC            71,75  Remove Trace
+QSYS       RMVTRCFTR         71     Remove Trace Filter
+QSYS       RMVUSRSMTP PRX    75     Remove User SMTP
+QSYS       RMVUSRSNMP        71,75  Remove User for SNMP
+QSYS       RMVVACSNMP        75     Remove VACM for SNMP
+QSYS       RMVWSE            71,75  Remove Work Station Entry
+QSYS       RNDC       PRX    71,75  Run RNDC Command
+QSYS       RNM               71,75  Rename Object
+QSYS       RNMDIRE           71,75  Rename Directory Entry
+QSYS       RNMDKT            71,75  Rename Diskette
+QSYS       RNMDLO            71,75  Rename Document Library Object
+QSYS       RNMDSTL           71,75  Rename Distribution List
+QSYS       RNMLANADPI        71,75  Rename LAN Adapter
+QSYS       RNMM              71,75  Rename Member
+QSYS       RNMNCK            71,75  Rename Nickname
+QSYS       RNMOBJ            71,75  Rename Object
+QSYS       RNMSDSTL   PRX    75     Rename SMTP Dist List
+QSYS       RNMTCPHTE         71,75  Rename TCP/IP Host Table Entry
+QSYS       ROLLBACK          71,75  Rollback
+QSYS       RPCBIND           71     Start RPC Binder Daemon
+QSYS       RPCGEN            71,75  Convert RPC Source
+QSYS       RPLDOC            71,75  Replace Document
+QSYS       RRTJOB            71,75  Reroute Job
+QSYS       RSMBKP            71,75  Resume Breakpoint
+QSYS       RSMCTLRCY         71,75  Resume Controller Recovery
+QSYS       RSMDEVRCY         71,75  Resume Device Recovery
+QSYS       RSMLINRCY         71,75  Resume Line Recovery
+QSYS       RSMNWIRCY         71     Resume NWI Recovery
+QSYS       RST               71     Restore Object
+QSYS       RSTAPARDTA        71     Restore APAR Data
+QSYS       RSTAUT            71     Restore Authority
+QSYS       RSTBLDEVT  PRX    71     
+QSYS       RSTBUILDER PRX    71     
+QSYS       RSTCFG            71     Restore Configuration
+QSYS       RSTDFROBJ         71     Restore Deferred Objects
+QSYS       RSTDLO            71     Restore Document Lib Object
+QSYS       RSTHAPCY   PRX    75     
+QSYS       RSTLIB            71     Restore Library
+QSYS       RSTLICPGM         71     Restore Licensed Program
+QSYS       RSTOBJ            71     Restore Object
+QSYS       RSTPFRCOL         71     Restore Performance Collection
+QSYS       RSTPRDBPR  PRX    71     
+QSYS       RSTS36F           71     Restore S/36 File
+QSYS       RSTS36FLR         71     Restore S/36 Folder
+QSYS       RSTS36LIBM        71     Restore S/36 Library Members
+QSYS       RSTSYSINF         71     Restore System Information
+QSYS       RSTUSRPRF         71     Restore User Profiles
+QSYS       RTNSUBR           71,75  Return from Subroutine
+QSYS       RTVASPCPYD PRX    75     
+QSYS       RTVASPSSN  PRX    75     
+QSYS       RTVAUTLE          71,75  Retrieve Auth List Entry
+QSYS       RTVBCKUP          71,75  Retrieve Backup Options
+QSYS       RTVBLDSTS  PRX    71     
+QSYS       RTVBLDTYPE PRX    71     
+QSYS       RTVBNDSRC         71,75  Retrieve Binder Source
+QSYS       RTVCFGSRC         71,75  Retrieve Configuration Source
+QSYS       RTVCFGSTS         71,75  Retrieve Configuration Status
+QSYS       RTVCLDSRC         71,75  Retrieve C Locale Description
+QSYS       RTVCLNUP          71,75  Retrieve Cleanup
+QSYS       RTVCLSRC          71,75  Retrieve CL Source
+QSYS       RTVCLU     PRX    75     
+QSYS       RTVCRG     PRX    75     
+QSYS       RTVCSMSSN  PRX    75     
+QSYS       RTVCURDIR         71,75  Retrieve Current Directory
+QSYS       RTVDIRINF         71     Retrieve Directory Information
+QSYS       RTVDLOAUT         71     Retrieve DLO Authority
+QSYS       RTVDLONAM         71,75  Retrieve DLO Name
+QSYS       RTVDOC            71,75  Retrieve Document
+QSYS       RTVDSKINF         71     Retrieve Disk Information
+QSYS       RTVDTAARA         71,75  Retrieve Data Area
+QSYS       RTVGRPA           71,75  Retrieve Group Attributes
+QSYS       RTVIMGCLG         71,75  Retrieve Image Catalog
+QSYS       RTVJOBA           71,75  Retrieve Job Attributes
+QSYS       RTVJRNE           71,75  Retrieve Journal Entry
+QSYS       RTVLIBD           71,75  Retrieve Library Description
+QSYS       RTVMBRD           71,75  Retrieve Member Description
+QSYS       RTVMSG            71,75  Retrieve Message
+QSYS       RTVNETA           71,75  Retrieve Network Attributes
+QSYS       RTVOBJD           71,75  Retrieve Object Description
+QSYS       RTVPDGPRF         71,75  Retrieve PDG Profile
+QSYS       RTVPRD     PRX    75     Retrieve Product
+QSYS       RTVPTF     PRX    75     Retrieve Program Temporary Fix
+QSYS       RTVPWRSCDE        71,75  Retrieve Power Schedule Entry
+QSYS       RTVQMFORM         71,75  Retrieve Query Management Form
+QSYS       RTVQMQRY          71,75  Retrieve Query Mgmt Query
+QSYS       RTVS36A    PRX    71     
+QSYS       RTVSMGOBJ  PRX    75     Retrieve SMG Object
+QSYS       RTVSRVAGT         71     Retrieve Service Agent
+QSYS       RTVSVCCPYD PRX    75     
+QSYS       RTVSVCSSN  PRX    75     
+QSYS       RTVSWLSRC         71,75  Retrieve Stop Word List Source
+QSYS       RTVSYSINF         71     Retrieve System Information
+QSYS       RTVSYSVAL         71,75  Retrieve System Value
+QSYS       RTVTBLSRC         71,75  Retrieve Table Source
+QSYS       RTVUSRPRF         71,75  Retrieve User Profile
+QSYS       RTVUSRPRTI        71,75  Retrieve User Print Info
+QSYS       RTVWSCST          71,75  Retrieve WSCST source
+QSYS       RUNBCKUP          71,75  Run Backup
+QSYS       RUNDNSUPD  PRX    71,75  Run DNS Update
+QSYS       RUNJVA     PRX    71,75  Run Java Program
+QSYS       RUNLPDA           71     Run LPDA-2
+QSYS       RUNQRY            71,75  Run Query
+QSYS       RUNRMTCMD         71,75  Run Remote Command
+QSYS       RUNRNDCCMD PRX    71,75  Run RNDC Command
+QSYS       RUNSMGCMD  PRX    75     Run SMG Command
+QSYS       RUNSMGOBJ  PRX    75     Run SMG Object
+QSYS       RUNSQL            75     Run SQL
+QSYS       RUNSQLSTM         71,75  Run SQL Statements
+QSYS       RVKACCAUT         71,75  Revoke Access Code Authority
+QSYS       RVKOBJAUT         71,75  Revoke Object Authority
+QSYS       RVKPUBAUT         71     Revoke Public Authority
+QSYS       RVKUSRPMN         71,75  Revoke User Permission
+QSYS       RVKWSOAUT  PRX    71,75  Revoke Workstation Object Aut
+QSYS       SAV               71,75  Save Object
+QSYS       SAVAPARDTA        71     Save APAR Data
+QSYS       SAVBLDEVT  PRX    71     
+QSYS       SAVBUILDER PRX    71     
+QSYS       SAVCFG            71,75  Save Configuration
+QSYS       SAVCHGOBJ         71,75  Save Changed Objects
+QSYS       SAVCICSGRP PRX    75     Save CICS Group
+QSYS       SAVDLO            71,75  Save Document Library Object
+QSYS       SAVHAPCY   PRX    75     
+QSYS       SAVLIB            71,75  Save Library
+QSYS       SAVLICPGM         71     Save Licensed Program
+QSYS       SAVOBJ            71,75  Save Object
+QSYS       SAVPFRCOL         71     Save Performance Collection
+QSYS       SAVPRDBPR  PRX    71     
+QSYS       SAVRST     PRX    71,75  Save Restore
+QSYS       SAVRSTCFG  PRX    71,75  Save Restore Configuration
+QSYS       SAVRSTCHG  PRX    71,75  Save Restore Changed Objects
+QSYS       SAVRSTDLO  PRX    71,75  Save Restore Doc/Lib Object
+QSYS       SAVRSTLIB  PRX    71,75  Save Restore Library
+QSYS       SAVRSTOBJ  PRX    71,75  Save Restore Object
+QSYS       SAVS36F           71,75  Save S/36 File
+QSYS       SAVS36LIBM        71,75  Save S/36 Library Members
+QSYS       SAVSAVFDTA        71,75  Save Save File Data
+QSYS       SAVSECDTA         71,75  Save Security Data
+QSYS       SAVSTG            71     Save Storage
+QSYS       SAVSYS            71,75  Save System
+QSYS       SAVSYSINF         71,75  Save System Information
+QSYS       SBMCODEJOB PRX    75     Submit CODE Batch Job
+QSYS       SBMCRQ     PRX    75     Submit Change Request
+QSYS       SBMDBJOB          71,75  Submit Data Base Jobs
+QSYS       SBMDKTJOB         71,75  Submit Diskette Jobs
+QSYS       SBMFNCJOB         71     Submit Finance Job
+QSYS       SBMJOB            71,75  Submit Job
+QSYS       SBMNETJOB         71,75  Submit Network Job
+QSYS       SBMNWSCMD         71     Submit Network Server Command
+QSYS       SBMRJEJOB  PRX    75     Submit RJE Job
+QSYS       SBMRMTCMD         71,75  Submit Remote Command
+QSYS       SELECT            71,75  Select
+QSYS       SETASPGRP         71,75  Set ASP Group
+QSYS       SETATNPGM         71,75  Set Attention Program
+QSYS       SETCSTDTA  PRX    71,75  Set Customization Data
+QSYS       SETDNSRVK  PRX    75     Set DNSSEC REVOKE Bit
+QSYS       SETKBDMAP         71,75  Set Keyboard Map
+QSYS       SETMSTKEY         71     Set Master Key
+QSYS       SETOBJACC         71,75  Set Object Access
+QSYS       SETPGMINF         71,75  Set Program Information
+QSYS       SETTAPCGY         71,75  Set Tape Category
+QSYS       SETUPGENV         71     Set Upgrade Environment
+QSYS       SETVTMAP   PRX    71,75  Set VT Keyboard Map
+QSYS       SETVTTBL   PRX    71,75  Set VT Mapping Tables
+QSYS       SIGNOFF           71,75  Sign Off
+QSYS       SLTCMD            71,75  Select Command
+QSYS       SNDARPRQS         71,75  Send ARP Request
+QSYS       SNDBRKMSG         71     Send Break Message
+QSYS       SNDDST            71     Send Distribution
+QSYS       SNDDSTQ           71     Send Distribution Queue
+QSYS       SNDF              71,75  Send File
+QSYS       SNDFNCIMG         71     Send Finance Diskette Image
+QSYS       SNDJRNE           71,75  Send Journal Entry
+QSYS       SNDLIC     PRX    75     Send License
+QSYS       SNDMSG            71,75  Send Message
+QSYS       SNDNETF           71,75  Send Network File
+QSYS       SNDNETMSG         71,75  Send Network Message
+QSYS       SNDNETSPLF        71,75  Send Network Spooled File
+QSYS       SNDNGHSOL         75     Send Neighbor Solicitation
+QSYS       SNDPGMMSG         71,75  Send Program Message
+QSYS       SNDPRD     PRX    75     Send Product
+QSYS       SNDPTF     PRX    75     Send Program Temporary Fix
+QSYS       SNDPTFORD         71     Send PTF Order
+QSYS       SNDRCVF           71,75  Send/Receive File
+QSYS       SNDRJECMD  PRX    75     Send RJE Command
+QSYS       SNDRPY            71,75  Send Reply
+QSYS       SNDSMGOBJ  PRX    75     Send SMG Object
+QSYS       SNDSMTPEMM PRX    75     Send SMTP E-mail Message
+QSYS       SNDSRVRQS         71     Send Service Request
+QSYS       SNDTCPSPLF PRX    71,75  Send TCP/IP Spooled File
+QSYS       SNDTIEF           71,75  Send TIE File
+QSYS       SNDUSRMSG         71,75  Send User Message
+QSYS       STATFS            71,75  Display Mounted FS Information
+QSYS       STRACCWEB  PRX    75     Start Access for Web
+QSYS       STRAFPU    PRX    75     Start AFP Utilities
+QSYS       STRAGTSRV         71,75  Start Agent Services
+QSYS       STRAPF     PRX    75     Advanced Printer Function
+QSYS       STRASPBAL         71     Start ASP Balance
+QSYS       STRASPSSN  PRX    75     
+QSYS       STRBLDIMPT PRX    71     
+QSYS       STRBLDSVR  PRX    71     
+QSYS       STRCAD     PRX    75     
+QSYS       STRCBLDBG  PRX    75     Start COBOL Debug
+QSYS       STRCGU     PRX    75     Start CGU
+QSYS       STRCHTSVR         71     Start CHT Server
+QSYS       STRCICS    PRX    75     Start CICS
+QSYS       STRCICSUSR PRX    75     Start CICS User
+QSYS       STRCLNUP          71,75  Start Cleanup
+QSYS       STRCLUNOD  PRX    75     
+QSYS       STRCMNSVR         71     Start Communications Server
+QSYS       STRCMNTRC         71     Start Communications Trace
+QSYS       STRCMTCTL         71,75  Start Commitment Control
+QSYS       STRCODE    PRX    75     Start CODE
+QSYS       STRCODECMD PRX    75     Start CODE Command
+QSYS       STRCPYSCN         71,75  Start Copy Screen
+QSYS       STRCRG     PRX    75     
+QSYS       STRCRGCNR  PRX    75     
+QSYS       STRCSMSSN  PRX    75     
+QSYS       STRDBG            71,75  Start Debug
+QSYS       STRDBGSVR         71,75  Start Debug Server
+QSYS       STRDBMON          71,75  Start Database Monitor
+QSYS       STRDBRDR          71,75  Start Data Base Reader
+QSYS       STRDFU            71,75  Start DFU
+QSYS       STRDIGQRY  PRX    71,75  Start DIG Query
+QSYS       STRDIRSHD         71,75  Start Directory Shadowing
+QSYS       STRDKTRDR         71,75  Start Diskette Reader
+QSYS       STRDKTWTR         71,75  Start Diskette Writer
+QSYS       STRDNSQRY  PRX    71,75  Start NSLOOKUP Query
+QSYS       STRDSKRGZ         71     Start Disk Reorganization
+QSYS       STRDW             71     Start Disk Watcher
+QSYS       STREDU            71,75  Start Education
+QSYS       STREML3270        71,75  Start 3270 Display Emulation
+QSYS       STREPMENV         71,75  Start EPM Environment
+QSYS       STRFMA            71,75  Start Font Management Aid
+QSYS       STRFNTDWN  PRX    75     Start Font Downloader
+QSYS       STRHOSTQRY PRX    71,75  Start HOST Query
+QSYS       STRHOSTSVR        71     Start Host Server
+QSYS       STRIDD            71,75  Start IDDU
+QSYS       STRIMPSMTP PRX    75     Start Import for SMTP Users
+QSYS       STRIPSIFC         71     Start IP over SNA Interface
+QSYS       STRISDB    PRX    75     Start ISDB
+QSYS       STRITF            71,75  Start ITF
+QSYS       STRJOBTRC  PRX    75     Start Job Trace
+QSYS       STRJRN            71,75  Start Journal
+QSYS       STRJRNAP          71,75  Start Journal Access Path
+QSYS       STRJRNLIB         71,75  Start Journal Library
+QSYS       STRJRNOBJ         71,75  Start Journal Object
+QSYS       STRJRNPF          71,75  Start Journal Physical File
+QSYS       STRJW             71     Start Job Watcher
+QSYS       STRLOGSVR         71,75  Start Job Log Server
+QSYS       STRMGDSYS  PRX    75     Start Managed System Services
+QSYS       STRMGRSRV  PRX    75     Start Manager Services
+QSYS       STRMOD            71,75  Start Mode
+QSYS       STRMSF            71     Start Mail Server Framework
+QSYS       STRNETINS         71     Start Network Install
+QSYS       STRNFSSVR         71     Start NFS Server
+QSYS       STROBJCVN         71     Start Object Conversion
+QSYS       STROVLU    PRX    75     Start Overlay Utility
+QSYS       STRPASTHR         71,75  Start Pass-Through
+QSYS       STRPCCMD   PRX    71,75  Start PC Command
+QSYS       STRPCO     PRX    71,75  Start PC Organizer
+QSYS       STRPDM     PRX    75     Start PDM
+QSYS       STRPEX            71     Start Performance Explorer
+QSYS       STRPFRCOL         71     Start Performance Collection
+QSYS       STRPFRG    PRX    75     Start Performance Graphics
+QSYS       STRPFRT    PRX    75     Start Performance Tools
+QSYS       STRPFRTRC         71     Start Performance Trace
+QSYS       STRPFU     PRX    75     Start Print Format Utility
+QSYS       STRPGMEXP         71,75  Start Program Export List
+QSYS       STRPGMMNU         71,75  Start Programmer Menu
+QSYS       STRPGMPRF         71     Start Program Profiling
+QSYS       STRPJ             71,75  Start Prestart Jobs
+QSYS       STRPRTEML         71,75  Start Printer Emulation
+QSYS       STRPRTWTR         71,75  Start Printer Writer
+QSYS       STRQM      PRX    75     Start DB2 UDB Query Manager
+QSYS       STRQMPRC          71,75  Start Query Management Proc
+QSYS       STRQMQRY          71,75  Start Query Management Query
+QSYS       STRQRY            71,75  Start Query
+QSYS       STRQSH     PRX    71,75  Start QSH
+QSYS       STRQST            71,75  Start Question and Answer
+QSYS       STRREXPRC         71,75  Start REXX Procedure
+QSYS       STRRJECSL  PRX    75     Start RJE Console
+QSYS       STRRJERDR  PRX    75     Start RJE Reader
+QSYS       STRRJESSN  PRX    75     Start RJE Session
+QSYS       STRRJEWTR  PRX    75     Start RJE Writer
+QSYS       STRRLU     PRX    75     Start Report Layout Utility
+QSYS       STRRMTSPT         71     Start Remote Support
+QSYS       STRRMTWTR         71,75  Start Remote Writer
+QSYS       STRRSESVR  PRX    75     Start RSE Server
+QSYS       STRS36     PRX    71     
+QSYS       STRS36PRC  PRX    71     
+QSYS       STRSAVSYNC        71,75  Start Save Synchronization
+QSYS       STRSBS            71,75  Start Subsystem
+QSYS       STRSCHIDX         71,75  Start Search Index
+QSYS       STRSDA     PRX    75     Start SDA
+QSYS       STRSEU     PRX    75     Start Source Entry Utility
+QSYS       STRSPLRCL         71     Start Spool Reclaim
+QSYS       STRSPTN           71,75  Start Support Network
+QSYS       STRSQL     PRX    75     Start SQL Interactive Session
+QSYS       STRSRVAGT         71     Start Service Agent
+QSYS       STRSRVJOB         71,75  Start Service Job
+QSYS       STRSST            71     Start System Service Tools
+QSYS       STRSVCSSN  PRX    75     
+QSYS       STRSYSMGR  PRX    75     Start System Manager
+QSYS       STRTCP            71     Start TCP/IP
+QSYS       STRTCPFTP  PRX    71,75  Start TCP/IP File Transfer
+QSYS       STRTCPIFC         71     Start TCP/IP Interface
+QSYS       STRTCPPTP         71     Start Point-to-Point TCP/IP
+QSYS       STRTCPSVR         71     Start TCP/IP Server
+QSYS       STRTCPTELN PRX    71,75  Start TCP/IP Telnet
+QSYS       STRTFMMGR  PRX    75     Start Transform Manager
+QSYS       STRTIESSN         71,75  Start TIE Session
+QSYS       STRTRC            71     Start Trace
+QSYS       STRTRPMGR         71     Start Trap Manager
+QSYS       STRVFYMON  PRX    71     
+QSYS       STRVPNCNN         75     Start VPN Connection
+QSYS       STRWCH            71     Start Watch
+QSYS       SUBR              71,75  Subroutine
+QSYS       TELNET     PRX    71,75  Start TCP/IP Telnet
+QSYS       TFRBCHJOB         71,75  Transfer Batch Job
+QSYS       TFRCTL            71,75  Transfer Control
+QSYS       TFRGRPJOB         71,75  Transfer to Group Job
+QSYS       TFRJOB            71,75  Transfer Job
+QSYS       TFRPASTHR         71,75  Transfer Pass-Through
+QSYS       TFRSECJOB         71,75  Transfer Secondary Job
+QSYS       TRACEROUTE        71,75  Trace TCP/IP Route
+QSYS       TRCASPBAL         71     Trace ASP Balance
+QSYS       TRCCNN            71     Trace Connection
+QSYS       TRCCPIC           71     Trace CPI Communications
+QSYS       TRCICF            71     Trace ICF
+QSYS       TRCINT            71     Trace Internal
+QSYS       TRCJOB            71     Trace Job
+QSYS       TRCREX            71,75  Trace REXX
+QSYS       TRCTCPAPP         71     Trace TCP/IP Application
+QSYS       TRCTCPRTE         71,75  Trace TCP/IP Route
+QSYS       TRNCKMKSF         71,75  Translate Keystore File
+QSYS       UNMOUNT           71     Remove Mounted FS
+QSYS       UPDBUILDER PRX    71     
+QSYS       UPDDTA            71,75  Update Data with Temp Program
+QSYS       UPDPGM            71,75  Update Program
+QSYS       UPDPTFINF         71     Update PTF Information
+QSYS       UPDSRVPGM         71,75  Update Service Program
+QSYS       UPDSYSINF         71     Update System Information
+QSYS       VFYAPPCCNN        71,75  Verify APPC Connection
+QSYS       VFYBPR     PRX    71     
+QSYS       VFYCMN            71     Verify Communications
+QSYS       VFYIMGCLG         71,75  Verify Image Catalog
+QSYS       VFYLNKLPDA        71     Verify Link supporting LPDA-2
+QSYS       VFYOBJ     PRX    71     
+QSYS       VFYOPCCNN  PRX    71,75  Verify OptiConnect Connections
+QSYS       VFYOPT            71     Verify Optical
+QSYS       VFYPRT            71     Verify Printer
+QSYS       VFYSRVAGT         71     Verify Service Agent
+QSYS       VFYSRVCFG         71,75  Verify Service Configuration
+QSYS       VFYTAP            71     Verify Tape
+QSYS       VFYTCPCNN         71,75  Verify TCP/IP Connection
+QSYS       VRYCFG            71,75  Vary Configuration
+QSYS       WAIT              71,75  Wait
+QSYS       WHEN              71,75  When
+QSYS       WRKACTJOB         71,75  Work with Active Jobs
+QSYS       WRKALR            71,75  Work with Alerts
+QSYS       WRKALRD           71,75  Work with Alert Descriptions
+QSYS       WRKALRTBL         71,75  Work with Alert Table
+QSYS       WRKAPPNSTS        71,75  Work with APPN Status
+QSYS       WRKARMJOB         71,75  Work with ARM Jobs
+QSYS       WRKASPCPYD PRX    75     
+QSYS       WRKASPJOB         71,75  Work with ASP Jobs
+QSYS       WRKAUT            71,75  Work with Authority
+QSYS       WRKAUTL           71,75  Work with Authorization Lists
+QSYS       WRKBLDID   PRX    71     
+QSYS       WRKBLDJOB  PRX    71     
+QSYS       WRKBLDOPT  PRX    71     
+QSYS       WRKBLDSVR  PRX    71     
+QSYS       WRKBNDDIR         71,75  Work with Binding Directories
+QSYS       WRKBNDDIRE        71,75  Work with Binding Dir Entries
+QSYS       WRKBPRINF  PRX    71     
+QSYS       WRKBPTBL          71,75  Work with BOOTP table
+QSYS       WRKCADMRE  PRX    75     
+QSYS       WRKCFGL           71,75  Work with Configuration Lists
+QSYS       WRKCFGSTS         71,75  Work with Configuration Status
+QSYS       WRKCHTFMT         71,75  Work with Chart Formats
+QSYS       WRKCICSCVT PRX    75     Work with CICS CVT
+QSYS       WRKCICSDCT PRX    75     Work with CICS DCT
+QSYS       WRKCICSFCT PRX    75     Work with CICS FCT
+QSYS       WRKCICSGLT PRX    75     Work with CICS GLT
+QSYS       WRKCICSGRP PRX    75     Work with CICS Group
+QSYS       WRKCICSJCT PRX    75     Work with CICS JCT
+QSYS       WRKCICSPCT PRX    75     Work with CICS PCT
+QSYS       WRKCICSPPT PRX    75     Work with CICS PPT
+QSYS       WRKCICSSIT PRX    75     Work with CICS SIT
+QSYS       WRKCICSSTS PRX    75     Work CICS Status
+QSYS       WRKCICSTCS PRX    75     Work with CICS TCS
+QSYS       WRKCICSTCT PRX    75     Work with CICS TCT
+QSYS       WRKCICSTST PRX    75     Work with CICS TST
+QSYS       WRKCLS            71,75  Work with Classes
+QSYS       WRKCLU     PRX    75     
+QSYS       WRKCMD            71,75  Work with Commands
+QSYS       WRKCMTDFN         71,75  Work with Commitment Def
+QSYS       WRKCNNL           71,75  Work with Connection Lists
+QSYS       WRKCNTINF         71     Work with Contact Information
+QSYS       WRKCOSD           71,75  Work with COS Descriptions
+QSYS       WRKCRQD    PRX    75     Work with CRQ Descriptions
+QSYS       WRKCSI            71,75  Work Comm Side Information
+QSYS       WRKCTLD           71,75  Work with Ctl Descriptions
+QSYS       WRKDBFIDD         71,75  Work with DB Files using IDDU
+QSYS       WRKDDMF           71,75  Work with DDM Files
+QSYS       WRKDEVD           71,75  Work with Device Descriptions
+QSYS       WRKDEVTBL         71     Work with Device Tables
+QSYS       WRKDIRE           71,75  Work with Directory Entries
+QSYS       WRKDIRLOC         71,75  Work with Directory Locations
+QSYS       WRKDIRSHD         71,75  Work with Dir Shadow Systems
+QSYS       WRKDOC            71,75  Work with Documents
+QSYS       WRKDOCLIB         71,75  Work with Document Libraries
+QSYS       WRKDOCPRTQ        71,75  Work with Document Print Queue
+QSYS       WRKDPCQ           71     Work with DSNX/PC Queues
+QSYS       WRKDSKSTS         71,75  Work with Disk Status
+QSYS       WRKDSTCLGE PRX    75     Work with DST Catalog Entries
+QSYS       WRKDSTL           71,75  Work with Distribution Lists
+QSYS       WRKDSTQ           71     Work with Distribution Queue
+QSYS       WRKDTAARA         71,75  Work with Data Areas
+QSYS       WRKDTADCT         71,75  Work with Data Dictionaries
+QSYS       WRKDTADFN         71,75  Work with Data Definitions
+QSYS       WRKDTAQ           71,75  Work with Data Queues
+QSYS       WRKEDTD           71,75  Work with Edit Descriptions
+QSYS       WRKENVVAR         71,75  Work with Environment Var
+QSYS       WRKF              71,75  Work with Files
+QSYS       WRKFCNARA  PRX    75     Work with Functional Areas
+QSYS       WRKFCNUSG         71,75  Work with Function Usage
+QSYS       WRKFCT     PRX    75     Work with Forms Control Table
+QSYS       WRKFLR            71,75  Work with Folders
+QSYS       WRKFNTRSC         71,75  Work with Font Resources
+QSYS       WRKFORMDF         71,75  Work with Form Definitions
+QSYS       WRKFTR            71,75  Work with Filters
+QSYS       WRKFTRACNE        71,75  Work with Ftr Action Entry
+QSYS       WRKFTRSLTE        71,75  Work with Ftr Selection Entry
+QSYS       WRKGSS            71,75  Work with Graphics Symbol Sets
+QSYS       WRKHACFGD  PRX    75     
+QSYS       WRKHAPCY   PRX    75     
+QSYS       WRKHDWPRD         71,75  Work with Hardware Products
+QSYS       WRKHDWRSC         71,75  Work with Hardware Resources
+QSYS       WRKHLDOPTF        71,75  Work with Held Optical Files
+QSYS       WRKHYSSTS  PRX    75     
+QSYS       WRKIMGCLG         71,75  Work with Image Catalogs
+QSYS       WRKIMGCLGE        71,75  Work with Catalog Entries
+QSYS       WRKIPXD           71,75  Work with IPX Descriptions
+QSYS       WRKJOB            71,75  Work with Job
+QSYS       WRKJOBD           71,75  Work with Job Descriptions
+QSYS       WRKJOBLOG         71,75  Work with Job Logs
+QSYS       WRKJOBQ           71,75  Work with Job Queue
+QSYS       WRKJOBQD          71,75  Work with Job Queue Desc
+QSYS       WRKJOBSCDE        71     Work with Job Schedule Entries
+QSYS       WRKJRN            71,75  Work with Journal
+QSYS       WRKJRNA           71,75  Work with Journal Attributes
+QSYS       WRKJRNRCV         71,75  Work with Journal Receivers
+QSYS       WRKJVMJOB  PRX    71,75  Work with JVM Jobs
+QSYS       WRKLANADPT        71,75  Work With LAN Adapters
+QSYS       WRKLIB            71,75  Work with Libraries
+QSYS       WRKLIBPDM  PRX    75     Work with Libraries Using PDM
+QSYS       WRKLICINF         71     Work with License Information
+QSYS       WRKLIND           71,75  Work with Line Descriptions
+QSYS       WRKLNK            71,75  Work with Object Links
+QSYS       WRKMBRPDM  PRX    75     Work with Members Using PDM
+QSYS       WRKMLBRSCQ        71,75  Work with MLB Resource Queue
+QSYS       WRKMLBSTS         71,75  Work with Media Library Status
+QSYS       WRKMNU            71,75  Work with Menus
+QSYS       WRKMOD            71,75  Work with Module
+QSYS       WRKMODD           71,75  Work with Mode Descriptions
+QSYS       WRKMSG            71,75  Work with Messages
+QSYS       WRKMSGD           71,75  Work with Message Descriptions
+QSYS       WRKMSGF           71,75  Work with Message Files
+QSYS       WRKMSGQ           71,75  Work with Message Queues
+QSYS       WRKNAMSMTP PRX    71,75  Work with Names for SMTP
+QSYS       WRKNCK            71,75  Work With Nickname
+QSYS       WRKNETF           71,75  Work with Network Files
+QSYS       WRKNETJOBE        71,75  Work with Network Job Entries
+QSYS       WRKNETTBLE        71,75  Work with Network Table Entry
+QSYS       WRKNODL           71,75  Work with Node List
+QSYS       WRKNODLE          71,75  Work with Node List Entries
+QSYS       WRKNTBD           71,75  Work with NetBIOS Descriptions
+QSYS       WRKNWID           71,75  Work with Network Interfaces
+QSYS       WRKNWSCFG         71     Work with NWS Configuration
+QSYS       WRKNWSD           71,75  Work with Network Servers
+QSYS       WRKNWSENR         71,75  Work with NWS User Enrollment
+QSYS       WRKNWSSTG         71,75  Work with NWS Storage Spaces
+QSYS       WRKNWSSTS         71,75  Work with NWS Status
+QSYS       WRKOBJ            71,75  Work with Objects
+QSYS       WRKOBJLCK         71,75  Work with Object Locks
+QSYS       WRKOBJOWN         71,75  Work with Objects by Owner
+QSYS       WRKOBJPDM  PRX    75     Work with Objects Using PDM
+QSYS       WRKOBJPGP         71,75  Work Objects by Primary Group
+QSYS       WRKOBJPVT         71,75  Work Objects by Private Auth
+QSYS       WRKOPCACT  PRX    71,75  Work with OptiConnect Activity
+QSYS       WRKOPTDIR         71,75  Work with Optical Directories
+QSYS       WRKOPTF           71,75  Work with Optical Files
+QSYS       WRKOPTVOL         71,75  Work with Optical Volumes
+QSYS       WRKOUTQ           71,75  Work with Output Queue
+QSYS       WRKOUTQD          71,75  Work with OUTQ Description
+QSYS       WRKOVL            71,75  Work with Overlays
+QSYS       WRKPAGDFN         71,75  Work with Page Definitions
+QSYS       WRKPAGSEG         71,75  Work with Page Segments
+QSYS       WRKPCLTBLE        71,75  Work with Protocol Table Entry
+QSYS       WRKPDFMAPE PRX    75     Work with PDF Map Entries
+QSYS       WRKPEXDFN         71     Work with PEX Definitions
+QSYS       WRKPEXFTR         71     Work with PEX Filters
+QSYS       WRKPFCST          71,75  Work with PF Constraints
+QSYS       WRKPFDL           71,75  Work with PF DataLinks
+QSYS       WRKPGM            71,75  Work with Programs
+QSYS       WRKPGMTBL         71     Work with Program Tables
+QSYS       WRKPMRMTS         71,75  Work With Remote Systems
+QSYS       WRKPMRPTO         71,75  Work With Omissions
+QSYS       WRKPMSCH          71,75  Work With Scheduled Jobs
+QSYS       WRKPNLGRP         71,75  Work with Panel Groups
+QSYS       WRKPRB            71     Work with Problem
+QSYS       WRKPRDBPR  PRX    71     
+QSYS       WRKPRDINF         71,75  Work with Product Information
+QSYS       WRKPRTSTS         71,75  Work with Printing Status
+QSYS       WRKPSFCFG         71,75  Work with PSF Configuration
+QSYS       WRKPTF            75     Work with PTF
+QSYS       WRKPTFGRP         71     Work with PTF Groups
+QSYS       WRKPTFORD         71     Work with PTF Order
+QSYS       WRKQMFORM         71,75  Work with Query Mgmt Forms
+QSYS       WRKQMQRY          71,75  Work with Query Mgmt Queries
+QSYS       WRKQRY     PRX    75     Work With Queries
+QSYS       WRKQST            71,75  Work with Questions
+QSYS       WRKRCVCRQA PRX    75     Work with Received CRQ Act
+QSYS       WRKRDBDIRE        71,75  Work with RDB Directory Entry
+QSYS       WRKRDR            71,75  Work with Readers
+QSYS       WRKREGINF         71,75  Work with Registration Info
+QSYS       WRKRJESSN  PRX    75     Work with RJE Session
+QSYS       WRKRMTDFN         71     Work with Remote Definitions
+QSYS       WRKRPYLE          71,75  Work with Reply List Entries
+QSYS       WRKRTDCFG         71,75  Work with RouteD Configuration
+QSYS       WRKS36     PRX    71     
+QSYS       WRKS36PGMA        71,75  Work with S/36 Program Attr
+QSYS       WRKS36PRCA        71,75  Work with S/36 Procedure Attr
+QSYS       WRKS36SRCA        71,75  Work with S/36 Source Attr
+QSYS       WRKSBMCRQ  PRX    75     Work with Submitted CRQs
+QSYS       WRKSBMCRQA PRX    75     Work with Submitted CRQ Act
+QSYS       WRKSBMJOB         71,75  Work with Submitted Jobs
+QSYS       WRKSBS            71,75  Work with Subsystems
+QSYS       WRKSBSD           71,75  Work with Subsystem Desc
+QSYS       WRKSBSJOB         71,75  Work with Subsystem Jobs
+QSYS       WRKSCHIDX         71,75  Work with Search Indexes
+QSYS       WRKSCHIDXE        71,75  Work Search Index Entry
+QSYS       WRKSDSTL   PRX    75     Work with SMTP Dist Lists
+QSYS       WRKSFWAGR         71,75  Work with Software Agreements
+QSYS       WRKSHRPOOL        71     Work with Shared Storage Pools
+QSYS       WRKSMTPEMM PRX    75     Work with SMTP E-mail Messages
+QSYS       WRKSMTPUSR PRX    75     Work with All SMTP Users
+QSYS       WRKSOC            71,75  Work with Sphere of Control
+QSYS       WRKSPADCT         71,75  Work with Spelling Aid Dict
+QSYS       WRKSPLF           71,75  Work with Spooled Files
+QSYS       WRKSPLFA          71,75  Work with Spooled File Attr
+QSYS       WRKSPTPRD         75     Work with Supported Products
+QSYS       WRKSRVAGT         71     Work with Service Agent
+QSYS       WRKSRVPGM         71,75  Work with Service Program
+QSYS       WRKSRVPVD         71     Work with Service Providers
+QSYS       WRKSRVRQS  PRX    75     Work with Service Requesters
+QSYS       WRKSRVTBLE        71,75  Work with Service Table Entry
+QSYS       WRKSSND    PRX    75     Work with Session Description
+QSYS       WRKSYSACT         71     Work with System Activity
+QSYS       WRKSYSSTS         71     Work with System Status
+QSYS       WRKSYSVAL         71     Work with System Value
+QSYS       WRKTAPCTG         71,75  Work with Tape Cartridge
+QSYS       WRKTBL            71,75  Work with Tables
+QSYS       WRKTCPPTP         71     Work with Point-to-Point TCPIP
+QSYS       WRKTCPSTS         71     Work with TCP/IP Network Sts
+QSYS       WRKTEF     PRX    71     
+QSYS       WRKTIE            71,75  Work with TIE
+QSYS       WRKTIMZON         71,75  Work with Time Zone Desc
+QSYS       WRKTRC            71     Work with Traces
+QSYS       WRKUSRJOB         71,75  Work with User Jobs
+QSYS       WRKUSRPRF         71,75  Work with User Profiles
+QSYS       WRKUSRTBL         71     Work with User Tables
+QSYS       WRKVFYLIST PRX    71     
+QSYS       WRKWCH            71     Work with Watches
+QSYS       WRKWTR            71,75  Work with Writers
+QTCP       ADDSDSTLE         75     Add SMTP Dist List Entry
+QTCP       ADDSMTPLE         71,75  Add SMTP List Entry
+QTCP       ADDSMTPRLE        75     Add Remote Login Entry
+QTCP       ADDUSRSMTP        75     Add User SMTP
+QTCP       CFGTCPFTP         71,75  Configure TCP/IP FTP
+QTCP       CFGTCPLPD         71,75  Configure TCP/IP LPD
+QTCP       CFGTCPRXC         71,75  Configure TCP/IP REXEC
+QTCP       CFGTCPSMTP        71,75  Configure TCP/IP SMTP
+QTCP       CFGTCPTELN        71,75  Configure TCP/IP TELNET
+QTCP       CHGFTPA           71,75  Change FTP Attributes
+QTCP       CHGLPDA           71,75  Change LPD Attributes
+QTCP       CHGPOPA           71,75  Change POP Server Attributes
+QTCP       CHGRXCA           71,75  Change REXEC Attributes
+QTCP       CHGSDSTL          75     Change SMTP Dist List
+QTCP       CHGSMTPA          71,75  Change SMTP Attributes
+QTCP       CHGSMTPRLE        75     Change Remote Login Entry
+QTCP       CHGTELNA          71,75  Change Telnet Attributes
+QTCP       CHGUSRSMTP        75     Change User SMTP
+QTCP       CHGVTMAP          71,75  Change VT Keyboard Map
+QTCP       CRTSDSTL          75     Create SMTP Dist List
+QTCP       CVTNAMSMTP        71,75  Convert SMTP Names
+QTCP       DLTSDSTL          75     Delete SMTP Dist List
+QTCP       DSPSDSTL          75     Display SMTP Dist List
+QTCP       DSPVTMAP          71,75  Display VT Keyboard Map
+QTCP       FTP               71,75  Start TCP/IP File Transfer
+QTCP       LPR               71,75  Send TCP/IP Spooled File
+QTCP       RMVSDSTLE         75     Remove SMTP Dist List Entry
+QTCP       RMVSMTPLE         71,75  Remove SMTP List Entry
+QTCP       RMVSMTPRLE        75     Remove Remote Login Entry
+QTCP       RMVUSRSMTP        75     Remove User SMTP
+QTCP       RNMSDSTL          75     Rename SMTP Dist List
+QTCP       SETVTMAP          71,75  Set VT Keyboard Map
+QTCP       SETVTTBL          71,75  Set VT Mapping Tables
+QTCP       SNDTCPSPLF        71,75  Send TCP/IP Spooled File
+QTCP       STRIMPSMTP        75     Start Import for SMTP Users
+QTCP       STRTCPFTP         71,75  Start TCP/IP File Transfer
+QTCP       STRTCPTELN        71,75  Start TCP/IP Telnet
+QTCP       TELNET            71,75  Start TCP/IP Telnet
+QTCP       WRKNAMSMTP        71,75  Work with Names for SMTP
+QTCP       WRKSDSTL          75     Work with SMTP Dist Lists
+QTCP       WRKSMTPEMM        75     Work with SMTP E-mail Messages
+QTCP       WRKSMTPUSR        75     Work with All SMTP Users
+
+# 1326 on both, 495 only on 7.1, 461 only on 7.5.

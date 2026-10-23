@@ -1,0 +1,653 @@
+# IBM i *MENU objects in QSYS, as the oracle systems list them.
+# Columns: library, name, attribute, releases, text. 71 = the primary oracle (V7R1M0),
+# 75 = pub400.com (V7R5M0); both listed on 2026-10-23. The text is the object text.
+
+QSYS       AFPU       UIM    75     IBM AFP Utilities
+QSYS       ASSIST     PGM    71,75  AS/400 Operational Assistant menu
+QSYS       BACKUP     UIM    71,75  Backup menu
+QSYS       CFG        UIM    71,75  Configuration
+QSYS       CFGCMN     UIM    71,75  Configure Communications and Remote Hardware
+QSYS       CFGDEVCMN  UIM    71,75  Configure Devices and Communications
+QSYS       CFGIPS     UIM    71,75  Configure IP over SNA
+QSYS       CFGLCL     UIM    71,75  Configure Local Hardware
+QSYS       CFGLST     UIM    71,75  Configure Address and Location Lists
+QSYS       CFGNWS     UIM    71,75  Configure Network Servers
+QSYS       CFGPCS     UIM    71,75  Configure PC Connections
+QSYS       CFGSM      UIM    75     Configure IBM System Manager for i5/OS
+QSYS       CFGTCP     PGM    71     Configure TCP/IP
+QSYS       CFGVRT     UIM    71,75  Configure Virtual Controllers and Devices
+QSYS       CLEANUP    UIM    71,75  AS/400 Operational Assistant Cleanup menu
+QSYS       CLUSTER    UIM    71,75  Cluster
+QSYS       CMD3270    UIM    71,75  3270 Emulation Commands
+QSYS       CMDABN     UIM    71,75  Abnormal Commands
+QSYS       CMDACC     UIM    71,75  Access Code Commands
+QSYS       CMDACG     UIM    71,75  Accounting Commands
+QSYS       CMDACNE    UIM    71,75  Action Entry Commands
+QSYS       CMDACT     UIM    71,75  Active Commands
+QSYS       CMDADD     UIM    71,75  Add Commands
+QSYS       CMDADMDMN  UIM    71,75  Administrative Domain Commands
+QSYS       CMDADP     UIM    71,75  Adopt Commands
+QSYS       CMDADPT    UIM    71,75  Adapter Commands
+QSYS       CMDADR     UIM    71,75  Address Commands
+QSYS       CMDAFP     UIM    71,75  AFP Commands
+QSYS       CMDAGT     UIM    71,75  Agent Commands
+QSYS       CMDAJE     UIM    71,75  Autostart Job Entry Commands
+QSYS       CMDALC     UIM    71,75  Allocate Commands
+QSYS       CMDALR     UIM    71,75  Alert Commands
+QSYS       CMDALRD    UIM    71,75  Alert Description Commands
+QSYS       CMDALRTBL  UIM    71,75  Alert Table Commands
+QSYS       CMDAMT     UIM    75     AMT Commands
+QSYS       CMDANS     UIM    71,75  Answer Commands
+QSYS       CMDANZ     UIM    71,75  Analyze Commands
+QSYS       CMDAP      UIM    71,75  Access Path Commands
+QSYS       CMDAPAR    UIM    71,75  APAR Commands
+QSYS       CMDAPF     UIM    71,75  Advanced Printer Function Cmds
+QSYS       CMDAPP     UIM    71,75  Application Commands
+QSYS       CMDAPPC    UIM    71,75  APPC Commands
+QSYS       CMDAPPN    UIM    71,75  APPN Commands
+QSYS       CMDAPY     UIM    71,75  Apply Commands
+QSYS       CMDARA     UIM    71,75  Area Commands
+QSYS       CMDARC     UIM    75     Archive Commands
+QSYS       CMDARP     UIM    75     ARP Commands
+QSYS       CMDASC     UIM    71,75  Async Commands
+QSYS       CMDASK     UIM    71,75  Ask Commands
+QSYS       CMDASP     UIM    71,75  Auxiliary Storage Pools Cmds
+QSYS       CMDATN     UIM    71,75  Attention Commands
+QSYS       CMDATR     UIM    71,75  Attribute Commands
+QSYS       CMDAUD     UIM    71,75  Auditing Commands
+QSYS       CMDAUT     UIM    71,75  Authority Commands
+QSYS       CMDAUTE    UIM    71,75  Authentication Entry Commands
+QSYS       CMDAUTL    UIM    71,75  Authorization List Commands
+QSYS       CMDBACK    UIM    71,75  Back Commands
+QSYS       CMDBCD     UIM    71,75  Barcode Commands
+QSYS       CMDBCH     UIM    71,75  Batch Commands
+QSYS       CMDBCKUP   UIM    71,75  Backup Commands
+QSYS       CMDBGU     UIM    71,75  BGU Commands
+QSYS       CMDBKP     UIM    71,75  Breakpoint Commands
+QSYS       CMDBND     UIM    71,75  Binding Commands
+QSYS       CMDBP      UIM    71,75  BOOTP Commands
+QSYS       CMDBSC     UIM    71,75  BSC Commands
+QSYS       CMDBSCF    UIM    71,75  BSC File Commands
+QSYS       CMDBUF     UIM    71,75  Buffer Commands
+QSYS       CMDC       UIM    71,75  C Commands
+QSYS       CMDCAD     UIM    71,75  Cluster Admin Domain Commands
+QSYS       CMDCALL    UIM    71,75  Call Commands
+QSYS       CMDCBL     UIM    71,75  COBOL Commands
+QSYS       CMDCCS     UIM    71,75  Change Control Server Commands
+QSYS       CMDCDE     UIM    71,75  Code Commands
+QSYS       CMDCFG     UIM    71,75  Configuration Commands
+QSYS       CMDCFGL    UIM    71,75  Configuration List Commands
+QSYS       CMDCFGLE   UIM    71,75  Config List Entry Commands
+QSYS       CMDCGY     UIM    71,75  Category Commands
+QSYS       CMDCHG     UIM    71,75  Change Commands
+QSYS       CMDCHK     UIM    71,75  Check Commands
+QSYS       CMDCHT     UIM    71,75  Chart/Clustered Hash Table Cmd
+QSYS       CMDCICS    UIM    71,75  CICS Commands
+QSYS       CMDCKM     UIM    71,75  Cryptographic Key Mgmt Cmds
+QSYS       CMDCL      UIM    71,75  CL Commands
+QSYS       CMDCLD     UIM    71,75  C Locale Description Commands
+QSYS       CMDCLG     UIM    71,75  Catalog Commands
+QSYS       CMDCLGE    UIM    71,75  Catalog Entry Commands
+QSYS       CMDCLNUP   UIM    71,75  Cleanup Commands
+QSYS       CMDCLO     UIM    71,75  Close Commands
+QSYS       CMDCLR     UIM    71,75  Clear Commands
+QSYS       CMDCLS     UIM    71,75  Class Commands
+QSYS       CMDCLT     UIM    71,75  Client Commands
+QSYS       CMDCLU     UIM    71,75  Cluster Commands
+QSYS       CMDCMD     UIM    71,75  Command Commands
+QSYS       CMDCMDDEF  UIM    71,75  Cmd Definition Stmt Commands
+QSYS       CMDCMN     UIM    71,75  Communications Commands
+QSYS       CMDCMNE    UIM    71,75  Communications Entry Commands
+QSYS       CMDCMNF    UIM    71,75  Communications File Commands
+QSYS       CMDCMNMGT  UIM    71,75  Communication Mgmt Commands
+QSYS       CMDCMP     UIM    71,75  Compare Commands
+QSYS       CMDCMT     UIM    71,75  Commit Commands
+QSYS       CMDCNL     UIM    71,75  Cancel Commands
+QSYS       CMDCNN     UIM    71,75  Connection Commands
+QSYS       CMDCNNL    UIM    71,75  Connection List Commands
+QSYS       CMDCNR     UIM    71,75  Container Commands
+QSYS       CMDCNT     UIM    71,75  Contact Commands
+QSYS       CMDCNV     UIM    71,75  Conversation Commands
+QSYS       CMDCOL     UIM    71,75  Collection Commands
+QSYS       CMDCOM     UIM    71,75  Community Commands
+QSYS       CMDCOSD    UIM    71,75  Class-of-Service Desc Commands
+QSYS       CMDCP      UIM    71,75  Check Pending Commands
+QSYS       CMDCPH     UIM    71,75  Cipher Commands
+QSYS       CMDCPP     UIM    71,75  C++ Commands
+QSYS       CMDCPT     UIM    71,75  Component Commands
+QSYS       CMDCPY     UIM    71,75  Copy Commands
+QSYS       CMDCPYD    UIM    75     Copy Description Commands
+QSYS       CMDCPYSCN  UIM    71,75  Copy Screen Commands
+QSYS       CMDCRG     UIM    71,75  Cluster Resource Group Cmds
+QSYS       CMDCRP     UIM    71,75  Cryptographic Commands
+QSYS       CMDCRQ     UIM    71,75  Change Request Commands
+QSYS       CMDCRSDMN  UIM    71,75  Cross-Domain Commands
+QSYS       CMDCRT     UIM    71,75  Create Commands
+QSYS       CMDCRTF    UIM    71,75  Create File Commands
+QSYS       CMDCRTPGM  UIM    71,75  Create Program Commands
+QSYS       CMDCSI     UIM    71,75  Comm Side Information Commands
+QSYS       CMDCSL     UIM    71,75  Console Commands
+QSYS       CMDCSM     UIM    75     Copy Services Manager Commands
+QSYS       CMDCST     UIM    71,75  Constraint/Customization Cmds
+QSYS       CMDCTG     UIM    71,75  Cartridge Commands
+QSYS       CMDCTL     UIM    71,75  Control Commands
+QSYS       CMDCTLD    UIM    71,75  Controller Desc Commands
+QSYS       CMDCUR     UIM    71,75  Current Commands
+QSYS       CMDCVN     UIM    71,75  Conversion Commands
+QSYS       CMDCVT     UIM    71,75  Convert Commands
+QSYS       CMDDAT     UIM    71,75  Date Commands
+QSYS       CMDDB      UIM    71,75  Database Commands
+QSYS       CMDDBF     UIM    71,75  Database File Commands
+QSYS       CMDDBG     UIM    71,75  Debug Commands
+QSYS       CMDDCL     UIM    71,75  Declare Commands
+QSYS       CMDDCT     UIM    71,75  Dictionary Commands
+QSYS       CMDDDI     UIM    71     DDI Commands
+QSYS       CMDDDM     UIM    71,75  DDM Commands
+QSYS       CMDDDMF    UIM    71,75  DDM File Commands
+QSYS       CMDDEV     UIM    71,75  Device Commands
+QSYS       CMDDEVD    UIM    71,75  Device Description Commands
+QSYS       CMDDEVMGT  UIM    71,75  Device Management Commands
+QSYS       CMDDFN     UIM    71,75  Definition Commands
+QSYS       CMDDFT     UIM    71,75  Default Commands
+QSYS       CMDDFU     UIM    71,75  Data File Utility Commands
+QSYS       CMDDHCP    UIM    71,75  DHCP Commands
+QSYS       CMDDIR     UIM    71,75  Directory Commands
+QSYS       CMDDIRE    UIM    71,75  Directory Entry Commands
+QSYS       CMDDIRSHD  UIM    71,75  Directory Shadow Commands
+QSYS       CMDDLC     UIM    71,75  Deallocate Commands
+QSYS       CMDDLO     UIM    71,75  Document Lib Objects Commands
+QSYS       CMDDLT     UIM    71,75  Delete Commands
+QSYS       CMDDLY     UIM    71,75  Delay Commands
+QSYS       CMDDMN     UIM    71,75  Domain Commands
+QSYS       CMDDMP     UIM    71,75  Dump Commands
+QSYS       CMDDNS     UIM    71,75  DNS Commands
+QSYS       CMDDO      UIM    71,75  Do Commands
+QSYS       CMDDOC     UIM    71,75  Document Commands
+QSYS       CMDDPR     UIM    71,75  DataPropagator Relational Cmds
+QSYS       CMDDSC     UIM    71,75  Disconnect Commands
+QSYS       CMDDSK     UIM    71,75  Disk Commands
+QSYS       CMDDSP     UIM    71,75  Display Commands
+QSYS       CMDDSPF    UIM    71,75  Display File Commands
+QSYS       CMDDST     UIM    71,75  Distribution Commands
+QSYS       CMDDSTL    UIM    71,75  Distribution List Commands
+QSYS       CMDDSTLE   UIM    71,75  Dist List Entry Commands
+QSYS       CMDDSTQ    UIM    71,75  Distribution Queue Commands
+QSYS       CMDDSTSRV  UIM    71,75  Distribution Services Commands
+QSYS       CMDDTA     UIM    71,75  Data Commands
+QSYS       CMDDTAARA  UIM    71,75  Data Area Commands
+QSYS       CMDDTAMGT  UIM    71,75  Data Management Commands
+QSYS       CMDDTAQ    UIM    71,75  Data Queue Commands
+QSYS       CMDDUP     UIM    71,75  Duplicate Commands
+QSYS       CMDDW      UIM    71,75  Disk Watcher Commands
+QSYS       CMDDWN     UIM    71,75  Down Commands
+QSYS       CMDEDT     UIM    71,75  Edit Commands
+QSYS       CMDEDTD    UIM    71,75  Edit Description Commands
+QSYS       CMDEDU     UIM    71,75  Education Commands
+QSYS       CMDEJT     UIM    71,75  Eject Commands
+QSYS       CMDEML     UIM    71,75  Emulation Commands
+QSYS       CMDENC     UIM    71,75  Encipher Commands
+QSYS       CMDEND     UIM    71,75  End Commands
+QSYS       CMDENVVAR  UIM    71,75  Environment Variable Commands
+QSYS       CMDEPM     UIM    71,75  Extended Program Model Cmds
+QSYS       CMDERR     UIM    71,75  Error Commands
+QSYS       CMDETH     UIM    71,75  Ethernet Commands
+QSYS       CMDEWC     UIM    71,75  Ext Wireless Controller Cmds
+QSYS       CMDEWL     UIM    71,75  Ext Wireless Line Commands
+QSYS       CMDEXIT    UIM    71,75  Exit Commands
+QSYS       CMDEXT     UIM    71,75  Extract Commands
+QSYS       CMDFCN     UIM    71,75  Function Commands
+QSYS       CMDFCNUSG  UIM    71,75  Function Usage Commands
+QSYS       CMDFCT     UIM    71,75  Forms Control Table Commands
+QSYS       CMDFCTE    UIM    71,75  Forms Control Table Entry Cmds
+QSYS       CMDFIL     UIM    71,75  File Commands
+QSYS       CMDFILE    UIM    71,75  File Commands
+QSYS       CMDFLR     UIM    71,75  Folder Commands
+QSYS       CMDFMT     UIM    71,75  Format Commands
+QSYS       CMDFNC     UIM    71,75  Finance Commands
+QSYS       CMDFND     UIM    71,75  Find Commands
+QSYS       CMDFNTRSC  UIM    71,75  Font Resource Commands
+QSYS       CMDFNTTBL  UIM    71,75  Work with Font Tables
+QSYS       CMDFORM    UIM    71,75  Form Commands
+QSYS       CMDFORMD   UIM    71,75  Form Description Commands
+QSYS       CMDFORMDF  UIM    71,75  Form Definition Commands
+QSYS       CMDFR      UIM    71     Frame Relay Commands
+QSYS       CMDFRM     UIM    71,75  From Commands
+QSYS       CMDFTP     UIM    71,75  File Tfr Protocol Commands
+QSYS       CMDFTR     UIM    71,75  Filter Commands
+QSYS       CMDGDF     UIM    71,75  Graphics Data Format Commands
+QSYS       CMDGEN     UIM    71,75  Generate Commands
+QSYS       CMDGO      UIM    71,75  Go Commands
+QSYS       CMDGPH     UIM    71,75  Graphics Commands
+QSYS       CMDGPHPKG  UIM    71,75  Graph Package Commands
+QSYS       CMDGRP     UIM    71,75  Group Commands
+QSYS       CMDGRT     UIM    71,75  Grant Commands
+QSYS       CMDGSS     UIM    71,75  Graphic Symbol Set Commands
+QSYS       CMDHA      UIM    75     High Availability Commands
+QSYS       CMDHDW     UIM    71,75  Hardware Commands
+QSYS       CMDHDWRSC  UIM    71,75  Hardware Resources Commands
+QSYS       CMDHLD     UIM    71,75  Hold Commands
+QSYS       CMDHLL     UIM    71,75  High Level Language Commands
+QSYS       CMDHLP     UIM    71,75  Help Commands
+QSYS       CMDHLR     UIM    71,75  Holder Commands
+QSYS       CMDHOST    UIM    71,75  Host Commands
+QSYS       CMDHST     UIM    71,75  History Commands
+QSYS       CMDHTE     UIM    71,75  Host Table Entry Commands
+QSYS       CMDHTTP    UIM    71,75  HTTP Commands
+QSYS       CMDHYS     UIM    75     HyperSwap Commands
+QSYS       CMDICF     UIM    71,75  ICF Commands
+QSYS       CMDICFF    UIM    71,75  ICF File Commands
+QSYS       CMDIDD     UIM    71,75  IDDU Commands
+QSYS       CMDIFC     UIM    71,75  Interface Commands
+QSYS       CMDIGC     UIM    71,75  IGC Commands Menu
+QSYS       CMDIMG     UIM    71,75  Image Commands
+QSYS       CMDIMGCLG  UIM    71,75  Image Catalog Commands
+QSYS       CMDIMP     UIM    75     Import Commands
+QSYS       CMDINF     UIM    71,75  Information Commands
+QSYS       CMDINP     UIM    71,75  Input Commands
+QSYS       CMDINS     UIM    71,75  Install Commands
+QSYS       CMDINST    UIM    75     Instance Commands
+QSYS       CMDINT     UIM    71,75  Internal Machine Commands
+QSYS       CMDINTR    UIM    71,75  Intrasystem Commands
+QSYS       CMDINZ     UIM    71,75  Initialize Commands
+QSYS       CMDIPL     UIM    71,75  IPL Commands
+QSYS       CMDIPS     UIM    71     IP over SNA Commands
+QSYS       CMDIPXD    UIM    71,75  Instance Commands
+QSYS       CMDITF     UIM    71,75  ITF Commands
+QSYS       CMDITG     UIM    71,75  Integrity Commands
+QSYS       CMDIWS     UIM    71,75  IWS Commands
+QSYS       CMDJOB     UIM    71,75  Job Commands
+QSYS       CMDJOBD    UIM    71,75  Job Description Commands
+QSYS       CMDJOBE    UIM    71,75  Job Entry Commands
+QSYS       CMDJOBQ    UIM    71,75  Job Queue Commands
+QSYS       CMDJOBQE   UIM    71,75  Job Queue Entry Commands
+QSYS       CMDJRN     UIM    71,75  Journal Commands
+QSYS       CMDJRNRCV  UIM    71,75  Journal Receiver Commands
+QSYS       CMDJS      UIM    71,75  Advanced Job Scheduler Cmds
+QSYS       CMDJVA     UIM    71,75  Java Commands
+QSYS       CMDJVM     UIM    75     Java Virtual Machine Commands
+QSYS       CMDJW      UIM    71,75  Job Watcher Commands
+QSYS       CMDKBD     UIM    71,75  Keyboard Commands
+QSYS       CMDKEY     UIM    71,75  Key Commands
+QSYS       CMDKRB     UIM    71,75  Kerberos Commands
+QSYS       CMDKSF     UIM    71,75  Keystore File Commands
+QSYS       CMDLAN     UIM    71,75  Local Area Network Commands
+QSYS       CMDLBL     UIM    71,75  Label Commands
+QSYS       CMDLCK     UIM    71,75  Lock Commands
+QSYS       CMDLF      UIM    71,75  Logical File Commands
+QSYS       CMDLIB     UIM    71,75  Library Commands
+QSYS       CMDLIBL    UIM    71,75  Library List Commands
+QSYS       CMDLIC     UIM    71,75  Licensed Commands
+QSYS       CMDLIN     UIM    71,75  Line Commands
+QSYS       CMDLIND    UIM    71,75  Line Description Commands
+QSYS       CMDLNK     UIM    71,75  Link Commands
+QSYS       CMDLNX     UIM    71     Linux Server Commands
+QSYS       CMDLOC     UIM    71     Location Commands
+QSYS       CMDLOCALE  UIM    71,75  Locale Commands
+QSYS       CMDLOD     UIM    71,75  Load Commands
+QSYS       CMDLOG     UIM    71,75  Log Commands
+QSYS       CMDLPD     UIM    71,75  Line Printer Daemon Commands
+QSYS       CMDLPDA    UIM    71,75  LPDA Commands
+QSYS       CMDLPR     UIM    71,75  LPR Commands
+QSYS       CMDLWS     UIM    71,75  Local Work Station Commands
+QSYS       CMDMAC     UIM    71     MAC Commands
+QSYS       CMDMAP     UIM    71,75  Map Commands
+QSYS       CMDMAX     UIM    71,75  Maximum Commands
+QSYS       CMDMBR     UIM    71,75  Member Commands
+QSYS       CMDMEDDFN  UIM    71,75  Media Definition Commands
+QSYS       CMDMFS     UIM    71,75  Mounted File System Commands
+QSYS       CMDMGD     UIM    71,75  Managed System Commands
+QSYS       CMDMGDSYS  UIM    71,75  Managed System Commands
+QSYS       CMDMGR     UIM    71,75  Manager and Migration Commands
+QSYS       CMDMGTCOL  UIM    71,75  Management Collection Commands
+QSYS       CMDMLB     UIM    71,75  Media Library Commands
+QSYS       CMDMNU     UIM    71,75  Menu Commands
+QSYS       CMDMOD     UIM    71,75  Mode and Module Commands
+QSYS       CMDMODD    UIM    71,75  Mode Description Commands
+QSYS       CMDMON     UIM    71,75  Monitor Commands
+QSYS       CMDMOV     UIM    71,75  Move Commands
+QSYS       CMDMRE     UIM    71,75  Monitored Resource Entry Cmds
+QSYS       CMDMRG     UIM    71,75  Merge Commands
+QSYS       CMDMSF     UIM    71,75  Mail Server Framework Commands
+QSYS       CMDMSG     UIM    71,75  Message Commands
+QSYS       CMDMSGD    UIM    71,75  Message Description Commands
+QSYS       CMDMSGF    UIM    71,75  Message File Commands
+QSYS       CMDMSGHDL  UIM    71,75  Message Handling Commands
+QSYS       CMDMSGQ    UIM    71,75  Message Queue Commands
+QSYS       CMDMST     UIM    71,75  Master Commands
+QSYS       CMDNAM     UIM    71,75  Name Commands
+QSYS       CMDNCK     UIM    71,75  Nickname Commands
+QSYS       CMDNET     UIM    71,75  Network Commands
+QSYS       CMDNETF    UIM    71,75  Network File Commands
+QSYS       CMDNFS     UIM    71,75  Network File System Commands
+QSYS       CMDNODGRP  UIM    71,75  Node Group Commands
+QSYS       CMDNODL    UIM    71,75  Node List Commands
+QSYS       CMDNTB     UIM    71,75  NetBIOS Commands
+QSYS       CMDNTP     UIM    71,75  Network Time Protocol Commands
+QSYS       CMDNWI     UIM    71,75  Network Interface Commands
+QSYS       CMDNWS     UIM    71,75  Network Server Commands
+QSYS       CMDNWSCFG  UIM    71,75  Network Server Config Commands
+QSYS       CMDNWSD    UIM    71,75  Network Server Desc Commands
+QSYS       CMDNWSH    UIM    71,75  Network Host Adapter Commands
+QSYS       CMDNWSSTG  UIM    71,75  Net Server Storage Commands
+QSYS       CMDOBJ     UIM    71,75  Object Commands
+QSYS       CMDOBJMGT  UIM    71,75  Object Management Commands
+QSYS       CMDOBJTYPE UIM    71,75  Object Type Commands
+QSYS       CMDOFF     UIM    71,75  Off Commands
+QSYS       CMDOPC     UIM    71,75  OptiConnect Commands
+QSYS       CMDOPN     UIM    71,75  Open Commands
+QSYS       CMDOPT     UIM    71,75  Optical Commands
+QSYS       CMDORD     UIM    71,75  Order Commands
+QSYS       CMDOSPF    UIM    71,75  OSPF Commands
+QSYS       CMDOUT     UIM    71,75  Out Commands
+QSYS       CMDOUTQ    UIM    71,75  Output Queue Commands
+QSYS       CMDOUTQD   UIM    71,75  Output Queue Descr Commands
+QSYS       CMDOVL     UIM    71,75  Overlay Commands
+QSYS       CMDOVR     UIM    71,75  Override Commands
+QSYS       CMDOWN     UIM    71,75  Owner Commands
+QSYS       CMDPAGDFN  UIM    71,75  Page Definition Commands
+QSYS       CMDPAGSEG  UIM    71,75  Page Segment Commands
+QSYS       CMDPASTHR  UIM    71,75  Pass-Through Commands
+QSYS       CMDPC      UIM    71,75  Personal Computer Commands
+QSYS       CMDPCL     UIM    71,75  Protocol Commands
+QSYS       CMDPCY     UIM    75     Policy Commands
+QSYS       CMDPDFMAP  UIM    71,75  PDF Map Commands
+QSYS       CMDPDG     UIM    71,75  Print Descriptor Commands
+QSYS       CMDPDM     UIM    71,75  PDM Commands
+QSYS       CMDPEX     UIM    71,75  Performance Explorer Commands
+QSYS       CMDPF      UIM    71,75  Physical File Commands
+QSYS       CMDPFR     UIM    71,75  Performance Commands
+QSYS       CMDPGM     UIM    71,75  Program Commands
+QSYS       CMDPGP     UIM    71,75  Primary Group Commands
+QSYS       CMDPHS     UIM    71,75  Phase Commands
+QSYS       CMDPIN     UIM    71,75  PIN Commands
+QSYS       CMDPJ      UIM    71,75  Prestart Job Commands
+QSYS       CMDPJE     UIM    71,75  Prestart Job Entry Commands
+QSYS       CMDPKG     UIM    71,75  Package Commands
+QSYS       CMDPM      UIM    71,75  PM Commands
+QSYS       CMDPMN     UIM    71,75  Permission Commands
+QSYS       CMDPMT     UIM    71,75  Prompt Commands
+QSYS       CMDPNLGRP  UIM    71,75  Panel Group Commands
+QSYS       CMDPOL     UIM    71,75  Pool Commands
+QSYS       CMDPOP     UIM    71,75  POP Mail Server Commands
+QSYS       CMDPORT    UIM    71,75  Port Commands
+QSYS       CMDPOS     UIM    71,75  Position Commands
+QSYS       CMDPPP     UIM    71,75  Point-to-Point Protocol
+QSYS       CMDPRB     UIM    71,75  Problem Commands
+QSYS       CMDPRBMGT  UIM    71,75  Problem Management Commands
+QSYS       CMDPRC     UIM    71,75  Procedure Commands
+QSYS       CMDPRD     UIM    71,75  Product Commands
+QSYS       CMDPRF     UIM    71,75  Profile Commands
+QSYS       CMDPRT     UIM    71,75  Print Commands
+QSYS       CMDPRTF    UIM    71,75  Printer File Commands
+QSYS       CMDPRTQ    UIM    71,75  Print Queue Commands
+QSYS       CMDPSFCFG  UIM    71,75  PSF Configuration Commands
+QSYS       CMDPTC     UIM    71,75  Portable Trans Computer Cmds
+QSYS       CMDPTF     UIM    71,75  Program Temporary Fix Commands
+QSYS       CMDPTP     UIM    71,75  Point-To-Point Commands
+QSYS       CMDPTR     UIM    71,75  Pointer Commands
+QSYS       CMDPVD     UIM    71,75  Provider Commands
+QSYS       CMDPWD     UIM    71,75  Password Commands
+QSYS       CMDPWR     UIM    71,75  Power Commands
+QSYS       CMDQM      UIM    71,75  Query Management Commands
+QSYS       CMDQRY     UIM    71,75  Query Commands
+QSYS       CMDQRYF    UIM    71,75  Query File Commands
+QSYS       CMDQSH     UIM    71,75  Qshell Interpreter Commands
+QSYS       CMDQST     UIM    71,75  Question Commands
+QSYS       CMDRBD     UIM    71,75  Rebuild Commands
+QSYS       CMDRCD     UIM    71,75  Record Commands
+QSYS       CMDRCL     UIM    71,75  Reclaim Commands
+QSYS       CMDRCV     UIM    71,75  Receive Commands
+QSYS       CMDRCY     UIM    71,75  Recovery Commands
+QSYS       CMDRDB     UIM    71,75  Relational Database Commands
+QSYS       CMDRDR     UIM    71,75  Reader Commands
+QSYS       CMDREF     UIM    71,75  Reference Commands
+QSYS       CMDREG     UIM    71,75  Registration Commands
+QSYS       CMDREX     UIM    71,75  REXX Commands
+QSYS       CMDRGZ     UIM    71,75  Reorganize Commands
+QSYS       CMDRIP     UIM    71,75  Routing Info Protocol Commands
+QSYS       CMDRJE     UIM    71,75  RJE Commands
+QSYS       CMDRJECTL  UIM    71,75  RJE Control Commands
+QSYS       CMDRLS     UIM    71,75  Release Commands
+QSYS       CMDRLU     UIM    71,75  Report Layout Utility Commands
+QSYS       CMDRMT     UIM    71,75  Remote Commands
+QSYS       CMDRMV     UIM    71,75  Remove Commands
+QSYS       CMDRNM     UIM    71,75  Rename Commands
+QSYS       CMDROLL    UIM    71,75  Roll Commands
+QSYS       CMDRPC     UIM    71,75  RPC Commands
+QSYS       CMDRPDS    UIM    71,75  RPDS Commands
+QSYS       CMDRPG     UIM    71,75  RPG Commands
+QSYS       CMDRPL     UIM    71,75  Replace Commands
+QSYS       CMDRPT     UIM    71,75  Report Commands
+QSYS       CMDRPY     UIM    71,75  Reply Commands
+QSYS       CMDRPYL    UIM    71,75  Reply List Commands
+QSYS       CMDRQS     UIM    71,75  Request Commands
+QSYS       CMDRRT     UIM    71,75  Reroute Commands
+QSYS       CMDRSC     UIM    71,75  Resource Commands
+QSYS       CMDRSI     UIM    71     Remote System Commands
+QSYS       CMDRSM     UIM    71,75  Resume Commands
+QSYS       CMDRST     UIM    71,75  Restore Commands
+QSYS       CMDRTD     UIM    71,75  RouteD Commands
+QSYS       CMDRTE     UIM    71,75  Route Entry Commands
+QSYS       CMDRTGE    UIM    71,75  Routing Entry Commands
+QSYS       CMDRTN     UIM    71,75  Return Commands
+QSYS       CMDRTV     UIM    71,75  Retrieve Commands
+QSYS       CMDRUN     UIM    71,75  Run Commands
+QSYS       CMDRVK     UIM    71,75  Revoke Commands
+QSYS       CMDRWS     UIM    71     Remote Work Station Commands
+QSYS       CMDRXC     UIM    71,75  REXEC Commands
+QSYS       CMDS36     UIM    71,75  System/36 Commands
+QSYS       CMDSAV     UIM    71,75  Save Commands
+QSYS       CMDSAVF    UIM    71,75  Save File Commands
+QSYS       CMDSAVRST  UIM    71,75  Save and Restore Commands
+QSYS       CMDSBM     UIM    71,75  Submit Commands
+QSYS       CMDSBS     UIM    71,75  Subsystem Commands
+QSYS       CMDSBSD    UIM    71,75  Subsystem Description Commands
+QSYS       CMDSCD     UIM    71,75  Schedule Commands
+QSYS       CMDSCDE    UIM    71,75  Schedule Entry Commands
+QSYS       CMDSCHIDX  UIM    71,75  Search Index Commands
+QSYS       CMDSCHIDXE UIM    71,75  Search Index Entry Commands
+QSYS       CMDSCN     UIM    71,75  Screen Commands
+QSYS       CMDSDA     UIM    71,75  Screen Design Aid Commands
+QSYS       CMDSDLC    UIM    71     SDLC Commands
+QSYS       CMDSEC     UIM    71,75  Security Commands
+QSYS       CMDSET     UIM    71,75  Set Commands
+QSYS       CMDSEU     UIM    71,75  Source Entry Utility Commands
+QSYS       CMDSFW     UIM    71,75  Software Commands
+QSYS       CMDSHRPOOL UIM    71,75  Shared Pool Commands
+QSYS       CMDSIGN    UIM    71,75  Sign Commands
+QSYS       CMDSLT     UIM    71,75  Select Commands
+QSYS       CMDSLTE    UIM    71,75  Selection Entry Commands
+QSYS       CMDSMG     UIM    71,75  System Manager Commands
+QSYS       CMDSMTP    UIM    71,75  SMTP Commands
+QSYS       CMDSND     UIM    71,75  Send Commands
+QSYS       CMDSNMP    UIM    71,75  SNMP Commands
+QSYS       CMDSNPT    UIM    71,75  SNPT Commands
+QSYS       CMDSNUF    UIM    71,75  SNUF Commands
+QSYS       CMDSOC     UIM    71,75  Sphere of Control Commands
+QSYS       CMDSPA     UIM    71,75  Spelling Aid Dictionary Cmds
+QSYS       CMDSPL     UIM    71,75  Spooling Commands
+QSYS       CMDSPLF    UIM    71,75  Spooled File Commands
+QSYS       CMDSPT     UIM    71,75  Support Commands
+QSYS       CMDSPTN    UIM    71,75  Support Network Commands
+QSYS       CMDSQL     UIM    71,75  SQL Commands
+QSYS       CMDSRC     UIM    71,75  Source Commands
+QSYS       CMDSRCF    UIM    71,75  Source File Commands
+QSYS       CMDSRV     UIM    71,75  Service Commands
+QSYS       CMDSRVAGT  UIM    71,75  Service Agent Commands
+QSYS       CMDSRVPGM  UIM    71,75  Service Program Commands
+QSYS       CMDSSN     UIM    71,75  Session Commands
+QSYS       CMDSSND    UIM    71,75  Session Description Commands
+QSYS       CMDSST     UIM    71,75  System Service Tools Commands
+QSYS       CMDSTG     UIM    71,75  Storage Commands
+QSYS       CMDSTM     UIM    71,75  Stream and Statements Commands
+QSYS       CMDSTR     UIM    71,75  Start Commands
+QSYS       CMDSTS     UIM    71,75  Status Commands
+QSYS       CMDSUBR    UIM    71,75  Subroutine Commands
+QSYS       CMDSVC     UIM    75     SAN Volume Controller Commands
+QSYS       CMDSVR     UIM    71,75  Server Commands
+QSYS       CMDSYS     UIM    71,75  System Commands
+QSYS       CMDSYSCTL  UIM    71,75  System Control Commands
+QSYS       CMDSYSDIR  UIM    71,75  System Directory Commands
+QSYS       CMDSYSVAL  UIM    71,75  System Value Commands
+QSYS       CMDTAP     UIM    71,75  Tape Commands
+QSYS       CMDTAPF    UIM    71,75  Tape File Commands
+QSYS       CMDTBL     UIM    71,75  Table Commands
+QSYS       CMDTBLE    UIM    71,75  Table Entry Commands
+QSYS       CMDTCP     UIM    71,75  TCP/IP Commands
+QSYS       CMDTDLC    UIM    71     TDLC Commands
+QSYS       CMDTELN    UIM    71,75  TELNET Commands
+QSYS       CMDTFR     UIM    71,75  Transfer Commands
+QSYS       CMDTHD     UIM    71,75  Thread Commands
+QSYS       CMDTIE     UIM    71,75  TIE Commands
+QSYS       CMDTIEF    UIM    71,75  TIE File Commands
+QSYS       CMDTIMZON  UIM    71,75  Time Zone Description Commands
+QSYS       CMDTNS     UIM    71,75  Transaction Commands
+QSYS       CMDTO      UIM    71,75  To Commands
+QSYS       CMDTOS     UIM    71     Type of Service Commands
+QSYS       CMDTRC     UIM    71,75  Trace Commands
+QSYS       CMDTRG     UIM    71,75  Trigger Commands
+QSYS       CMDTRN     UIM    71     Token-Ring Network Commands
+QSYS       CMDTRP     UIM    71,75  Trap Commands
+QSYS       CMDUBC     UIM    71,75  Generate DNS DSR Record
+QSYS       CMDUDFS    UIM    71,75  User-Defined FS Commands
+QSYS       CMDUPD     UIM    71,75  Update Commands
+QSYS       CMDUSG     UIM    71,75  Usage Commands
+QSYS       CMDUSR     UIM    71,75  User Commands
+QSYS       CMDUSRIDX  UIM    71,75  User Index Commands
+QSYS       CMDUSRPRF  UIM    71,75  User Profile Commands
+QSYS       CMDUSRPRTI UIM    71,75  User Print Info Commands
+QSYS       CMDUSRQ    UIM    71,75  User Queue Commands
+QSYS       CMDUSRSPC  UIM    71,75  User Space Commands
+QSYS       CMDVAL     UIM    71,75  Value Commands
+QSYS       CMDVAR     UIM    71,75  Variable Commands
+QSYS       CMDVFY     UIM    71,75  Verify Commands
+QSYS       CMDVLDL    UIM    71,75  Validation List Commands
+QSYS       CMDVOL     UIM    71,75  Volume Commands
+QSYS       CMDVPN     UIM    75     VPN Commands
+QSYS       CMDVRY     UIM    71,75  Vary Commands
+QSYS       CMDVWS     UIM    71,75  Virtual Work Station Commands
+QSYS       CMDWAIT    UIM    71,75  Wait Commands
+QSYS       CMDWCH     UIM    71,75  Watch Commands
+QSYS       CMDWG      UIM    71     IBM WorkGroup Commands
+QSYS       CMDWLCGRP  UIM    75     Workload Group Commands
+QSYS       CMDWLS     UIM    71     WLS (Wireless) Commands
+QSYS       CMDWNT     UIM    71,75  Windows Server Commands
+QSYS       CMDWRK     UIM    71,75  Work Commands
+QSYS       CMDWRKMGT  UIM    71,75  Work Management Commands
+QSYS       CMDWSE     UIM    71,75  Work Station Entry Commands
+QSYS       CMDWSO     UIM    71,75  Workstation Object Commands
+QSYS       CMDWTR     UIM    71,75  Writer Commands
+QSYS       CMDX25     UIM    71     X.25 Commands
+QSYS       CMN        UIM    71,75  Communications
+QSYS       CMNCFG     UIM    71,75  Communications Configuration menu
+QSYS       CMNSTS     UIM    71,75  Communications Status
+QSYS       CRQADM     UIM    75     Change Request Administration
+QSYS       DATA       UIM    71,75  Files, Libraries, and Folders
+QSYS       DECISION   UIM    71,75  DECISION Support
+QSYS       DEFINE     UIM    71,75  Define or Change the System
+QSYS       DEVICE     UIM    71,75  Printer, Tape and Diskette
+QSYS       DEVICESTS  UIM    71,75  Device status menu
+QSYS       DISKETTE   UIM    71     Diskette
+QSYS       DISKTASKS  UIM    71,75  Disk Tasks menu
+QSYS       DOCUMENT   UIM    71,75  Documents
+QSYS       FILE       UIM    71,75  Files
+QSYS       FILE2      UIM    71,75  Files
+QSYS       FILESYS    UIM    71,75  Integrated File System
+QSYS       FILETFR    UIM    71,75  File Transfer
+QSYS       FMA        UIM    71,75  Font Management Aid
+QSYS       FOLDER     UIM    71,75  Folders
+QSYS       FPDST      UIM    75     Fast Path Distribution Commands
+QSYS       FSDIR      UIM    71,75  Directory Commands
+QSYS       FSOBJ      UIM    71,75  Object Commands
+QSYS       FSSEC      UIM    71,75  Security Commands
+QSYS       HARDWARE   UIM    71,75  Hardware Resources
+QSYS       IDDU       UIM    71,75  Interactive Data Definition Utility
+QSYS       IMGCLG     UIM    71,75  Prepare Installation Images
+QSYS       INFO       UIM    71,75  Information Assistant options
+QSYS       IPLCFGCMD  UIM    71,75  Configuration Commands menu at IPL
+QSYS       IPLCFGLCMD UIM    71,75  Configuration List Commands menu at IPL
+QSYS       IPLCNNLCMD UIM    71,75  Connection List Commands menu at IPL
+QSYS       IPLCOSCMD  UIM    71,75  Class of Service Description Commands menu at IPL
+QSYS       IPLCTLCMD  UIM    71,75  Controller Description Commands menu at IPL
+QSYS       IPLDEFINE  UIM    71,75  Define or Change the System at IPL menu
+QSYS       IPLDEVCMD  UIM    71,75  Device Description Commands menu at IPL
+QSYS       IPLLINCMD  UIM    71,75  Line Description Commands menu at IPL
+QSYS       IPLMODCMD  UIM    71,75  Mode Description Commands menu at IPL
+QSYS       IPLNETACMD UIM    71,75  Network Attribute Commands menu at IPL
+QSYS       IPLNWIDCMD UIM    71     Network Interface Description Cmds menu at IPL
+QSYS       IPLNWSDCMD UIM    71,75  Configure Network Server IPL menu
+QSYS       IPLOBJCMD  UIM    71,75  General Object Commands menu at IPL
+QSYS       IPLSYSVAL  UIM    71,75  System Value Commands menu at IPL
+QSYS       JOB        UIM    71,75  Jobs
+QSYS       JOB2       UIM    71,75  Jobs
+QSYS       JOBENV     UIM    71,75  Control Job Environment
+QSYS       LIBRARY    UIM    71,75  Libraries
+QSYS       LICPGM     UIM    71     Manage Licensed Programs
+QSYS       MAIN       UIM    71,75  System i5 Main Menu
+QSYS       MAJOR      UIM    71,75  MAJOR command menu
+QSYS       MANAGESYS  UIM    71,75  Manage Your System menu
+QSYS       MESSAGE    UIM    71,75  Messages
+QSYS       NETCFG     UIM    71,75  Network Configuration
+QSYS       NETPRB     UIM    71,75  NETPRB system menu
+QSYS       NETWORK    UIM    71,75  Network Management
+QSYS       NWSADM     UIM    71,75  Network Server Administration
+QSYS       OFCSEC     UIM    71,75  Office Security
+QSYS       OFCTSK     UIM    71,75  Office Tasks
+QSYS       OPTICAL    UIM    71,75  Optical Support Menu
+QSYS       OPTSVR     UIM    71,75  Optical LAN Server Menu
+QSYS       ORDER      UIM    71,75  Go order menu
+QSYS       PCOMNU     DSPF   71,75  PC Organizer Menu
+QSYS       PCSHOST    UIM    71,75  Host System Tasks for IBM System i5 Access
+QSYS       PCSTSK     UIM    71,75  IBM System i5 Access Tasks
+QSYS       PM400      UIM    71,75  
+QSYS       PMAGT      UIM    71,75  
+QSYS       POWER      UIM    71,75  Power On and Off menu
+QSYS       PRINTER    UIM    71,75  Printer
+QSYS       PROBLEM    UIM    71,75  Problem Handling
+QSYS       PROBLEM2   UIM    71,75  Problem Handling
+QSYS       PROGRAM    UIM    71,75  Programming
+QSYS       PROGRAMS36 UIM    71,75  System/36 Programming
+QSYS       PRTEML     UIM    71,75  Printer Emulation
+QSYS       PTF        UIM    71,75  Program Temporary Fix
+QSYS       QS9CEMAIN  UIM    71     
+QSYS       QS9CRPT    UIM    71     
+QSYS       QS9MAIN    UIM    71     
+QSYS       QSJCFGCNN  UIM    71     
+QSYS       QSJMAIN    UIM    71     
+QSYS       QUERY      UIM    71,75  Query
+QSYS       RECOVERY   UIM    71,75  Optical Backup/Recovery Menu
+QSYS       REMOTE     UIM    71,75  Remote Jobs
+QSYS       RESOURCE   UIM    71,75  Work with System Resources
+QSYS       RESTORE    UIM    71,75  Restore
+QSYS       RJE        UIM    71,75  Remote Job Entry
+QSYS       RPDS       UIM    75     
+QSYS       RSTS36FMT  UIM    71,75  Restore in System/36 Format
+QSYS       RUNBCKUP   UIM    71,75  Run a backup menu
+QSYS       SAVE       UIM    71,75  Save
+QSYS       SAVS36FMT  UIM    71,75  Save in System/36 Format
+QSYS       SECBATCH   UIM    71     Submit or Schedule Security Reports To Batch
+QSYS       SECTOOLS   UIM    71     Security Tools
+QSYS       SECURITY   UIM    71,75  Security
+QSYS       SERVICE    PGM    71     
+QSYS       SERVICECE  PGM    71     
+QSYS       SETUP      UIM    71,75  Set Up Your System menu
+QSYS       SETUPBCKUP UIM    71,75  Set up backup menu
+QSYS       SMS        UIM    75     Software Management Services
+QSYS       SOFTWARE   UIM    71,75  Software Resources
+QSYS       STATUS     UIM    71,75  Status
+QSYS       SUBJECT    UIM    71,75  Subject Commands
+QSYS       SUPPORT    UIM    71,75  User Support Menu
+QSYS       SVMSS      UIM    75     SystemView MSS for iSeries Menu
+QSYS       SVSM       UIM    75     IBM System Manager for i5/OS Menu
+QSYS       SYSTEM     UIM    71,75  General System Tasks
+QSYS       SYSTEM2    UIM    71,75  General System Tasks
+QSYS       TAPE       UIM    71,75  Tape
+QSYS       TCPADM     UIM    71,75  Menu for TCPADM
+QSYS       TECHHELP   UIM    71,75  TECHHELP Technical Support Menu
+QSYS       USER       UIM    71,75  USER Tasks
+QSYS       USER2      UIM    71,75  USER Tasks
+QSYS       USERHELP   UIM    71,75  USERHELP Documentation and Problem Handling Menu
+QSYS       USRPMN     UIM    71,75  User Permission
+QSYS       VERB       UIM    71,75  Verb Commands
+
+# 597 on both, 28 only on 7.1, 22 only on 7.5.
