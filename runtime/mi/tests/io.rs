@@ -253,7 +253,7 @@ L0:
     assert_eq!(
         statuses,
         vec![
-            "0", "0", "0", "11", "0", "12", "0", "0", "0", "0", "1221", "0", "0", "1211"
+            "0", "0", "0", "11", "11", "12", "0", "0", "0", "0", "1221", "0", "0", "1211"
         ],
         "{console:?}"
     );
@@ -264,7 +264,9 @@ L0:
         .collect();
     assert_eq!(
         names,
-        vec!["Bob", "Carol", "Grace", "Alice"],
+        // The READ after the READE mismatch is at end of file too (the
+        // oracle's behavior), so the buffer still holds Carol.
+        vec!["Bob", "Carol", "Carol", "Alice"],
         "keyed order is CUSNO then NAME"
     );
     let rec = p.static_bytes("rec").unwrap();
