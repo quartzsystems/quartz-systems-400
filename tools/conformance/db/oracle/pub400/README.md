@@ -9,9 +9,9 @@ box could not make: `rla.csv`, `dspjrn.csv` and the exports of
 
 What differs from `../QSTEST.CLLE`:
 
-- the kit lives in library `CWELLMANB` (cleared, then first on the
-  library list) and under `/home/CWELLMAN/qstest`; the driver program
-  goes to `CWELLMAN1` so clearing the kit never deletes it;
+- the kit lives in library `<user>B` (cleared, then first on the
+  library list) and under `/home/<user>/qstest`; the driver program
+  goes to `<user>1` so clearing the kit never deletes it;
 - the DDS names its files unqualified, since the longer library name
   pushes `JFILE` past column 80;
 - `CRTBNDRPG ... TGTCCSID(*JOB)`: the compiler will not take a UTF-8

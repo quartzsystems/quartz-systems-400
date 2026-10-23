@@ -64,31 +64,17 @@ fn no_credential_in_the_tree() {
         .filter(|(k, _)| k.ends_with("_USER") || k.ends_with("_PASS"))
         .filter(|(k, v)| !(k.ends_with("_USER") && v == "QSECOFR"))
         .collect();
-    // Files of earlier phases that name the pub400 account as the
-    // owner of its libraries; they predate the rule and hold no
-    // password.
-    let historical = [
-        "tools/conformance/db/expected/dspjrn.csv",
-        "tools/conformance/db/oracle/pub400/README.md",
-        "tools/conformance/db/oracle/pub400/gen.py",
-        "tools/conformance/oracle/ile/README.md",
-    ];
     let mut hits = Vec::new();
     for f in tracked_files(&root) {
         if f.ends_with(".env") {
             continue;
         }
-        let rel = f
-            .strip_prefix(&root)
-            .map(|p| p.to_string_lossy().replace('\\', "/"))
-            .unwrap_or_default();
-        let old = historical.contains(&rel.as_str());
         let Ok(bytes) = std::fs::read(&f) else {
             continue;
         };
         let text = String::from_utf8_lossy(&bytes);
         for (k, v) in &secrets {
-            if text.contains(v.as_str()) && !(old && k.ends_with("_USER")) {
+            if text.contains(v.as_str()) {
                 hits.push(format!("{} holds the value of {k}", f.display()));
             }
         }

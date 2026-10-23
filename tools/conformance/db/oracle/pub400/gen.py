@@ -3,8 +3,9 @@
 # root directory of this project.
 
 """Build the pub400 variant of the QSTEST kit and the Xfer script that
-loads, runs and fetches it. Library CWELLMANB, IFS /home/CWELLMAN/qstest."""
-import pathlib, re, shutil
+loads, runs and fetches it. Library <user>B, IFS /home/<user>/qstest, the
+user being QS_PUB400_USER from tools/conformance/oracle/.env."""
+import os, pathlib, re, shutil
 
 repo = pathlib.Path(__file__).resolve().parents[2]
 wd = pathlib.Path(__file__).parent
@@ -14,8 +15,9 @@ if kit.exists():
 for d in ("dds", "data", "oracle"):
     (kit / d).mkdir(parents=True)
 
-LIB = "CWELLMANB"
-HOME = "/home/CWELLMAN/qstest"
+USER = os.environ["QS_PUB400_USER"]
+LIB = USER + "B"
+HOME = "/home/" + USER + "/qstest"
 
 def port(text):
     text = text.replace("/home/QSTEST", HOME)
@@ -25,7 +27,7 @@ def port(text):
     return text
 
 for f in (repo / "dds").iterdir():
-    # unqualified: CWELLMANB is first on the library list, and the longer
+    # unqualified: <user>B is first on the library list, and the longer
     # name would push JFILE past column 80
     dds = re.sub(r"\bQSTEST/", "", f.read_text(encoding="utf-8"))
     (kit / "dds" / f.name).write_text(dds, encoding="utf-8", newline="\n")
@@ -73,9 +75,9 @@ for sub in ("dds", "data", "oracle"):
     for f in sorted((kit / sub).iterdir()):
         lines.append("iput\t" + str(f) + "\t" + HOME + "/" + sub + "/" + f.name)
 lines += [
-    "cmd\tDLTPGM PGM(CWELLMAN1/QSTESTPUB)",
-    "cmd\tCRTBNDCL PGM(CWELLMAN1/QSTESTPUB) SRCSTMF('" + HOME + "/oracle/QSTEST.CLLE')\tstop",
-    "cmd\tCALL PGM(CWELLMAN1/QSTESTPUB)",
+    "cmd\tDLTPGM PGM(" + USER + "1/QSTESTPUB)",
+    "cmd\tCRTBNDCL PGM(" + USER + "1/QSTESTPUB) SRCSTMF('" + HOME + "/oracle/QSTEST.CLLE')\tstop",
+    "cmd\tCALL PGM(" + USER + "1/QSTESTPUB)",
     "log\t60",
 ]
 outs = ["rla.csv", "dspjrn.csv", "ffd.csv", "lvlid.csv"]

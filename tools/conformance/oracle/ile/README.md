@@ -43,7 +43,7 @@ compile time; the sources now have all three. A pub400 user cannot
 `ADDRPYLE`, so the driver ran with `INQMSGRPY(*DFT)`: `RESUMEG` and
 `REPLYR` ended on the default reply and left no line. To answer them,
 sign on interactively, `CRTPF QTEMP/ORACLE RCDLEN(80)`, `ADDLIBLE
-CWELLMAN2`, `CALL RESUMEG` and reply `G`, `CALL REPLYR` and reply `R`,
+<user>2`, `CALL RESUMEG` and reply `G`, `CALL REPLYR` and reply `R`,
 then `DSPPFM QTEMP/ORACLE`. `CEEFC` ended in a function check before
 writing anything, and `CMDEXC` got `CPD0031` (`SNDPGMMSG` is not
 allowed through `QCMDEXC`), both from the job log. The comparer
