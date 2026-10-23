@@ -124,10 +124,16 @@ Actions (`ACTION`, `ENTER`, `USREXIT`): `RETURN n`, `ENTER`, `HELP`,
 `HELP name`, `EXTHELP`, `KEYSHELP`, `ABOUT`, `EXIT`, `CANCEL`, `PRINT`,
 `CMDLINE`, `PRVPNL`, `NXTPNL`, `PAGEUP`, `PAGEDOWN`, `PULLDOWN`,
 `ACTIONS`, `RETRIEVE`, `MOREKEYS`, `FLDHELP`, `TOP`, `BOTTOM`, `HOME`,
-`PRVPAGE`, `NXTPAGE`, `CALL var`, `PANEL name`, `MENU name`, `MSG var`.
-`CALL` and `MSG` name a dialog variable holding the program or message
-identifier; `PANEL` names a panel of the group or an import; `MENU`
-names a `*MENU` object and is not checked.
+`PRVPAGE`, `NXTPAGE`, `CALL var`, `PANEL name`, `MENU name`, `MSG var`,
+`CMD string`. `CALL` and `MSG` name a dialog variable holding the
+program or message identifier; `PANEL` names a panel of the group or an
+import; `MENU` names a `*MENU` object and is not checked; `CMD` carries
+the rest of the value as a command string, case kept and not checked,
+which the menu driver runs (a leading `?` prompts it), as the generated
+command-group menus of `docs/MENUS.md` use it.
+
+Menu options (`:MENUI OPTION=`) run 1 to 999: IBM's command-group
+menus (`CMDCHG` has more than 250 items) go past 99.
 
 Keys (`KEY`): `ENTER`, `HELP`, `PRINT`, `HOME`, `PAGEUP` (`ROLLDOWN`),
 `PAGEDOWN` (`ROLLUP`), `F1` to `F24`.
@@ -160,7 +166,8 @@ headings hold a `Document`: `Block`s (`Heading`, `Para`, `ParaCont`,
 
 Defaults filled where the reference gives one: `DEPTH` 24 and `WIDTH`
 80 on a panel, 66 and 132 on a print panel; `TOPSEP`/`BOTSEP`/`GRPSEP`
-`SPACE`; `LAYOUT` 1; `SCROLL` `NO`; `DISPLAY` `YES`; `CMDLINE SIZE`
+`SPACE` (`RULE`, `NONE`, and on a panel `SYSNAM`, the `System:` line
+of R2); `LAYOUT` 1; `SCROLL` `NO`; `DISPLAY` `YES`; `CMDLINE SIZE`
 `LONG`; `CASE` `MIXED`; `SHIFT` `NONE`; a `:LISTCOL.` without `NAME`
 is named after its variable.
 
@@ -224,7 +231,7 @@ Severities: 10 warning (the group is created), 20 error (not created),
 | UIM1004 | 20 | expression does not parse |
 | UIM1005 | 20 | truth table row width |
 | UIM1006 | 20 | option used twice in a list or menu |
-| UIM1007 | 20 | menu option not 1 to 99 or `*` |
+| UIM1007 | 20 | menu option not 1 to 999 or `*` |
 | UIM1008 | 20 | list without columns or views |
 | UIM1009 | 20 | view names an unknown column |
 | UIM1010 | 20 | input field whose class has no width |

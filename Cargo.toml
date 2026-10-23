@@ -47,6 +47,7 @@ members = [
     "ui/tn5250",
     "ui/dspf",
     "ui/uim",
+    "ui/menus",
     "tools/tn5250-driver",
 ]
 

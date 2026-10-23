@@ -1,0 +1,21 @@
+[package]
+name = "menus"
+description = "QS/400 menus: the *MENU payload, the GO menu stack and the generator of the command-group menus"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+uim = { path = "../uim", version = "0.1.0" }
+thiserror.workspace = true
+# The genmenus binary only.
+anyhow.workspace = true
+
+[[bin]]
+name = "genmenus"
+path = "src/bin/genmenus.rs"
+
+[lints]
+workspace = true

@@ -159,7 +159,7 @@ wire_struct!(PrintPanel {
     areas,
     line
 });
-wire_enum!(Separator { 0 => Space, 1 => Rule, 2 => None });
+wire_enum!(Separator { 0 => Space, 1 => Rule, 2 => None, 3 => SysName });
 wire_enum!(Layout { 0 => One, 1 => Two, 2 => Three });
 wire_enum!(Scroll { 0 => Yes, 1 => No });
 wire_enum!(Usage { 0 => Input, 1 => Output, 2 => Inout });
@@ -556,6 +556,7 @@ impl Wire for Action {
             Self::Menu(s) => (26, Some(s)),
             Self::Msg(s) => (27, Some(s)),
             Self::HelpModule(s) => (28, Some(s)),
+            Self::Cmd(s) => (29, Some(s)),
         };
         out.push(tag);
         if let Some(s) = name {
@@ -593,6 +594,7 @@ impl Wire for Action {
             26 => Self::Menu(String::get(d)?),
             27 => Self::Msg(String::get(d)?),
             28 => Self::HelpModule(String::get(d)?),
+            29 => Self::Cmd(String::get(d)?),
             t => return Err(tag_err("Action", t)),
         })
     }
@@ -622,14 +624,14 @@ impl Wire for MenuOption {
         match self {
             Self::Number(n) => {
                 out.push(0);
-                out.push(*n);
+                n.put(out);
             }
             Self::Star => out.push(1),
         }
     }
     fn get(d: &mut Dec<'_>) -> Result<Self, WireError> {
         Ok(match u8::get(d)? {
-            0 => Self::Number(u8::get(d)?),
+            0 => Self::Number(u16::get(d)?),
             1 => Self::Star,
             t => return Err(tag_err("MenuOption", t)),
         })
