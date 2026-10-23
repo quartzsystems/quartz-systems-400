@@ -6,8 +6,8 @@
 //! requests over the logic of its crate under `devtools/`.
 
 pub mod dbg;
-pub mod pdm;
 pub mod dfu;
+pub mod pdm;
 pub mod rlu;
 pub mod seu;
 pub mod sst;
