@@ -24,6 +24,21 @@ note = "no completion message; a refusal is the escape"
 [cmd.WRKACTJOB]
 site = "job"
 
+[cmd.WRKSBSJOB]
+site = "job"
+
+[cmd.WRKSBS]
+site = "job"
+
+[cmd.DSPSBSD]
+site = "job"
+
+[cmd.DSPJOBD]
+site = "job"
+
+[cmd.DSPCLS]
+site = "job"
+
 # --- messages and objects (panels/objects.rs)
 # --- system and security (panels/system.rs)
 # ---
@@ -48,9 +63,11 @@ word = "dspmsg"
 alwlmtusr = true
 
 [cmd.WRKJOBD]
+site = "job"
 word = "dspjobd"
 
 [cmd.WRKCLS]
+site = "job"
 word = "dspcls"
 
 [cmd.WRKAUTL]
@@ -60,6 +77,7 @@ word = "dspautl"
 word = "wrkactjob"
 
 [cmd.WRKUSRJOB]
+site = "job"
 word = "wrkactjob"
 
 [cmd.RCLACTGRP]

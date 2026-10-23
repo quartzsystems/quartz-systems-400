@@ -70,13 +70,6 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         _ => {}
     }
     let line = sys_cpps::bridge::specified_line(&entry.word, &parms);
-    // A display the job shows as a panel keeps its text in the
-    // service, for a job without one.
-    if !OLD_JOB_WORDS.contains(&entry.word.as_str())
-        && sys_cpps::inventory::BRIDGE_WORDS.contains(&entry.word.as_str())
-    {
-        return classify(host.exec(&line).text);
-    }
     let out = jobcmd::command(job, host, &entry.word, &line);
     // A display's first line may well start with a message identifier
     // (the job log's, the queue's): no escape in that.

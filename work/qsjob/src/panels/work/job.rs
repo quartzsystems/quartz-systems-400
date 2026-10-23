@@ -193,7 +193,7 @@ fn split(q: &str) -> (String, String) {
 }
 
 /// The type of job as `DSPJOB` names it.
-fn type_name(kind: char) -> &'static str {
+pub(super) fn type_name(kind: char) -> &'static str {
     match kind {
         'A' => "AUTO",
         'B' => "BATCH",

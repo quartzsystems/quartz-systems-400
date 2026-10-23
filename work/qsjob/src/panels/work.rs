@@ -11,6 +11,9 @@
 
 mod actjob;
 mod job;
+mod jobs;
+mod objs;
+mod sbs;
 
 use cmd::{Resolved, Value};
 use mi::Job;
@@ -33,6 +36,14 @@ pub fn run(
     let res = match r.name.as_str() {
         "WRKACTJOB" => actjob::wrkactjob(job, host, surface, r),
         "WRKJOB" => job::wrkjob(job, host, surface, r),
+        "WRKUSRJOB" => jobs::wrkusrjob(job, host, surface, r),
+        "WRKSBSJOB" => jobs::wrksbsjob(job, host, surface, r),
+        "WRKSBS" => sbs::wrksbs(job, host, surface),
+        "DSPSBSD" => sbs::dspsbsd(job, host, surface, r),
+        "WRKJOBD" => objs::wrkjobd(job, host, surface, r),
+        "DSPJOBD" => objs::dspjobd(job, host, surface, r),
+        "WRKCLS" => objs::wrkcls(job, host, surface, r),
+        "DSPCLS" => objs::dspcls(job, host, surface, r),
         "DSPJOB" => job::dspjob(job, host, surface, r),
         "DSPJOBLOG" => job::dspjoblog(job, host, surface, r),
         _ => return None,

@@ -239,6 +239,14 @@ pub const JOB_SITE: &[&str] = &[
     // --- panels: work management (work/qsjob/src/panels/work.rs)
     "WRKACTJOB",
     "DSPJOB",
+    "WRKUSRJOB",
+    "WRKSBSJOB",
+    "WRKSBS",
+    "DSPSBSD",
+    "WRKJOBD",
+    "DSPJOBD",
+    "WRKCLS",
+    "DSPCLS",
     // --- panels: messages and objects (panels/objects.rs)
     // --- panels: system and security (panels/system.rs)
     "ADDBKP",

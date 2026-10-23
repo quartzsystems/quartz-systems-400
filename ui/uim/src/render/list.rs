@@ -56,12 +56,19 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
     // R9: the columns of the view.
     let cols = columns(ctx, area, limit);
     let grouped = cols.iter().any(|c| c.group.is_some());
-    let head_rows = usize::from(grouped)
-        + area.maxhead.map_or_else(
-            || cols.iter().map(|c| c.heading.len()).max().unwrap_or(0),
-            |m| m as usize,
-        );
-    headings(s, &cols, row, head_rows, grouped, limit);
+    // Without `MAXHEAD` a group's heading takes the first of the rows
+    // the other columns' wrapped headings need.
+    let head_rows = area.maxhead.map_or_else(
+        || {
+            cols.iter()
+                .map(|c| c.heading.len() + usize::from(c.group.is_some()))
+                .max()
+                .unwrap_or(0)
+        },
+        |m| usize::from(grouped) + m as usize,
+    );
+    let shared = if area.maxhead.is_some() { Some(grouped) } else { None };
+    headings(s, &cols, row, head_rows, shared, limit);
     row += head_rows;
 
     // The entries.
@@ -136,7 +143,7 @@ fn headings(
     cols: &[Col],
     head_top: usize,
     head_rows: usize,
-    grouped: bool,
+    shared: Option<bool>,
     limit: usize,
 ) {
     let mut seen_group = None;
@@ -164,10 +171,12 @@ fn headings(
             };
             put_cut(s, head_top, col, limit, Attr::HighIntensity, text);
         }
-        let col_rows = head_rows - usize::from(grouped);
+        // `MAXHEAD`: every column has the rows under the group's.
+        let above = shared.unwrap_or(c.group.is_some());
+        let col_rows = head_rows - usize::from(above);
         let skip = c.heading.len().saturating_sub(col_rows);
         for (j, h) in c.heading.iter().skip(skip).enumerate() {
-            let r = head_top + usize::from(grouped) + col_rows - (c.heading.len() - skip) + j;
+            let r = head_top + head_rows - (c.heading.len() - skip) + j;
             // A number's heading rows end where its field ends.
             let len = h.chars().count();
             let col = if c.numeric && !c.column.usage.is_input() && len <= c.field {

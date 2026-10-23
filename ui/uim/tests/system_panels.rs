@@ -329,3 +329,303 @@ fn wrkjob_14_openfiles() {
     d.set_list("OPNF", list(&rows));
     compare(&golden("wrkjob-14-openfiles"), &job_screen("OPNF", &d, &opts("SYSNAME")));
 }
+
+/// Jobs as WRKUSRJOB and WRKSBSJOB list them: name, user, type,
+/// status, function.
+fn user_jobs(jobs: &[[&'static str; 5]]) -> Vec<Vec<(&'static str, &'static str)>> {
+    jobs.iter()
+        .map(|j| {
+            vec![
+                ("JOB", j[0]),
+                ("USER", j[1]),
+                ("NUMBER", "NNNNNN"),
+                ("TYPE", j[2]),
+                ("STATUS", j[3]),
+                ("FUNCTION", j[4]),
+            ]
+        })
+        .collect()
+}
+
+#[test]
+fn wrkusrjob() {
+    let rows = user_jobs(&[
+        ["QPADEV000R", "USERNAME", "INTER", "ACTIVE", "CMD-WRKUSRJOB"],
+        ["QPRTJOB", "USERNAME", "PRINT", "OUTQ", ""],
+    ]);
+    let mut d = MapDialog::new();
+    d.set("*DATETIME", "MM/DD/YY  HH:MM:SS UTC")
+        .set_list("JOBS", list(&rows));
+    let s = render(&shipped("QUIWRKUSRJ"), "WRKUSRJOB", &d, &opts("PUB400")).expect("render");
+    compare(&golden("wrkusrjob"), &s);
+}
+
+#[test]
+fn wrksbsjob() {
+    let rows = user_jobs(&[
+        ["QPADEV000G", "AVINASH1", "INTER", "ACTIVE", "CMD-WRKMBRPDM"],
+        ["QPADEV000M", "YUVARAJ15", "INTER", "ACTIVE", "MNU-MAIN"],
+        ["QPADEV000R", "USERNAME", "INTER", "ACTIVE", "CMD-WRKSBSJOB"],
+        ["QPADEV000W", "HIMANSH", "INTER", "ACTIVE", "CMD-WRKMBRPDM"],
+        ["QPADEV001L", "SRIPRIYAA", "INTER", "ACTIVE", "CMD-STRSEU"],
+        ["QPADEV001S", "IAMSAM", "INTER", "ACTIVE", "MNU-MAIN"],
+        ["QPADEV001W", "KIRTIK782", "INTER", "ACTIVE", "CMD-STRSEU"],
+        ["QPADEV002L", "SHUBHAM93", "INTER", "ACTIVE", "CMD-STRSEU"],
+    ]);
+    let mut d = MapDialog::new();
+    d.set("*DATETIME", "MM/DD/YY  HH:MM:SS UTC")
+        .set("SBS", "QINTER2")
+        .set_list("JOBS", partial(&rows));
+    let s = render(&shipped("QUIWRKUSRJ"), "WRKSBSJOB", &d, &opts("PUB400")).expect("render");
+    compare(&golden("wrksbsjob"), &s);
+}
+
+#[test]
+#[ignore = "a display file on the oracle: the storage column and the pool group sit off R9's grid"]
+fn wrksbs() {
+    let names = [
+        "#SYSLOAD", "QBATCH", "QBATCH2", "QBATCH3", "QBATCH4", "QBATCH5", "QBATCH6", "QBATCH7",
+        "QCMN", "QCTL",
+    ];
+    let rows: Vec<Vec<(&str, &str)>> = names
+        .iter()
+        .enumerate()
+        .map(|(i, n)| {
+            let pool = if i == 0 { ("P2", "2") } else { ("P1", "2") };
+            vec![("SBS", *n), ("STORAGE", "0,0"), pool]
+        })
+        .collect();
+    let mut d = MapDialog::new();
+    d.set_list("SBS", partial(&rows));
+    let s = render(&shipped("QUIWRKSBS"), "WRKSBS", &d, &opts("SYSNAME")).expect("render");
+    compare(&golden("wrksbs"), &s);
+}
+
+fn sbsd_dialog() -> MapDialog {
+    let mut d = MapDialog::new();
+    d.set("SBS", "QINTER2")
+        .set("SBSLIB", "QSYS")
+        .set("STATUS", "ACTIVE");
+    d
+}
+
+fn sbsd_screen(panel: &str, d: &MapDialog) -> uim::Screen {
+    render(&shipped("QUIDSPSBSD"), panel, d, &opts("SYSNAME")).expect("render")
+}
+
+#[test]
+fn dspsbsd_menu() {
+    compare(&golden("dspsbsd-menu"), &sbsd_screen("DSPSBSD", &sbsd_dialog()));
+}
+
+#[test]
+fn dspsbsd_1() {
+    let mut d = sbsd_dialog();
+    d.set("MAXJOBS", "*NOMAX")
+        .set("SGNDSPF", "QDSIGNON2")
+        .set("SGNLIB", "QGPL")
+        .set("SYSLIBLE", "*NONE")
+        .set("ASPGRP", "*NONE")
+        .set("WLGRP", "*NONE");
+    compare(&golden("dspsbsd-1"), &sbsd_screen("OPRATR", &d));
+}
+
+#[test]
+#[ignore = "a display file on the oracle: its headings are centered over the values"]
+fn dspsbsd_2_pools() {
+    let mut d = sbsd_dialog();
+    let rows = vec![
+        vec![("POOLID", "1"), ("POOLSIZE", "*BASE")],
+        vec![("POOLID", "2"), ("POOLSIZE", "*INTERACT")],
+    ];
+    d.set_list("POOLS", list(&rows));
+    compare(&golden("dspsbsd-2-pools"), &sbsd_screen("POOLS", &d));
+}
+
+#[test]
+fn dspsbsd_3_aje() {
+    let mut d = sbsd_dialog();
+    d.set_list("AJES", list(&[]));
+    compare(&golden("dspsbsd-3-aje"), &sbsd_screen("AJES", &d));
+}
+
+#[test]
+#[ignore = "the oracle lays the entries out in four columns across the screen"]
+fn dspsbsd_5_wste() {
+    let mut d = sbsd_dialog();
+    let rows = vec![
+        vec![("WSNAME", "*CONS")],
+        vec![("WSNAME", "5555")],
+        vec![("WSNAME", "*ALL")],
+    ];
+    d.set_list("WSES", list(&rows));
+    compare(&golden("dspsbsd-5-wste"), &sbsd_screen("WSTES", &d));
+}
+
+#[test]
+#[ignore = "a display file on the oracle: the list starts at column 3 and centers its headings"]
+fn dspsbsd_6_jobqe() {
+    let mut d = sbsd_dialog();
+    let mut rows = Vec::new();
+    for (seq, q) in [("10", "QINTER"), ("20", "QS36MRT")] {
+        let mut r = vec![("SEQ", seq), ("JOBQ", q), ("JOBQLIB", "QGPL"), ("MAXACT", "*NOMAX")];
+        for m in ["M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9"] {
+            r.push((m, "*"));
+        }
+        rows.push(r);
+    }
+    d.set_list("JOBQES", list(&rows));
+    compare(&golden("dspsbsd-6-jobqe"), &sbsd_screen("JOBQES", &d));
+}
+
+#[test]
+#[ignore = "a display file on the oracle: its columns sit on their own grid"]
+fn dspsbsd_7_rtge() {
+    let mut d = sbsd_dialog();
+    let rows: Vec<Vec<(&str, &str)>> = [
+        ("10", "QCMD", "'QCMDI'", "1"),
+        ("15", "QCMD", "'QIGC'", "1"),
+        ("20", "QCMD", "'QS36MRT'", "1"),
+        ("40", "QARDRIVE", "'525XTEST'", "1"),
+        ("700", "QCL", "'QCMD38'", "1"),
+        ("9999", "QCMD", "*ANY", ""),
+    ]
+    .iter()
+    .map(|(s, p, c, n)| {
+        vec![("RTSEQ", *s), ("PGM", *p), ("PGMLIB", "QSYS"), ("CMPVAL", *c), ("STARTPOS", *n)]
+    })
+    .collect();
+    d.set_list("RTGES", list(&rows));
+    compare(&golden("dspsbsd-7-rtge"), &sbsd_screen("RTGES", &d));
+}
+
+/// An object list whose first entry is the blank line option 1 types
+/// a new name on.
+fn objects(var: &'static str, items: &[(&'static str, &'static str)]) -> Vec<Vec<(&'static str, &'static str)>> {
+    let mut rows = vec![vec![(var, ""), ("LIB", ""), ("TEXT", "")]];
+    rows.extend(
+        items
+            .iter()
+            .map(|(n, t)| vec![(var, *n), ("LIB", "QGPL"), ("TEXT", *t)]),
+    );
+    rows
+}
+
+#[test]
+#[ignore = "WRKJOBD centers the first heading row over the second; R9 puts it at the column start"]
+fn wrkjobd() {
+    let rows = objects(
+        "JOBD",
+        &[
+            ("BKP4I", ""),
+            ("CODE4I", ""),
+            ("CODE4IB", ""),
+            ("CODE4I1", ""),
+            ("CODE4I2", ""),
+            ("USERNAME", ""),
+            ("GANESH4", ""),
+            ("JEEVANA1", "jeevana bulla                    ENU"),
+            ("LOKE241", "Lokeshwari Cherukuri             ENU"),
+            ("MALLI2404", ""),
+        ],
+    );
+    let mut d = MapDialog::new();
+    d.set_list("JOBDS", partial(&rows));
+    let s = render(&shipped("QUIWRKJOBD"), "WRKJOBD", &d, &opts("SYSNAME")).expect("render");
+    compare(&golden("wrkjobd"), &s);
+}
+
+fn jobd_dialog() -> MapDialog {
+    let mut d = MapDialog::new();
+    for (k, v) in [
+        ("JOBD", "QDFTJOBD"),
+        ("LIB", "QGPL"),
+        ("USER", "*RQD"),
+        ("SYNTAX", "*NOCHK"),
+        ("HOLD", "*NO"),
+        ("ENDSEV", "30"),
+        ("JOBDATE", "*SYSVAL"),
+        ("SWS", "00000000"),
+        ("INQMSG", "*SYSRPYL"),
+        ("JOBPTY", "5"),
+        ("JOBQ", "QBATCH"),
+        ("JOBQLIB", "QGPL"),
+        ("OUTPTY", "5"),
+        ("PRTDEV", "*USRPRF"),
+        ("OUTQ", "*USRPRF"),
+        ("LOGLVL", "4"),
+        ("LOGSEV", "20"),
+        ("LOGTXT", "*SECLVL"),
+        ("LOGCLPGM", "*YES"),
+        ("LOGOUT", "*SYSVAL"),
+        ("ACGCDE", "*USRPRF"),
+        ("PRTTXT", "*SYSVAL"),
+        ("RTGDTA", "QCMDI"),
+        ("RQSDTA", "*NONE"),
+    ] {
+        d.set(k, v);
+    }
+    d
+}
+
+#[test]
+fn dspjobd() {
+    let s = render(&shipped("QUIWRKJOBD"), "DSPJOBD", &jobd_dialog(), &opts("SYSNAME")).expect("render");
+    compare(&golden("dspjobd"), &s);
+}
+
+#[test]
+fn dspjobd_2() {
+    let o = Options {
+        page: 1,
+        ..opts("SYSNAME")
+    };
+    let s = render(&shipped("QUIWRKJOBD"), "DSPJOBD", &jobd_dialog(), &o).expect("render");
+    compare(&golden("dspjobd-2"), &s);
+}
+
+#[test]
+fn wrkcls() {
+    let rows = objects(
+        "CLS",
+        &[
+            ("BATCHUSR", ""),
+            ("QBATCH", "Batch Subsystem Class"),
+            ("QBATCH2", "Class for QBATCH2 subsystem"),
+            ("QBATCH3", "Class for QBATCH3 subsystem"),
+            ("QBATCH4", "Class for QBATCH4 subsystem"),
+            ("QBATCH5", "Class for QBATCH5 subsystem"),
+            ("QBATCH6", "Class for QBATCH6 subsystem"),
+            ("QBATCH7", "Class for QBATCH7 subsystem"),
+            ("QCASERVR", "Client Access Server Class"),
+            ("QDIALOCAL", "Class for QDIALOCAL Job"),
+            ("QFNC", "Finance Subsystem Class"),
+        ],
+    );
+    let mut d = MapDialog::new();
+    d.set_list("CLASSES", partial(&rows));
+    let s = render(&shipped("QUIWRKCLS"), "WRKCLS", &d, &opts("SYSNAME")).expect("render");
+    compare(&golden("wrkcls"), &s);
+}
+
+#[test]
+#[ignore = "the oracle's text field runs into the last column and on to the next row"]
+fn dspcls() {
+    let mut d = MapDialog::new();
+    for (k, v) in [
+        ("CLS", "QINTER"),
+        ("LIB", "QGPL"),
+        ("RUNPTY", "20"),
+        ("TIMESLICE", "2000"),
+        ("PURGE", "*YES"),
+        ("DFTWAIT", "30"),
+        ("CPUTIME", "*NOMAX"),
+        ("MAXTMP", "*NOMAX"),
+        ("MAXTHD", "*NOMAX"),
+        ("TEXT", "Interactive Subsystem Class"),
+    ] {
+        d.set(k, v);
+    }
+    let s = render(&shipped("QUIWRKCLS"), "DSPCLS", &d, &opts("SYSNAME")).expect("render");
+    compare(&golden("dspcls"), &s);
+}

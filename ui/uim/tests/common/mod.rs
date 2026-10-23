@@ -86,6 +86,32 @@ fn mask(row: &str) -> String {
     text
 }
 
+/// The capture tool's number mask: each number standing alone is `N`,
+/// blank padded to its width.
+fn mask_numbers(row: &str) -> String {
+    let chars: Vec<char> = row.chars().collect();
+    let mut out = String::new();
+    let mut i = 0;
+    while i < chars.len() {
+        let starts = chars[i].is_ascii_digit() && (i == 0 || !chars[i - 1].is_ascii_alphanumeric());
+        if starts {
+            let mut j = i;
+            while j < chars.len() && chars[j].is_ascii_digit() {
+                j += 1;
+            }
+            if j == chars.len() || !chars[j].is_ascii_alphanumeric() {
+                out.push('N');
+                out.extend(std::iter::repeat_n(' ', j - i - 1));
+                i = j;
+                continue;
+            }
+        }
+        out.push(chars[i]);
+        i += 1;
+    }
+    out
+}
+
 /// Compare a screen with a golden's grid row by row, our rows masked
 /// as the capture tool masks; panics with every row that differs.
 pub fn compare(golden: &str, screen: &Screen) {
@@ -97,7 +123,14 @@ pub fn compare(golden: &str, screen: &Screen) {
     let mut diffs = Vec::new();
     for (i, row) in ours.iter().enumerate() {
         let want = theirs.get(i).map_or("", String::as_str);
-        let got = mask(row);
+        let mut got = mask(row);
+        // A capture taken with the number mask on: every number is `N`.
+        if got.trim_end() != want.trim_end() && want.contains('N') {
+            let numbers = mask_numbers(&got);
+            if numbers.trim_end() == want.trim_end() {
+                got = numbers;
+            }
+        }
         if got.trim_end() != want.trim_end() {
             diffs.push(format!(
                 "row {:>2}\n  golden |{want}|\n  ours   |{got}|",
