@@ -36,7 +36,12 @@ oracle (V7R1M0) answers no screen questions.
    format table, locks the keyboard and homes the cursor (a full
    screen write begins with it; partial updates do not send it).
    Consistent with every pub400 screen seen so far.
-8. **Password tokens for auto-signon.** Resolved by design: the
+8. **The printer data stream.** Open. The server sends each SCS chunk
+   as a GDS record (opcode 0) and waits for a record back; RFC 2877's
+   exact printer header and the client's response codes could not be
+   checked (no printer client reachable). Needs an ACS printer session
+   against QS/400, or a trace of one against a real system.
+9. **Password tokens for auto-signon.** Resolved by design: the
    profile keeps the RFC 4777 DES and SHA-1 tokens of its password
    beside the Argon2id hashes; SHA-1 verified against pub400's server
    (our client side), the server side against our own client.

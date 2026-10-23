@@ -22,7 +22,7 @@ use std::time::{Duration, Instant};
 
 use ipc::chan::Chan;
 use stg::{Client, JobInfo, Link, Shared};
-use tn5250::ds::wdsf::Model;
+use tn5250::ds::wdsf::{Model, printer_type_model};
 use tn5250::record::Record;
 use tn5250::screen::{Read as ModelRead, ScreenModel};
 use tn5250::telnet;
@@ -397,6 +397,7 @@ fn startup_response(code: &str, device: &str) -> Vec<u8> {
 }
 
 /// One connection, start to end.
+#[allow(clippy::too_many_lines)] // the negotiation, then the device
 fn session(
     stream: TcpStream,
     tls: Option<Arc<rustls::ServerConfig>>,
@@ -478,9 +479,12 @@ fn session(
         }
     }
     let neg = server.negotiated.clone();
+    let requested = neg.var("DEVNAME").unwrap_or_default().to_ascii_uppercase();
+    if let Some((ptype, pmodel)) = printer_type_model(&neg.terminal_type) {
+        return printer_session(&tr, &mut server, &mut link, &ev_rx, &requested, ptype, pmodel, &peer);
+    }
     let model = Model::from_terminal_type(&neg.terminal_type).unwrap_or_default();
     let (devtype, devmodel) = model.device_type_model();
-    let requested = neg.var("DEVNAME").unwrap_or_default().to_ascii_uppercase();
     let kbdtype = neg.var("KBDTYPE").unwrap_or_else(|| "USB".into());
     let device = match link
         .device_allocate(requested.clone(), devtype.into(), devmodel.into(), kbdtype)
@@ -511,6 +515,96 @@ fn session(
         &peer,
     );
     let _ = link.device_status(device.clone(), 1);
+    r
+}
+
+/// A printer session: the named printer device, its writer started,
+/// and the writer's records (SCS) carried to the client until the
+/// connection drops. `BLOCKED(phase8)`: the printer record framing is
+/// RFC 2877 as read, unverified against a real printer client.
+#[allow(clippy::too_many_arguments)]
+fn printer_session(
+    tr: &Transport,
+    server: &mut Server,
+    link: &mut Link,
+    ev_rx: &Receiver<Ev>,
+    requested: &str,
+    devtype: &str,
+    model: &str,
+    peer: &str,
+) -> Result<(), String> {
+    let device = match link
+        .device_allocate(requested.to_string(), devtype.into(), model.into(), String::new())
+        .map_err(|e| e.to_string())?
+    {
+        Ok(d) => d,
+        Err(code) => {
+            let _ = tr.send(startup_response(&code[..4.min(code.len())], requested));
+            return Err(format!("{peer}: no printer device: {code}"));
+        }
+    };
+    tr.send(startup_response("I902", &device))?;
+    let path = dev::socket(&device);
+    let _ = std::fs::create_dir_all(dev::DIR);
+    let _ = std::fs::remove_file(&path);
+    let listener = UnixListener::bind(&path).map_err(|e| format!("{path}: {e}"))?;
+    listener.set_nonblocking(true).map_err(|e| e.to_string())?;
+    let started = link
+        .exec(format!("STRPRTWTR DEV({device}) WTR({device})"))
+        .map_err(|e| e.to_string())?;
+    if started.text.lines().next().is_some_and(|l| l.starts_with("CPF") && !l.starts_with("CPF3313")) {
+        eprintln!("qsjob: QTVDEVICE: {device}: {}", started.text.trim());
+    }
+    let mut writer: Option<Chan> = None;
+    let r = loop {
+        if writer.is_none() {
+            match listener.accept() {
+                Ok((c, _)) => {
+                    c.set_nonblocking(false).map_err(|e| e.to_string())?;
+                    c.set_read_timeout(Some(Duration::from_millis(50))).map_err(|e| e.to_string())?;
+                    writer = Some(Chan::new(c));
+                }
+                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {}
+                Err(e) => break Err(e.to_string()),
+            }
+        }
+        if let Some(w) = writer.as_mut() {
+            match w.recv::<ToDevice>() {
+                Ok(ToDevice::Write { opcode, data }) => tr.record(opcode, data)?,
+                Err(ipc::WireError::Io(ref e))
+                    if matches!(
+                        e.kind(),
+                        std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+                    ) => {}
+                Ok(ToDevice::Release) | Err(_) => writer = None,
+            }
+        }
+        match ev_rx.recv_timeout(Duration::from_millis(50)) {
+            Ok(Ev::Tcp(bytes)) => {
+                let (reply, records) = server.feed(&bytes);
+                if !reply.is_empty() {
+                    tr.send(reply)?;
+                }
+                for b in records {
+                    if let (Ok(r), Some(w)) = (Record::decode(&b), writer.as_mut()) {
+                        let _ = w.send(&FromDevice::Record {
+                            flags: r.flags,
+                            opcode: r.opcode,
+                            data: r.data,
+                        });
+                    }
+                }
+            }
+            Ok(Ev::TcpGone) | Err(mpsc::RecvTimeoutError::Disconnected) => break Ok(()),
+            Ok(_) | Err(mpsc::RecvTimeoutError::Timeout) => {}
+        }
+    };
+    if let Some(mut w) = writer.take() {
+        let _ = w.send(&FromDevice::Gone);
+    }
+    let _ = std::fs::remove_file(&path);
+    let _ = link.exec(format!("ENDWTR WTR({device}) OPTION(*IMMED)"));
+    let _ = link.device_status(device, 1);
     r
 }
 

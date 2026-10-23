@@ -82,6 +82,21 @@ fn create_devd(txn: &mut Txn<'_>, qsys: ObjectId, name: &str, d: &Devd) -> Resul
         .map_err(|_| code::CREATE_FAILED.to_string())
 }
 
+/// The output queue `QUSRSYS/<name>` of a virtual printer, made when
+/// missing.
+fn ensure_outq(txn: &mut Txn<'_>, qsys: ObjectId, name: &str) -> Result<(), String> {
+    let lib = wm::obj::library(txn, qsys, "QUSRSYS").map_err(|e| e.to_string())?;
+    let n = qsname::Name::parse(name).map_err(|_| code::NOT_VALID.to_string())?;
+    let l = store::obj::library::Library::load(txn, lib).map_err(|e| e.to_string())?;
+    if l.lookup(txn, types::OUTQ, n).map_err(|e| e.to_string())?.is_some() {
+        return Ok(());
+    }
+    let q = wm::obj::outq::OutQ::new("Output queue of a TN5250E printer");
+    wm::obj::create(txn, lib, n, types::OUTQ, "Output queue of a TN5250E printer", &stamp(), &q.encode())
+        .map(|_| ())
+        .map_err(|_| code::CREATE_FAILED.to_string())
+}
+
 /// A message to the system operator from the telnet server.
 fn to_qsysopr(system: &mut System, msgid: &str, text: &str) {
     let m = wm::obj::msgq::QMsg {
@@ -98,7 +113,9 @@ fn to_qsysopr(system: &mut System, msgid: &str, text: &str) {
 
 /// A display for a session: the one it named (made under `QAUTOCFG`
 /// when missing), else a free virtual display, else a new one within
-/// `QAUTOVRT`. Its status becomes "sign-on display".
+/// `QAUTOVRT`. Its status becomes "sign-on display". A printer type
+/// gets the named printer with its output queue.
+#[allow(clippy::too_many_lines)] // the named, the free and the new device
 pub fn allocate(
     system: &mut System,
     requested: &str,
@@ -114,8 +131,37 @@ pub fn allocate(
         n => Some(n.parse().unwrap_or(0)),
     };
     let requested = requested.trim().to_ascii_uppercase();
+    let printer = wm::obj::devd::is_printer_type(devtype);
     let r = in_store(system, |txn, qsys| {
         ensure_controller(txn, qsys)?;
+        if printer {
+            // A printer session names its device; it is made under
+            // QAUTOCFG with an output queue of its own in QUSRSYS.
+            if requested.is_empty() || qsname::Name::parse(&requested).is_err() {
+                return Err(code::NOT_VALID.into());
+            }
+            return match find_devd(txn, qsys, &requested) {
+                Some((id, mut d)) => {
+                    if !d.is_printer() {
+                        return Err(code::NOT_VALID.into());
+                    }
+                    if !d.online || d.status != DevStatus::VariedOn {
+                        return Err(code::BUSY.into());
+                    }
+                    d.status = DevStatus::Active;
+                    wm::obj::write(txn, id, &d.encode()).map_err(|e| e.to_string())?;
+                    Ok(requested.clone())
+                }
+                None if autocfg => {
+                    let mut d = Devd::virtual_printer(&requested, devtype, model);
+                    d.status = DevStatus::Active;
+                    ensure_outq(txn, qsys, &requested)?;
+                    create_devd(txn, qsys, &requested, &d)?;
+                    Ok(requested.clone())
+                }
+                None => Err(code::NO_AUTOCFG.into()),
+            };
+        }
         if !requested.is_empty() {
             if qsname::Name::parse(&requested).is_err() {
                 return Err(code::NOT_VALID.into());

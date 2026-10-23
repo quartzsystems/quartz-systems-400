@@ -206,7 +206,34 @@ impl Devd {
     /// Whether this is a display.
     #[must_use]
     pub fn is_display(&self) -> bool {
-        matches!(self.devcls.as_str(), "*DSP" | "*VRT")
+        matches!(self.devcls.as_str(), "*DSP" | "*VRT") && !is_printer_type(&self.devtype)
+    }
+
+    /// Whether this is a printer (the capture device or a TN5250E
+    /// printer session's device).
+    #[must_use]
+    pub fn is_printer(&self) -> bool {
+        self.devcls == "*PRT" || is_printer_type(&self.devtype)
+    }
+
+    /// A virtual printer a TN5250E printer session asked for; its
+    /// output queue is `QUSRSYS/<name>`.
+    #[must_use]
+    pub fn virtual_printer(name: &str, devtype: &str, model: &str) -> Self {
+        Self {
+            online: true,
+            status: DevStatus::VariedOn,
+            devcls: "*VRT".into(),
+            devtype: devtype.into(),
+            model: model.into(),
+            outq: format!("QUSRSYS/{name}"),
+            text: "Virtual printer of a TN5250E printer session".into(),
+            ctl: VIRTUAL_CONTROLLER.into(),
+            kbdtype: String::new(),
+            msgq: "QSYS/QSYSOPR".into(),
+            virtual_: false,
+            alwbln: false,
+        }
     }
 
     /// The payload.
@@ -278,6 +305,15 @@ impl Devd {
         }
         Ok(d)
     }
+}
+
+/// Whether a device type is a printer's.
+#[must_use]
+pub fn is_printer_type(devtype: &str) -> bool {
+    matches!(
+        devtype,
+        "QSCP" | "3812" | "5553" | "5224" | "5225" | "5256" | "5262" | "4214" | "4234" | "4245" | "6262"
+    )
 }
 
 /// The virtual display name for a number: `QPADEV0001`, hexadecimal

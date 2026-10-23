@@ -116,6 +116,20 @@ impl Sf {
     }
 }
 
+/// The printer device type and model of a TN5250E printer session's
+/// terminal type (`IBM-3812-1`, `IBM-5553-B01`, `IBM-5224-1`), when it
+/// is one.
+pub fn printer_type_model(terminal_type: &str) -> Option<(&'static str, &'static str)> {
+    match terminal_type.trim().to_ascii_uppercase().as_str() {
+        "IBM-3812-1" => Some(("3812", "1")),
+        "IBM-5553-B01" => Some(("5553", "B01")),
+        "IBM-5224-1" => Some(("5224", "1")),
+        "IBM-5225-1" => Some(("5225", "1")),
+        "IBM-5256-1" => Some(("5256", "1")),
+        _ => None,
+    }
+}
+
 /// The display models the server and the terminal know.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum Model {
