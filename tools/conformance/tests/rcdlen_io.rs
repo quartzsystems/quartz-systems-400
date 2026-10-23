@@ -69,6 +69,9 @@ fn update_open_of_a_program_described_file() {
         Box::new(resolve),
     )));
     let _ = Case::parse("CHK", CHECKER);
+    // A debugger with nothing under debug (the job process keeps one)
+    // does not guard production files.
+    job.debug = Some(mi::debug::Debugger::default());
     let r = job.call_program("CHECKER", "QGPL", &[]);
     let console = job.console.join("\n");
     let raised: Vec<String> = job.raised.iter().map(|e| e.msgid.clone()).collect();
@@ -77,4 +80,17 @@ fn update_open_of_a_program_described_file() {
         "call {r:?}; raised {raised:?}; console:\n{console}"
     );
     assert!(console.contains("LOCKME"), "console:\n{console}");
+    // With a program under debug and UPDPROD(*NO), the update open is
+    // refused with CPF4188.
+    job.console.clear();
+    job.raised.clear();
+    if let Some(d) = job.debug.as_mut() {
+        d.programs.push("QGPL/OTHER".into());
+    }
+    let _ = job.call_program("CHECKER", "QGPL", &[]);
+    assert!(
+        job.raised.iter().any(|e| e.msgid == "CPF4188"),
+        "raised {:?}",
+        job.raised.iter().map(|e| e.msgid.clone()).collect::<Vec<_>>()
+    );
 }

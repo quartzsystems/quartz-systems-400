@@ -231,8 +231,9 @@ pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc:
         member: None,
         actgrp: actgrp(j),
     };
-    // Under debug with UPDPROD(*NO), a production file is not changed.
-    if j.debug.as_ref().is_some_and(|d| !d.updprod)
+    // Under debug (a program named by STRDBG) with UPDPROD(*NO), a
+    // production file is not changed.
+    if j.debug.as_ref().is_some_and(|d| !d.updprod && !d.programs.is_empty())
         && spec.usage != qir::FileUsage::Input
         && !spec.lib.eq_ignore_ascii_case("QTEMP")
     {
