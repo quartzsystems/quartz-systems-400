@@ -95,10 +95,39 @@ panel with the golden's visible values and compare the character grid:
 | messages and objects | 13 | 2 against goldens (`dspmsgd-list` wraps text into column 1; `dspobjaut` centers a heading over another), 3 with no golden |
 | system and security | 8 | 1 against a golden (`dspautusr`: one key row on row 22), 7 with no golden |
 
-Not done: WRKSYSSTS, WRKDSKSTS, WRKSYSACT, WRKSHRPOOL (text path,
-`TODO(phase8)`), DSPSGNINF (no command definition), the `QUI*` APIs
-(QUIOPNDA and the rest), another job's job log and call stack from
-WRKJOB.
+Panels batch 2, work (`panels/work2.rs`, storage request 240):
+WRKSBMJOB, WRKSBSD, WRKSYSSTS, WRKDSKSTS, WRKSYSACT, WRKSHRPOOL (sizes
+and activity levels typed over run `CHGSHRPOOL`), WRKOUTQD, DSPSPLF
+(F19/F20, F11 folded, F16 find, the Control line), WRKLIB, WRKOBJLCK,
+WRKOBJPGP, DSPPFM (F10 side-by-side hex, F11 vertical hex), WRKJRN,
+WRKJRNA, DSPJRN, DSPJRNRCVA, DSPOVR, DSPSAVF (stub), WRKPRB (empty);
+WRKACTJOB gains its 27x132 view, three key sets, F14 Include, F20
+Subset, F16 Resequence and option 9. Goldens: `work2-panels.tn` (19);
+pub400 refused WRKSHRPOOL, WRKSYSSTS, WRKSYSACT, WRKPRB and WRKOBJPGP
+and the account has no journal, so those are tested for title and keys
+only.
+
+Panels batch 2, programs, configuration, security and editors
+(`panels/system2.rs`, storage request 270): DSPPGM, DSPSRVPGM and
+DSPMOD (one display per detail), DSPBNDDIR, DSPCMD, DSPPGMREF and
+DSPAUDJRNE (report viewer), WRKDEVD, WRKHDWRSC/DSPHDWRSC, DSPPTF,
+DSPUSRPRF's `*OBJAUT`, `*OBJOWN`, `*OBJPGP`, `*CMDAUT`, `*DEVAUT` and
+`*GRPMBR`, DSPAUTLOBJ, and the editors EDTLIBL, EDTOBJAUT, EDTAUTL and
+WRKSYSVAL option 2. Goldens: batch 8; 19 match, 4 are ignored, 10 are
+blocked on pub400 (title and keys only).
+
+UIM APIs and engine: the dialog engine is `uim::engine` behind a
+`Terminal` trait (the job's `Surface` implements it): field, extended,
+keys and search-index help, links, printing to `QSYSPRT`, confirmation
+panels, pop-up windows (R24), position-to and subsets, option errors
+(R26) and 27x132 panels. The `QUI*`/`QUH*` APIs are natives in
+`sysapi::uiapi`, with `*SCHIDX`, `CRTSCHIDX` and `ADDSCHIDXE`; the CL
+kit's `UIAPI` case drives QUIOPNDA, QUIDSPP and QUICLOA over a panel
+group. Goldens: 11 from pub400 (`batch8-uim`, `batch9-uimpos`);
+blocked: help windows and confirm panels (no oracle capture).
+
+Not done: DSPSGNINF (no command definition), another job's job log and
+call stack from WRKJOB.
 
 ## Section 4: menus
 
@@ -110,6 +139,49 @@ NETWORK, ... and ACCESS; §6). Every task-menu golden (46, with second
 pages) matches row for row except the copyright line and titles that
 name IBM i (`ui/menus/tests/task_menus.rs`, 49 tests). A session's
 `MAIN` is the `QSYS/MAIN` menu object through the UIM engine.
+
+## Section 5: system displays
+
+`work/qsjob/src/sysdsp/`: System Request, Attention and Print are
+taken in one place (`keys.rs`) wherever a job waits at its display or
+a program runs; the screen is put back after. The System Request menu
+is display file `QWSSYSRQ` (help in panel group `QWSSYSRQ`); option 2
+ends the innermost request (`CPF1907`, the programs cancelled to their
+control boundary), 80 disconnects, 90 signs off, 10 and 11 answer not
+available. A TN5250 session holds several jobs per display: secondary
+jobs (`TFRSECJOB`, option 1) and group jobs (`CHGGRPA`, `TFRGRPJOB`,
+`ENDGRPJOB`, `*GDA`; storage requests 200-207). The Attention key runs
+`SETATNPGM`'s program or the profile's `ATNPGM` (`*ASSIST` the
+`ASSIST` menu, `QSYS/QUSCMDLN` a command-line window). Break messages
+come up on Display Messages and `*EXT` inquiries on Display Program
+Messages. The Print key spools the screen to `QSYSPRT`. About QS/400
+(`QUIABOUT`) is F14 on the Information Assistant. Goldens:
+`sysreq-menu`, `sysreq-help`, `sysreq-3-dspjob`, `sysreq-4-dspmsg`,
+`sysreq-5-sndmsg`, `sysreq-7-wrkstnusr`, `attn-program`,
+`break-message` (pub400, batches 7 and 8). Blocked: options 1, 80 and
+90 on pub400, and Display Program Messages (`SNDPGMMSG` to `*EXT` is
+refused from a command line).
+
+## Section 6: developer tools
+
+See `TOOLS.md` for each tool's screens, keys and gaps. Each tool is a
+crate under `devtools/` (pure logic, host-tested) with a driver under
+`work/qsjob/src/devtools/`; IBM's tool screens are display files, so
+they are built as `uim::Screen` values or shipped DDS and compared with
+pub400 goldens.
+
+| Tool | Goldens (pub400, V7R5M0) | Screen tests | Storage requests | Blocked |
+|---|---|---|---|---|
+| PDM (`STRPDM`, `WRK*PDM`, `FNDSTRPDM`) | 32 `pdm-*` (`pdm.tn`, `pdm2.tn`) | all match by character | 320-325 | Confirm Delete, Rename, Change Text, the user-defined option displays (reaching them changes things) |
+| SEU (`STRSEU`) | 80 `seu-*` (five `seu-*.tn`) | 26 tests, about 60 goldens; message rows skipped | 300-302 | CMD and PF/LF prompts, browse of a CL member, recovery |
+| STRDBG, `STRSRVJOB` | 52 `dbg-*` (`dbg*.tn`) | 20 whole, 32 without the message or debug line | 380-387 | source rows, F13 and F15 (no program with a source view), `STRSRVJOB` refused in debug mode |
+| STRSST | none: pub400 refused (no `*SERVICE`) | 16 screens equal `golden/dst/`; 10 of SST's own in `golden/sst/` | 420-432 | all of SST against an oracle |
+
+During one SEU capture a key that leaked past its screen reached
+MAIN's "Set initial menu" (F23) and pub400 answered that the user
+profile was changed (most likely to the value it held). Every later
+SEU script ends without a `continue`; this is the one change made on
+pub400 in the phase.
 
 ## Section 7: the console
 

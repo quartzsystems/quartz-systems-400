@@ -13,7 +13,7 @@ shipped DDS in `ui/dspf/sys/`, and tests them against pub400 goldens
 | Tool | Crate | Driver | Storage requests | Goldens |
 |---|---|---|---|---|
 | SEU | `devtools/seu` | `devtools/seu.rs`, `seu/` | 300-302 | 80 `seu-*` |
-| PDM | `devtools/pdm` | `devtools/pdm.rs`, `pdm/` | 320-339 | 32 `pdm-*` |
+| PDM | `devtools/pdm` | `devtools/pdm/` | 320-339 | 32 `pdm-*` |
 | STRDBG | `devtools/dbg` | `devtools/dbg/` | 380-387 | 52 `dbg-*` |
 | STRSST | `devtools/sst` | `devtools/sst.rs` | 420-432 | `golden/dst/`, `golden/sst/` |
 
