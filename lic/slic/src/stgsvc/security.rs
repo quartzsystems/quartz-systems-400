@@ -188,9 +188,7 @@ pub fn actor() -> Option<Principal> {
 /// Require special authority `a` of the actor; the system has all.
 pub fn require(a: sec::profile::SpecialAuth, what: &str) -> Result<(), String> {
     match actor() {
-        Some(p) => p
-            .require(a, what)
-            .map_err(|e| e.to_string()),
+        Some(p) => p.require(a, what).map_err(|e| e.to_string()),
         None => Ok(()),
     }
 }
@@ -199,10 +197,12 @@ pub fn require(a: sec::profile::SpecialAuth, what: &str) -> Result<(), String> {
 /// its own user, or `*JOBCTL`.
 pub fn may_control(target_user: &str, job: &str) -> Result<(), String> {
     match actor() {
-        Some(p) if p.user != target_user && !p.has(sec::profile::SpecialAuth::JOBCTL) => Err(format!(
-            "CPF1343 {} is not authorized to control job {job}; *JOBCTL special authority is needed",
-            p.user
-        )),
+        Some(p) if p.user != target_user && !p.has(sec::profile::SpecialAuth::JOBCTL) => {
+            Err(format!(
+                "CPF1343 {} is not authorized to control job {job}; *JOBCTL special authority is needed",
+                p.user
+            ))
+        }
         _ => Ok(()),
     }
 }
@@ -215,7 +215,11 @@ pub fn check_priority(kw: &str, value: &str) -> Result<(), String> {
     };
     match (kw, value.trim().parse::<u8>()) {
         ("JOBPTY" | "OUTPTY" | "RUNPTY", Ok(n)) => {
-            let limit = if kw == "RUNPTY" { p.ptylmt * 10 } else { p.ptylmt };
+            let limit = if kw == "RUNPTY" {
+                p.ptylmt * 10
+            } else {
+                p.ptylmt
+            };
             if n < limit {
                 return Err(format!(
                     "CPF1337 {kw}({n}) is beyond the priority limit {} of user {}",
@@ -491,6 +495,7 @@ pub fn sign_on(
     password: &str,
     device: &str,
     console: bool,
+    proof: Option<sec::signon::Substitute>,
 ) -> Result<sec::signon::SignedOn, sec::signon::Refused> {
     use sec::signon::{Attempt, Refused, Values};
     let fail = |text: String| Refused {
@@ -516,23 +521,29 @@ pub fn sign_on(
         console,
         sessions,
         now: crate::ipl::system::now_unix(),
+        proof,
     };
     let r = sec::guard::as_system(|| {
         let s = system.storage.as_mut()?;
         let qsys = s.qsys?;
         let mut txn = s.store.begin().ok()?;
         let dev_name = device.to_string();
-        let device_authority = move |txn: &mut store::Txn<'_>, who: &str| -> Option<sec::auth::bits::Auth> {
-            let lib = store::obj::library::Library::load(txn, qsys).ok()?;
-            let id = lib
-                .lookup(txn, store::obj::types::DEVD, qsname::Name::parse(&dev_name).ok()?)
-                .ok()??;
-            let h = sec::auth::grant::header(txn, id).ok()?;
-            if store::obj::header::text_of(&h.owner) == who {
-                return Some(sec::auth::bits::Auth::of(h.owner_authority));
-            }
-            sec::auth::grant::private(txn, &h, who).ok()?
-        };
+        let device_authority =
+            move |txn: &mut store::Txn<'_>, who: &str| -> Option<sec::auth::bits::Auth> {
+                let lib = store::obj::library::Library::load(txn, qsys).ok()?;
+                let id = lib
+                    .lookup(
+                        txn,
+                        store::obj::types::DEVD,
+                        qsname::Name::parse(&dev_name).ok()?,
+                    )
+                    .ok()??;
+                let h = sec::auth::grant::header(txn, id).ok()?;
+                if store::obj::header::text_of(&h.owner) == who {
+                    return Some(sec::auth::bits::Auth::of(h.owner_authority));
+                }
+                sec::auth::grant::private(txn, &h, who).ok()?
+            };
         let r = sec::signon::sign_on(&mut txn, qsys, &attempt, &values, &device_authority).ok()?;
         txn.commit().ok()?;
         Some(r)
@@ -555,7 +566,10 @@ fn user_queue(system: &mut System, user: &str) {
         let lib = wm::obj::library(&mut txn, qsys, "QUSRSYS").ok()?;
         let name = qsname::Name::parse(user).ok()?;
         let l = store::obj::library::Library::load(&mut txn, lib).ok()?;
-        if l.lookup(&mut txn, store::obj::types::MSGQ, name).ok()?.is_some() {
+        if l.lookup(&mut txn, store::obj::types::MSGQ, name)
+            .ok()?
+            .is_some()
+        {
             return Some(());
         }
         let stamp = wm::obj::Stamp {
@@ -564,7 +578,16 @@ fn user_queue(system: &mut System, user: &str) {
             now: crate::ipl::system::now_unix(),
         };
         let q = wm::obj::msgq::MsgQ::default();
-        let id = wm::obj::create(&mut txn, lib, name, store::obj::types::MSGQ, "User message queue", &stamp, &q.encode()).ok()?;
+        let id = wm::obj::create(
+            &mut txn,
+            lib,
+            name,
+            store::obj::types::MSGQ,
+            "User message queue",
+            &stamp,
+            &q.encode(),
+        )
+        .ok()?;
         // The user owns its queue.
         let qsys_id = qsys;
         sec::auth::grant::set_owner(&mut txn, qsys_id, id, user, true).ok()?;
@@ -578,7 +601,15 @@ fn vary_off(system: &mut System, device: &str) {
         let s = system.storage.as_mut()?;
         let qsys = s.qsys?;
         let mut txn = s.store.begin().ok()?;
-        let id = wm::obj::find(&mut txn, qsys, &store::obj::NameContext::default(), "QSYS", device, store::obj::types::DEVD).ok()?;
+        let id = wm::obj::find(
+            &mut txn,
+            qsys,
+            &store::obj::NameContext::default(),
+            "QSYS",
+            device,
+            store::obj::types::DEVD,
+        )
+        .ok()?;
         let mut d = wm::obj::devd::Devd::decode(&wm::obj::read(&mut txn, id).ok()?).ok()?;
         d.online = false;
         wm::obj::write(&mut txn, id, &d.encode()).ok()?;
@@ -588,7 +619,13 @@ fn vary_off(system: &mut System, device: &str) {
 
 /// `CHGPWD` for the job's own user; `validated` says the job already
 /// ran `QPWDVLDPGM`.
-pub fn chg_pwd(system: &mut System, me: &Principal, current: &str, new: &str, validated: bool) -> Result<(), String> {
+pub fn chg_pwd(
+    system: &mut System,
+    me: &Principal,
+    current: &str,
+    new: &str,
+    validated: bool,
+) -> Result<(), String> {
     let program = sysval_text(system, "QPWDVLDPGM");
     let program = program.split_whitespace().next().unwrap_or("*NONE");
     if !program.starts_with('*') && !validated {
@@ -617,9 +654,16 @@ pub fn audit_lic(events: &[(String, String, String)]) {
     use sec::audit::{Event, Kind};
     for (kind, code, user) in events {
         let e = match kind.as_str() {
-            "ST" => Event::new(Kind::St).set("ETYP", "A").set("SRVT", code.as_str()).set("USRP", user.as_str()),
-            "DS" => Event::new(Kind::Ds).set("USRP", user.as_str()).set("RTYP", code.as_str()),
-            "PW" => Event::new(Kind::Pw).set("ETYP", code.as_str()).set("USRP", user.as_str()),
+            "ST" => Event::new(Kind::St)
+                .set("ETYP", "A")
+                .set("SRVT", code.as_str())
+                .set("USRP", user.as_str()),
+            "DS" => Event::new(Kind::Ds)
+                .set("USRP", user.as_str())
+                .set("RTYP", code.as_str()),
+            "PW" => Event::new(Kind::Pw)
+                .set("ETYP", code.as_str())
+                .set("USRP", user.as_str()),
             _ => continue,
         };
         sec::audit::record(e.by(user));
@@ -646,7 +690,12 @@ pub fn api(
             let mut handle = sec::password::fresh_salt()[..12].to_vec();
             handle[0] |= 1;
             ctx.handles.insert(handle.clone(), ok);
-            sec::audit::record(Event::new(Kind::Ps).set("ETYP", "H").set("USRP", me.user.as_str()).set("NUSR", user.as_str()));
+            sec::audit::record(
+                Event::new(Kind::Ps)
+                    .set("ETYP", "H")
+                    .set("USRP", me.user.as_str())
+                    .set("NUSR", user.as_str()),
+            );
             Ok(Answer::Bytes { data: handle })
         }
         Query::SetHandle { handle } => {
@@ -658,24 +707,50 @@ pub fn api(
             let mut p = principal(system, &user);
             p.adopted = std::mem::take(&mut ctx.session.borrow_mut().principal.adopted);
             *ctx.session.borrow_mut() = sec::auth::cache::Session::new(p);
-            sec::audit::record(Event::new(Kind::Ps).set("ETYP", "S").set("USRP", me.user.as_str()).set("NUSR", user.as_str()));
+            sec::audit::record(
+                Event::new(Kind::Ps)
+                    .set("ETYP", "S")
+                    .set("USRP", me.user.as_str())
+                    .set("NUSR", user.as_str()),
+            );
             Ok(Answer::Done)
         }
         Query::ReleaseHandle { handle } => {
-            let user = ctx.handles.remove(&handle).ok_or_else(|| sysapi::ApiFail::id("CPF22E9"))?;
-            sec::audit::record(Event::new(Kind::Ps).set("ETYP", "E").set("USRP", me.user.as_str()).set("NUSR", user.as_str()));
+            let user = ctx
+                .handles
+                .remove(&handle)
+                .ok_or_else(|| sysapi::ApiFail::id("CPF22E9"))?;
+            sec::audit::record(
+                Event::new(Kind::Ps)
+                    .set("ETYP", "E")
+                    .set("USRP", me.user.as_str())
+                    .set("NUSR", user.as_str()),
+            );
             Ok(Answer::Done)
         }
         Query::ChangePassword { user, current, new } => {
             let target = principal(system, &user.to_ascii_uppercase());
-            chg_pwd(system, &target, &current, &new, true).map(|()| Answer::Done).map_err(|e| {
-                sysapi::ApiFail::id(e.split_whitespace().next().filter(|w| w.starts_with("CP")).unwrap_or("CPF22E2"))
-            })
+            chg_pwd(system, &target, &current, &new, true)
+                .map(|()| Answer::Done)
+                .map_err(|e| {
+                    sysapi::ApiFail::id(
+                        e.split_whitespace()
+                            .next()
+                            .filter(|w| w.starts_with("CP"))
+                            .unwrap_or("CPF22E2"),
+                    )
+                })
         }
         other => {
-            let s = system.storage.as_mut().ok_or_else(|| sysapi::ApiFail::id("CPF3CF2"))?;
+            let s = system
+                .storage
+                .as_mut()
+                .ok_or_else(|| sysapi::ApiFail::id("CPF3CF2"))?;
             let qsys = s.qsys.ok_or_else(|| sysapi::ApiFail::id("CPF3CF2"))?;
-            let mut txn = s.store.begin().map_err(|_| sysapi::ApiFail::id("CPF3CF2"))?;
+            let mut txn = s
+                .store
+                .begin()
+                .map_err(|_| sysapi::ApiFail::id("CPF3CF2"))?;
             let a = sec::api::answer(&mut txn, qsys, &me, &other).map_err(|e| api_fail(&e))?;
             txn.commit().map_err(|_| sysapi::ApiFail::id("CPF3CF2"))?;
             a.ok_or_else(|| sysapi::ApiFail::id("CPF3CF2"))
@@ -686,42 +761,78 @@ pub fn api(
 /// `QSYGETPH`'s checks: a password as sign-on checks it (`CPF22E2`
 /// wrong, `CPF22E3` disabled, `CPF22E4` expired, `CPF22E5` none), or
 /// `*NOPWD`, `*NOPWDCHK`, `*NOPWDSTS` with `*USE` to the profile.
-fn handle_check(system: &mut System, me: &Principal, user: &str, password: &str) -> sec::Result<String> {
+fn handle_check(
+    system: &mut System,
+    me: &Principal,
+    user: &str,
+    password: &str,
+) -> sec::Result<String> {
     let values = sec::signon::Values::from_sysvals(&|n: &str| sysval_text(system, n));
     let s = system
         .storage
         .as_mut()
         .ok_or_else(|| sec::SecError::msg("CPF3CF2", "The store is not open."))?;
-    let qsys = s.qsys.ok_or_else(|| sec::SecError::msg("CPF3CF2", "The store is not open."))?;
+    let qsys = s
+        .qsys
+        .ok_or_else(|| sec::SecError::msg("CPF3CF2", "The store is not open."))?;
     let mut txn = s.store.begin()?;
     let (id, mut p) = sec::profile::objects::read(&mut txn, qsys, user)?;
     let special = password.trim().to_ascii_uppercase();
     if matches!(special.as_str(), "*NOPWD" | "*NOPWDCHK" | "*NOPWDSTS") {
         let h = store::obj::ops::read_header(&mut txn, id)?.1;
-        let ok = sec::auth::search::check(&mut txn, qsys, me, &h, sec::auth::required::Need::Bits(sec::auth::bits::Auth::USE))?;
+        let ok = sec::auth::search::check(
+            &mut txn,
+            qsys,
+            me,
+            &h,
+            sec::auth::required::Need::Bits(sec::auth::bits::Auth::USE),
+        )?;
         if !ok.allowed {
-            return Err(sec::SecError::msg("CPF22E9", format!("Not authorized to user profile {user}.")));
+            return Err(sec::SecError::msg(
+                "CPF22E9",
+                format!("Not authorized to user profile {user}."),
+            ));
         }
         if p.disabled && special != "*NOPWDSTS" {
-            return Err(sec::SecError::msg("CPF22E3", format!("User profile {user} is disabled.")));
+            return Err(sec::SecError::msg(
+                "CPF22E3",
+                format!("User profile {user} is disabled."),
+            ));
         }
         return Ok(p.name);
     }
     if p.disabled {
-        return Err(sec::SecError::msg("CPF22E3", format!("User profile {user} is disabled.")));
+        return Err(sec::SecError::msg(
+            "CPF22E3",
+            format!("User profile {user} is disabled."),
+        ));
     }
     if p.pwd_none {
-        return Err(sec::SecError::msg("CPF22E5", format!("No password is associated with user profile {user}.")));
+        return Err(sec::SecError::msg(
+            "CPF22E5",
+            format!("No password is associated with user profile {user}."),
+        ));
     }
     if !sec::password::matches(&p, password, values.policy.pwdlvl) {
         p.signon_invalid += 1;
         sec::profile::objects::write(&mut txn, id, &p)?;
         txn.commit()?;
-        sec::audit::record(sec::audit::Event::new(sec::audit::Kind::Pw).set("ETYP", "P").set("USRP", user).by(user));
-        return Err(sec::SecError::msg("CPF22E2", format!("The password is not correct for user profile {user}.")));
+        sec::audit::record(
+            sec::audit::Event::new(sec::audit::Kind::Pw)
+                .set("ETYP", "P")
+                .set("USRP", user)
+                .by(user),
+        );
+        return Err(sec::SecError::msg(
+            "CPF22E2",
+            format!("The password is not correct for user profile {user}."),
+        ));
     }
     if values.policy.expired(&p, crate::ipl::system::now_unix()) {
-        return Err(sec::SecError::msg("CPF22E4", format!("The password of user profile {user} has expired.")));
+        return Err(sec::SecError::msg(
+            "CPF22E4",
+            format!("The password of user profile {user} has expired."),
+        ));
     }
     Ok(p.name)
 }

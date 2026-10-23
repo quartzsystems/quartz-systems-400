@@ -3,8 +3,10 @@
 // root directory of this project.
 
 //! Passwords: the forms `QPWDLVL` accepts, Argon2id hashes of them with a
-//! salt per hash, and checking one at sign-on. Nothing here is an IBM
-//! hash format; `docs/SECURITY.md` says what is stored.
+//! salt per hash, and checking one at sign-on. Beside the hashes a
+//! profile keeps the RFC 4777 tokens of its password (DES of the short
+//! form, SHA-1 of the long form) so a TN5250E client can sign on with a
+//! substitute; `docs/SECURITY.md` says what is stored.
 
 pub mod policy;
 pub mod rules;
@@ -45,8 +47,84 @@ pub fn short_ok(p: &str) -> bool {
 #[must_use]
 pub fn canonical(p: &str, form: PwdForm) -> String {
     match form {
-        PwdForm::Short => p.to_ascii_uppercase(),
-        PwdForm::Long => p.to_string(),
+        PwdForm::Short | PwdForm::DesToken => p.to_ascii_uppercase(),
+        PwdForm::Long | PwdForm::ShaToken => p.to_string(),
+    }
+}
+
+fn hex(b: &[u8]) -> String {
+    use std::fmt::Write as _;
+    b.iter().fold(String::new(), |mut s, x| {
+        let _ = write!(s, "{x:02x}");
+        s
+    })
+}
+
+fn unhex(s: &str) -> Vec<u8> {
+    (0..s.len() / 2)
+        .filter_map(|i| u8::from_str_radix(&s[2 * i..2 * i + 2], 16).ok())
+        .collect()
+}
+
+/// The RFC 4777 tokens of a new password: the DES token when the
+/// password has a short form, the SHA-1 token of the form the level
+/// signs on with.
+#[must_use]
+pub fn tokens_for(p: &str, pwdlvl: u8) -> Vec<PwdHash> {
+    let mut v = Vec::new();
+    if short_ok(p) {
+        let name = pwdsub::ebcdic_name(p);
+        // The token is of the password alone: the user folds in at
+        // sign-on through the substitute.
+        v.push(PwdHash {
+            form: PwdForm::DesToken,
+            phc: hex(&name),
+        });
+    }
+    let long = canonical(p, form_for(pwdlvl));
+    v.push(PwdHash {
+        form: PwdForm::ShaToken,
+        phc: hex(&pwdsub::utf16_password(&long)),
+    });
+    v
+}
+
+/// Whether an RFC 4777 substitute proves the profile's password: the
+/// twenty-byte SHA-1 form at levels 2 and 3, the eight-byte DES form at
+/// 0 and 1.
+#[must_use]
+pub fn verify_substitute(
+    prf: &UsrPrf,
+    user: &str,
+    s: &crate::signon::Substitute,
+    pwdlvl: u8,
+) -> bool {
+    if prf.pwd_none {
+        return false;
+    }
+    match s.substitute.len() {
+        20 if pwdlvl >= 2 => {
+            let Some(h) = prf.hash(PwdForm::ShaToken) else {
+                return false;
+            };
+            let u = pwdsub::utf16_name(user);
+            let token = pwdsub::sha_token(&u, &unhex(&h.phc));
+            pwdsub::sha_substitute(&token, &u, &s.server_seed, &s.client_seed)[..]
+                == s.substitute[..]
+        }
+        8 if pwdlvl <= 1 => {
+            let Some(h) = prf.hash(PwdForm::DesToken) else {
+                return false;
+            };
+            let u = pwdsub::ebcdic_name(user);
+            let mut pw = [0x40u8; 10];
+            let stored = unhex(&h.phc);
+            pw[..stored.len().min(10)].copy_from_slice(&stored[..stored.len().min(10)]);
+            let token = pwdsub::des_token(&u, &pw);
+            pwdsub::des_substitute(&token, &u, &s.server_seed, &s.client_seed)[..]
+                == s.substitute[..]
+        }
+        _ => false,
     }
 }
 
@@ -99,6 +177,12 @@ pub fn verify(h: &PwdHash, p: &str) -> bool {
 /// when the password fits it; level 3 keeps only the long form.
 #[must_use]
 pub fn hashes_for(p: &str, pwdlvl: u8) -> Vec<PwdHash> {
+    let mut v = hashes_only(p, pwdlvl);
+    v.extend(tokens_for(p, pwdlvl));
+    v
+}
+
+fn hashes_only(p: &str, pwdlvl: u8) -> Vec<PwdHash> {
     match pwdlvl {
         0 | 1 => vec![
             hash(p, PwdForm::Short, fresh_salt()),
@@ -143,9 +227,55 @@ mod tests {
         assert!(!matches(&p, "SECRET1", 3));
         assert!(matches(&p, "secret1", 0));
         p.hashes = hashes_for("Long pass phrase!", 3);
-        assert_eq!(p.hashes.len(), 1);
+        assert_eq!(p.hashes.iter().filter(|h| !h.form.is_token()).count(), 1);
+        assert!(p.hash(PwdForm::ShaToken).is_some());
+        assert!(p.hash(PwdForm::DesToken).is_none());
         assert!(!matches(&p, "x", 0));
         p.pwd_none = true;
         assert!(!matches(&p, "Long pass phrase!", 3));
+    }
+
+    #[test]
+    fn substitutes_prove_the_password() {
+        let (server, client) = ([1u8; 8], [2u8; 8]);
+        let mut p = UsrPrf::new("BOB", 40);
+        p.pwd_none = false;
+        p.hashes = hashes_for("Secret1", 2);
+        let sha = crate::signon::Substitute {
+            server_seed: server,
+            client_seed: client,
+            substitute: pwdsub::sha_password("bob", "Secret1", &server, &client).to_vec(),
+        };
+        assert!(verify_substitute(&p, "BOB", &sha, 2));
+        assert!(
+            !verify_substitute(&p, "BOB", &sha, 0),
+            "SHA-1 is not for level 0"
+        );
+        let wrong = crate::signon::Substitute {
+            substitute: pwdsub::sha_password("bob", "Secret2", &server, &client).to_vec(),
+            ..sha.clone()
+        };
+        assert!(!verify_substitute(&p, "BOB", &wrong, 2));
+        p.hashes = hashes_for("Secret1", 0);
+        let des = crate::signon::Substitute {
+            server_seed: server,
+            client_seed: client,
+            substitute: pwdsub::des_password("bob", "secret1", &server, &client).to_vec(),
+        };
+        assert!(verify_substitute(&p, "BOB", &des, 0));
+        assert!(
+            !verify_substitute(&p, "BOB", &des, 2),
+            "DES is not for level 2"
+        );
+        let other_user = pwdsub::des_password("ALICE", "secret1", &server, &client).to_vec();
+        assert!(!verify_substitute(
+            &p,
+            "BOB",
+            &crate::signon::Substitute {
+                substitute: other_user,
+                ..des
+            },
+            0
+        ));
     }
 }

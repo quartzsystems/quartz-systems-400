@@ -42,6 +42,7 @@ fn attempt(user: &str, password: &str) -> Attempt {
         console: false,
         sessions: 0,
         now: NOW,
+        proof: None,
     }
 }
 

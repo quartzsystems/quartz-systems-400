@@ -97,20 +97,59 @@ pub const MAIN_OPTIONS: &[&str] = &[
     "QS/400 Access tasks",
 ];
 
+/// The sign-on display as the display file `QDSIGNON` lays it out:
+/// the system, subsystem and device at the top right, the five entry
+/// fields, the copyright line. `long_password` is password level 2
+/// and 3 (128 characters, nondisplay).
+#[must_use]
+pub fn sign_on(
+    system: &str,
+    subsystem: &str,
+    device: &str,
+    long_password: bool,
+    message: &str,
+) -> Panel {
+    let mut p = Panel::default();
+    p.text(1, 36, 1, "Sign On");
+    p.text(2, 48, 0, "System  . . . . . :");
+    p.text(2, 68, 0, system);
+    p.text(3, 48, 0, "Subsystem . . . . :");
+    p.text(3, 68, 0, subsystem);
+    p.text(4, 48, 0, "Display . . . . . :");
+    p.text(4, 68, 0, device);
+    p.text(6, 17, 0, "User  . . . . . . . . . . . . . .");
+    p.field(6, 53, 10, "");
+    p.text(7, 17, 0, "Password  . . . . . . . . . . . .");
+    p.hidden(7, 53, if long_password { 128 } else { 10 });
+    p.text(8, 17, 0, "Program/procedure . . . . . . . .");
+    p.field(8, 53, 10, "");
+    p.text(9, 17, 0, "Menu  . . . . . . . . . . . . . .");
+    p.field(9, 53, 10, "");
+    p.text(10, 17, 0, "Current library . . . . . . . . .");
+    p.field(10, 53, 10, "");
+    p.text(24, 43, 1, "(C) COPYRIGHT QUARTZ SYSTEMS 2026.");
+    p.cursor = Some((6, 53));
+    p.message = message.into();
+    p.error = !message.is_empty();
+    p
+}
+
 /// The interim MAIN menu with the command line holding `field`.
 #[must_use]
 pub fn main_menu(system: &str, field: &str, message: &str) -> Panel {
     let mut p = Panel::default();
+    // The geometry of IBM's MAIN, measured on the oracle
+    // (tools/conformance/golden/verified/pub400/main-menu.txt).
     p.text(1, 2, 1, "MAIN");
-    p.text(1, 31, 1, "QS/400 Main Menu");
+    p.text(1, 33, 1, "QS/400 Main Menu");
     p.text(2, 62, 0, "System:");
     p.text(2, 72, 0, system);
-    p.text(4, 2, 0, "Select one of the following:");
+    p.text(3, 2, 0, "Select one of the following:");
     for (i, o) in MAIN_OPTIONS.iter().enumerate() {
-        let row = u8::try_from(6 + i).expect("few options");
-        p.text(row, 6, 0, format!("{:>3}. {o}", i + 1));
+        let row = u8::try_from(5 + i).expect("few options");
+        p.text(row, 5, 0, format!("{:>3}. {o}", i + 1));
     }
-    p.text(18, 6, 0, " 90. Sign off");
+    p.text(17, 5, 0, " 90. Sign off");
     p.text(19, 2, 0, "Selection or command");
     p.text(20, 2, 1, "===>");
     p.field(20, 7, 73, field);

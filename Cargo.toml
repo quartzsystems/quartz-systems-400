@@ -38,6 +38,7 @@ members = [
     "work/stg",
     # Security: profiles, passwords, authority, auditing.
     "security/sec",
+    "security/pwdsub",
     # Commands: definitions, the analyzer, the prompter, CL, the system command set.
     "command/cmd",
     "command/sys-cpps",

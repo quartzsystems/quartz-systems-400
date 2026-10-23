@@ -13,6 +13,7 @@
 
 pub mod cmd;
 pub mod ctl;
+pub mod dev;
 mod error;
 pub mod job;
 pub mod joblog;

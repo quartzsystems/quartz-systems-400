@@ -116,6 +116,20 @@ pub enum PwdForm {
     Short,
     /// Levels 2 and 3: at most 128 characters, case-sensitive.
     Long,
+    /// The RFC 4777 DES token of the short form (hex), for the telnet
+    /// auto-signon of levels 0 and 1.
+    DesToken,
+    /// The RFC 4777 SHA-1 token of the long form (hex), for levels 2
+    /// and 3.
+    ShaToken,
+}
+
+impl PwdForm {
+    /// Whether the form is a sign-on token rather than a hash.
+    #[must_use]
+    pub fn is_token(self) -> bool {
+        matches!(self, Self::DesToken | Self::ShaToken)
+    }
 }
 
 /// One stored hash: its form and its Argon2id PHC string.
@@ -132,6 +146,8 @@ impl PwdHash {
         let mut b = vec![match self.form {
             PwdForm::Short => 0,
             PwdForm::Long => 1,
+            PwdForm::DesToken => 2,
+            PwdForm::ShaToken => 3,
         }];
         b.extend_from_slice(self.phc.as_bytes());
         b
@@ -142,10 +158,11 @@ impl PwdHash {
             .split_first()
             .ok_or_else(|| SecError::Corrupt("empty password item".into()))?;
         Ok(Self {
-            form: if f == 0 {
-                PwdForm::Short
-            } else {
-                PwdForm::Long
+            form: match f {
+                0 => PwdForm::Short,
+                2 => PwdForm::DesToken,
+                3 => PwdForm::ShaToken,
+                _ => PwdForm::Long,
             },
             phc: String::from_utf8_lossy(rest).into_owned(),
         })
@@ -485,6 +502,8 @@ impl UsrPrf {
             a | match h.form {
                 PwdForm::Short => 1,
                 PwdForm::Long => 2,
+                PwdForm::DesToken => 4,
+                PwdForm::ShaToken => 8,
             }
         });
         r.set_uint("PwdForms", forms);

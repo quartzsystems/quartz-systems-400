@@ -8,6 +8,7 @@ publish.workspace = true
 
 [dependencies]
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+pwdsub = { path = "../pwdsub", version = "0.1.0" }
 ipc = { path = "../../work/ipc", version = "0.1.0" }
 qsname = { path = "../../storage/qsname", version = "0.1.0" }
 store = { path = "../../storage/store", version = "0.1.0" }

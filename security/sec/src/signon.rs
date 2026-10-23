@@ -39,7 +39,27 @@ pub struct Attempt {
     pub sessions: u32,
     /// Unix seconds.
     pub now: u64,
+    /// An RFC 4777 substitute in place of the password (auto-signon).
+    pub proof: Option<Substitute>,
 }
+
+/// What a TN5250E client sent to prove its password: the seeds both
+/// sides used and the substitute it computed.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Substitute {
+    /// The server's seed.
+    pub server_seed: [u8; 8],
+    /// The client's seed.
+    pub client_seed: [u8; 8],
+    /// The substitute: eight bytes (DES) or twenty (SHA-1).
+    pub substitute: Vec<u8>,
+}
+
+wire_struct!(Substitute {
+    server_seed,
+    client_seed,
+    substitute
+});
 
 /// What the display does next.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -208,7 +228,11 @@ pub fn sign_on(
         )));
     }
     let form = form_for(v.policy.pwdlvl);
-    if !p.hash(form).is_some_and(|h| verify(h, &a.password)) {
+    let proven = match &a.proof {
+        Some(s) => crate::password::verify_substitute(&p, &user, s, v.policy.pwdlvl),
+        None => p.hash(form).is_some_and(|h| verify(h, &a.password)),
+    };
+    if !proven {
         pw("P", &user, &a.device);
         p.signon_invalid += 1;
         let r = match v.maxsign {

@@ -338,4 +338,17 @@ ipc::rpc! {
     /// resolved command, its parameter block and which parameters the
     /// caller gave.
     131 => fn run_cmd / RunCmd (name: String, segments: Vec<Option<Vec<u8>>>, specified: Vec<bool>, typed: String) -> CmdReply;
+
+    /// A display device for a TN5250E session: the one named (made
+    /// under `QAUTOCFG` when missing), else a free or new virtual
+    /// display within `QAUTOVRT`. `Err` is the RFC 2877 response code.
+    132 => fn device_allocate / DeviceAllocate (requested: String, devtype: String, model: String, kbdtype: String) -> Result<String, String>;
+    /// A display's status: 1 varied on, 2 sign-on display, 3 active, 4
+    /// recovery pending.
+    133 => fn device_status / DeviceStatus (device: String, status: u8) -> Result<(), String>;
+    /// `PWRDWNSYS` from a job that is not at the console: the service
+    /// hands it to `slic`.
+    134 => fn power_down / PowerDown (immediate: bool, delay: u32, restart: bool) -> Result<(), String>;
+    /// Sign on with an RFC 4777 substitute instead of a password.
+    135 => fn sign_on_substitute / SignOnSubstitute (user: String, device: String, proof: sec::signon::Substitute) -> Result<sec::signon::SignedOn, sec::signon::Refused>;
 }

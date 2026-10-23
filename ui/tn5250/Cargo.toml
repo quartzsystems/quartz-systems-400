@@ -8,9 +8,8 @@ publish.workspace = true
 
 [dependencies]
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+pwdsub = { path = "../../security/pwdsub", version = "0.1.0" }
 thiserror.workspace = true
-des = "0.9.0"
-sha1 = "0.11.0"
 
 [lints]
 workspace = true

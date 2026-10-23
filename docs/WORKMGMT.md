@@ -494,25 +494,52 @@ what is due. An entry due before the current IPL started was missed;
 `*SBMRLS` submits it, `*SBMHLD` submits it held, `*NOSBM` moves on to
 its next date. Each submission is logged in QHST as `CPI1E63`.
 
-### `DeviceDescription` (128 bytes)
+### `DeviceDescription` (192 bytes)
 
 The payload of a `*DEVD`. Phase 5 has the capture device
 `QSYS/QSCAPTURE`, type `QSCP`, whose writer renders spooled files to
-text and PDF in the store; real printers are `MIGRATE(phase10)`.
+text and PDF in the store; Phase 8 adds the virtual displays of
+TN5250E sessions (`QPADEVnnnn`, class `*VRT`, on the controller
+`QPACTL01`) and the console `QSCONSOLE` (`*DSP`); real printers are
+`MIGRATE(phase10)`. Version 1 (128 bytes, ending at `Text` and a
+16-byte reserve) is still read.
 
 | Offset | Size | Field | Notes |
 |---|---|---|---|
 | 0 | 8 | Magic | `QSWMDEVD` in ASCII |
-| 8 | 2 | Version | 1 |
+| 8 | 2 | Version | 2 |
 | 10 | 1 | Online | varied on |
-| 11 | 1 | Reserved | zero |
-| 12 | 10 | DevCls | `*PRT` |
-| 22 | 10 | Type | `QSCP` |
-| 32 | 10 | Model | |
+| 11 | 1 | Status | 0 varied off, 1 varied on, 2 sign-on display, 3 active, 4 recovery pending |
+| 12 | 10 | DevCls | `*PRT`, `*DSP`, `*VRT` |
+| 22 | 10 | Type | `QSCP`, `3179`, `3477`, `5555` |
+| 32 | 10 | Model | `1`, `2`, `FC`, `C01` |
 | 42 | 10 | OutqName | the device's queue |
 | 52 | 10 | OutqLib | |
 | 62 | 50 | Text | |
-| 112 | 16 | Reserved2 | zero |
+| 112 | 10 | Ctl | the controller, `QPACTL01` for displays |
+| 122 | 10 | KbdType | `KBDTYPE` |
+| 132 | 10 | MsgqName | the device's message queue |
+| 142 | 10 | MsgqLib | |
+| 152 | 1 | Virtual | created by `QAUTOVRT` |
+| 153 | 1 | AlwBln | `ALWBLN(*YES)` |
+| 154 | 38 | Reserved2 | zero |
+
+### `ControllerDescription` (96 bytes)
+
+The payload of a `*CTLD`. Phase 8 has the virtual workstation
+controller `QSYS/QPACTL01` (`*VWS`), made when the first TN5250E
+session asks for a display; lines and real controllers are
+`MIGRATE(phase10)`.
+
+| Offset | Size | Field | Notes |
+|---|---|---|---|
+| 0 | 8 | Magic | `QSWMCTLD` in ASCII |
+| 8 | 2 | Version | 1 |
+| 10 | 1 | Online | varied on at IPL |
+| 11 | 1 | Reserved | zero |
+| 12 | 10 | Type | `*VWS` |
+| 22 | 50 | Text | |
+| 72 | 24 | Reserved2 | zero |
 
 ### `OutputQueue` (256 bytes)
 

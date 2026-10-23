@@ -521,6 +521,8 @@ pub fn password_blob(p: &crate::profile::UsrPrf) -> Vec<u8> {
         b.push(match h.form {
             crate::profile::PwdForm::Short => 0,
             crate::profile::PwdForm::Long => 1,
+            crate::profile::PwdForm::DesToken => 2,
+            crate::profile::PwdForm::ShaToken => 3,
         });
         b.extend_from_slice(&u16::try_from(h.phc.len()).unwrap_or(0).to_le_bytes());
         b.extend_from_slice(h.phc.as_bytes());
@@ -541,10 +543,11 @@ fn blob_hashes(b: &[u8]) -> Result<Vec<crate::profile::PwdHash>> {
             .ok_or_else(bad)?;
         let phc = rest.get(at + 3..at + 3 + n).ok_or_else(bad)?;
         out.push(crate::profile::PwdHash {
-            form: if form == 0 {
-                crate::profile::PwdForm::Short
-            } else {
-                crate::profile::PwdForm::Long
+            form: match form {
+                0 => crate::profile::PwdForm::Short,
+                2 => crate::profile::PwdForm::DesToken,
+                3 => crate::profile::PwdForm::ShaToken,
+                _ => crate::profile::PwdForm::Long,
             },
             phc: String::from_utf8_lossy(phc).into_owned(),
         });

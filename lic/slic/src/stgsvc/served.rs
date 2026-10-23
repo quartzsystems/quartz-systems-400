@@ -279,7 +279,12 @@ fn end_job(system: &mut System, ctx: &mut JobCtx, vanished: bool) {
     if let Some(q) = ctx.qtemp.take() {
         super::jobs::drop_qtemp(system, ctx.job.number, q);
     }
-    super::security::js("E", (&ctx.job.name, &ctx.job.user, ctx.job.number), ctx.job.kind, &ctx.job.jobd);
+    super::security::js(
+        "E",
+        (&ctx.job.name, &ctx.job.user, ctx.job.number),
+        ctx.job.kind,
+        &ctx.job.jobd,
+    );
     system.jobs.remove(ctx.job.number);
     system.job_seen.insert(ctx.job.name.clone(), 2);
     jrn::entry::forget_job(JobHandle(ctx.job.handle));
@@ -399,7 +404,10 @@ impl Service for Served<'_> {
                 let table = sql.session.overrides().to_vec();
                 self.ctx.io.session().set_overrides(table);
             }
-            self.ctx.msgs.overrides.clone_from(&self.ctx.svc.msgf_overrides);
+            self.ctx
+                .msgs
+                .overrides
+                .clone_from(&self.ctx.svc.msgf_overrides);
         }
         ile::set_libl(None);
         self.root_qtemp(root);
@@ -443,7 +451,41 @@ impl Service for Served<'_> {
         device: String,
         console: bool,
     ) -> Result<sec::signon::SignedOn, sec::signon::Refused> {
-        super::security::sign_on(self.system, &user, &password, &device, console)
+        super::security::sign_on(self.system, &user, &password, &device, console, None)
+    }
+
+    fn sign_on_substitute(
+        &mut self,
+        user: String,
+        device: String,
+        proof: sec::signon::Substitute,
+    ) -> Result<sec::signon::SignedOn, sec::signon::Refused> {
+        super::security::sign_on(self.system, &user, "", &device, false, Some(proof))
+    }
+
+    fn device_allocate(
+        &mut self,
+        requested: String,
+        devtype: String,
+        model: String,
+        kbdtype: String,
+    ) -> Result<String, String> {
+        super::devices::allocate(self.system, &requested, &devtype, &model, &kbdtype)
+    }
+
+    fn device_status(&mut self, device: String, status: u8) -> Result<(), String> {
+        super::devices::set_status(self.system, &device, status)
+    }
+
+    fn power_down(&mut self, immediate: bool, delay: u32, restart: bool) -> Result<(), String> {
+        // slic reads the options and powers down on SIGUSR1.
+        std::fs::write(
+            crate::ipl::power::REQUEST_FILE,
+            format!("{} {delay} {}\n", u8::from(immediate), u8::from(restart)),
+        )
+        .map_err(|e| e.to_string())?;
+        rustix::process::kill_process(rustix::process::Pid::INIT, rustix::process::Signal::USR1)
+            .map_err(|e| e.to_string())
     }
 
     fn chg_pwd(&mut self, current: String, new: String, validated: bool) -> Result<(), String> {
@@ -517,11 +559,21 @@ impl Service for Served<'_> {
     ) -> Result<Option<QMsg>, String> {
         let (lib, name) = msgs::queue_name(&queue);
         self.own_libl();
-        let r = msgs::with_queue(self.system, if remove { "msgq.remove" } else { "msgq.receive" }, &lib, &name, |q, _| {
-            let m = q.receive(kind, key, remove);
-            let changed = m.is_some();
-            Ok((m, changed))
-        });
+        let r = msgs::with_queue(
+            self.system,
+            if remove {
+                "msgq.remove"
+            } else {
+                "msgq.receive"
+            },
+            &lib,
+            &name,
+            |q, _| {
+                let m = q.receive(kind, key, remove);
+                let changed = m.is_some();
+                Ok((m, changed))
+            },
+        );
         ile::set_libl(None);
         r
     }
@@ -543,7 +595,9 @@ impl Service for Served<'_> {
     fn msgq_list(&mut self, queue: String) -> Result<Vec<QMsg>, String> {
         let (lib, name) = msgs::queue_name(&queue);
         self.own_libl();
-        let r = msgs::with_queue(self.system, "msgq.receive", &lib, &name, |q, _| Ok((q.msgs.clone(), false)));
+        let r = msgs::with_queue(self.system, "msgq.receive", &lib, &name, |q, _| {
+            Ok((q.msgs.clone(), false))
+        });
         ile::set_libl(None);
         r
     }
@@ -943,11 +997,19 @@ impl Service for Served<'_> {
         self.lent(|c| c.provider.check_command(&text))
     }
 
-    fn cmd_lookup(&mut self, name: String, lib: Option<String>) -> Result<Option<(Vec<u8>, String)>, String> {
+    fn cmd_lookup(
+        &mut self,
+        name: String,
+        lib: Option<String>,
+    ) -> Result<Option<(Vec<u8>, String)>, String> {
         self.system.current_job = self.ctx.job.number;
         self.own_libl();
         let r = (|| {
-            let s = self.system.storage.as_mut().ok_or("object store not open")?;
+            let s = self
+                .system
+                .storage
+                .as_mut()
+                .ok_or("object store not open")?;
             let qsys = s.qsys.ok_or("object store not initialized")?;
             svc::db::with_txn(&mut s.store, |txn| {
                 let names = ile::name_context(txn, qsys);
@@ -973,7 +1035,11 @@ impl Service for Served<'_> {
         let def = match sys_cpps::install::object(&name, 0) {
             Ok(o) => o.def,
             Err(_) => {
-                return crate::cpp::escape("CPF0006", &name, &format!("{name} has no shipped definition"));
+                return crate::cpp::escape(
+                    "CPF0006",
+                    &name,
+                    &format!("{name} has no shipped definition"),
+                );
             }
         };
         let parms = match cmd::block::read(&def, &segments, &specified) {
@@ -992,7 +1058,10 @@ impl Service for Served<'_> {
                 let table = sql.session.overrides().to_vec();
                 self.ctx.io.session().set_overrides(table);
             }
-            self.ctx.msgs.overrides.clone_from(&self.ctx.svc.msgf_overrides);
+            self.ctx
+                .msgs
+                .overrides
+                .clone_from(&self.ctx.svc.msgf_overrides);
         }
         ile::set_libl(None);
         self.root_qtemp(root);

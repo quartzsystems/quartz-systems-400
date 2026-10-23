@@ -12,6 +12,7 @@ pub use crate::rec::{Field, Layout};
 pub fn layouts() -> Vec<&'static Layout> {
     vec![
         &crate::obj::jobd::LAYOUT,
+        &crate::obj::ctld::LAYOUT,
         &crate::obj::cls::LAYOUT,
         &crate::obj::jobq::LAYOUT,
         &crate::obj::jobq::ENTRY_LAYOUT,

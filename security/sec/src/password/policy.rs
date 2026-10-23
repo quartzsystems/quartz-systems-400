@@ -180,6 +180,7 @@ pub fn set(
     if !p.pwd_none {
         let mut hist = std::mem::take(&mut p.hashes);
         hist.extend(std::mem::take(&mut p.history));
+        hist.retain(|h| !h.form.is_token());
         hist.truncate(64);
         p.history = hist;
     }

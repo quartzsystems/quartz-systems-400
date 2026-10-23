@@ -42,6 +42,10 @@ pub struct Start {
     pub lda: Vec<u8>,
     /// An interactive job: what signing on found out.
     pub signon: Option<sec::signon::SignedOn>,
+    /// The display device the job owns: its records cross the socket
+    /// of `crate::dev`. Empty for the console and for jobs without a
+    /// display.
+    pub device: String,
 }
 
 wire_struct!(Start {
@@ -58,7 +62,8 @@ wire_struct!(Start {
     rqsdta,
     pool,
     lda,
-    signon
+    signon,
+    device
 });
 
 /// Parent to job.
@@ -87,6 +92,24 @@ pub enum ToJob {
         /// The fields in order.
         fields: Vec<String>,
     },
+    /// A record from the job's own display device (`crate::dev`),
+    /// delivered on the job's inbox by the thread reading the socket.
+    Record {
+        /// The header flags.
+        flags: u16,
+        /// The operation code.
+        opcode: u8,
+        /// The data.
+        data: Vec<u8>,
+    },
+    /// The display device was reset or replaced: the screen must be
+    /// sent whole again.
+    DeviceReset {
+        /// The device's name now.
+        device: String,
+    },
+    /// The display device is gone.
+    DeviceGone,
 }
 
 wire_enum!(ToJob {
@@ -94,6 +117,9 @@ wire_enum!(ToJob {
     1 => Line { text },
     2 => End { immediate },
     3 => Input { key, fields },
+    4 => Record { flags, opcode, data },
+    5 => DeviceReset { device },
+    6 => DeviceGone,
 });
 
 /// Job to parent.
