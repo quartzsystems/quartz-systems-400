@@ -164,13 +164,23 @@ that record. Test: `CHAIN` to a key between two records, then `READ`.
 continues after the record's old key, so a record whose key moved up may
 be read again. Test: update a key field to a higher value, then `READ`.
 
-**`READE` with a mismatch.** `%EOF` comes on and the position does not
-move, so a following `READ` returns the record that did not match.
-Test: `SETLL` on a prefix, `READE` past its last record, then `READ`.
+**`READE` with a mismatch.** Settled by the pub400 capture (IBM i 7.5,
+2026-10-22): `%EOF` comes on and the file stays at its end until it is
+positioned again, so a following `READ` is end of file too (`00011`);
+`READPE` likewise leaves the file at its start.
 
-**`SETLL` with no record.** `%FOUND` is off and the status stays 00000;
-`CHAIN` not found is 00012. Test: `SETLL` beyond the last key and check
-`*STATUS`.
+**`SETLL` with no record.** Settled: `%FOUND` is off and the status is
+`00012`, as for `CHAIN`; `SETLL *HIVAL` finds nothing. `SETGT` with no
+record after it is `00012` as well.
+
+**The built-ins between operations.** Settled: `%FOUND`, `%EQUAL` and
+`%EOF` keep their values until an operation sets them. CHAIN, SETLL and
+SETGT set `%FOUND` and, when they find a record, turn `%EOF` off; SETLL
+alone sets `%EQUAL`; the READ family sets `%EOF`; CLOSE turns `%EOF` on;
+WRITE, UPDATE, DELETE without a key, UNLOCK and errors leave all three.
+The `rla` driver (`sql::rla`) keeps them so per file.
+
+**`UPDATE` after a read without a lock.** Settled: `01221`, as here.
 
 **Writes through logical files.** `WRITE`, `UPDATE` and `DELETE` on an
 open data path over a logical file go to the based-on member when every
@@ -249,6 +259,16 @@ written unconverted (`C1 C2 C3 C4` reads as `ÁÂÃÄ` in Latin-1), which
 for a character field. The machine pads numbers to their field width
 and writes `.00` for zero, which the comparer reads by value. Still
 unseen: `RCDDLM(*EOR)`, `RMVBLANK(*NONE)` and `NULLS(*NO)`.
+
+**`CPYTOIMPF` record order.** Settled by the pub400 capture: records are
+written in arrival sequence, of a keyed physical file and of a keyed
+logical file alike (`PRODUCT` and `PRDBYDESC` start with the first
+record written, `ORDBYCUS` follows `ORDERS`' arrival). A join logical
+file has no arrival sequence; the machine drives it from the primary
+file through a keyed path over the primary whose first key is the join
+field (`ORDJOIN` comes out in `ORDBYCUS` order: customer, then order
+date descending), which is the optimizer's choice and is what the
+export does here when such a path exists, else the primary's arrival.
 
 **`TIMFMT(*USA)` keeps its seconds.** Settled by the capture: a `*USA`
 time field exported with `TIMFMT(*ISO)` shows the seconds it was loaded
@@ -454,9 +474,12 @@ out differently. Test: none.
 ## Conformance kit
 
 **Compared outputs.** `tools/conformance/db/expected/` holds the
-2026-10-22 capture from IBM i 7.1 (no RPG compiler: `rla.csv`,
-`rla.log`, `dspjrn.csv` and the files the script rewrites are missing
-and skipped). Journal entries compare on the record entries (`R`) only,
+2026-10-22 capture from IBM i 7.1, and from pub400.com (IBM i 7.5) the
+files 7.1 could not make without an RPG compiler: `rla.csv`,
+`dspjrn.csv` and the exports of `PRODUCT`, `ORDBYCUS`, `ORDJOIN` and
+`PRDBYDESC` (`oracle/pub400/README.md`). `rla.log` is this
+implementation's own text and `RLALOG` is not exported (it is the log
+`rla.csv` holds). Every one of them matches. Journal entries compare on the record entries (`R`) only,
 by type, object and count, since the machine's sequence numbers and its
 `J` entries are its own. Field descriptions compare on name, type,
 digits (0 for non-numeric), decimals, bytes, position and null
@@ -468,10 +491,12 @@ matches.
 file the script opens for `UPDATE` is declared with `*delete` too, every
 file with `alwnull(*usrctl)`, and a `WRITE` sets the null indicator of
 every null-capable field it does not assign. `%status`, `%found`,
-`%equal` and `%eof` are logged after every operation; whether `%equal`
-is reset by a `READ` on the machine is to be seen from `rla.csv`. The
-2026-10-22 box had no RPG compiler, so the record-level, journal and
-commitment control entries above wait for one.
+`%equal` and `%eof` are logged after every operation, a single key value
+is passed as a key list (`(3)`: a bare literal must have the key
+field's exact length), and a logical file whose format lists no fields
+logs the fields of its `PFILE`. It compiled and ran on pub400 (7.5);
+the commitment control entries above are not in the script and stay
+open.
 
 **Dates in the exports.** The machine's `CPYTOIMPF` writes dates in the
 field's format unless `DATFMT` is given; the CL gives `*ISO` on every

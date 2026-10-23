@@ -256,6 +256,9 @@ without trailing blanks, and the outfile-derived tables through the
 compare on the `R` entries only. `rla.csv` from the machine carries
 the real status codes and flags line by line; where they differ from
 the script's `=>` column, the script is wrong and gets corrected.
+The kit was captured on 2026-10-22 on IBM i 7.1 and, for the RPG step,
+on pub400.com (7.5); every compared file matches, the format level
+identifiers are noted as the machine's own (`oracle/README.md`).
 
 Under QEMU, `build test` runs two more steps of the disk suite. Step 13
 pushes the same DDS and CSVs over the console, creates and loads the
