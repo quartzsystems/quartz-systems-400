@@ -12,6 +12,7 @@ db = { path = "../../database/db", version = "0.1.0" }
 qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
 qsname = { path = "../../storage/qsname", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+tn5250 = { path = "../tn5250", version = "0.1.0" }
 thiserror.workspace = true
 
 [lints]

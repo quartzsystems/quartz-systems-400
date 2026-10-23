@@ -5,6 +5,9 @@
 //! Random bytes against every parser: nothing panics. A session job
 //! that fed a hostile client's records into these must stay up.
 
+#![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+
+use tn5250::ds::field::Ffw;
 use tn5250::ds::parse::parse;
 use tn5250::ds::wdsf::{Capabilities, Model};
 use tn5250::record::Record;
@@ -102,8 +105,8 @@ fn screen_model_accepts_random_inbound() {
     let mut g = Lcg(3);
     let mut m = ScreenModel::new(false);
     m.put(1, 2, "Title", 0x22);
-    m.field(5, 10, 20, 0x24, "", Default::default(), &[]);
-    m.field(7, 1, 300, 0x24, "", Default::default(), &[]);
+    m.field(5, 10, 20, 0x24, "", Ffw::default(), &[]);
+    m.field(7, 1, 300, 0x24, "", Ffw::default(), &[]);
     let _ = m.render(Read::MdtFields);
     for _ in 0..20_000 {
         let data = g.bytes(120);

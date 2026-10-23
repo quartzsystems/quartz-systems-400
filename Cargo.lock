@@ -760,6 +760,7 @@ dependencies = [
  "qdecimal",
  "qsname",
  "thiserror",
+ "tn5250",
 ]
 
 [[package]]

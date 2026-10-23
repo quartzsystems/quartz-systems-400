@@ -6,10 +6,12 @@
 //! `CRTDSPF`, the model it produces, the record buffers a program sees
 //! and the payload the `*FILE` object keeps. See `docs/DSPF.md`.
 //!
-//! The crate is a library with no runtime: it never writes a 5250 data
-//! stream and never touches the store. The source form, the keyword
-//! grammar and the diagnostics come from the `dds` crate; references to
-//! other files go through [`RefResolver`].
+//! The runtime ([`rt`]) places records on a `tn5250` screen model and
+//! builds a format's input from what the display sent back; the job
+//! owns the model and the device, and the crate never touches the
+//! store. The source form, the keyword grammar and the diagnostics come
+//! from the `dds` crate; references to other files go through
+//! [`RefResolver`].
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -22,6 +24,7 @@ pub mod layout;
 pub mod listing;
 pub mod model;
 pub mod payload;
+pub mod rt;
 pub mod spec;
 
 pub use compile::compile_dspf;

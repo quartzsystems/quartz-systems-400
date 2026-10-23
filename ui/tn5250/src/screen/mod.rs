@@ -269,6 +269,52 @@ impl ScreenModel {
         self.fields.insert(at, f);
     }
 
+    /// Blank rows `from` to `to` (1-based, inclusive) and drop the
+    /// fields in them.
+    pub fn clear_rows(&mut self, from: usize, to: usize) {
+        let from = from.max(1);
+        let to = to.min(self.rows);
+        if from > to {
+            return;
+        }
+        let start = (from - 1) * self.cols;
+        let end = to * self.cols;
+        self.cells[start..end].iter_mut().for_each(|c| *c = NULL);
+        self.remove_fields_in(start, end);
+        if self
+            .cursor
+            .is_some_and(|(r, _)| r >= from && r <= to)
+        {
+            self.cursor = None;
+        }
+    }
+
+    /// Forget which fields the operator changed.
+    pub fn reset_mdt(&mut self) {
+        for f in &mut self.fields {
+            f.modified = false;
+        }
+    }
+
+    /// The index of the field starting at `(row, col)`.
+    #[must_use]
+    pub fn field_index_at(&self, row: usize, col: usize) -> Option<usize> {
+        self.fields.iter().position(|f| f.row == row && f.col == col)
+    }
+
+    /// Protect or free a field by index.
+    pub fn set_bypass(&mut self, index: usize, bypass: bool) {
+        if let Some(f) = self.fields.get_mut(index) {
+            f.ffw.bypass = bypass;
+        }
+    }
+
+    /// The cursor, when the job set it.
+    #[must_use]
+    pub fn cursor(&self) -> Option<(usize, usize)> {
+        self.cursor
+    }
+
     /// Change a field's value (the job's own write) by index.
     pub fn set_value(&mut self, index: usize, value: &str) {
         let cols = self.cols;
