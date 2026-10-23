@@ -229,7 +229,14 @@ fn ext_uses(i: &Inst, out: &mut Vec<Reg>) {
                 opt_uses(key.as_ref(), out);
                 opt_uses(rrn.as_ref(), out);
             }
-            IoInst::DevIo { rec, .. } => opt_place_uses(rec.as_ref(), out),
+            IoInst::DevIo { rec, ctl, .. } => {
+                opt_place_uses(rec.as_ref(), out);
+                if let Some(c) = ctl {
+                    for o in c.iter() {
+                        operand_uses(o, out);
+                    }
+                }
+            }
         },
         Inst::Msg(m) => match m {
             MsgInst::Snd {

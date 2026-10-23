@@ -208,6 +208,7 @@ absent optional length is -1.
 | 51 | `dbg_stmt` | `n` | debug variant only |
 | 52 | `dbg_var` | `name, addr, desc` | debug variant only |
 | 53 | `attn` | | the attention flag was set |
+| 54 | `prt_ctl` | `file, fmt, rec, rec_desc, ctl` | `i32` status: a printer line under `ctl`, space before, space after, skip before and skip after packed 16 bits each from the top |
 
 `file` is the index of the module's file declaration; the runtime
 finds the declaration through the running entry's program and keeps

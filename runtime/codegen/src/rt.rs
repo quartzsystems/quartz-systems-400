@@ -143,6 +143,10 @@ pub enum RtFn {
     /// `attn(env)`: the attention flag was set; the runtime takes what
     /// waits for the job (a break message) and clears it.
     Attn = 53,
+    /// `prt_ctl(env, file, fmt, rec, rec_desc, ctl) -> 0|1|status`: a
+    /// printer line with its carriage control, packed 16 bits each:
+    /// space before, space after, skip before, skip after.
+    PrtCtl = 54,
 }
 
 /// The code of a database operation, as `db_io` takes it.
@@ -186,7 +190,7 @@ pub fn dtaara_op_code(op: qir::DtaaraOp) -> i64 {
 }
 
 /// Every runtime function, in table order.
-pub const RT_FNS: [RtFn; 54] = [
+pub const RT_FNS: [RtFn; 55] = [
     RtFn::Raise,
     RtFn::Enter,
     RtFn::Leave,
@@ -241,6 +245,7 @@ pub const RT_FNS: [RtFn; 54] = [
     RtFn::DbgStmt,
     RtFn::DbgVar,
     RtFn::Attn,
+    RtFn::PrtCtl,
 ];
 
 impl RtFn {
@@ -314,6 +319,7 @@ impl RtFn {
             Self::DbgStmt => "dbg_stmt",
             Self::DbgVar => "dbg_var",
             Self::Attn => "attn",
+            Self::PrtCtl => "prt_ctl",
         }
     }
 
@@ -377,6 +383,7 @@ impl RtFn {
             Self::DbgStmt => (1, None),
             Self::DbgVar => (3, None),
             Self::Attn => (0, None),
+            Self::PrtCtl => (5, Some(types::I32)),
         }
     }
 

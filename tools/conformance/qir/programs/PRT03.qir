@@ -1,0 +1,22 @@
+; printer lines with the program's carriage control: space and skip
+; before and after, the overflow line, a skip back to a new page
+; qemu: no
+module PRT03
+file REPORT file(QSYSPRT) dev(*PRT)
+static $line: char(10)
+proc PRT03() entry {
+L0:
+  %o = dbopen REPORT
+  mov $line, "TITLE"
+  %a = prtio REPORT WRITE fmt(QSYSPRT) rec($line) ctl(0, 2, 3, 0)
+  mov $line, "FIRST"
+  %b = prtio REPORT WRITE fmt(QSYSPRT) rec($line) ctl(0, 1, 0, 0)
+  mov $line, "BOTTOM"
+  %c = prtio REPORT WRITE fmt(QSYSPRT) rec($line) ctl(0, 0, 60, 0)
+  dsply %c
+  mov $line, "NEXT PAGE"
+  %d = prtio REPORT WRITE fmt(QSYSPRT) rec($line) ctl(1, 0, 6, 0)
+  dsply %d
+  %x = dbclose REPORT
+  ret
+}

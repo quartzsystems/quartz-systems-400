@@ -991,6 +991,7 @@ impl W {
                 op,
                 fmt,
                 rec,
+                ctl,
             } => {
                 self.u8(3);
                 self.reg(*dst);
@@ -998,6 +999,11 @@ impl W {
                 self.u8(*op as u8);
                 self.str(fmt);
                 self.opt_place(rec.as_ref());
+                self.opt(ctl.as_ref(), |w, c| {
+                    for o in c.iter() {
+                        w.operand(o);
+                    }
+                });
             }
         }
     }

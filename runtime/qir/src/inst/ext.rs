@@ -563,7 +563,7 @@ pub enum IoInst {
         /// Read without a lock on an update file.
         nolock: bool,
     },
-    /// `%d = dspio|prtio FILE OP fmt(NAME) [rec(place)]`; `TODO(phase8)`.
+    /// `%d = dspio|prtio FILE OP fmt(NAME) [rec(place)] [ctl(sb, sa, kb, ka)]`.
     DevIo {
         /// Destination, an `i32`.
         dst: Reg,
@@ -575,6 +575,9 @@ pub enum IoInst {
         fmt: String,
         /// Record buffer.
         rec: Option<Place>,
+        /// A printer line's carriage control: space before, space
+        /// after, skip before, skip after (0 for none); format 2.
+        ctl: Option<Box<[Operand; 4]>>,
     },
 }
 

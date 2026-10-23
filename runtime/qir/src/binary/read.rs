@@ -21,11 +21,16 @@ use crate::types::{Field, Shape, StructType, Type};
 
 /// Read a module.
 pub fn read(bytes: &[u8]) -> Result<Module> {
-    let mut r = R { b: bytes, at: 0 };
+    let mut r = R {
+        b: bytes,
+        at: 0,
+        version: 0,
+    };
     if r.take(4)? != MAGIC {
         return Err(bad("wrong magic"));
     }
     let version = r.u16()?;
+    r.version = version;
     if version == 0 || version > FORMAT_VERSION {
         return Err(bad(format!(
             "format version {version} is not readable; this release reads up to {FORMAT_VERSION}"
@@ -106,6 +111,7 @@ const DTAARA_OPS: [DtaaraOp; 4] = [
 struct R<'a> {
     b: &'a [u8],
     at: usize,
+    version: u16,
 }
 
 impl R<'_> {
@@ -849,6 +855,11 @@ impl R<'_> {
                 op: self.tag(&DEV_OPS, "device operation")?,
                 fmt: self.str()?,
                 rec: self.opt_place()?,
+                ctl: if self.version >= 2 {
+                    self.opt(|r| Ok(Box::new([r.operand()?, r.operand()?, r.operand()?, r.operand()?])))?
+                } else {
+                    None
+                },
             },
             v => return Err(bad(format!("{v} is not an I/O instruction"))),
         })

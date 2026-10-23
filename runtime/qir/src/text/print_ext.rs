@@ -300,6 +300,7 @@ impl Printer<'_> {
                         op,
                         fmt,
                         rec,
+                        ctl,
                     } => {
                         let dev = match self.m.files.get(*f as usize).map(|x| x.dev) {
                             Some(crate::module::FileDev::Printer) => "prtio",
@@ -309,6 +310,9 @@ impl Printer<'_> {
                             format!("{} = {dev} {} {} fmt({fmt})", r(*dst), file(*f), op.name());
                         if let Some(x) = rec {
                             let _ = write!(s, " rec({})", pl(x));
+                        }
+                        if let Some(c) = ctl {
+                            let _ = write!(s, " ctl({}, {}, {}, {})", o(&c[0]), o(&c[1]), o(&c[2]), o(&c[3]));
                         }
                         s
                     }

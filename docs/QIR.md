@@ -296,7 +296,7 @@ Level checks happen at `dbopen` (`CPF4131` as an escape message).
 | `%d = dbclose FILE` | |
 | `%d = dbio FILE OP [rec(place)] [key(x)] [rrn(x)] [fmt(NAME)] [nolock]` | `READ READP READE READPE CHAIN SETLL SETGT WRITE UPDATE DELETE UNLOCK FEOD`; reads and writes need `rec`, positioning needs `key` or `rrn` |
 | `%d = dspio FILE OP fmt(NAME) [rec(place)]` | `WRITE READ EXFMT` on a `dev(*DSP)` file; `TODO(phase8)` |
-| `%d = prtio FILE WRITE fmt(NAME) [rec(place)]` | print a record of a `dev(*PRT)` file: 0, or 1 when the carriage reached the overflow line |
+| `%d = prtio FILE WRITE fmt(NAME) [rec(place)] [ctl(sb, sa, kb, ka)]` | print a record of a `dev(*PRT)` file: 0, or 1 when the carriage reached the overflow line; `ctl` gives the line's carriage control (space before, space after, skip before, skip after, integers, 0 for none), as RPG output does for a program-described file |
 
 `dbopen` and `dbclose` also open and close a printer file: the open
 creates its spooled file (`OPN`), the close makes it ready. An
@@ -395,7 +395,8 @@ and smallest values (`FF`/`00` for text), `*NULL` sixteen zero bytes,
 
 ## 8. Format version
 
-`FORMAT_VERSION` is 1. `*MODULE` objects store the binary IR that
+`FORMAT_VERSION` is 2 (version 2 added `prtio`'s `ctl`, at the end of
+the device I/O record). `*MODULE` objects store the binary IR that
 `qir::binary::write` produces: the magic `QIRM`, a `u16` version, a
 `u16` of zero, then the module as tagged fields in a fixed order
 (little-endian integers, `u32`-prefixed strings and byte arrays,

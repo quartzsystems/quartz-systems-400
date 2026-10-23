@@ -365,6 +365,7 @@ impl Lowerer<'_, '_> {
                 op,
                 fmt,
                 rec,
+                ctl,
             } => {
                 let f = self.i64(i64::from(*file));
                 let opv = self.i64(dev_op_code(*op));
@@ -376,9 +377,20 @@ impl Lowerer<'_, '_> {
                     Some(p) => self.place_pair(p)?,
                     None => (self.i64(0), self.i64(0)),
                 };
-                let v = self
-                    .rt_call(RtFn::DevIo, &[f, opv, fa, ra, rd])
-                    .expect("result");
+                let v = if let Some(c) = ctl {
+                    // The four controls packed 16 bits each, space
+                    // before in the high word.
+                    let mut word = self.i64(0);
+                    for o in c.iter() {
+                        let x = self.int_op(o)?;
+                        let x = self.b.ins().band_imm_u(x, 0xFFFF);
+                        let shifted = self.b.ins().ishl_imm_u(word, 16);
+                        word = self.b.ins().bor(shifted, x);
+                    }
+                    self.rt_call(RtFn::PrtCtl, &[f, fa, ra, rd, word]).expect("result")
+                } else {
+                    self.rt_call(RtFn::DevIo, &[f, opv, fa, ra, rd]).expect("result")
+                };
                 self.b.def_var(self.vars[dst.0 as usize], v);
             }
         }

@@ -302,12 +302,31 @@ impl Parser {
                 } else {
                     None
                 };
+                let ctl = if self.eat_word("ctl") {
+                    if want != FileDev::Printer {
+                        return Err(self.err("ctl() is for printer files"));
+                    }
+                    let four = self.paren(|p| {
+                        let a = p.operand()?;
+                        p.expect_sym(",")?;
+                        let b = p.operand()?;
+                        p.expect_sym(",")?;
+                        let c = p.operand()?;
+                        p.expect_sym(",")?;
+                        let d = p.operand()?;
+                        Ok([a, b, c, d])
+                    })?;
+                    Some(Box::new(four))
+                } else {
+                    None
+                };
                 Inst::Io(IoInst::DevIo {
                     dst,
                     file,
                     op,
                     fmt,
                     rec,
+                    ctl,
                 })
             }
             ("rcvmsg", None) => {

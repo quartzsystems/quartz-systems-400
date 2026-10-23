@@ -556,11 +556,19 @@ fn io_inst(cx: &Cx, io: &IoInst) -> Result<(), String> {
             Ok(())
         }
         IoInst::DevIo {
-            file: f, op, rec, ..
+            file: f, op, rec, ctl, ..
         } => {
+            if let Some(c) = ctl {
+                for o in c.iter() {
+                    cx.int(o)?;
+                }
+            }
             let fr = file(*f)?;
             if fr.dev == FileDev::Db {
                 return Err(format!("{} is a database file", fr.name));
+            }
+            if ctl.is_some() && fr.dev != FileDev::Printer {
+                return Err(format!("{} is not a printer file; ctl() is for printers", fr.name));
             }
             if fr.dev == FileDev::Printer && *op != DevOp::Write {
                 return Err(format!(

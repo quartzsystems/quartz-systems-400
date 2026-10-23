@@ -538,6 +538,59 @@ pub extern "sysv64" fn dev_io(
     }
 }
 
+/// `prt_ctl(env, file, fmt, rec, rec_desc, ctl) -> status`: one line of
+/// a printer file with the program's carriage control, `ctl` packing
+/// space before, space after, skip before and skip after in 16 bits
+/// each from the top. 0, or 1 when the carriage reached the overflow
+/// line.
+pub extern "sysv64" fn prt_ctl(
+    env: *mut Env,
+    file: i64,
+    _fmt: i64,
+    rec: i64,
+    rec_desc: i64,
+    ctl: i64,
+) -> i32 {
+    let Some((key, _)) = file_of(env, file) else {
+        return CLOSED;
+    };
+    let j = job(env);
+    let rec_len = if rec == 0 {
+        0
+    } else {
+        usize::try_from(ty(rec_desc).size()).unwrap_or(0)
+    };
+    let record = if rec == 0 {
+        Vec::new()
+    } else {
+        bytes(rec, rec_len).to_vec()
+    };
+    let word = ctl.cast_unsigned();
+    let part = |shift: u32| u16::try_from((word >> shift) & 0xFFFF).unwrap_or(0);
+    let control = spool::printer::Control {
+        space_before: part(48),
+        space_after: part(32),
+        skip_before: part(16),
+        skip_after: part(0),
+    };
+    let Some(state) = j.files.get_mut(&key) else {
+        return CLOSED;
+    };
+    let Some(p) = state.printer.as_mut() else {
+        return NO_DEVICE;
+    };
+    let Some(sink) = j.spool.as_mut() else {
+        return NO_DEVICE;
+    };
+    match p.write_ctl(sink.as_mut(), &record, control) {
+        Ok(over) => i32::from(over),
+        Err(f) => {
+            escape(j, &f);
+            i32::from(f.status)
+        }
+    }
+}
+
 /// A display file operation: the write, the read, or both.
 fn display_io(
     j: &mut Job,

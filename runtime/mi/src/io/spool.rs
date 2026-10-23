@@ -132,6 +132,25 @@ impl PrinterState {
         Ok(over)
     }
 
+    /// Write one line of a program-described file under the program's
+    /// own carriage control (RPG output: space and skip before and
+    /// after). Whether the overflow line was reached.
+    pub fn write_ctl(
+        &mut self,
+        sink: &mut dyn SpoolSink,
+        record: &[u8],
+        ctl: spool::printer::Control,
+    ) -> Result<bool, IoFail> {
+        if self.prtf.maxrcds > 0 && self.printer.records >= self.prtf.maxrcds {
+            return Err(IoFail::new(1299, "CPF4072", &[]));
+        }
+        let over = self.printer.write(record, ctl);
+        if self.printer.pending() >= CHUNK {
+            self.flush(sink)?;
+        }
+        Ok(over)
+    }
+
     /// Hand what has built up to the sink.
     pub fn flush(&mut self, sink: &mut dyn SpoolSink) -> Result<(), IoFail> {
         let data = self.printer.take();
