@@ -149,7 +149,8 @@ fixed index (`RtFn`), the relocation names the index, and the runtime
 take `env` first (except `copy`) and use the System V convention. A
 storage operand is a pair of `i64` words: the native address and a
 type descriptor (`TypeDesc`: kind, length or digits, scale or
-precision, date or time format). An absent optional operand is 0, an
+precision, date or time format, and bit 56, set in `RPGLE` modules,
+for the positive sign `F` that RPG writes in packed and zoned data). An absent optional operand is 0, an
 absent optional length is -1.
 
 | Index | Function | Operands after `env` | Returns |

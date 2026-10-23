@@ -111,8 +111,13 @@ pub fn items(read: &Read, diags: &mut Vec<Diag>) -> Vec<Item> {
                             }
                         }
                         'C' => {
-                            let first = &lines[*spec.lines.last().expect("a line")];
-                            let op = fixed::opcode_of(&first.text);
+                            // The operation is on the item's first line that has one.
+                            let op = spec
+                                .lines
+                                .iter()
+                                .map(|&k| fixed::opcode_of(&lines[k].text))
+                                .find(|o| !o.is_empty())
+                                .unwrap_or_default();
                             ops::extended(&op) && rpgspecs::cut(&n.text, 7, 35).trim().is_empty()
                         }
                         // Field lines and AND/OR lines of a record; a record
@@ -194,6 +199,14 @@ fn is_name_continuation(text: &str) -> bool {
     t.ends_with("...") && !t.contains(' ')
 }
 
+/// The line of the semicolon that ended the last free-form statement.
+fn last_semi_line(out: &[Item]) -> Option<u32> {
+    match out.last() {
+        Some(Item::Free(s)) => Some(s.end.line),
+        _ => None,
+    }
+}
+
 /// Tokenize a run of free-form lines and cut it at semicolons.
 fn flush_free(lines: &[Line], run: &mut Vec<usize>, out: &mut Vec<Item>, diags: &mut Vec<Diag>) {
     if run.is_empty() {
@@ -220,7 +233,19 @@ fn flush_free(lines: &[Line], run: &mut Vec<usize>, out: &mut Vec<Item>, diags: 
         col: *c + u16::try_from(t.len()).unwrap_or(0),
     });
     let mut cur: Vec<Tok> = Vec::new();
+    let mut drop_line: Option<u32> = None;
     for t in toks {
+        if let Some(l) = drop_line {
+            if t.at.line == l {
+                continue;
+            }
+            drop_line = None;
+        }
+        if t.kind != lex::Kind::Semi && cur.is_empty() && last_semi_line(out) == Some(t.at.line) {
+            diags.push(Diag::new(ids::AFTER_STATEMENT, 30, t.at));
+            drop_line = Some(t.at.line);
+            continue;
+        }
         if t.kind == lex::Kind::Semi {
             if !cur.is_empty() {
                 let at = cur[0].at;

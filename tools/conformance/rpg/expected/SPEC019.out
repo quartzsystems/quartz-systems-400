@@ -1,0 +1,11 @@
+# SPEC019 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: no (RNS9310)
+diag: RNF2318 00 line 2 seq 000200
+diag: RNF3530 00 line 3 seq 000300
+diag: RNF5508 30 line 4 seq 000400
+diag: RNF7030 30 line 10 seq 001000
+diag: RNF7503 30 line 10 seq 001000
+diag: RNF5508 30 line 12 seq 001200
+diag: RNF7503 30 line 13 seq 001300
+diag: RNF5508 30 line 15 seq 001500

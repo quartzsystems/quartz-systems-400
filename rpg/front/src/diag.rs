@@ -86,4 +86,8 @@ pub mod ids {
     pub const NAME_CONTINUATION: &str = "RNF0280";
     /// The comment entry on a free-form specification is not valid.
     pub const FREE_COMMENT: &str = "RNF5501";
+    /// Something follows a free-form statement on its line.
+    pub const AFTER_STATEMENT: &str = "RNF5508";
+    /// A numeric entry is not right-adjusted in its columns.
+    pub const NOT_RIGHT_ADJUSTED: &str = "RNF0263";
 }

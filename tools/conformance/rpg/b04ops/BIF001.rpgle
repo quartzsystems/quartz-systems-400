@@ -1,0 +1,21 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s s char(12) inz('  ab cd  ');
+dcl-s v varchar(20) inz('xxhixx');
+line = '[' + %trim(s) + ']';
+write QSYSPRT line;
+line = '[' + %triml(s) + ']';
+write QSYSPRT line;
+line = '[' + %trimr(s) + ']';
+write QSYSPRT line;
+line = '[' + %trim(v:'x') + ']';
+write QSYSPRT line;
+line = '[' + %triml(v:'x') + ']' + %char(%len(%trimr(v:'x')));
+write QSYSPRT line;
+line = '[' + %trim('...a.b...':'.') + ']';
+write QSYSPRT line;
+line = 'len=' + %char(%len(%trim(s))) + ' ' + %char(%len(s)) + ' ' + %char(%len(v));
+write QSYSPRT line;
+*inlr = *on;

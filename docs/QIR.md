@@ -107,7 +107,9 @@ proto NAME(params) [-> T] [opdesc]                ; a signature: for calls throu
 
 **Parameters** are `[byval] [const] $name: T [*NOPASS] [*OMIT] [*VARSIZE]`.
 By reference is the default. `*NOPASS` parameters come last; a
-`*VARSIZE` parameter is text or an aggregate passed by reference.
+`*VARSIZE` parameter is text or an aggregate passed by reference, and a
+`*VARSIZE` `bytes` parameter takes storage of any type (the runtime
+library's operands, described by a separate word).
 
 **Procedures**:
 

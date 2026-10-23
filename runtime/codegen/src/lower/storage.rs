@@ -701,7 +701,9 @@ impl Lowerer<'_, '_> {
     }
 
     fn desc(&mut self, ty: &Type) -> Value {
-        self.i64(TypeDesc::of(ty).word())
+        // RPG modules write the positive sign F.
+        let fsign = self.m.lang == qir::Lang::Rpgle;
+        self.i64(TypeDesc::of(ty).fsign(fsign).word())
     }
 
     /// A place as an (address, descriptor) pair.

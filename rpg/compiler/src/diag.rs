@@ -9,6 +9,8 @@
 pub mod ids {
     /// The name or indicator is not defined.
     pub const NOT_DEFINED: &str = "RNF7030";
+    /// An expression holds an operand that is not defined.
+    pub const UNDEFINED_OPERAND: &str = "RNF7503";
     /// The name is defined more than once.
     pub const DUPLICATE: &str = "RNF2120";
     /// A length or number of digits is not valid.

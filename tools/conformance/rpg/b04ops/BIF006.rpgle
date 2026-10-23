@@ -1,0 +1,25 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s a packed(9:2) inz(1234567.89);
+dcl-s b packed(9:2) inz(-1234567.89);
+dcl-s c packed(5:0) inz(0);
+dcl-s d packed(7:3) inz(-0.25);
+line = '[' + %editc(a:'1') + '][' + %editc(b:'1') + '][' + %editc(c:'1') + ']';
+write QSYSPRT line;
+line = '[' + %editc(a:'2') + '][' + %editc(c:'2') + '][' + %editc(d:'2') + ']';
+write QSYSPRT line;
+line = '[' + %editc(a:'3') + '][' + %editc(b:'4') + '][' + %editc(c:'4') + ']';
+write QSYSPRT line;
+line = '[' + %editc(b:'A') + '][' + %editc(b:'B') + '][' + %editc(b:'C') + ']';
+write QSYSPRT line;
+line = '[' + %editc(b:'J') + '][' + %editc(d:'K') + '][' + %editc(b:'L') + ']';
+write QSYSPRT line;
+line = '[' + %editc(b:'N') + '][' + %editc(d:'O') + '][' + %editc(b:'P') + ']';
+write QSYSPRT line;
+line = '[' + %editc(b:'X') + '][' + %editc(a:'Z') + '][' + %editc(c:'Z') + ']';
+write QSYSPRT line;
+line = '[' + %editc(a:'1':*astfill) + '][' + %editc(a:'J':'$') + ']';
+write QSYSPRT line;
+*inlr = *on;

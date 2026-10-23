@@ -75,6 +75,16 @@ pub(crate) fn write_num(addr: i64, desc: i64, v: &Decimal, rounding: Rounding) -
     }
     .map_err(|e| cond_of(&e))?;
     b.copy_from_slice(&bytes);
+    // The positive sign F, for RPG.
+    if desc.cast_unsigned() & codegen::abi::TypeDesc::FSIGN != 0
+        && let Some(last) = b.last_mut()
+    {
+        match &t {
+            Type::Packed(_) if *last & 0x0F == 0x0C => *last |= 0x0F,
+            Type::Zoned(_) if *last >> 4 == 0x0C => *last |= 0xF0,
+            _ => {}
+        }
+    }
     Ok(())
 }
 

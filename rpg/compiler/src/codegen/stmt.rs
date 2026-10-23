@@ -79,6 +79,16 @@ impl Gen<'_> {
                     self.err(ids::TYPE_MISMATCH, 30, "");
                     return;
                 }
+                if let (Vk::Lit, Some(n), Some(m)) = (src.kind, dst.ty.str_len(), src.ty.str_len())
+                    && m > n
+                    && !dst.ty.is_varying()
+                {
+                    // The literal cut to the field.
+                    let text: String = src.op.trim_matches('"').replace("\"\"", "\"");
+                    let cut: String = text.chars().take(usize::try_from(n).unwrap_or(0)).collect();
+                    self.b.ins(format!("mov {}, {}", dst.op, quote(&cut)));
+                    return;
+                }
                 self.b.ins(format!("mov {}, {}", dst.op, src.op));
             }
             (Ty::Ind, _) => {
@@ -244,7 +254,7 @@ impl Gen<'_> {
             let r = self.cmp_suffix(sfx2, &a, &b)?;
             if base == "AND" {
                 let t = self.b.reg();
-                self.b.ins(format!("{t} = and {acc}, {r}"));
+                self.b.ins(format!("{t} = select {acc}, {r}, {acc}"));
                 acc = t;
             } else {
                 or_parts.push(acc);
@@ -254,7 +264,7 @@ impl Gen<'_> {
         }
         for p in or_parts {
             let t = self.b.reg();
-            self.b.ins(format!("{t} = or {p}, {acc}"));
+            self.b.ins(format!("{t} = select {p}, {p}, {acc}"));
             acc = t;
         }
         Some((acc, used))
@@ -602,10 +612,33 @@ impl Gen<'_> {
                     self.clear(r);
                 }
             }
-            ("EXCEPT" | "COMMIT" | "ROLBK" | "DUMP" | "FEOD" | "UNLOCK" | "OPEN" | "CLOSE", _) => {
+            ("EXCEPT", _) => {
+                let name = op.f2.first().and_then(|e| e.name().map(str::to_string)).unwrap_or_default();
+                let outputs = self.outputs.clone();
+                if !name.is_empty() && !outputs.iter().any(|o| o.kind == "E" && o.except == name) {
+                    self.err(ids::NOT_DEFINED, 30, name.clone());
+                }
+                self.output(&outputs, crate::codegen::output::Step::Except(&name));
+            }
+            ("COMMIT" | "ROLBK" | "DUMP" | "FEOD" | "UNLOCK" | "OPEN" | "CLOSE", _) => {
                 self.err(ids::UNSUPPORTED, 30, op.code.clone());
             }
-            ("ENDMON" | "MONITOR" | "ON-ERROR", _) => self.err(ids::UNSUPPORTED, 30, op.code.clone()),
+            ("MONITOR", _) => {
+                self.monitors += 1;
+                let name = format!("M{}", self.monitors);
+                let end = self.b.label();
+                self.b.ins(format!("monitor {name}"));
+                let line = self.b.lines.len() - 1;
+                self.open.push(Open::Monitor {
+                    name,
+                    end,
+                    closed: false,
+                    line,
+                    handlers: Vec::new(),
+                });
+            }
+            ("ON-ERROR" | "ON-EXCP", _) => self.on_error(op, base == "ON-EXCP"),
+            ("ENDMON", _) => self.end_monitor(),
             ("AND" | "OR", _) => self.err(ids::UNBALANCED, 30, op.code.clone()),
             _ => self.err(ids::UNSUPPORTED, 30, op.code.clone()),
         }
@@ -613,6 +646,70 @@ impl Gen<'_> {
             self.b.place(&skip);
         }
         k + used
+    }
+
+    /// `ON-ERROR` (status codes, `*PROGRAM`, `*FILE`, `*ALL`) or
+    /// `ON-EXCP` (message identifiers): close the monitored body at the
+    /// first one, then start this handler.
+    fn on_error(&mut self, op: &rpgfront::ast::Op, excp: bool) {
+        let Some(Open::Monitor { name, end, closed, .. }) = self.open.last().cloned() else {
+            self.err(ids::UNBALANCED, 30, op.code.clone());
+            return;
+        };
+        if !closed {
+            self.b.ins(format!("endmon {name}"));
+        }
+        self.b.term(format!("br {end}"));
+        let label = self.b.label();
+        self.b.place(&label);
+        let items: Vec<Expr> = match &op.xf2 {
+            Some(Expr::List(v, _)) => v.clone(),
+            Some(e) => vec![e.clone()],
+            None => Vec::new(),
+        };
+        let mut sels = Vec::new();
+        for it in &items {
+            match it {
+                Expr::Lit(Lit::Num(n), _) if !excp => {
+                    let v: u32 = n.parse().unwrap_or(0);
+                    sels.push(format!("{v}"));
+                }
+                Expr::Special { word, .. } if matches!(word.as_str(), "*PROGRAM" | "*FILE" | "*ALL") => {
+                    sels.push(word.clone());
+                }
+                Expr::Lit(Lit::Char(id), _) if excp => sels.push(id.to_ascii_uppercase()),
+                Expr::Empty(_) => {}
+                _ => self.err(ids::BAD_KEYWORD_VALUE, 30, op.code.clone()),
+            }
+        }
+        if sels.is_empty() {
+            sels.push("*ALL".into());
+        }
+        if let Some(Open::Monitor { closed, handlers, .. }) = self.open.last_mut() {
+            *closed = true;
+            for s in sels {
+                handlers.push((s, label.clone()));
+            }
+        }
+    }
+
+    /// `ENDMON`: the region's `monitor` line written with every
+    /// handler, and the group's end.
+    fn end_monitor(&mut self) {
+        let Some(Open::Monitor { name, end, closed, line, handlers }) = self.open.pop() else {
+            self.err(ids::UNBALANCED, 30, "ENDMON");
+            return;
+        };
+        if !closed {
+            self.b.ins(format!("endmon {name}"));
+        }
+        self.b.place(&end);
+        let list: Vec<String> = if handlers.is_empty() {
+            vec![format!("*ALL -> {end}")]
+        } else {
+            handlers.iter().map(|(s, l)| format!("{s} -> {l}")).collect()
+        };
+        self.b.lines[line] = format!("  monitor {name}, {}", list.join(", "));
     }
 
     fn tag_label(&mut self, name: &str) -> String {
@@ -753,13 +850,9 @@ impl Gen<'_> {
         };
         match end {
             LoopEnd::Top(top) => {
-                self.b.place(&iter);
-                let _ = top;
-                if self.b.is_open() {
-                    // `iter` is the top for DOW: the place above fell
-                    // into it already.
-                }
-                self.b.term(format!("br {iter}"));
+                // `ITER` goes to the top, which is placed already.
+                let _ = iter;
+                self.b.term(format!("br {top}"));
             }
             LoopEnd::Bottom(cond, body) => {
                 self.b.place(&iter);
@@ -1236,11 +1329,91 @@ pub fn init_symbol(g: &mut Gen<'_>, id: SymId) {
                 }
             }
         }
+        Some(Kind::Field) if s.ctdata => {
+            default_value(g, &s.ty, s.dim, &place);
+            load_ctdata(g, id, &place);
+        }
         Some(Kind::Field) => match &s.inz {
             Some(Some(e)) => inz_value(g, &s.ty, s.dim, &place, e),
             _ => default_value(g, &s.ty, s.dim, &place),
         },
         _ => {}
+    }
+}
+
+/// A compile-time array's data: its `**CTDATA name` section, else the
+/// unnamed `**` section in the order the arrays are declared; `PERRCD`
+/// entries per record, each the element's length; numbers as their
+/// digits with the sign in the last zone.
+fn load_ctdata(g: &mut Gen<'_>, id: SymId, place: &str) {
+    let s = g.t.syms[id].clone();
+    let order = (0..id).filter(|&i| g.t.syms[i].ctdata).count();
+    let section = g
+        .ctdata
+        .iter()
+        .find(|c| c.kind == "CTDATA" && c.name == s.name)
+        .or_else(|| g.ctdata.iter().filter(|c| c.kind.is_empty()).nth(order))
+        .cloned();
+    let Some(section) = section else {
+        g.err(ids::NOT_DEFINED, 30, format!("**CTDATA {}", s.name));
+        return;
+    };
+    let width = usize::try_from(match &s.ty {
+        t if t.is_numeric() => u32::from(t.shape().map_or(1, |x| x.0)),
+        t => g.t.size(t),
+    })
+    .unwrap_or(1)
+    .max(1);
+    let per = usize::try_from(s.perrcd.max(1)).unwrap_or(1);
+    let mut k = 0u32;
+    for rec in &section.records {
+        let chars: Vec<char> = rec.chars().collect();
+        for e in 0..per {
+            if k >= s.dim {
+                return;
+            }
+            let from = e * width;
+            if from >= chars.len() && !s.ty.is_numeric() {
+                k += 1;
+                continue;
+            }
+            let text: String = (from..from + width).map(|i| chars.get(i).copied().unwrap_or(' ')).collect();
+            let p = format!("{place}[{k}]");
+            if s.ty.is_numeric() {
+                let (_, scale) = s.ty.shape().unwrap_or((1, 0));
+                let digits: String = text.chars().map(|c| if c.is_ascii_digit() { c } else { '0' }).collect();
+                let neg = text.chars().last().is_some_and(|c| "}JKLMNOPQR".contains(c) || c == '-');
+                let digits: String = text
+                    .chars()
+                    .enumerate()
+                    .map(|(i, c)| {
+                        if i + 1 == width && neg {
+                            match c {
+                                '}' => '0',
+                                'J'..='R' => char::from(b'1' + (c as u8 - b'J')),
+                                _ => c,
+                            }
+                        } else if c.is_ascii_digit() {
+                            c
+                        } else {
+                            '0'
+                        }
+                    })
+                    .collect::<String>()
+                    .chars()
+                    .zip(digits.chars())
+                    .map(|(a, _)| a)
+                    .collect();
+                let sc = usize::from(scale);
+                let (i, f) = digits.split_at(digits.len().saturating_sub(sc));
+                let lit = if sc > 0 { format!("{}{i}.{f}", if neg { "-" } else { "" }) } else { format!("{}{i}", if neg { "-" } else { "" }) };
+                let lit = if lit.starts_with('.') || lit.starts_with("-.") { lit.replacen('.', "0.", 1) } else { lit };
+                g.b.ins(format!("dec.mov {p}, {lit}"));
+            } else {
+                g.b.ins(format!("mov {p}, {}", quote(&text)));
+            }
+            k += 1;
+        }
     }
 }
 

@@ -125,8 +125,14 @@ impl Gen<'_> {
                     fig_text(f),
                 )
             }),
-            Expr::Special { word, index, .. } => self.special(word, index.as_deref()),
-            Expr::Ref { name, steps, .. } => self.reference(name, steps, false),
+            Expr::Special { word, index, at } => {
+                self.ref_at = *at;
+                self.special(word, index.as_deref())
+            }
+            Expr::Ref { name, steps, at } => {
+                self.ref_at = *at;
+                self.reference(name, steps, false)
+            }
             Expr::Bif { name, args, .. } => self.bif(name, args, w),
             Expr::Unary(op, a, _) => self.unary(*op, a, w),
             Expr::Binary(op, a, b, _) => self.binary(*op, a, b, w),
@@ -204,7 +210,8 @@ impl Gen<'_> {
                 return Some(V::place(Ty::Ind, format!("${}", up.to_ascii_lowercase())));
             }
         }
-        self.err(ids::NOT_DEFINED, 30, word.to_string());
+        let at = self.ref_at;
+        self.undefined_name(word, at);
         None
     }
 
@@ -251,7 +258,8 @@ impl Gen<'_> {
     /// constant, or a call.
     pub fn reference(&mut self, name: &str, steps: &[Step], modify: bool) -> Option<V> {
         let Some(id) = self.t.find(self.scope, name) else {
-            self.err(ids::NOT_DEFINED, 30, name.to_string());
+            let at = self.ref_at;
+            self.undefined_name(name, at);
             return None;
         };
         self.t.refer(id, self.at.line, modify);
@@ -431,7 +439,14 @@ impl Gen<'_> {
         let vb = self.expr(b, w)?;
         match op {
             BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Gt | BinOp::Le | BinOp::Ge => self.compare(op, &va, &vb),
-            BinOp::Add if va.ty.is_string() || vb.ty.is_string() || matches!(va.ty, Ty::Ds(_)) => self.concat(&va, &vb),
+            BinOp::Add
+                if va.ty.is_string()
+                    || vb.ty.is_string()
+                    || matches!(va.ty, Ty::Ds(_))
+                    || va.ty == Ty::Ind && vb.ty == Ty::Ind =>
+            {
+                self.concat(&va, &vb)
+            }
             _ => self.arith(op, &va, &vb, w),
         }
     }
@@ -536,9 +551,29 @@ impl Gen<'_> {
         }
     }
 
+    /// An indicator as character data: one character, `'0'` or `'1'`.
+    pub fn ind_as_char(&mut self, v: &V) -> V {
+        if v.ty != Ty::Ind {
+            return v.clone();
+        }
+        let t = self.b.temp("char(1)");
+        match v.kind {
+            Vk::Place => self.b.ins(format!("cvt {t}, {}", v.op)),
+            Vk::Lit => self.b.ins(format!("mov {t}, {}", if v.op == "*ON" { quote("1") } else { quote("0") })),
+            Vk::Reg => {
+                let i = self.b.temp("ind");
+                self.b.ins(format!("store {i}, {}", v.op));
+                self.b.ins(format!("cvt {t}, {i}"));
+            }
+        }
+        V::place(Ty::Char(1), t)
+    }
+
     fn concat(&mut self, va: &V, vb: &V) -> Option<V> {
         let va = self.as_chars(va);
         let vb = self.as_chars(vb);
+        let va = self.ind_as_char(&va);
+        let vb = self.ind_as_char(&vb);
         if !va.ty.is_char() || !vb.ty.is_char() {
             self.err(ids::TYPE_MISMATCH, 30, "+");
             return None;
@@ -571,6 +606,8 @@ impl Gen<'_> {
         };
         let va = self.as_chars(va);
         let vb = self.as_chars(vb);
+        // A figurative constant takes the other operand's type.
+        let (va, vb) = (self.fig_as(&va, &vb), self.fig_as(&vb, &va));
         let r = self.b.reg();
         let numeric = va.ty.is_numeric() || vb.ty.is_numeric();
         let fig_zero = |v: &V| matches!(v.fig, Some(Fig::Zeros | Fig::Hival | Fig::Loval));
@@ -606,7 +643,16 @@ impl Gen<'_> {
             return Some(V::reg(Ty::Ind, r));
         }
         if (va.ty.is_string() || va.fig.is_some()) && (vb.ty.is_string() || vb.fig.is_some()) {
-            self.b.ins(format!("{r} = str.cmp.{c} {}, {}", va.op, vb.op));
+            // The IR compares a literal only against storage.
+            let a = if va.kind == Vk::Lit && vb.kind == Vk::Lit {
+                let n = va.ty.str_len().unwrap_or(1).max(1);
+                let t = self.b.temp(&format!("char({n})"));
+                self.b.ins(format!("mov {t}, {}", va.op));
+                t
+            } else {
+                va.op.clone()
+            };
+            self.b.ins(format!("{r} = str.cmp.{c} {a}, {}", vb.op));
             return Some(V::reg(Ty::Ind, r));
         }
         if matches!(va.ty, Ty::Ptr | Ty::ProcPtr) || matches!(vb.ty, Ty::Ptr | Ty::ProcPtr) {
@@ -617,6 +663,26 @@ impl Gen<'_> {
         }
         self.err(ids::TYPE_MISMATCH, 30, "");
         None
+    }
+
+    /// A figurative constant as a temporary of `other`'s type, for a
+    /// comparison; anything else as it is.
+    fn fig_as(&mut self, v: &V, other: &V) -> V {
+        let Some(f) = &v.fig else { return v.clone() };
+        if other.fig.is_some() || !(other.ty.is_numeric() || other.ty.is_datetime()) {
+            return v.clone();
+        }
+        if matches!(f, Fig::On | Fig::Off | Fig::Null) {
+            return v.clone();
+        }
+        let ty = match &other.ty {
+            Ty::Float(_) | Ty::Int(_) | Ty::Uns(_) | Ty::Bin(..) => other.ty.clone(),
+            t if t.is_numeric() => t.clone(),
+            t => t.clone(),
+        };
+        let t = self.b.temp(&self.ir_ty(&ty));
+        self.b.ins(format!("mov {t}, {}", v.op));
+        V::place(ty, t)
     }
 
     fn ind_reg_or_lit(&mut self, v: &V) -> Option<String> {

@@ -1,0 +1,20 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s n packed(9:2) inz(10);
+dcl-s s varchar(20) inz('a');
+n += 5;
+n -= 2.5;
+n *= 3;
+n /= 4;
+line = %char(n);
+write QSYSPRT line;
+n **= 2;
+line = %char(n);
+write QSYSPRT line;
+s += 'bc';
+s += 'd';
+line = s + %char(%len(s));
+write QSYSPRT line;
+*inlr = *on;

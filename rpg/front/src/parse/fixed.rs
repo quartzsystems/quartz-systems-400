@@ -122,9 +122,21 @@ pub fn spec(b: &mut Builder<'_>, spec: &FixedSpec, group: bool) -> bool {
     }
 }
 
+/// A numeric entry must end in its field's last column (RNF0263).
+fn right_adjusted(b: &mut Builder<'_>, l: &Line, form: &Form, field: &str) {
+    let Some(fd) = form.field(field) else { return };
+    let raw = cut(&l.text, fd.from, fd.to);
+    if !raw.trim().is_empty() && raw.ends_with(' ') {
+        let col = fd.from + raw.len() - raw.trim_start().len();
+        b.diags.push(Diag::new(ids::NOT_RIGHT_ADJUSTED, 20, l.pos(u16::try_from(col).unwrap_or(0))));
+    }
+}
+
 fn file_spec(b: &mut Builder<'_>, lines: &[&Line]) {
     let l = lines[0];
     let ff = f("F");
+    right_adjusted(b, l, ff, "reclen");
+    right_adjusted(b, l, ff, "keylen");
     let c = |n: &str| ff.cut(&l.text, n).trim().to_ascii_uppercase();
     let cols = FileCols {
         ftype: c("type"),
@@ -172,6 +184,9 @@ fn def_spec(b: &mut Builder<'_>, lines: &[&Line], group: bool) -> bool {
     let (name, k) = long_name(lines);
     let l = lines[k];
     let df = f("D");
+    right_adjusted(b, l, df, "from");
+    right_adjusted(b, l, df, "to");
+    right_adjusted(b, l, df, "decimals");
     let c = |n: &str| df.cut(&l.text, n).trim().to_ascii_uppercase();
     let deftype = c("deftype");
     let cols = DefCols {
@@ -393,6 +408,8 @@ fn calc_spec(b: &mut Builder<'_>, lines: &[&Line]) {
         op.xf2 = x;
         op.more = more;
     } else {
+        right_adjusted(b, l, cf, "len");
+        right_adjusted(b, l, cf, "decimals");
         op.f2 = factor(b, l, 36, 49);
         op.result = factor(b, l, 50, 63);
         op.len = cf.cut(&l.text, "len").trim().to_string();

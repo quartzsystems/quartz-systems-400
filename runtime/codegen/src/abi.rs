@@ -326,11 +326,21 @@ pub fn time_fmt_index(f: TimeFmt) -> u8 {
 /// A type as the 64-bit word runtime calls receive beside a storage
 /// address: bits 0-7 the kind, 8-39 the length or digits, 40-47 the
 /// decimal positions or timestamp precision, 48-55 the date or time
-/// format index.
+/// format index, bit 56 [`TypeDesc::FSIGN`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct TypeDesc(pub u64);
 
 impl TypeDesc {
+    /// Packed and zoned values written through this descriptor take
+    /// the positive sign `F` instead of `C`, as RPG writes them.
+    pub const FSIGN: u64 = 1 << 56;
+
+    /// The descriptor with [`Self::FSIGN`] set when `on`.
+    #[must_use]
+    pub fn fsign(self, on: bool) -> Self {
+        if on { Self(self.0 | Self::FSIGN) } else { self }
+    }
+
     /// Encode a type. Structures, arrays and bytes encode as `bytes(n)`.
     #[must_use]
     pub fn of(ty: &Type) -> Self {

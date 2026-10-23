@@ -14,6 +14,7 @@
 pub mod bif;
 pub mod emit;
 pub mod expr;
+pub mod output;
 pub mod stmt;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -23,6 +24,7 @@ use rpgfront::Diag;
 use rpgfront::ast::{Expr, Module, Pos, Stmt};
 
 use crate::ctl::{Ctl, Options};
+use crate::diag::ids;
 use crate::files::{Dev, File};
 use crate::names::mangle;
 use crate::syms::{Kind, Storage, SymId, Table};
@@ -159,6 +161,32 @@ pub struct Gen<'a> {
     pub monitors: u32,
     /// Names of the module's own procedures.
     pub local_procs: BTreeSet<String>,
+    /// Page counters the output uses (`PAGE`, `PAGE1`...).
+    pub pages: BTreeSet<String>,
+    /// The module's output specifications.
+    pub outputs: Vec<rpgfront::ast::Output>,
+    /// The module's compile-time data sections.
+    pub ctdata: Vec<rpgfront::ast::CtData>,
+    /// Names reported as not defined.
+    pub undefined: BTreeSet<String>,
+    /// Statements reported for an undefined operand.
+    pub undefined_at: BTreeSet<u32>,
+    /// Where the reference being resolved is.
+    pub ref_at: Pos,
+}
+
+impl Gen<'_> {
+    /// A name that is not defined: RNF7030 at its first reference,
+    /// RNF7503 for each statement that uses it.
+    pub fn undefined_name(&mut self, name: &str, at: Pos) {
+        let at = if at.line == 0 { self.at } else { at };
+        if self.undefined.insert(name.to_string()) {
+            self.diags.push(Diag::new(ids::NOT_DEFINED, 30, at).arg(name.to_string()));
+        }
+        if self.undefined_at.insert(self.at.line) {
+            self.diags.push(Diag::new(ids::UNDEFINED_OPERAND, 30, at));
+        }
+    }
 }
 
 impl Gen<'_> {
@@ -242,6 +270,12 @@ pub fn module(
         debug: opts.dbgview != "*NONE",
         monitors: 0,
         local_procs: m.procs.iter().map(|p| p.name.to_ascii_uppercase()).collect(),
+        pages: BTreeSet::new(),
+        outputs: m.outputs.clone(),
+        ctdata: m.ctdata.clone(),
+        undefined: BTreeSet::new(),
+        undefined_at: BTreeSet::new(),
+        ref_at: Pos::default(),
     };
     let mut out = String::new();
     let actgrp = if ctl.dftactgrp {
@@ -325,6 +359,9 @@ pub fn module(
         procs.push_str(&stmt::subprocedure(&mut g, p, locals.get(i).copied().unwrap_or(0)));
     }
     procs.push_str(&init_proc(&mut g));
+    for p in &g.pages {
+        let _ = writeln!(out, "static {p}: zoned(4,0)");
+    }
     for e in g.externs.values() {
         out.push_str(e);
         out.push('\n');
@@ -362,6 +399,9 @@ fn init_proc(g: &mut Gen<'_>) -> String {
         stmt::init_symbol(g, id);
     }
     g.b.ins("mov $in.all_, *ZEROS".to_string());
+    for p in g.pages.clone() {
+        g.b.ins(format!("mov {p}, *ZEROS"));
+    }
     for n in SPECIAL_INDS {
         g.b.ins(format!("store ${}, *OFF", n.to_ascii_lowercase()));
     }
@@ -369,7 +409,10 @@ fn init_proc(g: &mut Gen<'_>) -> String {
     body.finish("proc _qrni_init()", "ret")
 }
 
-/// The main procedure: the program entry, running the cycle.
+/// The main procedure: the program entry, running the cycle in IBM's
+/// order: heading and detail output (the `1P` output on the first
+/// cycle), total calculations and total output, the end when `LR` is
+/// on, the detail calculations, and the return when `RT` is on.
 fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b = Body::new();
     g.scope = 0;
@@ -388,25 +431,39 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     }
     g.b.ins("store $init_done, *ON");
     g.b.place(&start);
-    // The detail calculations, then the LR and RT checks.
-    let end_calcs = g.b.label();
-    g.main_exit = Some(end_calcs.clone());
-    let (detail, total): (Vec<&Stmt>, Vec<&Stmt>) = m.calcs.iter().partition(|s| s.level != "LR");
+    g.b.ins("store $in1p, *ON");
+    // Where RETURN goes: the end, closing when LR is on.
+    let finish = g.b.label();
+    g.main_exit = Some(finish.clone());
+    let (detail, total): (Vec<&Stmt>, Vec<&Stmt>) = m.calcs.iter().partition(|s| !is_total(&s.level));
+    let outputs = g.outputs.clone();
     let top = g.b.label();
     g.b.place(&top);
+    g.output(&outputs, output::Step::HeadingDetail);
     g.b.ins("store $in1p, *OFF");
-    stmt::calcs(g, &detail);
-    g.b.place(&end_calcs);
-    let lr = g.b.label();
-    let rt = g.b.label();
+    // Total time: calculations conditioned by LR run when it is on.
+    let tot = g.b.label();
+    let after_tot = g.b.label();
+    g.b.ins("%lr0 = load $inlr");
+    g.b.term(format!("brif %lr0, {tot}, {after_tot}"));
+    g.b.place(&tot);
+    stmt::calcs(g, &total);
+    g.b.place(&after_tot);
+    g.output(&outputs, output::Step::Total);
+    let end = g.b.label();
+    let detail_l = g.b.label();
     g.b.ins("%lr = load $inlr");
-    g.b.term(format!("brif %lr, {lr}, {rt}"));
-    g.b.place(&rt);
+    g.b.term(format!("brif %lr, {end}, {detail_l}"));
+    g.b.place(&detail_l);
+    stmt::calcs(g, &detail);
     let ret = g.b.label();
     g.b.ins("%rt = load $inrt");
     g.b.term(format!("brif %rt, {ret}, {top}"));
-    g.b.place(&lr);
-    stmt::calcs(g, &total);
+    // RETURN: LR decides whether the program ends.
+    g.b.place(&finish);
+    g.b.ins("%lr2 = load $inlr");
+    g.b.term(format!("brif %lr2, {end}, {ret}"));
+    g.b.place(&end);
     for f in g.files.iter().filter(|f| f.scope == 0 && !f.template) {
         let r = g.b.reg();
         g.b.ins(format!("{r} = dbclose {}", mangle(&f.name)));
@@ -419,4 +476,9 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     stmt::finish_subrs(g);
     let body = std::mem::take(&mut g.b);
     body.finish(&format!("proc {}() entry", mangle(&g.opts.name)), "ret")
+}
+
+/// Whether a control level puts a calculation at total time.
+fn is_total(level: &str) -> bool {
+    level == "LR" || level == "L0" || level.len() == 2 && level.starts_with('L') && level[1..].parse::<u8>().is_ok()
 }

@@ -1,0 +1,25 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s a ind inz(*on);
+dcl-s b ind inz(*off);
+dcl-s n int(10) inz(0);
+*in01 = *on;
+*in(2) = a and b;
+*in03 = a or b;
+*in04 = not b;
+line = *in01 + *in02 + *in03 + *in04;
+write QSYSPRT line;
+if *in01 and not *in02;
+  line = 'yes';
+write QSYSPRT line;
+endif;
+if n = 0 or 1 / n > 1;
+  line = 'short circuit';
+write QSYSPRT line;
+endif;
+*in10 = (n > 5);
+line = 'in10=' + *in10;
+write QSYSPRT line;
+*inlr = *on;

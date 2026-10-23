@@ -1,0 +1,20 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s s char(10) inz('abcdefghij');
+dcl-s n int(10) inz(3);
+line = %subst(s:3:4);
+write QSYSPRT line;
+line = %subst(s:8);
+write QSYSPRT line;
+line = '[' + %subst(s:n:n) + ']';
+write QSYSPRT line;
+line = %char(%scan('d':s)) + ' ' + %char(%scan('z':s)) + ' ' + %char(%scan('c':s:4));
+write QSYSPRT line;
+line = %char(%scan('ef':s));
+write QSYSPRT line;
+%subst(s:2:3) = 'XYZ';
+line = s;
+write QSYSPRT line;
+*inlr = *on;

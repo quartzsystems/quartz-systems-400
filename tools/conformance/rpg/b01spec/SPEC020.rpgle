@@ -1,0 +1,22 @@
+**FREE
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s c char(6);
+dcl-s n packed(5:0);
+c = x'C1C2C3';
+line = '[' + c + ']'; write QSYSPRT line;
+c = *all'xy';
+line = '[' + c + ']'; write QSYSPRT line;
+c = *blanks;
+if c = *blanks;
+  line = 'blank'; write QSYSPRT line;
+endif;
+n = *hival;
+line = %char(n); write QSYSPRT line;
+n = *loval;
+line = %char(n); write QSYSPRT line;
+n = *zeros;
+if n = *zero;
+  line = 'zero'; write QSYSPRT line;
+endif;
+*inlr = *on;

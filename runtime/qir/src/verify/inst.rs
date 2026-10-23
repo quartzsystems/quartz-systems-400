@@ -275,7 +275,10 @@ fn call(
                         ));
                     }
                     if t != param.ty {
-                        let ok = param.varsize && t.class() == param.ty.class();
+                        // A *VARSIZE `bytes` parameter is opaque storage of
+                        // any type.
+                        let opaque = param.varsize && matches!(param.ty, Type::Bytes(_));
+                        let ok = param.varsize && t.class() == param.ty.class() || opaque;
                         if !ok {
                             return Err(format!(
                                 "parameter {} is a {}, the argument a {t}",

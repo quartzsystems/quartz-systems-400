@@ -1,0 +1,21 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s c char(1);
+dcl-s k int(10);
+for k = 1 to 5;
+  select;
+  when k = 1;
+    c = 'a';
+  when k = 2 or k = 3;
+    c = 'b';
+  when k > 10;
+    c = 'z';
+  other;
+    c = '?';
+  endsl;
+  line = %char(k) + c;
+write QSYSPRT line;
+endfor;
+*inlr = *on;
