@@ -1,0 +1,532 @@
+# STRDBG screens, second pass: Display Module Source of the account's own
+# program (no source view: DBGVIEW(*STMT)) under STRDBG UPDPROD(*NO),
+# each function key and each debug command's answer. After every
+# snapshot the script returns to the display (F12, then DSPMODSRC).
+# Nothing is called and no object changes.
+sleep 4000
+key enter
+wait "Main Menu"
+continue
+timeout 90000
+key eraseinput
+type strdbg pgm(cwellman1/qstestpub) updprod(*no)
+key enter
+wait "Display Module Source"
+settle 1500
+key f1
+settle 1500
+snap dbg-key-help
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key f5
+settle 1500
+snap dbg-key-f5
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key f6
+settle 1500
+snap dbg-key-f6
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key f9
+settle 1500
+snap dbg-key-f9
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key f10
+settle 1500
+snap dbg-key-f10
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key f11
+settle 1500
+snap dbg-key-f11
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key f14
+settle 1500
+snap dbg-key-f14
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key f15
+settle 1500
+snap dbg-key-f15
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key f16
+settle 1500
+snap dbg-key-f16
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key f17
+settle 1500
+snap dbg-key-f17
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key f18
+settle 1500
+snap dbg-key-f18
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key f19
+settle 1500
+snap dbg-key-f19
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key f20
+settle 1500
+snap dbg-key-f20
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key f21
+settle 1500
+snap dbg-key-f21
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key f22
+settle 1500
+snap dbg-key-f22
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key f23
+settle 1500
+snap dbg-key-f23
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key pgup
+settle 1500
+snap dbg-key-pgup
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type break 1
+key enter
+settle 1500
+snap dbg-cmd-break
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type tbreak 1
+key enter
+settle 1500
+snap dbg-cmd-tbreak
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type clear 1
+key enter
+settle 1500
+snap dbg-cmd-clear
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type clear pgm
+key enter
+settle 1500
+snap dbg-cmd-clear-pgm
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type display breakpoints
+key enter
+settle 1500
+snap dbg-cmd-display-bkp
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type eval x
+key enter
+settle 1500
+snap dbg-cmd-eval
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type attr x
+key enter
+settle 1500
+snap dbg-cmd-attr
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type watch x
+key enter
+settle 1500
+snap dbg-cmd-watch
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type step
+key enter
+settle 1500
+snap dbg-cmd-step
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type qual 1
+key enter
+settle 1500
+snap dbg-cmd-qual
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type find 'x'
+key enter
+settle 1500
+snap dbg-cmd-find
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type up
+key enter
+settle 1500
+snap dbg-cmd-up
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type down
+key enter
+settle 1500
+snap dbg-cmd-down
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type left
+key enter
+settle 1500
+snap dbg-cmd-left
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type right
+key enter
+settle 1500
+snap dbg-cmd-right
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type top
+key enter
+settle 1500
+snap dbg-cmd-top
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type bottom
+key enter
+settle 1500
+snap dbg-cmd-bottom
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type next
+key enter
+settle 1500
+snap dbg-cmd-next
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type previous
+key enter
+settle 1500
+snap dbg-cmd-previous
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type set case nomatch
+key enter
+settle 1500
+snap dbg-cmd-set
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type equate sm eval x
+key enter
+settle 1500
+snap dbg-cmd-equate
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type display equate
+key enter
+settle 1500
+snap dbg-cmd-display-equate
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type display module qstestpub
+key enter
+settle 1500
+snap dbg-cmd-display-module
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type display watch
+key enter
+settle 1500
+snap dbg-cmd-display-watch
+key f24
+settle 1000
+snap dbg-cmd-display-watch-f24
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type thread
+key enter
+settle 1500
+snap dbg-cmd-thread
+key f24
+settle 1000
+snap dbg-cmd-thread-f24
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type frob
+key enter
+settle 1500
+snap dbg-cmd-unknown
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key eraseinput
+type help
+key enter
+settle 1500
+snap dbg-cmd-help
+key f24
+settle 1000
+snap dbg-cmd-help-f24
+key f12
+settle 1500
+key eraseinput
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+key f3
+settle 1500
+snap dbg-key-f3
+key eraseinput
+type enddbg
+key enter
+settle 1500
+snap dbg-enddbg
+key eraseinput
+type endsrvjob
+key enter
+settle 1500
+snap dbg-endsrvjob
+key eraseinput

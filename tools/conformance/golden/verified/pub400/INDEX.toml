@@ -3792,5 +3792,420 @@ source = "pub400"
 release = "V7R5M0"
 date = "2026-10-23"
 script = "seu-lines"
+
+[[golden]]
+name = "dbg-dspmodsrc-rpg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg"
+width = 80
+
+[[golden]]
+name = "dbg-dspmodsrc-rpg-pgdn"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg"
+width = 80
+
+[[golden]]
+name = "dbg-dspmodsrc"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg"
+width = 80
+
+[[golden]]
+name = "dbg-dspmodsrc-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg"
+width = 80
+
+[[golden]]
+name = "dbg-dspmodsrc-f24-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg"
+width = 80
+
+[[golden]]
+name = "dbg-dspmodsrc-f24-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg"
+width = 80
+
+[[golden]]
+name = "dbg-f13-nosource"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg"
+width = 80
+
+[[golden]]
+name = "dbg-dspmodsrc-cmd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg"
+width = 80
+
+[[golden]]
+name = "dbg-strsrvjob-prompt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg"
+width = 80
+
+[[golden]]
+name = "dbg-key-help"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-key-f5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-key-f6"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-key-f9"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-key-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-key-f14"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-key-f15"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-key-f16"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-key-f17"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-key-f18"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-key-f19"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-key-f20"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-key-f21"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-key-pgup"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-break"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-tbreak"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-clear"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-clear-pgm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-display-bkp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-eval"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-attr"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-watch"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-qual"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-find"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-up"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-down"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-left"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-right"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-top"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-bottom"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-next"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-previous"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-set"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-equate"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-display-equate"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-display-module"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-display-watch"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-display-watch-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-unknown"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-help"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-help-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg2"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-thread"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg3"
+width = 80
+
+[[golden]]
+name = "dbg-cmd-thread-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dbg3"
 width = 80
 

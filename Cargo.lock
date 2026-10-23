@@ -668,6 +668,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "dbg"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+ "uim",
+]
+
+[[package]]
 name = "dds"
 version = "0.1.0"
 dependencies = [
@@ -1725,6 +1733,7 @@ version = "0.1.0"
 dependencies = [
  "ccsid",
  "cmd",
+ "dbg",
  "dspf",
  "ile",
  "ipc",

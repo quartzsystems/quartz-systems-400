@@ -324,7 +324,11 @@ pub fn build_job(host: &Host) -> (Box<Job>, Rc<RefCell<RemoteProvider>>) {
     // A running program takes its break messages too, and the keys a
     // display sent meanwhile (System Request, Attention).
     let breaks_host = host.clone();
-    job.attn = Some(Rc::new(move |job: &mut Job| breaks_host.attention(job)));
+    // The job servicing this one may have orders for it.
+    job.attn = Some(Rc::new(move |job: &mut Job| {
+        breaks_host.attention(job);
+        crate::devtools::dbg::served(job, &breaks_host);
+    }));
     host::attention_timer();
     job.spool = Some(Box::new(stg::remote::spool::RemoteSpool::new(link.clone())));
     let ask = host.clone();
@@ -336,8 +340,10 @@ pub fn build_job(host: &Host) -> (Box<Job>, Rc<RefCell<RemoteProvider>>) {
     job.act.qsecurity = link.borrow_mut().with(Client::whoami).qsecurity;
     let ctl = host.ctl.clone();
     let inbox = Rc::clone(&host.inbox);
+    let dbg_host = host.clone();
     job.set_debug_hook(Box::new(move |job: &mut Job, stop| {
-        debug::session(job, stop, &mut ctl.borrow_mut(), &inbox)
+        crate::devtools::dbg::stop(job, stop, &dbg_host)
+            .unwrap_or_else(|| debug::session(job, stop, &mut ctl.borrow_mut(), &inbox))
     }));
     crate::command::install_hook(&mut job, host);
     crate::command::natives::install(&mut job, host);

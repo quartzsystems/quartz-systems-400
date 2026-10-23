@@ -493,6 +493,23 @@ ipc::rpc! {
     // --- SDA (340-359)
     // --- DFU and RLU (360-379)
     // --- STRDBG screens (380-399)
+    /// The debugger: a program's modules with their source and
+    /// statement lines, for Display Module Source.
+    380 => fn dbg_program / DbgProgramReq (lib: String, name: String) -> Result<DbgProgram, String>;
+    /// `STRSRVJOB`: this job services the job named `number/user/name`.
+    381 => fn srvjob_start / SrvJobStart (job: String) -> Result<String, String>;
+    /// `ENDSRVJOB`: the serviced job is let go; its name.
+    382 => fn srvjob_end / SrvJobEnd () -> Result<String, String>;
+    /// The job this one services, `number/user/name`; empty for none.
+    383 => fn srvjob_serving / SrvJobServing () -> String;
+    /// The servicing job: an order for the serviced job.
+    384 => fn srvjob_order / SrvJobOrder (order: DbgOrder) -> Result<(), String>;
+    /// The serviced job: the orders waiting for it.
+    385 => fn srvjob_orders / SrvJobOrders () -> Vec<DbgOrder>;
+    /// The serviced job: news for the job servicing it.
+    386 => fn srvjob_event / SrvJobEvent (event: DbgEvent) -> Result<(), String>;
+    /// The servicing job: the news waiting for it.
+    387 => fn srvjob_events / SrvJobEvents () -> Vec<DbgEvent>;
     // --- STRSQL (400-419)
     // --- STRSST (420-439)
     /// SST: sign a service tools user on for this job (the job's user
@@ -662,4 +679,112 @@ wire_struct!(SrcMember {
     width,
     exists,
     records
+});
+
+// --- STRDBG screens types
+
+/// One module of a program under debug.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct DbgModule {
+    /// The module.
+    pub name: String,
+    /// The source lines; empty when not available.
+    pub lines: Vec<String>,
+    /// `(line, statement)` pairs.
+    pub stmts: Vec<(u32, u32)>,
+    /// The view the module was compiled with (`DBGVIEW`).
+    pub view: String,
+}
+
+wire_struct!(DbgModule {
+    name,
+    lines,
+    stmts,
+    view
+});
+
+/// A program under debug.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct DbgProgram {
+    /// Its library.
+    pub lib: String,
+    /// Its name.
+    pub name: String,
+    /// `*PGM` or `*SRVPGM`.
+    pub kind: String,
+    /// Its modules.
+    pub modules: Vec<DbgModule>,
+}
+
+wire_struct!(DbgProgram {
+    lib,
+    name,
+    kind,
+    modules
+});
+
+/// What a servicing job asks of the job it services.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DbgOrder {
+    /// `STRDBG`: a program, `LIB/NAME`, under debug.
+    Start {
+        /// The program.
+        program: String,
+        /// `UPDPROD`.
+        updprod: bool,
+    },
+    /// `ENDDBG`.
+    End,
+    /// The breakpoints now: program and statement.
+    Breakpoints {
+        /// The list.
+        list: Vec<(String, u32)>,
+    },
+    /// Go on from a stop.
+    Resume {
+        /// Step rather than run.
+        step: bool,
+        /// Into calls.
+        into: bool,
+    },
+    /// Evaluate a variable at the stop.
+    Eval {
+        /// The expression with its format suffix.
+        expr: String,
+    },
+}
+
+ipc::wire_enum!(DbgOrder {
+    0 => Start { program, updprod },
+    1 => End,
+    2 => Breakpoints { list },
+    3 => Resume { step, into },
+    4 => Eval { expr },
+});
+
+/// What a serviced job tells the job servicing it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DbgEvent {
+    /// Stopped at a statement.
+    Stopped {
+        /// `LIB/NAME`.
+        program: String,
+        /// The procedure.
+        procedure: String,
+        /// The statement.
+        stmt: u32,
+    },
+    /// The answer to an order (`EVAL`'s value, `STRDBG`'s result).
+    Answer {
+        /// The text.
+        text: String,
+    },
+    /// The program ended or the job went on running.
+    Running,
+}
+
+ipc::wire_enum!(DbgEvent {
+    0 => Stopped { program, procedure, stmt },
+    1 => Answer { text },
+    2 => Running,
 });

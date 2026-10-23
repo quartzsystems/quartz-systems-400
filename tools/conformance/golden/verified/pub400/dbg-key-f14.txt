@@ -1,0 +1,24 @@
+                             Work with Module List                              
+                                                             System:   SYSNAME  
+ Type options, press enter.                                                     
+   1=Add program   4=Remove program   5=Display module source                   
+   8=Work with module breakpoints                                               
+                                                                                
+ Opt     Program/module     Library        Type                                 
+                            *LIBL          *PGM                                 
+          QSTESTPUB         USERNAME1      *PGM                                 
+            QSTESTPUB                      *MODULE     Selected                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F9=Retrieve   F12=Cancel                    
+                                                                                
+                                                                                

@@ -1490,6 +1490,41 @@ impl Service for Served<'_> {
     // --- DFU and RLU (360-379)
 
     // --- STRDBG screens (380-399)
+    fn dbg_program(&mut self, lib: String, name: String) -> Result<stg::proto::DbgProgram, String> {
+        self.own_libl();
+        let r = super::dbg::program(self.system, &lib, &name);
+        ile::set_libl(None);
+        r
+    }
+
+    fn srvjob_start(&mut self, job: String) -> Result<String, String> {
+        let special = self.ctx.session.borrow().principal.special_adopted();
+        super::dbg::start(self.system, &self.ctx.job, special, &job)
+    }
+
+    fn srvjob_end(&mut self) -> Result<String, String> {
+        super::dbg::end(self.ctx.job.number)
+    }
+
+    fn srvjob_serving(&mut self) -> String {
+        super::dbg::serving(self.ctx.job.number)
+    }
+
+    fn srvjob_order(&mut self, order: stg::proto::DbgOrder) -> Result<(), String> {
+        super::dbg::order(self.ctx.job.number, order)
+    }
+
+    fn srvjob_orders(&mut self) -> Vec<stg::proto::DbgOrder> {
+        super::dbg::orders(self.ctx.job.number)
+    }
+
+    fn srvjob_event(&mut self, event: stg::proto::DbgEvent) -> Result<(), String> {
+        super::dbg::event(self.ctx.job.number, event)
+    }
+
+    fn srvjob_events(&mut self) -> Vec<stg::proto::DbgEvent> {
+        super::dbg::events(self.ctx.job.number)
+    }
 
     // --- STRSQL (400-419)
 

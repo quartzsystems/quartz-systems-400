@@ -349,6 +349,9 @@ pub const JOB_SITE: &[&str] = &[
     // --- SDA (devtools/sda)
     // --- DFU and RLU (devtools/dfu)
     // --- STRDBG screens (devtools/dbg)
+    "DSPMODSRC",
+    "STRSRVJOB",
+    "ENDSRVJOB",
     // --- STRSQL (devtools/isql)
     // --- STRSST (devtools/sst)
     "STRSST",
@@ -650,7 +653,6 @@ pub const BRIDGE_WORDS: &[&str] = &[
 /// (`docs/PHASE7.md` lists them under Blocked).
 pub const UNSUPPORTED: &[&str] = &[
     "CPYLIB",
-    "DSPMODSRC",
     "POSDBF",
     "STRSQL",
     "TFRJOB",

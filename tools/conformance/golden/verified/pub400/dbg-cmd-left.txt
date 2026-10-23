@@ -1,0 +1,24 @@
+                             Display Module Source                              
+                                                                                
+ Program:   QSTESTPUB      Library:   USERNAME1      Module:   QSTESTPUB        
+                                                                                
+   (Source not available.)                                                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Debug . . .   LEFT                                                             
+                                                                                
+ F3=End program   F6=Add/Clear breakpoint   F10=Step   F11=Display variable     
+ F12=Resume       F17=Watch variable   F18=Work with watch   F24=More keys      
+ No argument specified.                                                         

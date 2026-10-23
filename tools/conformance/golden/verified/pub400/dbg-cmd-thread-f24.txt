@@ -1,0 +1,24 @@
+                           Work With Debugged Threads                           
+                                                                                
+ Current subset . . . :   All threads                                           
+ Current thread . . . :   00000000        Stopped thread . . . :   *NONE        
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change current   3=Disable   6=Enable                                      
+                                                                                
+ Opt  Thread    Sts         Opt  Thread    Sts         Opt  Thread    Sts       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F9=Retrieve   F12=Cancel   F15=Subset       
+                                                                                
+ Function key not allowed.                                                    + 

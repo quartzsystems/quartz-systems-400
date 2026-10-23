@@ -1,0 +1,28 @@
+# STRDBG screens, third pass: Work With Debugged Threads (the THREAD
+# debug command) over the account's own program; ENDDBG at the end.
+sleep 4000
+key enter
+wait "Main Menu"
+continue
+timeout 90000
+key eraseinput
+type strdbg pgm(cwellman1/qstestpub) updprod(*no)
+key enter
+wait "Display Module Source"
+settle 1500
+key eraseinput
+type thread
+key enter
+settle 1500
+snap dbg-cmd-thread
+key f24
+settle 1000
+snap dbg-cmd-thread-f24
+key f12
+settle 1500
+key f12
+settle 1500
+key eraseinput
+type enddbg
+key enter
+settle 1500

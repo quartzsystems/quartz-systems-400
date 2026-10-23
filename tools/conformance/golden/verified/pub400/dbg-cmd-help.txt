@@ -1,0 +1,24 @@
+ Help                     Display Module Source - Help                          
+                                                                                
+     Debug commands can be entered in uppercase, lowercase, or mixed            
+     case.  If either of the following conditions exist:                        
+      o  The code character set ID of the debug job is 290                      
+      o  The code character set ID of the debug job is 65535 and the            
+         device character set is 290                                            
+     the debugger may not recognize lowercase.  In that event, you should       
+     enter text in uppercase.  In addition, debug commands can be               
+     abbreviated to the smallest subset of letters that uniquely identify       
+     them.                                                                      
+                                                                                
+     The following debug commands are available.  Place the cursor on a         
+     highlighted term and press Enter for more information.                     
+                                                                                
+           attr  >>--:--attr-->variable--><                                     
+                                                                                
+           break  >>--:--break-->position--:---------------------:--><          
+                                           :--when-->expression--:              
+                                                                                
+                                                                        More... 
+ F3=Exit help   F10=Move to top   F12=Cancel   F13=Information Assistant        
+ F14=Print help                                                                 
+                                                                                

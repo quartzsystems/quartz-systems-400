@@ -94,6 +94,15 @@ fn aid_of(k: u8) -> u8 {
     }
 }
 
+/// What ended a wait.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Waited {
+    /// An attention key and the cursor.
+    Key(u8, (u8, u8)),
+    /// The poll asked to stop waiting.
+    Polled,
+}
+
 impl Surface {
     /// Over the job's surroundings.
     #[must_use]
@@ -140,18 +149,27 @@ impl Surface {
     /// `None` when the job is to end, the device is gone or the request
     /// was ended.
     pub fn wait(&mut self) -> Option<(u8, (u8, u8))> {
+        match self.wait_or(&mut || false)? {
+            Waited::Key(a, at) => Some((a, at)),
+            Waited::Polled => None,
+        }
+    }
+
+    /// `wait`, asking `poll` each second whether to stop waiting;
+    /// `Waited::Polled` when it said so (the read stays outstanding).
+    pub fn wait_or(&mut self, poll: &mut dyn FnMut() -> bool) -> Option<Waited> {
         // A job waiting at its display gives its activity level to
         // another; it takes one again before it goes on.
         stg::remote::display_wait(&self.host.link, true);
-        let got = self.wait_input();
+        let got = self.wait_input(poll);
         if got.is_some() {
             stg::remote::display_wait(&self.host.link, false);
         }
         got
     }
 
-    /// The wait itself: keys, resets, the job's end.
-    fn wait_input(&mut self) -> Option<(u8, (u8, u8))> {
+    /// The wait itself: keys, resets, the job's end, the poll.
+    fn wait_input(&mut self, poll: &mut dyn FnMut() -> bool) -> Option<Waited> {
         use crate::sysdsp::keys;
         loop {
             if keys::unwinding() {
@@ -172,7 +190,7 @@ impl Surface {
                                 return None;
                             }
                         }
-                        Some((_, Some(inb))) => return Some((inb.aid, (inb.row, inb.col))),
+                        Some((_, Some(inb))) => return Some(Waited::Key(inb.aid, (inb.row, inb.col))),
                         Some((_, None)) => self.flush(Read::MdtFields),
                         None => {}
                     }
@@ -184,7 +202,7 @@ impl Surface {
                     let cursor = self.console.cursor().map_or((1, 1), |(r, c)| {
                         (u8::try_from(r).unwrap_or(1), u8::try_from(c).unwrap_or(1))
                     });
-                    return Some((aid_of(k), cursor));
+                    return Some(Waited::Key(aid_of(k), cursor));
                 }
                 Ok(ToJob::DeviceReset { device }) => {
                     if let Some(d) = self.host.display.borrow_mut().as_mut() {
@@ -198,6 +216,9 @@ impl Surface {
                     if self.host.display.borrow().is_some() {
                         let host = self.host.clone();
                         crate::sysdsp::msgs::poll(&host);
+                    }
+                    if poll() {
+                        return Some(Waited::Polled);
                     }
                 }
                 Ok(_) => {}

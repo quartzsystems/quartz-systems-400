@@ -298,6 +298,16 @@ note = "the list of members at a display; a printed report otherwise"
 # --- DFU and RLU (devtools/dfu)
 
 # --- STRDBG screens (devtools/dbg)
+[cmd.DSPMODSRC]
+site = "job"
+note = "Display Module Source at a display; text jobs have no source view"
+
+[cmd.STRSRVJOB]
+site = "job"
+note = "the storage service keeps who services whom; debug orders go through it"
+
+[cmd.ENDSRVJOB]
+site = "job"
 
 # --- STRSQL (devtools/isql)
 

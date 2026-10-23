@@ -5,6 +5,7 @@
 //! The developer tools' drivers: each tool's screens, keys and storage
 //! requests over the logic of its crate under `devtools/`.
 
+pub mod dbg;
 pub mod pdm;
 pub mod seu;
 pub mod sst;

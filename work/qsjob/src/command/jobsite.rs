@@ -58,7 +58,11 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         return res;
     }
     match r.name.as_str() {
-        "CALL" => return call(job, host, &parms),
+        "CALL" => {
+            // The job servicing this one may have orders for the call.
+            crate::devtools::dbg::served(job, host);
+            return call(job, host, &parms);
+        }
         "STRSEU" => return crate::devtools::seu::run(job, host, r),
         "RTVSYSVAL" => return rtvsysval(host, r, out),
         "RTVJOBA" => return rtvjoba(host, r, out),
@@ -72,6 +76,13 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "STRTCPSVR" => return strtcpsvr(host, r),
         "ENDTCPSVR" => return endtcpsvr(job, host, r),
         "CHGTELNA" => return chgtelna(job, host, r),
+        // --- STRDBG screens (devtools/dbg)
+        "STRDBG" | "ENDDBG" | "DSPMODSRC" | "ADDBKP" | "RMVBKP" | "DSPBKP" | "STRSRVJOB"
+        | "ENDSRVJOB" => {
+            if let Some(res) = crate::devtools::dbg::run(job, host, r, out) {
+                return res;
+            }
+        }
         // --- PDM (devtools/pdm)
         "STRPDM" | "WRKLIBPDM" | "WRKOBJPDM" | "WRKMBRPDM" | "FNDSTRPDM" => {
             return crate::devtools::pdm::run(job, host, r, out);

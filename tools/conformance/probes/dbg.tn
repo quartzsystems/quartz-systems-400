@@ -1,0 +1,278 @@
+# STRDBG screens: Display Module Source of the account's own programs
+# under STRDBG UPDPROD(*NO), its key pages and F-key displays, the
+# debug command line's answers, then ENDDBG. Nothing is called and no
+# object changes; breakpoints live only in the debug session.
+sleep 4000
+key enter
+wait "Main Menu"
+continue
+timeout 90000
+type strdbg pgm(cwellman1/qdfuzz) updprod(*no)
+key enter
+wait "Display Module Source"
+settle 1500
+snap dbg-dspmodsrc-rpg
+key pgdn
+settle 1000
+snap dbg-dspmodsrc-rpg-pgdn
+key f12
+settle 1500
+type enddbg
+key enter
+settle 1500
+type strdbg pgm(cwellman1/qstestpub) updprod(*no)
+key enter
+wait "Display Module Source"
+settle 1500
+snap dbg-dspmodsrc
+key f24
+settle 800
+snap dbg-dspmodsrc-f24
+key f24
+settle 800
+snap dbg-dspmodsrc-f24-2
+key f24
+settle 800
+snap dbg-dspmodsrc-f24-3
+key f13
+settle 1500
+snap dbg-wrkmodbkp
+key f12
+settle 1000
+key f14
+settle 1500
+snap dbg-wrkmodlst
+key f12
+settle 1000
+key f15
+settle 1500
+snap dbg-selview
+key f12
+settle 1000
+key f18
+settle 1500
+snap dbg-wrkwatch
+key f12
+settle 1000
+key f11
+settle 1500
+snap dbg-f11
+key f17
+settle 1500
+snap dbg-f17
+key f6
+settle 1500
+snap dbg-f6
+key help
+settle 2000
+snap dbg-help
+key f3
+settle 1500
+cursor 20 16
+key eraseeof
+type break 1
+key enter
+settle 1500
+snap dbg-cmd-break
+cursor 20 16
+key eraseeof
+type display breakpoints
+key enter
+settle 1500
+snap dbg-cmd-display-bkp
+key f13
+settle 1500
+snap dbg-wrkmodbkp-one
+key f12
+settle 1000
+cursor 20 16
+key eraseeof
+type clear 1
+key enter
+settle 1500
+snap dbg-cmd-clear
+cursor 20 16
+key eraseeof
+type tbreak 1
+key enter
+settle 1500
+snap dbg-cmd-tbreak
+cursor 20 16
+key eraseeof
+type clear pgm
+key enter
+settle 1500
+snap dbg-cmd-clear-pgm
+cursor 20 16
+key eraseeof
+type eval x
+key enter
+settle 1500
+snap dbg-cmd-eval
+cursor 20 16
+key eraseeof
+type attr x
+key enter
+settle 1500
+snap dbg-cmd-attr
+cursor 20 16
+key eraseeof
+type watch x
+key enter
+settle 1500
+snap dbg-cmd-watch
+cursor 20 16
+key eraseeof
+type step
+key enter
+settle 1500
+snap dbg-cmd-step
+cursor 20 16
+key eraseeof
+type qual 1
+key enter
+settle 1500
+snap dbg-cmd-qual
+cursor 20 16
+key eraseeof
+type find 'x'
+key enter
+settle 1500
+snap dbg-cmd-find
+cursor 20 16
+key eraseeof
+type up
+key enter
+settle 1500
+snap dbg-cmd-up
+cursor 20 16
+key eraseeof
+type down
+key enter
+settle 1500
+snap dbg-cmd-down
+cursor 20 16
+key eraseeof
+type left
+key enter
+settle 1500
+snap dbg-cmd-left
+cursor 20 16
+key eraseeof
+type right
+key enter
+settle 1500
+snap dbg-cmd-right
+cursor 20 16
+key eraseeof
+type top
+key enter
+settle 1500
+snap dbg-cmd-top
+cursor 20 16
+key eraseeof
+type bottom
+key enter
+settle 1500
+snap dbg-cmd-bottom
+cursor 20 16
+key eraseeof
+type next
+key enter
+settle 1500
+snap dbg-cmd-next
+cursor 20 16
+key eraseeof
+type previous
+key enter
+settle 1500
+snap dbg-cmd-previous
+cursor 20 16
+key eraseeof
+type set case nomatch
+key enter
+settle 1500
+snap dbg-cmd-set
+cursor 20 16
+key eraseeof
+type equate sm eval x
+key enter
+settle 1500
+snap dbg-cmd-equate
+cursor 20 16
+key eraseeof
+type display equate
+key enter
+settle 1500
+snap dbg-cmd-display-equate
+cursor 20 16
+key eraseeof
+type display module qstestpub
+key enter
+settle 1500
+snap dbg-cmd-display-module
+cursor 20 16
+key eraseeof
+type display watch
+key enter
+settle 1500
+snap dbg-cmd-display-watch
+key f12
+settle 1500
+snap dbg-cmd-display-watch-back
+cursor 20 16
+key eraseeof
+type thread
+key enter
+settle 1500
+snap dbg-cmd-thread
+key f12
+settle 1500
+snap dbg-cmd-thread-back
+cursor 20 16
+key eraseeof
+type frob
+key enter
+settle 1500
+snap dbg-cmd-unknown
+cursor 20 16
+key eraseeof
+type help
+key enter
+settle 1500
+snap dbg-cmd-help
+key f12
+settle 1500
+snap dbg-cmd-help-back
+key f10
+settle 1500
+snap dbg-f10
+key f12
+settle 1500
+type dspmodsrc
+key enter
+wait "Display Module Source"
+settle 1000
+snap dbg-dspmodsrc-cmd
+key f12
+settle 1500
+type dspbkp
+key enter
+settle 1500
+snap dbg-dspbkp
+key f12
+settle 1000
+type strsrvjob
+key f4
+settle 1500
+snap dbg-strsrvjob-prompt
+key f12
+settle 1000
+type endsrvjob
+key enter
+settle 1500
+snap dbg-endsrvjob
+type enddbg
+key enter
+settle 1500
+snap dbg-enddbg
