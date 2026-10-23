@@ -8,3 +8,5 @@ EXP038 float with decimal operands: last-digit differences (open question)
 EXP048 float with decimal operands: last-digit differences (open question)
 EXP058 float with decimal operands: last-digit differences (open question)
 OPS006 EVALR and string operations: being worked
+IO025 %CHAR of a timestamp: the dates work
+IO026 %CHAR of a timestamp: the dates work

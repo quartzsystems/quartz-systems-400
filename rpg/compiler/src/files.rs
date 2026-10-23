@@ -156,6 +156,12 @@ pub struct File {
     pub sfiles: Vec<(String, String)>,
     /// `QUALIFIED`.
     pub qualified: bool,
+    /// `IGNORE` record formats.
+    pub ignore: Vec<String>,
+    /// `INCLUDE` record formats.
+    pub include: Vec<String>,
+    /// `BLOCK(*NO)`.
+    pub noblock: bool,
     /// `TEMPLATE`.
     pub template: bool,
     /// The scope it belongs to (0 global).
@@ -174,6 +180,7 @@ impl File {
             (true, false) => "*INPUT",
             (false, true) if !self.update => "*OUTPUT",
             (true, true) if !self.update => "*ALL",
+            _ if self.update && self.output => "*ALL",
             _ => "*UPDATE",
         }
     }
@@ -301,6 +308,15 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
             out.renames.push((a, b));
         }
     }
+    for k in f.kws.iter().filter(|k| k.name == "IGNORE" || k.name == "INCLUDE") {
+        let v: Vec<String> = (0..k.args.len()).filter_map(|i| word_arg(k, i)).collect();
+        if k.name == "IGNORE" {
+            out.ignore.extend(v);
+        } else {
+            out.include.extend(v);
+        }
+    }
+    out.noblock = kw(f, "BLOCK").and_then(|k| word_arg(k, 0)).as_deref() == Some("*NO");
     for k in f.kws.iter().filter(|k| k.name == "SFILE") {
         if let (Some(a), Some(b)) = (word_arg(k, 0), word_arg(k, 1)) {
             out.sfiles.push((a, b));
@@ -320,7 +336,7 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
         .and_then(|k| str_arg(k, 0).or_else(|| word_arg(k, 0)))
         .unwrap_or_else(|| "*FIRST".into());
     if out.external {
-        let desc_name = kw(f, "EXTDESC").and_then(|k| str_arg(k, 0)).unwrap_or_else(|| out.obj.1.clone());
+        let desc_name = kw(f, "EXTDESC").and_then(|k| str_arg(k, 0)).unwrap_or_else(|| out.name.clone());
         let (lib, name) = match desc_name.split_once('/') {
             Some((l, n)) => (l.to_string(), n.to_string()),
             None => (out.obj.0.clone(), desc_name),

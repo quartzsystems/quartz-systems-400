@@ -268,6 +268,9 @@ impl Printer<'_> {
                     IoInst::DbClose { dst, file: f } => {
                         format!("{} = dbclose {}", r(*dst), file(*f))
                     }
+                    IoInst::DbFb { dst, file: f } => {
+                        format!("{} = dbfb {}", r(*dst), file(*f))
+                    }
                     IoInst::DbIo {
                         dst,
                         file: f,

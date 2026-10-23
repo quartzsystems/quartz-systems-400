@@ -17,7 +17,19 @@
 //!   their own names.
 //! - `cleanup:` a command run after the call (several allowed): the
 //!   objects the setup made.
+//! - `dds: NAME` a physical or logical file created from the DDS in
+//!   `rpg/dds/NAME.pf` or `NAME.lf` (beside the batch folders) before
+//!   the compile, in the work library, and deleted after the run.
+//! - `sql: STATEMENT` an SQL statement run before the compile, after
+//!   the files above it (`{lib}` is the work library): `CREATE TABLE
+//!   {lib}.T (...)` (character columns `CCSID 37`), `INSERT INTO
+//!   {lib}.T VALUES ...`. Tables it creates are deleted after the run.
+//! - `sqlfile: NAME` the statements of `rpg/dds/NAME.sql`, each as a
+//!   `sql:` step (cut at semicolons).
 //! - `target:` `pub400`, the only system with a compiler.
+//!
+//! `dds:` and `sql:` steps run in order, the same on the oracle and in
+//! the kit, so both sides hold the same files and records.
 
 use std::path::Path;
 
@@ -42,6 +54,83 @@ pub struct Case {
     pub with: Vec<(String, Vec<String>)>,
     /// The names `with:` asked for, before they are loaded.
     pub with_names: Vec<String>,
+    /// Database files and SQL statements, in order.
+    pub db: Vec<DbStep>,
+}
+
+/// One database setup step of a member.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DbStep {
+    /// A file from DDS: its name, whether it is logical, the source.
+    Dds {
+        /// The file name.
+        name: String,
+        /// A logical file.
+        logical: bool,
+        /// The DDS source lines.
+        source: Vec<String>,
+    },
+    /// An SQL statement, `{lib}` not yet filled.
+    Sql(String),
+    /// `sqlfile: NAME` before loading: the statements of `dds/NAME.sql`.
+    SqlFile(String),
+}
+
+/// The statements of an SQL script: cut at semicolons outside
+/// literals, `--` comments dropped, blanks collapsed.
+#[must_use]
+pub fn statements(text: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut cur = String::new();
+    for line in text.lines() {
+        let mut quote = false;
+        let mut chars = line.chars().peekable();
+        while let Some(ch) = chars.next() {
+            if ch == '\'' {
+                quote = !quote;
+            }
+            if !quote && ch == '-' && chars.peek() == Some(&'-') {
+                break;
+            }
+            if !quote && ch == ';' {
+                let s = cur.split_whitespace().collect::<Vec<_>>().join(" ");
+                if !s.is_empty() {
+                    out.push(s);
+                }
+                cur.clear();
+                continue;
+            }
+            cur.push(ch);
+        }
+        cur.push(' ');
+    }
+    let s = cur.split_whitespace().collect::<Vec<_>>().join(" ");
+    if !s.is_empty() {
+        out.push(s);
+    }
+    out
+}
+
+impl DbStep {
+    /// The file this step creates, if any: a DDS file, or the table
+    /// or view of a `CREATE`.
+    #[must_use]
+    pub fn creates(&self) -> Option<String> {
+        match self {
+            Self::Dds { name, .. } => Some(name.clone()),
+            Self::SqlFile(_) => None,
+            Self::Sql(s) => {
+                let w: Vec<String> = s.split_whitespace().take(3).map(str::to_ascii_uppercase).collect();
+                if w.len() == 3 && w[0] == "CREATE" && matches!(w[1].as_str(), "TABLE" | "VIEW" | "INDEX") {
+                    let n = w[2].rsplit(['.', '/']).next().unwrap_or("");
+                    let n: String = n.chars().take_while(|c| c.is_ascii_alphanumeric() || "$#@_".contains(*c)).collect();
+                    (!n.is_empty()).then_some(n)
+                } else {
+                    None
+                }
+            }
+        }
+    }
 }
 
 /// The default compile command.
@@ -65,6 +154,7 @@ impl Case {
             cleanup: Vec::new(),
             with: Vec::new(),
             with_names: Vec::new(),
+            db: Vec::new(),
         };
         for l in c.lines.clone() {
             let Some((key, value)) = directive(&l) else {
@@ -80,6 +170,13 @@ impl Case {
                 "with" => c
                     .with_names
                     .extend(value.split([',', ' ']).filter(|s| !s.is_empty()).map(str::to_ascii_uppercase)),
+                "dds" => c.db.push(DbStep::Dds {
+                    name: value.to_ascii_uppercase(),
+                    logical: false,
+                    source: Vec::new(),
+                }),
+                "sql" => c.db.push(DbStep::Sql(value)),
+                "sqlfile" => c.db.push(DbStep::SqlFile(value.to_ascii_uppercase())),
                 _ => {}
             }
         }
@@ -87,7 +184,8 @@ impl Case {
     }
 
     /// Read a member from a file named `NAME.rpgle` (or `.sqlrpgle`),
-    /// with the `.rpginc` members its `with:` names.
+    /// with the `.rpginc` members its `with:` names and the DDS its
+    /// `dds:` steps name from `../dds/`.
     pub fn load(path: &Path) -> std::io::Result<Self> {
         let text = std::fs::read_to_string(path)?;
         let name = path
@@ -102,6 +200,33 @@ impl Case {
             let t = std::fs::read_to_string(&p)?;
             c.with.push((w, t.replace("\r\n", "\n").lines().map(str::to_string).collect()));
         }
+        let dir = path
+            .parent()
+            .and_then(Path::parent)
+            .unwrap_or_else(|| Path::new("."))
+            .join("dds");
+        let read = |p: &Path| {
+            std::fs::read_to_string(p).map_err(|e| std::io::Error::new(e.kind(), format!("{}: {e}", p.display())))
+        };
+        let mut steps = Vec::new();
+        for step in std::mem::take(&mut c.db) {
+            match step {
+                DbStep::Dds { name, .. } => {
+                    let pf = dir.join(format!("{name}.pf"));
+                    let lf = dir.join(format!("{name}.lf"));
+                    let (p, logical) = if pf.exists() { (pf, false) } else { (lf, true) };
+                    let t = read(&p)?;
+                    let source = t.lines().map(|l| l.trim_end_matches('\r').to_string()).collect();
+                    steps.push(DbStep::Dds { name, logical, source });
+                }
+                DbStep::SqlFile(name) => {
+                    let t = read(&dir.join(format!("{name}.sql")))?;
+                    steps.extend(statements(&t).into_iter().map(DbStep::Sql));
+                }
+                s @ DbStep::Sql(_) => steps.push(s),
+            }
+        }
+        c.db = steps;
         Ok(c)
     }
 
@@ -158,5 +283,9 @@ mod tests {
         let f = Case::parse("x", "      *; rcdlen: 252\n      *; setup: DLTF A\n");
         assert_eq!(f.rcdlen, 252);
         assert_eq!(f.setup, vec!["DLTF A".to_string()]);
+        let d = Case::parse("x", "//; dds: CUST\n//; sql: CREATE TABLE {lib}.T2 (A CHAR(1))\n");
+        assert_eq!(d.db.len(), 2);
+        assert_eq!(d.db[0].creates().as_deref(), Some("CUST"));
+        assert_eq!(d.db[1].creates().as_deref(), Some("T2"));
     }
 }

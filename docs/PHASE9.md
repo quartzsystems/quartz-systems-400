@@ -49,6 +49,23 @@ in the system temporary folder (`qs400-rpg-oracle/session.lock`), where
 the last compile's time is kept too, so parallel worktrees share the
 compile gap.
 
+**Database files.** A member's `dds: NAME` directive creates
+`NAME` from `rpg/dds/NAME.pf` (or `.lf`) in the work library before
+the compile (the source goes into a `QDDSSRC` there, `CRTPF`/`CRTLF`,
+the member removed); `sql: STATEMENT` and `sqlfile: NAME` (the
+statements of `rpg/dds/NAME.sql`) run through `RUNSQLSTM` with `{lib}`
+the work library, a run of statements in one member. Every file a step
+creates is deleted after the run, the last first. The work library is
+added to the job's library list when the session opens, so the
+compile and the call find the files through `*LIBL`. The kit builds
+the same files in memory: the DDS through the `dds` compilers and
+`db::file`, the statements through the Phase 3 SQL engine, with `QGPL`
+as `{lib}`; the compiler reads the formats from those `*FILE` objects
+(`conformance::rpg::files::KitExt`, an `rpgc::ExtFiles`) and the job's
+`StoreIo` runs over the same store. A failing `RUNSQLSTM` reports the
+`SQL` lines of its listing. Statements are cut into lines at blanks,
+so a literal must not hold two blanks in a row.
+
 Queries run as `RUNSQLSTM` over an uploaded member because an `RCMD`
 line holds only about 250 characters; their tables have fixed-width
 CP037 columns and are read back in binary. The job runs with
@@ -64,6 +81,50 @@ page with blank lines up to a footer naming the site; blank lines and
 the footer are not part of the comparison. The masked listing goes
 beside it (`NAME.lst`): page headings, dates, times, the library, user
 and system names are placeholders.
+
+## Oracle facts: files and the cycle
+
+Recorded from batches 6 and 7 (`b06cycle`, `b07io`), pub400 V7R5M0.
+
+- The listing numbers generated lines like source lines: an `EXTNAME`
+  structure's subfields (`=D`) after its line, the input
+  specifications of externally described input formats (`=I`: a record
+  line unless an I spec names the format, then one line per field)
+  before the first calculation, the output specifications (`=O`) after
+  the main calculations. Diagnostic line numbers count them.
+- A search argument that is not a list must have the first key
+  field's length and decimals: `CHAIN 999 F` against a `5P 0` key is
+  `RNF7078` (30); `(999)` and `%KDS` convert.
+- Without `EXTDESC` the compile-time description is the file name of
+  the F spec, not `EXTFILE`'s (`RNF2120`, 40, otherwise).
+- `RNF7066` (00): a record format no operation names (file-name I/O does
+  not count; primary and secondary files are exempt). `RNF7086` (00):
+  an input-only file read only by `READ` (and primary files) is
+  blocked. `RNF6011` (00): an output record without space and skip
+  entries. A blank field name on an external I-spec field line is
+  `RNF4050`.
+- `%STATUS(file)` after `CHAIN(E)` that finds nothing is 00012 with
+  `%ERROR` off; `OPEN` of an open file is 01215; `UPDATE` after a read
+  without a lock (`(N)`, `UNLOCK`) is 01221; `WRITE` of a duplicate key
+  01021; a closed file 01211. `CLOSE *ALL` closes the printer too.
+- The INFDS operation code is five characters and `F` (by file name) or
+  `R` (by format): `READ F`, `CHAINR`, `WRITER`, `DELETF`.
+- After `FEOD` on an input file the next `READ` is at end of file.
+- A program-described printer's first line with space-before `n`
+  prints on line `1 + n`.
+- In the cycle, total calculations and output are skipped on the first
+  cycle; `L1`-`L9` set at a break stay on through the detail output of
+  the next cycle; overflow lines print after total output, then the
+  indicator goes off; fetch overflow prints them before the record.
+
+## Intentional differences
+
+- Format level identifiers are QS/400's (`DB_FORMAT.md`), not IBM's;
+  only the check at open uses them.
+- An I/O error with neither `(E)` nor an error indicator does not yet
+  reach the file's exception handling (`INFSR`, the default handler's
+  inquiry, `CEE9901` at the call): the operation's status is kept and
+  the program goes on. `TODO(phase9)` in `codegen/dbio.rs`.
 
 ## Blocked
 

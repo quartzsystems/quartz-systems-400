@@ -60,6 +60,8 @@ fn watchdog() {
     });
 }
 
+pub mod files;
+
 /// Where the corpus lives.
 pub struct Kit {
     /// `conformance/rpg`.
@@ -181,10 +183,13 @@ pub fn member(case: &Case) -> Member {
     Member::from_text("QGPL", "QRPGLESRC", &case.name, &case.lines.join("\n"))
 }
 
-/// Compile a case.
+/// Compile a case, with the external descriptions of its files.
 #[must_use]
-pub fn compile(case: &Case) -> rpgc::Compiled {
-    rpgc::compile(member(case), &mut includes(case), &mut rpgc::NoExtFiles, &options(case))
+pub fn compile(case: &Case, db: Option<&files::KitDb>) -> rpgc::Compiled {
+    match db {
+        Some(d) => rpgc::compile(member(case), &mut includes(case), &mut d.ext(), &options(case)),
+        None => rpgc::compile(member(case), &mut includes(case), &mut rpgc::NoExtFiles, &options(case)),
+    }
 }
 
 /// The members a case's `with:` brings, for `/COPY` and the setup.
@@ -199,7 +204,7 @@ pub fn includes(case: &Case) -> MemIncludes {
 
 /// Compile one of a case's members as a module with a setup command's
 /// options: the IR, or the reason it was not created.
-fn compile_member(case: &Case, mbr: &str, module: &str, cmd: &str) -> Result<String, String> {
+fn compile_member(case: &Case, db: Option<&files::KitDb>, mbr: &str, module: &str, cmd: &str) -> Result<String, String> {
     let lines = if mbr == case.name {
         case.lines.clone()
     } else {
@@ -221,12 +226,11 @@ fn compile_member(case: &Case, mbr: &str, module: &str, cmd: &str) -> Result<Str
     } else {
         rpgc::Command::CrtRpgMod
     };
-    let c = rpgc::compile(
-        Member::from_text("QGPL", "QRPGLESRC", mbr, &sub.lines.join("\n")),
-        &mut includes(case),
-        &mut rpgc::NoExtFiles,
-        &o,
-    );
+    let member = Member::from_text("QGPL", "QRPGLESRC", mbr, &sub.lines.join("\n"));
+    let c = match db {
+        Some(d) => rpgc::compile(member, &mut includes(case), &mut d.ext(), &o),
+        None => rpgc::compile(member, &mut includes(case), &mut rpgc::NoExtFiles, &o),
+    };
     if c.created {
         Ok(c.qir)
     } else {
@@ -241,7 +245,7 @@ pub fn diags(c: &rpgc::Compiled) -> Vec<ODiag> {
         .diags
         .iter()
         .map(|d| ODiag {
-            line: d.at.line,
+            line: c.listing_line(d.at.line),
             msgid: d.msgid.to_string(),
             severity: d.severity,
             seq: c
@@ -309,11 +313,16 @@ pub fn notes(c: &rpgc::Compiled) -> String {
 /// Compile and run a case: its outcome, listing and notes.
 #[allow(clippy::many_single_char_names)]
 pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
+    let db = if case.db.is_empty() {
+        None
+    } else {
+        Some(files::KitDb::build(&case.db).map_err(|e| format!("{}: {e}", case.name))?)
+    };
     // The setup's modules, service programs and directories.
     let mut objs = build::Objects::default();
     for s in &case.setup {
         let cmd = case.fill(s, "QGPL");
-        objs.setup(&cmd, &|mbr, module, cmd| compile_member(case, mbr, module, cmd))?;
+        objs.setup(&cmd, &|mbr, module, cmd| compile_member(case, db.as_ref(), mbr, module, cmd))?;
     }
     let main_cmd = case.fill(&case.cmd, "QGPL");
     let verb = main_cmd.trim().to_ascii_uppercase().split_whitespace().next().unwrap_or("").to_string();
@@ -335,7 +344,7 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
         return match p {
             Ok(p) => {
                 o.created = true;
-                call_into(case, &mut o, p, &objs);
+                call_into(case, &mut o, p, &objs, db.as_ref())?;
                 Ok((o, Vec::new(), String::new()))
             }
             Err(e) => {
@@ -344,7 +353,7 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
             }
         };
     }
-    let c = compile(case);
+    let c = compile(case, db.as_ref());
     let notes = notes(&c);
     let mut o = Outcome {
         created: c.created,
@@ -354,14 +363,20 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
     };
     if c.created && !case.call.is_empty() && verb != "CRTRPGMOD" {
         let p = program(&c, &case.name, &objs, &main_cmd)?;
-        call_into(case, &mut o, p, &objs);
+        call_into(case, &mut o, p, &objs, db.as_ref())?;
     }
     Ok((o, c.listing, notes))
 }
 
 /// Call a program with the case's service programs at hand, and note
 /// how it ended and what it printed.
-fn call_into(case: &Case, o: &mut Outcome, p: ile::ProgramObject, objs: &build::Objects) {
+fn call_into(
+    case: &Case,
+    o: &mut Outcome,
+    p: ile::ProgramObject,
+    objs: &build::Objects,
+    db: Option<&files::KitDb>,
+) -> Result<(), String> {
     {
         let mut src = MemSource::default();
         src.add("QGPL", p);
@@ -370,6 +385,9 @@ fn call_into(case: &Case, o: &mut Outcome, p: ile::ProgramObject, objs: &build::
         }
         let mut job = Job::boxed(Box::new(src));
         job.usrspcs.set_source(Box::new(MemUserSpaces::default()));
+        if let Some(d) = db {
+            job.io = Some(Box::new(d.io()?));
+        }
         let mut provider = MemProvider::default();
         provider.clock = Some(LocalNow {
             unix: CLOCK,
@@ -402,4 +420,5 @@ fn call_into(case: &Case, o: &mut Outcome, p: ile::ProgramObject, objs: &build::
         sysapi::uninstall(&job);
         o.spool = spooled(&spool.0.borrow());
     }
+    Ok(())
 }

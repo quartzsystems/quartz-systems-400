@@ -1,0 +1,8 @@
+     A                                      UNIQUE
+     A                                      CCSID(37)
+     A          R CUSTR
+     A            CUSNO          5P 0
+     A            NAME          20A
+     A            CITY          12A
+     A            BAL            9P 2
+     A          K CUSNO

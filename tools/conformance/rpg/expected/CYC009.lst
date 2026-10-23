@@ -1,0 +1,262 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   CYC009
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   CYC009
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1  *; dds: SALESF                                                                                           000000     000100
+      2  *; sqlfile: SALESF                                                                                       000000     000200
+      3  * Fetch overflow on detail lines, totals at L1 and LR.                                                   000000     000300
+-     4 FSALESF    IP   E             DISK                                                                        000000     000400
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  SALESF           {lib}/SALESF                            *
+         * Record format(s) . . . . . :  SALESR           SALESR                                      *
+         *--------------------------------------------------------------------------------------------*
+      5 FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)                                                       000000     000500
+-     6 DREGTOT           S              9P 2                                                                     000000     000600
+-     7 ISALESR        01                                                                                         000000     000700
+      8 I              REGION                      REGION        L1                                               000000     000800
+         *--------------------------------------------------------------------------------------------*                     1
+         * RPG record format  . . . . :  SALESR                                                       *                     1
+         * External format  . . . . . :  SALESR : {lib}/SALESF                                    *                     1
+         *--------------------------------------------------------------------------------------------*                     1
+      9=I                             A    1    2  REGION        L1                                                         1000001
+     10=I                             A    3    6  REP                                                                      1000002
+     11=I                             A    7   16  ITEM                                                                     1000003
+     12=I                             P   17   20 2AMT                                                                      1000004
+     13=I                             P   21   22 0QTY                                                                      1000005
+-    14 C   01              ADD       AMT           REGTOT                                                        000000     000900
+-    15 OQSYSPRT   H    1P                     2                                                                  000000     001000
+     16 O         OR    OF                                                                                        000000     001100
+     17 O                                           13 'Region report'                                            000000     001200
+     18 O                       PAGE          Z     30                                                            000000     001300
+     19 OQSYSPRT   DF   01                     4                                                                  000000     001400
+     20 O                       REGION               4                                                            000000     001500
+     21 O                       REP                 10                                                            000000     001600
+     22 O                       ITEM                22                                                            000000     001700
+     23 O                       AMT           J     34                                                            000000     001800
+     24 OQSYSPRT   DF   01                     2                                                                  000000     001900
+     25 O                       QTY           Z     10                                                            000000     002000
+     26 OQSYSPRT   T    L1                     2                                                                  000000     002100
+     27 O                                            6 'Region'                                                   000000     002200
+     28 O                       REGION               9                                                            000000     002300
+     29 O                       REGTOT        JB    34                                                            000000     002400
+     30 OQSYSPRT   T    LR                                                                                        000000     002500
+ ======>                                  aaaaaaaaaaaa
+ *RNF6011 00 a      002500  The Space and Skip entries are blank and no PRTCTL keyword
+                            specified; Space-After defaults to 1.
+     31 O                                            5 'Pages'                                                    000000     002600
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+     32 O                       PAGE          Z     12                                                            000000     002700
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+ *RNF7086 00      4 000400  RPG handles blocking for file SALESF. INFDS is updated only
+                            when blocks of data are transferred.
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-                 O u t p u t   B u f f e r   P o s i t i o n s
+0Line   Start End   Field or Constant
+0Number Pos   Pos
+     17     1    13 'Region report'
+     18    27    30 PAGE
+     20     3     4 REGION
+     21     7    10 REP
+     22    13    22 ITEM
+     23    25    34 AMT
+     25     8    10 QTY
+     27     1     6 'Region'
+     28     8     9 REGION
+     29    22    34 REGTOT
+     31     1     5 'Pages'
+     32     9    12 PAGE
+0 * * * * *   E N D   O F   O U T P U T   B U F F E R   P O S I T I O N   *  * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 5D     15      19      24
+                                                   26      30
+          SALESF            DISK                    4D
+            SALESR                                  4D      7
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INOF             N(1)                    5D
+          AMT               P(7,2)                 12D     14      23
+          ITEM              A(10)                  11D     22
+          PAGE              P(4,0)                 18      32
+          QTY               P(3,0)                 13D     25
+          REGION            A(2)                    9D     20      28
+          REGTOT            P(9,2)                  6D     14M     29M
+          REP               A(4)                   10D     21
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          01                                        7D     14      19      24
+          L1                                        9D     26
+          LR                                       30
+          OF                                        5D     16
+          1P                                       15
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF6011 00      1 The Space and Skip entries are blank and no PRTCTL keyword
+                    specified; Space-After defaults to 1.
+ *RNF7086 00      1 RPG handles blocking for the file. INFDS is updated only when
+                    blocks of data are transferred.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        2
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        2
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       32
+     Specifications  . . . . . . . . :       29
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        3
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program CYC009 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

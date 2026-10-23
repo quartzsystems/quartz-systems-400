@@ -1,0 +1,7 @@
+# PRC005  pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+run: ok
+spool: QSYSPRT
+  |1/1   start 100
+  |1/2   after 110

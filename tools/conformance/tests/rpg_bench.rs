@@ -53,7 +53,7 @@ fn rpg_bench() {
     let t = Instant::now();
     let mut ir = 0usize;
     for c in &cases {
-        let out = rpg::compile(c);
+        let out = rpg::compile(c, None);
         assert!(out.created, "{}", c.name);
         ir += out.qir.lines().count();
     }

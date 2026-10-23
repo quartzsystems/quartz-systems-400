@@ -511,6 +511,13 @@ fn io_inst(cx: &Cx, io: &IoInst) -> Result<(), String> {
             Ok(())
         }
         IoInst::DbClose { file: f, .. } => file(*f).map(|_| ()),
+        IoInst::DbFb { file: f, .. } => {
+            let fr = file(*f)?;
+            if fr.dev != FileDev::Db {
+                return Err(format!("{} is not a database file", fr.name));
+            }
+            Ok(())
+        }
         IoInst::DbIo {
             file: f,
             op,

@@ -84,6 +84,9 @@ pub struct FileState {
     pub printer: Option<Box<crate::io::spool::PrinterState>>,
     /// An open display file: `handle` is the display source's.
     pub display: bool,
+    /// The last operation's feedback bits (`dbfb`): 1 end of file, 2
+    /// found, 4 equal.
+    pub fb: i32,
 }
 
 /// A job's identity: `QSVCJOB QSYS 000001` for the service job.

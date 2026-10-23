@@ -1,0 +1,33 @@
+# CYC012 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+diag: RNF7086 00 line 4 seq 000400
+run: ok
+spool: QSYSPRT
+  |1/1   Sales by region and rep                             Page    1
+  |1/2    Reg Rep  Item             Qty       Price      Extended
+  |1/4    E1 R001
+  |1/5             Widget            10       25.00        250.00
+  |1/6             Gadget            10      199.90      1,999.00
+  |1/7             Gizmo             10        7.50         75.00
+  |1/8              Rep R001 total                       2,324.00*
+  |1/9    E1 R002
+  |1/10            Widget             5       12.50         62.50
+  |1/11            Bolt              25        1.25         31.25
+  |1/12             Rep R002 total                          93.75*
+  |1/13       Region E1 total                            2,417.75**
+  |1/15   N1 R003
+  |1/16            Sprocket          10       31.00        310.00
+  |1/17             Rep R003 total                         310.00*
+  |1/18       Region N1 total                              310.00**
+  |1/20   W1 R004
+  |1/21            Widget            20       50.00      1,000.00
+  |1/22            Gadget             2       39.98         79.96
+  |1/23             Rep R004 total                       1,079.96*
+  |1/24   W1 R005
+  |1/25            Gizmo              1         .75           .75
+  |1/26            Bolt             100        5.00        500.00
+  |1/27            Widget             1        2.50          2.50
+  |1/28             Rep R005 total                         503.25*
+  |1/29       Region W1 total                            1,583.21**
+  |1/32  Grand total       11 lines                      4,310.96***

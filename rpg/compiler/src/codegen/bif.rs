@@ -73,6 +73,9 @@ impl Gen<'_> {
     /// A built-in function.
     #[allow(clippy::too_many_lines)]
     pub fn bif(&mut self, name: &str, args: &[Expr], w: Want) -> Option<V> {
+        if let Some(v) = self.db_bif(name, args) {
+            return v;
+        }
         match name {
             "%LEN" => {
                 if !self.bif_arity(name, args, 1, 1) {

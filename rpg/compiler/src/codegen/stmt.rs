@@ -672,7 +672,12 @@ impl Gen<'_> {
                 }
                 self.output(&outputs, crate::codegen::output::Step::Except(&name));
             }
-            ("COMMIT" | "ROLBK" | "DUMP" | "FEOD" | "UNLOCK" | "OPEN" | "CLOSE", _) => {
+            (
+                "READ" | "READP" | "READE" | "READPE" | "CHAIN" | "SETLL" | "SETGT" | "UPDATE" | "DELETE" | "UNLOCK"
+                | "FEOD" | "OPEN" | "CLOSE" | "KLIST" | "KFLD",
+                _,
+            ) => self.db_op(op, base),
+            ("COMMIT" | "ROLBK" | "DUMP", _) => {
                 self.err(ids::UNSUPPORTED, 30, op.code.clone());
             }
             ("MONITOR", _) => {
@@ -1201,17 +1206,14 @@ impl Gen<'_> {
     /// described formats.
     fn write_op(&mut self, op: &rpgfront::ast::Op) {
         let Some(name) = op.f2.first().and_then(|e| e.name().map(str::to_string)) else {
-            self.err(ids::FILE_NOT_DEFINED, 30, "");
+            self.db_op(op, "WRITE");
             return;
         };
-        let Some(f) = self.files.iter().find(|f| f.name == name).cloned() else {
-            self.err(ids::FILE_NOT_DEFINED, 30, name);
+        let f = self.files.iter().find(|f| f.name == name).cloned();
+        let Some(f) = f.filter(|f| f.dev == Dev::Printer && !f.external) else {
+            self.db_op(op, "WRITE");
             return;
         };
-        if f.dev != Dev::Printer || f.external {
-            self.err(ids::UNSUPPORTED, 30, "WRITE");
-            return;
-        }
         let Some(r) = op.result.first() else {
             self.err(ids::BAD_FILE_OP, 30, name);
             return;

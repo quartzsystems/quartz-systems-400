@@ -138,6 +138,60 @@ a return without ending when `RT` is on. `RETURN` ends the program when
 `LR` is on and returns leaving it active otherwise. Subroutines are
 blocks with a return-point slot each and one `switch` at `ENDSR`.
 
+**The cycle with a primary file** (`codegen/cycle.rs`) follows IBM's
+order: heading and detail output; `1P`, `MR`, `L1`-`L9` and the record
+identifying indicators off; unless `LR` is already on, the next record
+read from the file the last one came from (every primary and secondary
+file on the first cycle, each into its own buffer); record selection:
+with matching fields (`M1`-`M9`) the lowest value, the earlier file on
+a tie, otherwise the primary to its end and then each secondary; at the
+end of every file `LR` and `L1`-`L9` on; for the selected record its
+record type (identification codes) and identifying indicator, the
+control break (the highest level whose fields changed is set on with
+every level below it, all of them on the first record) and `MR` (another
+file holds or last gave a record with the same matching value); total
+calculations, a run of each level under its indicator, and total output
+(not on the first cycle); the end when `LR` is on; overflow output
+(heading and detail records conditioned by an overflow indicator that
+is on, then the indicator off); the selected record's fields and field
+indicators; detail calculations. An output record with fetch overflow
+(`F`) runs the overflow output first when the indicator is on.
+
+**Files** (`extfiles.rs`, `codegen/dbio.rs`). The compiler reads an
+externally described file's formats through `rpgc::ExtFiles` (names,
+types, buffer offsets, keys, level identifiers, which the IR file
+declaration carries for the level check at open). Each format kept by
+`IGNORE`/`INCLUDE` is a symbol under its `RENAME` name and its fields
+become program fields named with `PREFIX` and the I-spec renames,
+unless the file is `QUALIFIED`; a field of the same name in two files
+is one field, and an `EXTNAME` subfield of that name takes it over.
+`EXTNAME(file[:fmt][:*ALL|*INPUT|*OUTPUT|*KEY])` and
+`LIKEREC(fmt|file.fmt[:type])` structures take the format's fields as
+subfields (`*ALL` at their buffer offsets, the others packed in order,
+`*KEY` in key order). Program-described input fields get their types
+from the I specs (`P B I U F`, zoned with decimals, character
+otherwise), and a fixed-form result field with a length is defined by
+its calculation (packed with decimals, character without).
+
+Every disk file has a record buffer. A read into the buffer moves the
+format's fields into the program's (program-described: the record type
+from the identification codes, its indicator, the fields and their
+field indicators); `WRITE`/`UPDATE` move them back first (`UPDATE
+%FIELDS` only the named ones); a result structure is read or written
+instead of the buffer. A key is built in record layout from a value,
+`(a:b)`, `%KDS(ds:n)` or a `KLIST`; a file without keys positions by
+relative record number; `*START`, `*END`, `*LOVAL`, `*HIVAL` are the
+IR's limits. After an operation `dbfb` gives `%EOF` (reads), `%FOUND`
+(`CHAIN`, `SETLL`, `SETGT`, `DELETE` with a key), `%EQUAL` (`SETLL`) for
+the file and for the last operation of the kind; a status of 1000 or
+more is an error: `(E)` or an error indicator sets `%ERROR` and
+`%STATUS` (the file's and the last), and the resulting indicators are
+set as IBM's columns say. `DELETE` with a key chains first. `OPEN` of an
+open file is 01215; `CLOSE` of a closed one does nothing; `CLOSE *ALL`
+closes every global file. Program-described output records to a disk
+file are built at their end positions (data format `P`/`B` packs) and
+added (`ADD`, or any output file), updated or deleted (`DEL`).
+
 **Printers.** A program-described printer without `OFLIND` gets the
 first unused of `*INOA`-`*INOG` (`RNF2318`, information). A `WRITE` of
 a structure to it prints one line and spaces one after; output records

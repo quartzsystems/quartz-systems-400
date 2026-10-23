@@ -297,6 +297,7 @@ Level checks happen at `dbopen` (`CPF4131` as an escape message).
 | `%d = dbopen FILE [infds(place)]` | open the declared file; the runtime keeps `infds` current |
 | `%d = dbclose FILE` | |
 | `%d = dbio FILE OP [rec(place)] [key(x)] [rrn(x)] [fmt(NAME)] [nolock]` | `READ READP READE READPE CHAIN SETLL SETGT WRITE UPDATE DELETE UNLOCK FEOD`; reads and writes need `rec`, positioning needs `key` or `rrn` |
+| `%d = dbfb FILE` | the feedback of the database file's last operation as bits: 1 end of file, 2 found, 4 equal, 8 open (`%EOF`, `%FOUND`, `%EQUAL`, `%OPEN`); 0 for a file that is not open |
 | `%d = dspio FILE OP fmt(NAME) [rec(place)]` | `WRITE READ EXFMT` on a `dev(*DSP)` file; `TODO(phase8)` |
 | `%d = prtio FILE WRITE fmt(NAME) [rec(place)] [ctl(sb, sa, kb, ka)]` | print a record of a `dev(*PRT)` file: 0, or 1 when the carriage reached the overflow line; `ctl` gives the line's carriage control (space before, space after, skip before, skip after, integers, 0 for none), as RPG output does for a program-described file |
 
@@ -314,7 +315,9 @@ as an escape and returns the status; a failing operation only returns
 it. The record place is filled on a read (padded with blanks, or
 truncated) and taken whole on a write or update. A key operand holds
 the key fields in record layout, as many as it has room for; `rrn`
-positions by relative record number. Display files return `01299`
+positions by relative record number. A negative `rrn` positions at a
+limit: -1 `*START`, -2 `*END`, -3 `*LOVAL`, -4 `*HIVAL`; `rrn(0)` on
+`READE`/`READPE` compares with the key of the current record. Display files return `01299`
 until Phase 8.
 
 The information data structure, when given, is kept current after

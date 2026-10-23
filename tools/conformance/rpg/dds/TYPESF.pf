@@ -1,0 +1,11 @@
+     A                                      CCSID(37)
+     A          R TYPR
+     A            TKEY           3S 0
+     A            TZON           7S 2
+     A            TBIN           9B 0
+     A            TBIN2          4B 2
+     A            TDATE           L         DATFMT(*ISO)
+     A            TTIME           T         TIMFMT(*ISO)
+     A            TSTMP           Z
+     A            TVAR          20A         VARLEN
+     A          K TKEY

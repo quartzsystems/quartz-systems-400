@@ -326,6 +326,16 @@ impl Lowerer<'_, '_> {
                 let v = self.rt_call(RtFn::DbClose, &[f]).expect("result");
                 self.b.def_var(self.vars[dst.0 as usize], v);
             }
+            IoInst::DbFb { dst, file } => {
+                // `db_io` with the feedback code answers without I/O.
+                let f = self.i64(i64::from(*file));
+                let opv = self.i64(crate::rt::DB_FEEDBACK);
+                let z = self.i64(0);
+                let v = self
+                    .rt_call(RtFn::DbIo, &[f, opv, z, z, z, z, z, z, z])
+                    .expect("result");
+                self.b.def_var(self.vars[dst.0 as usize], v);
+            }
             IoInst::DbIo {
                 dst,
                 file,

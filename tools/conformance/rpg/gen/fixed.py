@@ -119,3 +119,47 @@ PRT_D = D("LINE", "DS", to="132")
 def show(expr):
     """Print an expression (character) on QSYSPRT."""
     return [CX("EVAL", "LINE = " + expr), C(op="WRITE", f2="QSYSPRT", res="LINE")]
+
+
+def I_rec(name, seq, rid="", codes=(), number="", option=""):
+    """A program-described record line; codes are (pos, not, part, char)."""
+    parts = [(6, "I"), (7, name), (17, seq), (19, number), (20, option), (21, rid)]
+    for k, (pos, neg, part, ch) in enumerate(codes):
+        base = 23 + 8 * k
+        parts += [(base, rj(pos, 5)), (base + 5, neg), (base + 6, part), (base + 7, ch)]
+    return place(parts)
+
+
+def I_and(codes, rel="AND"):
+    """An AND or OR line of record identification codes."""
+    parts = [(6, "I"), (16, rel)]
+    for k, (pos, neg, part, ch) in enumerate(codes):
+        base = 23 + 8 * k
+        parts += [(base, rj(pos, 5)), (base + 5, neg), (base + 6, part), (base + 7, ch)]
+    return place(parts)
+
+
+def I_fld(name, frm, to, dec="", fmt="", level="", match="", rel="", plus="", minus="", zero=""):
+    """A program-described field line."""
+    return place([
+        (6, "I"), (36, fmt), (37, rj(frm, 5)), (42, rj(to, 5)), (47, rj(dec, 2) if dec != "" else ""),
+        (49, name), (63, level), (65, match), (67, rel), (69, plus), (71, minus), (73, zero),
+    ])
+
+
+def I_xrec(fmt, rid=""):
+    """An externally described record line."""
+    return place([(6, "I"), (7, fmt), (21, rid)])
+
+
+def I_xfld(ext, name="", level="", match="", plus="", minus="", zero=""):
+    """An externally described field line: rename, level, matching, indicators."""
+    return place([(6, "I"), (21, ext), (49, name or ext), (63, level), (65, match), (69, plus), (71, minus), (73, zero)])
+
+
+def A(name="", kind="", length="", typ="", dec="", kw=""):
+    """A DDS line."""
+    return place([
+        (6, "A"), (17, kind), (19, name), (30, rj(length, 5) if length != "" else ""), (35, typ),
+        (36, rj(dec, 2) if dec != "" else ""), (45, kw),
+    ])

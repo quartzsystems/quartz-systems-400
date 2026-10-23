@@ -1,0 +1,24 @@
+# CYC003 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+diag: RNF7086 00 line 4 seq 000400
+run: ok
+spool: QSYSPRT
+  |1/1     E1  Widget          25.00
+  |1/3     New region E1
+  |1/4     E1  Gadget         199.90
+  |1/5     E1  Gizmo            7.50
+  |1/6     E1  Widget          12.50
+  |1/7     E1  Bolt             1.25
+  |1/8    Total for E1        246.15
+  |1/9     N1  Sprocket        31.00
+  |1/11    New region N1
+  |1/12   Total for N1         31.00
+  |1/13    W1  Widget          50.00
+  |1/15    New region W1
+  |1/16    W1  Gadget          39.98
+  |1/17    W1  Gizmo             .75
+  |1/18    W1  Bolt             5.00
+  |1/19    W1  Widget           2.50
+  |1/20   Total for W1         98.23
+  |1/22  Grand total          375.38

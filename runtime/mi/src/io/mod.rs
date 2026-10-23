@@ -149,6 +149,14 @@ pub enum KeyRef<'a> {
     Rrn(u64),
     /// None: `READE`/`READPE` keep the key of the last positioning.
     None,
+    /// `*START`: before the first record.
+    Start,
+    /// `*END`: after the last record.
+    End,
+    /// `*LOVAL`: below every key.
+    LoVal,
+    /// `*HIVAL`: above every key.
+    HiVal,
 }
 
 /// A request to an open file.

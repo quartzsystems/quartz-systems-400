@@ -119,6 +119,10 @@ impl StoreIo {
         match key {
             KeyRef::Fields(b) => Some(KeyArg::Values(Self::key_values(fmt, b))),
             KeyRef::Rrn(n) => Some(KeyArg::Rrn(n)),
+            KeyRef::Start => Some(KeyArg::Start),
+            KeyRef::End => Some(KeyArg::End),
+            KeyRef::LoVal => Some(KeyArg::LoVal),
+            KeyRef::HiVal => Some(KeyArg::HiVal),
             KeyRef::None => None,
         }
     }

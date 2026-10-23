@@ -490,6 +490,7 @@ impl Inst {
             | Self::Io(
                 IoInst::DbOpen { dst, .. }
                 | IoInst::DbClose { dst, .. }
+                | IoInst::DbFb { dst, .. }
                 | IoInst::DbIo { dst, .. }
                 | IoInst::DevIo { dst, .. },
             )

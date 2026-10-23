@@ -1,0 +1,465 @@
+// Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+// licensed under the terms of the MIT license which can be found in the
+// root directory of this project.
+
+//! What externally described files declare: each record format (renamed
+//! by `RENAME`, left out by `IGNORE`/`INCLUDE`), its fields as program
+//! fields (`PREFIX`, I-spec renames; shared by name between files and
+//! with `EXTNAME` subfields), the fields of program-described input
+//! specifications, and the subfields of `EXTNAME` and `LIKEREC`
+//! structures.
+
+use rpgfront::Diag;
+use rpgfront::ast::{Def, Expr, Input, Step};
+
+use crate::decl::{Cx, int_arg, str_arg, word_arg};
+use crate::diag::ids;
+use crate::files::{ExtFormat, File};
+use crate::names::mangle;
+use crate::syms::{Kind, Storage, Sym, Table};
+use crate::types::Ty;
+
+/// A record format of a declared file.
+#[derive(Clone, Debug, Default)]
+pub struct RecFmt {
+    /// The file's index in the module's files.
+    pub file: usize,
+    /// The file's name.
+    pub file_name: String,
+    /// The name the program uses (after `RENAME`).
+    pub name: String,
+    /// The description.
+    pub fmt: ExtFormat,
+    /// The file is `QUALIFIED`: no fields of its own.
+    pub qualified: bool,
+    /// The program name of each field, in format order.
+    pub names: Vec<String>,
+}
+
+/// `PREFIX(text:n)` applied to a name.
+#[must_use]
+pub fn prefixed(name: &str, prefix: Option<&(String, u32)>) -> String {
+    match prefix {
+        Some((p, n)) => {
+            let p = p.trim_matches('\'');
+            let rest: String = name.chars().skip(*n as usize).collect();
+            format!("{p}{rest}").to_ascii_uppercase()
+        }
+        None => name.to_string(),
+    }
+}
+
+/// The formats a file keeps: `INCLUDE` names the kept, `IGNORE` the
+/// dropped.
+fn kept(f: &File, fmt: &str) -> bool {
+    if !f.include.is_empty() {
+        return f.include.iter().any(|i| i == fmt);
+    }
+    !f.ignore.iter().any(|i| i == fmt)
+}
+
+/// Declare the record formats and fields of a scope's files, and the
+/// fields of its program-described input specifications.
+pub fn declare_files(t: &mut Table, diags: &mut Vec<Diag>, scope: usize, prefix: &str, files: &[File], first: usize, inputs: &[Input]) {
+    for (fi, f) in files.iter().enumerate().skip(first) {
+        let Some(ext) = &f.ext else { continue };
+        if f.template {
+            continue;
+        }
+        for fm in &ext.formats {
+            if !kept(f, &fm.name) {
+                continue;
+            }
+            let name = f
+                .renames
+                .iter()
+                .find(|(e, _)| *e == fm.name)
+                .map_or_else(|| fm.name.clone(), |(_, n)| n.clone());
+            let mut rf = RecFmt {
+                file: fi,
+                file_name: f.name.clone(),
+                name: name.clone(),
+                fmt: fm.clone(),
+                qualified: f.qualified,
+                names: Vec::new(),
+            };
+            let idx = t.recfmts.len();
+            for fd in &fm.fields {
+                let mut pname = prefixed(&fd.name, f.prefix.as_ref());
+                // An I spec of the format renames the field.
+                for i in inputs.iter().filter(|i| i.external && (i.name == name || i.name == fm.name)) {
+                    if let Some(x) = i.fields.iter().find(|x| x.extname == fd.name && !x.name.is_empty()) {
+                        pname.clone_from(&x.name);
+                    }
+                }
+                rf.names.push(pname.clone());
+                if f.qualified || t.find_in(scope, &pname).is_some() {
+                    continue;
+                }
+                let _ = t.add(Sym {
+                    name: pname.clone(),
+                    kind: Some(Kind::Field),
+                    ty: fd.ty.clone(),
+                    ir: format!("${prefix}{}", mangle(&pname)),
+                    scope,
+                    storage: if scope == 0 { Storage::Static } else { Storage::Auto },
+                    def_line: f.def_line,
+                    implicit: true,
+                    ..Sym::default()
+                });
+            }
+            t.recfmts.push(rf);
+            if !f.qualified
+                && t
+                    .add(Sym {
+                        name: name.clone(),
+                        kind: Some(Kind::Format(idx)),
+                        scope,
+                        def_line: f.def_line,
+                        ..Sym::default()
+                    })
+                    .is_err()
+            {
+                diags.push(Diag::new(ids::DUPLICATE, 30, rpgfront::ast::Pos { line: f.def_line, col: 7 }).arg(name));
+            }
+        }
+    }
+    // Program-described input fields.
+    for i in inputs.iter().filter(|i| !i.external) {
+        for x in &i.fields {
+            if x.name.is_empty() || x.name.starts_with('*') || t.find_in(scope, &x.name).is_some() {
+                continue;
+            }
+            let Some(ty) = input_type(x) else { continue };
+            let _ = t.add(Sym {
+                name: x.name.clone(),
+                kind: Some(Kind::Field),
+                ty,
+                ir: format!("${prefix}{}", mangle(&x.name)),
+                scope,
+                def_line: x.at.line,
+                implicit: true,
+                ..Sym::default()
+            });
+        }
+    }
+}
+
+/// The type of a program-described input field from its positions,
+/// data format and decimals.
+#[must_use]
+pub fn input_type(x: &rpgfront::ast::InputField) -> Option<Ty> {
+    let from: u32 = x.from.trim().parse().ok()?;
+    let to: u32 = x.to.trim().parse().ok()?;
+    let n = to.checked_sub(from)? + 1;
+    let dec: Option<u8> = x.decimals.trim().parse().ok();
+    let digits = |d: u32| u8::try_from(d.min(63)).unwrap_or(63);
+    Some(match x.format.as_str() {
+        "P" => Ty::Packed(digits(2 * n - 1), dec.unwrap_or(0)),
+        "B" => Ty::Bin(if n <= 2 { 4 } else { 9 }, dec.unwrap_or(0)),
+        "I" => Ty::Int(match n {
+            1 => 3,
+            2 => 5,
+            8 => 20,
+            _ => 10,
+        }),
+        "U" => Ty::Uns(match n {
+            1 => 3,
+            2 => 5,
+            8 => 20,
+            _ => 10,
+        }),
+        "F" => Ty::Float(if n == 4 { 4 } else { 8 }),
+        "S" => Ty::Zoned(digits(n), dec.unwrap_or(0)),
+        _ => match dec {
+            Some(d) => Ty::Zoned(digits(n), d),
+            None => Ty::Char(n),
+        },
+    })
+}
+
+/// Subfields from a format: name, type, offset.
+pub type ExtSubs = Vec<(String, Ty, u32)>;
+
+/// Which fields of a format a structure takes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Which {
+    /// `*ALL`: every field at its buffer offset.
+    All,
+    /// `*INPUT`.
+    Input,
+    /// `*OUTPUT`.
+    Output,
+    /// `*KEY`: the key fields in key order.
+    Key,
+}
+
+impl Which {
+    fn parse(w: &str) -> Option<Self> {
+        Some(match w {
+            "*ALL" => Self::All,
+            "*INPUT" => Self::Input,
+            "*OUTPUT" => Self::Output,
+            "*KEY" => Self::Key,
+            _ => return None,
+        })
+    }
+}
+
+/// The subfields a format gives: name, type, offset; and the length.
+#[must_use]
+pub fn subfields(fm: &ExtFormat, names: Option<&[String]>, which: Which) -> (ExtSubs, u32) {
+    let name_of = |i: usize| names.and_then(|n| n.get(i).cloned()).unwrap_or_else(|| fm.fields[i].name.clone());
+    let mut out = Vec::new();
+    match which {
+        Which::All => {
+            for (i, f) in fm.fields.iter().enumerate() {
+                out.push((name_of(i), f.ty.clone(), f.offset));
+            }
+            (out, fm.len)
+        }
+        Which::Key => {
+            let mut at = 0;
+            for k in &fm.keys {
+                if let Some(i) = fm.fields.iter().position(|f| f.name == *k) {
+                    let f = &fm.fields[i];
+                    out.push((name_of(i), f.ty.clone(), at));
+                    at += field_len(fm, i);
+                }
+            }
+            (out, at)
+        }
+        Which::Input | Which::Output => {
+            let mut at = 0;
+            for (i, f) in fm.fields.iter().enumerate() {
+                let ok = match which {
+                    Which::Input => matches!(f.usage, 'I' | 'B'),
+                    _ => matches!(f.usage, 'O' | 'B'),
+                };
+                if ok {
+                    out.push((name_of(i), f.ty.clone(), at));
+                    at += field_len(fm, i);
+                }
+            }
+            (out, at)
+        }
+    }
+}
+
+/// A field's bytes in the buffer: to the next field, or the record end.
+#[must_use]
+pub fn field_len(fm: &ExtFormat, i: usize) -> u32 {
+    let start = fm.fields[i].offset;
+    let end = fm.fields.get(i + 1).map_or(fm.len, |f| f.offset);
+    end.saturating_sub(start)
+}
+
+/// The external fields an `EXTNAME` or `LIKEREC` structure takes, when
+/// it is one: the subfields and the length.
+pub fn ds_subfields(cx: &mut Cx<'_>, d: &Def) -> Option<(ExtSubs, u32)> {
+    if let Some(k) = d.kw("LIKEREC") {
+        // LIKEREC(fmt|file.fmt[:*ALL|*INPUT|*OUTPUT|*KEY]).
+        let (file, fmt) = match k.arg(0).and_then(|a| a.expr.clone()) {
+            Some(Expr::Ref { name, steps, .. }) => match steps.first() {
+                Some(Step::Field(f)) => (Some(name), f.clone()),
+                _ => (None, name),
+            },
+            _ => (None, word_arg(k, 0).unwrap_or_default()),
+        };
+        let which = word_arg(k, 1).and_then(|w| Which::parse(&w)).unwrap_or(Which::All);
+        let found = cx
+            .t
+            .recfmts
+            .iter()
+            .find(|r| r.name == fmt && file.as_ref().is_none_or(|f| *f == r.file_name) && (file.is_some() || !r.qualified))
+            .cloned();
+        let Some(r) = found else {
+            cx.diags.push(Diag::new(ids::NOT_DEFINED, 30, k.at).arg(fmt));
+            return Some((Vec::new(), 1));
+        };
+        return Some(subfields(&r.fmt, Some(&r.names), which));
+    }
+    let ext_col = d.fixed.as_ref().is_some_and(|c| c.ext == "E");
+    let k = d.kw("EXTNAME");
+    if k.is_none() && !ext_col {
+        return None;
+    }
+    let (file, fmt, which) = match k {
+        Some(k) => {
+            let file = str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_default().to_ascii_uppercase();
+            let mut fmt = None;
+            let mut which = Which::Input;
+            for i in 1..k.args.len() {
+                let w = str_arg(k, i).or_else(|| word_arg(k, i)).unwrap_or_default().to_ascii_uppercase();
+                match Which::parse(&w) {
+                    Some(x) => which = x,
+                    None => fmt = Some(w),
+                }
+            }
+            (file, fmt, which)
+        }
+        None => (d.name.to_ascii_uppercase(), None, Which::Input),
+    };
+    let (lib, name) = match file.split_once('/') {
+        Some((l, n)) => (l.to_string(), n.to_string()),
+        None => ("*LIBL".to_string(), file.clone()),
+    };
+    let Some(desc) = cx.t.extnames.get(&format!("{lib}/{name}")).cloned() else {
+        cx.diags.push(Diag::new(ids::EXT_NOT_FOUND, 40, d.at).arg(name));
+        return Some((Vec::new(), 1));
+    };
+    let fm = match &fmt {
+        Some(f) => desc.formats.iter().find(|x| x.name == *f),
+        None => desc.formats.first(),
+    };
+    let Some(fm) = fm else {
+        cx.diags.push(Diag::new(ids::NOT_DEFINED, 30, d.at).arg(fmt.unwrap_or_default()));
+        return Some((Vec::new(), 1));
+    };
+    let (mut subs, len) = subfields(fm, None, which);
+    // The structure's PREFIX renames its subfields.
+    if let Some(p) = d.kw("PREFIX") {
+        let text = p.arg(0).map(|a| a.toks.iter().map(rpgfront::lex::Tok::text).collect::<String>()).unwrap_or_default();
+        let n = int_arg(p, 1).and_then(|v| u32::try_from(v).ok()).unwrap_or(0);
+        let pre = (text.to_ascii_uppercase(), n);
+        for s in &mut subs {
+            s.0 = prefixed(&s.0, Some(&pre));
+        }
+    }
+    Some((subs, len))
+}
+
+/// The external descriptions the scope's `EXTNAME` structures name,
+/// read before the definitions are declared.
+pub fn read_extnames(t: &mut Table, defs: &[Def], ext: &mut dyn crate::files::ExtFiles) {
+    for d in defs {
+        let ext_col = d.fixed.as_ref().is_some_and(|c| c.ext == "E");
+        let file = match d.kw("EXTNAME") {
+            Some(k) => str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_default().to_ascii_uppercase(),
+            None if ext_col => d.name.to_ascii_uppercase(),
+            None => continue,
+        };
+        let (lib, name) = match file.split_once('/') {
+            Some((l, n)) => (l.to_string(), n.to_string()),
+            None => ("*LIBL".to_string(), file.clone()),
+        };
+        let key = format!("{lib}/{name}");
+        if t.extnames.contains_key(&key) {
+            continue;
+        }
+        if let Some(desc) = ext.describe(&name, &lib) {
+            t.extnames.insert(key, desc);
+        }
+    }
+}
+
+/// A subfield named by a special word (`*FILE`, `*STATUS`, ...): its
+/// type and offset in a file or program status data structure.
+#[must_use]
+pub fn special_subfield(c: &Def, psds: bool) -> Option<(Ty, u32)> {
+    let word = match &c.fixed {
+        Some(cols) if cols.from.starts_with('*') => cols.from.to_ascii_uppercase(),
+        _ => c.kws.iter().find(|k| k.name.starts_with('*') && k.args.is_empty())?.name.clone(),
+    };
+    Some(match (word.as_str(), psds) {
+        ("*FILE", false) => (Ty::Char(8), 0),
+        ("*STATUS", _) => (Ty::Zoned(5, 0), 10),
+        ("*OPCODE", false) => (Ty::Char(6), 15),
+        ("*ROUTINE", false) => (Ty::Char(8), 21),
+        ("*RECORD", false) => (Ty::Char(8), 37),
+        ("*SIZE", false) => (Ty::Zoned(4, 0), 66),
+        ("*INP", false) => (Ty::Zoned(2, 0), 70),
+        ("*OUT", false) => (Ty::Zoned(2, 0), 72),
+        ("*MODE", false) => (Ty::Zoned(2, 0), 74),
+        ("*PROC", true) => (Ty::Char(10), 0),
+        ("*ROUTINE", true) => (Ty::Char(8), 28),
+        ("*PARMS", true) => (Ty::Zoned(3, 0), 36),
+        _ => return None,
+    })
+}
+
+/// Result fields a fixed-form calculation defines with a length
+/// (columns 64-68) and decimals: packed with decimals, character
+/// without, unless the name is defined already.
+pub fn declare_calc_fields(t: &mut Table, scope: usize, prefix: &str, calcs: &[rpgfront::ast::Stmt]) {
+    for s in calcs {
+        let Ok(len) = s.op.len.trim().parse::<u32>() else { continue };
+        let Some(name) = s.op.result.first().and_then(|e| e.name().map(str::to_string)) else { continue };
+        if len == 0 || t.find(scope, &name).is_some() {
+            continue;
+        }
+        let ty = match s.op.decimals.trim().parse::<u8>() {
+            Ok(d) => Ty::Packed(u8::try_from(len.min(63)).unwrap_or(63), d),
+            Err(_) => Ty::Char(len),
+        };
+        let _ = t.add(Sym {
+            name: name.clone(),
+            kind: Some(Kind::Field),
+            ty,
+            ir: format!("${prefix}{}", mangle(&name)),
+            scope,
+            storage: if scope == 0 { Storage::Static } else { Storage::Auto },
+            def_line: s.at.line,
+            implicit: true,
+            ..Sym::default()
+        });
+    }
+}
+
+/// The lines IBM's listing generates and numbers like source lines:
+/// each `EXTNAME` structure's subfields after its line (`=D`), the
+/// input specifications of the externally described input formats
+/// before the first calculation (`=I`: a record line unless an I spec
+/// names the format, and a line per input field), and the output
+/// specifications of the output formats after the main calculations
+/// (`=O`: a record line and a line per output field). Each entry is a
+/// source line and how many generated lines come before it.
+#[must_use]
+pub fn generated_lines(m: &rpgfront::ast::Module, files: &[File], t: &Table) -> Vec<(u32, u32)> {
+    let mut out = Vec::new();
+    let defs = m.defs.iter().chain(m.procs.iter().flat_map(|p| p.defs.iter()));
+    for d in defs {
+        let ext = d.kw("EXTNAME").is_some() || d.fixed.as_ref().is_some_and(|c| c.ext == "E");
+        if !ext || d.kind != rpgfront::ast::DefKind::Ds {
+            continue;
+        }
+        let n = t
+            .find(0, &d.name.to_ascii_uppercase())
+            .and_then(|id| match t.syms[id].kind {
+                Some(Kind::Ds(i)) => Some(t.ds[i].subfields.len()),
+                _ => None,
+            })
+            .unwrap_or(0);
+        out.push((d.at.line + 1, u32::try_from(n).unwrap_or(0)));
+    }
+    let first_calc = m.calcs.first().map(|s| s.at.line);
+    let after_calcs = m
+        .outputs
+        .first()
+        .map(|o| o.at.line)
+        .or_else(|| m.procs.first().map(|p| p.at.line))
+        .or_else(|| m.ctdata.first().map(|c| c.at.line))
+        .unwrap_or(u32::MAX);
+    let mut gen_i = 0;
+    let mut gen_o = 0;
+    for r in &t.recfmts {
+        let Some(f) = files.get(r.file) else { continue };
+        if f.scope != 0 {
+            continue;
+        }
+        if f.input || f.update {
+            let named = m.inputs.iter().any(|i| i.external && (i.name == r.name || i.name == r.fmt.name));
+            gen_i += u32::from(!named) + u32::try_from(r.fmt.fields.iter().filter(|x| matches!(x.usage, 'I' | 'B')).count()).unwrap_or(0);
+        }
+        if f.output || f.update {
+            gen_o += 1 + u32::try_from(r.fmt.fields.iter().filter(|x| matches!(x.usage, 'O' | 'B')).count()).unwrap_or(0);
+        }
+    }
+    if gen_i > 0 {
+        out.push((first_calc.unwrap_or(after_calcs), gen_i));
+    }
+    if gen_o > 0 {
+        out.push((after_calcs, gen_o));
+    }
+    out
+}

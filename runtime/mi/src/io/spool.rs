@@ -144,6 +144,12 @@ impl PrinterState {
         if self.prtf.maxrcds > 0 && self.printer.records >= self.prtf.maxrcds {
             return Err(IoFail::new(1299, "CPF4072", &[]));
         }
+        // A program's first line starts at line 1: spacing before it
+        // counts from there.
+        let mut ctl = ctl;
+        if self.printer.line() == 0 && ctl.skip_before == 0 && ctl.space_before > 0 {
+            ctl.space_before += 1;
+        }
         let over = self.printer.write(record, ctl);
         if self.printer.pending() >= CHUNK {
             self.flush(sink)?;

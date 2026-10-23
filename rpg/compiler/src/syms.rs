@@ -209,6 +209,10 @@ pub struct Table {
     scopes: Vec<HashMap<String, SymId>>,
     /// References by symbol.
     pub refs: HashMap<SymId, Vec<Ref>>,
+    /// Record formats of the declared files.
+    pub recfmts: Vec<crate::extfiles::RecFmt>,
+    /// External descriptions `EXTNAME` names, by `LIB/FILE`.
+    pub extnames: HashMap<String, crate::files::ExtFile>,
 }
 
 impl Table {
@@ -241,6 +245,14 @@ impl Table {
             self.scopes[scope].insert(name, id);
         }
         Ok(id)
+    }
+
+    /// Point a scope's name at another symbol: an `EXTNAME` subfield
+    /// takes over the program field of the same name a file declared.
+    pub fn rebind(&mut self, scope: usize, name: &str, id: SymId) {
+        if let Some(m) = self.scopes.get_mut(scope) {
+            m.insert(name.to_string(), id);
+        }
     }
 
     /// Add a symbol that no name finds (a qualified subfield).

@@ -12,6 +12,8 @@
 //! gives the diagnostics and the code.
 
 pub mod bif;
+pub mod cycle;
+pub mod dbio;
 pub mod emit;
 pub mod exc;
 pub mod expr;
@@ -189,6 +191,14 @@ pub struct Gen<'a> {
     /// Inside a procedure with `ON-EXIT`: where `RETURN` goes, and the
     /// temporary holding the value.
     pub on_exit: Option<(String, Option<String>)>,
+    /// `KLIST` names and their `KFLD` fields.
+    pub klists: HashMap<String, Vec<Expr>>,
+    /// The module's input specifications.
+    pub inputs: Vec<rpgfront::ast::Input>,
+    /// Overflow output is being generated (no fetch inside it).
+    pub in_overflow: bool,
+    /// Record formats an operation names.
+    pub used_formats: BTreeSet<usize>,
 }
 
 impl Gen<'_> {
@@ -300,6 +310,10 @@ pub fn module(
         called_subrs: BTreeSet::new(),
         in_error_extender: false,
         on_exit: None,
+        klists: klists(m),
+        inputs: m.inputs.clone(),
+        in_overflow: false,
+        used_formats: BTreeSet::new(),
     };
     let mut out = String::new();
     let actgrp = if ctl.dftactgrp {
@@ -358,6 +372,7 @@ pub fn module(
     out.push_str("static $status: zoned(5,0)\n");
     out.push_str("static $errind: ind\n");
     out.push_str("static $psds_none: char(1)\n");
+    out.push_str(&dbio::statics(files, g.t));
     for (id, s) in g.t.syms.iter().enumerate() {
         if s.scope != 0 || s.template || s.parent.is_some() {
             continue;
@@ -397,6 +412,7 @@ pub fn module(
     for s in std::mem::take(&mut g.subr_bodies) {
         procs.push_str(&s);
     }
+    dbio::file_notes(&mut g, m);
     for p in &g.pages {
         let _ = writeln!(out, "static {p}: zoned(4,0)");
     }
@@ -477,6 +493,9 @@ fn init_proc(g: &mut Gen<'_>) -> String {
 /// cycle), total calculations and total output, the end when `LR` is
 /// on, the detail calculations, and the return when `RT` is on.
 fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
+    if cycle::has_primary(g) {
+        return cycle::main_proc(g, m);
+    }
     g.b = Body::new();
     g.scope = 0;
     g.subrs.clear();
@@ -488,9 +507,9 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b.term(format!("brif %first, {start}, {init}"));
     g.b.place(&init);
     g.b.ins("callb _qrni_init()");
-    for f in g.files.iter().filter(|f| f.scope == 0 && !f.usropn && !f.template) {
-        let r = g.b.reg();
-        g.b.ins(format!("{r} = dbopen {}", mangle(&f.name)));
+    let files = g.files;
+    for f in files.iter().filter(|f| f.scope == 0 && !f.usropn && !f.template) {
+        let _ = g.db_open(f);
     }
     g.b.ins("store $init_done, *ON");
     g.psds_init(&g.opts.name.clone());
@@ -627,6 +646,31 @@ fn linear_entry(g: &mut Gen<'_>, main: &str) -> String {
     g.b.term("ret");
     let body = std::mem::take(&mut g.b);
     body.finish(&format!("proc _QRNP_PEP_{}() entry", mangle(&g.opts.name)), "ret")
+}
+
+/// The `KLIST`s of every procedure: each name and the `KFLD` fields
+/// after it.
+fn klists(m: &Module) -> HashMap<String, Vec<Expr>> {
+    let mut out = HashMap::new();
+    let all = m.calcs.iter().chain(m.procs.iter().flat_map(|p| p.calcs.iter()));
+    let mut cur: Option<String> = None;
+    for s in all {
+        match s.op.code.as_str() {
+            "KLIST" => {
+                cur = s.op.f1.first().and_then(|e| e.name().map(str::to_string));
+                if let Some(n) = &cur {
+                    out.insert(n.clone(), Vec::new());
+                }
+            }
+            "KFLD" => {
+                if let (Some(n), Some(r)) = (&cur, s.op.result.first()) {
+                    out.entry(n.clone()).or_insert_with(Vec::new).push(r.clone());
+                }
+            }
+            _ => cur = None,
+        }
+    }
+    out
 }
 
 /// Whether a control level puts a calculation at total time.

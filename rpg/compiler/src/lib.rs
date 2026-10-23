@@ -32,6 +32,7 @@
 pub mod compile;
 pub mod ctl;
 pub mod decl;
+pub mod extfiles;
 pub mod diag;
 pub mod files;
 pub mod codegen;

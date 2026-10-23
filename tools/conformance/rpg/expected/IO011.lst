@@ -1,0 +1,348 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   IO011
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   IO011
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; dds: CUSTF                                                                                            000000     000200
+      3 //; sqlfile: CUSTF                                                                                        000000     000300
+      4 //; dds: ORDF                                                                                             000000     000400
+      5 //; sqlfile: ORDF                                                                                         000000     000500
+      6 ctl-opt dftactgrp(*no);                                                                                   000000     000600
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     7 dcl-f ORDF keyed;                                                                                         000000     000700
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  ORDF             {lib}/ORDF                              *
+         * Record format(s) . . . . . :  ORDR             ORDR                                        *
+         *--------------------------------------------------------------------------------------------*
+      8 dcl-f QSYSPRT printer(132);                                                                               000000     000800
+-     9 dcl-ds line len(132) end-ds;                                                                              000000     000900
+ ======>       aaaa
+ *RNF3530 00 a      000900  Data structure LINE has no valid subfields.
+     10 dcl-ds all extname('CUSTF') end-ds;                                                                       000000     001000
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+         *--------------------------------------------------------------------------------------------*                     1
+         * Data structure . . . . . . :  ALL                                                          *                     1
+         * External format  . . . . . :  CUSTR : {lib}/CUSTF                                      *                     1
+         *--------------------------------------------------------------------------------------------*                     1
+-Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+     11=D CUSNO                          5P 0                                                                               1000001
+     12=D NAME                          20A                                                                                 1000002
+     13=D CITY                          12A                                                                                 1000003
+     14=D BAL                            9P 2                                                                               1000004
+-Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     15 dcl-ds keys extname('CUSTF':*KEY) qualified end-ds;                                                       000000     001100
+         *--------------------------------------------------------------------------------------------*                     2
+         * Data structure . . . . . . :  KEYS                                                         *                     2
+         * External format  . . . . . :  CUSTR : {lib}/CUSTF                                      *                     2
+         *--------------------------------------------------------------------------------------------*                     2
+-Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+     16=D CUSNO                          5P 0                                                                               2000001
+-Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     17 dcl-ds ords extname('ORDF':'ORDR':*INPUT) prefix(X_) end-ds;                                              000000     001200
+         *--------------------------------------------------------------------------------------------*                     3
+         * Data structure . . . . . . :  ORDS                                                         *                     3
+         * Prefix . . . . . . . . . . :  X_ :    0                                                    *                     3
+         * External format  . . . . . :  ORDR : {lib}/ORDF                                        *                     3
+         *--------------------------------------------------------------------------------------------*                     3
+-Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+     18=D X_ORDCUS                       5P 0 EXTFLD (ORDCUS)                                                               3000001
+     19=D X_ORDNO                        5P 0 EXTFLD (ORDNO)                                                                3000002
+     20=D X_ITEM                        10A   EXTFLD (ITEM)                                                                 3000003
+     21=D X_QTY                          5P 0 EXTFLD (QTY)                                                                  3000004
+     22=D X_PRICE                        7P 2 EXTFLD (PRICE)                                                                3000005
+-Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     23 // EXTNAME data structures: *ALL, *KEY, a format and *INPUT.                                              000000     001300
+ *RNF2318 00      8 000800  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-    24=IORDR                                                                                                               4000001
+         *--------------------------------------------------------------------------------------------*                     4
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+         * RPG record format  . . . . :  ORDR                                                         *                     4
+         * External format  . . . . . :  ORDR : {lib}/ORDF                                        *                     4
+         *--------------------------------------------------------------------------------------------*                     4
+     25=I                             P    1    3 0ORDCUS                                                                   4000002
+     26=I                             P    4    6 0ORDNO                                                                    4000003
+     27=I                             A    7   16  ITEM                                                                     4000004
+     28=I                             P   17   19 0QTY                                                                      4000005
+     29=I                             P   20   23 2PRICE                                                                    4000006
+-    30 CUSNO = 101;                                                                                              000000     001400
+     31 NAME = 'Nobody';                                                                                          000000     001500
+     32 line = %char(%size(all)) + ' ' + %char(%size(keys)) + ' ' + %char(%size(ords));                           000000     001600
+     33 write QSYSPRT line;                                                                                       000000     001700
+     34 line = %subst(all:4:6) + '|' + %char(CUSNO);                                                              000000     001800
+     35 write QSYSPRT line;                                                                                       000000     001900
+     36 keys.CUSNO = 104;                                                                                         000000     002000
+     37 chain %kds(keys) ORDF;                                                                                    000000     002100
+     38 line = 'ord ' + ITEM + %char(QTY);                                                                        000000     002200
+     39 write QSYSPRT line;                                                                                       000000     002300
+     40 read ORDF ords;                                                                                           000000     002400
+     41 line = 'ds ' + X_ITEM + %char(X_QTY) + ' ' + %char(X_ORDCUS);                                             000000     002500
+     42 write QSYSPRT line;                                                                                       000000     002600
+     43 *inlr = *on;                                                                                              000000     002700
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+ *RNF7066 00      7 000700  Record-Format ORDR not used for input or output.
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                    K e y   F i e l d   I n f o r m a t i o n
+0         File           Internal    External
+            Record       field name  field name  Attributes
+0      1  ORDF
+            ORDR
+                         ORDCUS                  PACK      5,0 SIGNED
+                         ORDNO                   PACK      5,0 SIGNED
+0 * * * * *   E N D   O F   K E Y   F I E L D   I N F O R M A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          ORDF              DISK                    7D     37      40
+            ORDR                                    7D     24
+          QSYSPRT           PRINTER                 8D     33      35      39
+                                                   42
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   43M
+          ALL               DS(40)                 10D     32      34
+ *RNF7031 BAL               P(9,2)                 14D
+ *RNF7031 CITY              A(12)                  13D
+          CUSNO             P(5,0)                 11D     30M     34
+          ITEM              A(10)                  27D     38
+          KEYS              DS(3)                  15D     32      36M     37
+            CUSNO           P(5,0)                 16D     36
+          LINE              DS(132)                 9D     32M     33      34M
+                                                   35      38M     39      41M
+                                                   42
+          NAME              A(20)                  12D     31M
+ *RNF7031 ORDCUS            P(5,0)                 25D
+ *RNF7031 ORDNO             P(5,0)                 26D
+          ORDS              DS(23)                 17D     32      40M
+ *RNF7031 PRICE             P(7,2)                 29D
+          QTY               P(5,0)                 28D     38
+          X_ITEM            A(10)                  20D     41
+          X_ORDCUS          P(5,0)                 18D     41
+ *RNF7031 X_ORDNO           P(5,0)                 19D
+ *RNF7031 X_PRICE           P(7,2)                 22D
+          X_QTY             P(5,0)                 21D     41
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                       43M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+1{heading} page 8
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+ *RNF7031 00      7 The name or indicator is not referenced.
+ *RNF7066 00      1 Record-Format name of Externally-Described file is not used.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 10
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :       10
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :       10
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       43
+     Specifications  . . . . . . . . :       37
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        5
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program IO011 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

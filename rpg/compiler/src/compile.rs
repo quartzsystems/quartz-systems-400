@@ -43,6 +43,17 @@ pub struct Compiled {
     pub files: Vec<File>,
     /// The options in force.
     pub ctl: Ctl,
+    /// Lines the listing generates: before each source line, how many.
+    pub generated: Vec<(u32, u32)>,
+}
+
+impl Compiled {
+    /// The listing's number of a source line: generated lines (`=D`,
+    /// `=I`, `=O`) are numbered too.
+    #[must_use]
+    pub fn listing_line(&self, line: u32) -> u32 {
+        line + self.generated.iter().filter(|(at, _)| *at <= line).map(|(_, n)| n).sum::<u32>()
+    }
 }
 
 /// The condition names every compile defines: the command and the
@@ -70,9 +81,11 @@ fn declare_scope(
     prefix: &str,
     files_in: &[rpgfront::ast::FileDecl],
     defs: &[Def],
+    inputs: &[rpgfront::ast::Input],
     ext: &mut dyn ExtFiles,
     files: &mut Vec<File>,
 ) {
+    let first = files.len();
     for f in files_in {
         let mut fi = files::file(f, scope, ext, diags);
         fi.ir_index = u32::try_from(files.len()).unwrap_or(0);
@@ -88,6 +101,8 @@ fn declare_scope(
         }
         files.push(fi);
     }
+    crate::extfiles::declare_files(t, diags, scope, prefix, files, first, inputs);
+    crate::extfiles::read_extnames(t, defs, ext);
     let mut cx = Cx {
         t,
         diags,
@@ -111,7 +126,8 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
     let ctl = ctl::resolve(opts, &module.ctl, &mut diags);
     let mut t = Table::new();
     let mut files = Vec::new();
-    declare_scope(&mut t, &mut diags, &ctl, 0, "", &module.files, &module.defs, ext, &mut files);
+    declare_scope(&mut t, &mut diags, &ctl, 0, "", &module.files, &module.defs, &module.inputs, ext, &mut files);
+    crate::extfiles::declare_calc_fields(&mut t, 0, "", &module.calcs);
     // A program-described printer without an overflow indicator gets
     // the first of OA to OG no other file uses.
     let used: Vec<String> = files.iter().filter_map(|f| f.oflind.clone()).collect();
@@ -193,7 +209,8 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
                 });
             }
         }
-        declare_scope(&mut t, &mut diags, &ctl, scope, &prefix, &p.files, &p.defs, ext, &mut files);
+        declare_scope(&mut t, &mut diags, &ctl, scope, &prefix, &p.files, &p.defs, &[], ext, &mut files);
+        crate::extfiles::declare_calc_fields(&mut t, scope, &prefix, &p.calcs);
     }
     let (qir, gen_diags) = codegen::module(&module, &mut t, &files, &ctl, opts, &scopes);
     diags.extend(gen_diags);
@@ -222,7 +239,9 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         qir.clear();
     }
     let max_severity = diags.iter().map(|d| d.severity).max().unwrap_or(0);
+    let generated = crate::extfiles::generated_lines(&module, &files, &t);
     let mut c = Compiled {
+        generated,
         qir,
         ir,
         diags,

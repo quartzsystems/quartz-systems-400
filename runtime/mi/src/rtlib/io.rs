@@ -186,6 +186,7 @@ fn open_printer(j: &mut Job, key: FileKey, fr: &qir::FileRef, infds: u64, infds_
                     info,
                     printer: Some(Box::new(PrinterState::new(o))),
                     display: false,
+                    fb: 0,
                 },
             );
             0
@@ -236,6 +237,7 @@ fn open_display(j: &mut Job, key: FileKey, fr: &qir::FileRef, infds: u64, infds_
                     info,
                     printer: None,
                     display: true,
+                    fb: 0,
                 },
             );
             0
@@ -323,6 +325,7 @@ pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc:
                     info,
                     printer: None,
                     display: false,
+                    fb: 0,
                 },
             );
             0
@@ -416,6 +419,9 @@ pub extern "sysv64" fn db_io(
     let Some((fkey, _)) = file_of(env, file) else {
         return CLOSED;
     };
+    if op == codegen::rt::DB_FEEDBACK {
+        return job(env).files.get(&fkey).map_or(0, |s| s.fb | 8);
+    }
     let Some(op) = IoOp::from_code(op) else {
         raise_on(job(env), Cond::Mch3601);
         return CLOSED;
@@ -445,10 +451,16 @@ pub extern "sysv64" fn db_io(
     };
     let keyref = if key != 0 {
         KeyRef::Fields(&key_bytes)
-    } else if rrn != 0 {
+    } else if rrn > 0 {
         KeyRef::Rrn(rrn.cast_unsigned())
     } else {
-        KeyRef::None
+        match rrn {
+            -1 => KeyRef::Start,
+            -2 => KeyRef::End,
+            -3 => KeyRef::LoVal,
+            -4 => KeyRef::HiVal,
+            _ => KeyRef::None,
+        }
     };
     let format = (fmt != 0).then(|| ccsid::decode_trimmed(bytes(fmt, 10)));
     let req = IoRequest {
@@ -473,6 +485,9 @@ pub extern "sysv64" fn db_io(
         }
     }
     write_infds(infds, infds_len, &info, &r, true, op.name(), j.abi.cur_stmt);
+    if let Some(st) = j.files.get_mut(&fkey) {
+        st.fb = i32::from(r.eof) | i32::from(r.found) << 1 | i32::from(r.equal) << 2;
+    }
     i32::from(r.status)
 }
 

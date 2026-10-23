@@ -223,7 +223,7 @@ fn ext_uses(i: &Inst, out: &mut Vec<Reg>) {
         },
         Inst::Io(io) => match io {
             IoInst::DbOpen { infds, .. } => opt_place_uses(infds.as_ref(), out),
-            IoInst::DbClose { .. } => {}
+            IoInst::DbClose { .. } | IoInst::DbFb { .. } => {}
             IoInst::DbIo { rec, key, rrn, .. } => {
                 opt_place_uses(rec.as_ref(), out);
                 opt_uses(key.as_ref(), out);

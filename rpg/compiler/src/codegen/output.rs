@@ -28,6 +28,14 @@ pub enum Step<'a> {
     Total,
     /// Exception records with this name (empty: unnamed ones).
     Except(&'a str),
+    /// Heading and detail records conditioned by an overflow
+    /// indicator, at overflow time.
+    Overflow,
+}
+
+/// Whether conditioning names an overflow indicator.
+fn on_overflow(c: &rpgfront::ast::Conditioning) -> bool {
+    c.iter().flatten().any(|i| !i.not && matches!(i.ind.as_str(), "OA" | "OB" | "OC" | "OD" | "OE" | "OF" | "OG" | "OV"))
 }
 
 impl Gen<'_> {
@@ -38,6 +46,7 @@ impl Gen<'_> {
                 Step::HeadingDetail => o.kind == "H" || o.kind == "D",
                 Step::Total => o.kind == "T",
                 Step::Except(n) => o.kind == "E" && o.except == n,
+                Step::Overflow => (o.kind == "H" || o.kind == "D") && on_overflow(&o.cond),
             };
             if hit {
                 self.output_record(o);
@@ -45,16 +54,70 @@ impl Gen<'_> {
         }
     }
 
+    /// Overflow time: when a printer's overflow indicator is on, the
+    /// heading and detail records it conditions print, and it goes off.
+    pub fn overflow_output(&mut self, outputs: &[Output]) {
+        let inds: Vec<String> = self.files.iter().filter_map(|f| f.oflind.clone()).collect();
+        if inds.is_empty() || !outputs.iter().any(|o| on_overflow(&o.cond)) {
+            return;
+        }
+        let any = self.b.temp("ind");
+        self.b.ins(format!("store {any}, *OFF"));
+        for i in &inds {
+            let x = format!("${}", i.trim_start_matches('*').to_ascii_lowercase());
+            let r = self.b.reg();
+            self.b.ins(format!("{r} = load {x}"));
+            let on = self.b.label();
+            let next = self.b.label();
+            self.b.term(format!("brif {r}, {on}, {next}"));
+            self.b.place(&on);
+            self.b.ins(format!("store {any}, *ON"));
+            self.b.place(&next);
+        }
+        let r = self.b.reg();
+        self.b.ins(format!("{r} = load {any}"));
+        let go = self.b.label();
+        let done = self.b.label();
+        self.b.term(format!("brif {r}, {go}, {done}"));
+        self.b.place(&go);
+        self.in_overflow = true;
+        self.output(outputs, Step::Overflow);
+        self.in_overflow = false;
+        for i in &inds {
+            let x = format!("${}", i.trim_start_matches('*').to_ascii_lowercase());
+            self.b.ins(format!("store {x}, *OFF"));
+        }
+        self.b.place(&done);
+    }
+
     fn output_record(&mut self, o: &Output) {
         let Some(f) = self.files.iter().find(|f| f.name == o.name).cloned() else {
             self.err(ids::FILE_NOT_DEFINED, 30, o.name.clone());
             return;
         };
+        if f.dev == Dev::Disk && !f.external {
+            self.at = o.at;
+            let skip = self.b.label();
+            if !o.cond.is_empty() {
+                let r = self.conditioning(&o.cond);
+                let run = self.b.label();
+                if let Some(r) = r {
+                    self.b.term(format!("brif {r}, {run}, {skip}"));
+                }
+                self.b.place(&run);
+            }
+            self.disk_output(o, &f);
+            self.b.place(&skip);
+            return;
+        }
         if f.dev != Dev::Printer || f.external {
             self.err(ids::UNSUPPORTED, 30, "output");
             return;
         }
         self.at = o.at;
+        if o.space.iter().all(|s| s.trim().is_empty()) {
+            self.diags.push(rpgfront::Diag::new(ids::SPACE_DEFAULT, 0, o.at));
+        }
         let skip = self.b.label();
         if !o.cond.is_empty() {
             let r = self.conditioning(&o.cond);
@@ -63,6 +126,11 @@ impl Gen<'_> {
                 self.b.term(format!("brif {r}, {run}, {skip}"));
             }
             self.b.place(&run);
+        }
+        // Fetch overflow: the overflow lines first when it is on.
+        if o.fetch == "F" && !self.in_overflow {
+            let outputs = self.outputs.clone();
+            self.overflow_output(&outputs);
         }
         let len = if f.reclen == 0 { 132 } else { f.reclen };
         let line = self.b.temp(&format!("char({len})"));

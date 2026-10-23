@@ -240,6 +240,10 @@ impl Parser {
                 dst,
                 file: self.file_index()?,
             }),
+            ("dbfb", None) => Inst::Io(IoInst::DbFb {
+                dst,
+                file: self.file_index()?,
+            }),
             ("dbio", None) => {
                 let file = self.file_index()?;
                 let w = self.ident()?;

@@ -840,6 +840,10 @@ impl R<'_> {
                 dst: self.reg()?,
                 file: self.u32()?,
             },
+            4 => IoInst::DbFb {
+                dst: self.reg()?,
+                file: self.u32()?,
+            },
             2 => IoInst::DbIo {
                 dst: self.reg()?,
                 file: self.u32()?,

@@ -20,6 +20,7 @@ use tn5250_driver::env::Env;
 use tn5250_driver::ftp::Ftp;
 
 use rpg_oracle::Case;
+use rpg_oracle::case::DbStep;
 use rpg_oracle::listing::{self, Mask};
 use rpg_oracle::outcome::{Logged, Outcome, Run, Spooled, fcfc_rows};
 
@@ -36,6 +37,8 @@ pub struct Session {
     lib: String,
     user: String,
     rcdlen: Option<usize>,
+    ddssrc: bool,
+    in_sql_listing: bool,
     release: String,
     _lock: Lock,
 }
@@ -63,6 +66,8 @@ impl Session {
             lib: format!("{user}B"),
             user,
             rcdlen: None,
+            ddssrc: false,
+            in_sql_listing: false,
             release: String::new(),
             _lock: lock,
         };
@@ -126,6 +131,11 @@ impl Session {
     /// Upload lines as a member: binary data records, which the server
     /// numbers 1.00, 2.00, ... with zero dates.
     fn put_member(&mut self, member: &str, lines: &[String], width: usize) -> Result<()> {
+        self.put_source("QRPGLESRC", member, lines, width)
+    }
+
+    /// Upload lines as a member of a source file.
+    fn put_source(&mut self, file: &str, member: &str, lines: &[String], width: usize) -> Result<()> {
         let mut data = Vec::with_capacity(lines.len() * width);
         for (i, l) in lines.iter().enumerate() {
             let mut rec = vec![0x40u8; width];
@@ -133,8 +143,68 @@ impl Session {
                 .map_err(|e| anyhow::anyhow!("line {}: {e}", i + 1))?;
             data.extend(rec);
         }
-        let path = self.member_path("QRPGLESRC", member);
+        let path = self.member_path(file, member);
         self.ftp.put(&path, &data, true)
+    }
+
+    /// A member's database steps: DDS files created from `QDDSSRC`,
+    /// SQL statements run; the names of the files made, in order.
+    fn db_setup(&mut self, c: &Case) -> Result<Vec<String>> {
+        let lib = self.lib.clone();
+        let mut made = Vec::new();
+        let mut batch: Vec<String> = Vec::new();
+        for (i, step) in c.db.iter().enumerate() {
+            match step {
+                DbStep::Dds { name, logical, source } => {
+                    if !self.ddssrc {
+                        self.try_rcmd(&format!("DLTF FILE({lib}/QDDSSRC)"));
+                        let (ok, cause) = self.rcmd(&format!(
+                            "CRTSRCPF FILE({lib}/QDDSSRC) RCDLEN(92) CCSID(37)"
+                        ))?;
+                        if !ok {
+                            bail!("CRTSRCPF QDDSSRC failed {cause}");
+                        }
+                        self.ddssrc = true;
+                    }
+                    self.try_rcmd(&format!("DLTF FILE({lib}/{name})"));
+                    self.try_rcmd(&format!("RMVM FILE({lib}/QDDSSRC) MBR({name})"));
+                    self.put_source("QDDSSRC", name, source, 80)?;
+                    let cmd = if *logical { "CRTLF" } else { "CRTPF" };
+                    let (ok, cause) = self.rcmd(&format!(
+                        "{cmd} FILE({lib}/{name}) SRCFILE({lib}/QDDSSRC) SRCMBR({name})"
+                    ))?;
+                    self.try_rcmd(&format!("RMVM FILE({lib}/QDDSSRC) MBR({name})"));
+                    if !ok {
+                        bail!("{cmd} {name} failed {cause}");
+                    }
+                    made.push(name.clone());
+                }
+                DbStep::Sql(s) => {
+                    if let Some(n) = step.creates() {
+                        self.try_rcmd(&format!("DLTF FILE({lib}/{n})"));
+                        made.push(n);
+                    }
+                    batch.push(c.fill(s, &lib));
+                }
+                DbStep::SqlFile(_) => {}
+            }
+            // A run of statements goes through one RUNSQLSTM.
+            let next_sql = matches!(c.db.get(i + 1), Some(DbStep::Sql(_)));
+            if !batch.is_empty() && !next_sql {
+                let script = batch.join(" ; ");
+                batch.clear();
+                self.sql(&script)?;
+            }
+        }
+        Ok(made)
+    }
+
+    /// Delete what [`Self::db_setup`] made, the last first.
+    fn db_cleanup(&mut self, made: &[String]) {
+        let lib = self.lib.clone();
+        for n in made.iter().rev() {
+            self.try_rcmd(&format!("DLTF FILE({lib}/{n})"));
+        }
     }
 
     /// Run an SQL statement through `RUNSQLSTM` over a member.
@@ -143,7 +213,10 @@ impl Session {
         let mut lines = Vec::new();
         let mut cur = String::new();
         for w in stmt.split_whitespace() {
-            if cur.len() + w.len() + 1 > 70.min(width) {
+            // A line never ends inside a literal: the margin's blanks
+            // would join it.
+            let open = cur.matches('\'').count() % 2 == 1;
+            if !open && cur.len() + w.len() + 1 > 70.min(width) {
                 lines.push(std::mem::take(&mut cur));
             }
             if !cur.is_empty() {
@@ -155,11 +228,26 @@ impl Session {
         self.put_member("QSQ", &lines, width)?;
         let lib = self.lib.clone();
         let (ok, cause) = self.rcmd(&format!(
-            "RUNSQLSTM SRCFILE({lib}/QRPGLESRC) SRCMBR(QSQ) COMMIT(*NONE) NAMING(*SQL) MARGINS(80)"
+            "RUNSQLSTM SRCFILE({lib}/QRPGLESRC) SRCMBR(QSQ) COMMIT(*NONE) NAMING(*SQL) MARGINS(80) OUTPUT(*PRINT)"
         ))?;
         self.try_rcmd(&format!("RMVM FILE({lib}/QRPGLESRC) MBR(QSQ)"));
         if !ok {
-            bail!("RUNSQLSTM failed {cause}");
+            // The statement listing says why, unless this is that query.
+            let mut why = Vec::new();
+            if !self.in_sql_listing {
+                self.in_sql_listing = true;
+                if let Ok(list) = self.spools() {
+                    for e in list {
+                        if let Ok(lines) = self.take_spool(&e)
+                            && e.name == "QSQ"
+                        {
+                            why.extend(lines.into_iter().filter(|l| l.contains("SQL")));
+                        }
+                    }
+                }
+                self.in_sql_listing = false;
+            }
+            bail!("RUNSQLSTM failed {cause}\n{}", why.join("\n"));
         }
         Ok(())
     }
@@ -326,6 +414,14 @@ impl Session {
                 eprintln!("{}: setup failed: {cl}: {}", c.name, reply.trim());
             }
         }
+        let made = match self.db_setup(c) {
+            Ok(m) => m,
+            Err(e) => {
+                let all: Vec<String> = c.db.iter().filter_map(DbStep::creates).collect();
+                self.db_cleanup(&all);
+                return Err(e);
+            }
+        };
         // Spooled files left from before are not this member's.
         for e in self.spools()? {
             let _ = self.take_spool(&e);
@@ -385,6 +481,7 @@ impl Session {
             self.try_rcmd(&format!("RMVM FILE({lib}/QRPGLESRC) MBR({w})"));
         }
         self.try_rcmd(&format!("RMVM FILE({lib}/QRPGLESRC) MBR({})", c.name));
+        self.db_cleanup(&made);
         o.provenance = vec![
             format!("{} {} pub400.com", c.name, self.release),
             format!("captured {} by rpg-oracle", today()),
@@ -405,7 +502,7 @@ impl Session {
             }
         }
         let lib = self.lib.clone();
-        for f in ["QRPGLESRC", "RPGSPL", "RPGSPLS", "RPGJLOG"] {
+        for f in ["QRPGLESRC", "QDDSSRC", "RPGSPL", "RPGSPLS", "RPGJLOG"] {
             self.try_rcmd(&format!("DLTF FILE({lib}/{f})"));
         }
     }
@@ -413,7 +510,7 @@ impl Session {
     /// Delete the work files and say goodbye.
     pub fn close(mut self) {
         let lib = self.lib.clone();
-        for f in ["QRPGLESRC", "RPGSPL"] {
+        for f in ["QRPGLESRC", "QDDSSRC", "RPGSPL"] {
             self.try_rcmd(&format!("DLTF FILE({lib}/{f})"));
         }
         self.ftp.quit();

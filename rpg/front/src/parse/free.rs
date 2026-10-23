@@ -371,8 +371,13 @@ fn calc(b: &mut Builder<'_>, st: &FreeStmt, word: &str, n: usize) -> Option<Stmt
     } else {
         let mut c = expr::Cursor::new(rest, st.end);
         let mut list = Vec::new();
+        let keyed = matches!(word, "CHAIN" | "SETLL" | "SETGT" | "READE" | "READPE" | "DELETE");
         while !c.done() {
+            // A search argument in parentheses is a key list, even of one.
+            let paren = keyed && list.is_empty() && c.peek().is_some_and(|t| t.is("("));
+            let at = c.pos();
             if let Some(e) = expr::expr(&mut c, &mut b.diags) {
+                let e = if paren && !matches!(e, Expr::List(..)) { Expr::List(vec![e], at) } else { e };
                 list.push(e);
             } else {
                 c.skip_all();

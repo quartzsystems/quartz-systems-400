@@ -967,6 +967,11 @@ impl W {
                 self.reg(*dst);
                 self.u32(*file);
             }
+            IoInst::DbFb { dst, file } => {
+                self.u8(4);
+                self.reg(*dst);
+                self.u32(*file);
+            }
             IoInst::DbIo {
                 dst,
                 file,

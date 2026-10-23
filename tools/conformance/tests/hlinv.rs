@@ -47,7 +47,7 @@ fn hlinv_compiles_unmodified() {
         let name = p.file_stem().map(|s| s.to_string_lossy().to_ascii_uppercase()).unwrap_or_default();
         let mut case = Case::parse(&name, &text);
         case.call.clear();
-        let c = rpg::compile(&case);
+        let c = rpg::compile(&case, None);
         let ours: Vec<String> = rpg::diags(&c).iter().map(|d| format!("{} {:02} {}", d.msgid, d.severity, d.line)).collect();
         let worst = c.diags.iter().map(|d| d.severity).max().unwrap_or(0);
         if !c.created || worst > 10 {

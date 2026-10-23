@@ -1,0 +1,232 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   CYC004
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   CYC004
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1  *; dds: SALESF                                                                                           000000     000100
+      2  *; sqlfile: SALESF                                                                                       000000     000200
+      3  * Two control levels: L2 region, L1 rep.                                                                 000000     000300
+-     4 FSALESF    IP   F   22        DISK                                                                        000000     000400
+      5 FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)                                                       000000     000500
+-     6 DREPTOT           S              9P 2                                                                     000000     000600
+      7 DREGTOT           S              9P 2                                                                     000000     000700
+      8 DNREC             S              3P 0                                                                     000000     000800
+-     9 ISALESF    NS  01                                                                                         000000     000900
+     10 I                                  1    2  REGION        L2                                               000000     001000
+     11 I                                  3    6  REP           L1                                               000000     001100
+     12 I                                  7   16  ITEM                                                           000000     001200
+     13 I                             P   17   20 2AMT                                                            000000     001300
+     14 I                             P   21   22 0QTY                                                            000000     001400
+-    15 C   L1              Z-ADD     0             NREC                                                          000000     001500
+     16 C   01              ADD       AMT           REPTOT                                                        000000     001600
+     17 C   01              ADD       1             NREC                                                          000000     001700
+     18 CL1                 ADD       REPTOT        REGTOT                                                        000000     001800
+-    19 OQSYSPRT   T    L1                     1                                                                  000000     001900
+     20 O                       REGION               4                                                            000000     002000
+     21 O                       REP                 10                                                            000000     002100
+     22 O                       NREC          Z     14                                                            000000     002200
+     23 O                       REPTOT        JB    28                                                            000000     002300
+     24 OQSYSPRT   T    L2                     2                                                                  000000     002400
+     25 O                       REGION               4                                                            000000     002500
+     26 O                                           10 '**'                                                       000000     002600
+     27 O                       REGTOT        JB    28                                                            000000     002700
+     28 O                                           40 'L1 L2 LR'                                                 000000     002800
+     29 OQSYSPRT   T    LR                                                                                        000000     002900
+ ======>                                  aaaaaaaaaaaa
+ *RNF6011 00 a      002900  The Space and Skip entries are blank and no PRTCTL keyword
+                            specified; Space-After defaults to 1.
+     30 O                                            3 'end'                                                      000000     003000
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+1{heading} page 3
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+ *RNF7086 00      4 000400  RPG handles blocking for file SALESF. INFDS is updated only
+                            when blocks of data are transferred.
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-                 O u t p u t   B u f f e r   P o s i t i o n s
+0Line   Start End   Field or Constant
+0Number Pos   Pos
+     20     3     4 REGION
+     21     7    10 REP
+     22    12    14 NREC
+     23    16    28 REPTOT
+     25     3     4 REGION
+     26     9    10 '**'
+     27    16    28 REGTOT
+     28    33    40 'L1 L2 LR'
+     30     1     3 'end'
+0 * * * * *   E N D   O F   O U T P U T   B U F F E R   P O S I T I O N   *  * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 5D     19      24      29
+          SALESF            DISK                    4D      9
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+ *RNF7031 *INOF             N(1)                    5D
+          AMT               P(7,2)                 13D     16
+ *RNF7031 ITEM              A(10)                  12D
+          NREC              P(3,0)                  8D     15M     17M     22
+ *RNF7031 QTY               P(3,0)                 14D
+          REGION            A(2)                   10D     20      25
+          REGTOT            P(9,2)                  7D     18M     27M
+          REP               A(4)                   11D     21
+          REPTOT            P(9,2)                  6D     16M     18      23M
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          01                                        9D     16      17
+          L1                                       11D     15      18      19
+          L2                                       10D     24
+          LR                                       29
+ *RNF7031 OF                                        5D
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF6011 00      1 The Space and Skip entries are blank and no PRTCTL keyword
+                    specified; Space-After defaults to 1.
+ *RNF7031 00      3 The name or indicator is not referenced.
+ *RNF7086 00      1 RPG handles blocking for the file. INFDS is updated only when
+                    blocks of data are transferred.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        5
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        5
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       30
+     Specifications  . . . . . . . . :       27
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        3
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program CYC004 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

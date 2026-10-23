@@ -544,6 +544,14 @@ pub enum IoInst {
         /// File index.
         file: u32,
     },
+    /// `%d = dbfb FILE`: the feedback of the file's last operation as
+    /// bits: 1 end of file, 2 found, 4 equal, 8 open.
+    DbFb {
+        /// Destination, an `i32`.
+        dst: Reg,
+        /// File index.
+        file: u32,
+    },
     /// `%d = dbio FILE OP [rec(place)] [key(opnd)] [rrn(opnd)] [fmt(NAME)] [nolock]`.
     DbIo {
         /// Destination, an `i32`.

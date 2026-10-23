@@ -97,25 +97,6 @@ fn timfmt_arg(k: &Keyword) -> Option<(TimFmt, char)> {
     Some((f, sep))
 }
 
-/// A PSDS subfield's special keyword (free form) or From entry
-/// (fixed form): its type and position.
-fn psds_special(d: &Def) -> Option<(Ty, u32)> {
-    let word = d
-        .kws
-        .iter()
-        .map(|k| k.name.as_str())
-        .find(|n| n.starts_with('*'))
-        .map(str::to_string)
-        .or_else(|| d.fixed.as_ref().map(|c| c.from.clone()).filter(|f| f.starts_with('*')))?;
-    Some(match word.as_str() {
-        "*PROC" => (Ty::Char(10), 1),
-        "*STATUS" => (Ty::Zoned(5, 0), 11),
-        "*ROUTINE" => (Ty::Char(8), 29),
-        "*PARMS" => (Ty::Zoned(3, 0), 37),
-        _ => return None,
-    })
-}
-
 /// The type a definition's keywords or columns give, and its `DIM`.
 /// `None` when the type comes from elsewhere (`LIKEDS`, an external
 /// description) or is in error.
@@ -561,6 +542,42 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         dsr.inz |= src.inz;
         return Some(id);
     }
+    // EXTNAME and LIKEREC: the format's fields.
+    if let Some((subs, len)) = crate::extfiles::ds_subfields(cx, d) {
+        for (n, ty, off) in subs {
+            let sub = Sym {
+                name: n.clone(),
+                kind: Some(Kind::Subfield),
+                ty,
+                scope: cx.scope,
+                storage: Storage::InDs,
+                parent: Some(id),
+                offset: off,
+                def_line: d.at.line,
+                implicit: true,
+                ..Sym::default()
+            };
+            let sid = if qualified {
+                Some(cx.t.add_hidden(sub))
+            } else {
+                match cx.t.find_in(cx.scope, &n) {
+                    // A file's field of the same name is this subfield.
+                    Some(old) if cx.t.syms[old].implicit && cx.t.syms[old].kind == Some(Kind::Field) => {
+                        cx.t.syms[old].kind = None;
+                        let sid = cx.t.add_hidden(sub);
+                        cx.t.rebind(cx.scope, &n, sid);
+                        Some(sid)
+                    }
+                    _ => add(cx, sub, d.at),
+                }
+            };
+            if let Some(s) = sid {
+                cx.t.ds[ds_index].subfields.push(s);
+            }
+        }
+        cx.t.ds[ds_index].len = len_kw.or(fixed_len).unwrap_or(0).max(len).max(1);
+        return Some(id);
+    }
     // Subfields.
     let mut next: u32 = 0;
     let mut end: u32 = 0;
@@ -568,7 +585,7 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     let is_psds = cx.t.ds[ds_index].psds;
     for c in &d.children {
         let cname = c.name.to_ascii_uppercase();
-        let special = if is_psds { psds_special(c) } else { None };
+        let special = crate::extfiles::special_subfield(c, is_psds);
         let ty = match &special {
             Some((t, _)) => Some(t.clone()),
             None => type_of(cx, c, true),
@@ -604,7 +621,9 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             .or_else(|| special.as_ref().map(|(_, p)| *p));
         let pos_kw = c.kw("POS").and_then(|k| int_arg(k, 0)).and_then(|v| u32::try_from(v).ok());
         let overlay = c.kw("OVERLAY").cloned();
-        let offset = if let Some(f) = from.or(pos_kw) {
+        let offset = if let Some((_, o)) = special {
+            o
+        } else if let Some(f) = from.or(pos_kw) {
             f.saturating_sub(1)
         } else if let Some(k) = overlay {
             let target = word_arg(&k, 0).unwrap_or_default();
@@ -672,7 +691,7 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     }
     let len = len_kw.or(fixed_len).unwrap_or(0).max(end);
     let len = if len == 0 && d.children.is_empty() { 1 } else { len };
-    if d.children.is_empty() && d.kw("EXTNAME").is_none() && d.fixed.as_ref().is_none_or(|c| c.ext != "E") {
+    if d.children.is_empty() && d.kw("EXTNAME").is_none() && d.kw("LIKEREC").is_none() && d.fixed.as_ref().is_none_or(|c| c.ext != "E") {
         diag(cx, ids::DS_NO_SUBFIELDS, 0, d.at, &name);
     }
     cx.t.ds[ds_index].len = len;

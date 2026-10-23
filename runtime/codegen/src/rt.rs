@@ -149,6 +149,10 @@ pub enum RtFn {
     PrtCtl = 54,
 }
 
+/// The `db_io` code that asks for the last operation's feedback bits
+/// (`dbfb`) instead of running an operation.
+pub const DB_FEEDBACK: i64 = 13;
+
 /// The code of a database operation, as `db_io` takes it.
 #[must_use]
 pub fn db_op_code(op: qir::DbOp) -> i64 {

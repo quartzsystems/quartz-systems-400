@@ -1,0 +1,22 @@
+# CYC010 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+diag: RNF7086 00 line 4 seq 000400
+run: ok
+spool: QSYSPRT
+  |1/1   00101  credit
+  |1/2   city break Boston
+  |1/3   00102  debit
+  |1/4   city break Chicago
+  |1/5   00103  zero
+  |1/6   city break Boston
+  |1/7   00104  credit
+  |1/8   city break Denver
+  |1/9   00105  credit
+  |1/10  city break Chicago
+  |1/11  00106  credit
+  |1/12  city break Denver
+  |1/13  00107  credit
+  |1/14  city break Boston
+  |1/15  00108  credit
+  |1/16  city break Austin

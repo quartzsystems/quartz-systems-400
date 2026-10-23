@@ -66,6 +66,14 @@ pub mod ids {
     pub const EXT_NOT_FOUND: &str = "RNF2109";
     /// A feature this release does not compile.
     pub const UNSUPPORTED: &str = "RNF0201";
+    /// An output record without space or skip entries spaces one after.
+    pub const SPACE_DEFAULT: &str = "RNF6011";
+    /// A record format no operation names.
+    pub const FORMAT_UNUSED: &str = "RNF7066";
+    /// A search argument unlike the first key field.
+    pub const KEY_MISMATCH: &str = "RNF7078";
+    /// RPG blocks the file's records.
+    pub const BLOCKED: &str = "RNF7086";
     /// An index or element count out of range at compile time.
     pub const INDEX_RANGE: &str = "RNF7404";
 }

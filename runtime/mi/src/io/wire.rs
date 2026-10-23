@@ -139,12 +139,18 @@ pub enum OwnedKey {
     },
     /// No key.
     None,
+    /// A limit: 1 `*START`, 2 `*END`, 3 `*LOVAL`, 4 `*HIVAL`.
+    Limit {
+        /// Which.
+        which: u8,
+    },
 }
 
 wire_enum!(OwnedKey {
     0 => Fields { bytes },
     1 => Rrn { rrn },
     2 => None,
+    3 => Limit { which },
 });
 
 /// An [`IoRequest`] that owns its record and key.
@@ -181,6 +187,10 @@ impl OwnedRequest {
                 KeyRef::Fields(b) => OwnedKey::Fields { bytes: b.to_vec() },
                 KeyRef::Rrn(n) => OwnedKey::Rrn { rrn: n },
                 KeyRef::None => OwnedKey::None,
+                KeyRef::Start => OwnedKey::Limit { which: 1 },
+                KeyRef::End => OwnedKey::Limit { which: 2 },
+                KeyRef::LoVal => OwnedKey::Limit { which: 3 },
+                KeyRef::HiVal => OwnedKey::Limit { which: 4 },
             },
             format: r.format.map(str::to_string),
             nolock: r.nolock,
@@ -197,6 +207,12 @@ impl OwnedRequest {
                 OwnedKey::Fields { bytes } => KeyRef::Fields(bytes),
                 OwnedKey::Rrn { rrn } => KeyRef::Rrn(*rrn),
                 OwnedKey::None => KeyRef::None,
+                OwnedKey::Limit { which } => match which {
+                    1 => KeyRef::Start,
+                    2 => KeyRef::End,
+                    3 => KeyRef::LoVal,
+                    _ => KeyRef::HiVal,
+                },
             },
             format: self.format.as_deref(),
             nolock: self.nolock,

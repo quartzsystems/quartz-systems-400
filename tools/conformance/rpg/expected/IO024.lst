@@ -1,0 +1,301 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   IO024
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   IO024
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1  *; dds: CUSTF                                                                                            000000     000100
+      2  *; sqlfile: CUSTF                                                                                        000000     000200
+      3  * Fixed form: WRITE and DELETE with indicators, an INFDS.                                                000000     000300
+-     4 FCUSTF     UF A E           K DISK    INFDS(FB)                                                           000000     000400
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  CUSTF            {lib}/CUSTF                             *
+         * Record format(s) . . . . . :  CUSTR            CUSTR                                       *
+         *--------------------------------------------------------------------------------------------*
+      5 FQSYSPRT   O    F  132        PRINTER                                                                     000000     000500
+-     6 DLINE             DS           132                                                                        000000     000600
+ ======> aaaa
+ *RNF3530 00 a      000600  Data structure LINE has no valid subfields.
+      7 DKEY              S              5P 0                                                                     000000     000700
+      8 DFB               DS                                                                                      000000     000800
+      9 DFSTAT              *STATUS                                                                               000000     000900
+     10 DFOP                *OPCODE                                                                               000000     001000
+ *RNF2318 00      5 000500  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-    11=ICUSTR                                                                                                              1000001
+         *--------------------------------------------------------------------------------------------*                     1
+         * RPG record format  . . . . :  CUSTR                                                        *                     1
+         * External format  . . . . . :  CUSTR : {lib}/CUSTF                                      *                     1
+         *--------------------------------------------------------------------------------------------*                     1
+     12=I                             P    1    3 0CUSNO                                                                    1000002
+     13=I                             A    4   23  NAME                                                                     1000003
+     14=I                             A   24   35  CITY                                                                     1000004
+     15=I                             P   36   40 2BAL                                                                      1000005
+-    16 C                   EVAL      CUSNO = 102                                                                 000000     001100
+     17 C                   WRITE     CUSTR                              --70--                                   000000     001200
+     18 C                   EVAL      LINE = 'dup ' + *IN70 + ' ' + %CHAR(FSTAT) +                                000000     001300
+     19 C                             ' ' + FOP                                                                   000000     001400
+     20 C                   WRITE     QSYSPRT       LINE                                                          000000     001500
+     21 C                   EVAL      CUSNO = 130                                                                 000000     001600
+     22 C                   EVAL      NAME = 'New One'                                                            000000     001700
+     23 C                   WRITE     CUSTR                              --70--                                   000000     001800
+     24 C                   EVAL      LINE = 'new ' + *IN70 + ' ' + %CHAR(FSTAT) +                                000000     001900
+     25 C                             ' ' + FOP                                                                   000000     002000
+     26 C                   WRITE     QSYSPRT       LINE                                                          000000     002100
+     27 C                   Z-ADD     130           KEY                                                           000000     002200
+     28 C     KEY           DELETE    CUSTR                              7172--                                   000000     002300
+     29 C                   EVAL      LINE = 'del ' + *IN71 + *IN72 + ' ' + FOP                                   000000     002400
+     30 C                   WRITE     QSYSPRT       LINE                                                          000000     002500
+     31 C                   Z-ADD     131           KEY                                                           000000     002600
+     32 C     KEY           DELETE    CUSTF                              7172--                                   000000     002700
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+     33 C                   EVAL      LINE = 'del ' + *IN71 + *IN72 + ' ' + FOP                                   000000     002800
+     34 C                   WRITE     QSYSPRT       LINE                                                          000000     002900
+     35 C     *LOVAL        SETLL     CUSTF                                                                       000000     003000
+     36 C                   READ      CUSTF                              ----99                                   000000     003100
+     37 C     *IN99         DOWEQ     *OFF                                                              B01       000000     003200
+     38 C                   EVAL      LINE = %CHAR(CUSNO) + ' ' + NAME                                   01       000000     003300
+     39 C                   WRITE     QSYSPRT       LINE                                                 01       000000     003400
+     40 C                   READ      CUSTF                              ----99                          01       000000     003500
+     41 C                   ENDDO                                                                       E01       000000     003600
+     42 C                   SETON                                        LR----                                   000000     003700
+     43=OCUSTR                                                                                                              2000001
+         *--------------------------------------------------------------------------------------------*                     2
+         * RPG record format  . . . . :  CUSTR                                                        *                     2
+         * External format  . . . . . :  CUSTR : {lib}/CUSTF                                      *                     2
+         *--------------------------------------------------------------------------------------------*                     2
+     44=O                       CUSNO                3P PACK      5,0                                                       2000002
+     45=O                       NAME                23A CHAR       20                                                       2000003
+     46=O                       CITY                35A CHAR       12                                                       2000004
+     47=O                       BAL                 40P PACK      9,2                                                       2000005
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-                 O u t p u t   B u f f e r   P o s i t i o n s
+0Line   Start End   Field or Constant
+0Number Pos   Pos
+     44     1     3 CUSNO
+     45     4    23 NAME
+     46    24    35 CITY
+     47    36    40 BAL
+0 * * * * *   E N D   O F   O U T P U T   B U F F E R   P O S I T I O N   *  * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                    K e y   F i e l d   I n f o r m a t i o n
+0         File           Internal    External
+            Record       field name  field name  Attributes
+0      1  CUSTF
+            CUSTR
+                         CUSNO                   PACK      5,0 SIGNED
+0 * * * * *   E N D   O F   K E Y   F I E L D   I N F O R M A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          CUSTF             DISK                    4D     32      35      36
+                                                   40
+            CUSTR                                   4D     11      17      23
+                                                   28      43
+          QSYSPRT           PRINTER                 5D     20      26      30
+                                                   34      39
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *IN70             N(1)                   18      24
+          *IN71             N(1)                   29      33
+          *IN72             N(1)                   29      33
+          *IN99             N(1)                   37
+          BAL               P(9,2)                 15M     47
+          CITY              A(12)                  14M     46
+          CUSNO             P(5,0)                 12M     16M     21M     38
+                                                   44
+          FB                DS(21)                  4       8D
+          FOP               A(6)                   10D     19      25      29
+                                                   33
+          FSTAT             S(5,0)                  9D     18      24
+          KEY               P(5,0)                  7D     27M     28      31M
+                                                   32
+          LINE              DS(132)                 6D     18M     20      24M
+                                                   26      29M     30      33M
+                                                   34      38M     39
+          NAME              A(20)                  13M     22M     38      45
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          70                                       17D     18      23D     24
+          71                                       28D     29      32D     33
+          72                                       28D     29      32D     33
+          99                                       36D     37      40D
+          LR                                       42D
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+1{heading} page 7
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        2
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        2
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       47
+     Specifications  . . . . . . . . :       44
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        3
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program IO024 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

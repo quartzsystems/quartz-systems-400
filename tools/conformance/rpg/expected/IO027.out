@@ -1,0 +1,17 @@
+# IO027 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+diag: RNF7066 00 line 4 seq 000400
+diag: RNF7086 00 line 4 seq 000400
+diag: RNF2318 00 line 5 seq 000500
+diag: RNF3530 00 line 6 seq 000600
+run: ok
+spool: QSYSPRT
+  |1/1   101 Alice Adams         1250.50 1100
+  |1/2   102 Bob Brown           -75.25 1010
+  |1/3   103 Carol Clark         .00 1001
+  |1/4   104 Dan Davis           300.00 1100
+  |1/5   105 Eve Evans           99.99 1100
+  |1/6   106 Frank Fox           5000.00 1100
+  |1/7   107 Grace Green         12.34 1100
+  |1/8   108 Hank Hill           450.00 1100

@@ -1,0 +1,14 @@
+# IO030 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+diag: RNF7066 00 line 7 seq 000700
+diag: RNF7086 00 line 7 seq 000700
+diag: RNF7066 00 line 8 seq 000800
+diag: RNF7086 00 line 8 seq 000800
+diag: RNF2318 00 line 9 seq 000900
+diag: RNF3530 00 line 10 seq 001000
+run: ok
+spool: QSYSPRT
+  |1/1   orders 8 11
+spool: QSYSPRT
+  |1/1   closed 00

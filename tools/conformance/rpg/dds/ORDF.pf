@@ -1,0 +1,9 @@
+     A                                      CCSID(37)
+     A          R ORDR
+     A            ORDCUS         5P 0
+     A            ORDNO          5P 0
+     A            ITEM          10A
+     A            QTY            5P 0
+     A            PRICE          7P 2
+     A          K ORDCUS
+     A          K ORDNO
