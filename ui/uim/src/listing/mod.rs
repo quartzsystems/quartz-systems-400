@@ -145,11 +145,15 @@ fn messages(out: &mut String, source: &Source, diags: &[Diagnostic]) {
     );
 }
 
-/// `Label . . . . . . :` with the colon in column 28.
+/// `Label . . . . . . :` with the colon in column 27 and one blank
+/// before it, whatever the label's length.
 fn dots(label: &str) -> String {
     let mut s = format!("{label} ");
-    while s.len() + 2 <= 27 {
+    if !s.len().is_multiple_of(2) {
+        s.push(' ');
+    }
+    while s.len() < 26 {
         s.push_str(". ");
     }
-    format!("{s:<27}:")
+    format!("{s}:")
 }

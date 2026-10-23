@@ -1,6 +1,6 @@
 QS/400 UIM compiler
-  Panel group . . . . . . .  :  QGPL/HELP
-  Source . . . . . . . . . . :  QGPL/QPNLSRC(HELP)
+  Panel group . . . . . . . :  QGPL/HELP
+  Source  . . . . . . . . . :  QGPL/QPNLSRC(HELP)
 
   SEQNBR  MEMBER      ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8
   000100              .* Help modules: every help tag, an imbedded member and index search.
@@ -84,18 +84,18 @@ QS/400 UIM compiler
   000400  HLPCOMMON   :EHELP.
   007600              :EPNLGRP.
 
-  Panels . . . . . . . . . . :  0
-  Print panels . . . . . . . :  0
-  Help modules . . . . . . . :  3
-  Classes . . . . . . . . .  :  0
-  Variables . . . . . . . .  :  0
-  Conditions . . . . . . . . :  0
-  Key lists . . . . . . . .  :  0
-  Imports . . . . . . . . .  :  0
+  Panels  . . . . . . . . . :  0
+  Print panels  . . . . . . :  0
+  Help modules  . . . . . . :  3
+  Classes . . . . . . . . . :  0
+  Variables . . . . . . . . :  0
+  Conditions  . . . . . . . :  0
+  Key lists . . . . . . . . :  0
+  Imports . . . . . . . . . :  0
 
-  Severity 10 . . . . . . .  :  0
-  Severity 20 . . . . . . .  :  0
-  Severity 30 . . . . . . .  :  0
-  Severity 40 . . . . . . .  :  0
-  Highest severity . . . . . :  00
+  Severity 10 . . . . . . . :  0
+  Severity 20 . . . . . . . :  0
+  Severity 30 . . . . . . . :  0
+  Severity 40 . . . . . . . :  0
+  Highest severity  . . . . :  00
   Panel group created

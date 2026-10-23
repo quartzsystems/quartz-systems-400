@@ -1,6 +1,6 @@
 QS/400 UIM compiler
-  Panel group . . . . . . .  :  QGPL/DATA
-  Source . . . . . . . . . . :  QGPL/QPNLSRC(DATA)
+  Panel group . . . . . . . :  QGPL/DATA
+  Source  . . . . . . . . . :  QGPL/QPNLSRC(DATA)
 
   SEQNBR  MEMBER      ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8
   000100              .* A data panel: dot-leader entries, a group, an extender, a selection field.
@@ -88,18 +88,18 @@ QS/400 UIM compiler
   008300              :EHELP.
   008400              :EPNLGRP.
 
-  Panels . . . . . . . . . . :  1
-  Print panels . . . . . . . :  0
-  Help modules . . . . . . . :  7
-  Classes . . . . . . . . .  :  5
-  Variables . . . . . . . .  :  7
-  Conditions . . . . . . . . :  2
-  Key lists . . . . . . . .  :  1
-  Imports . . . . . . . . .  :  0
+  Panels  . . . . . . . . . :  1
+  Print panels  . . . . . . :  0
+  Help modules  . . . . . . :  7
+  Classes . . . . . . . . . :  5
+  Variables . . . . . . . . :  7
+  Conditions  . . . . . . . :  2
+  Key lists . . . . . . . . :  1
+  Imports . . . . . . . . . :  0
 
-  Severity 10 . . . . . . .  :  0
-  Severity 20 . . . . . . .  :  0
-  Severity 30 . . . . . . .  :  0
-  Severity 40 . . . . . . .  :  0
-  Highest severity . . . . . :  00
+  Severity 10 . . . . . . . :  0
+  Severity 20 . . . . . . . :  0
+  Severity 30 . . . . . . . :  0
+  Severity 40 . . . . . . . :  0
+  Highest severity  . . . . :  00
   Panel group created
