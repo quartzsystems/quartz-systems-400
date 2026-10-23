@@ -69,17 +69,47 @@ with `SNDRCVF` and drives it over a session.
 
 See `UIM.md`: the compiler (§1-6), the renderer rules measured on the
 goldens (§7) and the dialog engine in the job (§8). `CRTPNLGRP` makes
-`*PNLGRP` objects; `pnlgrp_open` hands a job the payload. The panels
-behind the work-management, message, object and system displays and
-the `QUI*` APIs are in progress (the engine's `Response` is what each
-panel driver acts on).
+`*PNLGRP` objects; `pnlgrp_open` hands a job the payload.
+
+The system's displays are UIM panels for a job that owns a 5250
+device: 34 shipped panel groups under `ui/uim/pnlgrp/`, installed into
+`QSYS` at service start, shown by the drivers in
+`work/qsjob/src/panels/` (`work.rs`: WRKACTJOB, WRKUSRJOB, WRKSBSJOB,
+WRKJOB and its options, DSPJOB, DSPJOBLOG, WRKSBS, DSPSBSD, WRKJOBD,
+DSPJOBD, WRKCLS, DSPCLS, WRKSPLF, WRKOUTQ, WRKJOBQ, WRKWTR, WRKJOBSCDE;
+`objects.rs`: DSPMSG, WRKMSG, Additional Message Information, DSPLIBL,
+WRKOBJ, DSPLIB, DSPOBJD, DSPOBJAUT, WRKBNDDIR, DSPMSGD, WRKRPYLE,
+DSPLOG, DSPFD, DSPFFD, DSPDBR, DSPDTAARA, WRKOBJOWN; `system.rs`:
+DSPSYSVAL, WRKSYSVAL, DSPUSRPRF, WRKUSRPRF, DSPNETA, DSPSFWRSC,
+DSPAUTUSR, WRKCFGSTS, DSPDEVD, DSPAUTL, WRKAUTL, DSPSECAUD, the
+Information Assistant). Their data comes through storage requests
+140-191; list options run their commands through the engine. The
+serial service console and batch jobs keep the text answers.
+
+Golden tests (`ui/uim/tests/{wm,object,system}_panels.rs`) render each
+panel with the golden's visible values and compare the character grid:
+
+| Area | Matching the golden | Ignored, with the reason in the test |
+|---|---|---|
+| work management | 17 | 13 against goldens (IBM display-file grids R7/R9 do not reproduce), 7 with no golden (title and keys checked) |
+| messages and objects | 13 | 2 against goldens (`dspmsgd-list` wraps text into column 1; `dspobjaut` centers a heading over another), 3 with no golden |
+| system and security | 8 | 1 against a golden (`dspautusr`: one key row on row 22), 7 with no golden |
+
+Not done: WRKSYSSTS, WRKDSKSTS, WRKSYSACT, WRKSHRPOOL (text path,
+`TODO(phase8)`), DSPSGNINF (no command definition), the `QUI*` APIs
+(QUIOPNDA and the rest), another job's job log and call stack from
+WRKJOB.
 
 ## Section 4: menus
 
 See `MENUS.md`: `*MENU` objects, the stack, the generator (512
-command menus), `GO` in the job (§5) and the shipped `MAIN`. The task
-menus of the inventory (`USER`, `OFCTSK`, `SYSTEM`, ...) are in
-progress.
+command menus), `GO` in the job (§5), and 43 hand-written task menus
+in `ui/menus/sys/` (MAIN, USER, OFCTSK, SYSTEM, DATA, PROGRAM, CMN,
+DEFINE, PROBLEM, the Operational Assistant menus, SAVE, RESTORE,
+NETWORK, ... and ACCESS; §6). Every task-menu golden (46, with second
+pages) matches row for row except the copyright line and titles that
+name IBM i (`ui/menus/tests/task_menus.rs`, 49 tests). A session's
+`MAIN` is the `QSYS/MAIN` menu object through the UIM engine.
 
 ## Section 7: the console
 
