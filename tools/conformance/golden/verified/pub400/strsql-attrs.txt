@@ -1,0 +1,24 @@
+                           Change Session Attributes                            
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Statement processing . . . . .   *RUN           *RUN, *VLD, *SYN             
+   SELECT output  . . . . . . . .   1              1=Display, 2=Printer         
+                                                   3=File                       
+   Commitment control . . . . . .   *NONE          *NONE, *CHG, *CS, *ALL, *RR  
+                                                   *NC, *UR, *RS                
+   Date format  . . . . . . . . .   *YMD           *JOB, *USA, *ISO, *EUR, *JIS 
+                                                   *MDY, *DMY, *YMD, *JUL       
+   Date separator . . . . . . . .   '-'            *JOB, '/', '.', ',', '-'     
+                                                   ' ', *BLANK                  
+   Time format  . . . . . . . . .   *HMS           *HMS, *USA, *ISO             
+                                                   *EUR, *JIS                   
+   Time separator . . . . . . . .   ':'            *JOB, ':', '.', ','          
+                                                   ' ', *BLANK                  
+   Data refresh . . . . . . . . .   *ALWAYS        *ALWAYS, *FORWARD            
+   Allow copy data  . . . . . . .   *YES           *YES, *OPTIMIZE, *NO         
+   Naming convention  . . . . . .   *SYS           *SYS, *SQL                   
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+                                                                                

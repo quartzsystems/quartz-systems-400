@@ -1,0 +1,24 @@
+                            Specify INSERT Statement                            
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   INTO file . . . . . . . .                            Name, F4 for list       
+     Library . . . . . . . .                            Name, F4 for list       
+                                                                                
+   Select fields to insert                                                      
+     INTO  . . . . . . . . .   N                        Y=Yes, N=No             
+                                                                                
+   Insertion method  . . . .   1                        1=Input VALUES          
+                                                        2=Subselect             
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   WITH isolation level  . .   1                 1=Current level, 2=NC (NONE)   
+                                                 3=UR (CHG), 4=CS, 5=RS (ALL)   
+                                                 6=RR                           
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F20=Display entire name        
+ F21=Display statement                                                          
+                                                                                

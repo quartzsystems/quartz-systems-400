@@ -1,0 +1,24 @@
+                            Specify UPDATE Statement                            
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   File . . . . . . . . .                            Name, F4 for list          
+     Library  . . . . . .                            Name, F4 for list          
+                                                                                
+   Correlation  . . . . .                            Name                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F20=Display entire name        
+ F21=Display statement                                                          
+                                                                                

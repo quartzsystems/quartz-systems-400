@@ -1,0 +1,24 @@
+                            Specify DELETE Statement                            
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   File . . . . . . . . . . .                            Name, F4 for list      
+     Library  . . . . . . . .                            Name, F4 for list      
+   Correlation  . . . . . . .                            Name                   
+                                                                                
+ Type WHERE conditions, press Enter.                                            
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Type choices, press Enter.                                                     
+                                                                                
+   WITH isolation level . . .   1                1=Current level, 2=NC (NONE)   
+                                                 3=UR (CHG), 4=CS, 5=RS (ALL)   
+                                                 6=RR                           
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit         F4=Prompt   F5=Refresh   F6=Insert line   F9=Specify subquery  
+ F10=Copy line   F12=Cancel   F14=Delete line   F15=Split line   F24=More keys  
+                                                                                

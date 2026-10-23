@@ -1,0 +1,24 @@
+                              Exit Interactive SQL                              
+                                                                                
+ Type choice, press Enter.                                                      
+                                                                                
+   Option . . . . . . . . .   1       1=Save and exit session                   
+                                      2=Exit without saving session             
+                                      3=Resume session                          
+                                      4=Save session in source file             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F12=Cancel                                                                     
+                                                                                

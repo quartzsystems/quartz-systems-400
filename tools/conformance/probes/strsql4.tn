@@ -1,0 +1,39 @@
+# STRSQL, fourth pass: F18's lists. F18 asks for a library first (the
+# session keeps the choice), then a file, then shows its fields.
+# Read-only: the lists are left with F3, the session with option 2.
+timeout 30000
+settle 2500
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+key backtab
+key f18
+wait "Select and Sequence Libraries"
+settle 800
+snap strsql-f18
+cursor 8 3
+type 1
+key enter
+wait "Select and Sequence Files"
+settle 1500
+snap strsql-f18-files
+cursor 6 2
+type 1
+key enter
+settle 2500
+snap strsql-f18-fields
+key f3
+wait "Enter SQL Statements"
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"

@@ -1,0 +1,24 @@
+                                  Display Data                                  
+                                              Data width . . . . . . :    5321  
+ Position to line  . . . . .              Shift to column  . . . . . .          
+ ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....
+ TABLE_NAME                                                                     
+                                                                                
+ AJ_DMART_INFO                                                                  
+ ASP_INFO                                                                       
+ ASP_JOB_INFO                                                                   
+ ASP_VARY_INFO                                                                  
+ AUDIT_JOURNAL_DATA_MART_INFO                                                   
+ AUTHORITY_COLLECTION                                                           
+ AUTHORITY_COLLECTION_DLO                                                       
+ AUTHORITY_COLLECTION_FSOBJ                                                     
+ AUTHORITY_COLLECTION_IFS                                                       
+ AUTHORITY_COLLECTION_LIBRARIES                                                 
+ AUTHORITY_COLLECTION_OBJECT                                                    
+ AUTHORIZATION_LIST_INFO                                                        
+ AUTHORIZATION_LIST_USER_INFO                                                   
+ AUTHORIZATIONS                                                                 
+ AUTOSTART_JOB_INFO                                                             
+                                                                      More...   
+ F3=Exit      F12=Cancel      F19=Left      F20=Right      F21=Split            
+                                                                                

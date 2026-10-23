@@ -4432,3 +4432,299 @@ date = "2026-10-23"
 script = "dfu2"
 width = 80
 
+
+[[golden]]
+name = "strsql-attrs"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql"
+width = 80
+
+[[golden]]
+name = "strsql-attrs-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql"
+width = 80
+
+[[golden]]
+name = "strsql-attrs-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql"
+width = 80
+
+[[golden]]
+name = "strsql-data-bottom"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql3"
+width = 80
+
+[[golden]]
+name = "strsql-data-dummy"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql2"
+width = 80
+
+[[golden]]
+name = "strsql-data-f20"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql3"
+width = 80
+
+[[golden]]
+name = "strsql-data-pgdn"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql3"
+width = 80
+
+[[golden]]
+name = "strsql-data-posto"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql3"
+width = 80
+
+[[golden]]
+name = "strsql-data-shiftto"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql3"
+width = 80
+
+[[golden]]
+name = "strsql-data-wide"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql3"
+width = 80
+
+[[golden]]
+name = "strsql-error"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql3"
+width = 80
+
+[[golden]]
+name = "strsql-exit"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql2"
+width = 80
+
+[[golden]]
+name = "strsql-f16"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql2"
+width = 80
+
+[[golden]]
+name = "strsql-f17"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql2"
+width = 80
+
+[[golden]]
+name = "strsql-f17-files"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql3"
+width = 80
+
+[[golden]]
+name = "strsql-f18"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql4"
+width = 80
+
+[[golden]]
+name = "strsql-f18-fields"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql4"
+width = 80
+
+[[golden]]
+name = "strsql-f18-files"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql4"
+width = 80
+
+[[golden]]
+name = "strsql-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql"
+width = 80
+
+[[golden]]
+name = "strsql-f24-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql"
+width = 80
+
+[[golden]]
+name = "strsql-f6"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql3"
+width = 80
+
+[[golden]]
+name = "strsql-f9"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql3"
+width = 80
+
+[[golden]]
+name = "strsql-help"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql3"
+width = 80
+
+[[golden]]
+name = "strsql-history"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql3"
+width = 80
+
+[[golden]]
+name = "strsql-main"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-crtidx"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-crttbl"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-crtview"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-delete"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-insert"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-list"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-list-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-list-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-select"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql2"
+width = 80
+
+[[golden]]
+name = "strsql-prompt-update"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql2"
+width = 80
+
+[[golden]]
+name = "strsql-restored"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql3"
+width = 80
+
+[[golden]]
+name = "strsql-services"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "strsql"
+width = 80

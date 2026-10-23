@@ -1,0 +1,24 @@
+                              Select SQL Statement                              
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     29. ROLLBACK                                                               
+     30. SELECT                                                                 
+     31. SET CONNECTION                                                         
+     32. SET TRANSACTION                                                        
+     33. UPDATE                                                                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

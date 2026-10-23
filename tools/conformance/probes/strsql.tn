@@ -1,0 +1,57 @@
+# STRSQL, first pass: Enter SQL Statements and its key pages, Select
+# SQL Statement (F4 on a blank line), the Services menu and Change
+# Session Attributes. Read-only: nothing runs, every display is left
+# with F12 except Enter SQL Statements, which F12 would leave for the
+# Exit display; the session is left with option 2 (exit without
+# saving). No `continue`: a failed step ends the script.
+timeout 30000
+settle 2500
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+snap strsql-main
+key f24
+settle 800
+snap strsql-f24
+key f24
+settle 800
+snap strsql-f24-2
+key eraseinput
+key backtab
+key f4
+wait "Select SQL Statement"
+snap strsql-prompt-list
+key pgdn
+settle 800
+snap strsql-prompt-list-2
+key f12
+wait "Enter SQL Statements"
+key f13
+wait "Interactive SQL Session Services"
+snap strsql-services
+type 1
+key enter
+wait "Change Session Attributes"
+snap strsql-attrs
+key pgdn
+settle 800
+snap strsql-attrs-2
+key pgdn
+settle 800
+snap strsql-attrs-3
+key f12
+settle 800
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"

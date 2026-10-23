@@ -1,0 +1,89 @@
+# STRSQL, third pass: the restored session, Display Data over a wide
+# query of IBM's own catalog rows (shift, position-to, the bottom),
+# the history after it, a statement in error with its message help,
+# F9 and F6 with the cursor on the input, the file list behind F17
+# (F18 is strsql4.tn), and the Exit screen. Read-only as strsql2.tn:
+# only SELECTs, lists left with F3, the session left with option 2.
+timeout 30000
+settle 2500
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+snap strsql-restored
+key eraseinput
+key backtab
+type select * from qsys2.systables where table_schema='QSYS2' limit 40
+key enter
+wait "Display Data"
+settle 1500
+snap strsql-data-wide
+key f20
+settle 1000
+snap strsql-data-f20
+key f19
+settle 800
+key pgdn
+settle 1000
+snap strsql-data-pgdn
+cursor 3 32
+type 30
+key enter
+settle 1200
+snap strsql-data-posto
+cursor 3 74
+type 200
+key enter
+settle 1200
+snap strsql-data-shiftto
+cursor 3 32
+type b
+key enter
+settle 1200
+snap strsql-data-bottom
+key f12
+wait "Enter SQL Statements"
+settle 1000
+snap strsql-history
+key eraseinput
+key backtab
+type selec 1 from sysibm.sysdummy1
+key enter
+settle 2000
+snap strsql-error
+cursor 9 7
+key help
+settle 1500
+snap strsql-error-help
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key backtab
+key f9
+settle 1000
+snap strsql-f9
+key f6
+settle 1000
+snap strsql-f6
+key eraseinput
+key backtab
+key f17
+wait "Select and Sequence Libraries"
+cursor 8 3
+type 1
+key enter
+settle 2500
+snap strsql-f17-files
+key f3
+wait "Enter SQL Statements"
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+cursor 5 31
+key eraseeof
+type 2
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"

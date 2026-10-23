@@ -1,0 +1,24 @@
+                           Select and Sequence Fields                           
+                                                                                
+ Type sequence numbers (1-999) to select fields, press Enter.                   
+                                                                                
+                                                                                
+ Seq  Field              File               Type                 Length  Scale  
+      DATA_MART_LIBRA >  AJ_DMART           VARCHAR                  10         
+      DATA_MART_TABLE    AJ_DMART           CHARACTER                16         
+      DATA_MART_SYSTE >  AJ_DMART           CHARACTER                 5         
+      JOURNAL_ENTRY_T >  AJ_DMART           CHARACTER                 2         
+      DATA_MART_FILTE >  AJ_DMART           VARCHAR                1000         
+      AJ_START           AJ_DMART           TIMESTAMP                26     6   
+      AUDIT_JOURNAL_E >  AJ_DMART           TIMESTAMP                26     6   
+      BUILD_START        AJ_DMART           TIMESTAMP                26     6   
+      BUILD_END          AJ_DMART           TIMESTAMP                26     6   
+      BUILD_JOB          AJ_DMART           VARCHAR                  28         
+      FAILURE_DETAIL     AJ_DMART           VARCHAR                 300         
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F5=Refresh   F11=Display text   F12=Cancel   F17=Select files        
+ F19=Display system field names   F20=Display entire name                       
+                                                                                

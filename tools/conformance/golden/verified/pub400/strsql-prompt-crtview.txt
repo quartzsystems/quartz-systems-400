@@ -1,0 +1,24 @@
+                         Specify CREATE VIEW Statement                          
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   View . . . . . . . . .                            Name                       
+     Library  . . . . . .                            Name, F4 for list          
+                                                                                
+   Field names for view     1                        1=Use result file names    
+                                                     2=Specify names            
+                                                                                
+   WITH CHECK OPTION  . .   1                        1=NONE                     
+                                                     2=CASCADED                 
+                                                     3=LOCAL                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F20=Display entire name        
+ F21=Display statement                                                          
+                                                                                

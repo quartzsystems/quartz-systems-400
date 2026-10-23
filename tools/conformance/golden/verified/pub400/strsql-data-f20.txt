@@ -1,0 +1,24 @@
+                                  Display Data                                  
+                                              Data width . . . . . . :    5321  
+ Position to line  . . . . .              Shift to column  . . . . . .          
+ 8....+....9....+...10....+...11....+...12....+...13....+...14....+...15....+...
+                                                    TABLE_OWNER                 
+                                                                                
+                                                    QSYS                        
+                                                    QSYS                        
+                                                    QSYS                        
+                                                    QSYS                        
+                                                    QSYS                        
+                                                    QSYS                        
+                                                    QSYS                        
+                                                    QSYS                        
+                                                    QSYS                        
+                                                    QSYS                        
+                                                    QSYS                        
+                                                    QSYS                        
+                                                    QSYS                        
+                                                    QSYS                        
+                                                    QSYS                        
+                                                                      More...   
+ F3=Exit      F12=Cancel      F19=Left      F20=Right      F21=Split            
+                                                                                

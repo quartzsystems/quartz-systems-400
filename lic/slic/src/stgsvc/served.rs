@@ -1549,6 +1549,47 @@ impl Service for Served<'_> {
     }
 
     // --- STRSQL (400-419)
+    fn isql_start(&mut self, naming: String, commit: String) -> Result<bool, String> {
+        let root = self.own_qtemp();
+        self.own_libl();
+        let user = self.ctx.job.user.clone();
+        let r = super::isql::in_job(self.system, &mut self.ctx.svc, |s| {
+            super::isql::start(s, &user, &naming, &commit)
+        });
+        ile::set_libl(None);
+        self.root_qtemp(root);
+        r
+    }
+
+    fn isql_run(&mut self, text: String, naming: String, check: bool, max_rows: u32) -> stg::proto::IsqlReply {
+        let root = self.own_qtemp();
+        self.system.current_job = self.ctx.job.number;
+        self.own_libl();
+        let r = super::isql::in_job(self.system, &mut self.ctx.svc, |s| {
+            super::isql::run(s, &text, &naming, check, max_rows)
+        });
+        ile::set_libl(None);
+        self.root_qtemp(root);
+        r
+    }
+
+    fn isql_end(&mut self, commit: bool) -> Result<u64, String> {
+        let root = self.own_qtemp();
+        self.own_libl();
+        let r = super::isql::in_job(self.system, &mut self.ctx.svc, |s| super::isql::end(s, commit));
+        ile::set_libl(None);
+        self.root_qtemp(root);
+        r
+    }
+
+    fn isql_session(&mut self) -> Option<String> {
+        super::isql::session(self.system)
+    }
+
+    fn isql_session_put(&mut self, text: Option<String>) -> Result<(), String> {
+        super::isql::session_put(self.system, text.as_deref())
+    }
+
 
     // --- STRSST (420-439)
 

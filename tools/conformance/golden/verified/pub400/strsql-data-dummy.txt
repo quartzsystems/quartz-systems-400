@@ -1,0 +1,24 @@
+                                  Display Data                                  
+                                              Data width . . . . . . :       7  
+ Position to line  . . . . .              Shift to column  . . . . . .          
+ ....+..                                                                        
+ IBMREQD                                                                        
+    Y                                                                           
+ ********  End of data  ********                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                       Bottom   
+ F3=Exit      F12=Cancel      F19=Left      F20=Right      F21=Split            
+                                                                                

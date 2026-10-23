@@ -12,7 +12,7 @@
              PARM       KWD(NAMING) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           DFT(*SYS) VALUES(*SYS *SQL) PROMPT('Naming')
              PARM       KWD(PROCESS) TYPE(*CHAR) LEN(4) RSTD(*YES) +
-                          DFT(*RUN) VALUES(*RUN *SYN) +
+                          DFT(*RUN) VALUES(*RUN *VLD *SYN) +
                           PROMPT('Statement processing')
              PARM       KWD(LIBOPT) TYPE(*CHAR) LEN(5) RSTD(*YES) +
                           DFT(*LIB) VALUES(*LIB *NONE) +

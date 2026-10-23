@@ -329,6 +329,9 @@ note = "the storage service keeps who services whom; debug orders go through it"
 site = "job"
 
 # --- STRSQL (devtools/isql)
+[cmd.STRSQL]
+site = "job"
+note = "Enter SQL Statements at a display; it cannot run in batch"
 
 # --- STRSST (devtools/sst)
 

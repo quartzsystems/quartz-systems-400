@@ -1,0 +1,24 @@
+                                  Display Data                                  
+                                              Data width . . . . . . :    5321  
+ Position to line  . . . . .   30         Shift to column  . . . . . .          
+ ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....
+ TABLE_NAME                                                                     
+                                                                                
+ BINDING_DIRECTORY_INFO                                                         
+ BOUND_MODULE_INFO                                                              
+ BOUND_SRVPGM_INFO                                                              
+ CATALOG_NAME                                                                   
+ CERTIFICATE_USAGE_INFO                                                         
+ CHARACTER_SETS                                                                 
+ CHARACTER_SETS_S                                                               
+ CHECK_CONSTRAINTS                                                              
+ COLLECTION_SERVICES_INFO                                                       
+ COLUMN_PRIVILEGES                                                              
+ COLUMNS                                                                        
+ COLUMNS_S                                                                      
+ COMMAND_INFO                                                                   
+ COMMUNICATIONS_ENTRY_INFO                                                      
+ CONDENSEDINDEXADVICE                                                           
+                                                                      More...   
+ F3=Exit      F12=Cancel      F19=Left      F20=Right      F21=Split            
+ Line positioning value not valid.                                              

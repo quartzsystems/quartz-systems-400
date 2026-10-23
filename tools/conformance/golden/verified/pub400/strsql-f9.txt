@@ -1,0 +1,24 @@
+                              Enter SQL Statements                              
+                                                                                
+ Type SQL statement, press Enter.                                               
+    >                                                                           
+                                                                                
+                                                                                
+      selec 1 from sysibm.sysdummy1                                             
+      Token SELEC was not valid. Valid tokens: ( CL END GET SET TAG CALL D      
+ ===>                                                                           
+                                                                                
+                                                                                
+      selec 1 from sysibm.sysdummy1                                             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                        Bottom  
+ F3=Exit   F4=Prompt   F6=Insert line   F9=Retrieve   F10=Copy line             
+ F12=Cancel            F13=Services     F24=More keys                           
+                                                                                

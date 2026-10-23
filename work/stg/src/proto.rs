@@ -521,6 +521,21 @@ ipc::rpc! {
     /// The servicing job: the news waiting for it.
     387 => fn srvjob_events / SrvJobEvents () -> Vec<DbgEvent>;
     // --- STRSQL (400-419)
+    /// STRSQL: the job's SQL session started with its naming (`*SYS`,
+    /// `*SQL`) and commitment control (`*NONE`, `*CHG`, `*CS`,
+    /// `*ALL`); whether it started a definition (one already active is
+    /// kept and left alone).
+    400 => fn isql_start / IsqlStart (naming: String, commit: String) -> Result<bool, String>;
+    /// STRSQL: one statement run (or with `check` only parsed), at most
+    /// `max_rows` rows of a query returned.
+    401 => fn isql_run / IsqlRun (text: String, naming: String, check: bool, max_rows: u32) -> IsqlReply;
+    /// STRSQL: the session ended, pending changes committed or rolled
+    /// back; how many there were.
+    402 => fn isql_end / IsqlEnd (commit: bool) -> Result<u64, String>;
+    /// STRSQL: the job's user's saved session (`QUSRSYS/QSQLSESS`).
+    403 => fn isql_session / IsqlSession () -> Option<String>;
+    /// STRSQL: the job's user's session saved, or with `None` dropped.
+    404 => fn isql_session_put / IsqlSessionPut (text: Option<String>) -> Result<(), String>;
     // --- STRSST (420-439)
     /// SST: sign a service tools user on for this job (the job's user
     /// needs `*SERVICE`): the privileges, or why not.
@@ -558,6 +573,43 @@ ipc::rpc! {
 /// A search index topic: title, root words, panel group (`LIB/NAME`)
 /// and help module.
 pub type SchidxEntry = (String, Vec<String>, String, String);
+
+// --- STRSQL types
+
+/// What a statement run by `isql_run` left.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct IsqlReply {
+    /// `SQLCODE`.
+    pub sqlcode: i32,
+    /// `SQLSTATE`.
+    pub sqlstate: String,
+    /// The message's identifier, blank for a statement that ran.
+    pub msgid: String,
+    /// The message's text.
+    pub text: String,
+    /// The statement's name (`SELECT`, `INSERT`, ...).
+    pub statement: String,
+    /// Rows changed.
+    pub count: u64,
+    /// A query's columns: name and SQL type.
+    pub columns: Vec<(String, String)>,
+    /// A query's rows, `None` for a null.
+    pub rows: Vec<Vec<Option<String>>>,
+    /// More rows than `max_rows` were left out.
+    pub truncated: bool,
+}
+
+wire_struct!(IsqlReply {
+    sqlcode,
+    sqlstate,
+    msgid,
+    text,
+    statement,
+    count,
+    columns,
+    rows,
+    truncated
+});
 
 /// A system reply list entry for `rpyl_entries`: sequence, message
 /// identifier, compare data, its start, reply, dump.

@@ -1,0 +1,24 @@
+                           Select and Sequence Files                            
+                                                                                
+ Type sequence numbers (1-999) to select files, press Enter.                    
+                                                                                
+ Seq  File                     Library       Type  Text                         
+      AJ_DMART                 QSYS2         VW                                 
+      ASP_INFO                 QSYS2         VW                                 
+      ASP_JOB_INFO             QSYS2         VW                                 
+      ASP_VARY_INFO            QSYS2         VW                                 
+      ASPJ_INFO                QSYS2         VW                                 
+      AUDIT_JOURNAL_DATA_M  >  QSYS2         VW                                 
+      AUTH_CIFS                QSYS2         VW                                 
+      AUTH_COL                 QSYS2         VW                                 
+      AUTH_COLDL               QSYS2         VW                                 
+      AUTH_COLFS               QSYS2         VW                                 
+      AUTH_COLLI               QSYS2         VW                                 
+      AUTH_COLOB               QSYS2         VW                                 
+      AUTHIDS                  QSYS2         VW                                 
+      AUTHL_INFO               QSYS2         VW                                 
+      AUTHORITY_COLLECTION     QSYS2         VW                                 
+                                                                        More... 
+ F3=Exit   F5=Refresh   F12=Cancel   F16=Select libraries                       
+ F20=Display entire name                                                        
+ Before using field list, select at least one file.                             

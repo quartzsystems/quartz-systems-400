@@ -1,0 +1,24 @@
+                            Specify SELECT Statement                            
+                                                                                
+ Type SELECT statement information.  Press F4 for a list.                       
+                                                                                
+   FROM files . . . . . . . . .                                                 
+   SELECT fields  . . . . . . .                                                 
+   WHERE conditions . . . . . .                                                 
+   GROUP BY fields  . . . . . .                                                 
+   HAVING conditions  . . . . .                                                 
+   ORDER BY fields  . . . . . .                                                 
+   FOR UPDATE OF fields . . . .                                                 
+                                                                                
+                                                                         Bottom 
+ Type choices, press Enter.                                                     
+                                                                                
+   DISTINCT records in result file  . . . . . . . .   N    Y=Yes, N=No          
+   UNION with another SELECT  . . . . . . . . . . .   N    Y=Yes, N=No          
+   Specify additional options . . . . . . . . . . .   N    Y=Yes, N=No          
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit         F4=Prompt   F5=Refresh   F6=Insert line   F9=Specify subquery  
+ F10=Copy line   F12=Cancel   F14=Delete line   F15=Split line   F24=More keys  
+                                                                                

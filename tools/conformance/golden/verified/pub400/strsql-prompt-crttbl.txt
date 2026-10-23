@@ -1,0 +1,24 @@
+                         Specify CREATE TABLE Statement                         
+                                                                                
+ Type information, press Enter.                                                 
+                                                                                
+   File . . . . . . . . . .                            Name                     
+     Library  . . . . . . .                            Name, F4 for list        
+                                                                                
+ Nulls:  1=NULL, 2=NOT NULL, 3=NOT NULL WITH DEFAULT                            
+                                                                                
+ Field                 FOR Field     Type              Length      Scale  Nulls 
+                                                                            3   
+                                                                            3   
+                                                                            3   
+                                                                            3   
+                                                                            3   
+                                                                            3   
+                                                                            3   
+                                                                         Bottom 
+   File CONSTRAINT  . . . . . . . . . . . . .   N      Y=Yes, N=No              
+   Distributed File . . . . . . . . . . . . .   N      Y=Yes, N=No              
+                                                                                
+ F3=Exit   F4=Prompt           F5=Refresh   F6=Insert line    F10=Copy line     
+ F11=Display more attributes   F12=Cancel   F14=Delete line   F24=More keys     
+                                                                                

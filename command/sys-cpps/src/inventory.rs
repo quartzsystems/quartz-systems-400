@@ -358,6 +358,7 @@ pub const JOB_SITE: &[&str] = &[
     "STRSRVJOB",
     "ENDSRVJOB",
     // --- STRSQL (devtools/isql)
+    "STRSQL",
     // --- STRSST (devtools/sst)
     "STRSST",
     "ADDBKP",
@@ -659,6 +660,5 @@ pub const BRIDGE_WORDS: &[&str] = &[
 pub const UNSUPPORTED: &[&str] = &[
     "CPYLIB",
     "POSDBF",
-    "STRSQL",
     "TFRJOB",
 ];

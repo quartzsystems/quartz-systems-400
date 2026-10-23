@@ -15,6 +15,7 @@ mod dbg;
 pub(crate) mod devices;
 pub(crate) mod exec;
 pub(crate) mod hist;
+mod isql;
 mod joblog;
 mod pdm;
 mod dfu;

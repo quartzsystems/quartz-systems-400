@@ -55,6 +55,7 @@ members = [
     "devtools/pdm",
     "devtools/dfu",
     "devtools/dbg",
+    "devtools/isql",
     "devtools/sst",
 ]
 

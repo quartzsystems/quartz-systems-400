@@ -1,0 +1,24 @@
+                           Change Session Attributes                            
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   List of libraries  . . . . . .   *LIBL          Name, *LIBL, *USRLIBL        
+                                                   *ALLUSR, *ALL, *CURLIB       
+   List type  . . . . . . . . . .   *ALL           *ALL, *SQL                   
+   Decimal point  . . . . . . . .   *COMMA         *PERIOD, *COMMA, *JOB,       
+                                                     *SYSVAL                    
+   Sort sequence  . . . . . . . .   *HEX           Name, *JOB, *JOBRUN          
+                                                   *LANGIDUNQ, *LANGIDSHR       
+                                                   *HEX                         
+   Language identifier  . . . . .   ENU            Name, *JOB, *JOBRUN          
+                                                   F4 for Prompt                
+   SQL rules  . . . . . . . . . .   *DB2           *DB2, *STD                   
+   Display password . . . . . . .   *NO            *NO, *YES                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  
+ Already at bottom of area.                                                     

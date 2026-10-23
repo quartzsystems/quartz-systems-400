@@ -1,0 +1,24 @@
+                         Specify CREATE INDEX Statement                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Index . . . . . . . .                            Name                        
+     Library . . . . . .                            Name, F4 for list           
+                                                                                
+   File  . . . . . . . .                            Name, F4 for list           
+     Library . . . . . .                            Name, F4 for list           
+                                                                                
+   Type of Index . . . .   1                        1=Unspecified               
+                                                    2=UNIQUE                    
+                                                    3=UNIQUE WHERE NOT NULL     
+                                                    4=ENCODED VECTOR            
+                                                                                
+   DISTINCT VALUES . . .                            Number                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F20=Display entire name        
+ F21=Display statement                                                          
+                                                                                

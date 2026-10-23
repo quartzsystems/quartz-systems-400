@@ -1,0 +1,167 @@
+# STRSQL, second pass: the statement list's last page, each statement
+# prompt, Display Data (one column, then a wide query shifted and
+# paged), the history, a statement in error with its second-level
+# help, F9, F6, the select lists (F16 to F18) and the Exit screen.
+# Read-only: only SELECTs run, every prompt and list is left with F12,
+# the session is left with option 2 (exit without saving). No
+# `continue`: a step that fails ends the script rather than typing on
+# the wrong display. After a return from a prompt the cursor sits on a
+# protected row, so each statement is typed after Erase Input and
+# Backtab, on the last input line.
+timeout 30000
+settle 2500
+key enter
+wait "Main Menu"
+type strsql
+key enter
+wait "Enter SQL Statements"
+settle 1500
+key eraseinput
+key backtab
+key f4
+wait "Select SQL Statement"
+key pgdn
+settle 800
+key pgdn
+settle 800
+snap strsql-prompt-list-3
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key backtab
+type select
+key f4
+settle 2000
+snap strsql-prompt-select
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key backtab
+type insert
+key f4
+settle 2000
+snap strsql-prompt-insert
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key backtab
+type update
+key f4
+settle 2000
+snap strsql-prompt-update
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key backtab
+type delete
+key f4
+settle 2000
+snap strsql-prompt-delete
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key backtab
+type create table
+key f4
+settle 2000
+snap strsql-prompt-crttbl
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key backtab
+type create view
+key f4
+settle 2000
+snap strsql-prompt-crtview
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key backtab
+type create index
+key f4
+settle 2000
+snap strsql-prompt-crtidx
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key backtab
+type select * from sysibm.sysdummy1
+key enter
+wait "Display Data"
+settle 1000
+snap strsql-data-dummy
+key f12
+wait "Enter SQL Statements"
+settle 1000
+snap strsql-history
+key eraseinput
+key backtab
+type select * from qsys2.systables fetch first 40 rows only
+key enter
+wait "Display Data"
+settle 1500
+snap strsql-data-wide
+key f20
+settle 1000
+snap strsql-data-f20
+key f19
+settle 800
+key pgdn
+settle 1000
+snap strsql-data-pgdn
+key pgdn
+settle 1000
+key pgdn
+settle 1000
+snap strsql-data-bottom
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key backtab
+type selec 1 from sysibm.sysdummy1
+key enter
+settle 2000
+snap strsql-error
+cursor 24 2
+key help
+settle 1500
+snap strsql-error-help
+key f12
+wait "Enter SQL Statements"
+key f9
+settle 1000
+snap strsql-f9
+key f6
+settle 1000
+snap strsql-f6
+key eraseinput
+key backtab
+key f16
+settle 2000
+snap strsql-f16
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key backtab
+key f17
+settle 2000
+snap strsql-f17
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key backtab
+key f18
+settle 2000
+snap strsql-f18
+key f12
+wait "Enter SQL Statements"
+key eraseinput
+key f3
+wait "Exit Interactive SQL"
+snap strsql-exit
+cursor 5 31
+key eraseeof
+type 2
+expect "Exit Interactive SQL"
+key enter
+wait "Main Menu"

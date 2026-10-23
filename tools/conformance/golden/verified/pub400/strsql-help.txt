@@ -1,0 +1,24 @@
+ Help                      Type SQL Statement - Help                            
+                                                                                
+     The SQL statements are processed according to the selection made on        
+     the Enter SQL Statements display.                                          
+                                                                                
+     Messages sent about an SQL statement also appear on this display.          
+     Further information about a message can be obtained by placing the         
+     cursor on the message and pressing the Help key.                           
+                                                                                
+     To view previously typed statements and messages sent, press the           
+     Page Down (Roll Up) and Page Up (Roll Down) keys.  To copy a               
+     statement to the current line, place the cursor on the statement you       
+     want to copy and press F9=Retrieve.  To copy the last statement you        
+     entered, just press F9=Retrieve without moving the cursor.  The            
+     copied statement then can be edited and run.                               
+                                                                                
+     Function keys F16=Select collections (libraries), F17=Select tables        
+     (files), and F18=Select columns (fields) help build the collection         
+     (library), table (physical file), and column (field) parameters for        
+     the SQL statement.                                                         
+                                                                         Bottom 
+ F2=Extended help   F3=Exit help   F10=Move to top   F12=Cancel                 
+ F13=Information Assistant         F14=Print help                               
+                                                                                

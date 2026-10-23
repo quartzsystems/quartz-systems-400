@@ -1,0 +1,24 @@
+                              Enter SQL Statements                              
+                                                                                
+ Type SQL statement, press Enter.                                               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+      select * from qsys2.systables where table_schema='QSYS2' limit 40         
+      SELECT statement run complete.                                            
+ ===>                                                                           
+                                                                                
+                                                                                
+                                                                                
+                                                                        Bottom  
+ F3=Exit   F4=Prompt   F6=Insert line   F9=Retrieve   F10=Copy line             
+ F12=Cancel            F13=Services     F24=More keys                           
+                                                                                

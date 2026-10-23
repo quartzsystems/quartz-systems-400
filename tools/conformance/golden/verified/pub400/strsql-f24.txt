@@ -1,0 +1,24 @@
+                              Enter SQL Statements                              
+                                                                                
+ Type SQL statement, press Enter.                                               
+      Current connection is to relational database PUB400.                      
+ ===>                                                                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                        Bottom  
+ F14=Delete line   F15=Split line   F16=Select libraries                        
+ F17=Select files                   F18=Select fields   F24=More keys           
+                                                                                
