@@ -37,6 +37,7 @@ pub struct Session {
     user: String,
     rcdlen: Option<usize>,
     release: String,
+    _lock: Lock,
 }
 
 /// One row of the spool query.
@@ -48,8 +49,10 @@ struct Entry {
 }
 
 impl Session {
-    /// Connect to pub400 and prepare the job.
+    /// Connect to pub400 and prepare the job, once no other session on
+    /// this machine is open.
     pub fn open() -> Result<Self> {
+        let lock = Lock::take()?;
         let env = Env::load()?;
         let creds = env.credentials(Target::Pub400, None)?;
         let ftp = Ftp::connect(&creds.host, &creds.user, &creds.password)
@@ -61,6 +64,7 @@ impl Session {
             user,
             rcdlen: None,
             release: String::new(),
+            _lock: lock,
         };
         s.ftp.command("SITE NAMEFMT 1")?;
         s.rcmd("CHGJOB INQMSGRPY(*DFT)")?;
@@ -389,14 +393,51 @@ impl Session {
     }
 }
 
-/// Where the last compile's time is kept, under `target/`.
+/// The folder every `rpg-oracle` process on this machine shares, so
+/// the compile gap and the one-session rule hold across worktrees.
+fn shared_dir() -> PathBuf {
+    std::env::temp_dir().join("qs400-rpg-oracle")
+}
+
+/// Where the last compile's time is kept.
 fn stamp_file() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
-        .join("target")
-        .join("rpg-oracle")
-        .join("last-compile")
+    shared_dir().join("last-compile")
+}
+
+/// The machine-wide session lock: held while a session is open.
+pub struct Lock(PathBuf);
+
+impl Lock {
+    /// Wait for the lock (another process's session), taking it over
+    /// when its holder has been gone for an hour.
+    pub fn take() -> Result<Self> {
+        let dir = shared_dir();
+        std::fs::create_dir_all(&dir)?;
+        let path = dir.join("session.lock");
+        loop {
+            match std::fs::OpenOptions::new().write(true).create_new(true).open(&path) {
+                Ok(_) => return Ok(Self(path)),
+                Err(_) => {
+                    let stale = std::fs::metadata(&path)
+                        .and_then(|m| m.modified())
+                        .ok()
+                        .and_then(|t| t.elapsed().ok())
+                        .is_some_and(|e| e > Duration::from_secs(3600));
+                    if stale {
+                        let _ = std::fs::remove_file(&path);
+                        continue;
+                    }
+                    std::thread::sleep(Duration::from_secs(5));
+                }
+            }
+        }
+    }
+}
+
+impl Drop for Lock {
+    fn drop(&mut self) {
+        let _ = std::fs::remove_file(&self.0);
+    }
 }
 
 /// Today as `yyyy-mm-dd` (UTC).

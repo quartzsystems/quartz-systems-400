@@ -44,6 +44,11 @@ member:
 6. deletes the program, module or service program and the member, and
    at the end of the session the work files.
 
+One session is open at a time on this machine: sessions take a lock
+in the system temporary folder (`qs400-rpg-oracle/session.lock`), where
+the last compile's time is kept too, so parallel worktrees share the
+compile gap.
+
 Queries run as `RUNSQLSTM` over an uploaded member because an `RCMD`
 line holds only about 250 characters; their tables have fixed-width
 CP037 columns and are read back in binary. The job runs with
