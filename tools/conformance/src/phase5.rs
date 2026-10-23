@@ -415,10 +415,9 @@ impl Suite {
         secofr_command_entry(s)?;
         s.command("type wrkactjob", CMD)?;
         s.command("key enter", CMD)?;
-        // The output, which lists the job running it; with the system
-        // jobs it is long enough to scroll the command line away.
-        screen_has(s, "QSYSARB")?;
-        let active = s.command("wrkactjob", CMD)?;
+        // The Work with Active Jobs panel, the console's own job under
+        // its subsystem; F3 goes back to Command Entry.
+        let active = screen_has(s, "Work with Active Jobs")?;
         let row = active
             .lines()
             .find(|l| l.trim_start().starts_with("QSCONSOLE"))
@@ -429,6 +428,8 @@ impl Suite {
                 "the console job is not QSECOFR's interactive job: {row}"
             ));
         }
+        s.command("key f3", CMD)?;
+        screen_has(s, "Command Entry")?;
         s.command("type signoff", CMD)?;
         s.command("key enter", CMD)?;
         screen_has(s, "Sign On")?;
