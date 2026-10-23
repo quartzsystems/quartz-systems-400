@@ -1,0 +1,6 @@
+kit/
+got/
+*.class
+run.xfer
+run.log
+lib/

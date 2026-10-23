@@ -20,7 +20,7 @@ open(e) CUSTOMER;
 detail = '';
 logline(3 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 4: SETLL 3                                => 00000 FOUND EQUAL
-setll(e) 3 CUSTOMER;
+setll(e) (3) CUSTOMER;
 detail = '';
 logline(4 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 5: READ                                   => 00000 CUSNO=3 NAME='Carol'
@@ -35,7 +35,7 @@ detail = '';
 detail += 'CUSNO=' + %char(CUSNO) + ' ';
 logline(6 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 7: SETGT 4                                => 00000 FOUND
-setgt(e) 4 CUSTOMER;
+setgt(e) (4) CUSTOMER;
 detail = '';
 logline(7 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 8: READ                                   => 00000 CUSNO=5
@@ -44,11 +44,11 @@ detail = '';
 detail += 'CUSNO=' + %char(CUSNO) + ' ';
 logline(8 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 9: CHAIN 42                               => 00012 NOFOUND
-chain(e) 42 CUSTOMER;
+chain(e) (42) CUSTOMER;
 detail = '';
 logline(9 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 10: CHAIN 6                                => 00000 CUSNO=6 NAME='Frank' BAL=1500.00
-chain(e) 6 CUSTOMER;
+chain(e) (6) CUSTOMER;
 detail = '';
 detail += 'CUSNO=' + %char(CUSNO) + ' ';
 detail += 'NAME=' + %trimr(NAME) + ' ';
@@ -73,16 +73,16 @@ read(e) CUSTOMER;
 detail = '';
 logline(14 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 15: SETLL 5                                => 00000 FOUND EQUAL
-setll(e) 5 CUSTOMER;
+setll(e) (5) CUSTOMER;
 detail = '';
 logline(15 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 16: READE 5                                => 00000 CUSNO=5
-reade(e) 5 CUSTOMER;
+reade(e) (5) CUSTOMER;
 detail = '';
 detail += 'CUSNO=' + %char(CUSNO) + ' ';
 logline(16 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 17: READE 5                                => 00011 EOF
-reade(e) 5 CUSTOMER;
+reade(e) (5) CUSTOMER;
 detail = '';
 logline(17 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 18: READ                                   => 00000 CUSNO=6
@@ -102,7 +102,7 @@ write(e) CUSREC;
 detail = '';
 logline(19 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 20: CHAIN 7                                => 00000 NAME='Grace' SINCE=*NULL
-chain(e) 7 CUSTOMER;
+chain(e) (7) CUSTOMER;
 detail = '';
 detail += 'NAME=' + %trimr(NAME) + ' ';
 if %nullind(SINCE);
@@ -119,7 +119,7 @@ update(e) CUSREC;
 detail = '';
 logline(21 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 22: CHAINN 7                               => 00000 BAL=6.50 NOTE='updated'
-chain(en) 7 CUSTOMER;
+chain(en) (7) CUSTOMER;
 detail = '';
 detail += 'BAL=' + %char(BAL) + ' ';
 if %nullind(NOTE);
@@ -134,7 +134,7 @@ update(e) CUSREC;
 detail = '';
 logline(23 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 24: CHAIN 7                                => 00000
-chain(e) 7 CUSTOMER;
+chain(e) (7) CUSTOMER;
 detail = '';
 logline(24 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 25: DELETE                                 => 00000
@@ -142,7 +142,7 @@ delete(e) CUSREC;
 detail = '';
 logline(25 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 26: CHAIN 7                                => 00012 NOFOUND
-chain(e) 7 CUSTOMER;
+chain(e) (7) CUSTOMER;
 detail = '';
 logline(26 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 27: WRITE CUSNO=1 NAME='dup' STATUS='A'    => 01021
@@ -174,24 +174,24 @@ detail += 'NAME=? ';
 detail += 'CUSNO=? ';
 logline(31 : %status(CUSBYNAME) : %found(CUSBYNAME) : %equal(CUSBYNAME) : %eof(CUSBYNAME) : %trimr(detail));
 // 32: READE 'Alice'                          => 00011 EOF
-reade(e) 'Alice' CUSBYNAME;
+reade(e) ('Alice') CUSBYNAME;
 detail = '';
 logline(32 : %status(CUSBYNAME) : %found(CUSBYNAME) : %equal(CUSBYNAME) : %eof(CUSBYNAME) : %trimr(detail));
 // 33: SETLL 'Carol'                          => 00000 FOUND EQUAL
-setll(e) 'Carol' CUSBYNAME;
+setll(e) ('Carol') CUSBYNAME;
 detail = '';
 logline(33 : %status(CUSBYNAME) : %found(CUSBYNAME) : %equal(CUSBYNAME) : %eof(CUSBYNAME) : %trimr(detail));
 // 34: READE 'Carol'                          => 00000 CUSNO=3
-reade(e) 'Carol' CUSBYNAME;
+reade(e) ('Carol') CUSBYNAME;
 detail = '';
 detail += 'CUSNO=? ';
 logline(34 : %status(CUSBYNAME) : %found(CUSBYNAME) : %equal(CUSBYNAME) : %eof(CUSBYNAME) : %trimr(detail));
 // 35: READE 'Carol'                          => 00011 EOF
-reade(e) 'Carol' CUSBYNAME;
+reade(e) ('Carol') CUSBYNAME;
 detail = '';
 logline(35 : %status(CUSBYNAME) : %found(CUSBYNAME) : %equal(CUSBYNAME) : %eof(CUSBYNAME) : %trimr(detail));
 // 36: SETGT 'Dave'                           => 00000 FOUND
-setgt(e) 'Dave' CUSBYNAME;
+setgt(e) ('Dave') CUSBYNAME;
 detail = '';
 logline(36 : %status(CUSBYNAME) : %found(CUSBYNAME) : %equal(CUSBYNAME) : %eof(CUSBYNAME) : %trimr(detail));
 // 37: READ                                   => 00000 NAME='Erin'

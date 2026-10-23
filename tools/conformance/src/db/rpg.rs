@@ -344,7 +344,9 @@ fn split(raw: &str) -> (String, Vec<String>) {
 }
 
 /// A key argument in RPG: `*START`/`*LOVAL`, `*END`/`*HIVAL`, `#n` as a
-/// record number, else the values as a key list.
+/// record number, else the values as a key list in parentheses, which
+/// converts each value to its key field (a bare literal must have the
+/// key field's exact length: RNF7078 on 7.5).
 fn key(args: &[String]) -> String {
     match args.first().map(|w| w.to_ascii_uppercase()).as_deref() {
         None | Some("*START" | "*LOVAL") => "*loval".into(),
@@ -352,11 +354,7 @@ fn key(args: &[String]) -> String {
         Some(w) if w.starts_with('#') => w[1..].to_string(),
         _ => {
             let vals: Vec<String> = args.iter().map(|a| literal(a)).collect();
-            if vals.len() == 1 {
-                vals[0].clone()
-            } else {
-                format!("({})", vals.join(":"))
-            }
+            format!("({})", vals.join(":"))
         }
     }
 }
@@ -410,8 +408,8 @@ mod tests {
 
     #[test]
     fn keys_and_literals() {
-        assert_eq!(key(&["3".into()]), "3");
-        assert_eq!(key(&["'Carol'".into()]), "'Carol'");
+        assert_eq!(key(&["3".into()]), "(3)");
+        assert_eq!(key(&["'Carol'".into()]), "('Carol')");
         assert_eq!(key(&["#3".into()]), "3");
         assert_eq!(key(&["*END".into()]), "*hival");
         assert_eq!(key(&["1".into(), "'a'".into()]), "(1:'a')");
