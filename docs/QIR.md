@@ -211,7 +211,7 @@ part that does not fit is `MCH1210`.
 | Instruction | Meaning |
 |---|---|
 | `dec.add\|sub\|mul\|div\|rem dst, a, b prec(d,s) [halfadj] [resdecpos]` | the operation at `prec`, then assignment to `dst`, half-adjusted when flagged; `resdecpos` keeps at least `dst`'s decimal positions in the intermediate; `div` and `rem` by zero are `MCH1211` |
-| `dec.mov\|neg\|abs dst, src [halfadj]` | numeric assignment across any numeric types; `MCH1210` when the integer part does not fit; `MCH1202` for invalid packed or zoned data |
+| `dec.mov\|neg\|abs dst, src [halfadj] [trunc]` | numeric assignment across any numeric types; `MCH1210` when the integer part does not fit, unless `trunc` drops the high-order digits that do not fit a packed or zoned target (fixed-form RPG arithmetic); `MCH1202` for invalid packed or zoned data |
 | `%d = dec.cmp.cond a, b` | numeric comparison by value, an `ind` |
 | `%d = cvt.T place` | a numeric place into an integer or float register, truncating decimals toward zero; `.chk` raises `MCH1210` when out of range |
 
@@ -396,7 +396,7 @@ and smallest values (`FF`/`00` for text), `*NULL` sixteen zero bytes,
 ## 8. Format version
 
 `FORMAT_VERSION` is 2 (version 2 added `prtio`'s `ctl`, at the end of
-the device I/O record). `*MODULE` objects store the binary IR that
+the device I/O record, and `dec.mov`'s `trunc`, at the end of its). `*MODULE` objects store the binary IR that
 `qir::binary::write` produces: the magic `QIRM`, a `u16` version, a
 `u16` of zero, then the module as tagged fields in a fixed order
 (little-endian integers, `u32`-prefixed strings and byte arrays,

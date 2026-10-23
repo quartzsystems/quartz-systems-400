@@ -78,6 +78,18 @@ pub(crate) fn write_num(addr: i64, desc: i64, v: &Decimal, rounding: Rounding) -
     Ok(())
 }
 
+/// A value cut to a decimal target's digits from the left, as
+/// fixed-form RPG assignments do; other targets take it as it is.
+fn fit_target(addr: i64, desc: i64, v: &Decimal, r: Rounding) -> Result<Decimal, Cond> {
+    let (_, t) = typed(addr, desc);
+    let shape = match &t {
+        Type::Packed(s) | Type::Zoned(s) => qdecimal::Shape::new(s.digits, s.scale),
+        _ => return Ok(v.clone()),
+    }
+    .map_err(|e| cond_of(&e))?;
+    v.fit_truncate(shape, r).map_err(|e| cond_of(&e))
+}
+
 fn rounding(halfadj: bool) -> Rounding {
     if halfadj {
         Rounding::HalfAdjust
@@ -146,7 +158,9 @@ pub extern "sysv64" fn dec_un(
             2 => v.abs(),
             _ => v,
         };
-        write_num(dst, dty, &v, rounding(halfadj != 0))
+        // Bit 1: drop the high-order digits that do not fit.
+        let v = if halfadj & 2 != 0 { fit_target(dst, dty, &v, rounding(halfadj & 1 != 0))? } else { v };
+        write_num(dst, dty, &v, rounding(halfadj & 1 != 0))
     })();
     if let Err(c) = r {
         raise_on(job(env), c);

@@ -465,12 +465,23 @@ impl Parser {
                 let dst = self.place()?;
                 self.comma()?;
                 let src = self.operand()?;
-                let halfadj = self.eat_word("halfadj");
+                let mut halfadj = false;
+                let mut trunc = false;
+                loop {
+                    if self.eat_word("halfadj") {
+                        halfadj = true;
+                    } else if self.eat_word("trunc") {
+                        trunc = true;
+                    } else {
+                        break;
+                    }
+                }
                 Inst::DecUn {
                     dst,
                     op,
                     src,
                     halfadj,
+                    trunc,
                 }
             }
             ("cvt", None) => {

@@ -617,12 +617,14 @@ impl W {
                 op,
                 src,
                 halfadj,
+                trunc,
             } => {
                 self.u8(20);
                 self.place(dst);
                 self.u8(*op as u8);
                 self.operand(src);
                 self.bool(*halfadj);
+                self.bool(*trunc);
             }
             Inst::DecCmp { dst, cond, a, b } => {
                 self.u8(21);

@@ -613,6 +613,7 @@ impl R<'_> {
                 op: self.tag(&DEC_UNS, "decimal assignment")?,
                 src: self.operand()?,
                 halfadj: self.bool()?,
+                trunc: self.version >= 2 && self.bool()?,
             },
             21 => Inst::DecCmp {
                 dst: self.reg()?,

@@ -1,0 +1,15 @@
+; dec.mov trunc: high-order digits dropped, as fixed-form RPG arithmetic does
+module DEC05
+static $a: packed(7,2) inz(12345.67)
+static $r: packed(5,2)
+static $z: zoned(3,0)
+proc DEC05() entry {
+L0:
+  dec.mov $r, $a trunc
+  dsply $r
+  dec.mov $z, $a halfadj trunc
+  dsply $z
+  dec.mov $z, -98765 trunc
+  dsply $z
+  ret
+}

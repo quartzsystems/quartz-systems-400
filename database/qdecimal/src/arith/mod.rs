@@ -98,6 +98,35 @@ fn shape(integer: u16, scale: u16, limit: u16, mode: Mode, value: &Decimal) -> R
     Shape::new(digits.max(1), scale)
 }
 
+/// The operations whose intermediate shape [`intermediate`] gives.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Op {
+    /// `a + b`.
+    Add,
+    /// `a - b`.
+    Sub,
+    /// `a * b`.
+    Mul,
+    /// `a / b`.
+    Div,
+}
+
+/// The shape of an operation's intermediate result from its operands'
+/// declared shapes: the precision a compiler states for the operation
+/// (`dec.add ... prec(d,s)`), the same that [`add`], [`sub`], [`mul`]
+/// and [`div`] compute with. A size error when no shape can hold it.
+pub fn intermediate(op: Op, a: Shape, b: Shape, mode: Mode) -> Result<Shape> {
+    let lim = limit(a, b);
+    let (ai, bi) = (u16::from(a.integer()), u16::from(b.integer()));
+    let (asc, bsc) = (u16::from(a.scale), u16::from(b.scale));
+    let (integer, scale) = match op {
+        Op::Add | Op::Sub => (ai.max(bi) + 1, asc.max(bsc)),
+        Op::Mul => (ai + bi, asc + bsc),
+        Op::Div => (ai + bsc, lim),
+    };
+    shape(integer, scale, lim, mode, &Decimal::zero())
+}
+
 /// Truncate an exact result to its intermediate shape.
 fn settle(exact: &Decimal, shape: Shape) -> Result<Typed> {
     let value = exact.fit(shape, Rounding::Truncate)?;
@@ -173,6 +202,31 @@ mod tests {
 
     fn shape_of(r: &Typed) -> (u8, u8) {
         (r.shape.digits, r.shape.scale)
+    }
+
+    #[test]
+    fn intermediate_shapes_match_the_operations() {
+        let sh = |d, s| Shape::new(d, s).unwrap();
+        let m = Mode::default();
+        let cases = [
+            (Op::Add, sh(5, 2), sh(7, 3)),
+            (Op::Mul, sh(31, 10), sh(31, 10)),
+            (Op::Div, sh(1, 0), sh(1, 0)),
+            (Op::Div, sh(5, 2), sh(31, 10)),
+            (Op::Sub, sh(5, 2), sh(63, 32)),
+        ];
+        for (op, a, b) in cases {
+            let ta = Typed::new(&Decimal::parse("1").unwrap(), a).unwrap();
+            let tb = Typed::new(&Decimal::parse("1").unwrap(), b).unwrap();
+            let r = match op {
+                Op::Add => add(&ta, &tb, m),
+                Op::Sub => sub(&ta, &tb, m),
+                Op::Mul => mul(&ta, &tb, m),
+                Op::Div => div(&ta, &tb, m),
+            }
+            .unwrap();
+            assert_eq!(intermediate(op, a, b, m).unwrap(), r.shape, "{op:?} {a:?} {b:?}");
+        }
     }
 
     #[test]

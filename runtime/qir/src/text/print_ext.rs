@@ -50,12 +50,14 @@ impl Printer<'_> {
                 op,
                 src,
                 halfadj,
+                trunc,
             } => format!(
-                "dec.{} {}, {}{}",
+                "dec.{} {}, {}{}{}",
                 op.name(),
                 pl(dst),
                 o(src),
-                if *halfadj { " halfadj" } else { "" }
+                if *halfadj { " halfadj" } else { "" },
+                if *trunc { " trunc" } else { "" }
             ),
             Inst::DecCmp { dst, cond, a, b } => {
                 format!("{} = dec.cmp.{} {}, {}", r(*dst), cond.name(), o(a), o(b))

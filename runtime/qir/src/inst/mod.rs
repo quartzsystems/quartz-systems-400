@@ -340,8 +340,8 @@ pub enum Inst {
         /// `*RESDECPOS`: the intermediate keeps at least `dst`'s decimals.
         resdecpos: bool,
     },
-    /// `dec.mov|neg|abs dst, src [halfadj]`: numeric assignment between
-    /// any numeric types, a register or a literal.
+    /// `dec.mov|neg|abs dst, src [halfadj] [trunc]`: numeric assignment
+    /// between any numeric types, a register or a literal.
     DecUn {
         /// Destination, numeric.
         dst: Place,
@@ -351,6 +351,9 @@ pub enum Inst {
         src: Operand,
         /// Half-adjust.
         halfadj: bool,
+        /// Drop high-order digits that do not fit instead of `MCH1210`
+        /// (fixed-form RPG arithmetic); format 2.
+        trunc: bool,
     },
     /// `%d = dec.cmp.cond a, b`: numeric comparison by value.
     DecCmp {

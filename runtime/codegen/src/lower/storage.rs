@@ -68,6 +68,7 @@ impl Lowerer<'_, '_> {
                 op,
                 src,
                 halfadj,
+                trunc,
             } => {
                 let (da, dd) = self.place_pair(dst)?;
                 let (sa, sd) = self.sop(src, None)?;
@@ -76,7 +77,7 @@ impl Lowerer<'_, '_> {
                     DecUn::Neg => 1,
                     DecUn::Abs => 2,
                 });
-                let h = self.i64(i64::from(*halfadj));
+                let h = self.i64(i64::from(*halfadj) | i64::from(*trunc) << 1);
                 self.rt_call(RtFn::DecUn, &[opv, da, dd, sa, sd, h]);
             }
             Inst::DecCmp { dst, cond, a, b } => {
