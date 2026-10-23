@@ -304,15 +304,8 @@ impl Ty {
             Self::Ind => "ind".into(),
             Self::Packed(d, s) => format!("packed({d},{s})"),
             Self::Zoned(d, s) => format!("zoned({d},{s})"),
-            Self::Bin(d, _) => {
-                if *d <= 4 {
-                    "i16".into()
-                } else if *d <= 9 {
-                    "i32".into()
-                } else {
-                    "i64".into()
-                }
-            }
+            // Binary keeps its decimals: the IR's binary decimal.
+            Self::Bin(d, s) => format!("bin({d},{s})"),
             Self::Int(d) => int_ir('i', *d),
             Self::Uns(d) => int_ir('u', *d),
             Self::Float(b) => format!("f{}", u32::from(*b) * 8),

@@ -32,6 +32,7 @@ boundaries; a structure holding a pointer anywhere has alignment 16.
 | `f32 f64` | 4 8 | IEEE 754 |
 | `packed(d,s)` | `d/2 + 1` | `DECIMAL.md` §2; 1 ≤ d ≤ 63, s ≤ d |
 | `zoned(d,s)` | `d` | `DECIMAL.md` §2 |
+| `bin(d,s)` | 2, 4 or 8 | big-endian two's complement with `s` implied decimals; up to 4, 9 or 18 digits (RPG and DDS `B`) |
 | `char(n)` | `n` | CP037, blank padded; 1 ≤ n ≤ 16773104 |
 | `varchar(n)` | `2 + n` | big-endian length then data; n ≤ 65535 |
 | `ucs2(n)` | `2n` | UCS-2 big-endian, blank (`0020`) padded |
@@ -400,8 +401,9 @@ and smallest values (`FF`/`00` for text), `*NULL` sixteen zero bytes,
 
 ## 8. Format version
 
-`FORMAT_VERSION` is 2 (version 2 added `prtio`'s `ctl`, at the end of
-the device I/O record, and `dec.mov`'s `trunc`, at the end of its). `*MODULE` objects store the binary IR that
+`FORMAT_VERSION` is 3 (version 2 added `prtio`'s `ctl`, at the end of
+the device I/O record, and `dec.mov`'s `trunc`, at the end of its;
+version 3 the type `bin(d,s)`, tag 26). `*MODULE` objects store the binary IR that
 `qir::binary::write` produces: the magic `QIRM`, a `u16` version, a
 `u16` of zero, then the module as tagged fields in a fixed order
 (little-endian integers, `u32`-prefixed strings and byte arrays,

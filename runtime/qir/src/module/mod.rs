@@ -16,7 +16,7 @@ pub use var::{Scope, StorageClass, Var, VarRef};
 use crate::types::Type;
 
 /// The IR format version this crate writes. Within V1R it only grows.
-pub const FORMAT_VERSION: u16 = 2;
+pub const FORMAT_VERSION: u16 = 3;
 
 /// A list index as the 32-bit form the IR uses.
 #[must_use]

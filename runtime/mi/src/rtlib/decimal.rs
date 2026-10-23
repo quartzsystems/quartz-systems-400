@@ -7,7 +7,7 @@
 use codegen::Cond;
 use codegen::abi::Env;
 use codegen::rt::dec_flags;
-use qdecimal::{Decimal, DecimalError, Float, Integer, Packed, Rounding, Shape, Typed, Zoned};
+use qdecimal::{Binary, Decimal, DecimalError, Float, Integer, Packed, Rounding, Shape, Typed, Zoned};
 use qir::Type;
 
 use super::core::raise_on;
@@ -78,6 +78,7 @@ pub(crate) fn read_num(addr: i64, desc: i64) -> Result<Typed, Cond> {
     let value = match &t {
         Type::Packed(s) => Packed::new(s.digits, s.scale).and_then(|p| p.decode(b)),
         Type::Zoned(s) => Zoned::new(s.digits, s.scale).and_then(|z| z.decode(b)),
+        Type::Bin(s) => Binary::new(s.digits, s.scale).and_then(|z| z.decode(b)),
         Type::F32 => Float::SINGLE.decode(b),
         // RPG takes a double's value to 17 significant digits.
         Type::F64 if desc.cast_unsigned() & codegen::abi::TypeDesc::FSIGN != 0 => {
@@ -104,6 +105,7 @@ pub(crate) fn write_num(addr: i64, desc: i64, v: &Decimal, rounding: Rounding) -
     let bytes = match &t {
         Type::Packed(s) => Packed::new(s.digits, s.scale).and_then(|p| p.encode(v, rounding)),
         Type::Zoned(s) => Zoned::new(s.digits, s.scale).and_then(|z| z.encode(v, rounding)),
+        Type::Bin(s) => Binary::new(s.digits, s.scale).and_then(|z| z.encode(v, rounding)),
         Type::F32 => Float::SINGLE.encode(v),
         Type::F64 => Float::DOUBLE.encode(v),
         Type::Ind => return Err(Cond::Mch1210),
@@ -132,7 +134,7 @@ pub(crate) fn write_num(addr: i64, desc: i64, v: &Decimal, rounding: Rounding) -
 fn fit_target(addr: i64, desc: i64, v: &Decimal, r: Rounding) -> Result<Decimal, Cond> {
     let (_, t) = typed(addr, desc);
     let shape = match &t {
-        Type::Packed(s) | Type::Zoned(s) => qdecimal::Shape::new(s.digits, s.scale),
+        Type::Packed(s) | Type::Zoned(s) | Type::Bin(s) => qdecimal::Shape::new(s.digits, s.scale),
         _ => return Ok(v.clone()),
     }
     .map_err(|e| cond_of(&e))?;

@@ -160,6 +160,11 @@ impl W {
                 self.u8(s.digits);
                 self.u8(s.scale);
             }
+            Type::Bin(s) => {
+                self.u8(26);
+                self.u8(s.digits);
+                self.u8(s.scale);
+            }
             Type::Char(n) => {
                 self.u8(12);
                 self.u32(*n);

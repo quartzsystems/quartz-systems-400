@@ -4,7 +4,7 @@
 
 //! Literals as the bytes a type holds: initializers and constants.
 
-use qdecimal::{Decimal, Float, Integer, Packed, Rounding, Zoned};
+use qdecimal::{Binary, Decimal, Float, Integer, Packed, Rounding, Zoned};
 
 use super::Const;
 use crate::types::{Type, TypeClass};
@@ -177,9 +177,25 @@ fn hival(ty: &Type, size: usize) -> Result<Vec<u8>, String> {
             out
         }
         Type::Zoned(_) => vec![0xF9; size],
+        Type::Bin(s) => bin_extreme(*s, false)?,
         Type::Ind => vec![0xF1],
         _ => return Err(format!("*HIVAL is not a {ty}")),
     })
+}
+
+/// A binary decimal's largest (or smallest) value: all nines.
+fn bin_extreme(s: crate::types::Shape, low: bool) -> Result<Vec<u8>, String> {
+    let nines = "9".repeat(usize::from(s.digits));
+    let text = if s.scale > 0 {
+        let (i, f) = nines.split_at(usize::from(s.digits - s.scale));
+        format!("{}{i}.{f}", if low { "-" } else { "" })
+    } else {
+        format!("{}{nines}", if low { "-" } else { "" })
+    };
+    let v = Decimal::parse(&text).map_err(|e| e.to_string())?;
+    Binary::new(s.digits, s.scale)
+        .and_then(|b| b.encode(&v, Rounding::Truncate))
+        .map_err(|e| e.to_string())
 }
 
 fn loval(ty: &Type, size: usize) -> Result<Vec<u8>, String> {
@@ -211,6 +227,7 @@ fn loval(ty: &Type, size: usize) -> Result<Vec<u8>, String> {
             out[size - 1] = 0xD9;
             out
         }
+        Type::Bin(s) => bin_extreme(*s, true)?,
         Type::Ind => vec![0xF0],
         _ => return Err(format!("*LOVAL is not a {ty}")),
     })
@@ -233,6 +250,9 @@ fn encode_number(ty: &Type, v: &Decimal) -> Result<Vec<u8>, String> {
         }
         Type::Zoned(s) => {
             Zoned::new(s.digits, s.scale).and_then(|p| p.encode(v, Rounding::Truncate))
+        }
+        Type::Bin(s) => {
+            Binary::new(s.digits, s.scale).and_then(|p| p.encode(v, Rounding::Truncate))
         }
         Type::Ind => {
             return match v.to_i128() {

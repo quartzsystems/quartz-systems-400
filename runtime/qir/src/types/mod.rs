@@ -50,6 +50,9 @@ pub enum Type {
     Packed(Shape),
     /// Zoned decimal, one byte per digit.
     Zoned(Shape),
+    /// Binary decimal: a big-endian two's complement integer of 2, 4 or
+    /// 8 bytes (up to 4, 9 or 18 digits) with an implied scale.
+    Bin(Shape),
     /// Fixed character, CP037 bytes, blank padded.
     Char(u32),
     /// Variable character: a 2-byte big-endian length then `n` bytes.
@@ -142,7 +145,7 @@ impl Type {
             Self::I8 | Self::I16 | Self::I32 | Self::I64 => TypeClass::Int,
             Self::U8 | Self::U16 | Self::U32 | Self::U64 => TypeClass::UInt,
             Self::F32 | Self::F64 => TypeClass::Float,
-            Self::Packed(_) | Self::Zoned(_) => TypeClass::Decimal,
+            Self::Packed(_) | Self::Zoned(_) | Self::Bin(_) => TypeClass::Decimal,
             Self::Char(_) | Self::VarChar(_) => TypeClass::Char,
             Self::Ucs2(_) | Self::VarUcs2(_) => TypeClass::Ucs2,
             Self::Graphic(_) => TypeClass::Graphic,
@@ -239,7 +242,7 @@ impl Type {
     #[must_use]
     pub fn shape(&self) -> Option<Shape> {
         match self {
-            Self::Packed(s) | Self::Zoned(s) => Some(*s),
+            Self::Packed(s) | Self::Zoned(s) | Self::Bin(s) => Some(*s),
             _ => None,
         }
     }
@@ -254,6 +257,12 @@ impl Type {
         match self {
             Self::Packed(s) | Self::Zoned(s) => {
                 Shape::new(s.digits, s.scale).map_err(|e| bad(e.to_string()))?;
+            }
+            Self::Bin(s) => {
+                Shape::new(s.digits, s.scale).map_err(|e| bad(e.to_string()))?;
+                if s.digits > 18 {
+                    return Err(bad("a binary decimal has at most 18 digits".into()));
+                }
             }
             Self::Char(n)
             | Self::VarChar(n)
@@ -378,6 +387,7 @@ impl fmt::Display for Type {
             Self::F64 => f.write_str("f64"),
             Self::Packed(s) => write!(f, "packed({},{})", s.digits, s.scale),
             Self::Zoned(s) => write!(f, "zoned({},{})", s.digits, s.scale),
+            Self::Bin(s) => write!(f, "bin({},{})", s.digits, s.scale),
             Self::Char(n) => write!(f, "char({n})"),
             Self::VarChar(n) => write!(f, "varchar({n})"),
             Self::Ucs2(n) => write!(f, "ucs2({n})"),
@@ -418,6 +428,9 @@ mod tests {
         assert_eq!(Type::Packed(shape(15, 5)).size(), 8);
         assert_eq!(Type::Packed(shape(16, 0)).size(), 9);
         assert_eq!(Type::Zoned(shape(7, 2)).size(), 7);
+        assert_eq!(Type::Bin(shape(4, 2)).size(), 2);
+        assert_eq!(Type::Bin(shape(9, 2)).size(), 4);
+        assert_eq!(Type::Bin(shape(18, 0)).size(), 8);
         assert_eq!(Type::VarChar(10).size(), 12);
         assert_eq!(Type::Ucs2(5).size(), 10);
         assert_eq!(Type::VarUcs2(5).size(), 12);

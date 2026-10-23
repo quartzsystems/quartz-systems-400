@@ -36,6 +36,7 @@ impl Parser {
             "procptr" => Type::ProcPtr,
             "packed" => Type::Packed(self.shape()?),
             "zoned" => Type::Zoned(self.shape()?),
+            "bin" => Type::Bin(self.shape()?),
             "char" => Type::Char(self.paren(Self::u32)?),
             "varchar" => Type::VarChar(self.paren(Self::u32)?),
             "ucs2" => Type::Ucs2(self.paren(Self::u32)?),

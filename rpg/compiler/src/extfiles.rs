@@ -62,7 +62,7 @@ fn kept(f: &File, fmt: &str) -> bool {
 /// numbers are packed there, as IBM brings them in.
 fn program_type(t: &Ty) -> Ty {
     match t {
-        Ty::Zoned(d, s) => Ty::Packed(*d, *s),
+        Ty::Zoned(d, s) | Ty::Bin(d, s) => Ty::Packed(*d, *s),
         other => other.clone(),
     }
 }

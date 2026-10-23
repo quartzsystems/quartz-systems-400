@@ -587,14 +587,7 @@ impl Gen<'_> {
 
     /// A numeric operand as a decimal instruction takes it.
     pub fn dec_operand(&mut self, v: &V) -> String {
-        match (&v.ty, v.kind) {
-            (Ty::Bin(..), Vk::Place) => {
-                let r = self.b.reg();
-                self.b.ins(format!("{r} = load {}", v.op));
-                r
-            }
-            _ => v.op.clone(),
-        }
+        v.op.clone()
     }
 
     /// An indicator as character data: one character, `'0'` or `'1'`.

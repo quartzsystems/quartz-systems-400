@@ -257,6 +257,7 @@ impl R<'_> {
             9 => Type::F64,
             10 => Type::Packed(self.shape()?),
             11 => Type::Zoned(self.shape()?),
+            26 => Type::Bin(self.shape()?),
             12 => Type::Char(self.u32()?),
             13 => Type::VarChar(self.u32()?),
             14 => Type::Ucs2(self.u32()?),

@@ -32,6 +32,11 @@ impl Type {
             Self::I64 | Self::U64 | Self::F64 | Self::Time(_) => 8,
             Self::Packed(s) => u64::from(s.digits) / 2 + 1,
             Self::Zoned(s) => u64::from(s.digits),
+            Self::Bin(s) => match s.digits {
+                0..=4 => 2,
+                5..=9 => 4,
+                _ => 8,
+            },
             Self::Char(n) | Self::Bytes(n) => u64::from(*n),
             Self::VarChar(n) => 2 + u64::from(*n),
             Self::Ucs2(n) | Self::Graphic(n) => 2 * u64::from(*n),

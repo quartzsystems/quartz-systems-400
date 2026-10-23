@@ -8,10 +8,3 @@ EXP038 float with decimal operands: last-digit differences (open question)
 EXP048 float with decimal operands: last-digit differences (open question)
 EXP058 float with decimal operands: last-digit differences (open question)
 b12err/* the compile-error batch: its diagnostics are being written
-DCL012 binary fields with decimals: the IR has no scaled binary type yet
-DCL001 binary fields with decimals: the IR has no scaled binary type yet
-DCL004 binary fields with decimals: the IR has no scaled binary type yet
-DCL007 binary fields with decimals: the IR has no scaled binary type yet
-DCL013 binary fields with decimals: the IR has no scaled binary type yet
-IO025 binary fields with decimals: the IR has no scaled binary type yet
-IO026 binary fields with decimals: the IR has no scaled binary type yet
