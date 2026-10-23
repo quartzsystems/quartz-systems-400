@@ -14,7 +14,9 @@ shipped DDS in `ui/dspf/sys/`, and tests them against pub400 goldens
 |---|---|---|---|---|
 | SEU | `devtools/seu` | `devtools/seu.rs`, `seu/` | 300-302 | 80 `seu-*` |
 | PDM | `devtools/pdm` | `devtools/pdm/` | 320-339 | 32 `pdm-*` |
+| DFU, RLU | `devtools/dfu` | `devtools/dfu/`, `rlu.rs` | 360-363 | 24 `dfu-*`, 7 `rlu-*` |
 | STRDBG | `devtools/dbg` | `devtools/dbg/` | 380-387 | 52 `dbg-*` |
+| STRSQL | `devtools/isql` | `devtools/isql/` | 400-404 | 37 `strsql-*` |
 | STRSST | `devtools/sst` | `devtools/sst.rs` | 420-432 | `golden/dst/`, `golden/sst/` |
 
 ## SEU
@@ -102,6 +104,83 @@ layouts (no golden), field help.
 **Find string.** Option 25 and `FNDSTRPDM` search the members' source between two columns, matching case or not. They then run an option (or a user-defined one) on each member that holds the string, prompted if asked, and print the list or the matching records. Without a display, `FNDSTRPDM` gives the report as its output.
 
 **Known gaps.** F10 does not start Command Entry from PDM. No file list for F4 on Specify Members. The library list has no subset panel. Member option 3 prompts `CPYSRCF` instead of IBM's Copy Members panel. 54 and 55 (`CMPPFM`, `MRGSRC`), 9 and 10 (`SAVOBJ`/`RSTOBJ`) and 16 on REXX members have no command behind them yet. No help on the lists. Print format, mark record and overflow on Find String are accepted but not used.
+
+## DFU
+
+`STRDFU` shows the menu (Run, Create, Change, Delete a DFU program,
+Update data using temporary program) and its entry panels, which
+remember their values for the session. `UPDDTA`, `CHGDTA` and
+`DSPDTA` go straight to the data. DFU programs are `*PGM` objects of
+attribute `DFU` whose payload is the definition as text. Create and
+Change go through Define General Information (Nonindexed or Indexed
+File); Enter stores the program, and F12 asks once before leaving.
+Records go through the open data path the service keeps for the job.
+
+**Working with data.** Title and mode (CHANGE, ENTRY, INSERT,
+DISPLAY) on row 1, format and file on row 2, the record number or key
+fields on row 4, the fields from row 5 with values at column 11 (or
+after a longer label). A value runs past column 80 onto the next row,
+numbers are right-adjusted with the sign last, and pages turn when the
+fields don't fit.
+
+**Keys.** F3 End Data Entry (the counts, Y/N), F5 refresh, F6 Select
+Record Format, F9 insert, F10 entry, F11 change, Page Down/Up to roll
+(the record is written first when it was changed), F23 delete the
+record shown.
+
+**Known gaps.** No format or field selection displays, no audit
+report, no running a DFU program by `CALL`; the creation displays after
+Define General Information.
+
+## RLU
+
+`STRRLU` shows Design Report: `Columns`, the `RLU==>` line, a ruler,
+the page banners, and one image line per printer line, with fields as
+`X`/`9` masks and the format name in the prefix area. Typing changes
+constants; a field remains while its mask is whole. Line commands `I`,
+`D`, `DR`; F19/F20 shift; F24 cycles three key sets; `SAVE`, `FILE`,
+`CANCEL`. Exit RLU: 1 saves (and creates the printer file when asked),
+2 leaves, 3 resumes. `OPTION(5)` browses, `OPTION(6)` prints a
+listing. The member is read and written through PDM's requests.
+
+**Known gaps.** F11, F13-F18, F22 and F23 answer "not in this RLU";
+no prototype report or batch; the DDS is regenerated, so comments and
+the source's own line and position style are lost.
+
+## STRSQL
+
+Statements run in the job's own SQL context (naming and commitment
+control from the session attributes); sessions are saved per user in
+the user space `QUSRSYS/QSQLSESS`. In batch `STRSQL` fails and points
+to `RUNSQLSTM`.
+
+**Screens.** Enter SQL Statements (both key pages, `*SYS` and `*SQL`
+key texts), Select SQL Statement (3 pages), the seven statement
+prompts, Session Services, both pages of Change Session Attributes,
+Exit Interactive SQL, Display Data, and the Libraries, Files and
+Fields select lists.
+
+**Keys.** F3 and F12 lead to Exit (options 1-4), F4 prompt, F6 insert
+line, F9 retrieve, F10 copy line, F13 services, F14 delete line, F15
+split line, F16-F18 the lists (names go in at the cursor), F24 more
+keys, the roll keys over the history, F1 on an SQL message for its
+second-level text.
+
+**History.** The scrolling area is rows 4-20. A statement is kept as
+the lines it was typed on, shown after `>` at column 5; messages are
+cut to 68 columns. After a statement runs, the area keeps its position
+and scrolls only enough to leave 4 input lines. After an error the
+statement is put at the top and stays on the input. `*SYN` and `*VLD`
+only parse.
+
+**Display Data.** A column is as wide as its type or its heading,
+whichever is wider; a value narrower than its heading is centred under
+it; the scale numbers end on their column; F19/F20 shift by 79.
+Output 2 prints to `QSYSPRT`.
+
+**Known gaps.** Output to a file (3), F21 split on Display Data, F4
+lists inside the prompts; pending changes are committed, not asked
+about, when the session ends.
 
 ## STRDBG
 
