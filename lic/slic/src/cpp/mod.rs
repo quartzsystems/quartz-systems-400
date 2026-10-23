@@ -42,12 +42,12 @@ pub fn run(system: &mut System, name: &str, parms: &Parms, typed: &str) -> CmdRe
             let id = e.stub.clone().unwrap_or_else(|| "CPF3700".into());
             escape(&id, name, "")
         }
-        Site::Job => escape(
+        Site::Job if !sys_cpps::inventory::in_service_too(name) => escape(
             "CPF0006",
             name,
             &format!("{name} runs in the job, not the service"),
         ),
-        Site::Service => direct::run(system, name, parms)
+        Site::Job | Site::Service => direct::run(system, name, parms)
             .or_else(|| msgfcmd::run(system, name, parms))
             .or_else(|| dbcmd::run(system, name, parms))
             .or_else(|| objcmd::run(system, name, parms))

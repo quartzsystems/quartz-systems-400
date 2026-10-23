@@ -1,0 +1,50 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QUISECAUD: DSPSECAUD, the security auditing values.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=VALCL BASETYPE='CHAR 40'.
+:ECLASS.
+:VAR NAME=SAJRN CLASS=VALCL.
+:VAR NAME=SAJRNLIB CLASS=VALCL.
+:VAR NAME=SARCV CLASS=VALCL.
+:VAR NAME=SACTL CLASS=VALCL.
+:VAR NAME=SALVL CLASS=VALCL.
+:VAR NAME=SALVL2 CLASS=VALCL.
+:VAR NAME=SAENDACN CLASS=VALCL.
+:VAR NAME=SAFRCLVL CLASS=VALCL.
+:VAR NAME=SACRTAUD CLASS=VALCL.
+:KEYL NAME=DSPKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=DSPSECAUD HELP=HLPSEC KEYL=DSPKEYS TOPSEP=SYSNAM.Display Security Auditing Values
+:DATA DEPTH='*'.
+:DATAGRP.Audit journal
+:DATAI VAR=SAJRN USAGE=OUTPUT.Journal
+:DATAI VAR=SAJRNLIB USAGE=OUTPUT.Library
+:DATAI VAR=SARCV USAGE=OUTPUT.Current receiver
+:EDATAGRP.
+:DATAGRP.Security auditing system values
+:DATAI VAR=SACTL USAGE=OUTPUT.Auditing control (QAUDCTL)
+:DATAI VAR=SALVL USAGE=OUTPUT.Auditing level (QAUDLVL)
+:DATAI VAR=SALVL2 USAGE=OUTPUT.Auditing level extension (QAUDLVL2)
+:DATAI VAR=SAENDACN USAGE=OUTPUT.Auditing end action (QAUDENDACN)
+:DATAI VAR=SAFRCLVL USAGE=OUTPUT.Auditing force level (QAUDFRCLVL)
+:DATAI VAR=SACRTAUD USAGE=OUTPUT.Default auditing (QCRTOBJAUD)
+:EDATAGRP.
+:EDATA.
+:BOTINST.Press Enter to continue.
+:EPANEL.
+:HELP NAME=HLPSEC.Display Security Auditing Values - Help
+:P.This display shows whether security auditing is on: the journal its
+entries go to, the receiver attached to it now, and the system values
+that say what is audited and what happens when the journal cannot be
+written. CHGSECAUD changes them.
+:EHELP.
+:EPNLGRP.

@@ -1141,6 +1141,55 @@ impl Service for Served<'_> {
     fn user_info(&mut self, name: String) -> Option<UserInfo> {
         self.lent(|c| c.provider.user_info(&name))
     }
+
+    // --- panel data: system and security (180-199)
+    fn sysval_panel(&mut self, name: String) -> Option<(String, String, Vec<String>)> {
+        super::sysdata::sysval(self.system, &name)
+    }
+
+    fn sysval_panel_list(&mut self) -> Vec<(String, String, String)> {
+        super::sysdata::sysvals(self.system)
+    }
+
+    fn neta_panel(&mut self) -> Result<Vec<(String, String)>, String> {
+        super::sysdata::neta(self.system)
+    }
+
+    fn usrprf_panel(&mut self, name: String) -> Result<Vec<(String, String)>, String> {
+        super::sysdata::usrprf(self.system, &name)
+    }
+
+    fn usrprf_panel_list(&mut self) -> Result<Vec<(String, String, String)>, String> {
+        super::sysdata::usrprfs(self.system)
+    }
+
+    fn autusr_panel(&mut self, by_group: bool) -> Result<Vec<Vec<String>>, String> {
+        super::sysdata::autusr(self.system, by_group)
+    }
+
+    fn sfwrsc_panel(&mut self) -> Vec<Vec<String>> {
+        super::sysdata::sfwrsc()
+    }
+
+    fn autl_panel(&mut self, name: String) -> Result<Vec<Vec<String>>, String> {
+        super::sysdata::autl(self.system, &name)
+    }
+
+    fn autl_panel_list(&mut self) -> Result<Vec<(String, String)>, String> {
+        super::sysdata::autls(self.system)
+    }
+
+    fn secaud_panel(&mut self) -> Result<Vec<(String, String)>, String> {
+        super::sysdata::secaud(self.system)
+    }
+
+    fn cfgsts_panel(&mut self) -> Result<Vec<Vec<String>>, String> {
+        super::sysdata::cfgsts(self.system)
+    }
+
+    fn devd_panel(&mut self, name: String) -> Result<Vec<(String, String)>, String> {
+        super::sysdata::devd(self.system, &name)
+    }
 }
 
 /// `CPF1241` (normal) or `CPF1240` (abnormal: end code 20 and up, or no

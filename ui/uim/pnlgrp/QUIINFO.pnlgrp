@@ -1,0 +1,52 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QUIINFO: the Information Assistant options, a menu without a
+.* command line; F9 asks for one. The INFO menu object itself belongs
+.* to the task menus (ui/menus/sys/).
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 1'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='INFO'.
+:KEYL NAME=INFOKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.F1=Help
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F9 ACTION='RETURN 9'.F9=Command line
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=INFO HELP=HLPINFO KEYL=INFOKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Information Assistant Options
+:MENU DEPTH='*' OPTIONS=OPTION.To select one of the following, type its number below and press Enter:
+:MENUI OPTION=1 ACTION='HELP HLPWHERE'.Where do I look for information?
+:MENUI OPTION=2 ACTION='HELP HLPCMNT'.How can I comment on information?
+:EMENU.
+:BOTINST.Type a menu option below
+:EPANEL.
+:HELP NAME=HLPINFO.Information Assistant Options - Help
+:P.This menu points to where the system's own information is kept.
+Type an option number and press Enter.
+:P.F9 gives a command line, F3 leaves the menu and F12 returns to the
+display shown before it.
+:EHELP.
+:HELP NAME=HLPWHERE.Where to Look for Information - Help
+:P.Every display has help: press F1 (or Help) on it. With the cursor on
+a field, F1 tells about that field; elsewhere it tells about the whole
+display.
+:P.For a command, type its name and press F4 to prompt it; F1 on the
+prompt display tells about each parameter. The command menus (GO
+MAJOR) list the commands by what they do.
+:P.Messages tell more when you put the cursor on them and press F1.
+:EHELP.
+:HELP NAME=HLPCMNT.Commenting on Information - Help
+:P.Quartz Systems welcomes remarks on the system's displays, help and
+messages. Write down the display's title and identifier (the name in
+its upper left corner) and what you would change, and send them to
+your Quartz Systems contact.
+:EHELP.
+:EPNLGRP.

@@ -33,14 +33,23 @@ enum Row<'a> {
     },
 }
 
-/// A column of the area: its start, width and rows.
+/// A column of the area: its start, width, prompt width and rows.
 struct Column<'a> {
     start: usize,
     width: usize,
+    /// A prompt width from an empty `:DATACOL.` before this one.
+    prompt: Option<usize>,
     rows: Vec<Row<'a>>,
 }
 
-pub(super) fn render(ctx: &Ctx, area: &DataArea, s: &mut Screen, top: usize, height: usize) {
+pub(super) fn render(
+    ctx: &Ctx,
+    area: &DataArea,
+    s: &mut Screen,
+    top: usize,
+    height: usize,
+    shared: Option<usize>,
+) {
     let limit = s.limit();
     let mut row = top;
     let title = ctx.text(&area.title);
@@ -63,8 +72,12 @@ pub(super) fn render(ctx: &Ctx, area: &DataArea, s: &mut Screen, top: usize, hei
         longest.div_ceil(per).max(1)
     };
     let page = ctx.opts.page.min(pages - 1);
+    let single = columns.len() == 1;
     for c in &columns {
-        let colon = colon_of(ctx, c);
+        let mut colon = colon_of(ctx, c);
+        if single && let Some(sh) = shared {
+            colon = colon.max(sh);
+        }
         let end = (c.start + c.width - 1).min(limit);
         for (i, r) in c.rows.iter().skip(page * per).take(per).enumerate() {
             put_row(ctx, s, row + i, c.start, end, colon, r);
@@ -75,8 +88,22 @@ pub(super) fn render(ctx: &Ctx, area: &DataArea, s: &mut Screen, top: usize, hei
     }
 }
 
-/// R14: the colon column from the longest label of the column.
+/// R14: the colon column a one-column area asks for, so the panel's
+/// one-column areas line up (dspusrprf's header over its pages).
+pub(super) fn single_colon(ctx: &Ctx, area: &DataArea, limit: usize) -> Option<usize> {
+    let columns = columns(ctx, area, limit);
+    match columns.as_slice() {
+        [c] => Some(colon_of(ctx, c)),
+        _ => None,
+    }
+}
+
+/// R14: the colon column from the longest label of the column, or
+/// at the end of its prompt width.
 fn colon_of(ctx: &Ctx, c: &Column) -> usize {
+    if let Some(p) = c.prompt {
+        return c.start + p.max(2) - 1;
+    }
     let mut longest = c.start - 1;
     for r in &c.rows {
         let (col, spans) = match r {
@@ -206,6 +233,10 @@ fn label_and_colon(
 ) -> usize {
     let label = label.trim_end();
     let len = label.chars().count();
+    if len == 0 && !compact {
+        // A row without a label continues the value above it.
+        return colon + 4 + shift;
+    }
     if compact {
         // R16: `Label:   value`.
         let text = format!("{label}:");
@@ -316,21 +347,30 @@ fn columns<'a>(ctx: &Ctx, area: &'a DataArea, limit: usize) -> Vec<Column<'a>> {
     if has_datacol {
         let mut start = 2;
         let mut current: Option<Column<'a>> = None;
+        let mut prompt = None;
         for item in &area.items {
             if let DataNode::Column(w) = item {
                 if let Some(c) = current.take() {
-                    start += c.width;
-                    out.push(c);
+                    if c.rows.is_empty() && c.prompt.is_none() {
+                        // R17: an empty column is the prompt width of
+                        // the one after it.
+                        prompt = Some(c.width);
+                    } else {
+                        start += c.width;
+                        out.push(c);
+                    }
                 }
                 current = Some(Column {
                     start,
                     width: *w as usize,
+                    prompt: prompt.take(),
                     rows: Vec::new(),
                 });
             } else {
                 let c = current.get_or_insert_with(|| Column {
                     start,
                     width: limit + 1 - start,
+                    prompt: None,
                     rows: Vec::new(),
                 });
                 walk(ctx, item, c.start, 0, area.compact, &mut c.rows);
@@ -353,7 +393,12 @@ fn columns<'a>(ctx: &Ctx, area: &'a DataArea, limit: usize) -> Vec<Column<'a>> {
             for item in chunk {
                 walk(ctx, item, start, 0, area.compact, &mut rows);
             }
-            out.push(Column { start, width, rows });
+            out.push(Column {
+                start,
+                width,
+                prompt: None,
+                rows,
+            });
         }
     }
     out
@@ -372,7 +417,12 @@ fn walk<'a>(
     match item {
         DataNode::Column(_) => {}
         DataNode::Field(f) => {
-            if f.display == Display::Yes {
+            // A row without a label continues the value above it and
+            // shows only when it holds something.
+            let continuation = f.extenders.is_empty()
+                && ctx.text(&f.prompt).trim().is_empty()
+                && ctx.value(&f.var).trim().is_empty();
+            if f.display == Display::Yes && !continuation {
                 rows.push(Row::Field {
                     label_col,
                     shift,

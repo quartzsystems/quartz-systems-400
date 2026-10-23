@@ -73,7 +73,7 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
         let skip = c.heading.len().saturating_sub(col_rows);
         for (j, h) in c.heading.iter().skip(skip).enumerate() {
             let r = head_top + usize::from(grouped) + col_rows - (c.heading.len() - skip) + j;
-            put_cut(s, r, c.start, end.min(limit), Attr::HighIntensity, h);
+            put_cut(s, r, heading_col(c, h), end.min(limit), Attr::HighIntensity, h);
         }
     }
     row += head_rows;
@@ -135,6 +135,16 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
     s.list_shown.insert(area.listdef.clone(), entries);
     let more = state.top + entries < state.count() || (!state.complete && shown >= entries);
     super::indicator(s, last, !more);
+}
+
+/// R9: where a heading row starts: centered when the heading is wider
+/// than its field (dspsfwrsc `ID`, dspautusr `No`), else at the start.
+fn heading_col(c: &Col, h: &str) -> usize {
+    if c.width > c.field && !c.option {
+        c.start + (c.width - h.chars().count()) / 2
+    } else {
+        c.start
+    }
 }
 
 /// Text cut at `end`.

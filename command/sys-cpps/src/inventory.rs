@@ -233,12 +233,34 @@ pub const DIRECT: &[&str] = &[
     "WRKSYSVAL",
 ];
 
+/// Whether a job-site command also runs in the service: a display the
+/// job shows as a panel, whose text the service answers for a job
+/// without one (batch, `OUTPUT(*PRINT)`).
+#[must_use]
+pub fn in_service_too(name: &str) -> bool {
+    JOB_SITE.contains(&name)
+        && (DIRECT.contains(&name)
+            || crate::entry(name).is_some_and(|e| BRIDGE_WORDS.contains(&e.word.as_str())))
+}
+
 /// The commands `work/qsjob` runs in the job (`command/jobsite.rs` and
 /// the job words it bridges to).
 pub const JOB_SITE: &[&str] = &[
     // --- panels: work management (work/qsjob/src/panels/work.rs)
     // --- panels: messages and objects (panels/objects.rs)
     // --- panels: system and security (panels/system.rs)
+    "DSPSYSVAL",
+    "WRKSYSVAL",
+    "DSPNETA",
+    "DSPSFWRSC",
+    "DSPUSRPRF",
+    "WRKUSRPRF",
+    "DSPAUTUSR",
+    "WRKCFGSTS",
+    "DSPDEVD",
+    "DSPAUTL",
+    "WRKAUTL",
+    "DSPSECAUD",
     "ADDBKP",
     "CALL",
     "CHGDBG",

@@ -362,4 +362,33 @@ ipc::rpc! {
     // --- panel data: work management (140-159)
     // --- panel data: messages and objects (160-179)
     // --- panel data: system and security (180-199)
+    /// A system value for `DSPSYSVAL`: its text, its type (`*SEC` ...)
+    /// and the value's elements as shown.
+    180 => fn sysval_panel / SysvalPanel (name: String) -> Option<(String, String, Vec<String>)>;
+    /// Every system value for `WRKSYSVAL`: name, type and text.
+    181 => fn sysval_panel_list / SysvalPanelList () -> Vec<(String, String, String)>;
+    /// The network attributes for `DSPNETA`, by keyword.
+    182 => fn neta_panel / NetaPanel () -> Result<Vec<(String, String)>, String>;
+    /// `DSPUSRPRF TYPE(*BASIC)`: the panel's variables and values.
+    183 => fn usrprf_panel / UsrprfPanel (name: String) -> Result<Vec<(String, String)>, String>;
+    /// `WRKUSRPRF`: name, class and text of every profile.
+    184 => fn usrprf_panel_list / UsrprfPanelList () -> Result<Vec<(String, String, String)>, String>;
+    /// `DSPAUTUSR`: user, group, password change date, `X` for no
+    /// password and text, by user or by group.
+    185 => fn autusr_panel / AutusrPanel (by_group: bool) -> Result<Vec<Vec<String>>, String>;
+    /// `DSPSFWRSC`: resource ID, option, feature, description, feature
+    /// type, library and release of each installed product.
+    186 => fn sfwrsc_panel / SfwrscPanel () -> Vec<Vec<String>>;
+    /// `DSPAUTL`: the list's owner and text, then each user with its
+    /// authority and `X` for list management.
+    187 => fn autl_panel / AutlPanel (name: String) -> Result<Vec<Vec<String>>, String>;
+    /// `WRKAUTL`: every authorization list and its text.
+    188 => fn autl_panel_list / AutlPanelList () -> Result<Vec<(String, String)>, String>;
+    /// `DSPSECAUD`: the audit journal, its receiver and the auditing
+    /// system values, by label.
+    189 => fn secaud_panel / SecaudPanel () -> Result<Vec<(String, String)>, String>;
+    /// `WRKCFGSTS CFGTYPE(*DEV)`: name, status and text of each device.
+    190 => fn cfgsts_panel / CfgstsPanel () -> Result<Vec<Vec<String>>, String>;
+    /// `DSPDEVD`: the panel's variables and values.
+    191 => fn devd_panel / DevdPanel (name: String) -> Result<Vec<(String, String)>, String>;
 }
