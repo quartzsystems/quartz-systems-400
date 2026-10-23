@@ -156,6 +156,8 @@ pub struct UimDialog {
     pub system: String,
     /// Show the group's copyright on the message line when no message.
     pub copyright: bool,
+    /// Where the cursor was when the operator last pressed a key.
+    pub cursor: (usize, usize),
 }
 
 impl Dialog for UimDialog {
@@ -205,6 +207,7 @@ impl UimDialog {
             message: None,
             system: system.to_string(),
             copyright: false,
+            cursor: (1, 1),
         }
     }
 
@@ -511,9 +514,10 @@ impl UimDialog {
             let screen = uim::render(&group, panel_name, self, &opts)?;
             surface.with_model(|m| apply(&screen, m));
             surface.flush(Read::MdtFields);
-            let Some((a, _cursor)) = surface.wait() else {
+            let Some((a, cursor)) = surface.wait() else {
                 return Ok(Response::Gone);
             };
+            self.cursor = (usize::from(cursor.0), usize::from(cursor.1));
             let values: Vec<(Field, String)> = surface.with_model(|m| {
                 screen
                     .fields

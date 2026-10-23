@@ -1,0 +1,145 @@
+.* DSPMSG and WRKMSG: a message queue's messages, and the
+.* Additional Message Information panel shown for one of them.
+:PNLGRP.
+:COPYR.(C) Quartz Systems 2026
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=SEVCL BASETYPE='CHAR 2'.
+:ECLASS.
+:CLASS NAME=LINECL BASETYPE='CHAR 77'.
+:ECLASS.
+:CLASS NAME=TYPECL BASETYPE='CHAR 13'.
+:ECLASS.
+:CLASS NAME=DATECL BASETYPE='CHAR 8'.
+:ECLASS.
+:CLASS NAME=FLAGCL BASETYPE='CHAR 1'.
+:ECLASS.
+:CLASS NAME=RPYCL BASETYPE='CHAR 76'.
+:ECLASS.
+:VAR NAME=SYSNM CLASS=NAMECL.
+:VAR NAME=MSGQ CLASS=NAMECL.
+:VAR NAME=MSGQLIB CLASS=NAMECL.
+:VAR NAME=PGM CLASS=NAMECL VALUE='*DSPMSG'.
+:VAR NAME=PGMLIB CLASS=NAMECL.
+:VAR NAME=SEV CLASS=SEVCL VALUE='00'.
+:VAR NAME=DLVRY CLASS=NAMECL.
+:VAR NAME=MORE CLASS=FLAGCL VALUE='N'.
+:VAR NAME=LINE CLASS=LINECL.
+:VAR NAME=FROMUSR CLASS=NAMECL.
+:VAR NAME=MSGSEV CLASS=SEVCL.
+:VAR NAME=MSGTYPE CLASS=TYPECL.
+:VAR NAME=SNTDATE CLASS=DATECL.
+:VAR NAME=SNTTIME CLASS=DATECL.
+:VAR NAME=REPLY CLASS=RPYCL.
+:LISTDEF NAME=MSGS VARS='LINE'.
+:LISTDEF NAME=INFO VARS='LINE'.
+:COND NAME=FIRSTSET EXPR='&MORE. EQ "N"'.
+:COND NAME=OTHERSET EXPR='&MORE. EQ "Y"'.
+.* The key rows are laid out at fixed columns, as the display shows
+.* them: one item carries each row's text, the others act unseen.
+:KEYL NAME=MSGKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION='RETURN 1'.
+:KEYI KEY=F1 ACTION='RETURN 1'.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit              F11=Remove a message                 F12=Cancel
+:KEYI KEY=F5 ACTION='RETURN 5' COND=OTHERSET.F5=Refresh           F17=Top             F18=Bottom          F24=More keys
+:KEYI KEY=F11 ACTION='RETURN 11'.
+:KEYI KEY=F12 ACTION=CANCEL.
+:KEYI KEY=F13 ACTION='RETURN 13' COND=FIRSTSET.F13=Remove all       F16=Remove all except unanswered     F24=More keys
+:KEYI KEY=F16 ACTION='RETURN 16'.
+:KEYI KEY=F17 ACTION=TOP.
+:KEYI KEY=F18 ACTION=BOTTOM.
+:KEYI KEY=F24 ACTION='RETURN 24'.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:KEYL NAME=INFOKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F6 ACTION=PRINT.F6=Print
+:KEYI KEY=F9 ACTION='RETURN 9'.F9=Display message details
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F21 ACTION='RETURN 21'.F21=Select assistance level
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:PANEL NAME=DSPMSG KEYL=MSGKEYS HELP=DSPMSGH ENTER='RETURN 0' TOPSEP=NONE BOTSEP=NONE.Display Messages
+:DATA DEPTH=1.
+:DATACOL WIDTH=54.
+:DATAC.
+:DATACOL WIDTH=24.
+:DATAC.System:   &SYSNM.
+:EDATA.
+:DATA DEPTH=4.
+:DATACOL WIDTH=44.
+:DATAC.Queue . . . . . :   &MSGQ.
+:DATAGRP GRPSEP=NONE.
+:DATAC.Library . . . :     &MSGQLIB.
+:EDATAGRP.
+:DATAC.Severity  . . . :   &SEV.
+:DATACOL WIDTH=34.
+:DATAC.Program . . . . :   &PGM.
+:DATAGRP GRPSEP=NONE.
+:DATAC.Library . . . :     &PGMLIB.
+:EDATAGRP.
+:DATAC.Delivery  . . . :   &DLVRY.
+:EDATA.
+:TOPINST.Type reply (if required), press Enter.
+:LIST DEPTH='*' LISTDEF=MSGS SCROLL=YES.
+:LISTCOL VAR=LINE USAGE=OUTPUT.
+:ELIST.
+:EPANEL.
+:PANEL NAME=ADDMSGI KEYL=INFOKEYS HELP=ADDMSGH ENTER='RETURN 0' TOPSEP=SPACE.Additional Message Information
+:DATA DEPTH=4.
+:DATACOL WIDTH=41.
+:DATAI VAR=FROMUSR USAGE=OUTPUT.From
+:DATAI VAR=MSGTYPE USAGE=OUTPUT.Message type
+:DATAI VAR=SNTDATE USAGE=OUTPUT.Date sent
+:DATACOL WIDTH=37.
+:DATAC.Severity . . . . . . . :   &MSGSEV.
+:DATAC.
+:DATAC.Time sent  . . . . . . :   &SNTTIME.
+:EDATA.
+:LIST DEPTH='*' LISTDEF=INFO SCROLL=YES.
+:LISTCOL VAR=LINE USAGE=OUTPUT.
+:ELIST.
+:BOTINST.Press Enter to continue.
+:EPANEL.
+:PANEL NAME=ADDMSGR KEYL=INFOKEYS HELP=ADDMSGH ENTER='RETURN 0' TOPSEP=SPACE.Additional Message Information
+:DATA DEPTH=4.
+:DATACOL WIDTH=41.
+:DATAI VAR=FROMUSR USAGE=OUTPUT.From
+:DATAI VAR=MSGTYPE USAGE=OUTPUT.Message type
+:DATAI VAR=SNTDATE USAGE=OUTPUT.Date sent
+:DATACOL WIDTH=37.
+:DATAC.Severity . . . . . . . :   &MSGSEV.
+:DATAC.
+:DATAC.Time sent  . . . . . . :   &SNTTIME.
+:EDATA.
+:LIST DEPTH='*' LISTDEF=INFO SCROLL=YES.
+:LISTCOL VAR=LINE USAGE=OUTPUT.
+:ELIST.
+:TOPINST.Type the reply below, then press Enter.
+:DATA DEPTH=1.
+:DATAI VAR=REPLY USAGE=INPUT CSRLOC.Reply
+:EDATA.
+:EPANEL.
+:HELP NAME=DSPMSGH.Display Messages - Help
+:P.The messages on a message queue, oldest first. An inquiry
+waits for its reply: place the cursor on it and press F1 to see
+the whole message and type the reply.
+:P.F11 removes the message under the cursor, F13 every message, F16
+every message but the inquiries that still wait for a reply.
+:EHELP.
+:HELP NAME=ADDMSGH.Additional Message Information - Help
+:P.The whole message: who sent it and when, its text and what the
+message description says about its cause and what to do. F9 adds the
+message identifier, its message file and the sending program.
+:EHELP.
+:HELP NAME=KEYSHLP.Function keys - Help
+:P.F3 leaves the display, F12 goes back one display, F5 shows the
+queue again as it is now.
+:EHELP.
+:EPNLGRP.

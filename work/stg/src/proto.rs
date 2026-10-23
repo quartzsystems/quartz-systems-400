@@ -361,6 +361,23 @@ ipc::rpc! {
     138 => fn pnlgrp_open / PnlgrpOpen (name: String, lib: String) -> Result<(Vec<u8>, String), String>;
     // --- panel data: work management (140-159)
     // --- panel data: messages and objects (160-179)
+    /// What `DSPOBJD DETAIL(*FULL)` shows beyond `object`: `(field,
+    /// value)` pairs (`CREATOR`, `SYSTEM`, `RELEASE`, `SIZE` in bytes,
+    /// `DOMAIN`, `DAMAGED`, `PGP`, `AUDIT`, `LASTUSED`, `DAYSUSED`,
+    /// `RESET`; dates `CYYMMDDHHMMSS`), `None` when not found.
+    160 => fn obj_detail / ObjDetail (lib: String, name: String, ty: String) -> Option<Vec<(String, String)>>;
+    /// The objects a name and type select in a library (or `*LIBL`),
+    /// with their size in bytes: library, name, type, size.
+    161 => fn obj_sizes / ObjSizes (lib: String, name: String, ty: String) -> Vec<(String, String, String, u64)>;
+    /// The system reply list: sequence, message identifier, compare
+    /// data, its start position, reply, dump.
+    162 => fn rpyl_entries / RpylEntries () -> Result<Vec<RpyRow>, String>;
+    /// The history log, oldest first: date (`CYYMMDD`), time
+    /// (`HHMMSS`), message identifier, severity, type, job name, user,
+    /// number and text, in that order.
+    163 => fn hst_entries / HstEntries () -> Result<Vec<Vec<String>>, String>;
+    /// A message file's descriptions: identifier and first-level text.
+    164 => fn msgf_list / MsgfList (msgf: String, lib: String) -> Result<Vec<(String, String)>, String>;
     // --- panel data: system and security (180-199)
     /// A system value for `DSPSYSVAL`: its text, its type (`*SEC` ...)
     /// and the value's elements as shown.
@@ -392,3 +409,7 @@ ipc::rpc! {
     /// `DSPDEVD`: the panel's variables and values.
     191 => fn devd_panel / DevdPanel (name: String) -> Result<Vec<(String, String)>, String>;
 }
+
+/// A system reply list entry for `rpyl_entries`: sequence, message
+/// identifier, compare data, its start, reply, dump.
+pub type RpyRow = (u16, String, String, u16, String, bool);

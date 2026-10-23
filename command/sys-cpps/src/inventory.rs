@@ -248,6 +248,22 @@ pub fn in_service_too(name: &str) -> bool {
 pub const JOB_SITE: &[&str] = &[
     // --- panels: work management (work/qsjob/src/panels/work.rs)
     // --- panels: messages and objects (panels/objects.rs)
+    "DSPDBR",
+    "DSPDTAARA",
+    "DSPFD",
+    "DSPFFD",
+    "DSPLIB",
+    "DSPLIBL",
+    "DSPLOG",
+    "DSPMSG",
+    "DSPMSGD",
+    "DSPOBJAUT",
+    "DSPOBJD",
+    "WRKBNDDIR",
+    "WRKMSG",
+    "WRKOBJ",
+    "WRKOBJOWN",
+    "WRKRPYLE",
     // --- panels: system and security (panels/system.rs)
     "DSPSYSVAL",
     "WRKSYSVAL",

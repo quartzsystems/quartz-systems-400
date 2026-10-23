@@ -22,6 +22,58 @@ note = "no completion message; a refusal is the escape"
 # Panels (the displays shown as UIM panels by an interactive job):
 # --- work management (work/qsjob/src/panels/work.rs)
 # --- messages and objects (panels/objects.rs)
+[cmd.DSPLIBL]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.WRKOBJ]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPLIB]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPOBJD]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPOBJAUT]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPMSGD]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.WRKRPYLE]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPLOG]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPFD]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPFFD]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPDBR]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.DSPDTAARA]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
+[cmd.WRKOBJOWN]
+site = "job"
+note = "a panel at a display; the text form in the service otherwise"
+
 # --- system and security (panels/system.rs)
 
 [cmd.DSPSYSVAL]
@@ -88,6 +140,7 @@ note = "the description through the job's link"
 [cmd.WRKMSG]
 word = "dspmsg"
 alwlmtusr = true
+site = "job"
 
 [cmd.WRKJOBD]
 word = "dspjobd"
@@ -169,6 +222,7 @@ alwlmtusr = true
 
 [cmd.DSPMSG]
 alwlmtusr = true
+site = "job"
 
 [cmd.DSPJOB]
 alwlmtusr = true
@@ -236,6 +290,7 @@ note = "the editor waits for display files; the list is shown"
 
 [cmd.WRKBNDDIR]
 word = "dspbnddir"
+site = "job"
 
 [cmd.PRTUSRPRF]
 word = "prtusrprf"

@@ -1,0 +1,182 @@
+.* DSPOBJD: the objects selected (basic) and one object's whole
+.* description (full), a library at a time.
+:PNLGRP.
+:COPYR.(C) Quartz Systems 2026
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=KINDCL BASETYPE='CHAR 8'.
+:ECLASS.
+:CLASS NAME=SIZECL BASETYPE='CHAR 28'.
+:ECLASS.
+:CLASS NAME=TEXTCL BASETYPE='CHAR 50'.
+:ECLASS.
+:CLASS NAME=POSCL BASETYPE='CHAR 28'.
+:ECLASS.
+:VAR NAME=LIBPOS CLASS=POSCL.
+:VAR NAME=LIB CLASS=NAMECL.
+:VAR NAME=ASPDEV CLASS=NAMECL VALUE='*SYSBAS'.
+:VAR NAME=ASPGRP CLASS=NAMECL VALUE='*SYSBAS'.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=OBJ CLASS=NAMECL.
+:VAR NAME=OBJTYPE CLASS=KINDCL.
+:VAR NAME=OBJLIB CLASS=NAMECL.
+:VAR NAME=ATRSIZE CLASS=SIZECL.
+:VAR NAME=OBJTEXT CLASS=TEXTCL.
+:VAR NAME=OBJATR CLASS=NAMECL.
+:VAR NAME=OWNER CLASS=NAMECL.
+:VAR NAME=PGP CLASS=NAMECL VALUE='*NONE'.
+:VAR NAME=UDATTR CLASS=NAMECL.
+:VAR NAME=CRTDATE CLASS=TEXTCL.
+:VAR NAME=CRTUSER CLASS=NAMECL.
+:VAR NAME=CRTSYS CLASS=NAMECL.
+:VAR NAME=DOMAIN CLASS=NAMECL.
+:VAR NAME=CHGDATE CLASS=TEXTCL.
+:VAR NAME=USAGE CLASS=NAMECL VALUE='NO'.
+:VAR NAME=LASTUSED CLASS=NAMECL.
+:VAR NAME=DAYSUSED CLASS=NAMECL VALUE='0'.
+:VAR NAME=RESETDT CLASS=NAMECL.
+:VAR NAME=RESETLN CLASS=TEXTCL VALUE='  Reset date . . . . . . . . . . . . :'.
+:VAR NAME=ALWCHG CLASS=NAMECL VALUE='YES'.
+:VAR NAME=AUDIT CLASS=NAMECL VALUE='*NONE'.
+:VAR NAME=SIGNED CLASS=NAMECL VALUE='NO'.
+:VAR NAME=AUTCOL CLASS=NAMECL VALUE='*NONE'.
+:VAR NAME=OBJSIZE CLASS=TEXTCL.
+:VAR NAME=ASPNUM CLASS=NAMECL VALUE='1'.
+:VAR NAME=DAMAGED CLASS=NAMECL VALUE='NO'.
+:VAR NAME=SRCFILE CLASS=TEXTCL.
+:VAR NAME=RELEASE CLASS=NAMECL.
+:LISTDEF NAME=OBJS VARS='OPT OBJ OBJTYPE OBJLIB ATRSIZE OBJTEXT'.
+:KEYL NAME=LISTKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F17 ACTION=TOP.F17=Top
+:KEYI KEY=F18 ACTION=BOTTOM.F18=Bottom
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:KEYL NAME=FULLKEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:PANEL NAME=BASIC KEYL=LISTKEYS HELP=BASICH ENTER='RETURN 0' TOPSEP=NONE BOTSEP=NONE.Display Object Description - Basic
+:DATA DEPTH=1.
+:DATACOL WIDTH=50.
+:DATAC.
+:DATACOL WIDTH=28.
+:DATAC.&LIBPOS.
+:EDATA.
+:DATA DEPTH=3.
+:DATACOL WIDTH=41.
+:DATAC.Library . . . . . . . :   &LIB.
+:DATACOL WIDTH=37.
+:DATAC.Library ASP device  . :   &ASPDEV.
+:DATAC.Library ASP group . . :   &ASPGRP.
+:EDATA.
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=OBJS SCROLL=YES.
+:LISTACT OPTION=5 ENTER='RETURN 5'.5=Display full attributes
+:LISTACT OPTION=8 ENTER='RETURN 8'.8=Display service attributes
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=OBJ USAGE=OUTPUT.Object
+:LISTCOL VAR=OBJTYPE USAGE=OUTPUT.Type
+.* The attribute and the size share a column: the size is right-aligned
+.* under its heading at the column's end.
+:LISTCOL VAR=ATRSIZE USAGE=OUTPUT.Attribute               Size
+:LISTCOL VAR=OBJTEXT USAGE=OUTPUT.Text
+:ELIST.
+:EPANEL.
+:PANEL NAME=FULL KEYL=FULLKEYS HELP=FULLH ENTER='RETURN 0' TOPSEP=NONE.Display Object Description - Full
+:DATA DEPTH=1.
+:DATACOL WIDTH=50.
+:DATAC.
+:DATACOL WIDTH=28.
+:DATAC.&LIBPOS.
+:EDATA.
+:DATA DEPTH=5.
+:DATACOL WIDTH=41.
+:DATAC.Object . . . . . . . :   &OBJ.
+:DATAGRP GRPSEP=NONE.
+:DATAC.Library  . . . . . :     &OBJLIB.
+:EDATAGRP.
+:DATAC.Library ASP device . :   &ASPDEV.
+:DATAC.Type . . . . . . . . :   &OBJTYPE.
+:DATACOL WIDTH=37.
+:DATAC.Attribute  . . . . . :   &OBJATR.
+:DATAC.Owner  . . . . . . . :   &OWNER.
+:DATAC.Library ASP group  . :   &ASPGRP.
+:DATAC.Primary group  . . . :   &PGP.
+:EDATA.
+.* Twelve rows a page; blank rows end a page early as the display does.
+:DATA DEPTH='*'.
+:DATAC.User-defined information:
+:DATAGRP GRPSEP=NONE.
+:DATAC.Attribute  . . . . . . . . . . . . . :   &UDATTR.
+:DATAC.Text . . . . . . . . . . . . . . . . :   &OBJTEXT.
+:EDATAGRP.
+:DATAC.
+:DATAC.Creation information:
+:DATAGRP GRPSEP=NONE.
+:DATAC.Creation date/time . . . . . . . . . :   &CRTDATE.
+:DATAC.Created by user  . . . . . . . . . . :   &CRTUSER.
+:DATAC.System created on  . . . . . . . . . :   &CRTSYS.
+:DATAC.Object domain  . . . . . . . . . . . :   &DOMAIN.
+:EDATAGRP.
+:DATAC.
+:DATAC.
+:DATAC.
+:DATAC.Change/Usage information:
+:DATAGRP GRPSEP=NONE.
+:DATAC.Change date/time . . . . . . . . . . :   &CHGDATE.
+:DATAC.Usage data collected . . . . . . . . :   &USAGE.
+:DATAC.Last used date . . . . . . . . . . . :   &LASTUSED.
+:DATAC.Days used count  . . . . . . . . . . :   &DAYSUSED.
+.* A third level of indent: the label is a value, its blanks kept.
+:DATAC.&RESETLN.   &RESETDT.
+:DATAC.Allow change by program  . . . . . . :   &ALWCHG.
+:EDATAGRP.
+:DATAC.Auditing/Integrity information:
+:DATAGRP GRPSEP=NONE.
+:DATAC.Object auditing value  . . . . . . . :   &AUDIT.
+:DATAC.Digitally signed . . . . . . . . . . :   &SIGNED.
+:DATAC.Authority collection value . . . . . :   &AUTCOL.
+:EDATAGRP.
+:DATAC.
+:DATAC.Storage information:
+:DATAGRP GRPSEP=NONE.
+:DATAC.Size . . . . . . . . . . . . . . . . :   &OBJSIZE.
+:DATAC.Object ASP number  . . . . . . . . . :   &ASPNUM.
+:DATAC.Object damaged . . . . . . . . . . . :   &DAMAGED.
+:EDATAGRP.
+:DATAC.
+:DATAC.Service information:
+:DATAGRP GRPSEP=NONE.
+:DATAC.Source file  . . . . . . . . . . . . :   &SRCFILE.
+:DATAC.Object level . . . . . . . . . . . . :   &RELEASE.
+:EDATAGRP.
+:EDATA.
+:BOTINST.Press Enter to continue.
+:EPANEL.
+:HELP NAME=BASICH.Display Object Description - Help
+:P.The objects the name and type select in one library. Type 5 next
+to an object to see all of its description, 8 to see where it came
+from.
+:EHELP.
+:HELP NAME=FULLH.Display Object Description - Full - Help
+:P.Everything the system keeps about the object: its owner, when it
+was made and changed, by whom, how it is audited and how much storage
+it takes. Page down for the rest.
+:EHELP.
+:HELP NAME=KEYSHLP.Function keys - Help
+:P.F3 leaves the display, F12 goes back one display.
+:EHELP.
+:EPNLGRP.
