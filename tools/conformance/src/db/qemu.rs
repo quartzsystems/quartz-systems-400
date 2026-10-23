@@ -175,10 +175,19 @@ impl Suite {
                 &format!("cpytoimpf {lib}/{name} NULLS(*YES) DATFMT(*ISO) TIMFMT(*ISO)"),
                 LONG,
             )?;
-            // Line endings differ between the serial line and memory;
-            // only the lines are compared.
-            let theirs = body(&out).replace('\r', "").trim_end().to_string();
-            let ours = local.export(name)?.replace('\r', "").trim_end().to_string();
+            // Line endings differ between the serial line and memory, and
+            // the line carries only ASCII intact (a hex field exports its
+            // bytes as Latin-1 characters); only the lines, with every
+            // other character folded, are compared.
+            let fold = |s: String| -> String {
+                s.replace('\r', "")
+                    .trim_end()
+                    .chars()
+                    .map(|c| if c.is_ascii() { c } else { '?' })
+                    .collect()
+            };
+            let theirs = fold(body(&out));
+            let ours = fold(local.export(name)?);
             if theirs != ours {
                 return Err(format!(
                     "{name} differs between the console and memory:\n--- console\n{theirs}--- memory\n{ours}"
