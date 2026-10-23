@@ -41,14 +41,10 @@ pub(super) fn render(ctx: &Ctx, area: &MenuArea, s: &mut Screen, top: usize, hei
     } else {
         (body, false)
     };
-    let pages = if per == 0 {
-        1
-    } else {
-        rows.len().div_ceil(per).max(1)
-    };
-    let page = ctx.opts.page.min(pages - 1);
+    let pages = paginate(&rows, per);
+    let page = ctx.opts.page.min(pages.len() - 1);
     let first = top + 2;
-    for (i, r) in rows.iter().skip(page * per).take(per).enumerate() {
+    for (i, r) in pages[page].iter().enumerate() {
         let row = first + i;
         match r {
             Row::Blank => {}
@@ -65,8 +61,30 @@ pub(super) fn render(ctx: &Ctx, area: &MenuArea, s: &mut Screen, top: usize, hei
         }
     }
     if overflow {
-        super::indicator(s, top + height - 1, page + 1 == pages);
+        super::indicator(s, top + height - 1, page + 1 == pages.len());
     }
+}
+
+/// The rows in pages of `per`; a page does not start with a blank row.
+fn paginate(rows: &[Row], per: usize) -> Vec<Vec<&Row>> {
+    let mut pages: Vec<Vec<&Row>> = vec![Vec::new()];
+    if per == 0 {
+        return pages;
+    }
+    for r in rows {
+        if pages.last().is_some_and(|p| p.len() >= per) {
+            pages.push(Vec::new());
+        }
+        let page = pages.last_mut().expect("a page");
+        if page.is_empty() && matches!(r, Row::Blank) {
+            continue;
+        }
+        page.push(r);
+    }
+    if pages.len() > 1 && pages.last().is_some_and(Vec::is_empty) {
+        pages.pop();
+    }
+    pages
 }
 
 /// The rows: a blank one where option numbers skip and before a group
@@ -109,24 +127,40 @@ fn push_item(ctx: &Ctx, out: &mut Vec<Row>, prev: &mut Option<u16>, item: &MenuI
         out.push(Row::Blank);
     }
     let (text, right) = split_right(&ctx.text(&item.text));
-    out.push(Row::Item(n, text, right));
+    // A reserved option: no text, a blank row, the number kept.
+    if text.trim().is_empty() {
+        out.push(Row::Blank);
+    } else {
+        out.push(Row::Item(n, text, right));
+    }
     *prev = Some(n);
 }
 
-/// R13: a trailing upper-case name after lower-case text goes to the
-/// right column.
+/// Whether a word is an object name for the right column.
+fn is_name(word: &str) -> bool {
+    (2..=10).contains(&word.len())
+        && word.chars().next().is_some_and(|c| c.is_ascii_uppercase())
+        && word
+            .chars()
+            .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || "@#$_".contains(c))
+}
+
+/// R13: a trailing name after two blanks goes to the right column, as
+/// does one of four characters or more after a single blank and
+/// lower-case text (`Interactive SQL` stays whole).
 fn split_right(text: &str) -> (String, Option<String>) {
     let t = text.trim_end();
+    if let Some((head, last)) = t.rsplit_once("  ")
+        && is_name(last)
+        && !head.trim().is_empty()
+    {
+        return (head.trim_end().to_string(), Some(last.to_string()));
+    }
     let Some((head, last)) = t.rsplit_once(' ') else {
         return (t.to_string(), None);
     };
-    let is_name = (2..=10).contains(&last.len())
-        && last.chars().next().is_some_and(|c| c.is_ascii_uppercase())
-        && last
-            .chars()
-            .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || "@#$_".contains(c));
     let prev_word = head.rsplit(' ').next().unwrap_or("");
-    if is_name && prev_word.chars().any(|c| c.is_ascii_lowercase()) {
+    if is_name(last) && last.len() >= 4 && prev_word.chars().any(|c| c.is_ascii_lowercase()) {
         (head.trim_end().to_string(), Some(last.to_string()))
     } else {
         (t.to_string(), None)
@@ -146,5 +180,11 @@ mod tests {
         assert_eq!(split_right("User tasks"), ("User tasks".into(), None));
         assert_eq!(split_right("Start TCP/IP"), ("Start TCP/IP".into(), None));
         assert_eq!(split_right("Sign off"), ("Sign off".into(), None));
+        assert_eq!(split_right("Interactive SQL"), ("Interactive SQL".into(), None));
+        assert_eq!(
+            split_right("Change Job  CHGJOB"),
+            ("Change Job".into(), Some("CHGJOB".into()))
+        );
+        assert_eq!(split_right("Do  DO"), ("Do".into(), Some("DO".into())));
     }
 }
