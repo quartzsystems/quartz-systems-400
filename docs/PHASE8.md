@@ -174,7 +174,7 @@ pub400 goldens.
 |---|---|---|---|---|
 | PDM (`STRPDM`, `WRK*PDM`, `FNDSTRPDM`) | 32 `pdm-*` (`pdm.tn`, `pdm2.tn`) | all match by character | 320-325 | Confirm Delete, Rename, Change Text, the user-defined option displays (reaching them changes things) |
 | SEU (`STRSEU`) | 80 `seu-*` (five `seu-*.tn`) | 26 tests, about 60 goldens; message rows skipped | 300-302 | CMD and PF/LF prompts, browse of a CL member, recovery |
-| DFU, RLU (`STRDFU`, `UPDDTA`, `DSPDTA`, `CHGDTA`, `STRRLU`) | 24 `dfu-*`, 7 `rlu-*` (`dfu.tn`, `dfu2.tn`) | 16 tests, ten without the message line | 360-363 | DSPDTA's display (no DFU program), keyed-file key entry, the creation displays after General Information, RLU over a real printer file |
+| DFU, RLU (`STRDFU`, `UPDDTA`, `DSPDTA`, `CHGDTA`, `STRRLU`) | 24 `dfu-*`, 4 `rlu-*` (`dfu.tn`, `dfu2.tn`) | 16 tests, ten without the message line | 360-363 | DSPDTA's display (no DFU program), keyed-file key entry, the creation displays after General Information, RLU over a real printer file |
 | STRDBG, `STRSRVJOB` | 52 `dbg-*` (`dbg*.tn`) | 20 whole, 32 without the message or debug line | 380-387 | source rows, F13 and F15 (no program with a source view), `STRSRVJOB` refused in debug mode |
 | STRSQL | 37 `strsql-*` (`strsql.tn` to `strsql4.tn`) | 21 tests, message rows skipped | 400-404 | the second displays of the INSERT, UPDATE and CREATE INDEX prompts, Save Session in Source File, Print session |
 | STRSST | none: pub400 refused (no `*SERVICE`) | 16 screens equal `golden/dst/`; 10 of SST's own in `golden/sst/` | 420-432 | all of SST against an oracle |
