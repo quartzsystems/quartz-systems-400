@@ -344,6 +344,8 @@ pub fn file_of(msgid: &str) -> &'static str {
     match msgid.get(..3) {
         Some("CEE") => "QCEEMSG",
         Some("SQL") => "QSQLMSG",
+        Some("RNF" | "RNS") => "QRPGLEMSG",
+        Some("RNX" | "RNQ" | "RNI" | "RNT") => "QRNXMSG",
         _ => "QCPFMSG",
     }
 }

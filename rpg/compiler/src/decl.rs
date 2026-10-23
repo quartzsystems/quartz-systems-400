@@ -53,6 +53,15 @@ pub fn word_arg(k: &Keyword, i: usize) -> Option<String> {
     }
 }
 
+/// Which `EXTPROC` argument names the procedure: the second after a
+/// language word (`*CL`, `*CWIDEN`, `*CNOWIDEN`, `*JAVA`), else the first.
+fn extproc_name_arg(k: &Keyword) -> usize {
+    match word_arg(k, 0).as_deref() {
+        Some("*CL" | "*CWIDEN" | "*CNOWIDEN" | "*JAVA") if k.arg(1).is_some() => 1,
+        _ => 0,
+    }
+}
+
 /// A character literal argument.
 pub fn str_arg(k: &Keyword, i: usize) -> Option<String> {
     match &k.arg(i)?.expr {
@@ -686,12 +695,14 @@ pub fn proto(cx: &mut Cx<'_>, d: &Def) -> Proto {
         extpgm: d
             .kw("EXTPGM")
             .map(|k| str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_else(|| d.name.to_ascii_uppercase())),
-        extproc: d
-            .kw("EXTPROC")
-            .map(|k| str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_else(|| d.name.to_ascii_uppercase())),
-        extproc_word: d
-            .kw("EXTPROC")
-            .is_some_and(|k| str_arg(k, 0).is_none() && word_arg(k, 0).is_some_and(|w| !w.starts_with('*'))),
+        extproc: d.kw("EXTPROC").map(|k| {
+            let i = extproc_name_arg(k);
+            str_arg(k, i).or_else(|| word_arg(k, i)).unwrap_or_else(|| d.name.to_ascii_uppercase())
+        }),
+        extproc_word: d.kw("EXTPROC").is_some_and(|k| {
+            let i = extproc_name_arg(k);
+            str_arg(k, i).is_none() && word_arg(k, i).is_some_and(|w| !w.starts_with('*'))
+        }),
         ret,
         ret_dim: dim_of(cx, d),
         opdesc: d.kw("OPDESC").is_some(),

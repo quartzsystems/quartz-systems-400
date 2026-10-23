@@ -85,6 +85,8 @@ fn no_ibm_phrasing_in_messages() {
         ("qcpfmsg.toml", msgf_source("qcpfmsg.toml")),
         ("qceemsg.toml", msgf_source("qceemsg.toml")),
         ("qsqlmsg.toml", msgf_source("qsqlmsg.toml")),
+        ("qrpglemsg.toml", msgf_source("qrpglemsg.toml")),
+        ("qrnxmsg.toml", msgf_source("qrnxmsg.toml")),
     ] {
         let lower = text.to_ascii_lowercase();
         for d in &denied {

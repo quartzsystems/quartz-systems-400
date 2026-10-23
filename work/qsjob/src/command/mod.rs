@@ -619,7 +619,7 @@ fn failed(job: &mut Job, e: &CmdError) -> Outcome {
 
 fn log_diag(job: &mut Job, d: &Diag, kind: MsgType) {
     let help = (!d.detail.is_empty()).then(|| d.detail.clone());
-    job.log_external_with(&d.msgid, "QCPFMSG", &d.data, kind, None, help);
+    job.log_external_with(&d.msgid, sysapi::param::file_of(&d.msgid), &d.data, kind, None, help);
 }
 
 /// A diagnostic as the console shows it: the identifier and its text,
@@ -628,7 +628,7 @@ fn shown_diag(job: &mut Job, d: &Diag) -> String {
     if !d.detail.is_empty() {
         return format!("{} {}\n", d.msgid, d.detail);
     }
-    let (text, _, _) = job.describe_message(&d.msgid, "QCPFMSG", "*LIBL", &d.data);
+    let (text, _, _) = job.describe_message(&d.msgid, sysapi::param::file_of(&d.msgid), "*LIBL", &d.data);
     format!("{} {}\n", d.msgid, text.trim_end())
 }
 
@@ -647,7 +647,7 @@ fn shown(job: &mut Job, f: &Fail) -> String {
         }
         return format!("{head}{} {last}\n", f.msgid);
     }
-    let (text, _, _) = job.describe_message(&f.msgid, "QCPFMSG", "*LIBL", &f.data);
+    let (text, _, _) = job.describe_message(&f.msgid, sysapi::param::file_of(&f.msgid), "*LIBL", &f.data);
     format!("{} {}\n", f.msgid, text.trim_end())
 }
 
@@ -657,7 +657,7 @@ pub(crate) fn log(job: &mut Job, msgid: &str, data: &[u8], kind: MsgType, text: 
         let t = t.trim_end();
         t.strip_prefix(msgid).map_or(t, str::trim_start).to_string()
     });
-    job.log_external_with(msgid, "QCPFMSG", data, kind, text, None);
+    job.log_external_with(msgid, sysapi::param::file_of(msgid), data, kind, text, None);
 }
 
 /// The message type of a `CmdMsg` code.

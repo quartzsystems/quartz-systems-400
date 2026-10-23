@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! Source types: how each one is edited (first column shown, upper
-//! case), checked (the analyzer, the DDS compilers, a hook for RPG) and
+//! case), checked (the analyzer, the DDS compilers, the RPG front end) and
 //! prompted, and the format lines and prompt layouts of the fixed-form
 //! specifications, as column tables. The tables are the compatibility
 //! interface: the columns are IBM's; the ruler words name the columns.
@@ -17,7 +17,7 @@ pub enum Family {
     Cmd,
     /// DDS (`PF`, `LF`, `DSPF`, `PRTF`, `ICFF`).
     Dds,
-    /// RPG IV (`RPGLE`, `SQLRPGLE`).
+    /// RPG IV (`RPGLE`, `SQLRPGLE`, `RPGLEINC`).
     RpgIle,
     /// RPG III (`RPG`, `SQLRPG`, `RPG38`).
     Rpg,
@@ -41,7 +41,8 @@ pub enum Checker {
     Cl,
     /// The DDS compiler of the file type.
     Dds,
-    /// RPG: a hook with no checker behind it yet.
+    /// RPG IV: the compiler's front end over the member (RPG III
+    /// has none yet).
     Rpg,
     /// None.
     None,
@@ -57,7 +58,7 @@ impl SourceType {
             "CMD" | "CMD38" => Family::Cmd,
             "PF" | "LF" | "DSPF" | "PRTF" | "ICFF" | "BSCF" | "MXDF" | "PF38" | "LF38"
             | "DSPF38" | "PRTF38" => Family::Dds,
-            "RPGLE" | "SQLRPGLE" => Family::RpgIle,
+            "RPGLE" | "SQLRPGLE" | "RPGLEINC" => Family::RpgIle,
             "RPG" | "SQLRPG" | "RPG38" | "RPT" | "RPT38" => Family::Rpg,
             _ => Family::Other,
         };
@@ -99,8 +100,8 @@ impl SourceType {
         match self.family {
             Family::Cl | Family::Cmd => Checker::Cl,
             Family::Dds => Checker::Dds,
-            Family::Rpg | Family::RpgIle => Checker::Rpg,
-            Family::Other => Checker::None,
+            Family::RpgIle => Checker::Rpg,
+            Family::Rpg | Family::Other => Checker::None,
         }
     }
 

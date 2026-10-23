@@ -84,7 +84,7 @@ pub mod ids {
     pub const BLOCK_MISMATCH: &str = "RNF5034";
     /// A name continued with `...` has no continuation.
     pub const NAME_CONTINUATION: &str = "RNF0280";
-    /// The comment entry on a free-form specification is not valid.
+    /// Text in the comment columns of a free-form line.
     pub const FREE_COMMENT: &str = "RNF5501";
     /// Something follows a free-form statement on its line.
     pub const AFTER_STATEMENT: &str = "RNF5508";

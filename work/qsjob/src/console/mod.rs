@@ -250,7 +250,8 @@ impl Console {
                 self.refresh_libl();
             }
             "CHGJOB" => self.host.attrs_changed(),
-            "UPDPGM" | "CRTPGM" | "CRTSRVPGM" | "CRTBNDCL" | "CRTCLPGM" | "DLTPGM" => {
+            "UPDPGM" | "CRTPGM" | "CRTSRVPGM" | "CRTBNDCL" | "CRTCLPGM" | "CRTBNDRPG"
+            | "CRTSQLRPGI" | "DLTPGM" => {
                 // A changed program is loaded afresh at its next call.
                 if let Some(j) = self.job.as_mut() {
                     j.act.loaded.clear();
@@ -336,6 +337,8 @@ pub fn build_job(host: &Host) -> (Box<Job>, Rc<RefCell<RemoteProvider>>) {
     let provider = Rc::new(RefCell::new(s.provider));
     let dyn_provider: Rc<RefCell<dyn sysapi::Provider>> = provider.clone();
     sysapi::install(&mut job, dyn_provider);
+    // Programs compiled from RPG call its runtime library.
+    qrpgrt::install(&mut job);
     // Domain and state are enforced at the level of this IPL.
     job.act.qsecurity = link.borrow_mut().with(Client::whoami).qsecurity;
     let ctl = host.ctl.clone();

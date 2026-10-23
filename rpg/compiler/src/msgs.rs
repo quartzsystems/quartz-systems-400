@@ -76,3 +76,10 @@ pub fn summary_text(id: &str) -> String {
         .find(|(i, _)| *i == id)
         .map_or_else(|| "Diagnostic.".to_string(), |(_, t)| t.replace("&1 ", "").replace("&1", "the item"))
 }
+
+/// Every identifier with its text (`&1` unfilled), for the check that
+/// `QRPGLEMSG` says the same (`runtime/msgf/tests/rpg_texts.rs`).
+#[must_use]
+pub fn texts() -> &'static [(&'static str, &'static str)] {
+    TEXTS
+}

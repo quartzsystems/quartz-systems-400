@@ -4,8 +4,8 @@
 
 //! Syntax checking of DDS as SEU does it: the member compiled by its
 //! type's compiler, and the first error on a record the operator just
-//! added or changed reported. CL is checked by the job's analyzer; RPG
-//! has a hook and no checker until its compiler exists.
+//! added or changed reported. CL is checked by the job's analyzer, RPG IV
+//! by the compiler's front end (`crate::rpg`).
 
 use dspf::{CompileOpts, Diagnostic, NoRefs, Severity, Source};
 
@@ -39,13 +39,6 @@ pub fn dds(srctype: &str, records: &[(u32, u32, String)], touched: &[usize]) -> 
                 .filter(|l| touched.contains(l))
                 .map(|l| (l, format!("{} {}", d.id, d.text)))
         })
-}
-
-/// RPG's checker: none yet. `TODO(phase9)`: the RPG compiler's syntax
-/// check of one specification.
-#[must_use]
-pub fn rpg(_record: &str) -> Option<String> {
-    None
 }
 
 #[cfg(test)]

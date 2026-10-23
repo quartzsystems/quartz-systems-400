@@ -3,7 +3,7 @@
 // root directory of this project.
 
 //! Message file sources: `msgs/*.toml` at build time, parsed into
-//! descriptions. The three system files are embedded here.
+//! descriptions. The system files are embedded here.
 
 use serde::Deserialize;
 
@@ -16,6 +16,10 @@ pub const QCPFMSG: &str = include_str!("../msgs/qcpfmsg.toml");
 pub const QCEEMSG: &str = include_str!("../msgs/qceemsg.toml");
 /// The source of `QSQLMSG`.
 pub const QSQLMSG: &str = include_str!("../msgs/qsqlmsg.toml");
+/// The source of `QRPGLEMSG`, the ILE RPG compiler's messages.
+pub const QRPGLEMSG: &str = include_str!("../msgs/qrpglemsg.toml");
+/// The source of `QRNXMSG`, the ILE RPG runtime's messages.
+pub const QRNXMSG: &str = include_str!("../msgs/qrnxmsg.toml");
 
 /// A message file: its name, text and descriptions.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -165,10 +169,10 @@ impl MsgToml {
     }
 }
 
-/// The three system message files, parsed from their sources.
+/// The system message files, parsed from their sources.
 #[must_use]
 pub fn builtin() -> Vec<MsgFile> {
-    [QCPFMSG, QCEEMSG, QSQLMSG]
+    [QCPFMSG, QCEEMSG, QSQLMSG, QRPGLEMSG, QRNXMSG]
         .iter()
         .map(|s| parse(s).expect("the built-in sources parse"))
         .collect()
@@ -181,7 +185,7 @@ mod tests {
     #[test]
     fn builtin_sources_parse_and_look_up() {
         let files = builtin();
-        assert_eq!(files.len(), 3);
+        assert_eq!(files.len(), 5);
         let cpf = &files[0];
         assert_eq!(cpf.name, "QCPFMSG");
         let m = cpf.find("MCH1211").unwrap();

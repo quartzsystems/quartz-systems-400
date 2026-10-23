@@ -1,0 +1,366 @@
+# QRPGLEMSG: the ILE RPG compiler's messages. RNF messages are the
+# compile diagnostics the listing prints; RNS messages end the
+# CRTBNDRPG, CRTRPGMOD and CRTSQLRPGI commands (RNS9314 is our own,
+# in a number IBM leaves unused). Every text is
+# Quartz-written; the identifiers and severities are the compatibility
+# interface. A text the compiler prints (rpg/compiler/src/msgs.rs) is
+# repeated here word for word; a test keeps the two in step.
+name = "QRPGLEMSG"
+text = "ILE RPG compiler messages"
+
+# Compile diagnostics.
+
+[[msg]]
+id = "RNF0001"
+sev = 50
+text = "The compiler could not generate the program: &1."
+help = "The code generated for the source was refused by the verifier. This is the compiler's own error, not the source's; the object was not created."
+vars = ["*CHAR 256"]
+
+[[msg]]
+id = "RNF0023"
+sev = 40
+text = "Copy member &1 was not found."
+help = "A /COPY or /INCLUDE directive names a member that is not in the file and library given, or in the library list."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0024"
+sev = 40
+text = "Copy member &1 is already being copied, or copies nest too deep."
+help = "A member copies itself, directly or through others, or the nesting passes the COPYNEST limit."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0036"
+sev = 30
+text = "A conditional group has no /ENDIF."
+help = "The member ended inside a /IF group. Add the /ENDIF that closes it."
+
+[[msg]]
+id = "RNF0037"
+sev = 30
+text = "The directive is not recognized."
+help = "A line starting with a slash in column 7 names no directive the compiler knows, or the directive is not allowed where it is."
+
+[[msg]]
+id = "RNF0039"
+sev = 30
+text = "/ELSE, /ELSEIF or /ENDIF has no matching /IF."
+help = "The directive closes or continues a conditional group that was never opened."
+
+[[msg]]
+id = "RNF0201"
+sev = 10
+text = "&1 is not valid here."
+help = "The character or entry cannot appear in this position of the specification."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0202"
+sev = 20
+text = "A parenthesis is missing."
+help = "The opening and closing parentheses of the expression or keyword do not pair up."
+
+[[msg]]
+id = "RNF0203"
+sev = 30
+text = "&1 is not a valid keyword."
+help = "The keyword is not one this specification type takes."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0257"
+sev = 30
+text = "The specification type is out of sequence or not valid."
+help = "Specifications follow the order H, F, D, I, C, O, P. The letter in column 6 is not one of them or comes after a later type."
+
+[[msg]]
+id = "RNF0263"
+sev = 20
+text = "A numeric entry is not right-aligned in its columns."
+help = "Numbers in fixed-form entries end in the last column of the entry. The entry was read as written."
+
+[[msg]]
+id = "RNF0267"
+sev = 20
+text = "A character literal has no closing apostrophe; one is assumed."
+
+[[msg]]
+id = "RNF0280"
+sev = 20
+text = "A continued name has no continuation."
+help = "A name ending in ... carries on to the next specification, which did not provide the rest of it."
+
+[[msg]]
+id = "RNF0308"
+sev = 20
+text = "The float literal is not valid."
+help = "A float literal is a mantissa, the letter E and a signed exponent, for example 1.5E-3."
+
+[[msg]]
+id = "RNF0618"
+sev = 20
+text = "The length or number of digits for &1 is not valid."
+help = "The length is outside what the data type holds, or the decimals exceed the digits."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0955"
+sev = 30
+text = "This item cannot be the target of an assignment."
+help = "Constants, literals, built-in function results and read-only parameters cannot be changed."
+
+[[msg]]
+id = "RNF2109"
+sev = 40
+text = "No external description was found for file &1."
+help = "An externally described file must exist when the source is compiled; its record formats give the fields."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF2120"
+sev = 40
+text = "&1 is defined more than once."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF2318"
+sev = 0
+text = "No overflow indicator given for the printer file; *INOA is used, with a skip to line 6 on overflow."
+
+[[msg]]
+id = "RNF3304"
+sev = 20
+text = "The data type &1 is not valid."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3313"
+sev = 20
+text = "The value of keyword &1 is not valid."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3349"
+sev = 20
+text = "&1 is not a data structure."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3431"
+sev = 20
+text = "The initial value does not fit the field."
+help = "The value of the INZ keyword is longer than the field, or has more digits than it holds."
+
+[[msg]]
+id = "RNF3530"
+sev = 0
+text = "The data structure has no subfields."
+
+[[msg]]
+id = "RNF5005"
+sev = 30
+text = "Calculations follow the subroutines."
+help = "Main calculations must come before the first BEGSR. The statement is not reached."
+
+[[msg]]
+id = "RNF5012"
+sev = 30
+text = "&1 does not match an open operation."
+help = "An ENDxx, ELSE or WHEN has no IF, DO, SELECT, FOR or MONITOR open to close or continue."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5013"
+sev = 30
+text = "Operation code &1 is not valid."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5034"
+sev = 30
+text = "A declaration group is not ended, or ended where none is open."
+help = "Each DCL-DS, DCL-PR, DCL-PI and DCL-PROC needs its END-xx, and an END-xx needs its beginning."
+
+[[msg]]
+id = "RNF5346"
+sev = 30
+text = "Operation &1 is not allowed in free form."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5347"
+sev = 30
+text = "An assignment operator is expected."
+
+[[msg]]
+id = "RNF5358"
+sev = 30
+text = "&1 is not expected here."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5377"
+sev = 20
+text = "The expression should end here."
+
+[[msg]]
+id = "RNF5410"
+sev = 30
+text = "No prototype is defined for the call to &1."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5501"
+sev = 20
+text = "Free-form specifications do not take a comment area."
+
+[[msg]]
+id = "RNF5507"
+sev = 30
+text = "The free-form statement has no ending semicolon."
+
+[[msg]]
+id = "RNF5508"
+sev = 30
+text = "Something follows the end of the free-form statement."
+help = "Only a comment may follow the semicolon that ends a statement on the same line."
+
+[[msg]]
+id = "RNF7013"
+sev = 20
+text = "The built-in function &1 is not known."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7014"
+sev = 30
+text = "The arguments of &1 are not valid."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7021"
+sev = 30
+text = "File &1 is not defined."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7023"
+sev = 40
+text = "The program has no way to end."
+help = "A cycle-main program needs *INLR or RETURN, or a primary file whose end turns on *INLR."
+
+[[msg]]
+id = "RNF7028"
+sev = 30
+text = "The operation is not valid for file &1."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7030"
+sev = 30
+text = "&1 is not defined."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7057"
+sev = 0
+text = "Half adjust has no effect: the result has no more decimals than the target."
+
+[[msg]]
+id = "RNF7404"
+sev = 20
+text = "An index or position is out of range."
+
+[[msg]]
+id = "RNF7419"
+sev = 20
+text = "An expression of this type is not allowed here."
+
+[[msg]]
+id = "RNF7421"
+sev = 30
+text = "The types of the operands do not match."
+
+[[msg]]
+id = "RNF7503"
+sev = 30
+text = "An operand of the expression is not defined."
+
+[[msg]]
+id = "RNF7504"
+sev = 30
+text = "A constant divisor is zero."
+
+[[msg]]
+id = "RNF7534"
+sev = 10
+text = "A global file of a module without a main procedure is not closed for it."
+help = "Close the file with CLOSE before the activation group ends, or declare it in a procedure."
+
+[[msg]]
+id = "RNF7535"
+sev = 30
+text = "The number of parameters for &1 does not match its prototype."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7536"
+sev = 30
+text = "A parameter does not match its prototype."
+
+[[msg]]
+id = "RNF7551"
+sev = 10
+text = "The intermediate result keeps fewer decimals than the target."
+help = "Decimal positions past those the intermediate result keeps are lost before the value is assigned."
+
+# Completion of the commands.
+
+[[msg]]
+id = "RNS9304"
+sev = 0
+text = "Program &1 created in library &2. Highest severity: &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 2", "*CHAR 8", "*CHAR 8"]
+
+[[msg]]
+id = "RNS9305"
+sev = 0
+text = "Module &1 created in library &2. Highest severity: &3."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 2", "*CHAR 8", "*CHAR 8"]
+
+[[msg]]
+id = "RNS9308"
+sev = 50
+text = "The compile of &1 in &2 stopped at severity &3."
+help = "A diagnostic of a severity above the GENLVL value was found, so no object was made. The listing shows each one."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 2"]
+
+[[msg]]
+id = "RNS9309"
+sev = 50
+text = "Module &1 was not created in library &2."
+help = "The listing shows why: diagnostics above GENLVL, OPTION(*NOGEN), or a problem storing the module."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "RNS9310"
+sev = 50
+text = "Program &1 was not created in library &2."
+help = "The listing shows why: diagnostics above GENLVL, OPTION(*NOGEN), or a problem binding or storing the program."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "RNS9311"
+sev = 50
+text = "The compile found diagnostics up to severity &1."
+help = "Read the listing for each diagnostic, fix the source and compile again."
+vars = ["*CHAR 2"]
+
+[[msg]]
+id = "RNS9314"
+sev = 50
+text = "The SQL precompiler is not available, so &1 in &2 was not created."
+help = "The source holds EXEC SQL statements, which need the precompiler. Source without embedded SQL compiles with CRTSQLRPGI as with CRTBNDRPG or CRTRPGMOD."
+vars = ["*CHAR 10", "*CHAR 10"]

@@ -152,7 +152,8 @@ pub fn dspmsgd(file: &str, d: &MsgDesc) -> String {
     out
 }
 
-/// Install `QCPFMSG`, `QCEEMSG` and `QSQLMSG` into `QSYS` when absent;
+/// Install the system message files (`QCPFMSG`, `QCEEMSG`, `QSQLMSG`,
+/// `QRPGLEMSG`, `QRNXMSG`) into `QSYS` when absent;
 /// returns the objects created.
 pub fn install_builtin(txn: &mut Txn<'_>, ctx: &Ctx, qsys: ObjectId) -> Result<Vec<ObjectId>> {
     let mut made = Vec::new();

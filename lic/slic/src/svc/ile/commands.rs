@@ -497,6 +497,8 @@ fn dspmsgd(system: &mut System, p: &Params) -> Result<String, String> {
                 match id.get(..3) {
                     Some("CEE") => "QCEEMSG",
                     Some("SQL") => "QSQLMSG",
+                    Some("RNF" | "RNS") => "QRPGLEMSG",
+                    Some("RNX" | "RNQ" | "RNI" | "RNT") => "QRNXMSG",
                     _ => "QCPFMSG",
                 }
             )

@@ -30,6 +30,38 @@ pub const PRODUCT_ID: &str = "5770SS1";
 /// The product's description.
 pub const PRODUCT_TEXT: &str = "Quartz Systems/400 Operating System";
 
+/// A licensed program option installed beside the operating system.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Product {
+    /// IBM's product identifier, so that software checking for the
+    /// product finds it.
+    pub id: &'static str,
+    /// `*BASE` or the option number.
+    pub option: &'static str,
+    /// Our description.
+    pub text: &'static str,
+    /// The library its objects are in.
+    pub lib: &'static str,
+}
+
+/// The licensed programs past the operating system, at [`RELEASE`]:
+/// the ILE RPG compiler stands where IBM's development tools product
+/// and its ILE RPG option (31) stand.
+pub const PRODUCTS: &[Product] = &[
+    Product {
+        id: "5770WDS",
+        option: "*BASE",
+        text: "Quartz Systems/400 Application Development",
+        lib: "QSYS",
+    },
+    Product {
+        id: "5770WDS",
+        option: "31",
+        text: "Quartz Systems/400 ILE RPG Compiler",
+        lib: "QSYS",
+    },
+];
+
 /// The build ID captured at compile time: `git describe --always --dirty`,
 /// or `QS400_BUILD_ID` from the environment, else `unknown`.
 pub fn build_id() -> &'static str {

@@ -5,9 +5,10 @@
 //! Message files for QS/400: message descriptions with first- and
 //! second-level text, severity, substitution variables, replies and
 //! dump lists; substitution of message data into the text; the `*MSGF`
-//! payload and its commands; and the system files `QCPFMSG`, `QCEEMSG`
-//! and `QSQLMSG`, authored in `msgs/*.toml` and installed into `QSYS`
-//! on first IPL. Every text is ours; the identifiers are IBM's.
+//! payload and its commands; and the system files `QCPFMSG`, `QCEEMSG`,
+//! `QSQLMSG`, `QRPGLEMSG` and `QRNXMSG`, authored in `msgs/*.toml` and
+//! installed into `QSYS` on first IPL. Every text is ours; the
+//! identifiers are IBM's.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]

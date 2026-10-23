@@ -14,6 +14,8 @@ display = ["dep:dspf", "dep:dds", "dep:tn5250", "dep:ccsid"]
 [dependencies]
 thiserror.workspace = true
 rpgspecs = { path = "../../rpg/specs", version = "0.1.0" }
+rpgfront = { path = "../../rpg/front", version = "0.1.0" }
+rpgc = { path = "../../rpg/compiler", version = "0.1.0" }
 dspf = { path = "../../ui/dspf", version = "0.1.0", optional = true }
 dds = { path = "../../database/dds", version = "0.1.0", optional = true }
 tn5250 = { path = "../../ui/tn5250", version = "0.1.0", optional = true }

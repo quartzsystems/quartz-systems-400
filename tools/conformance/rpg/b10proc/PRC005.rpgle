@@ -4,7 +4,6 @@
 //; setup: CRTRPGMOD MODULE({lib}/PRC005) SRCFILE({lib}/QRPGLESRC) SRCMBR(PRC005)
 //; cmd: CRTPGM PGM({lib}/PRC005) MODULE({lib}/PRC005 {lib}/PRC005D)
 //; cleanup: DLTMOD MODULE({lib}/PRC005D)
-ctl-opt dftactgrp(*no);
 dcl-f QSYSPRT printer(132);
 dcl-ds line len(132) end-ds;
 dcl-s counter int(10) import;

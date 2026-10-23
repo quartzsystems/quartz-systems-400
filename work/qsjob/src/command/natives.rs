@@ -168,7 +168,7 @@ fn escape(job: &mut Job, f: &Fail) {
     log(job, &f.msgid, &f.data, MsgType::Escape, Some(&f.text));
     let _ = job.send_message(
         &f.msgid,
-        "QCPFMSG",
+        sysapi::param::file_of(&f.msgid),
         "QSYS",
         f.data.clone(),
         MsgType::Escape,

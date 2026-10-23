@@ -40,17 +40,21 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
     })
 }
 
-/// `DSPSFWRSC`: the one licensed program, the operating system.
+/// `DSPSFWRSC`: the operating system and the licensed programs beside
+/// it, each with its English language feature.
 fn dspsfwrsc() -> String {
-    format!(
-        "Resource ID  Option  Feature  Release  Description\n{:<11}  *BASE   5050     {:<7}  {}\n{:<11}  *BASE   2924     {:<7}  {} (English)\n",
-        release::PRODUCT_ID,
-        release::RELEASE.to_string(),
-        release::PRODUCT_TEXT,
-        release::PRODUCT_ID,
-        release::RELEASE.to_string(),
-        release::PRODUCT_TEXT,
-    )
+    let rls = release::RELEASE.to_string();
+    let mut out = String::from("Resource ID  Option  Feature  Release  Description\n");
+    let base = [(release::PRODUCT_ID, "*BASE", release::PRODUCT_TEXT)];
+    let more = release::PRODUCTS.iter().map(|p| (p.id, p.option, p.text));
+    for (id, opt, text) in base.into_iter().chain(more) {
+        let _ = writeln!(out, "{id:<11}  {opt:<6}  5050     {rls:<7}  {text}");
+        let _ = writeln!(
+            out,
+            "{id:<11}  {opt:<6}  2924     {rls:<7}  {text} (English)"
+        );
+    }
+    out
 }
 
 /// `DSPPTF`: no PTF has been applied to this release.

@@ -100,10 +100,30 @@ CASES = [
     ["dcl-f QSYSPRT printer(132) usage(*input);"],
     ["dcl-f QSYSPRT printer(132);", "dcl-f QSYSPRT printer(132);"],
     ["chain 1 nofile;"],
+    # Found by batch 2 (appended, so the numbers above stay).
+    ["dcl-s a bindec(13:3);"],
+    ["dcl-s f float(8);", "dcl-s a int(10);", "a = %decpos(f);"],
+    ["dcl-s n char(10);", "dcl-s m like(n : 5);"],
+    ["dcl-ds d len(40);", "  p char(2) overlay(d : 30);", "end-ds;"],
+    ["dcl-c K *blanks;", "dcl-s c char(5);", "c = 'a' + K;"],
+    ["FIXED",
+     "     H DFTACTGRP(*NO)",
+     "     D c               S             10",
+     "      /free",
+     "        c = 'short';                                                            c = 'cut';",
+     "        *inlr = *on;",
+     "      /end-free"],
+    ["CMD", "//; cmd: CRTRPGMOD MODULE({lib}/{name}) SRCFILE({lib}/QRPGLESRC) SRCMBR({name}) OUTPUT(*PRINT)",
+     "ctl-opt dftactgrp(*no);", "dcl-s a int(10);"],
 ]
 
 for i, body in enumerate(CASES, 1):
     name = f"ERR{i:03d}"
     with open(os.path.join(OUT, name + ".rpgle"), "w", encoding="utf-8", newline="\n") as f:
-        f.write("\n".join(HEAD + body + ["*inlr = *on;"]) + "\n")
+        if body[0] == "CMD":
+            f.write("\n".join(["**FREE", "//; run: no", body[1]] + body[2:] + ["*inlr = *on;"]) + "\n")
+        elif body[0] == "FIXED":
+            f.write("\n".join(["     *; run: no"] + body[1:]) + "\n")
+        else:
+            f.write("\n".join(HEAD + body + ["*inlr = *on;"]) + "\n")
 print(len(CASES), "members")

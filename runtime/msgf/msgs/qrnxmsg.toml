@@ -1,0 +1,380 @@
+# QRNXMSG: the ILE RPG runtime's messages. RNX messages are the escapes
+# the runtime sends, the status code in the identifier's number; RNQ
+# messages are the same conditions as inquiries for an unhandled error.
+# Every text is Quartz-written; the identifiers, severities, data
+# layouts and replies are the compatibility interface
+# (tools/conformance/rpg/oracle/qrnxmsg.psv).
+name = "QRNXMSG"
+text = "ILE RPG runtime messages"
+
+# Escapes.
+
+[[msg]]
+id = "RNX0100"
+sev = 50
+text = "A string operation's start or length is outside the string."
+help = "The position or length given to %SUBST, %SCAN, %REPLACE or a similar operation reaches past the end of the string or is below 1."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "RNX0101"
+sev = 50
+text = "The square root of a negative number was asked for."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "RNX0102"
+sev = 50
+text = "A number was divided by zero."
+help = "The divisor of a DIV operation, a / in an expression or %DIV and %REM was zero."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "RNX0103"
+sev = 99
+text = "The result is too big for the field that receives it."
+help = "The integer part of the value has more digits than the target holds."
+
+[[msg]]
+id = "RNX0104"
+sev = 99
+text = "A float value is too small to hold."
+help = "The result is nearer to zero than the float type can represent."
+
+[[msg]]
+id = "RNX0105"
+sev = 99
+text = "A character value cannot be read as a number."
+help = "%DEC, %INT, %UNS, %FLOAT and similar functions found characters that are not part of a number."
+
+[[msg]]
+id = "RNX0112"
+sev = 50
+text = "A date, time or timestamp value is not valid."
+
+[[msg]]
+id = "RNX0113"
+sev = 50
+text = "A date operation went past the dates the format holds."
+
+[[msg]]
+id = "RNX0114"
+sev = 99
+text = "A date or time could not be mapped to the format asked for."
+
+[[msg]]
+id = "RNX0115"
+sev = 50
+text = "A variable-length field holds a length that is not valid."
+help = "The length prefix is larger than the field's declared length."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "RNX0120"
+sev = 99
+text = "A table or array is not in its declared sequence."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*CHAR 10"]
+
+[[msg]]
+id = "RNX0121"
+sev = 50
+text = "An array index is outside the array."
+help = "The index is zero, negative or larger than the number of elements."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*CHAR 10"]
+
+[[msg]]
+id = "RNX0122"
+sev = 50
+text = "The OCCUR value is outside the data structure's occurrences."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "RNX0123"
+sev = 50
+text = "RESET was used while the program was still initializing."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "RNX0299"
+sev = 50
+text = "The RPG formatted dump could not be made."
+
+[[msg]]
+id = "RNX0333"
+sev = 50
+text = "The DSPLY operation failed."
+
+[[msg]]
+id = "RNX1011"
+sev = 99
+text = "A record of a type the program does not describe was read."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
+
+[[msg]]
+id = "RNX1211"
+sev = 99
+text = "An operation was tried on a file that is not open."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33", "*CHAR 5", "*CHAR 10", "*CHAR 2", "*CHAR 2", "*CHAR 10"]
+
+[[msg]]
+id = "RNX1216"
+sev = 99
+text = "A file could not be opened or closed by the cycle."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33", "*CHAR 5", "*CHAR 10", "*CHAR 2", "*CHAR 2", "*CHAR 10"]
+
+[[msg]]
+id = "RNX1217"
+sev = 99
+text = "A file could not be opened or closed by the OPEN or CLOSE operation."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33", "*CHAR 5", "*CHAR 10", "*CHAR 2", "*CHAR 2", "*CHAR 10"]
+
+[[msg]]
+id = "RNX1218"
+sev = 99
+text = "The record is locked by another job."
+help = "The record could not be allocated in the file's wait time."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
+
+[[msg]]
+id = "RNX1221"
+sev = 99
+text = "An update or delete was tried without a record read first."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
+
+[[msg]]
+id = "RNX1222"
+sev = 99
+text = "The record cannot be allocated: a constraint refused it."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
+
+[[msg]]
+id = "RNX1299"
+sev = 99
+text = "An input or output operation failed."
+help = "The file operation ended with an error the program did not handle."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33", "*CHAR 5", "*CHAR 10", "*CHAR 2", "*CHAR 2", "*CHAR 10"]
+
+[[msg]]
+id = "RNX9001"
+sev = 50
+text = "An RPG procedure failed."
+help = "The RPG runtime stopped the procedure; the earlier messages in the job log tell why."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*CHAR 5"]
+
+# Inquiries: C cancels, D dumps and cancels, F dumps all and cancels,
+# G goes on, R tries again, S takes a system dump.
+
+[[msg]]
+id = "RNQ0100"
+sev = 99
+text = "A string operation's start or length is outside the string."
+help = "The position or length given to %SUBST, %SCAN, %REPLACE or a similar operation reaches past the end of the string or is below 1."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ0101"
+sev = 99
+text = "The square root of a negative number was asked for."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ0102"
+sev = 99
+text = "A number was divided by zero."
+help = "The divisor of a DIV operation, a / in an expression or %DIV and %REM was zero."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ0103"
+sev = 99
+text = "The result is too big for the field that receives it."
+help = "The integer part of the value has more digits than the target holds."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "F", "C", "G"] }
+
+[[msg]]
+id = "RNQ0104"
+sev = 99
+text = "A float value is too small to hold."
+help = "The result is nearer to zero than the float type can represent."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "F", "C", "G"] }
+
+[[msg]]
+id = "RNQ0105"
+sev = 99
+text = "A character value cannot be read as a number."
+help = "%DEC, %INT, %UNS, %FLOAT and similar functions found characters that are not part of a number."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "F", "C", "G"] }
+
+[[msg]]
+id = "RNQ0112"
+sev = 99
+text = "A date, time or timestamp value is not valid."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "F", "C", "G"] }
+
+[[msg]]
+id = "RNQ0113"
+sev = 99
+text = "A date operation went past the dates the format holds."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "F", "C", "G"] }
+
+[[msg]]
+id = "RNQ0114"
+sev = 99
+text = "A date or time could not be mapped to the format asked for."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "F", "C", "G"] }
+
+[[msg]]
+id = "RNQ0115"
+sev = 99
+text = "A variable-length field holds a length that is not valid."
+help = "The length prefix is larger than the field's declared length."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ0120"
+sev = 99
+text = "A table or array is not in its declared sequence."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "C", "F"] }
+
+[[msg]]
+id = "RNQ0121"
+sev = 99
+text = "An array index is outside the array."
+help = "The index is zero, negative or larger than the number of elements."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ0122"
+sev = 99
+text = "The OCCUR value is outside the data structure's occurrences."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ0123"
+sev = 99
+text = "RESET was used while the program was still initializing."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "C", "F"] }
+
+[[msg]]
+id = "RNQ0202"
+sev = 99
+text = "A called program or procedure ended in error."
+help = "The callee sent an escape message the caller did not handle. The earlier messages in the job log tell why."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*CHAR 256"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ0211"
+sev = 99
+text = "A program or procedure could not be called."
+help = "The program or procedure was not found, could not be loaded, or the caller is not allowed to use it."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*CHAR 256"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ0222"
+sev = 99
+text = "A pointer or parameter is not valid."
+help = "A pointer was null or pointed to storage that no longer exists, or a parameter was not passed."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ0231"
+sev = 99
+text = "A called program returned with a halt indicator on."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*CHAR 256"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ0299"
+sev = 99
+text = "The RPG formatted dump could not be made."
+reply = { default = "C", valid = ["C", "S"] }
+
+[[msg]]
+id = "RNQ0333"
+sev = 99
+text = "The DSPLY operation failed."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ0907"
+sev = 99
+text = "Decimal data is not valid."
+help = "A packed or zoned field holds bytes that are not digits and a sign."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ1011"
+sev = 99
+text = "A record of a type the program does not describe was read."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ1211"
+sev = 99
+text = "An operation was tried on a file that is not open."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33", "*CHAR 5", "*CHAR 10", "*CHAR 2", "*CHAR 2", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ1216"
+sev = 99
+text = "A file could not be opened or closed by the cycle."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33", "*CHAR 5", "*CHAR 10", "*CHAR 2", "*CHAR 2", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "F", "C"] }
+
+[[msg]]
+id = "RNQ1217"
+sev = 99
+text = "A file could not be opened or closed by the OPEN or CLOSE operation."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33", "*CHAR 5", "*CHAR 10", "*CHAR 2", "*CHAR 2", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ1218"
+sev = 99
+text = "The record is locked by another job."
+help = "The record could not be allocated in the file's wait time."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
+reply = { default = "C", valid = ["R", "D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ1221"
+sev = 99
+text = "An update or delete was tried without a record read first."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ1222"
+sev = 99
+text = "The record cannot be allocated: a constraint refused it."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
+reply = { default = "C", valid = ["R", "D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ1299"
+sev = 99
+text = "An input or output operation failed."
+help = "The file operation ended with an error the program did not handle."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33", "*CHAR 5", "*CHAR 10", "*CHAR 2", "*CHAR 2", "*CHAR 10"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }

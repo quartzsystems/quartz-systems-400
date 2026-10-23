@@ -408,9 +408,9 @@ pub fn module(
     (out, g.diags)
 }
 
-/// An exported field's literal `INZ` as a static initializer, so the
-/// value is there when another module reads it before any call.
-fn static_inz(s: &crate::syms::Sym) -> String {
+/// A field's literal `INZ` as a static initializer: an exported field's
+/// value is there before any call, a local static's from the first.
+pub fn static_inz(s: &crate::syms::Sym) -> String {
     use rpgfront::ast::Lit;
     if s.dim > 0 || !matches!(s.kind, Some(Kind::Field)) {
         return String::new();
@@ -426,6 +426,7 @@ fn static_inz(s: &crate::syms::Sym) -> String {
         (Some(Some(Expr::Lit(Lit::Char(c), _))), Ty::Char(len)) if c.chars().count() <= *len as usize => {
             format!(" inz({})", emit::quote(c))
         }
+        (Some(Some(Expr::Special { word, .. })), Ty::Ind) if word == "*ON" => " inz(*ON)".to_string(),
         _ => String::new(),
     }
 }

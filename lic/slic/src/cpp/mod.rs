@@ -17,6 +17,7 @@ mod dbcmd;
 mod direct;
 mod msgfcmd;
 mod objcmd;
+mod rpg;
 mod sysinfo;
 mod uicmd;
 

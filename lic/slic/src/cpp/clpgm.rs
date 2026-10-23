@@ -210,7 +210,7 @@ fn definitions(system: &mut System, source: &str) -> Result<MemSource, String> {
 }
 
 /// The library an object goes to, by name: `*CURLIB` resolved.
-fn target_library(system: &mut System, lib: &str) -> Result<String, String> {
+pub(super) fn target_library(system: &mut System, lib: &str) -> Result<String, String> {
     if !lib.is_empty() && lib != "*CURLIB" && lib != "*LIBL" {
         return Ok(lib.to_string());
     }
@@ -486,7 +486,7 @@ fn rtvclsrc(system: &mut System, parms: &Parms) -> CmdReply {
 }
 
 /// An escape from the last line of what went wrong.
-fn failed(name: &str, e: &str) -> CmdReply {
+pub(super) fn failed(name: &str, e: &str) -> CmdReply {
     let last = e.lines().last().unwrap_or("").trim();
     let id = super::leading_msgid(last).unwrap_or("CPF0006").to_string();
     let detail = e.trim().strip_prefix(&id).unwrap_or(e.trim()).trim();

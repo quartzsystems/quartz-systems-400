@@ -29,6 +29,7 @@ pub mod exit;
 pub mod find;
 pub mod line;
 pub mod prompt;
+pub mod rpg;
 pub mod session;
 pub mod srctype;
 

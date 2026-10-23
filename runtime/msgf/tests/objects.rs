@@ -87,7 +87,7 @@ fn system_files_install_once_and_resolve() {
     let (mut store, qsys, lib) = open_new();
     let mut t = store.begin().unwrap();
     let made = install_builtin(&mut t, &ctx(), qsys).unwrap();
-    assert_eq!(made.len(), 3);
+    assert_eq!(made.len(), 5);
     assert!(install_builtin(&mut t, &ctx(), qsys).unwrap().is_empty());
     let names = NameContext {
         curlib: Some(lib),

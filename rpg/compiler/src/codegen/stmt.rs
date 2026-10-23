@@ -1854,6 +1854,8 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
         let ty = g.t.ir_storage(&s);
         match &s.storage {
             Storage::Auto => g.b.decls.push(format!("auto {}: {ty}", s.ir)),
+            // Kept between calls: initialized once, from a literal INZ.
+            Storage::Static => g.b.decls.push(format!("static {}: {ty}{}", s.ir, crate::codegen::static_inz(&s))),
             Storage::Based(ptr) => g.b.decls.push(format!("based {}: {ty} on {}", s.ir, g.t.syms[*ptr].ir)),
             _ => {}
         }

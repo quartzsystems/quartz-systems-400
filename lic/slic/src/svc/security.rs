@@ -82,6 +82,19 @@ pub fn in_store<T>(
 
 /// Print `lines` as spooled file `file` of the running job.
 pub fn print(system: &mut System, file: &str, lines: &[String]) -> Result<String, String> {
+    print_as(system, file, file, lines, false)
+}
+
+/// Print `lines` through `QSYSPRT` as spooled file `file` with user
+/// data `usrdta`; with `fcfc` each line's first character is its forms
+/// control (a compile listing).
+pub fn print_as(
+    system: &mut System,
+    file: &str,
+    usrdta: &str,
+    lines: &[String],
+    fcfc: bool,
+) -> Result<String, String> {
     let prtf = crate::stgsvc::prtf::resolve(system, "QSYS/QSYSPRT", &[]).unwrap_or_default();
     let fmt = PageFormat {
         len: prtf.page_len,
@@ -93,14 +106,23 @@ pub fn print(system: &mut System, file: &str, lines: &[String]) -> Result<String
     };
     let mut p = Printer::new(fmt);
     for l in lines {
-        p.write_str(l, Control::line());
+        let mut chars = l.chars();
+        match chars.next().filter(|_| fcfc) {
+            Some(c) => {
+                let ctl = Control::fcfc(c, fmt.ovrflw).unwrap_or_else(Control::line);
+                p.write_str(chars.as_str(), ctl);
+            }
+            None => {
+                p.write_str(l, Control::line());
+            }
+        }
     }
     let me = system.current_job;
     let job = crate::stgsvc::msgs::sender(system, me);
     let attrs = SplfAttrs {
         name: file.into(),
         job: job.clone(),
-        usrdta: file.into(),
+        usrdta: usrdta.into(),
         schedule: Schedule::FileEnd,
         copies: 1,
         outpty: 5,

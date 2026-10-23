@@ -1,0 +1,24 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+line = %char(viaptr(5));
+write QSYSPRT line;
+*inlr = *on;
+dcl-proc viaptr;
+  dcl-pi *n int(10);
+    n int(10) value;
+  end-pi;
+  dcl-pr target int(10) extproc(pt);
+    x int(10) value;
+  end-pr;
+  dcl-s pt pointer(*proc) static;
+  pt = %paddr(triple);
+  return target(n);
+end-proc;
+dcl-proc triple;
+  dcl-pi *n int(10);
+    x int(10) value;
+  end-pi;
+  return x * 3;
+end-proc;

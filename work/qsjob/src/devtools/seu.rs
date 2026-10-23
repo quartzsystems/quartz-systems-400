@@ -316,11 +316,11 @@ pub(crate) fn check(ctx: &mut Ctx<'_>, s: &mut Session) {
             }
         }
         Checker::Rpg => {
-            for (id, i) in touched {
-                if let Some(msg) = seu::display::check::rpg(&s.buf.records()[i].data) {
-                    s.syntax_error(id, &msg);
-                    return;
-                }
+            let recs = s.records();
+            let idx: Vec<usize> = touched.iter().map(|(_, i)| *i).collect();
+            if let Some((i, msg)) = seu::rpg::check(&recs, &idx) {
+                let id = s.buf.records()[i].id;
+                s.syntax_error(id, &msg);
             }
         }
         Checker::None => {}

@@ -6,7 +6,6 @@
 //; cmd: CRTPGM PGM({lib}/PRC003) MODULE({lib}/PRC003) BNDSRVPGM({lib}/PRC003S)
 //; cleanup: DLTSRVPGM SRVPGM({lib}/PRC003S)
 //; cleanup: DLTMOD MODULE({lib}/PRC003S)
-ctl-opt dftactgrp(*no);
 dcl-f QSYSPRT printer(132);
 dcl-ds line len(132) end-ds;
 dcl-pr greet varchar(30);

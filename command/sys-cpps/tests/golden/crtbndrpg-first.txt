@@ -1,0 +1,24 @@
+                      Create Bound RPG Program (CRTBNDRPG)                      
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Program  . . . . . . . . . . . . > HELLO         Name                          
+   Library  . . . . . . . . . . .     QGPL          Name, *CURLIB               
+ Source file  . . . . . . . . . .   QRPGLESRC     Name                          
+   Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
+ Source member  . . . . . . . . .   *PGM          Name, *PGM                    
+ Source stream file . . . . . . .                                               
+ Severity that stops creation . .   10            0-20                          
+ Description  . . . . . . . . . .   *SRCMBRTXT                                  
+ Default activation group . . . .   *YES          *YES, *NO                     
+ Activation group . . . . . . . .   *STGMDL       Name, *STGMDL, *NEW, *CALLER  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               

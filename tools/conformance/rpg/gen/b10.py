@@ -139,7 +139,6 @@ M["PRC003"] = [
     "//; cmd: CRTPGM PGM({lib}/PRC003) MODULE({lib}/PRC003) BNDSRVPGM({lib}/PRC003S)",
     "//; cleanup: DLTSRVPGM SRVPGM({lib}/PRC003S)",
     "//; cleanup: DLTMOD MODULE({lib}/PRC003S)",
-    "ctl-opt dftactgrp(*no);",
     "dcl-f QSYSPRT printer(132);",
     "dcl-ds line len(132) end-ds;",
     "dcl-pr greet varchar(30);",
@@ -189,7 +188,6 @@ M["PRC005"] = [
     "//; setup: CRTRPGMOD MODULE({lib}/PRC005) SRCFILE({lib}/QRPGLESRC) SRCMBR(PRC005)",
     "//; cmd: CRTPGM PGM({lib}/PRC005) MODULE({lib}/PRC005 {lib}/PRC005D)",
     "//; cleanup: DLTMOD MODULE({lib}/PRC005D)",
-    "ctl-opt dftactgrp(*no);",
     "dcl-f QSYSPRT printer(132);",
     "dcl-ds line len(132) end-ds;",
     "dcl-s counter int(10) import;",
@@ -245,6 +243,28 @@ M["PRC007"] = HEAD + [
     "    b int(10) value;",
     "  end-pi;",
     "  return a * b;",
+    "end-proc;",
+]
+
+# A procedure pointer local to a procedure, with its prototype there.
+M["PRC008"] = HEAD + p("%char(viaptr(5))") + [
+    "*inlr = *on;",
+    "dcl-proc viaptr;",
+    "  dcl-pi *n int(10);",
+    "    n int(10) value;",
+    "  end-pi;",
+    "  dcl-pr target int(10) extproc(pt);",
+    "    x int(10) value;",
+    "  end-pr;",
+    "  dcl-s pt pointer(*proc) static;",
+    "  pt = %paddr(triple);",
+    "  return target(n);",
+    "end-proc;",
+    "dcl-proc triple;",
+    "  dcl-pi *n int(10);",
+    "    x int(10) value;",
+    "  end-pi;",
+    "  return x * 3;",
     "end-proc;",
 ]
 

@@ -15,6 +15,7 @@ wm = { path = "../../work/wm", version = "0.1.0" }
 mi = { path = "../../runtime/mi", version = "0.1.0" }
 ile = { path = "../../runtime/ile", version = "0.1.0" }
 sysapi = { path = "../../runtime/sysapi", version = "0.1.0" }
+qrpgrt = { path = "../../rpg/qrpgrt", version = "0.1.0" }
 msgf = { path = "../../runtime/msgf", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }

@@ -3,8 +3,8 @@
 // root directory of this project.
 
 //! Options 14 (compile) and 15 (create module): the command for a
-//! member's source type, in batch when the defaults say so. RPG, COBOL
-//! and C types are known and refused until their compilers exist.
+//! member's source type, in batch when the defaults say so. RPG III,
+//! COBOL and C types are known and refused until their compilers exist.
 
 use crate::PdmError;
 use crate::subst::{Context, Item, substitute};
@@ -37,8 +37,10 @@ pub fn compiler(srctype: &str) -> Option<Compiler> {
             "CRTPNLGRP PNLGRP(&O/&N) SRCFILE(&L/&F) SRCMBR(&N) REPLACE(&R)",
             "CRTMNU MENU(&O/&N) TYPE(*UIM) PNLGRP(&O/&N) REPLACE(&R)",
         ]),
-        "RPGLE" => NotInstalled("CRTBNDRPG"),
-        "SQLRPGLE" => NotInstalled("CRTSQLRPGI"),
+        "RPGLE" => Cmds(&["CRTBNDRPG PGM(&O/&N) SRCFILE(&L/&F) SRCMBR(&N) REPLACE(&R)"]),
+        "SQLRPGLE" => {
+            Cmds(&["CRTSQLRPGI OBJ(&O/&N) SRCFILE(&L/&F) SRCMBR(&N) OBJTYPE(*PGM) REPLACE(&R)"])
+        }
         "RPG" | "RPT" | "RPG38" | "RPT38" => NotInstalled("CRTRPGPGM"),
         "SQLRPG" => NotInstalled("CRTSQLRPG"),
         "CBLLE" => NotInstalled("CRTBNDCBL"),
@@ -57,8 +59,10 @@ pub fn module_compiler(srctype: &str) -> Option<Compiler> {
     use Compiler::{Cmds, NotInstalled};
     Some(match srctype.trim().to_ascii_uppercase().as_str() {
         "CLLE" => Cmds(&["CRTCLMOD MODULE(&O/&N) SRCFILE(&L/&F) SRCMBR(&N) REPLACE(&R)"]),
-        "RPGLE" => NotInstalled("CRTRPGMOD"),
-        "SQLRPGLE" => NotInstalled("CRTSQLRPGI"),
+        "RPGLE" => Cmds(&["CRTRPGMOD MODULE(&O/&N) SRCFILE(&L/&F) SRCMBR(&N) REPLACE(&R)"]),
+        "SQLRPGLE" => {
+            Cmds(&["CRTSQLRPGI OBJ(&O/&N) SRCFILE(&L/&F) SRCMBR(&N) OBJTYPE(*MODULE) REPLACE(&R)"])
+        }
         "CBLLE" => NotInstalled("CRTCBLMOD"),
         "SQLCBLLE" => NotInstalled("CRTSQLCBLI"),
         "C" => NotInstalled("CRTCMOD"),
@@ -157,9 +161,22 @@ mod tests {
         );
         assert_eq!(commands(&member("MENU"), &ctx, false).unwrap().len(), 2);
         assert_eq!(
-            commands(&member("RPGLE"), &ctx, false),
-            Err(PdmError::NotInstalled("RPGLE".into()))
+            commands(&member("rpgle"), &ctx, false).unwrap(),
+            ["CRTBNDRPG PGM(OBJ/M1) SRCFILE(SRC/QSRC) SRCMBR(M1) REPLACE(*NO)"]
         );
+        assert_eq!(
+            commands(&member("SQLRPGLE"), &ctx, false).unwrap(),
+            ["CRTSQLRPGI OBJ(OBJ/M1) SRCFILE(SRC/QSRC) SRCMBR(M1) OBJTYPE(*PGM) REPLACE(*NO)"]
+        );
+        assert_eq!(
+            commands(&member("RPG"), &ctx, false),
+            Err(PdmError::NotInstalled("RPG".into()))
+        );
+        // A copy member compiles only where it is copied.
+        assert!(matches!(
+            commands(&member("RPGLEINC"), &ctx, false),
+            Err(PdmError::NotForType { .. })
+        ));
         assert!(matches!(
             commands(&member("TXT"), &ctx, false),
             Err(PdmError::NotForType { .. })
@@ -167,6 +184,14 @@ mod tests {
         assert_eq!(
             commands(&member("CLLE"), &ctx, true).unwrap(),
             ["CRTCLMOD MODULE(OBJ/M1) SRCFILE(SRC/QSRC) SRCMBR(M1) REPLACE(*NO)"]
+        );
+        assert_eq!(
+            commands(&member("RPGLE"), &ctx, true).unwrap(),
+            ["CRTRPGMOD MODULE(OBJ/M1) SRCFILE(SRC/QSRC) SRCMBR(M1) REPLACE(*NO)"]
+        );
+        assert_eq!(
+            commands(&member("SQLRPGLE"), &ctx, true).unwrap(),
+            ["CRTSQLRPGI OBJ(OBJ/M1) SRCFILE(SRC/QSRC) SRCMBR(M1) OBJTYPE(*MODULE) REPLACE(*NO)"]
         );
         assert!(commands(&member("PF"), &ctx, true).is_err());
     }

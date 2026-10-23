@@ -756,6 +756,18 @@ impl Gen<'_> {
         let v = self.expr(e, Want::default())?;
         let v = if matches!(prm.ty, Ty::Ds(_)) { v } else { self.as_chars(&v) };
         let same = v.ty == prm.ty && v.dim == prm.dim;
+        // OPTIONS(*STRING): text passes as the address of a copy ended
+        // by a null byte.
+        if prm.string && prm.ty == Ty::Ptr && v.ty.is_string() {
+            let max = v.ty.str_len().unwrap_or(1) + 1;
+            let t = self.tmp(&Ty::VarChar(max, 2));
+            self.b.ins(format!("str.cat {}, {}, x\"00\"", t.op, v.op));
+            let a = self.b.reg();
+            self.b.ins(format!("{a} = addr {}", t.op));
+            let r = self.b.reg();
+            self.b.ins(format!("{r} = ptradd {a}, 2"));
+            return Some(r);
+        }
         if prm.value || prm.konst {
             // Converted into a temporary of the parameter's type, unless
             // it is already a place of that type.
