@@ -59,13 +59,41 @@ pub enum SignOnError {
     Expired,
     /// The new password breaks a rule.
     #[error("new password is not valid: {0}")]
-    BadPassword(&'static str),
+    BadPassword(String),
     /// The user exists already.
     #[error("service tools user ID already exists")]
     Exists,
     /// The last user with the user ID privilege cannot lose it.
     #[error("the last user ID that can manage user IDs cannot be removed")]
     LastAdministrator,
+}
+
+impl SignOnError {
+    /// A number for the variant, for a message between processes.
+    #[must_use]
+    pub fn code(&self) -> u8 {
+        match self {
+            Self::NotCorrect => 0,
+            Self::Disabled => 1,
+            Self::Expired => 2,
+            Self::BadPassword(_) => 3,
+            Self::Exists => 4,
+            Self::LastAdministrator => 5,
+        }
+    }
+
+    /// The variant for a code and the reason of a bad password.
+    #[must_use]
+    pub fn from_code(code: u8, why: String) -> Self {
+        match code {
+            1 => Self::Disabled,
+            2 => Self::Expired,
+            3 => Self::BadPassword(why),
+            4 => Self::Exists,
+            5 => Self::LastAdministrator,
+            _ => Self::NotCorrect,
+        }
+    }
 }
 
 /// Every user.
@@ -96,13 +124,13 @@ pub fn verify_password(hash: &str, password: &str) -> bool {
 
 fn valid_password(p: &str) -> Result<(), SignOnError> {
     if p.is_empty() {
-        return Err(SignOnError::BadPassword("empty"));
+        return Err(SignOnError::BadPassword("empty".into()));
     }
     if p.len() > PASSWORD_LEN {
-        return Err(SignOnError::BadPassword("longer than 128 characters"));
+        return Err(SignOnError::BadPassword("longer than 128 characters".into()));
     }
     if p.chars().any(char::is_control) {
-        return Err(SignOnError::BadPassword("control characters"));
+        return Err(SignOnError::BadPassword("control characters".into()));
     }
     Ok(())
 }
@@ -157,6 +185,17 @@ impl UserDb {
             });
         }
         db
+    }
+
+    /// The same users with no password hashes: what a display needs,
+    /// for a process that has no business holding the hashes.
+    #[must_use]
+    pub fn without_hashes(&self) -> Self {
+        let mut users = self.users.clone();
+        for u in &mut users {
+            u.hash.clear();
+        }
+        Self { users }
     }
 
     /// The users, in creation order.
@@ -222,7 +261,7 @@ impl UserDb {
             return Err(SignOnError::NotCorrect);
         }
         if old == new {
-            return Err(SignOnError::BadPassword("same as the old password"));
+            return Err(SignOnError::BadPassword("same as the old password".into()));
         }
         u.hash = hash_password(new, salt);
         u.expired = false;
@@ -247,7 +286,7 @@ impl UserDb {
             || !name.bytes().all(|b| b.is_ascii_alphanumeric())
         {
             return Err(SignOnError::BadPassword(
-                "user ID must be 1 to 10 letters or digits",
+                "user ID must be 1 to 10 letters or digits".into(),
             ));
         }
         valid_password(password)?;

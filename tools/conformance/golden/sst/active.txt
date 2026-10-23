@@ -1,0 +1,24 @@
+                         Work with Active Service Tools                         
+                                                                 System:  QS400 
+                                                                                
+ Service tool                        Started by                                 
+ System service tools (SST)          Local console (display and keyboard)       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+    Press Enter to continue.                                             Bottom 
+ F3=Exit   F7=Previous page   F8=Next page   F12=Cancel                         
+                                                                                

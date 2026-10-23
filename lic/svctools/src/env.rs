@@ -13,7 +13,8 @@ use console::Screen;
 use crate::dst::console_mode::ConsoleMode;
 use crate::install::lic::LicEvent;
 use crate::install::options::{IplOptions, MajorOptions};
-use crate::users::UserDb;
+use crate::dst::signon::message;
+use crate::users::{Privilege, SignOnError, UserDb};
 
 /// A configured disk unit, as the disk configuration displays show it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -103,6 +104,63 @@ pub struct SecurityFlags {
     pub allow_add_certificates: bool,
 }
 
+/// A change to the service tools user IDs.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum UserChange {
+    /// A new user with an expired password and no privileges.
+    Create {
+        /// Name.
+        name: String,
+        /// Password.
+        password: String,
+        /// Description.
+        text: String,
+    },
+    /// Delete a user.
+    Delete {
+        /// Name.
+        name: String,
+    },
+    /// Enable or disable a user.
+    Enable {
+        /// Name.
+        name: String,
+        /// Enable it.
+        enable: bool,
+    },
+    /// Replace a user's privileges.
+    Privileges {
+        /// Name.
+        name: String,
+        /// The new set.
+        privileges: Privilege,
+    },
+    /// A new, expired password.
+    Reset {
+        /// Name.
+        name: String,
+        /// Password.
+        password: String,
+    },
+}
+
+impl UserChange {
+    /// Apply the change to `db`.
+    pub fn apply(&self, db: &mut UserDb, now: u64, salt: [u8; 16]) -> Result<(), SignOnError> {
+        match self {
+            Self::Create {
+                name,
+                password,
+                text,
+            } => db.create(name, password, Privilege::NONE, text, now, salt),
+            Self::Delete { name } => db.delete(name),
+            Self::Enable { name, enable } => db.set_enabled(name, *enable),
+            Self::Privileges { name, privileges } => db.set_privileges(name, *privileges),
+            Self::Reset { name, password } => db.reset_password(name, password, now, salt),
+        }
+    }
+}
+
 /// The system behind the service tools.
 pub trait DstEnv {
     /// The system name for the top line.
@@ -124,6 +182,58 @@ pub trait DstEnv {
     /// Let a progress display stay up long enough to be read; the
     /// machine's pace, nothing in memory.
     fn pace(&mut self) {}
+
+    /// Whether a change to disks or user IDs shows a confirmation first
+    /// (SST does; DST changes at once where it always has).
+    fn confirm_changes(&self) -> bool {
+        false
+    }
+
+    /// Sign a service tools user on: the privileges, or why not. Every
+    /// attempt is saved (failure counts) and audited.
+    fn sign_on(&mut self, user: &str, password: &str) -> Result<Privilege, SignOnError> {
+        let result = self.users().sign_on(user, password).map(|u| u.privileges);
+        // Failure counts and disables are durable.
+        let _ = self.save_users();
+        match &result {
+            Ok(_) => self.audit("ST", "DS", user),
+            Err(SignOnError::NotCorrect) => self.audit("PW", "X", user),
+            Err(_) => {}
+        }
+        result
+    }
+
+    /// Change an expired password; the user's privileges once done, or
+    /// the message text of a refusal.
+    fn change_password(&mut self, user: &str, old: &str, new: &str) -> Result<Privilege, String> {
+        let now = self.now();
+        let salt = self.random();
+        self.users()
+            .change_password(user, old, new, now, salt)
+            .map_err(|e| message(&e))?;
+        self.save_users()
+            .map_err(|e| format!("Password changed but not saved: {e}"))?;
+        Ok(self
+            .users()
+            .get(user)
+            .map(|u| u.privileges)
+            .unwrap_or_default())
+    }
+
+    /// Change the user IDs and make the change durable; the message
+    /// text of a refusal.
+    fn change_user(&mut self, change: &UserChange) -> Result<(), String> {
+        let now = self.now();
+        let salt = self.random();
+        change
+            .apply(self.users(), now, salt)
+            .map_err(|e| message(&e))?;
+        if let UserChange::Reset { name, .. } = change {
+            self.audit("DS", "R", name);
+        }
+        self.save_users()
+            .map_err(|e| format!("Change made but not saved: {e}"))
+    }
 
     /// The configured disk units.
     fn disk_units(&mut self) -> Vec<DiskUnit> {
@@ -328,6 +438,8 @@ pub struct MemEnv {
     pub actions: Vec<String>,
     /// Screens shown during long actions, as dumps.
     pub shown: Vec<String>,
+    /// Confirm changes first, as SST does.
+    pub confirm: bool,
     seed: u64,
 }
 
@@ -356,6 +468,9 @@ impl DstEnv for MemEnv {
     }
     fn now(&self) -> u64 {
         self.time
+    }
+    fn confirm_changes(&self) -> bool {
+        self.confirm
     }
     fn random(&mut self) -> [u8; 16] {
         let mut out = [0u8; 16];

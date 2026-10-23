@@ -6,6 +6,7 @@
 
 use console::Screen;
 
+use crate::dst::common::guarded;
 use crate::env::{DstEnv, SecurityFlags};
 use crate::panel::{Flow, Panel};
 use crate::ui::{self, FormLine};
@@ -41,6 +42,14 @@ const LABELS: [&str; 4] = [
     "Allow new digital certificates",
     "Allow system value security changes",
     "Allow add of digital certificates",
+];
+
+/// The options in a word or two, for the confirmation.
+const SHORT: [&str; 4] = [
+    "Default password change by its user",
+    "New digital certificates",
+    "System value security changes",
+    "Add of digital certificates",
 ];
 
 fn yn(b: bool) -> &'static str {
@@ -120,10 +129,30 @@ impl Panel for Security {
             allow_sysval_security_changes: bits[2],
             allow_add_certificates: bits[3],
         };
-        match env.set_security_flags(flags) {
-            Ok(()) => Flow::Unwind(1, Some(("System security options changed".into(), false))),
-            Err(e) => Flow::Error(e),
+        if env.confirm_changes() && env.security_flags() == flags {
+            return Flow::Pop;
         }
+        let mut lines = vec!["The options will be:".to_string(), String::new()];
+        let values = [
+            flags.allow_default_password_change,
+            flags.allow_new_certificates,
+            flags.allow_sysval_security_changes,
+            flags.allow_add_certificates,
+        ];
+        for (i, (label, v)) in SHORT.iter().zip(values).enumerate() {
+            lines.push(format!("  {}. {label:<40} {}", i + 1, yn(v)));
+        }
+        guarded(
+            env,
+            "dst-security-confirm",
+            "Confirm System Security Change",
+            lines,
+            1,
+            Box::new(move |env: &mut dyn DstEnv| {
+                env.set_security_flags(flags)
+                    .map(|()| "System security options changed".to_string())
+            }),
+        )
     }
 }
 

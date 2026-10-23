@@ -1,0 +1,15 @@
+[package]
+name = "sst"
+description = "QS/400 SST: the service tools menus STRSST shows in a job, over the DST panels and their logic"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+console = { path = "../../lic/console", version = "0.1.0" }
+svctools = { path = "../../lic/svctools", version = "0.1.0" }
+uim = { path = "../../ui/uim", version = "0.1.0" }
+
+[lints]
+workspace = true

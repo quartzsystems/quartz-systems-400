@@ -220,6 +220,7 @@ impl System {
         if let Some(severity) = severity
             && let Some((part, record)) = self.lic.as_mut()
         {
+            part.refresh(record);
             record.push_pal(licpart::PalEntry {
                 time: now_unix(),
                 code: src.bytes(),

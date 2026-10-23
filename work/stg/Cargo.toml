@@ -15,6 +15,7 @@ sysapi = { path = "../../runtime/sysapi", version = "0.1.0" }
 wm = { path = "../../work/wm", version = "0.1.0" }
 sec = { path = "../../security/sec", version = "0.1.0" }
 cmd = { path = "../../command/cmd", version = "0.1.0" }
+svctools = { path = "../../lic/svctools", version = "0.1.0", features = ["wire"] }
 tracing.workspace = true
 
 [lints]

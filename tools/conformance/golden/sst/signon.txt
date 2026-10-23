@@ -1,0 +1,24 @@
+                      Start Service Tools (STRSST) Sign On                      
+                                                                 System:  QS400 
+                                                                                
+ Service tools user . . . . . . . . . . .                                       
+ Service tools password . . . . . . . . .                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

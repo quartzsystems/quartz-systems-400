@@ -486,6 +486,37 @@ ipc::rpc! {
     // --- STRDBG screens (380-399)
     // --- STRSQL (400-419)
     // --- STRSST (420-439)
+    /// SST: sign a service tools user on for this job (the job's user
+    /// needs `*SERVICE`): the privileges, or why not.
+    420 => fn sst_sign_on / SstSignOn (user: String, password: String) -> Result<svctools::Privilege, svctools::users::SignOnError>;
+    /// SST: change an expired password, signing the user on.
+    421 => fn sst_change_password / SstChangePassword (user: String, old: String, new: String) -> Result<svctools::Privilege, String>;
+    /// SST: the job's service tools user signs off.
+    422 => fn sst_sign_off / SstSignOff () -> ();
+    /// SST: the configured units and the disks in no ASP.
+    423 => fn sst_disks / SstDisks () -> Result<(Vec<svctools::env::DiskUnit>, Vec<svctools::env::NonConfigured>), String>;
+    /// SST: a disk change as DST makes it (`add`, `remove`, `mirror`,
+    /// `unmirror`, `suspend`, `resume`, `replace`, `threshold` with the
+    /// percent as `unit`); the unit number a new unit got.
+    424 => fn sst_disk_change / SstDiskChange (op: String, unit: u16, device: String) -> Result<u16, String>;
+    /// SST: the ASP threshold and the parity-capable controllers.
+    425 => fn sst_disk_facts / SstDiskFacts () -> Result<(u8, Vec<String>), String>;
+    /// SST: the product activity log and the LIC log's lines.
+    426 => fn sst_logs / SstLogs () -> Result<(Vec<svctools::env::LogEntry>, Vec<String>), String>;
+    /// SST: the hardware resource table and the processor count.
+    427 => fn sst_resources / SstResources () -> Result<(Vec<svctools::env::ResourceRow>, u32), String>;
+    /// SST: a page of a unit (from 0), or an object header by ID.
+    428 => fn sst_storage / SstStorage (unit: u16, page: u64, id: String) -> Result<Vec<u8>, String>;
+    /// SST: the security flags as their byte.
+    429 => fn sst_security / SstSecurity () -> Result<u8, String>;
+    /// SST: the security flags changed.
+    430 => fn sst_set_security / SstSetSecurity (flags: u8) -> Result<(), String>;
+    /// SST: the user IDs without their password hashes, as the LIC
+    /// record encodes them.
+    431 => fn sst_users / SstUsers () -> Result<Vec<u8>, String>;
+    /// SST: a change to the user IDs (`create`, `delete`, `enable`,
+    /// `disable`, `privileges`, `reset`); the message of a refusal.
+    432 => fn sst_user_change / SstUserChange (op: String, name: String, password: String, text: String, privileges: svctools::Privilege) -> Result<(), String>;
 }
 
 /// A search index topic: title, root words, panel group (`LIB/NAME`)

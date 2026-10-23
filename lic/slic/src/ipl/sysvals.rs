@@ -151,6 +151,7 @@ pub fn save(system: &mut System) -> Result<(), String> {
                 return Ok(());
             }
             if let Some((part, record)) = lic.as_mut() {
+                part.refresh(record);
                 vals.store_ipl(record).map_err(|e| e.to_string())?;
                 part.write(record).map_err(|e| e.to_string())?;
             }

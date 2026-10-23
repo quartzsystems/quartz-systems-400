@@ -6,7 +6,7 @@
 //! resume, and the recovery procedures text.
 
 use crate::dst::NOT_AUTHORIZED;
-use crate::dst::common::{Confirm, Notice, Select, Submenu};
+use crate::dst::common::{Confirm, Notice, Select, Submenu, guarded};
 use crate::dst::disk::config::nonconfigured_row;
 use crate::dst::disk::{self, STATUS_HEADINGS};
 use crate::env::{DiskUnit, DstEnv};
@@ -155,14 +155,25 @@ fn suspend(env: &mut dyn DstEnv) -> Select {
         &format!("Opt  {STATUS_HEADINGS}"),
         rows,
         Box::new(move |chosen: &[usize], env: &mut dyn DstEnv| {
-            let mut done = 0;
-            for &i in chosen {
-                if let Err(e) = env.suspend(active[i].unit) {
-                    return Flow::Error(e);
-                }
-                done += 1;
-            }
-            Flow::Unwind(1, Some((format!("{done} unit(s) suspended"), false)))
+            let units: Vec<u16> = chosen.iter().map(|&i| active[i].unit).collect();
+            let mut lines = vec![
+                "Writes stop going to these units until they are resumed:".to_string(),
+                String::new(),
+            ];
+            lines.extend(units.iter().map(|u| format!("  Unit {}", u + 1)));
+            guarded(
+                env,
+                "dst-suspend-confirm",
+                "Confirm Suspend Mirrored Protection",
+                lines,
+                1,
+                Box::new(move |env: &mut dyn DstEnv| {
+                    for &u in &units {
+                        env.suspend(u)?;
+                    }
+                    Ok(format!("{} unit(s) suspended", units.len()))
+                }),
+            )
         }),
     )
 }
@@ -182,19 +193,24 @@ fn resume(env: &mut dyn DstEnv) -> Select {
         rows,
         Box::new(move |chosen: &[usize], env: &mut dyn DstEnv| {
             let unit = suspended[chosen[0]].unit;
-            match env.resume(unit) {
-                Ok(()) => Flow::Unwind(
-                    1,
-                    Some((
+            guarded(
+                env,
+                "dst-resume-confirm",
+                "Confirm Resume Mirrored Protection",
+                vec![format!(
+                    "Unit {} is copied from its partner in the background.",
+                    unit + 1
+                )],
+                1,
+                Box::new(move |env: &mut dyn DstEnv| {
+                    env.resume(unit).map(|()| {
                         format!(
                             "Unit {} resuming in the background; option 1 shows its progress",
                             unit + 1
-                        ),
-                        false,
-                    )),
-                ),
-                Err(e) => Flow::Error(e),
-            }
+                        )
+                    })
+                }),
+            )
         }),
     )
 }

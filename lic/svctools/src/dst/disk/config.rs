@@ -8,7 +8,7 @@
 use console::Screen;
 
 use crate::dst::NOT_AUTHORIZED;
-use crate::dst::common::{Confirm, Notice, Select, Submenu};
+use crate::dst::common::{Confirm, Notice, Select, Submenu, guarded};
 use crate::dst::disk::{self, CAPACITY_HEADINGS, STATUS_HEADINGS, mirror};
 use crate::env::{DstEnv, NonConfigured};
 use crate::panel::{Flow, Panel};
@@ -236,10 +236,17 @@ impl Panel for Threshold {
         if !(1..=100).contains(&p) {
             return Flow::Error("Threshold must be a number from 1 to 100".into());
         }
-        match env.set_asp_threshold(p) {
-            Ok(()) => Flow::Unwind(1, Some((format!("ASP 1 threshold set to {p}%"), false))),
-            Err(e) => Flow::Error(e),
-        }
+        guarded(
+            env,
+            "dst-asp-threshold-confirm",
+            "Confirm ASP Threshold",
+            vec![format!("The ASP 1 threshold will be {p}%.")],
+            1,
+            Box::new(move |env: &mut dyn DstEnv| {
+                env.set_asp_threshold(p)
+                    .map(|()| format!("ASP 1 threshold set to {p}%"))
+            }),
+        )
     }
 }
 

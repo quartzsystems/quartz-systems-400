@@ -1741,7 +1741,9 @@ dependencies = [
  "rustls-graviola",
  "sec",
  "spool",
+ "sst",
  "stg",
+ "svctools",
  "sys-cpps",
  "sysapi",
  "thiserror",
@@ -2327,6 +2329,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "sst"
+version = "0.1.0"
+dependencies = [
+ "console",
+ "svctools",
+ "uim",
+]
+
+[[package]]
 name = "stable_deref_trait"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2342,6 +2353,7 @@ dependencies = [
  "mi",
  "msgf",
  "sec",
+ "svctools",
  "sysapi",
  "tracing",
  "wm",
@@ -2378,6 +2390,7 @@ version = "0.1.0"
 dependencies = [
  "argon2",
  "console",
+ "ipc",
  "licpart",
  "release",
  "thiserror",

@@ -150,6 +150,7 @@ pub fn shutdown(system: &mut System, final_src: &'static src::Src) {
     };
     let entry = history_entry(system, outcome, final_src);
     if let Some((part, record)) = system.lic.as_mut() {
+        part.refresh(record);
         record.header.ipl_in_progress = false;
         if !system.complete {
             record.push_history(entry);
@@ -162,6 +163,7 @@ pub fn shutdown(system: &mut System, final_src: &'static src::Src) {
 pub fn set_next_mode(system: &mut System, mode: IplMode) -> Result<(), String> {
     match system.lic.as_mut() {
         Some((part, record)) => {
+            part.refresh(record);
             record.header.next_mode = Some(mode);
             part.write(record).map(|_| ()).map_err(|e| e.to_string())
         }

@@ -350,6 +350,7 @@ pub const JOB_SITE: &[&str] = &[
     // --- STRDBG screens (devtools/dbg)
     // --- STRSQL (devtools/isql)
     // --- STRSST (devtools/sst)
+    "STRSST",
     "ADDBKP",
     "CALL",
     "CHGDBG",

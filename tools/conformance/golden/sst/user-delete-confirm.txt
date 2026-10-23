@@ -1,0 +1,24 @@
+                    Confirm Delete of Service Tools User ID                     
+                                                                 System:  QS400 
+                                                                                
+ Service tools user ID 22222222 will be deleted.                                
+                                                                                
+ Press F10 to delete it, F12 to keep it.                                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

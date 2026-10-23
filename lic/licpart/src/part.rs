@@ -96,6 +96,16 @@ impl<D: Device> LicPart<D> {
         }
     }
 
+    /// Replace `rec` with the newest copy on disk, so a change made from
+    /// it keeps what another process wrote (the storage service's SST
+    /// writes the record while `slic` holds a copy). Kept as it is when
+    /// no copy reads.
+    pub fn refresh(&mut self, rec: &mut Record) {
+        if let Ok(fresh) = self.read() {
+            *rec = fresh;
+        }
+    }
+
     /// Write `rec` to the older (or invalid) copy with the next sequence
     /// number, then sync. Returns the copy written. The newest good copy is
     /// never overwritten, so a torn write cannot lose it.

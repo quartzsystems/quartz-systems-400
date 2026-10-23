@@ -1463,6 +1463,84 @@ impl Service for Served<'_> {
     // --- STRSQL (400-419)
 
     // --- STRSST (420-439)
+
+    fn sst_sign_on(
+        &mut self,
+        user: String,
+        password: String,
+    ) -> Result<svctools::Privilege, svctools::users::SignOnError> {
+        super::sst::sign_on(self.system, self.ctx.job.number, &user, &password)
+    }
+
+    fn sst_change_password(
+        &mut self,
+        user: String,
+        old: String,
+        new: String,
+    ) -> Result<svctools::Privilege, String> {
+        super::sst::change_password(self.system, self.ctx.job.number, &user, &old, &new)
+    }
+
+    fn sst_sign_off(&mut self) {
+        super::sst::sign_off(self.ctx.job.number);
+    }
+
+    fn sst_disks(
+        &mut self,
+    ) -> Result<(Vec<svctools::env::DiskUnit>, Vec<svctools::env::NonConfigured>), String> {
+        super::sst::disks(self.system, self.ctx.job.number)
+    }
+
+    fn sst_disk_change(&mut self, op: String, unit: u16, device: String) -> Result<u16, String> {
+        super::sst::disk_change(self.system, self.ctx.job.number, &op, unit, &device)
+    }
+
+    fn sst_disk_facts(&mut self) -> Result<(u8, Vec<String>), String> {
+        super::sst::disk_facts(self.system, self.ctx.job.number)
+    }
+
+    fn sst_logs(&mut self) -> Result<(Vec<svctools::env::LogEntry>, Vec<String>), String> {
+        super::sst::logs(self.system, self.ctx.job.number)
+    }
+
+    fn sst_resources(&mut self) -> Result<(Vec<svctools::env::ResourceRow>, u32), String> {
+        super::sst::resources(self.system, self.ctx.job.number)
+    }
+
+    fn sst_storage(&mut self, unit: u16, page: u64, id: String) -> Result<Vec<u8>, String> {
+        super::sst::storage(self.system, self.ctx.job.number, unit, page, &id)
+    }
+
+    fn sst_security(&mut self) -> Result<u8, String> {
+        super::sst::security(self.system, self.ctx.job.number)
+    }
+
+    fn sst_set_security(&mut self, flags: u8) -> Result<(), String> {
+        super::sst::set_security(self.system, self.ctx.job.number, flags)
+    }
+
+    fn sst_users(&mut self) -> Result<Vec<u8>, String> {
+        super::sst::users(self.system, self.ctx.job.number)
+    }
+
+    fn sst_user_change(
+        &mut self,
+        op: String,
+        name: String,
+        password: String,
+        text: String,
+        privileges: svctools::Privilege,
+    ) -> Result<(), String> {
+        super::sst::user_change(
+            self.system,
+            self.ctx.job.number,
+            &op,
+            &name,
+            &password,
+            &text,
+            privileges,
+        )
+    }
 }
 
 /// The store reads behind the message and object panels.

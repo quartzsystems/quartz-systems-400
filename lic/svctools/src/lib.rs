@@ -9,7 +9,7 @@
 //! [`panel::Panel`]s driven by Enter and function keys from the console
 //! and asking its environment ([`env::DstEnv`]) for everything else.
 //! Phase 8's SST shows the same panels inside a job through another
-//! environment.
+//! environment, asking first before it changes disks or user IDs.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
@@ -20,6 +20,8 @@ pub mod install;
 pub mod panel;
 pub mod ui;
 pub mod users;
+#[cfg(feature = "wire")]
+pub mod wire;
 
 pub use env::DstEnv;
 pub use panel::{Flow, Outcome, Panel, Runner};

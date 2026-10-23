@@ -2,7 +2,9 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The DST sign-on and the forced password change.
+//! The service tools sign-on and the forced password change. DST
+//! shows them with its own title and goes on to its main menu; SST
+//! (`STRSST`) gives another title and its own menu.
 
 use console::Screen;
 
@@ -10,12 +12,56 @@ use crate::dst::menu::MainMenu;
 use crate::env::DstEnv;
 use crate::panel::{Flow, Panel};
 use crate::ui::{self, FormLine};
-use crate::users::{SignOnError, normalize_name};
+use crate::users::{Privilege, SignOnError, normalize_name};
+
+/// The menu a signed-on user lands on.
+pub type Home = fn(String, Privilege) -> Box<dyn Panel>;
+
+/// DST's main menu.
+#[must_use]
+pub fn dst_home(user: String, privileges: Privilege) -> Box<dyn Panel> {
+    Box::new(MainMenu::new(user, privileges))
+}
+
+/// What differs between the tools that sign on.
+#[derive(Clone, Copy)]
+pub struct Tool {
+    /// The sign-on title.
+    pub title: &'static str,
+    /// The note on the password change display.
+    pub expired: &'static str,
+    /// Where a sign-on goes.
+    pub home: Home,
+}
+
+/// DST.
+pub const DST: Tool = Tool {
+    title: "Dedicated Service Tools (DST) Sign On",
+    expired: "Password has expired and must be changed before DST can be used",
+    home: dst_home,
+};
 
 /// Sign-on: user and password.
-#[derive(Default)]
 pub struct SignOn {
     user: String,
+    tool: Tool,
+}
+
+impl Default for SignOn {
+    fn default() -> Self {
+        Self::new(DST)
+    }
+}
+
+impl SignOn {
+    /// For a tool.
+    #[must_use]
+    pub fn new(tool: Tool) -> Self {
+        Self {
+            user: String::new(),
+            tool,
+        }
+    }
 }
 
 impl Panel for SignOn {
@@ -26,7 +72,7 @@ impl Panel for SignOn {
     fn render(&self, env: &mut dyn DstEnv) -> Screen {
         // Both leaders run to one column and both fields are 10 wide.
         ui::form_wide(
-            "Dedicated Service Tools (DST) Sign On",
+            self.tool.title,
             &env.system_name(),
             &[
                 FormLine::new("Service tools user", 10, self.user.clone()),
@@ -41,17 +87,11 @@ impl Panel for SignOn {
         let user = normalize_name(fields.first().map_or("", String::as_str));
         let password = fields.get(1).map_or("", String::as_str);
         self.user.clone_from(&user);
-        let result = env.users().sign_on(&user, password).map(|u| u.privileges);
-        // Failure counts and disables are durable.
-        let _ = env.save_users();
-        match &result {
-            Ok(_) => env.audit("ST", "DS", &user),
-            Err(SignOnError::NotCorrect) => env.audit("PW", "X", &user),
-            Err(_) => {}
-        }
-        match result {
-            Ok(privileges) => Flow::Reset(Box::new(MainMenu::new(user, privileges))),
-            Err(SignOnError::Expired) => Flow::Push(Box::new(ChangePassword::new(user))),
+        match env.sign_on(&user, password) {
+            Ok(privileges) => Flow::Reset((self.tool.home)(user, privileges)),
+            Err(SignOnError::Expired) => {
+                Flow::Push(Box::new(ChangePassword::for_tool(user, self.tool)))
+            }
             Err(e) => Flow::Error(message(&e)),
         }
     }
@@ -77,13 +117,20 @@ pub fn message(e: &SignOnError) -> String {
 /// Change an expired password: old, new, and new again.
 pub struct ChangePassword {
     user: String,
+    tool: Tool,
 }
 
 impl ChangePassword {
-    /// For `user`.
+    /// For `user`, going on to DST.
     #[must_use]
     pub fn new(user: String) -> Self {
-        Self { user }
+        Self::for_tool(user, DST)
+    }
+
+    /// For `user`, going on to `tool`'s menu.
+    #[must_use]
+    pub fn for_tool(user: String, tool: Tool) -> Self {
+        Self { user, tool }
     }
 }
 
@@ -104,11 +151,7 @@ impl Panel for ChangePassword {
             ],
             "F3=Exit   F12=Cancel",
         );
-        ui::message(
-            &mut s,
-            "Password has expired and must be changed before DST can be used",
-            false,
-        );
+        ui::message(&mut s, self.tool.expired, false);
         s
     }
 
@@ -119,22 +162,9 @@ impl Panel for ChangePassword {
         if new != again {
             return Flow::Error("New passwords do not match".into());
         }
-        let now = env.now();
-        let salt = env.random();
-        let result = env.users().change_password(&self.user, old, new, now, salt);
-        match result {
-            Ok(()) => {
-                if let Err(e) = env.save_users() {
-                    return Flow::Error(format!("Password changed but not saved: {e}"));
-                }
-                let privileges = env
-                    .users()
-                    .get(&self.user)
-                    .map(|u| u.privileges)
-                    .unwrap_or_default();
-                Flow::Reset(Box::new(MainMenu::new(self.user.clone(), privileges)))
-            }
-            Err(e) => Flow::Error(message(&e)),
+        match env.change_password(&self.user, old, new) {
+            Ok(privileges) => Flow::Reset((self.tool.home)(self.user.clone(), privileges)),
+            Err(e) => Flow::Error(e),
         }
     }
 }

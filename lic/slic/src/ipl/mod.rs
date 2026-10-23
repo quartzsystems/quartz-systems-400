@@ -408,6 +408,8 @@ fn serial_sign_on(system: &mut System, line: &str) {
             .serial("The service tools user IDs are not available.\n");
         return;
     };
+    // SST may have changed the user IDs since this copy was read.
+    part.refresh(record);
     let Some(mut users) = svctools::UserDb::load(record) else {
         system
             .out

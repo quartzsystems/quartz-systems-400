@@ -1,0 +1,17 @@
+# STRSST: the service tools sign-on. The pub400 account has no
+# *SERVICE, so the command is expected to be refused with a message on
+# MAIN; the snapshot records what came back. Nothing is typed into a
+# service tools display: the probe leaves with F3 at once.
+continue
+timeout 60000
+settle 3000
+# Break messages at sign-on show Display Messages first: Enter goes on
+# (and does nothing on MAIN).
+key enter
+wait "Main Menu"
+type strsst
+key enter
+settle 2000
+snap strsst
+key f3
+settle 1000

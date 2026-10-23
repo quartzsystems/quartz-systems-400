@@ -1,0 +1,24 @@
+                      Confirm Suspend Mirrored Protection                       
+                                                                 System:  QS400 
+                                                                                
+ Writes stop going to these units until they are resumed:                       
+                                                                                
+   Unit 1                                                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

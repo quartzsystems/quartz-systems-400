@@ -1,0 +1,24 @@
+                           System Service Tools (SST)                           
+                                                                 System:  QS400 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Start a service tool                                                   
+      2. Work with active service tools                                         
+      3. Work with disk units                                                   
+      4. Work with diskette data recovery                                       
+      5. Work with system partitions                                            
+      6. Work with system capacity                                              
+      7. Work with system security                                              
+      8. Work with service tools user IDs and Devices                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

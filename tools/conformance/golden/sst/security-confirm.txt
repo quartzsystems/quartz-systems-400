@@ -1,0 +1,24 @@
+                         Confirm System Security Change                         
+                                                                 System:  QS400 
+                                                                                
+ The options will be:                                                           
+                                                                                
+   1. Default password change by its user      Y                                
+   2. New digital certificates                 N                                
+   3. System value security changes            N                                
+   4. Add of digital certificates              N                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F10=Continue   F12=Cancel                                                      
+                                                                                

@@ -8,9 +8,8 @@
 use console::Screen;
 
 use crate::dst::NOT_AUTHORIZED;
-use crate::dst::common::{Notice, Options, Submenu, parse_options};
-use crate::dst::signon::message;
-use crate::env::DstEnv;
+use crate::dst::common::{Notice, Options, Submenu, guarded, parse_options};
+use crate::env::{DstEnv, UserChange};
 use crate::panel::{Flow, Panel};
 use crate::ui::{self, FormLine};
 use crate::users::{Privilege, ServiceUser};
@@ -134,22 +133,43 @@ impl Panel for UserList {
         match opt {
             2 => Flow::Push(Box::new(Privileges::new(name))),
             3 => {
-                let r = env.users().delete(&name);
-                save_after(env, r.map(|()| format!("User ID {name} deleted")), 0)
+                let lines = vec![
+                    format!("Service tools user ID {name} will be deleted."),
+                    String::new(),
+                    "Press F10 to delete it, F12 to keep it.".into(),
+                ];
+                let change = UserChange::Delete { name: name.clone() };
+                let done = format!("User ID {name} deleted");
+                guarded(
+                    env,
+                    "dst-user-delete-confirm",
+                    "Confirm Delete of Service Tools User ID",
+                    lines,
+                    0,
+                    Box::new(move |env: &mut dyn DstEnv| env.change_user(&change).map(|()| done.clone())),
+                )
             }
             4 => Flow::Push(Box::new(display_user(env, &name))),
             5 | 6 => {
                 let enable = opt == 5;
-                let r = env.users().set_enabled(&name, enable);
-                save_after(
+                let word = if enable { "enabled" } else { "disabled" };
+                let lines = vec![
+                    format!("Service tools user ID {name} will be {word}."),
+                    String::new(),
+                    "Press F10 to go on, F12 to leave it as it is.".into(),
+                ];
+                let change = UserChange::Enable {
+                    name: name.clone(),
+                    enable,
+                };
+                let done = format!("User ID {name} {word}");
+                guarded(
                     env,
-                    r.map(|()| {
-                        format!(
-                            "User ID {name} {}",
-                            if enable { "enabled" } else { "disabled" }
-                        )
-                    }),
+                    "dst-user-enable-confirm",
+                    "Confirm Change of Service Tools User ID",
+                    lines,
                     0,
+                    Box::new(move |env: &mut dyn DstEnv| env.change_user(&change).map(|()| done.clone())),
                 )
             }
             _ => Flow::Push(Box::new(ResetPassword::new(name))),
@@ -163,23 +183,6 @@ impl Panel for UserList {
             12 => Flow::Pop,
             _ => Flow::Stay,
         }
-    }
-}
-
-/// Save the users after a change and show the result: on the panel
-/// itself (`unwind` 0) or on the one `unwind` panels back.
-fn save_after(
-    env: &mut dyn DstEnv,
-    result: Result<String, crate::users::SignOnError>,
-    unwind: usize,
-) -> Flow {
-    match result {
-        Ok(m) => match env.save_users() {
-            Ok(()) if unwind == 0 => Flow::Message(m),
-            Ok(()) => Flow::Unwind(unwind, Some((m, false))),
-            Err(e) => Flow::Error(format!("Change made but not saved: {e}")),
-        },
-        Err(e) => Flow::Error(message(&e)),
     }
 }
 
@@ -246,17 +249,15 @@ impl Panel for CreateUser {
         if pw != again {
             return Flow::Error("Passwords do not match".into());
         }
-        let now = env.now();
-        let salt = env.random();
-        let r = env
-            .users()
-            .create(&name, pw, Privilege::NONE, text, now, salt);
-        match r {
-            Ok(()) => match env.save_users() {
-                Ok(()) => Flow::Replace(Box::new(Privileges::new(name.to_ascii_uppercase()))),
-                Err(e) => Flow::Error(format!("User ID created but not saved: {e}")),
-            },
-            Err(e) => Flow::Error(message(&e)),
+        // A new ID has no privileges: nothing to confirm until they come.
+        let change = UserChange::Create {
+            name: name.clone(),
+            password: pw.to_string(),
+            text: text.to_string(),
+        };
+        match env.change_user(&change) {
+            Ok(()) => Flow::Replace(Box::new(Privileges::new(name.to_ascii_uppercase()))),
+            Err(e) => Flow::Error(e),
         }
     }
 }
@@ -326,11 +327,31 @@ impl Panel for Privileges {
                 p = p.with(*bit);
             }
         }
-        let r = env.users().set_privileges(&self.name, p);
-        save_after(
+        let name = self.name.clone();
+        let mut lines = vec![
+            format!("The privileges of service tools user ID {name} will be:"),
+            String::new(),
+        ];
+        for (bit, text) in Privilege::NAMES {
+            if p.has(bit) {
+                lines.push(format!("  {text}"));
+            }
+        }
+        if p == Privilege::NONE {
+            lines.push("  (None)".into());
+        }
+        let change = UserChange::Privileges {
+            name: name.clone(),
+            privileges: p,
+        };
+        let done = format!("Privileges of {name} changed");
+        guarded(
             env,
-            r.map(|()| format!("Privileges of {} changed", self.name)),
+            "dst-user-privileges-confirm",
+            "Confirm Change of Service Tools User Privileges",
+            lines,
             1,
+            Box::new(move |env: &mut dyn DstEnv| env.change_user(&change).map(|()| done.clone())),
         )
     }
 }
@@ -372,21 +393,23 @@ impl Panel for ResetPassword {
         if pw != again {
             return Flow::Error("Passwords do not match".into());
         }
-        let now = env.now();
-        let salt = env.random();
-        let r = env.users().reset_password(&self.name, pw, now, salt);
-        if r.is_ok() {
-            env.audit("DS", "R", &self.name);
-        }
-        save_after(
+        let name = self.name.clone();
+        let lines = vec![
+            format!("The password of service tools user ID {name} will be replaced."),
+            "The new one has expired: it is changed at the next sign-on.".into(),
+        ];
+        let change = UserChange::Reset {
+            name: name.clone(),
+            password: pw.to_string(),
+        };
+        let done = format!("Password of {name} reset; it must be changed at the next sign-on");
+        guarded(
             env,
-            r.map(|()| {
-                format!(
-                    "Password of {} reset; it must be changed at the next sign-on",
-                    self.name
-                )
-            }),
+            "dst-user-reset-confirm",
+            "Confirm Reset of Service Tools User Password",
+            lines,
             1,
+            Box::new(move |env: &mut dyn DstEnv| env.change_user(&change).map(|()| done.clone())),
         )
     }
 }

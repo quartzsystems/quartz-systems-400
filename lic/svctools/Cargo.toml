@@ -12,6 +12,11 @@ licpart = { path = "../../lic/licpart", version = "0.1.0" }
 release = { path = "../../lic/release", version = "0.1.0" }
 thiserror.workspace = true
 argon2 = { version = "0.5.3", default-features = false, features = ["alloc", "password-hash"] }
+ipc = { path = "../../work/ipc", version = "0.1.0", optional = true }
+
+[features]
+# The process-message encoding SST's storage requests carry.
+wire = ["dep:ipc"]
 
 [lints]
 workspace = true

@@ -376,6 +376,29 @@ impl Panel for Confirm {
     }
 }
 
+/// Run a change now, or, when the environment asks for confirmation
+/// first (SST), on F10 of a confirmation showing `lines`. Its message
+/// shows `unwind` panels back from the one asking (0: on it).
+pub fn guarded(
+    env: &mut dyn DstEnv,
+    name: &'static str,
+    title: &'static str,
+    lines: Vec<String>,
+    unwind: usize,
+    mut action: Confirmed,
+) -> Flow {
+    if env.confirm_changes() {
+        return Flow::Push(Box::new(
+            Confirm::new(name, title, lines, action).unwinding(unwind + 1),
+        ));
+    }
+    match action(env) {
+        Ok(m) if unwind == 0 => Flow::Message(m),
+        Ok(m) => Flow::Unwind(unwind, Some((m, false))),
+        Err(e) => Flow::Error(e),
+    }
+}
+
 /// What a selection list does with the chosen rows.
 pub type Chosen = Box<dyn FnMut(&[usize], &mut dyn DstEnv) -> Flow>;
 
