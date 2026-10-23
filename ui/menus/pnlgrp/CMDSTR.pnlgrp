@@ -53,7 +53,7 @@
 :MENUI OPTION=27 ACTION='CMD ?STRDBGSVR'.
 :MENUI OPTION=28 ACTION='CMD ?STRDBMON'.
 :MENUI OPTION=29 ACTION='CMD ?STRDBRDR'.
-:MENUI OPTION=30 ACTION='CMD ?STRDFU'.
+:MENUI OPTION=30 ACTION='CMD ?STRDFU'.Start DFU  STRDFU
 :MENUI OPTION=31 ACTION='CMD ?STRDIGQRY'.
 :MENUI OPTION=32 ACTION='CMD ?STRDIRSHD'.
 :MENUI OPTION=33 ACTION='CMD ?STRDKTRDR'.
@@ -116,7 +116,7 @@
 :MENUI OPTION=90 ACTION='CMD ?STRRJERDR'.
 :MENUI OPTION=91 ACTION='CMD ?STRRJESSN'.
 :MENUI OPTION=92 ACTION='CMD ?STRRJEWTR'.
-:MENUI OPTION=93 ACTION='CMD ?STRRLU'.
+:MENUI OPTION=93 ACTION='CMD ?STRRLU'.Start Report Layout Utility  STRRLU
 :MENUI OPTION=94 ACTION='CMD ?STRRMTSPT'.
 :MENUI OPTION=95 ACTION='CMD ?STRRMTWTR'.Start Remote Writer  STRRMTWTR
 :MENUI OPTION=96 ACTION='CMD ?STRRSESVR'.
@@ -124,12 +124,12 @@
 :MENUI OPTION=98 ACTION='CMD ?STRSBS'.Start Subsystem  STRSBS
 :MENUI OPTION=99 ACTION='CMD ?STRSCHIDX'.
 :MENUI OPTION=100 ACTION='CMD ?STRSDA'.
-:MENUI OPTION=101 ACTION='CMD ?STRSEU'.
+:MENUI OPTION=101 ACTION='CMD ?STRSEU'.Start Source Entry Utility  STRSEU
 :MENUI OPTION=102 ACTION='CMD ?STRSPLRCL'.
 :MENUI OPTION=103 ACTION='CMD ?STRSPTN'.
 :MENUI OPTION=104 ACTION='CMD ?STRSQL'.Start SQL Interactive Session  STRSQL
 :MENUI OPTION=105 ACTION='CMD ?STRSRVAGT'.
-:MENUI OPTION=106 ACTION='CMD ?STRSRVJOB'.
+:MENUI OPTION=106 ACTION='CMD ?STRSRVJOB'.Start Service Job  STRSRVJOB
 :MENUI OPTION=107 ACTION='CMD ?STRSST'.Start System Service Tools  STRSST
 :MENUI OPTION=108 ACTION='CMD ?STRSVCSSN'.
 :MENUI OPTION=109 ACTION='CMD ?STRSYSMGR'.
@@ -153,7 +153,7 @@
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
 :HELP NAME=HLPCMDSTR.Start Commands - Help
-:P.Start Commands: every command whose name starts with STR, in name order, with the command name at the right of its row. The option numbers follow the full IBM i command set, so a blank row is a command this release does not provide.
+:P.Start Commands: every command whose name starts with STR, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
 :EHELP.
 :EPNLGRP.

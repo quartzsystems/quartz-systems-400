@@ -210,7 +210,7 @@ fn help_for(kind: &Kind, title: &str) -> Vec<String> {
     };
     vec![
         format!(
-            "{title}: {how}, in name order, with the command name at the right of its row. The option numbers follow the full IBM i command set, so a blank row is a command this release does not provide."
+            "{title}: {how}, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide."
         ),
         "Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.".to_string(),
     ]

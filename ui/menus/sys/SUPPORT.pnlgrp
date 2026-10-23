@@ -27,7 +27,7 @@
 :MENUI OPTION=2 ACTION='CMD STRSCHIDX'.Search system help index
 :MENUI OPTION=3 ACTION='MENU MAJOR'.How to use commands
 :MENUI OPTION=4 ACTION='CMD ASKQST'.Question and answer
-:MENUI OPTION=5 ACTION='MENU INFO'.IBM i publications
+:MENUI OPTION=5 ACTION='MENU INFO'.QS/400 publications
 :MENUI OPTION=7 ACTION='MENU USERHELP'.How to handle system problems
 :MENUI OPTION=8 ACTION='MENU PROBLEM'.Problem handling
 :MENUI OPTION=9 ACTION='CMD STREDU'.Online education

@@ -140,6 +140,49 @@ fn golden_text_stays_in_the_golden_directory() {
     );
 }
 
+/// The Phase 7 denylist (IBM's own phrasings) over the Phase 8 sources
+/// that hold screen text: panel groups, shipped display files, menus
+/// and the developer tools.
+#[test]
+fn no_ibm_phrasing_in_screens() {
+    let root = repo_root();
+    let denied: Vec<String> = std::fs::read_to_string(root.join("command/sys-cpps/denylist.txt"))
+        .expect("the denylist")
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        .map(str::to_ascii_lowercase)
+        .collect();
+    let mut hits = Vec::new();
+    for dir in ["ui/uim/pnlgrp", "ui/dspf/sys", "ui/menus", "ui/uim/src", "devtools"] {
+        for f in walk(&root.join(dir)) {
+            // Tests and the oracle's own inventories are test data.
+            if f.components().any(|c| c.as_os_str() == "tests" || c.as_os_str() == "inventory") {
+                continue;
+            }
+            let Ok(text) = std::fs::read_to_string(&f) else {
+                continue;
+            };
+            let lower = text.to_ascii_lowercase();
+            for d in &denied {
+                if has_phrase(&lower, d) {
+                    hits.push(format!("{}: {d:?}", f.display()));
+                }
+            }
+        }
+    }
+    assert!(hits.is_empty(), "IBM phrasings in screen sources:\n  {}", hits.join("\n  "));
+}
+
+/// `phrase` in `text` as whole words: "ibm i" is not "ibm inventories".
+fn has_phrase(text: &str, phrase: &str) -> bool {
+    text.match_indices(phrase).any(|(at, _)| {
+        let before = text[..at].chars().next_back();
+        let after = text[at + phrase.len()..].chars().next();
+        !before.is_some_and(char::is_alphanumeric) && !after.is_some_and(char::is_alphanumeric)
+    })
+}
+
 fn walk(dir: &Path) -> Vec<PathBuf> {
     let mut out = Vec::new();
     if let Ok(rd) = std::fs::read_dir(dir) {

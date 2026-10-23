@@ -46,7 +46,7 @@
 :BOTINST.Press Enter to continue.
 :EPANEL.
 :HELP NAME=ABOUTH.About QS/400 - Help
-:P.QS/400 is Quartz Systems' operating system for the AS/400 way of
+:P.QS/400 is Quartz Systems' operating system for the midrange way of
 working: the same commands, displays and programs, on a machine of
 today. This display names the release this system runs and the build
 it came from, which Quartz Systems asks for with any report of a

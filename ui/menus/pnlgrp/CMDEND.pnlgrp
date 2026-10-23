@@ -98,7 +98,7 @@
 :MENUI OPTION=72 ACTION='CMD ?ENDSBS'.End Subsystem  ENDSBS
 :MENUI OPTION=73 ACTION='CMD ?ENDSELECT'.End Select  ENDSELECT
 :MENUI OPTION=74 ACTION='CMD ?ENDSRVAGT'.
-:MENUI OPTION=75 ACTION='CMD ?ENDSRVJOB'.
+:MENUI OPTION=75 ACTION='CMD ?ENDSRVJOB'.End Service Job  ENDSRVJOB
 :MENUI OPTION=76 ACTION='CMD ?ENDSUBR'.End Subroutine  ENDSUBR
 :MENUI OPTION=77 ACTION='CMD ?ENDSVCSSN'.
 :MENUI OPTION=78 ACTION='CMD ?ENDSYS'.End System  ENDSYS
@@ -123,7 +123,7 @@
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
 :HELP NAME=HLPCMDEND.End Commands - Help
-:P.End Commands: every command whose name starts with END, in name order, with the command name at the right of its row. The option numbers follow the full IBM i command set, so a blank row is a command this release does not provide.
+:P.End Commands: every command whose name starts with END, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
 :EHELP.
 :EPNLGRP.

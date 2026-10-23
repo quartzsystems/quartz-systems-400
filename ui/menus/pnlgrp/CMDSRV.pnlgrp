@@ -38,12 +38,12 @@
 :MENUI OPTION=12 ACTION='CMD ?DSPSRVSTS'.
 :MENUI OPTION=13 ACTION='CMD ?ENDAGTSRV'.
 :MENUI OPTION=14 ACTION='CMD ?ENDMGRSRV'.
-:MENUI OPTION=15 ACTION='CMD ?ENDSRVJOB'.
+:MENUI OPTION=15 ACTION='CMD ?ENDSRVJOB'.End Service Job  ENDSRVJOB
 :MENUI OPTION=16 ACTION='CMD ?RMVSRVTBLE'.
 :MENUI OPTION=17 ACTION='CMD ?SNDSRVRQS'.
 :MENUI OPTION=18 ACTION='CMD ?STRAGTSRV'.
 :MENUI OPTION=19 ACTION='CMD ?STRMGRSRV'.
-:MENUI OPTION=20 ACTION='CMD ?STRSRVJOB'.
+:MENUI OPTION=20 ACTION='CMD ?STRSRVJOB'.Start Service Job  STRSRVJOB
 :MENUI OPTION=21 ACTION='CMD ?VFYSRVCFG'.
 :MENUI OPTION=22 ACTION='CMD ?WRKSRVPVD'.
 :MENUI OPTION=23 ACTION='CMD ?WRKSRVRQS'.
@@ -53,7 +53,7 @@
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
 :HELP NAME=HLPCMDSRV.Service Commands - Help
-:P.Service Commands: every command whose name carries SRV after its verb, in name order, with the command name at the right of its row. The option numbers follow the full IBM i command set, so a blank row is a command this release does not provide.
+:P.Service Commands: every command whose name carries SRV after its verb, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
 :EHELP.
 :EPNLGRP.

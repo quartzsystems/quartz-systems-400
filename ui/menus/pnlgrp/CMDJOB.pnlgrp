@@ -44,7 +44,7 @@
 :MENUI OPTION=18 ACTION='CMD ?ENDJOB'.End Job  ENDJOB
 :MENUI OPTION=19 ACTION='CMD ?ENDJOBABN'.
 :MENUI OPTION=20 ACTION='CMD ?ENDJOBTRC'.
-:MENUI OPTION=21 ACTION='CMD ?ENDSRVJOB'.
+:MENUI OPTION=21 ACTION='CMD ?ENDSRVJOB'.End Service Job  ENDSRVJOB
 :MENUI OPTION=22 ACTION='CMD ?HLDJOB'.Hold Job  HLDJOB
 :MENUI OPTION=23 ACTION='CMD ?HLDJOBSCDE'.Hold Job Schedule Entry  HLDJOBSCDE
 :MENUI OPTION=24 ACTION='CMD ?PRTJOBRPT'.
@@ -62,7 +62,7 @@
 :MENUI OPTION=36 ACTION='CMD ?SBMNETJOB'.
 :MENUI OPTION=37 ACTION='CMD ?SBMRJEJOB'.
 :MENUI OPTION=38 ACTION='CMD ?STRJOBTRC'.
-:MENUI OPTION=39 ACTION='CMD ?STRSRVJOB'.
+:MENUI OPTION=39 ACTION='CMD ?STRSRVJOB'.Start Service Job  STRSRVJOB
 :MENUI OPTION=40 ACTION='CMD ?TFRBCHJOB'.
 :MENUI OPTION=41 ACTION='CMD ?TFRGRPJOB'.Transfer to Group Job  TFRGRPJOB
 :MENUI OPTION=42 ACTION='CMD ?TFRJOB'.Transfer Job  TFRJOB
@@ -82,7 +82,7 @@
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
 :HELP NAME=HLPCMDJOB.Job Commands - Help
-:P.Job Commands: every command whose name carries JOB after its verb, in name order, with the command name at the right of its row. The option numbers follow the full IBM i command set, so a blank row is a command this release does not provide.
+:P.Job Commands: every command whose name carries JOB after its verb, in name order, with the command name at the right of its row. The option numbers follow the full command set of the systems this one is compatible with, so a blank row is a command this release does not provide.
 :P.Type an option number and press Enter to prompt the command, or type a command on the command line. F12 returns to the previous menu, F3 to the menu where you started and F16 to the major command groups.
 :EHELP.
 :EPNLGRP.
