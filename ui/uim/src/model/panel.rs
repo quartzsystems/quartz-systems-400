@@ -146,6 +146,8 @@ pub enum Separator {
     Rule,
     /// `NONE`.
     None,
+    /// `SYSNAME`: the system name on the line under the title.
+    SysName,
 }
 
 /// `LAYOUT`: columns of a data or list area.

@@ -1,0 +1,82 @@
+QS/400 UIM compiler
+  Panel group . . . . . . . :  QGPL/RENDER-HELP
+  Source  . . . . . . . . . :  QGPL/QPNLSRC(RENDER-HELP)
+
+  SEQNBR  MEMBER      ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8
+  000100              .* Rendering: a help module long enough to page, with every block kind.
+  000200              :PNLGRP.
+  000300              :CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+  000400              :ECLASS.
+  000500              :VAR NAME=WNAME CLASS=NAMECL VALUE='GADGET'.
+  000600              :KEYL NAME=KEYS.
+  000700              :KEYI KEY=ENTER ACTION=ENTER.
+  000800              :KEYI KEY=F3 ACTION=EXIT.F3=Exit
+  000900              :EKEYL.
+  001000              :PANEL NAME=DUMMY KEYL=KEYS HELP=HLPWDG.Widgets
+  001100              :TEXT DEPTH=2.
+  001200              A panel so the group has one.
+  001300              :ETEXT.
+  001400              :EPANEL.
+  001500              :HELP NAME=HLPWDG.Widgets - Help
+  001600              :P.The Work with Widgets panel lists the widgets of a library and lets
+  001700              you change, remove, show and describe them. Type an option next to an
+  001800              entry and press Enter; the option runs for every entry you marked, in
+  001900              the order of the list.
+  002000              :H1.How to pick an entry
+  002100              :P.Type the option number in the Opt column of the entry. To run the
+  002200              same option for several entries, type it next to each of them. The
+  002300              cursor's entry is &WNAME. when nothing is typed.
+  002400              :P.To run a command instead, type it on the command line and press
+  002500              Enter.  For help on a command, type its name and press F4 (Prompt).
+  002600              :H2.Options
+  002700              :UL.
+  002800              :LI.Change: the change panel for the entry.
+  002900              :LI.Remove: the entry is removed after you confirm.
+  003000              :LI.Show: the display panel for the entry.
+  003100              :EUL.
+  003200              :H2.Keys
+  003300              :DL.
+  003400              :DT.F5
+  003500              :DD.Refreshes the list from the library.
+  003600              :DT.F11
+  003700              :DD.Shows the quantities instead of the text.
+  003800              :EDL.
+  003900              :NT.Options you type stay on the panel until they run.
+  004000              :ENT.
+  004100              :H2.Examples
+  004200              :XMP.
+  004300                2  GADGET     QGPL
+  004400                4  SPROCKET   QGPL
+  004500              :EXMP.
+  004600              :P.Marking :HP2.two:EHP2. entries runs both options when you press Enter.
+  004700              See :LINK PERFORM='DSPHELP HLPMORE'.more about widgets:ELINK. for the rest.
+  004800              :PARML.
+  004900              :PT.LIB
+  005000              :PD.The library whose widgets are listed.
+  005100              :EPARML.
+  005200              :OL.
+  005300              :LI.First step.
+  005400              :LI.Second step.
+  005500              :EOL.
+  005600              :P.The last paragraph ends the module after the page break.
+  005700              :EHELP.
+  005800              :HELP NAME=HLPMORE.More About Widgets
+  005900              :P.Widgets hold other widgets when their holds flag is on.
+  006000              :EHELP.
+  006100              :EPNLGRP.
+
+  Panels  . . . . . . . . . :  1
+  Print panels  . . . . . . :  0
+  Help modules  . . . . . . :  2
+  Classes . . . . . . . . . :  1
+  Variables . . . . . . . . :  1
+  Conditions  . . . . . . . :  0
+  Key lists . . . . . . . . :  1
+  Imports . . . . . . . . . :  0
+
+  Severity 10 . . . . . . . :  0
+  Severity 20 . . . . . . . :  0
+  Severity 30 . . . . . . . :  0
+  Severity 40 . . . . . . . :  0
+  Highest severity  . . . . :  00
+  Panel group created

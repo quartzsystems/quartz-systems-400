@@ -4,7 +4,8 @@
 
 //! UIM for QS/400: the panel-group tag language as `CRTPNLGRP` and
 //! `CRTMNU TYPE(*UIM)` read it, the model a renderer walks, the
-//! checks, the listing and the `*PNLGRP` payload.
+//! checks, the listing, the `*PNLGRP` payload and the panel renderer
+//! ([`render`]).
 //!
 //! The crate never renders and never touches the store. Imbedded
 //! members come through [`Imbed`] and the names other groups export
@@ -21,6 +22,7 @@ pub mod lex;
 pub mod listing;
 pub mod model;
 pub mod payload;
+pub mod render;
 pub mod source;
 pub mod spec;
 pub mod tags;
@@ -30,4 +32,5 @@ pub use compile::{Compilation, CompileOpts, Imports, MapImports, NoImports, comp
 pub use diag::{Diagnostic, Diagnostics, Severity};
 pub use model::PanelGroup;
 pub use payload::{Payload, PayloadError};
+pub use render::{Dialog, ListState, MapDialog, Options, RenderError, Screen, render, render_help};
 pub use source::{Imbed, MapImbeds, NoImbeds, Source, SourceLine};

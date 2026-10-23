@@ -31,7 +31,17 @@ impl Imbed for FileImbeds {
     }
 }
 
-const CLEAN: &[&str] = &["data", "list", "menu", "help", "imports_a"];
+const CLEAN: &[&str] = &[
+    "data",
+    "list",
+    "menu",
+    "help",
+    "imports_a",
+    "render-data",
+    "render-help",
+    "render-list",
+    "render-menu",
+];
 const FAILING: &[&str] = &["errors", "imports_b", "nopnlgrp"];
 
 /// Every group compiled, imports resolved from the other groups' exports.
@@ -130,8 +140,9 @@ fn payload_round_trips() {
     let all = compile_all();
     for stem in CLEAN {
         let c = &all[*stem];
+        // The header holds ten characters of the name.
         let p = Payload {
-            name: stem.to_ascii_uppercase(),
+            name: stem.to_ascii_uppercase().chars().take(10).collect(),
             library: "QGPL".into(),
             group: c.group.clone().unwrap(),
             source: c.source.lines().to_vec(),

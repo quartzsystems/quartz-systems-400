@@ -1,0 +1,119 @@
+QS/400 UIM compiler
+  Panel group . . . . . . . :  QGPL/RENDER-DATA
+  Source  . . . . . . . . . :  QGPL/QPNLSRC(RENDER-DATA)
+
+  SEQNBR  MEMBER      ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8
+  000100              .* Rendering: data panels with leaders, groups, a compact row, a selection field, two columns.
+  000200              :PNLGRP.
+  000300              :CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+  000400              :ECLASS.
+  000500              :CLASS NAME=TEXTCL BASETYPE='CHAR 50'.
+  000600              :ECLASS.
+  000700              :CLASS NAME=NUMCL BASETYPE='PACKED 5 0'.
+  000800              :ECLASS.
+  000900              :CLASS NAME=DATECL BASETYPE=DATE.
+  001000              :ECLASS.
+  001100              :CLASS NAME=TIMECL BASETYPE=TIME.
+  001200              :ECLASS.
+  001300              :CLASS NAME=YNCL BASETYPE='CHAR 1'.
+  001400              :TL.
+  001500              :TI VALUE='Y'.*YES
+  001600              :TI VALUE='N'.*NO
+  001700              :ETL.
+  001800              :ECLASS.
+  001900              :CLASS NAME=CODECL BASETYPE='CHAR 1'.
+  002000              :ECLASS.
+  002100              :VAR NAME=WNAME CLASS=NAMECL.
+  002200              :VAR NAME=WLIB CLASS=NAMECL.
+  002300              :VAR NAME=OWNER CLASS=NAMECL.
+  002400              :VAR NAME=WTEXT CLASS=TEXTCL.
+  002500              :VAR NAME=QTY CLASS=NUMCL.
+  002600              :VAR NAME=PRIO CLASS=NUMCL.
+  002700              :VAR NAME=OUTQ CLASS=NAMECL.
+  002800              :VAR NAME=OUTQLIB CLASS=NAMECL.
+  002900              :VAR NAME=SDATE CLASS=DATECL.
+  003000              :VAR NAME=STIME CLASS=TIMECL.
+  003100              :VAR NAME=ACTIVE CLASS=YNCL VALUE='Y'.
+  003200              :VAR NAME=SHARED CLASS=YNCL VALUE='N'.
+  003300              :VAR NAME=COLOR CLASS=CODECL VALUE='B'.
+  003400              :VAR NAME=NOTE CLASS=TEXTCL.
+  003500              :VAR NAME=KIND CLASS=NAMECL.
+  003600              :VAR NAME=SIZE CLASS=NUMCL.
+  003700              :VAR NAME=UNITS CLASS=NAMECL.
+  003800              :VAR NAME=HOLDS CLASS=YNCL VALUE='Y'.
+  003900              :COND NAME=ISACTIVE EXPR='&ACTIVE. EQ "Y"'.
+  004000              :KEYL NAME=DSPKEYS.
+  004100              :KEYI KEY=ENTER ACTION=ENTER.
+  004200              :KEYI KEY=F3 ACTION=EXIT.F3=Exit
+  004300              :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+  004400              :KEYI KEY=HELP ACTION=HELP.
+  004500              :EKEYL.
+  004600              :PANEL NAME=DSPWDG KEYL=DSPKEYS TOPSEP=SYSNAME.Display Widget
+  004700              :DATA DEPTH='*'.
+  004800              :DATAGRP GRPSEP=NONE COMPACT.
+  004900              :DATAI VAR=WNAME USAGE=OUTPUT.Widget
+  005000              :DATAIX VAR=WLIB USAGE=OUTPUT.
+  005100              :DATAIXT.Library
+  005200              :EDATAGRP.
+  005300              :DATAC.
+  005400              :DATAI VAR=OWNER USAGE=OUTPUT.Owner
+  005500              :DATAI VAR=KIND USAGE=OUTPUT.Kind of widget
+  005600              :DATAI VAR=QTY USAGE=OUTPUT.Quantity on hand
+  005700              :DATAI VAR=PRIO USAGE=OUTPUT.Priority (on the queue)
+  005800              :DATAI VAR=OUTQ USAGE=OUTPUT.Output queue
+  005900              :DATAGRP GRPSEP=NONE.
+  006000              :DATAI VAR=OUTQLIB USAGE=OUTPUT.Library
+  006100              :EDATAGRP.
+  006200              :DATAI VAR=ACTIVE USAGE=OUTPUT.Active
+  006300              :DATAI VAR=SHARED USAGE=OUTPUT.Shared with every user
+  006400              :DATAGRP.Started
+  006500              :DATAI VAR=SDATE USAGE=OUTPUT.Date
+  006600              :DATAI VAR=STIME USAGE=OUTPUT.Time
+  006700              :EDATAGRP.
+  006800              :DATAI VAR=SIZE USAGE=OUTPUT.Size
+  006900              :DATAIX VAR=UNITS USAGE=OUTPUT.
+  007000              :DATAIXT.Units
+  007100              :DATAI VAR=HOLDS USAGE=OUTPUT.Holds other widgets
+  007200              :DATAI VAR=WTEXT USAGE=OUTPUT.Text
+  007300              :DATAC.
+  007400              :DATAC.Values below come from the last save.
+  007500              :DATAI VAR=NOTE USAGE=OUTPUT.Note
+  007600              :DATAI VAR=OWNER USAGE=OUTPUT.Saved by
+  007700              :EDATA.
+  007800              :BOTINST.Press Enter to go back.
+  007900              :EPANEL.
+  008000              :PANEL NAME=CHGWDG KEYL=DSPKEYS TOPSEP=SPACE.Change Widget
+  008100              :TOPINST.Type the new values, press Enter.
+  008200              :DATA DEPTH='*' LAYOUT=2.
+  008300              :DATACOL WIDTH=40.
+  008400              :DATAI VAR=WNAME USAGE=INPUT REQUIRED CSRLOC.Widget
+  008500              :DATAI VAR=WLIB USAGE=INPUT.Library
+  008600              :DATAI VAR=QTY USAGE=INPUT.Quantity
+  008700              :DATASLT VAR=COLOR USAGE=INPUT.Color
+  008800              :DATASLTC VALUE='R'.Red
+  008900              :DATASLTC VALUE='B'.Blue
+  009000              :DATASLTC VALUE='G' COND=ISACTIVE.Green
+  009100              :EDATASLT.
+  009200              :DATACOL WIDTH=38.
+  009300              :DATAI VAR=OWNER USAGE=OUTPUT.Owner
+  009400              :DATAI VAR=ACTIVE USAGE=INPUT.Active
+  009500              :DATAI VAR=NOTE USAGE=INPUT MAXWIDTH=20.Note
+  009600              :EDATA.
+  009700              :EPANEL.
+  009800              :EPNLGRP.
+
+  Panels  . . . . . . . . . :  2
+  Print panels  . . . . . . :  0
+  Help modules  . . . . . . :  0
+  Classes . . . . . . . . . :  7
+  Variables . . . . . . . . :  18
+  Conditions  . . . . . . . :  1
+  Key lists . . . . . . . . :  1
+  Imports . . . . . . . . . :  0
+
+  Severity 10 . . . . . . . :  0
+  Severity 20 . . . . . . . :  0
+  Severity 30 . . . . . . . :  0
+  Severity 40 . . . . . . . :  0
+  Highest severity  . . . . :  00
+  Panel group created
