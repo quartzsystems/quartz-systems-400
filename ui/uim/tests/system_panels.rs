@@ -78,3 +78,122 @@ fn additional_message_information() {
         &render(&g, "ADDMSGI", &d, &opts()).unwrap(),
     );
 }
+
+#[test]
+fn dsplibl() {
+    let g = shipped("QUIDSPLIBL");
+    let mut d = MapDialog::new();
+    let libs = [
+        ("PUB400SYS", "SYS", "$ PUB400.COM global programs"),
+        ("QSYS", "SYS", "System Library"),
+        ("QSYS2", "SYS", "System Library for CPI's"),
+        ("QUSRSYS", "SYS", "System Library for Users"),
+        ("QHLPSYS", "SYS", ""),
+        ("USERNAME1", "CUR", "USERNAME (*CURLIB your current library)"),
+        ("QGPL", "USR", "General Purpose Library"),
+        ("QTEMP", "USR", ""),
+        ("GAMES400", "USR", "$ fun library"),
+    ];
+    d.set_list(
+        "LIBS",
+        list(
+            libs.iter()
+                .map(|(n, t, x)| vec![("LIBNAME", *n), ("LIBTYPE", *t), ("LIBTEXT", *x)])
+                .collect(),
+        ),
+    );
+    compare("dsplibl", &render(&g, "DSPLIBL", &d, &opts()).unwrap());
+}
+
+#[test]
+fn wrkobj() {
+    let g = shipped("QUIWRKOBJ");
+    let mut d = MapDialog::new();
+    let objs = [
+        ("SETUSER", "*PGM", "CLP", "set users to 4G"),
+        ("EXCELAFBA", "*SQLPKG", "", ""),
+        ("MSACCEAFBA", "*SQLPKG", "", ""),
+        ("MSCS001", "*SQLPKG", "PACKAGE", ""),
+        ("MSNC001", "*SQLPKG", "PACKAGE", ""),
+        ("MSQRY3AFBA", "*SQLPKG", "", ""),
+        ("MSRR001", "*SQLPKG", "PACKAGE", ""),
+        ("MSRS001", "*SQLPKG", "PACKAGE", ""),
+        ("MSUR001", "*SQLPKG", "PACKAGE", ""),
+        ("QSQCLIPKGC", "*SQLPKG", "PACKAGE", ""),
+        ("QSQCLIPKGN", "*SQLPKG", "PACKAGE", ""),
+        ("QSQCLIPKGS", "*SQLPKG", "PACKAGE", ""),
+    ];
+    let mut l = list(
+        objs.iter()
+            .map(|(n, t, a, x)| {
+                vec![("OBJ", *n), ("OBJTYPE", *t), ("OBJLIB", "QGPL"), ("OBJATR", *a), ("OBJTEXT", *x)]
+            })
+            .collect(),
+    );
+    l.total = None;
+    l.complete = false;
+    d.set_list("OBJS", l);
+    compare("wrkobj", &render(&g, "WRKOBJ", &d, &opts()).unwrap());
+}
+
+fn objd_header(d: &mut MapDialog) {
+    d.set("LIBPOS", &format!("{:>28}", "Library 1 of 1"))
+        .set("LIB", "QGPL")
+        .set("OBJ", "QDFTJOBD")
+        .set("OBJLIB", "QGPL")
+        .set("OBJTYPE", "*JOBD")
+        .set("OWNER", "QPGMR");
+}
+
+#[test]
+fn dspobjd_basic() {
+    let g = shipped("QUIDSPOBJD");
+    let mut d = MapDialog::new();
+    objd_header(&mut d);
+    let size = format!("{:<10}{:>18}", "", "8192");
+    d.set_list(
+        "OBJS",
+        list(vec![vec![
+            ("OBJ", "QDFTJOBD"),
+            ("OBJTYPE", "*JOBD"),
+            ("ATRSIZE", size.as_str()),
+            ("OBJTEXT", "Default job description"),
+        ]]),
+    );
+    compare("dspobjd-basic", &render(&g, "BASIC", &d, &opts()).unwrap());
+}
+
+fn objd_full(d: &mut MapDialog) {
+    objd_header(d);
+    d.set("OBJTEXT", "Default job description")
+        .set("CRTDATE", "MM/DD/YY  HH:MM:SS")
+        .set("CRTUSER", "*IBM")
+        .set("CRTSYS", "00000000")
+        .set("DOMAIN", "*SYSTEM")
+        .set("CHGDATE", "MM/DD/YY  HH:MM:SS")
+        .set("USAGE", "YES")
+        .set("LASTUSED", "MM/DD/YY")
+        .set("DAYSUSED", "14")
+        .set("ALWCHG", "NO")
+        .set("AUDIT", "*NOTAVL");
+}
+
+#[test]
+fn dspobjd_full() {
+    let g = shipped("QUIDSPOBJD");
+    let mut d = MapDialog::new();
+    objd_full(&mut d);
+    compare("dspobjd-full", &render(&g, "FULL", &d, &opts()).unwrap());
+}
+
+#[test]
+fn dspobjd_full_2() {
+    let g = shipped("QUIDSPOBJD");
+    let mut d = MapDialog::new();
+    objd_full(&mut d);
+    let o = Options {
+        page: 1,
+        ..opts()
+    };
+    compare("dspobjd-full-2", &render(&g, "FULL", &d, &o).unwrap());
+}

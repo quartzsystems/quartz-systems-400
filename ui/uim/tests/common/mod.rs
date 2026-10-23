@@ -49,6 +49,30 @@ fn masked(row: &str) -> String {
     c.into_iter().collect()
 }
 
+/// The golden's number mask: where it shows `N`, a run of digits on
+/// our row becomes `N` and blanks of the same length.
+fn numbers(golden: &str, row: &str) -> String {
+    let w: Vec<char> = golden.chars().collect();
+    let mut c: Vec<char> = row.chars().collect();
+    let mut i = 0;
+    while i < c.len() {
+        let starts = w.get(i) == Some(&'N')
+            && c[i].is_ascii_digit()
+            && (i == 0 || !c[i - 1].is_ascii_alphanumeric());
+        if starts {
+            c[i] = 'N';
+            i += 1;
+            while i < c.len() && c[i].is_ascii_digit() {
+                c[i] = ' ';
+                i += 1;
+            }
+        } else {
+            i += 1;
+        }
+    }
+    c.into_iter().collect()
+}
+
 /// Compare a screen's character grid with golden `NAME.txt`. The
 /// message line is skipped when the golden shows IBM's copyright
 /// there (ours is Quartz's).
@@ -62,7 +86,7 @@ pub fn compare(golden: &str, screen: &Screen) {
         if w.trim_start().starts_with("(C) COPYRIGHT") {
             continue;
         }
-        let g = got.get(i).map(|r| masked(r)).unwrap_or_default();
+        let g = got.get(i).map(|r| numbers(w, &masked(r))).unwrap_or_default();
         if g.trim_end() != w.trim_end() {
             let _ = writeln!(diff, "row {:>2}:\n  want |{}|\n  got  |{}|", i + 1, w.trim_end(), g.trim_end());
         }
