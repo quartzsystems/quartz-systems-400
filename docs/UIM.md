@@ -302,6 +302,32 @@ fixes the tags). A reader skips tags it does not know.
 
 ## 7. Renderer rules
 
+A draft from the pub400 goldens (2026-10-23), to be settled rule by rule
+as the renderer lands; each rule names the goldens that established it
+(`tools/conformance/golden/verified/pub400`).
+
+Each rule names the goldens that established it (tools/conformance/golden/verified/pub400).
+
+| # | Rule | Goldens |
+|---|---|---|
+| R1 | The panel title is on row 1, starting at column 1 + (80 - len)/2 (integer division); a `PANELID` sits at column 2 of row 1 ("MAIN", "MAJOR", "INFO"). | all; main-menu, major-menu, information-assistant |
+| R2 | `System:` at column 62 of row 2 with the system name at column 72, on data, list and menu panels that show it. | wrksbs, wrkrpyle, wrkjob, dspjobd, dspmsgd-5, dspneta, main-menu |
+| R3 | Panels with the date and time put the system name at column 72 of row 1 and `MM/DD/YY` at 58, `HH:MM:SS UTC` at 68 on row 2 (display-file panels: WRKACTJOB, WRKUSRJOB, WRKSBSJOB). | wrkactjob, wrkusrjob, wrksbsjob |
+| R4 | `Type options, press Enter.` at column 2 on the first free row after the header (row 3, or 5 when a two-row header block follows the title). | wrkobj, wrkjobd, wrkactjob |
+| R5 | Option legends start at column 4, in order, separated so each next item begins 3 columns after the previous item's end, wrapping to a new row at column 4 when the next item would pass column 79. | wrkobj, wrkjobd, wrkcls, wrkbnddir, wrksplf |
+| R6 | List column headings: `Opt` at column 2; data columns start at the header's column; a two-row heading puts the upper word above the lower one right-aligned to the column text start. | wrkjobd ("Job"/"Description"), wrkbnddir ("Binding"/"Directory"), wrkrpyle |
+| R7 | List rows begin two rows below the first heading row? no: directly on the next row; the option entry field is 2 columns at column 3-4; first data column at column 7. | wrkobj, wrkcls, wrkjobd |
+| R8 | `More...` at column 73, `Bottom` at column 74, on the row above the command-line prompt (row 19 with a command line; row 21 with "Press Enter to continue." on row 22? see R10). | wrkobj (19), dspmsg (21), dspjobd (20) |
+| R9 | `Parameters or command` (or `Parameters for options A, B and C or command`, the list's option numbers that take parameters joined with commas and "and"/"or") at column 2 of row 20; `===>` at column 2 of row 21 with the command line following at column 7. | wrkobj, wrkjobd, wrkcls, wrkbnddir, wrkrpyle |
+| R10 | Data panels without a command line end with `Press Enter to continue.` at column 2 of row 21 (list panels in the same style: dspautusr row 20), `More...`/`Bottom` on row 20 (dspjobd) or 19 (dspautusr). | dspjobd, dspsysval, dspmsgd-5, dspneta, dspautusr |
+| R11 | Function keys fill rows 22 and 23 (or 23 alone), each row packed left to right with 3 blanks between keys; when two rows are filled, the keys of the upper row are aligned to the columns of the lower row where the whole row still fits in 79 columns (wrkjobd: 2/15/27/40/54 over 2/15/40), else packed greedily (wrkobj). | wrkjobd, wrkcls, wrkbnddir, wrkusrjob, wrkobj, wrkrpyle |
+| R12 | The copyright line is row 24 of the initial menu and of panels reached from it (menus, dspautusr), never of panels reached from Command Entry. | main-menu, major-menu, dspautusr, wrkrpyle vs command-entry |
+| R13 | Menu panels: `Select one of the following:` at column 2 of row 3; options from row 5, `{:>3}.` at column 5 followed by one blank and the text; `Selection or command` at row 19, `===>` at row 20; a `MENU` tag's option text may be followed by a right column (the command group names at column 70 in MAJOR). | main-menu, major-menu, cmdwrk-menu |
+| R14 | Data panel entries: label from column 2 (sub-entries indented 2), dot leaders ` . ` to the colon so that the colon sits at a column shared by the whole group (col 52 in dspjobd/dspneta, col 46 in dspjob-status, col 32 in dspmsgd-5, col 26 in dspsysval): the colon column is 2 past the longest label of the group rounded to an even column; the value starts 4 columns after the colon (3 blanks); indented sub-entry values start 2 further. | dspjobd, dspneta, dspmsgd-5, dspsysval, dspjob-status |
+| R15 | A data panel's identification block (`Job description:   QDFTJOBD       Library:   QGPL`) is on row 3 with the values 3 blanks after the colon. | dspjobd, dspjob-status, wrkjob |
+| R16 | Message panels: the message line is row 24, white; an error also sounds the alarm. | command-entry (not authorized message on Command Entry), main-menu |
+| R17 | Help windows: F1 on MAIN shows a help panel whose title row carries the help title centered; `More...`/`Bottom`; F3/F12 return. | main-menu-help |
+
 ## 8. Open questions
 
 - The condition grammar accepts a bare name as a variable because the
