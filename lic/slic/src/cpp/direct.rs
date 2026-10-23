@@ -612,7 +612,7 @@ fn chgcmddft(system: &mut System, parms: &Parms) -> CmdReply {
 
 /// `CRTPRXCMD`.
 fn crtprxcmd(system: &mut System, parms: &Parms) -> CmdReply {
-    let (n, l) = parms.qual("PRXCMD");
+    let (n, l) = parms.qual("CMD");
     let (tn, tl) = parms.qual("TGTCMD");
     let text = parms.text("TEXT");
     let replace = parms.yes("REPLACE");
@@ -637,7 +637,7 @@ fn crtprxcmd(system: &mut System, parms: &Parms) -> CmdReply {
 /// `CHGPRXCMD`.
 fn chgprxcmd(system: &mut System, parms: &Parms) -> CmdReply {
     let r = in_store(system, |txn, qsys, names| {
-        let (n, l) = parms.qual("PRXCMD");
+        let (n, l) = parms.qual("CMD");
         let found =
             cmd::store::find(txn, qsys, names, &n, &lib_or(&l)).map_err(|e| e.to_string())?;
         let (tn, tl) = parms.qual("TGTCMD");

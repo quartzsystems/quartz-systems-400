@@ -5,7 +5,7 @@
 /* CHGPRXCMD: change the target or the text of a proxy command. */
              CMD        PROMPT('Change Proxy Command') MAXPOS(1) +
                           ALLOW(*ALL) HLPPNLGRP(QHPGCMD) HLPID(CHGPRXCMD)
-             PARM       KWD(PRXCMD) TYPE(Q1) MIN(1) PROMPT('Proxy command')
+             PARM       KWD(CMD) TYPE(Q1) MIN(1) PROMPT('Proxy command')
              PARM       KWD(TGTCMD) TYPE(Q2) DFT(*SAME) SNGVAL((*SAME)) +
                           PROMPT('Target command')
              PARM       KWD(TEXT) TYPE(*CHAR) LEN(50) DFT(*SAME) +

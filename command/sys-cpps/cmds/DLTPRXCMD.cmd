@@ -5,7 +5,7 @@
 /* DLTPRXCMD: delete one proxy command or a generic set of them. */
              CMD        PROMPT('Delete Proxy Command') MAXPOS(1) +
                           ALLOW(*ALL) HLPPNLGRP(QHPGCMD) HLPID(DLTPRXCMD)
-             PARM       KWD(PRXCMD) TYPE(Q1) MIN(1) PROMPT('Proxy command')
+             PARM       KWD(CMD) TYPE(Q1) MIN(1) PROMPT('Proxy command')
              Q1:        QUAL       TYPE(*GENERIC) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB) (*USRLIBL) (*ALL) +

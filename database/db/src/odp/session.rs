@@ -427,7 +427,7 @@ impl Session {
         Ok(cycle)
     }
 
-    /// `ROLLBCK`.
+    /// `ROLLBACK`.
     pub fn rollbck(&mut self, txn: &mut Txn<'_>, now: Option<u64>) -> Result<ChangeReport> {
         let c = Rc::clone(self.commit_def().ok_or(DbError::CommitNotActive)?);
         let r = c.borrow_mut().rollback(txn, now)?;

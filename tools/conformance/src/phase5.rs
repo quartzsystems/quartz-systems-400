@@ -569,7 +569,7 @@ impl Suite {
             CMD,
         )?;
         s.command(
-            "addjobscde JOB(WMWEEK) CMD('wrkactjob') FRQ(*WEEKLY) SCDDAY(*ALL) SCDTIME(235959)",
+            "addjobscde JOB(WMWEEK) CMD('wrkactjob') FRQ(*WEEKLY) SCDDATE(*NONE) SCDDAY(*ALL) SCDTIME(235959)",
             CMD,
         )?;
         let held = s.command("hldjobscde WMWEEK", CMD)?;

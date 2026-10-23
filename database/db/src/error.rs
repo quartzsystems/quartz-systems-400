@@ -193,7 +193,7 @@ pub enum DbError {
     #[error("commitment control is not active for the job")]
     CommitOpen,
 
-    /// `COMMIT`, `ROLLBCK` or `ENDCMTCTL` without `STRCMTCTL`.
+    /// `COMMIT`, `ROLLBACK` or `ENDCMTCTL` without `STRCMTCTL`.
     #[error("commitment control is not active")]
     CommitNotActive,
 

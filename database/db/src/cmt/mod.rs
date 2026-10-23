@@ -246,7 +246,7 @@ impl CommitDef {
         self.close_cycle(txn, "CM", now)
     }
 
-    /// `ROLLBCK`: undo the cycle from its journal entries newest first,
+    /// `ROLLBACK`: undo the cycle from its journal entries newest first,
     /// then `C RB`.
     pub fn rollback(&mut self, txn: &mut Txn<'_>, now: Option<u64>) -> Result<ChangeReport> {
         if self.cycle == 0 {

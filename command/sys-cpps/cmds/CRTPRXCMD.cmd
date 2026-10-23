@@ -5,7 +5,7 @@
 /* CRTPRXCMD: create a proxy command that stands for another command. */
              CMD        PROMPT('Create Proxy Command') MAXPOS(2) +
                           ALLOW(*ALL) HLPPNLGRP(QHPGCMD) HLPID(CRTPRXCMD)
-             PARM       KWD(PRXCMD) TYPE(Q1) MIN(1) PROMPT('Proxy command')
+             PARM       KWD(CMD) TYPE(Q1) MIN(1) PROMPT('Proxy command')
              PARM       KWD(TGTCMD) TYPE(Q2) MIN(1) PROMPT('Target command')
              PARM       KWD(TEXT) TYPE(*CHAR) LEN(50) DFT(*BLANK) +
                           SPCVAL((*BLANK ' ')) PROMPT('Description')
