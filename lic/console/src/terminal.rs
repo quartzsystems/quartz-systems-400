@@ -141,6 +141,9 @@ impl ConsoleTerminal {
         let (row, col) = self.term.cursor();
         s.cursor = (row.saturating_sub(1), col.saturating_sub(1));
         if self.locked() {
+            // Input inhibited: the operator sees the indicator, not the
+            // message the host has yet to replace.
+            s.put(ROWS, 1, &" ".repeat(COLS), Attr::GREEN);
             s.put(ROWS, 1, INHIBITED, Attr::WHITE);
         }
         s
@@ -149,7 +152,13 @@ impl ConsoleTerminal {
     /// The text rows, for dumps.
     #[must_use]
     pub fn text_rows(&self) -> Vec<String> {
-        self.term.text_rows()
+        let mut rows = self.term.text_rows();
+        if self.locked()
+            && let Some(last) = rows.get_mut(ROWS - 1)
+        {
+            *last = format!("{INHIBITED:<COLS$}");
+        }
+        rows
     }
 
     /// Whether the last key was taken (for tests).
@@ -200,6 +209,7 @@ mod tests {
         let sent = t.key(Key::Enter);
         assert_eq!(sent.len(), 1);
         assert!(t.locked());
+        assert!(t.text_rows()[23].starts_with("X II"));
         assert!(t.text_rows()[5].contains("CODY"));
     }
 }
