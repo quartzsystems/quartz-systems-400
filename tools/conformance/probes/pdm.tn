@@ -43,7 +43,7 @@ key f12
 settle 800
 key f3
 wait "Main Menu"
-type wrklibpdm cwellman1
+type wrklibpdm {user}1
 key enter
 settle 1500
 snap pdm-wrklibpdm
@@ -59,7 +59,7 @@ key f24
 settle 800
 key f3
 wait "Main Menu"
-type wrkobjpdm cwellman1
+type wrkobjpdm {user}1
 key enter
 settle 1500
 snap pdm-wrkobjpdm
@@ -127,7 +127,7 @@ key f12
 settle 1000
 key f3
 wait "Main Menu"
-type wrkmbrpdm cwellman1/qclsrc
+type wrkmbrpdm {user}1/qclsrc
 key enter
 settle 1500
 snap pdm-wrkmbrpdm-own

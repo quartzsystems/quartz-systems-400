@@ -7,7 +7,7 @@ key enter
 wait "Main Menu"
 continue
 timeout 90000
-type strdbg pgm(cwellman1/qdfuzz) updprod(*no)
+type strdbg pgm({user}1/qdfuzz) updprod(*no)
 key enter
 wait "Display Module Source"
 settle 1500
@@ -20,7 +20,7 @@ settle 1500
 type enddbg
 key enter
 settle 1500
-type strdbg pgm(cwellman1/qstestpub) updprod(*no)
+type strdbg pgm({user}1/qstestpub) updprod(*no)
 key enter
 wait "Display Module Source"
 settle 1500

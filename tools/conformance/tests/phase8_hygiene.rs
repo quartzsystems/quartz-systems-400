@@ -72,9 +72,10 @@ fn no_credential_in_the_tree() {
         let Ok(bytes) = std::fs::read(&f) else {
             continue;
         };
-        let text = String::from_utf8_lossy(&bytes);
+        // In any case: a probe once typed the account name in lower case.
+        let text = String::from_utf8_lossy(&bytes).to_lowercase();
         for (k, v) in &secrets {
-            if text.contains(v.as_str()) {
+            if text.contains(&v.to_lowercase()) {
                 hits.push(format!("{} holds the value of {k}", f.display()));
             }
         }

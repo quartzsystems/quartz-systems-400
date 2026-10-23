@@ -17,11 +17,11 @@ key enter
 settle 1500
 type qstestdfu
 key fieldexit
-type cwellman1
+type {user}1
 key fieldexit
 type qdfuzzin
 key fieldexit
-type cwellman1
+type {user}1
 key fieldexit
 key enter
 settle 3000

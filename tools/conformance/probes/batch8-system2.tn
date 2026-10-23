@@ -110,37 +110,37 @@ settle 2000
 snap dspautlobj
 key f3
 wait "Main Menu"
-type dspusrprf cwellman *objaut
+type dspusrprf {user} *objaut
 key enter
 settle 2000
 snap dspusrprf-objaut
 key f3
 wait "Main Menu"
-type dspusrprf cwellman *objown
+type dspusrprf {user} *objown
 key enter
 settle 2000
 snap dspusrprf-objown
 key f3
 wait "Main Menu"
-type dspusrprf cwellman *objpgp
+type dspusrprf {user} *objpgp
 key enter
 settle 2000
 snap dspusrprf-objpgp
 key f3
 wait "Main Menu"
-type dspusrprf cwellman *cmdaut
+type dspusrprf {user} *cmdaut
 key enter
 settle 2000
 snap dspusrprf-cmdaut
 key f3
 wait "Main Menu"
-type dspusrprf cwellman *devaut
+type dspusrprf {user} *devaut
 key enter
 settle 2000
 snap dspusrprf-devaut
 key f3
 wait "Main Menu"
-type dspusrprf cwellman *grpmbr
+type dspusrprf {user} *grpmbr
 key enter
 settle 2000
 snap dspusrprf-grpmbr
@@ -158,7 +158,7 @@ settle 1500
 snap edtlibl
 key f12
 wait "Main Menu"
-type edtobjaut qsys/cwellman1 *lib
+type edtobjaut qsys/{user}1 *lib
 key enter
 settle 2000
 snap edtobjaut

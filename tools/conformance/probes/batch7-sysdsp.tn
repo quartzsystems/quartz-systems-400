@@ -68,7 +68,7 @@ settle 2000
 snap attn-program
 key f3
 wait "Main Menu"
-type sndmsg msg('A break message for the capture') tousr(cwellman)
+type sndmsg msg('A break message for the capture') tousr({user})
 key enter
 settle 3000
 snap break-message

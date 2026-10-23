@@ -47,7 +47,7 @@ settle 1000
 snap wrkusrjob +jobnum
 key f3
 wait "Command Entry"
-type dspusrprf cwellman
+type dspusrprf {user}
 key enter
 settle 1000
 snap dspusrprf

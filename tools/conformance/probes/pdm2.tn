@@ -5,7 +5,7 @@
 wait "Main Menu"
 continue
 timeout 30000
-type wrklibpdm cwellman1
+type wrklibpdm {user}1
 key enter
 settle 1500
 key f24
@@ -22,7 +22,7 @@ key f11
 settle 800
 key f3
 wait "Main Menu"
-type wrkobjpdm cwellman1
+type wrkobjpdm {user}1
 key enter
 settle 1500
 key f24

@@ -25,6 +25,8 @@
 //! sleep 500                 milliseconds
 //! mask NAME REGEX => TOKEN  a mask for the following snaps
 //! echo text
+//! {user}                    in any step: the target's user name, so a
+//!                           script never holds the account itself
 //! continue                  keep going after a failed step (the script
 //!                           still counts as failed at the end)
 //! ```
@@ -166,7 +168,8 @@ pub fn run(s: &mut Session, ctx: &mut Context, text: &str) -> Result<()> {
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
-        if let Err(e) = step(s, ctx, line).with_context(|| format!("line {}: {line}", i + 1)) {
+        let expanded = line.replace("{user}", &ctx.user);
+        if let Err(e) = step(s, ctx, &expanded).with_context(|| format!("line {}: {line}", i + 1)) {
             if ctx.continue_on_error {
                 println!("  step failed, going on: {e:#}");
                 ctx.failed_steps += 1;
