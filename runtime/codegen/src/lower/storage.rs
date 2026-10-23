@@ -594,7 +594,10 @@ impl Lowerer<'_, '_> {
     fn ptr_inst(&mut self, p: &PtrInst) -> Result<()> {
         match p {
             PtrInst::Addr { dst, place } => {
-                let (a, ty) = self.addr(place)?;
+                let (a, ty) = match self.param_addr(place) {
+                    Some(x) => x,
+                    None => self.addr(place)?,
+                };
                 let out = self.ptr_slot();
                 let len = self.i64(i64::try_from(ty.size()).expect("size fits"));
                 let frame = self.i64(i64::from(self.in_frame(place)));

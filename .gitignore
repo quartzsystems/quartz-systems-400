@@ -4,3 +4,5 @@
 .claude/
 tools/conformance/oracle/.env
 tools/conformance/hlinv/src/
+tools/conformance/oss/src/
+__pycache__/

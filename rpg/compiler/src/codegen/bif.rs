@@ -807,17 +807,20 @@ impl Gen<'_> {
         for (prm, a) in p.parms.iter().zip(args) {
             ops.push(self.argument(prm, a)?);
         }
-        let callee = self.declare_callee(p);
         let list = ops.join(", ");
-        if let Some(pgm) = &p.extpgm {
-            let _ = pgm;
-            self.b.ins(format!("call {callee}({list})"));
+        let callee = match self.through_pointer(p) {
+            Some(head) => head,
+            None => format!("callb {}", self.declare_callee(p)),
+        };
+        if p.extpgm.is_some() {
+            let name = self.declare_callee(p);
+            self.b.ins(format!("call {name}({list})"));
             return Some(V::lit(Ty::Unknown, ""));
         }
         match &p.ret {
             Some(rt) if crate::codegen::stmt::is_reg_type(rt) => {
                 let r = self.b.reg();
-                self.b.ins(format!("{r} = callb {callee}({list})"));
+                self.b.ins(format!("{r} = {callee}({list})"));
                 let r = if *rt == Ty::Float(4) {
                     let f = self.b.reg();
                     self.b.ins(format!("{f} = cvt.f64 {r}"));
@@ -836,11 +839,11 @@ impl Gen<'_> {
             }
             Some(rt) => {
                 let t = self.tmp(rt);
-                self.b.ins(format!("callb {callee}({list}) -> {}", t.op));
+                self.b.ins(format!("{callee}({list}) -> {}", t.op));
                 Some(t)
             }
             None => {
-                self.b.ins(format!("callb {callee}({list})"));
+                self.b.ins(format!("{callee}({list})"));
                 if want_value {
                     self.err(ids::BAD_EXPRESSION_TYPE, 30, p.name.clone());
                     return None;
@@ -848,6 +851,26 @@ impl Gen<'_> {
                 Some(V::lit(Ty::Unknown, ""))
             }
         }
+    }
+
+    /// A call through the procedure pointer `EXTPROC` names: the
+    /// `callpp %p as PROTO` head, the signature declared as a prototype.
+    fn through_pointer(&mut self, p: &Proto) -> Option<String> {
+        if !p.extproc_word {
+            return None;
+        }
+        let id = self.t.find(self.scope, p.extproc.as_deref()?)?;
+        if self.t.syms[id].ty != Ty::ProcPtr {
+            return None;
+        }
+        let place = crate::codegen::place_of(self.t, id);
+        let decl = self.declare_callee(&Proto { extproc: Some(format!("_QRNPP_{}", p.name)), extproc_word: false, ..p.clone() });
+        if let Some(e) = self.externs.get_mut(&decl) {
+            *e = e.replacen("extern proc ", "proto ", 1);
+        }
+        let r = self.b.reg();
+        self.b.ins(format!("{r} = load {place}"));
+        Some(format!("callpp {r} as {decl}"))
     }
 
     /// The IR name of a call's target, declaring an external one.

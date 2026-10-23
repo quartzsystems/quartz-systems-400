@@ -1,0 +1,26 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-ds t template qualified;
+  id int(10) inz(7);
+  nm char(8) inz('tmpl');
+end-ds;
+dcl-ds x likeds(t) inz(*likeds);
+dcl-ds y likeds(t);
+dcl-ds arr likeds(t) dim(3) inz(*likeds);
+dcl-ds nest qualified;
+  head char(2) inz('hd');
+  inner likeds(t);
+  tail char(2) inz('tl');
+end-ds;
+line = %char(x.id) + ' [' + x.nm + '] ' + %char(%size(x));
+write QSYSPRT line;
+line = %char(y.id) + ' [' + y.nm + ']';
+write QSYSPRT line;
+line = %char(%elem(arr)) + ' ' + %char(arr(3).id) + ' ' + %char(%size(arr : *all));
+write QSYSPRT line;
+nest.inner.id = 55;
+line = nest.head + ' ' + %char(nest.inner.id) + ' ' + nest.tail + ' ' + %char(%size(nest));
+write QSYSPRT line;
+*inlr = *on;

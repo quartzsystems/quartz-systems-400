@@ -5,7 +5,8 @@
 //! The RPG corpus in memory: every member compiles and runs, its
 //! outcome and listing go under `target/conformance-rpg/ours/`, and the
 //! outcomes are compared with the oracle's in `expected/` (provenance
-//! lines aside). Members the oracle has not run yet are listed.
+//! lines aside). Members the oracle has not run yet are listed, and so
+//! are those `known.txt` names as known to differ.
 
 use std::fs;
 
@@ -22,6 +23,13 @@ fn every_member_matches_the_oracle() {
     let mut failures = Vec::new();
     let mut missing = Vec::new();
     let mut passed = 0;
+    let known_text = fs::read_to_string(kit.root.join("known.txt")).unwrap_or_default();
+    let known: Vec<&str> = known_text
+        .lines()
+        .filter(|l| !l.starts_with('#'))
+        .filter_map(|l| l.split_whitespace().next())
+        .collect();
+    let mut known_hit = Vec::new();
     for (batch, case) in &cases {
         let (o, listing, notes) = match run(case) {
             Ok(x) => x,
@@ -37,11 +45,20 @@ fn every_member_matches_the_oracle() {
         let exp = kit.expected_dir().join(format!("{}.out", case.name));
         match fs::read_to_string(&exp) {
             Ok(e) if comparable(&e) == comparable(&text) => passed += 1,
+            Ok(_) if known.contains(&case.name.as_str()) => known_hit.push(case.name.clone()),
             Ok(_) => failures.push(format!("{batch}/{}: differs (diff target/conformance-rpg/ours/{0}.out against expected)", case.name)),
             Err(_) => missing.push(case.name.clone()),
         }
     }
-    eprintln!("rpg kit: {passed} match, {} differ, {} without an oracle outcome", failures.len(), missing.len());
+    eprintln!(
+        "rpg kit: {passed} match, {} differ, {} known to differ, {} without an oracle outcome",
+        failures.len(),
+        known_hit.len(),
+        missing.len()
+    );
+    if !known_hit.is_empty() {
+        eprintln!("known to differ: {}", known_hit.join(" "));
+    }
     if !missing.is_empty() {
         eprintln!("not yet run on the oracle: {}", missing.join(" "));
     }

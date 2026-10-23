@@ -1,0 +1,348 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   PRC001
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   PRC001
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 ctl-opt dftactgrp(*no);                                                                                   000000     000200
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     3 dcl-f QSYSPRT printer(132);                                                                               000000     000300
+-     4 dcl-ds line len(132) end-ds;                                                                              000000     000400
+ ======>       aaaa
+ *RNF3530 00 a      000400  Data structure LINE has no valid subfields.
+      5 dcl-s n packed(7:2) inz(10);                                                                              000000     000500
+      6 dcl-s c char(10) inz('abc');                                                                              000000     000600
+      7 dcl-s v varchar(20);                                                                                      000000     000700
+      8 dcl-s f ind;                                                                                              000000     000800
+      9 dcl-s i int(10);                                                                                          000000     000900
+ *RNF2318 00      3 000300  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-    10 bump(n);                                                                                                  000000     001000
+     11 line = 'bump ' + %char(n);                                                                                000000     001100
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     12 write QSYSPRT line;                                                                                       000000     001200
+     13 v = twice('xy');                                                                                          000000     001300
+     14 line = 'twice ' + v + ' ' + %char(%len(v));                                                               000000     001400
+     15 write QSYSPRT line;                                                                                       000000     001500
+     16 i = sum3(1 : 2 : n * 2);                                                                                  000000     001600
+     17 line = 'sum3 ' + %char(i);                                                                                000000     001700
+     18 write QSYSPRT line;                                                                                       000000     001800
+     19 f = isbig(n + 1000);                                                                                      000000     001900
+     20 line = 'isbig ' + f;                                                                                      000000     002000
+     21 write QSYSPRT line;                                                                                       000000     002100
+     22 c = %trim(c) + 'd';                                                                                       000000     002200
+     23 line = 'val ' + byval(c) + ' ' + c;                                                                       000000     002300
+     24 write QSYSPRT line;                                                                                       000000     002400
+     25 line = 'fact ' + %char(fact(10));                                                                         000000     002500
+     26 write QSYSPRT line;                                                                                       000000     002600
+     27 *inlr = *on;                                                                                              000000     002700
+-    28 dcl-proc bump;                                                                                            000000     002800
+-    29   dcl-pi *n;                                                                                              000000     002900
+     30     x packed(7:2);                                                                                        000000     003000
+     31   end-pi;                                                                                                 000000     003100
+-    32   x += 1.5;                                                                                               000000     003200
+     33 end-proc;                                                                                                 000000     003300
+     34 dcl-proc twice;                                                                                           000000     003400
+-    35   dcl-pi *n varchar(20);                                                                                  000000     003500
+     36     s varchar(10) const;                                                                                  000000     003600
+     37   end-pi;                                                                                                 000000     003700
+-    38   return s + s;                                                                                           000000     003800
+     39 end-proc;                                                                                                 000000     003900
+     40 dcl-proc sum3;                                                                                            000000     004000
+-    41   dcl-pi *n int(10);                                                                                      000000     004100
+     42     a int(10) value;                                                                                      000000     004200
+     43     b int(10) value;                                                                                      000000     004300
+     44     c packed(9:2) const;                                                                                  000000     004400
+     45   end-pi;                                                                                                 000000     004500
+-    46   return a + b + %int(c);                                                                                 000000     004600
+     47 end-proc;                                                                                                 000000     004700
+     48 dcl-proc isbig;                                                                                           000000     004800
+-    49   dcl-pi *n ind;                                                                                          000000     004900
+     50     x packed(9:2) value;                                                                                  000000     005000
+     51   end-pi;                                                                                                 000000     005100
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     52   return x > 500;                                                                                         000000     005200
+     53 end-proc;                                                                                                 000000     005300
+     54 dcl-proc byval;                                                                                           000000     005400
+-    55   dcl-pi *n char(10);                                                                                     000000     005500
+     56     s char(10) value;                                                                                     000000     005600
+     57   end-pi;                                                                                                 000000     005700
+-    58   s = 'changed';                                                                                          000000     005800
+     59   return s;                                                                                               000000     005900
+     60 end-proc;                                                                                                 000000     006000
+     61 dcl-proc fact;                                                                                            000000     006100
+-    62   dcl-pi *n packed(15:0);                                                                                 000000     006200
+     63     k int(10) value;                                                                                      000000     006300
+     64   end-pi;                                                                                                 000000     006400
+-    65   if k <= 1;                                                                                         B01  000000     006500
+     66     return 1;                                                                                         01  000000     006600
+     67   endif;                                                                                             E01  000000     006700
+     68   return k * fact(k - 1);                                                                                 000000     006800
+     69 end-proc;                                                                                                 000000     006900
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 3D     12      15      18
+                                                   21      24      26
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   27M
+          BUMP              PROTOTYPE              10M     28
+          BYVAL             A(10)                  23      54
+                            PROTOTYPE
+          C                 A(10)                   6D     22M     22      23
+                                                   23
+          F                 N(1)                    8D     19M     20
+          FACT              P(15,0)                25      61      68
+                            PROTOTYPE
+          I                 I(10,0)                 9D     16M     17
+          ISBIG             N(1)                   19      48
+                            PROTOTYPE
+          LINE              DS(132)                 4D     11M     12      14M
+                                                   15      17M     18      20M
+                                                   21      23M     24      25M
+                                                   26
+          N                 P(7,2)                  5D     10      11      16
+                                                   19
+          SUM3              I(10,0)                16      40
+                            PROTOTYPE
+          TWICE             A(20)                  13      34
+                            VARYING(2)
+                            PROTOTYPE
+          V                 A(20)                   7D     13M     14      14
+                            VARYING(2)
+       Field References for subprocedure BUMP
+0         Field             Attributes         References (D=Defined M=Modified)
+          X                 P(7,2)                 30D     32M
+                            BASED(_QRNL_PST+)
+       Field References for subprocedure TWICE
+0         Field             Attributes         References (D=Defined M=Modified)
+          S                 A(10)                  36D     38      38
+                            BASED(_QRNL_PST+)
+                            VARYING(2)
+       Field References for subprocedure SUM3
+0         Field             Attributes         References (D=Defined M=Modified)
+          A                 I(10,0)                42D     46
+          B                 I(10,0)                43D     46
+          C                 P(9,2)                 44D     46
+                            BASED(_QRNL_PST+)
+       Field References for subprocedure ISBIG
+0         Field             Attributes         References (D=Defined M=Modified)
+1{heading} page 7
+0         X                 P(9,2)                 50D     52
+       Field References for subprocedure BYVAL
+0         Field             Attributes         References (D=Defined M=Modified)
+          S                 A(10)                  56D     58M     59
+       Field References for subprocedure FACT
+0         Field             Attributes         References (D=Defined M=Modified)
+          K                 I(10,0)                63D     65      68      68
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                       27M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 10
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        2
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        2
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       69
+     Specifications  . . . . . . . . :       56
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        0
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program PRC001 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

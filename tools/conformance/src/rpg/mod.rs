@@ -15,7 +15,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
-use ile::{ActGrpAttr, BindInput, BindOptions, CreateData, ModuleObject, PgmKind};
+use ile::{ActGrpAttr, CreateData, ModuleObject, PgmKind};
 use mi::io::spool::{MemSpool, PrinterOpen, SpoolSink};
 use mi::io::IoFail;
 use mi::{Job, MemSource, MemUserSpaces};
@@ -26,6 +26,9 @@ use rpgfront::{MemIncludes, Member};
 use sysapi::{LocalNow, MemProvider};
 
 use crate::qir::CLOCK;
+
+pub mod build;
+pub mod fuzz;
 
 /// How long one member may run in the kit before its request ends.
 const LIMIT_MS: u64 = 10_000;
@@ -181,11 +184,59 @@ pub fn member(case: &Case) -> Member {
 /// Compile a case.
 #[must_use]
 pub fn compile(case: &Case) -> rpgc::Compiled {
-    rpgc::compile(member(case), &mut MemIncludes::default(), &mut rpgc::NoExtFiles, &options(case))
+    rpgc::compile(member(case), &mut includes(case), &mut rpgc::NoExtFiles, &options(case))
+}
+
+/// The members a case's `with:` brings, for `/COPY` and the setup.
+#[must_use]
+pub fn includes(case: &Case) -> MemIncludes {
+    let mut inc = MemIncludes::default();
+    for (n, lines) in &case.with {
+        inc.members.push(Member::from_text("QGPL", "QRPGLESRC", n, &lines.join("\n")));
+    }
+    inc
+}
+
+/// Compile one of a case's members as a module with a setup command's
+/// options: the IR, or the reason it was not created.
+fn compile_member(case: &Case, mbr: &str, module: &str, cmd: &str) -> Result<String, String> {
+    let lines = if mbr == case.name {
+        case.lines.clone()
+    } else {
+        case.with
+            .iter()
+            .find(|(n, _)| n == mbr)
+            .map(|(_, l)| l.clone())
+            .ok_or_else(|| format!("{mbr}: not among the case's members"))?
+    };
+    let sub = Case {
+        name: module.to_string(),
+        lines,
+        cmd: cmd.to_string(),
+        ..case.clone()
+    };
+    let mut o = options(&sub);
+    o.command = if cmd.trim_start().to_ascii_uppercase().starts_with("CRTBNDRPG") {
+        rpgc::Command::CrtBndRpg
+    } else {
+        rpgc::Command::CrtRpgMod
+    };
+    let c = rpgc::compile(
+        Member::from_text("QGPL", "QRPGLESRC", mbr, &sub.lines.join("\n")),
+        &mut includes(case),
+        &mut rpgc::NoExtFiles,
+        &o,
+    );
+    if c.created {
+        Ok(c.qir)
+    } else {
+        Err(format!("{module}: not created ({})", c.diags.iter().map(|d| d.msgid).collect::<Vec<_>>().join(" ")))
+    }
 }
 
 /// The diagnostics as the oracle's listing reports them.
-fn diags(c: &rpgc::Compiled) -> Vec<ODiag> {
+#[must_use]
+pub fn diags(c: &rpgc::Compiled) -> Vec<ODiag> {
     let mut out: Vec<ODiag> = c
         .diags
         .iter()
@@ -208,7 +259,7 @@ fn diags(c: &rpgc::Compiled) -> Vec<ODiag> {
 }
 
 /// The program a compile made.
-fn program(c: &rpgc::Compiled, name: &str) -> Result<ile::ProgramObject, String> {
+fn program(c: &rpgc::Compiled, name: &str, objs: &build::Objects, cmd: &str) -> Result<ile::ProgramObject, String> {
     let m = qir::parse(&c.qir).map_err(|e| format!("{name}: {e}"))?;
     let actgrp = match &m.actgrp {
         qir::ActGrp::New => ActGrpAttr::New,
@@ -217,17 +268,10 @@ fn program(c: &rpgc::Compiled, name: &str) -> Result<ile::ProgramObject, String>
     };
     let dft = m.dftactgrp;
     let mo = ModuleObject::compile(m, CreateData::default(), CLOCK).map_err(|e| format!("{name}: {e}"))?;
-    let mut opts = BindOptions::new(&mo.name.clone(), PgmKind::Pgm);
-    opts.attr.actgrp = if dft { ActGrpAttr::Default } else { actgrp };
-    opts.allow_unresolved = true;
-    ile::bind(BindInput {
-        modules: vec![(mo, "QGPL".into())],
-        bnddirs: Vec::new(),
-        lookup: &|_| None,
-        options: opts,
-    })
-    .map(|(p, _)| p)
-    .map_err(|e| format!("{name}: {e}"))
+    // The directories the control specification and the command name.
+    let mut dirs: Vec<String> = c.ctl.bnddir.iter().map(|d| d.rsplit('/').next().unwrap_or(d).to_string()).collect();
+    dirs.extend(build::names_of(&build::kwd(cmd, "BNDDIR")));
+    objs.bind(&mo.name.clone(), PgmKind::Pgm, vec![mo], &dirs, &[], if dft { ActGrpAttr::Default } else { actgrp })
 }
 
 /// The spooled files as page/line rows of printed lines.
@@ -265,6 +309,41 @@ pub fn notes(c: &rpgc::Compiled) -> String {
 /// Compile and run a case: its outcome, listing and notes.
 #[allow(clippy::many_single_char_names)]
 pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
+    // The setup's modules, service programs and directories.
+    let mut objs = build::Objects::default();
+    for s in &case.setup {
+        let cmd = case.fill(s, "QGPL");
+        objs.setup(&cmd, &|mbr, module, cmd| compile_member(case, mbr, module, cmd))?;
+    }
+    let main_cmd = case.fill(&case.cmd, "QGPL");
+    let verb = main_cmd.trim().to_ascii_uppercase().split_whitespace().next().unwrap_or("").to_string();
+    // CRTPGM binds what the setup made; nothing is compiled.
+    if verb == "CRTPGM" {
+        let mods: Vec<ModuleObject> = build::names_of(&build::kwd(&main_cmd, "MODULE"))
+            .iter()
+            .filter_map(|m| objs.modules.get(m).cloned())
+            .collect();
+        let p = objs.bind(
+            &case.name,
+            PgmKind::Pgm,
+            mods,
+            &build::names_of(&build::kwd(&main_cmd, "BNDDIR")),
+            &build::names_of(&build::kwd(&main_cmd, "BNDSRVPGM")),
+            ActGrpAttr::Named("QILE".into()),
+        );
+        let mut o = Outcome::default();
+        return match p {
+            Ok(p) => {
+                o.created = true;
+                call_into(case, &mut o, p, &objs);
+                Ok((o, Vec::new(), String::new()))
+            }
+            Err(e) => {
+                o.cause = "CPF5D04".into();
+                Ok((o, Vec::new(), e))
+            }
+        };
+    }
     let c = compile(case);
     let notes = notes(&c);
     let mut o = Outcome {
@@ -273,10 +352,22 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
         diags: diags(&c),
         ..Outcome::default()
     };
-    if c.created && !case.call.is_empty() {
-        let p = program(&c, &case.name)?;
+    if c.created && !case.call.is_empty() && verb != "CRTRPGMOD" {
+        let p = program(&c, &case.name, &objs, &main_cmd)?;
+        call_into(case, &mut o, p, &objs);
+    }
+    Ok((o, c.listing, notes))
+}
+
+/// Call a program with the case's service programs at hand, and note
+/// how it ended and what it printed.
+fn call_into(case: &Case, o: &mut Outcome, p: ile::ProgramObject, objs: &build::Objects) {
+    {
         let mut src = MemSource::default();
         src.add("QGPL", p);
+        for s in objs.srvpgms.values().chain(objs.programs.values()) {
+            src.add("QGPL", s.clone());
+        }
         let mut job = Job::boxed(Box::new(src));
         job.usrspcs.set_source(Box::new(MemUserSpaces::default()));
         let mut provider = MemProvider::default();
@@ -311,5 +402,4 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
         sysapi::uninstall(&job);
         o.spool = spooled(&spool.0.borrow());
     }
-    Ok((o, c.listing, notes))
 }

@@ -10,7 +10,13 @@
 //!   default is `CRTBNDRPG` with `DBGVIEW(*NONE) OUTPUT(*PRINT)`.
 //! - `call:` the call command; `run: no` compiles only.
 //! - `rcdlen:` the source file's record length (112 by default).
-//! - `setup:` a command run before the compile (several allowed).
+//! - `setup:` a command run before the compile (several allowed);
+//!   one that compiles (`CRT...`) keeps the compile gap.
+//! - `with:` other members the case needs (copy members, modules of a
+//!   service program): `NAME.rpginc` files beside it, uploaded under
+//!   their own names.
+//! - `cleanup:` a command run after the call (several allowed): the
+//!   objects the setup made.
 //! - `target:` `pub400`, the only system with a compiler.
 
 use std::path::Path;
@@ -30,6 +36,12 @@ pub struct Case {
     pub rcdlen: usize,
     /// Commands before the compile.
     pub setup: Vec<String>,
+    /// Commands after the call.
+    pub cleanup: Vec<String>,
+    /// Other members: name and lines.
+    pub with: Vec<(String, Vec<String>)>,
+    /// The names `with:` asked for, before they are loaded.
+    pub with_names: Vec<String>,
 }
 
 /// The default compile command.
@@ -50,6 +62,9 @@ impl Case {
             call: DEFAULT_CALL.into(),
             rcdlen: 112,
             setup: Vec::new(),
+            cleanup: Vec::new(),
+            with: Vec::new(),
+            with_names: Vec::new(),
         };
         for l in c.lines.clone() {
             let Some((key, value)) = directive(&l) else {
@@ -61,20 +76,33 @@ impl Case {
                 "run" if value.eq_ignore_ascii_case("no") => c.call.clear(),
                 "rcdlen" => c.rcdlen = value.parse().unwrap_or(112),
                 "setup" => c.setup.push(value),
+                "cleanup" => c.cleanup.push(value),
+                "with" => c
+                    .with_names
+                    .extend(value.split([',', ' ']).filter(|s| !s.is_empty()).map(str::to_ascii_uppercase)),
                 _ => {}
             }
         }
         c
     }
 
-    /// Read a member from a file named `NAME.rpgle` (or `.sqlrpgle`).
+    /// Read a member from a file named `NAME.rpgle` (or `.sqlrpgle`),
+    /// with the `.rpginc` members its `with:` names.
     pub fn load(path: &Path) -> std::io::Result<Self> {
         let text = std::fs::read_to_string(path)?;
         let name = path
             .file_stem()
             .map(|s| s.to_string_lossy().to_string())
             .unwrap_or_default();
-        Ok(Self::parse(&name, &text))
+        let mut c = Self::parse(&name, &text);
+        let dir = path.parent().unwrap_or_else(|| Path::new("."));
+        for w in c.with_names.clone() {
+            let p = dir.join(format!("{w}.rpginc"));
+            let p = if p.exists() { p } else { dir.join(format!("{}.rpginc", w.to_ascii_lowercase())) };
+            let t = std::fs::read_to_string(&p)?;
+            c.with.push((w, t.replace("\r\n", "\n").lines().map(str::to_string).collect()));
+        }
+        Ok(c)
     }
 
     /// A template with `{lib}` and `{name}` filled.

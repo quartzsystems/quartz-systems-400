@@ -81,9 +81,8 @@ impl Gen<'_> {
                 }
                 if let (Vk::Lit, Some(n), Some(m)) = (src.kind, dst.ty.str_len(), src.ty.str_len())
                     && m > n
-                    && !dst.ty.is_varying()
                 {
-                    // The literal cut to the field.
+                    // The literal cut to the field (or its maximum).
                     let text: String = src.op.trim_matches('"').replace("\"\"", "\"");
                     let cut: String = text.chars().take(usize::try_from(n).unwrap_or(0)).collect();
                     self.b.ins(format!("mov {}, {}", dst.op, quote(&cut)));

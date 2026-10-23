@@ -173,6 +173,8 @@ pub struct Proto {
     pub extpgm: Option<String>,
     /// `EXTPROC`: the external procedure name.
     pub extproc: Option<String>,
+    /// `EXTPROC` names a variable (a procedure pointer), not a string.
+    pub extproc_word: bool,
     /// The return type, when it returns a value.
     pub ret: Option<Ty>,
     /// Elements of an array return value.

@@ -1,0 +1,27 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-ds whole;
+  all char(12);
+  yy char(4) overlay(all);
+  mm char(2) overlay(all : 5);
+  dd char(2) overlay(all : *next);
+  rest char(4) overlay(all : *next);
+end-ds;
+dcl-ds nums;
+  n1 zoned(4:0) inz(1234);
+  n2 zoned(2:0) overlay(n1 : 3);
+end-ds;
+dcl-ds groups qualified;
+  first char(2) inz('ab');
+  second char(2) inz('cd');
+end-ds;
+all = '20260305rest';
+line = yy + '/' + mm + '/' + dd + ' ' + rest;
+write QSYSPRT line;
+line = %char(n2) + ' ' + %char(%size(nums));
+write QSYSPRT line;
+line = groups.first + groups.second + ' ' + %char(%size(groups));
+write QSYSPRT line;
+*inlr = *on;

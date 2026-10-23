@@ -1,0 +1,20 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s buf char(20) inz('0123456789abcdefghij');
+dcl-s p pointer;
+dcl-s b1 char(4) based(p);
+dcl-ds bds based(p) qualified;
+  x char(2);
+  y char(3);
+end-ds;
+p = %addr(buf);
+line = b1 + ' ' + bds.x + ' ' + bds.y;
+write QSYSPRT line;
+p = %addr(buf) + 10;
+line = b1 + ' ' + bds.x + ' ' + bds.y;
+write QSYSPRT line;
+line = %char(%size(p)) + ' ' + %char(%size(bds));
+write QSYSPRT line;
+*inlr = *on;

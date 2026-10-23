@@ -1,0 +1,14 @@
+**FREE
+ctl-opt nomain;
+dcl-proc greet export;
+  dcl-pi *n varchar(30);
+    who varchar(10) const;
+  end-pi;
+  return 'hello ' + who;
+end-proc;
+dcl-proc addone export;
+  dcl-pi *n int(10);
+    n int(10) value;
+  end-pi;
+  return n + 1;
+end-proc;

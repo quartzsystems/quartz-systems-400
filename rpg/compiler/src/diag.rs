@@ -7,7 +7,7 @@
 
 /// The identifiers.
 pub mod ids {
-    /// The name or indicator is not defined.
+    /// A name or indicator used but never declared.
     pub const NOT_DEFINED: &str = "RNF7030";
     /// An expression holds an operand that is not defined.
     pub const UNDEFINED_OPERAND: &str = "RNF7503";

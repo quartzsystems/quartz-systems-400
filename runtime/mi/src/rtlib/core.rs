@@ -197,6 +197,11 @@ fn read_ptr(addr: i64) -> FatPtr {
 /// `ptr_addr(env, out, native, len, frame)`: `frame` marks automatic
 /// storage, one space per call-stack entry.
 pub extern "sysv64" fn ptr_addr(env: *mut Env, out: i64, native: i64, len: i64, frame: i64) {
+    // An omitted parameter has no storage: its address is null.
+    if native == 0 {
+        write_ptr(out, FatPtr::null());
+        return;
+    }
     let j = job(env);
     let depth = j.depth;
     let p = j

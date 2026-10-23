@@ -689,6 +689,9 @@ pub fn proto(cx: &mut Cx<'_>, d: &Def) -> Proto {
         extproc: d
             .kw("EXTPROC")
             .map(|k| str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_else(|| d.name.to_ascii_uppercase())),
+        extproc_word: d
+            .kw("EXTPROC")
+            .is_some_and(|k| str_arg(k, 0).is_none() && word_arg(k, 0).is_some_and(|w| !w.starts_with('*'))),
         ret,
         ret_dim: dim_of(cx, d),
         opdesc: d.kw("OPDESC").is_some(),

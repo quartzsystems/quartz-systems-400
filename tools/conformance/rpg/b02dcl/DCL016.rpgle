@@ -1,0 +1,28 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s a1 packed(5:1) dim(4) inz(2.5);
+dcl-s a2 char(3) dim(5);
+dcl-s a3 int(10) dim(3) ascend;
+dcl-s a4 varchar(6) dim(2) inz('ab');
+dcl-s a5 like(a1) dim(7);
+dcl-s i int(10);
+a2(2) = 'xy';
+a3(1) = 3;
+a3(2) = 7;
+a3(3) = 9;
+a5(7) = a1(4) * 3;
+line = %char(%elem(a1)) + ' ' + %char(%size(a1)) + ' ' + %char(%size(a1 : *all));
+write QSYSPRT line;
+line = %char(%elem(a2)) + ' ' + %char(%size(a2 : *all));
+write QSYSPRT line;
+line = %char(%elem(a5)) + ' ' + %char(a5(7));
+write QSYSPRT line;
+line = '[' + a2(1) + '][' + a2(2) + ']' + a4(2) + %char(%len(a4(1)));
+write QSYSPRT line;
+for i = 1 to %elem(a3);
+  line = %char(i) + '=' + %char(a3(i)) + ' ' + %char(%lookup(a3(i) : a3));
+  write QSYSPRT line;
+endfor;
+*inlr = *on;

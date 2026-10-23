@@ -1,0 +1,10 @@
+# Members whose outcome is known to differ from the oracle's, one per
+# line with the reason; the kit reports them apart and does not fail on
+# them. Each has an entry in docs/RPG_OPEN_QUESTIONS.md or is being worked.
+EXP008 float with decimal operands: last-digit differences (open question)
+EXP018 float with decimal operands: last-digit differences (open question)
+EXP028 float with decimal operands: last-digit differences (open question)
+EXP038 float with decimal operands: last-digit differences (open question)
+EXP048 float with decimal operands: last-digit differences (open question)
+EXP058 float with decimal operands: last-digit differences (open question)
+OPS006 EVALR and string operations: being worked

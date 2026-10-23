@@ -1,0 +1,6 @@
+**FREE
+ctl-opt nomain;
+dcl-s counter int(10) export inz(100);
+dcl-proc tick export;
+  counter += 5;
+end-proc;

@@ -370,7 +370,7 @@ pub fn module(
         let decl = match &s.storage {
             Storage::Based(p) => format!("based {}: {ty} on {}", s.ir, g.t.syms[*p].ir),
             Storage::Import => format!("import {}: {ty}", s.ir),
-            Storage::Export => format!("static {}: {ty} export", s.ir),
+            Storage::Export => format!("static {}: {ty}{} export", s.ir, static_inz(s)),
             _ => format!("static {}: {ty}", s.ir),
         };
         let _ = id;
@@ -406,6 +406,28 @@ pub fn module(
     }
     out.push_str(&procs);
     (out, g.diags)
+}
+
+/// An exported field's literal `INZ` as a static initializer, so the
+/// value is there when another module reads it before any call.
+fn static_inz(s: &crate::syms::Sym) -> String {
+    use rpgfront::ast::Lit;
+    if s.dim > 0 || !matches!(s.kind, Some(Kind::Field)) {
+        return String::new();
+    }
+    match (&s.inz, &s.ty) {
+        (Some(Some(Expr::Lit(Lit::Num(n), _))), t)
+            if matches!(t, Ty::Int(_) | Ty::Uns(_) | Ty::Packed(..) | Ty::Zoned(..))
+                && !n.contains(['E', 'e'])
+                && !(matches!(t, Ty::Int(_) | Ty::Uns(_)) && n.contains('.')) =>
+        {
+            format!(" inz({n})")
+        }
+        (Some(Some(Expr::Lit(Lit::Char(c), _))), Ty::Char(len)) if c.chars().count() <= *len as usize => {
+            format!(" inz({})", emit::quote(c))
+        }
+        _ => String::new(),
+    }
 }
 
 /// The special indicators beside `*IN01`-`*IN99`.

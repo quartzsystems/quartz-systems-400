@@ -68,18 +68,28 @@ impl Session {
         };
         s.ftp.command("SITE NAMEFMT 1")?;
         s.rcmd("CHGJOB INQMSGRPY(*DFT)")?;
+        // The work library first in this job's list: /COPY members and
+        // programs called by name are found there.
+        let lib = s.lib.clone();
+        s.try_rcmd(&format!("ADDLIBLE LIB({lib}) POSITION(*FIRST)"));
         Ok(s)
     }
 
     /// `RCMD`: whether it worked and the cause code it gave.
     fn rcmd(&mut self, cl: &str) -> Result<(bool, String)> {
+        let (ok, cause, _) = self.rcmd_text(cl)?;
+        Ok((ok, cause))
+    }
+
+    /// `RCMD`: whether it worked, the cause code and the reply.
+    fn rcmd_text(&mut self, cl: &str) -> Result<(bool, String, String)> {
         let (code, text) = self.ftp.command(&format!("RCMD {cl}"))?;
         let cause = text
             .split("Cause code is ")
             .nth(1)
             .map(|r| r.chars().take(7).collect::<String>())
             .unwrap_or_default();
-        Ok((code == 250, cause))
+        Ok((code == 250, cause, text))
     }
 
     /// Quietly try a command.
@@ -302,9 +312,19 @@ impl Session {
         let lib = self.lib.clone();
         self.try_rcmd(&format!("RMVM FILE({lib}/QRPGLESRC) MBR({})", c.name));
         self.put_member(&c.name, &c.lines, c.width())?;
+        for (w, lines) in &c.with {
+            self.try_rcmd(&format!("RMVM FILE({lib}/QRPGLESRC) MBR({w})"));
+            self.put_member(w, lines, c.width())?;
+        }
         for s in &c.setup {
             let cl = c.fill(s, &lib);
-            self.try_rcmd(&cl);
+            if cl.trim_start().to_ascii_uppercase().starts_with("CRT") {
+                Self::throttle()?;
+            }
+            let (ok, _, reply) = self.rcmd_text(&cl)?;
+            if !ok {
+                eprintln!("{}: setup failed: {cl}: {}", c.name, reply.trim());
+            }
         }
         // Spooled files left from before are not this member's.
         for e in self.spools()? {
@@ -356,6 +376,13 @@ impl Session {
         }
         for cmd in ["DLTPGM PGM", "DLTMOD MODULE", "DLTSRVPGM SRVPGM"] {
             self.try_rcmd(&format!("{cmd}({lib}/{})", c.name));
+        }
+        for s in &c.cleanup {
+            let cl = c.fill(s, &lib);
+            self.try_rcmd(&cl);
+        }
+        for (w, _) in &c.with {
+            self.try_rcmd(&format!("RMVM FILE({lib}/QRPGLESRC) MBR({w})"));
         }
         self.try_rcmd(&format!("RMVM FILE({lib}/QRPGLESRC) MBR({})", c.name));
         o.provenance = vec![
@@ -415,21 +442,19 @@ impl Lock {
         std::fs::create_dir_all(&dir)?;
         let path = dir.join("session.lock");
         loop {
-            match std::fs::OpenOptions::new().write(true).create_new(true).open(&path) {
-                Ok(_) => return Ok(Self(path)),
-                Err(_) => {
-                    let stale = std::fs::metadata(&path)
-                        .and_then(|m| m.modified())
-                        .ok()
-                        .and_then(|t| t.elapsed().ok())
-                        .is_some_and(|e| e > Duration::from_secs(3600));
-                    if stale {
-                        let _ = std::fs::remove_file(&path);
-                        continue;
-                    }
-                    std::thread::sleep(Duration::from_secs(5));
-                }
+            if std::fs::OpenOptions::new().write(true).create_new(true).open(&path).is_ok() {
+                return Ok(Self(path));
             }
+            let stale = std::fs::metadata(&path)
+                .and_then(|m| m.modified())
+                .ok()
+                .and_then(|t| t.elapsed().ok())
+                .is_some_and(|e| e > Duration::from_secs(3600));
+            if stale {
+                let _ = std::fs::remove_file(&path);
+                continue;
+            }
+            std::thread::sleep(Duration::from_secs(5));
         }
     }
 }

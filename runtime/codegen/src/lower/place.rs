@@ -87,6 +87,21 @@ impl Lowerer<'_, '_> {
         addr
     }
 
+    /// The address of a whole by-reference parameter, unchecked: zero
+    /// when it was omitted, so `addr` of it is a null pointer.
+    pub(crate) fn param_addr(&self, place: &Place) -> Option<(Value, Type)> {
+        let PlaceBase::Var(r) = &place.base else { return None };
+        if !place.path.is_empty() || r.scope != Scope::Proc {
+            return None;
+        }
+        let v = self.m.var(*r, Some(self.p))?;
+        let StorageClass::Param(k) = v.class else { return None };
+        if self.p.params[k as usize].by_value {
+            return None;
+        }
+        Some((self.param_vals[k as usize], v.ty.clone()))
+    }
+
     fn var_addr(&mut self, r: VarRef) -> Result<Value> {
         let v = self.m.var(r, Some(self.p)).expect("verified");
         Ok(match (&r.scope, &v.class) {

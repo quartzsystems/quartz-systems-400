@@ -1,0 +1,25 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-c N 4;
+dcl-s arr char(2) dim(N);
+dcl-s v4 varchar(10 : 4) inz('four');
+dcl-s v2 varchar(10) inz('two');
+dcl-s i int(10);
+line = %char(%elem(arr)) + ' ' + %char(%size(v4)) + ' ' + %char(%size(v2));
+write QSYSPRT line;
+for i = 1 to 3;
+  line = %char(counter());
+  write QSYSPRT line;
+endfor;
+*inlr = *on;
+dcl-proc counter;
+  dcl-pi *n int(10);
+  end-pi;
+  dcl-s n int(10) static inz(10);
+  dcl-s m int(10) inz(10);
+  n += 1;
+  m += 1;
+  return n * 100 + m;
+end-proc;
