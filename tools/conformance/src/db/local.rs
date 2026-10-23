@@ -412,10 +412,8 @@ impl Local {
             written.push(p);
             Ok(())
         };
-        let exported: Vec<&str> = kit::PHYSICAL
-            .iter()
-            .chain(kit::EXPORTED_LOGICAL.iter())
-            .copied()
+        let exported: Vec<&str> = kit::exported_physical()
+            .chain(kit::EXPORTED_LOGICAL.iter().copied())
             .collect();
         for name in &exported {
             let text = self.export(name)?;

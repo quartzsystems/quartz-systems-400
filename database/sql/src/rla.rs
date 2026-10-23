@@ -19,7 +19,15 @@
 //!
 //! `READN` and `CHAINN` read without a lock. A line starting with `#` or
 //! `--` is a comment.
+//!
+//! `FOUND`, `EQUAL` and `EOF` are an RPG program's `%FOUND`, `%EQUAL` and
+//! `%EOF` of the file, which keep their values until an operation sets
+//! them (the pub400 capture): CHAIN, SETLL and SETGT set `%FOUND` (and
+//! turn `%EOF` off when they find a record), SETLL alone sets `%EQUAL`,
+//! the READ family sets `%EOF`, CLOSE turns `%EOF` on, and WRITE, UPDATE,
+//! DELETE, UNLOCK and FEOD leave all three.
 
+use std::collections::HashMap;
 use std::fmt::Write as _;
 
 use db::odp::{KeyArg, Odp, OpenOpts, Usage};
@@ -195,8 +203,58 @@ fn field_texts(table: &TableInfo, rec: &db::odp::Record) -> Vec<(String, String)
         .collect()
 }
 
+/// An RPG program's `%FOUND`, `%EQUAL` and `%EOF` for one file.
+#[derive(Clone, Copy, Debug, Default)]
+struct Bifs {
+    found: bool,
+    equal: bool,
+    eof: bool,
+}
+
+impl Bifs {
+    /// The values after `op` ran, given the open data path's feedback
+    /// and whether a record came back.
+    fn after(mut self, op: &str, fb: Option<&db::odp::IoFeedback>, read: bool) -> Self {
+        if op == "CLOSE" {
+            self.eof = true;
+            return self;
+        }
+        let Some(fb) = fb else {
+            return self;
+        };
+        let ok = fb.status == 0 || fb.status == 11 || fb.status == 12;
+        match op {
+            "SETLL" if ok => {
+                self.found = fb.found;
+                self.equal = fb.equal;
+                if fb.found {
+                    self.eof = false;
+                }
+            }
+            "SETGT" if ok => {
+                self.found = fb.found;
+                if fb.found {
+                    self.eof = false;
+                }
+            }
+            "CHAIN" | "CHAINN" if ok => {
+                self.found = read;
+                if read {
+                    self.eof = false;
+                }
+            }
+            "READ" | "READN" | "READP" | "READE" | "READPE" if ok => self.eof = !read,
+            _ => {}
+        }
+        self
+    }
+}
+
 struct Driver {
     odp: Option<(Odp, TableInfo)>,
+    /// The file last opened, and the built-ins of each file by name.
+    file: Option<String>,
+    bifs: HashMap<String, Bifs>,
     last: Option<db::odp::Record>,
     /// The status while nothing is open: `00000` after a `CLOSE`, else
     /// `01211` (no file open).
@@ -210,6 +268,21 @@ impl Driver {
             .map_or_else(|| self.closed_status.clone(), |(o, _)| o.fb.status_code())
     }
 
+    /// The current file's built-ins after `op`, kept for the next line.
+    fn bifs_after(&mut self, op: &str, read: bool) -> Bifs {
+        let Some(f) = self.file.clone() else {
+            return Bifs::default();
+        };
+        let prev = self.bifs.get(&f).copied().unwrap_or_default();
+        let next = prev.after(
+            &op.to_ascii_uppercase(),
+            self.odp.as_ref().map(|(o, _)| &o.fb),
+            read,
+        );
+        self.bifs.insert(f, next);
+        next
+    }
+
     fn odp(&mut self) -> Result<&mut (Odp, TableInfo), String> {
         self.odp
             .as_mut()
@@ -219,6 +292,9 @@ impl Driver {
     fn open(&mut self, txn: &mut Txn<'_>, ctx: &SqlContext, args: &[String]) -> Result<(), String> {
         let qual = args.first().ok_or("OPEN needs LIB/FILE")?;
         let name = object_name(qual)?;
+        let file = qual.rsplit('/').next().unwrap_or(qual).to_ascii_uppercase();
+        self.bifs.entry(file.clone()).or_default();
+        self.file = Some(file);
         let table = ctx.resolve_table(txn, &name).map_err(|e| e.to_string())?;
         let mut opts = OpenOpts::input(ctx.job);
         opts.member = MemberSpec::Name(table.member.name);
@@ -361,6 +437,8 @@ pub fn run_script(txn: &mut Txn<'_>, ctx: &mut SqlContext, lines: &[String]) -> 
     let mut report = Report::default();
     let mut d = Driver {
         odp: None,
+        file: None,
+        bifs: HashMap::new(),
         last: None,
         closed_status: "01211".into(),
     };
@@ -385,9 +463,8 @@ pub fn run_script(txn: &mut Txn<'_>, ctx: &mut SqlContext, lines: &[String]) -> 
             }
         };
         let status = d.status();
-        let (found, equal, eof) = d.odp.as_ref().map_or((false, false, false), |(o, _)| {
-            (o.fb.found, o.fb.equal, o.fb.eof)
-        });
+        let b = d.bifs_after(op, rec.is_some());
+        let (found, equal, eof) = (b.found, b.equal, b.eof);
         let mut problems = Vec::new();
         let texts = match (&rec, &d.odp) {
             (Some(r), Some((_, table))) => field_texts(table, r),

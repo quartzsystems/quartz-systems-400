@@ -9,13 +9,13 @@ READ                                   => 00000 CUSNO=5
 CHAIN 42                               => 00012 NOFOUND
 CHAIN 6                                => 00000 CUSNO=6 NAME='Frank' BAL=1500.00
 READP                                  => 00000 CUSNO=5
-SETLL *END                             => 00000
+SETLL *END                             => 00012 NOFOUND
 READP                                  => 00000 CUSNO=6
 READ                                   => 00011 EOF
 SETLL 5                                => 00000 FOUND EQUAL
 READE 5                                => 00000 CUSNO=5
 READE 5                                => 00011 EOF
-READ                                   => 00000 CUSNO=6
+READ                                   => 00011 EOF
 WRITE CUSNO=7 NAME='Grace' STATUS='A' BAL=5 => 00000
 CHAIN 7                                => 00000 NAME='Grace' SINCE=*NULL
 UPDATE BAL=6.5 NOTE='updated'          => 00000

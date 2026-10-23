@@ -35,8 +35,14 @@ pub const LOGICAL: &[&str] = &[
     "BIGORD",
 ];
 
-/// Logical files with one format, exported in key order like a physical
-/// file.
+/// Physical files whose data is exported and compared: every one but
+/// `RLALOG`, which is the oracle's own log (`rla.csv`).
+pub fn exported_physical() -> impl Iterator<Item = &'static str> {
+    PHYSICAL.iter().copied().filter(|n| *n != "RLALOG")
+}
+
+/// Logical files with one format, exported like a physical file (in
+/// arrival sequence, as the machine's `CPYTOIMPF` does).
 pub const EXPORTED_LOGICAL: &[&str] = &[
     "CUSBYNAME",
     "ORDBYCUS",
