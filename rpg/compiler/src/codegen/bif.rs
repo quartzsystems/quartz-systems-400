@@ -90,10 +90,31 @@ impl Gen<'_> {
                 }
                 let n = match &v.ty {
                     t if t.is_string() => t.str_len().unwrap_or(0),
+                    // A float's length is its size in bytes.
+                    Ty::Float(n) => u32::from(*n),
                     t if t.is_numeric() => u32::from(t.shape().map_or(0, |s| s.0)),
                     t => self.t.size(t),
                 };
                 Some(V::lit(Ty::Packed(10, 0), n.to_string()))
+            }
+            "%DECPOS" => {
+                if !self.bif_arity(name, args, 1, 1) {
+                    return None;
+                }
+                let v = self.expr(&args[0], w)?;
+                match (&v.ty, v.ty.shape()) {
+                    (t, Some((_, s))) if t.is_numeric() && !matches!(t, Ty::Float(_)) => {
+                        Some(V::lit(Ty::Packed(10, 0), s.to_string()))
+                    }
+                    _ => {
+                        let shown = match &args[0] {
+                            Expr::Ref { name, .. } => name.clone(),
+                            _ => String::new(),
+                        };
+                        self.err(ids::DECPOS_ARG, 30, shown);
+                        None
+                    }
+                }
             }
             "%SIZE" => {
                 let n = self.size_of(args.first()?)?;
@@ -489,7 +510,11 @@ impl Gen<'_> {
         {
             let s = self.t.syms[id].clone();
             if let Some(Kind::Const(_)) = s.kind {
+                // A numeric constant is as long as its digits, as a literal is.
                 let v = self.expr(e, Want::default())?;
+                if v.kind == Vk::Lit && v.ty.is_numeric() {
+                    return Some((u32::from(v.ty.shape().map_or(1, |s| s.0)), 0));
+                }
                 return Some((v.ty.str_len().unwrap_or_else(|| self.t.size(&v.ty)), 0));
             }
             return Some((self.t.size(&s.ty), s.dim));

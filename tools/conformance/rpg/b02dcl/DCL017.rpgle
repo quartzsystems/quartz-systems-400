@@ -15,7 +15,7 @@ dcl-ds d2 qualified inz;
 end-ds;
 dcl-ds d3 len(40);
   p1 char(4) pos(10);
-  p2 char(2) overlay(d3 : 30);
+  p2 char(2) pos(30);
 end-ds;
 line = %char(%size(d1)) + ' ' + %char(%size(d2)) + ' ' + %char(%size(d3));
 write QSYSPRT line;

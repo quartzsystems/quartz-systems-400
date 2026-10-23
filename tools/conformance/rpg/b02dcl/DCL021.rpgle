@@ -18,9 +18,11 @@
         f2 = 123.45;
         f3 = -77;
         f4 = 12345.678;
-        line = f1 + ' ' + %char(f2) + ' ' + %char(f3) + ' ' + %char(f4) + ' ' + %char(%size(ds1));
+        line = f1 + ' ' + %char(f2) + ' ' + %char(f3) + ' ' + %char(f4) + ' ' +
+        %char(%size(ds1));
         write QSYSPRT line;
-        line = '[' + g1 + '] ' + %char(g2) + ' ' + %char(g3) + ' ' + %char(%size(ds2));
+        line = '[' + g1 + '] ' + %char(g2) + ' ' + %char(g3) + ' ' +
+        %char(%size(ds2));
         write QSYSPRT line;
         line = ds3.h1 + '[' + ds3.h2 + '] ' + %char(%size(ds3));
         write QSYSPRT line;

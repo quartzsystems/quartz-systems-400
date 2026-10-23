@@ -9,6 +9,8 @@
 pub mod ids {
     /// A name or indicator used but never declared.
     pub const NOT_DEFINED: &str = "RNF7030";
+    /// `%DECPOS` of something that is not a fixed-point number.
+    pub const DECPOS_ARG: &str = "RNF0334";
     /// An expression holds an operand that is not defined.
     pub const UNDEFINED_OPERAND: &str = "RNF7503";
     /// The name is defined more than once.

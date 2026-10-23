@@ -6,7 +6,8 @@
 //! outcome and listing go under `target/conformance-rpg/ours/`, and the
 //! outcomes are compared with the oracle's in `expected/` (provenance
 //! lines aside). Members the oracle has not run yet are listed, and so
-//! are those `known.txt` names as known to differ.
+//! are those `known.txt` names (a member, or `batch/*`) as known to
+//! differ.
 
 use std::fs;
 
@@ -45,7 +46,9 @@ fn every_member_matches_the_oracle() {
         let exp = kit.expected_dir().join(format!("{}.out", case.name));
         match fs::read_to_string(&exp) {
             Ok(e) if comparable(&e) == comparable(&text) => passed += 1,
-            Ok(_) if known.contains(&case.name.as_str()) => known_hit.push(case.name.clone()),
+            Ok(_) if known.contains(&case.name.as_str()) || known.contains(&format!("{batch}/*").as_str()) => {
+                known_hit.push(case.name.clone());
+            }
             Ok(_) => failures.push(format!("{batch}/{}: differs (diff target/conformance-rpg/ours/{0}.out against expected)", case.name)),
             Err(_) => missing.push(case.name.clone()),
         }

@@ -442,6 +442,12 @@ impl Gen<'_> {
         }
         let va = self.expr(a, w)?;
         let vb = self.expr(b, w)?;
+        // An operand whose type could not be resolved: its own error
+        // was given; the expression is reported as undefined.
+        if [&va, &vb].iter().any(|v| v.ty == Ty::Unknown && v.kind == Vk::Place) {
+            self.err(ids::UNDEFINED_OPERAND, 30, "");
+            return None;
+        }
         match op {
             BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Gt | BinOp::Le | BinOp::Ge => self.compare(op, &va, &vb),
             BinOp::Add
@@ -452,12 +458,48 @@ impl Gen<'_> {
             {
                 self.concat(&va, &vb)
             }
+            BinOp::Add | BinOp::Sub if va.ty == Ty::Ptr || vb.ty == Ty::Ptr => self.ptr_arith(op, &va, &vb),
             _ => self.arith(op, &va, &vb, w),
         }
     }
 
+    /// Pointer arithmetic: a pointer plus or minus a number of bytes,
+    /// or the bytes between two pointers.
+    fn ptr_arith(&mut self, op: BinOp, va: &V, vb: &V) -> Option<V> {
+        if va.ty == Ty::Ptr && vb.ty == Ty::Ptr && op == BinOp::Sub {
+            let (p, q) = (self.ptr_reg(va), self.ptr_reg(vb));
+            let r = self.b.reg();
+            self.b.ins(format!("{r} = ptrdiff {p}, {q}"));
+            return Some(V::reg(Ty::Int(20), r));
+        }
+        let (p, n) = match (&va.ty, &vb.ty) {
+            (Ty::Ptr, t) if t.is_numeric() => (va, vb),
+            (t, Ty::Ptr) if t.is_numeric() && op == BinOp::Add => (vb, va),
+            _ => {
+                self.err(ids::TYPE_MISMATCH, 30, "");
+                return None;
+            }
+        };
+        let p = self.ptr_reg(p);
+        let mut n = self.int_reg(n)?;
+        if op == BinOp::Sub {
+            let m = self.b.reg();
+            self.b.ins(format!("{m} = sub 0, {n}"));
+            n = m;
+        }
+        let r = self.b.reg();
+        self.b.ins(format!("{r} = ptradd {p}, {n}"));
+        Some(V::reg(Ty::Ptr, r))
+    }
+
     /// Numeric arithmetic.
     pub fn arith(&mut self, op: BinOp, va: &V, vb: &V, w: Want) -> Option<V> {
+        // An operand whose type could not be resolved: its own error
+        // was given; the expression is reported as undefined.
+        if [va, vb].iter().any(|v| v.ty == Ty::Unknown && v.kind == Vk::Place) {
+            self.err(ids::UNDEFINED_OPERAND, 30, "");
+            return None;
+        }
         if !va.ty.is_numeric() || !vb.ty.is_numeric() {
             self.err(ids::TYPE_MISMATCH, 30, "");
             return None;

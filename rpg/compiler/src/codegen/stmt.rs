@@ -1503,7 +1503,14 @@ fn inz_fits(ty: &Ty, v: &V) -> bool {
         }
         t if t.is_numeric() && !matches!(t, Ty::Float(_)) => {
             let (d, s) = t.shape().unwrap_or((63, 0));
-            let int_digits = v.op.trim_start_matches('-').split('.').next().unwrap_or("").trim_start_matches('0').len();
+            // The literal's integer digits as IBM counts them: a zero
+            // written without a point is one digit; 0.4 has none.
+            let lit = v.op.trim_start_matches('-');
+            let whole = lit.split('.').next().unwrap_or("");
+            let int_digits = match whole.trim_start_matches('0').len() {
+                0 if !whole.is_empty() && !lit.contains('.') => 1,
+                n => n,
+            };
             int_digits <= usize::from(d - s)
         }
         t if t.is_char() && !t.is_varying() => v.ty.str_len().unwrap_or(0) <= t.str_len().unwrap_or(0),

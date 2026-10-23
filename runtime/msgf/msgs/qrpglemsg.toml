@@ -391,3 +391,9 @@ id = "RNF7350"
 sev = 0
 text = "&1 leaves out subfields that have no namesake in the other structure."
 vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0334"
+sev = 30
+text = "%DECPOS needs a decimal or integer value; &1 is not one."
+vars = ["*CHAR 50"]

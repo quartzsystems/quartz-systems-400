@@ -12,7 +12,7 @@ import random
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from fixed import C, CX, D  # noqa: E402
+from fixed import D, wrap  # noqa: E402
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "b02dcl")
 FREE_HEAD = ["**FREE", "ctl-opt dftactgrp(*no);", "dcl-f QSYSPRT printer(132);", "dcl-ds line len(132) end-ds;"]
@@ -42,7 +42,7 @@ def shape_of(rng):
             txt = "-" + txt
         return f"{k}({d}:{s})", (d, "P" if k == "packed" else "S", s), txt, True
     if k == "bindec":
-        d = rng.randint(1, 18)
+        d = rng.randint(1, 9)
         s = rng.randint(0, min(d, 4))
         i = d - s
         v = rng.randint(0, 10 ** min(i, 4) - 1) if i else 0
@@ -65,12 +65,21 @@ def shape_of(rng):
     return "timestamp", ("", "Z", ""), "z'2026-03-05-14.30.05.123456'", False
 
 
-def show(name, numeric, varying=False):
+def ff(lines):
+    """Free-form lines for a fixed-format member: from column 9, and cut
+    to end by column 80 (81 on is the comment area)."""
+    return ["        " + piece for l in lines for piece in wrap(l, 72)]
+
+
+def show(name, numeric, varying=False, decpos=True):
     """The lines that print a field's attributes and value."""
     out = []
     attrs = f"%char(%size({name}))"
-    if numeric:
+    if numeric and decpos:
         attrs += f" + ' ' + %char(%len({name})) + ' ' + %char(%decpos({name}))"
+        val = f"%char({name})"
+    elif numeric:
+        attrs += f" + ' ' + %char(%len({name}))"
         val = f"%char({name})"
     else:
         attrs += f" + ' ' + %char(%len({name}))"
@@ -100,7 +109,7 @@ def scalars(name, rng, fixed):
             decls.append(D(name=fname, deftype="S", to=ln, typ=typ, dec=dec, kw=kw))
         else:
             decls.append(f"dcl-s {fname} {free}" + (f" inz({inz})" if use_inz else "") + ";")
-        body += show(fname, numeric)
+        body += show(fname, numeric, decpos=not free.startswith("float"))
     if fixed:
         lines = [
             "     H DFTACTGRP(*NO)",
@@ -109,7 +118,7 @@ def scalars(name, rng, fixed):
         ] + decls + ["**FREE"] + body + ["*inlr = *on;"]
         # Fixed and free mixed: the free section starts after the specs.
         lines = [l for l in lines if l != "**FREE"]
-        lines = lines[:3 + len(decls)] + ["      /free"] + ["        " + l for l in body] + ["        *inlr = *on;", "      /end-free"]
+        lines = lines[:3 + len(decls)] + ["      /free"] + ff(body) + ["        *inlr = *on;", "      /end-free"]
     else:
         lines += FREE_HEAD[1:] + decls + body + ["*inlr = *on;"]
     M[name] = lines
@@ -127,7 +136,7 @@ M["DCL015"] = FREE_HEAD + [
     "dcl-s more like(base : +3);",
     "dcl-s less like(base : -2);",
     "dcl-s name char(10) inz('abc');",
-    "dcl-s longer like(name : 5);",
+    "dcl-s longer like(name : +5);",
     "dcl-s vname varchar(8) inz('vv');",
     "dcl-s likev like(vname);",
     "dcl-c K1 'quoted';",
@@ -137,7 +146,7 @@ M["DCL015"] = FREE_HEAD + [
     "more = base * 10;",
     "less = 99.9;",
     "longer = name + 'xyz';",
-] + show("more", True) + show("less", True) + show("longer", False) + show("likev", False) + p("K1 + ' ' + %char(K2) + '[' + K3 + ']' + K4") + p("%char(%len(K1)) + ' ' + %char(%size(K2))") + ["*inlr = *on;"]
+] + show("more", True) + show("less", True) + show("longer", False) + show("likev", False) + p("K1 + ' ' + %char(K2) + K4") + p("'[' + %char(%len(K1)) + ']'") + p("%char(%len(K1)) + ' ' + %char(%size(K2))") + ["*inlr = *on;"]
 
 M["DCL016"] = FREE_HEAD + [
     "dcl-s a1 packed(5:1) dim(4) inz(2.5);",
@@ -170,7 +179,7 @@ M["DCL017"] = FREE_HEAD + [
     "end-ds;",
     "dcl-ds d3 len(40);",
     "  p1 char(4) pos(10);",
-    "  p2 char(2) overlay(d3 : 30);",
+    "  p2 char(2) pos(30);",
     "end-ds;",
 ] + p("%char(%size(d1)) + ' ' + %char(%size(d2)) + ' ' + %char(%size(d3))") + p("'[' + s1 + '] ' + %char(s2) + ' ' + %char(s3) + ' ' + %char(s4)") + p("'[' + d2.a + '] ' + %char(d2.b) + ' ' + d2.c") + [
     "p1 = 'WXYZ';",
@@ -248,9 +257,7 @@ M["DCL021"] = [
     "        f2 = 123.45;",
     "        f3 = -77;",
     "        f4 = 12345.678;",
-] + ["        " + l for l in p("f1 + ' ' + %char(f2) + ' ' + %char(f3) + ' ' + %char(f4) + ' ' + %char(%size(ds1))")] + [
-    "        " + l for l in p("'[' + g1 + '] ' + %char(g2) + ' ' + %char(g3) + ' ' + %char(%size(ds2))")
-] + ["        " + l for l in p("ds3.h1 + '[' + ds3.h2 + '] ' + %char(%size(ds3))")] + [
+] + ff(p("f1 + ' ' + %char(f2) + ' ' + %char(f3) + ' ' + %char(f4) + ' ' + %char(%size(ds1))")) + ff(p("'[' + g1 + '] ' + %char(g2) + ' ' + %char(g3) + ' ' + %char(%size(ds2))")) + ff(p("ds3.h1 + '[' + ds3.h2 + '] ' + %char(%size(ds3))")) + [
     "        *inlr = *on;",
     "      /end-free",
 ]

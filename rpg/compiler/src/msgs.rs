@@ -9,6 +9,7 @@ use rpgfront::Diag;
 
 /// The texts.
 const TEXTS: &[(&str, &str)] = &[
+    ("RNF0334", "%DECPOS needs a decimal or integer value; &1 is not one."),
     ("RNF0001", "The compiler could not generate the program: &1."),
     ("RNF0023", "Copy member &1 was not found."),
     ("RNF0024", "Copy member &1 is already being copied, or copies nest too deep."),

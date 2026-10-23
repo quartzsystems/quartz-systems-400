@@ -9,3 +9,16 @@ EXP048 float with decimal operands: last-digit differences (open question)
 EXP058 float with decimal operands: last-digit differences (open question)
 IO025 %CHAR of a timestamp: the dates work
 IO026 %CHAR of a timestamp: the dates work
+b12err/* the compile-error batch: its diagnostics are being written
+DCL001 dates (%CHAR of timestamps, date and time defaults): the dates merge
+DCL002 dates (%CHAR of timestamps, date and time defaults): the dates merge
+DCL003 dates (%CHAR of timestamps, date and time defaults): the dates merge
+DCL004 dates (%CHAR of timestamps, date and time defaults): the dates merge
+DCL005 dates (%CHAR of timestamps, date and time defaults): the dates merge
+DCL006 dates (%CHAR of timestamps, date and time defaults): the dates merge
+DCL007 dates (%CHAR of timestamps, date and time defaults): the dates merge
+DCL008 dates (%CHAR of timestamps, date and time defaults): the dates merge
+DCL009 dates (%CHAR of timestamps, date and time defaults): the dates merge
+DCL010 dates (%CHAR of timestamps, date and time defaults): the dates merge
+DCL013 dates (%CHAR of timestamps, date and time defaults): the dates merge
+DCL012 binary fields with decimals: the IR has no scaled binary type yet

@@ -536,12 +536,19 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             return Some(id);
         };
         let src = cx.t.ds[oi].clone();
+        // The other structure's initial values come along only with
+        // INZ(*LIKEDS); otherwise the copy starts blank (or, with INZ,
+        // each subfield at its type's default).
+        let inz_likeds = d.kw("INZ").and_then(|k| word_arg(k, 0)).is_some_and(|w| w == "*LIKEDS");
         let mut subs = Vec::new();
         for &s in &src.subfields {
             let mut c = cx.t.syms[s].clone();
             c.parent = Some(id);
             c.scope = cx.scope;
             c.ir = String::new();
+            if !inz_likeds {
+                c.inz = None;
+            }
             subs.push(cx.t.add_hidden(c));
         }
         let dsr = &mut cx.t.ds[ds_index];
@@ -549,7 +556,9 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         dsr.len = src.len;
         dsr.has_ptr = src.has_ptr;
         dsr.ir_type = src.ir_type;
-        dsr.inz |= src.inz;
+        if inz_likeds {
+            dsr.inz |= src.inz;
+        }
         return Some(id);
     }
     // EXTNAME and LIKEREC: the format's fields.
@@ -616,7 +625,10 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
                     let len = cx.t.ds[oi].len;
                     (Ty::Ds(oi), len * sdim.max(1))
                 } else {
-                    diag(cx, ids::BAD_TYPE, 30, c.at, &cname);
+                    // A LIKE that names nothing was reported already.
+                    if c.kw("LIKE").is_none() {
+                        diag(cx, ids::BAD_TYPE, 30, c.at, &cname);
+                    }
                     (Ty::Unknown, 0)
                 }
             }
