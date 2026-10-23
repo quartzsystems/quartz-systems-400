@@ -55,8 +55,8 @@
              Q2:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
-             E1:        ELEM       TYPE(*CHAR) LEN(7) RSTD(*YES) MIN(1) +
-                          VALUES(*QUAL *CHAR *CCHAR *HEX *DEC *BIN +
+             E1:        ELEM       TYPE(*CHAR) LEN(8) RSTD(*YES) MIN(1) +
+                          VALUES(*QUAL *CHAR *CCHAR *HEX *DEC *BIN *QTDCHAR +
                           *UBIN *ITV *DTS *UTC *UTCD *UTCT *SYSPTR +
                           *SPP) PROMPT('Data type')
                         ELEM       TYPE(*INT2) RANGE(1 32767) +

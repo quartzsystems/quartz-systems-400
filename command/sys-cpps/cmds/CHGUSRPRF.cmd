@@ -181,3 +181,5 @@
                         ELEM       TYPE(*CHAR) LEN(10) RSTD(*YES) +
                           DFT(*NOCRTEIMID) VALUES(*NOCRTEIMID *CRTEIMID) +
                           PROMPT('Create EIM identifier')
+             DEP        CTL((&GRPPRF *EQ *NONE)) PARM(&SUPGRPPRF) +
+                          NBRTRUE(*NONE) MSGID(CPD22B2)

@@ -15,15 +15,15 @@
              PARM       KWD(MSGTYPE) TYPE(*CHAR) LEN(5) RSTD(*YES) +
                           DFT(*INFO) VALUES(*INFO *INQ) +
                           PROMPT('Message type')
-             PARM       KWD(RPYMSGQ) TYPE(Q2) PMTCTL(P1) +
+             PARM       KWD(RPYMSGQ) TYPE(Q2) DFT(*WRKSTN) SNGVAL((*WRKSTN)) +
+                          PMTCTL(P1) +
                           PROMPT('Message queue to get reply')
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
-             Q2:        QUAL       TYPE(*NAME) LEN(10) DFT(*WRKSTN) +
-                          SPCVAL((*WRKSTN))
+             Q2:        QUAL       TYPE(*NAME) LEN(10)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
              P1:        PMTCTL     CTL(MSGTYPE) COND((*EQ *INQ))
              DEP        CTL(*ALWAYS) PARM(&TOUSR &TOMSGQ) +
-                          NBRTRUE((*EQ 1))
+                          NBRTRUE((*EQ 1)) MSGID(CPD2544)

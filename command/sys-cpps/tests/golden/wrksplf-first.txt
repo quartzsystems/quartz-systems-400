@@ -8,6 +8,7 @@
    Form type  . . . . . . . . . .     *ALL          *ALL, *STD                  
    User data  . . . . . . . . . .     *ALL          *ALL                        
    ASP  . . . . . . . . . . . . .     *ALL          *ALL, *ASPDEV, *CURASPGR... 
+   ASP device . . . . . . . . . .     *             Name, *, *ALL, *SYSBAS      
  Time period:                                                                   
    Start:                                                                       
      Start time . . . . . . . . .       *AVAIL        Time, *AVAIL              
@@ -17,7 +18,6 @@
      End date . . . . . . . . . .       *END          Date, *END, *CURRENT      
  Job name . . . . . . . . . . . .   *             Name, *                       
    User . . . . . . . . . . . . .                   Name                        
-   Number . . . . . . . . . . . .                   Character value             
                                                                                 
                                                                         More... 
  F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel                                  

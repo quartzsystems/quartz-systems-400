@@ -40,6 +40,7 @@ pub fn compile_shipped(name: &str, source: &str) -> Result<String, String> {
         program: true,
         exec: false,
         module: false,
+        syntax_only: false,
     };
     let opts = cl::Options {
         name: name.to_string(),
@@ -198,6 +199,7 @@ fn create(system: &mut System, cmdname: &str, parms: &Parms) -> CmdReply {
             program: true,
             exec: false,
             module: is_module,
+            syntax_only: false,
         };
         let mut files = StoreFiles { system };
         cl::compile(&source, &opts, &mut env, &mut files)

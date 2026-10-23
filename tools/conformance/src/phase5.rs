@@ -108,7 +108,7 @@ impl Suite {
             return Err(format!("dspjobd:\n{shown}"));
         }
         let bad = s.command("chgjobd QGPL/WMTEST JOBPTY(12)", CMD)?;
-        if !bad.contains("CPD0093") {
+        if !bad.contains("CPD0085") {
             return Err(format!("chgjobd accepted JOBPTY(12): {bad}"));
         }
         let changed = s.command("chgjob LOG(2 20 *SECLVL) SWS(10000001)", CMD)?;

@@ -47,3 +47,5 @@
              Q1:        QUAL       TYPE(*NAME) LEN(10)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
+             DEP        CTL((&SCDDATE *EQ *CURRENT)) PARM((&SCDDAY *EQ *NONE)) +
+                          MSGID(CPD0925)

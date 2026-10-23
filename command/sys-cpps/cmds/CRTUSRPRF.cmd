@@ -178,3 +178,5 @@
                         ELEM       TYPE(*CHAR) LEN(10) RSTD(*YES) +
                           DFT(*NOCRTEIMID) VALUES(*NOCRTEIMID *CRTEIMID) +
                           PROMPT('Create EIM identifier')
+             DEP        CTL((&OWNER *EQ *GRPPRF)) PARM((&GRPPRF *NE *NONE)) +
+                          MSGID(CPD2261)

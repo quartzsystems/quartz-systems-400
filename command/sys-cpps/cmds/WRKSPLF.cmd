@@ -24,6 +24,8 @@
                         ELEM       TYPE(*CHAR) LEN(10) DFT(*ALL) +
                           SPCVAL((*ALL) (*ASPDEV) (*CURASPGRP) (*SYSBAS)) +
                           PROMPT('ASP')
+                        ELEM       TYPE(*NAME) LEN(10) DFT(*) +
+                          SPCVAL((*) (*ALL) (*SYSBAS)) PROMPT('ASP device')
              E2:        ELEM       TYPE(E3) PROMPT('Start')
                         ELEM       TYPE(E4) PROMPT('End')
              E3:        ELEM       TYPE(*TIME) DFT(*AVAIL) +

@@ -193,6 +193,7 @@ pub fn compile(case: &Case) -> cl::Compiled {
         program: true,
         exec: false,
         module: false,
+        syntax_only: false,
     };
     let opts = cl::Options {
         name: case.name.clone(),

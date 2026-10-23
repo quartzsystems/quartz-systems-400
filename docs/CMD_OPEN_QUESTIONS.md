@@ -11,32 +11,28 @@ now and what to check.
    prompt text wraps are unverified. A capture of F4 on CRTPF, CRTLIB,
    SBMJOB and CHGJOB on the real box would fix them.
 
-2. **The analyzer kit.** `tools/conformance/cmd/expected.txt` is our
-   outcome for 797 strings; `ORACLE.CLLE` gathers the real box's. The
-   identifiers we send for each refusal (CPD0012 bad keyword, CPD0015
-   required, CPD0016 too many values, CPD0084 bad value, CPD0093 out
-   of range) follow IBM's documented ones, but which diagnostic IBM
-   sends first when several apply, and whether CPD0014 or CPD0015
-   names a missing required parameter, is unverified.
+2. **The analyzer kit.** Settled by the capture of 2026-10-22
+   (`tools/conformance/cmd/oracle.txt`, IBM i 7.1): the identifiers
+   `docs/CMD.md` lists, the order the diagnostics come in, which
+   definitions take generic names or special values, and the
+   validity-checker messages `DEP` statements now send. 20 of the 797
+   strings still differ; item 15 names each.
 
-3. **Three-part qualified names.** A `QUAL` group renders with
-   slashes, last part first (`JOB(123456/USER/NAME)`); a file member
-   is an `ELEM` beside its qualified file, not a third `QUAL` part.
-   Whether IBM's definitions ever spell a third `QUAL` part after a
-   blank is unverified.
+3. **Three-part qualified names.** Settled: `JOB(A/B/C/D)` is
+   `CPD0045` on the box, so a job name has exactly three parts; a file
+   member stays an `ELEM` beside its qualified file.
 
-4. **`EXPR(*YES)`.** Our shipped definitions leave it out, so the
-   analyzer takes an expression on any character, numeric, logical or
-   name-typed scalar. IBM's definitions mark it per parameter; a
-   parameter where IBM refuses `'a' *CAT 'b'` at the command line is
-   unknown to us.
+4. **`EXPR(*YES)`.** Partly settled: the box refuses an expression on
+   a `*DATE` (`SCDDATE(13/45/26)` is `CPD0104`) and accepted every
+   other expression the kit gave it, which is what this analyzer does.
+   A parameter where IBM refuses `'a' *CAT 'b'` is still unknown; the
+   kit has no such string.
 
-5. **Return variable lengths.** IBM's rule for a `RTNVAL(*YES)`
-   character parameter is "at least the length" for fixed results and
-   any length for `VARY` results. Ours: at least the length, unless
-   the parameter is longer than 100. `RTVSYSVAL RTNVAR` is declared
-   `LEN(1)` so a variable of the system value's length passes; IBM's
-   definition may differ.
+5. **Return variable lengths.** Partly settled: `RTVSYSVAL` without
+   `RTNVAR` is `CPD0071`, so a return variable may be required (the
+   definition compiler now allows `MIN` with `RTNVAL(*YES)`). The
+   length rule is unverified: `QCMDCHK` has no declarations, so the
+   capture never compared a variable's length with the parameter's.
 
 6. **`MONMSG CMPDTA`.** Compared with the first characters of the
    message data, as IBM documents; a mismatch passes the message to
@@ -64,10 +60,9 @@ now and what to check.
    ends the request and shows the message at Command Entry; the
    inquiry a batch job gets instead is unverified.
 
-10. **Eight-digit dates.** A `*DATE` value of eight digits that is not
-    a date in the job's format is taken as `YYYYMMDD` (the harness and
-    the displays spell dates so). Whether IBM accepts `20261022` in a
-    `*MDY` job is unverified; it may be a `CPD0084` there.
+10. **Eight-digit dates.** Unverified: the kit has no eight-digit
+    date; the box reads an unquoted date with separators as an
+    expression (`CPD0104`), which the analyzer now does too.
 
 11. **The listing.** Our listing's column layout (statement number,
     nesting, source; the cross-reference columns) imitates IBM's shape
@@ -89,3 +84,37 @@ now and what to check.
 
 14. **`CHGNETA SYSNAME`.** Takes effect at once and sets `QSYSNAME`;
     the machine keeps it pending (`PNDSYSNAME`) until the next IPL.
+
+15. **What the analyzer kit's capture left.** The 20 strings whose
+    outcome still differs from the box, with the reason:
+    - `?CRTLIB`, `CRTLIB ?LIB(ABC)`, `CRTLIB ?*LIB(ABC)`,
+      `CRTLIB ?<LIB(ABC)`, `??CRTLIB`: `QCMDCHK` refuses prompting
+      (`CPD0037`, `CPD0016`); the analyzer prompts, as a command line
+      must.
+    - `CRTJRN ... MNGRCV(*USER) DLTRCV(*NO)`, `ENDRCV RCDFMT(PROMPT)`,
+      `CRTMSGQ ... ALWALT(*NO) MSGQFULL(*WRAP)`: one keyword of each is
+      not in the 7.1 definition (`CPD0043`); which one needs the
+      definitions themselves.
+    - `ENDSBS ... DELAY(*NOLIMIT) ... BCHTIMLMT(*NONE)`: one of the two
+      special values is not one on the box (`CPD0076`).
+    - `ENDJOB ABC/ABC/*` positional: `CPD0017` there, `CPD0012` here.
+    - `WRKSPLF SELECT((...)) PERIOD(((...)))`: the box accepts the
+      extra parentheses on these two groups and not on others.
+    - `WRKSPLF SELECT(*CURRENT *ALL *ALL *ALL) JOB(*)`: `CPD0079`
+      there; the value it names is not known.
+    - `SNDPGMMSG MSGID(CPF9898)`: `CPD2441`, a validity check whose
+      rule is not known.
+    - `IF (&A *EQ 1) GOTO X`: the box lets a positional `THEN` take the
+      rest of the line.
+    - `WAIT DEV(*FILE)`: `CPD0081` there.
+    - `CRTPRXCMD CMD(...)`: IBM's keyword is `CMD`, ours `PRXCMD`; the
+      processing program in `lic/slic/src/cpp/direct.rs` reads
+      `PRXCMD` and must change with the definition.
+    - `CRTDTAQ ... RMTLOCNAME(*RDB) RDB(REMOTE)`: `CPD9266`, a validity
+      check of the DDM data queue.
+    - `CRTPF RCDLEN(32767)` is `CPD0091` and `RCDLEN(0)` `CPD7347`
+      there, `CPD0085` here.
+    - `DSPFD TYPE(*MBRLIST *ACCPTH) OUTPUT(*OUTFILE)`: `CPD3003`, one
+      `TYPE` with an outfile; a `DEP` cannot count a list.
+    - `MOVOBJ ... TOLIB(QTEMP)` is now `CPD0090` here too, read from
+      the capture rather than the documentation.

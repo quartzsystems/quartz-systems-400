@@ -13,7 +13,7 @@
                           SNGVAL((*USRPRF)) PROMPT('Job description')
              PARM       KWD(JOBQ) TYPE(Q1) DFT(*JOBD) SNGVAL((*JOBD)) +
                           PROMPT('Job queue')
-             PARM       KWD(JOBPTY) TYPE(*INT2) DFT(*JOBD) RANGE(1 9) +
+             PARM       KWD(JOBPTY) TYPE(*DEC) LEN(1) DFT(*JOBD) RANGE(1 9) +
                           SPCVAL((*JOBD 0)) PROMPT('Job priority (on JOBQ)')
              PARM       KWD(OUTPTY) TYPE(*INT2) DFT(*JOBD) RANGE(1 9) +
                           SPCVAL((*JOBD 0)) +

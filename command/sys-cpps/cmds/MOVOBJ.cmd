@@ -31,3 +31,4 @@
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
+             DEP        CTL(*ALWAYS) PARM((&TOLIB *NE QTEMP)) MSGID(CPD0090)

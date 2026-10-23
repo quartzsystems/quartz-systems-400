@@ -12,6 +12,24 @@ use crate::error::Diag;
 use crate::token::{Sel, Tok};
 use crate::value::Value;
 
+/// What the string gave a parameter: the tokens, the selective-prompt
+/// prefix and the position of its keyword in the string.
+type Given = (Vec<Tok>, Option<Sel>, usize);
+
+/// The order the box reports in: too many positional values; a level
+/// of parentheses too many and a job number that is not one; a keyword
+/// it does not know; a required parameter missing; then the values in
+/// order.
+fn rank(msgid: &str) -> u8 {
+    match msgid {
+        "CPD0065" => 0,
+        "CPD0012" | "CPD0047" | "CPD0048" => 1,
+        "CPD0011" | "CPD0042" | "CPD0043" => 2,
+        "CPD0071" => 3,
+        _ => 4,
+    }
+}
+
 /// The binding of one command.
 pub(super) struct Ctx<'e, 'a> {
     /// The environment.
@@ -32,44 +50,47 @@ impl Ctx<'_, '_> {
     }
 
     /// Bind every parameter of the definition from the command's
-    /// tokens.
+    /// tokens. The diagnostics come out as the box reports them: a
+    /// missing required parameter first, the rest in the order of the
+    /// string.
     pub fn bind_all(&mut self, toks: &[Tok]) -> Vec<Bound> {
         let n = self.def.parms.len();
-        let mut given: Vec<Option<(Vec<Tok>, Option<Sel>)>> = vec![None; n];
+        let mut given: Vec<Option<Given>> = vec![None; n];
+        let mut ordered: Vec<(usize, Diag)> = Vec::new();
         let mut pos = 0;
         let mut seen_kw = false;
-        for t in toks {
+        for (at, t) in toks.iter().enumerate() {
+            let before = self.diags.len();
             match t {
                 Tok::Kw { name, pfx, args } => {
                     seen_kw = true;
-                    let Some(i) = self.def.index(name) else {
+                    if let Some(i) = self.def.index(name) {
+                        if given[i].is_some() {
+                            self.bad("CPD0042", name, format!("{name} was given twice"));
+                        } else {
+                            given[i] = Some((args.clone(), *pfx, at + 1));
+                        }
+                    } else {
                         self.bad(
-                            "CPD0012",
+                            "CPD0043",
                             name,
                             format!("{name} is not a keyword of {}", self.def.name),
                         );
-                        continue;
-                    };
-                    if given[i].is_some() {
-                        self.bad("CPD0020", name, format!("{name} was given twice"));
-                        continue;
                     }
-                    given[i] = Some((args.clone(), *pfx));
                 }
                 Tok::Word(w) if w.starts_with("?-") || w.starts_with("?&") => {
                     let (sel, name) = match w.strip_prefix("?-") {
                         Some(rest) => (Sel::Omit, rest),
                         None => (Sel::Hidden, &w[2..]),
                     };
-                    let Some(i) = self.def.index(name) else {
-                        self.bad(
-                            "CPD0012",
+                    match self.def.index(name) {
+                        Some(i) => given[i] = Some((Vec::new(), Some(sel), at + 1)),
+                        None => self.bad(
+                            "CPD0043",
                             name,
                             format!("{name} is not a keyword of {}", self.def.name),
-                        );
-                        continue;
-                    };
-                    given[i] = Some((Vec::new(), Some(sel)));
+                        ),
+                    }
                 }
                 other => {
                     if seen_kw {
@@ -78,36 +99,44 @@ impl Ctx<'_, '_> {
                             &other.text(),
                             format!("{} is positional after a keyword", other.text()),
                         );
-                        continue;
-                    }
-                    if !positional_ok(self.def, pos) {
+                    } else if !positional_ok(self.def, pos) {
                         self.bad(
-                            "CPD0010",
+                            "CPD0065",
                             &other.text(),
                             format!("{} is beyond the positional parameters", other.text()),
                         );
                         pos += 1;
-                        continue;
+                    } else {
+                        if other.word() != Some("*N") {
+                            // A positional group comes in its own parentheses.
+                            let args = match (other, self.def.parms.get(pos)) {
+                                (Tok::Paren(items), Some(p)) if is_elem(p) && !p.is_list() => {
+                                    items.clone()
+                                }
+                                _ => vec![other.clone()],
+                            };
+                            given[pos] = Some((args, None, at + 1));
+                        }
+                        pos += 1;
                     }
-                    if other.word() != Some("*N") {
-                        given[pos] = Some((vec![other.clone()], None));
-                    }
-                    pos += 1;
                 }
             }
+            ordered.extend(self.diags.drain(before..).map(|d| (at + 1, d)));
         }
         let mut out = Vec::with_capacity(n);
         for (i, parm) in self.def.parms.iter().enumerate() {
-            let (args, sel) = given[i].take().unwrap_or((Vec::new(), None));
+            let (args, sel, at) = given[i].take().unwrap_or((Vec::new(), None, 0));
             let specified = !args.is_empty();
+            let before = self.diags.len();
             let value = if specified {
                 self.bind_parm(parm, &parm.kwd, &args, false)
             } else {
                 if parm.required() && parm.constant.is_none() && !self.prompting {
-                    self.bad("CPD0015", &parm.kwd, format!("{} is required", parm.kwd));
+                    self.bad("CPD0071", &parm.kwd, format!("{} is required", parm.kwd));
                 }
                 self.default_of(parm, &parm.kwd)
             };
+            ordered.extend(self.diags.drain(before..).map(|d| (at, d)));
             out.push(Bound {
                 kwd: parm.kwd.clone(),
                 value,
@@ -116,6 +145,8 @@ impl Ctx<'_, '_> {
                 given: args,
             });
         }
+        ordered.sort_by_key(|(p, d)| (rank(&d.msgid), *p));
+        self.diags.extend(ordered.into_iter().map(|(_, d)| d));
         out
     }
 
@@ -157,7 +188,19 @@ impl Ctx<'_, '_> {
             return self.bind_list(parm, kwd, toks, trusted);
         }
         if is_elem(parm) {
+            // A single group's elements come bare: `KWD((a b))` is a
+            // level too many (the box tells a group whose first element
+            // is a qualified name apart from the rest).
             let inner = match toks {
+                [Tok::Paren(items)] if !trusted => {
+                    let qual_first = parm.items.first().is_some_and(is_qual);
+                    self.bad(
+                        if qual_first { "CPD0048" } else { "CPD0047" },
+                        kwd,
+                        format!("{kwd}: too many levels of parentheses"),
+                    );
+                    return None;
+                }
                 [Tok::Paren(items)] => items.as_slice(),
                 other => other,
             };
@@ -255,6 +298,15 @@ impl Ctx<'_, '_> {
             );
             return None;
         }
+        // A date or time never takes an expression.
+        if matches!(parm.ty, ParmType::Date | ParmType::Time) {
+            self.bad(
+                "CPD0104",
+                kwd,
+                format!("{kwd}: an expression is not allowed for this parameter"),
+            );
+            return None;
+        }
         match expr::eval(toks, self.env) {
             Ok(tok) => self.scalar_of(parm, kwd, &tok, trusted),
             Err(expr::Unevaluated::Variables) if self.env.vars.is_some() => {
@@ -262,14 +314,14 @@ impl Ctx<'_, '_> {
             }
             Err(expr::Unevaluated::Variables) => {
                 self.bad(
-                    "CPD0084",
+                    "CPD0104",
                     kwd,
-                    format!("{kwd}: variables in an expression are for CL programs"),
+                    format!("{kwd}: an expression with variables is for CL programs"),
                 );
                 None
             }
             Err(expr::Unevaluated::Bad(why)) => {
-                self.bad("CPD0084", kwd, format!("{kwd}: {why}"));
+                self.bad("CPD0047", kwd, format!("{kwd}: too many values; {why}"));
                 None
             }
         }
@@ -345,9 +397,21 @@ impl Ctx<'_, '_> {
         }
         if n < usize::from(parm.min) {
             self.bad(
-                "CPD0015",
+                "CPD0071",
                 kwd,
                 format!("{kwd}: at least {} values are needed", parm.min),
+            );
+            return None;
+        }
+        if n > 1
+            && toks
+                .iter()
+                .any(|t| parm.sngval.iter().any(|s| s.from == t.text()))
+        {
+            self.bad(
+                "CPD0094",
+                kwd,
+                format!("{kwd}: a single value was given with other values"),
             );
             return None;
         }
@@ -409,7 +473,7 @@ impl Ctx<'_, '_> {
             };
             if item.required() && v.is_none() && ok {
                 self.bad(
-                    "CPD0015",
+                    "CPD0072",
                     kwd,
                     format!("{kwd}: element {} is required", i + 1),
                 );
@@ -434,7 +498,7 @@ impl Ctx<'_, '_> {
         };
         if parts.len() > parm.items.len() {
             self.bad(
-                "CPD0016",
+                "CPD0045",
                 kwd,
                 format!(
                     "{kwd}: a name with {} parts where {} are defined",
@@ -442,6 +506,16 @@ impl Ctx<'_, '_> {
                     parm.items.len()
                 ),
             );
+            return None;
+        }
+        // A single value of the parameter (`*PRINT`, `*LDA`) names the
+        // whole thing: it takes no library.
+        if parts.len() > 1
+            && let Some(Tok::Word(w)) = parts.first()
+            && w.starts_with('*')
+            && parm.sngval.iter().any(|s| s.from == *w)
+        {
+            self.bad("CPD0078", kwd, format!("{kwd}: {w} cannot be qualified"));
             return None;
         }
         let mut out = Vec::with_capacity(parm.items.len());
@@ -466,7 +540,7 @@ impl Ctx<'_, '_> {
                 Some(v) => out.push(v),
                 None if ok => {
                     if i == 0 {
-                        self.bad("CPD0015", kwd, format!("{kwd}: a name is required"));
+                        self.bad("CPD0071", kwd, format!("{kwd}: a name is required"));
                         ok = false;
                     } else {
                         out.push(Value::Char(String::new()));

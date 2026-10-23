@@ -9,14 +9,14 @@
                           PROMPT('Data area specification')
              PARM       KWD(VALUE) TYPE(*X) LEN(2000) MIN(1) EXPR(*YES) +
                           PROMPT('New value')
-             E1:        ELEM       TYPE(Q1) MIN(1) PROMPT('Data area')
+             E1:        ELEM       TYPE(Q1) MIN(1) +
+                          SNGVAL((*LDA) (*GDA) (*PDA)) PROMPT('Data area')
                         ELEM       TYPE(E2) DFT(*ALL) SNGVAL((*ALL)) +
                           PROMPT('Substring')
              E2:        ELEM       TYPE(*INT2) MIN(1) RANGE(1 2000) +
                           PROMPT('Start position')
                         ELEM       TYPE(*INT2) MIN(1) RANGE(1 2000) +
                           PROMPT('Length')
-             Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1) +
-                          SPCVAL((*LDA) (*GDA) (*PDA))
+             Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')

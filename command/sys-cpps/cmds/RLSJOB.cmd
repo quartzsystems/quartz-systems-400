@@ -5,7 +5,7 @@
 /* RLSJOB: release a held job. */
              CMD        PROMPT('Release Job') MAXPOS(1) +
                           ALLOW(*ALL) HLPPNLGRP(QHWMCMD) HLPID(RLSJOB)
-             PARM       KWD(JOB) TYPE(QJ) DFT(*) PROMPT('Job name')
+             PARM       KWD(JOB) TYPE(QJ) MIN(1) PROMPT('Job name')
              PARM       KWD(DUPJOBOPT) TYPE(*CHAR) LEN(7) RSTD(*YES) +
                           DFT(*SELECT) VALUES(*SELECT *MSG) +
                           PROMPT('Duplicate job option')

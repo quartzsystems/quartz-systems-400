@@ -43,6 +43,7 @@ fn prompter_screens_per_second() {
         program: true,
         exec: false,
         module: false,
+        syntax_only: false,
     };
     let texts = [
         "CRTPF FILE(QGPL/CUST) RCDLEN(80)",

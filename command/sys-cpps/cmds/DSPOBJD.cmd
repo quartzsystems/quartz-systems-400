@@ -53,3 +53,5 @@
                           DFT(*REPLACE) VALUES(*REPLACE *ADD) +
                           PROMPT('Replace or add records')
              P1:        PMTCTL     CTL(OUTPUT) COND((*EQ *OUTFILE))
+             DEP        CTL(&OUTFILE) PARM((&OUTPUT *EQ *OUTFILE)) +
+                          MSGID(CPD9862)

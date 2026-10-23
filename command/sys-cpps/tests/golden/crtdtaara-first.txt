@@ -10,7 +10,7 @@
    Decimal positions  . . . . . .     0             0-9                         
  Initial value  . . . . . . . . .                                               
  Description  . . . . . . . . . .   *BLANK                                      
-                                                                                
+ Relational database  . . . . . .   *NONE               *NONE                   
                                                                                 
                                                                                 
                                                                                 

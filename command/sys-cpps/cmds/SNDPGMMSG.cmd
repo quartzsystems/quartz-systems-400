@@ -56,4 +56,11 @@
                           SPCVAL((*NONE)) PROMPT('Bound program')
              P1:        PMTCTL     CTL(MSGTYPE) COND((*EQ *INQ) +
                           (*EQ *NOTIFY)) NBRTRUE((*EQ 1))
-             DEP        CTL(*ALWAYS) PARM(&MSGID &MSG) NBRTRUE((*EQ 1))
+             DEP        CTL(*ALWAYS) PARM(&MSGID &MSG) NBRTRUE((*GE 1)) +
+                          MSGID(CPD2536)
+             DEP        CTL(*ALWAYS) PARM(&MSGID &MSG) NBRTRUE((*LE 1)) +
+                          MSGID(CPD2443)
+             DEP        CTL((&MSGTYPE *EQ *ESCAPE)) PARM(&MSGID) +
+                          MSGID(CPD2489)
+             DEP        CTL((&MSGTYPE *EQ *ESCAPE)) PARM((&TOPGMQ *NE *EXT)) +
+                          MSGID(CPD2409)

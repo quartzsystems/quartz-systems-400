@@ -7,13 +7,14 @@
              CMD        PROMPT('Copy File') MAXPOS(5) +
                           ALLOW(*ALL) HLPPNLGRP(QHDBCMD) HLPID(CPYF)
              PARM       KWD(FROMFILE) TYPE(Q1) MIN(1) PROMPT('From file')
-             PARM       KWD(TOFILE) TYPE(Q2) MIN(1) PROMPT('To file')
+             PARM       KWD(TOFILE) TYPE(Q2) MIN(1) SNGVAL((*PRINT)) +
+                          PROMPT('To file')
              PARM       KWD(FROMMBR) TYPE(*GENERIC) LEN(10) DFT(*FIRST) +
                           SPCVAL((*FIRST) (*ALL)) PROMPT('From member')
              PARM       KWD(TOMBR) TYPE(*NAME) LEN(10) DFT(*FIRST) +
                           SPCVAL((*FIRST) (*FROMMBR) (*ALL)) +
                           PROMPT('To member or label')
-             PARM       KWD(MBROPT) TYPE(*CHAR) LEN(8) RSTD(*YES) +
+             PARM       KWD(MBROPT) TYPE(*NAME) LEN(8) RSTD(*YES) +
                           DFT(*NONE) VALUES(*NONE *ADD *REPLACE *UPDADD) +
                           PROMPT('Replace or add records')
              PARM       KWD(CRTFILE) TYPE(*CHAR) LEN(4) RSTD(*YES) +
@@ -28,17 +29,17 @@
                           SPCVAL((*ONLY) (*ALL)) PMTCTL(*PMTRQS) +
                           PROMPT('Record format of logical file')
              PARM       KWD(FROMRCD) TYPE(*DEC) LEN(10) DFT(*START) +
-                          RANGE(1 4294967288) SPCVAL((*START 0)) +
+                          REL(*GT 0) SPCVAL((*START 0)) +
                           PMTCTL(*PMTRQS) PROMPT('From record number')
              PARM       KWD(TORCD) TYPE(*DEC) LEN(10) DFT(*END) +
-                          RANGE(1 4294967288) SPCVAL((*END 0)) +
+                          REL(*GT 0) SPCVAL((*END 0)) +
                           PMTCTL(*PMTRQS) PROMPT('To record number')
              PARM       KWD(FROMKEY) TYPE(E1) DFT(*NONE) SNGVAL((*NONE)) +
                           PMTCTL(*PMTRQS) PROMPT('From record key')
              PARM       KWD(TOKEY) TYPE(E1) DFT(*NONE) SNGVAL((*NONE)) +
                           PMTCTL(*PMTRQS) PROMPT('To record key')
              PARM       KWD(NBRRCDS) TYPE(*DEC) LEN(10) DFT(*END) +
-                          RANGE(1 4294967288) SPCVAL((*END 0)) +
+                          REL(*GT 0) SPCVAL((*END 0)) +
                           PMTCTL(*PMTRQS) PROMPT('Number of records to copy')
              PARM       KWD(INCCHAR) TYPE(E2) DFT(*NONE) SNGVAL((*NONE)) +
                           PMTCTL(*PMTRQS) PROMPT('Include by character test')
@@ -63,8 +64,7 @@
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
-             Q2:        QUAL       TYPE(*NAME) LEN(10) MIN(1) +
-                          SPCVAL((*PRINT))
+             Q2:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
              E1:        ELEM       TYPE(*DEC) LEN(3) DFT(*BLDKEY) +

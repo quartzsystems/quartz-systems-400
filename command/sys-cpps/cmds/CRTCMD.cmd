@@ -11,8 +11,6 @@
              PARM       KWD(SRCFILE) TYPE(Q3) PROMPT('Source file')
              PARM       KWD(SRCMBR) TYPE(*NAME) LEN(10) DFT(*CMD) +
                           SPCVAL((*CMD)) PROMPT('Source member')
-             PARM       KWD(SRCSTMF) TYPE(*PNAME) LEN(5000) +
-                          PROMPT('Source stream file')
              PARM       KWD(REXSRCFILE) TYPE(Q4) PMTCTL(P1) +
                           PROMPT('REXX source file')
              PARM       KWD(REXSRCMBR) TYPE(*NAME) LEN(10) DFT(*CMD) +
@@ -110,3 +108,5 @@
                           PROMPT('Message retrieval')
              P1:        PMTCTL     CTL(PGM) COND((*EQ *REXX)) +
                           NBRTRUE(*ALL)
+             DEP        CTL((&THDSAFE *NE *COND)) PARM(&MLTTHDACN) +
+                          NBRTRUE(*NONE) MSGID(CPD6278)

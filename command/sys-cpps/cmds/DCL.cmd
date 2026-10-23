@@ -19,7 +19,7 @@
              PARM       KWD(DEFVAR) TYPE(E2) PROMPT('Defined on variable')
              PARM       KWD(BASPTR) TYPE(*VARNAME) LEN(11) +
                           PROMPT('Basing pointer')
-             E1:        ELEM       TYPE(*INT4) RANGE(1 32767) +
+             E1:        ELEM       TYPE(*INT4) REL(*GE 1) +
                           PROMPT('Length')
                         ELEM       TYPE(*INT2) DFT(0) RANGE(0 9) +
                           PROMPT('Decimal positions')

@@ -32,8 +32,8 @@
              PARM       KWD(AUTL) TYPE(*NAME) LEN(10) +
                           PROMPT('Authorization list')
              PARM       KWD(AUT) TYPE(*CHAR) LEN(10) RSTD(*YES) MAX(10) +
-                          DFT(*CHANGE) VALUES(*CHANGE *ALL *USE *EXCLUDE +
-                          *AUTL *OBJALTER *OBJEXIST *OBJMGT *OBJOPR +
+                          DFT(*CHANGE) SNGVAL((*CHANGE) (*ALL) (*USE) +
+                          (*EXCLUDE) (*AUTL)) VALUES(*OBJALTER *OBJEXIST *OBJMGT *OBJOPR +
                           *OBJREF *ADD *DLT *EXECUTE *READ *UPD) +
                           PROMPT('Authority')
              PARM       KWD(REFOBJ) TYPE(Q2) DFT(*NONE) SNGVAL((*NONE)) +
@@ -69,3 +69,5 @@
              Q2:        QUAL       TYPE(*NAME) LEN(10)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
+             DEP        CTL(*ALWAYS) PARM(&USER &AUTL) NBRTRUE((*EQ 1)) +
+                          MSGID(CPD2242)

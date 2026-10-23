@@ -94,9 +94,9 @@ impl Suite {
         screen_without(s, "===> crtpf")?;
         let _ = (retrieved, older);
         // A command the analyzer refuses: the diagnostic and CPF0001.
-        entry_wait(s, "crtlib LIB(CLTEST) NOPE(1)", has(&["CPD0012"]))?;
+        entry_wait(s, "crtlib LIB(CLTEST) NOPE(1)", has(&["CPD0043"]))?;
         sign_off(s)?;
-        Ok("CRTLIB ran through the analyzer; ?CRTPF and F4 prompted; Enter ran CRTPF; DSPJOBLOG lists the requests; F9 retrieved; CPD0012 for a bad keyword".into())
+        Ok("CRTLIB ran through the analyzer; ?CRTPF and F4 prompted; Enter ran CRTPF; DSPJOBLOG lists the requests; F9 retrieved; CPD0043 for a bad keyword".into())
     }
 
     /// Step 47: a CL program from a source member: compiled with
@@ -193,16 +193,16 @@ impl Suite {
     #[allow(clippy::unused_self)] // every step has the same shape
     pub(crate) fn analyzer_console(&self, s: &mut Session) -> Result<String, String> {
         let bad = s.command("crtlib", CMD)?;
-        if !bad.contains("CPD0015") || !bad.contains("CPF0001") {
-            return Err(format!("a missing LIB was not refused with CPD0015:\n{bad}"));
+        if !bad.contains("CPD0071") || !bad.contains("CPF0001") {
+            return Err(format!("a missing LIB was not refused with CPD0071:\n{bad}"));
         }
         let unknown = s.command("nosuchcmd", CMD)?;
         if !unknown.contains("CPD0030") {
             return Err(format!("an unknown command was not refused with CPD0030:\n{unknown}"));
         }
         let too_many = s.command("dltlib LIB(CLTEST) EXTRA(1)", CMD)?;
-        if !too_many.contains("CPD0012") {
-            return Err(format!("a bad keyword was not refused with CPD0012:\n{too_many}"));
+        if !too_many.contains("CPD0043") {
+            return Err(format!("a bad keyword was not refused with CPD0043:\n{too_many}"));
         }
         let dev = s.command("svc.obj ls CLTEST", CMD)?;
         if !dev.contains("F1") {
@@ -212,6 +212,6 @@ impl Suite {
         if !gone.contains("CLTEST") {
             return Err(format!("dltlib CLTEST: {gone}"));
         }
-        Ok("CPD0015, CPD0030 and CPD0012 at the service console; svc. words still work; CLTEST deleted".into())
+        Ok("CPD0071, CPD0030 and CPD0043 at the service console; svc. words still work; CLTEST deleted".into())
     }
 }

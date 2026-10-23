@@ -10,8 +10,6 @@
              PARM       KWD(SRCFILE) TYPE(Q2) PROMPT('Source file')
              PARM       KWD(SRCMBR) TYPE(*NAME) LEN(10) DFT(*PGM) +
                           SPCVAL((*PGM)) PROMPT('Source member')
-             PARM       KWD(SRCSTMF) TYPE(*PNAME) LEN(5000) +
-                          PROMPT('Source stream file')
              PARM       KWD(TEXT) TYPE(*CHAR) LEN(50) DFT(*SRCMBRTXT) +
                           SPCVAL((*SRCMBRTXT) (*BLANK ' ')) +
                           PROMPT('Description')
@@ -87,3 +85,5 @@
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB) (*USRLIBL)) +
                           PROMPT('Library')
+             DEP        CTL((&DFTACTGRP *EQ *YES)) PARM(&ACTGRP) +
+                          NBRTRUE(*NONE) MSGID(CPD0875)

@@ -12,7 +12,7 @@
  Output queue . . . . . . . . . .   *USRPRF       Name                          
    Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
  Description  . . . . . . . . . .   *BLANK                                      
-                                                                                
+ Initial ASP group  . . . . . . .   *NONE         Name, *NONE                   
                                                                                 
                                                                                 
                                                                                 
