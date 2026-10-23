@@ -3155,5 +3155,642 @@ source = "pub400"
 release = "V7R5M0"
 date = "2026-10-23"
 script = "brkmsg"
+name = "seu-browse"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-browse"
+width = 80
+
+[[golden]]
+name = "seu-browse-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-browse"
+width = 80
+
+[[golden]]
+name = "seu-browse-f24-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-browse"
+width = 80
+
+[[golden]]
+name = "seu-browse-pgdn"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-browse"
+width = 80
+
+[[golden]]
+name = "seu-browse-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-browse"
+width = 80
+
+[[golden]]
+name = "seu-browse-f20"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-browse"
+width = 80
+
+[[golden]]
+name = "seu-browse-f14"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-browse"
+width = 80
+
+[[golden]]
+name = "seu-browse-f15"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-browse"
+width = 80
+
+[[golden]]
+name = "seu-browse-f13"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-browse"
+width = 80
+
+[[golden]]
+name = "seu-browse-f16"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-browse"
+width = 80
+
+[[golden]]
+name = "seu-browse-find"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-browse"
+width = 80
+
+[[golden]]
+name = "seu-browse-f16-again"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-browse"
+width = 80
+
+[[golden]]
+name = "seu-browse-bottom"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-browse"
+width = 80
+
+[[golden]]
+name = "seu-shift-r1"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-shift"
+width = 80
+
+[[golden]]
+name = "seu-shift-r2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-shift"
+width = 80
+
+[[golden]]
+name = "seu-shift-l1"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-shift"
+width = 80
+
+[[golden]]
+name = "seu-shift-l2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-shift"
+width = 80
+
+[[golden]]
+name = "seu-shift-t1"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-shift"
+width = 80
+
+[[golden]]
+name = "seu-shift-t2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-shift"
+width = 80
+
+[[golden]]
+name = "seu-browse-c"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-shift"
+width = 80
+
+[[golden]]
+name = "seu-browse-c-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-shift"
+width = 80
+
+[[golden]]
+name = "seu-recover"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-f24-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-f20"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-defaults"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-defaults-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-findchg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-findchg-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-browsecopy"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-f16"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-f17"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-f21"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-f23"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-f4"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-find"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-find-nf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-badcmd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-f5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-insert"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-insert-gone"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-pending"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-exclude"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-bottom"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-clp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-prompt-cl"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-prompt-cl-back"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-dspf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-rpgle"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-cmd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-edit-inuse"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-exit"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-edit"
+width = 80
+
+[[golden]]
+name = "seu-select-blank"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-prompts"
+width = 80
+
+[[golden]]
+name = "seu-prompt-dds"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-prompts"
+width = 80
+
+[[golden]]
+name = "seu-prompt-dds-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-prompts"
+width = 80
+
+[[golden]]
+name = "seu-prompt-dds-ip"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-prompts"
+width = 80
+
+[[golden]]
+name = "seu-select-rpgle"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-prompts"
+width = 80
+
+[[golden]]
+name = "seu-prompt-rpg-h"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-prompts"
+width = 80
+
+[[golden]]
+name = "seu-prompt-rpg-f"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-prompts"
+width = 80
+
+[[golden]]
+name = "seu-prompt-rpg-d"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-prompts"
+width = 80
+
+[[golden]]
+name = "seu-prompt-rpg-c"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-prompts"
+width = 80
+
+[[golden]]
+name = "seu-prompt-rpg-cx"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-prompts"
+width = 80
+
+[[golden]]
+name = "seu-prompt-rpg-o"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-prompts"
+width = 80
+
+[[golden]]
+name = "seu-prompt-rpg-p"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-prompts"
+width = 80
+
+[[golden]]
+name = "seu-prompt-rpg-i"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-prompts"
+width = 80
+
+[[golden]]
+name = "seu-prompt-ip"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-prompts"
+width = 80
+
+[[golden]]
+name = "seu-edit-ip-back"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-prompts"
+width = 80
+
+[[golden]]
+name = "seu-syntax-cl"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-lines"
+width = 80
+
+[[golden]]
+name = "seu-syntax-cl-gone"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-lines"
+width = 80
+
+[[golden]]
+name = "seu-lc-copy"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-lines"
+width = 80
+
+[[golden]]
+name = "seu-lc-delete"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-lines"
+width = 80
+
+[[golden]]
+name = "seu-lc-move"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-lines"
+width = 80
+
+[[golden]]
+name = "seu-lc-repeat"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-lines"
+width = 80
+
+[[golden]]
+name = "seu-lc-shift-right"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-lines"
+width = 80
+
+[[golden]]
+name = "seu-lc-shift-left"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-lines"
+width = 80
+
+[[golden]]
+name = "seu-lc-format"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-lines"
+width = 80
+
+[[golden]]
+name = "seu-lc-window"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-lines"
+width = 80
+
+[[golden]]
+name = "seu-exit-changed"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "seu-lines"
 width = 80
 

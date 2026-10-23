@@ -59,6 +59,7 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
     }
     match r.name.as_str() {
         "CALL" => return call(job, host, &parms),
+        "STRSEU" => return crate::devtools::seu::run(job, host, r),
         "RTVSYSVAL" => return rtvsysval(host, r, out),
         "RTVJOBA" => return rtvjoba(host, r, out),
         "RTVOBJD" => return rtvobjd(host, r, out),

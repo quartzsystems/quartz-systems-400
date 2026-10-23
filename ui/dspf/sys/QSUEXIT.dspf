@@ -1,0 +1,45 @@
+     A*  QSUEXIT: SEU's Exit display (F3 in edit mode).
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      INDARA
+     A          R EXIT
+     A                                  1 38'Exit'
+     A                                      DSPATR(HI)
+     A                                  3  2'Type choices, press Enter.'
+     A                                  5  4'Change/create member  . . . . . . -
+     A                                      .'
+     A            CHGMBR         1A  B  5 42
+     A                                  5 55'Y=Yes, N=No'
+     A                                  6  6'Member  . . . . . . . . . . . . .'
+     A            MBR           10A  B  6 42
+     A                                  6 55'Name, F4 for list'
+     A                                  7  6'File  . . . . . . . . . . . . . .'
+     A            FILE          10A  B  7 42
+     A                                  7 55'Name, F4 for list'
+     A                                  8  8'Library . . . . . . . . . . . .'
+     A            LIB           10A  B  8 44
+     A                                  8 55'Name'
+     A                                  9  6'Text  . . . . . . . . . . . . . .'
+     A            TEXT          50A  B  9 42CHECK(LC)
+     A                                 11  6'Resequence member . . . . . . . .'
+     A            RESEQ          1A  B 11 42
+     A                                 11 55'Y=Yes, N=No'
+     A                                 12  8'Start . . . . . . . . . . . . .'
+     A            START          7A  B 12 42
+     A                                 12 55'0000.01-9999.99'
+     A                                 13  8'Increment . . . . . . . . . . .'
+     A            INCR           5A  B 13 42
+     A                                 13 55'00.01-99.99'
+     A                                 15  4'Print member  . . . . . . . . . . -
+     A                                      .'
+     A            PRINT          1A  B 15 42
+     A                                 15 55'Y=Yes, N=No'
+     A                                 17  4'Return to editing . . . . . . . . -
+     A                                      .'
+     A            RETURN         1A  B 17 42
+     A                                 17 55'Y=Yes, N=No'
+     A                                 19  4'Go to member list . . . . . . . . -
+     A                                      .'
+     A            MBRLIST        1A  B 19 42
+     A                                 19 55'Y=Yes, N=No'
+     A            KEYS1         79A  O 22  2COLOR(BLU)
+     A            KEYS2         79A  O 23  2COLOR(BLU)

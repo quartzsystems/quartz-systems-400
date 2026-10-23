@@ -1,0 +1,89 @@
+     A*  QSUBRW: SEU's browse options (F15): BRWCPY in edit mode, BRW
+     A*  in browse mode. The member case is the one carried out.
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      INDARA
+     A          R BRWCPY
+     A                                  1 28'Browse/Copy Options'
+     A                                      DSPATR(HI)
+     A                                  3  2'Type choices, press Enter.'
+     A                                  5  4'Selection . . . . . . . . . . .'
+     A            SEL            1A  B  5 38
+     A                                  5 53'1=Member'
+     A                                  6 53'2=Spool file'
+     A                                  7 53'3=Output queue'
+     A                                  8  4'Copy all records  . . . . . . .'
+     A            COPYALL        1A  B  8 38
+     A                                  8 53'Y=Yes, N=No'
+     A                                  9  4'Browse/copy member  . . . . . .'
+     A            BMBR          10A  B  9 38
+     A                                  9 53'Name, F4 for list'
+     A                                 10  6'File  . . . . . . . . . . . .'
+     A            BFILE         10A  B 10 40
+     A                                 10 53'Name, F4 for list'
+     A                                 11  8'Library . . . . . . . . . .'
+     A            BLIB          10A  B 11 42
+     A                                 11 53'Name, *CURLIB, *LIBL'
+     A                                 13  4'Browse/copy spool file  . . . .'
+     A            SPLF          10A  B 13 38
+     A                                 13 53'Name, F4 for list'
+     A                                 14  6'Job . . . . . . . . . . . . .'
+     A            JOB           10A  B 14 40
+     A                                 14 53'Name'
+     A                                 15  8'User  . . . . . . . . . . .'
+     A            USER          10A  B 15 42
+     A                                 15 53'Name, F4 for list'
+     A                                 16  8'Job number  . . . . . . . .'
+     A            JOBNBR         6A  B 16 42
+     A                                 16 53'Number, *LAST'
+     A                                 17  6'Spool number  . . . . . . . .'
+     A            SPLNBR         6A  B 17 40
+     A                                 17 53'Number, *LAST, *ONLY'
+     A                                 19  4'Display output queue  . . . . .'
+     A            OUTQ          10A  B 19 38
+     A                                 19 53'Name, *ALL'
+     A                                 20  6'Library . . . . . . . . . . .'
+     A            OUTQLIB       10A  B 20 40
+     A                                 20 53'Name, *CURLIB, *LIBL'
+     A            KEYS1         79A  O 22  2COLOR(BLU)
+     A            KEYS2         79A  O 23  2COLOR(BLU)
+     A          R BRW
+     A                                  1 31'Browse Options'
+     A                                      DSPATR(HI)
+     A                                  3  2'Type choices, press Enter.'
+     A                                  5  4'Selection . . . . . . . . . . .'
+     A            SEL            1A  B  5 38
+     A                                  5 53'1=Member'
+     A                                  6 53'2=Spool file'
+     A                                  7 53'3=Output queue'
+     A                                  9  4'Browse member . . . . . . . . .'
+     A            BMBR          10A  B  9 38
+     A                                  9 53'Name, F4 for list'
+     A                                 10  6'File  . . . . . . . . . . . .'
+     A            BFILE         10A  B 10 40
+     A                                 10 53'Name, F4 for list'
+     A                                 11  8'Library . . . . . . . . . .'
+     A            BLIB          10A  B 11 42
+     A                                 11 53'Name, *CURLIB, *LIBL'
+     A                                 13  4'Browse spool file . . . . . . .'
+     A            SPLF          10A  B 13 38
+     A                                 13 53'Name, F4 for list'
+     A                                 14  6'Job . . . . . . . . . . . . .'
+     A            JOB           10A  B 14 40
+     A                                 14 53'Name'
+     A                                 15  8'User  . . . . . . . . . . .'
+     A            USER          10A  B 15 42
+     A                                 15 53'Name, F4 for list'
+     A                                 16  8'Job number  . . . . . . . .'
+     A            JOBNBR         6A  B 16 42
+     A                                 16 53'Number, *LAST'
+     A                                 17  6'Spool number  . . . . . . . .'
+     A            SPLNBR         6A  B 17 40
+     A                                 17 53'Number, *LAST, *ONLY'
+     A                                 19  4'Display output queue  . . . . .'
+     A            OUTQ          10A  B 19 38
+     A                                 19 53'Name, *ALL'
+     A                                 20  6'Library . . . . . . . . . . .'
+     A            OUTQLIB       10A  B 20 40
+     A                                 20 53'Name, *CURLIB, *LIBL'
+     A            KEYS1         79A  O 22  2COLOR(BLU)
+     A            KEYS2         79A  O 23  2COLOR(BLU)

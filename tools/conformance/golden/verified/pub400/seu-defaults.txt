@@ -1,0 +1,24 @@
+                              Change Session Defaults                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Amount to roll . . . . . . . . . . .   H            H=Half, F=Full           
+                                                       C=Cursor, D=Data         
+                                                       1-999                    
+   Uppercase input only . . . . . . . .   Y            Y=Yes, N=No              
+   Tabs on  . . . . . . . . . . . . . .   N            Y=Yes, N=No              
+   Increment of insert record . . . . .   0.01         0.01-999.99              
+   Full screen mode . . . . . . . . . .   N            Y=Yes, N=No              
+                                                                                
+   Source type  . . . . . . . . . . . .                                         
+   Syntax checking:                                                             
+     When added/modified  . . . . . . .   Y            Y=Yes, N=No              
+     From sequence number . . . . . . .                0000.00-9999.99          
+     To sequence number . . . . . . . .                0000.00-9999.99          
+                                                                                
+                                                                                
+   Set records to date  . . . . . . . .     /  /       YY/MM/DD or YYMMDD       
+                                                                        More... 
+ F3=Exit      F5=Refresh   F12=Cancel                                           
+ F14=Find/Change options   F15=Browse/Copy options                              
+                                                                                

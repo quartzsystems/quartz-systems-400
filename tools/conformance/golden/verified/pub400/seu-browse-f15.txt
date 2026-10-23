@@ -1,0 +1,24 @@
+                              Browse Options                                    
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Selection . . . . . . . . . . .   1              1=Member                    
+                                                    2=Spool file                
+                                                    3=Output queue              
+                                                                                
+   Browse member . . . . . . . . .   QUSEC          Name, F4 for list           
+     File  . . . . . . . . . . . .     QRPGLESRC    Name, F4 for list           
+       Library . . . . . . . . . .       QSYSINC    Name, *CURLIB, *LIBL        
+                                                                                
+   Browse spool file . . . . . . .   QUSEC          Name, F4 for list           
+     Job . . . . . . . . . . . . .     QUSEC        Name                        
+       User  . . . . . . . . . . .       USERNAME   Name, F4 for list           
+       Job number  . . . . . . . .       *LAST      Number, *LAST               
+     Spool number  . . . . . . . .     *LAST        Number, *LAST, *ONLY        
+                                                                                
+   Display output queue  . . . . .   QPRINT         Name, *ALL                  
+     Library . . . . . . . . . . .     *LIBL        Name, *CURLIB, *LIBL        
+                                                                                
+ F3=Exit       F4=Prompt       F5=Refresh       F12=Cancel                      
+ F13=Change session defaults   F14=Find options                                 
+                                                                                

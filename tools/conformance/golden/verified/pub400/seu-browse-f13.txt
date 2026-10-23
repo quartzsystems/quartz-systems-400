@@ -1,0 +1,24 @@
+                              Change Session Defaults                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Amount to roll . . . . . . . . . . .   H            H=Half, F=Full           
+                                                       C=Cursor, D=Data         
+                                                       1-999                    
+   Full screen mode . . . . . . . . . .   N            Y=Yes, N=No              
+                                                                                
+   User exit program  . . . . . . . . .   *REGFAC      *REGFAC, *NONE, Name     
+     Program selection filter . . . . .   *ALL         *ALL, *USRPRF, String    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F5=Refresh   F12=Cancel                                              
+ F14=Find options       F15=Browse options                                      
+                                                                                

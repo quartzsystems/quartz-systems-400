@@ -465,6 +465,15 @@ ipc::rpc! {
     /// panel's variables and its lists' entries.
     270 => fn sys2_panel / Sys2Panel (what: String, args: Vec<String>) -> Result<Sys2Data, String>;
     // --- SEU (300-319)
+    /// SEU: a source member read whole and locked for the job, `*EXCL`
+    /// to edit and `*SHRRD` to browse; a missing member opens empty to
+    /// edit.
+    300 => fn seu_open / SeuOpen (lib: String, file: String, member: String, edit: bool) -> Result<SrcMember, String>;
+    /// SEU: write a member's records (sequence, date, data) back, the
+    /// member added when new, its source type and text set.
+    301 => fn seu_save / SeuSave (lib: String, file: String, member: String, records: Vec<(u32, u32, String)>, srctype: String, text: String) -> Result<(), String>;
+    /// SEU: release the member `seu_open` locked.
+    302 => fn seu_close / SeuClose (lib: String, file: String, member: String) -> ();
     // --- PDM (320-339)
     /// PDM: a source member's lines; `None` when the file or member is
     /// missing.
@@ -623,3 +632,34 @@ pub type PanelData = (Vec<(String, String)>, Vec<Vec<(String, String)>>);
 /// A panel's data: its variables, then each list's name and entries
 /// as `(variable, value)` pairs.
 pub type Sys2Data = (Vec<(String, String)>, Vec<(String, Vec<Vec<(String, String)>>)>);
+/// A source member as SEU opens it.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct SrcMember {
+    /// The file's real library.
+    pub lib: String,
+    /// The file.
+    pub file: String,
+    /// The member.
+    pub member: String,
+    /// Its source type; blank for none.
+    pub srctype: String,
+    /// Its text.
+    pub text: String,
+    /// The data length of a record.
+    pub width: u32,
+    /// Whether the member exists (a new one is added when saved).
+    pub exists: bool,
+    /// Sequence in hundredths, date `yymmdd`, data.
+    pub records: Vec<(u32, u32, String)>,
+}
+
+wire_struct!(SrcMember {
+    lib,
+    file,
+    member,
+    srctype,
+    text,
+    width,
+    exists,
+    records
+});

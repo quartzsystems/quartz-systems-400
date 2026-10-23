@@ -339,6 +339,7 @@ pub const JOB_SITE: &[&str] = &[
     "EDTOBJAUT",
     "EDTAUTL",
     // --- SEU (devtools/seu)
+    "STRSEU",
     // --- PDM (devtools/pdm)
     "STRPDM",
     "WRKLIBPDM",

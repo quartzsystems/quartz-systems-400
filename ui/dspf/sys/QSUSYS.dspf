@@ -1,0 +1,12 @@
+     A*  QSUSYS: SEU's system command window (F21).
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      INDARA
+     A          R SYSCMD
+     A                                      WINDOW(18 2 5 76)
+     A                                      OVERLAY
+     A                                  1 32'System Command'
+     A                                      DSPATR(HI)
+     A                                  3  3'===>'
+     A            CMD           66A  B  3  8CHECK(LC)
+     A            WKEYS         70A  O  4  3COLOR(BLU)
+     A            WMSG          72A  O  5  3

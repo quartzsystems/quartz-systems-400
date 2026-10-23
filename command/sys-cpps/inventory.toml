@@ -268,6 +268,9 @@ site = "job"
 note = "the editor at a display; CHGLIBL otherwise"
 
 # --- SEU (devtools/seu)
+[cmd.STRSEU]
+site = "job"
+note = "SEU at a display (work/qsjob/src/devtools/seu.rs); refused without one"
 
 # --- PDM (devtools/pdm)
 [cmd.STRPDM]

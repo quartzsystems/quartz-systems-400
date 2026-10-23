@@ -1,0 +1,24 @@
+                                Select Prompt                                   
+                                                                                
+ Type choice, press Enter.                                                      
+                                                                                
+  Prompt type . . . . . . . . . . . .         Values listed below               
+                                                                                
+    ILE RPG:        H,F,FX,I,IX,J (I cont),JX,D,DX,C,CX,OD,P (O cont),PR,       
+                    PX,* (Comment),**                                           
+    ILE COBOL:      CB,C*                                                       
+    REFORMAT/SORT:  RH,RR,RF,RC                                                 
+    DDS:            LF (Logical file),PF (Physical file),                       
+                    BC (Interactive Communications Feature file),               
+                    DP (Display and Printer file),                              
+                    A* (Comment)                                                
+    MNU:            MS,MH,MD,MC (MD cont),CC (Comment)                          
+    FORTRAN:        FT, F*                                                      
+    Other:          NC (No syntax checking),** (Free format)                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F12=Cancel   F23=Select user prompt                                            
+                                                                                

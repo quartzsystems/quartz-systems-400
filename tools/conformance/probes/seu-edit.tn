@@ -1,0 +1,196 @@
+# SEU in edit mode (OPTION(2)) on a member of the user's own library:
+# the edit display and its key sets, the session defaults, the find
+# and browse options, the system command window, line commands, the
+# prompts by source type (changed through F13 for the session only)
+# and the Exit display. Nothing is saved: the script has no
+# `continue`, so any surprise ends the session without the Exit
+# display, and the Exit display is left with "Change/create member" N.
+wait "Main Menu"
+timeout 60000
+type strseu srcfile(*curlib/qddssrc) srcmbr(qdfuzzin) option(2)
+key enter
+# The interrupted sessions of earlier captures: discard and start anew.
+wait "Recover SEU Member"
+snap seu-recover
+field 21 7 2
+key enter
+wait "Edit"
+snap seu-edit
+key f24
+settle 1200
+snap seu-edit-f24
+key f24
+settle 1200
+snap seu-edit-f24-2
+key f24
+settle 1200
+key f11
+settle 1500
+snap seu-edit-f11 +jobnum
+key f11
+settle 1200
+key f20
+settle 1500
+snap seu-edit-f20
+key f19
+settle 1500
+key f13
+wait "Change Session Defaults"
+snap seu-defaults
+key pgdn
+settle 1500
+snap seu-defaults-2
+key f12
+wait "Edit"
+key f14
+settle 1500
+snap seu-findchg
+key pgdn
+settle 1500
+snap seu-findchg-2
+key f12
+wait "Edit"
+key f15
+settle 1500
+snap seu-browsecopy
+key f12
+wait "Edit"
+key f16
+settle 1500
+snap seu-edit-f16
+key f17
+settle 1500
+snap seu-edit-f17
+key f21
+settle 1500
+snap seu-edit-f21
+key f12
+wait "Edit"
+key f23
+settle 1500
+snap seu-edit-f23
+key f12
+wait "Edit"
+cursor 5 20
+key f4
+settle 1500
+snap seu-edit-f4
+key f12
+wait "Edit"
+field 2 9 find IID
+key enter
+settle 1500
+snap seu-edit-find
+field 2 9 find zzzz
+key enter
+settle 1500
+snap seu-edit-find-nf
+field 2 9 xyz
+key enter
+settle 1500
+snap seu-edit-badcmd
+key reset
+key f5
+settle 1500
+snap seu-edit-f5
+field 5 1 i
+key enter
+settle 1500
+snap seu-edit-insert
+key enter
+settle 1500
+snap seu-edit-insert-gone
+field 5 1 cc
+key enter
+settle 1500
+snap seu-edit-pending
+key f5
+settle 1500
+field 6 1 x
+key enter
+settle 1500
+snap seu-edit-exclude
+field 2 9 top
+key enter
+settle 1500
+field 2 9 bottom
+key enter
+settle 1500
+snap seu-edit-bottom
+field 2 9 top
+key enter
+settle 1500
+# The session's source type, for the prompts and the format line.
+key f13
+wait "Change Session Defaults"
+field 13 43 CLP
+key enter
+wait "Edit"
+snap seu-edit-clp
+field 11 1 i
+key enter
+settle 1500
+type dsplib
+key f4
+settle 2500
+snap seu-prompt-cl
+key f12
+settle 1500
+snap seu-prompt-cl-back
+key f13
+wait "Change Session Defaults"
+field 13 43 DSPF
+key enter
+wait "Edit"
+snap seu-edit-dspf
+cursor 6 20
+key f4
+settle 1500
+snap seu-prompt-dds
+key f12
+settle 1200
+key f23
+settle 1500
+snap seu-select-dspf
+key f12
+settle 1200
+key f13
+wait "Change Session Defaults"
+field 13 43 RPGLE
+key enter
+wait "Edit"
+snap seu-edit-rpgle
+key f23
+settle 1500
+snap seu-select-rpgle
+key f12
+settle 1200
+key f13
+wait "Change Session Defaults"
+field 13 43 CMD
+key enter
+wait "Edit"
+snap seu-edit-cmd
+cursor 6 20
+key f4
+settle 1500
+snap seu-prompt-cmd
+key f12
+settle 1200
+key f21
+settle 1500
+type strseu srcfile(*curlib/qddssrc) srcmbr(qdfuzzin) option(2)
+key enter
+settle 2500
+snap seu-edit-inuse
+key f12
+settle 1500
+key f12
+wait "Edit"
+key f3
+wait "Exit"
+snap seu-exit
+field 5 42 N
+expect "member  . . . . . . .   N"
+key enter
+wait "Main Menu"

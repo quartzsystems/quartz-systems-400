@@ -1417,6 +1417,37 @@ impl Service for Served<'_> {
 
     // --- SEU (300-319)
 
+    fn seu_open(&mut self, lib: String, file: String, member: String, edit: bool) -> Result<stg::proto::SrcMember, String> {
+        self.own_libl();
+        let job = JobHandle(self.ctx.job.handle);
+        let r = super::seu::open(self.system, job, (&lib, &file, &member), edit);
+        ile::set_libl(None);
+        r
+    }
+
+    fn seu_save(
+        &mut self,
+        lib: String,
+        file: String,
+        member: String,
+        records: Vec<(u32, u32, String)>,
+        srctype: String,
+        text: String,
+    ) -> Result<(), String> {
+        self.own_libl();
+        let job = JobHandle(self.ctx.job.handle);
+        let r = super::seu::save(self.system, job, (&lib, &file, &member), &records, &srctype, &text);
+        ile::set_libl(None);
+        r
+    }
+
+    fn seu_close(&mut self, lib: String, file: String, member: String) {
+        self.own_libl();
+        let job = JobHandle(self.ctx.job.handle);
+        super::seu::close(self.system, job, (&lib, &file, &member));
+        ile::set_libl(None);
+    }
+
     // --- PDM (320-339)
     fn pdm_read(&mut self, lib: String, file: String, member: String) -> Result<Option<Vec<String>>, String> {
         self.own_libl();

@@ -1,0 +1,37 @@
+# SEU's window over wide records: F19/F20 shifts and F11 toggles in
+# browse mode, on an RPG member and on a C member (another source type,
+# another first column and format line).
+wait "Main Menu"
+timeout 60000
+type strseu srcfile(qsysinc/qrpglesrc) srcmbr(qusec) option(5)
+key enter
+wait "Browse"
+key f20
+settle 1500
+snap seu-shift-r1 +jobnum
+key f20
+settle 1500
+snap seu-shift-r2 +jobnum
+key f19
+settle 1500
+snap seu-shift-l1 +jobnum
+key f19
+settle 1500
+snap seu-shift-l2 +jobnum
+key f11
+settle 1500
+snap seu-shift-t1 +jobnum
+key f11
+settle 1500
+snap seu-shift-t2 +jobnum
+key f3
+wait "Main Menu"
+type strseu srcfile(qsysinc/h) srcmbr(qusec) option(5)
+key enter
+wait "Browse"
+snap seu-browse-c
+key f11
+settle 1500
+snap seu-browse-c-f11 +jobnum
+key f3
+wait "Main Menu"

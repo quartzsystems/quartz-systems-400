@@ -33,6 +33,7 @@ pub(crate) mod wtr;
 
 pub use jobs::chgjob;
 mod served;
+mod seu;
 mod sysdata;
 mod system2;
 mod sysdsp;

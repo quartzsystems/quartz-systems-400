@@ -1,0 +1,24 @@
+                              Find Options                                      
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Find  . . . . . . . . . . . . .                                              
+   From column number  . . . . . .   1            1-100                         
+   To column number  . . . . . . .   100          1-100 or blank                
+   Occurrences to process  . . . .   1            1=Next, 2=All, 3=Previous     
+                                                  4=First, 5=Last               
+   Records to search . . . . . . .   1            1=All, 2=Excluded             
+                                                  3=Non-excluded                
+   Kind of match . . . . . . . . .   2            1=Same case                   
+                                                  2=Ignore case                 
+                                                                                
+   Search for date . . . . . . . .   MM/DD/YY     YY/MM/DD or YYMMDD            
+     Compare . . . . . . . . . . .                1=Less than                   
+                                                  2=Equal to                    
+                                                  3=Greater than                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F5=Refresh   F12=Cancel   F13=Change session defaults                
+ F15=Browse options     F16=Find                                                
+                                                                                

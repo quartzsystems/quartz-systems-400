@@ -77,7 +77,13 @@ pub struct Prompter {
     errors: Vec<String>,
     window: Option<Window>,
     label: Option<String>,
+    /// A source line's label and comment (SEU's prompt of a CL line).
+    source: Option<(String, String)>,
 }
+
+/// The parameter index of the label and comment fields of a source
+/// line's prompt.
+const SOURCE_PARM: usize = usize::MAX;
 
 impl Prompter {
     /// A session for a resolved command.
@@ -138,7 +144,44 @@ impl Prompter {
             errors: Vec::new(),
             window: None,
             label: r.label.clone(),
+            source: None,
         }
+    }
+
+    /// A session over a line of CL source (SEU's `F4`): the display
+    /// gains a `Label` field first and a `Comment` field last, and the
+    /// command string leaves them out ([`source_parts`](Self::source_parts)
+    /// has them).
+    #[must_use]
+    pub fn for_source_line(r: &Resolved, comment: &str) -> Self {
+        let mut p = Self::new(r);
+        let label = p.label.take().unwrap_or_default();
+        p.source = Some((label, comment.to_string()));
+        p
+    }
+
+    /// The label and comment of a source line's prompt as they stand.
+    #[must_use]
+    pub fn source_parts(&self) -> Option<(String, String)> {
+        self.source.clone()
+    }
+
+    /// The label and comment lines around a source line's parameters.
+    fn with_source(&self, items: &mut Vec<Line>) {
+        let Some((label, comment)) = &self.source else {
+            return;
+        };
+        let line = |text: &str, value: &str, step: usize, width: usize| Line::Value {
+            label: text.to_string(),
+            indent: 0,
+            field: Some((width, value.to_string())),
+            protected: None,
+            choices: String::new(),
+            marker: false,
+            path: Path::parm(SOURCE_PARM).step(step),
+        };
+        items.insert(0, line("Label", label, 0, 10));
+        items.push(line("Comment", comment, 1, layout::MAX_WIDTH));
     }
 
     /// The display as it stands.
@@ -148,7 +191,8 @@ impl Prompter {
         if let Some(w) = &self.window {
             return self.window_screen(w);
         }
-        let lines = self.lines();
+        let mut lines = self.lines();
+        self.with_source(&mut lines.items);
         let mut s = Screen::default();
         s.center(1, &format!("{} ({})", self.def.prompt, self.name));
         s.put(3, LABEL_COL, "Type choices, press Enter.");
@@ -360,6 +404,17 @@ impl Prompter {
             let Some(path) = &f.path else {
                 continue;
             };
+            if path.parm == SOURCE_PARM {
+                if let Some(src) = self.source.as_mut() {
+                    let v = typed.trim_end().to_string();
+                    if path.steps.first() == Some(&0) {
+                        src.0 = v.trim().to_ascii_uppercase();
+                    } else {
+                        src.1 = v;
+                    }
+                }
+                continue;
+            }
             if path.steps.last() == Some(&usize::MAX) {
                 if !typed.trim().is_empty() {
                     more = Some(path.parm);
@@ -388,7 +443,12 @@ impl Prompter {
                 let path = self
                     .error
                     .clone()
-                    .or_else(|| shown.fields.iter().find_map(|f| f.path.clone()));
+                    .or_else(|| {
+                        shown
+                            .fields
+                            .iter()
+                            .find_map(|f| f.path.clone().filter(|p| p.parm != SOURCE_PARM))
+                    });
                 if let Some(path) = path {
                     let values = self.choices_of(&path);
                     self.window = Some(Window::Choices { path, values });

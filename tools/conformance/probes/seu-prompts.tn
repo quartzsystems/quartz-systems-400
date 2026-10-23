@@ -1,0 +1,191 @@
+# SEU's prompts by source type (the session's type set through F13),
+# Select Prompt (F23), insert-with-prompt line commands, a CL syntax
+# error and the block line commands. The member is never saved: no
+# `continue`, and the Exit display is left with "Change/create member" N.
+wait "Main Menu"
+timeout 60000
+type strseu srcfile(*curlib/qddssrc) srcmbr(qdfuzzin) option(2)
+key enter
+wait "Edit"
+cursor 7 20
+key f23
+settle 1500
+snap seu-select-blank
+key f12
+wait "Edit"
+key f13
+wait "Change Session Defaults"
+field 13 43 DSPF
+key enter
+wait "Edit"
+cursor 7 20
+key f4
+settle 1500
+snap seu-prompt-dds
+key f24
+settle 1200
+snap seu-prompt-dds-f24
+key f12
+wait "Edit"
+cursor 7 20
+key f23
+settle 1500
+snap seu-select-dspf
+key f12
+wait "Edit"
+field 7 1 ip
+key enter
+settle 1500
+snap seu-prompt-dds-ip
+key f12
+wait "Edit"
+key f13
+wait "Change Session Defaults"
+field 13 43 PF
+key enter
+wait "Edit"
+snap seu-edit-pf
+cursor 7 20
+key f4
+settle 1500
+snap seu-prompt-pf
+key f12
+wait "Edit"
+key f13
+wait "Change Session Defaults"
+field 13 43 RPGLE
+key enter
+wait "Edit"
+cursor 7 20
+key f23
+settle 1500
+snap seu-select-rpgle
+key f12
+wait "Edit"
+field 7 1 iph
+key enter
+settle 1500
+snap seu-prompt-rpg-h
+key f12
+wait "Edit"
+field 7 1 ipf
+key enter
+settle 1500
+snap seu-prompt-rpg-f
+key f12
+wait "Edit"
+field 7 1 ipd
+key enter
+settle 1500
+snap seu-prompt-rpg-d
+key f12
+wait "Edit"
+field 7 1 ipc
+key enter
+settle 1500
+snap seu-prompt-rpg-c
+key f12
+wait "Edit"
+field 7 1 ipcx
+key enter
+settle 1500
+snap seu-prompt-rpg-cx
+key f12
+wait "Edit"
+field 7 1 ipo
+key enter
+settle 1500
+snap seu-prompt-rpg-o
+key f12
+wait "Edit"
+field 7 1 ipp
+key enter
+settle 1500
+snap seu-prompt-rpg-p
+key f12
+wait "Edit"
+field 7 1 ipi
+key enter
+settle 1500
+snap seu-prompt-rpg-i
+key f12
+wait "Edit"
+key f13
+wait "Change Session Defaults"
+field 13 43 CMD
+key enter
+wait "Edit"
+cursor 7 20
+key f4
+settle 1500
+snap seu-prompt-cmd
+key f12
+wait "Edit"
+cursor 7 20
+key f23
+settle 1500
+snap seu-select-cmd
+key f12
+wait "Edit"
+key f13
+wait "Change Session Defaults"
+field 13 43 CLP
+key enter
+wait "Edit"
+field 7 1 ip
+key enter
+settle 2000
+snap seu-prompt-cl-ip
+key f12
+wait "Edit"
+snap seu-edit-cl-ip-back
+field 11 1 i
+key enter
+settle 1500
+type dsplib lib(
+key enter
+settle 2000
+snap seu-syntax-cl
+key reset
+key f5
+settle 1500
+snap seu-edit-refresh
+# Block and target line commands on the first records.
+field 5 1 c
+field 7 1 a
+key enter
+settle 1500
+snap seu-lc-copy
+field 5 1 dd
+field 6 1 dd
+key enter
+settle 1500
+snap seu-lc-delete
+field 5 1 m
+field 7 1 b
+key enter
+settle 1500
+snap seu-lc-move
+field 5 1 rp
+key enter
+settle 1500
+snap seu-lc-repeat
+field 5 1 r3
+key enter
+settle 1500
+snap seu-lc-shift
+field 5 1 f
+key enter
+settle 1500
+snap seu-lc-format
+field 5 1 w20
+key enter
+settle 1500
+snap seu-lc-window
+key f3
+wait "Exit"
+snap seu-exit-changed
+field 5 42 N
+expect "member  . . . . . . .   N"
+key enter
+wait "Main Menu"

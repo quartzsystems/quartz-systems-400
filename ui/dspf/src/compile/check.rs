@@ -231,7 +231,7 @@ fn windows(df: &mut DisplayFile, diags: &mut Diagnostics) {
                 && match origin {
                     WindowOrigin::At(r, c) => {
                         u32::from(r) + u32::from(lines) < u32::from(size.rows)
-                            && u32::from(c) + u32::from(cols) + 3 <= u32::from(size.cols)
+                            && u32::from(c) + u32::from(cols) + 2 <= u32::from(size.cols)
                     }
                     _ => true,
                 };

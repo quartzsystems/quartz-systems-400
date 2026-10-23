@@ -1,0 +1,24 @@
+                           Browse/Copy Options                                  
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Selection . . . . . . . . . . .   1              1=Member                    
+                                                    2=Spool file                
+                                                    3=Output queue              
+   Copy all records  . . . . . . .   N              Y=Yes, N=No                 
+   Browse/copy member  . . . . . .   QDFUZZIN       Name, F4 for list           
+     File  . . . . . . . . . . . .     QDDSSRC      Name, F4 for list           
+       Library . . . . . . . . . .       USERNAME1  Name, *CURLIB, *LIBL        
+                                                                                
+   Browse/copy spool file  . . . .   QDFUZZIN       Name, F4 for list           
+     Job . . . . . . . . . . . . .     QDFUZZIN     Name                        
+       User  . . . . . . . . . . .       USERNAME   Name, F4 for list           
+       Job number  . . . . . . . .       *LAST      Number, *LAST               
+     Spool number  . . . . . . . .     *LAST        Number, *LAST, *ONLY        
+                                                                                
+   Display output queue  . . . . .   QPRINT         Name, *ALL                  
+     Library . . . . . . . . . . .     *LIBL        Name, *CURLIB, *LIBL        
+                                                                                
+ F3=Exit       F4=Prompt       F5=Refresh       F12=Cancel                      
+ F13=Change session defaults   F14=Find/Change options                          
+                                                                                

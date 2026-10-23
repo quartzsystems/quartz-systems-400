@@ -1,0 +1,24 @@
+ Columns . . . :    1  71            Edit                     USERNAME1/QDDSSRC 
+ SEU==>                                                                QDFUZZIN 
+ FMT DP .....AAN01N02N03T.Name++++++RLen++TDpBLinPosFunctions++++++++++++++++++ 
+        *************** Beginning of data ************************************* 
+0001.00      A          R QDFUZZINR                                             
+- - - - ------------- 1 data records excluded --------------------------------- 
+0003.00      A            OP             2A                                     
+0004.00      A            SA             2S 0                                   
+0005.00      A            A             70A                                     
+0006.00      A            SB             2S 0                                   
+0007.00      A            B             70A                                     
+0008.00      DSPLIB                                                             
+        ****************** End of data **************************************** 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F5=Refresh   F9=Retrieve   F10=Cursor   F11=Toggle       
+ F16=Repeat find       F17=Repeat change          F24=More keys                 
+                                                                                

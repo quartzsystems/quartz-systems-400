@@ -1,0 +1,24 @@
+                              Change Session Defaults                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Resequence member default  . . . . .   P            Y=Yes, N=No              
+                                                       P=Previous               
+   Default to uppercase input                                                   
+     for unknown source type  . . . . .   Y            Y=Yes, N=No              
+                                                                                
+   User exit program  . . . . . . . . .   *REGFAC      *REGFAC, *NONE, Name     
+     Program selection filter . . . . .   *ALL         *ALL, *USRPRF, String    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit      F5=Refresh   F12=Cancel                                           
+ F14=Find/Change options   F15=Browse/Copy options                              
+                                                                                

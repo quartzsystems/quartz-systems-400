@@ -1740,6 +1740,7 @@ dependencies = [
  "rustls",
  "rustls-graviola",
  "sec",
+ "seu",
  "spool",
  "sst",
  "stg",
@@ -2160,6 +2161,18 @@ checksum = "66cf8fedced2fcf12406bcb34223dffb92eaf34908ede12fed414c82b7f00b3e"
 dependencies = [
  "base16ct",
  "serde",
+]
+
+[[package]]
+name = "seu"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "dds",
+ "dspf",
+ "seu",
+ "thiserror",
+ "tn5250",
 ]
 
 [[package]]

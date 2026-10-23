@@ -1,0 +1,77 @@
+     A*  QSUFND: SEU's find and change options (F14): FNDCHG in edit
+     A*  mode, FND in browse mode.
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      INDARA
+     A          R FNDCHG
+     A                                  1 28'Find/Change Options'
+     A                                      DSPATR(HI)
+     A                                  3  2'Type choices, press Enter.'
+     A                                  5  4'Find  . . . . . . . . . . . . .'
+     A            FIND          43A  B  5 38CHECK(LC)
+     A                                  6  4'Change  . . . . . . . . . . . .'
+     A            CHANGE        43A  B  6 38CHECK(LC)
+     A                                  7  4'From column number  . . . . . .'
+     A            FROMCOL        3A  B  7 38
+     A                                  7 51'1-100'
+     A                                  8  4'To column number  . . . . . . .'
+     A            TOCOL          3A  B  8 38
+     A                                  8 51'1-100 or blank'
+     A                                  9  4'Occurrences to process  . . . .'
+     A            OCC            1A  B  9 38
+     A                                  9 51'1=Next, 2=All, 3=Previous'
+     A                                 10 51'4=First, 5=Last'
+     A                                 11  4'Records to search . . . . . . .'
+     A            RECS           1A  B 11 38
+     A                                 11 51'1=All, 2=Excluded'
+     A                                 12 51'3=Non-excluded'
+     A                                 13  4'Kind of match . . . . . . . . .'
+     A            MATCH          1A  B 13 38
+     A                                 13 51'1=Same case'
+     A                                 14 51'2=Ignore case'
+     A                                 15  4'Allow data shift  . . . . . . .'
+     A            SHIFT          1A  B 15 38
+     A                                 15 51'Y=Yes, N=No'
+     A                                 17  4'Search for date . . . . . . . .'
+     A            SDATE          8A  B 17 38
+     A                                 17 51'YY/MM/DD or YYMMDD'
+     A                                 18  6'Compare . . . . . . . . . . .'
+     A            CMP            1A  B 18 38
+     A                                 18 51'1=Less than'
+     A                                 19 51'2=Equal to'
+     A                                 20 51'3=Greater than'
+     A            KEYS1         79A  O 22  2COLOR(BLU)
+     A            KEYS2         79A  O 23  2COLOR(BLU)
+     A          R FND
+     A                                  1 31'Find Options'
+     A                                      DSPATR(HI)
+     A                                  3  2'Type choices, press Enter.'
+     A                                  5  4'Find  . . . . . . . . . . . . .'
+     A            FIND          43A  B  5 38CHECK(LC)
+     A                                  6  4'From column number  . . . . . .'
+     A            FROMCOL        3A  B  6 38
+     A                                  6 51'1-100'
+     A                                  7  4'To column number  . . . . . . .'
+     A            TOCOL          3A  B  7 38
+     A                                  7 51'1-100 or blank'
+     A                                  8  4'Occurrences to process  . . . .'
+     A            OCC            1A  B  8 38
+     A                                  8 51'1=Next, 2=All, 3=Previous'
+     A                                  9 51'4=First, 5=Last'
+     A                                 10  4'Records to search . . . . . . .'
+     A            RECS           1A  B 10 38
+     A                                 10 51'1=All, 2=Excluded'
+     A                                 11 51'3=Non-excluded'
+     A                                 12  4'Kind of match . . . . . . . . .'
+     A            MATCH          1A  B 12 38
+     A                                 12 51'1=Same case'
+     A                                 13 51'2=Ignore case'
+     A                                 15  4'Search for date . . . . . . . .'
+     A            SDATE          8A  B 15 38
+     A                                 15 51'YY/MM/DD or YYMMDD'
+     A                                 16  6'Compare . . . . . . . . . . .'
+     A            CMP            1A  B 16 38
+     A                                 16 51'1=Less than'
+     A                                 17 51'2=Equal to'
+     A                                 18 51'3=Greater than'
+     A            KEYS1         79A  O 22  2COLOR(BLU)
+     A            KEYS2         79A  O 23  2COLOR(BLU)

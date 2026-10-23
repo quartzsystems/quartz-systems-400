@@ -1,0 +1,62 @@
+# SEU in browse mode (OPTION(5)) on a QSYSINC member every user may
+# read: the browse display, its key sets, the roll keys, the find and
+# browse options and the session defaults; F3 leaves without a prompt.
+wait "Main Menu"
+continue
+timeout 60000
+type strseu srcfile(qsysinc/qrpglesrc) srcmbr(qusec) option(5)
+key enter
+wait "Browse"
+snap seu-browse
+key f24
+settle 1200
+snap seu-browse-f24
+key f24
+settle 1200
+snap seu-browse-f24-2
+key pgdn
+settle 1500
+snap seu-browse-pgdn
+key pgup
+settle 1500
+key f11
+settle 1500
+snap seu-browse-f11 +jobnum
+key f11
+settle 1200
+key f20
+settle 1500
+snap seu-browse-f20
+key f19
+settle 1500
+key f14
+wait "Find"
+snap seu-browse-f14
+key f12
+settle 1500
+key f15
+settle 1500
+snap seu-browse-f15
+key f12
+settle 1500
+key f13
+wait "Change Session Defaults"
+snap seu-browse-f13
+key f12
+settle 1500
+key f16
+settle 1500
+snap seu-browse-f16
+field 2 9 find error
+key enter
+settle 1500
+snap seu-browse-find
+key f16
+settle 1500
+snap seu-browse-f16-again
+field 2 9 bottom
+key enter
+settle 1500
+snap seu-browse-bottom
+key f3
+wait "Main Menu"

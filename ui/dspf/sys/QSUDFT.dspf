@@ -1,0 +1,96 @@
+     A*  QSUDFT: SEU's session defaults (F13), two pages in edit mode
+     A*  and one in browse mode.
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      INDARA
+     A          R DFT1
+     A                                  1 31'Change Session Defaults'
+     A                                      DSPATR(HI)
+     A                                  3  2'Type choices, press Enter.'
+     A                                  5  4'Amount to roll . . . . . . . . . .-
+     A                                       .'
+     A            ROLL           3A  B  5 43
+     A                                  5 56'H=Half, F=Full'
+     A                                  6 56'C=Cursor, D=Data'
+     A                                  7 56'1-999'
+     A                                  8  4'Uppercase input only . . . . . . .-
+     A                                       .'
+     A            UPPER          1A  B  8 43
+     A                                  8 56'Y=Yes, N=No'
+     A                                  9  4'Tabs on  . . . . . . . . . . . . .-
+     A                                       .'
+     A            TABS           1A  B  9 43
+     A                                  9 56'Y=Yes, N=No'
+     A                                 10  4'Increment of insert record . . . .-
+     A                                       .'
+     A            INCR           6A  B 10 43
+     A                                 10 56'0.01-999.99'
+     A                                 11  4'Full screen mode . . . . . . . . .-
+     A                                       .'
+     A            FULL           1A  B 11 43
+     A                                 11 56'Y=Yes, N=No'
+     A                                 13  4'Source type  . . . . . . . . . . .-
+     A                                       .'
+     A            SRCTYPE       10A  B 13 43
+     A                                 14  4'Syntax checking:'
+     A                                 15  6'When added/modified  . . . . . . .'
+     A            SYNTAX         1A  B 15 43
+     A                                 15 56'Y=Yes, N=No'
+     A                                 16  6'From sequence number . . . . . . .'
+     A            FROMSEQ        7A  B 16 43
+     A                                 16 56'0000.00-9999.99'
+     A                                 17  6'To sequence number . . . . . . . .'
+     A            TOSEQ          7A  B 17 43
+     A                                 17 56'0000.00-9999.99'
+     A                                 20  4'Set records to date  . . . . . . .-
+     A                                       .'
+     A            SETDATE        8A  B 20 43
+     A                                 20 56'YY/MM/DD or YYMMDD'
+     A                                 21 73'More...'
+     A            KEYS1         79A  O 22  2COLOR(BLU)
+     A            KEYS2         79A  O 23  2COLOR(BLU)
+     A          R DFT2
+     A                                  1 31'Change Session Defaults'
+     A                                      DSPATR(HI)
+     A                                  3  2'Type choices, press Enter.'
+     A                                  5  4'Resequence member default  . . . .-
+     A                                       .'
+     A            RESEQ          1A  B  5 43
+     A                                  5 56'Y=Yes, N=No'
+     A                                  6 56'P=Previous'
+     A                                  7  4'Default to uppercase input'
+     A                                  8  6'for unknown source type  . . . . .'
+     A            UPUNK          1A  B  8 43
+     A                                  8 56'Y=Yes, N=No'
+     A                                 10  4'User exit program  . . . . . . . .-
+     A                                       .'
+     A            EXITPGM       10A  B 10 43
+     A                                 10 56'*REGFAC, *NONE, Name'
+     A                                 11  6'Program selection filter . . . . .'
+     A            FILTER        10A  B 11 43
+     A                                 11 56'*ALL, *USRPRF, String'
+     A                                 21 74'Bottom'
+     A            KEYS1         79A  O 22  2COLOR(BLU)
+     A            KEYS2         79A  O 23  2COLOR(BLU)
+     A          R DFTB
+     A                                  1 31'Change Session Defaults'
+     A                                      DSPATR(HI)
+     A                                  3  2'Type choices, press Enter.'
+     A                                  5  4'Amount to roll . . . . . . . . . .-
+     A                                       .'
+     A            ROLL           3A  B  5 43
+     A                                  5 56'H=Half, F=Full'
+     A                                  6 56'C=Cursor, D=Data'
+     A                                  7 56'1-999'
+     A                                  8  4'Full screen mode . . . . . . . . .-
+     A                                       .'
+     A            FULL           1A  B  8 43
+     A                                  8 56'Y=Yes, N=No'
+     A                                 10  4'User exit program  . . . . . . . .-
+     A                                       .'
+     A            EXITPGM       10A  B 10 43
+     A                                 10 56'*REGFAC, *NONE, Name'
+     A                                 11  6'Program selection filter . . . . .'
+     A            FILTER        10A  B 11 43
+     A                                 11 56'*ALL, *USRPRF, String'
+     A            KEYS1         79A  O 22  2COLOR(BLU)
+     A            KEYS2         79A  O 23  2COLOR(BLU)

@@ -15,12 +15,40 @@ pub const QDSIGNON2: &str = include_str!("../sys/QDSIGNON2.dspf");
 
 /// The System Request menu.
 pub const QWSSYSRQ: &str = include_str!("../sys/QWSSYSRQ.dspf");
+/// SEU's edit and browse display.
+pub const QSUSEU: &str = include_str!("../sys/QSUSEU.dspf");
+
+/// SEU's session defaults.
+pub const QSUDFT: &str = include_str!("../sys/QSUDFT.dspf");
+
+/// SEU's find and change options.
+pub const QSUFND: &str = include_str!("../sys/QSUFND.dspf");
+
+/// SEU's browse and copy options.
+pub const QSUBRW: &str = include_str!("../sys/QSUBRW.dspf");
+
+/// SEU's Exit display.
+pub const QSUEXIT: &str = include_str!("../sys/QSUEXIT.dspf");
+
+/// SEU's system command window.
+pub const QSUSYS: &str = include_str!("../sys/QSUSYS.dspf");
+
+/// SEU's Select Prompt display.
+pub const QSUSEL: &str = include_str!("../sys/QSUSEL.dspf");
 
 /// Every shipped display file: name and DDS.
 pub const FILES: &[(&str, &str)] = &[
     ("QDSIGNON", QDSIGNON),
     ("QDSIGNON2", QDSIGNON2),
     ("QWSSYSRQ", QWSSYSRQ),
+    // --- SEU
+    ("QSUSEU", QSUSEU),
+    ("QSUDFT", QSUDFT),
+    ("QSUFND", QSUFND),
+    ("QSUBRW", QSUBRW),
+    ("QSUEXIT", QSUEXIT),
+    ("QSUSYS", QSUSYS),
+    ("QSUSEL", QSUSEL),
 ];
 
 #[cfg(test)]

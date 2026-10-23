@@ -1,0 +1,24 @@
+ Columns . . . :    1  71            Edit                     USERNAME1/QDDSSRC 
+ SEU==>                                                                QDFUZZIN 
+ FMT **  ...+... 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7  
+        *************** Beginning of data ************************************* 
+0001.00      A          R QDFUZZINR                                             
+- - - - ------------- 1 data records excluded --------------------------------- 
+0003.00      A            OP             2A                                     
+0004.00      A            SA             2S 0                                   
+0005.00      A            A             70A                                     
+0006.00      A            SB             2S 0                                   
+0007.00      A            B             70A                                     
+0008.00      DSPLIB                                                             
+        ****************** End of data **************************************** 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ .............................................................................. 
+ :                               System Command                               : 
+ :                                                                            : 
+ :  ===> strseu srcfile(*curlib/qddssrc) srcmbr(qdfuzzin) option(2)           : 
+ :  F4=Prompt   F9=Retrieve   F12=Cancel                                      : 
+ :  Member QDFUZZIN in file USERNAME1/QDDSSRC is in use.                   +  : 
+ :............................................................................: 

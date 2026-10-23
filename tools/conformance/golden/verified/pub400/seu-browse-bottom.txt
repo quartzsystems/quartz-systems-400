@@ -1,0 +1,24 @@
+ Columns . . . :    5  75           Browse                    QSYSINC/QRPGLESRC 
+ SEU==>                                                                   QUSEC 
+ FMT D  .DName+++++++++++ETDsFrom+++To/L+++IDc.Keywords++++++++++++++++++++++++ 
+0000.67  D QUSEI00                13     19                                     
+0000.68  D*                                             Exception Id            
+0000.69  D QUSERVED39             20     20                                     
+0000.70  D*                                             Reserved                
+0000.71  D QUSCCSID11             21     24I 0                                  
+0000.72  D*                                             CCSID                   
+0000.73  D QUSOED01               25     28I 0                                  
+0000.74  D*                                             Offset Exc Data         
+0000.75  D QUSLED01               29     32I 0                                  
+0000.76  D*                                             Length Exc Data         
+0000.77  D*QUSRSV214              33     33                                     
+0000.78  D*                                             Reserved2               
+0000.79  D*                                                                     
+0000.80  D*QUSED02                34     34                                     
+0000.81  D*                                                                     
+0000.82  D*                                      Varying Length    §B1A         
+        ****************** End of data **************************************** 
+                                                                                
+ F19=Left   F20=Right   F21=System command                                      
+ F24=More keys                                                                  
+                                                                                

@@ -51,6 +51,7 @@ members = [
     "tools/tn5250-driver",
     # Developer tools: SEU, PDM, SDA, DFU, RLU, the debugger screens,
     # interactive SQL, SST (the job's drivers are in work/qsjob/src/devtools).
+    "devtools/seu",
     "devtools/pdm",
     "devtools/sst",
 ]

@@ -1,0 +1,24 @@
+ Columns . . . :    1  71            Edit                     USERNAME1/QDDSSRC 
+ SEU==>                                                                QDFUZZIN 
+ FMT DP .....AAN01N02N03T.Name++++++RLen++TDpBLinPosFunctions++++++++++++++++++ 
+        *************** Beginning of data ************************************* 
+0001.00      A          R QDFUZZINR                                             
+0002.00      A            IID            9S 0                                   
+0003.00      A            OP             2A                                     
+'''''''                                                                         
+0004.00      A            SA             2S 0                                   
+0005.00      A            A             70A                                     
+ Prompt type . . .   DP      Sequence number . . .  '''''''                     
+                                                                                
+ And/Or/                    Name                                                
+ Comment     N01N02N03      Type        Name         Ref      Length            
+                                                                                
+ Data        Decimal                 --- Location ---                           
+ Type       Positions      Use       Line    Position                           
+                                                                                
+ Functions                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F5=Refresh          F11=Previous record                  
+ F12=Cancel            F23=Select prompt   F24=More keys                        
+Value required for indicated numeric field.                                     

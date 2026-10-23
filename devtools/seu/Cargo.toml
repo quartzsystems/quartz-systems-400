@@ -1,0 +1,25 @@
+[package]
+name = "seu"
+description = "QS/400 Source Entry Utility: the editing model behind STRSEU (records, line commands, the command line, find and change, prompts by source type, session defaults, exit options)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[features]
+# The displays drawn through the shipped display files (the job's
+# driver and the golden tests).
+display = ["dep:dspf", "dep:dds", "dep:tn5250", "dep:ccsid"]
+
+[dependencies]
+thiserror.workspace = true
+dspf = { path = "../../ui/dspf", version = "0.1.0", optional = true }
+dds = { path = "../../database/dds", version = "0.1.0", optional = true }
+tn5250 = { path = "../../ui/tn5250", version = "0.1.0", optional = true }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0", optional = true }
+
+[dev-dependencies]
+seu = { path = ".", features = ["display"] }
+
+[lints]
+workspace = true

@@ -1,0 +1,24 @@
+                                Recover SEU Member                              
+                                                                                
+ Member  . . . . :   QDFUZZIN                                                   
+ File  . . . . . :   QDDSSRC                                                    
+   Library . . . :     USERNAME1                                                
+                                                                                
+                                                                                
+ The previous edit session for the member above ended abnormally.               
+                                                                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Recover changes made in previous edit session                          
+      2. Discard changes made in previous edit session                          
+         and start a new session                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+      1                                                                         
+                                                                                
+ F12=Cancel                                                                     
+                                        (C) COPYRIGHT IBM CORP. 1981, 2013      

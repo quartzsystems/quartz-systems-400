@@ -922,9 +922,9 @@ fn draw_border(m: &mut ScreenModel, w: &crate::model::Window, row_shift: i32, co
     let left = shifted(0, col_shift);
     let lines = usize::from(w.lines);
     let cols = usize::from(w.cols);
-    let line: String = ".".repeat(cols + 2);
-    m.put(top, left, &line, attr::GREEN);
-    m.put(top + lines + 1, left, &line, attr::GREEN);
+    // Dots across the top, colons at the bottom corners.
+    m.put(top, left, &".".repeat(cols + 2), attr::GREEN);
+    m.put(top + lines + 1, left, &format!(":{}:", ".".repeat(cols)), attr::GREEN);
     for r in 1..=lines {
         m.put(top + r, left, &format!(":{}:", " ".repeat(cols)), attr::GREEN);
     }

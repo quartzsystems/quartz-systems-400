@@ -1,0 +1,40 @@
+     A*  QSUSEU: the Source Entry Utility's edit and browse display.
+     A*  HEADER clears the display; LINE and PROMPT are written at the
+     A*  line before the one their first field names (SLNO(*VAR)), as a
+     A*  field on row 1 cannot start in column 1; KEYS closes it.
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      INDARA
+     A          R HEADER
+     A                                  1  2'Columns . . . :'
+     A            COLS           8A  O  1 18
+     A            TITLE         25A  O  1 28DSPATR(HI)
+     A            RIGHT         26A  O  1 54
+     A                                  2  2'SEU==>'
+     A            CMD           60A  B  2  9CHECK(LC)
+     A            MBR           10A  O  2 70
+     A            FMTLBL         6A  O  3  2
+     A            RULER         71A  O  3  9
+     A          R LINE
+     A                                      SLNO(*VAR)
+     A                                      OVERLAY
+     A                                      CLRL(*NO)
+     A                                      CHGINPDFT
+     A            LINENO         2A  H
+     A            SEQ            7A  B  2  1CHECK(LC)
+     A            DATA          71A  B  2  9CHECK(LC)
+     A  50                                  DSPATR(PR)
+     A          R PROMPT
+     A                                      SLNO(*VAR)
+     A                                      OVERLAY
+     A                                      CLRL(*NO)
+     A            LINENO         2A  H
+     A                                  1  2'Prompt type . . .'
+     A            PTYPE          2A  O  1 22DSPATR(HI)
+     A                                  1 30'Sequence number . . .'
+     A            PSEQ           7A  B  1 53
+     A          R KEYS
+     A                                      OVERLAY
+     A                                      CLRL(*NO)
+     A            KEYS1         79A  O 22  2COLOR(BLU)
+     A            KEYS2         79A  O 23  2COLOR(BLU)
+     A  40                             24 42'(C) COPYRIGHT QUARTZ SYSTEMS 2026.'

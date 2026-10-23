@@ -1,0 +1,78 @@
+# SEU's line commands and a CL syntax error, on the member of
+# seu-edit.tn (the session seu-prompts.tn left is recovered and
+# dropped first). Nothing is saved: no `continue`, and the Exit
+# display is left with "Change/create member" N.
+# A break message waiting at sign-on (another capture's) is passed first.
+wait "Display Messages"
+key f3
+wait "Main Menu"
+timeout 60000
+type strseu srcfile(*curlib/qddssrc) srcmbr(qdfuzzin) option(2)
+key enter
+wait "Recover SEU Member"
+field 21 7 2
+key enter
+wait "Edit"
+# A CL line with an error, as type CLP checks it.
+key f13
+wait "Change Session Defaults"
+field 13 43 CLP
+key enter
+wait "Edit"
+field 11 1 i
+key enter
+settle 1500
+type dsplib lib(
+key enter
+settle 2000
+snap seu-syntax-cl
+field 12 1 d
+key enter
+settle 1500
+snap seu-syntax-cl-gone
+# Copy one line after another.
+field 5 1 c
+field 7 1 a
+key enter
+settle 1500
+snap seu-lc-copy
+# Delete a block.
+field 5 1 dd
+field 6 1 dd
+key enter
+settle 1500
+snap seu-lc-delete
+# Move one line before another.
+field 5 1 m
+field 8 1 b
+key enter
+settle 1500
+snap seu-lc-move
+# Repeat, shift right and left, a format line, the window.
+field 5 1 rp
+key enter
+settle 1500
+snap seu-lc-repeat
+field 5 1 r3
+key enter
+settle 1500
+snap seu-lc-shift-right
+field 5 1 l2
+key enter
+settle 1500
+snap seu-lc-shift-left
+field 5 1 f
+key enter
+settle 1500
+snap seu-lc-format
+field 7 1 w20
+key enter
+settle 1500
+snap seu-lc-window
+key f3
+wait "Exit"
+snap seu-exit-changed
+field 5 42 N
+expect "member  . . . . . . .   N"
+key enter
+wait "Main Menu"

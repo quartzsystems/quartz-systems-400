@@ -115,6 +115,105 @@ pub fn records(
     Ok(out)
 }
 
+/// A source member as an editor reads it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SourceMember {
+    /// The member's `*MBR` object, for locks.
+    pub object: ObjectId,
+    /// Its source type; blank for none.
+    pub srctype: String,
+    /// Its text.
+    pub text: String,
+    /// The data length of a record.
+    pub width: usize,
+    /// The records: sequence in hundredths, date `yymmdd`, data.
+    pub records: Vec<(u32, u32, String)>,
+}
+
+/// The data length of a source file's records.
+pub fn data_width(txn: &mut Txn<'_>, file: ObjectId) -> Result<usize> {
+    let desc = source_file(txn, file)?;
+    let width = desc
+        .formats
+        .first()
+        .and_then(|f| f.format.fields.get(2))
+        .map_or(80, |f| f.length as usize);
+    Ok(width)
+}
+
+/// Read a source member whole for an editor (`STRSEU`).
+pub fn read_member(txn: &mut Txn<'_>, file: ObjectId, member: MemberSpec) -> Result<SourceMember> {
+    crate::auth::check(txn, "file.open-input", file)?;
+    let desc = source_file(txn, file)?;
+    let entry = member_of(&desc, member)?;
+    let width = data_width(txn, file)?;
+    let text = store::obj::ops::describe(txn, entry.object)
+        .map(|h| ccsid::from_ebcdic(&h.text).trim_end().to_string())
+        .unwrap_or_default();
+    let records = records(txn, file, member)?
+        .into_iter()
+        .map(|(s, d, data)| (s, d, ccsid::from_ebcdic(&data).trim_end().to_string()))
+        .collect();
+    Ok(SourceMember {
+        object: entry.object,
+        srctype: entry.srctype.map(|n| n.to_string()).unwrap_or_default(),
+        text,
+        width,
+        records,
+    })
+}
+
+/// Replace a member's records with an editor's: each keeps its own
+/// sequence number and date. The member is added when missing; its
+/// source type and text are set.
+#[allow(clippy::too_many_arguments)] // the member, its records and attributes
+pub fn write_member(
+    txn: &mut Txn<'_>,
+    job: JobHandle,
+    file: ObjectId,
+    member: Name,
+    lines: &[(u32, u32, String)],
+    srctype: Option<Name>,
+    text: &str,
+    now: u64,
+) -> Result<u64> {
+    crate::auth::check(txn, "file.open-output", file)?;
+    let mut desc = source_file(txn, file)?;
+    if desc.member(MemberSpec::Name(member)).is_none() {
+        file::add_member(txn, file, member, text, srctype, now)?;
+        desc = source_file(txn, file)?;
+    }
+    let entry = member_of(&desc, MemberSpec::Name(member))?;
+    // The editor holds the member itself; only the file is taken here.
+    let hold = Hold::take(txn, job, &[(file, LockState::SharedUpdate)], &desc.name().to_string())?;
+    let result = Member::open(txn, &desc, &entry).and_then(|mut m| {
+        m.jrn.job = job;
+        m.clear(txn)?;
+        let fmt = m.format().clone();
+        let f = &fmt.format.fields;
+        let mut record = vec![0u8; usize::try_from(fmt.format.record_len).expect("fits")];
+        let mut n = 0u64;
+        for (seq, date, line) in lines {
+            n += 1;
+            let s = Decimal::new(i128::from(*seq), 2).expect("small");
+            record::write_field(&f[0], &mut record, &Value::Num(s))?;
+            let d = Decimal::new(i128::from(*date), 0).expect("six digits");
+            record::write_field(&f[1], &mut record, &Value::Num(d))?;
+            let bytes: Vec<u8> = line
+                .chars()
+                .map(|c| ccsid::byte_of(c).unwrap_or(ccsid::SPACE))
+                .collect();
+            record::write_field(&f[2], &mut record, &Value::Char(bytes))?;
+            m.write_new(txn, &record, &[])?;
+        }
+        Ok(n)
+    });
+    hold.release(txn);
+    let n = result?;
+    file::chgpfm(txn, file, entry.name, Some(text), Some(srctype), now)?;
+    Ok(n)
+}
+
 /// The member as UTF-8 text, one line per record, trailing blanks gone.
 pub fn srcget(txn: &mut Txn<'_>, file: ObjectId, member: MemberSpec) -> Result<String> {
     crate::auth::check(txn, "file.open-input", file)?;

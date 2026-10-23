@@ -1,0 +1,28 @@
+     A*  QSUSEL: SEU's Select Prompt display (F23): the prompt formats
+     A*  of the session's source type, listed by the program.
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      INDARA
+     A          R SELECT
+     A                                  1 33'Select Prompt'
+     A                                      DSPATR(HI)
+     A                                  3  2'Type choice, press Enter.'
+     A                                  5  3'Prompt type . . . . . . . . . . . -
+     A                                      .'
+     A            PTYPE          2A  B  5 40
+     A                                  5 47'Values listed below'
+     A            LIST07        76A  O  7  3
+     A            LIST08        76A  O  8  3
+     A            LIST09        76A  O  9  3
+     A            LIST10        76A  O 10  3
+     A            LIST11        76A  O 11  3
+     A            LIST12        76A  O 12  3
+     A            LIST13        76A  O 13  3
+     A            LIST14        76A  O 14  3
+     A            LIST15        76A  O 15  3
+     A            LIST16        76A  O 16  3
+     A            LIST17        76A  O 17  3
+     A            LIST18        76A  O 18  3
+     A            LIST19        76A  O 19  3
+     A            LIST20        76A  O 20  3
+     A            KEYS1         79A  O 22  2COLOR(BLU)
+     A            KEYS2         79A  O 23  2COLOR(BLU)

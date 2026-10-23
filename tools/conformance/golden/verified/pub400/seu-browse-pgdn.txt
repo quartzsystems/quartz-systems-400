@@ -1,0 +1,24 @@
+ Columns . . . :    6  76           Browse                    QSYSINC/QRPGLESRC 
+ SEU==>                                                                   QUSEC 
+ FMT *   *. 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7 ...+. 
+0000.09 D*US Government Users Restricted Rights -                               
+0000.10 D*Use, duplication or disclosure restricted                             
+0000.11 D*by GSA ADP Schedule Contract with IBM Corp.                           
+0000.12 D*                                                                      
+0000.13 D*Licensed Materials-Property of IBM                                    
+0000.14 D*                                                                      
+0000.15 D*                                                                      
+0000.16 D*Description: Include header file for the error code parameter.        
+0000.17 D*                                                                      
+0000.18 D*Header Files Included: None.                                          
+0000.19 D*                                                                      
+0000.20 D*Macros List: None.                                                    
+0000.21 D*                                                                      
+0000.22 D*Structure List: Qus_EC_t                                              
+0000.23 D*             Qus_ERRC0200_t                                           
+0000.24 D*                                                                      
+0000.25 D*Function Prototype List: None.                                        
+                                                                                
+ F19=Left   F20=Right   F21=System command                                      
+ F24=More keys                                                                  
+                                                                                

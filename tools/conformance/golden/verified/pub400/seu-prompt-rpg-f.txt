@@ -1,0 +1,24 @@
+ Columns . . . :    6  76            Edit                     USERNAME1/QDDSSRC 
+ SEU==>                                                                QDFUZZIN 
+ FMT ** ... 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7 ...+. 
+0003.00 A            OP             2A                                          
+'''''''                                                                         
+0004.00 A            SA             2S 0                                        
+ Prompt type . . .    F      Sequence number . . .  '''''''                     
+                                                                                
+               File        File          End of        File                     
+ Filename      Type     Designation       File       Addition       Sequence    
+                                                                                
+ File      Record      Limits        Length of          Record                  
+ Format    Length    Processing      Key Field       Address Type               
+                                                                                
+     File                                                                       
+ Organization        Device     Keywords                                        
+                                                                                
+ Comment                                                                        
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F5=Refresh          F11=Previous record                  
+ F12=Cancel            F23=Select prompt   F24=More keys                        
+                                                                                
