@@ -10,6 +10,7 @@
 //! options run their commands, F5 fetches again, F3 and F12 leave.
 
 mod actjob;
+mod job;
 
 use cmd::{Resolved, Value};
 use mi::Job;
@@ -31,6 +32,9 @@ pub fn run(
 ) -> Option<Result<String, Fail>> {
     let res = match r.name.as_str() {
         "WRKACTJOB" => actjob::wrkactjob(job, host, surface, r),
+        "WRKJOB" => job::wrkjob(job, host, surface, r),
+        "DSPJOB" => job::dspjob(job, host, surface, r),
+        "DSPJOBLOG" => job::dspjoblog(job, host, surface, r),
         _ => return None,
     };
     Some(res)
@@ -255,8 +259,9 @@ fn entry(pairs: &[(&str, String)]) -> Vec<(String, String)> {
         .collect()
 }
 
-/// Show a display panel (no list options) until it is left: Enter, F3
-/// or F12; F5 runs `refresh`; F16 asks for the job menu (`Some(16)`).
+/// Show a display panel (no list options) until it is left: F3
+/// leaves the command, Enter, F12 and F16 go back; F5 runs `refresh`
+/// and F9 prompts the dialog's `CHGCMD`.
 fn show_display(
     job: &mut Job,
     host: &Host,
@@ -264,26 +269,23 @@ fn show_display(
     d: &mut UimDialog,
     panel: &str,
     refresh: &mut dyn FnMut(&mut UimDialog),
-) -> Result<Option<u32>, Fail> {
+) -> Result<job::Left, Fail> {
     let mut history = Vec::new();
     loop {
         match d.show(surface, panel).map_err(|e| render_fail(&e))? {
             Response::Return(5) => refresh(d),
-            Response::Return(16) => return Ok(Some(16)),
             Response::Return(9) => {
                 let cmd = d.get("CHGCMD");
-                if cmd.trim().is_empty() {
-                    return Ok(None);
+                if !cmd.trim().is_empty() {
+                    run_command(job, host, d, &mut history, &format!("?{cmd}"));
+                    refresh(d);
                 }
-                run_command(job, host, d, &mut history, &format!("?{cmd}"));
-                refresh(d);
             }
-            Response::Return(_) | Response::Exit | Response::Cancel | Response::Gone => {
-                return Ok(None);
-            }
+            Response::Exit | Response::Gone => return Ok(job::Left::Exit),
+            Response::Return(_) | Response::Cancel => return Ok(job::Left::Back),
             other => {
                 if let Flow::Leave = common(job, host, d, &mut history, other) {
-                    return Ok(None);
+                    return Ok(job::Left::Exit);
                 }
             }
         }

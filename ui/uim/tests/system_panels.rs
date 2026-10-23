@@ -139,3 +139,193 @@ fn wrkactjob_f24_keys() {
 fn wrkactjob_f23_options() {
     compare(&golden("wrkactjob-f23-options"), &wrkactjob_screen("WRKACTJ2", 0, false, "N.N", "594"));
 }
+
+/// The job the WRKJOB and DSPJOB captures show.
+fn job_dialog(change: bool) -> MapDialog {
+    let mut d = MapDialog::new();
+    d.set("JOB", "QPADEV000R")
+        .set("USER", "USERNAME")
+        .set("NUMBER", "NNNNNN")
+        .set("CANCHG", if change { "Y" } else { "N" });
+    d
+}
+
+fn job_screen(panel: &str, d: &MapDialog, o: &Options) -> uim::Screen {
+    render(&shipped("QUIWRKJOB"), panel, d, o).expect("render")
+}
+
+#[test]
+fn wrkjob() {
+    let d = job_dialog(true);
+    compare(&golden("wrkjob"), &job_screen("WRKJOB", &d, &opts("SYSNAME")));
+}
+
+#[test]
+fn dspjob_menu() {
+    let d = job_dialog(false);
+    compare(&golden("dspjob-menu"), &job_screen("DSPJOB", &d, &opts("SYSNAME")));
+}
+
+#[test]
+fn dspjob_status() {
+    let mut d = job_dialog(false);
+    for (k, v) in [
+        ("STATUS", "ACTIVE"),
+        ("CURUSER", "USERNAME"),
+        ("IDENTITY", "USERNAME"),
+        ("SETBY", "*DEFAULT"),
+        ("ENTDATE", "MM/DD/YY"),
+        ("ENTTIME", "HH:MM:SS"),
+        ("STRDATE", "MM/DD/YY"),
+        ("STRTIME", "HH:MM:SS"),
+        ("SBS", "QINTER2"),
+        ("SBSPOOL", "2"),
+        ("TYPE", "INTER"),
+        ("SPCENV", "*NONE"),
+        ("RTNCODE", "0"),
+    ] {
+        d.set(k, v);
+    }
+    compare(&golden("dspjob-status"), &job_screen("STSA", &d, &opts("SYSNAME")));
+}
+
+#[test]
+fn wrkjob_3_status() {
+    let mut d = job_dialog(true);
+    for (k, v) in [
+        ("RUNPTY", "50"),
+        ("TIMESLICE", "2000"),
+        ("PURGE", "*YES"),
+        ("DFTWAIT", "30"),
+        ("CPUTIME", "*NOMAX"),
+        ("CPUUSED", "10"),
+        ("MAXTMP", "*NOMAX"),
+        ("TMPUSED", "7"),
+        ("TMPPEAK", "7"),
+        ("MAXTHD", "*NOMAX"),
+        ("THREADS", "1"),
+        ("AFFGRP", "*NOGROUP"),
+        ("AFFLVL", "*NORMAL"),
+        ("RSCAFF", "*NO"),
+    ] {
+        d.set(k, v);
+    }
+    compare(&golden("wrkjob-3-status"), &job_screen("RUNA", &d, &opts("SYSNAME")));
+}
+
+#[test]
+#[ignore = "a display file on the oracle: the second legend row and the headings sit on its own grid"]
+fn wrkjob_4_splf() {
+    let mut d = job_dialog(true);
+    d.set_list("SPLF", list(&[]));
+    compare(&golden("wrkjob-4-splf"), &job_screen("SPLF", &d, &opts("SYSNAME")));
+}
+
+/// The job log header: the job's names with their leaders.
+fn log_header(d: &mut MapDialog) {
+    let hdr = format!(
+        "Job . . :   {:<10}    User . . :   {:<10}    Number . . . :   {}",
+        "QPADEV000R", "USERNAME", "NNNNNN"
+    );
+    d.set("JOBHDR", &hdr);
+}
+
+#[test]
+#[ignore = "a display file on the oracle: F24 sits under F10, not where R7 puts it"]
+fn wrkjob_10_joblog() {
+    let mut d = job_dialog(true);
+    log_header(&mut d);
+    d.set_list("MSGS", list(&[vec![("MSGLINE", "3>> wrkjob")]]));
+    compare(&golden("wrkjob-10-joblog"), &job_screen("JOBLOG", &d, &opts("SYSNAME")));
+}
+
+#[test]
+#[ignore = "a display file on the oracle: its title is one column left of R1"]
+fn dspjoblog() {
+    let mut d = job_dialog(false);
+    log_header(&mut d);
+    d.set_list("MSGS", list(&[vec![("MSGLINE", "3>> dspjoblog")]]));
+    compare(&golden("dspjoblog"), &job_screen("JOBLOG", &d, &opts("SYSNAME")));
+}
+
+#[test]
+#[ignore = "a display file on the oracle: its single key row sits a row above where R6 puts it"]
+fn dspjoblog_f10() {
+    let mut d = job_dialog(false);
+    log_header(&mut d);
+    d.set_list("MSGS", list(&[vec![("MSGLINE", "3>> dspjoblog")]]));
+    compare(&golden("dspjoblog-f10"), &job_screen("JOBLOGALL", &d, &opts("SYSNAME")));
+}
+
+#[test]
+#[ignore = "a display file on the oracle: the program and library columns are one apart"]
+fn wrkjob_11_callstk() {
+    let mut d = job_dialog(true);
+    d.set("THREAD", "00000A9D");
+    let rows: Vec<Vec<(&str, &str)>> = [
+        ("", "QCMD", "/0519"),
+        ("", "QUICMENU", "/00C1"),
+        ("1", "QUIMNDRV", "/061E"),
+        ("2", "QUIMGFLW", "/04D9"),
+        ("3", "QUICMD", "/056F"),
+    ]
+    .iter()
+    .map(|(t, p, s)| vec![("RQSLVL", *t), ("PGM", *p), ("PGMLIB", "QSYS"), ("STMT", *s)])
+    .collect();
+    d.set_list("STACK", list(&rows));
+    compare(&golden("wrkjob-11-callstk"), &job_screen("CALLSTK", &d, &opts("SYSNAME")));
+}
+
+#[test]
+fn wrkjob_13_libl() {
+    let mut d = job_dialog(true);
+    let libs = [
+        ("PUB400SYS", "SYS", "$ PUB400.COM global programs"),
+        ("QSYS", "SYS", "System Library"),
+        ("QSYS2", "SYS", "System Library for CPI's"),
+        ("QUSRSYS", "SYS", "System Library for Users"),
+        ("QHLPSYS", "SYS", ""),
+        ("USERNAME1", "CUR", "USERNAME (*CURLIB your current library)"),
+        ("QGPL", "USR", "General Purpose Library"),
+        ("QTEMP", "USR", ""),
+        ("GAMES400", "USR", "$ fun library"),
+    ];
+    let rows: Vec<Vec<(&str, &str)>> = libs
+        .iter()
+        .map(|(l, t, x)| vec![("LIB", *l), ("LIBTYPE", *t), ("LIBTEXT", *x)])
+        .collect();
+    d.set_list("LIBL", list(&rows));
+    let g = golden("wrkjob-13-libl");
+    let copyright = g.lines().nth(23).unwrap_or("").trim().to_string();
+    let o = Options {
+        show_copyright: true,
+        copyright,
+        ..opts("SYSNAME")
+    };
+    compare(&g, &job_screen("LIBL", &d, &o));
+}
+
+#[test]
+#[ignore = "a display file on the oracle: its columns are one or two apart and the header has its own spacing"]
+fn wrkjob_14_openfiles() {
+    let mut d = job_dialog(true);
+    let hdr = format!(
+        "Job . . :   {:<10}     User . . :   {:<10}     Number . . . :   {}",
+        "QPADEV000R", "USERNAME", "NNNNNN"
+    );
+    d.set("JOBHDR", &hdr).set("ODPS", "2");
+    let rows: Vec<Vec<(&str, &str)>> = ["QDUI80", "QDDSPOF"]
+        .iter()
+        .map(|f| {
+            vec![
+                ("OFILE", *f),
+                ("OLIB", "QSYS"),
+                ("OMBR", "QPADEV000R"),
+                ("OSCOPE", "*ACTGRPDFN"),
+                ("OACTGRP", "*DFTACTGRP 0000000000000002"),
+            ]
+        })
+        .collect();
+    d.set_list("OPNF", list(&rows));
+    compare(&golden("wrkjob-14-openfiles"), &job_screen("OPNF", &d, &opts("SYSNAME")));
+}

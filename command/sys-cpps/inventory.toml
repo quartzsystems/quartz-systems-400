@@ -127,6 +127,7 @@ alwlmtusr = true
 alwlmtusr = true
 
 [cmd.DSPJOB]
+site = "job"
 alwlmtusr = true
 
 [cmd.SNDMSG]
