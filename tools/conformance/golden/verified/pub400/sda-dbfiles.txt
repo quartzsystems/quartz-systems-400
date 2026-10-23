@@ -1,0 +1,24 @@
+                             Select Database Files                              
+                                                                                
+ Type options and names, press Enter.                                           
+   1=Display database field list                                                
+   2=Select all fields for input (I)                                            
+   3=Select all fields for output (O)                                           
+   4=Select all fields for both (B) input and output                            
+                                                                                
+ Option    Database File   Library      Record                                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit     F4=Prompt     F12=Cancel                                           
+                                                                                

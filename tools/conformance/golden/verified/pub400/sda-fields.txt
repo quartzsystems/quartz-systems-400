@@ -1,0 +1,24 @@
+                                Work with Fields                                
+                                                                                
+ Record . . . :   SCREEN1                                                       
+                                                                                
+ Type information, press Enter.                                                 
+   Number of fields to roll . . . . . . . . . . . . . . . . . .     6           
+                                                                                
+ Type options, change values, press Enter.                                      
+   1=Select keywords  2=Edit comments   4=Delete field                          
+                                                                                
+ Option   Order   Field       Type Use  Length  Row/Col  Ref Condition  Overlap 
+             10   Customer      C            8   03 002                         
+             20   FLD001        A   I       10   03 021                         
+             30   Amount        C            6   05 002                         
+             40   due           C            3   05 009                         
+             50   FLD002        Y   O      7,2   05 021                         
+                                                                                
+                                                                         Bottom 
+  Add                               H            Hidden                         
+  Add                               M            Message                        
+  Add                               P            Program-to-system              
+                                                                                
+ F3=Exit   F6=Sort by row/column   F12=Cancel                                   
+                                                                                

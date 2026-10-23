@@ -1,0 +1,24 @@
+                               Add New Record                                   
+                                                                                
+ File  . . . . . . :   QDDSSRC                Member . . . . . . :   SDAPROBE   
+   Library . . . . :     USERNAME1            Source type  . . . :   DSPF       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   New record  . . . . . . . . . . . . . . .   SCREEN2      Name                
+                                                                                
+   Type  . . . . . . . . . . . . . . . . . .   RECORD       RECORD, USRDFN      
+                                                            SFL,    SFLMSG      
+                                                            WINDOW, WDWSFL      
+                                                            PULDWN, PDNSFL      
+                                                            MNUBAR              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit     F5=Refresh     F12=Cancel                                          
+                                                                                

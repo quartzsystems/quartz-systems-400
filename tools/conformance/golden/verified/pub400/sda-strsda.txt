@@ -1,0 +1,24 @@
+                            Screen Design Aid (SDA)                             
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Design screens                                                         
+      2. Design menus                                                           
+      3. Test display files                                                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F1=Help   F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                       
+                                          (C) COPYRIGHT IBM CORP. 1981, 2007.   

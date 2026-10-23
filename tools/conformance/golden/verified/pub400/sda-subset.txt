@@ -1,0 +1,24 @@
+                                Subset Records                                  
+                                                                                
+ File  . . . . . . :   QDDSSRC                Member . . . . . . :   SDAPROBE   
+   Library . . . . :     USERNAME1            Source type  . . . :   DSPF       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Record name . . . . . . .   *ALL         *ALL, generic*, name                
+                                                                                
+   Record type . . . . . . .   *ALL         *ALL, SFL*,   RECORD, USRDFN        
+                                            SFL,  SFLCTL, SFLMSG, WINDOW        
+                                            MNUBAR, PULDWN, GRDRCD              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit     F5=Refresh     F12=Cancel                                          
+                                                                                

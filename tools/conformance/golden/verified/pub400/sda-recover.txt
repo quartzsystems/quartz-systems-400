@@ -1,0 +1,24 @@
+                              Recover SDA Session                               
+                                                                                
+ Member . . . . :   SDAPROBE                                                    
+ File . . . . . :   QDDSSRC                                                     
+   Library  . . :     USERNAME1                                                 
+                                                                                
+ The previous SDA session for the member shown                                  
+   abnormally ended.                                                            
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     1. Recover changes made in the previous SDA session                        
+     2. Discard changes and start a new session                                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+     1                                                                          
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

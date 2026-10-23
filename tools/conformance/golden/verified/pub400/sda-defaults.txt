@@ -1,0 +1,24 @@
+                                Change Defaults                                 
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Print work screen image:                                                     
+     Include field definitions  . . . .   Y    Y=Yes, N=No                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

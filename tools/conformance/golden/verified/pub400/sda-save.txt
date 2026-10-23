@@ -1,0 +1,24 @@
+                         Save DDS - Create Display File                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Save DDS source  . . . . . . . . . . . .   Y            Y=Yes                
+     Source file  . . . . . . . . . . . . .   QDDSSRC      F4 for list          
+       Library  . . . . . . . . . . . . . .   USERNAME1    Name, *LIBL ...      
+     Member . . . . . . . . . . . . . . . .   SDAPROBE     F4 for list          
+     Text . . . . . . . . . . . . . . . . .                                     
+                                                                                
+                                                                                
+   Create display file  . . . . . . . . . .   Y            Y=Yes                
+     Prompt for parameters  . . . . . . . .                Y=Yes                
+     Display file . . . . . . . . . . . . .   SDAPROBE     F4 for list          
+       Library  . . . . . . . . . . . . . .   USERNAME1    Name, *CURLIB        
+     Replace existing file  . . . . . . . .                Y=Yes                
+                                                                                
+   Submit create job in batch . . . . . . .   Y            Y=Yes                
+                                                                                
+   Specify additional                                                           
+     save or create options . . . . . . . .                Y=Yes                
+                                                                                
+ F3=Exit   F4=Prompt   F12=Cancel                                               
+ Member SDAPROBE already exists. Press Enter to replace.                      + 

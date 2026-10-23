@@ -1,0 +1,24 @@
+                                Exit SDA Work Screen                            
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     1. Save work since last Enter and exit work screen                         
+     2. Exit without saving any work done on the work screen                    
+     3. Resume work screen session                                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+     1                                                                          
+                                                                                
+ F12=Cancel                                                                     
+                                                                                

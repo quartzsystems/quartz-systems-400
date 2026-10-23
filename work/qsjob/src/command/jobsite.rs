@@ -97,6 +97,8 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "STRRLU" => return crate::devtools::rlu::run(job, host, r, out),
         // --- STRSQL (devtools/isql)
         "STRSQL" => return crate::devtools::isql::run(host, r),
+        // --- SDA (devtools/sda)
+        "STRSDA" => return crate::devtools::sda::run(job, host, r, out),
         _ => {}
     }
     // A panel's command in a job that shows none: the service's text.

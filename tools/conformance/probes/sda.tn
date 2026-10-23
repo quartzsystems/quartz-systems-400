@@ -1,0 +1,190 @@
+# SDA: the menu, the three entry displays, Work with Display Records
+# over the account's QDDSSRC member SDAPROBE (record SCREEN1) with its
+# key sets, Add New Record, the record keywords, comments, file-level
+# keywords and comments, subset and defaults displays, the design image
+# with the ruler, Work with Fields, Select Database Files, image codes
+# typed on it, the Exit SDA Work Screen and Save DDS displays. Read-only:
+# the image is left with option 2 (exit without saving), the record list
+# with F12 and the Save DDS display with both prompts cleared.
+# sda-recover (Recover SDA Session) came from a run after a probe had
+# ended inside SDA; such a run needs the recovery display answered with
+# option 2 before the record list shows.
+settle 4000
+key enter
+wait "Main Menu"
+timeout 30000
+type strsda
+key enter
+wait "Screen Design Aid"
+snap sda-strsda
+type 1
+key enter
+wait "Design Screens"
+snap sda-design-screens
+field 7 34 {user}1
+key eraseeof
+field 9 34 SDAPROBE
+key enter
+wait "Work with Display Records"
+snap sda-records
+key f24
+settle 1000
+snap sda-records-f24
+key f11
+settle 1500
+snap sda-records-f11
+key f11
+settle 1500
+key f24
+settle 1000
+field 11 2 1
+key fieldexit
+type SCREEN2
+key enter
+wait "Add New Record"
+snap sda-addrcd
+key f12
+settle 2000
+wait "Work with Display Records"
+cursor 11 2
+key eraseeof
+cursor 11 16
+key eraseeof
+field 12 2 8
+key enter
+settle 2500
+snap sda-rcdkwd
+key f12
+settle 2000
+wait "Work with Display Records"
+field 12 2 2
+key enter
+settle 2500
+snap sda-comments
+key f3
+settle 2000
+wait "Save comments"
+snap sda-comments-exit
+key enter
+settle 2000
+wait "Work with Display Records"
+key f14
+settle 2500
+snap sda-filekwd
+key f12
+settle 2000
+wait "Work with Display Records"
+key f15
+settle 2500
+snap sda-filecmt
+key f3
+settle 2000
+wait "Save comments"
+key enter
+settle 2000
+wait "Work with Display Records"
+key f17
+settle 2500
+snap sda-subset
+key f12
+settle 2000
+wait "Work with Display Records"
+key f13
+settle 2500
+snap sda-defaults
+key f12
+settle 2000
+wait "Work with Display Records"
+field 12 2 12
+key enter
+wait "Work screen for record"
+snap sda-image
+key help
+settle 1500
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key pgdn
+settle 1000
+show
+key f12
+settle 1500
+key f14
+settle 1500
+snap sda-image-ruler
+key f14
+settle 1500
+key f4
+wait "Work with Fields"
+snap sda-fields
+field 12 4 1
+key enter
+settle 2500
+snap sda-fldkwd
+key f12
+settle 1500
+show
+key f12
+settle 1500
+key f9
+settle 1500
+snap sda-image-f9
+key enter
+settle 1500
+key f10
+wait "Select Database Files"
+snap sda-dbfiles
+key f12
+settle 1500
+field 3 1 H
+field 3 20 R
+key enter
+settle 2500
+snap sda-image-codes
+key reset
+key f3
+wait "Exit SDA Work Screen"
+snap sda-image-exit
+field 21 6 2
+key enter
+settle 2000
+wait "Work with Display Records"
+key f12
+settle 2500
+wait "Save DDS - Create Display File"
+snap sda-save
+# Cleared, neither prompt is taken: nothing is saved or created.
+cursor 5 47
+key eraseeof
+cursor 12 47
+key eraseeof
+key enter
+settle 3000
+show
+wait "Design Screens"
+key f12
+wait "Screen Design Aid"
+type 2
+key enter
+wait "Design Menus"
+snap sda-design-menus
+key f12
+wait "Screen Design Aid"
+type 3
+key enter
+wait "Test Display File"
+snap sda-test-dspf
+key f12
+wait "Screen Design Aid"
+key f3
+wait "Main Menu"

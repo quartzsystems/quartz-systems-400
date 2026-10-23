@@ -4728,3 +4728,204 @@ release = "V7R5M0"
 date = "2026-10-23"
 script = "strsql"
 width = 80
+
+[[golden]]
+name = "sda-recover"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-strsda"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-design-screens"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-records"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-records-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-records-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-addrcd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-rcdkwd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-comments"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-comments-exit"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-filekwd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-filecmt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-subset"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-defaults"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-image"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-image-ruler"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-fields"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-fldkwd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-image-f9"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-dbfiles"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-image-codes"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-image-exit"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-save"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-design-menus"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+
+[[golden]]
+name = "sda-test-dspf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sda"
+width = 80
+

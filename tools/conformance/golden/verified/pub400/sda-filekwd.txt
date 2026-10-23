@@ -1,0 +1,24 @@
+                             Select File Keywords                               
+                                                                                
+ Member . . . :   SDAPROBE                                                      
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+                                     Y=Yes                                      
+   General keywords  . . . . . . . .                                            
+   Indicator keywords  . . . . . . .                                            
+   Print keywords  . . . . . . . . .                                            
+   Help keywords . . . . . . . . . .                                            
+   Display sizes . . . . . . . . . .                                            
+   Alternate keywords  . . . . . . .                                            
+   DBCS conversion . . . . . . . . .                                            
+   Window Borders  . . . . . . . . .                                            
+   Menu-bar keywords . . . . . . . .                                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Display Selected Keywords   F12=Cancel                            
+                                                                                

@@ -1,0 +1,16 @@
+[package]
+name = "sda"
+description = "QS/400 SDA: the screen-image model, field placement on the design image, the DDS reader and writer with a stable round trip, menu design and SDA's displays"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+dds = { path = "../../database/dds", version = "0.1.0" }
+dspf = { path = "../../ui/dspf", version = "0.1.0" }
+uim = { path = "../../ui/uim", version = "0.1.0" }
+thiserror.workspace = true
+
+[lints]
+workspace = true

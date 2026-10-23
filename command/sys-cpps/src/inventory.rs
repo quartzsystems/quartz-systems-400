@@ -347,6 +347,7 @@ pub const JOB_SITE: &[&str] = &[
     "WRKMBRPDM",
     "FNDSTRPDM",
     // --- SDA (devtools/sda)
+    "STRSDA",
     // --- DFU and RLU (devtools/dfu)
     "STRDFU",
     "UPDDTA",

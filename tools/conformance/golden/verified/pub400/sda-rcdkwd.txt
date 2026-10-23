@@ -1,0 +1,24 @@
+                            Select Record Keywords                              
+                                                                                
+ Record . . . :   SCREEN1                                                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+                                     Y=Yes                                      
+   General keywords  . . . . . . . .                                            
+   Indicator keywords  . . . . . . .                                            
+   Application help  . . . . . . . .                                            
+   Help keywords . . . . . . . . . .                                            
+   Output keywords . . . . . . . . .                                            
+   Input keywords  . . . . . . . . .                                            
+   Overlay keywords  . . . . . . . .                                            
+                                                                                
+   Print keywords  . . . . . . . . .                                            
+   ALTNAME keyword . . . . . . . . .                                            
+                                                                                
+   TEXT keyword  . . . . . . . . . .                                            
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Display Selected Keywords   F12=Cancel                            
+                                                                                

@@ -294,6 +294,9 @@ site = "job"
 note = "the list of members at a display; a printed report otherwise"
 
 # --- SDA (devtools/sda)
+[cmd.STRSDA]
+site = "job"
+note = "SDA's menu and its three options; a display is needed"
 
 # --- DFU and RLU (devtools/dfu)
 [cmd.STRDFU]

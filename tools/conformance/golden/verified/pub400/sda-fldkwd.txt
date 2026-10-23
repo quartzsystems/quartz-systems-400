@@ -1,0 +1,24 @@
+                             Select Field Keywords                              
+                                                                                
+ Constant  . . . :   Customer                                                   
+ Length  . . . . :   8                    Row . . . :  3    Column . . . :  2   
+                                                                                
+ Type choices, press Enter.                                                     
+                                     Y=Yes   For Field Type                     
+   Display attributes  . . . . . . .         All except Hidden                  
+   Colors  . . . . . . . . . . . . .         All except Hidden                  
+                                                                                
+                                                                                
+                                                                                
+   General keywords  . . . . . . . .         All types                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+   TEXT keyword  . . . . . . . . . .                                            
+                                                                                
+                                                                                
+ F3=Exit   F4=Display Selected Keywords   F12=Cancel                            
+                                                                                

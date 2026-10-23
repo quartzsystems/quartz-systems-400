@@ -1,0 +1,24 @@
+                                     Exit                                       
+                                                                                
+ Type choice, press Enter.                                                      
+                                                                                
+   Save comments . . . . . . . . . . .   N            Y=Yes, N=No               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F5=Refresh   F12=Cancel                                              
+                                                                                

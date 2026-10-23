@@ -1,0 +1,24 @@
+                      Work with Display Records                                 
+                                                                                
+ File  . . . . . . :   QDDSSRC                Member . . . . . . :   SDAPROBE   
+   Library . . . . :     USERNAME1            Source type  . . . :   DSPF       
+                                                                                
+ Type options, press Enter.                                                     
+   1=Add             2=Edit comments          3=Copy          4=Delete          
+   7=Rename          8=Select keywords       12=Design image                    
+                                                                                
+ Opt  Order    Record        Type      Related Subfile   Date        DDS Error  
+                                                                                
+         10    SCREEN1       RECORD                      MM/DD/YY               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F5=Refresh     F11=Display text     F13=Change defaults     F24=More keys      
+                                                                                
+                                                                                
