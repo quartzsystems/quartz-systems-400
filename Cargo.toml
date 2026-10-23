@@ -42,6 +42,8 @@ members = [
     "command/cmd",
     "command/sys-cpps",
     "command/cl",
+    # User interface: display files and the 5250 data stream.
+    "ui/dspf",
 ]
 
 [workspace.package]
