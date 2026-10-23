@@ -5,7 +5,7 @@
 /* DSPLOG: show the history log over a period, by job or message. */
              CMD        PROMPT('Display Log') MAXPOS(1) +
                           ALLOW(*ALL) HLPPNLGRP(QHMHCMD) HLPID(DSPLOG)
-             PARM       KWD(LOG) TYPE(*CHAR) LEN(4) RSTD(*YES) +
+             PARM       KWD(LOG) TYPE(*NAME) LEN(10) RSTD(*YES) +
                           DFT(QHST) VALUES(QHST) PROMPT('Log')
              PARM       KWD(PERIOD) TYPE(E1) PROMPT('Time period')
              PARM       KWD(OUTPUT) TYPE(*CHAR) LEN(10) RSTD(*YES) +

@@ -22,6 +22,8 @@
                           *POOL *PTY *RSP *STS *TYPE *USER) +
                           PROMPT('Sequence')
              PARM       KWD(JOB) TYPE(QJ) DFT(*ALL) PROMPT('Job name')
+             PARM       KWD(INTERVAL) TYPE(*DEC) LEN(3) DFT(5) RANGE(1 999) +
+                          PROMPT('Interval')
              QJ:        QUAL       TYPE(*GENERIC) LEN(10) SPCVAL((*ALL))
                         QUAL       TYPE(*NAME) LEN(10) DFT(*ALL) +
                           SPCVAL((*ALL)) PROMPT('User')

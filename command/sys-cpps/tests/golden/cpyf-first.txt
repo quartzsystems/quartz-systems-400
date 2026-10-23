@@ -4,11 +4,11 @@
                                                                                 
  From file  . . . . . . . . . . . > CUST          Name                          
    Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
- To file  . . . . . . . . . . . . > CUST2         Name, *PRINT                  
+ To file  . . . . . . . . . . . . > CUST2         Name                          
    Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
  From member  . . . . . . . . . .   *FIRST        Name, generic*, *FIRST, *ALL  
  To member or label . . . . . . .   *FIRST        Name, *FIRST, *FROMMBR, *ALL  
- Replace or add records . . . . .   *NONE         *NONE, *ADD, *REPLACE, *UP... 
+ Replace or add records . . . . .   *NONE         Name, *NONE, *ADD, *REPLAC... 
  Create file  . . . . . . . . . .   *NO           *NO, *YES                     
                                                                                 
                                                                                 

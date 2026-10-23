@@ -5,7 +5,7 @@
 /* DLTLIB: delete a library and everything in it. */
              CMD        PROMPT('Delete Library') MAXPOS(1) +
                           ALLOW(*ALL) HLPPNLGRP(QHLICMD) HLPID(DLTLIB)
-             PARM       KWD(LIB) TYPE(*GENERIC) LEN(10) MIN(1) +
+             PARM       KWD(LIB) TYPE(*NAME) LEN(10) MIN(1) +
                           PROMPT('Library')
              PARM       KWD(ASPDEV) TYPE(*NAME) LEN(10) DFT(*) +
                           SPCVAL((*) (*ALLAVL) (*CURASPGRP) (*SYSBAS)) +

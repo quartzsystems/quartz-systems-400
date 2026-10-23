@@ -97,5 +97,7 @@
                           PROMPT('Maximum scale')
                         ELEM       TYPE(*INT2) DFT(0) RANGE(0 63) +
                           PROMPT('Minimum divide scale')
-             DEP        CTL(*ALWAYS) PARM(&SRCFILE &SRCSTMF) +
-                          NBRTRUE((*EQ 1)) MSGID(CPD0001)
+             DEP        CTL(*ALWAYS) PARM(&SRCMBR &SRCSTMF) +
+                          NBRTRUE((*GE 1)) MSGID(SQL8025)
+             DEP        CTL(*ALWAYS) PARM(&SRCMBR &SRCSTMF) +
+                          NBRTRUE((*LE 1)) MSGID(SQL8019)

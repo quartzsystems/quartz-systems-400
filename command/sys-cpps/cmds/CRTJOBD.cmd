@@ -7,7 +7,7 @@
                           ALLOW(*ALL) HLPPNLGRP(QHWMCMD) HLPID(CRTJOBD)
              PARM       KWD(JOBD) TYPE(Q1) MIN(1) PROMPT('Job description')
              PARM       KWD(JOBQ) TYPE(Q2) DFT(QBATCH) PROMPT('Job queue')
-             PARM       KWD(JOBPTY) TYPE(*INT2) DFT(5) RANGE(1 9) +
+             PARM       KWD(JOBPTY) TYPE(*DEC) LEN(1) DFT(5) RANGE(1 9) +
                           PROMPT('Job priority (on JOBQ)')
              PARM       KWD(OUTPTY) TYPE(*INT2) DFT(5) RANGE(1 9) +
                           PROMPT('Output priority (on OUTQ)')
@@ -86,6 +86,8 @@
              PARM       KWD(AUT) TYPE(*NAME) LEN(10) DFT(*LIBCRTAUT) +
                           SPCVAL((*LIBCRTAUT) (*CHANGE) (*ALL) (*USE) +
                           (*EXCLUDE)) PMTCTL(*PMTRQS) PROMPT('Authority')
+             PARM       KWD(INLASPGRP) TYPE(*NAME) LEN(10) DFT(*NONE) +
+                          SPCVAL((*NONE)) PROMPT('Initial ASP group')
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*CURLIB) +
                           SPCVAL((*CURLIB)) PROMPT('Library')

@@ -23,3 +23,5 @@
              QM:        QUAL       TYPE(*NAME) LEN(10)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
+             DEP        CTL((&MSGTYPE *EQ *INFO)) PARM(&RPYMSGQ) +
+                          NBRTRUE(*NONE) MSGID(CPD2437)

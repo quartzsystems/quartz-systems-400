@@ -35,7 +35,7 @@
                           SPCVAL((*NONE)) PMTCTL(*PMTRQS) +
                           PROMPT('Expiration date for member')
              PARM       KWD(MAXMBRS) TYPE(*DEC) LEN(5) DFT(1) +
-                          RANGE(1 32767) SPCVAL((*NOMAX 0)) +
+                          REL(*GE 1) SPCVAL((*NOMAX 0)) +
                           PMTCTL(*PMTRQS) PROMPT('Maximum members')
              PARM       KWD(ACCPTHSIZ) TYPE(*CHAR) LEN(7) RSTD(*YES) +
                           DFT(*MAX1TB) VALUES(*MAX1TB *MAX4GB) +
@@ -124,3 +124,5 @@
                           RANGE(0 32767) PROMPT('Increment records')
                         ELEM       TYPE(*DEC) LEN(5) DFT(3) +
                           RANGE(0 32767) PROMPT('Maximum increments')
+             DEP        CTL(&SRCFILE) PARM(&RCDLEN) NBRTRUE(*NONE) +
+                          MSGID(CPD7324)

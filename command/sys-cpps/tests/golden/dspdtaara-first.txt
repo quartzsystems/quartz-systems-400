@@ -2,9 +2,9 @@
                                                                                 
  Type choices, press Enter.                                                     
                                                                                 
- Data area  . . . . . . . . . . . > FLAG          Name, *LDA, *GDA, *PDA        
+ Data area  . . . . . . . . . . . > FLAG          Name                          
    Library  . . . . . . . . . . .     QGPL          Name, *LIBL, *CURLIB        
- Output . . . . . . . . . . . . .   *             *, *PRINT                     
+ Output . . . . . . . . . . . . .   *             Name, *, *PRINT               
  Output format  . . . . . . . . .   *CHAR         *CHAR, *HEX                   
                                                                                 
                                                                                 

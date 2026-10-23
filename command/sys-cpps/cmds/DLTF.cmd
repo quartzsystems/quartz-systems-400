@@ -12,8 +12,7 @@
              PARM       KWD(RMVCST) TYPE(*CHAR) LEN(9) RSTD(*YES) +
                           DFT(*RESTRICT) VALUES(*RESTRICT *REMOVE *KEEP) +
                           PROMPT('Remove constraint')
-             Q1:        QUAL       TYPE(*GENERIC) LEN(10) MIN(1) +
-                          SPCVAL((*ALL))
+             Q1:        QUAL       TYPE(*GENERIC) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB) (*USRLIBL) (*ALLUSR) +
                           (*ALL)) PROMPT('Library')

@@ -32,6 +32,8 @@
                           SPCVAL((*LIBCRTAUT) (*CHANGE) (*ALL) (*USE) +
                           (*EXCLUDE)) PMTCTL(*PMTRQS) +
                           PROMPT('Authority')
+             PARM       KWD(RDB) TYPE(*CHAR) LEN(18) DFT(*NONE) SPCVAL((*NONE)) +
+                          PROMPT('Relational database')
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*CURLIB) +
                           SPCVAL((*CURLIB)) PROMPT('Library')

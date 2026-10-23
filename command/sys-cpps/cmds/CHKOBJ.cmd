@@ -27,8 +27,8 @@
              PARM       KWD(MBR) TYPE(*NAME) LEN(10) DFT(*NONE) +
                           SPCVAL((*NONE) (*FIRST)) PROMPT('Member')
              PARM       KWD(AUT) TYPE(*CHAR) LEN(10) RSTD(*YES) +
-                          DFT(*NONE) VALUES(*NONE *ALL *CHANGE *USE +
-                          *EXCLUDE *AUTLMGT *OBJALTER *OBJEXIST *OBJMGT +
+                          DFT(*NONE) SNGVAL((*NONE) (*ALL) (*CHANGE) (*USE) +
+                          (*EXCLUDE)) VALUES(*AUTLMGT *OBJALTER *OBJEXIST *OBJMGT +
                           *OBJOPR *OBJREF *ADD *DLT *EXECUTE *READ *UPD) +
                           MAX(14) PROMPT('Authority')
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)

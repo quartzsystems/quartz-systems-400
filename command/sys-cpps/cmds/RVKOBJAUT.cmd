@@ -29,11 +29,11 @@
                           PROMPT('ASP device')
              PARM       KWD(USER) TYPE(*NAME) LEN(10) MAX(50) +
                           SNGVAL((*PUBLIC) (*ALL)) PROMPT('Users')
-             PARM       KWD(AUTL) TYPE(*NAME) LEN(10) SPCVAL((*ALL)) +
+             PARM       KWD(AUTL) TYPE(*NAME) LEN(10) +
                           PROMPT('Authorization list')
              PARM       KWD(AUT) TYPE(*CHAR) LEN(10) RSTD(*YES) MAX(10) +
-                          DFT(*CHANGE) VALUES(*CHANGE *ALL *USE *EXCLUDE +
-                          *AUTL *OBJALTER *OBJEXIST *OBJMGT *OBJOPR +
+                          DFT(*CHANGE) SNGVAL((*CHANGE) (*ALL) (*USE) +
+                          (*EXCLUDE) (*AUTL)) VALUES(*OBJALTER *OBJEXIST *OBJMGT *OBJOPR +
                           *OBJREF *ADD *DLT *EXECUTE *READ *UPD) +
                           PROMPT('Authority')
              Q1:        QUAL       TYPE(*GENERIC) LEN(10) MIN(1) +
@@ -41,3 +41,5 @@
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +
                           SPCVAL((*LIBL) (*CURLIB) (*USRLIBL) (*ALL) +
                           (*ALLUSR)) PROMPT('Library')
+             DEP        CTL(*ALWAYS) PARM(&USER &AUTL) NBRTRUE((*EQ 1)) +
+                          MSGID(CPD22A2)

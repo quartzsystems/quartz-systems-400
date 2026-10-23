@@ -9,4 +9,4 @@
                           PROMPT('Delay time, seconds')
              PARM       KWD(RSMTIME) TYPE(*TIME) PROMPT('Resume time')
              DEP        CTL(*ALWAYS) PARM(&DLY &RSMTIME) +
-                          NBRTRUE((*EQ 1))
+                          NBRTRUE((*EQ 1)) MSGID(CPD0908)

@@ -16,12 +16,6 @@
              PARM       KWD(REXCMDENV) TYPE(Q3) DFT(*SAME) +
                           SNGVAL((*SAME) (*COMMAND) (*CPICOMM) +
                           (*EXECSQL)) PROMPT('REXX command environment')
-             PARM       KWD(THDSAFE) TYPE(*CHAR) LEN(5) RSTD(*YES) +
-                          DFT(*SAME) VALUES(*SAME *NO *COND *YES) +
-                          PROMPT('Threadsafe')
-             PARM       KWD(MLTTHDACN) TYPE(*CHAR) LEN(7) RSTD(*YES) +
-                          DFT(*SAME) VALUES(*SAME *SYSVAL *RUN *MSG +
-                          *NORUN) PROMPT('Multithreaded job action')
              PARM       KWD(VLDCKR) TYPE(Q3) DFT(*SAME) SNGVAL((*SAME) +
                           (*NONE)) PROMPT('Validity checking program')
              PARM       KWD(MODE) TYPE(*CHAR) LEN(8) RSTD(*YES) +

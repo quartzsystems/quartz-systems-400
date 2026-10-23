@@ -2,6 +2,6 @@
 /* licensed under the terms of the MIT license which can be found in the  */
 /* root directory of this project.                                       */
 
-/* ROLLBCK: roll back the current transaction; takes no parameters. */
+/* ROLLBACK: roll back the current transaction; takes no parameters. */
              CMD        PROMPT('Rollback') MAXPOS(0) +
-                          ALLOW(*ALL) HLPPNLGRP(QHDBCMD) HLPID(ROLLBCK)
+                          ALLOW(*ALL) HLPPNLGRP(QHDBCMD) HLPID(ROLLBACK)

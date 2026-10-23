@@ -6,7 +6,7 @@
 /* current library if asked.                                     */
              CMD        PROMPT('Change Library List') MAXPOS(2) +
                           ALLOW(*ALL) HLPPNLGRP(QHWMCMD) HLPID(CHGLIBL)
-             PARM       KWD(LIBL) TYPE(*NAME) LEN(10) MIN(1) MAX(250) +
+             PARM       KWD(LIBL) TYPE(*NAME) LEN(10) MAX(250) +
                           SNGVAL((*NONE)) PROMPT('Libraries for current thread')
              PARM       KWD(CURLIB) TYPE(*NAME) LEN(10) DFT(*SAME) +
                           SPCVAL((*SAME) (*CRTDFT)) PROMPT('Current library')

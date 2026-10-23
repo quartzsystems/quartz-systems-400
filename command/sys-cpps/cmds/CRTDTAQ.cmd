@@ -46,6 +46,8 @@
                           SPCVAL((*LIBCRTAUT) (*CHANGE) (*ALL) (*USE) +
                           (*EXCLUDE)) PMTCTL(*PMTRQS) +
                           PROMPT('Authority')
+             PARM       KWD(RDB) TYPE(*CHAR) LEN(18) DFT(*NONE) SPCVAL((*NONE)) +
+                          PROMPT('Relational database')
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*CURLIB) +
                           SPCVAL((*CURLIB)) PROMPT('Library')
@@ -62,3 +64,7 @@
              P1:        PMTCTL     CTL(TYPE) COND((*EQ *STD))
              P2:        PMTCTL     CTL(TYPE) COND((*EQ *DDM))
              P3:        PMTCTL     CTL(SEQ) COND((*EQ *KEYED))
+             DEP        CTL(*ALWAYS) PARM(&MAXLEN) MSGID(CPD9267)
+             DEP        CTL((&SEQ *NE *KEYED)) PARM(&KEYLEN) NBRTRUE(*NONE) +
+                          MSGID(CPD9501)
+             DEP        CTL((&SEQ *EQ *KEYED)) PARM(&KEYLEN) MSGID(CPD9502)

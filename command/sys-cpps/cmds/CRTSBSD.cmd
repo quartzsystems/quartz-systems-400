@@ -7,12 +7,12 @@
                           ALLOW(*ALL) HLPPNLGRP(QHWMCMD) HLPID(CRTSBSD)
              PARM       KWD(SBSD) TYPE(Q1) MIN(1) +
                           PROMPT('Subsystem description')
-             PARM       KWD(POOLS) TYPE(E1) MAX(10) DFT((1 *BASE)) +
+             PARM       KWD(POOLS) TYPE(E1) MIN(1) MAX(10) +
                           PROMPT('Storage pools')
              PARM       KWD(MAXJOBS) TYPE(*INT4) DFT(*NOMAX) +
                           RANGE(0 1000) SPCVAL((*NOMAX -1)) +
                           PROMPT('Maximum jobs')
-             PARM       KWD(SGNDSPF) TYPE(Q2) DFT(QDSIGNON) +
+             PARM       KWD(SGNDSPF) TYPE(Q2) DFT(QDSIGNON) SNGVAL((*QDSIGNON)) +
                           PMTCTL(*PMTRQS) PROMPT('Sign-on display file')
              PARM       KWD(SYSLIBLE) TYPE(*NAME) LEN(10) DFT(*NONE) +
                           SPCVAL((*NONE)) PMTCTL(*PMTRQS) +
@@ -30,7 +30,7 @@
                           SPCVAL((*LIBL) (*CURLIB)) PROMPT('Library')
              E1:        ELEM       TYPE(*INT2) RANGE(1 10) +
                           PROMPT('Pool identifier')
-                        ELEM       TYPE(*CHAR) LEN(10) SPCVAL((*BASE) +
+                        ELEM       TYPE(*DEC) LEN(10) SPCVAL((*BASE) +
                           (*NOSTG) (*INTERACT) (*SPOOL) (*SHRPOOL1) +
                           (*SHRPOOL2) (*SHRPOOL3) (*SHRPOOL4) (*SHRPOOL5) +
                           (*SHRPOOL6) (*SHRPOOL7) (*SHRPOOL8) (*SHRPOOL9) +

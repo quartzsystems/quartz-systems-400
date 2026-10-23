@@ -5,7 +5,7 @@
 /* HLDJOB: hold a job, and its spooled files if asked. */
              CMD        PROMPT('Hold Job') MAXPOS(1) +
                           ALLOW(*ALL) HLPPNLGRP(QHWMCMD) HLPID(HLDJOB)
-             PARM       KWD(JOB) TYPE(QJ) DFT(*) PROMPT('Job name')
+             PARM       KWD(JOB) TYPE(QJ) MIN(1) PROMPT('Job name')
              PARM       KWD(SPLFILE) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           DFT(*NO) VALUES(*NO *YES) +
                           PROMPT('Hold spooled files')

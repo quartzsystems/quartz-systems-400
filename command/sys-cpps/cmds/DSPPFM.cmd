@@ -10,7 +10,7 @@
              PARM       KWD(MBR) TYPE(*NAME) LEN(10) DFT(*FIRST) +
                           SPCVAL((*FIRST) (*LAST)) PROMPT('Member')
              PARM       KWD(FROMRCD) TYPE(*DEC) LEN(10) DFT(1) +
-                          RANGE(1 4294967288) SPCVAL((*END 0)) +
+                          REL(*GT 0) SPCVAL((*END 0)) +
                           PROMPT('From record')
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*LIBL) +

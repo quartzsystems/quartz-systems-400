@@ -2,7 +2,7 @@
                                                                                 
  Type choices, press Enter.                                                     
                                                                                 
- Library  . . . . . . . . . . . . > TESTLIB       Name, generic*                
+ Library  . . . . . . . . . . . . > TESTLIB       Name                          
                                                                                 
                                                                                 
                                                                                 

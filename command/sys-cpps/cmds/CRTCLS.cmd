@@ -9,7 +9,7 @@
              PARM       KWD(RUNPTY) TYPE(*INT2) DFT(50) RANGE(1 99) +
                           PROMPT('Run priority')
              PARM       KWD(TIMESLICE) TYPE(*INT4) DFT(2000) +
-                          RANGE(8 9999999) PROMPT('Time slice')
+                          RANGE(0 9999999) PROMPT('Time slice')
              PARM       KWD(PURGE) TYPE(*CHAR) LEN(4) RSTD(*YES) +
                           DFT(*YES) VALUES(*YES *NO) +
                           PROMPT('Eligible for purge')

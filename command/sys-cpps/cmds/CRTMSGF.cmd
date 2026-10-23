@@ -21,9 +21,9 @@
              Q1:        QUAL       TYPE(*NAME) LEN(10) MIN(1)
                         QUAL       TYPE(*NAME) LEN(10) DFT(*CURLIB) +
                           SPCVAL((*CURLIB)) PROMPT('Library')
-             E1:        ELEM       TYPE(*INT4) DFT(10) RANGE(1 16384) +
+             E1:        ELEM       TYPE(*INT4) DFT(10) RANGE(0 16384) +
                           PROMPT('Initial storage size (KB)')
-                        ELEM       TYPE(*INT4) DFT(2) RANGE(1 16384) +
+                        ELEM       TYPE(*INT4) DFT(2) RANGE(0 16384) +
                           PROMPT('Increment (KB)')
                         ELEM       TYPE(*INT4) DFT(*NOMAX) RANGE(0 9999) +
                           SPCVAL((*NOMAX -1)) +

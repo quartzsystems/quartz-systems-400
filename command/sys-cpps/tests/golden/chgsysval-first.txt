@@ -2,7 +2,7 @@
                                                                                 
  Type choices, press Enter.                                                     
                                                                                 
- System value . . . . . . . . . . > QINACTITV     Name                          
+ System value . . . . . . . . . . > QINACTITV     QABNORMSW, QACGLVL, QACTJO... 
  New value  . . . . . . . . . . . > '60'                                        
                                                                                 
                                                                                 

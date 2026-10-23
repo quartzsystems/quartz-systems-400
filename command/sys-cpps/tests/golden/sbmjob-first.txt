@@ -8,7 +8,7 @@
    Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
  Job queue  . . . . . . . . . . .   *JOBD         Name                          
    Library  . . . . . . . . . . .     *LIBL         Name, *LIBL, *CURLIB        
- Job priority (on JOBQ) . . . . .   *JOBD         1-9, *JOBD                    
+ Job priority (on JOBQ) . . . . .   *JOB          1-9, *JOBD                    
  Output priority (on OUTQ)  . . .   *JOBD         1-9, *JOBD                    
  Print device . . . . . . . . . .   *CURRENT      Name, *CURRENT, *USRPRF, *... 
  Output queue . . . . . . . . . .   *CURRENT      Name                          

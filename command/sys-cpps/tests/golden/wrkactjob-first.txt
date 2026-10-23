@@ -12,7 +12,7 @@
  Job name . . . . . . . . . . . .   *ALL          Name, generic*, *ALL          
    User . . . . . . . . . . . . .     *ALL          Name, *ALL                  
    Number . . . . . . . . . . . .     *ALL          000000-999999, *ALL         
-                                                                                
+ Interval . . . . . . . . . . . .   5             1-999                         
                                                                                 
                                                                                 
                                                                                 
