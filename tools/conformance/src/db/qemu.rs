@@ -177,14 +177,20 @@ impl Suite {
             )?;
             // Line endings differ between the serial line and memory, and
             // the line carries only ASCII intact (a hex field exports its
-            // bytes as Latin-1 characters); only the lines, with every
-            // other character folded, are compared.
+            // bytes as Latin-1 characters, which the serial reader turns
+            // into some other run of characters); only the lines, with
+            // every run of other characters folded to one `?`, are
+            // compared.
             let fold = |s: String| -> String {
-                s.replace('\r', "")
-                    .trim_end()
-                    .chars()
-                    .map(|c| if c.is_ascii() { c } else { '?' })
-                    .collect()
+                let mut out = String::new();
+                for c in s.replace('\r', "").trim_end().chars() {
+                    if c.is_ascii() {
+                        out.push(c);
+                    } else if !out.ends_with('?') {
+                        out.push('?');
+                    }
+                }
+                out
             };
             let theirs = fold(body(&out));
             let ours = fold(local.export(name)?);
