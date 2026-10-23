@@ -335,12 +335,25 @@ impl Gen<'_, '_> {
                         }
                         _ => format!("char({})", fd.len.max(1)),
                     };
-                    fields.push(format!("{}: {ty} @{}", fd.name, fd.pos.saturating_sub(1)));
+                    if fd.pos > 0 {
+                        fields.push(format!("{}: {ty} @{}", fd.name, fd.pos - 1));
+                    }
+                    // A display format's input buffer is laid out on
+                    // its own: the same field has a second place.
+                    if let Some(p) = fd.in_pos {
+                        fields.push(format!("_I{}: {ty} @{}", fd.name, p - 1));
+                    }
+                }
+                for (i, ind) in m.option_inds.iter().enumerate() {
+                    fields.push(format!("_O{ind:02}: ind @{i}"));
+                }
+                for (i, ind) in m.response_inds.iter().enumerate() {
+                    fields.push(format!("_R{ind:02}: ind @{i}"));
                 }
                 self.types.push(format!(
                     "type R{}_{k} = struct({}) {{ {} }}",
                     f.n,
-                    m.len.max(1),
+                    m.len.max(m.in_len).max(1),
                     fields.join(", ")
                 ));
                 self.decls

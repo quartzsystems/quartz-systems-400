@@ -284,35 +284,51 @@ impl Gen<'_, '_> {
         }
         if f.display {
             let verb = match op {
-                FileOp::Rcvf => "READ",
+                FileOp::Rcvf | FileOp::Wait => "READ",
                 FileOp::Sndf => "WRITE",
                 FileOp::SndRcvf => "EXFMT",
-                FileOp::Wait => "READ",
                 FileOp::EndRcv => return,
             };
+            let writes = matches!(op, FileOp::Sndf | FileOp::SndRcvf);
+            let reads = matches!(op, FileOp::Rcvf | FileOp::SndRcvf | FileOp::Wait);
+            if writes {
+                // The variables and &INnn into the output buffer.
+                for fd in format.fields.iter().filter(|fd| fd.pos > 0) {
+                    if let Some(v) = self.t.var(&fd.name) {
+                        match v.ty {
+                            VarType::Dec => {
+                                self.ins(&format!("dec.mov {rec}.{}, {}", fd.name, v.place()));
+                            }
+                            _ => self.ins(&format!("mov {rec}.{}, {}", fd.name, v.place())),
+                        }
+                    }
+                }
+                for ind in &format.option_inds {
+                    self.ins(&format!("mov {rec}._O{ind:02}, $IN{ind:02}"));
+                }
+            }
+            // The runtime reports a failure (no display, no such
+            // format) as the escape itself.
             let r = self.reg("s");
             self.ins(&format!(
                 "{r} = dspio {fname} {verb} fmt({}) rec({rec})",
                 format.name
             ));
-            // Display files reach the runtime in Phase 8; until then the
-            // operation reports CPF4101 to the program.
-            let bad = self.reg("b");
-            self.ins(&format!("{bad} = cmp.ne {r}, 0"));
-            let fail = self.fresh("DF");
-            let ok = self.fresh("DK");
-            self.term(&format!("brif {bad}, {fail}, {ok}"));
-            self.label(&fail);
-            let d = self.temp(&Ty::Char(20));
-            self.ins(&format!(
-                "mov {d}, {}",
-                qstr(&format!("{:<10}{:<10}", f.name, f.lib))
-            ));
-            self.ins(&format!(
-                "sndpgmmsg msgid(\"CPF4101\") msgf(\"QCPFMSG\") data({d}) type(*ESCAPE) to(*SAME)"
-            ));
-            self.term(&format!("br {ok}"));
-            self.label(&ok);
+            if reads {
+                for ind in &format.response_inds {
+                    self.ins(&format!("mov $IN{ind:02}, {rec}._R{ind:02}"));
+                }
+                for fd in format.fields.iter().filter(|fd| fd.in_pos.is_some()) {
+                    if let Some(v) = self.t.var(&fd.name) {
+                        match v.ty {
+                            VarType::Dec => {
+                                self.ins(&format!("dec.mov {}, {rec}._I{}", v.place(), fd.name));
+                            }
+                            _ => self.ins(&format!("mov {}, {rec}._I{}", v.place(), fd.name)),
+                        }
+                    }
+                }
+            }
             return;
         }
         match op {

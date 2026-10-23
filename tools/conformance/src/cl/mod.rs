@@ -156,6 +156,7 @@ impl cl::Files for KitFiles {
             len,
             digits,
             decimals,
+            in_pos: None,
         };
         match name {
             "CUST" => Some((
@@ -168,6 +169,7 @@ impl cl::Files for KitFiles {
                         f("NAME", 'A', 5, 30, 0, 0),
                         f("BAL", 'P', 35, 5, 9, 2),
                     ],
+                    ..cl::Format::default()
                 }],
             )),
             "KITDSP" => Some((
@@ -175,7 +177,12 @@ impl cl::Files for KitFiles {
                 vec![cl::Format {
                     name: "PROMPT".into(),
                     len: 20,
-                    fields: vec![f("ANSWER", 'A', 1, 20, 0, 0)],
+                    fields: vec![cl::FieldDef {
+                        in_pos: Some(1),
+                        ..f("ANSWER", 'A', 1, 20, 0, 0)
+                    }],
+                    in_len: 20,
+                    ..cl::Format::default()
                 }],
             )),
             _ => None,

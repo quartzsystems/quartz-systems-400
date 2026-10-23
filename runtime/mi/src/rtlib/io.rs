@@ -482,6 +482,8 @@ pub extern "sysv64" fn db_io(
 /// `EXFMT` (2) go to the job's display source; a read copies the input
 /// buffer back over the record and leaves the attention identifier,
 /// cursor and subfile record number in the information data structure.
+/// A display file that is not open yet opens with its first operation,
+/// as CL's do.
 pub extern "sysv64" fn dev_io(
     env: *mut Env,
     file: i64,
@@ -490,10 +492,16 @@ pub extern "sysv64" fn dev_io(
     rec: i64,
     rec_desc: i64,
 ) -> i32 {
-    let Some((key, _)) = file_of(env, file) else {
+    let Some((key, fr)) = file_of(env, file) else {
         return CLOSED;
     };
     let j = job(env);
+    if !j.files.contains_key(&key) && fr.dev == qir::FileDev::Display {
+        let st = open_display(j, key, &fr, 0, 0);
+        if st != 0 {
+            return st;
+        }
+    }
     let format = if fmt == 0 {
         String::new()
     } else {

@@ -94,11 +94,18 @@ impl Var {
 pub struct Format {
     /// Name.
     pub name: String,
-    /// Record length.
+    /// Record length (the output buffer of a display format).
     pub len: u32,
     /// Fields: name, DDS type, position (1-based), bytes, digits,
     /// decimals.
     pub fields: Vec<FieldDef>,
+    /// A display format's input buffer length.
+    pub in_len: u32,
+    /// Option indicators at the front of a display format's output
+    /// buffer, one byte each in this order.
+    pub option_inds: Vec<u8>,
+    /// Response indicators at the front of its input buffer.
+    pub response_inds: Vec<u8>,
 }
 
 /// A field of a format.
@@ -108,7 +115,8 @@ pub struct FieldDef {
     pub name: String,
     /// DDS data type: `A`, `P`, `S`, `B`, `L`, `T`, `Z`...
     pub ty: char,
-    /// Buffer position, 1-based.
+    /// Buffer position, 1-based; 0 when the field is not in the
+    /// output buffer (an input-only display field).
     pub pos: u32,
     /// Bytes.
     pub len: u32,
@@ -116,6 +124,9 @@ pub struct FieldDef {
     pub digits: u32,
     /// Decimal positions.
     pub decimals: u32,
+    /// Position in a display format's input buffer, 1-based; `None`
+    /// for a field that is not read back.
+    pub in_pos: Option<u32>,
 }
 
 /// A declared file.
@@ -306,6 +317,56 @@ pub fn tables(p: &Program, files: &mut dyn Files, errs: &mut Vec<Diag>) -> Table
                             t.order.push(fd.name.clone());
                             t.vars.insert(fd.name.clone(), v);
                         }
+                    }
+                }
+                if display {
+                    // A display file brings the indicators &IN01 to
+                    // &IN99, as IBM's compiler declares them.
+                    for i in 1..=99u8 {
+                        let name = format!("IN{i:02}");
+                        if t.vars.contains_key(&name) {
+                            continue;
+                        }
+                        t.order.push(name.clone());
+                        t.vars.insert(
+                            name.clone(),
+                            Var {
+                                name,
+                                ty: VarType::Lgl,
+                                len: 1,
+                                dec: 0,
+                                stg: Stg::Auto,
+                                value: None,
+                                parm: false,
+                                line: s.line,
+                                file: Some(n),
+                            },
+                        );
+                    }
+                }
+                if display {
+                    // A display file brings the indicators &IN01 to
+                    // &IN99, as IBM's compiler declares them.
+                    for i in 1..=99u8 {
+                        let name = format!("IN{i:02}");
+                        if t.vars.contains_key(&name) {
+                            continue;
+                        }
+                        t.order.push(name.clone());
+                        t.vars.insert(
+                            name.clone(),
+                            Var {
+                                name,
+                                ty: VarType::Lgl,
+                                len: 1,
+                                dec: 0,
+                                stg: Stg::Auto,
+                                value: None,
+                                parm: false,
+                                line: s.line,
+                                file: Some(n),
+                            },
+                        );
                     }
                 }
                 t.files.push(File {
