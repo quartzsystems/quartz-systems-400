@@ -1,0 +1,45 @@
+QS/400 UIM compiler
+  Panel group . . . . . . .  :  QGPL/IMPORTS_B
+  Source . . . . . . . . . . :  QGPL/QPNLSRC(IMPORTS_B)
+
+  SEQNBR  MEMBER      ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8
+  000100              .* Imports from IMPORTS_A: a named help module, everything by *, and one it does not export.
+  000200              :PNLGRP.
+  000300              :IMPORT NAME=HLPSHARED PNLGRP=QGPL/IMPORTS_A.
+  000400              :IMPORT NAME=* PNLGRP=IMPORTS_A.
+  000500              :IMPORT NAME=HLPMISSING PNLGRP=IMPORTS_A.
+      **  UIM2011 20  Panel group IMPORTS_A does not export HLPMISSING
+  000600              :CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+  000700              :ECLASS.
+  000800              :VAR NAME=NAME CLASS=NAMECL.
+  000900              :KEYL NAME=KEYS HELP=HLPKEYS.
+  001000              :KEYI KEY=ENTER ACTION=ENTER.
+  001100              :KEYI KEY=F3 ACTION=EXIT.F3=Exit
+  001200              :EKEYL.
+  001300              :PANEL NAME=SHOW KEYL=KEYS HELP=HLPSHARED.Show a Name
+  001400              :DATA DEPTH=4.
+  001500              :DATAI VAR=NAME USAGE=OUTPUT HELP=HLPUNKNOWN.Name
+      **  UIM2006 20  Help module HLPUNKNOWN is not defined
+  001600              :EDATA.
+  001700              :EPANEL.
+  001800              :EPNLGRP.
+
+  Panels . . . . . . . . . . :  1
+  Print panels . . . . . . . :  0
+  Help modules . . . . . . . :  0
+  Classes . . . . . . . . .  :  1
+  Variables . . . . . . . .  :  1
+  Conditions . . . . . . . . :  0
+  Key lists . . . . . . . .  :  1
+  Imports . . . . . . . . .  :  3
+
+  Messages
+  000500  UIM2011 20  Panel group IMPORTS_A does not export HLPMISSING
+  001500  UIM2006 20  Help module HLPUNKNOWN is not defined
+
+  Severity 10 . . . . . . .  :  0
+  Severity 20 . . . . . . .  :  2
+  Severity 30 . . . . . . .  :  0
+  Severity 40 . . . . . . .  :  0
+  Highest severity . . . . . :  20
+  Panel group not created

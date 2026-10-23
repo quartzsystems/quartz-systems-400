@@ -1,0 +1,30 @@
+QS/400 UIM compiler
+  Panel group . . . . . . .  :  QGPL/IMPORTS_A
+  Source . . . . . . . . . . :  QGPL/QPNLSRC(IMPORTS_A)
+
+  SEQNBR  MEMBER      ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8
+  000100              .* A help-only group that other groups import from.
+  000200              :PNLGRP.
+  000300              :HELP NAME=HLPSHARED.Shared - Help
+  000400              :P.Shared help text.
+  000500              :EHELP.
+  000600              :HELP NAME=HLPKEYS.Keys - Help
+  000700              :P.The common keys.
+  000800              :EHELP.
+  000900              :EPNLGRP.
+
+  Panels . . . . . . . . . . :  0
+  Print panels . . . . . . . :  0
+  Help modules . . . . . . . :  2
+  Classes . . . . . . . . .  :  0
+  Variables . . . . . . . .  :  0
+  Conditions . . . . . . . . :  0
+  Key lists . . . . . . . .  :  0
+  Imports . . . . . . . . .  :  0
+
+  Severity 10 . . . . . . .  :  0
+  Severity 20 . . . . . . .  :  0
+  Severity 30 . . . . . . .  :  0
+  Severity 40 . . . . . . .  :  0
+  Highest severity . . . . . :  00
+  Panel group created

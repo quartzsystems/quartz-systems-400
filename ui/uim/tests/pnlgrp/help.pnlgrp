@@ -1,0 +1,76 @@
+.* Help modules: every help tag, an imbedded member and index search.
+:PNLGRP SCHIDX=QGPL/MYSCHIDX TXTCHRID='697 37'.
+:ISCHSYN ROOT=OBJECT.objects thing things
+:EISCHSYN.
+:ISCHSYN ROOT=LIBRARY.libraries lib libs
+:EISCHSYN.
+:HELP NAME=HLPINTRO.Introduction - Help
+:H1.Introduction
+:P.The first paragraph. It mentions :HP2.bold:EHP2. words,
+:HP1.one:EHP1. :HP3.three:EHP3. :HP4.four:EHP4. :HP5.five:EHP5.
+:HP6.six:EHP6. :HP7.seven:EHP7. :HP8.eight:EHP8. :HP9.nine:EHP9.
+and :HP0.plain:EHP0. text, :RT.reverse:ERT. text, a :PK.PROGRAM:EPK. keyword
+and a :PV.program-variable:EPV..
+:PC.This continues the paragraph above without a blank line.
+:H2.A second-level heading
+:XMP.
+   CRTLIB LIB(MYLIB) TEXT('My library')
+
+   DSPLIB LIB(MYLIB)
+:EXMP.
+:H3.Lists
+:UL.
+:LI.An unordered item
+:LI.Another, with a nested list:
+:OL COMPACT.
+:LI.first
+:LI.second
+:EOL.
+:EUL.
+:SL.
+:LI.A simple list item
+:LI.And another
+:ESL.
+:H4.Definitions
+:DL.
+:DTHD.Term
+:DDHD.Meaning
+:DT.Library
+:DD.A container of objects.
+:DT.Object
+:DD.A named thing in a library.
+:P.It has a type.
+:EDL.
+:PARML.
+:PT.LIB
+:PD.The library name.
+:PT.TEXT
+:PD.Up to 50 characters.
+:EPARML.
+:NT.
+:P.A note with two paragraphs.
+:P.The second one.
+:ENT.
+:NOTE.A short note.
+:ENOTE.
+:LINES.
+Line one, kept as written
+   Line two, indented
+:ELINES.
+:FIG.
++-------+
+| box   |
++-------+
+:EFIG.
+:P.See :LINK PERFORM='DSPHELP HLPMORE'.more information:ELINK. for details,
+with brackets &lbracket.like these&rbracket., braces &lbrace.and these&rbrace.,
+a colon&colon. a period&period. a comma&comma. and an ampersand &amp..
+:IMHELP NAME=HLPCOMMON.
+:DUMMY.
+:ISCH ROOTS='OBJECT LIBRARY'.Working with objects in libraries
+:EHELP.
+:HELP NAME=HLPMORE TITLE='More Information'.
+:P.More about objects.
+:EHELP.
+.IM HLPCOMMON
+:EPNLGRP.
