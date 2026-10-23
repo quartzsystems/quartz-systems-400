@@ -1,0 +1,24 @@
+                             Work with Active Jobs                     PUB400   
+                                                         MM/DD/YY  HH:MM:SS UTC 
+ CPU %:     N.N     Elapsed time:   HH:MM:SS     Active jobs:   594             
+                                                                                
+ Type options, press Enter.                                                     
+   9=Exclude   10=Display call stack   11=Work with locks                       
+   12=Work with threads   14=Work with mutexes ...                              
+                     Current                                                    
+ Opt  Subsystem/Job  User        Type  CPU %  Function        Status            
+      #SYSLOAD       QSYS        SBS     N.N                   DEQW             
+        SYSLOAD      #SYSLOAD    ASJ     N.N  DLY-321          DLYW             
+      QBATCH         QSYS        SBS     N.N                   DEQW             
+        IRESTAPI     JJMENDES    BCH     N.N  CMD-QSH          TIMW             
+        MAPEPIRE     QSECOFR     BCH     N.N  CMD-STRQSH       TIMW             
+        QP0ZSPWT     JJMENDES    BCI     N.N  PGM-node         SELW             
+        QP0ZSPWT     QSECOFR     BCI     N.N  PGM-jFromPASE    EVTW             
+        QP0ZSPWT     QSECOFR     BCI     N.N  JVM-/QOpenSys/   THDW             
+        QZSHSH       JJMENDES    BCI     N.N  PGM-QZSHSH       EVTW             
+                                                                        More... 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F5=Refresh       F7=Find      F10=Restart statistics                 
+ F11=Display elapsed data   F12=Cancel   F23=More options   F24=More keys       
+                                                                                

@@ -1,0 +1,24 @@
+ CMDMOV                          Move Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Move Object                                                 MOV        
+      2. Move Object                                                 MOVE       
+      3. Move Document                                               MOVDOC     
+      4. Move Object                                                 MOVOBJ     
+      5. Move Performance Collection                                 MOVPFRCOL  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ Already at bottom of area.                                                     

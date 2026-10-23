@@ -1,0 +1,24 @@
+ CMDPF                       Physical File Commands                             
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Add PF Constraint                                           ADDPFCST   
+      2. Add Physical File Member                                    ADDPFM     
+      3. Add Physical File Trigger                                   ADDPFTRG   
+      4. Add Phy File Variable Len Mbr                               ADDPFVLM   
+      5. Change Physical File                                        CHGPF      
+      6. Change PF Constraint                                        CHGPFCST   
+      7. Change Physical File Member                                 CHGPFM     
+      8. Change PF Trigger                                           CHGPFTRG   
+      9. Change Source Physical File                                 CHGSRCPF   
+     10. Clear Physical File Member                                  CLRPFM     
+     11. Compare Physical File Member                                CMPPFM     
+     12. Create Physical File                                        CRTPF      
+     13. Create Source Physical File                                 CRTSRCPF   
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

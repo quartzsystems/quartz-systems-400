@@ -1,0 +1,24 @@
+ CMDDLT                         Delete Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Remove Link                                                 DEL        
+      2. Delete Alert                                                DLTALR     
+      3. Delete Alert Table                                          DLTALRTBL  
+      4. Delete APAR Data                                            DLTAPARDTA 
+      5. Delete Authority Collection                                 DLTAUTCOL  
+      6. Delete Authority Holder                                     DLTAUTHLR  
+      7. Delete Authorization List                                   DLTAUTL    
+      8. Delete Binding Directory                                    DLTBNDDIR  
+                                                                                
+     10. Delete Configuration List                                   DLTCFGL    
+                                                                                
+     12. Delete CICS Group                                           DLTCICSGRP 
+     13. Delete C Locale Description                                 DLTCLD     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

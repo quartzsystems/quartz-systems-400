@@ -1,0 +1,24 @@
+ FILE2                               Files                                      
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Work with Distributed Data Management (DDM) Files                      
+      2. Send or receive files                                                  
+      3. Create a file                                                          
+      4. Edit rebuild of access paths                                           
+                                                                                
+     50. Save a file in System/36 format                                        
+     51. Restore a file from System/36 format                                   
+                                                                                
+     70. Related commands                                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

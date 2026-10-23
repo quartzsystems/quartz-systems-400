@@ -1,0 +1,24 @@
+ CMDWRK                          Work Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Work with TCP/IP Network Sts                                NETSTAT    
+      2. Work with Active Jobs                                       WRKACTJOB  
+      3. Work with Alerts                                            WRKALR     
+      4. Work with Alert Descriptions                                WRKALRD    
+      5. Work with Alert Table                                       WRKALRTBL  
+      6. Work with ARM Jobs                                          WRKARMJOB  
+      7. Work with APPN Status                                       WRKAPPNSTS 
+                                                                                
+     10. Work with ASP Jobs                                          WRKASPJOB  
+     11. Work with Authority                                         WRKAUT     
+     12. Work with Authorization Lists                               WRKAUTL    
+     13. Work with Binding Directories                               WRKBNDDIR  
+     14. Work with Binding Dir Entries                               WRKBNDDIRE 
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

@@ -1,0 +1,24 @@
+ CMDCHG                         Change Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Change ASP Attribute                                        CHGASPA    
+     15. Change ASP Activity                                         CHGASPACT  
+                                                                                
+     18. Change Attribute                                            CHGATR     
+     19. Change Auditing Value                                       CHGAUD     
+     20. Change Authority                                            CHGAUT     
+     21. Change Authority Collection                                 CHGAUTCOL  
+                                                                                
+     23. Change Auth List Entry                                      CHGAUTLE   
+     24. Change Backup Options                                       CHGBCKUP   
+     25. Change BOOTP Attributes                                     CHGBPA     
+                                                                                
+     27. Change Coded Font                                           CHGCDEFNT  
+     28. Change Configuration List                                   CHGCFGL    
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

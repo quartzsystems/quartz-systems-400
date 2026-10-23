@@ -1,0 +1,24 @@
+ SUPPORT                   User Support and Education                           
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. How to use help                                                        
+      2. Search system help index                                               
+      3. How to use commands                                                    
+      4. Question and answer                                                    
+      5. IBM i publications                                                     
+                                                                                
+      7. How to handle system problems                                          
+      8. Problem handling                                                       
+      9. Online education                                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

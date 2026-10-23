@@ -1,0 +1,24 @@
+                       Display Job Definition Attributes                        
+                                                             System:   SYSNAME  
+ Job:   QPADEV000R     User:   USERNAME       Number:   NNNNNN                  
+                                                                                
+ Job description . . . . . . . . . . . . . . . . . :   USERNAME                 
+   Library . . . . . . . . . . . . . . . . . . . . :     QGPL                   
+   ASP device  . . . . . . . . . . . . . . . . . . :     *SYSBAS                
+ Job queue . . . . . . . . . . . . . . . . . . . . :                            
+   Library . . . . . . . . . . . . . . . . . . . . :                            
+   ASP device  . . . . . . . . . . . . . . . . . . :                            
+ Job priority (on job queue) . . . . . . . . . . . :   5                        
+ Output priority (on output queue) . . . . . . . . :   5                        
+ End severity  . . . . . . . . . . . . . . . . . . :   30                       
+ Message logging:                                                               
+   Level . . . . . . . . . . . . . . . . . . . . . :   4                        
+   Severity  . . . . . . . . . . . . . . . . . . . :   0                        
+   Text  . . . . . . . . . . . . . . . . . . . . . :   *SECLVL                  
+ Log CL program commands . . . . . . . . . . . . . :   *YES                     
+ Job log output  . . . . . . . . . . . . . . . . . :   *JOBEND                  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F5=Refresh   F9=Change job   F12=Cancel   F16=Job menu               
+                                                                                

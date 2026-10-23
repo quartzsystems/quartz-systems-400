@@ -1,0 +1,24 @@
+ VERB                            Verb Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     15. Cancel Commands                                             CMDCNL     
+     16. Container Commands                                          CMDCNR     
+     17. Copy Commands                                               CMDCPY     
+     18. Create Commands                                             CMDCRT     
+     19. Create File Commands                                        CMDCRTF    
+     20. Create Program Commands                                     CMDCRTPGM  
+     21. Convert Commands                                            CMDCVT     
+     22. Declare Commands                                            CMDDCL     
+     23. Deallocate Commands                                         CMDDLC     
+     24. Delete Commands                                             CMDDLT     
+     25. Delay Commands                                              CMDDLY     
+     26. Dump Commands                                               CMDDMP     
+     27. Do Commands                                                 CMDDO      
+     28. Disconnect Commands                                         CMDDSC     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

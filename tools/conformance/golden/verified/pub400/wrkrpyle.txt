@@ -1,0 +1,24 @@
+                      Work with System Reply List Entries                       
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   2=Change   4=Delete                                                          
+                                                                                
+      Sequence  Message                                              Compare    
+ Opt   Number   ID       Reply       Compare Value                    Start     
+          10    CPA0700  D           *NONE                                      
+          20    RPG0000  D           *NONE                                      
+          30    CBE0000  D           *NONE                                      
+          40    PLI0000  D           *NONE                                      
+         123    CPA7025  I           *NONE                                      
+         955    CPA5737  C           'Q1PLIN    Q1PCTL    '              6      
+        3282    CPA32B2  I           'ACS Database Schemas'              1      
+        4207    CPF4207  C           *NONE                                      
+        4208    RNQ1216  C           *NONE                                      
+        4209    RNQ1218  R           *NONE                                      
+        4321    CPA7090  C           *NONE                                      
+                                                                        More... 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F5=Refresh   F6=Add   F11=Display entire reply   F12=Cancel          
+ F24=More keys                                                                  
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

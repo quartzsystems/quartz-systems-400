@@ -1,0 +1,24 @@
+ CMDDLT                         Delete Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Delete Class                                                DLTCLS     
+                                                                                
+     16. Delete Command                                              DLTCMD     
+     17. Delete Communications Trace                                 DLTCMNTRC  
+     18. Delete Connection List                                      DLTCNNL    
+     19. Delete Class-of-Service Desc                                DLTCOSD    
+     20. Delete Cluster Resource Group                               DLTCRG     
+                                                                                
+     23. Delete CRQ Description                                      DLTCRQD    
+     24. Delete Comm Side Information                                DLTCSI     
+     25. Delete Controller Description                               DLTCTLD    
+     26. Delete Device Description                                   DLTDEVD    
+     27. Delete DFU Program                                          DLTDFUPGM  
+     28. Delete Document Library Object                              DLTDLO     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

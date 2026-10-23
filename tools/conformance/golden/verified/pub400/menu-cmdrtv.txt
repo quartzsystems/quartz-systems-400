@@ -1,0 +1,24 @@
+ CMDRTV                        Retrieve Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      4. Retrieve Auth List Entry                                    RTVAUTLE   
+      5. Retrieve Backup Options                                     RTVBCKUP   
+      6. Retrieve Binder Source                                      RTVBNDSRC  
+      7. Retrieve Configuration Source                               RTVCFGSRC  
+      8. Retrieve Configuration Status                               RTVCFGSTS  
+      9. Retrieve C Locale Description                               RTVCLDSRC  
+     10. Retrieve Cleanup                                            RTVCLNUP   
+     11. Retrieve CL Source                                          RTVCLSRC   
+                                                                                
+     15. Retrieve Current Directory                                  RTVCURDIR  
+     16. Retrieve Directory Information                              RTVDIRINF  
+     17. Retrieve DLO Authority                                      RTVDLOAUT  
+     18. Retrieve DLO Name                                           RTVDLONAM  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

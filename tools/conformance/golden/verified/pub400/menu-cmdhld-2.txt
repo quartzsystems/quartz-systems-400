@@ -1,0 +1,24 @@
+ CMDHLD                          Hold Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Hold Communications Device                                  HLDCMNDEV  
+      2. Hold Distribution Queue                                     HLDDSTQ    
+      3. Hold Job                                                    HLDJOB     
+                                                                                
+      5. Hold Job Queue                                              HLDJOBQ    
+      6. Hold Job Schedule Entry                                     HLDJOBSCDE 
+      7. Hold Output Queue                                           HLDOUTQ    
+      8. Hold Program Temporary Fix                                  HLDPTF     
+      9. Hold Reader                                                 HLDRDR     
+     10. Hold Spooled File                                           HLDSPLF    
+     11. Hold Writer                                                 HLDWTR     
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ Already at bottom of area.                                                     

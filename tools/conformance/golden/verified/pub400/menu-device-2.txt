@@ -1,0 +1,24 @@
+ DEVICE                        Device Operations                                
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Work with device status                                                
+      2. Work with displays                                                     
+      3. Printer                                                                
+      4. Tape                                                                   
+      5. Diskette                                                               
+      6. Configure PC connections                                               
+      7. Optical                                                                
+                                                                                
+     70. Related commands                                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

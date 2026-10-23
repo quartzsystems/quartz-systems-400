@@ -1,0 +1,24 @@
+                              Display All Messages                              
+                                                             System:   SYSNAME  
+ Job . . :   QPADEV000R    User . . :   USERNAME      Number . . . :   NNNNNN   
+                                                                                
+ 3>> dspjoblog                                                                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F5=Refresh   F12=Cancel   F17=Top   F18=Bottom                       
+                                                                                
+                                                                                

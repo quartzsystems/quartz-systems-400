@@ -1,0 +1,24 @@
+                                 Command Entry                         PUB400   
+                                                           Request level:   4   
+ Previous commands and messages:                                                
+                                                                                
+   (No previous commands or messages)                                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===>                                                                           
+                                                                                
+                                                                                
+                                                                                
+ F16=System main menu   F24=More keys                                           
+                                                                                
+                                                                                

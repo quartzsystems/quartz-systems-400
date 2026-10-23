@@ -1,0 +1,24 @@
+ CMDEDT                          Edit Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Edit Authorization List                                     EDTAUTL    
+      2. Edit Backup List                                            EDTBCKUPL  
+                                                                                
+      4. Edit CHKPND Constraints                                     EDTCPCST   
+      5. Edit DL File Attributes                                     EDTDLFA    
+      6. Edit DLO Authority                                          EDTDLOAUT  
+      7. Edit Document                                               EDTDOC     
+      8. Edit File                                                   EDTF       
+      9. Edit DBCS Conversion Dict                                   EDTIGCDCT  
+     10. Edit Library List                                           EDTLIBL    
+     11. Edit Object Authority                                       EDTOBJAUT  
+     12. Edit Questions and Answers                                  EDTQST     
+     13. Edit Rebuild of Access Paths                                EDTRBDAP   
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

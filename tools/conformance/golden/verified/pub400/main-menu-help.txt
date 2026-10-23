@@ -1,0 +1,24 @@
+ Help                        IBM i Main Menu - Help                             
+                                                                                
+     The IBM i Main (MAIN) menu allows you to select the general task you       
+     want to do.                                                                
+                                                                                
+ How to Use a Menu                                                              
+                                                                                
+     To select a menu option, type the option number and press Enter.           
+                                                                                
+     To run a command, type the command and press Enter.  For assistance        
+     in selecting a command, press F4 (Prompt) without typing anything.         
+     For assistance in entering a command, type the command and press F4        
+     (Prompt).  To see a previous command you entered, press F9                 
+     (Retrieve).                                                                
+                                                                                
+     To go to another menu, use the   Go to Menu (GO) command. Type GO          
+     followed by the menu ID, then press the Enter key.  For example, to        
+     go to the User Tasks (USER) menu, type GO USER and press the Enter         
+     key.  The menu ID is shown in the upper left corner of the menu.           
+     For assistance in entering the GO command, type GO and press F4            
+                                                                        More... 
+ F3=Exit help   F10=Move to top   F12=Cancel   F13=Information Assistant        
+ F14=Print help                                                                 
+                                                                                

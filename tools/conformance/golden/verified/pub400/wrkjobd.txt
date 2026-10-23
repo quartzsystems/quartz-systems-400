@@ -1,0 +1,24 @@
+                           Work with Job Descriptions                           
+                                                                                
+ Type options, press Enter.                                                     
+   1=Create   2=Change   3=Copy   4=Delete   5=Display                          
+                                                                                
+          Job                                                                   
+ Opt  Description  Library     Text                                             
+                                                                                
+      BKP4I        QGPL                                                         
+      CODE4I       QGPL                                                         
+      CODE4IB      QGPL                                                         
+      CODE4I1      QGPL                                                         
+      CODE4I2      QGPL                                                         
+      USERNAME     QGPL                                                         
+      GANESH4      QGPL                                                         
+      JEEVANA1     QGPL        jeevana bulla                    ENU             
+      LOKE241      QGPL        Lokeshwari Cherukuri             ENU             
+      MALLI2404    QGPL                                                         
+                                                                        More... 
+ Parameters for options 1, 2, 3 and 5 or command                                
+ ===>                                                                           
+ F3=Exit      F4=Prompt   F5=Refresh   F9=Retrieve   F11=Display names only     
+ F12=Cancel   F16=Repeat position to   F17=Position to                          
+                                                                                

@@ -1,0 +1,24 @@
+ CMDADD                           Add Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     15. Add CICS File Control Table                                 ADDCICSFCT 
+     16. Add CICS Group List Table                                   ADDCICSGLT 
+     17. Add CICS Journal Control Table                              ADDCICSJCT 
+     18. Add CICS Program Control Table                              ADDCICSPCT 
+     19. Add CICS Pgm Processing Table                               ADDCICSPPT 
+     20. Add CICS System Init Table                                  ADDCICSSIT 
+     21. Add CICS Terminal Ctrl Sys Tbl                              ADDCICSTCS 
+     22. Add CICS Terminal Control Tbl                               ADDCICSTCT 
+     23. Add CICS Temporary Storage Tbl                              ADDCICSTST 
+     24. Add Keystore File Entry                                     ADDCKMKSFE 
+                                                                                
+     27. Add Communications Entry                                    ADDCMNE    
+     28. Add Community for SNMP                                      ADDCOMSNMP 
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

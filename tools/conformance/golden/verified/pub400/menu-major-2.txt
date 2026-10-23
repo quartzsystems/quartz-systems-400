@@ -1,0 +1,24 @@
+ MAJOR                        Major Command Groups                              
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+     14. Office Commands                                             CMDOFC     
+     15. Database Commands                                           CMDDB      
+     16. Communications Management Commands                          CMDCMNMGT  
+     17. Distribution Services Commands                              CMDDSTSRV  
+     18. Configuration Commands                                      CMDCFG     
+     19. Problem Management Commands                                 CMDPRBMGT  
+     20. Message Handling Commands                                   CMDMSGHDL  
+     21. Performance Commands                                        CMDPFR     
+     22. System/36 Commands                                          CMDS36     
+     23. System/38 Commands                                          CMDS38     
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+                                                                                

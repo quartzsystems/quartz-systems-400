@@ -1,0 +1,24 @@
+                            Display Authorized Users                            
+                                                                                
+                         Password                                               
+ User        Group       Last         No                                        
+ Profile     Profile     Changed   Password  Text                               
+ USERNAME                MM/DD/YY            Wellman,Cody                       
+ ENGMTZ                  MM/DD/YY            Mohammed,Moataz                    
+ SANDEP981               MM/DD/YY            Anonym,sandeep                     
+ VENSUJA                 MM/DD/YY            Prakash,Suja                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Password Level Information   F12=Cancel   F17=Top   F18=Bottom   
+                                                                                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

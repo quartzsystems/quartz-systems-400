@@ -1,0 +1,24 @@
+ CMDRNM                         Rename Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Rename Object                                               REN        
+      2. Rename Object                                               RNM        
+      3. Rename Directory Entry                                      RNMDIRE    
+      4. Rename Document Library Object                              RNMDLO     
+      5. Rename Distribution List                                    RNMDSTL    
+                                                                                
+      7. Rename LAN Adapter                                          RNMLANADPI 
+      8. Rename Member                                               RNMM       
+      9. Rename Nickname                                             RNMNCK     
+     10. Rename Object                                               RNMOBJ     
+     11. Rename SMTP Dist List                                       RNMSDSTL   
+     12. Rename TCP/IP Host Table Entry                              RNMTCPHTE  
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ Already at bottom of area.                                                     

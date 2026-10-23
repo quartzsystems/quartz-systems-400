@@ -1,0 +1,24 @@
+                            Work with Subsystem Jobs                   PUB400   
+                                                         MM/DD/YY  HH:MM:SS UTC 
+ Subsystem  . . . . . . . . . . :   QINTER2                                     
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change   3=Hold   4=End   5=Work with   6=Release   7=Display message      
+   8=Work with spooled files   13=Disconnect                                    
+                                                                                
+                                                                                
+ Opt  Job         User        Type     -----Status-----  Function               
+      QPADEV000G  AVINASH1    INTER    ACTIVE            CMD-WRKMBRPDM          
+      QPADEV000M  YUVARAJ15   INTER    ACTIVE            MNU-MAIN               
+      QPADEV000R  USERNAME    INTER    ACTIVE            CMD-WRKSBSJOB          
+      QPADEV000W  HIMANSH     INTER    ACTIVE            CMD-WRKMBRPDM          
+      QPADEV001L  SRIPRIYAA   INTER    ACTIVE            CMD-STRSEU             
+      QPADEV001S  IAMSAM      INTER    ACTIVE            MNU-MAIN               
+      QPADEV001W  KIRTIK782   INTER    ACTIVE            CMD-STRSEU             
+      QPADEV002L  SHUBHAM93   INTER    ACTIVE            CMD-STRSEU             
+                                                                        More... 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit      F4=Prompt   F5=Refresh   F9=Retrieve   F11=Display schedule data  
+ F12=Cancel   F17=Top     F18=Bottom                                            
+                                                                                

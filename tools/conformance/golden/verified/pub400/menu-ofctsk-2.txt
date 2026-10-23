@@ -1,0 +1,24 @@
+ OFCTSK                           Office Tasks                                  
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      2. IBM i Access tasks                                                     
+      3. Decision support                                                       
+      4. Office security                                                        
+      5. Work with directory entries                                            
+      6. Documents                                                              
+      7. Folders                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

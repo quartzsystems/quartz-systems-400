@@ -1,0 +1,24 @@
+ CMDLIB                         Library Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     15. Restore S/36 Library Members                                RSTS36LIBM 
+     16. Retrieve Library Description                                RTVLIBD    
+     17. Save Library                                                SAVLIB     
+                                                                                
+     19. Save Restore Library                                        SAVRSTLIB  
+     20. Save Restore Object                                         SAVRSTOBJ  
+     21. Save S/36 Library Members                                   SAVS36LIBM 
+     22. Start Journal Library                                       STRJRNLIB  
+     23. Work with Document Libraries                                WRKDOCLIB  
+     24. Work with Libraries                                         WRKLIB     
+                                                                                
+     26. Work with Libraries using PDM                               WRKLIBPDM  
+                                                                                
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

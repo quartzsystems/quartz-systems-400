@@ -1,0 +1,24 @@
+ CMDEDT                          Edit Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Edit Recovery for Access Paths                              EDTRCYAP   
+     15. Edit S/36 Program Attributes                                EDTS36PGMA 
+     16. Edit S/36 Procedure Attributes                              EDTS36PRCA 
+     17. Edit S/36 Source Attributes                                 EDTS36SRCA 
+     18. Edit Workstation Object Aut                                 EDTWSOAUT  
+     19. Start Source Entry Utility                                  STRSEU     
+                                                                                
+   Related Command Menus                                                        
+     20. Edit Description Commands                                   CMDEDTD    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

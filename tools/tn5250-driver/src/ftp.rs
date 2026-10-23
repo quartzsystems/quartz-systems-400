@@ -12,7 +12,6 @@ use std::time::Duration;
 
 use anyhow::{Context, Result, bail};
 
-use crate::FtpArgs;
 use crate::env::Credentials;
 
 /// The control connection.
@@ -165,21 +164,20 @@ impl Ftp {
     }
 }
 
-/// `ftp` from the command line.
-pub fn run(args: &FtpArgs, creds: &Credentials) -> Result<()> {
+/// `ftp` from the command line: `op` and its operands.
+pub fn run(op: &str, ops: &[String], creds: &Credentials) -> Result<()> {
     let mut f = Ftp::connect(&creds.host, &creds.user, &creds.password)?;
-    let ops = &args.operands;
     let arg =
         |i: usize| -> Result<&str> { ops.get(i).map(String::as_str).context("missing operand") };
-    match args.op.as_str() {
+    match op {
         "ls" => print!("{}", f.list(ops.first().map_or("", String::as_str))?),
         "get" | "bget" => {
-            let data = f.get(arg(0)?, args.op == "bget")?;
+            let data = f.get(arg(0)?, op == "bget")?;
             std::fs::write(arg(1)?, data)?;
         }
         "put" | "bput" => {
             let data = std::fs::read(arg(0)?)?;
-            f.put(arg(1)?, &data, args.op == "bput")?;
+            f.put(arg(1)?, &data, op == "bput")?;
         }
         "quote" => {
             let (code, text) = f.command(&ops.join(" "))?;

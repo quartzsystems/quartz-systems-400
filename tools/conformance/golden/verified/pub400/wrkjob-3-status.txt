@@ -1,0 +1,24 @@
+                           Display Job Run Attributes                           
+                                                             System:   SYSNAME  
+ Job:   QPADEV000R     User:   USERNAME       Number:   NNNNNN                  
+                                                                                
+ Run priority  . . . . . . . . . . . . . . . . . . :   50                       
+ Time slice in milliseconds  . . . . . . . . . . . :   2000                     
+ Eligible for purge  . . . . . . . . . . . . . . . :   *YES                     
+ Default wait time in seconds  . . . . . . . . . . :   30                       
+ Maximum CPU time in milliseconds  . . . . . . . . :   *NOMAX                   
+   CPU time used . . . . . . . . . . . . . . . . . :     10                     
+ Maximum temporary storage in megabytes  . . . . . :   *NOMAX                   
+   Temporary storage used  . . . . . . . . . . . . :     7                      
+   Peak temporary storage used . . . . . . . . . . :     7                      
+ Maximum threads . . . . . . . . . . . . . . . . . :   *NOMAX                   
+   Threads . . . . . . . . . . . . . . . . . . . . :     1                      
+ Thread resources affinity:                                                     
+   Group . . . . . . . . . . . . . . . . . . . . . :   *NOGROUP                 
+   Level . . . . . . . . . . . . . . . . . . . . . :   *NORMAL                  
+ Resources affinity group  . . . . . . . . . . . . :   *NO                      
+                                                                                
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F5=Refresh   F9=Change job   F12=Cancel   F16=Job menu               
+                                                                                

@@ -1,0 +1,24 @@
+                           Display Network Attributes                           
+                                                             System:   SYSNAME  
+ Current system name  . . . . . . . . . . . . . . :   PUB400                    
+   Pending system name  . . . . . . . . . . . . . :                             
+ Local network ID . . . . . . . . . . . . . . . . :   APPN                      
+ Local control point name . . . . . . . . . . . . :   C20AA83V                  
+ Default local location . . . . . . . . . . . . . :   C20AA83V                  
+ Default mode . . . . . . . . . . . . . . . . . . :   BLANK                     
+ APPN node type . . . . . . . . . . . . . . . . . :   *ENDNODE                  
+ Data compression . . . . . . . . . . . . . . . . :   *NONE                     
+ Intermediate data compression  . . . . . . . . . :   *NONE                     
+ Maximum number of intermediate sessions  . . . . :   200                       
+ Route addition resistance  . . . . . . . . . . . :   128                       
+ Server network ID/control point name . . . . . . :   *LCLNETID   *ANY          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

@@ -1,0 +1,24 @@
+                         Display Subsystem Description                          
+                                                             System:   SYSNAME  
+ Subsystem description:   QINTER2        Library:   QSYS                        
+ Status:   ACTIVE                                                               
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Operational attributes                                                 
+      2. Pool definitions                                                       
+      3. Autostart job entries                                                  
+      4. Work station name entries                                              
+      5. Work station type entries                                              
+      6. Job queue entries                                                      
+      7. Routing entries                                                        
+      8. Communications entries                                                 
+      9. Remote location name entries                                           
+     10. Prestart job entries                                                   
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+                                                                                

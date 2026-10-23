@@ -1,0 +1,24 @@
+                             Work with Active Jobs                     PUB400   
+                                                         MM/DD/YY  HH:MM:SS UTC 
+ CPU %:     N.N     Elapsed time:   HH:MM:SS     Active jobs:   594             
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change   3=Hold   4=End   5=Work with   6=Release   7=Display message      
+   8=Work with spooled files   13=Disconnect ...                                
+                     Current                                                    
+ Opt  Subsystem/Job  User        Type  CPU %  Function        Status            
+      #SYSLOAD       QSYS        SBS     N.N                   DEQW             
+        SYSLOAD      #SYSLOAD    ASJ     N.N  DLY-321          DLYW             
+      QBATCH         QSYS        SBS     N.N                   DEQW             
+        IRESTAPI     JJMENDES    BCH     N.N  CMD-QSH          TIMW             
+        MAPEPIRE     QSECOFR     BCH     N.N  CMD-STRQSH       TIMW             
+        QP0ZSPWT     JJMENDES    BCI     N.N  PGM-node         SELW             
+        QP0ZSPWT     QSECOFR     BCI     N.N  PGM-jFromPASE    EVTW             
+        QP0ZSPWT     QSECOFR     BCI     N.N  JVM-/QOpenSys/   THDW             
+        QZSHSH       JJMENDES    BCI     N.N  PGM-QZSHSH       EVTW             
+                                                                        More... 
+ Parameters or command                                                          
+ ===>                                                                           
+ F4=Prompt   F8=Repeat find   F9=Retrieve   F13=Reset statistics   F14=Include  
+ F16=Resequence   F17=Top     F18=Bottom    F20=Subset   F24=More keys          
+                                                                                

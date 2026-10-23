@@ -1,0 +1,24 @@
+ VERB                            Verb Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Add Commands                                                CMDADD     
+      2. Allocate Commands                                           CMDALC     
+      3. Answer Commands                                             CMDANS     
+      4. Analyze Commands                                            CMDANZ     
+      5. Apply Commands                                              CMDAPY     
+      6. Ask Commands                                                CMDASK     
+      7. Auditing Commands                                           CMDAUD     
+      8. Call Commands                                               CMDCALL    
+      9. Configuration Commands                                      CMDCFG     
+     10. Change Commands                                             CMDCHG     
+     11. Check Commands                                              CMDCHK     
+     12. Close Commands                                              CMDCLO     
+     13. Clear Commands                                              CMDCLR     
+     14. Compare Commands                                            CMDCMP     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

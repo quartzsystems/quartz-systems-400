@@ -61,7 +61,7 @@ pub const SRC_SEQUENCE_MEDIA: &[&str] = &[
     SRC_IPL_COMPLETE,
 ];
 
-const CMD: Duration = Duration::from_secs(10);
+pub(crate) const CMD: Duration = Duration::from_secs(10);
 
 /// What the suite boots.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -111,6 +111,9 @@ pub struct Suite {
     pub out_dir: PathBuf,
     /// Time allowed for an IPL to reach completion.
     pub(crate) boot_timeout: Duration,
+    /// Run only the steps whose names start with one of these (after
+    /// the boot).
+    pub(crate) only: Option<Vec<String>>,
 }
 
 // The steps share one signature so `step` can take them as fn pointers.
@@ -159,6 +162,7 @@ impl Suite {
                 cdrom_first: false,
                 extra_disks: Vec::new(),
                 qmp: out_dir.join("qmp.sock"),
+                telnet_port: Some(free_port()),
             },
             media,
             install: false,
@@ -167,7 +171,14 @@ impl Suite {
             iso: iso.map(Path::to_path_buf),
             out_dir,
             boot_timeout,
+            only: None,
         })
+    }
+
+    /// Run only the steps whose names start with `prefix`; the boot
+    /// step always runs.
+    pub fn set_only(&mut self, prefixes: Option<String>) {
+        self.only = prefixes.map(|p| p.split(',').map(|s| format!("{} ", s.trim())).collect());
     }
 
     /// With the ISO: install onto a blank 4 GiB disk and boot it, instead
@@ -471,9 +482,19 @@ impl Suite {
         reports.push(self.step(&mut s, "48 limited user", Self::limited_user)?);
         reports.push(self.step(&mut s, "49 startup program", Self::startup_program)?);
         reports.push(self.step(&mut s, "50 analyzer console", Self::analyzer_console)?);
+        reports.push(self.step(&mut s, "51 telnet sign-on", Self::telnet_sign_on)?);
+        reports.push(self.step(
+            &mut s,
+            "52 telnet command entry",
+            Self::telnet_command_entry,
+        )?);
+        reports.push(self.step(&mut s, "53 telnet device recovery", Self::telnet_recovery)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);
+        if self.only.is_some() {
+            return Ok(reports);
+        }
         reports.push(self.db_crash()?);
         reports.push(self.abnormal()?);
         reports.push(self.power_pulls()?);
@@ -489,12 +510,28 @@ impl Suite {
         f: fn(&Self, &mut Session) -> Result<String, String>,
     ) -> Result<StepReport, HarnessError> {
         let start = Instant::now();
-        match f(self, s) {
-            Ok(detail) => Ok(StepReport {
+        if let Some(prefixes) = &self.only
+            && !prefixes.iter().any(|p| name.starts_with(p.as_str()))
+            && !name.starts_with("1 ")
+        {
+            return Ok(StepReport {
                 name,
-                elapsed: start.elapsed(),
-                detail,
-            }),
+                elapsed: Duration::ZERO,
+                detail: "skipped".into(),
+            });
+        }
+        match f(self, s) {
+            Ok(detail) => {
+                println!(
+                    "  PASS {name:<24} {:6.1}s  {detail}",
+                    start.elapsed().as_secs_f64()
+                );
+                Ok(StepReport {
+                    name,
+                    elapsed: start.elapsed(),
+                    detail,
+                })
+            }
             Err(reason) => Err(HarnessError::Failed {
                 step: name,
                 reason,
@@ -684,6 +721,13 @@ impl Suite {
             detail: "C1002000 after a killed IPL; QABNORMSW is 1".into(),
         })
     }
+}
+
+/// A free TCP port on the loopback for the telnet forward.
+pub fn free_port() -> u16 {
+    std::net::TcpListener::bind("127.0.0.1:0")
+        .and_then(|l| l.local_addr())
+        .map_or(2323, |a| a.port())
 }
 
 /// Rows 1 to 10 of the sign-on display, built from the layout in the Phase 1

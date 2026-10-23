@@ -1,0 +1,24 @@
+ CMDCRT                         Create Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Create Configuration List                                   CRTCFGL    
+     15. Create CICS ILE C Object                                    CRTCICSC   
+     16. Create CICS COBOL                                           CRTCICSCBL 
+     17. Create CICS Group                                           CRTCICSGRP 
+     18. Create CICS Map                                             CRTCICSMAP 
+     19. Create Keystore File                                        CRTCKMKSF  
+     20. Create C Locale Description                                 CRTCLD     
+     21. Create CL Module                                            CRTCLMOD   
+     22. Create CL Program                                           CRTCLPGM   
+     23. Create Class                                                CRTCLS     
+                                                                                
+     25. Create Command                                              CRTCMD     
+     26. Create C Module                                             CRTCMOD    
+     27. Create Class-of-Service Desc                                CRTCOSD    
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

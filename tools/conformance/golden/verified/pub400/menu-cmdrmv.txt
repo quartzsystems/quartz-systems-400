@@ -1,0 +1,24 @@
+ CMDRMV                         Remove Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Remove Link                                                 DEL        
+      2. Remove Link                                                 ERASE      
+      3. Remove Directory                                            RD         
+      4. Remove Directory                                            RMDIR      
+      5. Remove Access Code                                          RMVACC     
+      6. Remove Access for Web                                       RMVACCWEB  
+      7. Remove Autostart Job Entry                                  RMVAJE     
+      8. Remove Alert Description                                    RMVALRD    
+                                                                                
+     10. Remove Auth List Entry                                      RMVAUTLE   
+     11. Remove Breakpoint                                           RMVBKP     
+     12. Remove Binding Directory Entry                              RMVBNDDIRE 
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

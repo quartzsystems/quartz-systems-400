@@ -1,0 +1,24 @@
+                            Display Pool Definitions                            
+                                                             System:   SYSNAME  
+ Subsystem description:   QINTER2        Status:   ACTIVE                       
+                                                                                
+ Pool           Storage     Activity                                            
+  ID           Size (M)      Level                                              
+   1              *BASE                                                         
+   2          *INTERACT                                                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

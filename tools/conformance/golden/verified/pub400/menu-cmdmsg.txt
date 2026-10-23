@@ -1,0 +1,24 @@
+ CMDMSG                         Message Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      2. Display Messages                                            DSPMSG     
+      3. Generate Message Catalog                                    GENCAT     
+      4. Monitor Message                                             MONMSG     
+      5. Merge Message Catalog                                       MRGMSGCLG  
+      6. Receive Message                                             RCVMSG     
+      7. Remove Message                                              RMVMSG     
+      8. Retrieve Message                                            RTVMSG     
+      9. Send Break Message                                          SNDBRKMSG  
+     10. Send Message                                                SNDMSG     
+     11. Send Network Message                                        SNDNETMSG  
+     12. Send Program Message                                        SNDPGMMSG  
+     13. Send Reply                                                  SNDRPY     
+     14. Send User Message                                           SNDUSRMSG  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

@@ -1,0 +1,24 @@
+ CMDPRT                          Print Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Change Device Desc (Printer)                                CHGDEVPRT  
+      2. Create Device Desc (Printer)                                CRTDEVPRT  
+      3. Emulate Printer Keys                                        EMLPRTKEY  
+      4. End Printer Emulation                                       ENDPRTEML  
+      5. Print Activity Report                                       PRTACTRPT  
+                                                                                
+      7. Print Adopting Objects                                      PRTADPOBJ  
+      8. Print AFP Data                                              PRTAFPDTA  
+      9. Print CICS Trace                                            PRTCICSTRC 
+     10. Print Command Usage                                         PRTCMDUSG  
+     11. Print Communications Security                               PRTCMNSEC  
+     12. Print Communications Trace                                  PRTCMNTRC  
+     13. Print Component Report                                      PRTCPTRPT  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

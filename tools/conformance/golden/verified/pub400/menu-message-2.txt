@@ -1,0 +1,24 @@
+ MESSAGE                            Messages                                    
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Send a message                                                         
+      2. Send a break message                                                   
+      3. Display messages                                                       
+      4. Display system operator messages                                       
+      5. Send a network message                                                 
+      6. Work with message queues                                               
+      7. Create a message queue                                                 
+      8. Work with message descriptions                                         
+                                                                                
+     70. Related commands                                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

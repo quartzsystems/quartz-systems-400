@@ -1,0 +1,24 @@
+                          Display History Log Contents                          
+                                                                                
+ Job NNNNNN/#SYSLOAD/RZKHSETAUD submitted for job schedule entry RZKHSETAUD nu  
+ Job NNNNNN/QSECOFR/SETUSERACC submitted for job schedule entry SETUSERACC num  
+ Job NNNNNN/QSECOFR/SETUSERACC started on MM/DD/YY at HH:MM:SS in subsystem QB  
+ Job NNNNNN/#SYSLOAD/RZKHSETAUD started on MM/DD/YY at HH:MM:SS in subsystem R  
+ Job NNNNNN/QUSER/QZDASOINIT ended on MM/DD/YY at HH:MM:SS; 0,013 seconds used  
+ Job NNNNNN/QUSER/QZDASOINIT ended on MM/DD/YY at HH:MM:SS; 0,012 seconds used  
+ *SIGNON server job NNNNNN/QUSER/QZSOSIGN processing request for user PCDEV on  
+ Job NNNNNN/QUSER/QZDASOINIT started on MM/DD/YY at HH:MM:SS in subsystem QUSR  
+ Job NNNNNN/QUSER/QZDASOINIT started on MM/DD/YY at HH:MM:SS in subsystem QUSR  
+ Job NNNNNN/QUSER/QZDASOINIT ended on MM/DD/YY at HH:MM:SS; 0,019 seconds used  
+ User PCDEV from client MM/DD/YY.144 connected to job NNNNNN/QUSER/QZDASOINIT   
+ Job NNNNNN/HORUZHIY/QPADEV002L started on MM/DD/YY at HH:MM:SS in subsystem Q  
+ Job NNNNNN/QUSER/QZDASOINIT ended on MM/DD/YY at HH:MM:SS; 0,025 seconds used  
+ Job NNNNNN/QUSER/QZDASOINIT ended on MM/DD/YY at HH:MM:SS; 0,017 seconds used  
+ Log version QHST26295A in QSYS closed and should be saved.                     
+ Job NNNNNN/QUSER/QZDASOINIT ended on MM/DD/YY at HH:MM:SS; 0,027 seconds used  
+ Job NNNNNN/QUSER/QZDASOINIT ended on MM/DD/YY at HH:MM:SS; 0,597 seconds used  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F10=Display all   F12=Cancel                                         
+                                                                                

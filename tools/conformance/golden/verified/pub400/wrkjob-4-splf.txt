@@ -1,0 +1,24 @@
+                          Work with Job Spooled Files                           
+                                                                                
+ Job:   QPADEV000R     User:   USERNAME       Number:   NNNNNN                  
+                                                                                
+ Type options, press Enter.                                                     
+   1=Send   2=Change   3=Hold   4=Delete   5=Display   6=Release   7=Messages   
+   8=Attributes        9=Work with printing status                              
+                                                                                
+                  Device or                       Total   Current               
+ Opt  File        Queue       User Data   Status  Pages     Page   Copies       
+                                                                                
+   (No spooled output files)                                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Parameters for options 1, 2, 3 or command                                      
+ ===>                                                                           
+ F3=Exit   F10=View 3   F11=View 2   F12=Cancel   F22=Printers   F24=More keys  
+                                                                                

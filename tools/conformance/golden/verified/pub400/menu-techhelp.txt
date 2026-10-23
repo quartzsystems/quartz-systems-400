@@ -1,0 +1,24 @@
+ TECHHELP                   Technical Support Tasks                             
+                                                             System:   SYSNAME  
+ To select one of the following, type its number below and press Enter:         
+                                                                                
+      1. Display messages for the system operator                               
+                                                                                
+     10. Work with problems with the system                                     
+     11. Work with PTF(s)                                                       
+     12. Copy your screen on another display station                            
+     13. Stop copying your screen                                               
+                                                                                
+     20. Connect to technical support                                           
+     21. Disconnect from technical support                                      
+                                                                                
+     80. Temporary sign-off                                                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Type a menu option below                                                       
+                                                                                
+                                                                                
+ F1=Help   F3=Exit   F9=Command line   F12=Cancel                               
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

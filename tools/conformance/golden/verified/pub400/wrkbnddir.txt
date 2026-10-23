@@ -1,0 +1,24 @@
+                         Work with Binding Directories                          
+                                                                                
+ Type options, press Enter.                                                     
+   1=Create   4=Delete   5=Display   9=Work with binding directory entries      
+   13=Change description                                                        
+                                                                                
+      Binding                                                                   
+ Opt  Directory   Library     Text                                              
+                                                                                
+      QCBLLE      QSYS                                                          
+      QCLLE       QSYS        ILE CL BINDING DIRECTORY                          
+      QC2LE       QSYS                                                          
+      QILE        QSYS                                                          
+      QLECWI      QSYS                                                          
+      QRNXLE      QSYS                                                          
+      QSNAPI      QSYS                                                          
+      QUSAPIBD    QSYS        API BINDING DIRECTORY                             
+      QYPPLR      QSYS                                                          
+                                                                        More... 
+ Parameters for options 1, 5 and 13 or command                                  
+ ===>                                                                           
+ F3=Exit      F4=Prompt   F5=Refresh   F9=Retrieve   F11=Display names only     
+ F12=Cancel   F16=Repeat position to   F17=Position to                          
+                                                                                

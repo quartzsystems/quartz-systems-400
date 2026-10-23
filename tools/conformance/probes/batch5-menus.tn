@@ -1,0 +1,898 @@
+# Batch 5: menus, each from MAIN by GO.
+wait "Main Menu"
+continue
+timeout 60000
+type go major
+key enter
+settle 1500
+snap menu-major
+key pgdn
+settle 1000
+snap menu-major-2
+key f3
+wait "Main Menu"
+type go verb
+key enter
+settle 1500
+snap menu-verb
+key pgdn
+settle 1000
+snap menu-verb-2
+key f3
+wait "Main Menu"
+type go subject
+key enter
+settle 1500
+snap menu-subject
+key pgdn
+settle 1000
+snap menu-subject-2
+key f3
+wait "Main Menu"
+type go user
+key enter
+settle 1500
+snap menu-user
+key pgdn
+settle 1000
+snap menu-user-2
+key f3
+wait "Main Menu"
+type go system
+key enter
+settle 1500
+snap menu-system
+key pgdn
+settle 1000
+snap menu-system-2
+key f3
+wait "Main Menu"
+type go data
+key enter
+settle 1500
+snap menu-data
+key pgdn
+settle 1000
+snap menu-data-2
+key f3
+wait "Main Menu"
+type go program
+key enter
+settle 1500
+snap menu-program
+key pgdn
+settle 1000
+snap menu-program-2
+key f3
+wait "Main Menu"
+type go cmn
+key enter
+settle 1500
+snap menu-cmn
+key pgdn
+settle 1000
+snap menu-cmn-2
+key f3
+wait "Main Menu"
+type go define
+key enter
+settle 1500
+snap menu-define
+key pgdn
+settle 1000
+snap menu-define-2
+key f3
+wait "Main Menu"
+type go problem
+key enter
+settle 1500
+snap menu-problem
+key pgdn
+settle 1000
+snap menu-problem-2
+key f3
+wait "Main Menu"
+type go techhelp
+key enter
+settle 1500
+snap menu-techhelp
+key pgdn
+settle 1000
+snap menu-techhelp-2
+key f3
+wait "Main Menu"
+type go status
+key enter
+settle 1500
+snap menu-status
+key pgdn
+settle 1000
+snap menu-status-2
+key f3
+wait "Main Menu"
+type go security
+key enter
+settle 1500
+snap menu-security
+key pgdn
+settle 1000
+snap menu-security-2
+key f3
+wait "Main Menu"
+type go file
+key enter
+settle 1500
+snap menu-file
+key pgdn
+settle 1000
+snap menu-file-2
+key f3
+wait "Main Menu"
+type go library
+key enter
+settle 1500
+snap menu-library
+key pgdn
+settle 1000
+snap menu-library-2
+key f3
+wait "Main Menu"
+type go job
+key enter
+settle 1500
+snap menu-job
+key pgdn
+settle 1000
+snap menu-job-2
+key f3
+wait "Main Menu"
+type go message
+key enter
+settle 1500
+snap menu-message
+key pgdn
+settle 1000
+snap menu-message-2
+key f3
+wait "Main Menu"
+type go printer
+key enter
+settle 1500
+snap menu-printer
+key pgdn
+settle 1000
+snap menu-printer-2
+key f3
+wait "Main Menu"
+type go device
+key enter
+settle 1500
+snap menu-device
+key pgdn
+settle 1000
+snap menu-device-2
+key f3
+wait "Main Menu"
+type go devicests
+key enter
+settle 1500
+snap menu-devicests
+key pgdn
+settle 1000
+snap menu-devicests-2
+key f3
+wait "Main Menu"
+type go power
+key enter
+settle 1500
+snap menu-power
+key pgdn
+settle 1000
+snap menu-power-2
+key f3
+wait "Main Menu"
+type go save
+key enter
+settle 1500
+snap menu-save
+key pgdn
+settle 1000
+snap menu-save-2
+key f3
+wait "Main Menu"
+type go restore
+key enter
+settle 1500
+snap menu-restore
+key pgdn
+settle 1000
+snap menu-restore-2
+key f3
+wait "Main Menu"
+type go backup
+key enter
+settle 1500
+snap menu-backup
+key pgdn
+settle 1000
+snap menu-backup-2
+key f3
+wait "Main Menu"
+type go cleanup
+key enter
+settle 1500
+snap menu-cleanup
+key pgdn
+settle 1000
+snap menu-cleanup-2
+key f3
+wait "Main Menu"
+type go setup
+key enter
+settle 1500
+snap menu-setup
+key pgdn
+settle 1000
+snap menu-setup-2
+key f3
+wait "Main Menu"
+type go assist
+key enter
+settle 1500
+snap menu-assist
+key pgdn
+settle 1000
+snap menu-assist-2
+key f3
+wait "Main Menu"
+type go support
+key enter
+settle 1500
+snap menu-support
+key pgdn
+settle 1000
+snap menu-support-2
+key f3
+wait "Main Menu"
+type go ptf
+key enter
+settle 1500
+snap menu-ptf
+key pgdn
+settle 1000
+snap menu-ptf-2
+key f3
+wait "Main Menu"
+type go software
+key enter
+settle 1500
+snap menu-software
+key pgdn
+settle 1000
+snap menu-software-2
+key f3
+wait "Main Menu"
+type go tcpadm
+key enter
+settle 1500
+snap menu-tcpadm
+key pgdn
+settle 1000
+snap menu-tcpadm-2
+key f3
+wait "Main Menu"
+type go network
+key enter
+settle 1500
+snap menu-network
+key pgdn
+settle 1000
+snap menu-network-2
+key f3
+wait "Main Menu"
+type go cfg
+key enter
+settle 1500
+snap menu-cfg
+key pgdn
+settle 1000
+snap menu-cfg-2
+key f3
+wait "Main Menu"
+type go hardware
+key enter
+settle 1500
+snap menu-hardware
+key pgdn
+settle 1000
+snap menu-hardware-2
+key f3
+wait "Main Menu"
+type go recovery
+key enter
+settle 1500
+snap menu-recovery
+key pgdn
+settle 1000
+snap menu-recovery-2
+key f3
+wait "Main Menu"
+type go disktasks
+key enter
+settle 1500
+snap menu-disktasks
+key pgdn
+settle 1000
+snap menu-disktasks-2
+key f3
+wait "Main Menu"
+type go document
+key enter
+settle 1500
+snap menu-document
+key pgdn
+settle 1000
+snap menu-document-2
+key f3
+wait "Main Menu"
+type go ofctsk
+key enter
+settle 1500
+snap menu-ofctsk
+key pgdn
+settle 1000
+snap menu-ofctsk-2
+key f3
+wait "Main Menu"
+type go user2
+key enter
+settle 1500
+snap menu-user2
+key pgdn
+settle 1000
+snap menu-user2-2
+key f3
+wait "Main Menu"
+type go system2
+key enter
+settle 1500
+snap menu-system2
+key pgdn
+settle 1000
+snap menu-system2-2
+key f3
+wait "Main Menu"
+type go job2
+key enter
+settle 1500
+snap menu-job2
+key pgdn
+settle 1000
+snap menu-job2-2
+key f3
+wait "Main Menu"
+type go problem2
+key enter
+settle 1500
+snap menu-problem2
+key pgdn
+settle 1000
+snap menu-problem2-2
+key f3
+wait "Main Menu"
+type go file2
+key enter
+settle 1500
+snap menu-file2
+key pgdn
+settle 1000
+snap menu-file2-2
+key f3
+wait "Main Menu"
+type go cmdadd
+key enter
+settle 1500
+snap menu-cmdadd
+key pgdn
+settle 1000
+snap menu-cmdadd-2
+key f3
+wait "Main Menu"
+type go cmdjob
+key enter
+settle 1500
+snap menu-cmdjob
+key pgdn
+settle 1000
+snap menu-cmdjob-2
+key f3
+wait "Main Menu"
+type go cmdpf
+key enter
+settle 1500
+snap menu-cmdpf
+key pgdn
+settle 1000
+snap menu-cmdpf-2
+key f3
+wait "Main Menu"
+type go cmdchg
+key enter
+settle 1500
+snap menu-cmdchg
+key pgdn
+settle 1000
+snap menu-cmdchg-2
+key f3
+wait "Main Menu"
+type go cmddsp
+key enter
+settle 1500
+snap menu-cmddsp
+key pgdn
+settle 1000
+snap menu-cmddsp-2
+key f3
+wait "Main Menu"
+type go cmdcrt
+key enter
+settle 1500
+snap menu-cmdcrt
+key pgdn
+settle 1000
+snap menu-cmdcrt-2
+key f3
+wait "Main Menu"
+type go cmddlt
+key enter
+settle 1500
+snap menu-cmddlt
+key pgdn
+settle 1000
+snap menu-cmddlt-2
+key f3
+wait "Main Menu"
+type go cmdstr
+key enter
+settle 1500
+snap menu-cmdstr
+key pgdn
+settle 1000
+snap menu-cmdstr-2
+key f3
+wait "Main Menu"
+type go cmdend
+key enter
+settle 1500
+snap menu-cmdend
+key pgdn
+settle 1000
+snap menu-cmdend-2
+key f3
+wait "Main Menu"
+type go cmdlib
+key enter
+settle 1500
+snap menu-cmdlib
+key pgdn
+settle 1000
+snap menu-cmdlib-2
+key f3
+wait "Main Menu"
+type go cmdobj
+key enter
+settle 1500
+snap menu-cmdobj
+key pgdn
+settle 1000
+snap menu-cmdobj-2
+key f3
+wait "Main Menu"
+type go cmdmsg
+key enter
+settle 1500
+snap menu-cmdmsg
+key pgdn
+settle 1000
+snap menu-cmdmsg-2
+key f3
+wait "Main Menu"
+type go cmdsbs
+key enter
+settle 1500
+snap menu-cmdsbs
+key pgdn
+settle 1000
+snap menu-cmdsbs-2
+key f3
+wait "Main Menu"
+type go cmdusr
+key enter
+settle 1500
+snap menu-cmdusr
+key pgdn
+settle 1000
+snap menu-cmdusr-2
+key f3
+wait "Main Menu"
+type go cmdrmv
+key enter
+settle 1500
+snap menu-cmdrmv
+key pgdn
+settle 1000
+snap menu-cmdrmv-2
+key f3
+wait "Main Menu"
+type go cmdsav
+key enter
+settle 1500
+snap menu-cmdsav
+key pgdn
+settle 1000
+snap menu-cmdsav-2
+key f3
+wait "Main Menu"
+type go cmdrst
+key enter
+settle 1500
+snap menu-cmdrst
+key pgdn
+settle 1000
+snap menu-cmdrst-2
+key f3
+wait "Main Menu"
+type go cmdsnd
+key enter
+settle 1500
+snap menu-cmdsnd
+key pgdn
+settle 1000
+snap menu-cmdsnd-2
+key f3
+wait "Main Menu"
+type go cmdrcv
+key enter
+settle 1500
+snap menu-cmdrcv
+key pgdn
+settle 1000
+snap menu-cmdrcv-2
+key f3
+wait "Main Menu"
+type go cmdcpy
+key enter
+settle 1500
+snap menu-cmdcpy
+key pgdn
+settle 1000
+snap menu-cmdcpy-2
+key f3
+wait "Main Menu"
+type go cmdmov
+key enter
+settle 1500
+snap menu-cmdmov
+key pgdn
+settle 1000
+snap menu-cmdmov-2
+key f3
+wait "Main Menu"
+type go cmdrnm
+key enter
+settle 1500
+snap menu-cmdrnm
+key pgdn
+settle 1000
+snap menu-cmdrnm-2
+key f3
+wait "Main Menu"
+type go cmdhld
+key enter
+settle 1500
+snap menu-cmdhld
+key pgdn
+settle 1000
+snap menu-cmdhld-2
+key f3
+wait "Main Menu"
+type go cmdrls
+key enter
+settle 1500
+snap menu-cmdrls
+key pgdn
+settle 1000
+snap menu-cmdrls-2
+key f3
+wait "Main Menu"
+type go cmdclr
+key enter
+settle 1500
+snap menu-cmdclr
+key pgdn
+settle 1000
+snap menu-cmdclr-2
+key f3
+wait "Main Menu"
+type go cmdgrt
+key enter
+settle 1500
+snap menu-cmdgrt
+key pgdn
+settle 1000
+snap menu-cmdgrt-2
+key f3
+wait "Main Menu"
+type go cmdrvk
+key enter
+settle 1500
+snap menu-cmdrvk
+key pgdn
+settle 1000
+snap menu-cmdrvk-2
+key f3
+wait "Main Menu"
+type go cmdopn
+key enter
+settle 1500
+snap menu-cmdopn
+key pgdn
+settle 1000
+snap menu-cmdopn-2
+key f3
+wait "Main Menu"
+type go cmdclo
+key enter
+settle 1500
+snap menu-cmdclo
+key pgdn
+settle 1000
+snap menu-cmdclo-2
+key f3
+wait "Main Menu"
+type go cmdchk
+key enter
+settle 1500
+snap menu-cmdchk
+key pgdn
+settle 1000
+snap menu-cmdchk-2
+key f3
+wait "Main Menu"
+type go cmdvfy
+key enter
+settle 1500
+snap menu-cmdvfy
+key pgdn
+settle 1000
+snap menu-cmdvfy-2
+key f3
+wait "Main Menu"
+type go cmdalc
+key enter
+settle 1500
+snap menu-cmdalc
+key pgdn
+settle 1000
+snap menu-cmdalc-2
+key f3
+wait "Main Menu"
+type go cmddlc
+key enter
+settle 1500
+snap menu-cmddlc
+key pgdn
+settle 1000
+snap menu-cmddlc-2
+key f3
+wait "Main Menu"
+type go cmdedt
+key enter
+settle 1500
+snap menu-cmdedt
+key pgdn
+settle 1000
+snap menu-cmdedt-2
+key f3
+wait "Main Menu"
+type go cmdprt
+key enter
+settle 1500
+snap menu-cmdprt
+key pgdn
+settle 1000
+snap menu-cmdprt-2
+key f3
+wait "Main Menu"
+type go cmdrtv
+key enter
+settle 1500
+snap menu-cmdrtv
+key pgdn
+settle 1000
+snap menu-cmdrtv-2
+key f3
+wait "Main Menu"
+type go cmdsbm
+key enter
+settle 1500
+snap menu-cmdsbm
+key pgdn
+settle 1000
+snap menu-cmdsbm-2
+key f3
+wait "Main Menu"
+type go cmdtfr
+key enter
+settle 1500
+snap menu-cmdtfr
+key pgdn
+settle 1000
+snap menu-cmdtfr-2
+key f3
+wait "Main Menu"
+type go cmdinz
+key enter
+settle 1500
+snap menu-cmdinz
+key pgdn
+settle 1000
+snap menu-cmdinz-2
+key f3
+wait "Main Menu"
+type go cmdrgz
+key enter
+settle 1500
+snap menu-cmdrgz
+key pgdn
+settle 1000
+snap menu-cmdrgz-2
+key f3
+wait "Main Menu"
+type go cmdrcl
+key enter
+settle 1500
+snap menu-cmdrcl
+key pgdn
+settle 1000
+snap menu-cmdrcl-2
+key f3
+wait "Main Menu"
+type go cmdvry
+key enter
+settle 1500
+snap menu-cmdvry
+key pgdn
+settle 1000
+snap menu-cmdvry-2
+key f3
+wait "Main Menu"
+type go cmddmp
+key enter
+settle 1500
+snap menu-cmddmp
+key pgdn
+settle 1000
+snap menu-cmddmp-2
+key f3
+wait "Main Menu"
+type go cmdtrc
+key enter
+settle 1500
+snap menu-cmdtrc
+key pgdn
+settle 1000
+snap menu-cmdtrc-2
+key f3
+wait "Main Menu"
+type go cmdanz
+key enter
+settle 1500
+snap menu-cmdanz
+key pgdn
+settle 1000
+snap menu-cmdanz-2
+key f3
+wait "Main Menu"
+type go cmdcvt
+key enter
+settle 1500
+snap menu-cmdcvt
+key pgdn
+settle 1000
+snap menu-cmdcvt-2
+key f3
+wait "Main Menu"
+type go cmdapy
+key enter
+settle 1500
+snap menu-cmdapy
+key pgdn
+settle 1000
+snap menu-cmdapy-2
+key f3
+wait "Main Menu"
+type go cmdmrg
+key enter
+settle 1500
+snap menu-cmdmrg
+key pgdn
+settle 1000
+snap menu-cmdmrg-2
+key f3
+wait "Main Menu"
+type go cmdovr
+key enter
+settle 1500
+snap menu-cmdovr
+key pgdn
+settle 1000
+snap menu-cmdovr-2
+key f3
+wait "Main Menu"
+type go cmdpos
+key enter
+settle 1500
+snap menu-cmdpos
+key pgdn
+settle 1000
+snap menu-cmdpos-2
+key f3
+wait "Main Menu"
+type go cmdcall
+key enter
+settle 1500
+snap menu-cmdcall
+key pgdn
+settle 1000
+snap menu-cmdcall-2
+key f3
+wait "Main Menu"
+type go cmddsc
+key enter
+settle 1500
+snap menu-cmddsc
+key pgdn
+settle 1000
+snap menu-cmddsc-2
+key f3
+wait "Main Menu"
+type go cmdset
+key enter
+settle 1500
+snap menu-cmdset
+key pgdn
+settle 1000
+snap menu-cmdset-2
+key f3
+wait "Main Menu"
+type go cmdmon
+key enter
+settle 1500
+snap menu-cmdmon
+key pgdn
+settle 1000
+snap menu-cmdmon-2
+key f3
+wait "Main Menu"
+type go cmdupd
+key enter
+settle 1500
+snap menu-cmdupd
+key pgdn
+settle 1000
+snap menu-cmdupd-2
+key f3
+wait "Main Menu"
+type go cmdcmp
+key enter
+settle 1500
+snap menu-cmdcmp
+key pgdn
+settle 1000
+snap menu-cmdcmp-2
+key f3
+wait "Main Menu"
+type signoff
+key enter
+settle 1500

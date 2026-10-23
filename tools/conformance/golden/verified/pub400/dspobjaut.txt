@@ -1,0 +1,24 @@
+                            Display Object Authority                            
+                                                                                
+ Object . . . . . . . :   QDFTJOBD        Owner  . . . . . . . :   QPGMR        
+   Library  . . . . . :     QGPL          Primary group  . . . :   *NONE        
+ Object type  . . . . :   *JOBD           ASP device . . . . . :   *SYSBAS      
+                                                                                
+ Object secured by authorization list  . . . . . . . . . . . . :   *NONE        
+                                                                                
+                          Object                                                
+ User        Group       Authority                                              
+ *PUBLIC                 *USE                                                   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Display detail object authorities   F12=Cancel   F17=Top         
+ F18=Bottom                                                                     
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

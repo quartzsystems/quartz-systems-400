@@ -1,0 +1,24 @@
+ MAJOR                        Major Command Groups                              
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Select Command by Name                                      SLTCMD     
+      2. Verb Commands                                               VERB       
+      3. Subject Commands                                            SUBJECT    
+      4. Object Management Commands                                  CMDOBJMGT  
+      5. File Commands                                               CMDFILE    
+      6. Save and Restore Commands                                   CMDSAVRST  
+      7. Work Management Commands                                    CMDWRKMGT  
+      8. Data Management Commands                                    CMDDTAMGT  
+      9. Security Commands                                           CMDSEC     
+     10. Print Commands                                              CMDPRT     
+     11. Spooling Commands                                           CMDSPL     
+     12. System Control Commands                                     CMDSYSCTL  
+     13. Program Commands                                            CMDPGM     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

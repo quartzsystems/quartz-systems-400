@@ -1,0 +1,24 @@
+                               Work with Classes                                
+                                                                                
+ Type options, press Enter.                                                     
+   1=Create   2=Change   4=Delete   5=Display                                   
+                                                                                
+ Opt  Class       Library     Text                                              
+                                                                                
+      BATCHUSR    QGPL                                                          
+      QBATCH      QGPL        Batch Subsystem Class                             
+      QBATCH2     QGPL        Class for QBATCH2 subsystem                       
+      QBATCH3     QGPL        Class for QBATCH3 subsystem                       
+      QBATCH4     QGPL        Class for QBATCH4 subsystem                       
+      QBATCH5     QGPL        Class for QBATCH5 subsystem                       
+      QBATCH6     QGPL        Class for QBATCH6 subsystem                       
+      QBATCH7     QGPL        Class for QBATCH7 subsystem                       
+      QCASERVR    QGPL        Client Access Server Class                        
+      QDIALOCAL   QGPL        Class for QDIALOCAL Job                           
+      QFNC        QGPL        Finance Subsystem Class                           
+                                                                        More... 
+ Parameters for options 1, 2 and 5 or command                                   
+ ===>                                                                           
+ F3=Exit      F4=Prompt   F5=Refresh   F9=Retrieve   F11=Display names only     
+ F12=Cancel   F16=Repeat position to   F17=Position to                          
+                                                                                

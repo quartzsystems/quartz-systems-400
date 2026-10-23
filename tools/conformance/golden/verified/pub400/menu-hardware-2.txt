@@ -1,0 +1,24 @@
+ HARDWARE                      Hardware Resources                               
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Work with communication resources                                      
+      2. Work with local workstation resources                                  
+      3. Work with storage resources                                            
+      4. Work with processor resources                                          
+      5. Work with token ring LAN adapter resources                             
+      6. Work with DDI LAN adapter resources                                    
+      7. Work with all LAN adapter resources                                    
+      8. Work with coupled system adapter                                       
+      9. Work with cryptographic system resources                               
+                                                                                
+     70. Related commands                                                       
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

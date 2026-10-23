@@ -1,0 +1,24 @@
+ CMDLIB                         Library Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      2. Change Current Library                                      CHGCURLIB  
+      3. Change Library                                              CHGLIB     
+      4. Clear Library                                               CLRLIB     
+      5. Copy Library                                                CPYLIB     
+      6. Create Library                                              CRTLIB     
+      7. Delete library                                              DLTLIB     
+      8. Display Library                                             DSPLIB     
+      9. Display Library Description                                 DSPLIBD    
+     10. End Journal Library                                         ENDJRNLIB  
+     11. Query Document Library                                      QRYDOCLIB  
+     12. Reclaim Library                                             RCLLIB     
+     13. Restore Library                                             RSTLIB     
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

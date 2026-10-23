@@ -1,0 +1,24 @@
+                         Display Operational Attributes                         
+                                                             System:   SYSNAME  
+ Subsystem description:   QINTER2        Status:   ACTIVE                       
+                                                                                
+ Subsystem description  . . . . . . . . :   QINTER2                             
+   Library  . . . . . . . . . . . . . . :     QSYS                              
+ Maximum jobs in subsystem  . . . . . . :   *NOMAX                              
+ Sign-on display file . . . . . . . . . :   QDSIGNON2                           
+   Library  . . . . . . . . . . . . . . :     QGPL                              
+ System library list entry  . . . . . . :   *NONE                               
+ Auxiliary storage pool group . . . . . :   *NONE                               
+ Workload group . . . . . . . . . . . . :   *NONE                               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

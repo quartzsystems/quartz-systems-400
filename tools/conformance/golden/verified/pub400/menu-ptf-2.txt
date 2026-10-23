@@ -1,0 +1,24 @@
+ PTF                         Program Temporary Fix                              
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+     70. Related commands                                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+                                                                                

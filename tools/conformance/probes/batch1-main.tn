@@ -1,0 +1,49 @@
+# Batch 1: the main menu, Command Entry and the first work-management
+# panels, from the user's initial menu after sign-on.
+wait "Main Menu"
+continue
+snap main-menu
+key f1
+wait "Help"
+snap main-menu-help
+key f3
+wait "Main Menu"
+type go cmdwrk
+key enter
+wait "Work Commands"
+snap cmdwrk-menu
+key pgdn
+settle 600
+snap cmdwrk-menu-page2
+key f12
+wait "Main Menu"
+type call qcmd
+key enter
+wait "Command Entry"
+snap command-entry
+type dsplibl
+key enter
+wait "Display Library List"
+snap dsplibl
+key f3
+wait "Command Entry"
+type wrkactjob
+key enter
+wait "Work with Active Jobs"
+snap wrkactjob +jobnum +cpu
+key f11
+settle 800
+snap wrkactjob-f11 +jobnum +cpu
+key f11
+settle 800
+snap wrkactjob-f11-2 +jobnum +cpu
+key f24
+settle 800
+snap wrkactjob-f24 +jobnum +cpu
+key f3
+wait "Command Entry"
+key f3
+wait "Main Menu"
+type signoff
+key enter
+settle 1500

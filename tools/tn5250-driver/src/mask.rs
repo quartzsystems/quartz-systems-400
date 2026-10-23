@@ -112,7 +112,7 @@ impl Masks {
                 "SERIAL",
                 false,
             ),
-            ("cpu", r"\b\d{1,3}\.\d\b", 0, "N.N", false),
+            ("cpu", r"\b\d{1,3}[.,]\d\b", 0, "N.N", false),
             ("number", r"\b\d+\b", 0, "N", false),
         ];
         for (name, pat, group, token, enabled) in defaults {
@@ -191,8 +191,8 @@ mod tests {
     #[test]
     fn user_mask() {
         let mut m = Masks::defaults();
-        m.set_user("cwellman");
-        let out = m.apply(&["User CWELLMAN here".to_string()]);
+        m.set_user("someuser");
+        let out = m.apply(&["User SOMEUSER here".to_string()]);
         assert_eq!(out[0], "User USERNAME here");
     }
 

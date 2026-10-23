@@ -1,0 +1,24 @@
+ CMDCHG                         Change Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Apply Journaled Changes                                     APYJRNCHG  
+      2. Apply Journaled Changes Extend                              APYJRNCHGX 
+      3. Change Current Directory                                    CD         
+      4. Change Current Directory                                    CHDIR      
+      5. Change Accounting Code                                      CHGACGCDE  
+      6. Change Active Profile List                                  CHGACTPRFL 
+      7. Change Activation Scd Entry                                 CHGACTSCDE 
+      8. Change Autostart Job Entry                                  CHGAJE     
+      9. Change Alert Action Entry                                   CHGALRACNE 
+     10. Change Alert Description                                    CHGALRD    
+     11. Change Alert Selection Entry                                CHGALRSLTE 
+     12. Change Alert Table                                          CHGALRTBL  
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

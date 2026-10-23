@@ -1,0 +1,24 @@
+                              Display Open Files                                
+                                                                                
+ Job . . :   QPADEV000R     User . . :   USERNAME       Number . . . :   NNNNNN 
+ Number of open data paths . . . . . . . . . . :      2                         
+                                                                                
+                                                                                
+                       Member/                                                  
+ File       Library    Device      Scope       Activation Group                 
+ QDUI80     QSYS       QPADEV000R  *ACTGRPDFN  *DFTACTGRP 0000000000000002      
+ QDDSPOF    QSYS       QPADEV000R  *ACTGRPDFN  *DFTACTGRP 0000000000000002      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F5=Refresh   F11=Display I/O details    F12=Cancel   F16=Job menu    
+                                                                                

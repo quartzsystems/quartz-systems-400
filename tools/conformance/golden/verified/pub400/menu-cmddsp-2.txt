@@ -1,0 +1,24 @@
+ CMDDSP                         Display Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     15. Display Audit Journal Entries                               DSPAUDJRNE 
+     16. Display Authority                                           DSPAUT     
+     17. Display Authority Holder                                    DSPAUTHLR  
+     18. Display Authorization List                                  DSPAUTL    
+     19. Display Authorization List DLO                              DSPAUTLDLO 
+     20. Display Authorization List Obj                              DSPAUTLOBJ 
+     21. Display Authorized Users                                    DSPAUTUSR  
+                                                                                
+     23. Display Backup Status                                       DSPBCKSTS  
+     24. Display Backup Options                                      DSPBCKUP   
+     25. Display Backup List                                         DSPBCKUPL  
+     26. Display Breakpoints                                         DSPBKP     
+     27. Display Binding Directory                                   DSPBNDDIR  
+     28. Display Coded Font                                          DSPCDEFNT  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

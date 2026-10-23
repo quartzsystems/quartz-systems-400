@@ -1,0 +1,24 @@
+ INFO                    Information Assistant Options                          
+                                                             System:   SYSNAME  
+ To select one of the following, type its number below and press Enter:         
+                                                                                
+      1. Where do I look for information?                                       
+      2. How can I comment on information?                                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Type a menu option below                                                       
+                                                                                
+                                                                                
+ F1=Help   F3=Exit   F9=Command line   F12=Cancel                               
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

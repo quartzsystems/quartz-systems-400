@@ -1,0 +1,24 @@
+ CMDUSR                          User Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Delete Service Tools User ID                                DLTSSTUSR  
+     15. Delete User Profile                                         DLTUSRPRF  
+     16. Delete User Trace                                           DLTUSRTRC  
+     17. Dump User Profile                                           DMPUSRPRF  
+     18. Dump User Trace                                             DMPUSRTRC  
+     19. Display Authorized Users                                    DSPAUTUSR  
+     20. Display NWS User Attributes                                 DSPNWSUSRA 
+     21. Display Service Tools User ID                               DSPSSTUSR  
+     22. Display User Permission                                     DSPUSRPMN  
+     23. Display User Profile                                        DSPUSRPRF  
+     24. Display Work Station User                                   DSPWSUSR   
+     25. Grant User Authority                                        GRTUSRAUT  
+     26. Grant User Permission                                       GRTUSRPMN  
+     27. Print User Objects                                          PRTUSROBJ  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

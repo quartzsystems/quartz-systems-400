@@ -1,0 +1,24 @@
+ RECOVERY                   Optical Backup/Recovery                             
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Work with held optical files                                           
+      2. Reclaim optical index                                                  
+      3. Copy to optical backup                                                 
+      4. Copy from optical backup                                               
+      5. Work with backup volumes                                               
+      6. Convert optical backup volume                                          
+      7. Duplicate optical volume                                               
+      8. Check optical volume                                                   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

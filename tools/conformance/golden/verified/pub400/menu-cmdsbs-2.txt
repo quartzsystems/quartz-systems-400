@@ -1,0 +1,24 @@
+ CMDSBS                        Subsystem Commands                               
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. End Subsystem                                               ENDSBS     
+      2. Start Subsystem                                             STRSBS     
+                                                                                
+      4. Work with Subsystems                                        WRKSBS     
+      5. Work with Subsystem Jobs                                    WRKSBSJOB  
+                                                                                
+   Related Command Menus                                                        
+      6. Subsystem Description Commands                              CMDSBSD    
+      7. System Control Commands                                     CMDSYSCTL  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ Already at bottom of area.                                                     

@@ -1,0 +1,24 @@
+                                Display Messages                                
+                                                       System:   SYSNAME        
+ Queue . . . . . :   USERNAME                Program . . . . :   *DSPMSG        
+   Library . . . :     QUSRSYS                 Library . . . :                  
+ Severity  . . . :   00                      Delivery  . . . :   *BREAK         
+                                                                                
+ Type reply (if required), press Enter.                                         
+   (No messages available)                                                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit              F11=Remove a message                 F12=Cancel           
+ F13=Remove all       F16=Remove all except unanswered     F24=More keys        
+                                                                                

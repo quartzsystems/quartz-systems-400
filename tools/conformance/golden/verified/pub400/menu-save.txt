@@ -1,0 +1,24 @@
+ SAVE                                 Save                                      
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+   Save Data                                                                    
+      1. Files                                                                  
+      2. Libraries                                                              
+      3. Documents and folders                                                  
+      4. Programs                                                               
+      5. Other objects                                                          
+      6. Changed objects only                                                   
+      7. Licensed programs                                                      
+      8. Security data                                                          
+                                                                                
+     10. Configuration                                                          
+     11. Objects in directories                                                 
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

@@ -1,0 +1,155 @@
+# Batch 4: panels run from MAIN's command line (F3 from a panel comes
+# back to MAIN); unauthorized commands leave a message on MAIN and
+# their snapshot is dropped afterwards.
+wait "Main Menu"
+continue
+timeout 90000
+type wrkrpyle
+key enter
+wait "Work with System Reply List"
+snap wrkrpyle
+key f3
+wait "Main Menu"
+type dspmsgd cpf1124
+key enter
+wait "Display Message Descriptions"
+snap dspmsgd-list
+type 5
+key enter
+settle 1000
+snap dspmsgd-5
+key f12
+settle 600
+key f3
+wait "Main Menu"
+type wrkmsgd cpf11 qsys/qcpfmsg
+key enter
+wait "Work with Message Descriptions"
+snap wrkmsgd
+key f3
+wait "Main Menu"
+type dspsfwrsc
+key enter
+wait "Display Software Resources"
+snap dspsfwrsc
+key f3
+wait "Main Menu"
+type dspneta
+key enter
+wait "Display Network Attributes"
+snap dspneta
+key pgdn
+settle 600
+snap dspneta-2
+key f3
+wait "Main Menu"
+type dspobjaut qgpl/qdftjobd *jobd
+key enter
+wait "Display Object Authority"
+snap dspobjaut
+key f3
+wait "Main Menu"
+type wrkbnddir qsys/*all
+key enter
+wait "Work with Binding Directories"
+snap wrkbnddir
+key f3
+wait "Main Menu"
+type dspdtaara qsys/qdate
+key enter
+wait "Display Data Area"
+snap dspdtaara
+key f3
+wait "Main Menu"
+type dspautusr
+key enter
+wait "Display Authorized Users"
+snap dspautusr
+key f3
+wait "Main Menu"
+key f13
+settle 1500
+snap information-assistant
+key f3
+wait "Main Menu"
+type dspjoblog
+key enter
+wait "Display Job Log"
+key f10
+settle 800
+key f1
+settle 1500
+snap additional-message-information
+key f3
+settle 800
+key f3
+settle 800
+key f3
+wait "Main Menu"
+type wrkactjob
+key enter
+wait "Work with Active Jobs"
+key f24
+settle 800
+snap wrkactjob-f24-keys +jobnum +cpu
+key f23
+settle 800
+snap wrkactjob-f23-options +jobnum +cpu
+cursor 10 4
+type 5
+key enter
+wait "Work with Job"
+snap wrkactjob-5-wrkjob +jobnum
+key f12
+settle 800
+key f3
+wait "Main Menu"
+type call qcmd
+key enter
+wait "Command Entry"
+key f24
+settle 800
+snap command-entry-f24
+key f24
+settle 800
+type dsplibl
+key enter
+wait "Display Library List"
+key f3
+wait "Command Entry"
+key f10
+settle 800
+snap command-entry-f10
+key f11
+settle 800
+snap command-entry-f11
+key f9
+settle 800
+snap command-entry-f9
+key f12
+settle 800
+key f4
+settle 1500
+snap command-entry-f4-prompt
+key f12
+settle 800
+type crtlib
+key f4
+wait "Create Library"
+snap prompt-crtlib
+key f12
+wait "Command Entry"
+type wrkactjob
+key f4
+wait "Work with Active Jobs (WRKACTJOB)"
+snap prompt-wrkactjob
+key f10
+settle 800
+snap prompt-wrkactjob-f10
+key f12
+wait "Command Entry"
+key f3
+wait "Main Menu"
+type signoff
+key enter
+settle 1500

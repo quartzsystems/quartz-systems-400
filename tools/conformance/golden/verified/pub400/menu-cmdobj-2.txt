@@ -1,0 +1,24 @@
+ CMDOBJ                         Object Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Change Primary Group                                        CHGPGP     
+     15. Change Product Object Desc                                  CHGPRDOBJD 
+     16. Check In Object                                             CHKIN      
+     17. Check Object                                                CHKOBJ     
+     18. Check Object Integrity                                      CHKOBJITG  
+     19. Check Out Object                                            CHKOUT     
+     20. Copy Object                                                 COPY       
+     21. Compress Object                                             CPROBJ     
+     22. Copy Object                                                 CPY        
+     23. Create Duplicate Object                                     CRTDUPOBJ  
+     24. Decompress Object                                           DCPOBJ     
+     25. Remove Link                                                 DEL        
+     26. Deallocate Object                                           DLCOBJ     
+     27. Delete Object                                               DLTOBJ     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

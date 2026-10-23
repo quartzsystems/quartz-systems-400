@@ -1,0 +1,24 @@
+ POWER                       Power On and Off Tasks                             
+                                                             System:   SYSNAME  
+ To select one of the following, type its number below and press Enter:         
+                                                                                
+      1. Display power on and off schedule                                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Type a menu option below                                                       
+                                                                                
+                                                                                
+ F1=Help   F3=Exit   F9=Command line   F12=Cancel                               
+                                                                                

@@ -1,0 +1,258 @@
+# Batch 3: more work-management, job and object panels; slow commands
+# get a long wait (pub400 lists thousands of objects).
+wait "Main Menu"
+continue
+timeout 90000
+type call qcmd
+key enter
+wait "Command Entry"
+type wrkoutq qusrsys/*all
+key enter
+wait "Work with All Output Queues"
+snap wrkoutq +number
+key f3
+wait "Command Entry"
+type wrkjobq qgpl/*all
+key enter
+wait "Work with All Job Queues"
+snap wrkjobq +number
+key f3
+wait "Command Entry"
+type wrkjob
+key enter
+wait "Work with Job"
+snap wrkjob +jobnum
+type 2
+key enter
+settle 800
+snap wrkjob-2-chgjob +jobnum
+key f12
+wait "Work with Job"
+type 3
+key enter
+settle 800
+snap wrkjob-3-status +jobnum
+key f12
+wait "Work with Job"
+type 4
+key enter
+settle 800
+snap wrkjob-4-splf +jobnum
+key f12
+wait "Work with Job"
+type 10
+key enter
+settle 800
+snap wrkjob-10-joblog +jobnum
+key f12
+wait "Work with Job"
+type 11
+key enter
+settle 800
+snap wrkjob-11-callstk +jobnum
+key f12
+wait "Work with Job"
+type 13
+key enter
+settle 800
+snap wrkjob-13-libl +jobnum
+key f12
+wait "Work with Job"
+type 14
+key enter
+settle 800
+snap wrkjob-14-openfiles +jobnum
+key f12
+wait "Work with Job"
+key f3
+wait "Command Entry"
+type wrksbsjob qinter2
+key enter
+wait "Work with Subsystem Jobs"
+snap wrksbsjob +jobnum
+key f3
+wait "Command Entry"
+type dspsbsd qinter2
+key enter
+wait "Display Subsystem Description"
+snap dspsbsd-menu
+type 1
+key enter
+settle 800
+snap dspsbsd-1
+key f12
+settle 600
+type 2
+key enter
+settle 800
+snap dspsbsd-2-pools
+key f12
+settle 600
+type 3
+key enter
+settle 800
+snap dspsbsd-3-aje
+key f12
+settle 600
+type 5
+key enter
+settle 800
+snap dspsbsd-5-wste
+key f12
+settle 600
+type 6
+key enter
+settle 800
+snap dspsbsd-6-jobqe
+key f12
+settle 600
+type 7
+key enter
+settle 800
+snap dspsbsd-7-rtge
+key f12
+settle 600
+key f3
+wait "Command Entry"
+type wrkjobd qgpl/*all
+key enter
+wait "Work with Job Descriptions"
+snap wrkjobd
+key f3
+wait "Command Entry"
+type dspjobd qgpl/qdftjobd
+key enter
+wait "Display Job Description"
+snap dspjobd
+key pgdn
+settle 600
+snap dspjobd-2
+key f3
+wait "Command Entry"
+type wrkcls qgpl/*all
+key enter
+wait "Work with Classes"
+snap wrkcls
+key f3
+wait "Command Entry"
+type dspcls qgpl/qinter
+key enter
+wait "Display Class"
+snap dspcls
+key f3
+wait "Command Entry"
+type dspsysval qmodel
+key enter
+wait "Display System Value"
+snap dspsysval
+key f3
+wait "Command Entry"
+type dspobjd qgpl/qdftjobd *jobd
+key enter
+wait "Display Object Description"
+snap dspobjd-basic
+key f3
+wait "Command Entry"
+type dspobjd qgpl/qdftjobd *jobd detail(*full)
+key enter
+wait "Display Object Description"
+snap dspobjd-full
+key pgdn
+settle 600
+snap dspobjd-full-2
+key f3
+wait "Command Entry"
+type wrkjobscde
+key enter
+settle 2000
+snap wrkjobscde
+key f3
+wait "Command Entry"
+type dsplog
+key enter
+settle 3000
+snap dsplog +jobnum
+key f3
+wait "Command Entry"
+type wrkrpyle
+key enter
+settle 2000
+snap wrkrpyle
+key f3
+wait "Command Entry"
+type dspmsgd cpf1124
+key enter
+wait "Display Message Descriptions"
+snap dspmsgd-list
+type 5
+key enter
+settle 800
+snap dspmsgd-5
+key f12
+settle 600
+key f3
+wait "Command Entry"
+type wrkmsgd qsys/qcpfmsg
+key enter
+settle 2000
+snap wrkmsgd
+key f3
+wait "Command Entry"
+type dspdevd qpadev0001
+key enter
+settle 2000
+snap dspdevd +device
+key f3
+wait "Command Entry"
+type wrkcfgsts *dev qpadev*
+key enter
+settle 3000
+snap wrkcfgsts +device
+key f3
+wait "Command Entry"
+type dspsfwrsc
+key enter
+settle 2000
+snap dspsfwrsc
+key f3
+wait "Command Entry"
+type dspneta
+key enter
+settle 2000
+snap dspneta
+key f3
+wait "Command Entry"
+type dspautusr
+key enter
+settle 3000
+snap dspautusr
+key f3
+wait "Command Entry"
+type dspobjaut qgpl/qdftjobd *jobd
+key enter
+settle 2000
+snap dspobjaut
+key f3
+wait "Command Entry"
+type wrkbnddir qsys/*all
+key enter
+settle 3000
+snap wrkbnddir
+key f3
+wait "Command Entry"
+type dspdtaara qsys/qdate
+key enter
+settle 2000
+snap dspdtaara
+key f3
+wait "Command Entry"
+key f13
+settle 2000
+snap information-assistant
+key f3
+wait "Command Entry"
+key f3
+wait "Main Menu"
+type signoff
+key enter
+settle 1500

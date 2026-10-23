@@ -1,0 +1,24 @@
+                            Display Job Description                             
+                                                             System:   SYSNAME  
+ Job description:   QDFTJOBD       Library:   QGPL                              
+                                                                                
+ User profile . . . . . . . . . . . . . . . . . . :   *RQD                      
+ CL syntax check  . . . . . . . . . . . . . . . . :   *NOCHK                    
+ Hold on job queue  . . . . . . . . . . . . . . . :   *NO                       
+ End severity . . . . . . . . . . . . . . . . . . :   30                        
+ Job date . . . . . . . . . . . . . . . . . . . . :   *SYSVAL                   
+ Job switches . . . . . . . . . . . . . . . . . . :   00000000                  
+ Inquiry message reply  . . . . . . . . . . . . . :   *SYSRPYL                  
+ Job priority (on job queue)  . . . . . . . . . . :   5                         
+ Job queue  . . . . . . . . . . . . . . . . . . . :   QBATCH                    
+   Library  . . . . . . . . . . . . . . . . . . . :     QGPL                    
+ Output priority (on output queue)  . . . . . . . :   5                         
+ Printer device . . . . . . . . . . . . . . . . . :   *USRPRF                   
+ Output queue . . . . . . . . . . . . . . . . . . :   *USRPRF                   
+   Library  . . . . . . . . . . . . . . . . . . . :                             
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

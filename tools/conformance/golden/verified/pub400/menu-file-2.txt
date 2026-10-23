@@ -1,0 +1,24 @@
+ FILE                                Files                                      
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Work with files                                                        
+      2. Save a file                                                            
+      3. Restore a file                                                         
+      4. Edit a source file                                                     
+      5. Interactive Data Definition Utility (IDDU)                             
+      6. Query Utilities                                                        
+      7. Data File Utility (DFU)                                                
+      8. Interactive SQL                                                        
+      9. Programmer menu                                                        
+     10. Display a stream file or database file                                 
+     11. Edit a stream file or database file                                    
+                                                                                
+     60. More file options                                                      
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

@@ -1,0 +1,24 @@
+ CMDRVK                         Revoke Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Revoke Access Code Authority                                RVKACCAUT  
+                                                                                
+      3. Revoke Object Authority                                     RVKOBJAUT  
+      4. Revoke Public Authority                                     RVKPUBAUT  
+      5. Revoke User Permission                                      RVKUSRPMN  
+      6. Revoke Workstation Object Aut                               RVKWSOAUT  
+      7. Set DNSSEC REVOKE Bit                                       SETDNSRVK  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ Already at bottom of area.                                                     

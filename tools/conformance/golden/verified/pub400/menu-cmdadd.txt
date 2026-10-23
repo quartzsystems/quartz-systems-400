@@ -1,0 +1,24 @@
+ CMDADD                           Add Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Add Access Code                                             ADDACC     
+      2. Add Autostart Job Entry                                     ADDAJE     
+      3. Add Alert Action Entry                                      ADDALRACNE 
+      4. Add Alert Description                                       ADDALRD    
+      5. Add Alert Selection Entry                                   ADDALRSLTE 
+                                                                                
+      7. Add Authorization List Entry                                ADDAUTLE   
+      8. Add Breakpoint                                              ADDBKP     
+      9. Add Binding Directory Entry                                 ADDBNDDIRE 
+                                                                                
+     12. Add Configuration List Entries                              ADDCFGLE   
+     13. Add CICS Conversion Vector Tbl                              ADDCICSCVT 
+     14. Add CICS Destination Ctrl Tbl                               ADDCICSDCT 
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

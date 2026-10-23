@@ -1,0 +1,24 @@
+ CMDRLS                         Release Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Release Communications Device                               RLSCMNDEV  
+      2. Release Distribution Queue                                  RLSDSTQ    
+      3. Release File System Locks                                   RLSIFSLCK  
+      4. Release Job                                                 RLSJOB     
+                                                                                
+      6. Release Job Queue                                           RLSJOBQ    
+      7. Release Job Schedule Entry                                  RLSJOBSCDE 
+      8. Release Output Queue                                        RLSOUTQ    
+      9. Release Program Temporary Fix                               RLSPTF     
+     10. Release Reader                                              RLSRDR     
+     11. Release Remote Phase                                        RLSRMTPHS  
+     12. Release Spooled File                                        RLSSPLF    
+     13. Release Writer                                              RLSWTR     
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ Already at bottom of area.                                                     

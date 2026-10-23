@@ -1,0 +1,24 @@
+ SUBJECT                        Subject Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Abnormal Commands                                           CMDABN     
+      2. Access Code Commands                                        CMDACC     
+      3. Accounting Commands                                         CMDACG     
+      4. Action Entry Commands                                       CMDACNE    
+      5. Active Commands                                             CMDACT     
+      6. Adopt Commands                                              CMDADP     
+      7. Adapter Commands                                            CMDADPT    
+      8. Address Commands                                            CMDADR     
+      9. AFP Commands                                                CMDAFP     
+     10. Agent Commands                                              CMDAGT     
+     11. Autostart Job Entry Commands                                CMDAJE     
+     12. Alert Commands                                              CMDALR     
+     13. Alert Description Commands                                  CMDALRD    
+     14. Alert Table Commands                                        CMDALRTBL  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

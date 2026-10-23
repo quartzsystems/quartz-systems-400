@@ -1,0 +1,24 @@
+                       Display Work Station Type Entries                        
+                                                             System:   SYSNAME  
+ Subsystem description:   QINTER2        Status:   ACTIVE                       
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display work station type details                                          
+                                                                                
+ Opt  Type           Opt  Type           Opt  Type           Opt  Type          
+      *CONS                                                                     
+      5555                                                                      
+      *ALL                                                                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F9=Display all detailed descriptions   F12=Cancel                    
+                                                                                

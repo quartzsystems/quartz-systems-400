@@ -1,0 +1,24 @@
+ CMDCHK                          Check Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Check ASP Balance                                           CHKASPBAL  
+      2. Check Communications Trace                                  CHKCMNTRC  
+      3. Check Document Library Object                               CHKDLO     
+      4. Check DNS Configuration                                     CHKDNSCFG  
+      5. Check DNS Zone                                              CHKDNSZNE  
+      6. Check DBCS Font Table                                       CHKIGCTBL  
+      7. Check In Object                                             CHKIN      
+      8. Check Master KVV                                            CHKMSTKVV  
+      9. Check Object                                                CHKOBJ     
+     10. Check Object Integrity                                      CHKOBJITG  
+     11. Check Optical Volume                                        CHKOPTVOL  
+     12. Check Out Object                                            CHKOUT     
+     13. Check Performance Collection                                CHKPFRCOL  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

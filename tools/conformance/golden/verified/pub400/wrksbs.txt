@@ -1,0 +1,24 @@
+                              Work with Subsystems                              
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   N=End subsystem   N=Display subsystem description                            
+   N=Work with subsystem jobs                                                   
+                                                                                
+                       Total     -----------Subsystem Pools------------         
+ Opt  Subsystem     Storage (M)   N   N   N   N   N   N   N   N   N  N          
+      #SYSLOAD             N,N        N                                         
+      QBATCH               N,N    N                                             
+      QBATCH2              N,N    N                                             
+      QBATCH3              N,N    N                                             
+      QBATCH4              N,N    N                                             
+      QBATCH5              N,N    N                                             
+      QBATCH6              N,N    N                                             
+      QBATCH7              N,N    N                                             
+      QCMN                 N,N    N                                             
+      QCTL                 N,N    N                                             
+                                                                        More... 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F5=Refresh   F11=Display system data   F12=Cancel                    
+ F14=Work with system status                                                    
+                                                                                

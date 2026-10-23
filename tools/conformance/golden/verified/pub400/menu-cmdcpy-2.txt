@@ -1,0 +1,24 @@
+ CMDCPY                          Copy Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     16. Copy From PCF File                                          CPYFRMPCFF 
+     17. Copy From Query File                                        CPYFRMQRYF 
+     18. Copy From Stream File                                       CPYFRMSTMF 
+     19. Copy From Tape                                              CPYFRMTAP  
+     20. Copy Graph Format                                           CPYGPHFMT  
+     21. Copy Graph Package                                          CPYGPHPKG  
+     22. Copy DBCS Master Sort Table                                 CPYIGCSRT  
+     23. Copy DBCS Font Table                                        CPYIGCTBL  
+                                                                                
+     25. Copy Library                                                CPYLIB     
+                                                                                
+     27. Copy Optical                                                CPYOPT     
+     28. Copy Performance Collection                                 CPYPFRCOL  
+     29. Copy Program Temporary Fix                                  CPYPTF     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

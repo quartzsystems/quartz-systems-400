@@ -1,0 +1,24 @@
+                                Display Library                                 
+                                                                                
+ Library  . . . . . . :   QGPL            Number of objects  . :   N            
+ Type . . . . . . . . :   PROD            Library ASP number . :   N            
+ Create authority . . :   *SYSVAL         Library ASP device . :   *SYSBAS      
+                                          Library ASP group  . :   *SYSBAS      
+                                                                                
+ Type options, press Enter.                                                     
+   N=Display full attributes   N=Display service attributes                     
+                                                                                
+ Opt  Object      Type      Attribute               Size  Text                  
+      SETUSER     *PGM      CLP                    N      set users to 4G       
+      EXCELAFBA   *SQLPKG                          N                            
+      MSACCEAFBA  *SQLPKG                        N                              
+      MSCS001     *SQLPKG   PACKAGE               N                             
+      MSNC001     *SQLPKG   PACKAGE               N                             
+      MSQRY3AFBA  *SQLPKG                          N                            
+      MSRR001     *SQLPKG   PACKAGE               N                             
+      MSRS001     *SQLPKG   PACKAGE               N                             
+      MSUR001     *SQLPKG   PACKAGE               N                             
+      QSQCLIPKGC  *SQLPKG   PACKAGE               N                             
+                                                                        More... 
+ F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    
+ (C) COPYRIGHT IBM CORP. N   , N   .                                            

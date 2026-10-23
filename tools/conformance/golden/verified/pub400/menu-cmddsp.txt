@@ -1,0 +1,24 @@
+ CMDDSP                         Display Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Change Device Desc (Display)                                CHGDEVDSP  
+      2. Create Device Desc (Display)                                CRTDEVDSP  
+      3. Display Access Code                                         DSPACC     
+      4. Display Access Code Authority                               DSPACCAUT  
+      5. Display Active Prestart Jobs                                DSPACTPJ   
+      6. Display Active Profile List                                 DSPACTPRFL 
+      7. Display Activation Schedule                                 DSPACTSCD  
+      8. Display APPN Information                                    DSPAPPNINF 
+                                                                                
+     11. ASP device                                                  DSPASPINF  
+                                                                                
+     13. Display ASP Status                                          DSPASPSTS  
+     14. Display Attributes                                          DSPATR     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

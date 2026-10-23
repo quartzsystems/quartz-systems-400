@@ -1,0 +1,24 @@
+ CMDCHK                          Check Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Check Product Option                                        CHKPRDOPT  
+     15. Check Password                                              CHKPWD     
+     16. Check Record Locks                                          CHKRCDLCK  
+                                                                                
+     18. Check Tape                                                  CHKTAP     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

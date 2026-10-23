@@ -46,6 +46,9 @@ pub struct Launch {
     pub extra_disks: Vec<PathBuf>,
     /// QMP Unix socket path.
     pub qmp: PathBuf,
+    /// A user-mode network with the guest's telnet port forwarded to
+    /// this host port; no network device when `None`.
+    pub telnet_port: Option<u16>,
 }
 
 /// Find the system emulator: the override variable, else `PATH`.
@@ -128,8 +131,6 @@ pub fn args(l: &Launch) -> Vec<OsString> {
             "std",
             "-device",
             "virtio-keyboard-pci",
-            "-nic",
-            "none",
             "-nographic",
             "-serial",
             "stdio",
@@ -144,6 +145,17 @@ pub fn args(l: &Launch) -> Vec<OsString> {
     qmp.push(&l.qmp);
     qmp.push(",server,nowait");
     a.push(qmp);
+    if let Some(port) = l.telnet_port {
+        a.push(OsString::from("-netdev"));
+        a.push(OsString::from(format!(
+            "user,id=n0,net=10.0.2.0/24,hostfwd=tcp:127.0.0.1:{port}-:23"
+        )));
+        a.push(OsString::from("-device"));
+        a.push(OsString::from("virtio-net-pci,netdev=n0"));
+    } else {
+        a.push(OsString::from("-nic"));
+        a.push(OsString::from("none"));
+    }
     a
 }
 

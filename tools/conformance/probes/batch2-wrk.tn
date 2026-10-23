@@ -1,0 +1,102 @@
+# Batch 2: work-management, message, security and object panels from
+# Command Entry.
+wait "Main Menu"
+continue
+type call qcmd
+key enter
+wait "Command Entry"
+type dspjob
+key enter
+wait "Display Job"
+snap dspjob-menu +jobnum
+type 1
+key enter
+settle 800
+snap dspjob-status +jobnum
+key f12
+settle 600
+key f3
+wait "Command Entry"
+type wrksplf
+key enter
+settle 1000
+snap wrksplf +jobnum
+key f3
+wait "Command Entry"
+type dspmsg
+key enter
+settle 1000
+snap dspmsg
+key f3
+wait "Command Entry"
+type wrkmsg
+key enter
+settle 1000
+snap wrkmsg
+key f3
+wait "Command Entry"
+type wrkoutq
+key enter
+settle 1000
+snap wrkoutq +number
+key f3
+wait "Command Entry"
+type wrkusrjob
+key enter
+settle 1000
+snap wrkusrjob +jobnum
+key f3
+wait "Command Entry"
+type dspusrprf cwellman
+key enter
+settle 1000
+snap dspusrprf
+key pgdn
+settle 600
+snap dspusrprf-2
+key f3
+wait "Command Entry"
+type wrksysval
+key enter
+settle 1000
+snap wrksysval
+key f3
+wait "Command Entry"
+type wrksbs
+key enter
+settle 1000
+snap wrksbs +number
+key f3
+wait "Command Entry"
+type wrkjobq
+key enter
+settle 1000
+snap wrkjobq +number
+key f3
+wait "Command Entry"
+type dspjoblog
+key enter
+settle 1000
+snap dspjoblog +jobnum
+key f10
+settle 800
+snap dspjoblog-f10 +jobnum
+key f3
+wait "Command Entry"
+type wrkobj qgpl/*all
+key enter
+settle 1000
+snap wrkobj
+key f3
+wait "Command Entry"
+type dsplib qgpl
+key enter
+settle 1000
+snap dsplib +number
+key f3
+wait "Command Entry"
+key f3
+wait "Main Menu"
+type signoff
+key enter
+settle 1500

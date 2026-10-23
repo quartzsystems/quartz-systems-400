@@ -1,0 +1,24 @@
+ PROGRAM                          Programming                                   
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Programmer menu                                                        
+      2. Programming Development Manager (PDM)                                  
+      3. Utilities                                                              
+      4. Programming language debug                                             
+      5. Structured Query Language (SQL) pre-compiler                           
+      6. Question and answer                                                    
+                                                                                
+      8. Copy screen image                                                      
+      9. Cross System Product/Application Execution (CSP/AE)                    
+                                                                                
+     50. System/36 programming                                                  
+                                                                                
+     70. Related commands                                                       
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

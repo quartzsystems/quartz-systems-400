@@ -1,0 +1,24 @@
+                         Display Autostart Job Entries                          
+                                                             System:   SYSNAME  
+ Subsystem description:   QINTER2        Status:   ACTIVE                       
+                                                                                
+ Job            Job Description     Library                                     
+                                                                                
+   (No autostart job entries)                                                   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

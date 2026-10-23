@@ -1,0 +1,24 @@
+                          Display User Profile - Basic                          
+                                                                                
+ User profile . . . . . . . . . . . . . . . :   USERNAME                        
+                                                                                
+ Previous sign-on . . . . . . . . . . . . . :   MM/DD/YY  HH:MM:SS              
+ Password verifications not valid . . . . . :   0                               
+ Status . . . . . . . . . . . . . . . . . . :   *ENABLED                        
+ Date password last changed . . . . . . . . :   MM/DD/YY  HH:MM:SS              
+ Password is *NONE  . . . . . . . . . . . . :   *NO                             
+ Password expiration interval . . . . . . . :   *SYSVAL                         
+   Date password expires  . . . . . . . . . :     MM/DD/YY                      
+ Password set expired by command  . . . . . :   *NO                             
+ Block password change  . . . . . . . . . . :   *SYSVAL                         
+ Local password management  . . . . . . . . :   *YES                            
+ Maximum sign-on attempts . . . . . . . . . :   *SYSVAL                         
+ User class . . . . . . . . . . . . . . . . :   *PGMR                           
+ Creation date/time . . . . . . . . . . . . :   MM/DD/YY  HH:MM:SS              
+ Created by user  . . . . . . . . . . . . . :   JOBMANAGER                      
+ Change date/time . . . . . . . . . . . . . :   MM/DD/YY  HH:MM:SS              
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

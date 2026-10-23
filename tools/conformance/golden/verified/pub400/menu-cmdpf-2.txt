@@ -1,0 +1,24 @@
+ CMDPF                       Physical File Commands                             
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Convert Overlay to PFM                                      CVTOVLPFM  
+     15. Convert Page Segment to PFM                                 CVTPAGSPFM 
+     16. Convert PFM to Page Segment                                 CVTPFMPAGS 
+     17. Display Physical File Member                                DSPPFM     
+     18. End Journal Physical File                                   ENDJRNPF   
+     19. Initialize Physical File Mbr                                INZPFM     
+     20. Reorganize Physical File Mbr                                RGZPFM     
+     21. Remove PF Constraint                                        RMVPFCST   
+     22. Remove Physical File Trigger                                RMVPFTRG   
+     23. Start Journal Physical File                                 STRJRNPF   
+     24. Work with PF Constraints                                    WRKPFCST   
+     25. Work with PF DataLinks                                      WRKPFDL    
+                                                                                
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

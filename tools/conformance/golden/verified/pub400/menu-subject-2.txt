@@ -1,0 +1,24 @@
+ SUBJECT                        Subject Commands                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     16. Access Path Commands                                        CMDAP      
+     17. APAR Commands                                               CMDAPAR    
+     18. Advanced Printer Function Cmds                              CMDAPF     
+     19. Application Commands                                        CMDAPP     
+     20. APPC Commands                                               CMDAPPC    
+     21. Area Commands                                               CMDARA     
+     22. Archive Commands                                            CMDARC     
+     23. ARP Commands                                                CMDARP     
+     24. Async Commands                                              CMDASC     
+     25. Auxiliary Storage Pools Cmds                                CMDASP     
+     26. Attention Commands                                          CMDATN     
+     27. Attribute Commands                                          CMDATR     
+     28. Authority Commands                                          CMDAUT     
+     29. Authentication Entry Commands                               CMDAUTE    
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

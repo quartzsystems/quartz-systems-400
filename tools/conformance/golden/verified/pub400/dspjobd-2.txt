@@ -1,0 +1,24 @@
+                            Display Job Description                             
+                                                             System:   SYSNAME  
+ Job description:   QDFTJOBD       Library:   QGPL                              
+                                                                                
+ Message logging:                                                               
+   Level  . . . . . . . . . . . . . . . . . . . . :   4                         
+   Severity . . . . . . . . . . . . . . . . . . . :   20                        
+   Text . . . . . . . . . . . . . . . . . . . . . :   *SECLVL                   
+ Log CL program commands  . . . . . . . . . . . . :   *YES                      
+ Job log output . . . . . . . . . . . . . . . . . :   *SYSVAL                   
+ Accounting code  . . . . . . . . . . . . . . . . :   *USRPRF                   
+ Print text . . . . . . . . . . . . . . . . . . . :   *SYSVAL                   
+                                                                                
+ Routing data . . . . . . . . . . . . . . . . . . :   QCMDI                     
+                                                                                
+ Request data . . . . . . . . . . . . . . . . . . :   *NONE                     
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

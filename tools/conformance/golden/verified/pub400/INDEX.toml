@@ -1,0 +1,552 @@
+[[golden]]
+name = "main-menu"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch1-main"
+width = 80
+
+[[golden]]
+name = "main-menu-help"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch1-main"
+width = 80
+
+[[golden]]
+name = "cmdwrk-menu"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch1-main"
+width = 80
+
+[[golden]]
+name = "cmdwrk-menu-page2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch1-main"
+width = 80
+
+[[golden]]
+name = "command-entry"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch1-main"
+width = 80
+
+[[golden]]
+name = "dsplibl"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch1-main"
+width = 80
+
+[[golden]]
+name = "wrkactjob"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch1-main"
+width = 80
+
+[[golden]]
+name = "wrkactjob-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch1-main"
+width = 80
+
+[[golden]]
+name = "wrkactjob-f11-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch1-main"
+width = 80
+
+[[golden]]
+name = "wrkactjob-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch1-main"
+width = 80
+
+[[golden]]
+name = "dspjob-menu"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch2-wrk"
+width = 80
+
+[[golden]]
+name = "dspjob-status"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch2-wrk"
+width = 80
+
+[[golden]]
+name = "wrksplf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch2-wrk"
+width = 80
+
+[[golden]]
+name = "dspmsg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch2-wrk"
+width = 80
+
+[[golden]]
+name = "wrkmsg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch2-wrk"
+width = 80
+
+[[golden]]
+name = "wrkusrjob"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch2-wrk"
+width = 80
+
+[[golden]]
+name = "dspusrprf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch2-wrk"
+width = 80
+
+[[golden]]
+name = "dspusrprf-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch2-wrk"
+width = 80
+
+[[golden]]
+name = "wrksbs"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch2-wrk"
+width = 80
+
+[[golden]]
+name = "dspjoblog"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch2-wrk"
+width = 80
+
+[[golden]]
+name = "dspjoblog-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch2-wrk"
+width = 80
+
+[[golden]]
+name = "wrkobj"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch2-wrk"
+width = 80
+
+[[golden]]
+name = "dsplib"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch2-wrk"
+width = 80
+
+[[golden]]
+name = "dspcls"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "dspjobd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "dspjobd-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "dsplog"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "dspobjd-basic"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "dspobjd-full"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "dspobjd-full-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "dspsbsd-1"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "dspsbsd-2-pools"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "dspsbsd-3-aje"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "dspsbsd-5-wste"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "dspsbsd-6-jobqe"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "dspsbsd-7-rtge"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "dspsbsd-menu"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "dspsysval"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "wrkcls"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "wrkjob"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "wrkjob-10-joblog"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "wrkjob-11-callstk"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "wrkjob-13-libl"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "wrkjob-14-openfiles"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "wrkjob-2-chgjob"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "wrkjob-3-status"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "wrkjob-4-splf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "wrkjobd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "wrksbsjob"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch3-wrk"
+width = 80
+
+[[golden]]
+name = "wrkrpyle"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "dspmsgd-list"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "dspmsgd-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "dspsfwrsc"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "dspneta"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "dspneta-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "dspobjaut"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "wrkbnddir"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "dspautusr"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "information-assistant"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "additional-message-information"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "wrkactjob-f24-keys"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "wrkactjob-f23-options"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "command-entry-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "command-entry-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "command-entry-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "command-entry-f9"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "major-menu"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "prompt-wrkactjob"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+
+[[golden]]
+name = "prompt-wrkactjob-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch4-misc"
+width = 80
+

@@ -1,0 +1,24 @@
+ CMDSND                          Send Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Send ARP Request                                            ARPING     
+      2. Send TCP/IP Spooled File                                    LPR        
+      3. Send Neighbor Solicitation                                  NDPING     
+      4. Send ARP Request                                            SNDARPRQS  
+      5. Send Break Message                                          SNDBRKMSG  
+      6. Send Distribution                                           SNDDST     
+                                                                                
+      8. Send Distribution Queue                                     SNDDSTQ    
+      9. Send DBCS 3270PC Eml Code                                   SNDEMLIGC  
+     10. Send File                                                   SNDF       
+     11. Send Journal Entry                                          SNDJRNE    
+     12. Send Message                                                SNDMSG     
+     13. Send Network File                                           SNDNETF    
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

@@ -35,6 +35,10 @@ struct Cli {
     /// Power pulls in the disk suite (0 skips them).
     #[arg(long, default_value_t = 3)]
     pulls: u32,
+    /// Run only the steps whose names start with this (the boot step
+    /// always runs; the later phases' steps are skipped).
+    #[arg(long)]
+    only: Option<String>,
 }
 
 fn main() -> Result<ExitCode> {
@@ -49,6 +53,10 @@ fn main() -> Result<ExitCode> {
     )?;
     suite.set_install(cli.install);
     suite.set_phase2(cli.bench, cli.pulls);
+    suite.set_only(cli.only.clone());
+    if cli.only.is_some() {
+        suite.set_phase2(cli.bench, 0);
+    }
     let l = suite.launch();
     println!(
         "{} + {} ({})",

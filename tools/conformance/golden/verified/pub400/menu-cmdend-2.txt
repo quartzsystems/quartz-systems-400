@@ -1,0 +1,24 @@
+ CMDEND                           End Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. End Communications Server                                   ENDCMNSVR  
+     15. End Communications Trace                                    ENDCMNTRC  
+     16. End Commitment Control                                      ENDCMTCTL  
+     17. End Copy Screen                                             ENDCPYSCN  
+                                                                                
+     21. End Controller Recovery                                     ENDCTLRCY  
+     22. End Debug Mode                                              ENDDBG     
+     23. End Debug Server                                            ENDDBGSVR  
+     24. End Database Monitor                                        ENDDBMON   
+     25. End Device Recovery                                         ENDDEVRCY  
+     26. End Directory Shadowing                                     ENDDIRSHD  
+     27. End Do Group                                                ENDDO      
+                                                                                
+     30. End Disk Reorganization                                     ENDDSKRGZ  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

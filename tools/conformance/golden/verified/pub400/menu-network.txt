@@ -1,0 +1,24 @@
+ NETWORK                       Network Management                               
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Display network attributes                                             
+      2. Change network attributes                                              
+      3. Display sphere of control (SOC) status                                 
+      4. Work with sphere of control (SOC)                                      
+      5. Network problem handling                                               
+      6. Display APPN information                                               
+      7. Work with distribution queues                                          
+      8. Display distribution services                                          
+      9. Display distribution services log                                      
+     10. TCP/IP administration                                                  
+                                                                                
+     12. SystemView System Manager                                              
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

@@ -1,0 +1,24 @@
+                              Display Library List                              
+                                                             System:   SYSNAME  
+                                                                                
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display objects in library                                                 
+                                                                                
+                            ASP                                                 
+ Opt  Library     Type      Device      Text                                    
+      PUB400SYS   SYS                   $ PUB400.COM global programs            
+      QSYS        SYS                   System Library                          
+      QSYS2       SYS                   System Library for CPI's                
+      QUSRSYS     SYS                   System Library for Users                
+      QHLPSYS     SYS                                                           
+      CWELLMAN1   CUR                   USERNAME (*CURLIB your current library) 
+      QGPL        USR                   General Purpose Library                 
+      QTEMP       USR                                                           
+      GAMES400    USR                   $ fun library                           
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

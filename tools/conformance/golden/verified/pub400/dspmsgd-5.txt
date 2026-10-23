@@ -1,0 +1,24 @@
+                           Display Message Attributes                           
+                                                             System:   SYSNAME  
+ Message ID . . . . . . . . . :   CPF1124                                       
+ Message file . . . . . . . . :   QCPFMSG                                       
+   Library  . . . . . . . . . :     QSYS                                        
+                                                                                
+ Severity . . . . . . . . . . :   0                                             
+                                                                                
+ Log problem  . . . . . . . . :   *NO                                           
+                                                                                
+ Default program  . . . . . . :   *NONE                                         
+   Default library  . . . . . :                                                 
+                                                                                
+ Message level  . . . . . . . :   MM/DD/YY 73                                   
+                                                                                
+ Alert option . . . . . . . . :   *NO                                           
+                                                                                
+ Data to be dumped  . . . . . :   *NONE                                         
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

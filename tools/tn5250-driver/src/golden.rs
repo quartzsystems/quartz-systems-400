@@ -50,18 +50,22 @@ pub fn read_rows(path: &Path) -> Result<Vec<String>> {
 }
 
 /// Compare with the stored golden; the differences as text, `None`
-/// when equal. A missing golden is a difference.
+/// when equal. A missing golden is a difference. Without `attrs` only
+/// the characters are compared.
 pub fn compare(
     dir: &Path,
     name: &str,
     rows: &[String],
-    attrs: &[String],
+    attrs: Option<&[String]>,
+    masks: &crate::mask::Masks,
 ) -> Result<Option<String>> {
     let path = dir.join(format!("{name}.txt"));
     if !path.is_file() {
         return Ok(Some(format!("    no golden {}", path.display())));
     }
-    let want = read_rows(&path)?;
+    // The golden was masked when captured; masks added since apply to
+    // it too, so both sides wear the same ones.
+    let want = masks.apply(&read_rows(&path)?);
     let mut out = String::new();
     for (i, (w, g)) in want.iter().zip(rows.iter()).enumerate() {
         if w.trim_end() != g.trim_end() {
@@ -78,7 +82,9 @@ pub fn compare(
         );
     }
     let apath = dir.join(format!("{name}.attr"));
-    if apath.is_file() {
+    if let Some(attrs) = attrs
+        && apath.is_file()
+    {
         let want = read_rows(&apath)?;
         for (i, (w, g)) in want.iter().zip(attrs.iter()).enumerate() {
             if w != g {

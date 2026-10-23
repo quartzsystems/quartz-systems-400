@@ -1,0 +1,24 @@
+ CMDJOB                           Job Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Change System Job                                           CHGSYSJOB  
+                                                                                
+     16. Data                                                        DATA       
+     17. Delete Trace                                                DLTTRC     
+     18. Delay Job                                                   DLYJOB     
+     19. Dump Job                                                    DMPJOB     
+     20. Dump Job Internal                                           DMPJOBINT  
+     21. Disconnect Job                                              DSCJOB     
+     22. Display JVM Jobs                                            DSPJVMJOB  
+     23. Display Job                                                 DSPJOB     
+     24. Display Job Log                                             DSPJOBLOG  
+                                                                                
+     26. Display Job Tables                                          DSPJOBTBL  
+     27. End Batch Job                                               ENDBCHJOB  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

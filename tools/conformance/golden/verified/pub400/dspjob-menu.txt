@@ -1,0 +1,24 @@
+                                  Display Job                                   
+                                                             System:   SYSNAME  
+ Job:   QPADEV000R     User:   USERNAME       Number:   NNNNNN                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Display job status attributes                                          
+      2. Display job definition attributes                                      
+      3. Display job run attributes, if active                                  
+      4. Display spooled files                                                  
+                                                                                
+     10. Display job log, if active, on job queue, or pending                   
+     11. Display call stack, if active                                          
+     12. Display locks, if active                                               
+     13. Display library list, if active                                        
+     14. Display open files, if active                                          
+     15. Display file overrides, if active                                      
+     16. Display commitment control status, if active                           
+                                                                        More... 
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

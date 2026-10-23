@@ -1,0 +1,24 @@
+ PROBLEM                        Problem Handling                                
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Question and answer                                                    
+      2. Work with problems                                                     
+      3. Network problem handling                                               
+      4. Display system operator messages                                       
+      5. Display the history log                                                
+      6. System service tools                                                   
+                                                                                
+     60. More problem handling options                                          
+                                                                                
+     70. Related commands                                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

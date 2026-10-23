@@ -1,0 +1,24 @@
+                       Select Message Details to Display                        
+                                                             System:   SYSNAME  
+ Message ID . . . . . . . . . :   CPF1124                                       
+ Message file . . . . . . . . :   QCPFMSG                                       
+   Library  . . . . . . . . . :     QSYS                                        
+ Message text . . . . . . . . :   Job &3/&2/&1 started on &18 at &19 in subsyste
+m &8 in &9. Job entered system on &20 at &21.&17                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Display message text                                                   
+      2. Display field data                                                     
+                                                                                
+      5. Display message attributes                                             
+                                                                                
+     30. All of the above                                                       
+                                                                                
+                                                                                
+                                                                                
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

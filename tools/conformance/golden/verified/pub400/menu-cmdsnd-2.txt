@@ -1,0 +1,24 @@
+ CMDSND                          Send Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Send Network Message                                        SNDNETMSG  
+     15. Send Network Spooled File                                   SNDNETSPLF 
+     16. Send Neighbor Solicitation                                  SNDNGHSOL  
+     17. Send Program Message                                        SNDPGMMSG  
+     18. Send PTF Order                                              SNDPTFORD  
+     19. Send/Receive File                                           SNDRCVF    
+     20. Send RJE Host Command                                       SNDRJECMD  
+                                                                                
+     22. Send Reply                                                  SNDRPY     
+     23. Send SMTP E-mail                                            SNDSMTPEMM 
+     24. Send Service Request                                        SNDSRVRQS  
+     25. Send TCP/IP Spooled File                                    SNDTCPSPLF 
+     26. Send TIE File                                               SNDTIEF    
+     27. Send User Message                                           SNDUSRMSG  
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

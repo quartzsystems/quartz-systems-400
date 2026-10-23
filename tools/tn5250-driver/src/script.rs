@@ -19,12 +19,14 @@
 //! cursor 6 53               1-based row and column
 //! field 6 53 QSECOFR        cursor there, then type
 //! signon                    user and password from the target, Enter
-//! snap NAME [+mask] [-mask] capture or compare a golden
+//! snap NAME [+mask] [-mask] capture or compare a golden; `-attrs`
+//!                           compares the characters only
 //! show                      print the screen
 //! sleep 500                 milliseconds
 //! mask NAME REGEX => TOKEN  a mask for the following snaps
 //! echo text
-//! continue                  keep going after a failed step
+//! continue                  keep going after a failed step (the script
+//!                           still counts as failed at the end)
 //! ```
 
 use std::time::Duration;
@@ -32,11 +34,10 @@ use std::time::Duration;
 use anyhow::{Context as _, Result, anyhow, bail};
 use tn5250::term::{Key, KeyResult};
 
-use crate::RunArgs;
-use crate::env::Credentials;
 use crate::golden::{self, Entry};
 use crate::mask::{Mask, Masks};
 use crate::session::Session;
+use crate::{Connect, ScriptOptions};
 
 /// What the scripts share over a session.
 pub struct Context {
@@ -61,43 +62,36 @@ pub struct Context {
     pub timeout: Duration,
     /// Snapshots compared that differed.
     pub mismatches: Vec<String>,
+    /// Steps that failed in the running script under `continue`.
+    pub failed_steps: u32,
     /// Index entries to append.
     pub entries: Vec<Entry>,
 }
 
 impl Context {
-    /// From the arguments.
-    pub fn new(args: &RunArgs, creds: &Credentials) -> Self {
-        let user = args.user.clone().unwrap_or_else(|| creds.user.clone());
+    /// From the connection and the options.
+    pub fn new(c: &Connect, o: &ScriptOptions) -> Self {
         let mut masks = Masks::defaults();
-        masks.set_user(&user);
+        masks.set_user(&c.user);
         Self {
             masks,
-            golden: args.golden.clone(),
-            update: args.update,
-            source: args.target.name().into(),
-            release: args.release.clone(),
-            user,
-            password: args
-                .password
-                .clone()
-                .unwrap_or_else(|| creds.password.clone()),
+            golden: o.golden.clone(),
+            update: o.update,
+            source: c.target.name().into(),
+            release: o.release.clone(),
+            user: c.user.clone(),
+            password: c.password.clone(),
             script: String::new(),
             continue_on_error: false,
-            timeout: Duration::from_millis(args.timeout),
+            timeout: Duration::from_millis(o.timeout_ms),
             mismatches: Vec::new(),
+            failed_steps: 0,
             entries: Vec::new(),
         }
     }
 
     /// Write the index entries; fail on mismatches.
     pub fn finish(&self) -> Result<()> {
-        if let Some(dir) = &self.golden
-            && self.update
-            && !self.entries.is_empty()
-        {
-            golden::index_append(dir, &self.entries)?;
-        }
         if !self.mismatches.is_empty() {
             bail!(
                 "{} snapshot(s) differ: {}",
@@ -172,7 +166,19 @@ pub fn run(s: &mut Session, ctx: &mut Context, text: &str) -> Result<()> {
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
-        step(s, ctx, line).with_context(|| format!("line {}: {line}", i + 1))?;
+        if let Err(e) = step(s, ctx, line).with_context(|| format!("line {}: {line}", i + 1)) {
+            if ctx.continue_on_error {
+                println!("  step failed, going on: {e:#}");
+                ctx.failed_steps += 1;
+                let _ = s.key(Key::Reset);
+                continue;
+            }
+            return Err(e);
+        }
+    }
+    if ctx.failed_steps > 0 {
+        let n = std::mem::take(&mut ctx.failed_steps);
+        bail!("{n} step(s) failed");
     }
     Ok(())
 }
@@ -264,12 +270,17 @@ fn step(s: &mut Session, ctx: &mut Context, line: &str) -> Result<()> {
             check(s.key(Key::Enter)?)?;
         }
         "snap" => {
-            s.wait_unlocked(ctx.timeout)?;
+            if !s.wait_unlocked(ctx.timeout)? {
+                bail!("the keyboard is still locked: the host has not answered");
+            }
             let mut it = rest.split_whitespace();
             let name = it.next().context("snapshot name")?.to_string();
             let mut masks = ctx.masks.clone();
+            let mut with_attrs = true;
             for m in it {
-                if let Some(n) = m.strip_prefix('+') {
+                if m == "-attrs" {
+                    with_attrs = false;
+                } else if let Some(n) = m.strip_prefix('+') {
                     masks.enable(n)?;
                 } else if let Some(n) = m.strip_prefix('-') {
                     masks.disable(n);
@@ -286,17 +297,26 @@ fn step(s: &mut Session, ctx: &mut Context, line: &str) -> Result<()> {
                 }
                 Some(dir) if ctx.update => {
                     golden::write(dir, &name, &rows, &attrs)?;
-                    ctx.entries.push(Entry {
+                    // The index is kept up to date snapshot by snapshot, so
+                    // a run cut short still has its provenance recorded.
+                    let entry = Entry {
                         name: name.clone(),
                         source: ctx.source.clone(),
                         release: ctx.release.clone(),
                         script: ctx.script.clone(),
                         width: s.term.cols(),
-                    });
+                    };
+                    golden::index_append(dir, std::slice::from_ref(&entry))?;
+                    ctx.entries.push(entry);
                     println!("  wrote {name}");
                 }
                 Some(dir) => {
-                    if let Some(diff) = golden::compare(dir, &name, &rows, &attrs)? {
+                    let attrs = if with_attrs {
+                        Some(attrs.as_slice())
+                    } else {
+                        None
+                    };
+                    if let Some(diff) = golden::compare(dir, &name, &rows, attrs, &masks)? {
                         println!("  {name} differs:\n{diff}");
                         ctx.mismatches.push(name);
                     } else {

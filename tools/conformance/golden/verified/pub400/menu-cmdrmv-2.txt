@@ -1,0 +1,24 @@
+ CMDRMV                         Remove Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     15. Remove Cfg List Entries                                     RMVCFGLE   
+     16. Remove CICS Conv Vector Tbl                                 RMVCICSCVT 
+     17. Remove CICS Dest Control Tbl                                RMVCICSDCT 
+     18. Remove CICS File Control Tbl                                RMVCICSFCT 
+     19. Remove CICS Group List Table                                RMVCICSGLT 
+     20. Remove CICS Journal Ctrl Tbl                                RMVCICSJCT 
+     21. Remove CICS Program Ctrl Tbl                                RMVCICSPCT 
+     22. Remove CICS Pgm Processing Tbl                              RMVCICSPPT 
+     23. Remove CICS System Init Table                               RMVCICSSIT 
+     24. Remove CICS Term Ctrl Sys Tbl                               RMVCICSTCS 
+     25. Remove CICS Terminal Ctrl Tbl                               RMVCICSTCT 
+     26. Remove CICS Temporary Stg Tbl                               RMVCICSTST 
+     27. Remove Keystore File Entry                                  RMVCKMKSFE 
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

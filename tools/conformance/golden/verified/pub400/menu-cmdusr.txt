@@ -1,0 +1,24 @@
+ CMDUSR                          User Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Add SMTP User                                               ADDUSRSMTP 
+      2. Add User for SNMP                                           ADDUSRSNMP 
+      3. Analyze User Objects                                        ANZUSROBJ  
+      4. Change NWS User Attributes                                  CHGNWSUSRA 
+      5. Change Service Tools User ID                                CHGSSTUSR  
+      6. Change User Auditing                                        CHGUSRAUD  
+      7. Change User Profile                                         CHGUSRPRF  
+      8. Change SMTP User                                            CHGUSRSMTP 
+      9. Change User for SNMP                                        CHGUSRSNMP 
+     10. Change User Trace                                           CHGUSRTRC  
+     11. Create Service Tools User ID                                CRTSSTUSR  
+     12. Create User Profile                                         CRTUSRPRF  
+     13. Convert User Certificate                                    CVTUSRCERT 
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

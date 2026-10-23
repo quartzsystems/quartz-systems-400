@@ -1,0 +1,24 @@
+ CMDJOB                           Job Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Add Autostart Job Entry                                     ADDAJE     
+                                                                                
+      3. Add Job Schedule Entry                                      ADDJOBSCDE 
+      4. Add Job Watcher Definition                                  ADDJWDFN   
+      5. Batch Job                                                   BCHJOB     
+      6. Change Autostart Job Entry                                  CHGAJE     
+                                                                                
+      8. Change Group Attributes                                     CHGGRPA    
+      9. Change Job                                                  CHGJOB     
+                                                                                
+     11. Change Job MLB Attributes                                   CHGJOBMLBA 
+     12. Change Job Schedule Entry                                   CHGJOBSCDE 
+     13. Change Job Type                                             CHGJOBTYP  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

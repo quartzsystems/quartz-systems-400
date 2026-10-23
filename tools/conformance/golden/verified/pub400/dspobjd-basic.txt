@@ -1,0 +1,24 @@
+                       Display Object Description - Basic                       
+                                                                 Library 1 of 1 
+ Library . . . . . . . :   QGPL           Library ASP device  . :   *SYSBAS     
+                                          Library ASP group . . :   *SYSBAS     
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display full attributes   8=Display service attributes                     
+                                                                                
+ Opt  Object      Type      Attribute               Size  Text                  
+      QDFTJOBD    *JOBD                             8192  Default job descripti 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F12=Cancel   F17=Top   F18=Bottom                                    
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

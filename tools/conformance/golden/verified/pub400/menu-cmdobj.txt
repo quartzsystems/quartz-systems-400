@@ -1,0 +1,24 @@
+ CMDOBJ                         Object Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Add Link                                                    ADDLNK     
+      2. Allocate Object                                             ALCOBJ     
+      3. Analyze User Objects                                        ANZUSROBJ  
+      4. Change Attribute                                            CHGATR     
+      5. Change Auditing Value                                       CHGAUD     
+      6. Change Authority                                            CHGAUT     
+      7. Change Journaled Object                                     CHGJRNOBJ  
+      8. Change Object Auditing                                      CHGOBJAUD  
+      9. Change ObjectConnect Attrs                                  CHGOBJCA   
+     10. Change Object Description                                   CHGOBJD    
+     11. Change Object Owner                                         CHGOBJOWN  
+     12. Change Object Primary Group                                 CHGOBJPGP  
+     13. Change Owner                                                CHGOWN     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

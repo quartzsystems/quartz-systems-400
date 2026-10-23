@@ -1,0 +1,24 @@
+ CMDCPY                          Copy Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      3. Copy Object                                                 COPY       
+      4. Copy Object                                                 CPY        
+      5. Copy Audit Journal Entries                                  CPYAUDJRNE 
+      6. Copy Configuration List                                     CPYCFGL    
+      7. Copy Document                                               CPYDOC     
+      8. Copy File                                                   CPYF       
+      9. Copy Functional Area                                        CPYFCNARA  
+     10. Copy From Archive File                                      CPYFRMARCF 
+     11. Copy From Directory                                         CPYFRMDIR  
+     12. Copy From Import File                                       CPYFRMIMPF 
+     13. Copy From LDIF                                              CPYFRMLDIF 
+     14. Copy From Main Storage Dump                                 CPYFRMMSD  
+     15. Copy From PC Document                                       CPYFRMPCD  
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

@@ -1,0 +1,24 @@
+                           Display Network Attributes                           
+                                                             System:   SYSNAME  
+ Alert status . . . . . . . . . . . . . . . . . . :   *OFF                      
+ Alert logging status . . . . . . . . . . . . . . :   *NONE                     
+ Alert primary focal point  . . . . . . . . . . . :   *NO                       
+ Alert default focal point  . . . . . . . . . . . :   *NO                       
+ Alert backup focal point . . . . . . . . . . . . :                             
+   Network ID . . . . . . . . . . . . . . . . . . :     *NONE                   
+ Alert focal point to request . . . . . . . . . . :                             
+   Network ID . . . . . . . . . . . . . . . . . . :     *NONE                   
+ Alert controller description . . . . . . . . . . :   *NONE                     
+ Alert hold count . . . . . . . . . . . . . . . . :   0                         
+ Alert filter . . . . . . . . . . . . . . . . . . :   *NONE                     
+   Library  . . . . . . . . . . . . . . . . . . . :                             
+ Message queue  . . . . . . . . . . . . . . . . . :   QSYSOPR                   
+   Library  . . . . . . . . . . . . . . . . . . . :     QSYS                    
+ Output queue . . . . . . . . . . . . . . . . . . :   QPRINT                    
+   Library  . . . . . . . . . . . . . . . . . . . :     QGPL                    
+ Job action . . . . . . . . . . . . . . . . . . . :   *FILE                     
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

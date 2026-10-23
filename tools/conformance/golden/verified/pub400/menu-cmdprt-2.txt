@@ -1,0 +1,24 @@
+ CMDPRT                          Print Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     14. Print Device Addresses                                      PRTDEVADR  
+     15. Print Directory Information                                 PRTDIRINF  
+     16. Print Document                                              PRTDOC     
+                                                                                
+     18. Print Disk Information                                      PRTDSKINF  
+     19. Print Error Log                                             PRTERRLOG  
+     20. Print Internal Data                                         PRTINTDTA  
+     21. Print JOBD Authority                                        PRTJOBDAUT 
+     22. Print Job Interval Report                                   PRTJOBRPT  
+     23. Print Job Trace                                             PRTJOBTRC  
+     24. Print JVM Job                                               PRTJVMJOB  
+                                                                                
+     26. Print Lock Report                                           PRTLCKRPT  
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

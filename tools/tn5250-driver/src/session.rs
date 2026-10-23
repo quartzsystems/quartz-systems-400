@@ -17,9 +17,8 @@ use tn5250::telnet;
 use tn5250::telnet::client::{Client, Config, Encoding};
 use tn5250::term::{Key, KeyResult, Terminal};
 
-use crate::env::Credentials;
 use crate::trace::Trace;
-use crate::{ModelArg, RunArgs, Target};
+use crate::{Connect, ModelArg, ScriptOptions, Target};
 
 /// A live session.
 pub struct Session {
@@ -39,10 +38,10 @@ pub struct Session {
 
 impl Session {
     /// Connect and negotiate.
-    pub fn connect(args: &RunArgs, creds: &Credentials) -> Result<Self> {
-        let addr = (creds.host.as_str(), creds.port)
+    pub fn connect(args: &Connect) -> Result<Self> {
+        let addr = (args.host.as_str(), args.port)
             .to_socket_addrs()
-            .with_context(|| format!("resolving {}", creds.host))?
+            .with_context(|| format!("resolving {}", args.host))?
             .next()
             .context("no address")?;
         let stream = TcpStream::connect_timeout(&addr, Duration::from_secs(15))
@@ -53,17 +52,16 @@ impl Session {
             ModelArg::M3179 => Model::M3179,
             ModelArg::M3477 => Model::M3477Fc,
         };
-        let user = args.user.clone().unwrap_or_else(|| creds.user.clone());
-        let password = args
-            .password
-            .clone()
-            .unwrap_or_else(|| creds.password.clone());
         let cfg = Config {
             terminal_type: model.terminal_type().into(),
             device: args.device.clone(),
-            user: if args.auto_signon { Some(user) } else { None },
+            user: if args.auto_signon {
+                Some(args.user.clone())
+            } else {
+                None
+            },
             password: if args.auto_signon {
-                Some(password)
+                Some(args.password.clone())
             } else {
                 None
             },
@@ -237,11 +235,15 @@ impl Session {
 }
 
 /// `run`: connect, run the scripts in order, report.
-pub fn run(args: &RunArgs, creds: &Credentials) -> Result<()> {
-    let mut s = Session::connect(args, creds)?;
-    let mut ctx = crate::script::Context::new(args, creds);
+pub fn run(
+    connect: &Connect,
+    options: &ScriptOptions,
+    scripts: &[std::path::PathBuf],
+) -> Result<()> {
+    let mut s = Session::connect(connect)?;
+    let mut ctx = crate::script::Context::new(connect, options);
     let mut failures = 0;
-    for path in &args.scripts {
+    for path in scripts {
         let text =
             std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
         let name = path

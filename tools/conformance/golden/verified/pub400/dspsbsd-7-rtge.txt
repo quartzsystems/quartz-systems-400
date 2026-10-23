@@ -1,0 +1,24 @@
+                            Display Routing Entries                             
+                                                             System:   SYSNAME  
+ Subsystem description:   QINTER2        Status:   ACTIVE                       
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display details                                                            
+                                                                                
+                                                                          Start 
+ Opt    Seq Nbr    Program       Library       Compare Value               Pos  
+           10      QCMD          QSYS          'QCMDI'                      1   
+           15      QCMD          QSYS          'QIGC'                       1   
+           20      QCMD          QSYS          'QS36MRT'                    1   
+           40      QARDRIVE      QSYS          '525XTEST'                   1   
+          700      QCL           QSYS          'QCMD38'                     1   
+         9999      QCMD          QSYS          *ANY                             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F9=Display all detailed descriptions   F12=Cancel                    
+                                                                                

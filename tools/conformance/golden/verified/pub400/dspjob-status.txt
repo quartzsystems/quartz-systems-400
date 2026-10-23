@@ -1,0 +1,24 @@
+                         Display Job Status Attributes                          
+                                                             System:   SYSNAME  
+ Job:   QPADEV000R     User:   USERNAME       Number:   NNNNNN                  
+                                                                                
+ Status of job . . . . . . . . . . . . . . . :   ACTIVE                         
+ Current user profile  . . . . . . . . . . . :   USERNAME                       
+ Job user identity . . . . . . . . . . . . . :   USERNAME                       
+   Set by  . . . . . . . . . . . . . . . . . :     *DEFAULT                     
+ Entered system:                                                                
+   Date  . . . . . . . . . . . . . . . . . . :   MM/DD/YY                       
+   Time  . . . . . . . . . . . . . . . . . . :   HH:MM:SS                       
+ Started:                                                                       
+   Date  . . . . . . . . . . . . . . . . . . :   MM/DD/YY                       
+   Time  . . . . . . . . . . . . . . . . . . :   HH:MM:SS                       
+ Subsystem . . . . . . . . . . . . . . . . . :   QINTER2                        
+   Subsystem pool ID . . . . . . . . . . . . :     2                            
+ Type of job . . . . . . . . . . . . . . . . :   INTER                          
+ Special environment . . . . . . . . . . . . :   *NONE                          
+ Program return code . . . . . . . . . . . . :   0                              
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F5=Refresh   F12=Cancel   F16=Job menu                               
+                                                                                

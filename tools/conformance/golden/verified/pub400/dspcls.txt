@@ -1,0 +1,24 @@
+                           Display Class Information                            
+                                                             System:   SYSNAME  
+ Class . . . . . . . . . . . . . . . . . . . . . . :   QINTER                   
+   Library . . . . . . . . . . . . . . . . . . . . :     QGPL                   
+ Run priority  . . . . . . . . . . . . . . . . . . :   20                       
+ Time slice in milliseconds  . . . . . . . . . . . :   2000                     
+ Eligible for purge  . . . . . . . . . . . . . . . :   *YES                     
+ Default wait time in seconds  . . . . . . . . . . :   30                       
+ Maximum CPU time in milliseconds  . . . . . . . . :   *NOMAX                   
+ Maximum temporary storage in megabytes  . . . . . :   *NOMAX                   
+ Maximum threads . . . . . . . . . . . . . . . . . :   *NOMAX                   
+ Text  . . . . . . . . . . . . . . . . . . . . . . :   Interactive Subsystem Cla
+ss                                                                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

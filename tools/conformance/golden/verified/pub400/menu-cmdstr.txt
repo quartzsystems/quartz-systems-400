@@ -1,0 +1,24 @@
+ CMDSTR                          Start Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Start NSLOOKUP Query                                        NSLOOKUP   
+      2. Start QSH                                                   QSH        
+      3. Start RPC Binder Daemon                                     RPCBIND    
+      4. Start Access for Web                                        STRACCWEB  
+      5. Start AFP Utilities                                         STRAFPU    
+      6. Start Agent Services                                        STRAGTSRV  
+                                                                                
+      8. Start Advanced Print Function                               STRAPF     
+                                                                                
+     11. Start ASP Balance                                           STRASPBAL  
+                                                                                
+     13. Start Authority Collection                                  STRAUTCOL  
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

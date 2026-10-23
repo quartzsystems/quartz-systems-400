@@ -1,0 +1,24 @@
+ RESTORE                            Restore                                     
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+   Restore Data                                                                 
+      1. Files                                                                  
+      2. Libraries                                                              
+      3. Documents and folders                                                  
+      4. Programs                                                               
+      5. Other objects                                                          
+      6. Licensed programs                                                      
+      7. Configuration                                                          
+      8. User profiles                                                          
+      9. Objects in directories                                                 
+                                                                                
+   Restore System and User Data                                                 
+     21. System and user data                                                   
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

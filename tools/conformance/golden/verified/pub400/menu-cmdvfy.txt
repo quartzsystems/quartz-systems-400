@@ -1,0 +1,24 @@
+ CMDVFY                         Verify Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. Verify APPC Connection                                      APING      
+      2. Verify TCP/IP Connection                                    PING       
+      3. Verify APPC Connection                                      VFYAPPCCNN 
+      4. Verify Communications                                       VFYCMN     
+      5. Verify Image Catalog                                        VFYIMGCLG  
+      6. Verify Link supporting LPDA-2                               VFYLNKLPDA 
+                                                                                
+      8. Verify OptiConnect Connections                              VFYOPCCNN  
+      9. Verify Optical                                              VFYOPT     
+     10. Verify Printer                                              VFYPRT     
+     11. Verify Service Agent                                        VFYSRVAGT  
+     12. Verify Service Configuration                                VFYSRVCFG  
+     13. Verify Tape                                                 VFYTAP     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

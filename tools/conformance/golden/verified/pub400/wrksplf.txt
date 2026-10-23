@@ -1,0 +1,24 @@
+                          Work with All Spooled Files                           
+                                                                                
+ Type options, press Enter.                                                     
+   1=Send   2=Change   3=Hold   4=Delete   5=Display   6=Release   7=Messages   
+   8=Attributes        9=Work with printing status                              
+                                                                                
+                                                                                
+                              Device or                     Total     Cur       
+ Opt  File        User        Queue       User Data   Sts   Pages    Page  Copy 
+      QDFUZZIN    USERNAME    USERNAME                RDY       3             1 
+      QDFUZZOUT   USERNAME    USERNAME                RDY       3             1 
+      QDFUZZ      USERNAME    USERNAME                RDY     178             1 
+      QDFUZZ      USERNAME    USERNAME                RDY     178             1 
+      QORACLE     USERNAME    USERNAME                RDY       8             1 
+      CVTCHAR     USERNAME    USERNAME                RDY       8             1 
+      DATEBAD     USERNAME    USERNAME                RDY       8             1 
+      SUBSTBAD    USERNAME    USERNAME                RDY       8             1 
+      RESUMEG     USERNAME    USERNAME                RDY       8             1 
+                                                                        More... 
+ Parameters for options 1, 2, 3 or command                                      
+ ===>                                                                           
+ F3=Exit   F10=View 4   F11=View 2   F12=Cancel   F22=Printers   F24=More keys  
+                                                                                
+                                                                                

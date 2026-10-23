@@ -1,0 +1,24 @@
+ SAVE                                 Save                                      
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+   Save System and User Data                                                    
+     20. Define save system and user data defaults                              
+     21. Entire system                                                          
+     22. System data only                                                       
+     23. All user data                                                          
+                                                                                
+   Save Document Library Objects                                                
+     30. All documents, folders, and mail                                       
+     31. New and changed documents, new folders, all mail                       
+     32. Documents and folders                                                  
+     33. Mail only                                                              
+                                                                                
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     
+ F16=System Main menu                                                           
+                                                                                

@@ -1,0 +1,24 @@
+                                 Command Entry                         PUB400   
+                                                           Request level:   4   
+ All previous commands and messages:                                            
+  3 > dspautusr                                                                 
+      Job 020588/USERNAME/QPADEV007D changed by JOBMANAGER.                     
+  3 > dspjoblog                                                                 
+      Job 020588/USERNAME/QPADEV007D changed by JOBMANAGER.                     
+  3 > wrkactjob                                                                 
+      Job 020588/USERNAME/QPADEV007D changed by JOBMANAGER.                     
+      Job 020588/USERNAME/QPADEV007D changed by JOBMANAGER.                     
+      Job 020588/USERNAME/QPADEV007D changed by JOBMANAGER.                     
+    > /*      */                                                                
+  3 > call qcmd                                                                 
+  4 > dsplibl                                                                   
+      Job 020588/USERNAME/QPADEV007D changed by JOBMANAGER.                     
+                                                                         Bottom 
+ Type command, press Enter.                                                     
+ ===>                                                                           
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F10=Exclude detailed messages              
+ F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys  
+                                                                                

@@ -1,0 +1,24 @@
+                             Work with Active Jobs                     PUB400   
+                                                         MM/DD/YY  HH:MM:SS UTC 
+ CPU %:     0,0     Elapsed time:   HH:MM:SS     Active jobs:   922             
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change   3=Hold   4=End   5=Work with   6=Release   7=Display message      
+   8=Work with spooled files   13=Disconnect ...                                
+                                               --------Elapsed---------         
+ Opt  Subsystem/Job  Type  Pool  Pty      CPU  Int    Rsp  AuxIO  CPU %         
+      #SYSLOAD       SBS     2    0       0,0                  0    0,0         
+        SYSLOAD      ASJ     2    1       3,9                  0    0,0         
+      QBATCH         SBS     2    0      82,1                  0    0,0         
+        IRESTAPI     BCH     2   99       0,0                  0    0,0         
+        MAPEPIRE     BCH     2   99       0,3                  0    0,0         
+        QP0ZSPWT     BCI     2   99       4,9                  0    0,0         
+        QP0ZSPWT     BCI     2   99       0,0                  0    0,0         
+        QP0ZSPWT     BCI     2   99     139,4                  0    0,0         
+        QZSHSH       BCI     2   99       0,0                  0    0,0         
+                                                                        More... 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F5=Refresh      F7=Find      F10=Restart statistics                  
+ F11=Display thread data   F12=Cancel   F23=More options   F24=More keys        
+                                                                                

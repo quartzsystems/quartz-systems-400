@@ -1,0 +1,24 @@
+                       Display Object Description - Full                        
+                                                                 Library 1 of 1 
+ Object . . . . . . . :   QDFTJOBD        Attribute  . . . . . :                
+   Library  . . . . . :     QGPL          Owner  . . . . . . . :   QPGMR        
+ Library ASP device . :   *SYSBAS         Library ASP group  . :   *SYSBAS      
+ Type . . . . . . . . :   *JOBD           Primary group  . . . :   *NONE        
+                                                                                
+ Change/Usage information:                                                      
+   Change date/time . . . . . . . . . . :   MM/DD/YY  HH:MM:SS                  
+   Usage data collected . . . . . . . . :   YES                                 
+   Last used date . . . . . . . . . . . :   MM/DD/YY                            
+   Days used count  . . . . . . . . . . :   14                                  
+     Reset date . . . . . . . . . . . . :                                       
+   Allow change by program  . . . . . . :   NO                                  
+ Auditing/Integrity information:                                                
+   Object auditing value  . . . . . . . :   *NOTAVL                             
+   Digitally signed . . . . . . . . . . :   NO                                  
+   Authority collection value . . . . . :   *NONE                               
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

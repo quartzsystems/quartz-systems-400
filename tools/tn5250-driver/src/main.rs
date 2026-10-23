@@ -7,22 +7,15 @@
 //! a real emulator, runs a keystroke script, and captures or compares
 //! screens. `ftp` moves files with the oracle's FTP server.
 
-mod env;
-mod ftp;
-mod golden;
-mod mask;
-mod script;
-mod session;
-mod trace;
-
 use std::path::PathBuf;
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context as _, Result, bail};
 use clap::{Parser, Subcommand, ValueEnum};
+use tn5250_driver::{Connect, Encoding, ModelArg, ScriptOptions, Target, env, ftp, session};
 
 /// Which system to talk to.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
-pub enum Target {
+enum TargetArg {
     /// The QS/400 under test (`--host`, default `127.0.0.1:2323`).
     Qs400,
     /// The primary oracle, from `QS_ORACLE_*`.
@@ -31,15 +24,30 @@ pub enum Target {
     Pub400,
 }
 
-impl Target {
-    /// The name used in golden paths and the index.
-    pub fn name(self) -> &'static str {
-        match self {
-            Self::Qs400 => "qs400",
-            Self::Oracle => "oracle",
-            Self::Pub400 => "pub400",
+impl From<TargetArg> for Target {
+    fn from(t: TargetArg) -> Self {
+        match t {
+            TargetArg::Qs400 => Self::Qs400,
+            TargetArg::Oracle => Self::Oracle,
+            TargetArg::Pub400 => Self::Pub400,
         }
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
+enum EncodingArg {
+    /// DES (password levels 0 and 1).
+    Des,
+    /// SHA-1 (password levels 2 and 3).
+    Sha,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
+enum ModelOpt {
+    /// `IBM-3179-2`, 24×80.
+    M3179,
+    /// `IBM-3477-FC`, 27×132.
+    M3477,
 }
 
 #[derive(Parser, Debug)]
@@ -62,88 +70,70 @@ enum Cmd {
 /// Arguments of `run`.
 #[derive(clap::Args, Debug, Clone)]
 #[allow(clippy::struct_excessive_bools)] // command-line switches
-pub struct RunArgs {
+struct RunArgs {
     /// The system.
     #[arg(long, value_enum)]
-    pub target: Target,
+    target: TargetArg,
     /// Host (and `:port`) overriding the target's.
     #[arg(long)]
-    pub host: Option<String>,
+    host: Option<String>,
     /// The user to sign on as; the target's by default.
     #[arg(long)]
-    pub user: Option<String>,
+    user: Option<String>,
     /// The password; the target's by default.
     #[arg(long)]
-    pub password: Option<String>,
+    password: Option<String>,
     /// Send the password at negotiation (RFC 4777 auto-signon).
     #[arg(long)]
-    pub auto_signon: bool,
+    auto_signon: bool,
     /// The substitute encoding for auto-signon.
-    #[arg(long, value_enum, default_value_t = Encoding::Sha)]
-    pub encoding: Encoding,
+    #[arg(long, value_enum, default_value_t = EncodingArg::Sha)]
+    encoding: EncodingArg,
     /// The device name to ask for.
     #[arg(long, default_value = "")]
-    pub device: String,
+    device: String,
     /// The terminal model.
-    #[arg(long, value_enum, default_value_t = ModelArg::M3179)]
-    pub model: ModelArg,
+    #[arg(long, value_enum, default_value_t = ModelOpt::M3179)]
+    model: ModelOpt,
     /// Claim GUI support (windows arrive as structured fields).
     #[arg(long)]
-    pub gui: bool,
+    gui: bool,
     /// Print the negotiation, every record and what it did.
     #[arg(long)]
-    pub trace: bool,
+    trace: bool,
     /// With `--trace`: the records in hex too.
     #[arg(long)]
-    pub hex: bool,
+    hex: bool,
     /// Where snapshots go (and are compared against).
     #[arg(long)]
-    pub golden: Option<PathBuf>,
+    golden: Option<PathBuf>,
     /// Write snapshots instead of comparing them.
     #[arg(long)]
-    pub update: bool,
+    update: bool,
     /// The release recorded in the golden index for this target.
     #[arg(long, default_value = "")]
-    pub release: String,
+    release: String,
     /// Milliseconds a `wait` gives up after.
     #[arg(long, default_value_t = 15000)]
-    pub timeout: u64,
+    timeout: u64,
     /// Scripts to run, in order, over one session.
-    pub scripts: Vec<PathBuf>,
-}
-
-/// The auto-signon substitute.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
-pub enum Encoding {
-    /// DES (password levels 0 and 1).
-    Des,
-    /// SHA-1 (password levels 2 and 3).
-    Sha,
-}
-
-/// The models the driver negotiates.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
-pub enum ModelArg {
-    /// `IBM-3179-2`, 24×80.
-    M3179,
-    /// `IBM-3477-FC`, 27×132.
-    M3477,
+    scripts: Vec<PathBuf>,
 }
 
 /// Arguments of `ftp`.
 #[derive(clap::Args, Debug, Clone)]
-pub struct FtpArgs {
+struct FtpArgs {
     /// The system.
     #[arg(long, value_enum)]
-    pub target: Target,
+    target: TargetArg,
     /// Host overriding the target's.
     #[arg(long)]
-    pub host: Option<String>,
+    host: Option<String>,
     /// The operation: `ls PATH`, `get REMOTE LOCAL`, `put LOCAL REMOTE`,
     /// `quote COMMAND`.
-    pub op: String,
+    op: String,
     /// Its operands.
-    pub operands: Vec<String>,
+    operands: Vec<String>,
 }
 
 fn main() -> Result<()> {
@@ -154,13 +144,40 @@ fn main() -> Result<()> {
                 bail!("no script given");
             }
             let e = env::Env::load()?;
-            let creds = e.credentials(args.target, args.host.as_deref())?;
-            session::run(&args, &creds)
+            let target: Target = args.target.into();
+            let creds = e.credentials(target, args.host.as_deref())?;
+            let connect = Connect {
+                target,
+                host: creds.host,
+                port: creds.port,
+                user: args.user.clone().unwrap_or(creds.user),
+                password: args.password.clone().unwrap_or(creds.password),
+                auto_signon: args.auto_signon,
+                encoding: match args.encoding {
+                    EncodingArg::Des => Encoding::Des,
+                    EncodingArg::Sha => Encoding::Sha,
+                },
+                device: args.device.clone(),
+                model: match args.model {
+                    ModelOpt::M3179 => ModelArg::M3179,
+                    ModelOpt::M3477 => ModelArg::M3477,
+                },
+                gui: args.gui,
+                trace: args.trace,
+                hex: args.hex,
+            };
+            let options = ScriptOptions {
+                golden: args.golden.clone(),
+                update: args.update,
+                release: args.release.clone(),
+                timeout_ms: args.timeout,
+            };
+            session::run(&connect, &options, &args.scripts)
         }
         Cmd::Ftp(args) => {
             let e = env::Env::load()?;
-            let creds = e.credentials(args.target, args.host.as_deref())?;
-            ftp::run(&args, &creds).context("ftp")
+            let creds = e.credentials(args.target.into(), args.host.as_deref())?;
+            ftp::run(&args.op, &args.operands, &creds).context("ftp")
         }
         Cmd::Env => {
             let e = env::Env::load()?;

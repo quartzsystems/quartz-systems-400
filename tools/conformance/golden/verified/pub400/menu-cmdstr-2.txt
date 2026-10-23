@@ -1,0 +1,24 @@
+ CMDSTR                          Start Commands                                 
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+     18. Start COBOL Debug                                           STRCBLDBG  
+     19. Start CGU                                                   STRCGU     
+     20. Start CHT Server                                            STRCHTSVR  
+     21. Start CICS                                                  STRCICS    
+     22. Start CICS User                                             STRCICSUSR 
+     23. Start Cleanup                                               STRCLNUP   
+                                                                                
+     25. Start Communications Server                                 STRCMNSVR  
+     26. Start Communications Trace                                  STRCMNTRC  
+     27. Start Commitment Control                                    STRCMTCTL  
+                                                                                
+     31. Start Copy Screen                                           STRCPYSCN  
+                                                                                
+     33. Start Debug                                                 STRDBG     
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+                                                                                

@@ -1,0 +1,24 @@
+ CMDEND                           End Commands                                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+   Commands                                                                     
+      1. End Access for Web                                          ENDACCWEB  
+      2. End Agent Services                                          ENDAGTSRV  
+      3. End ASP Balance                                             ENDASPBAL  
+                                                                                
+      5. End Authority Collection                                    ENDAUTCOL  
+      6. End Batch Job                                               ENDBCHJOB  
+                                                                                
+      8. End COBOL Debug                                             ENDCBLDBG  
+      9. End CHT Server                                              ENDCHTSVR  
+     10. End CICS                                                    ENDCICS    
+     11. End CICS User                                               ENDCICSUSR 
+     12. End Cleanup                                                 ENDCLNUP   
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F16=Major menu                
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

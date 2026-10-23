@@ -1,0 +1,24 @@
+                         Additional Message Information                         
+                                                                                
+ From . . . . . . . . . :   USERNAME      Severity . . . . . . . :   00         
+ Message type . . . . . :   Request                                             
+ Date sent  . . . . . . :   MM/DD/YY      Time sent  . . . . . . :   HH:MM:SS   
+                                                                                
+ Message . . . . :   dspjoblog                                                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Display message details   F12=Cancel                   
+ F21=Select assistance level                                                    
+                                                                                

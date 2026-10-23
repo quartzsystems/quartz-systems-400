@@ -1,0 +1,24 @@
+                               Display Call Stack                               
+                                                             System:   SYSNAME  
+ Job:   QPADEV000R     User:   USERNAME       Number:   NNNNNN                  
+ Thread:   00000A9D                                                             
+                                                                                
+                                                                                
+ Type  Program                  Statement         Procedure                     
+       QCMD       QSYS                     /0519                                
+       QUICMENU   QSYS                     /00C1                                
+    1  QUIMNDRV   QSYS                     /061E                                
+    2  QUIMGFLW   QSYS                     /04D9                                
+    3  QUICMD     QSYS                     /056F                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit        F5=Refresh   F11=Display activation group   F12=Cancel          
+ F16=Job menu   F17=Top      F18=Bottom   F22=Display entire field              
+                                                                                
