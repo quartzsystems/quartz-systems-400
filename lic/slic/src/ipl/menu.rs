@@ -83,7 +83,8 @@ pub fn read(system: &mut System, rx: &Receiver<Event>) -> Option<Answer> {
                 | Event::JobGone
                 | Event::Console(Input::SignOn(_))
                 | Event::ConsoleJob(_)
-                | Event::ConsoleGone(_),
+                | Event::ConsoleGone(_)
+                | Event::ConsoleLinkGone,
             ) => {}
             Err(_) => return None,
         }

@@ -11,6 +11,7 @@ pub mod display;
 pub mod dst;
 pub mod install;
 pub mod lic;
+pub mod link;
 pub mod log;
 pub mod menu;
 pub mod power;
@@ -50,6 +51,8 @@ pub enum Event {
     ConsoleJob(wm::ctl::FromJob),
     /// That job's channel closed.
     ConsoleGone(u32),
+    /// The console's TN5250 session to the telnet server ended.
+    ConsoleLinkGone,
     /// Something from the local console's keyboard.
     Console(::console::Input),
 }
@@ -348,7 +351,14 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
     }
     lic::complete(system);
     system.emit(&src::IPL_COMPLETE);
-    procs::console::sign_on(system, "");
+    // The console becomes a terminal of the telnet server; its own
+    // sign-on display stands in when the server is not there.
+    let port = link::port(system);
+    if let Err(e) = link::connect(system, port, tx) {
+        system.out.serial(&format!("slic: console: {e}; the interim sign-on shows
+"));
+        procs::console::sign_on(system, "");
+    }
     audit_lic(system);
     if system.procs.stg.is_some()
         && let Err(e) = procs::svcjob::start(system, tx.clone())
@@ -593,6 +603,13 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
             Ok(Event::Console(input)) => console_input(system, input, tx),
             Ok(Event::ConsoleJob(m)) => procs::console::from_job(system, m),
             Ok(Event::ConsoleGone(pid)) => procs::console::gone(system, pid),
+            Ok(Event::ConsoleLinkGone) => {
+                system.out.serial("slic: console: the TN5250 session ended
+");
+                if system.procs.console.is_none() {
+                    procs::console::sign_on(system, "");
+                }
+            }
             Err(_) => park(),
         }
     }

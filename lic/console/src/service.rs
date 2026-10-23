@@ -58,6 +58,14 @@ pub enum Command {
     Virtual(Key),
     /// Reply with the 24 lines of the grid.
     Dump(Sender<String>),
+    /// A TN5250E session to the system's telnet server is up: the
+    /// console becomes its terminal; the operator's records go out
+    /// on the sender.
+    Attach(Sender<Vec<u8>>),
+    /// A record from the session.
+    Record(Vec<u8>),
+    /// The session ended: the console's own screens again.
+    Detach,
 }
 
 /// What the console reports back to slic.
@@ -78,6 +86,8 @@ enum Kind {
     Src,
     App,
     SignOn,
+    /// A 5250 terminal of the system's own telnet server.
+    Terminal,
 }
 
 /// The console state.
@@ -90,6 +100,10 @@ pub struct Console {
     mods: Modifiers,
     locked: bool,
     out: Option<Sender<Input>>,
+    /// The terminal, while attached to a session.
+    term: Option<crate::terminal::ConsoleTerminal>,
+    /// Where the terminal's records go.
+    link: Option<Sender<Vec<u8>>>,
 }
 
 impl Console {
@@ -122,9 +136,16 @@ impl Console {
                 mods: Modifiers::default(),
                 locked: false,
                 out: None,
+                term: None,
+                link: None,
             },
             status,
         )
+    }
+
+    /// Whether the console is a session's terminal.
+    pub fn attached(&self) -> bool {
+        self.kind == Kind::Terminal
     }
 
     /// Whether a display is attached.
@@ -194,8 +215,45 @@ impl Console {
                 }
             }
             Command::Dump(reply) => {
-                let _ = reply.send(self.screen.dump());
+                let text = match &self.term {
+                    Some(t) if self.kind == Kind::Terminal => {
+                        let mut s = t.text_rows().join("\n");
+                        s.push('\n');
+                        s
+                    }
+                    _ => self.screen.dump(),
+                };
+                let _ = reply.send(text);
                 return;
+            }
+            Command::Attach(link) => {
+                self.term = Some(crate::terminal::ConsoleTerminal::new());
+                self.link = Some(link);
+                self.kind = Kind::Terminal;
+                self.locked = false;
+                self.screen = Screen::new();
+            }
+            Command::Record(bytes) => {
+                let (Some(t), Ok(rec)) =
+                    (self.term.as_mut(), tn5250::record::Record::decode(&bytes))
+                else {
+                    return;
+                };
+                t.apply(&rec);
+                self.screen = t.screen();
+            }
+            Command::Detach => {
+                self.term = None;
+                self.link = None;
+                if self.kind == Kind::Terminal {
+                    self.kind = Kind::Src;
+                    self.screen = match self.recent.last() {
+                        Some((code, text)) => {
+                            screens::src_screen(&self.system, code, text, &self.recent)
+                        }
+                        None => Screen::new(),
+                    };
+                }
             }
         }
         self.redraw();
@@ -224,6 +282,18 @@ impl Console {
 
     /// Apply a 5250 key. Returns whether the screen changed.
     fn apply(&mut self, key: Key) -> bool {
+        if self.kind == Kind::Terminal {
+            let Some(t) = self.term.as_mut() else {
+                return false;
+            };
+            for bytes in t.key(key) {
+                if let Some(link) = &self.link {
+                    let _ = link.send(bytes);
+                }
+            }
+            self.screen = t.screen();
+            return true;
+        }
         if self.locked {
             if matches!(editor::apply(&mut self.screen.clone(), key), Outcome::Reset) {
                 self.unlock();
@@ -280,7 +350,7 @@ impl Console {
                 self.lock("");
                 true
             }
-            Kind::Src => false,
+            Kind::Src | Kind::Terminal => false,
         }
     }
 
@@ -323,6 +393,8 @@ mod tests {
             mods: Modifiers::default(),
             locked: false,
             out: None,
+            term: None,
+            link: None,
         }
     }
 

@@ -17,6 +17,7 @@ pub mod keyboard;
 pub mod palette;
 pub mod screen;
 pub mod screens;
+pub mod terminal;
 
 #[cfg(target_os = "linux")]
 pub mod fb;
