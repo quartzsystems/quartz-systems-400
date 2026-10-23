@@ -59,7 +59,7 @@ readp(e) CUSTOMER;
 detail = '';
 detail += 'CUSNO=' + %char(CUSNO) + ' ';
 logline(11 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
-// 12: SETLL *END                             => 00000
+// 12: SETLL *END                             => 00012 NOFOUND
 setll(e) *hival CUSTOMER;
 detail = '';
 logline(12 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
@@ -85,10 +85,9 @@ logline(16 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUST
 reade(e) (5) CUSTOMER;
 detail = '';
 logline(17 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
-// 18: READ                                   => 00000 CUSNO=6
+// 18: READ                                   => 00011 EOF
 read(e) CUSTOMER;
 detail = '';
-detail += 'CUSNO=' + %char(CUSNO) + ' ';
 logline(18 : %status(CUSTOMER) : %found(CUSTOMER) : %equal(CUSTOMER) : %eof(CUSTOMER) : %trimr(detail));
 // 19: WRITE CUSNO=7 NAME='Grace' STATUS='A' BAL=5 => 00000
 clear CUSREC;
@@ -170,8 +169,8 @@ logline(30 : %status(CUSBYNAME) : %found(CUSBYNAME) : %equal(CUSBYNAME) : %eof(C
 // 31: READ                                   => 00000 NAME='Alice' CUSNO=1
 read(e) CUSBYNAME;
 detail = '';
-detail += 'NAME=? ';
-detail += 'CUSNO=? ';
+detail += 'NAME=' + %trimr(NAME) + ' ';
+detail += 'CUSNO=' + %char(CUSNO) + ' ';
 logline(31 : %status(CUSBYNAME) : %found(CUSBYNAME) : %equal(CUSBYNAME) : %eof(CUSBYNAME) : %trimr(detail));
 // 32: READE 'Alice'                          => 00011 EOF
 reade(e) ('Alice') CUSBYNAME;
@@ -184,7 +183,7 @@ logline(33 : %status(CUSBYNAME) : %found(CUSBYNAME) : %equal(CUSBYNAME) : %eof(C
 // 34: READE 'Carol'                          => 00000 CUSNO=3
 reade(e) ('Carol') CUSBYNAME;
 detail = '';
-detail += 'CUSNO=? ';
+detail += 'CUSNO=' + %char(CUSNO) + ' ';
 logline(34 : %status(CUSBYNAME) : %found(CUSBYNAME) : %equal(CUSBYNAME) : %eof(CUSBYNAME) : %trimr(detail));
 // 35: READE 'Carol'                          => 00011 EOF
 reade(e) ('Carol') CUSBYNAME;
@@ -197,7 +196,7 @@ logline(36 : %status(CUSBYNAME) : %found(CUSBYNAME) : %equal(CUSBYNAME) : %eof(C
 // 37: READ                                   => 00000 NAME='Erin'
 read(e) CUSBYNAME;
 detail = '';
-detail += 'NAME=? ';
+detail += 'NAME=' + %trimr(NAME) + ' ';
 logline(37 : %status(CUSBYNAME) : %found(CUSBYNAME) : %equal(CUSBYNAME) : %eof(CUSBYNAME) : %trimr(detail));
 // 38: CLOSE                                  => 00000
 close(e) CUSBYNAME;
@@ -233,22 +232,22 @@ logline(44 : %status(ACTIVE) : %found(ACTIVE) : %equal(ACTIVE) : %eof(ACTIVE) : 
 // 45: READ                                   => 00000 CUSNO=1
 read(e) ACTIVE;
 detail = '';
-detail += 'CUSNO=? ';
+detail += 'CUSNO=' + %char(CUSNO) + ' ';
 logline(45 : %status(ACTIVE) : %found(ACTIVE) : %equal(ACTIVE) : %eof(ACTIVE) : %trimr(detail));
 // 46: READ                                   => 00000 CUSNO=3
 read(e) ACTIVE;
 detail = '';
-detail += 'CUSNO=? ';
+detail += 'CUSNO=' + %char(CUSNO) + ' ';
 logline(46 : %status(ACTIVE) : %found(ACTIVE) : %equal(ACTIVE) : %eof(ACTIVE) : %trimr(detail));
 // 47: READ                                   => 00000 CUSNO=4
 read(e) ACTIVE;
 detail = '';
-detail += 'CUSNO=? ';
+detail += 'CUSNO=' + %char(CUSNO) + ' ';
 logline(47 : %status(ACTIVE) : %found(ACTIVE) : %equal(ACTIVE) : %eof(ACTIVE) : %trimr(detail));
 // 48: READ                                   => 00000 CUSNO=6
 read(e) ACTIVE;
 detail = '';
-detail += 'CUSNO=? ';
+detail += 'CUSNO=' + %char(CUSNO) + ' ';
 logline(48 : %status(ACTIVE) : %found(ACTIVE) : %equal(ACTIVE) : %eof(ACTIVE) : %trimr(detail));
 // 49: READ                                   => 00011 EOF
 read(e) ACTIVE;
@@ -265,12 +264,12 @@ logline(51 : %status(BIGORD) : %found(BIGORD) : %equal(BIGORD) : %eof(BIGORD) : 
 // 52: READ                                   => 00000 ORDNO=1003
 read(e) BIGORD;
 detail = '';
-detail += 'ORDNO=? ';
+detail += 'ORDNO=' + %char(ORDNO) + ' ';
 logline(52 : %status(BIGORD) : %found(BIGORD) : %equal(BIGORD) : %eof(BIGORD) : %trimr(detail));
 // 53: READ                                   => 00000 ORDNO=1004
 read(e) BIGORD;
 detail = '';
-detail += 'ORDNO=? ';
+detail += 'ORDNO=' + %char(ORDNO) + ' ';
 logline(53 : %status(BIGORD) : %found(BIGORD) : %equal(BIGORD) : %eof(BIGORD) : %trimr(detail));
 // 54: READ                                   => 00011 EOF
 read(e) BIGORD;

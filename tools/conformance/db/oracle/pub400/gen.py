@@ -29,8 +29,11 @@ for f in (repo / "dds").iterdir():
     # name would push JFILE past column 80
     dds = re.sub(r"\bQSTEST/", "", f.read_text(encoding="utf-8"))
     (kit / "dds" / f.name).write_text(dds, encoding="utf-8", newline="\n")
+# LF only: a checkout may hold CRLF, and the carriage return turns the
+# last numeric field into bad data for CPYFRMIMPF (reason code 7)
 for f in (repo / "data").iterdir():
-    shutil.copy(f, kit / "data" / f.name)
+    text = f.read_text(encoding="utf-8").replace("\r\n", "\n")
+    (kit / "data" / f.name).write_text(text, encoding="utf-8", newline="\n")
 (kit / "oracle" / "RLATEST.RPGLE").write_text(
     port((repo / "oracle" / "RLATEST.RPGLE").read_text(encoding="utf-8")), encoding="utf-8", newline="\n")
 (kit / "oracle" / "QRESULTS.SQL").write_text(

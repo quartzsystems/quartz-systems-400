@@ -914,8 +914,11 @@ impl Odp {
                 self.fb.found = self.peek(txn, true)?.is_some();
             }
             KeyArg::End | KeyArg::HiVal => {
+                // Nothing lies at or after the end: not found, as the
+                // machine reports it.
                 self.pos = Pos::End;
-                self.fb.found = self.peek(txn, false)?.is_some();
+                self.fb.found = false;
+                self.fb.equal = false;
             }
             KeyArg::Rrn(n) if self.keyed() => self.setll_rrn_keyed(txn, *n)?,
             KeyArg::Rrn(n) => {
@@ -937,7 +940,16 @@ impl Odp {
                 self.fb.equal = next.is_some_and(|(k, _)| k.key.starts_with(&prefix));
             }
         }
+        self.not_found_status();
         Ok(())
+    }
+
+    /// `SETLL`/`SETGT` with no record to read next: status `00012`, as
+    /// the machine's RPG file status shows.
+    fn not_found_status(&mut self) {
+        if !self.fb.found && self.fb.status == status::OK {
+            self.fb.status = status::NOT_FOUND;
+        }
     }
 
     /// `SETLL` by RRN on a keyed open: before the record's own entry, so
@@ -992,6 +1004,7 @@ impl Odp {
             }
         }
         self.fb.found = self.peek(txn, true)?.is_some();
+        self.not_found_status();
         Ok(())
     }
 
@@ -1069,6 +1082,10 @@ impl Odp {
         let found = self.peek(txn, forward)?;
         let found = found.filter(|(k, _)| k.key.starts_with(&prefix));
         if found.is_none() {
+            // The file is at its end in the reading direction until it is
+            // positioned again: a READ after a READE mismatch is end of
+            // file on the machine.
+            self.pos = if forward { Pos::End } else { Pos::Start };
             self.fb.eof = true;
             self.fb.status = status::EOF;
             return Ok(None);

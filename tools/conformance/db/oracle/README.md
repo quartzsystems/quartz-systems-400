@@ -47,3 +47,15 @@ keeps its seconds on the machine (`EVENTS`, `Q08`), `CPYTOIMPF` writes
 a hex (`H`) field's bytes unconverted (`TYPES`), `DSPFFD` reports 0
 digits for a character field (`WHFLDD`), and the format level
 identifiers (`RFID`) are IBM's own hash.
+
+## Captured 2026-10-22 on pub400.com (IBM i 7.5)
+
+The rest of the kit ran on pub400 with the RPG step (`pub400/README.md`
+says how): `rla.csv`, `dspjrn.csv` and the exports of `PRODUCT`,
+`ORDBYCUS`, `ORDJOIN` and `PRDBYDESC` in `expected/` come from there.
+What the machine settled: `%FOUND`, `%EQUAL` and `%EOF` keep their
+values between operations; `SETLL` and `SETGT` with no record report
+`00012`; a `READ` after a `READE` mismatch is end of file; `CPYTOIMPF`
+writes arrival sequence even for keyed files, and a join file in the
+order of a keyed path over its primary that leads with the join field.
+`RLALOG` is not exported: it is `rla.csv`.

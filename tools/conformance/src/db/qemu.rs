@@ -170,7 +170,7 @@ impl Suite {
         }
 
         let mut compared = 0u32;
-        for name in kit::PHYSICAL.iter().chain(kit::EXPORTED_LOGICAL.iter()) {
+        for name in kit::exported_physical().chain(kit::EXPORTED_LOGICAL.iter().copied()) {
             let out = s.command(
                 &format!("cpytoimpf {lib}/{name} NULLS(*YES) DATFMT(*ISO) TIMFMT(*ISO)"),
                 LONG,

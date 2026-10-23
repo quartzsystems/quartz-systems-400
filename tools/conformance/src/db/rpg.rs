@@ -33,6 +33,15 @@ fn is_num(w: &str) -> bool {
     w.parse::<f64>().is_ok()
 }
 
+/// The file a DDS member's `PFILE` keyword names, without its library.
+fn pfile_of(text: &str) -> Option<String> {
+    let up = text.to_ascii_uppercase();
+    let rest = &up[up.find("PFILE(")? + 6..];
+    let inner = &rest[..rest.find(')')?];
+    let first = inner.split_whitespace().next()?;
+    Some(first.rsplit('/').next().unwrap_or(first).to_string())
+}
+
 /// An RPG literal for a script value.
 fn literal(v: &str) -> String {
     if v.starts_with('\'') || is_num(v) {
@@ -56,10 +65,21 @@ fn as_text(f: &kit::DdsField) -> String {
 pub fn generate_rpg(kit: &Kit) -> Result<String, String> {
     let lines = kit.rla_lines().map_err(|e| e.to_string())?;
     let members = kit.dds_members().map_err(|e| e.to_string())?;
-    let dds: BTreeMap<String, (Option<String>, Vec<kit::DdsField>)> = members
+    let mut dds: BTreeMap<String, (Option<String>, Vec<kit::DdsField>)> = members
         .iter()
         .map(|(n, _, t)| (n.clone(), kit::dds_fields(t)))
         .collect();
+    // A logical file whose format lists no fields has every field of its
+    // PFILE's format.
+    for (n, _, t) in &members {
+        let empty = dds.get(n).is_some_and(|(_, fs)| fs.is_empty());
+        if let (true, Some(pf)) = (empty, pfile_of(t))
+            && let Some((_, fs)) = dds.get(&pf).cloned()
+            && let Some(e) = dds.get_mut(n)
+        {
+            e.1 = fs;
+        }
+    }
     // Logical files take field types from their physical file.
     let pf_types: BTreeMap<String, bool> = dds
         .values()
@@ -405,6 +425,15 @@ pub fn generate_sql(kit: &Kit) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pfile_names_the_physical_file() {
+        assert_eq!(
+            pfile_of("     A          R CUSREC                    PFILE(QSTEST/CUSTOMER)"),
+            Some("CUSTOMER".into())
+        );
+        assert_eq!(pfile_of("     A          R X"), None);
+    }
 
     #[test]
     fn keys_and_literals() {
