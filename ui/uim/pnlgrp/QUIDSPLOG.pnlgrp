@@ -1,0 +1,34 @@
+.* DSPLOG: the history log's messages, oldest first.
+:PNLGRP.
+:COPYR.(C) Quartz Systems 2026
+:CLASS NAME=LINECL BASETYPE='CHAR 77'.
+:ECLASS.
+:VAR NAME=LINE CLASS=LINECL.
+:LISTDEF NAME=LOG VARS='LINE'.
+:KEYL NAME=KEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION='RETURN 1'.
+:KEYI KEY=F1 ACTION='RETURN 1'.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F10 ACTION='RETURN 10'.F10=Display all
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F17 ACTION=TOP.
+:KEYI KEY=F18 ACTION=BOTTOM.
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:PANEL NAME=DSPLOG KEYL=KEYS HELP=DSPLOGH ENTER='RETURN 0' TOPSEP=SPACE.Display History Log Contents
+:LIST DEPTH='*' LISTDEF=LOG SCROLL=YES.
+:LISTCOL VAR=LINE USAGE=OUTPUT.
+:ELIST.
+:BOTINST.Press Enter to continue.
+:EPANEL.
+:HELP NAME=DSPLOGH.Display History Log Contents - Help
+:P.The messages the system kept in its history log, oldest first. F10
+adds when each was sent, its identifier and the job that sent it.
+Place the cursor on a message and press F1 to see all of it.
+:EHELP.
+:HELP NAME=KEYSHLP.Function keys - Help
+:P.F3 leaves the display, F12 goes back one display.
+:EHELP.
+:EPNLGRP.

@@ -1,0 +1,151 @@
+.* DSPMSGD: a message file's descriptions (LIST), what to show of one
+.* (SELECT) and the details: its text (TEXT), its fields (FIELDS) and
+.* its attributes (ATTRS).
+:PNLGRP.
+:COPYR.(C) Quartz Systems 2026
+:CLASS NAME=OPTCL BASETYPE=ACTION.
+:ECLASS.
+:CLASS NAME=IDCL BASETYPE='CHAR 7'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=TEXTCL BASETYPE='CHAR 70'.
+:ECLASS.
+:CLASS NAME=LINECL BASETYPE='CHAR 77'.
+:ECLASS.
+:CLASS NAME=SELCL BASETYPE='CHAR 2'.
+:ECLASS.
+:VAR NAME=SYSNM CLASS=NAMECL.
+:VAR NAME=MSGID CLASS=IDCL.
+:VAR NAME=MSGF CLASS=NAMECL.
+:VAR NAME=MSGFLIB CLASS=NAMECL.
+:VAR NAME=TEXT1 CLASS=TEXTCL.
+:VAR NAME=TEXT2 CLASS=LINECL.
+:VAR NAME=SEL CLASS=SELCL.
+:VAR NAME=OPT CLASS=OPTCL.
+:VAR NAME=ID CLASS=IDCL.
+:VAR NAME=IDTEXT CLASS=TEXTCL.
+:VAR NAME=LINE CLASS=LINECL.
+:VAR NAME=SEV CLASS=NAMECL.
+:VAR NAME=LOGPRB CLASS=NAMECL VALUE='*NO'.
+:VAR NAME=DFTPGM CLASS=NAMECL VALUE='*NONE'.
+:VAR NAME=DFTLIB CLASS=NAMECL.
+:VAR NAME=LEVEL CLASS=TEXTCL.
+:VAR NAME=ALROPT CLASS=NAMECL VALUE='*NO'.
+:VAR NAME=DMPLST CLASS=TEXTCL VALUE='*NONE'.
+:VAR NAME=RPYTYPE CLASS=NAMECL VALUE='*NONE'.
+:VAR NAME=VALUES CLASS=TEXTCL VALUE='*NONE'.
+:VAR NAME=DFTRPY CLASS=TEXTCL VALUE='*NONE'.
+:LISTDEF NAME=IDS VARS='OPT ID IDTEXT'.
+:LISTDEF NAME=LINES VARS='LINE'.
+:KEYL NAME=KEYS HELP=KEYSHLP.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=PAGEUP ACTION=PAGEUP.
+:KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+:EKEYL.
+:PANEL NAME=LIST KEYL=KEYS HELP=LISTH ENTER='RETURN 0' TOPSEP=SYSNAM.Display Message Descriptions
+:DATA DEPTH=3.
+:DATAC.Message file . . . . . . . . :   &MSGF.
+:DATAGRP GRPSEP=NONE.
+:DATAC.Library  . . . . . . . . . :     &MSGFLIB.
+:EDATAGRP.
+:EDATA.
+:TOPINST.Type options, press Enter.
+:LIST DEPTH='*' LISTDEF=IDS SCROLL=YES.
+:LISTACT OPTION=5 ENTER='RETURN 5'.5=Display details
+:LISTCOL VAR=OPT USAGE=INPUT.Opt
+:LISTCOL VAR=ID USAGE=OUTPUT.Message ID
+:LISTCOL VAR=IDTEXT USAGE=OUTPUT.Message Text
+:ELIST.
+:EPANEL.
+:PANEL NAME=SELECT KEYL=KEYS HELP=SELECTH ENTER='RETURN 0' TOPSEP=SYSNAM.Select Message Details to Display
+:DATA DEPTH=6.
+:DATAC.Message ID . . . . . . . . . :   &MSGID.
+:DATAC.Message file . . . . . . . . :   &MSGF.
+:DATAGRP GRPSEP=NONE.
+:DATAC.Library  . . . . . . . . . :     &MSGFLIB.
+:EDATAGRP.
+:DATAC.Message text . . . . . . . . :   &TEXT1.
+:DATAC.&TEXT2.
+:EDATA.
+:MENU DEPTH='*'.Select one of the following:
+:MENUI OPTION=1 ACTION='RETURN 1'.Display message text
+:MENUI OPTION=2 ACTION='RETURN 2'.Display field data
+:MENUI OPTION=5 ACTION='RETURN 5'.Display message attributes
+:MENUI OPTION=30 ACTION='RETURN 30'.All of the above
+:EMENU.
+:EPANEL.
+:PANEL NAME=TEXT KEYL=KEYS HELP=SELECTH ENTER='RETURN 0' TOPSEP=SYSNAM.Display Formatted Message Text
+:DATA DEPTH=4.
+:DATAC.Message ID . . . . . . . . . :   &MSGID.
+:DATAC.Message file . . . . . . . . :   &MSGF.
+:DATAGRP GRPSEP=NONE.
+:DATAC.Library  . . . . . . . . . :     &MSGFLIB.
+:EDATAGRP.
+:EDATA.
+:LIST DEPTH='*' LISTDEF=LINES SCROLL=YES.
+:LISTCOL VAR=LINE USAGE=OUTPUT.
+:ELIST.
+:BOTINST.Press Enter to continue.
+:EPANEL.
+:PANEL NAME=FIELDS KEYL=KEYS HELP=SELECTH ENTER='RETURN 0' TOPSEP=SYSNAM.Display Field Data
+:DATA DEPTH=4.
+:DATAC.Message ID . . . . . . . . . :   &MSGID.
+:DATAC.Message file . . . . . . . . :   &MSGF.
+:DATAGRP GRPSEP=NONE.
+:DATAC.Library  . . . . . . . . . :     &MSGFLIB.
+:EDATAGRP.
+:EDATA.
+:LIST DEPTH='*' LISTDEF=LINES SCROLL=YES.
+:LISTCOL VAR=LINE USAGE=OUTPUT.Field     Data Type          Length
+:ELIST.
+:BOTINST.Press Enter to continue.
+:EPANEL.
+:PANEL NAME=ATTRS KEYL=KEYS HELP=SELECTH ENTER='RETURN 0' TOPSEP=SYSNAM.Display Message Attributes
+:DATA DEPTH='*'.
+:DATAC.Message ID . . . . . . . . . :   &MSGID.
+:DATAC.Message file . . . . . . . . :   &MSGF.
+:DATAGRP GRPSEP=NONE.
+:DATAC.Library  . . . . . . . . . :     &MSGFLIB.
+:EDATAGRP.
+:DATAC.
+:DATAC.Severity . . . . . . . . . . :   &SEV.
+:DATAC.
+:DATAC.Log problem  . . . . . . . . :   &LOGPRB.
+:DATAC.
+:DATAC.Default program  . . . . . . :   &DFTPGM.
+:DATAGRP GRPSEP=NONE.
+:DATAC.Default library  . . . . . :     &DFTLIB.
+:EDATAGRP.
+:DATAC.
+:DATAC.Message level  . . . . . . . :   &LEVEL.
+:DATAC.
+:DATAC.Alert option . . . . . . . . :   &ALROPT.
+:DATAC.
+:DATAC.Data to be dumped  . . . . . :   &DMPLST.
+:DATAC.
+:DATAC.Reply type . . . . . . . . . :   &RPYTYPE.
+:DATAC.
+:DATAC.Valid reply values . . . . . :   &VALUES.
+:DATAC.
+:DATAC.Default reply value  . . . . :   &DFTRPY.
+:EDATA.
+:BOTINST.Press Enter to continue.
+:EPANEL.
+:HELP NAME=LISTH.Display Message Descriptions - Help
+:P.The descriptions in a message file, by identifier. Type 5 next to
+one to choose what to see of it.
+:EHELP.
+:HELP NAME=SELECTH.Message description - Help
+:P.Option 1 shows the message's first and second level texts, 2 the
+substitution fields its data fills, 5 its severity, logging, dump
+list and replies; 30 shows each in turn.
+:EHELP.
+:HELP NAME=KEYSHLP.Function keys - Help
+:P.F3 leaves the display, F12 goes back one display.
+:EHELP.
+:EPNLGRP.
