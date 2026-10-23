@@ -4,8 +4,9 @@ The `uim` crate (`ui/uim`) implements this document: the panel-group
 tag language as `CRTPNLGRP` and `CRTMNU TYPE(*UIM)` read it from a
 source member, the model a renderer walks, the checks, the listing and
 the `*PNLGRP` payload. `ui/uim/tests/spec.rs` compares the code's
-layouts with the tables in §6. The crate renders nothing and never
-touches the store; imbedded members and the exports of other groups
+layouts with the tables in §6. The renderer (§7) lays a panel out as
+texts and fields; nothing in the crate makes a data stream or touches
+the store; imbedded members and the exports of other groups
 come through callbacks (`Imbed`, `Imports`). Every text here is ours;
 the tag, attribute and action names are the compatibility interface.
 
@@ -160,7 +161,7 @@ headings hold a `Document`: `Block`s (`Heading`, `Para`, `ParaCont`,
 
 Defaults filled where the reference gives one: `DEPTH` 24 and `WIDTH`
 80 on a panel, 66 and 132 on a print panel; `TOPSEP`/`BOTSEP`/`GRPSEP`
-`SPACE`; `LAYOUT` 1; `SCROLL` `NO`; `DISPLAY` `YES`; `CMDLINE SIZE`
+`SPACE` (a panel's `TOPSEP` also takes `SYSNAME`, §7 R2); `LAYOUT` 1; `SCROLL` `NO`; `DISPLAY` `YES`; `CMDLINE SIZE`
 `LONG`; `CASE` `MIXED`; `SHIFT` `NONE`; a `:LISTCOL.` without `NAME`
 is named after its variable.
 
@@ -302,31 +303,46 @@ fixes the tags). A reader skips tags it does not know.
 
 ## 7. Renderer rules
 
-A draft from the pub400 goldens (2026-10-23), to be settled rule by rule
-as the renderer lands; each rule names the goldens that established it
-(`tools/conformance/golden/verified/pub400`).
-
-Each rule names the goldens that established it (tools/conformance/golden/verified/pub400).
+`uim::render` lays a compiled panel and the dialog's values out as a
+`Screen`: texts at 1-based positions with an attribute, input fields
+with their width and target, the cursor and the paging indicator.
+Nothing is written to column 1 or the last column; the data stream
+crate puts attribute bytes there. The rules were settled against the
+pub400 goldens (`tools/conformance/golden/verified/pub400`, 2026-10-23);
+each names the goldens that establish it. `W` is the panel width (80
+or 132) and the last usable column is `W-1`.
 
 | # | Rule | Goldens |
 |---|---|---|
-| R1 | The panel title is on row 1, starting at column 1 + (80 - len)/2 (integer division); a `PANELID` sits at column 2 of row 1 ("MAIN", "MAJOR", "INFO"). | all; main-menu, major-menu, information-assistant |
-| R2 | `System:` at column 62 of row 2 with the system name at column 72, on data, list and menu panels that show it. | wrksbs, wrkrpyle, wrkjob, dspjobd, dspmsgd-5, dspneta, main-menu |
-| R3 | Panels with the date and time put the system name at column 72 of row 1 and `MM/DD/YY` at 58, `HH:MM:SS UTC` at 68 on row 2 (display-file panels: WRKACTJOB, WRKUSRJOB, WRKSBSJOB). | wrkactjob, wrkusrjob, wrksbsjob |
-| R4 | `Type options, press Enter.` at column 2 on the first free row after the header (row 3, or 5 when a two-row header block follows the title). | wrkobj, wrkjobd, wrkactjob |
-| R5 | Option legends start at column 4, in order, separated so each next item begins 3 columns after the previous item's end, wrapping to a new row at column 4 when the next item would pass column 79. | wrkobj, wrkjobd, wrkcls, wrkbnddir, wrksplf |
-| R6 | List column headings: `Opt` at column 2; data columns start at the header's column; a two-row heading puts the upper word above the lower one right-aligned to the column text start. | wrkjobd ("Job"/"Description"), wrkbnddir ("Binding"/"Directory"), wrkrpyle |
-| R7 | List rows begin two rows below the first heading row? no: directly on the next row; the option entry field is 2 columns at column 3-4; first data column at column 7. | wrkobj, wrkcls, wrkjobd |
-| R8 | `More...` at column 73, `Bottom` at column 74, on the row above the command-line prompt (row 19 with a command line; row 21 with "Press Enter to continue." on row 22? see R10). | wrkobj (19), dspmsg (21), dspjobd (20) |
-| R9 | `Parameters or command` (or `Parameters for options A, B and C or command`, the list's option numbers that take parameters joined with commas and "and"/"or") at column 2 of row 20; `===>` at column 2 of row 21 with the command line following at column 7. | wrkobj, wrkjobd, wrkcls, wrkbnddir, wrkrpyle |
-| R10 | Data panels without a command line end with `Press Enter to continue.` at column 2 of row 21 (list panels in the same style: dspautusr row 20), `More...`/`Bottom` on row 20 (dspjobd) or 19 (dspautusr). | dspjobd, dspsysval, dspmsgd-5, dspneta, dspautusr |
-| R11 | Function keys fill rows 22 and 23 (or 23 alone), each row packed left to right with 3 blanks between keys; when two rows are filled, the keys of the upper row are aligned to the columns of the lower row where the whole row still fits in 79 columns (wrkjobd: 2/15/27/40/54 over 2/15/40), else packed greedily (wrkobj). | wrkjobd, wrkcls, wrkbnddir, wrkusrjob, wrkobj, wrkrpyle |
-| R12 | The copyright line is row 24 of the initial menu and of panels reached from it (menus, dspautusr), never of panels reached from Command Entry. | main-menu, major-menu, dspautusr, wrkrpyle vs command-entry |
-| R13 | Menu panels: `Select one of the following:` at column 2 of row 3; options from row 5, `{:>3}.` at column 5 followed by one blank and the text; `Selection or command` at row 19, `===>` at row 20; a `MENU` tag's option text may be followed by a right column (the command group names at column 70 in MAJOR). | main-menu, major-menu, cmdwrk-menu |
-| R14 | Data panel entries: label from column 2 (sub-entries indented 2), dot leaders ` . ` to the colon so that the colon sits at a column shared by the whole group (col 52 in dspjobd/dspneta, col 46 in dspjob-status, col 32 in dspmsgd-5, col 26 in dspsysval): the colon column is 2 past the longest label of the group rounded to an even column; the value starts 4 columns after the colon (3 blanks); indented sub-entry values start 2 further. | dspjobd, dspneta, dspmsgd-5, dspsysval, dspjob-status |
-| R15 | A data panel's identification block (`Job description:   QDFTJOBD       Library:   QGPL`) is on row 3 with the values 3 blanks after the colon. | dspjobd, dspjob-status, wrkjob |
-| R16 | Message panels: the message line is row 24, white; an error also sounds the alarm. | command-entry (not authorized message on Command Entry), main-menu |
-| R17 | Help windows: F1 on MAIN shows a help panel whose title row carries the help title centered; `More...`/`Bottom`; F3/F12 return. | main-menu-help |
+| R1 | The title is on row 1 from column `1 + (W - len)/2`, high intensity; the `PANELID` variable's value is at column 2 of row 1, blue. | all; main-menu, major-menu, cmdwrk-menu, information-assistant |
+| R2 | Row 2 is `TOPSEP`: `SPACE` blank, `SYSNAME` puts `System:` at column `W-18` and the name at `W-8` (normal), `RULE` dashes, `NONE` no row (the areas start on row 2). | wrksbs, wrkrpyle, wrkjob, dspjobd, dspmsgd-5, main-menu; wrkobj, wrkjobd, wrkcls blank |
+| R3 | The bottom block is laid out upward from the message line (the last row): the function keys on one row or two above it; with a command line, its field rows (one for `SHORT`, two for `LONG`) and its prompt row sit directly on the keys; without one, `BOTSEP` (a blank row) sits on the keys and the `BOTINST` or the menu selection rows above it. The areas share the rows between the title block and the bottom block. | wrkobj 20-21/22-23, main-menu 19-21/22-23, cmdwrk-menu 20-22/23, dspjobd 21/23, dspobjaut 20/22-23, dspmsgd-list 20-21/23 |
+| R4 | Instruction rows (`TOPINST`, `BOTINST`, the menu heading) are at column 2, blue. | wrkobj 3, dspjobd 21, main-menu 3 |
+| R5 | Option legends: the `:LISTACT.` texts with an `OPTION`, in order from column 4, blue, three blanks apart, wrapping to column 4 of the next row when one would pass `W-1`; two rows align as R7. | wrkobj, wrkjobd, wrkcls, wrkbnddir, wrksbs |
+| R6 | Function keys: the key list's items with text, `COND` true, from column 2 as R5; at most two rows, a single row on the row above the message line. A `MOREKEYS` item splits the list: the items before it and itself, or with `more_keys` the items after it and itself. | wrkjobd, wrkobj, wrkrpyle, wrksbs, main-menu, main-menu-help |
+| R7 | Column alignment of two flowed rows (R5, R6): after the greedy wrap, for each item index both rows hold, the row whose item starts earlier moves that item and what follows it to the other's column when the row still ends within `W-1`; otherwise both stay. | wrkobj legends 4/28/37/48/70 over 4/28; wrkjobd, wrkcls, wrkbnddir keys 2/15/27/40/54 over 2/15/40; wrkusrjob 2/15/27/40/54 over 2/15/27/40; wrkobj keys greedy 2/12/24/37/51; wrkrpyle, wrksbs one lower item |
+| R8 | A list area holds, top down: the legend rows, a blank row, the heading rows (`MAXHEAD`, else as many as the widest wrapped heading needs, plus one for a `:LISTGRP.`), the entries, and the indicator on its last row. | wrkobj 4-19, wrkjobd 4-19, wrkbnddir 4-19 |
+| R9 | List columns start at column 2 and are two columns apart; a column is as wide as the larger of its field (`MAXWIDTH`, else the class) and its widest heading row; the heading wraps at the field width and its rows sit left-aligned at the column start, bottom-aligned; a `:LISTGRP.` heading is on the first heading row at its first column; the `ACTION` column (`Opt`) has its field centered (two wide at column 2, one wide at column 3) with `ACTLEN` or the class as the width; numbers are right-aligned in their field; the last column is cut at `W-1`. Headings are high intensity, values normal, input columns underlined. | wrkobj 2/7/19/29/41/53, wrkjobd 7/20/32 with the one-wide field at 3, wrkbnddir 7/19/31, wrkcls, wrkrpyle |
+| R10 | The indicator is `More...` ending at `W-1` (column 73) or `Bottom` (column 74), high intensity, on the area's last row: always on a list (`More...` while entries follow the page or the list is incomplete with a full page); on a menu, data or information area only when it has more than one page. | wrkobj 19, dspjobd 20, dspsysval none, major-menu 18, menu-major-2 Bottom, main-menu none |
+| R11 | The command line: the `:CMDLINE.` text at column 2 (normal), else `Selection or command` on a menu panel and `Parameters or command` elsewhere; `===>` at column 2 of the next row (normal); the field from column 7 to `W-1`, going on to `W-1` of the row after for `LONG`. The form `Parameters for options 5, 7 and 13 or command` is the author's text (`options_prompt` builds it: commas, then `and`). | wrkobj, wrkjobd, wrkcls, wrkbnddir, main-menu, cmdwrk-menu; wrksplf's `1, 2, 3` is a display file |
+| R12 | A menu panel without a command line: `Selection` (or the `BOTINST` text) at column 2, normal, with the selection field at column 7 of the next row, as wide as the longest option number. | dspmsgd-list 20-21, information-assistant 20-21 |
+| R13 | A menu area: its heading row (blue), a blank row, then the items: the option right-aligned in columns 5-7, a period at 8, the text at 10 (normal); a `:MENUGRP.` heading at column 4 on its own row after a blank one; a blank row where the option numbers skip; a trailing upper-case name after lower-case text goes to column `W-10`; items with `COND` false are left out. Pages hold the item rows less one. | main-menu, major-menu, cmdwrk-menu, dspjob-menu |
+| R14 | A data item: the label at column 2, dot leaders to the colon at `C`, the value at `C+4`; `C` is the longest label's end column plus 12 over the whole area (every page); the dots sit at the colon's parity from the first such column two past the label; numbers are right-aligned in their width; `:TL.` values show their text. | dspsysval 25, dspusrprf 45; dspmsgd-5 31 and dspcls 52 measure plus 13 (see §8) |
+| R15 | Groups: a `:DATAGRP.` with a heading shows `Heading:` at its indent and its items two columns further in with values at `C+4`; a group without a heading indents its items' labels and values by two (`C+6`); `GRPSEP` goes before a group that does not start the area (`SPACE` a blank row, `RULE` dashes); an empty `:DATAC.` is a blank row. | dspjob-status 9-11 and 12-14 (`Entered system:`), 7-8 (`Set by`); dspjobd 13-14; dspmsgd-5 |
+| R16 | A `COMPACT` group is an identification block without leaders: `Label:`, three blanks, the field, then five blanks before each extender's `Text:`, three blanks and its field. Extenders of a normal item follow its field after three blanks. | dspjobd 3, dspjob-status 3, wrkjob 3; dspneta 14 |
+| R17 | `:DATACOL WIDTH=n.` starts a column that wide at the previous column's end; without one, `LAYOUT=2` or `3` splits the items into equal columns over `W-1`; each column has its own `C` and cuts at its end. | dspmsg 3-5, dspobjaut 3-5 |
+| R18 | The message line is the last row, high intensity: the message, else the copyright while `show_copyright`. | main-menu, wrkrpyle, dspautusr; wrkobj without |
+| R19 | Conditions: `:KEYI.`, `:MENUI.` and `:DATASLTC.` with a `COND` that evaluates false are left out. The tree evaluates with the dialog's values: `%LIST(l)` is the list's count, `%NODE(l)` whether it has entries, a comparison is numeric when both sides are numbers and by characters with trailing blanks ignored otherwise; a condition the group does not define is asked of the dialog. `:LISTACT.` has no `COND`. | |
+| R20 | A help panel: `Help` at column 2 of row 1 (blue) with the module's title centered (high intensity); the text from row 3: headings at column 2 (high intensity), paragraphs at column 6 wrapped so no row passes column `W-7`, a blank row between blocks, list markers (`o`, `1.`) at column 6, definition and parameter terms at column 6 with their text at column 16, `Note:` at column 6; 18 text rows per page (`W` 80, 24 rows); the indicator on row 21; `F3=Exit help   F10=Move to top   F12=Cancel   F13=Information Assistant` and `F14=Print help` on rows 22-23. `&name.` shows the variable's declared `VALUE`. | main-menu-help |
+| R21 | Attributes: titles, headings, the indicator and the message line high intensity; instructions, legends, keys and the panel identifier blue; input fields underlined; `:HP2.`, `:PK.` high intensity, `:HP1.`, `:PV.`, `:LINK.` underlined, `:HP3.`, `:RT.` reverse, `:HP4.` blue; everything else normal. | main-menu, wrkobj, main-menu-help attribute grids |
+
+The area heights: a `DEPTH` number is the area's rows; `DEPTH='*'`
+areas share what the fixed ones leave; `:TEXT.` without a depth takes
+the rows its text needs. Data, menu and information areas page with
+`Options.page`; a list shows the entries of its `ListState` from
+`top`; `Options.view` picks the `:LISTVIEW.`. The cursor goes to the
+`CSRLOC` field, else the first option field, else the command line or
+selection field, else the first input field.
 
 ## 8. Open questions
 
@@ -339,3 +355,20 @@ Each rule names the goldens that established it (tools/conformance/golden/verifi
   area's heading. Both wait for probes.
 - Help module names are checked for characters only (up to 32), panel
   and variable names for the ten-character rule.
+- R14's colon column is the longest label's end plus 12 on dspsysval and
+  dspusrprf, plus 13 on dspmsgd-5 and dspcls; a prompt longer than the
+  visible ones (a later page, a `DISPLAY=NO` item) would explain the
+  two, or the rule has a parity term. A probe with a known source
+  settles it.
+- Two-row column headings: WRKBNDDIR shows `Binding` over `Directory`
+  left-aligned (R9); WRKJOBD shows `Job` centered over `Description`
+  and WRKRPYLE `Number` one column in. Which of those panels are UIM
+  and which display files is not known from the captures; R9 follows
+  WRKBNDDIR.
+- The keys of a set are flowed over two rows and cut there; the real
+  behaviour of a set that needs a third row is unverified.
+- `:DATASLT.` shows its choices as `n=text` after the field; the real
+  presentation is unverified. `:LIST BOTINST=` is not rendered.
+- The copyright line's rule (which panels show it) is the caller's
+  (`Options.show_copyright`); the goldens show it on menus and on some
+  display panels reached from them.
