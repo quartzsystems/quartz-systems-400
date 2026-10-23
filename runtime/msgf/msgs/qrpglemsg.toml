@@ -364,3 +364,30 @@ sev = 50
 text = "The SQL precompiler is not available, so &1 in &2 was not created."
 help = "The source holds EXEC SQL statements, which need the precompiler. Source without embedded SQL compiles with CRTSQLRPGI as with CRTBNDRPG or CRTRPGMOD."
 vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "RNF6011"
+sev = 0
+text = "The record has no space or skip entries and no PRTCTL; it spaces one line after."
+
+[[msg]]
+id = "RNF7066"
+sev = 0
+text = "Record format &1 is not named by any input or output operation."
+vars = ["*CHAR 10"]
+
+[[msg]]
+id = "RNF7078"
+sev = 30
+text = "The search argument's length or type differs from the file's first key field."
+
+[[msg]]
+id = "RNF7086"
+sev = 0
+text = "Records of the file are read in blocks; its INFDS changes only when a block moves."
+
+[[msg]]
+id = "RNF7350"
+sev = 0
+text = "&1 leaves out subfields that have no namesake in the other structure."
+vars = ["*CHAR 50"]
