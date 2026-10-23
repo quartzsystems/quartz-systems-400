@@ -132,6 +132,7 @@ pub struct SourceMember {
 
 /// The data length of a source file's records.
 pub fn data_width(txn: &mut Txn<'_>, file: ObjectId) -> Result<usize> {
+    crate::auth::check(txn, "file.open-input", file)?;
     let desc = source_file(txn, file)?;
     let width = desc
         .formats
