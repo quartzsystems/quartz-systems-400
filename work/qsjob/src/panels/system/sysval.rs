@@ -125,7 +125,7 @@ pub fn wrksysval(
         loop {
             let answer = match d.show(surface, "WRKSYSVAL") {
                 Ok(a) => a,
-                Err(e) => return Some(Err(Fail::new("CPF6A98", e.to_string()))),
+                Err(e) => return Some(Err(Fail::new("CPF6A12", e.to_string()))),
             };
             // Option 2 changes the value on its change panel.
             let answer = crate::panels::system2::change_options(job, host, surface, &d, answer);

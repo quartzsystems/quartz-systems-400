@@ -75,7 +75,7 @@ fn display(surface: &mut Surface, d: &mut UimDialog, panel: &str) -> Result<Stri
                 | Response::Panel(_),
             ) => return Ok(String::new()),
             Ok(_) => {}
-            Err(e) => return Err(Fail::new("CPF6A98", e.to_string())),
+            Err(e) => return Err(Fail::new("CPF6A12", e.to_string())),
         }
     }
 }

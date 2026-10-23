@@ -83,7 +83,7 @@ pub fn wrkusrprf(
         loop {
             let answer = match d.show(surface, "WRKUSRPRF") {
                 Ok(a) => a,
-                Err(e) => return Some(Err(Fail::new("CPF6A98", e.to_string()))),
+                Err(e) => return Some(Err(Fail::new("CPF6A12", e.to_string()))),
             };
             match work_answer(job, host, &mut d, "USERS", answer) {
                 Next::Stay => {}
@@ -134,7 +134,7 @@ pub fn dspautusr(host: &Host, surface: &mut Surface, r: &Resolved) -> Option<Res
             }
             Ok(Response::Options(_) | Response::Command(_) | Response::Retrieve) => {}
             Ok(_) => return Some(Ok(String::new())),
-            Err(e) => return Some(Err(Fail::new("CPF6A98", e.to_string()))),
+            Err(e) => return Some(Err(Fail::new("CPF6A12", e.to_string()))),
         }
         d.copyright = false;
     }

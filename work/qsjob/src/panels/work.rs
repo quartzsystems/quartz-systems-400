@@ -86,7 +86,7 @@ fn qualified(r: &Resolved, kwd: &str) -> Option<(String, String)> {
 
 /// The panel engine refused: the group or panel is not what we ship.
 fn render_fail(e: &UimError) -> Fail {
-    Fail::new("CPF6A98", format!("panel: {e}"))
+    Fail::new("CPF6A12", format!("panel: {e}"))
 }
 
 /// The date, time and zone for `TOPSEP=DATETIME`, in the job's date

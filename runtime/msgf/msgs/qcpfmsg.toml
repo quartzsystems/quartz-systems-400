@@ -189,14 +189,14 @@ text = "The request was ended from the System Request menu."
 help = "The operator chose option 2 on the System Request menu (or ran ENDRQS) while the request ran. The programs it called were cancelled down to the nearest control boundary; the command or menu it was started from takes over."
 
 [[msg]]
-id = "CPF1305"
+id = "CPF1313"
 sev = 30
 text = "Group job name &1 is not valid."
 help = "A group job name is up to ten characters, a letter or $, # or @ first, then letters, digits, $, #, @ or _."
 vars = ["*CHAR 10"]
 
 [[msg]]
-id = "CPF1306"
+id = "CPF1307"
 sev = 30
 text = "Group job &1 already exists in the group."
 help = "Each job of a group has its own group job name. Choose another name, or transfer to the job that has it with TFRGRPJOB."
@@ -205,12 +205,11 @@ vars = ["*CHAR 10"]
 [[msg]]
 id = "CPF1309"
 sev = 30
-text = "Group job &1 not found in the group."
-help = "No job of the group has that group job name. TFRGRPJOB GRPJOB(*SELECT) lists the jobs of the group."
-vars = ["*CHAR 10"]
+text = "The group could not complete the request."
+help = "The job's group changed while the request ran, or the group no longer exists. Display the group with TFRGRPJOB GRPJOB(*SELECT) and try again."
 
 [[msg]]
-id = "CPF1310"
+id = "CPF1306"
 sev = 30
 text = "The job cannot leave its group while other jobs are in it."
 help = "CHGGRPA GRPJOB(*NONE) removes a job from its group only when it is the last one; end the other group jobs first with ENDGRPJOB."
@@ -222,10 +221,10 @@ text = "The job is not a group job."
 help = "TFRGRPJOB, ENDGRPJOB and the group data area *GDA need a group job. CHGGRPA GRPJOB(name) makes the job one."
 
 [[msg]]
-id = "CPF1312"
+id = "CPF1310"
 sev = 30
-text = "Group job &1 is the job that asked."
-help = "A job cannot transfer to itself. Name another job of the group, or use GRPJOB(*SELECT) to choose one."
+text = "Transfer to group job &1 not done."
+help = "No job of the group has that group job name, or it names the job that asked. TFRGRPJOB GRPJOB(*SELECT) lists the other jobs of the group."
 vars = ["*CHAR 10"]
 
 [[msg]]

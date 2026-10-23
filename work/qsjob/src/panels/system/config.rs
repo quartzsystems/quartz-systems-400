@@ -58,7 +58,7 @@ pub fn wrkcfgsts(
         loop {
             let answer = match d.show(surface, "WRKCFGSTS") {
                 Ok(a) => a,
-                Err(e) => return Some(Err(Fail::new("CPF6A98", e.to_string()))),
+                Err(e) => return Some(Err(Fail::new("CPF6A12", e.to_string()))),
             };
             match work_answer(job, host, &mut d, "DEVICES", answer) {
                 Next::Stay => {}

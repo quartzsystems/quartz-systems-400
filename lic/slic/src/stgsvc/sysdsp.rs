@@ -67,7 +67,7 @@ pub fn grp_chg(number: u32, name: &str, text: &str) -> Result<u32, String> {
                 && g.members.len() > 1
             {
                 return Err(format!(
-                    "CPF1310 Group job cannot leave the group while {} other jobs are in it.",
+                    "CPF1306 Group job cannot leave the group while {} other jobs are in it.",
                     g.members.len() - 1
                 ));
             }
@@ -75,12 +75,12 @@ pub fn grp_chg(number: u32, name: &str, text: &str) -> Result<u32, String> {
             return Ok(0);
         }
         if !valid_name(&name) {
-            return Err(format!("CPF1305 Group job name {name} is not valid."));
+            return Err(format!("CPF1313 Group job name {name} is not valid."));
         }
         if let Some(id) = group_of(&s, number) {
             let g = s.groups.get_mut(&id).expect("group");
             if g.members.iter().any(|m| m.0 == name && m.1 != number) {
-                return Err(format!("CPF1306 Group job {name} already exists in the group."));
+                return Err(format!("CPF1307 Group job {name} already exists in the group."));
             }
             if let Some(m) = g.members.iter_mut().find(|m| m.1 == number) {
                 m.0.clone_from(&name);
@@ -126,7 +126,7 @@ pub fn grp_join(group: u32, name: &str, text: &str, number: u32) -> Result<(), S
             .get_mut(&group)
             .ok_or_else(|| "CPF1309 The group no longer exists.".to_string())?;
         if g.members.iter().any(|m| m.0 == name) {
-            return Err(format!("CPF1306 Group job {name} already exists in the group."));
+            return Err(format!("CPF1307 Group job {name} already exists in the group."));
         }
         g.members.push((name.to_string(), number, text.to_string()));
         Ok(())

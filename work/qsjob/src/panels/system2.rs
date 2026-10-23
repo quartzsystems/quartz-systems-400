@@ -168,7 +168,7 @@ fn cell(d: &UimDialog, list: &str, row: usize, var: &str) -> String {
 /// Show a panel, a render failure as the command's escape.
 fn show(d: &mut UimDialog, surface: &mut Surface, panel: &str) -> Result<Response, Fail> {
     d.show(surface, panel)
-        .map_err(|e| Fail::new("CPF6A98", format!("panel {panel}: {e}")))
+        .map_err(|e| Fail::new("CPF6A12", format!("panel {panel}: {e}")))
 }
 
 /// A dialog over a shipped group, the copyright line shown.

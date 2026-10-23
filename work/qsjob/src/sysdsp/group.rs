@@ -89,7 +89,7 @@ pub fn transfer_to(host: &Host, which: &str, program: &str) -> Result<Act, Strin
         }
         name => {
             if name == me {
-                return Err(format!("CPF1312 Group job {name} is this job."));
+                return Err(format!("CPF1310 Group job {name} is this job."));
             }
             if let Some(m) = members.iter().find(|m| m.0 == name) {
                 return Ok(hand_over(host, &FromJob::GroupTransfer { job: m.1 }));
@@ -199,7 +199,7 @@ pub fn endgrpjob(host: &Host, which: &str) -> Result<String, Fail> {
     let m = members
         .iter()
         .find(|m| m.0 == which)
-        .ok_or_else(|| fail(&format!("CPF1309 Group job {which} not found in the group.")))?;
+        .ok_or_else(|| fail(&format!("CPF1310 Group job {which} not found in the group.")))?;
     host.ctl
         .borrow_mut()
         .send(&FromJob::GroupEnd { job: m.1 })

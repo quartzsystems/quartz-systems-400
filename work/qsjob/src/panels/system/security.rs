@@ -90,7 +90,7 @@ pub fn wrkautl(
         loop {
             let answer = match d.show(surface, "WRKAUTL") {
                 Ok(a) => a,
-                Err(e) => return Some(Err(Fail::new("CPF6A98", e.to_string()))),
+                Err(e) => return Some(Err(Fail::new("CPF6A12", e.to_string()))),
             };
             match work_answer(job, host, &mut d, "LISTS", answer) {
                 Next::Stay => {}

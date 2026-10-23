@@ -102,7 +102,7 @@ pub fn dspsfwrsc(host: &Host, surface: &mut Surface) -> Option<Result<String, Fa
             }
             Ok(Response::Options(_) | Response::Command(_) | Response::Retrieve) => {}
             Ok(_) => return Some(Ok(String::new())),
-            Err(e) => return Some(Err(Fail::new("CPF6A98", e.to_string()))),
+            Err(e) => return Some(Err(Fail::new("CPF6A12", e.to_string()))),
         }
     }
 }

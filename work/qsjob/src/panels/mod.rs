@@ -44,9 +44,9 @@ pub fn group(host: &Host, lib: &str, name: &str) -> Result<Rc<uim::PanelGroup>, 
         .link
         .borrow_mut()
         .with(|l| l.pnlgrp_open(name.into(), lib.into()))
-        .map_err(|e| Fail::new("CPF6A98", format!("panel group {lib}/{name}: {e}")))?;
+        .map_err(|e| Fail::new("CPF6A12", format!("panel group {lib}/{name}: {e}")))?;
     let p = uim::payload::decode(&payload)
-        .map_err(|e| Fail::new("CPF6A98", format!("panel group {lib}/{name}: {e}")))?;
+        .map_err(|e| Fail::new("CPF6A12", format!("panel group {lib}/{name}: {e}")))?;
     let g = Rc::new(p.group);
     GROUPS.with(|m| m.borrow_mut().insert(key, Rc::clone(&g)));
     Ok(g)
