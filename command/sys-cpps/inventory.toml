@@ -118,6 +118,25 @@ note = "a panel at a display; the text form in the service otherwise"
 # --- SEU (devtools/seu)
 
 # --- PDM (devtools/pdm)
+[cmd.STRPDM]
+site = "job"
+note = "PDM's menu; a display is needed"
+
+[cmd.WRKLIBPDM]
+site = "job"
+note = "a PDM list; a display is needed"
+
+[cmd.WRKOBJPDM]
+site = "job"
+note = "a PDM list; a display is needed"
+
+[cmd.WRKMBRPDM]
+site = "job"
+note = "a PDM list; a display is needed"
+
+[cmd.FNDSTRPDM]
+site = "job"
+note = "the list of members at a display; a printed report otherwise"
 
 # --- SDA (devtools/sda)
 

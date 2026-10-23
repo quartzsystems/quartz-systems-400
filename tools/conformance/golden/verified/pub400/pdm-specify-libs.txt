@@ -1,0 +1,24 @@
+                        Specify Libraries to Work With                          
+                                                                                
+ Type choice, press Enter.                                                      
+                                                                                
+   Library  . . . . . . . . . . .   *LIBL        *LIBL, name, *generic*, *ALL,  
+                                                 *ALLUSR, *USRLIBL, *CURLIB     
+   ASP number . . . . . . . . . .   *ALL         1-32, *ALL                     
+   ASP device . . . . . . . . . .   *            Name, *, *SYSBAS, *CURASPGRP   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit     F5=Refresh     F12=Cancel                                          
+                                                                                

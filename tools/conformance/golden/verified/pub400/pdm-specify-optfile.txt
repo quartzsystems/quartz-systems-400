@@ -1,0 +1,24 @@
+                      Specify Option File to Work With                          
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   File  . . . . . . . . . .   QAUOOPT      Name, F4 for list                   
+                                                                                
+     Library . . . . . . . .     QGPL       *LIBL, *CURLIB, name                
+                                                                                
+   Member  . . . . . . . . .   QAUOOPT      Name                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit     F5=Refresh     F12=Cancel                                          
+                                                                                

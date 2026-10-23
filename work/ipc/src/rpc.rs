@@ -36,16 +36,18 @@ macro_rules! rpc {
             fn put(&self, out: &mut Vec<u8>) {
                 match self {
                     $( $req::$v { $($a),* } => {
-                        out.push($tag);
+                        // Two bytes: request numbers pass 255.
+                        let tag: u16 = $tag;
+                        $crate::Wire::put(&tag, out);
                         $( $crate::Wire::put($a, out); )*
                     } )*
                 }
             }
             fn get(d: &mut $crate::Dec<'_>) -> ::core::result::Result<Self, $crate::WireError> {
-                let tag = <u8 as $crate::Wire>::get(d)?;
+                let tag = <u16 as $crate::Wire>::get(d)?;
                 match tag {
                     $( $tag => ::core::result::Result::Ok($req::$v { $($a: $crate::Wire::get(d)?),* }), )*
-                    tag => ::core::result::Result::Err($crate::WireError::Tag { what: stringify!($req), tag }),
+                    tag => ::core::result::Result::Err($crate::WireError::Tag { what: stringify!($req), tag: u8::try_from(tag).unwrap_or(u8::MAX) }),
                 }
             }
         }

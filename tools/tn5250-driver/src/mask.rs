@@ -122,13 +122,14 @@ impl Masks {
         m
     }
 
-    /// The user mask: the user's name as a word.
+    /// The user mask: the user's name as a word, or followed by
+    /// digits (the library `NAME1` a shared system gives each user).
     pub fn set_user(&mut self, user: &str) {
         self.list.retain(|m| m.name != "user");
         if !user.is_empty() {
-            let pat = format!(r"\b{}\b", regex::escape(&user.to_ascii_uppercase()));
+            let pat = format!(r"\b({})\d*\b", regex::escape(&user.to_ascii_uppercase()));
             self.list
-                .push(Mask::new("user", &pat, 0, "USERNAME", true).expect("a user mask"));
+                .push(Mask::new("user", &pat, 1, "USERNAME", true).expect("a user mask"));
         }
     }
 
@@ -194,6 +195,8 @@ mod tests {
         m.set_user("someuser");
         let out = m.apply(&["User SOMEUSER here".to_string()]);
         assert_eq!(out[0], "User USERNAME here");
+        let out = m.apply(&["Lib SOMEUSER1 x".to_string()]);
+        assert_eq!(out[0], "Lib USERNAME1 x");
     }
 
     #[test]

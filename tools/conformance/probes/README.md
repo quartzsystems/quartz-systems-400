@@ -30,6 +30,7 @@ panel shows values that change between runs.
 | `batch5-menus.tn` | every menu `GO` reaches from MAIN: `MAJOR`, `VERB`, `SUBJECT`, the `CMDxxx` command menus with their second pages, the task menus |
 | `batch6-prompts.tn` | 68 command prompts, with F10 (additional parameters), F11 (keywords) and F24 (more keys) where they differ |
 | `batch7-sysdsp.tn` | the System Request menu and options 3 to 7 and 80, the Attention program, a break message, `DSPSGNINF`, `CHGPWD`, `GO CMDSIGNOFF`, the `SIGNOFF` prompt (2026-10-23: only the menu, its help and option 3 came back before the keyboard stayed locked) |
+| `pdm.tn`, `pdm2.tn` | PDM: `STRPDM` and its help, the Specify panels, Change Defaults, the three list panels over the account's own library and `QSYSINC/QRPGLESRC` with every option and key set, names only, the date view, the subset panels, Work with User-Defined Options, the Find String panel (read-only: every panel left with F3 or F12) |
 
 A command the pub400 account is not authorized to (`WRKSYSSTS`,
 `WRKOUTQ`, `WRKJOBQ`, `WRKJOBSCDE`, `WRKSYSVAL`) leaves a message

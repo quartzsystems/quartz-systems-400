@@ -1,0 +1,24 @@
+                               Subset Member List                               
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Member . . . . . . .   *ALL          *ALL, name, *generic*                   
+                                                                                
+   Member type  . . . .   *ALL          *ALL, type, *generic*, *BLANK           
+                                                                                
+   From date  . . . . .   MM/DD/YY      Earliest date to include                
+                                                                                
+   To date  . . . . . .   MM/DD/YY      Latest date to include                  
+                                                                                
+   Text . . . . . . . .   *ALL                                                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit        F5=Refresh        F12=Cancel                                    
+                                                                                

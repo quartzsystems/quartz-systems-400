@@ -1607,6 +1607,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "pdm"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+ "uim",
+]
+
+[[package]]
 name = "pem-rfc7468"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1724,6 +1732,7 @@ dependencies = [
  "mi",
  "msgf",
  "p256",
+ "pdm",
  "qdecimal",
  "qir",
  "rustls",

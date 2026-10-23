@@ -1,0 +1,135 @@
+# PDM: the STRPDM menu, its Specify panels, the defaults, user-defined
+# options, and the three list panels with their F23/F24/F11/F14/F17
+# states. Read-only: every panel is left with F12 or F3, no option that
+# changes anything is entered.
+wait "Main Menu"
+continue
+timeout 30000
+type strpdm
+key enter
+settle 1500
+snap pdm-strpdm
+type 1
+key enter
+settle 1200
+snap pdm-specify-libs
+key f12
+settle 800
+type 2
+key enter
+settle 1200
+snap pdm-specify-objs
+key f12
+settle 800
+type 3
+key enter
+settle 1200
+snap pdm-specify-mbrs
+key f12
+settle 800
+key f18
+settle 1200
+snap pdm-defaults
+key pgdn
+settle 800
+snap pdm-defaults-2
+key f12
+settle 800
+type 9
+key enter
+settle 1200
+snap pdm-specify-optfile
+key f12
+settle 800
+key f3
+wait "Main Menu"
+type wrklibpdm cwellman1
+key enter
+settle 1500
+snap pdm-wrklibpdm
+key f23
+settle 800
+snap pdm-wrklibpdm-f23
+key f23
+settle 800
+key f24
+settle 800
+snap pdm-wrklibpdm-f24
+key f24
+settle 800
+key f3
+wait "Main Menu"
+type wrkobjpdm cwellman1
+key enter
+settle 1500
+snap pdm-wrkobjpdm
+key f23
+settle 800
+snap pdm-wrkobjpdm-f23
+key f23
+settle 800
+key f24
+settle 800
+snap pdm-wrkobjpdm-f24
+key f24
+settle 800
+key f17
+settle 1200
+snap pdm-subset-objs
+key f12
+settle 800
+key f16
+settle 1200
+snap pdm-wrkusrdfnopt
+key f12
+settle 800
+key f18
+settle 1200
+snap pdm-defaults-list
+key f12
+settle 800
+key f3
+wait "Main Menu"
+type wrkmbrpdm qsysinc/qrpglesrc
+key enter
+settle 1500
+snap pdm-wrkmbrpdm
+key f23
+settle 800
+snap pdm-wrkmbrpdm-f23
+key f23
+settle 800
+key f24
+settle 800
+snap pdm-wrkmbrpdm-f24
+key f24
+settle 800
+key f14
+settle 1000
+snap pdm-wrkmbrpdm-f14
+key f14
+settle 800
+key f11
+settle 1000
+snap pdm-wrkmbrpdm-f11
+key f11
+settle 800
+key f17
+settle 1200
+snap pdm-subset-mbrs
+key f12
+settle 800
+type 25
+key enter
+settle 1500
+snap pdm-fndstrpdm
+key f12
+settle 1000
+key f3
+wait "Main Menu"
+type wrkmbrpdm cwellman1/qclsrc
+key enter
+settle 1500
+snap pdm-wrkmbrpdm-own
+key f3
+settle 1000

@@ -1,0 +1,24 @@
+                                  Find String                                   
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Find . . . . . . . . . . . . . .                                             
+     From column number . . . . . .   1         1 - *RCDLEN                     
+     To column number . . . . . . .   *RCDLEN   1 - *RCDLEN                     
+     Kind of match  . . . . . . . .   2         1=Same case, 2=Ignore case      
+                                                                                
+   Option . . . . . . . . . . . . .   5         *NONE, Valid option             
+     Prompt . . . . . . . . . . . .   N         Y=Yes, N=No                     
+   Print list . . . . . . . . . . .   N         Y=Yes, N=No                     
+   Print records  . . . . . . . . .   N         Y=Yes, N=No                     
+     Number to find . . . . . . . .   *ALL      *ALL, number                    
+     Print format . . . . . . . . .   *CHAR     *CHAR, *HEX, *ALTHEX            
+     Mark record  . . . . . . . . .   Y         Y=Yes, N=No                     
+     Record overflow  . . . . . . .   1         1=Fold, 2=Truncate              
+   Find string in batch . . . . . .   N         Y=Yes, N=No                     
+   Parameters . . . . . . . . . . .                                             
+                                                                                
+                                                                                
+ F3=Exit                 F5=Refresh        F12=Cancel       F16=User options    
+ F18=Change defaults                                                            
+                                                                                

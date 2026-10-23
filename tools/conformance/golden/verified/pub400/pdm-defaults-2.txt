@@ -1,0 +1,24 @@
+                                Change Defaults                                 
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Log option commands . . . . .  Y            Y=Yes, N=No                      
+   Exit lists on ENTER   . . . .  N            Y=Yes, N=No                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+  F3=Exit    F5=Refresh     F12=Cancel                                          
+                                                                                

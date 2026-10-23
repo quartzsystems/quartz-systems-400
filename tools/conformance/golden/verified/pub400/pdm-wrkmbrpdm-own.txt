@@ -1,0 +1,24 @@
+                           Work with Members Using PDM                 PUB400   
+                                                                                
+ File  . . . . . .   QCLSRC                                                     
+   Library . . . .     USERNAME1            Position to  . . . . .              
+                                                                                
+ Type options, press Enter.                                                     
+  2=Edit         3=Copy  4=Delete 5=Display       6=Print     7=Rename          
+  8=Display description  9=Save  13=Change text  14=Compile  15=Create module...
+                                                                                
+ Opt  Member      Type        Text                                              
+                                                                                
+   (No members in file)                                                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit          F4=Prompt             F5=Refresh            F6=Create         
+ F9=Retrieve      F10=Command entry     F23=More options      F24=More keys     
+                                          (C) COPYRIGHT IBM CORP. 1981, 2007.   

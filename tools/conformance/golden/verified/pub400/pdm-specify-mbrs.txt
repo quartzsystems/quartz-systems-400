@@ -1,0 +1,24 @@
+                       Specify Members to Work With                             
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   File  . . . . . . . . . .                Name, F4 for list                   
+                                                                                
+     Library . . . . . . . .     *LIBL      *LIBL, *CURLIB, name                
+                                                                                
+   Member:                                                                      
+     Name  . . . . . . . . .   *ALL         *ALL, name, *generic*               
+     Type  . . . . . . . . .   *ALL         *ALL, type, *generic*, *BLANK       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit     F4=Prompt     F5=Refresh     F12=Cancel                            
+                                                                                

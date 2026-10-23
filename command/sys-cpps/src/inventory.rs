@@ -298,6 +298,11 @@ pub const JOB_SITE: &[&str] = &[
     // --- panels batch 2: programs, config, security, editors (panels/system2.rs)
     // --- SEU (devtools/seu)
     // --- PDM (devtools/pdm)
+    "STRPDM",
+    "WRKLIBPDM",
+    "WRKOBJPDM",
+    "WRKMBRPDM",
+    "FNDSTRPDM",
     // --- SDA (devtools/sda)
     // --- DFU and RLU (devtools/dfu)
     // --- STRDBG screens (devtools/dbg)

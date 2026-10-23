@@ -428,6 +428,21 @@ ipc::rpc! {
     // --- panels batch 2: programs, config, security, editors (270-299)
     // --- SEU (300-319)
     // --- PDM (320-339)
+    /// PDM: a source member's lines; `None` when the file or member is
+    /// missing.
+    320 => fn pdm_read / PdmRead (lib: String, file: String, member: String) -> Result<Option<Vec<String>>, String>;
+    /// PDM: a source member's lines replaced, file and member made when
+    /// missing.
+    321 => fn pdm_write / PdmWrite (lib: String, file: String, member: String, lines: Vec<String>, srctype: String) -> Result<(), String>;
+    /// PDM: a user-defined options member (the shared `QGPL/QAUOOPT` as
+    /// the system reads it).
+    322 => fn pdm_options / PdmOptions (lib: String, file: String, member: String) -> Result<Option<Vec<String>>, String>;
+    /// PDM: a user-defined options member written.
+    323 => fn pdm_options_put / PdmOptionsPut (lib: String, file: String, member: String, lines: Vec<String>) -> Result<(), String>;
+    /// PDM: the job's user's session defaults, blank when none.
+    324 => fn pdm_defaults / PdmDefaults () -> String;
+    /// PDM: the job's user's session defaults stored.
+    325 => fn pdm_defaults_put / PdmDefaultsPut (text: String) -> Result<(), String>;
     // --- SDA (340-359)
     // --- DFU and RLU (360-379)
     // --- STRDBG screens (380-399)

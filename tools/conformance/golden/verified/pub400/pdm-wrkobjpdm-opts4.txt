@@ -1,0 +1,24 @@
+                          Work with Objects Using PDM                  PUB400   
+                                                                                
+ Library . . . . .   USERNAME1        Position to . . . . . . . .               
+                                      Position to type  . . . . .               
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change       3=Copy        4=Delete      5=Display       7=Rename          
+   8=Display description        9=Save       10=Restore      11=Move ...        
+                                                                                
+ Opt  Object      Type        Attribute   Text                                  
+      QDFUZZ      *PGM        RPGLE                                             
+      QSTESTPUB   *PGM        CLLE                                              
+      QCBLLESRC   *FILE       PF-SRC      COBOL source files                    
+      QCLSRC      *FILE       PF-SRC      CL source files                       
+      QCMDSRC     *FILE       PF-SRC      COMMAND source files                  
+      QCPPSRC     *FILE       PF-SRC      C++ Source files                      
+      QDDSSRC     *FILE       PF-SRC      DDS source files                      
+      QDFUZZIN    *FILE       PF-DTA                                            
+                                                                        More... 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit          F4=Prompt            F5=Refresh           F6=Create           
+ F9=Retrieve      F10=Command entry    F23=More options     F24=More keys       
+                                                                                

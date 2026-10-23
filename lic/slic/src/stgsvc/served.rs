@@ -1346,6 +1346,41 @@ impl Service for Served<'_> {
     // --- SEU (300-319)
 
     // --- PDM (320-339)
+    fn pdm_read(&mut self, lib: String, file: String, member: String) -> Result<Option<Vec<String>>, String> {
+        self.own_libl();
+        let r = super::pdm::read(self.system, &lib, &file, &member);
+        ile::set_libl(None);
+        r
+    }
+
+    fn pdm_write(&mut self, lib: String, file: String, member: String, lines: Vec<String>, srctype: String) -> Result<(), String> {
+        self.own_libl();
+        let r = super::pdm::write(self.system, &lib, &file, &member, &lines, &srctype);
+        ile::set_libl(None);
+        r
+    }
+
+    fn pdm_options(&mut self, lib: String, file: String, member: String) -> Result<Option<Vec<String>>, String> {
+        self.own_libl();
+        let r = super::pdm::read_options(self.system, &lib, &file, &member);
+        ile::set_libl(None);
+        r
+    }
+
+    fn pdm_options_put(&mut self, lib: String, file: String, member: String, lines: Vec<String>) -> Result<(), String> {
+        self.own_libl();
+        let r = super::pdm::write_options(self.system, &lib, &file, &member, &lines);
+        ile::set_libl(None);
+        r
+    }
+
+    fn pdm_defaults(&mut self) -> String {
+        super::pdm::defaults(self.system)
+    }
+
+    fn pdm_defaults_put(&mut self, text: String) -> Result<(), String> {
+        super::pdm::put_defaults(self.system, &text)
+    }
 
     // --- SDA (340-359)
 

@@ -1,0 +1,24 @@
+ Help                         PDM Main Menu - Help                              
+                                                                                
+     Use this display to select the type of list you want to work with.         
+                                                                                
+     To choose an option, type the option number on the command line and        
+     press Enter.  For more information about an option, move the cursor        
+     to the option number and press Help.                                       
+                                                                                
+     To run a command, type the command and press Enter.  For help in           
+     entering a command, type the command name and press F4=Prompt.  To         
+     see the last command you typed, press F9=Retrieve.  For assistance         
+     in selecting a command, press F4=Prompt without typing anything.  A        
+     display appears listing all the possible types of commands.                
+                                                                                
+ 1. Work with libraries                                                         
+                                                                                
+     Choose this option to copy, delete, display, rename, save, restore         
+     and create libraries and to display such information as the library        
+     description.  When you press Enter, the Specify Libraries to Work          
+     With display appears.                                                      
+                                                                        More... 
+ F3=Exit help   F10=Move to top   F11=Search Index   F12=Cancel                 
+ F13=Information Assistant        F14=Print help                                
+                                                                                

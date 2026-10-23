@@ -15,6 +15,7 @@ pub(crate) mod devices;
 pub(crate) mod exec;
 pub(crate) mod hist;
 mod joblog;
+mod pdm;
 pub(crate) mod jobqs;
 mod jobs;
 pub(crate) mod jobscd;

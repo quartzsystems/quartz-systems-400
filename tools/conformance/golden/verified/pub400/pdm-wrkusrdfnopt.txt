@@ -1,0 +1,24 @@
+                       Work with User-Defined Options                  PUB400   
+                                                                                
+ File . . . . . . . :   QAUOOPT          Member . . . . . . :   QAUOOPT         
+   Library  . . . . :     QGPL           Position to  . . . :                   
+                                                                                
+ Type options, press Enter.                                                     
+   2=Change         3=Copy         4=Delete         5=Display                   
+                                                                                
+ Opt  Option  Command                                                           
+        AB    STRCODECMD CMD('CODEBRWS "</ADM>&ZP/&ZL/&ZT/&ZN"')                
+        AD    STRCODECMD CMD('CODEDSU "</ADM>&ZP/&ZL/&ZT/&ZN"')                 
+        AE    STRCODECMD CMD('CODEEDIT "</ADM>&ZP/&ZL/&ZT/&ZN"')                
+         C    CALL &O/&N                                                        
+        CB    STRCODECMD CMD('CODEBRWS "<>&L/&F(&N)"')                          
+        CC    CHGCURLIB CURLIB(&L)                                              
+        CD    STRDFU OPTION(2)                                                  
+        CE    STRCODECMD CMD('CODEEDIT "<>&L/&F(&N)"')                          
+        CL    CHGCURLIB CURLIB(&N)                                              
+                                                                        More... 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit             F4=Prompt           F5=Refresh       F6=Create             
+ F9=Retrieve         F10=Command entry                    F24=More keys         
+                                                                                

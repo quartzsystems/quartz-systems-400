@@ -1,0 +1,24 @@
+                         Programming Development Manager (PDM)                  
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Work with libraries                                                    
+      2. Work with objects                                                      
+      3. Work with members                                                      
+                                                                                
+      9. Work with user-defined options                                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit       F4=Prompt       F9=Retrieve        F10=Command entry             
+ F12=Cancel    F18=Change defaults                                              
+                                          (C) COPYRIGHT IBM CORP. 1981, 2007.   

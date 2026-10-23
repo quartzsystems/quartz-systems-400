@@ -2406,3 +2406,259 @@ date = "2026-10-23"
 script = "batch7-sysdsp"
 width = 80
 
+[[golden]]
+name = "pdm-strpdm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-specify-libs"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-specify-objs"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-specify-mbrs"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-defaults"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-defaults-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-specify-optfile"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-wrklibpdm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-wrklibpdm-f23"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-wrklibpdm-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-wrkobjpdm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-wrkobjpdm-f23"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-wrkobjpdm-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-subset-objs"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-wrkusrdfnopt"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-defaults-list"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-wrkmbrpdm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-wrkmbrpdm-f23"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-wrkmbrpdm-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-wrkmbrpdm-f14"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-wrkmbrpdm-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-subset-mbrs"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-fndstrpdm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-wrkmbrpdm-own"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm"
+width = 80
+
+[[golden]]
+name = "pdm-wrklibpdm-keys3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm2"
+width = 80
+
+[[golden]]
+name = "pdm-wrklibpdm-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm2"
+width = 80
+
+[[golden]]
+name = "pdm-wrkobjpdm-keys3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm2"
+width = 80
+
+[[golden]]
+name = "pdm-wrkobjpdm-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm2"
+width = 80
+
+[[golden]]
+name = "pdm-wrkobjpdm-opts4"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm2"
+width = 80
+
+[[golden]]
+name = "pdm-wrkmbrpdm-opts3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm2"
+width = 80
+
+[[golden]]
+name = "pdm-wrkusrdfnopt-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm2"
+width = 80
+
+[[golden]]
+name = "pdm-strpdm-help"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "pdm2"
+width = 80
+

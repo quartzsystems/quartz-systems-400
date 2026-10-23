@@ -1,0 +1,24 @@
+                       Specify Objects to Work With                             
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Library  . . . . . . . . . .   *CURLIB      *CURLIB, name                    
+                                                                                
+   Object:                                                                      
+     Name . . . . . . . . . . .   *ALL         *ALL, name, *generic*            
+     Type . . . . . . . . . . .   *ALL         *ALL, *type                      
+     Attribute  . . . . . . . .   *ALL         *ALL, attribute, *generic*,      
+                                               *BLANK                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit     F5=Refresh     F12=Cancel                                          
+                                                                                

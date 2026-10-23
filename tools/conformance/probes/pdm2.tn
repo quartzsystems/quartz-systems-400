@@ -1,0 +1,75 @@
+# PDM, second pass: the third key sets of the library and object lists,
+# the object list's names-only view and later option sets, the member
+# list's third option set, the user-defined options' second keys and
+# the STRPDM help. Read-only like pdm.tn.
+wait "Main Menu"
+continue
+timeout 30000
+type wrklibpdm cwellman1
+key enter
+settle 1500
+key f24
+settle 800
+key f24
+settle 800
+snap pdm-wrklibpdm-keys3
+key f24
+settle 800
+key f11
+settle 1000
+snap pdm-wrklibpdm-f11
+key f11
+settle 800
+key f3
+wait "Main Menu"
+type wrkobjpdm cwellman1
+key enter
+settle 1500
+key f24
+settle 800
+key f24
+settle 800
+snap pdm-wrkobjpdm-keys3
+key f24
+settle 800
+key f11
+settle 1000
+snap pdm-wrkobjpdm-f11
+key f11
+settle 800
+key f23
+settle 800
+key f23
+settle 800
+key f23
+settle 800
+snap pdm-wrkobjpdm-opts4
+key f3
+wait "Main Menu"
+type wrkmbrpdm qsysinc/qrpglesrc
+key enter
+settle 1500
+key f23
+settle 800
+key f23
+settle 800
+snap pdm-wrkmbrpdm-opts3
+key f16
+settle 1200
+key f24
+settle 800
+snap pdm-wrkusrdfnopt-f24
+key f12
+settle 800
+key f3
+wait "Main Menu"
+type strpdm
+key enter
+settle 1500
+key f1
+settle 1500
+snap pdm-strpdm-help
+key f3
+settle 1000
+key f3
+settle 1000

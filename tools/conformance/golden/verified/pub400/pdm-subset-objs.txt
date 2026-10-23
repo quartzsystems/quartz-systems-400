@@ -1,0 +1,24 @@
+                              Subset Object List                                
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Object . . . . . . . . . . . .   *ALL         *ALL, name, *generic*          
+                                                                                
+   Object type  . . . . . . . . .   *ALL         *ALL, *type                    
+                                                                                
+   Object attribute . . . . . . .   *ALL         *ALL, attribute, *generic*,    
+                                                 *BLANK                         
+   Object size                                                                  
+     From . . . . . . . . . . . .            0   0 - 9999999999                 
+     To . . . . . . . . . . . . .   9999999999   0 - 9999999999                 
+                                                                                
+                                                                                
+                                                                                
+   Text . . . . . . . . . . . . .   *ALL                                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit        F5=Refresh        F12=Cancel                                    
+                                                                                

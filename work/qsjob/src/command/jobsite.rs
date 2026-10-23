@@ -67,6 +67,10 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "STRTCPSVR" => return strtcpsvr(host, r),
         "ENDTCPSVR" => return endtcpsvr(job, host, r),
         "CHGTELNA" => return chgtelna(job, host, r),
+        // --- PDM (devtools/pdm)
+        "STRPDM" | "WRKLIBPDM" | "WRKOBJPDM" | "WRKMBRPDM" | "FNDSTRPDM" => {
+            return crate::devtools::pdm::run(job, host, r, out);
+        }
         _ => {}
     }
     // A panel's command in a job that shows none: the service's text.
