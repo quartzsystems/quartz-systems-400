@@ -10,7 +10,12 @@ use std::path::Path;
 
 fn main() {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("cmds");
+    // The directory, each file, and this script: a file added on a
+    // file system that keeps directory times still (drvfs) is seen when
+    // the script itself changes.
     println!("cargo:rerun-if-changed=cmds");
+    println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-changed=inventory.toml");
     let mut names: Vec<String> = std::fs::read_dir(&dir)
         .expect("cmds/ exists")
         .filter_map(Result::ok)

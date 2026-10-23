@@ -104,7 +104,7 @@ pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
                 });
                 std::process::exit(0);
             }
-            Ok(ToJob::Start { .. } | ToJob::Input { .. }) => {}
+            Ok(_) => {}
             Err(()) => std::process::exit(0),
         }
     }
@@ -113,7 +113,22 @@ pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
 impl Console {
     /// A job's runtime over `link`, its parent on `ctl`.
     pub fn new(ctl: Chan, link: &Shared, start: &Start) -> Self {
-        let inbox = inbox(&ctl);
+        let (inbox_tx, inbox) = inbox(&ctl);
+        let display = if start.device.is_empty() || start.role != "INTER" {
+            None
+        } else {
+            match crate::display::Display::connect(
+                &start.device,
+                &inbox_tx,
+                tn5250::ds::wdsf::Model::M3179,
+            ) {
+                Ok(d) => Some(d),
+                Err(e) => {
+                    eprintln!("qsjob: {}: {e}", start.name);
+                    None
+                }
+            }
+        };
         let lda = stg::remote::new_lda();
         if !start.lda.is_empty() {
             let mut b = start.lda.clone();
@@ -129,6 +144,7 @@ impl Console {
             lda,
             start: Rc::new(start.clone()),
             attrs: Rc::new(RefCell::new(None)),
+            display: Rc::new(RefCell::new(display)),
         };
         Self {
             host,
@@ -320,9 +336,11 @@ impl Console {
 /// What `slic` sends, read on a thread.
 pub type Inbox = Rc<Receiver<ToJob>>;
 
-/// Read `ctl` on a thread; the channel closes when `slic` does.
-fn inbox(ctl: &Chan) -> Inbox {
+/// Read `ctl` on a thread; the channel closes when `slic` does. The
+/// sender feeds the job's own display device too.
+fn inbox(ctl: &Chan) -> (std::sync::mpsc::Sender<ToJob>, Inbox) {
     let (tx, rx) = std::sync::mpsc::channel();
+    let feed = tx.clone();
     if let Ok(mut reader) = ctl.try_clone() {
         std::thread::spawn(move || {
             while let Ok(m) = reader.recv::<ToJob>() {
@@ -330,11 +348,11 @@ fn inbox(ctl: &Chan) -> Inbox {
                     // ENDJOB *IMMED: the service releases what the job held.
                     std::process::exit(2);
                 }
-                if tx.send(m).is_err() {
+                if feed.send(m).is_err() {
                     return;
                 }
             }
         });
     }
-    Rc::new(rx)
+    (tx, Rc::new(rx))
 }

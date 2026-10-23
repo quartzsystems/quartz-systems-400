@@ -185,6 +185,57 @@ fn open_printer(j: &mut Job, key: FileKey, fr: &qir::FileRef, infds: u64, infds_
                     infds_len,
                     info,
                     printer: Some(Box::new(PrinterState::new(o))),
+                    display: false,
+                },
+            );
+            0
+        }
+        Err(f) => {
+            let r = IoResult {
+                status: f.status,
+                msgid: Some(f.msgid.clone()),
+                ..IoResult::default()
+            };
+            write_infds(infds, infds_len, &info, &r, false, "OPEN", j.abi.cur_stmt);
+            escape(j, &f);
+            i32::from(f.status)
+        }
+    }
+}
+
+/// Open a display file through the job's display source.
+fn open_display(j: &mut Job, key: FileKey, fr: &qir::FileRef, infds: u64, infds_len: usize) -> i32 {
+    let mut info = FileInfo {
+        file: fr.file.clone(),
+        lib: fr.lib.clone(),
+        ..FileInfo::default()
+    };
+    let ag = actgrp(j);
+    let opened = match j.display.as_mut() {
+        Some(d) => d.open(&fr.file, &fr.lib, &ag),
+        None => Err(IoFail::new(1299, "CPF4101", &[&fr.file, &fr.lib])),
+    };
+    match opened {
+        Ok(o) => {
+            info.lib = o.lib;
+            write_infds(
+                infds,
+                infds_len,
+                &info,
+                &IoResult::default(),
+                true,
+                "OPEN",
+                j.abi.cur_stmt,
+            );
+            j.files.insert(
+                key,
+                FileState {
+                    handle: o.handle,
+                    infds,
+                    infds_len,
+                    info,
+                    printer: None,
+                    display: true,
                 },
             );
             0
@@ -217,6 +268,9 @@ pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc:
     if fr.dev == qir::FileDev::Printer {
         return open_printer(j, key, &fr, infds.cast_unsigned(), infds_len);
     }
+    if fr.dev == qir::FileDev::Display {
+        return open_display(j, key, &fr, infds.cast_unsigned(), infds_len);
+    }
     let spec = OpenSpec {
         file: fr.file.clone(),
         lib: fr.lib.clone(),
@@ -233,7 +287,9 @@ pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc:
     };
     // Under debug (a program named by STRDBG) with UPDPROD(*NO), a
     // production file is not changed.
-    if j.debug.as_ref().is_some_and(|d| !d.updprod && !d.programs.is_empty())
+    if j.debug
+        .as_ref()
+        .is_some_and(|d| !d.updprod && !d.programs.is_empty())
         && spec.usage != qir::FileUsage::Input
         && !spec.lib.eq_ignore_ascii_case("QTEMP")
     {
@@ -266,6 +322,7 @@ pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc:
                     infds_len,
                     info,
                     printer: None,
+                    display: false,
                 },
             );
             0
@@ -308,6 +365,15 @@ pub extern "sysv64" fn db_close(env: *mut Env, file: i64) -> i32 {
     let r = if let Some(p) = state.printer.as_mut() {
         let closed = j.spool.as_mut().map(|s| p.close(s.as_mut()));
         match closed {
+            Some(Err(f)) => IoResult {
+                status: f.status,
+                msgid: Some(f.msgid),
+                ..IoResult::default()
+            },
+            _ => IoResult::default(),
+        }
+    } else if state.display {
+        match j.display.as_mut().map(|d| d.close(state.handle)) {
             Some(Err(f)) => IoResult {
                 status: f.status,
                 msgid: Some(f.msgid),
@@ -412,12 +478,14 @@ pub extern "sysv64" fn db_io(
 
 /// `dev_io(env, file, op, fmt, rec, rec_desc) -> status`. A printer
 /// file's `WRITE` prints the record: 0, or 1 when the carriage reached
-/// the overflow line. Display files have no device yet
-/// (`TODO(phase8)`): status `01299`.
+/// the overflow line. A display file's `WRITE` (op 0), `READ` (1) and
+/// `EXFMT` (2) go to the job's display source; a read copies the input
+/// buffer back over the record and leaves the attention identifier,
+/// cursor and subfile record number in the information data structure.
 pub extern "sysv64" fn dev_io(
     env: *mut Env,
     file: i64,
-    _op: i64,
+    op: i64,
     fmt: i64,
     rec: i64,
     rec_desc: i64,
@@ -431,14 +499,22 @@ pub extern "sysv64" fn dev_io(
     } else {
         ccsid::decode_trimmed(bytes(fmt, 10))
     };
+    let rec_len = if rec == 0 {
+        0
+    } else {
+        usize::try_from(ty(rec_desc).size()).unwrap_or(0)
+    };
     let record = if rec == 0 {
         Vec::new()
     } else {
-        bytes(rec, usize::try_from(ty(rec_desc).size()).unwrap_or(0)).to_vec()
+        bytes(rec, rec_len).to_vec()
     };
     let Some(state) = j.files.get_mut(&key) else {
         return CLOSED;
     };
+    if state.display {
+        return display_io(j, key, op, &format, rec, rec_len, &record);
+    }
     let Some(p) = state.printer.as_mut() else {
         return NO_DEVICE;
     };
@@ -447,6 +523,56 @@ pub extern "sysv64" fn dev_io(
     };
     match p.write(sink.as_mut(), &format, &record) {
         Ok(over) => i32::from(over),
+        Err(f) => {
+            escape(j, &f);
+            i32::from(f.status)
+        }
+    }
+}
+
+/// A display file operation: the write, the read, or both.
+fn display_io(
+    j: &mut Job,
+    key: FileKey,
+    op: i64,
+    format: &str,
+    rec: i64,
+    rec_len: usize,
+    record: &[u8],
+) -> i32 {
+    let Some(state) = j.files.get(&key) else {
+        return CLOSED;
+    };
+    let handle = state.handle;
+    let (infds, infds_len, info) = (state.infds, state.infds_len, state.info.clone());
+    let Some(d) = j.display.as_mut() else {
+        return NO_DEVICE;
+    };
+    let r = match op {
+        0 => d.write(handle, format, record, &[]).map(|()| None),
+        1 => d.read(handle, format).map(Some),
+        _ => d.exfmt(handle, format, record, &[]).map(Some),
+    };
+    match r {
+        Ok(input) => {
+            let mut fb = IoResult::default();
+            if let Some(input) = input {
+                if rec != 0 {
+                    let dst = bytes(rec, rec_len);
+                    let n = input.record.len().min(rec_len);
+                    dst[..n].copy_from_slice(&input.record[..n]);
+                }
+                fb.format = input.format;
+                fb.rrn = u64::from(input.sfl_rrn);
+                fb.key = vec![
+                    input.aid,
+                    u8::try_from(input.cursor.0).unwrap_or(0),
+                    u8::try_from(input.cursor.1).unwrap_or(0),
+                ];
+            }
+            write_infds(infds, infds_len, &info, &fb, false, "DSPIO", j.abi.cur_stmt);
+            0
+        }
         Err(f) => {
             escape(j, &f);
             i32::from(f.status)

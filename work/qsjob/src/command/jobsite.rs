@@ -60,6 +60,9 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "RTVMSG" => return rtvmsg(host, r, out),
         "RTVCFGSTS" => return rtvcfgsts(host, r, out),
         "RCLRSC" => return Ok(rclrsc(job, host)),
+        "STRTCPSVR" => return strtcpsvr(host, r),
+        "ENDTCPSVR" => return endtcpsvr(job, host, r),
+        "CHGTELNA" => return chgtelna(job, host, r),
         _ => {}
     }
     let line = sys_cpps::bridge::specified_line(&entry.word, &parms);
@@ -201,9 +204,7 @@ fn rtvobjd(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail>
     let (name, lib) = match r.get("OBJ").and_then(|b| b.value.as_ref()) {
         Some(Value::Qual(parts)) => (
             parts.first().map(Value::source).unwrap_or_default(),
-            parts
-                .get(1)
-                .map_or_else(|| "*LIBL".into(), Value::source),
+            parts.get(1).map_or_else(|| "*LIBL".into(), Value::source),
         ),
         Some(v) => (v.source(), "*LIBL".into()),
         None => return Err(Fail::new("CPD0015", "OBJ is required")),
@@ -328,9 +329,7 @@ fn qual_of(r: &Resolved, kw: &str) -> (String, String) {
     match r.get(kw).and_then(|b| b.value.as_ref()) {
         Some(Value::Qual(parts)) => (
             parts.first().map(Value::source).unwrap_or_default(),
-            parts
-                .get(1)
-                .map_or_else(|| "*LIBL".into(), Value::source),
+            parts.get(1).map_or_else(|| "*LIBL".into(), Value::source),
         ),
         Some(v) => (v.source(), "*LIBL".into()),
         None => (String::new(), "*LIBL".into()),
@@ -398,13 +397,23 @@ fn rtvmbrd(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail>
         ("RTNMBR", chars(&m.name)),
         ("FILEATR", chars(&f.attr)),
         ("FILETYPE", chars(if f.source { "*SRC" } else { "*DATA" })),
-        ("SRCTYPE", chars(if m.srctype.is_empty() { "*NONE" } else { &m.srctype })),
+        (
+            "SRCTYPE",
+            chars(if m.srctype.is_empty() {
+                "*NONE"
+            } else {
+                &m.srctype
+            }),
+        ),
         ("CRTDATE", chars(&m.created)),
         ("EXPDATE", chars("*NONE")),
         ("TEXT", chars(&m.text)),
         ("NBRCURRCD", num(i64::from(m.records))),
         ("NBRDLTRCD", num(i64::from(m.deleted))),
-        ("DTASPCSIZ", num(i64::from(m.records + m.deleted) * i64::from(f.rec_len))),
+        (
+            "DTASPCSIZ",
+            num(i64::from(m.records + m.deleted) * i64::from(f.rec_len)),
+        ),
         ("ACCPTHSIZ", num(0)),
         ("NBRDTAMBRS", num(i64::from(f.attr == "LF"))),
         ("CHGDATE", chars(&m.changed)),
@@ -430,8 +439,9 @@ fn rtvusrprf(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fai
         .borrow_mut()
         .with(|l| l.sec_api(sec::api::Query::Profile { user: user.clone() }));
     let p = match answer {
-        Ok(sec::api::Answer::Profile { data }) => sec::profile::UsrPrf::decode(&data)
-            .map_err(|e| Fail::new("CPF9999", e.to_string()))?,
+        Ok(sec::api::Answer::Profile { data }) => {
+            sec::profile::UsrPrf::decode(&data).map_err(|e| Fail::new("CPF9999", e.to_string()))?
+        }
         Ok(_) => return Err(Fail::new("CPF9999", "unexpected answer".to_string())),
         Err(e) => {
             return Err(Fail {
@@ -463,17 +473,36 @@ fn rtvusrprf(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fai
         ("SPCAUT", chars(&padded(&spcaut))),
         ("MAXSTG", num(p.maxstg)),
         ("MAXSTGLRG", num(p.maxstglrg)),
-        ("STGUSED", num(i64::try_from(p.stg_used).unwrap_or(i64::MAX))),
-        ("STGUSEDLRG", num(i64::try_from(p.stg_used).unwrap_or(i64::MAX))),
+        (
+            "STGUSED",
+            num(i64::try_from(p.stg_used).unwrap_or(i64::MAX)),
+        ),
+        (
+            "STGUSEDLRG",
+            num(i64::try_from(p.stg_used).unwrap_or(i64::MAX)),
+        ),
         ("PTYLMT", chars(&p.ptylmt.to_string())),
         ("INLPGM", inlpgm),
         ("INLPGMLIB", inlpgmlib),
         ("JOBD", jobd),
         ("JOBDLIB", jobdlib),
-        ("GRPPRF", chars(if p.grpprf.is_empty() { "*NONE" } else { &p.grpprf })),
-        ("OWNER", chars(if p.owner_grpprf { "*GRPPRF" } else { "*USRPRF" })),
+        (
+            "GRPPRF",
+            chars(if p.grpprf.is_empty() {
+                "*NONE"
+            } else {
+                &p.grpprf
+            }),
+        ),
+        (
+            "OWNER",
+            chars(if p.owner_grpprf { "*GRPPRF" } else { "*USRPRF" }),
+        ),
         ("GRPAUT", chars(&p.grpaut)),
-        ("GRPAUTTYP", chars(if p.grpauttyp_pgp { "*PGP" } else { "*PRIVATE" })),
+        (
+            "GRPAUTTYP",
+            chars(if p.grpauttyp_pgp { "*PGP" } else { "*PRIVATE" }),
+        ),
         ("ACGCDE", chars(&p.acgcde)),
         ("MSGQ", msgq),
         ("MSGQLIB", msgqlib),
@@ -488,12 +517,22 @@ fn rtvusrprf(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fai
         ("PWDEXPITV", num(i64::from(p.pwdexpitv))),
         ("PWDEXP", yes_no(p.pwdexp)),
         ("USRCLS", chars(p.usrcls.name())),
-        ("STATUS", chars(if p.disabled { "*DISABLED" } else { "*ENABLED" })),
+        (
+            "STATUS",
+            chars(if p.disabled { "*DISABLED" } else { "*ENABLED" }),
+        ),
         ("PWDCHGDAT", chars(&cyymmdd(p.pwd_changed))),
         ("PRVSIGN", chars(&cyymmdd(p.prev_signon))),
         ("NOTVLDSIGN", num(i64::from(p.signon_invalid))),
         ("USROPT", chars(&padded(&p.usropt))),
-        ("CURLIB", chars(if p.curlib.is_empty() { "*CRTDFT" } else { &p.curlib })),
+        (
+            "CURLIB",
+            chars(if p.curlib.is_empty() {
+                "*CRTDFT"
+            } else {
+                &p.curlib
+            }),
+        ),
         ("INLMNU", inlmnu),
         ("INLMNULIB", inlmnulib),
         ("LMTCPB", chars(p.lmtcpb.name())),
@@ -517,7 +556,14 @@ fn rtvusrprf(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fai
         ("GID", num(i64::from(p.gid))),
         ("HOMEDIR", chars(&p.homedir)),
         ("LCLPWDMGT", yes_no(p.lclpwdmgt)),
-        ("PWDCHGBLK", chars(&if p.pwdchgblk == 0 { "*NONE".to_string() } else { p.pwdchgblk.to_string() })),
+        (
+            "PWDCHGBLK",
+            chars(&if p.pwdchgblk == 0 {
+                "*NONE".to_string()
+            } else {
+                p.pwdchgblk.to_string()
+            }),
+        ),
         ("USREXPDATE", chars(&cyymmdd(p.usrexpdate))),
         ("USREXPITV", num(i64::from(p.usrexpitv))),
     ];
@@ -526,11 +572,42 @@ fn rtvusrprf(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fai
 
 /// The network attributes `RTVNETA` returns, in its keyword order.
 const NETA_KEYWORDS: &[&str] = &[
-    "SYSNAME", "PNDSYSNAME", "LCLNETID", "LCLCPNAME", "LCLLOCNAME", "DFTMODE", "NODETYPE",
-    "DTACPR", "DTACPRINM", "MAXINTSSN", "RAR", "NETSERVER", "ALRSTS", "ALRPRIFP", "ALRDFTFP",
-    "ALRLOGSTS", "ALRBCKFP", "ALRRQSFP", "ALRCTLD", "ALRHLDCNT", "ALRFTR", "MSGQ", "OUTQ",
-    "JOBACN", "MAXHOP", "DDMACC", "PCSACC", "DFTCNNLST", "ALWANYNET", "NWSDOMAIN", "ALWVRTIP",
-    "ALWHPRTWR", "VRTAUTODEV", "HPRPTHTMR", "ALWADDCLU", "MDMCNTRYID",
+    "SYSNAME",
+    "PNDSYSNAME",
+    "LCLNETID",
+    "LCLCPNAME",
+    "LCLLOCNAME",
+    "DFTMODE",
+    "NODETYPE",
+    "DTACPR",
+    "DTACPRINM",
+    "MAXINTSSN",
+    "RAR",
+    "NETSERVER",
+    "ALRSTS",
+    "ALRPRIFP",
+    "ALRDFTFP",
+    "ALRLOGSTS",
+    "ALRBCKFP",
+    "ALRRQSFP",
+    "ALRCTLD",
+    "ALRHLDCNT",
+    "ALRFTR",
+    "MSGQ",
+    "OUTQ",
+    "JOBACN",
+    "MAXHOP",
+    "DDMACC",
+    "PCSACC",
+    "DFTCNNLST",
+    "ALWANYNET",
+    "NWSDOMAIN",
+    "ALWVRTIP",
+    "ALWHPRTWR",
+    "VRTAUTODEV",
+    "HPRPTHTMR",
+    "ALWADDCLU",
+    "MDMCNTRYID",
 ];
 
 /// `RTVNETA`: every attribute asked for, through the job's link.
@@ -608,12 +685,174 @@ fn rtvmsg(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> 
     returned(r, &values, out)
 }
 
+/// `STRTCPSVR SERVER(*TELNET)`: the telnet server job `QTVTELNET`
+/// starts in `QSYSWRK`, a child of this job like a subsystem monitor.
+/// The other servers wait for Phase 10.
+fn strtcpsvr(host: &Host, r: &Resolved) -> Result<String, Fail> {
+    let servers: Vec<String> = r
+        .parms
+        .iter()
+        .find(|b| b.kwd == "SERVER")
+        .and_then(|b| b.value.as_ref())
+        .map_or_else(
+            || vec!["*ALL".to_string()],
+            |v| {
+                v.source()
+                    .split_whitespace()
+                    .map(|s| {
+                        s.trim_matches(|c| c == '(' || c == ')')
+                            .to_ascii_uppercase()
+                    })
+                    .collect()
+            },
+        );
+    let telnet = servers.iter().any(|s| s == "*TELNET" || s == "*ALL");
+    if !telnet {
+        return Err(Fail::new(
+            "TCP1A04",
+            format!(
+                "{}: only *TELNET starts in this release.",
+                servers.join(" ")
+            ),
+        ));
+    }
+    let state = host
+        .link
+        .borrow_mut()
+        .with(|l| l.job_state("QTVTELNET".into()));
+    if state == 1 {
+        return Ok("TCP1A08 TELNET server already started.\n".into());
+    }
+    let number = host
+        .link
+        .borrow_mut()
+        .with(Client::job_number)
+        .map_err(|e| Fail::new("CPF0001", e))?;
+    let start = wm::ctl::Start {
+        name: "QTVTELNET".into(),
+        user: "QTCP".into(),
+        number,
+        handle: u64::from(number),
+        kind: 'B',
+        subsystem: "QSYSWRK".into(),
+        role: "TELNET".into(),
+        jobd: "QSYS/QSYSJOBD".into(),
+        class: "QSYS/QSYSCLS20".into(),
+        pool: "*BASE".into(),
+        rqsdta: telnet_port(host),
+        ..wm::ctl::Start::default()
+    };
+    let mut s = crate::work::spawn::job(start).map_err(|e| Fail::new("TCP1A05", e))?;
+    crate::work::spawn::ready(&mut s).map_err(|e| Fail::new("TCP1A05", e))?;
+    host.children.borrow_mut().push(s);
+    Ok("TCP1A07 TELNET server starting.\n".into())
+}
+
+/// `PORT(n)` for the server from `CHGTELNA`'s data area, when one was
+/// set (the harness uses a high port where 23 is not allowed).
+fn telnet_port(host: &Host) -> String {
+    host.link
+        .borrow_mut()
+        .with(|l| l.da_read("QTVTELNA".into(), "QUSRSYS".into()))
+        .ok()
+        .map(|v| ccsid::from_ebcdic(&v.value))
+        .and_then(|t| {
+            t.to_ascii_uppercase()
+                .split_once("PORT(")
+                .map(|(_, r)| format!("PORT({})", r.split(')').next().unwrap_or("23").trim()))
+        })
+        .unwrap_or_default()
+}
+
+/// `ENDTCPSVR SERVER(*TELNET)`: the server job ends.
+fn endtcpsvr(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
+    let _ = r;
+    let state = host
+        .link
+        .borrow_mut()
+        .with(|l| l.job_state("QTVTELNET".into()));
+    if state != 1 {
+        return Ok("TCP1A09 TELNET server not active.\n".into());
+    }
+    let out = crate::command::run(job, host, "ENDJOB JOB(QTVTELNET) OPTION(*CNTRLD)").text;
+    if let Some(id) = leading_msgid(out.trim()) {
+        return Err(Fail::new(id, out.trim().to_string()));
+    }
+    Ok("TCP1A0A TELNET server ending.\n".into())
+}
+
+/// `CHGTELNA`: the attributes kept in the data area `QUSRSYS/QTVTELNA`
+/// as `KEYWORD(value)` text.
+fn chgtelna(job: &mut Job, host: &Host, r: &Resolved) -> Result<String, Fail> {
+    let current = host
+        .link
+        .borrow_mut()
+        .with(|l| l.da_read("QTVTELNA".into(), "QUSRSYS".into()))
+        .ok()
+        .map(|v| ccsid::from_ebcdic(&v.value).trim().to_string())
+        .unwrap_or_default();
+    let mut values: Vec<(String, String)> = current
+        .split(')')
+        .filter_map(|p| p.trim().split_once('('))
+        .map(|(k, v)| (k.trim().to_string(), v.trim().to_string()))
+        .collect();
+    for b in &r.parms {
+        let Some(v) = b.value.as_ref() else {
+            continue;
+        };
+        let text = v.source().trim().to_ascii_uppercase();
+        if text == "*SAME" || text.is_empty() {
+            continue;
+        }
+        values.retain(|(k, _)| k != &b.kwd);
+        values.push((b.kwd.clone(), text));
+    }
+    let joined: Vec<String> = values.iter().map(|(k, v)| format!("{k}({v})")).collect();
+    let text = joined.join(" ");
+    let out = crate::command::run(
+        job,
+        host,
+        &format!(
+            "CHGDTAARA DTAARA(QUSRSYS/QTVTELNA (1 200)) VALUE('{}')",
+            text.replace('\'', "''")
+        ),
+    )
+    .text;
+    if leading_msgid(out.trim()).is_some_and(|id| id.starts_with("CPF")) {
+        let made = crate::command::run(
+            job,
+            host,
+            "CRTDTAARA DTAARA(QUSRSYS/QTVTELNA) TYPE(*CHAR) LEN(200) TEXT('TELNET server attributes')",
+        )
+        .text;
+        if let Some(id) = leading_msgid(made.trim()) {
+            return Err(Fail::new(id, made.trim().to_string()));
+        }
+        let again = crate::command::run(
+            job,
+            host,
+            &format!(
+                "CHGDTAARA DTAARA(QUSRSYS/QTVTELNA (1 200)) VALUE('{}')",
+                text.replace('\'', "''")
+            ),
+        )
+        .text;
+        if let Some(id) = leading_msgid(again.trim()) {
+            return Err(Fail::new(id, again.trim().to_string()));
+        }
+    }
+    Ok("TELNET attributes changed.\n".into())
+}
+
 /// `RTVCFGSTS CFGD(name) CFGTYPE(*DEV)`: varied on (10) or off (0).
 fn rtvcfgsts(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
     let name = text_of(r, "CFGD").to_ascii_uppercase();
     let ty = text_of(r, "CFGTYPE").to_ascii_uppercase();
     if ty != "*DEV" {
-        return Err(Fail::new("CPD0084", format!("CFGTYPE({ty}): only *DEV objects exist here")));
+        return Err(Fail::new(
+            "CPD0084",
+            format!("CFGTYPE({ty}): only *DEV objects exist here"),
+        ));
     }
     let b = host
         .link
@@ -632,7 +871,10 @@ fn rtvcfgsts(host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fai
     };
     let values = [
         ("STSCDE", num(if online { 10 } else { 0 })),
-        ("STS", chars(if online { "VARIED ON" } else { "VARIED OFF" })),
+        (
+            "STS",
+            chars(if online { "VARIED ON" } else { "VARIED OFF" }),
+        ),
     ];
     returned(r, &values, out)
 }

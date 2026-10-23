@@ -14,4 +14,6 @@ pub mod pwdpgm;
 pub mod scheduler;
 pub mod spawn;
 pub mod sysjob;
+pub mod telnet;
+pub mod tls;
 pub mod writer;

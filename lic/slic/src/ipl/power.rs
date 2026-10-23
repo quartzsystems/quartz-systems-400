@@ -11,9 +11,29 @@ use crate::ipl::system::System;
 use crate::platform::power;
 use crate::src;
 
+/// Where the storage service leaves a job's `PWRDWNSYS` options
+/// (`immediate delay restart`) before signalling `SIGUSR1`.
+pub const REQUEST_FILE: &str = "/run/qs400/pwrdwn";
+
 /// Power off, or restart. Never returns.
 pub fn down(system: &mut System, restart: bool) -> ! {
     down_ending(system, restart, true, 0)
+}
+
+/// `SIGUSR1`: a power-down a job asked the service for, with its
+/// options when the request file holds them; else a plain power off.
+pub fn requested(system: &mut System) -> ! {
+    let text = std::fs::read_to_string(REQUEST_FILE).unwrap_or_default();
+    let _ = std::fs::remove_file(REQUEST_FILE);
+    let mut it = text.split_whitespace();
+    let immediate = it.next() == Some("1");
+    let delay: u32 = it.next().and_then(|d| d.parse().ok()).unwrap_or(0);
+    let restart = it.next() == Some("1");
+    if text.trim().is_empty() {
+        down(system, false)
+    } else {
+        down_ending(system, restart, immediate, delay)
+    }
 }
 
 /// `PWRDWNSYS`: power down with the work ending controlled within

@@ -57,6 +57,9 @@ pub struct Host {
     pub start: Rc<Start>,
     /// The job's attributes as last fetched; `None` until needed.
     pub attrs: Rc<RefCell<Option<JobAttrs>>>,
+    /// The job's own display device, when it has one; the console job
+    /// shows its panels through the parent instead.
+    pub display: Rc<RefCell<Option<crate::display::Display>>>,
 }
 
 impl Host {
@@ -69,6 +72,10 @@ impl Host {
 
     /// Show a panel on the job's display.
     pub fn show(&self, panel: Panel) {
+        if let Some(d) = self.display.borrow_mut().as_mut() {
+            d.show(&panel);
+            return;
+        }
         let _ = self.ctl.borrow_mut().send(&FromJob::Show { panel });
     }
 
@@ -100,6 +107,21 @@ impl Host {
         loop {
             match self.inbox.recv_timeout(BREAK_POLL) {
                 Ok(ToJob::Input { key, fields }) => return Some((key, fields)),
+                Ok(ToJob::Record { flags, data, .. }) => {
+                    let got = self
+                        .display
+                        .borrow_mut()
+                        .as_mut()
+                        .and_then(|d| d.accept(flags, &data));
+                    if let Some(r) = got {
+                        return Some(r);
+                    }
+                }
+                Ok(ToJob::DeviceReset { device }) => {
+                    if let Some(d) = self.display.borrow_mut().as_mut() {
+                        d.reset(device);
+                    }
+                }
                 Ok(ToJob::End { .. }) | Err(RecvTimeoutError::Disconnected) => return None,
                 Ok(_) => {}
                 Err(RecvTimeoutError::Timeout) => self.breaks(job),

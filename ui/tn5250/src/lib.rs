@@ -16,6 +16,7 @@
 pub mod ds;
 pub mod error;
 pub mod record;
+pub mod screen;
 pub mod telnet;
 pub mod term;
 

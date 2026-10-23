@@ -256,6 +256,7 @@ fn start(
             pool: r.pool,
             lda: Vec::new(),
             signon: Some(signed),
+            device: String::new(),
         }),
     })
     .map_err(|e| e.to_string())?;
@@ -427,13 +428,17 @@ pub fn inactivity(system: &mut System) {
         match action.first().copied().unwrap_or("*ENDJOB") {
             "*ENDJOB" => {
                 if let Some(mut j) = system.procs.console.take() {
-                    system.out.serial(&format!("slic: {} inactive; job ended\n", j.user));
+                    system
+                        .out
+                        .serial(&format!("slic: {} inactive; job ended\n", j.user));
                     j.end();
                     sign_on(system, "The job ended: the display was not used.");
                 }
             }
             "*DSCJOB" => {
-                system.out.serial("slic: console inactive; job disconnected\n");
+                system
+                    .out
+                    .serial("slic: console inactive; job disconnected\n");
                 disconnect(system);
             }
             queue => {
@@ -445,7 +450,9 @@ pub fn inactivity(system: &mut System) {
                 let msg = wm::obj::msgq::QMsg {
                     msgid: "CPI1126".into(),
                     msgf: ("QCPFMSG".into(), "QSYS".into()),
-                    text: format!("Job {DEVICE} of user {user} has not been used for {itv} minutes."),
+                    text: format!(
+                        "Job {DEVICE} of user {user} has not been used for {itv} minutes."
+                    ),
                     severity: 0,
                     ..wm::obj::msgq::QMsg::default()
                 };
@@ -455,8 +462,10 @@ pub fn inactivity(system: &mut System) {
             }
         }
     }
-    if let (Some(itv), Some(d)) = (minutes(system, "QDSCJOBITV"), system.procs.disconnected.as_ref())
-        && d.at.elapsed().as_secs() >= itv * 60
+    if let (Some(itv), Some(d)) = (
+        minutes(system, "QDSCJOBITV"),
+        system.procs.disconnected.as_ref(),
+    ) && d.at.elapsed().as_secs() >= itv * 60
         && let Some(d) = system.procs.disconnected.take()
     {
         let mut j = d.job;

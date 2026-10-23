@@ -82,6 +82,8 @@ pub struct FileState {
     pub info: crate::io::FileInfo,
     /// The line printer of an open printer file.
     pub printer: Option<Box<crate::io::spool::PrinterState>>,
+    /// An open display file: `handle` is the display source's.
+    pub display: bool,
 }
 
 /// A job's identity: `QSVCJOB QSYS 000001` for the service job.
@@ -162,6 +164,8 @@ pub struct Job {
     pub io: Option<Box<dyn crate::io::IoSource>>,
     /// Where printer files' spooled files go.
     pub spool: Option<Box<dyn crate::io::spool::SpoolSink>>,
+    /// Where display files show and read their formats.
+    pub display: Option<Box<dyn crate::io::display::DisplaySource>>,
     /// Data areas and data queues.
     pub data: Option<Box<dyn crate::io::DataSource>>,
     /// Open files by activation, module and file index.
@@ -241,6 +245,7 @@ impl Job {
             usrspcs: crate::usrspc::UserSpaces::default(),
             io: None,
             spool: None,
+            display: None,
             data: None,
             files: HashMap::new(),
             debug: None,

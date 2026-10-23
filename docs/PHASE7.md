@@ -128,8 +128,9 @@ In memory, release build, one core of the development machine
 - **Unsupported commands**, defined and analyzed but without a
   processing program: `POSDBF` (positioning a shared query path by
   `OPNID`), `CPYLIB` (a generic object copy comes with save and
-  restore), `TFRJOB`, and the display-bound `CRTDEVDSP`, `CRTDSPF`,
-  `DSPMODSRC`, `EDTLIBL` and `STRSQL`. The cleanup after Phase 7 gave
+  restore), `TFRJOB`, and the display-bound `CRTDSPF`, `DSPMODSRC`,
+  `EDTLIBL` and `STRSQL` (`CRTDEVDSP` gained its processing program
+  with Phase 8's devices). The cleanup after Phase 7 gave
   the other 50 processing programs: the message file, `CHGPF`/`CHGLF`/
   member, `RUNSQL`/`RUNSQLSTM`, journal, lock, library, override
   display, network attribute, device, software resource and PTF

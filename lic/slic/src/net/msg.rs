@@ -22,6 +22,18 @@ pub const NLM_F_ACK: u16 = 0x04;
 pub const NLM_F_DUMP: u16 = 0x300;
 /// `IFLA_IFNAME`.
 pub const IFLA_IFNAME: u16 = 3;
+/// `RTM_NEWADDR`.
+pub const RTM_NEWADDR: u16 = 20;
+/// `NLM_F_CREATE`.
+pub const NLM_F_CREATE: u16 = 0x400;
+/// `NLM_F_EXCL`.
+pub const NLM_F_EXCL: u16 = 0x200;
+/// `IFA_ADDRESS`.
+pub const IFA_ADDRESS: u16 = 1;
+/// `IFA_LOCAL`.
+pub const IFA_LOCAL: u16 = 2;
+/// `AF_INET`.
+const AF_INET: u8 = 2;
 /// `IFF_UP`.
 pub const IFF_UP: u32 = 1;
 
@@ -51,6 +63,44 @@ pub fn link_request(
     m.extend_from_slice(&index.to_ne_bytes());
     m.extend_from_slice(&ifflags.to_ne_bytes());
     m.extend_from_slice(&change.to_ne_bytes());
+    m
+}
+
+/// Build `nlmsghdr` + `ifaddrmsg` + the address attributes for an IPv4
+/// address request.
+pub fn addr_request(
+    kind: u16,
+    flags: u16,
+    seq: u32,
+    index: i32,
+    ip: [u8; 4],
+    prefix: u8,
+) -> Vec<u8> {
+    const IFADDR_LEN: usize = 8;
+    let attr = |t: u16, v: &[u8]| -> Vec<u8> {
+        let mut a = Vec::new();
+        a.extend_from_slice(&u16::try_from(4 + v.len()).expect("small").to_ne_bytes());
+        a.extend_from_slice(&t.to_ne_bytes());
+        a.extend_from_slice(v);
+        while a.len() % 4 != 0 {
+            a.push(0);
+        }
+        a
+    };
+    // ifaddrmsg: family, prefix length, flags, scope (universe), index.
+    let mut body = vec![AF_INET, prefix, 0, 0];
+    body.extend_from_slice(&index.to_ne_bytes());
+    body.extend(attr(IFA_LOCAL, &ip));
+    body.extend(attr(IFA_ADDRESS, &ip));
+    let len = u32::try_from(NLMSG_HDRLEN + body.len()).expect("small");
+    debug_assert!(body.len() >= IFADDR_LEN);
+    let mut m = Vec::with_capacity(len as usize);
+    m.extend_from_slice(&len.to_ne_bytes());
+    m.extend_from_slice(&kind.to_ne_bytes());
+    m.extend_from_slice(&flags.to_ne_bytes());
+    m.extend_from_slice(&seq.to_ne_bytes());
+    m.extend_from_slice(&0u32.to_ne_bytes());
+    m.extend(body);
     m
 }
 

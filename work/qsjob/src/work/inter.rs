@@ -25,7 +25,7 @@ use crate::command::RunMode;
 use crate::console::Console;
 
 /// Lines of previous commands and messages the panel shows.
-const SHOWN: usize = 14;
+const SHOWN: usize = 12;
 /// The width a line of output wraps at.
 const WIDTH: usize = 76;
 /// The most characters a command line holds (`CPF0005` beyond).
@@ -540,43 +540,61 @@ fn visible(s: &Session<'_>) -> (usize, Vec<(String, bool)>) {
 
 /// The Command Entry panel.
 fn panel(s: &Session<'_>, field: &str, message: &str) -> Panel {
+    // The layout of IBM's Command Entry display, measured on the oracle
+    // (tools/conformance/golden/verified/pub400/command-entry.txt).
     let mut p = Panel::default();
     p.text(1, 34, 1, "Command Entry");
     p.text(1, 72, 0, s.system.clone());
-    p.text(2, 59, 0, "Request level:   1");
-    p.text(4, 2, 0, "Previous commands and messages:");
+    p.text(2, 60, 0, "Request level:   1");
+    p.text(
+        3,
+        2,
+        2,
+        if s.detailed {
+            "All previous commands and messages:"
+        } else {
+            "Previous commands and messages:"
+        },
+    );
     let (from, shown) = visible(s);
     let total = rows(s).len();
+    if total == 0 {
+        p.text(5, 4, 0, "(No previous commands or messages)");
+    }
     for (i, (l, command)) in shown.iter().enumerate() {
-        let row = u8::try_from(5 + i).unwrap_or(18);
+        let row = u8::try_from(4 + i).unwrap_or(15);
         p.text(row, 2, u8::from(*command), l.clone());
     }
     let at_end = from + shown.len() >= total;
-    p.text(18, 73, 0, if at_end { "Bottom" } else { "More..." });
-    p.text(19, 2, 0, "Type command, press Enter.");
-    p.text(20, 2, 1, "===>");
-    let mut chars = field.chars();
-    let first: String = chars.by_ref().take(73).collect();
-    let second: String = chars.by_ref().take(78).collect();
-    let third: String = chars.take(78).collect();
-    p.field(20, 7, 73, first);
-    p.field(21, 2, 78, second);
-    p.field(22, 2, 78, third);
-    if s.more_keys {
-        p.text(23, 2, 2, "F16=Leave   F17=Top   F18=Bottom");
-        p.text(24, 2, 2, "F24=More keys");
+    if at_end {
+        p.text(16, 74, 1, "Bottom");
     } else {
+        p.text(16, 73, 1, "More...");
+    }
+    p.text(17, 2, 0, "Type command, press Enter.");
+    p.text(18, 2, 1, "===>");
+    // One field of 313 cells over rows 18 to 21, as the oracle lays it
+    // out; the framebuffer console shows its first row until it becomes
+    // a 5250 client (section 7).
+    p.field(18, 7, 313, field);
+    if s.more_keys {
+        p.text(22, 2, 2, "F16=System main menu   F24=More keys");
+    } else {
+        p.text(
+            22,
+            2,
+            2,
+            if s.detailed {
+                "F3=Exit   F4=Prompt   F9=Retrieve   F10=Exclude detailed messages"
+            } else {
+                "F3=Exit   F4=Prompt   F9=Retrieve   F10=Include detailed messages"
+            },
+        );
         p.text(
             23,
             2,
             2,
-            "F3=Exit   F4=Prompt   F9=Retrieve   F10=Detailed messages",
-        );
-        p.text(
-            24,
-            2,
-            2,
-            "F11=Full display   F12=Cancel   F13=Assistant   F24=More keys",
+            "F11=Display full      F12=Cancel    F13=Information Assistant   F24=More keys",
         );
     }
     p.message = message.to_string();

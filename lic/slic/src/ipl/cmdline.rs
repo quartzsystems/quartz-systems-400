@@ -28,6 +28,9 @@ pub struct Boot {
     /// Milliseconds each IPL code and install step stays on the display
     /// (`qs400.pace`); the default when absent.
     pub pace: Option<u64>,
+    /// The first Ethernet link's IPv4 address and prefix
+    /// (`qs400.ip=10.0.2.15/24`); QEMU's user network when absent.
+    pub ip: Option<String>,
 }
 
 impl Boot {
@@ -47,6 +50,7 @@ impl Boot {
             ipl_d: false,
             media: None,
             pace: None,
+            ip: None,
         };
         for word in text.split_whitespace() {
             let Some((key, value)) = word.split_once('=') else {
@@ -73,6 +77,7 @@ impl Boot {
                 "qs400.ipl" => boot.ipl_d = value.eq_ignore_ascii_case("d"),
                 "qs400.media" => boot.media = Some(value.to_string()),
                 "qs400.pace" => boot.pace = value.parse().ok(),
+                "qs400.ip" => boot.ip = Some(value.to_string()),
                 _ => {}
             }
         }

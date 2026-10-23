@@ -2,7 +2,8 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Minimal rtnetlink: list links, set a link up. Nothing else in Phase 1.
+//! Minimal rtnetlink: list links, set a link up, give a link an IPv4
+//! address (Phase 8, for the TN5250E server).
 
 pub mod msg;
 
@@ -13,8 +14,8 @@ use rustix::net::netlink::SocketAddrNetlink;
 use rustix::net::{AddressFamily, RecvFlags, SendFlags, SocketType, bind, recv, send, socket};
 
 use msg::{
-    IFF_UP, IFLA_IFNAME, NLM_F_ACK, NLM_F_DUMP, NLM_F_REQUEST, NLMSG_DONE, NLMSG_ERROR,
-    RTM_GETLINK, RTM_NEWLINK,
+    IFF_UP, IFLA_IFNAME, NLM_F_ACK, NLM_F_CREATE, NLM_F_DUMP, NLM_F_EXCL, NLM_F_REQUEST,
+    NLMSG_DONE, NLMSG_ERROR, RTM_GETLINK, RTM_NEWADDR, RTM_NEWLINK,
 };
 
 /// One network link.
@@ -67,6 +68,32 @@ pub fn links() -> Result<Vec<Link>, Errno> {
         }
     }
     Ok(links)
+}
+
+/// Give a link an IPv4 address with a prefix length; an address
+/// already there is not an error.
+pub fn add_address(index: i32, ip: [u8; 4], prefix: u8) -> Result<(), Errno> {
+    let sock = open()?;
+    let req = msg::addr_request(
+        RTM_NEWADDR,
+        NLM_F_REQUEST | NLM_F_ACK | NLM_F_CREATE | NLM_F_EXCL,
+        3,
+        index,
+        ip,
+        prefix,
+    );
+    send(&sock, &req, SendFlags::empty())?;
+    let mut buf = vec![0u8; 4096];
+    let (n, _) = recv(&sock, &mut buf[..], RecvFlags::empty())?;
+    for m in msg::messages(&buf[..n]) {
+        if m.kind == NLMSG_ERROR {
+            return match m.error() {
+                None | Some(Errno::EXIST) => Ok(()),
+                Some(e) => Err(e),
+            };
+        }
+    }
+    Ok(())
 }
 
 /// Set `IFF_UP` on a link.

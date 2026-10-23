@@ -58,6 +58,11 @@ pub fn end_all(system: &mut crate::ipl::system::System, immediate: bool, delay: 
 
 /// Put a process in a storage pool's cgroup, making the cgroup when it
 /// is missing (`docs/WORKMGMT.md`, pools).
+/// The directory of the display device sockets (`wm::dev`).
+pub fn device_dir() {
+    let _ = std::fs::create_dir_all(wm::dev::DIR);
+}
+
 pub fn cgroup_place(pool: &str, pid: u32) {
     let mut dir = std::path::PathBuf::from("/sys/fs/cgroup/qs400");
     for part in pool.trim_start_matches('*').split('/') {

@@ -21,6 +21,7 @@
                STRSBS     SBSD(QSYS/QBATCH)
                STRSBS     SBSD(QSYS/QCMN)
              ENDDO
+             STRTCPSVR  SERVER(*TELNET)
              RTVSYSVAL  SYSVAL(QSTRPRTWTR) RTNVAR(&WTR)
              IF         COND(&WTR *EQ '1') THEN(STRPRTWTR DEV(QSCAPTURE))
              RLSJOBQ    JOBQ(QGPL/QS36EVOKE)

@@ -186,7 +186,48 @@ fn lic_phase(
         Err(e) => system.out.serial(&format!("slic: rtnetlink: {e}\n")),
     }
     system.emit(&src::NET_ENUMERATED);
+    net_address(system);
+    procs::device_dir();
     Ok(())
+}
+
+/// The address of the first Ethernet link: `qs400.ip=A.B.C.D/N` on the
+/// command line, else the address QEMU's user network expects.
+/// `BLOCKED(phase10)`: TCP/IP configuration objects and DHCP.
+fn net_address(system: &mut System) {
+    let Some(link) = system
+        .links
+        .iter()
+        .find(|l| l.name != "lo" && !l.name.starts_with("sit"))
+    else {
+        return;
+    };
+    let (index, name) = (link.index, link.name.clone());
+    let spec = system
+        .boot
+        .ip
+        .clone()
+        .unwrap_or_else(|| "10.0.2.15/24".into());
+    let Some((addr, prefix)) = spec.split_once('/') else {
+        return;
+    };
+    let octets: Vec<u8> = addr.split('.').filter_map(|o| o.parse().ok()).collect();
+    let Ok(prefix) = prefix.parse::<u8>() else {
+        return;
+    };
+    if octets.len() != 4 {
+        return;
+    }
+    let ip = [octets[0], octets[1], octets[2], octets[3]];
+    if !link.is_up()
+        && let Err(e) = net::set_up(index)
+    {
+        system.out.serial(&format!("slic: {name} up: {e}\n"));
+    }
+    match net::add_address(index, ip, prefix) {
+        Ok(()) => system.out.serial(&format!("slic: {name} {spec}\n")),
+        Err(e) => system.out.serial(&format!("slic: {name} {spec}: {e}\n")),
+    }
 }
 
 /// C6004100: the operating system install the LIC install left
@@ -319,9 +360,9 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
         system.svc_user = Some("*DEV".into());
         svc::banner(system);
     } else {
-        system
-            .out
-            .serial("Service console: sign on with a service tools user ID: signon USER PASSWORD\n");
+        system.out.serial(
+            "Service console: sign on with a service tools user ID: signon USER PASSWORD\n",
+        );
     }
 }
 
@@ -342,19 +383,21 @@ pub fn audit_lic(system: &mut System) {
 fn serial_sign_on(system: &mut System, line: &str) {
     let mut w = line.split_whitespace();
     if w.next() != Some("signon") {
-        system
-            .out
-            .serial("Sign on first: signon USER PASSWORD\n");
+        system.out.serial("Sign on first: signon USER PASSWORD\n");
         return;
     }
     let user = w.next().unwrap_or("").to_ascii_uppercase();
     let password = w.next().unwrap_or("");
     let Some((part, record)) = system.lic.as_mut() else {
-        system.out.serial("The service tools user IDs are not available.\n");
+        system
+            .out
+            .serial("The service tools user IDs are not available.\n");
         return;
     };
     let Some(mut users) = svctools::UserDb::load(record) else {
-        system.out.serial("The service tools user IDs are not available.\n");
+        system
+            .out
+            .serial("The service tools user IDs are not available.\n");
         return;
     };
     let r = users.sign_on(&user, password).map(|_| ());
@@ -363,8 +406,12 @@ fn serial_sign_on(system: &mut System, line: &str) {
     }
     match r {
         Ok(()) => {
-            system.audit_lic.push(("ST".into(), "SC".into(), user.clone()));
-            system.out.serial(&format!("Service tools user {user} signed on.\n"));
+            system
+                .audit_lic
+                .push(("ST".into(), "SC".into(), user.clone()));
+            system
+                .out
+                .serial(&format!("Service tools user {user} signed on.\n"));
             system.svc_user = Some(user);
             audit_lic(system);
             system.out.serial(svc::PROMPT);
@@ -526,7 +573,7 @@ fn run_loop(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
                 let pids = sys::reap();
                 reaped(system, &pids, tx);
             }
-            Ok(Event::Signal(s)) if s == libc_sigusr1() => power::down(system, false),
+            Ok(Event::Signal(s)) if s == libc_sigusr1() => power::requested(system),
             // SIGTERM and SIGINT are ignored by PID 1; the reaper restarts
             // a job whose channel closed.
             Ok(Event::Signal(_) | Event::JobGone) => {}

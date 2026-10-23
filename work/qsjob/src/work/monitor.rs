@@ -197,6 +197,7 @@ impl Monitor {
             pool: pool_name(&self.name, r.pool, kind_of),
             lda: j.lda,
             signon: None,
+            device: String::new(),
         };
         let mut s = spawn::job(start)?;
         spawn::ready(&mut s)?;
