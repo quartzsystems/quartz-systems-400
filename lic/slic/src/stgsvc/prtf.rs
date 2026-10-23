@@ -126,7 +126,16 @@ pub fn open(
     if let Some(i) = mine.iter().rposition(|o| o.secure) {
         mine.drain(..i);
     }
-    let mine: Vec<Params> = mine.iter().map(|o| Params::parse(&o.line)).collect();
+    // The override's own keywords are not the printer file's.
+    let mine: Vec<Params> = mine
+        .iter()
+        .map(|o| {
+            let mut p = Params::parse(&o.line);
+            p.kw
+                .retain(|(k, _)| !matches!(k.as_str(), "CALLLVL" | "SECURE" | "OVRSCOPE"));
+            p
+        })
+        .collect();
     let target = mine
         .iter()
         .rev()
