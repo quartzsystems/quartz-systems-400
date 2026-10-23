@@ -1,0 +1,27 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s a char(5) inz('ab');
+dcl-s v varchar(10) inz('cd');
+dcl-s arr char(3) dim(3);
+dcl-s va varchar(5) dim(3);
+arr(1) = 'x';
+arr(2) = 'yy';
+arr(3) = 'zzz';
+va(1) = 'p';
+va(2) = '';
+va(3) = 'rr';
+line = 'a [' + %concat(',':'a':'b':'c') + ']';
+write QSYSPRT line;
+line = 'b [' + %concat('-':a:v) + ']';
+write QSYSPRT line;
+line = 'c [' + %concat('':v:v:v) + ']';
+write QSYSPRT line;
+line = 'd [' + %concatarr(',':arr) + ']';
+write QSYSPRT line;
+line = 'e [' + %concatarr('/':va) + '] ' + %char(%len(%concatarr('/':va)));
+write QSYSPRT line;
+line = 'f [' + %concat(' ':%trim(a):v) + ']';
+write QSYSPRT line;
+*inlr = *on;

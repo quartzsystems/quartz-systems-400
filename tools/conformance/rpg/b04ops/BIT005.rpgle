@@ -1,0 +1,32 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s u uns(10) inz(12);
+dcl-s i int(10) inz(-6);
+dcl-s u3 uns(3) inz(240);
+dcl-s c char(2) inz(x'F0C1');
+dcl-ds hx;
+  hb char(2);
+  hu uns(5) overlay(hb);
+end-ds;
+line = 'a ' + %char(%bitand(u:10)) + ' ' + %char(%bitor(u:1)) + ' ' + %char(%bitxor(u:5));
+write QSYSPRT line;
+line = 'b ' + %char(%bitnot(u)) + ' ' + %char(%bitnot(i)) + ' ' + %char(%bitnot(u3));
+write QSYSPRT line;
+line = 'c ' + %char(%bitand(i:255)) + ' ' + %char(%bitor(i:1:16)) + ' ' +
+      %char(%bitxor(u3:15));
+write QSYSPRT line;
+hb = %bitand(c:x'0F0F');
+line = 'd ' + %char(hu);
+write QSYSPRT line;
+hb = %bitor(c:x'0102');
+line = 'e ' + %char(hu);
+write QSYSPRT line;
+hb = %bitnot(c);
+line = 'f ' + %char(hu);
+write QSYSPRT line;
+hb = %bitxor(c:x'FFFF');
+line = 'g ' + %char(hu);
+write QSYSPRT line;
+*inlr = *on;

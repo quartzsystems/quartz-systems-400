@@ -275,6 +275,10 @@ impl Gen<'_> {
                 let mut ty = sym.ty.clone();
                 let mut dim = sym.dim;
                 let mut cur = id;
+                if sym.table && dim > 0 && steps.is_empty() {
+                    place = self.table_elem(id, &place);
+                    dim = 0;
+                }
                 let mut steps = steps.iter().peekable();
                 // An element of an array (or of a structure array).
                 if dim > 0
@@ -286,7 +290,7 @@ impl Gen<'_> {
                         self.err(ids::INDEX_RANGE, 30, name.to_string());
                         return None;
                     }
-                    let i = self.index(&a[0], dim)?;
+                    let i = self.elem_index(id, &a[0], dim, modify)?;
                     place = format!("{place}[{i}]");
                     dim = 0;
                 }
@@ -433,6 +437,7 @@ impl Gen<'_> {
     fn binary(&mut self, op: BinOp, a: &Expr, b: &Expr, w: Want) -> Option<V> {
         match op {
             BinOp::And | BinOp::Or => return self.logic(op, a, b),
+            BinOp::In => return self.in_op(a, b),
             _ => {}
         }
         let va = self.expr(a, w)?;
@@ -596,10 +601,13 @@ impl Gen<'_> {
         let t = self.b.temp(&self.ir_ty(&ty));
         if la + lb == 0 {
             self.b.ins(format!("mov {t}, \"\""));
+        } else if lb == 0 {
+            // An empty literal adds nothing.
+            self.b.ins(format!("mov {t}, {}", va.op));
+        } else if la == 0 {
+            self.b.ins(format!("mov {t}, {}", vb.op));
         } else {
-            let a = if la == 0 { quote("") } else { va.op.clone() };
-            let b = if lb == 0 { quote("") } else { vb.op.clone() };
-            self.b.ins(format!("str.cat {t}, {a}, {b}"));
+            self.b.ins(format!("str.cat {t}, {}, {}", va.op, vb.op));
         }
         Some(V::place(ty, t))
     }

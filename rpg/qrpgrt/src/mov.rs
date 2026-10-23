@@ -2,30 +2,41 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! `MOVE` and `MOVEL`: bytes moved right-aligned (`MOVE`) or
-//! left-aligned (`MOVEL`). A number takes part as its zoned digits,
-//! the sign in the last digit's zone; a numeric target takes the
-//! digits of the moved characters and the sign of the last one's zone.
-//! Without `(P)` the target's other positions keep their contents.
+//! `MOVE`, `MOVEL`, `MOVEA` and the zone moves. Every operand takes
+//! part as its image: character data as its bytes (a varying field as
+//! its current value), an indicator as its one character, a number as
+//! its zoned digits with the sign in the last zone (`F` plus, `D`
+//! minus). The bytes move right-aligned (`MOVE`) or left-aligned
+//! (`MOVEL`); without `(P)` the target's other positions keep their
+//! contents. A numeric target then takes the digit half of each byte
+//! and the sign of its last zone.
 
-use qdecimal::{Decimal, Rounding, Zoned};
+use qdecimal::{Decimal, Rounding};
 
 use crate::value::{Desc, Kind, bytes, read_num};
 
-/// A value's bytes as `MOVE` sees them.
-fn image(addr: u64, d: &Desc) -> Result<Vec<u8>, mi::Cond> {
+/// The zoned image of a number: its digits, the sign in the last zone.
+#[must_use]
+pub fn num_image(v: &Decimal, d: &Desc) -> Vec<u8> {
+    let n = usize::try_from(d.digits()).unwrap_or(1).max(1);
+    let le: Vec<u8> = v.rescale(d.dec, Rounding::Truncate).map(|x| x.digits_le().to_vec()).unwrap_or_default();
+    let mut out: Vec<u8> = (0..n).rev().map(|i| 0xF0 | le.get(i).copied().unwrap_or(0)).collect();
+    if v.is_negative()
+        && let Some(last) = out.last_mut()
+    {
+        *last = 0xD0 | (*last & 0x0F);
+    }
+    out
+}
+
+/// An operand's image.
+pub fn image(addr: u64, d: &Desc) -> Result<Vec<u8>, mi::Cond> {
     if d.numeric() {
-        let v = read_num(addr, d)?;
-        let digits = u8::try_from(d.len.clamp(1, 63)).unwrap_or(63);
-        let z = Zoned::new(digits, d.dec).map_err(|_| mi::Cond::Mch1202)?;
-        let mut out = z.encode(&v, Rounding::Truncate).map_err(|_| mi::Cond::Mch1210)?;
-        // A positive value moves with the F zone.
-        if !v.is_negative()
-            && let Some(last) = out.last_mut()
-        {
-            *last = 0xF0 | (*last & 0x0F);
+        if d.kind == Kind::Zoned {
+            return Ok(bytes(addr, d.size()).to_vec());
         }
-        return Ok(out);
+        let v = read_num(addr, d)?;
+        return Ok(num_image(&v, d));
     }
     let b = bytes(addr, d.size());
     Ok(match d.kind {
@@ -37,67 +48,119 @@ fn image(addr: u64, d: &Desc) -> Result<Vec<u8>, mi::Cond> {
     })
 }
 
+/// A number from a zoned image: the digit half of every byte, the sign
+/// from the last zone (`B` and `D` are minus).
+#[must_use]
+pub fn from_image(img: &[u8], dec: u8) -> Decimal {
+    let le: Vec<u8> = img.iter().rev().map(|b| if b & 0x0F > 9 { 0 } else { b & 0x0F }).collect();
+    let neg = img.last().is_some_and(|b| matches!(b >> 4, 0xB | 0xD));
+    Decimal::from_digits(neg, le, dec).unwrap_or_else(|_| Decimal::zero())
+}
+
+/// Write an image back into an operand.
+pub fn store_image(addr: u64, d: &Desc, img: &[u8]) -> Result<(), mi::Cond> {
+    if d.numeric() {
+        // A digit half above 9 is not decimal data.
+        if img.iter().any(|b| b & 0x0F > 9) {
+            return Err(mi::Cond::Mch1202);
+        }
+        if d.kind == Kind::Zoned {
+            // The digits as moved, the sign normalized to F or D.
+            let out = bytes(addr, d.size());
+            for (o, b) in out.iter_mut().zip(img) {
+                let digit = if b & 0x0F > 9 { 0 } else { b & 0x0F };
+                *o = 0xF0 | digit;
+            }
+            if img.last().is_some_and(|b| matches!(b >> 4, 0xB | 0xD))
+                && let Some(last) = out.last_mut()
+            {
+                *last = 0xD0 | (*last & 0x0F);
+            }
+            return Ok(());
+        }
+        return crate::value::write_num(addr, d, &from_image(img, d.dec));
+    }
+    let out = bytes(addr, d.size());
+    if d.kind == Kind::VarChar {
+        let n = usize::from(u16::from_be_bytes([out[0], out[1]]));
+        let n = n.min(img.len());
+        out[2..2 + n].copy_from_slice(&img[..n]);
+    } else {
+        let n = out.len().min(img.len());
+        out[..n].copy_from_slice(&img[..n]);
+    }
+    Ok(())
+}
+
+/// The padding byte of a target.
+fn fill(d: &Desc) -> u8 {
+    if d.numeric() { 0xF0 } else { 0x40 }
+}
+
 /// Move `src` into `dst`.
 pub fn mov(left: bool, pad: bool, dst: u64, dd: &Desc, src: u64, sd: &Desc) -> Result<(), mi::Cond> {
     let from = image(src, sd)?;
-    let mut to = if dd.numeric() {
-        image(dst, dd).unwrap_or_else(|_| vec![0xF0; usize::try_from(dd.len).unwrap_or(0)])
-    } else {
-        image(dst, dd)?
-    };
-    let fill = if dd.numeric() { 0xF0 } else { 0x40 };
+    let mut to = image(dst, dd).unwrap_or_else(|_| vec![0xF0; dd.size()]);
     let n = to.len();
     let m = from.len();
     if pad {
-        to.fill(fill);
+        to.fill(fill(dd));
     }
     if left {
         let k = n.min(m);
         to[..k].copy_from_slice(&from[..k]);
+        // A numeric target filled takes the sign of factor 2's last zone.
+        if dd.numeric() && m >= n && n > 0 {
+            to[n - 1] = (from[m - 1] & 0xF0) | (to[n - 1] & 0x0F);
+        }
     } else if m >= n {
         to.copy_from_slice(&from[m - n..]);
     } else {
         to[n - m..].copy_from_slice(&from);
     }
-    if dd.numeric() {
-        // Digits from every position; the sign from the last.
-        let neg = to.last().is_some_and(|b| b >> 4 == 0xD || b >> 4 == 0xB);
-        let mut digits: Vec<u8> = to.iter().map(|b| b & 0x0F).collect();
-        for x in &mut digits {
-            if *x > 9 {
-                *x = 0;
-            }
-        }
-        let text: String = digits.iter().map(|d| char::from(b'0' + d)).collect();
-        let mut v = Decimal::parse(&text).map_err(|_| mi::Cond::Mch1202)?;
-        v = v.rescale(0, Rounding::Truncate).map_err(|_| mi::Cond::Mch1202)?;
-        let v = Decimal::new(v.mantissa_i128().unwrap_or(0), dd.dec).map_err(|_| mi::Cond::Mch1202)?;
-        let v = if neg { v.negated() } else { v };
-        return write_num(dst, dd, &v);
+    store_image(dst, dd, &to)
+}
+
+/// The image of `count` elements from `addr`.
+fn elements(addr: u64, d: &Desc, count: usize) -> Result<Vec<u8>, mi::Cond> {
+    let size = d.size() as u64;
+    let mut out = Vec::new();
+    for i in 0..count as u64 {
+        out.extend(image(addr + i * size, d)?);
     }
-    let out = bytes(dst, dd.size());
-    match dd.kind {
-        Kind::VarChar => {
-            let n = usize::from(u16::from_be_bytes([out[0], out[1]]));
-            out[2..2 + n].copy_from_slice(&to[..n]);
+    Ok(out)
+}
+
+/// `MOVEA`: the bytes of the source elements from the first one
+/// named to the end, into the target's from its first one named.
+pub fn movea(pad: bool, dst: u64, dd: &Desc, dcount: usize, src: u64, sd: &Desc, scount: usize) -> Result<(), mi::Cond> {
+    let from = elements(src, sd, scount)?;
+    let mut to = elements(dst, dd, dcount).unwrap_or_else(|_| vec![0xF0; dd.size() * dcount]);
+    let k = to.len().min(from.len());
+    to[..k].copy_from_slice(&from[..k]);
+    if pad {
+        let f = fill(dd);
+        for b in &mut to[k..] {
+            *b = f;
         }
-        _ => out.copy_from_slice(&to),
+    }
+    let one = image(dst, dd).map_or(dd.size(), |i| i.len()).max(1);
+    let size = dd.size() as u64;
+    for (i, chunk) in to.chunks(one).enumerate() {
+        store_image(dst + i as u64 * size, dd, chunk)?;
     }
     Ok(())
 }
 
-fn write_num(addr: u64, d: &Desc, v: &Decimal) -> Result<(), mi::Cond> {
-    let digits = u8::try_from(d.len.clamp(1, 63)).unwrap_or(63);
-    let enc = match d.kind {
-        Kind::Packed => qdecimal::Packed::new(digits, d.dec).and_then(|p| p.encode(v, Rounding::Truncate)),
-        Kind::Zoned => Zoned::new(digits, d.dec).and_then(|z| z.encode(v, Rounding::Truncate)),
-        Kind::Bin => qdecimal::Binary::new(digits, d.dec).and_then(|b| b.encode(v, Rounding::Truncate)),
-        Kind::Int | Kind::Uns => {
-            qdecimal::Integer::new(u8::try_from(d.size()).unwrap_or(8), d.kind == Kind::Int).and_then(|i| i.encode(v))
-        }
-        _ => return Err(mi::Cond::Mch1202),
+/// The zone moves: `MHHZO` 0, `MHLZO` 1, `MLHZO` 2, `MLLZO` 3.
+pub fn zone(op: i32, dst: u64, dd: &Desc, src: u64, sd: &Desc) -> Result<(), mi::Cond> {
+    let from = image(src, sd)?;
+    let mut to = image(dst, dd)?;
+    if from.is_empty() || to.is_empty() {
+        return Ok(());
     }
-    .map_err(|_| mi::Cond::Mch1210)?;
-    bytes(addr, enc.len()).copy_from_slice(&enc);
-    Ok(())
+    let z = if op == 0 || op == 1 { from[0] } else { from[from.len() - 1] } & 0xF0;
+    let at = if op == 0 || op == 2 { 0 } else { to.len() - 1 };
+    to[at] = z | (to[at] & 0x0F);
+    store_image(dst, dd, &to)
 }

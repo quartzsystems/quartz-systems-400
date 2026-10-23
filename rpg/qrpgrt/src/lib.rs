@@ -12,9 +12,12 @@
 
 pub mod cvt;
 pub mod exc;
+pub mod arrays;
 pub mod fmt;
 pub mod mov;
 pub mod natives;
+pub mod ops;
+pub mod strops;
 pub mod value;
 
 /// Every procedure with its code address.
@@ -31,6 +34,24 @@ pub fn procedures() -> Vec<(&'static str, usize)> {
         ("_QRNX_PSDSERR", exc::psds_err as *const () as usize),
         ("_QRNX_RERAISE", exc::reraise as *const () as usize),
         ("_QRNX_CHARTONUM", cvt::char_to_num as *const () as usize),
+        ("_QRNX_MOVEA", ops::movea as *const () as usize),
+        ("_QRNX_ZONE", ops::zone as *const () as usize),
+        ("_QRNX_CAT", ops::cat as *const () as usize),
+        ("_QRNX_SCAN", ops::scan as *const () as usize),
+        ("_QRNX_CHECK", ops::check as *const () as usize),
+        ("_QRNX_XLATE", ops::xlate as *const () as usize),
+        ("_QRNX_SUBST", ops::subst as *const () as usize),
+        ("_QRNX_TESTN", ops::testn as *const () as usize),
+        ("_QRNX_TESTZ", ops::testz as *const () as usize),
+        ("_QRNX_BITS", ops::bits as *const () as usize),
+        ("_QRNX_LOOKUP", ops::lookup as *const () as usize),
+        ("_QRNX_SORTA", ops::sorta as *const () as usize),
+        ("_QRNX_SCANR", ops::scanr as *const () as usize),
+        ("_QRNX_SCANRPL", ops::scanrpl as *const () as usize),
+        ("_QRNX_SPLIT", ops::split as *const () as usize),
+        ("_QRNX_EXTREME", ops::extreme as *const () as usize),
+        ("_QRNX_STRGET", ops::strget as *const () as usize),
+        ("_QRNX_STRSET", ops::strset as *const () as usize),
     ]
 }
 

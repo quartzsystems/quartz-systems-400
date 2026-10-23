@@ -51,6 +51,7 @@ const TEXTS: &[(&str, &str)] = &[
     ("RNF7066", "Record format &1 is not named by any input or output operation."),
     ("RNF7078", "The search argument's length or type differs from the file's first key field."),
     ("RNF7086", "Records of the file are read in blocks; its INFDS changes only when a block moves."),
+    ("RNF7350", "&1 leaves out subfields that have no namesake in the other structure."),
     ("RNF7404", "An index or position is out of range."),
     ("RNF7419", "An expression of this type is not allowed here."),
     ("RNF7421", "The types of the operands do not match."),

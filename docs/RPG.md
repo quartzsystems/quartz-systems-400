@@ -214,9 +214,43 @@ digits from bit 8, decimals in the low byte.
 | `_QRNX_CHARNUM` | `%CHAR` of a number |
 | `_QRNX_EDITC` | `%EDITC`, output edit codes |
 | `_QRNX_EDITW` | `%EDITW`, output edit words |
-| `_QRNX_MOVE` | `MOVE`, `MOVEL` |
+| `_QRNX_MOVE` | `MOVE`, `MOVEL`, `EVALR` into fixed character |
+| `_QRNX_MOVEA` | `MOVEA` |
+| `_QRNX_ZONE` | `MHHZO`, `MHLZO`, `MLHZO`, `MLLZO` |
+| `_QRNX_CAT` | `CAT` |
+| `_QRNX_SCAN` | `SCAN` (positions into a field or an array) |
+| `_QRNX_CHECK` | `CHECK`, `CHECKR` |
+| `_QRNX_XLATE` | `XLATE` |
+| `_QRNX_SUBST` | `SUBST` |
+| `_QRNX_BITS` | `BITON`, `BITOFF`, `TESTB` |
+| `_QRNX_TESTN`, `_QRNX_TESTZ` | `TESTN`, `TESTZ` |
+| `_QRNX_LOOKUP` | `LOOKUP`, `%LOOKUPxx`, `%TLOOKUPxx` |
+| `_QRNX_SORTA` | `SORTA` |
+| `_QRNX_EXTREME` | `%MAXARR`, `%MINARR` |
+| `_QRNX_SCANR`, `_QRNX_SCANRPL` | `%SCANR`, `%SCANRPL` |
+| `_QRNX_SPLIT` | `%SPLIT` (in `FOR-EACH` and array assignment) |
+| `_QRNX_STRGET`, `_QRNX_STRSET` | `%STR` and `%STR(...) =` |
 | `_QRNX_POW` | `**` |
-| `_QRNX_SQRT` | `%SQRT` |
+| `_QRNX_SQRT` | `%SQRT`, `SQRT` |
+
+**Moves** (`qrpgrt::mov`). Every operand takes part as its image:
+character data as its bytes (a varying field as its current value, its
+length unchanged), an indicator as its character, a number as its
+zoned digits with the sign in the last zone. `MOVE` copies the image
+right-aligned and `MOVEL` left-aligned; a numeric target then takes the
+digit half of every byte (a digit above 9 is `MCH1202`) and the sign of
+its last zone (`B`, `D` minus), and `MOVEL` into a number that factor 2
+fills or overfills takes factor 2's sign. `MOVEA` works on the images
+of the elements from the one named to the end of each array.
+
+**Tables, occurrences, `RESET`.** A table named alone is its current
+element (`$tix_NAME`, moved by `LOOKUP` and `%TLOOKUP`). A
+multiple-occurrence structure is its current occurrence in its own
+storage, every occurrence in `$NAME__occ` and the current number in
+`$NAME__cur`; `OCCUR` saves the current one and fetches the next.
+`RESET` restores a copy (`$NAME__rst`) that `_qrni_snap` takes when
+initialization and `*INZSR` are done. A `DIM(*AUTO)` or `DIM(*VAR)`
+array keeps its count in `$NAME__elem`.
 
 ## Adding a feature
 

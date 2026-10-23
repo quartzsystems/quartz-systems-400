@@ -1,0 +1,336 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   MOV018
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   MOV018
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+0                          S o u r c e   L i s t i n g
+-
+      1 FQSYSPRT   O    F  132        PRINTER                                                                     000000     000100
+-     2 DLINE             DS           132                                                                        000000     000200
+ ======> aaaa
+ *RNF3530 00 a      000200  Data structure LINE has no valid subfields.
+      3 DZ3               S              3S 0 DIM(3)                                                              000000     000300
+      4 DZ2               S              3S 0 DIM(4)                                                              000000     000400
+      5 DZC               S              2A   DIM(4)                                                              000000     000500
+      6 DC6               S              6A                                                                       000000     000600
+ *RNF2318 00      1 000100  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-     7 C                   SETOFF                                       101519                                   000000     000700
+      8 C                   SETOFF                                       202199                                   000000     000800
+      9 C                   EVAL      Z3(1) = 123                                                                 000000     000900
+     10 C                   EVAL      Z3(2) = 456                                                                 000000     001000
+     11 C                   EVAL      Z3(3) = -789                                                                000000     001100
+     12 C                   EVAL      Z2 = 5                                                                      000000     001200
+     13 C                   MOVEA     Z3            Z2(2)                                                         000000     001300
+     14 C                   EVAL      LINE = 'a ' + %EDITC(Z2(1):'X') +                                           000000     001400
+     15 C                             %EDITC(Z2(2):'X') + %EDITC(Z2(3):'X') +                                     000000     001500
+     16 C                             %EDITC(Z2(4):'X')                                                           000000     001600
+     17 C                   WRITE     QSYSPRT       LINE                                                          000000     001700
+     18 C                   EVAL      LINE = 'b ' + %CHAR(Z2(1)) + ' ' +                                          000000     001800
+     19 C                             %CHAR(Z2(4))                                                                000000     001900
+     20 C                   WRITE     QSYSPRT       LINE                                                          000000     002000
+     21 C                   MOVEA     '0110'        *IN(11)                                                       000000     002100
+     22 C                   EVAL      LINE = 'c ' + *IN10 + *IN11 + *IN12 + *IN13 +                               000000     002200
+     23 C                             *IN14 + *IN15                                                               000000     002300
+     24 C                   WRITE     QSYSPRT       LINE                                                          000000     002400
+     25 C                   EVAL      C6 = '......'                                                               000000     002500
+     26 C                   MOVEA     *IN(11)       C6                                                            000000     002600
+     27 C                   EVAL      LINE = 'd [' + C6 + ']'                                                     000000     002700
+     28 C                   WRITE     QSYSPRT       LINE                                                          000000     002800
+     29 C                   MOVEA     *ALL'1'       *IN(20)                                                       000000     002900
+     30 C                   EVAL      LINE = 'e ' + *IN19 + *IN20 + *IN21 + *IN99                                 000000     003000
+     31 C                   WRITE     QSYSPRT       LINE                                                          000000     003100
+     32 C                   MOVEA(P)  '1'           *IN(20)                                                       000000     003200
+     33 C                   EVAL      LINE = 'f ' + *IN20 + *IN21 + *IN99                                         000000     003300
+     34 C                   WRITE     QSYSPRT       LINE                                                          000000     003400
+     35 C                   EVAL      *INLR = *ON                                                                 000000     003500
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+1{heading} page 3
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 1D     17      20      24
+                                                   28      31      34
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *IN(99)           N(1)                   21M     26      29M     32M
+          *INLR             N(1)                   35M
+          *IN10             N(1)                   22
+          *IN11             N(1)                   22
+          *IN12             N(1)                   22
+          *IN13             N(1)                   22
+          *IN14             N(1)                   23
+          *IN15             N(1)                   23
+          *IN19             N(1)                   30
+          *IN20             N(1)                   30      33
+          *IN21             N(1)                   30      33
+          *IN99             N(1)                   30      33
+          C6                A(6)                    6D     25M     26M     27
+          LINE              DS(132)                 2D     14M     17      18M
+                                                   20      22M     24      27M
+                                                   28      30M     31      33M
+                                                   34
+ *RNF7031 ZC(4)             A(2)                    5D
+          Z2(4)             S(3,0)                  4D     12M     13M     14
+                                                   15      15      16      18
+                                                   19
+          Z3(3)             S(3,0)                  3D      9M     10M     11M
+                                                   13
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          *IN                                      21M     26      29M     32M
+          10                                        7D     22
+          11                                       21M     22      26
+          12                                       21M     22      26
+          13                                       21M     22      26
+          14                                       21M     23      26
+          15                                        7D     23      26
+          16                                       26
+          19                                        7D     30
+          20                                        8D     29M     30      32M
+                                                   33
+          21                                        8D     29M     30      33
+          22                                       29M
+          23                                       29M
+          24                                       29M
+          25                                       29M
+          26                                       29M
+          27                                       29M
+          28                                       29M
+1{heading} page 5
+0         29                                       29M
+          30                                       29M
+          31                                       29M
+          32                                       29M
+          33                                       29M
+          34                                       29M
+          35                                       29M
+          36                                       29M
+          37                                       29M
+          38                                       29M
+          39                                       29M
+          40                                       29M
+          41                                       29M
+          42                                       29M
+          43                                       29M
+          44                                       29M
+          45                                       29M
+          46                                       29M
+          47                                       29M
+          48                                       29M
+          49                                       29M
+          50                                       29M
+          51                                       29M
+          52                                       29M
+          53                                       29M
+          54                                       29M
+          55                                       29M
+          56                                       29M
+          57                                       29M
+          58                                       29M
+          59                                       29M
+          60                                       29M
+          61                                       29M
+          62                                       29M
+          63                                       29M
+          64                                       29M
+          65                                       29M
+          66                                       29M
+          67                                       29M
+          68                                       29M
+          69                                       29M
+          70                                       29M
+          71                                       29M
+          72                                       29M
+          73                                       29M
+          74                                       29M
+          75                                       29M
+          76                                       29M
+          77                                       29M
+          78                                       29M
+          79                                       29M
+          80                                       29M
+          81                                       29M
+          82                                       29M
+          83                                       29M
+          84                                       29M
+          85                                       29M
+          86                                       29M
+1{heading} page 6
+0         87                                       29M
+          88                                       29M
+          89                                       29M
+          90                                       29M
+          91                                       29M
+          92                                       29M
+          93                                       29M
+          94                                       29M
+          95                                       29M
+          96                                       29M
+          97                                       29M
+          98                                       29M
+          99                                        8D     29M     30      33
+          LR                                       35M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+ *RNF7031 00      1 The name or indicator is not referenced.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        3
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        3
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       35
+     Specifications  . . . . . . . . :       35
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        0
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program MOV018 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

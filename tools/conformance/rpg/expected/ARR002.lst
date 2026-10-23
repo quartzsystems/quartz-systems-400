@@ -1,0 +1,324 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   ARR002
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   ARR002
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+0                          S o u r c e   L i s t i n g
+-
+      1 FQSYSPRT   O    F  132        PRINTER                                                                     000000     000100
+-     2 DLINE             DS           132                                                                        000000     000200
+ ======> aaaa
+ *RNF3530 00 a      000200  Data structure LINE has no valid subfields.
+      3 DASC              S              3P 0 DIM(5) ASCEND                                                       000000     000300
+      4 DDSC              S              3P 0 DIM(5) DESCEND                                                      000000     000400
+      5 DI                S              3P 0                                                                     000000     000500
+      6 DCA               S              2A   DIM(4) ASCEND                                                       000000     000600
+      7 DK                S              3P 0                                                                     000000     000700
+ *RNF2318 00      1 000100  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-     8 C                   EVAL      ASC(1) = 10                                                                 000000     000800
+      9 C                   EVAL      ASC(2) = 20                                                                 000000     000900
+     10 C                   EVAL      ASC(3) = 30                                                                 000000     001000
+     11 C                   EVAL      ASC(4) = 40                                                                 000000     001100
+     12 C                   EVAL      ASC(5) = 50                                                                 000000     001200
+     13 C                   EVAL      DSC(1) = 50                                                                 000000     001300
+     14 C                   EVAL      DSC(2) = 40                                                                 000000     001400
+     15 C                   EVAL      DSC(3) = 30                                                                 000000     001500
+     16 C                   EVAL      DSC(4) = 20                                                                 000000     001600
+     17 C                   EVAL      DSC(5) = 10                                                                 000000     001700
+     18 C                   EVAL      CA(1) = 'b'                                                                 000000     001800
+     19 C                   EVAL      CA(2) = 'd'                                                                 000000     001900
+     20 C                   EVAL      CA(3) = 'f'                                                                 000000     002000
+     21 C                   EVAL      CA(4) = 'h'                                                                 000000     002100
+     22 C                   EVAL      I = 1                                                                       000000     002200
+     23 C                   EVAL      K = 25                                                                      000000     002300
+     24 C     K             LOOKUP    ASC(I)                             51----                                   000000     002400
+     25 C                   EVAL      LINE = 'a ' + %CHAR(I) + ' ' + *IN51                                        000000     002500
+     26 C                   WRITE     QSYSPRT       LINE                                                          000000     002600
+     27 C                   EVAL      I = 1                                                                       000000     002700
+     28 C                   EVAL      K = 25                                                                      000000     002800
+     29 C     K             LOOKUP    ASC(I)                             --52--                                   000000     002900
+     30 C                   EVAL      LINE = 'b ' + %CHAR(I) + ' ' + *IN52                                        000000     003000
+     31 C                   WRITE     QSYSPRT       LINE                                                          000000     003100
+     32 C                   EVAL      I = 1                                                                       000000     003200
+     33 C                   EVAL      K = 30                                                                      000000     003300
+     34 C     K             LOOKUP    ASC(I)                             51--53                                   000000     003400
+     35 C                   EVAL      LINE = 'c ' + %CHAR(I) + ' ' + *IN51 + *IN53                                000000     003500
+     36 C                   WRITE     QSYSPRT       LINE                                                          000000     003600
+     37 C                   EVAL      I = 1                                                                       000000     003700
+     38 C                   EVAL      K = 30                                                                      000000     003800
+     39 C     K             LOOKUP    ASC(I)                             --5253                                   000000     003900
+     40 C                   EVAL      LINE = 'd ' + %CHAR(I) + ' ' + *IN52 + *IN53                                000000     004000
+     41 C                   WRITE     QSYSPRT       LINE                                                          000000     004100
+     42 C                   EVAL      I = 1                                                                       000000     004200
+     43 C                   EVAL      K = 60                                                                      000000     004300
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+     44 C     K             LOOKUP    ASC(I)                             51----                                   000000     004400
+     45 C                   EVAL      LINE = 'e ' + %CHAR(I) + ' ' + *IN51                                        000000     004500
+     46 C                   WRITE     QSYSPRT       LINE                                                          000000     004600
+     47 C                   EVAL      I = 1                                                                       000000     004700
+     48 C                   EVAL      K = 5                                                                       000000     004800
+     49 C     K             LOOKUP    ASC(I)                             --52--                                   000000     004900
+     50 C                   EVAL      LINE = 'f ' + %CHAR(I) + ' ' + *IN52                                        000000     005000
+     51 C                   WRITE     QSYSPRT       LINE                                                          000000     005100
+     52 C                   EVAL      I = 1                                                                       000000     005200
+     53 C                   EVAL      K = 25                                                                      000000     005300
+     54 C     K             LOOKUP    DSC(I)                             51----                                   000000     005400
+     55 C                   EVAL      LINE = 'g ' + %CHAR(I) + ' ' + *IN51                                        000000     005500
+     56 C                   WRITE     QSYSPRT       LINE                                                          000000     005600
+     57 C                   EVAL      I = 1                                                                       000000     005700
+     58 C                   EVAL      K = 25                                                                      000000     005800
+     59 C     K             LOOKUP    DSC(I)                             --52--                                   000000     005900
+     60 C                   EVAL      LINE = 'h ' + %CHAR(I) + ' ' + *IN52                                        000000     006000
+     61 C                   WRITE     QSYSPRT       LINE                                                          000000     006100
+     62 C                   EVAL      I = 1                                                                       000000     006200
+     63 C     'e '          LOOKUP    CA(I)                              51----                                   000000     006300
+     64 C                   EVAL      LINE = 'i ' + %CHAR(I) + ' ' + *IN51                                        000000     006400
+     65 C                   WRITE     QSYSPRT       LINE                                                          000000     006500
+     66 C                   EVAL      I = 1                                                                       000000     006600
+     67 C     'e '          LOOKUP    CA(I)                              --52--                                   000000     006700
+     68 C                   EVAL      LINE = 'j ' + %CHAR(I) + ' ' + *IN52                                        000000     006800
+     69 C                   WRITE     QSYSPRT       LINE                                                          000000     006900
+     70 C                   EVAL      I = 3                                                                       000000     007000
+     71 C                   EVAL      K = 25                                                                      000000     007100
+     72 C     K             LOOKUP    ASC(I)                             --52--                                   000000     007200
+     73 C                   EVAL      LINE = 'k ' + %CHAR(I) + ' ' + *IN52                                        000000     007300
+     74 C                   WRITE     QSYSPRT       LINE                                                          000000     007400
+     75 C                   EVAL      I = 1                                                                       000000     007500
+     76 C                   EVAL      K = 40                                                                      000000     007600
+     77 C     K             LOOKUP    ASC(I)                             ----53                                   000000     007700
+     78 C                   EVAL      LINE = 'l ' + %CHAR(I) + ' ' + *IN53                                        000000     007800
+     79 C                   WRITE     QSYSPRT       LINE                                                          000000     007900
+     80 C                   EVAL      *INLR = *ON                                                                 000000     008000
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 1D     26      31      36
+                                                   41      46      51      56
+                                                   61      65      69      74
+                                                   79
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   80M
+          *IN51             N(1)                   25      35      45      55
+                                                   64
+          *IN52             N(1)                   30      40      50      60
+                                                   68      73
+          *IN53             N(1)                   35      40      78
+          ASC(5)            P(3,0)                  3D      8M      9M     10M
+                                                   11M     12M     24      29
+                                                   34      39      44      49
+                                                   72      77
+          CA(4)             A(2)                    6D     18M     19M     20M
+                                                   21M     63      67
+          DSC(5)            P(3,0)                  4D     13M     14M     15M
+                                                   16M     17M     54      59
+          I                 P(3,0)                  5D     22M     24M     25
+                                                   27M     29M     30      32M
+                                                   34M     35      37M     39M
+                                                   40      42M     44M     45
+                                                   47M     49M     50      52M
+                                                   54M     55      57M     59M
+                                                   60      62M     63M     64
+                                                   66M     67M     68      70M
+                                                   72M     73      75M     77M
+                                                   78
+          K                 P(3,0)                  7D     23M     24      28M
+                                                   29      33M     34      38M
+                                                   39      43M     44      48M
+                                                   49      53M     54      58M
+                                                   59      71M     72      76M
+                                                   77
+          LINE              DS(132)                 2D     25M     26      30M
+                                                   31      35M     36      40M
+                                                   41      45M     46      50M
+                                                   51      55M     56      60M
+                                                   61      64M     65      68M
+                                                   69      73M     74      78M
+                                                   79
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          51                                       24D     25      34D     35
+                                                   44D     45      54D     55
+                                                   63D     64
+1{heading} page 6
+0         52                                       29D     30      39D     40
+                                                   49D     50      59D     60
+                                                   67D     68      72D     73
+          53                                       34D     35      39D     40
+                                                   77D     78
+          LR                                       80M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        2
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        2
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       80
+     Specifications  . . . . . . . . :       80
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        0
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program ARR002 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

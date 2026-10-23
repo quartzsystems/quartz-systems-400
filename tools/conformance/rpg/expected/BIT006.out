@@ -1,0 +1,11 @@
+# BIT006 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 3 seq 000300
+diag: RNF3530 00 line 4 seq 000400
+diag: RNF7350 00 line 17 seq 001700
+diag: RNF7350 00 line 22 seq 002200
+run: ok
+spool: QSYSPRT
+  |1/1   a alp 12 7.0 mine
+  |1/2   b bet -2

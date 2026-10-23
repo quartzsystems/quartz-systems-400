@@ -381,6 +381,13 @@ pub fn declare(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
                 ctdata: d.kw("CTDATA").is_some(),
                 perrcd: d.kw("PERRCD").and_then(|k| int_arg(k, 0)).and_then(|v| u32::try_from(v).ok()).unwrap_or(1),
                 table: d.name.to_ascii_uppercase().starts_with("TAB"),
+                alt: d.kw("ALT").and_then(|k| word_arg(k, 0)).unwrap_or_default(),
+                vardim: match d.kw("DIM").and_then(|k| word_arg(k, 0)).as_deref() {
+                    Some("*AUTO") => 1,
+                    Some("*VAR") => 2,
+                    _ => 0,
+                },
+                seq: if d.kw("ASCEND").is_some() { 1 } else if d.kw("DESCEND").is_some() { 2 } else { 0 },
                 external: d
                     .kw("EXPORT")
                     .or_else(|| d.kw("IMPORT"))
@@ -422,6 +429,9 @@ fn add(cx: &mut Cx<'_>, s: Sym, at: Pos) -> Option<SymId> {
 /// `DIM(n)`: the element count.
 fn dim_of(cx: &mut Cx<'_>, d: &Def) -> u32 {
     let Some(k) = d.kw("DIM") else { return 0 };
+    if matches!(word_arg(k, 0).as_deref(), Some("*AUTO" | "*VAR")) {
+        return int_arg(k, 1).and_then(|n| u32::try_from(n).ok()).unwrap_or(0);
+    }
     match int_arg(k, 0) {
         Some(n) if (1..=16_773_104).contains(&n) => u32::try_from(n).unwrap_or(0),
         _ => {
@@ -676,6 +686,7 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             storage: Storage::InDs,
             parent: Some(id),
             offset,
+            seq: if c.kw("ASCEND").is_some() { 1 } else if c.kw("DESCEND").is_some() { 2 } else { 0 },
             inz: c.kw("INZ").map(|k| k.arg(0).and_then(|a| a.expr.clone())),
             def_line: c.at.line,
             ..Sym::default()

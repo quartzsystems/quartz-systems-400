@@ -1,0 +1,260 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   MOV003
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   MOV003
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+0                          S o u r c e   L i s t i n g
+-
+      1 FQSYSPRT   O    F  132        PRINTER                                                                     000000     000100
+-     2 DLINE             DS           132                                                                        000000     000200
+ ======> aaaa
+ *RNF3530 00 a      000200  Data structure LINE has no valid subfields.
+      3 DC3               S              3A                                                                       000000     000300
+      4 DC6               S              6A                                                                       000000     000400
+      5 DC10              S             10A                                                                       000000     000500
+      6 DZ5               S              5S 0 INZ(12345)                                                          000000     000600
+      7 DZN               S              5S 0 INZ(-12345)                                                         000000     000700
+      8 DZ72              S              7S 2 INZ(-123.45)                                                        000000     000800
+      9 DZ3               S              3S 0 INZ(-120)                                                           000000     000900
+ *RNF2318 00      1 000100  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-    10 C                   EVAL      C6 = 'abcdef'                                                               000000     001000
+     11 C                   MOVE      Z5            C6                                                            000000     001100
+     12 C                   EVAL      LINE = 'a [' + C6 + ']'                                                     000000     001200
+     13 C                   WRITE     QSYSPRT       LINE                                                          000000     001300
+     14 C                   EVAL      C6 = 'abcdef'                                                               000000     001400
+     15 C                   MOVE      ZN            C6                                                            000000     001500
+     16 C                   EVAL      LINE = 'b [' + C6 + ']'                                                     000000     001600
+     17 C                   WRITE     QSYSPRT       LINE                                                          000000     001700
+     18 C                   EVAL      C3 = 'abc'                                                                  000000     001800
+     19 C                   MOVE      Z5            C3                                                            000000     001900
+     20 C                   EVAL      LINE = 'c [' + C3 + ']'                                                     000000     002000
+     21 C                   WRITE     QSYSPRT       LINE                                                          000000     002100
+     22 C                   EVAL      C3 = 'abc'                                                                  000000     002200
+     23 C                   MOVE      ZN            C3                                                            000000     002300
+     24 C                   EVAL      LINE = 'd [' + C3 + ']'                                                     000000     002400
+     25 C                   WRITE     QSYSPRT       LINE                                                          000000     002500
+     26 C                   EVAL      C10 = 'abcdefghij'                                                          000000     002600
+     27 C                   MOVE(P)   ZN            C10                                                           000000     002700
+     28 C                   EVAL      LINE = 'e [' + C10 + ']'                                                    000000     002800
+     29 C                   WRITE     QSYSPRT       LINE                                                          000000     002900
+     30 C                   EVAL      C10 = 'abcdefghij'                                                          000000     003000
+     31 C                   MOVE      Z72           C10                                                           000000     003100
+     32 C                   EVAL      LINE = 'f [' + C10 + ']'                                                    000000     003200
+     33 C                   WRITE     QSYSPRT       LINE                                                          000000     003300
+     34 C                   EVAL      C3 = 'abc'                                                                  000000     003400
+     35 C                   MOVE      Z3            C3                                                            000000     003500
+     36 C                   EVAL      LINE = 'g [' + C3 + ']'                                                     000000     003600
+     37 C                   WRITE     QSYSPRT       LINE                                                          000000     003700
+     38 C                   EVAL      C3 = 'abc'                                                                  000000     003800
+     39 C                   MOVE(P)   Z72           C3                                                            000000     003900
+     40 C                   EVAL      LINE = 'h [' + C3 + ']'                                                     000000     004000
+     41 C                   WRITE     QSYSPRT       LINE                                                          000000     004100
+     42 C                   EVAL      *INLR = *ON                                                                 000000     004200
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 1D     13      17      21
+                                                   25      29      33      37
+                                                   41
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   42M
+          C10               A(10)                   5D     26M     27M     28
+                                                   30M     31M     32
+          C3                A(3)                    3D     18M     19M     20
+                                                   22M     23M     24      34M
+                                                   35M     36      38M     39M
+                                                   40
+          C6                A(6)                    4D     10M     11M     12
+                                                   14M     15M     16
+          LINE              DS(132)                 2D     12M     13      16M
+                                                   17      20M     21      24M
+                                                   25      28M     29      32M
+                                                   33      36M     37      40M
+                                                   41
+          ZN                S(5,0)                  7D     15      23      27
+          Z3                S(3,0)                  9D     35
+          Z5                S(5,0)                  6D     11      19
+          Z72               S(7,2)                  8D     31      39
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                       42M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        2
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        2
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       42
+     Specifications  . . . . . . . . :       42
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        0
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program MOV003 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

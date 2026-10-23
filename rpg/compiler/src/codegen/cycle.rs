@@ -161,7 +161,9 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     for f in all.iter().filter(|f| f.scope == 0 && !f.usropn && !f.template) {
         let _ = g.db_open(f);
     }
+    g.init_tail(m);
     g.b.ins("store $init_done, *ON");
+    g.psds_init(&g.opts.name.clone());
     g.b.ins("store $cy_first, *ON");
     g.b.ins("store $cy_sel, -1");
     for f in &files {

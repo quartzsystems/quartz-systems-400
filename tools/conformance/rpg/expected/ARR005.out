@@ -1,0 +1,17 @@
+# ARR005 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 3 seq 000300
+diag: RNF3530 00 line 4 seq 000400
+run: ok
+spool: QSYSPRT
+  |1/1   a appledate fig  kiwi pear
+  |1/2   b pear kiwi fig  date apple
+  |1/3   c 3.5 -1.0 .0
+  |1/4   c2 10.0 2.2
+  |1/5   d -1.0 .0 2.2
+  |1/6   d2 3.5 10.0
+  |1/7   e 50 7 5 -5
+  |1/8   f al   cy   bob
+  |1/9   g cy   bob  al
+  |1/10  h kiwi pear fig  date apple

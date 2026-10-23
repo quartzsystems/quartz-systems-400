@@ -323,6 +323,8 @@ pub enum BinOp {
     And,
     /// `OR`.
     Or,
+    /// `IN` (`x IN %LIST(...)`, `x IN %RANGE(...)`, `FOR-EACH x IN ...`).
+    In,
 }
 
 /// Unary operators.

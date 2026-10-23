@@ -378,7 +378,7 @@ impl Gen<'_> {
         let half = op.ext.contains('H');
         let mut used = 1;
         match (base, sfx) {
-            ("EVAL" | "EVALR", _) => {
+            ("EVAL", _) => {
                 if let Some(Expr::Assign(aop, t, v, _)) = &op.xf2 {
                     self.eval(*aop, t, v, half);
                 }
@@ -658,12 +658,6 @@ impl Gen<'_> {
                 }
             }
             ("ADD" | "SUB" | "MULT" | "DIV", _) => self.fixed_arith(base, op, half),
-            ("MOVE" | "MOVEL", _) => self.move_op(base == "MOVEL", op),
-            ("CLEAR" | "RESET", _) => {
-                if let Some(r) = op.result.first() {
-                    self.clear(r);
-                }
-            }
             ("EXCEPT", _) => {
                 let name = op.f2.first().and_then(|e| e.name().map(str::to_string)).unwrap_or_default();
                 let outputs = self.outputs.clone();
@@ -698,6 +692,7 @@ impl Gen<'_> {
             ("ENDMON", _) => self.end_monitor(),
             ("SND-MSG", _) => self.snd_msg(op),
             ("AND" | "OR", _) => self.err(ids::UNBALANCED, 30, op.code.clone()),
+            _ if self.strop(base, s) => {}
             _ => self.err(ids::UNSUPPORTED, 30, op.code.clone()),
         }
         used
@@ -864,6 +859,9 @@ impl Gen<'_> {
     }
 
     fn eval(&mut self, aop: AssignOp, t: &Expr, v: &Expr, half: bool) {
+        if self.eval_hook(aop, t, v, half) {
+            return;
+        }
         let Some(tv) = self.target(t) else {
             return;
         };
@@ -1290,6 +1288,9 @@ impl Gen<'_> {
         };
         let w = Want { mode: target_mode(self, &t, half) };
         let (Some(va), Some(vb)) = (self.expr(&a, w), self.expr(&b, w)) else { return };
+        if base == "DIV" {
+            self.keep_div(&va, &vb, &t);
+        }
         let bop = match base {
             "ADD" => BinOp::Add,
             "SUB" => BinOp::Sub,
@@ -1300,35 +1301,6 @@ impl Gen<'_> {
             self.assign_fixed(&t, &v, half);
             self.num_resind(op, &t);
         }
-    }
-
-    /// `MOVE` and `MOVEL` of character data (the full matrix is in
-    /// `qrpgrt`).
-    fn move_op(&mut self, left: bool, op: &rpgfront::ast::Op) {
-        let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else { return };
-        let Some(t) = self.target(&r) else { return };
-        let Some(v) = self.expr(&f2, Want::default()) else { return };
-        let t = self.as_chars(&t);
-        let v = self.as_chars(&v);
-        let pad = op.ext.contains('P');
-        let (dst_desc, src_desc) = (self.desc_of(&t), self.desc_of(&v));
-        let src = if v.kind == Vk::Place {
-            v.op.clone()
-        } else {
-            let tmp = self.b.temp(&self.ir_ty(&if v.ty.is_numeric() { v.ty.clone() } else { Ty::Char(v.ty.str_len().unwrap_or(1).max(1)) }));
-            self.b.ins(format!("mov {tmp}, {}", v.op));
-            tmp
-        };
-        self.externs.insert(
-            "_QRNX_MOVE".into(),
-            "extern proc _QRNX_MOVE(byval $left: i32, byval $pad: i32, $dst: bytes(1) *VARSIZE, byval $dd: i64, $src: bytes(1) *VARSIZE, byval $sd: i64)".into(),
-        );
-        self.b.ins(format!(
-            "callb _QRNX_MOVE({}, {}, {}, {dst_desc}, {src}, {src_desc})",
-            i32::from(left),
-            i32::from(pad),
-            t.op
-        ));
     }
 
     /// A type descriptor word for the runtime library: kind in the top
@@ -1352,49 +1324,6 @@ impl Gen<'_> {
         (kind << 56) | (len << 8) | dec
     }
 
-    /// `CLEAR`: blanks, zeros and `*OFF` by type.
-    fn clear(&mut self, e: &Expr) {
-        let Some(t) = self.target(e) else { return };
-        let v = match &t.ty {
-            Ty::Ds(_) => {
-                if let Some(id) = t.sym {
-                    self.clear_ds(id, &t.op);
-                }
-                return;
-            }
-            ty if ty.is_numeric() => "*ZEROS",
-            Ty::Ind => "*OFF",
-            Ty::Ptr | Ty::ProcPtr => "*NULL",
-            Ty::Date(..) | Ty::Time(..) | Ty::Timestamp(_) => "*LOVAL",
-            _ => "*BLANKS",
-        };
-        if t.dim > 0 {
-            for i in 0..t.dim {
-                self.b.ins(format!("mov {}[{i}], {v}", t.op));
-            }
-        } else if matches!(t.ty, Ty::Ptr | Ty::ProcPtr) {
-            let r = self.b.reg();
-            self.b.ins(format!("{r} = const.ptr *NULL"));
-            self.b.ins(format!("store {}, {r}", t.op));
-        } else {
-            self.b.ins(format!("mov {}, {v}", t.op));
-        }
-    }
-
-    /// Each subfield of a structure to its default.
-    fn clear_ds(&mut self, id: SymId, place: &str) {
-        let Some(Kind::Ds(di)) = self.t.syms[id].kind.clone() else { return };
-        let subs = self.t.ds[di].subfields.clone();
-        let reps = self.t.syms[id].dim.max(1);
-        for r in 0..reps {
-            let base = if self.t.syms[id].dim > 0 { format!("{place}[{r}]") } else { place.to_string() };
-            for s in &subs {
-                let sym = self.t.syms[*s].clone();
-                let p = format!("{base}.{}", mangle(&sym.name));
-                default_value(self, &sym.ty, sym.dim, &p);
-            }
-        }
-    }
 }
 
 /// Whether a type is returned in a register.

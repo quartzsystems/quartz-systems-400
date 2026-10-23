@@ -1,0 +1,18 @@
+# STR002 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 1 seq 000100
+diag: RNF3530 00 line 2 seq 000200
+run: ok
+spool: QSYSPRT
+  |1/1   a 2 1
+  |1/2   b 5 1
+  |1/3   c 0 0
+  |1/4   d 2
+  |1/5   e 2 5 8 0 0
+  |1/6   f 1
+  |1/7   g 0
+  |1/8   h 3
+  |1/9   i 4
+  |1/10  j 10
+  |1/11  k 6 9 0

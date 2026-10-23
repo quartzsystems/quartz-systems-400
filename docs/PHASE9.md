@@ -125,6 +125,48 @@ Recorded from batches 6 and 7 (`b06cycle`, `b07io`), pub400 V7R5M0.
   reach the file's exception handling (`INFSR`, the default handler's
   inquiry, `CEE9901` at the call): the operation's status is kept and
   the program goes on. `TODO(phase9)` in `codegen/dbio.rs`.
+## Oracle facts: moves, strings and arrays
+
+Recorded from batch 5 (`b05move/`) and the `STR`, `ARR` and `BIT`
+members of batch 4, pub400 V7R5M0.
+
+- `MOVE` and `MOVEL` treat every number as its zoned digits, the sign
+  in the last zone, whatever its storage (packed, binary, integer);
+  a positive number moves with the `F` zone, so it reads as digits in
+  character data. Decimal positions take no part.
+- A numeric target takes the digit half of every byte and the sign of
+  its last zone. `MOVEL` into a number that factor 2 fills or overfills
+  takes factor 2's sign from its last position, even when that position
+  is not moved; a shorter factor 2 leaves the target's sign.
+- Character data whose digit halves are not decimal digits (`+ - . ,`)
+  moved into a number is a decimal data error at run time; blanks move
+  as zeros.
+- A varying target keeps its current length under `MOVE`, `MOVEL` and
+  `CAT`, with or without `(P)`; `MOVE` of a varying source moves its
+  current value.
+- `MOVE` of character data into an indicator is `RNF7531`; a structure
+  moved into its own subfield is `RNF7017`; `MOVEA` between numeric
+  arrays of different type or length is `RNF7262`; `EVALR` into a
+  varying field is `RNF7565`; `SUBST` with a constant length or start
+  past the base is `RNF7143` / `RNF5216`.
+- `LOOKUP`'s search argument must have the element's type and length,
+  literals included (`RNF7021`): `25` does not search a `3P 0` array.
+- `%LOOKUPLT`, `LE`, `GT`, `GE` need an `ASCEND` or `DESCEND` array
+  (`RNF0592`).
+- An indicator `*INxx` that nothing sets (no `SETON`, resulting
+  indicator or assignment) is `RNF7030` where an expression uses it.
+- 7.5 accepts `%SCANRPL`, `%SCANR`, `%CONCAT`, `%CONCATARR`, `%SPLIT`
+  (with `FOR-EACH` and array assignment), `%LEFT`, `%RIGHT`,
+  `%CHARCOUNT`, `%MAXARR`, `%MINARR`, `IN %LIST(...)`, `IN %RANGE(...)`,
+  `DIM(*AUTO)` and `DIM(*VAR)` with `%ELEM` as a target and `*NEXT`,
+  the `%BITxxx` functions, `%STR` and `SORTA %SUBARR`.
+
+## Checks not yet made
+
+- The compile-time checks above (`RNF7021`, `RNF7262`, `RNF7531`,
+  `RNF7017`, `RNF7565`, `RNF7143`, `RNF5216`, `RNF0592`, the
+  never-set indicator) are not made yet; the corpus keeps to valid
+  programs.
 
 ## Blocked
 

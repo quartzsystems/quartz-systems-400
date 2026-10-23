@@ -11,6 +11,7 @@
 //! Statements check their operands as they are generated, so one walk
 //! gives the diagnostics and the code.
 
+pub mod arrays;
 pub mod bif;
 pub mod cycle;
 pub mod dbio;
@@ -19,6 +20,8 @@ pub mod exc;
 pub mod expr;
 pub mod output;
 pub mod stmt;
+pub mod strbif;
+pub mod strops;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fmt::Write as _;
@@ -199,6 +202,8 @@ pub struct Gen<'a> {
     pub in_overflow: bool,
     /// Record formats an operation names.
     pub used_formats: BTreeSet<usize>,
+    /// The string, array and move operations' state.
+    pub ops: strops::OpState,
 }
 
 impl Gen<'_> {
@@ -314,6 +319,7 @@ pub fn module(
         inputs: m.inputs.clone(),
         in_overflow: false,
         used_formats: BTreeSet::new(),
+        ops: strops::OpState::default(),
     };
     let mut out = String::new();
     let actgrp = if ctl.dftactgrp {
@@ -413,6 +419,7 @@ pub fn module(
         procs.push_str(&s);
     }
     dbio::file_notes(&mut g, m);
+    procs.push_str(&arrays::snap_proc(&mut g));
     for p in &g.pages {
         let _ = writeln!(out, "static {p}: zoned(4,0)");
     }
@@ -475,6 +482,7 @@ fn init_proc(g: &mut Gen<'_>) -> String {
     for id in ids {
         stmt::init_symbol(g, id);
     }
+    g.ops_init();
     g.b.ins("mov $in.all_, *ZEROS".to_string());
     g.b.ins("dec.mov $status, 0".to_string());
     g.b.ins("store $errind, *OFF".to_string());
@@ -501,6 +509,18 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.subrs.clear();
     g.tags.clear();
     g.open.clear();
+    // Where RETURN goes: the end, closing when LR is on.
+    let finish = g.b.label();
+    g.main_exit = Some(finish.clone());
+    let (detail, total): (Vec<&Stmt>, Vec<&Stmt>) = m.calcs.iter().partition(|s| !is_total(&s.level));
+    // Subroutines become procedures of their own, made first so the
+    // initialization can call *INZSR.
+    let (detail, subrs) = stmt::split_subroutines(g, &detail);
+    g.subr_procs = true;
+    let has_pssr = subrs.iter().any(|(n, _)| n == "*PSSR");
+    for (name, body) in &subrs {
+        stmt::subroutine_proc(g, name, body);
+    }
     let start = g.b.label();
     let init = g.b.label();
     g.b.ins("%first = load $init_done");
@@ -511,21 +531,11 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     for f in files.iter().filter(|f| f.scope == 0 && !f.usropn && !f.template) {
         let _ = g.db_open(f);
     }
+    g.init_tail(m);
     g.b.ins("store $init_done, *ON");
     g.psds_init(&g.opts.name.clone());
     g.b.place(&start);
     g.b.ins("store $in1p, *ON");
-    // Where RETURN goes: the end, closing when LR is on.
-    let finish = g.b.label();
-    g.main_exit = Some(finish.clone());
-    let (detail, total): (Vec<&Stmt>, Vec<&Stmt>) = m.calcs.iter().partition(|s| !is_total(&s.level));
-    // Subroutines become procedures of their own.
-    let (detail, subrs) = stmt::split_subroutines(g, &detail);
-    g.subr_procs = true;
-    let has_pssr = subrs.iter().any(|(n, _)| n == "*PSSR");
-    for (name, body) in &subrs {
-        stmt::subroutine_proc(g, name, body);
-    }
     let outputs = g.outputs.clone();
     let top = g.b.label();
     g.b.place(&top);
@@ -631,10 +641,11 @@ fn linear_entry(g: &mut Gen<'_>, main: &str) -> String {
     g.b.term(format!("brif %first, {start}, {init}"));
     g.b.place(&init);
     g.b.ins("callb _qrni_init()");
-    for f in g.files.iter().filter(|f| f.scope == 0 && !f.usropn && !f.template) {
-        let r = g.b.reg();
-        g.b.ins(format!("{r} = dbopen {}", mangle(&f.name)));
+    let files = g.files;
+    for f in files.iter().filter(|f| f.scope == 0 && !f.usropn && !f.template) {
+        let _ = g.db_open(f);
     }
+    g.b.ins("callb _qrni_snap()");
     g.b.ins("store $init_done, *ON");
     g.psds_init(&g.opts.name.clone());
     g.b.place(&start);

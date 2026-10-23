@@ -112,6 +112,12 @@ pub struct Sym {
     /// Implicitly defined (a fixed-form result field with a length,
     /// an external field).
     pub implicit: bool,
+    /// `ALT(name)`: the array this one alternates with.
+    pub alt: String,
+    /// `ASCEND` 1, `DESCEND` 2, else 0.
+    pub seq: u8,
+    /// `DIM(*AUTO)` 1, `DIM(*VAR)` 2, else 0.
+    pub vardim: u8,
 }
 
 /// A data structure's layout.

@@ -101,6 +101,12 @@ impl Desc {
         }
     }
 
+    /// The digits of a number as `MOVE` sees it (its zoned length).
+    #[must_use]
+    pub fn digits(&self) -> u32 {
+        self.len.clamp(1, 63)
+    }
+
     /// Whether it is a number.
     #[must_use]
     pub fn numeric(&self) -> bool {
@@ -165,4 +171,38 @@ pub fn write_varchar(addr: u64, text: &[u8]) {
 #[must_use]
 pub fn ebcdic(s: &str) -> Vec<u8> {
     s.chars().map(|c| ccsid::byte_of(c).unwrap_or(0x40)).collect()
+}
+
+/// A number into storage, high-order digits dropped as fixed-form
+/// operations drop them; an integer that does not fit is `MCH1210`.
+pub fn write_num(addr: u64, d: &Desc, v: &Decimal) -> Result<(), mi::Cond> {
+    let digits = u8::try_from(d.len.clamp(1, 63)).unwrap_or(63);
+    let fit = |v: &Decimal| {
+        Shape::new(digits, d.dec)
+            .ok()
+            .and_then(|sh| v.fit_truncate(sh, qdecimal::Rounding::Truncate).ok())
+            .unwrap_or_else(Decimal::zero)
+    };
+    let enc = match d.kind {
+        Kind::Packed => Packed::new(digits, d.dec).and_then(|p| p.encode(&fit(v), qdecimal::Rounding::Truncate)),
+        Kind::Zoned => Zoned::new(digits, d.dec).and_then(|z| z.encode(&fit(v), qdecimal::Rounding::Truncate)),
+        Kind::Bin => Binary::new(digits, d.dec).and_then(|b| b.encode(&fit(v), qdecimal::Rounding::Truncate)),
+        Kind::Int | Kind::Uns => Integer::new(u8::try_from(d.size()).unwrap_or(8), d.kind == Kind::Int)
+            .and_then(|i| i.encode(&v.rescale(0, qdecimal::Rounding::Truncate).unwrap_or_else(|_| Decimal::zero()))),
+        Kind::Float => {
+            let f: f64 = v.to_string().parse().unwrap_or(0.0);
+            let b = bytes(addr, d.size());
+            if d.len == 4 {
+                #[allow(clippy::cast_possible_truncation)]
+                b.copy_from_slice(&(f as f32).to_be_bytes());
+            } else {
+                b.copy_from_slice(&f.to_be_bytes());
+            }
+            return Ok(());
+        }
+        _ => return Err(mi::Cond::Mch1202),
+    }
+    .map_err(|_| mi::Cond::Mch1210)?;
+    bytes(addr, enc.len()).copy_from_slice(&enc);
+    Ok(())
 }

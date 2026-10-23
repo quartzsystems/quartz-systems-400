@@ -1,0 +1,27 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s s varchar(40) inz('one two  three');
+dcl-s t varchar(40) inz('a,b,,c');
+dcl-s w varchar(20);
+dcl-s arr varchar(10) dim(5);
+dcl-s n int(10);
+for-each w in %split(s);
+line = 'a [' + w + ']';
+write QSYSPRT line;
+endfor;
+for-each w in %split(t:',');
+line = 'b [' + w + ']';
+write QSYSPRT line;
+endfor;
+arr = %split(t:',');
+line = 'c ' + arr(1) + '|' + arr(2) + '|' + arr(3) + '|' + arr(4) + '|' + arr(5);
+write QSYSPRT line;
+n = 0;
+for-each w in %split('x;y z':'; ');
+n += 1;
+line = 'd ' + %char(n) + ' [' + w + ']';
+write QSYSPRT line;
+endfor;
+*inlr = *on;

@@ -1,0 +1,14 @@
+# MOV002 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 1 seq 000100
+diag: RNF3530 00 line 2 seq 000200
+run: ok
+spool: QSYSPRT
+  |1/1   a [XYcde]
+  |1/2   b [XY   ]
+  |1/3   c [123]
+  |1/4   d [123]
+  |1/5   e [XY   678]
+  |1/6   f [123     ]
+  |1/7   g [LONGE]

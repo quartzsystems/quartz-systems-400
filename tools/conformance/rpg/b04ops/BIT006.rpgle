@@ -1,0 +1,25 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-ds src qualified;
+  a char(5) inz('alpha');
+  n packed(5:2) inz(12.34);
+  z zoned(3:0) inz(7);
+  only char(3) inz('src');
+end-ds;
+dcl-ds dst qualified;
+  n int(10);
+  a char(3);
+  z packed(5:1);
+  mine char(4) inz('mine');
+end-ds;
+eval-corr dst = src;
+line = 'a ' + dst.a + ' ' + %char(dst.n) + ' ' + %char(dst.z) + ' ' + dst.mine;
+write QSYSPRT line;
+src.a = 'beta';
+src.n = -1.99;
+eval-corr(h) dst = src;
+line = 'b ' + dst.a + ' ' + %char(dst.n);
+write QSYSPRT line;
+*inlr = *on;

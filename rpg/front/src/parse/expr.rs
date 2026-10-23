@@ -188,6 +188,7 @@ fn binop(t: &Tok) -> Option<(BinOp, Level)> {
         Kind::Punct(">") => (BinOp::Gt, Level::Compare),
         Kind::Punct("<=") => (BinOp::Le, Level::Compare),
         Kind::Punct(">=") => (BinOp::Ge, Level::Compare),
+        Kind::Name(n) if n == "IN" => (BinOp::In, Level::Compare),
         Kind::Punct("+") => (BinOp::Add, Level::Add),
         Kind::Punct("-") => (BinOp::Sub, Level::Add),
         Kind::Punct("*") => (BinOp::Mul, Level::Mul),

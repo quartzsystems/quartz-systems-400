@@ -102,6 +102,9 @@ impl Gen<'_> {
                 Some(V::lit(Ty::Packed(10, 0), n.to_string()))
             }
             "%ELEM" => {
+                if let Some(r) = self.elem_bif(args) {
+                    return r;
+                }
                 let v = self.expr(args.first()?, w)?;
                 if v.dim == 0 {
                     self.err(ids::BIF_ARGS, 30, name.to_string());
@@ -409,6 +412,9 @@ impl Gen<'_> {
                 Some(V::reg(Ty::Ptr, r))
             }
             "%XFOOT" => {
+                if let Some(r) = self.xfoot_bif(args) {
+                    return r;
+                }
                 let v = self.expr(args.first()?, Want::default())?;
                 if v.dim == 0 || !v.ty.is_numeric() {
                     self.err(ids::BIF_ARGS, 30, name.to_string());
@@ -466,6 +472,9 @@ impl Gen<'_> {
                 Some(best)
             }
             _ => {
+                if let Some(r) = self.bif_ext(name, args, w) {
+                    return r;
+                }
                 self.err(ids::UNKNOWN_BIF, 30, name.to_string());
                 None
             }

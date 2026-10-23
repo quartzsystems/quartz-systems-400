@@ -1,0 +1,353 @@
+"""Corpus batch 4, free-form built-in members of the string, array and
+bit operations (STR007-, ARR005-, BIT005-). Imported by b04s.py.
+"""
+from fixed import C, CX, D, PRT_D, PRT_F, show
+
+
+def add(M, member, free_member, p, ev, sn, S, FREE_HEAD):
+    # %SCANRPL and %SCANR.
+    free_member("STR007", [
+        "dcl-s c char(20) inz('hello world');",
+        "dcl-s v varchar(30) inz('a.b.c');",
+    ], [
+        p("'a [' + %scanrpl('o':'0':c) + ']'"),
+        p("'b [' + %scanrpl('l':'LL':c) + ']'"),
+        p("'c [' + %scanrpl('o':'':c) + ']'"),
+        p("'d [' + %scanrpl('o':'*':c:6) + ']'"),
+        p("'e [' + %scanrpl('l':'_':c:1:4) + ']'"),
+        p("'f [' + %scanrpl('.':'::':v) + '] ' + %char(%len(%scanrpl('.':'::':v)))"),
+        p("'g [' + %scanrpl('zz':'y':v) + ']'"),
+        p("'h ' + %char(%scanr('o':c)) + ' ' + %char(%scanr('l':c)) + ' ' + %char(%scanr('z':c))"),
+        p("'i ' + %char(%scanr('l':c:1:5)) + ' ' + %char(%scanr('o':c:6))"),
+        p("'j ' + %char(%scanr('.':v)) + ' ' + %char(%scanr('ll':c))"),
+    ])
+
+    # %LEFT, %RIGHT, %CHARCOUNT, %STR.
+    free_member("STR008", [
+        "dcl-s c char(12) inz('abcdefgh');",
+        "dcl-s v varchar(20) inz('xyz12');",
+        "dcl-s buf char(10) inz(x'C1C2C300C5C6C7C8C9D1');",
+        "dcl-s p pointer;",
+    ], [
+        p("'a [' + %left(c:3) + '] [' + %right(c:3) + ']'"),
+        p("'b [' + %left(v:2) + '] [' + %right(v:2) + ']'"),
+        p("'c [' + %right(%trimr(c):4) + '] ' + %char(%len(%left(c:5)))"),
+        p("'d ' + %char(%charcount(c)) + ' ' + %char(%charcount(v)) + ' ' + %char(%charcount(''))"),
+        "p = %addr(buf);",
+        p("'e [' + %str(p:10) + '] ' + %char(%len(%str(p:10)))"),
+        p("'f [' + %str(p:2) + ']'"),
+        "p = %addr(c);",
+        "%str(p:5) = 'pq';",
+        p("'g ' + %subst(c:1:2) + ' ' + %char(%len(%str(p:12)))"),
+        p("'h [' + %str(p:12) + ']'"),
+    ])
+
+    # %CONCAT and %CONCATARR.
+    free_member("STR009", [
+        "dcl-s a char(5) inz('ab');",
+        "dcl-s v varchar(10) inz('cd');",
+        "dcl-s arr char(3) dim(3);",
+        "dcl-s va varchar(5) dim(3);",
+    ], [
+        "arr(1) = 'x';",
+        "arr(2) = 'yy';",
+        "arr(3) = 'zzz';",
+        "va(1) = 'p';",
+        "va(2) = '';",
+        "va(3) = 'rr';",
+        p("'a [' + %concat(',':'a':'b':'c') + ']'"),
+        p("'b [' + %concat('-':a:v) + ']'"),
+        p("'c [' + %concat('':v:v:v) + ']'"),
+        p("'d [' + %concatarr(',':arr) + ']'"),
+        p("'e [' + %concatarr('/':va) + '] ' + %char(%len(%concatarr('/':va)))"),
+        p("'f [' + %concat(' ':%trim(a):v) + ']'"),
+    ])
+
+    # %SPLIT.
+    free_member("STR010", [
+        "dcl-s s varchar(40) inz('one two  three');",
+        "dcl-s t varchar(40) inz('a,b,,c');",
+        "dcl-s w varchar(20);",
+        "dcl-s arr varchar(10) dim(5);",
+        "dcl-s n int(10);",
+    ], [
+        "for-each w in %split(s);",
+        p("'a [' + w + ']'"),
+        "endfor;",
+        "for-each w in %split(t:',');",
+        p("'b [' + w + ']'"),
+        "endfor;",
+        "arr = %split(t:',');",
+        p("'c ' + arr(1) + '|' + arr(2) + '|' + arr(3) + '|' + arr(4) + '|' + arr(5)"),
+        "n = 0;",
+        "for-each w in %split('x;y z':'; ');",
+        "n += 1;",
+        p("'d ' + %char(n) + ' [' + w + ']'"),
+        "endfor;",
+    ])
+
+    # SORTA.
+    free_member("ARR005", [
+        "dcl-s c char(5) dim(5);",
+        "dcl-s n packed(5:1) dim(5);",
+        "dcl-s d int(10) dim(4) descend;",
+        "dcl-ds e qualified dim(3);",
+        "  name char(5);",
+        "  amt packed(5:0);",
+        "end-ds;",
+    ], [
+        "c(1) = 'pear';", "c(2) = 'fig';", "c(3) = 'apple';", "c(4) = 'kiwi';", "c(5) = 'date';",
+        "sorta c;",
+        p("'a ' + c(1) + c(2) + c(3) + c(4) + c(5)"),
+        "sorta(d) c;",
+        p("'b ' + c(1) + c(2) + c(3) + c(4) + c(5)"),
+        "n(1) = 3.5;", "n(2) = -1;", "n(3) = 10;", "n(4) = 0;", "n(5) = 2.2;",
+        "sorta %subarr(n:2:3);",
+        p("'c ' + %char(n(1)) + ' ' + %char(n(2)) + ' ' + %char(n(3))"),
+        p("'c2 ' + %char(n(4)) + ' ' + %char(n(5))"),
+        "sorta n;",
+        p("'d ' + %char(n(1)) + ' ' + %char(n(2)) + ' ' + %char(n(3))"),
+        p("'d2 ' + %char(n(4)) + ' ' + %char(n(5))"),
+        "d(1) = 5;", "d(2) = 50;", "d(3) = -5;", "d(4) = 7;",
+        "sorta d;",
+        p("'e ' + %char(d(1)) + ' ' + %char(d(2)) + ' ' + %char(d(3)) + ' ' + %char(d(4))"),
+        "e(1).name = 'bob';", "e(1).amt = 30;",
+        "e(2).name = 'al';", "e(2).amt = 10;",
+        "e(3).name = 'cy';", "e(3).amt = 20;",
+        "sorta e(*).amt;",
+        p("'f ' + e(1).name + e(2).name + e(3).name"),
+        "sorta(d) e(*).name;",
+        p("'g ' + e(1).name + e(2).name + e(3).name"),
+        "sorta(a) %subarr(c:1:2);",
+        p("'h ' + c(1) + c(2) + c(3) + c(4) + c(5)"),
+    ])
+
+    # %LOOKUP and %TLOOKUP families.
+    M["ARR006"] = FREE_HEAD + [
+        "dcl-s asc packed(3:0) dim(5) ascend;",
+        "dcl-s chr char(3) dim(4);",
+        "dcl-s taba char(3) dim(3) ctdata perrcd(1);",
+        "dcl-s tabb char(4) dim(3) alt(taba);",
+        "dcl-s tabn packed(3:0) dim(4) ascend ctdata perrcd(1);",
+        "asc(1) = 10;", "asc(2) = 20;", "asc(3) = 30;", "asc(4) = 40;", "asc(5) = 50;",
+        "chr(1) = 'a';", "chr(2) = 'b';", "chr(3) = 'c';", "chr(4) = 'b';",
+        p("'a ' + %char(%lookup(30:asc)) + ' ' + %char(%lookup(35:asc)) + ' ' + %char(%lookup('b':chr))"),
+        p("'b ' + %char(%lookup('b':chr:3)) + ' ' + %char(%lookup('b':chr:1:1)) + ' ' + %char(%lookup('a':chr:2))"),
+        p("'c ' + %char(%lookuplt(30:asc)) + ' ' + %char(%lookuple(30:asc)) + ' ' + %char(%lookuplt(35:asc))"),
+        p("'d ' + %char(%lookupgt(30:asc)) + ' ' + %char(%lookupge(30:asc)) + ' ' + %char(%lookupge(35:asc))"),
+        p("'e ' + %char(%lookuplt(5:asc)) + ' ' + %char(%lookupgt(50:asc)) + ' ' + %char(%lookupge(5:asc))"),
+        p("'f ' + %char(%lookupgt(10:asc:3)) + ' ' + %char(%lookuple(45:asc:1:2))"),
+        p("'g ' + taba + ' ' + tabb"),
+        "if %tlookup('BBB':taba:tabb);",
+        p("'h ' + taba + ' ' + tabb"),
+        "endif;",
+        "if not %tlookup('ZZZ':taba);",
+        p("'i ' + taba + ' ' + tabb"),
+        "endif;",
+        "if %tlookupgt(25:tabn);",
+        p("'j ' + %char(tabn)"),
+        "endif;",
+        "if %tlookuple(25:tabn);",
+        p("'k ' + %char(tabn)"),
+        "endif;",
+        "*inlr = *on;",
+        "**ctdata taba",
+        "AAAone",
+        "BBBtwo",
+        "CCCsix",
+        "**ctdata tabn",
+        "010",
+        "020",
+        "030",
+        "040",
+    ]
+
+    # Array assignment, %SUBARR, %XFOOT, %MAXARR, %MINARR.
+    free_member("ARR007", [
+        "dcl-s a packed(5:0) dim(6);",
+        "dcl-s b packed(5:0) dim(4);",
+        "dcl-s c char(4) dim(3);",
+        "dcl-s i int(10);",
+    ], [
+        "a = 7;",
+        p("'a ' + %char(a(1)) + ' ' + %char(a(6)) + ' ' + %char(%xfoot(a))"),
+        "for i = 1 to 6;",
+        "  a(i) = i * 10;",
+        "endfor;",
+        "b = %subarr(a:3);",
+        p("'b ' + %char(b(1)) + ' ' + %char(b(2)) + ' ' + %char(b(3)) + ' ' + %char(b(4))"),
+        "%subarr(a:2:2) = 0;",
+        p("'c ' + %char(a(1)) + ' ' + %char(a(2)) + ' ' + %char(a(3)) + ' ' + %char(a(4))"),
+        "%subarr(a:4) = b;",
+        p("'d ' + %char(a(4)) + ' ' + %char(a(5)) + ' ' + %char(a(6))"),
+        p("'e ' + %char(%xfoot(%subarr(a:4:2)))"),
+        "a(2) = 99;",
+        "a(5) = -3;",
+        p("'f ' + %char(%maxarr(a)) + ' ' + %char(%minarr(a))"),
+        p("'g ' + %char(%maxarr(a:3)) + ' ' + %char(%minarr(a:1:4))"),
+        "c = 'xy';",
+        "c(2) = 'zz';",
+        p("'h ' + c(1) + c(2) + c(3) + ' ' + %char(%maxarr(c)) + ' ' + %char(%minarr(c))"),
+        "b = a;",
+        p("'i ' + %char(b(1)) + ' ' + %char(b(2)) + ' ' + %char(b(4))"),
+    ])
+
+    # OCCUR and %OCCUR.
+    member("ARR008", [
+        D("MODS", "DS", kw="OCCURS(3)"), D("MA", frm="1", to="3"),
+        D("MN", frm="4", to="6", typ="S", dec="0"),
+        D("OTHER", "DS", kw="OCCURS(3)"), D("OA", frm="1", to="2"),
+        S("N", 3, "P", "0"),
+    ], [
+        ev("MA = 'one'"), ev("MN = 1"),
+        C("2", "OCCUR", "MODS"), ev("MA = 'two'"), ev("MN = 2"),
+        C("3", "OCCUR", "MODS"), ev("MA = 'thr'"), ev("MN = 3"),
+        C("2", "OCCUR", "MODS", "N"), *show("'a ' + MA + ' ' + %CHAR(MN) + ' ' + %CHAR(N)"),
+        C("1", "OCCUR", "MODS"), *show("'b ' + MA + ' ' + %CHAR(MN) + ' ' + %CHAR(%OCCUR(MODS))"),
+        C(op="OCCUR", f2="MODS", res="N"), *sn("c", "N"),
+        ev("N = 4"), C("N", "OCCUR", "MODS", lo="40"), *show("'d ' + *IN40 + ' ' + MA + ' ' + %CHAR(%OCCUR(MODS))"),
+        ev("%OCCUR(MODS) = 3"), *show("'e ' + MA + ' ' + %CHAR(MN)"),
+        C("MODS", "OCCUR", "OTHER"), *show("'f ' + %CHAR(%OCCUR(OTHER)) + ' [' + OA + ']'"),
+        ev("OA = 'zz'"), C("1", "OCCUR", "OTHER"), *show("'g [' + OA + ']'"),
+        C("3", "OCCUR", "OTHER"), *show("'h [' + OA + ']'"),
+        ev("N = 2"), C("N", "OCCUR", "MODS"), *show("'i ' + MA"),
+    ])
+
+    # CLEAR and RESET, with *INZSR.
+    M["ARR009"] = [
+        PRT_F, PRT_D,
+        S("F1", 5, kw="INZ('init')"), S("F2", 5, "P", "1", "INZ(12.5)"), S("F3", 5),
+        D("DS1", "DS"), D("SA", frm="1", to="3", kw="INZ('abc')"),
+        D("SN", frm="4", to="7", typ="S", dec="0", kw="INZ(42)"),
+        S("ARR", 2, kw="DIM(3) INZ('aa')"),
+        D("MODS", "DS", kw="OCCURS(2)"), D("MX", frm="1", to="2", kw="INZ('mm')"),
+        S("N1", 1, "N", kw="INZ(*ON)"),
+        ev("F1 = 'chg'"), ev("F2 = 1"), ev("F3 = 'chg'"), ev("SA = 'xyz'"), ev("SN = 7"),
+        ev("ARR(2) = 'zz'"), ev("N1 = *OFF"),
+        C(op="RESET", res="F1"), C(op="RESET", res="F2"), C(op="RESET", res="F3"),
+        *show("'a [' + F1 + '] ' + %CHAR(F2) + ' [' + F3 + ']'"),
+        C(op="RESET", res="SN"), *show("'b ' + SA + ' ' + %CHAR(SN)"),
+        C(op="RESET", res="DS1"), *show("'c ' + SA + ' ' + %CHAR(SN)"),
+        C(op="RESET", res="ARR"), C(op="RESET", res="N1"), *show("'d ' + ARR(2) + ' ' + N1"),
+        C(op="CLEAR", res="DS1"), C(op="CLEAR", res="ARR"), C(op="CLEAR", res="F2"),
+        *show("'e [' + SA + '] ' + %CHAR(SN) + ' [' + ARR(1) + '] ' + %CHAR(F2)"),
+        C(op="CLEAR", res="N1"), *show("'f ' + N1"),
+        ev("MX = 'p1'"), C("2", "OCCUR", "MODS"), ev("MX = 'p2'"),
+        C(op="RESET", res="MODS"), *show("'g ' + MX"),
+        C("1", "OCCUR", "MODS"), *show("'h ' + MX"),
+        C(op="CLEAR", f2="*ALL", res="MODS"), C("2", "OCCUR", "MODS"), *show("'i [' + MX + ']'"),
+        C(op="RESET", f2="*ALL", res="MODS"), C("1", "OCCUR", "MODS"), *show("'j [' + MX + ']'"),
+        ev("*IN05 = *ON"), C(op="CLEAR", res="*IN"), *show("'k ' + *IN05"),
+        CX("EVAL", "*INLR = *ON"),
+        C("*INZSR", "BEGSR"),
+        ev("F1 = 'inzsr'"), ev("SN = 99"),
+        C(op="ENDSR"),
+    ]
+
+    # Varying-dimension arrays: DIM(*AUTO) and DIM(*VAR).
+    free_member("ARR010", [
+        "dcl-s au char(3) dim(*auto:10);",
+        "dcl-s vr packed(3:0) dim(*var:5);",
+        "dcl-s i int(10);",
+    ], [
+        p("'a ' + %char(%elem(au)) + ' ' + %char(%elem(au:*max)) + ' ' + %char(%elem(vr))"),
+        "au(1) = 'one';",
+        "au(4) = 'fou';",
+        p("'b ' + %char(%elem(au)) + ' [' + au(2) + '] ' + au(4)"),
+        "%elem(au) = 2;",
+        p("'c ' + %char(%elem(au))"),
+        "au(*next) = 'nxt';",
+        p("'d ' + %char(%elem(au)) + ' ' + au(3)"),
+        "%elem(vr) = 3;",
+        "vr = 4;",
+        p("'e ' + %char(%elem(vr)) + ' ' + %char(vr(1)) + ' ' + %char(vr(3)) + ' ' + %char(%xfoot(vr))"),
+        "vr(2) = 1;",
+        "sorta vr;",
+        p("'f ' + %char(vr(1)) + ' ' + %char(vr(2)) + ' ' + %char(vr(3))"),
+        "%elem(vr) = 5;",
+        p("'g ' + %char(vr(4)) + ' ' + %char(vr(5)) + ' ' + %char(%lookup(1:vr))"),
+        "%elem(vr) = 1;",
+        "%elem(vr) = 2;",
+        p("'h ' + %char(vr(1)) + ' ' + %char(vr(2))"),
+        "for i = 1 to %elem(au);",
+        p("'i ' + %char(i) + ' [' + au(i) + ']'"),
+        "endfor;",
+    ])
+
+    # The bit built-in functions.
+    free_member("BIT005", [
+        "dcl-s u uns(10) inz(12);",
+        "dcl-s i int(10) inz(-6);",
+        "dcl-s u3 uns(3) inz(240);",
+        "dcl-s c char(2) inz(x'F0C1');",
+        "dcl-ds hx;",
+        "  hb char(2);",
+        "  hu uns(5) overlay(hb);",
+        "end-ds;",
+    ], [
+        p("'a ' + %char(%bitand(u:10)) + ' ' + %char(%bitor(u:1)) + ' ' + %char(%bitxor(u:5))"),
+        p("'b ' + %char(%bitnot(u)) + ' ' + %char(%bitnot(i)) + ' ' + %char(%bitnot(u3))"),
+        p("'c ' + %char(%bitand(i:255)) + ' ' + %char(%bitor(i:1:16)) + ' ' + %char(%bitxor(u3:15))"),
+        "hb = %bitand(c:x'0F0F');",
+        p("'d ' + %char(hu)"),
+        "hb = %bitor(c:x'0102');",
+        p("'e ' + %char(hu)"),
+        "hb = %bitnot(c);",
+        p("'f ' + %char(hu)"),
+        "hb = %bitxor(c:x'FFFF');",
+        p("'g ' + %char(hu)"),
+    ])
+
+    # EVAL-CORR.
+    free_member("BIT006", [
+        "dcl-ds src qualified;",
+        "  a char(5) inz('alpha');",
+        "  n packed(5:2) inz(12.34);",
+        "  z zoned(3:0) inz(7);",
+        "  only char(3) inz('src');",
+        "end-ds;",
+        "dcl-ds dst qualified;",
+        "  n int(10);",
+        "  a char(3);",
+        "  z packed(5:1);",
+        "  mine char(4) inz('mine');",
+        "end-ds;",
+    ], [
+        "eval-corr dst = src;",
+        p("'a ' + dst.a + ' ' + %char(dst.n) + ' ' + %char(dst.z) + ' ' + dst.mine"),
+        "src.a = 'beta';",
+        "src.n = -1.99;",
+        "eval-corr(h) dst = src;",
+        p("'b ' + dst.a + ' ' + %char(dst.n)"),
+    ])
+
+    # IN with %LIST and %RANGE.
+    free_member("BIT007", [
+        "dcl-s c char(3) inz('b');",
+        "dcl-s n packed(5:0) inz(5);",
+        "dcl-s v varchar(5) inz('xy');",
+    ], [
+        "if c in %list('a':'b':'c');",
+        p("'a yes'"),
+        "endif;",
+        "if not (c in %list('x':'y'));",
+        p("'b no'"),
+        "endif;",
+        "if n in %range(1:9);",
+        p("'c in range'"),
+        "endif;",
+        "if n in %range(6:9);",
+        p("'d wrong'"),
+        "else;",
+        p("'d out'"),
+        "endif;",
+        "if v in %range('aa':'zz');",
+        p("'e chars'"),
+        "endif;",
+        "if n + 1 in %list(4:6:8);",
+        p("'f expr'"),
+        "endif;",
+        "if 'b  ' in %list(c:'q');",
+        p("'g padded'"),
+        "endif;",
+    ])
