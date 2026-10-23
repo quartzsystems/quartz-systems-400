@@ -84,28 +84,36 @@ pub fn expected(case: &Case) -> Row {
                 return row;
             };
             let result = Shape::new(RESULT_SHAPE.0, RESULT_SHAPE.1).expect("valid");
-            let plain = operation(op, &a, &b, Mode::Default);
-            row.inter = match &plain {
+            // `%CHAR` of the expression: no result field.
+            row.inter = match operation(op, &a, &b, Mode::default()) {
                 Ok(t) => t.value.to_string(),
-                Err(e) => token(e),
+                Err(e) => token(&e),
             };
-            let assign = |t: &Result<Typed, DecimalError>, rounding: Rounding| match t {
+            let to_result = Mode {
+                result_scale: RESULT_SHAPE.1,
+                ..Mode::default()
+            };
+            let assign = |mode: Mode, rounding: Rounding| match operation(op, &a, &b, mode) {
                 Ok(t) => t
                     .assign(result, rounding)
                     .map_or_else(|e| token(&e), |v| v.to_string()),
-                Err(e) => token(e),
+                Err(e) => token(&e),
             };
-            row.r1 = assign(&plain, Rounding::Truncate);
-            row.rh = assign(&plain, Rounding::HalfAdjust);
-            let res = operation(
-                op,
-                &a,
-                &b,
-                Mode::ResDecPos {
-                    result_scale: RESULT_SHAPE.1,
+            row.r1 = assign(to_result, Rounding::Truncate);
+            row.rh = assign(
+                Mode {
+                    half_adjust: true,
+                    ..to_result
                 },
+                Rounding::HalfAdjust,
             );
-            row.rr = assign(&res, Rounding::Truncate);
+            row.rr = assign(
+                Mode {
+                    resdecpos: true,
+                    ..to_result
+                },
+                Rounding::Truncate,
+            );
         }
     }
     row

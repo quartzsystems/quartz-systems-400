@@ -65,39 +65,57 @@ yields a typed result; the result's shape follows the rules below and
 the exact result is truncated (never rounded) to it. Literals have the
 shape of their own digits.
 
+The natural shape of a result:
+
 | Operation | Integer digits | Decimal positions |
 |---|---|---|
 | `a + b`, `a - b` | `max(i1, i2) + 1` | `max(d1, d2)` |
 | `a * b` | `i1 + i2` | `d1 + d2` |
-| `a / b` | `i1 + d2` | `63 - (i1 + d2)` |
+| `a / b` | `i1 + d2` | every position the limit leaves |
 
-When integer digits plus decimals exceed 63, decimal positions are
-dropped first, down to `63 - integer`. When the integer digits alone
-exceed 63 the operation fails with a size error. Division by zero is
+The **limit** is the number of digits an intermediate result may use
+before its decimals give way: 30 when no operand has more than 30
+digits, 31 when the widest operand has 31, and 63 once an operand is
+wider than 31. When integer digits plus decimals exceed the limit, the
+decimals are cut to `limit - integer`, but not below the **floor**: the
+decimal positions of the field the expression is assigned to (0 for an
+argument such as `%CHAR(a / b)`), one more under half-adjust (`EVAL(H)`
+or the `H` extender) so the dropped digit can round. Integer digits are
+never cut by the limit: `31,10 * 31,10` keeps its 42 integer digits
+with no decimals. Past 63 digits the floor goes too, down to `63 -
+integer`, and 63 integer digits are the most a result can have; a value
+that does not fit the shape is a size error. Division by zero is
 MCH1211.
 
-The pub400 capture (IBM i 7.5, `tools/conformance/oracle/qdecimal/
-results.csv`) confirms the 63-digit rule for `+`, `-` and `*`, but its
-quotients are shorter: `999.99 / 999.99` has 25 decimals there, 58
-here, and `EVAL(R)` keeps the result's decimals where ours drops to
-zero. The division rule and `*RESDECPOS` are open until the capture is
-fitted (`cargo test -p qdecimal --test oracle` lists every case).
-
 **`*RESDECPOS`** (`EXPROPTS(*RESDECPOS)` or the `R` extender): the same
-rules, except that the decimal positions of an intermediate result are
-never reduced below the result field's decimal positions. If that
-leaves too few integer digits for the value, the operation fails with a
-size error. The default rules and `*RESDECPOS` are a `Mode` on every
-operation.
+rules, except that past 63 digits the floor is kept and integer digits
+give way instead, so a value that needs them is a size error. The
+result field's decimals, half-adjust and `*RESDECPOS` are the `Mode` of
+every operation.
 
-Examples (default rules):
+These rules are fitted to the pub400 capture (IBM i 7.5,
+`tools/conformance/oracle/qdecimal/results.csv`, 3506 cases over
+operands of 5 to 63 digits); it has no operand of 32 to 39 digits, so
+the limit for those is a reading, not an observation.
+
+Examples (the result field is `15,5` where one is named):
 
 - `5,2 + 7,3` gives `9,3`.
-- `31,0 * 32,0` gives `63,0`; `40,0 * 40,0` is a size error.
+- `5,2 / 5,2` gives `5` integer digits and `25` decimals: 30 in all.
+- `1,0 / 1,0` gives `30,29`, so `1 / 3` is `0.333...3` with 29 threes.
+- `5,2 / 31,10` gives `13` integer digits and `18` decimals: a 31-digit
+  operand widens the limit to 31.
+- `5,2 + 31,10` gives `31,9`: the tenth decimal gives way.
+- `31,10 * 31,10` gives `42,0`.
+- `31,10 / 31,10` gives `31,0` for an argument, `36,5` assigned to the
+  result field (`1 / 3` is `.33333`), `37,6` under half-adjust.
 - `40,20 * 40,20` gives `63,23`: 80 integer digits would be needed for
   40 decimals; the decimals give way to 23.
-- `1,0 / 1,0` gives `63,62`, so `1 / 3` is `0.333...3` with 62 threes.
-- `5,1 / 3,2` gives `6` integer digits and `57` decimals.
+- `31,0 * 32,0` gives `63,0`; `40,0 * 40,0` is a size error.
+- `5,2 + 63,32` gives `63,31`: the sum keeps its 32 integer digits.
+- `45,14 / 63,32` gives `63,0` even assigned to the result field (`1 /
+  3` is `.00000`); under `*RESDECPOS` it gives `63,5` with 58 integer
+  digits, and `1 / 3` is `.33333`.
 
 ## 5. Errors
 
