@@ -12,7 +12,7 @@ use crate::model::{Area, MenuArea, MenuItem, MenuNode, MenuOption, Panel};
 enum Row {
     Blank,
     Heading(String),
-    Item(u8, String, Option<String>),
+    Item(u16, String, Option<String>),
 }
 
 /// The width of the selection field: the digits of the largest option.
@@ -73,7 +73,7 @@ pub(super) fn render(ctx: &Ctx, area: &MenuArea, s: &mut Screen, top: usize, hei
 /// heading that does not start the area.
 fn rows(ctx: &Ctx, area: &MenuArea) -> Vec<Row> {
     let mut out: Vec<Row> = Vec::new();
-    let mut prev: Option<u8> = None;
+    let mut prev: Option<u16> = None;
     for node in &area.items {
         match node {
             MenuNode::Item(i) => push_item(ctx, &mut out, &mut prev, i),
@@ -96,7 +96,7 @@ fn rows(ctx: &Ctx, area: &MenuArea) -> Vec<Row> {
 }
 
 /// One item's row, after a blank one when its number skips.
-fn push_item(ctx: &Ctx, out: &mut Vec<Row>, prev: &mut Option<u8>, item: &MenuItem) {
+fn push_item(ctx: &Ctx, out: &mut Vec<Row>, prev: &mut Option<u16>, item: &MenuItem) {
     let MenuOption::Number(n) = item.option else {
         return;
     };
