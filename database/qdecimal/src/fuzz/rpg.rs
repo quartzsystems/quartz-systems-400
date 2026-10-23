@@ -257,11 +257,14 @@ division by zero).
 ## Captured 2026-10-22 on pub400.com (IBM i 7.5)
 
 `results.csv` came from pub400 (job CCSID 273). `CRTBNDRPG` needed
-`GENLVL(20)`: three edit-word cases (statements 7155, 7176 and 7179)
-draw `RNF8004`, not enough replaceable characters, and compile anyway.
-`cargo test -p qdecimal --test oracle` reports 590 mismatches, 584 in
-`inter` (the `%CHAR` of the intermediate result, mostly fewer decimal
-positions than this implementation keeps) and 6 in `rr`.
+`GENLVL(20)`: three edit-word cases (statements 7155, 7176 and 7179,
+the words `**0.  `, `$   ,   ` and `**  ,   `) draw `RNF8004`, not
+enough replaceable characters, and compile anyway with the statement
+dropped, so their 21 rows are blank and the diff counts them as
+unanswered. The job's CCSID shows the negative zero zone of edit code
+`X` as `ü`; the diff reads it as `}`. The precision rules in
+`docs/DECIMAL.md` and the edit rules are fitted to this capture:
+`cargo test -p qdecimal --test oracle` reports no mismatch.
 "
     .to_string()
 }

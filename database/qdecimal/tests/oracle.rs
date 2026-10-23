@@ -32,7 +32,7 @@ fn kit_is_current() {
     let rows: Vec<_> = cases.iter().map(fuzz::expected).collect();
     assert_eq!(
         expected,
-        fuzz::write_rows(&rows),
+        fuzz::write_rows(&rows).replace("\r\n", "\n"),
         "expected.csv is stale; run qdfuzz kit"
     );
 }

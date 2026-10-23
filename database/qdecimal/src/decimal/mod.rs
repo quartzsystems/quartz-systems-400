@@ -278,16 +278,23 @@ impl Decimal {
         (a, b, scale)
     }
 
-    /// Exact sum. Fails past 63 digits.
-    pub fn add_exact(&self, other: &Self) -> Result<Self> {
+    /// The exact sum as sign, magnitude and scale, however many digits
+    /// it takes.
+    pub(crate) fn sum_digits(&self, other: &Self) -> (bool, Digits, u8) {
         let (a, b, scale) = self.aligned(other);
         if self.neg == other.neg {
-            return Self::from_digits(self.neg, digits::add(&a, &b), scale);
+            return (self.neg, digits::add(&a, &b), scale);
         }
         match digits::cmp(&a, &b) {
-            Ordering::Less => Self::from_digits(other.neg, digits::sub(&b, &a), scale),
-            _ => Self::from_digits(self.neg, digits::sub(&a, &b), scale),
+            Ordering::Less => (other.neg, digits::sub(&b, &a), scale),
+            _ => (self.neg, digits::sub(&a, &b), scale),
         }
+    }
+
+    /// Exact sum. Fails past 63 digits.
+    pub fn add_exact(&self, other: &Self) -> Result<Self> {
+        let (neg, mag, scale) = self.sum_digits(other);
+        Self::from_digits(neg, mag, scale)
     }
 
     /// Exact difference. Fails past 63 digits.

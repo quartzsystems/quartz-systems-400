@@ -27,10 +27,6 @@ enum Status {
     Minus,
 }
 
-fn is_digit_position(c: char) -> bool {
-    matches!(c, ' ' | '0' | '*')
-}
-
 /// Split the word for a field of `digits` digit positions.
 fn parse(word: &str, digits: usize) -> Result<Parsed> {
     let chars: Vec<char> = word.chars().collect();
@@ -41,8 +37,10 @@ fn parse(word: &str, digits: usize) -> Result<Parsed> {
     let mut at = 0;
     while at < chars.len() && positions < digits {
         let c = chars[at];
-        if is_digit_position(c) {
-            if c == '0' && stop.is_none() {
+        // The first zero or asterisk ends zero suppression; any later
+        // one is a constant, not a digit position.
+        if c == ' ' || (matches!(c, '0' | '*') && stop.is_none()) {
+            if c != ' ' {
                 stop = Some(body.len());
                 if body.last() == Some(&'$') && body.len() > 1 {
                     floating = Some(body.len() - 1);
@@ -86,33 +84,40 @@ fn parse(word: &str, digits: usize) -> Result<Parsed> {
 pub fn edit_word(value: &Decimal, shape: Shape, word: &str) -> Result<String> {
     let (neg, digits) = digits_of(value, shape)?;
     let p = parse(word, digits.len())?;
-    // Any asterisk among the digit positions makes asterisks the fill.
-    let fill = if p.body.contains(&'*') { '*' } else { ' ' };
+    // An asterisk as the stop makes asterisks the fill.
+    let fill = if p.stop.is_some_and(|s| p.body[s] == '*') {
+        '*'
+    } else {
+        ' '
+    };
     let mut out = String::with_capacity(word.len());
     let mut next = digits.iter().copied();
     let mut significant = false;
-    let mut first_digit_at: Option<usize> = None;
+    let mut first_printed_at: Option<usize> = None;
     for (i, &c) in p.body.iter().enumerate() {
         if Some(i) == p.floating {
             // The symbol's own position is given to the digits; the
-            // symbol lands just left of the first one printed.
+            // symbol lands just left of the first character printed.
             continue;
         }
-        let at_stop = p.stop.is_some_and(|s| i >= s);
-        if is_digit_position(c) {
+        // Suppression ends after the stop: a leading zero in the stop's
+        // own position is still blank (pub400).
+        let past_stop = p.stop.is_some_and(|s| i > s);
+        if c == ' ' || Some(i) == p.stop {
             let d = next.next().expect("one digit per position");
-            if d != 0 || significant || at_stop {
+            if d != 0 || significant || past_stop {
                 significant = true;
-                first_digit_at.get_or_insert(out.chars().count());
+                first_printed_at.get_or_insert(out.chars().count());
                 out.push(digit_char(d));
             } else {
                 out.push(fill);
             }
         } else if c == '&' {
             out.push(' ');
-        } else if significant || at_stop || i == 0 {
+        } else if significant || past_stop || i == 0 {
             // Constants print once a digit has, and a leading constant
             // (a fixed currency symbol) always.
+            first_printed_at.get_or_insert(out.chars().count());
             out.push(c);
         } else {
             out.push(fill);
@@ -120,7 +125,7 @@ pub fn edit_word(value: &Decimal, shape: Shape, word: &str) -> Result<String> {
     }
     if let Some(fi) = p.floating {
         let mut chars: Vec<char> = out.chars().collect();
-        chars.insert(first_digit_at.unwrap_or(0), p.body[fi]);
+        chars.insert(first_printed_at.unwrap_or(0), p.body[fi]);
         out = chars.into_iter().collect();
     }
     match p.status {
@@ -148,12 +153,18 @@ mod tests {
         assert_eq!(edit("1234.56", 7, 2, "  ,   .  "), " 1,234.56");
         assert_eq!(edit("34.56", 7, 2, "  ,   .  "), "    34.56");
         assert_eq!(edit("0.56", 7, 2, "  ,   .  "), "       56");
-        assert_eq!(edit("0.56", 7, 2, "  ,  0.  "), "     0.56");
-        assert_eq!(edit("0", 7, 2, "  ,  0.  "), "     0.00");
+        // The stop's own leading zero is blank; constants after it print
+        // (pub400: `  0.  ` edits 0.00 as `   .00`).
+        assert_eq!(edit("0.56", 7, 2, "  ,  0.  "), "      .56");
+        assert_eq!(edit("0", 7, 2, "  ,  0.  "), "      .00");
+        assert_eq!(edit("10", 7, 2, "  ,  0.  "), "    10.00");
         assert_eq!(edit("0", 7, 2, "  ,   .  "), "         ");
-        assert_eq!(edit("12", 5, 0, "  0  "), "  012");
-        assert_eq!(edit("12", 5, 0, "**   "), "***12");
-        assert_eq!(edit("12", 5, 0, "0    "), "00012");
+        assert_eq!(edit("12", 5, 0, "  0  "), "   12");
+        assert_eq!(edit("102", 5, 0, "  0  "), "  102");
+        assert_eq!(edit("12", 5, 0, "*    "), "*0012");
+        assert_eq!(edit("12", 5, 0, " *   "), "**012");
+        assert_eq!(edit("12", 5, 0, "0    "), " 0012");
+        assert_eq!(edit("0", 7, 0, "     0 &DAYS"), "      0 DAYS");
     }
 
     #[test]
@@ -171,13 +182,20 @@ mod tests {
         assert_eq!(edit("12.34", 7, 2, "$  ,   .  "), "$    12.34");
         assert_eq!(edit("12.34", 7, 2, "  ,  $0.  "), "    $12.34");
         assert_eq!(edit("1234.56", 7, 2, "  ,  $0.  "), " $1,234.56");
-        assert_eq!(edit("0.5", 7, 2, "  ,  $0.  "), "     $0.50");
+        assert_eq!(edit("0.5", 7, 2, "  ,  $0.  "), "      $.50");
+        assert_eq!(edit("0", 5, 2, "  $0.  "), "   $.00");
         assert_eq!(edit("12345.67", 7, 2, "  ,  $0.  "), "$12,345.67");
     }
 
     #[test]
     fn errors() {
+        let one = Decimal::parse("1").unwrap();
         let shape = Shape::new(5, 0).unwrap();
-        assert!(edit_word(&Decimal::parse("1").unwrap(), shape, "   ").is_err());
+        assert!(edit_word(&one, shape, "   ").is_err());
+        // Only the first asterisk or zero is a digit position: pub400's
+        // compiler rejects these for too few.
+        assert!(edit_word(&one, shape, "**0.  ").is_err());
+        assert!(edit_word(&one, Shape::new(7, 0).unwrap(), "**  ,   ").is_err());
+        assert!(edit_word(&one, Shape::new(7, 0).unwrap(), "$   ,   ").is_err());
     }
 }
