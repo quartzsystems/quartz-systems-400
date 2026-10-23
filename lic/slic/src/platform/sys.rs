@@ -22,6 +22,25 @@ pub fn is_init() -> bool {
     getpid().is_init()
 }
 
+/// Open files a process may hold, for slic and every process it
+/// starts: the telnet server holds several per session (socket, device
+/// socket, storage link), and 200 sessions pass the kernel's 1024.
+pub const OPEN_FILES: u64 = 65_536;
+
+/// Raise the open-file limit to `OPEN_FILES` (PID 1 may); children
+/// inherit it. Whether it took.
+pub fn raise_file_limit() -> bool {
+    use rustix::process::{Resource, Rlimit, setrlimit};
+    setrlimit(
+        Resource::Nofile,
+        Rlimit {
+            current: Some(OPEN_FILES),
+            maximum: Some(OPEN_FILES),
+        },
+    )
+    .is_ok()
+}
+
 fn handled_set() -> libc::sigset_t {
     // SAFETY: an all-zero sigset_t is a valid value to pass to sigemptyset.
     let mut set: libc::sigset_t = unsafe { mem::zeroed() };

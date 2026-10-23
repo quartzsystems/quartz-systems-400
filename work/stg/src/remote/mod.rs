@@ -12,7 +12,7 @@ mod provider;
 pub mod spool;
 
 pub use cmds::RemoteCmds;
-pub use data::{LDA_LEN, Lda, RemoteData, RemoteIo, new_lda, status};
+pub use data::{LDA_LEN, Lda, RemoteData, RemoteIo, display_wait, new_lda, status};
 pub use objects::{RemoteMsgs, RemoteObjects, RemoteSpaces};
 pub use provider::RemoteProvider;
 

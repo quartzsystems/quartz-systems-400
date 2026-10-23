@@ -140,6 +140,18 @@ impl Surface {
     /// `None` when the job is to end, the device is gone or the request
     /// was ended.
     pub fn wait(&mut self) -> Option<(u8, (u8, u8))> {
+        // A job waiting at its display gives its activity level to
+        // another; it takes one again before it goes on.
+        stg::remote::display_wait(&self.host.link, true);
+        let got = self.wait_input();
+        if got.is_some() {
+            stg::remote::display_wait(&self.host.link, false);
+        }
+        got
+    }
+
+    /// The wait itself: keys, resets, the job's end.
+    fn wait_input(&mut self) -> Option<(u8, (u8, u8))> {
         use crate::sysdsp::keys;
         loop {
             if keys::unwinding() {

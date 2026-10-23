@@ -118,6 +118,29 @@ a TN5250E client of the system's own telnet server (device
 `QSCONSOLE`), so one path renders every display; the console's own
 screens remain for the IPL, DST and the time the server is not there.
 
+## Load
+
+`cargo run -p conformance -- --load 200` boots the image under QEMU
+(4 CPUs, 6 GiB), creates 200 user profiles and opens 200 TN5250
+sessions 50 ms apart; each signs on, runs `WRKACTJOB`, presses F5 five
+times and signs off. On 2026-10-23 (host: WSL Ubuntu, 24 threads):
+
+| Figure | Median | p95 |
+|---|---|---|
+| Sign-on (connect to MAIN) | 36.84 s | 52.95 s |
+| `WRKACTJOB` | 1.29 s | 3.14 s |
+| F5 refresh | 0.68 s | 5.39 s |
+
+All 200 completed in 103.5 s. QEMU's peak resident memory was
+1024 MiB and it used 66.6 s of CPU over the run; `WRKSYSSTS` at the
+peak showed 425 jobs. Sign-on dominates: every session arrives within
+ten seconds and each sign-on verifies an Argon2id hash. Two fixes came
+out of the run: `slic` raises its open-file limit to 65,536 (the
+telnet server ran out at about 500 sockets), and a job waiting at a
+display now gives its activity level back (`stg::remote::display_wait`),
+so 20 jobs sitting in `WRKACTJOB` no longer hold the interactive
+pool's 20 levels.
+
 ## Blocked
 
 - **The primary oracle shows no screens.** Ports 23, 992 and 21 do
@@ -133,6 +156,15 @@ screens remain for the IPL, DST and the time the server is not there.
   built from RFC 2877 as read and marked `BLOCKED(phase8)`.
 - **Password level 0/1 auto-signon** (the DES substitute) has no
   reachable system to verify against; implemented after JTOpen.
+- **HLINV is not on the primary oracle.** The specification says it
+  lives there; on 2026-10-23 the box held no library, object, file or
+  source member named `HL*` or containing `INV` in a user library
+  (`QSYS2.SYSPARTITIONSTAT`, `QSYS2.SYSTABLES`, `OBJECT_STATISTICS` of
+  every non-IBM library: only `ORACLE`, `SECORA` and `QSTEST` exist,
+  the first two from earlier phases' kits). Nothing to compile or
+  capture; the display-file runtime is exercised instead by step 54 and
+  the DDS corpus. Needs Cody: the HLINV source (DDS and RPG) or the
+  library it was restored to.
 
 ## Goldens
 
@@ -175,6 +207,25 @@ with the oracle's capture, characters only), 53 (device recovery:
 `*DSCMSG` keeps and resumes the job, `*ENDJOB` ends it), 54 (a
 display file: `CRTDSPF`, a CL `SNDRCVF` shown, read and echoed, `F3`
 through `&IN03`).
+
+## ACS smoke checklist (Cody)
+
+Run IBM i Access Client Solutions against a QS/400 image (QEMU with
+`hostfwd` to port 23, or the installed system) and mark each line with
+the date; this is the one acceptance item only Cody can sign off.
+
+| # | Check | Expected | Signed off |
+|---|---|---|---|
+| 1 | 5250 session, 24x80, sign on as a user | sign-on display (`QDSIGNON`), MAIN | |
+| 2 | Same with auto-signon (user and password in the session profile) | MAIN without the sign-on display | |
+| 3 | 27x132 session (3477-FC) | sign-on, `WRKACTJOB` in its wide view | |
+| 4 | Printer session to a named device | the device appears in `WRKCFGSTS`, a spooled file printed by `STRPRTWTR` arrives in ACS | |
+| 5 | Screen print (Print key) | a `QSYSPRT` spooled file of the screen | |
+| 6 | F-keys F1-F24, Page Up/Down, Help, Field Exit | as on a real system | |
+| 7 | Sys Req, option 3 | Display Job of the session's job | |
+| 8 | Attn | the user's attention program (Operational Assistant menu) | |
+| 9 | Drop the connection, reconnect, sign on | the job comes back under `QDEVRCYACN *DSCMSG` | |
+| 10 | Record a packet trace of 1 and 2 | traces to `tools/conformance/probes/` for `docs/UI_OPEN_QUESTIONS.md` items 4 and 8 | |
 
 ## Acceptance checklist
 

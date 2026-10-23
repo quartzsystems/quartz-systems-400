@@ -153,9 +153,22 @@ impl DataSource for RemoteData {
     }
 }
 
+thread_local! {
+    /// The function the job last reported, kept across a display wait.
+    static FUNCTION: std::cell::RefCell<String> = const { std::cell::RefCell::new(String::new()) };
+}
+
+/// Tell the service the job waits at its display (its activity level
+/// goes to another job) or runs again, its function unchanged.
+pub fn display_wait(link: &Shared, waiting: bool) {
+    let function = FUNCTION.with(|f| f.borrow().clone());
+    status(link, if waiting { Status::Dspw } else { Status::Run }, &function);
+}
+
 /// Tell the service what the job is doing. A runnable job waits here,
 /// ineligible, until its pool has a free activity level.
 pub fn status(link: &Shared, s: Status, function: &str) {
+    FUNCTION.with(|f| function.clone_into(&mut f.borrow_mut()));
     loop {
         let granted = link
             .borrow_mut()

@@ -163,6 +163,8 @@ impl Suite {
                 extra_disks: Vec::new(),
                 qmp: out_dir.join("qmp.sock"),
                 telnet_port: Some(free_port()),
+                memory_mb: 1024,
+                cpus: 2,
             },
             media,
             install: false,

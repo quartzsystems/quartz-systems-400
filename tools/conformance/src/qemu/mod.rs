@@ -49,6 +49,10 @@ pub struct Launch {
     /// A user-mode network with the guest's telnet port forwarded to
     /// this host port; no network device when `None`.
     pub telnet_port: Option<u16>,
+    /// Guest memory, MiB.
+    pub memory_mb: u32,
+    /// Guest CPUs.
+    pub cpus: u32,
 }
 
 /// Find the system emulator: the override variable, else `PATH`.
@@ -89,11 +93,8 @@ pub fn args(l: &Launch) -> Vec<OsString> {
     if l.kvm {
         a.extend(["-enable-kvm", "-cpu", "host"].iter().map(OsString::from));
     }
-    a.extend(
-        ["-m", "1024", "-smp", "2", "-drive"]
-            .iter()
-            .map(OsString::from),
-    );
+    a.extend(["-m".into(), l.memory_mb.to_string().into()]);
+    a.extend(["-smp".into(), l.cpus.to_string().into(), OsString::from("-drive")]);
     a.push(join("if=pflash,format=raw,readonly=on,file=", &l.firmware));
     let (disk_index, cd_index) = if l.cdrom_first { (1, 0) } else { (0, 1) };
     if let Some(image) = &l.image {

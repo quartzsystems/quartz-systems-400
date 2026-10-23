@@ -52,6 +52,11 @@ impl Session {
         })
     }
 
+    /// QEMU's process ID.
+    pub fn pid(&self) -> u32 {
+        self.child.id()
+    }
+
     /// Seconds since launch.
     pub fn elapsed(&self) -> Duration {
         self.started.elapsed()
