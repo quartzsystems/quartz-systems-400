@@ -203,7 +203,70 @@ missing, a `*PNLGRP` and a `*MENU` of the same name each
 (`lic/slic/src/cpp/uicmd.rs`) make them from a source member and from
 parameters; `DLTPNLGRP` and `DLTMNU` delete them.
 
-## 6. Open questions
+## 6. The task menus
+
+The hand-written menus under `ui/menus/sys/` are IBM's task menus,
+reached from `MAIN` and from each other. Option numbers, titles and
+option texts follow the pub400 goldens (`menu-<name>.txt`, the second
+page `menu-<name>-2.txt`); `ui/menus/tests/task_menus.rs` renders each
+and compares it with its golden row by row, the message line aside.
+Help modules are ours. The only renaming is MAIN's: `IBM i Access
+tasks` reads `QS/400 Access tasks` (`OFCTSK` 2, `DATA` 4) and leads to
+`ACCESS`, which has no golden: the telnet server, display devices and
+network attributes a 5250 client meets.
+
+| Menu | Title | Options |
+|---|---|---|
+| `USER`, `USER2` | User Tasks | 1-9, 60, 90; 1-3 |
+| `OFCTSK` | Office Tasks | 2-7 (1 is not shown on pub400) |
+| `SYSTEM`, `SYSTEM2` | General System Tasks | 1-10, 60; 1-3, 70, 80 |
+| `DATA` | Files, Libraries, and Folders | 1-5 |
+| `PROGRAM` | Programming | 1-6, 8, 9, 50, 70 |
+| `CMN` | Communications | 1-9, 70 |
+| `DEFINE` | Define or Change the System | 1-6, 8, 9 |
+| `PROBLEM`, `PROBLEM2` | Problem Handling | 1-6, 60, 70; 1-7, 70 |
+| `CFG` | Configuration | 1-4 |
+| `DEVICE` | Device Operations | 1-7, 70 |
+| `DOCUMENT` | Documents | 1-3, 70 |
+| `FILE`, `FILE2` | Files | 1-11, 60; 1-4, 50, 51, 70 |
+| `HARDWARE` | Hardware Resources | 1-9, 70 |
+| `JOB`, `JOB2` | Jobs | 1-7, 20, 60, 70; 1-8, 70 |
+| `LIBRARY` | Libraries | 1-4, 50, 51, 70 |
+| `MESSAGE` | Messages | 1-8, 70 |
+| `NETWORK` | Network Management | 1-10, 12, 14, 70 (two pages) |
+| `PRINTER` | Printer | 1-6, 70 |
+| `PTF` | Program Temporary Fix | 1-13, 70 (two pages) |
+| `RECOVERY` | Optical Backup/Recovery | 1-8 |
+| `RESTORE` | Restore | groups: 1-9, 21-23, 30-32, 40-42, 50, 70 |
+| `SAVE` | Save | groups: 1-8, 10, 11, 20-23, 30-33, 40-42, 50, 70 |
+| `SECURITY` | Security | 1-5, 8, 70 |
+| `SOFTWARE` | Software Resources | 1, 2 |
+| `STATUS` | Status | 1-10 |
+| `SUPPORT` | User Support and Education | 1-5, 7-9 |
+| `TCPADM` | TCP/IP Administration | 1, 2, 7-11, 20 |
+| `ACCESS` | QS/400 Access Tasks | 1-6 |
+
+The Operational Assistant menus (`ASSIST`, `BACKUP`, `CLEANUP`,
+`DEVICESTS`, `DISKTASKS`, `POWER`, `SETUP`, `TECHHELP`) and `INFO` (the
+Information Assistant, golden `information-assistant`) have no command
+line: the heading asks for a number typed below, `:BOTINST.` gives the
+`Type a menu option below` row over the selection field, and the keys
+are `F1=Help`, `F3=Exit`, `F9=Command line` (`CMD CALL QCMD`, Command
+Entry) and `F12=Cancel`. IBM's `ASSIST` is a display-file menu whose
+title sits one column right of a panel group's centering; its test
+compares that title by its words.
+
+Every other menu has the keys of `MAIN` with `F16=System Main menu`
+(`MENU MAIN`) in place of `F23`, except `RECOVERY` and `TCPADM` (no
+`F13` or `F16`) and `SUPPORT` (`F16=Major menu`, no `F13`), as their
+goldens show. An option runs the IBM command or shows the IBM menu it
+names (`CMD ?SAVLIB`, `MENU CFGCMN`) whether or not QS/400 ships it;
+one we do not ship answers that it is not available. Options pub400
+hides keep their number unused, which leaves the blank row a skipped
+number gives; `SAVE` 34 is a reserved option (no text), whose blank
+row keeps the next group on the third page as IBM's does.
+
+## 7. Open questions
 
 - IBM's subject menus are curated: whether a `CMDJOB` option such as
   `ADDJOBQE` or `CHGJOBD` is listed cannot be read from the goldens
