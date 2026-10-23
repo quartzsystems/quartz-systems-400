@@ -62,7 +62,9 @@ pub fn dialog(host: &Host, name: &str) -> Result<UimDialog, Fail> {
 /// did not ask for printed output.
 #[must_use]
 pub fn shows_panels(host: &Host, r: &Resolved) -> bool {
-    if !host.interactive() {
+    // Only a job that owns a 5250 device: the serial service console
+    // (QSVCJOB) is interactive but answers in text.
+    if !host.interactive() || host.display.borrow().is_none() {
         return false;
     }
     !r.parms.iter().any(|p| {
