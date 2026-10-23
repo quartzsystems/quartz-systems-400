@@ -95,7 +95,7 @@ screens remain for the IPL, DST and the time the server is not there.
   screen golden comes from pub400, whose sign-on display is customized
   and whose user is not `QSECOFR`. The DDS sign-on (`QDSIGNON`) could
   therefore not be diffed against an oracle's; its geometry is IBM's
-  `QDSIGNON` source as known (constants at column 48, values at 70,
+  `QDSIGNON` source as known (constants at column 48, values at 68 as the Phase 1 specification lays them out,
   fields at 53). `QSECOFR`-only panels wait for a system that allows
   them.
 - **ACS negotiation strings.** No ACS trace can be taken (ACS cannot

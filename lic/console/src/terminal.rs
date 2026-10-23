@@ -84,12 +84,12 @@ pub fn fb_attr(a: u8) -> Attr {
 }
 
 impl ConsoleTerminal {
-    /// A 24x80 color terminal, as the console device is described.
+    /// A 24x80 color terminal (a 3179-2), the framebuffer's size.
     #[must_use]
     pub fn new() -> Self {
         Self {
             term: Terminal::new(Capabilities {
-                model: Model::M3477Fc,
+                model: Model::M3179,
                 gui: false,
                 color: true,
             }),

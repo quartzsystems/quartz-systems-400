@@ -88,9 +88,12 @@ pub fn connect(system: &mut System, port: u16, events: &Sender<Event>) -> Result
     let _ = console.send(Command::Attach(rec_tx));
     let to_console = console.clone();
     let gone = events.clone();
+    // The first screen (the sign-on) is waited for, so whatever reads
+    // the console after the IPL sees it.
+    let (first_tx, first_rx) = mpsc::channel::<()>();
     thread::spawn(move || {
         let mut client = TelnetClient::new(Config {
-            terminal_type: "IBM-3477-FC".into(),
+            terminal_type: "IBM-3179-2".into(),
             device: DEVICE.into(),
             ..Config::default()
         });
@@ -108,6 +111,7 @@ pub fn connect(system: &mut System, port: u16, events: &Sender<Event>) -> Result
                 if to_console.send(Command::Record(r)).is_err() {
                     break;
                 }
+                let _ = first_tx.send(());
             }
         }
         let _ = to_console.send(Command::Detach);
@@ -123,9 +127,15 @@ pub fn connect(system: &mut System, port: u16, events: &Sender<Event>) -> Result
             }
         }
     });
-    system
-        .out
-        .serial(&format!("slic: console: TN5250 session to port {port} as {DEVICE}\n"));
+    let shown = first_rx.recv_timeout(Duration::from_secs(15)).is_ok();
+    // The console thread has the record queued before this answer.
+    let (tx, rx) = mpsc::channel();
+    let _ = console.send(Command::Dump(tx));
+    let _ = rx.recv_timeout(Duration::from_secs(2));
+    system.out.serial(&format!(
+        "slic: console: TN5250 session to port {port} as {DEVICE}{}\n",
+        if shown { "" } else { " (no screen yet)" }
+    ));
     Ok(())
 }
 

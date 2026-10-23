@@ -554,7 +554,16 @@ impl Suite {
 
     /// Step 2: rows 1 to 10 of the sign-on display, exactly.
     fn sign_on_screen(&self, s: &mut Session) -> Result<String, String> {
-        let dump = s.command("screen", CMD)?;
+        // The console's sign-on comes over its TN5250 session to the
+        // telnet server, a moment after the IPL completes.
+        let mut dump = s.command("screen", CMD)?;
+        for _ in 0..40 {
+            if dump.contains("Sign On") {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(500));
+            dump = s.command("screen", CMD)?;
+        }
         let rows: Vec<&str> = dump.lines().filter(|l| l.chars().count() == 80).collect();
         if rows.len() < 24 {
             return Err(format!(
