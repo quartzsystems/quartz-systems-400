@@ -292,6 +292,17 @@ pub const JOB_SITE: &[&str] = &[
     "DSPAUTL",
     "WRKAUTL",
     "DSPSECAUD",
+    // --- system displays (work/qsjob/src/sysdsp/)
+    // --- UIM APIs (work/qsjob/src/command/uiapi.rs)
+    // --- panels batch 2: work, spool, journals (panels/work2.rs)
+    // --- panels batch 2: programs, config, security, editors (panels/system2.rs)
+    // --- SEU (devtools/seu)
+    // --- PDM (devtools/pdm)
+    // --- SDA (devtools/sda)
+    // --- DFU and RLU (devtools/dfu)
+    // --- STRDBG screens (devtools/dbg)
+    // --- STRSQL (devtools/isql)
+    // --- STRSST (devtools/sst)
     "ADDBKP",
     "CALL",
     "CHGDBG",

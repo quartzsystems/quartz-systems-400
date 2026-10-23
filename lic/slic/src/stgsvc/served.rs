@@ -1334,6 +1334,28 @@ impl Service for Served<'_> {
         ile::set_libl(None);
         r
     }
+
+    // --- system displays (200-219)
+
+    // --- UIM APIs (220-239)
+
+    // --- panels batch 2: work, spool, journals (240-269)
+
+    // --- panels batch 2: programs, config, security, editors (270-299)
+
+    // --- SEU (300-319)
+
+    // --- PDM (320-339)
+
+    // --- SDA (340-359)
+
+    // --- DFU and RLU (360-379)
+
+    // --- STRDBG screens (380-399)
+
+    // --- STRSQL (400-419)
+
+    // --- STRSST (420-439)
 }
 
 /// The store reads behind the message and object panels.

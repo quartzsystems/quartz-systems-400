@@ -107,6 +107,28 @@ note = "a panel at a display; the text form in the service otherwise"
 site = "job"
 note = "a panel at a display; the text form in the service otherwise"
 
+# --- system displays (work/qsjob/src/sysdsp/)
+
+# --- UIM APIs (work/qsjob/src/command/uiapi.rs)
+
+# --- panels batch 2: work, spool, journals (panels/work2.rs)
+
+# --- panels batch 2: programs, config, security, editors (panels/system2.rs)
+
+# --- SEU (devtools/seu)
+
+# --- PDM (devtools/pdm)
+
+# --- SDA (devtools/sda)
+
+# --- DFU and RLU (devtools/dfu)
+
+# --- STRDBG screens (devtools/dbg)
+
+# --- STRSQL (devtools/isql)
+
+# --- STRSST (devtools/sst)
+
 # --- system and security (panels/system.rs)
 
 [cmd.DSPSYSVAL]
