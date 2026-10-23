@@ -1,0 +1,21 @@
+QS/400 UIM compiler
+  Panel group . . . . . . . :  QGPL/NOPNLGRP
+  Source  . . . . . . . . . :  QGPL/QPNLSRC(NOPNLGRP)
+
+  SEQNBR  MEMBER      ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8
+  000100              .* No panel group tag at all.
+  000200              :HELP NAME=LONELY.Lonely
+      **  UIM0204 20  Tag :HELP is not allowed inside :ROOT
+  000300              :P.Text without a group.
+  000400              :EHELP.
+
+  Messages
+          UIM0206 40  The source has no :PNLGRP tag; nothing to compile
+  000200  UIM0204 20  Tag :HELP is not allowed inside :ROOT
+
+  Severity 10 . . . . . . . :  0
+  Severity 20 . . . . . . . :  1
+  Severity 30 . . . . . . . :  0
+  Severity 40 . . . . . . . :  1
+  Highest severity  . . . . :  40
+  Panel group not created

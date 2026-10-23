@@ -1,0 +1,15 @@
+[package]
+name = "uim"
+description = "QS/400 UIM: the panel-group tag language, its model, validation, listing and the *PNLGRP payload"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+ipc = { path = "../../work/ipc", version = "0.1.0" }
+thiserror.workspace = true
+
+[lints]
+workspace = true

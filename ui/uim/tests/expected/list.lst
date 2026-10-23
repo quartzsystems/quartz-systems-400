@@ -1,0 +1,124 @@
+QS/400 UIM compiler
+  Panel group . . . . . . . :  QGPL/LIST
+  Source  . . . . . . . . . :  QGPL/QPNLSRC(LIST)
+
+  SEQNBR  MEMBER      ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8
+  000100              .* A list panel: options, two views, a column group, a truth table, a confirmation panel.
+  000200              :PNLGRP DFTMSGF=QGPL/MYMSGF.
+  000300              :CLASS NAME=OPTCL BASETYPE=ACTION.
+  000400              :ECLASS.
+  000500              :CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+  000600              :ECLASS.
+  000700              :CLASS NAME=TEXTCL BASETYPE='CHAR 30'.
+  000800              :ECLASS.
+  000900              :CLASS NAME=NUMCL BASETYPE='ZONED 5 0'.
+  001000              :ECLASS.
+  001100              :CLASS NAME=DATECL BASETYPE=DATE.
+  001200              :ECLASS.
+  001300              :CLASS NAME=FLAGCL BASETYPE='CHAR 1'.
+  001400              :ECLASS.
+  001500              :VAR NAME=OPT CLASS=OPTCL.
+  001600              :VAR NAME=OBJNAME CLASS=NAMECL.
+  001700              :VAR NAME=OBJLIB CLASS=NAMECL.
+  001800              :VAR NAME=OBJTEXT CLASS=TEXTCL.
+  001900              :VAR NAME=OBJSIZE CLASS=NUMCL.
+  002000              :VAR NAME=OBJDATE CLASS=DATECL.
+  002100              :VAR NAME=OBJTYPE CLASS=NAMECL.
+  002200              :VAR NAME=SHOWALL CLASS=FLAGCL VALUE='N'.
+  002300              :VAR NAME=CANDLT CLASS=FLAGCL VALUE='Y'.
+  002400              :VAR NAME=PGMNAME CLASS=NAMECL VALUE='QGPL/WRKOBJ'.
+  002500              :VAR NAME=FILTER CLASS=NAMECL VALUE='*ALL'.
+  002600              :VARRCD NAME=EXITPARMS VARS='OBJNAME OBJLIB OBJTYPE' EXTVARS='NAME LIB TYPE'.
+  002700              :LISTDEF NAME=OBJLIST VARS='OPT OBJNAME OBJLIB OBJTYPE OBJTEXT OBJSIZE OBJDATE' MSGID=MSG0010.
+  002800              :COND NAME=ALL EXPR='&SHOWALL. EQ "Y"'.
+  002900              :COND NAME=DLTOK EXPR='&CANDLT. EQ "Y"'.
+  003000              :COND NAME=HASOBJS EXPR='%LIST(OBJLIST) GT 0'.
+  003100              :COND NAME=TOPNODE EXPR='%NODE(OBJLIST) OR (&FILTER. NE "*ALL" AND &SHOWALL. EQ "N")'.
+  003200              :TT NAME=OPTIONS CONDS='ALL DLTOK HASOBJS'.
+  003300              :TTROW VALUES='1 1 1'.
+  003400              :TTROW VALUES='1 0 X'.
+  003500              :TTROW VALUES='0 X 1'.
+  003600              :ETT.
+  003700              :KEYL NAME=LISTKEYS.
+  003800              :KEYI KEY=ENTER ACTION=ENTER.
+  003900              :KEYI KEY=F3 ACTION=EXIT.F3=Exit
+  004000              :KEYI KEY=F5 ACTION='RETURN 5' VARUPD=NO.F5=Refresh
+  004100              :KEYI KEY=F11 ACTION='RETURN 11'.F11=Display names only
+  004200              :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+  004300              :KEYI KEY=F17 ACTION=TOP.F17=Top
+  004400              :KEYI KEY=F18 ACTION=BOTTOM.F18=Bottom
+  004500              :KEYI KEY=F24 ACTION=MOREKEYS.F24=More keys
+  004600              :KEYI KEY=PAGEUP ACTION=PAGEUP.
+  004700              :KEYI KEY=PAGEDOWN ACTION=PAGEDOWN.
+  004800              :KEYI KEY=HELP ACTION=HELP.
+  004900              :KEYI KEY=PRINT ACTION=PRINT.
+  005000              :EKEYL.
+  005100              :PANEL NAME=WRKOBJ HELP=HLPWRKOBJ KEYL=LISTKEYS ENTER='RETURN 1' TOPSEP=SPACE.Work with Objects
+  005200              :TOPINST.Type options, press Enter.
+  005300              :DATA DEPTH=2 LAYOUT=1.
+  005400              :DATAI VAR=FILTER USAGE=INPUT HELP=HLPFILTER.Filter
+  005500              :EDATA.
+  005600              :LIST DEPTH='*' LISTDEF=OBJLIST VIEWS=2 ACTOR=UIM EXTACT=YES MAXHEAD=2
+  005700                    PARMS=EXITPARMS SCROLL=YES ENTER='RETURN 2' SELECT=MULTI ACTLEN=2
+  005800                    BOTINST='More...'.
+  005900              :LISTACT OPTION=2 ENTER='RETURN 2' HELP=HLPOPT2 VARUPD=YES.2=Change
+  006000              :LISTACT OPTION=4 ENTER='RETURN 4' CONFIRM=CFMDLT HELP=HLPOPT4 USREXIT='CALL PGMNAME' ACTFOR=LIST.4=Delete
+  006100              :LISTACT OPTION=5 ENTER='RETURN 5' RETURN=5 ENTERMSG=MSG0020.5=Display
+  006200              :LISTACT OPTION=8 ENTER='RETURN 8'.8=Display description
+  006300              :LISTACT ENTER='RETURN 1'.
+  006400              :LISTCOL VAR=OPT USAGE=INPUT MAXWIDTH=2 HELP=HLPOPT.Opt
+  006500              :LISTCOL VAR=OBJNAME USAGE=OUTPUT MAXWIDTH=10 NAME=NAME.Object
+  006600              :LISTGRP COL=LOCATION.Location
+  006700              :LISTCOL VAR=OBJLIB USAGE=OUTPUT MAXWIDTH=10.Library
+  006800              :LISTCOL VAR=OBJTYPE USAGE=OUTPUT MAXWIDTH=8.Type
+  006900              :ELISTGRP.
+  007000              :LISTCOL VAR=OBJTEXT USAGE=OUTPUT MAXWIDTH=30 DISPLAY=YES.Text
+  007100              :LISTCOL VAR=OBJSIZE USAGE=OUTPUT MAXWIDTH=7 DSPCOL=60 NOGUI.Size
+  007200              :LISTCOL VAR=OBJDATE USAGE=OUTPUT.Changed
+  007300              :LISTVIEW COLS='OPT NAME LOCATION OBJTEXT' LAYOUT=1.
+  007400              :LISTVIEW COLS='OPT NAME OBJSIZE OBJDATE' LAYOUT=1.
+  007500              :ELIST.
+  007600              :EPANEL.
+  007700              :PANEL NAME=CFMDLT KEYL=LISTKEYS HELP=HLPCFMDLT.Confirm Delete of Objects
+  007800              :TOPINST.Press Enter to confirm your choices for 4=Delete.
+  007900              :LIST DEPTH='*' LISTDEF=OBJLIST.
+  008000              :LISTCOL VAR=OBJNAME USAGE=OUTPUT.Object
+  008100              :LISTCOL VAR=OBJLIB USAGE=OUTPUT.Library
+  008200              :ELIST.
+  008300              :EPANEL.
+  008400              :HELP NAME=HLPWRKOBJ.Work with Objects - Help
+  008500              :P.The list shows the objects the filter selects. &OBJNAME. is the
+  008600              cursor's object.
+  008700              :EHELP.
+  008800              :HELP NAME=HLPFILTER.Filter - Help
+  008900              :P.A name, a generic name or &splat.ALL.
+  009000              :EHELP.
+  009100              :HELP NAME=HLPOPT.Options - Help
+  009200              :P.Type an option next to an entry.
+  009300              :EHELP.
+  009400              :HELP NAME=HLPOPT2.2=Change - Help
+  009500              :P.Changes the object.
+  009600              :EHELP.
+  009700              :HELP NAME=HLPOPT4.4=Delete - Help
+  009800              :P.Deletes the object after confirmation.
+  009900              :EHELP.
+  010000              :HELP NAME=HLPCFMDLT.Confirm Delete - Help
+  010100              :P.Press Enter to delete, F12 to go back.
+  010200              :EHELP.
+  010300              :EPNLGRP.
+
+  Panels  . . . . . . . . . :  2
+  Print panels  . . . . . . :  0
+  Help modules  . . . . . . :  6
+  Classes . . . . . . . . . :  6
+  Variables . . . . . . . . :  11
+  Conditions  . . . . . . . :  4
+  Key lists . . . . . . . . :  1
+  Imports . . . . . . . . . :  0
+
+  Severity 10 . . . . . . . :  0
+  Severity 20 . . . . . . . :  0
+  Severity 30 . . . . . . . :  0
+  Severity 40 . . . . . . . :  0
+  Highest severity  . . . . :  00
+  Panel group created

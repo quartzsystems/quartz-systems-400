@@ -1,0 +1,9 @@
+.* A help-only group that other groups import from.
+:PNLGRP.
+:HELP NAME=HLPSHARED.Shared - Help
+:P.Shared help text.
+:EHELP.
+:HELP NAME=HLPKEYS.Keys - Help
+:P.The common keys.
+:EHELP.
+:EPNLGRP.

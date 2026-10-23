@@ -1,0 +1,4 @@
+.* Shared help module, imbedded by help.pnlgrp through .IM HLPCOMMON.
+:HELP NAME=HLPCOMMON.Common Help
+:P.This text is shared by several panel groups.
+:EHELP.

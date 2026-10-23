@@ -1,0 +1,101 @@
+QS/400 UIM compiler
+  Panel group . . . . . . . :  QGPL/HELP
+  Source  . . . . . . . . . :  QGPL/QPNLSRC(HELP)
+
+  SEQNBR  MEMBER      ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8
+  000100              .* Help modules: every help tag, an imbedded member and index search.
+  000200              :PNLGRP SCHIDX=QGPL/MYSCHIDX TXTCHRID='697 37'.
+  000300              :ISCHSYN ROOT=OBJECT.objects thing things
+  000400              :EISCHSYN.
+  000500              :ISCHSYN ROOT=LIBRARY.libraries lib libs
+  000600              :EISCHSYN.
+  000700              :HELP NAME=HLPINTRO.Introduction - Help
+  000800              :H1.Introduction
+  000900              :P.The first paragraph. It mentions :HP2.bold:EHP2. words,
+  001000              :HP1.one:EHP1. :HP3.three:EHP3. :HP4.four:EHP4. :HP5.five:EHP5.
+  001100              :HP6.six:EHP6. :HP7.seven:EHP7. :HP8.eight:EHP8. :HP9.nine:EHP9.
+  001200              and :HP0.plain:EHP0. text, :RT.reverse:ERT. text, a :PK.PROGRAM:EPK. keyword
+  001300              and a :PV.program-variable:EPV..
+  001400              :PC.This continues the paragraph above without a blank line.
+  001500              :H2.A second-level heading
+  001600              :XMP.
+  001700                 CRTLIB LIB(MYLIB) TEXT('My library')
+  001800
+  001900                 DSPLIB LIB(MYLIB)
+  002000              :EXMP.
+  002100              :H3.Lists
+  002200              :UL.
+  002300              :LI.An unordered item
+  002400              :LI.Another, with a nested list:
+  002500              :OL COMPACT.
+  002600              :LI.first
+  002700              :LI.second
+  002800              :EOL.
+  002900              :EUL.
+  003000              :SL.
+  003100              :LI.A simple list item
+  003200              :LI.And another
+  003300              :ESL.
+  003400              :H4.Definitions
+  003500              :DL.
+  003600              :DTHD.Term
+  003700              :DDHD.Meaning
+  003800              :DT.Library
+  003900              :DD.A container of objects.
+  004000              :DT.Object
+  004100              :DD.A named thing in a library.
+  004200              :P.It has a type.
+  004300              :EDL.
+  004400              :PARML.
+  004500              :PT.LIB
+  004600              :PD.The library name.
+  004700              :PT.TEXT
+  004800              :PD.Up to 50 characters.
+  004900              :EPARML.
+  005000              :NT.
+  005100              :P.A note with two paragraphs.
+  005200              :P.The second one.
+  005300              :ENT.
+  005400              :NOTE.A short note.
+  005500              :ENOTE.
+  005600              :LINES.
+  005700              Line one, kept as written
+  005800                 Line two, indented
+  005900              :ELINES.
+  006000              :FIG.
+  006100              +-------+
+  006200              | box   |
+  006300              +-------+
+  006400              :EFIG.
+  006500              :P.See :LINK PERFORM='DSPHELP HLPMORE'.more information:ELINK. for details,
+  006600              with brackets &lbracket.like these&rbracket., braces &lbrace.and these&rbrace.,
+  006700              a colon&colon. a period&period. a comma&comma. and an ampersand &amp..
+  006800              :IMHELP NAME=HLPCOMMON.
+  006900              :DUMMY.
+  007000              :ISCH ROOTS='OBJECT LIBRARY'.Working with objects in libraries
+  007100              :EHELP.
+  007200              :HELP NAME=HLPMORE TITLE='More Information'.
+  007300              :P.More about objects.
+  007400              :EHELP.
+  007500              .IM HLPCOMMON
+  000100  HLPCOMMON   .* Shared help module, imbedded by help.pnlgrp through .IM HLPCOMMON.
+  000200  HLPCOMMON   :HELP NAME=HLPCOMMON.Common Help
+  000300  HLPCOMMON   :P.This text is shared by several panel groups.
+  000400  HLPCOMMON   :EHELP.
+  007600              :EPNLGRP.
+
+  Panels  . . . . . . . . . :  0
+  Print panels  . . . . . . :  0
+  Help modules  . . . . . . :  3
+  Classes . . . . . . . . . :  0
+  Variables . . . . . . . . :  0
+  Conditions  . . . . . . . :  0
+  Key lists . . . . . . . . :  0
+  Imports . . . . . . . . . :  0
+
+  Severity 10 . . . . . . . :  0
+  Severity 20 . . . . . . . :  0
+  Severity 30 . . . . . . . :  0
+  Severity 40 . . . . . . . :  0
+  Highest severity  . . . . :  00
+  Panel group created

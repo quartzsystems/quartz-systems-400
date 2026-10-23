@@ -1,0 +1,220 @@
+QS/400 UIM compiler
+  Panel group . . . . . . . :  QGPL/ERRORS
+  Source  . . . . . . . . . :  QGPL/QPNLSRC(ERRORS)
+
+  SEQNBR  MEMBER      ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8
+  000100              .* Error cases, one per line where possible.
+  000200              .IM NOSUCHMBR
+      **  UIM0101 30  Imbedded member NOSUCHMBR was not found; the .IM line is skipped
+  000300              .CE a control word the compiler does not have
+      **  UIM0106 20  Control word .CE is not known; only .* and .IM are
+  000400              :PNLGRP BOGUS=1.
+      **  UIM0301 10  Attribute BOGUS is not known on :PNLGRP; ignored
+  000500              stray text in the group
+      **  UIM0205 20  Text is not allowed inside :PNLGRP
+  000600              :CLASS NAME=C1 BASETYPE='CHAR 10'.
+  000700              :ECLASS.
+  000800              :CLASS NAME=C1 BASETYPE='CHAR 5'.
+      **  UIM1001 20  Class C1 is already defined
+  000900              :ECLASS.
+  001000              :CLASS NAME=NOWIDTH BASETYPE=DEC.
+  001100              :ECLASS.
+  001200              :CLASS NAME=BADTYPE BASETYPE='BLOB 10'.
+      **  UIM1003 20  BASETYPE "BLOB 10" is not valid: BLOB is not a base type
+  001300              :ECLASS.
+  001400              :CLASS NAME=TOOLONGNAME BASETYPE='CHAR 1'.
+      **  UIM1002 20  Class name "TOOLONGNAME" is not valid; up to 10 of letters, digits, _ @ # $, starting with a letter
+  001500              :ECLASS.
+  001600              :CLASS NAME=OPENTL BASETYPE='CHAR 1'.
+  001700              :TL.
+  001800              :TI VALUE=1.one
+  001900              :ECLASS.
+      **  UIM0203 20  Element :TL is not closed before :ECLASS
+  002000              :VAR NAME=V1 CLASS=C1.
+  002100              :VAR NAME=V2 CLASS=NOCLASS.
+      **  UIM2001 20  Class NOCLASS is not defined
+  002200              :VAR NAME=V3 CLASS=NOWIDTH.
+  002300              :VAR NAME=V1 CLASS=C1.
+      **  UIM1001 20  Variable V1 is already defined
+  002400              :VAR NAME=V4.
+      **  UIM0302 20  Tag :VAR needs the CLASS attribute
+  002500              :LISTDEF NAME=L1 VARS='V1 V2 NOVAR'.
+      **  UIM2002 20  Variable NOVAR is not defined
+  002600              :COND NAME=BAD EXPR='&V1. EQ'.
+      **  UIM1004 20  Expression of condition BAD is not valid: operand expected at the end
+  002700              :COND NAME=OK EXPR='&V1. EQ &NOVAR2.'.
+      **  UIM2002 20  Variable NOVAR2 is not defined
+  002800              :TT NAME=T1 CONDS='OK NOCOND'.
+      **  UIM2004 20  Condition NOCOND is not defined
+  002900              :TTROW VALUES='1 0 1'.
+      **  UIM1005 20  Truth table row has 3 values; CONDS names 2 conditions
+  003000              :TTROW VALUES='1 Q'.
+      **  UIM0303 20  Value "Q" of VALUES on :TTROW is not valid: 1, 0 or X
+      **  UIM1005 20  Truth table row has 1 values; CONDS names 2 conditions
+  003100              :ETT.
+  003200              :KEYL NAME=K1.
+  003300              :KEYI KEY=F3 ACTION=EXIT.F3=Exit
+  003400              :KEYI KEY=F3 ACTION=CANCEL.F3=Again
+      **  UIM1012 20  Key F3 is already in this key list
+  003500              :KEYI KEY=F99 ACTION=EXIT.
+      **  UIM1017 20  Key "F99" is not valid; use ENTER, HELP, PRINT, HOME, PAGEUP, PAGEDOWN or F1 to F24
+  003600              :KEYI KEY=F4 ACTION=JUMP.
+      **  UIM1016 20  Action "JUMP" is not valid: JUMP is not an action
+  003700              :KEYI KEY=F5 ACTION='PANEL NOPANEL'.
+      **  UIM2007 20  Panel NOPANEL is not defined
+  003800              :KEYI KEY=F6 ACTION=EXIT COND=NOCOND HELP=NOHELP.
+      **  UIM2006 20  Help module NOHELP is not defined
+      **  UIM2004 20  Condition NOCOND is not defined
+  003900              :EKEYL.
+  004000              :PANEL NAME=P1 KEYL=NOKEYL HELP=NOHELP DEPTH=25 WIDTH=80.Errors
+      **  UIM3003 20  Panel size 25x80 is not one of 24x80, 27x132 or 24x132
+      **  UIM1011 20  Area depths add up to 42 lines; the panel has 22 for areas
+      **  UIM2005 20  Key list NOKEYL is not defined
+      **  UIM2006 20  Help module NOHELP is not defined
+  004100              :DATA DEPTH=30 LAYOUT=5.
+      **  UIM0303 20  Value "5" of LAYOUT on :DATA is not valid: one of 1, 2, 3
+  004200              :DATAI VAR=V3 USAGE=INPUT.No width
+      **  UIM1010 20  Variable V3 is input but class NOWIDTH has no width; give the class a WIDTH or a sized BASETYPE
+  004300              :DATAI VAR=V1 USAGE=SIDEWAYS.Bad usage
+      **  UIM0303 20  Value "SIDEWAYS" of USAGE on :DATAI is not valid: one of INPUT, OUTPUT, INOUT
+  004400              :DATAI VAR=V1.No usage
+      **  UIM0302 20  Tag :DATAI needs the USAGE attribute
+  004500              :DATAIXT.Extender text with no field
+      **  UIM1018 20  :DATAIX must follow a :DATAI in the same group
+  004600              :DATACOL.
+      **  UIM0302 20  Tag :DATACOL needs the WIDTH attribute
+  004700              :EDATA.
+  004800              :LIST DEPTH=4 LISTDEF=NOLIST VIEWS=3.
+      **  UIM1015 10  The list has 1 :LISTVIEW tags; VIEWS says 3
+      **  UIM2003 20  List NOLIST is not defined
+  004900              :LISTACT OPTION=2 ENTER='RETURN 2'.2=Change
+  005000              :LISTACT OPTION=2 ENTER='RETURN 2'.2=Again
+      **  UIM1006 20  Option 2 is already used in this area
+  005100              :LISTACT OPTION=ABC ENTER='RETURN 3'.
+      **  UIM1019 20  List option "ABC" must be a number from 1 to 99 or one letter
+  005200              :LISTACT HELP=NOHELP.
+      **  UIM1014 20  :LISTACT needs OPTION or ENTER
+  005300              :LISTVIEW COLS='NOCOL'.
+      **  UIM1009 20  COLS names column NOCOL, which the list does not define
+  005400              :ELIST.
+  005500              :LIST DEPTH=4 LISTDEF=L1.
+      **  UIM1008 20  List area has no :LISTCOL and no :LISTVIEW; it would show nothing
+  005600              :ELIST.
+  005700              :MENU DEPTH=4.
+  005800              :MENUI OPTION=1 ACTION=EXIT.One
+  005900              :MENUI OPTION=1 ACTION=EXIT.One again
+      **  UIM1006 20  Option 1 is already used in this area
+  006000              :MENUI OPTION=100 ACTION=EXIT.Too big
+      **  UIM1007 20  Menu option "100" must be a number from 1 to 99, or * on a menu with a command line
+  006100              :MENUI OPTION=0 ACTION=EXIT.Zero
+      **  UIM1007 20  Menu option "0" must be a number from 1 to 99, or * on a menu with a command line
+  006200              :MENUI OPTION='*' ACTION=CMDLINE.Star without a command line
+      **  UIM1013 20  Option * needs a command line on the panel
+  006300              :EMENU.
+  006400              :P.A paragraph where no paragraph goes
+      **  UIM0204 20  Tag :P is not allowed inside :PANEL
+  006500              :EPANEL.
+  006600              :PANEL NAME=P2 KEYL=K1.Two command lines
+  006700              :CMDLINE SIZE=SHORT.Command
+  006800              :CMDLINE SIZE=LONG.Command again
+      **  UIM3002 20  A panel has at most one command line
+  006900              :MENU DEPTH=4 OPTIONS=V1.
+  007000              :MENUI OPTION=1 ACTION='RETURN 1'.One
+  007100              :EMENU.
+  007200              :EPANEL.
+  007300              :PANEL NAME=P3 KEYL=K1.Nothing in it
+      **  UIM3001 10  Panel P3 has no areas
+  007400              :EPANEL.
+  007500              :HELP NAME=H1.Empty help
+      **  UIM3004 10  Help module H1 has no text
+  007600              :EHELP.
+  007700              :HELP NAME=H2.Open highlight
+  007800              :P.Text with :HP2.an open highlight
+  007900              :P.And an unknown &NOSYMBOL. symbol
+      **  UIM0208 20  Highlight tag :HP2 is not closed before its text ends
+      **  UIM2010 20  &NOSYMBOL. is neither a symbol nor a variable of this panel group
+  008000              :XMP.unterminated example
+  008100              :EHELP.
+      **  UIM0203 20  Element :XMP is not closed before :EHELP
+  008200              :NOSUCHTAG.
+      **  UIM0201 20  Tag :NOSUCHTAG is not known; skipped
+  008300              :EPANEL.
+      **  UIM0202 20  End tag :EPANEL has no open element to close
+  008400              :EPNLGRP.
+  008500              :PNLGRP.
+      **  UIM0207 20  A second :PNLGRP tag; only one panel group per source
+      **  UIM0203 20  Element :PNLGRP is not closed before the end of the source
+
+  Panels  . . . . . . . . . :  3
+  Print panels  . . . . . . :  0
+  Help modules  . . . . . . :  2
+  Classes . . . . . . . . . :  4
+  Variables . . . . . . . . :  4
+  Conditions  . . . . . . . :  1
+  Key lists . . . . . . . . :  1
+  Imports . . . . . . . . . :  0
+
+  Messages
+  000200  UIM0101 30  Imbedded member NOSUCHMBR was not found; the .IM line is skipped
+  000300  UIM0106 20  Control word .CE is not known; only .* and .IM are
+  000400  UIM0301 10  Attribute BOGUS is not known on :PNLGRP; ignored
+  000500  UIM0205 20  Text is not allowed inside :PNLGRP
+  000800  UIM1001 20  Class C1 is already defined
+  001200  UIM1003 20  BASETYPE "BLOB 10" is not valid: BLOB is not a base type
+  001400  UIM1002 20  Class name "TOOLONGNAME" is not valid; up to 10 of letters, digits, _ @ # $, starting with a letter
+  001900  UIM0203 20  Element :TL is not closed before :ECLASS
+  002100  UIM2001 20  Class NOCLASS is not defined
+  002300  UIM1001 20  Variable V1 is already defined
+  002400  UIM0302 20  Tag :VAR needs the CLASS attribute
+  002500  UIM2002 20  Variable NOVAR is not defined
+  002600  UIM1004 20  Expression of condition BAD is not valid: operand expected at the end
+  002700  UIM2002 20  Variable NOVAR2 is not defined
+  002800  UIM2004 20  Condition NOCOND is not defined
+  002900  UIM1005 20  Truth table row has 3 values; CONDS names 2 conditions
+  003000  UIM0303 20  Value "Q" of VALUES on :TTROW is not valid: 1, 0 or X
+  003000  UIM1005 20  Truth table row has 1 values; CONDS names 2 conditions
+  003400  UIM1012 20  Key F3 is already in this key list
+  003500  UIM1017 20  Key "F99" is not valid; use ENTER, HELP, PRINT, HOME, PAGEUP, PAGEDOWN or F1 to F24
+  003600  UIM1016 20  Action "JUMP" is not valid: JUMP is not an action
+  003700  UIM2007 20  Panel NOPANEL is not defined
+  003800  UIM2006 20  Help module NOHELP is not defined
+  003800  UIM2004 20  Condition NOCOND is not defined
+  004000  UIM3003 20  Panel size 25x80 is not one of 24x80, 27x132 or 24x132
+  004000  UIM1011 20  Area depths add up to 42 lines; the panel has 22 for areas
+  004000  UIM2005 20  Key list NOKEYL is not defined
+  004000  UIM2006 20  Help module NOHELP is not defined
+  004100  UIM0303 20  Value "5" of LAYOUT on :DATA is not valid: one of 1, 2, 3
+  004200  UIM1010 20  Variable V3 is input but class NOWIDTH has no width; give the class a WIDTH or a sized BASETYPE
+  004300  UIM0303 20  Value "SIDEWAYS" of USAGE on :DATAI is not valid: one of INPUT, OUTPUT, INOUT
+  004400  UIM0302 20  Tag :DATAI needs the USAGE attribute
+  004500  UIM1018 20  :DATAIX must follow a :DATAI in the same group
+  004600  UIM0302 20  Tag :DATACOL needs the WIDTH attribute
+  004800  UIM1015 10  The list has 1 :LISTVIEW tags; VIEWS says 3
+  004800  UIM2003 20  List NOLIST is not defined
+  005000  UIM1006 20  Option 2 is already used in this area
+  005100  UIM1019 20  List option "ABC" must be a number from 1 to 99 or one letter
+  005200  UIM1014 20  :LISTACT needs OPTION or ENTER
+  005300  UIM1009 20  COLS names column NOCOL, which the list does not define
+  005500  UIM1008 20  List area has no :LISTCOL and no :LISTVIEW; it would show nothing
+  005900  UIM1006 20  Option 1 is already used in this area
+  006000  UIM1007 20  Menu option "100" must be a number from 1 to 99, or * on a menu with a command line
+  006100  UIM1007 20  Menu option "0" must be a number from 1 to 99, or * on a menu with a command line
+  006200  UIM1013 20  Option * needs a command line on the panel
+  006400  UIM0204 20  Tag :P is not allowed inside :PANEL
+  006800  UIM3002 20  A panel has at most one command line
+  007300  UIM3001 10  Panel P3 has no areas
+  007500  UIM3004 10  Help module H1 has no text
+  007900  UIM0208 20  Highlight tag :HP2 is not closed before its text ends
+  007900  UIM2010 20  &NOSYMBOL. is neither a symbol nor a variable of this panel group
+  008100  UIM0203 20  Element :XMP is not closed before :EHELP
+  008200  UIM0201 20  Tag :NOSUCHTAG is not known; skipped
+  008300  UIM0202 20  End tag :EPANEL has no open element to close
+  008500  UIM0207 20  A second :PNLGRP tag; only one panel group per source
+  008500  UIM0203 20  Element :PNLGRP is not closed before the end of the source
+
+  Severity 10 . . . . . . . :  4
+  Severity 20 . . . . . . . :  51
+  Severity 30 . . . . . . . :  1
+  Severity 40 . . . . . . . :  0
+  Highest severity  . . . . :  30
+  Panel group not created

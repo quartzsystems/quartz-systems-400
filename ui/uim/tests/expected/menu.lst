@@ -1,0 +1,91 @@
+QS/400 UIM compiler
+  Panel group . . . . . . . :  QGPL/MENU
+  Source  . . . . . . . . . :  QGPL/QPNLSRC(MENU)
+
+  SEQNBR  MEMBER      ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8
+  000100              .* A menu panel with a command line, as CRTMNU TYPE(*UIM) uses it.
+  000200              :PNLGRP.
+  000300              :CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+  000400              :ECLASS.
+  000500              :CLASS NAME=CMDCL BASETYPE=CMDLINE WIDTH=200.
+  000600              :ECLASS.
+  000700              :CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+  000800              :ECLASS.
+  000900              :CLASS NAME=FLAGCL BASETYPE='CHAR 1'.
+  001000              :ECLASS.
+  001100              :VAR NAME=OPTION CLASS=OPTCL.
+  001200              :VAR NAME=COMMAND CLASS=CMDCL.
+  001300              :VAR NAME=USER CLASS=NAMECL.
+  001400              :VAR NAME=SECOFR CLASS=FLAGCL VALUE='N'.
+  001500              :VAR NAME=PGM CLASS=NAMECL VALUE='QGPL/MYPGM'.
+  001600              :VAR NAME=MSGVAR CLASS=NAMECL VALUE='MSG0030'.
+  001700              :COND NAME=ISSECOFR EXPR='&SECOFR. EQ "Y"'.
+  001800              :KEYL NAME=MENUKEYS.
+  001900              :KEYI KEY=ENTER ACTION=ENTER.
+  002000              :KEYI KEY=F1 ACTION=HELP.
+  002100              :KEYI KEY=F3 ACTION=EXIT.F3=Exit
+  002200              :KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+  002300              :KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+  002400              :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+  002500              :KEYI KEY=F13 ACTION=KEYSHELP.F13=Information Assistant
+  002600              :KEYI KEY=F16 ACTION='MENU MAIN'.F16=System main menu
+  002700              :KEYI KEY=F23 ACTION=ACTIONS.
+  002800              :KEYI KEY=HELP ACTION=HELP.
+  002900              :EKEYL.
+  003000              :PANEL NAME=MAIN HELP=HLPMAIN KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SPACE PANELID=USER.QS/400 Main Menu
+  003100              :MENU DEPTH='*' SCROLL=YES BOTSEP=SPACE TOPSEP=SPACE OPTIONS=OPTION HELP=HLPMENU.Select one of the following:
+  003200              :MENUGRP HELP=HLPUSER.User tasks
+  003300              :MENUI OPTION=1 ACTION='CALL PGM' HELP=HLP01.User tasks
+  003400              :MENUI OPTION=2 ACTION='PANEL OFFICE' HELP=HLP02.Office tasks
+  003500              :MENUI OPTION=3 ACTION='MENU GENERAL'.General system tasks
+  003600              :EMENUGRP.
+  003700              :MENUGRP.Operator tasks
+  003800              :MENUI OPTION=4 ACTION='MSG MSGVAR' COND=ISSECOFR VARUPD=NO.Files, libraries, and folders
+  003900              :MENUI OPTION=10 ACTION='RETURN 10'.Information Assistant options
+  004000              :MENUI OPTION=90 ACTION=EXIT.Sign off
+  004100              :MENUI OPTION='*' ACTION=CMDLINE.Run the command typed below
+  004200              :EMENUGRP.
+  004300              :EMENU.
+  004400              :CMDLINE SIZE=LONG NAME=CMD.Selection or command
+  004500              :EPANEL.
+  004600              :PANEL NAME=OFFICE KEYL=MENUKEYS HELP=HLPMAIN.Office Tasks
+  004700              :INFO DEPTH='*' SCROLL=YES HELP=HLPMAIN.
+  004800              :P.Office tasks are not installed on this system.
+  004900              :P.Press :PK.F12:EPK. to return to the main menu.
+  005000              :EINFO.
+  005100              :TEXT DEPTH=2.
+  005200              Fixed text at the bottom of the panel.
+  005300              :ETEXT.
+  005400              :EPANEL.
+  005500              :HELP NAME=HLPMAIN.Main Menu - Help
+  005600              :P.Type an option number or a command and press Enter.
+  005700              :EHELP.
+  005800              :HELP NAME=HLPMENU.Options - Help
+  005900              :P.The options of this menu.
+  006000              :EHELP.
+  006100              :HELP NAME=HLPUSER.User tasks - Help
+  006200              :P.Tasks every user can run.
+  006300              :EHELP.
+  006400              :HELP NAME=HLP01.Option 1 - Help
+  006500              :P.Calls the program &PGM. names.
+  006600              :EHELP.
+  006700              :HELP NAME=HLP02.Option 2 - Help
+  006800              :P.Shows the office tasks panel.
+  006900              :EHELP.
+  007000              :EPNLGRP.
+
+  Panels  . . . . . . . . . :  2
+  Print panels  . . . . . . :  0
+  Help modules  . . . . . . :  5
+  Classes . . . . . . . . . :  4
+  Variables . . . . . . . . :  6
+  Conditions  . . . . . . . :  1
+  Key lists . . . . . . . . :  1
+  Imports . . . . . . . . . :  0
+
+  Severity 10 . . . . . . . :  0
+  Severity 20 . . . . . . . :  0
+  Severity 30 . . . . . . . :  0
+  Severity 40 . . . . . . . :  0
+  Highest severity  . . . . :  00
+  Panel group created
