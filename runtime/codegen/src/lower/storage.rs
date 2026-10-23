@@ -584,7 +584,8 @@ impl Lowerer<'_, '_> {
                 let (a, ty) = self.addr(place)?;
                 let out = self.ptr_slot();
                 let len = self.i64(i64::try_from(ty.size()).expect("size fits"));
-                self.rt_call(RtFn::PtrAddr, &[out, a, len]);
+                let frame = self.i64(i64::from(self.in_frame(place)));
+                self.rt_call(RtFn::PtrAddr, &[out, a, len, frame]);
                 let v = self.b.ins().load(types::I128, super::le(), out, 0);
                 self.b.def_var(self.vars[dst.0 as usize], v);
             }

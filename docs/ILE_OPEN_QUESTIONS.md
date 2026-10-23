@@ -26,12 +26,14 @@ is in `expected/` and the test passes.
    varying length outside the string raise `RNX0100`; an array index out
    of range stays `MCH0603` (status `00121`), as `STATMAP` confirms.
 
-4. **Pointer arithmetic within static storage.** The machine reads one
-   byte past a static *and* past an automatic variable without error:
-   the stack is one space. Implemented: statics are one space; an
-   automatic variable is still its own space here and fails one byte
-   past it (`00222`). Open until automatic storage is modelled as the
-   entry's frame.
+4. **Pointer arithmetic within static storage.** Settled on pub400: a
+   pointer advanced one byte past a static *and* one past an automatic
+   variable reads the neighbour without error, since the stack is one
+   space. Implemented: a static area is one space, and an entry's
+   automatic storage is one space per call-stack depth that grows over
+   every automatic address the entry takes (`ABI.md` §4); it dies when
+   the entry returns (`MCH3402`). Heap blocks and user spaces keep exact
+   bounds (`MCH0601`).
 
 5. **`%DEC` of text with embedded blanks.** Implemented: every blank
    is removed before parsing, so `1 2` reads as `12`. The machine may

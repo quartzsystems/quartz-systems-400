@@ -258,7 +258,8 @@ for dates, `*HOURS *MINUTES *SECONDS` for times, all seven with
 | `dt.now dst` | the current value in `dst`'s type |
 
 **Pointers.** `[%p +n]:T` derefs; the runtime rules for a bad pointer
-are in `ILE.md`.
+are in `ILE.md`. A region is a static area, a heap block, a mapped user
+space, or an entry's automatic storage as a whole (`ABI.md` §4).
 
 | Instruction | Meaning |
 |---|---|

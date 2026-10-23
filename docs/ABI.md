@@ -113,6 +113,12 @@ parameter's type.
 
 A `based` variable or a `[%p]` deref goes through the runtime's `deref`
 (§6), which validates the fat pointer and returns a native address.
+`addr` of an `auto` variable or a by-value parameter passes `frame` 1 to
+`ptr_addr`: the entry's automatic storage is one space per call-stack
+depth, grown over every automatic address the entry takes, so a pointer
+advanced past one automatic variable reads its neighbour (as on the
+machine, where the stack is one space) and dies when the entry returns.
+A static area, a heap block and a mapped user space keep exact bounds.
 Array indexes are bounds-checked against the declared element count;
 an index out of range raises `MCH0603`.
 
@@ -175,7 +181,7 @@ absent optional length is -1.
 | 24 | `dt_extract` | `src, sty, unit` | `i32` |
 | 25 | `dt_test` | `src, sty, datfmt, timfmt` | `i32` 0 or 1 |
 | 26 | `dt_now` | `dst, dty` | |
-| 27 | `ptr_addr` | `out, native, len` | 16 bytes at `out` |
+| 27 | `ptr_addr` | `out, native, len, frame` | 16 bytes at `out` |
 | 28 | `ptr_add` | `out, ptr, n` | 16 bytes at `out` |
 | 29 | `ptr_diff` | `p, q` | `i64` |
 | 30 | `proc_addr` | `out, code` | 16 bytes at `out` |
@@ -230,7 +236,7 @@ program's procedure table; `leave` is called before
 every return, and the spaces of automatic storage the entry handed out
 die with it. `cond` is the number of the `MCHnnnn` message: `0601`,
 `0602`, `0603`, `1202`, `1210`, `1211`, `1602`, `3401`, `3402`, `3601`,
-`3602`. `prec` packs digits in its low byte and decimal positions in
+`3602`, `4429`, or `100` for the RPG runtime's `RNX0100`. `prec` packs digits in its low byte and decimal positions in
 the next; `flags` bit 0 is half-adjust; `opts` of `convert` packs
 half-adjust, the date and time format index plus one, and a CCSID
 (`codegen::rt::cvt_opts`). Literal operands are placed in temporaries

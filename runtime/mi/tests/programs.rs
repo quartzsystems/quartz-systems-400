@@ -371,6 +371,63 @@ GONE:
 }
 
 #[test]
+fn automatic_storage_is_one_space_per_entry() {
+    let mut p = run(r"
+module FRM
+static $got: i32
+static $far: i32
+static $gone: i32
+proc FRAME() -> ptr {
+  auto $local: i32 inz(99)
+L0:
+  %a = addr $local
+  ret %a
+}
+proc MAIN() entry {
+  auto $a: i32 inz(7)
+  auto $b: i32 inz(9)
+L0:
+  %pa = addr $a
+  %pb = addr $b
+  %d = ptrdiff %pb, %pa
+  %q = ptradd %pa, %d
+  %v = load [%q]:i32
+  store $got, %v
+  monitor M, MCH0601 -> RANGE
+  %bad = ptradd %pa, 65536
+  store $far, 1
+  endmon M
+  br DEAD
+RANGE:
+  store $far, 2
+  br DEAD
+DEAD:
+  %fp = callb FRAME()
+  monitor M2, MCH3402 -> GONE
+  %w = load [%fp]:i32
+  store $gone, %w
+  endmon M2
+  ret
+GONE:
+  store $gone, -1
+  ret
+}
+");
+    assert_eq!(num(&p, "got"), "9");
+    assert_eq!(num(&p, "far"), "2");
+    assert_eq!(num(&p, "gone"), "-1");
+    let j = p.job();
+    assert_eq!(
+        j.handled
+            .iter()
+            .map(|e| e.cond.unwrap())
+            .collect::<Vec<_>>(),
+        vec![Cond::Mch0601, Cond::Mch3402]
+    );
+    assert!(!j.pending());
+}
+
+#[test]
 fn monitors_nest_and_percolate() {
     let mut p = run(r#"
 module MON

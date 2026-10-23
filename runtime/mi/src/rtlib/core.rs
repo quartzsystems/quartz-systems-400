@@ -194,13 +194,14 @@ fn read_ptr(addr: i64) -> FatPtr {
     FatPtr::from_bytes(&b)
 }
 
-/// `ptr_addr(env, out, native, len)`.
-pub extern "sysv64" fn ptr_addr(env: *mut Env, out: i64, native: i64, len: i64) {
+/// `ptr_addr(env, out, native, len, frame)`: `frame` marks automatic
+/// storage, one space per call-stack entry.
+pub extern "sysv64" fn ptr_addr(env: *mut Env, out: i64, native: i64, len: i64, frame: i64) {
     let j = job(env);
     let depth = j.depth;
     let p = j
         .spaces
-        .addr(native.cast_unsigned(), len.cast_unsigned(), depth);
+        .addr(native.cast_unsigned(), len.cast_unsigned(), depth, frame != 0);
     write_ptr(out, p);
 }
 

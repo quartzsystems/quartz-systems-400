@@ -8,7 +8,7 @@ use cranelift_codegen::ir::InstBuilder;
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{Value, types};
 use qir::verify::place::resolve;
-use qir::{Place, Scope, StorageClass, Type, VarRef};
+use qir::{Place, PlaceBase, Scope, StorageClass, Type, VarRef};
 
 use super::{Lowerer, le};
 use crate::error::Result;
@@ -48,6 +48,23 @@ impl Lowerer<'_, '_> {
             a = self.b.ins().iadd(a, off);
         }
         Ok((a, acc.ty))
+    }
+
+    /// Whether a place lies in the procedure's own frame: an `auto`
+    /// variable or a by-value parameter.
+    pub(crate) fn in_frame(&self, place: &Place) -> bool {
+        let PlaceBase::Var(r) = &place.base else {
+            return false;
+        };
+        if !matches!(r.scope, Scope::Proc) {
+            return false;
+        }
+        let v = self.m.var(*r, Some(self.p)).expect("verified");
+        match &v.class {
+            StorageClass::Auto => true,
+            StorageClass::Param(k) => self.p.params[*k as usize].by_value,
+            _ => false,
+        }
     }
 
     /// An integer register value as an `i64`, by its signedness.
