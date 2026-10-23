@@ -307,3 +307,141 @@ pub fn autusr(system: &mut System, by_group: bool) -> Result<Vec<Vec<String>>, S
         Ok(rows)
     })
 }
+
+/// `Label . . . :   value` lines of a text display as pairs.
+fn labelled(text: &str) -> Vec<(String, String)> {
+    text.lines()
+        .filter_map(|l| l.split_once(":   "))
+        .map(|(k, v)| {
+            let k = k.trim_end_matches(['.', ' ']).trim().to_string();
+            (k, v.trim().to_string())
+        })
+        .collect()
+}
+
+/// `DSPAUTL`: owner and text, then each user with its authority and an
+/// `X` for list management.
+pub fn autl(system: &mut System, name: &str) -> Result<Vec<Vec<String>>, String> {
+    let name = name.trim().to_ascii_uppercase();
+    let text = security::in_store(system, |txn, env| {
+        sec::cmd::object::dspautl(txn, env, &name)
+    })?;
+    let head = labelled(&text);
+    let get = |i: usize| head.get(i).map(|(_, v)| v.clone()).unwrap_or_default();
+    let mut rows = vec![vec![get(1), get(2)]];
+    rows.extend(
+        text.lines()
+            .skip(4)
+            .filter(|l| !l.trim().is_empty())
+            .map(|l| {
+                let cut =
+                    |a: usize, b: usize| l.get(a..b.min(l.len())).unwrap_or("").trim().to_string();
+                vec![cut(1, 11), cut(13, 22), cut(24, l.len())]
+            }),
+    );
+    Ok(rows)
+}
+
+/// `WRKAUTL`: every authorization list and its text.
+pub fn autls(system: &mut System) -> Result<Vec<(String, String)>, String> {
+    security::in_store(system, |txn, env| {
+        let mut out = Vec::new();
+        for n in sec::auth::autl::list(txn, env.qsys)? {
+            let id = sec::auth::autl::find(txn, env.qsys, &n)?;
+            let h = sec::auth::grant::header(txn, id)?;
+            out.push((n, text_of(&h.text)));
+        }
+        Ok(out)
+    })
+}
+
+/// `DSPSECAUD`: the audit journal, its receiver and the auditing
+/// system values, by label.
+pub fn secaud(system: &mut System) -> Result<Vec<(String, String)>, String> {
+    let text = security::in_store(system, sec::cmd::audit::dspsecaud)?;
+    Ok(labelled(&text))
+}
+
+/// A device's status as `WRKCFGSTS` words it.
+fn dev_status(d: &wm::obj::devd::Devd) -> &'static str {
+    if d.is_display() {
+        d.status.text()
+    } else if d.online {
+        "VARIED ON"
+    } else {
+        "VARIED OFF"
+    }
+}
+
+/// `WRKCFGSTS CFGTYPE(*DEV)`: name, status and text of each device.
+pub fn cfgsts(system: &mut System) -> Result<Vec<Vec<String>>, String> {
+    use store::obj::library::Library;
+    let s = system.storage.as_mut().ok_or("object store not open")?;
+    let qsys = s.qsys.ok_or("object store not initialized")?;
+    crate::svc::db::with_txn(&mut s.store, |txn| {
+        let lib = Library::load(txn, qsys).map_err(|e| e.to_string())?;
+        let mut out = Vec::new();
+        for (key, id) in lib
+            .list(txn, Some(store::obj::types::DEVD))
+            .map_err(|e| e.to_string())?
+        {
+            let b = wm::obj::read(txn, id).map_err(|e| e.to_string())?;
+            let d = wm::obj::devd::Devd::decode(&b).map_err(|e| e.to_string())?;
+            out.push(vec![
+                key.name.to_string(),
+                dev_status(&d).to_string(),
+                d.text.clone(),
+            ]);
+        }
+        Ok(out)
+    })
+}
+
+/// `LIB/NAME` as name and library; blank as `none`.
+fn split_qual(v: &str, none: &str) -> (String, String) {
+    match v.split_once('/') {
+        Some((l, n)) => (n.to_string(), l.to_string()),
+        None if v.is_empty() => (none.to_string(), String::new()),
+        None => (v.to_string(), String::new()),
+    }
+}
+
+/// `DSPDEVD`: the description's attributes for `QUICFG`'s panel.
+pub fn devd(system: &mut System, name: &str) -> Result<Vec<(String, String)>, String> {
+    let name = name.trim().to_ascii_uppercase();
+    let s = system.storage.as_mut().ok_or("object store not open")?;
+    let qsys = s.qsys.ok_or("object store not initialized")?;
+    crate::svc::db::with_txn(&mut s.store, |txn| {
+        let id = wm::obj::find(
+            txn,
+            qsys,
+            &store::obj::ops::NameContext::default(),
+            "QSYS",
+            &name,
+            store::obj::types::DEVD,
+        )
+        .map_err(|_| format!("CPF2702 device description {name} not found"))?;
+        let b = wm::obj::read(txn, id).map_err(|e| e.to_string())?;
+        let d = wm::obj::devd::Devd::decode(&b).map_err(|e| e.to_string())?;
+        let (outq, outql) = split_qual(&d.outq, "*NONE");
+        let (msgq, msgql) = split_qual(&d.msgq, "*NONE");
+        Ok([
+            ("DVNAME", name.clone()),
+            ("DVCLS", d.devcls.clone()),
+            ("DVTYPE", d.devtype.clone()),
+            ("DVMODEL", d.model.clone()),
+            ("DVONLINE", yes(d.online).to_string()),
+            ("DVSTATUS", dev_status(&d).to_string()),
+            ("DVCTL", d.ctl.clone()),
+            ("DVKBD", d.kbdtype.clone()),
+            ("DVMSGQ", msgq),
+            ("DVMSGQL", msgql),
+            ("DVOUTQ", outq),
+            ("DVOUTQL", outql),
+            ("DVTEXT", d.text.clone()),
+        ]
+        .into_iter()
+        .map(|(k, v)| (k.to_string(), v))
+        .collect())
+    })
+}

@@ -267,3 +267,94 @@ fn main_menu_help() {
         assert_eq!(got[i].trim_end(), want[i].trim_end(), "row {}", i + 1);
     }
 }
+
+/// A panel without a golden: its title centered on row 1 and its keys
+/// on the key rows.
+fn title_and_keys(group: &str, panel: &str, title: &str, keys: &[&str]) {
+    let g = shipped(group);
+    let s = render(&g, panel, &MapDialog::new(), &sysname()).unwrap();
+    let rows = s.text_rows();
+    let col = 1 + (80 - title.len()) / 2;
+    assert_eq!(rows[0].get(col - 1..col - 1 + title.len()), Some(title), "{panel} title");
+    let key_rows = format!("{}\n{}", rows[21], rows[22]);
+    for k in keys {
+        assert!(key_rows.contains(k), "{panel}: {k} not on the key rows:\n{key_rows}");
+    }
+}
+
+#[test]
+#[ignore = "no golden"]
+fn wrksysval() {
+    title_and_keys(
+        "QUISYSVAL",
+        "WRKSYSVAL",
+        "Work with System Values",
+        &["F3=Exit", "F5=Refresh", "F12=Cancel"],
+    );
+}
+
+#[test]
+#[ignore = "no golden"]
+fn wrkusrprf() {
+    title_and_keys(
+        "QUIUSRPRF",
+        "WRKUSRPRF",
+        "Work with User Profiles",
+        &["F3=Exit", "F5=Refresh", "F6=Create", "F12=Cancel"],
+    );
+}
+
+#[test]
+#[ignore = "no golden"]
+fn wrkcfgsts() {
+    title_and_keys(
+        "QUICFG",
+        "WRKCFGSTS",
+        "Work with Configuration Status",
+        &["F3=Exit", "F5=Refresh", "F12=Cancel"],
+    );
+}
+
+#[test]
+#[ignore = "no golden"]
+fn dspdevd() {
+    title_and_keys(
+        "QUICFG",
+        "DSPDEVD",
+        "Display Device Description",
+        &["F3=Exit", "F12=Cancel"],
+    );
+}
+
+#[test]
+#[ignore = "no golden"]
+fn dspautl() {
+    title_and_keys(
+        "QUIAUTL",
+        "DSPAUTL",
+        "Display Authorization List",
+        &["F3=Exit", "F12=Cancel"],
+    );
+}
+
+#[test]
+#[ignore = "no golden"]
+fn wrkautl() {
+    title_and_keys(
+        "QUIAUTL",
+        "WRKAUTL",
+        "Work with Authorization Lists",
+        &["F3=Exit", "F5=Refresh", "F6=Create", "F12=Cancel"],
+    );
+}
+
+#[test]
+#[ignore = "no golden"]
+fn dspsecaud() {
+    title_and_keys(
+        "QUISECAUD",
+        "DSPSECAUD",
+        "Display Security Auditing Values",
+        &["F3=Exit", "F12=Cancel"],
+    );
+}

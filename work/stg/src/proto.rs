@@ -379,4 +379,16 @@ ipc::rpc! {
     /// `DSPSFWRSC`: resource ID, option, feature, description, feature
     /// type, library and release of each installed product.
     186 => fn sfwrsc_panel / SfwrscPanel () -> Vec<Vec<String>>;
+    /// `DSPAUTL`: the list's owner and text, then each user with its
+    /// authority and `X` for list management.
+    187 => fn autl_panel / AutlPanel (name: String) -> Result<Vec<Vec<String>>, String>;
+    /// `WRKAUTL`: every authorization list and its text.
+    188 => fn autl_panel_list / AutlPanelList () -> Result<Vec<(String, String)>, String>;
+    /// `DSPSECAUD`: the audit journal, its receiver and the auditing
+    /// system values, by label.
+    189 => fn secaud_panel / SecaudPanel () -> Result<Vec<(String, String)>, String>;
+    /// `WRKCFGSTS CFGTYPE(*DEV)`: name, status and text of each device.
+    190 => fn cfgsts_panel / CfgstsPanel () -> Result<Vec<Vec<String>>, String>;
+    /// `DSPDEVD`: the panel's variables and values.
+    191 => fn devd_panel / DevdPanel (name: String) -> Result<Vec<(String, String)>, String>;
 }

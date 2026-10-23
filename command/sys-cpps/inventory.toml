@@ -52,6 +52,22 @@ note = "a panel when the job shows panels; else the service's text"
 site = "job"
 note = "a panel when the job shows panels; else the service's text"
 
+[cmd.WRKCFGSTS]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.DSPDEVD]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.DSPAUTL]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
+[cmd.DSPSECAUD]
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
+
 # ---
 
 [cmd.CALL]
@@ -81,6 +97,8 @@ word = "dspcls"
 
 [cmd.WRKAUTL]
 word = "dspautl"
+site = "job"
+note = "a panel when the job shows panels; else the service's text"
 
 [cmd.WRKSBMJOB]
 word = "wrkactjob"

@@ -1170,6 +1170,26 @@ impl Service for Served<'_> {
     fn sfwrsc_panel(&mut self) -> Vec<Vec<String>> {
         super::sysdata::sfwrsc()
     }
+
+    fn autl_panel(&mut self, name: String) -> Result<Vec<Vec<String>>, String> {
+        super::sysdata::autl(self.system, &name)
+    }
+
+    fn autl_panel_list(&mut self) -> Result<Vec<(String, String)>, String> {
+        super::sysdata::autls(self.system)
+    }
+
+    fn secaud_panel(&mut self) -> Result<Vec<(String, String)>, String> {
+        super::sysdata::secaud(self.system)
+    }
+
+    fn cfgsts_panel(&mut self) -> Result<Vec<Vec<String>>, String> {
+        super::sysdata::cfgsts(self.system)
+    }
+
+    fn devd_panel(&mut self, name: String) -> Result<Vec<(String, String)>, String> {
+        super::sysdata::devd(self.system, &name)
+    }
 }
 
 /// `CPF1241` (normal) or `CPF1240` (abnormal: end code 20 and up, or no
