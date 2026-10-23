@@ -29,6 +29,13 @@ pub mod ids {
     pub const BAD_EXPRESSION_TYPE: &str = "RNF7419";
     /// An operation's structure is unbalanced (ENDIF without IF...).
     pub const UNBALANCED: &str = "RNF5012";
+    /// Half-adjust has nothing to round: the value has no more decimals
+    /// than the target.
+    pub const HALF_ADJUST_IDLE: &str = "RNF7057";
+    /// An intermediate result keeps fewer decimals than its target.
+    pub const DECIMALS_LOST: &str = "RNF7551";
+    /// The initial value does not fit the field.
+    pub const INZ_TOO_LONG: &str = "RNF3431";
     /// A constant divisor of zero.
     pub const DIVIDE_BY_ZERO: &str = "RNF7504";
     /// A calculation after the subroutines.

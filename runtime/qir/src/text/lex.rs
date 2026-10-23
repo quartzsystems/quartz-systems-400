@@ -190,9 +190,12 @@ impl Lexer<'_> {
         } else if point {
             Ok(Tok::Dec(text))
         } else {
-            text.parse::<i128>()
-                .map(Tok::Int)
-                .map_err(|_| self.err(format!("{text} is not an integer")))
+            // An integer past 128 bits is a decimal literal (63 digits).
+            match text.parse::<i128>() {
+                Ok(v) => Ok(Tok::Int(v)),
+                Err(_) if text.trim_start_matches('-').len() <= 63 => Ok(Tok::Dec(text)),
+                Err(_) => Err(self.err(format!("{text} is not an integer"))),
+            }
         }
     }
 

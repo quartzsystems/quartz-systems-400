@@ -37,6 +37,41 @@ fn integer(t: &Type) -> Option<Integer> {
     Integer::new(bytes, signed).ok()
 }
 
+/// A double's exact value as a decimal, cut to 63 digits; what RPG
+/// assigns before the target's truncation (`RPG_OPEN_QUESTIONS.md`,
+/// floats).
+fn f64_to_decimal_exact(f: f64) -> qdecimal::Result<Decimal> {
+    if !f.is_finite() {
+        return Err(qdecimal::DecimalError::NotFinite { what: "infinity or NaN" });
+    }
+    if f == 0.0 {
+        return Ok(Decimal::zero());
+    }
+    // Rust prints the exact binary value to the precision asked for;
+    // the decimals the integer digits leave room for.
+    let int_digits = format!("{:.0}", f.abs().trunc()).len();
+    let decimals = 63usize.saturating_sub(int_digits).min(45);
+    let s = format!("{:.*}", decimals + 1, f.abs());
+    // Truncate the one extra digit printed for rounding's sake.
+    let s = &s[..s.len() - 1];
+    let s = s.strip_suffix('.').unwrap_or(s);
+    let v = Decimal::parse(s)?;
+    Ok(if f < 0.0 { v.negated() } else { v })
+}
+
+/// A decimal as the double just toward zero from it, as RPG converts
+/// a decimal operand of a float operation.
+fn truncated_f64(v: &Decimal) -> f64 {
+    let near: f64 = v.to_string().parse().unwrap_or(0.0);
+    match f64_to_decimal_exact(near) {
+        Ok(back) if back.abs() > v.abs() => {
+            let toward_zero = if near > 0.0 { f64::from_bits(near.to_bits() - 1) } else { -f64::from_bits((-near).to_bits() - 1) };
+            if near == 0.0 { near } else { toward_zero }
+        }
+        _ => near,
+    }
+}
+
 /// Read a numeric operand as a typed value.
 pub(crate) fn read_num(addr: i64, desc: i64) -> Result<Typed, Cond> {
     let (b, t) = typed(addr, desc);
@@ -44,6 +79,10 @@ pub(crate) fn read_num(addr: i64, desc: i64) -> Result<Typed, Cond> {
         Type::Packed(s) => Packed::new(s.digits, s.scale).and_then(|p| p.decode(b)),
         Type::Zoned(s) => Zoned::new(s.digits, s.scale).and_then(|z| z.decode(b)),
         Type::F32 => Float::SINGLE.decode(b),
+        // RPG takes a double's value to 17 significant digits.
+        Type::F64 if desc.cast_unsigned() & codegen::abi::TypeDesc::FSIGN != 0 => {
+            f64_to_decimal_exact(f64::from_be_bytes(b[..8].try_into().unwrap_or([0; 8])))
+        }
         Type::F64 => Float::DOUBLE.decode(b),
         Type::Ind => Decimal::new(i128::from(b[0] == 0xF1), 0),
         _ => match integer(&t) {
@@ -231,7 +270,9 @@ pub extern "sysv64" fn dec_to_int(
 
 /// `dec_to_float(env, src, sty) -> f64`.
 pub extern "sysv64" fn dec_to_float(env: *mut Env, src: i64, sty: i64) -> f64 {
+    let rpg = sty.cast_unsigned() & codegen::abi::TypeDesc::FSIGN != 0;
     match read_num(src, sty) {
+        Ok(v) if rpg => truncated_f64(&v.value),
         Ok(v) => v.value.to_string().parse().unwrap_or(0.0),
         Err(c) => {
             raise_on(job(env), c);

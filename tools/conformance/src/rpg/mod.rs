@@ -27,6 +27,36 @@ use sysapi::{LocalNow, MemProvider};
 
 use crate::qir::CLOCK;
 
+/// How long one member may run in the kit before its request ends.
+const LIMIT_MS: u64 = 10_000;
+
+/// When the running member's time is up, as milliseconds since the
+/// epoch; 0 when none runs.
+static DEADLINE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+fn now_ms() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
+}
+
+/// A thread that raises the attention flag once a deadline passes, so
+/// a member that never ends (a cycle without `LR`) is stopped.
+fn watchdog() {
+    static STARTED: std::sync::Once = std::sync::Once::new();
+    STARTED.call_once(|| {
+        std::thread::spawn(|| {
+            loop {
+                std::thread::sleep(std::time::Duration::from_millis(50));
+                let d = DEADLINE.load(std::sync::atomic::Ordering::Relaxed);
+                if d != 0 && now_ms() > d {
+                    mi::rtlib::ATTN.store(1, std::sync::atomic::Ordering::Relaxed);
+                }
+            }
+        });
+    });
+}
+
 /// Where the corpus lives.
 pub struct Kit {
     /// `conformance/rpg`.
@@ -257,7 +287,17 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
         qrpgrt::install(&mut job);
         let spool = KitSpool::default();
         job.spool = Some(Box::new(spool.clone()));
+        // Past the deadline the attention hook ends the request.
+        watchdog();
+        job.attn = Some(Rc::new(|j: &mut Job| {
+            let d = DEADLINE.load(std::sync::atomic::Ordering::Relaxed);
+            if d != 0 && now_ms() > d {
+                j.cancel_request("CPF9999", "QCPFMSG", b"TIMEOUT".to_vec());
+            }
+        }));
+        DEADLINE.store(now_ms() + LIMIT_MS, std::sync::atomic::Ordering::Relaxed);
         let r = job.call_program(&case.name, "QGPL", &[]);
+        DEADLINE.store(0, std::sync::atomic::Ordering::Relaxed);
         job.close_printers();
         o.run = match r {
             Ok(()) => Run::Ok,

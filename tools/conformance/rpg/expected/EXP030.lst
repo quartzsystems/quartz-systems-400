@@ -1,0 +1,994 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   EXP030
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   EXP030
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 ctl-opt dftactgrp(*no);                                                                                   000000     000200
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     3 dcl-f QSYSPRT printer(132);                                                                               000000     000300
+-     4 dcl-ds line len(132) end-ds;                                                                              000000     000400
+ ======>       aaaa
+ *RNF3530 00 a      000400  Data structure LINE has no valid subfields.
+      5 dcl-s a1 zoned(15:7) inz(-680.9443261);                                                                   000000     000500
+      6 dcl-s b1 packed(1) inz(-8);                                                                               000000     000600
+      7 dcl-s r1 packed(8:1);                                                                                     000000     000700
+      8 dcl-s a2 packed(3:3) inz(-0.273);                                                                         000000     000800
+      9 dcl-s b2 packed(3:3) inz(0.059);                                                                          000000     000900
+     10 dcl-s r2 packed(4:3);                                                                                     000000     001000
+     11 dcl-s a3 packed(28:10) inz(5389766050031.0714707192);                                                     000000     001100
+     12 dcl-s b3 packed(15:1) inz(-941881356.1);                                                                  000000     001200
+     13 dcl-s r3 packed(21:1);                                                                                    000000     001300
+     14 dcl-s a4 zoned(2:2) inz(-0.86);                                                                           000000     001400
+     15 dcl-s b4 packed(4:4) inz(0.8378);                                                                         000000     001500
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     16 dcl-s r4 packed(6:5);                                                                                     000000     001600
+     17 dcl-s a5 packed(11:6) inz(0.192615);                                                                      000000     001700
+     18 dcl-s b5 packed(12:11) inz(-8.73065176957);                                                               000000     001800
+     19 dcl-s r5 packed(26:9);                                                                                    000000     001900
+     20 dcl-s a6 zoned(12:8) inz(-6674.06023937);                                                                 000000     002000
+     21 dcl-s b6 packed(22:4) inz(409284012374033043.5765);                                                       000000     002100
+     22 dcl-s r6 packed(22);                                                                                      000000     002200
+     23 dcl-s a7 packed(14:4) inz(-2.0786);                                                                       000000     002300
+     24 dcl-s b7 packed(6:3) inz(242.744);                                                                        000000     002400
+     25 dcl-s r7 packed(18:7);                                                                                    000000     002500
+     26 dcl-s a8 zoned(4:1) inz(-861.8);                                                                          000000     002600
+     27 dcl-s b8 packed(4) inz(980);                                                                              000000     002700
+     28 dcl-s r8 packed(5:1);                                                                                     000000     002800
+     29 dcl-s a9 zoned(17) inz(6460);                                                                             000000     002900
+     30 dcl-s b9 packed(26:11) inz(9.76533509646);                                                                000000     003000
+     31 dcl-s r9 packed(21:3);                                                                                    000000     003100
+     32 dcl-s a10 packed(11) inz(0);                                                                              000000     003200
+     33 dcl-s b10 packed(13:3) inz(-2.846);                                                                       000000     003300
+     34 dcl-s r10 packed(1:1);                                                                                    000000     003400
+     35 dcl-s a11 packed(24:9) inz(591777599.164999319);                                                          000000     003500
+     36 dcl-s b11 packed(8) inz(3234930);                                                                         000000     003600
+     37 dcl-s r11 packed(9:6);                                                                                    000000     003700
+     38 dcl-s a12 packed(11:2) inz(-62.40);                                                                       000000     003800
+     39 dcl-s b12 packed(6:4) inz(-0.8692);                                                                       000000     003900
+     40 dcl-s r12 packed(9:5);                                                                                    000000     004000
+     41 dcl-s a13 zoned(17:8) inz(-518962483.49413790);                                                           000000     004100
+     42 dcl-s b13 packed(13:2) inz(11020588806.38);                                                               000000     004200
+     43 dcl-s r13 packed(24:4);                                                                                   000000     004300
+     44 dcl-s a14 packed(20:4) inz(869100.5196);                                                                  000000     004400
+     45 dcl-s b14 packed(3:2) inz(0.77);                                                                          000000     004500
+     46 dcl-s r14 packed(28:11);                                                                                  000000     004600
+     47 dcl-s a15 packed(25:10) inz(-562461898821203.2379979574);                                                 000000     004700
+     48 dcl-s b15 packed(16:2) inz(6702161008734.66);                                                             000000     004800
+     49 dcl-s r15 packed(26:10);                                                                                  000000     004900
+     50 dcl-s a16 packed(11:6) inz(9.539503);                                                                     000000     005000
+     51 dcl-s b16 packed(5) inz(-313);                                                                            000000     005100
+     52 dcl-s r16 packed(23:12);                                                                                  000000     005200
+     53 dcl-s a17 zoned(25:4) inz(540070291525845467.9174);                                                       000000     005300
+     54 dcl-s b17 packed(7:5) inz(0.13437);                                                                       000000     005400
+     55 dcl-s r17 packed(13);                                                                                     000000     005500
+     56 dcl-s a18 packed(4:3) inz(0.643);                                                                         000000     005600
+     57 dcl-s b18 packed(12:2) inz(3943460728.13);                                                                000000     005700
+     58 dcl-s r18 packed(4:2);                                                                                    000000     005800
+     59 dcl-s a19 packed(3:3) inz(0.576);                                                                         000000     005900
+     60 dcl-s b19 packed(10) inz(3);                                                                              000000     006000
+     61 dcl-s r19 packed(15:4);                                                                                   000000     006100
+     62 dcl-s a20 zoned(11:3) inz(38122.055);                                                                     000000     006200
+     63 dcl-s b20 packed(13:6) inz(1392568.745185);                                                               000000     006300
+     64 dcl-s r20 packed(11:2);                                                                                   000000     006400
+     65 dcl-s a21 packed(25:10) inz(7334542269957.3314567792);                                                    000000     006500
+     66 dcl-s b21 packed(24:10) inz(4992495628770.0001238617);                                                    000000     006600
+     67 dcl-s r21 packed(7:1);                                                                                    000000     006700
+     68 dcl-s a22 packed(5:1) inz(-8041.8);                                                                       000000     006800
+     69 dcl-s b22 packed(21:6) inz(0.273743);                                                                     000000     006900
+     70 dcl-s r22 packed(19:8);                                                                                   000000     007000
+     71 dcl-s a23 packed(15:6) inz(2088.217889);                                                                  000000     007100
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     72 dcl-s b23 packed(18:7) inz(4575243.3673296);                                                              000000     007200
+     73 dcl-s r23 packed(28:1);                                                                                   000000     007300
+     74 dcl-s a24 packed(13:5) inz(-6.09104);                                                                     000000     007400
+     75 dcl-s b24 packed(31) inz(7985363946988285458862731138605);                                                000000     007500
+     76 dcl-s r24 packed(34:2);                                                                                   000000     007600
+     77 dcl-s a25 packed(12:7) inz(4158.6206643);                                                                 000000     007700
+     78 dcl-s b25 packed(8:4) inz(19.1887);                                                                       000000     007800
+     79 dcl-s r25 packed(8:2);                                                                                    000000     007900
+     80 dcl-s a26 zoned(11:9) inz(3.954738114);                                                                   000000     008000
+     81 dcl-s b26 packed(28:7) inz(3276927870863514436.7780276);                                                  000000     008100
+     82 dcl-s r26 packed(15:5);                                                                                   000000     008200
+     83 dcl-s a27 packed(21:7) inz(-19925225121444.2069224);                                                      000000     008300
+     84 dcl-s b27 packed(13:8) inz(39396.85595349);                                                               000000     008400
+     85 dcl-s r27 packed(16:1);                                                                                   000000     008500
+     86 dcl-s a28 packed(27:10) inz(-381.7384777986);                                                             000000     008600
+     87 dcl-s b28 packed(25:1) inz(213835715375542.2);                                                            000000     008700
+     88 dcl-s r28 packed(46:5);                                                                                   000000     008800
+     89 dcl-s a29 packed(4) inz(3438);                                                                            000000     008900
+     90 dcl-s b29 packed(15:10) inz(6342.4520553816);                                                             000000     009000
+     91 dcl-s r29 packed(1:1);                                                                                    000000     009100
+     92 dcl-s a30 zoned(14:9) inz(51005.123504719);                                                               000000     009200
+     93 dcl-s b30 packed(17:10) inz(5.0117622301);                                                                000000     009300
+     94 dcl-s r30 packed(18:10);                                                                                  000000     009400
+     95 dcl-s a31 packed(16:5) inz(5292.17844);                                                                   000000     009500
+     96 dcl-s b31 packed(15:10) inz(48.3393301420);                                                               000000     009600
+     97 dcl-s r31 packed(2:1);                                                                                    000000     009700
+     98 dcl-s a32 packed(4:2) inz(0.10);                                                                          000000     009800
+     99 dcl-s b32 packed(2) inz(1);                                                                               000000     009900
+    100 dcl-s r32 packed(5:2);                                                                                    000000     010000
+    101 dcl-s a33 zoned(31) inz(4950890214812780263649358563859);                                                 000000     010100
+    102 dcl-s b33 packed(18:3) inz(41.164);                                                                       000000     010200
+    103 dcl-s r33 packed(26:9);                                                                                   000000     010300
+    104 dcl-s a34 zoned(13:12) inz(-3.024745328839);                                                              000000     010400
+    105 dcl-s b34 packed(29:7) inz(-933272124028053801302.6890907);                                               000000     010500
+    106 dcl-s r34 packed(10:1);                                                                                   000000     010600
+    107 dcl-s a35 packed(22:6) inz(3.886174);                                                                     000000     010700
+    108 dcl-s b35 packed(23:4) inz(1804716234662435.5978);                                                        000000     010800
+    109 dcl-s r35 packed(32:11);                                                                                  000000     010900
+    110 dcl-s a36 packed(7) inz(-930);                                                                            000000     011000
+    111 dcl-s b36 packed(10) inz(47204);                                                                          000000     011100
+    112 dcl-s r36 packed(12:1);                                                                                   000000     011200
+    113 dcl-s a37 zoned(1) inz(0);                                                                                000000     011300
+    114 dcl-s b37 packed(8:2) inz(62.40);                                                                         000000     011400
+    115 dcl-s r37 packed(9:2);                                                                                    000000     011500
+    116 dcl-s a38 packed(11:5) inz(581.97772);                                                                    000000     011600
+    117 dcl-s b38 packed(12:4) inz(-68056654.4599);                                                               000000     011700
+    118 dcl-s r38 packed(14);                                                                                     000000     011800
+    119 dcl-s a39 packed(17:10) inz(246185.8676805722);                                                           000000     011900
+    120 dcl-s b39 packed(24:2) inz(-7365660761634780509.49);                                                      000000     012000
+    121 dcl-s r39 packed(36:7);                                                                                   000000     012100
+    122 dcl-s a40 packed(7:2) inz(11486.64);                                                                      000000     012200
+    123 dcl-s b40 packed(6:5) inz(4.54566);                                                                       000000     012300
+    124 dcl-s r40 packed(10:4);                                                                                   000000     012400
+ *RNF2318 00      3 000300  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+1{heading} page 5
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+    125 monitor;                                                                                             B01  000000     012500
+    126   eval(h) r1 = a1 / b1;                                                                               01  000000     012600
+    127   line = '1 ' + %char(r1);                                                                            01  000000     012700
+    128 on-error 102;                                                                                        X01  000000     012800
+    129   line = '1 E102';                                                                                    01  000000     012900
+    130 on-error 103;                                                                                        X01  000000     013000
+    131   line = '1 E103';                                                                                    01  000000     013100
+    132 on-error;                                                                                            X01  000000     013200
+    133   line = '1 E';                                                                                       01  000000     013300
+    134 endmon;                                                                                              E01  000000     013400
+    135 write QSYSPRT line;                                                                                       000000     013500
+    136 monitor;                                                                                             B01  000000     013600
+    137   r2 = a2 + b2;                                                                                       01  000000     013700
+    138   line = '2 ' + %char(r2);                                                                            01  000000     013800
+    139 on-error 102;                                                                                        X01  000000     013900
+    140   line = '2 E102';                                                                                    01  000000     014000
+    141 on-error 103;                                                                                        X01  000000     014100
+    142   line = '2 E103';                                                                                    01  000000     014200
+    143 on-error;                                                                                            X01  000000     014300
+    144   line = '2 E';                                                                                       01  000000     014400
+    145 endmon;                                                                                              E01  000000     014500
+    146 write QSYSPRT line;                                                                                       000000     014600
+    147 monitor;                                                                                             B01  000000     014700
+    148   r3 = a3 / b3;                                                                                       01  000000     014800
+    149   line = '3 ' + %char(r3);                                                                            01  000000     014900
+    150 on-error 102;                                                                                        X01  000000     015000
+    151   line = '3 E102';                                                                                    01  000000     015100
+    152 on-error 103;                                                                                        X01  000000     015200
+    153   line = '3 E103';                                                                                    01  000000     015300
+    154 on-error;                                                                                            X01  000000     015400
+    155   line = '3 E';                                                                                       01  000000     015500
+    156 endmon;                                                                                              E01  000000     015600
+    157 write QSYSPRT line;                                                                                       000000     015700
+    158 monitor;                                                                                             B01  000000     015800
+    159   r4 = a4 * b4;                                                                                       01  000000     015900
+    160   line = '4 ' + %char(r4);                                                                            01  000000     016000
+    161 on-error 102;                                                                                        X01  000000     016100
+    162   line = '4 E102';                                                                                    01  000000     016200
+    163 on-error 103;                                                                                        X01  000000     016300
+    164   line = '4 E103';                                                                                    01  000000     016400
+    165 on-error;                                                                                            X01  000000     016500
+    166   line = '4 E';                                                                                       01  000000     016600
+    167 endmon;                                                                                              E01  000000     016700
+    168 write QSYSPRT line;                                                                                       000000     016800
+    169 monitor;                                                                                             B01  000000     016900
+    170   r5 = a5 / b5;                                                                                       01  000000     017000
+    171   line = '5 ' + %char(r5);                                                                            01  000000     017100
+    172 on-error 102;                                                                                        X01  000000     017200
+    173   line = '5 E102';                                                                                    01  000000     017300
+    174 on-error 103;                                                                                        X01  000000     017400
+    175   line = '5 E103';                                                                                    01  000000     017500
+    176 on-error;                                                                                            X01  000000     017600
+    177   line = '5 E';                                                                                       01  000000     017700
+    178 endmon;                                                                                              E01  000000     017800
+    179 write QSYSPRT line;                                                                                       000000     017900
+    180 monitor;                                                                                             B01  000000     018000
+1{heading} page 6
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+    181   r6 = a6 * b6;                                                                                       01  000000     018100
+    182   line = '6 ' + %char(r6);                                                                            01  000000     018200
+    183 on-error 102;                                                                                        X01  000000     018300
+    184   line = '6 E102';                                                                                    01  000000     018400
+    185 on-error 103;                                                                                        X01  000000     018500
+    186   line = '6 E103';                                                                                    01  000000     018600
+    187 on-error;                                                                                            X01  000000     018700
+    188   line = '6 E';                                                                                       01  000000     018800
+    189 endmon;                                                                                              E01  000000     018900
+    190 write QSYSPRT line;                                                                                       000000     019000
+    191 monitor;                                                                                             B01  000000     019100
+    192   r7 = a7 + b7;                                                                                       01  000000     019200
+    193   line = '7 ' + %char(r7);                                                                            01  000000     019300
+    194 on-error 102;                                                                                        X01  000000     019400
+    195   line = '7 E102';                                                                                    01  000000     019500
+    196 on-error 103;                                                                                        X01  000000     019600
+    197   line = '7 E103';                                                                                    01  000000     019700
+    198 on-error;                                                                                            X01  000000     019800
+    199   line = '7 E';                                                                                       01  000000     019900
+    200 endmon;                                                                                              E01  000000     020000
+    201 write QSYSPRT line;                                                                                       000000     020100
+    202 monitor;                                                                                             B01  000000     020200
+    203   r8 = a8 + b8;                                                                                       01  000000     020300
+    204   line = '8 ' + %char(r8);                                                                            01  000000     020400
+    205 on-error 102;                                                                                        X01  000000     020500
+    206   line = '8 E102';                                                                                    01  000000     020600
+    207 on-error 103;                                                                                        X01  000000     020700
+    208   line = '8 E103';                                                                                    01  000000     020800
+    209 on-error;                                                                                            X01  000000     020900
+    210   line = '8 E';                                                                                       01  000000     021000
+    211 endmon;                                                                                              E01  000000     021100
+    212 write QSYSPRT line;                                                                                       000000     021200
+    213 monitor;                                                                                             B01  000000     021300
+    214   r9 = a9 + b9;                                                                                       01  000000     021400
+    215   line = '9 ' + %char(r9);                                                                            01  000000     021500
+    216 on-error 102;                                                                                        X01  000000     021600
+    217   line = '9 E102';                                                                                    01  000000     021700
+    218 on-error 103;                                                                                        X01  000000     021800
+    219   line = '9 E103';                                                                                    01  000000     021900
+    220 on-error;                                                                                            X01  000000     022000
+    221   line = '9 E';                                                                                       01  000000     022100
+    222 endmon;                                                                                              E01  000000     022200
+    223 write QSYSPRT line;                                                                                       000000     022300
+    224 monitor;                                                                                             B01  000000     022400
+    225   r10 = a10 + b10;                                                                                    01  000000     022500
+    226   line = '10 ' + %char(r10);                                                                          01  000000     022600
+    227 on-error 102;                                                                                        X01  000000     022700
+    228   line = '10 E102';                                                                                   01  000000     022800
+    229 on-error 103;                                                                                        X01  000000     022900
+    230   line = '10 E103';                                                                                   01  000000     023000
+    231 on-error;                                                                                            X01  000000     023100
+    232   line = '10 E';                                                                                      01  000000     023200
+    233 endmon;                                                                                              E01  000000     023300
+    234 write QSYSPRT line;                                                                                       000000     023400
+    235 monitor;                                                                                             B01  000000     023500
+    236   r11 = a11 * b11;                                                                                    01  000000     023600
+1{heading} page 7
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+    237   line = '11 ' + %char(r11);                                                                          01  000000     023700
+    238 on-error 102;                                                                                        X01  000000     023800
+    239   line = '11 E102';                                                                                   01  000000     023900
+    240 on-error 103;                                                                                        X01  000000     024000
+    241   line = '11 E103';                                                                                   01  000000     024100
+    242 on-error;                                                                                            X01  000000     024200
+    243   line = '11 E';                                                                                      01  000000     024300
+    244 endmon;                                                                                              E01  000000     024400
+    245 write QSYSPRT line;                                                                                       000000     024500
+    246 monitor;                                                                                             B01  000000     024600
+    247   r12 = a12 / b12;                                                                                    01  000000     024700
+    248   line = '12 ' + %char(r12);                                                                          01  000000     024800
+    249 on-error 102;                                                                                        X01  000000     024900
+    250   line = '12 E102';                                                                                   01  000000     025000
+    251 on-error 103;                                                                                        X01  000000     025100
+    252   line = '12 E103';                                                                                   01  000000     025200
+    253 on-error;                                                                                            X01  000000     025300
+    254   line = '12 E';                                                                                      01  000000     025400
+    255 endmon;                                                                                              E01  000000     025500
+    256 write QSYSPRT line;                                                                                       000000     025600
+    257 monitor;                                                                                             B01  000000     025700
+    258   r13 = a13 * b13;                                                                                    01  000000     025800
+    259   line = '13 ' + %char(r13);                                                                          01  000000     025900
+    260 on-error 102;                                                                                        X01  000000     026000
+    261   line = '13 E102';                                                                                   01  000000     026100
+    262 on-error 103;                                                                                        X01  000000     026200
+    263   line = '13 E103';                                                                                   01  000000     026300
+    264 on-error;                                                                                            X01  000000     026400
+    265   line = '13 E';                                                                                      01  000000     026500
+    266 endmon;                                                                                              E01  000000     026600
+    267 write QSYSPRT line;                                                                                       000000     026700
+    268 monitor;                                                                                             B01  000000     026800
+    269   r14 = a14 - b14;                                                                                    01  000000     026900
+    270   line = '14 ' + %char(r14);                                                                          01  000000     027000
+    271 on-error 102;                                                                                        X01  000000     027100
+    272   line = '14 E102';                                                                                   01  000000     027200
+    273 on-error 103;                                                                                        X01  000000     027300
+    274   line = '14 E103';                                                                                   01  000000     027400
+    275 on-error;                                                                                            X01  000000     027500
+    276   line = '14 E';                                                                                      01  000000     027600
+    277 endmon;                                                                                              E01  000000     027700
+    278 write QSYSPRT line;                                                                                       000000     027800
+    279 monitor;                                                                                             B01  000000     027900
+    280   r15 = a15 + b15;                                                                                    01  000000     028000
+    281   line = '15 ' + %char(r15);                                                                          01  000000     028100
+    282 on-error 102;                                                                                        X01  000000     028200
+    283   line = '15 E102';                                                                                   01  000000     028300
+    284 on-error 103;                                                                                        X01  000000     028400
+    285   line = '15 E103';                                                                                   01  000000     028500
+    286 on-error;                                                                                            X01  000000     028600
+    287   line = '15 E';                                                                                      01  000000     028700
+    288 endmon;                                                                                              E01  000000     028800
+    289 write QSYSPRT line;                                                                                       000000     028900
+    290 monitor;                                                                                             B01  000000     029000
+    291   r16 = a16 / b16;                                                                                    01  000000     029100
+    292   line = '16 ' + %char(r16);                                                                          01  000000     029200
+1{heading} page 8
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+    293 on-error 102;                                                                                        X01  000000     029300
+    294   line = '16 E102';                                                                                   01  000000     029400
+    295 on-error 103;                                                                                        X01  000000     029500
+    296   line = '16 E103';                                                                                   01  000000     029600
+    297 on-error;                                                                                            X01  000000     029700
+    298   line = '16 E';                                                                                      01  000000     029800
+    299 endmon;                                                                                              E01  000000     029900
+    300 write QSYSPRT line;                                                                                       000000     030000
+    301 monitor;                                                                                             B01  000000     030100
+    302   r17 = a17 * b17;                                                                                    01  000000     030200
+    303   line = '17 ' + %char(r17);                                                                          01  000000     030300
+    304 on-error 102;                                                                                        X01  000000     030400
+    305   line = '17 E102';                                                                                   01  000000     030500
+    306 on-error 103;                                                                                        X01  000000     030600
+    307   line = '17 E103';                                                                                   01  000000     030700
+    308 on-error;                                                                                            X01  000000     030800
+    309   line = '17 E';                                                                                      01  000000     030900
+    310 endmon;                                                                                              E01  000000     031000
+    311 write QSYSPRT line;                                                                                       000000     031100
+    312 monitor;                                                                                             B01  000000     031200
+    313   r18 = a18 / b18;                                                                                    01  000000     031300
+    314   line = '18 ' + %char(r18);                                                                          01  000000     031400
+    315 on-error 102;                                                                                        X01  000000     031500
+    316   line = '18 E102';                                                                                   01  000000     031600
+    317 on-error 103;                                                                                        X01  000000     031700
+    318   line = '18 E103';                                                                                   01  000000     031800
+    319 on-error;                                                                                            X01  000000     031900
+    320   line = '18 E';                                                                                      01  000000     032000
+    321 endmon;                                                                                              E01  000000     032100
+    322 write QSYSPRT line;                                                                                       000000     032200
+    323 monitor;                                                                                             B01  000000     032300
+    324   r19 = a19 - b19;                                                                                    01  000000     032400
+    325   line = '19 ' + %char(r19);                                                                          01  000000     032500
+    326 on-error 102;                                                                                        X01  000000     032600
+    327   line = '19 E102';                                                                                   01  000000     032700
+    328 on-error 103;                                                                                        X01  000000     032800
+    329   line = '19 E103';                                                                                   01  000000     032900
+    330 on-error;                                                                                            X01  000000     033000
+    331   line = '19 E';                                                                                      01  000000     033100
+    332 endmon;                                                                                              E01  000000     033200
+    333 write QSYSPRT line;                                                                                       000000     033300
+    334 monitor;                                                                                             B01  000000     033400
+    335   r20 = a20 + b20;                                                                                    01  000000     033500
+    336   line = '20 ' + %char(r20);                                                                          01  000000     033600
+    337 on-error 102;                                                                                        X01  000000     033700
+    338   line = '20 E102';                                                                                   01  000000     033800
+    339 on-error 103;                                                                                        X01  000000     033900
+    340   line = '20 E103';                                                                                   01  000000     034000
+    341 on-error;                                                                                            X01  000000     034100
+    342   line = '20 E';                                                                                      01  000000     034200
+    343 endmon;                                                                                              E01  000000     034300
+    344 write QSYSPRT line;                                                                                       000000     034400
+    345 monitor;                                                                                             B01  000000     034500
+    346   r21 = a21 / b21;                                                                                    01  000000     034600
+    347   line = '21 ' + %char(r21);                                                                          01  000000     034700
+    348 on-error 102;                                                                                        X01  000000     034800
+1{heading} page 9
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+    349   line = '21 E102';                                                                                   01  000000     034900
+    350 on-error 103;                                                                                        X01  000000     035000
+    351   line = '21 E103';                                                                                   01  000000     035100
+    352 on-error;                                                                                            X01  000000     035200
+    353   line = '21 E';                                                                                      01  000000     035300
+    354 endmon;                                                                                              E01  000000     035400
+    355 write QSYSPRT line;                                                                                       000000     035500
+    356 monitor;                                                                                             B01  000000     035600
+    357   r22 = a22 / b22;                                                                                    01  000000     035700
+    358   line = '22 ' + %char(r22);                                                                          01  000000     035800
+    359 on-error 102;                                                                                        X01  000000     035900
+    360   line = '22 E102';                                                                                   01  000000     036000
+    361 on-error 103;                                                                                        X01  000000     036100
+    362   line = '22 E103';                                                                                   01  000000     036200
+    363 on-error;                                                                                            X01  000000     036300
+    364   line = '22 E';                                                                                      01  000000     036400
+    365 endmon;                                                                                              E01  000000     036500
+    366 write QSYSPRT line;                                                                                       000000     036600
+    367 monitor;                                                                                             B01  000000     036700
+    368   eval(h) r23 = a23 * b23;                                                                            01  000000     036800
+    369   line = '23 ' + %char(r23);                                                                          01  000000     036900
+    370 on-error 102;                                                                                        X01  000000     037000
+    371   line = '23 E102';                                                                                   01  000000     037100
+    372 on-error 103;                                                                                        X01  000000     037200
+    373   line = '23 E103';                                                                                   01  000000     037300
+    374 on-error;                                                                                            X01  000000     037400
+    375   line = '23 E';                                                                                      01  000000     037500
+    376 endmon;                                                                                              E01  000000     037600
+    377 write QSYSPRT line;                                                                                       000000     037700
+    378 monitor;                                                                                             B01  000000     037800
+    379   r24 = a24 + b24;                                                                                    01  000000     037900
+    380   line = '24 ' + %char(r24);                                                                          01  000000     038000
+    381 on-error 102;                                                                                        X01  000000     038100
+    382   line = '24 E102';                                                                                   01  000000     038200
+    383 on-error 103;                                                                                        X01  000000     038300
+    384   line = '24 E103';                                                                                   01  000000     038400
+    385 on-error;                                                                                            X01  000000     038500
+    386   line = '24 E';                                                                                      01  000000     038600
+    387 endmon;                                                                                              E01  000000     038700
+    388 write QSYSPRT line;                                                                                       000000     038800
+    389 monitor;                                                                                             B01  000000     038900
+    390   eval(h) r25 = a25 - b25;                                                                            01  000000     039000
+    391   line = '25 ' + %char(r25);                                                                          01  000000     039100
+    392 on-error 102;                                                                                        X01  000000     039200
+    393   line = '25 E102';                                                                                   01  000000     039300
+    394 on-error 103;                                                                                        X01  000000     039400
+    395   line = '25 E103';                                                                                   01  000000     039500
+    396 on-error;                                                                                            X01  000000     039600
+    397   line = '25 E';                                                                                      01  000000     039700
+    398 endmon;                                                                                              E01  000000     039800
+    399 write QSYSPRT line;                                                                                       000000     039900
+    400 monitor;                                                                                             B01  000000     040000
+    401   r26 = a26 / b26;                                                                                    01  000000     040100
+    402   line = '26 ' + %char(r26);                                                                          01  000000     040200
+    403 on-error 102;                                                                                        X01  000000     040300
+    404   line = '26 E102';                                                                                   01  000000     040400
+1{heading} page 10
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+    405 on-error 103;                                                                                        X01  000000     040500
+    406   line = '26 E103';                                                                                   01  000000     040600
+    407 on-error;                                                                                            X01  000000     040700
+    408   line = '26 E';                                                                                      01  000000     040800
+    409 endmon;                                                                                              E01  000000     040900
+    410 write QSYSPRT line;                                                                                       000000     041000
+    411 monitor;                                                                                             B01  000000     041100
+    412   r27 = a27 - b27;                                                                                    01  000000     041200
+    413   line = '27 ' + %char(r27);                                                                          01  000000     041300
+    414 on-error 102;                                                                                        X01  000000     041400
+    415   line = '27 E102';                                                                                   01  000000     041500
+    416 on-error 103;                                                                                        X01  000000     041600
+    417   line = '27 E103';                                                                                   01  000000     041700
+    418 on-error;                                                                                            X01  000000     041800
+    419   line = '27 E';                                                                                      01  000000     041900
+    420 endmon;                                                                                              E01  000000     042000
+    421 write QSYSPRT line;                                                                                       000000     042100
+    422 monitor;                                                                                             B01  000000     042200
+    423   r28 = a28 * b28;                                                                                    01  000000     042300
+    424   line = '28 ' + %char(r28);                                                                          01  000000     042400
+    425 on-error 102;                                                                                        X01  000000     042500
+    426   line = '28 E102';                                                                                   01  000000     042600
+    427 on-error 103;                                                                                        X01  000000     042700
+    428   line = '28 E103';                                                                                   01  000000     042800
+    429 on-error;                                                                                            X01  000000     042900
+    430   line = '28 E';                                                                                      01  000000     043000
+    431 endmon;                                                                                              E01  000000     043100
+    432 write QSYSPRT line;                                                                                       000000     043200
+    433 monitor;                                                                                             B01  000000     043300
+    434   r29 = a29 + b29;                                                                                    01  000000     043400
+    435   line = '29 ' + %char(r29);                                                                          01  000000     043500
+    436 on-error 102;                                                                                        X01  000000     043600
+    437   line = '29 E102';                                                                                   01  000000     043700
+    438 on-error 103;                                                                                        X01  000000     043800
+    439   line = '29 E103';                                                                                   01  000000     043900
+    440 on-error;                                                                                            X01  000000     044000
+    441   line = '29 E';                                                                                      01  000000     044100
+    442 endmon;                                                                                              E01  000000     044200
+    443 write QSYSPRT line;                                                                                       000000     044300
+    444 monitor;                                                                                             B01  000000     044400
+    445   r30 = a30 - b30;                                                                                    01  000000     044500
+    446   line = '30 ' + %char(r30);                                                                          01  000000     044600
+    447 on-error 102;                                                                                        X01  000000     044700
+    448   line = '30 E102';                                                                                   01  000000     044800
+    449 on-error 103;                                                                                        X01  000000     044900
+    450   line = '30 E103';                                                                                   01  000000     045000
+    451 on-error;                                                                                            X01  000000     045100
+    452   line = '30 E';                                                                                      01  000000     045200
+    453 endmon;                                                                                              E01  000000     045300
+    454 write QSYSPRT line;                                                                                       000000     045400
+    455 monitor;                                                                                             B01  000000     045500
+    456   eval(h) r31 = a31 - b31;                                                                            01  000000     045600
+    457   line = '31 ' + %char(r31);                                                                          01  000000     045700
+    458 on-error 102;                                                                                        X01  000000     045800
+    459   line = '31 E102';                                                                                   01  000000     045900
+    460 on-error 103;                                                                                        X01  000000     046000
+1{heading} page 11
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+    461   line = '31 E103';                                                                                   01  000000     046100
+    462 on-error;                                                                                            X01  000000     046200
+    463   line = '31 E';                                                                                      01  000000     046300
+    464 endmon;                                                                                              E01  000000     046400
+    465 write QSYSPRT line;                                                                                       000000     046500
+    466 monitor;                                                                                             B01  000000     046600
+    467   eval(h) r32 = a32 / b32;                                                                            01  000000     046700
+    468   line = '32 ' + %char(r32);                                                                          01  000000     046800
+    469 on-error 102;                                                                                        X01  000000     046900
+    470   line = '32 E102';                                                                                   01  000000     047000
+    471 on-error 103;                                                                                        X01  000000     047100
+    472   line = '32 E103';                                                                                   01  000000     047200
+    473 on-error;                                                                                            X01  000000     047300
+    474   line = '32 E';                                                                                      01  000000     047400
+    475 endmon;                                                                                              E01  000000     047500
+    476 write QSYSPRT line;                                                                                       000000     047600
+    477 monitor;                                                                                             B01  000000     047700
+    478   r33 = a33 * b33;                                                                                    01  000000     047800
+    479   line = '33 ' + %char(r33);                                                                          01  000000     047900
+    480 on-error 102;                                                                                        X01  000000     048000
+    481   line = '33 E102';                                                                                   01  000000     048100
+    482 on-error 103;                                                                                        X01  000000     048200
+    483   line = '33 E103';                                                                                   01  000000     048300
+    484 on-error;                                                                                            X01  000000     048400
+    485   line = '33 E';                                                                                      01  000000     048500
+    486 endmon;                                                                                              E01  000000     048600
+    487 write QSYSPRT line;                                                                                       000000     048700
+    488 monitor;                                                                                             B01  000000     048800
+    489   eval(h) r34 = a34 / b34;                                                                            01  000000     048900
+    490   line = '34 ' + %char(r34);                                                                          01  000000     049000
+    491 on-error 102;                                                                                        X01  000000     049100
+    492   line = '34 E102';                                                                                   01  000000     049200
+    493 on-error 103;                                                                                        X01  000000     049300
+    494   line = '34 E103';                                                                                   01  000000     049400
+    495 on-error;                                                                                            X01  000000     049500
+    496   line = '34 E';                                                                                      01  000000     049600
+    497 endmon;                                                                                              E01  000000     049700
+    498 write QSYSPRT line;                                                                                       000000     049800
+    499 monitor;                                                                                             B01  000000     049900
+    500   r35 = a35 / b35;                                                                                    01  000000     050000
+    501   line = '35 ' + %char(r35);                                                                          01  000000     050100
+    502 on-error 102;                                                                                        X01  000000     050200
+    503   line = '35 E102';                                                                                   01  000000     050300
+    504 on-error 103;                                                                                        X01  000000     050400
+    505   line = '35 E103';                                                                                   01  000000     050500
+    506 on-error;                                                                                            X01  000000     050600
+    507   line = '35 E';                                                                                      01  000000     050700
+    508 endmon;                                                                                              E01  000000     050800
+    509 write QSYSPRT line;                                                                                       000000     050900
+    510 monitor;                                                                                             B01  000000     051000
+    511   eval(h) r36 = a36 + b36;                                                                            01  000000     051100
+    512   line = '36 ' + %char(r36);                                                                          01  000000     051200
+    513 on-error 102;                                                                                        X01  000000     051300
+    514   line = '36 E102';                                                                                   01  000000     051400
+    515 on-error 103;                                                                                        X01  000000     051500
+    516   line = '36 E103';                                                                                   01  000000     051600
+1{heading} page 12
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+    517 on-error;                                                                                            X01  000000     051700
+    518   line = '36 E';                                                                                      01  000000     051800
+    519 endmon;                                                                                              E01  000000     051900
+    520 write QSYSPRT line;                                                                                       000000     052000
+    521 monitor;                                                                                             B01  000000     052100
+    522   r37 = a37 - b37;                                                                                    01  000000     052200
+    523   line = '37 ' + %char(r37);                                                                          01  000000     052300
+    524 on-error 102;                                                                                        X01  000000     052400
+    525   line = '37 E102';                                                                                   01  000000     052500
+    526 on-error 103;                                                                                        X01  000000     052600
+    527   line = '37 E103';                                                                                   01  000000     052700
+    528 on-error;                                                                                            X01  000000     052800
+    529   line = '37 E';                                                                                      01  000000     052900
+    530 endmon;                                                                                              E01  000000     053000
+    531 write QSYSPRT line;                                                                                       000000     053100
+    532 monitor;                                                                                             B01  000000     053200
+    533   r38 = a38 * b38;                                                                                    01  000000     053300
+    534   line = '38 ' + %char(r38);                                                                          01  000000     053400
+    535 on-error 102;                                                                                        X01  000000     053500
+    536   line = '38 E102';                                                                                   01  000000     053600
+    537 on-error 103;                                                                                        X01  000000     053700
+    538   line = '38 E103';                                                                                   01  000000     053800
+    539 on-error;                                                                                            X01  000000     053900
+    540   line = '38 E';                                                                                      01  000000     054000
+    541 endmon;                                                                                              E01  000000     054100
+    542 write QSYSPRT line;                                                                                       000000     054200
+    543 monitor;                                                                                             B01  000000     054300
+    544   r39 = a39 * b39;                                                                                    01  000000     054400
+    545   line = '39 ' + %char(r39);                                                                          01  000000     054500
+    546 on-error 102;                                                                                        X01  000000     054600
+    547   line = '39 E102';                                                                                   01  000000     054700
+    548 on-error 103;                                                                                        X01  000000     054800
+    549   line = '39 E103';                                                                                   01  000000     054900
+    550 on-error;                                                                                            X01  000000     055000
+    551   line = '39 E';                                                                                      01  000000     055100
+    552 endmon;                                                                                              E01  000000     055200
+    553 write QSYSPRT line;                                                                                       000000     055300
+    554 monitor;                                                                                             B01  000000     055400
+    555   eval(h) r40 = a40 + b40;                                                                            01  000000     055500
+    556   line = '40 ' + %char(r40);                                                                          01  000000     055600
+    557 on-error 102;                                                                                        X01  000000     055700
+    558   line = '40 E102';                                                                                   01  000000     055800
+    559 on-error 103;                                                                                        X01  000000     055900
+    560   line = '40 E103';                                                                                   01  000000     056000
+    561 on-error;                                                                                            X01  000000     056100
+    562   line = '40 E';                                                                                      01  000000     056200
+    563 endmon;                                                                                              E01  000000     056300
+    564 write QSYSPRT line;                                                                                       000000     056400
+    565 *inlr = *on;                                                                                              000000     056500
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+1{heading} page 13
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+ *RNF7057 00    511 051100  Half Adjust is not valid for the number of decimal
+                            positions of the result.
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 14
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 3D    135     146     157
+                                                  168     179     190     201
+                                                  212     223     234     245
+                                                  256     267     278     289
+                                                  300     311     322     333
+                                                  344     355     366     377
+                                                  388     399     410     421
+                                                  432     443     454     465
+                                                  476     487     498     509
+                                                  520     531     542     553
+                                                  564
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                  565M
+          A1                S(15,7)                 5D    126
+          A10               P(11,0)                32D    225
+          A11               P(24,9)                35D    236
+          A12               P(11,2)                38D    247
+          A13               S(17,8)                41D    258
+          A14               P(20,4)                44D    269
+          A15               P(25,10)               47D    280
+          A16               P(11,6)                50D    291
+          A17               S(25,4)                53D    302
+          A18               P(4,3)                 56D    313
+          A19               P(3,3)                 59D    324
+          A2                P(3,3)                  8D    137
+          A20               S(11,3)                62D    335
+          A21               P(25,10)               65D    346
+          A22               P(5,1)                 68D    357
+          A23               P(15,6)                71D    368
+          A24               P(13,5)                74D    379
+          A25               P(12,7)                77D    390
+          A26               S(11,9)                80D    401
+          A27               P(21,7)                83D    412
+          A28               P(27,10)               86D    423
+          A29               P(4,0)                 89D    434
+          A3                P(28,10)               11D    148
+          A30               S(14,9)                92D    445
+          A31               P(16,5)                95D    456
+          A32               P(4,2)                 98D    467
+          A33               S(31,0)               101D    478
+          A34               S(13,12)              104D    489
+          A35               P(22,6)               107D    500
+          A36               P(7,0)                110D    511
+          A37               S(1,0)                113D    522
+          A38               P(11,5)               116D    533
+          A39               P(17,10)              119D    544
+          A4                S(2,2)                 14D    159
+          A40               P(7,2)                122D    555
+          A5                P(11,6)                17D    170
+1{heading} page 15
+0         A6                S(12,8)                20D    181
+          A7                P(14,4)                23D    192
+          A8                S(4,1)                 26D    203
+          A9                S(17,0)                29D    214
+          B1                P(1,0)                  6D    126
+          B10               P(13,3)                33D    225
+          B11               P(8,0)                 36D    236
+          B12               P(6,4)                 39D    247
+          B13               P(13,2)                42D    258
+          B14               P(3,2)                 45D    269
+          B15               P(16,2)                48D    280
+          B16               P(5,0)                 51D    291
+          B17               P(7,5)                 54D    302
+          B18               P(12,2)                57D    313
+          B19               P(10,0)                60D    324
+          B2                P(3,3)                  9D    137
+          B20               P(13,6)                63D    335
+          B21               P(24,10)               66D    346
+          B22               P(21,6)                69D    357
+          B23               P(18,7)                72D    368
+          B24               P(31,0)                75D    379
+          B25               P(8,4)                 78D    390
+          B26               P(28,7)                81D    401
+          B27               P(13,8)                84D    412
+          B28               P(25,1)                87D    423
+          B29               P(15,10)               90D    434
+          B3                P(15,1)                12D    148
+          B30               P(17,10)               93D    445
+          B31               P(15,10)               96D    456
+          B32               P(2,0)                 99D    467
+          B33               P(18,3)               102D    478
+          B34               P(29,7)               105D    489
+          B35               P(23,4)               108D    500
+          B36               P(10,0)               111D    511
+          B37               P(8,2)                114D    522
+          B38               P(12,4)               117D    533
+          B39               P(24,2)               120D    544
+          B4                P(4,4)                 15D    159
+          B40               P(6,5)                123D    555
+          B5                P(12,11)               18D    170
+          B6                P(22,4)                21D    181
+          B7                P(6,3)                 24D    192
+          B8                P(4,0)                 27D    203
+          B9                P(26,11)               30D    214
+          LINE              DS(132)                 4D    127M    129M    131M
+                                                  133M    135     138M    140M
+                                                  142M    144M    146     149M
+                                                  151M    153M    155M    157
+                                                  160M    162M    164M    166M
+                                                  168     171M    173M    175M
+                                                  177M    179     182M    184M
+                                                  186M    188M    190     193M
+                                                  195M    197M    199M    201
+                                                  204M    206M    208M    210M
+                                                  212     215M    217M    219M
+                                                  221M    223     226M    228M
+                                                  230M    232M    234     237M
+                                                  239M    241M    243M    245
+1{heading} page 16
+0                                                 248M    250M    252M    254M
+                                                  256     259M    261M    263M
+                                                  265M    267     270M    272M
+                                                  274M    276M    278     281M
+                                                  283M    285M    287M    289
+                                                  292M    294M    296M    298M
+                                                  300     303M    305M    307M
+                                                  309M    311     314M    316M
+                                                  318M    320M    322     325M
+                                                  327M    329M    331M    333
+                                                  336M    338M    340M    342M
+                                                  344     347M    349M    351M
+                                                  353M    355     358M    360M
+                                                  362M    364M    366     369M
+                                                  371M    373M    375M    377
+                                                  380M    382M    384M    386M
+                                                  388     391M    393M    395M
+                                                  397M    399     402M    404M
+                                                  406M    408M    410     413M
+                                                  415M    417M    419M    421
+                                                  424M    426M    428M    430M
+                                                  432     435M    437M    439M
+                                                  441M    443     446M    448M
+                                                  450M    452M    454     457M
+                                                  459M    461M    463M    465
+                                                  468M    470M    472M    474M
+                                                  476     479M    481M    483M
+                                                  485M    487     490M    492M
+                                                  494M    496M    498     501M
+                                                  503M    505M    507M    509
+                                                  512M    514M    516M    518M
+                                                  520     523M    525M    527M
+                                                  529M    531     534M    536M
+                                                  538M    540M    542     545M
+                                                  547M    549M    551M    553
+                                                  556M    558M    560M    562M
+                                                  564
+          R1                P(8,1)                  7D    126M    127
+          R10               P(1,1)                 34D    225M    226
+          R11               P(9,6)                 37D    236M    237
+          R12               P(9,5)                 40D    247M    248
+          R13               P(24,4)                43D    258M    259
+          R14               P(28,11)               46D    269M    270
+          R15               P(26,10)               49D    280M    281
+          R16               P(23,12)               52D    291M    292
+          R17               P(13,0)                55D    302M    303
+          R18               P(4,2)                 58D    313M    314
+          R19               P(15,4)                61D    324M    325
+          R2                P(4,3)                 10D    137M    138
+          R20               P(11,2)                64D    335M    336
+          R21               P(7,1)                 67D    346M    347
+          R22               P(19,8)                70D    357M    358
+          R23               P(28,1)                73D    368M    369
+          R24               P(34,2)                76D    379M    380
+          R25               P(8,2)                 79D    390M    391
+          R26               P(15,5)                82D    401M    402
+          R27               P(16,1)                85D    412M    413
+          R28               P(46,5)                88D    423M    424
+1{heading} page 17
+0         R29               P(1,1)                 91D    434M    435
+          R3                P(21,1)                13D    148M    149
+          R30               P(18,10)               94D    445M    446
+          R31               P(2,1)                 97D    456M    457
+          R32               P(5,2)                100D    467M    468
+          R33               P(26,9)               103D    478M    479
+          R34               P(10,1)               106D    489M    490
+          R35               P(32,11)              109D    500M    501
+          R36               P(12,1)               112D    511M    512
+          R37               P(9,2)                115D    522M    523
+          R38               P(14,0)               118D    533M    534
+          R39               P(36,7)               121D    544M    545
+          R4                P(6,5)                 16D    159M    160
+          R40               P(10,4)               124D    555M    556
+          R5                P(26,9)                19D    170M    171
+          R6                P(22,0)                22D    181M    182
+          R7                P(18,7)                25D    192M    193
+          R8                P(5,1)                 28D    203M    204
+          R9                P(21,3)                31D    214M    215
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                      565M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 18
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 19
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+ *RNF7057 00      1 Half Adjust is not valid for the number of decimal positions
+                    of the result.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 20
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        3
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        3
+-  Source Totals:
+0    Records . . . . . . . . . . . . :      565
+     Specifications  . . . . . . . . :      564
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        0
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program EXP030 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

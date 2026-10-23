@@ -526,6 +526,11 @@ impl Gen<'_> {
             self.err(ids::BAD_LENGTH, 30, "");
             return None;
         };
+        // Past 63 digits the decimals may give way below the target's.
+        let floor = mode.result_scale + u8::from(mode.half_adjust);
+        if sh.scale < floor && sh.digits == 63 {
+            self.err(ids::DECIMALS_LOST, 10, sh.scale.to_string());
+        }
         let t = self.b.temp(&format!("packed({},{})", sh.digits, sh.scale));
         let o = match op {
             BinOp::Add => "dec.add",

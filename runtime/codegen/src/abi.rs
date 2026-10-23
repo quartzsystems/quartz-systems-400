@@ -331,8 +331,10 @@ pub fn time_fmt_index(f: TimeFmt) -> u8 {
 pub struct TypeDesc(pub u64);
 
 impl TypeDesc {
-    /// Packed and zoned values written through this descriptor take
-    /// the positive sign `F` instead of `C`, as RPG writes them.
+    /// RPG's data rules: packed and zoned values written through this
+    /// descriptor take the positive sign `F` instead of `C`, a double
+    /// read through it becomes its exact decimal value (cut to 63
+    /// digits), and a decimal read as a double rounds toward zero.
     pub const FSIGN: u64 = 1 << 56;
 
     /// The descriptor with [`Self::FSIGN`] set when `on`.

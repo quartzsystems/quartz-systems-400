@@ -1,0 +1,10 @@
+# EXC005 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 3 seq 000300
+diag: RNF3530 00 line 4 seq 000400
+run: ok
+spool: QSYSPRT
+  |1/1   st=102 ex=MCH1211 rt=*DETC
+  |1/2   pr=EXC005     pa=0 sm=00000020
+  |1/3   status now 0 102

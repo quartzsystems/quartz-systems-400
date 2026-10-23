@@ -781,6 +781,16 @@ impl Gen<'_> {
             }
         };
         if let Some(value) = value {
+            // EVAL(H) of a value with no more decimals than the target
+            // rounds nothing.
+            if half
+                && tv.ty.is_numeric()
+                && !matches!(value.ty, Ty::Float(_))
+                && let (Some((_, vs)), Some((_, ts))) = (value.ty.shape(), tv.ty.shape())
+                && vs <= ts
+            {
+                self.err(ids::HALF_ADJUST_IDLE, 0, String::new());
+            }
             self.assign(&tv, &value, half);
         }
     }
@@ -1306,6 +1316,7 @@ fn default_value(g: &mut Gen<'_>, ty: &Ty, dim: u32, place: &str) {
 pub fn init_symbol(g: &mut Gen<'_>, id: SymId) {
     let s = g.t.syms[id].clone();
     let place = place_of(g.t, id);
+    g.at = rpgfront::ast::Pos { line: s.def_line, col: 0 };
     match &s.kind {
         Some(Kind::Ds(di)) => {
             let ds = g.t.ds[*di].clone();
@@ -1417,9 +1428,44 @@ fn load_ctdata(g: &mut Gen<'_>, id: SymId, place: &str) {
     }
 }
 
+/// Whether a literal fits a type as an initial value.
+fn inz_fits(ty: &Ty, v: &V) -> bool {
+    if v.kind != Vk::Lit || v.fig.is_some() {
+        return true;
+    }
+    match ty {
+        Ty::Int(d) | Ty::Uns(d) => {
+            let Ok(n) = v.op.split('.').next().unwrap_or("0").parse::<i128>() else { return false };
+            let bits = match d {
+                3 => 8,
+                5 => 16,
+                10 => 32,
+                _ => 64,
+            };
+            if matches!(ty, Ty::Int(_)) {
+                n >= -(1i128 << (bits - 1)) && n < (1i128 << (bits - 1))
+            } else {
+                n >= 0 && n < (1i128 << bits)
+            }
+        }
+        t if t.is_numeric() && !matches!(t, Ty::Float(_)) => {
+            let (d, s) = t.shape().unwrap_or((63, 0));
+            let int_digits = v.op.trim_start_matches('-').split('.').next().unwrap_or("").trim_start_matches('0').len();
+            int_digits <= usize::from(d - s)
+        }
+        t if t.is_char() && !t.is_varying() => v.ty.str_len().unwrap_or(0) <= t.str_len().unwrap_or(0),
+        _ => true,
+    }
+}
+
 /// An `INZ(value)`: the value into every element.
 fn inz_value(g: &mut Gen<'_>, ty: &Ty, dim: u32, place: &str, e: &Expr) {
     let Some(v) = g.expr(e, Want::default()) else { return };
+    if !inz_fits(ty, &v) {
+        g.err(ids::INZ_TOO_LONG, 20, String::new());
+        default_value(g, ty, dim, place);
+        return;
+    }
     let places: Vec<String> = if dim > 0 {
         (0..dim).map(|i| format!("{place}[{i}]")).collect()
     } else {
