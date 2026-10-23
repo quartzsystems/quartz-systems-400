@@ -675,6 +675,67 @@ impl Service for Served<'_> {
         r
     }
 
+    // --- panel data: work management (140-159)
+
+    fn actjob_data(&mut self, advance: bool) -> stg::proto::ActJobs {
+        super::stats::actjob_data(self.system, advance)
+    }
+
+    fn job_detail(&mut self, job: String) -> Result<stg::proto::JobDetail, String> {
+        let q = job.trim().to_ascii_uppercase();
+        let number = if q.is_empty() || q == "*" {
+            self.ctx.job.number
+        } else if let Some(id) = wm::job::JobId::parse(&q) {
+            id.number
+        } else {
+            // A bare name: the caller's own job of that name first.
+            let all = self.system.jobs.all();
+            all.iter()
+                .find(|j| j.name == q && j.user == self.ctx.job.user)
+                .or_else(|| all.iter().find(|j| j.name == q))
+                .map(|j| j.number)
+                .ok_or_else(|| format!("CPF1070 Job {q} not found."))?
+        };
+        let j = self
+            .system
+            .jobs
+            .get(number)
+            .cloned()
+            .ok_or_else(|| format!("CPF1070 Job {q} not found."))?;
+        let attrs = self.system.attrs.get(&number).cloned().unwrap_or_default();
+        let (cpu_ms, threads, tmp_mb, aux_io) = super::stats::job_figures(self.system, number);
+        let sbs_pool = super::sbs::list(self.system)
+            .into_iter()
+            .find(|s| s.name == j.subsystem)
+            .and_then(|s| s.pools.into_iter().find(|(_, p)| *p == j.pool))
+            .map_or(0, |(id, _)| id);
+        Ok(stg::proto::JobDetail {
+            job: j,
+            attrs,
+            cpu_ms,
+            threads,
+            tmp_mb,
+            aux_io,
+            sbs_pool,
+        })
+    }
+
+    fn splf_list(&mut self, user: String, job: String) -> Vec<wm::obj::splf::SplfAttrs> {
+        let user = user.trim().to_ascii_uppercase();
+        let job = job.trim().to_ascii_uppercase();
+        let mut files: Vec<wm::obj::splf::SplfAttrs> = self
+            .system
+            .spool
+            .files
+            .values()
+            .map(|e| e.attrs.clone())
+            .filter(|a| user.is_empty() || a.job.1 == user)
+            .filter(|a| job.is_empty() || super::spool::job_matches(&job, &a.job))
+            .collect();
+        files.sort_by_key(|a| (a.created, a.id));
+        files
+    }
+
     fn dsp_open(
         &mut self,
         file: String,

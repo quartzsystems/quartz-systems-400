@@ -399,7 +399,7 @@ fn walk<'a>(
         DataNode::Group(g) => {
             if !rows.is_empty() {
                 match g.grpsep {
-                    Separator::Space | Separator::SysName => rows.push(Row::Blank),
+                    Separator::Space | Separator::SysName | Separator::DateTime => rows.push(Row::Blank),
                     Separator::Rule => rows.push(Row::Rule),
                     Separator::None => {}
                 }

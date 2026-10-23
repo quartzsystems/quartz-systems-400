@@ -48,7 +48,9 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
             }
             row += 1;
         }
-        row += 1;
+        if !area.compact {
+            row += 1;
+        }
     }
 
     // R9: the columns of the view.
@@ -59,23 +61,7 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
             || cols.iter().map(|c| c.heading.len()).max().unwrap_or(0),
             |m| m as usize,
         );
-    let head_top = row;
-    let mut seen_group = None;
-    for c in &cols {
-        let end = c.start + c.width - 1;
-        if let Some((g, text)) = &c.group
-            && seen_group != Some(*g)
-        {
-            seen_group = Some(*g);
-            put_cut(s, head_top, c.start, limit, Attr::HighIntensity, text);
-        }
-        let col_rows = head_rows - usize::from(grouped);
-        let skip = c.heading.len().saturating_sub(col_rows);
-        for (j, h) in c.heading.iter().skip(skip).enumerate() {
-            let r = head_top + usize::from(grouped) + col_rows - (c.heading.len() - skip) + j;
-            put_cut(s, r, c.start, end.min(limit), Attr::HighIntensity, h);
-        }
-    }
+    headings(s, &cols, row, head_rows, grouped, limit);
     row += head_rows;
 
     // The entries.
@@ -130,11 +116,68 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
         }
     }
 
+    // An empty list shows its `:LIST.` text on the second entry row.
+    if state.rows.is_empty() && state.complete && entries > 1 {
+        let empty = ctx.text(&area.title);
+        put_cut(s, row + 1, 4, limit, Attr::Normal, empty.trim());
+    }
+
     // R10: lists always say where they stand.
     let shown = state.rows.len().min(entries);
     s.list_shown.insert(area.listdef.clone(), entries);
     let more = state.top + entries < state.count() || (!state.complete && shown >= entries);
     super::indicator(s, last, !more);
+}
+
+/// R9: the heading rows from `head_top`, a group's heading over its
+/// columns on the first.
+fn headings(
+    s: &mut Screen,
+    cols: &[Col],
+    head_top: usize,
+    head_rows: usize,
+    grouped: bool,
+    limit: usize,
+) {
+    let mut seen_group = None;
+    for c in cols {
+        let end = c.start + c.width - 1;
+        if let Some((g, text)) = &c.group
+            && seen_group != Some(*g)
+        {
+            seen_group = Some(*g);
+            // A group of numbers ends its heading where its last field ends.
+            let members: Vec<&Col> = cols
+                .iter()
+                .filter(|k| k.group.as_ref().is_some_and(|(x, _)| x == g))
+                .collect();
+            let len = text.chars().count();
+            let col = match members.last() {
+                Some(last)
+                    if members
+                        .iter()
+                        .all(|k| k.numeric && !k.column.usage.is_input()) =>
+                {
+                    (last.start + last.field).saturating_sub(len).max(c.start)
+                }
+                _ => c.start,
+            };
+            put_cut(s, head_top, col, limit, Attr::HighIntensity, text);
+        }
+        let col_rows = head_rows - usize::from(grouped);
+        let skip = c.heading.len().saturating_sub(col_rows);
+        for (j, h) in c.heading.iter().skip(skip).enumerate() {
+            let r = head_top + usize::from(grouped) + col_rows - (c.heading.len() - skip) + j;
+            // A number's heading rows end where its field ends.
+            let len = h.chars().count();
+            let col = if c.numeric && !c.column.usage.is_input() && len <= c.field {
+                c.start + c.field - len
+            } else {
+                c.start
+            };
+            put_cut(s, r, col, end.min(limit), Attr::HighIntensity, h);
+        }
+    }
 }
 
 /// Text cut at `end`.

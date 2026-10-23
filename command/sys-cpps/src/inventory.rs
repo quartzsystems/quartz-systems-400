@@ -237,6 +237,7 @@ pub const DIRECT: &[&str] = &[
 /// the job words it bridges to).
 pub const JOB_SITE: &[&str] = &[
     // --- panels: work management (work/qsjob/src/panels/work.rs)
+    "WRKACTJOB",
     // --- panels: messages and objects (panels/objects.rs)
     // --- panels: system and security (panels/system.rs)
     "ADDBKP",

@@ -360,6 +360,94 @@ ipc::rpc! {
     /// A panel group's payload and its real library.
     138 => fn pnlgrp_open / PnlgrpOpen (name: String, lib: String) -> Result<(Vec<u8>, String), String>;
     // --- panel data: work management (140-159)
+    /// `WRKACTJOB`'s figures: the jobs and the machine's CPU since the
+    /// display's last look, which moves to now when `advance`.
+    140 => fn actjob_data / ActjobData (advance: bool) -> ActJobs;
+    /// A job by `number/user/name` (blank for the caller): what
+    /// `DSPJOB` and `WRKJOB` show.
+    141 => fn job_detail / JobDetailReq (job: String) -> Result<JobDetail, String>;
+    /// Spooled files, oldest first: of a user (blank for any) and a
+    /// job (`number/user/name`, blank for any).
+    142 => fn splf_list / SplfList (user: String, job: String) -> Vec<SplfAttrs>;
     // --- panel data: messages and objects (160-179)
     // --- panel data: system and security (180-199)
 }
+
+// --- panel data: work management types
+
+/// One `WRKACTJOB` entry.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ActJob {
+    /// Shown under its subsystem.
+    pub under: bool,
+    /// The job.
+    pub job: JobInfo,
+    /// CPU % in the interval, tenths.
+    pub cpu: u32,
+    /// CPU used since it started, tenths of a second.
+    pub cpu_secs: u64,
+    /// Its pool's system number.
+    pub pool: u16,
+    /// `RUNPTY`.
+    pub runpty: u8,
+    /// Auxiliary I/O in the interval.
+    pub aux_io: u64,
+    /// Threads.
+    pub threads: u32,
+    /// Temporary storage, megabytes.
+    pub tmp_mb: u64,
+}
+
+wire_struct!(ActJob {
+    under,
+    job,
+    cpu,
+    cpu_secs,
+    pool,
+    runpty,
+    aux_io,
+    threads,
+    tmp_mb
+});
+
+/// `WRKACTJOB`'s data.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ActJobs {
+    /// The machine's CPU % in the interval, tenths.
+    pub cpu: u32,
+    /// The interval, seconds.
+    pub elapsed: u64,
+    /// The jobs in display order.
+    pub jobs: Vec<ActJob>,
+}
+
+wire_struct!(ActJobs { cpu, elapsed, jobs });
+
+/// One job for `DSPJOB` and `WRKJOB`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct JobDetail {
+    /// The job.
+    pub job: JobInfo,
+    /// Its attributes.
+    pub attrs: JobAttrs,
+    /// CPU used, milliseconds.
+    pub cpu_ms: u64,
+    /// Threads.
+    pub threads: u32,
+    /// Temporary storage, megabytes.
+    pub tmp_mb: u64,
+    /// Auxiliary I/O requests.
+    pub aux_io: u64,
+    /// Its subsystem's pool identifier, 0 for none.
+    pub sbs_pool: u8,
+}
+
+wire_struct!(JobDetail {
+    job,
+    attrs,
+    cpu_ms,
+    threads,
+    tmp_mb,
+    aux_io,
+    sbs_pool
+});

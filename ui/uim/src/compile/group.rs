@@ -292,7 +292,10 @@ impl Build {
                 self.diags.push(ids::bad_key(ki.line, &ktext));
                 continue;
             };
-            if keys.iter().any(|k| k.key == key) {
+            // A key may come back under a condition: the first item
+            // whose condition holds is the key's.
+            let conditioned = ki.attr("COND").is_some();
+            if keys.iter().any(|k| k.key == key && (k.cond.is_none() || !conditioned)) {
                 self.diags.push(ids::duplicate_key(ki.line, &key.text()));
             }
             let Some(action) = self.action(ki, "ACTION") else {

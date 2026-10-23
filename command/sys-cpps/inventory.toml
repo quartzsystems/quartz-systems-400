@@ -21,6 +21,9 @@ note = "no completion message; a refusal is the escape"
 # ----------------------------------------------------------- the job's
 # Panels (the displays shown as UIM panels by an interactive job):
 # --- work management (work/qsjob/src/panels/work.rs)
+[cmd.WRKACTJOB]
+site = "job"
+
 # --- messages and objects (panels/objects.rs)
 # --- system and security (panels/system.rs)
 # ---

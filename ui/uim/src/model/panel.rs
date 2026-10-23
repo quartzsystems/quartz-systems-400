@@ -148,6 +148,9 @@ pub enum Separator {
     None,
     /// `SYSNAM` (also written `SYSNAME`): a line with `System:` and the system name (panels).
     SysName,
+    /// `DATETIME`: the system name on the title line, the date and
+    /// time on the line under it (panels).
+    DateTime,
 }
 
 /// `LAYOUT`: columns of a data or list area.
@@ -427,6 +430,8 @@ pub struct ListArea {
     pub select: Option<String>,
     /// `ACTLEN`: the option column's width.
     pub actlen: Option<u32>,
+    /// `COMPACT`: no blank row between the legends and the headings.
+    pub compact: bool,
     /// `HELP`.
     pub help: Option<String>,
     /// `:LISTACT.` items.
