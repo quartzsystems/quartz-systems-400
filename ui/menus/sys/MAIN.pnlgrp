@@ -40,12 +40,26 @@
 :CMDLINE SIZE=LONG.Selection or command
 :EPANEL.
 :HELP NAME=HLPMAIN.QS/400 Main Menu - Help
-:P.The main menu is where a session begins. Type an option number or a
-command on the line at the bottom and press Enter. Option 9 shows the
-command menus; option 90 signs off.
-:P.F3 leaves the menu (signing off when it is the session's first),
-F4 prompts the command typed, F9 brings the previous command back,
-F12 returns to the menu shown before this one, F23 makes this menu
-the one the user's sessions start with.
+:P.The main menu is where a session begins: from it you reach the
+menus of the system's tasks, or run a command directly.
+:H2.Choosing an Option
+:P.Type the number of an option on the line at the bottom and press
+Enter. The menu the option names takes the place of this one; F12 on
+it brings this menu back.
+:P.To run a command instead, type it on the same line and press Enter.
+F4 with nothing typed lists the command groups to choose from; F4
+after a command name shows its parameters to fill in. F9 brings back
+the command you ran last, to run it again or change it first.
+:P.To show another menu, type GO and the menu's name, for example GO
+MAJOR for the command groups. The name of the menu on the display is
+in its upper left corner.
+:H2.Function Keys
+:P.F3 leaves the menu, signing off when it is the first one of the
+session. F12 returns to the menu shown before this one. F13 shows the
+Information Assistant options. F23 makes this menu the one your
+sessions start with.
+:H2.Signing Off
+:P.Option 90 signs off. The SIGNOFF command does the same, and with
+LOG(*LIST) keeps the session's job log as a spooled file.
 :EHELP.
 :EPNLGRP.

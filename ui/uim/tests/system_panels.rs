@@ -222,3 +222,48 @@ fn dspautusr() {
     let s = render(&g, "DSPAUTUSR", &d, &opts).unwrap();
     compare("dspautusr", &s);
 }
+
+#[test]
+fn information_assistant() {
+    let g = shipped("QUIINFO");
+    let opts = Options {
+        show_copyright: true,
+        copyright: g.copyright.clone().unwrap_or_default(),
+        ..sysname()
+    };
+    let s = render(&g, "INFO", &MapDialog::new(), &opts).unwrap();
+    compare("information-assistant", &s);
+}
+
+/// The main menu's help is Quartz's text: only its geometry follows the
+/// golden (`Help` and the centered title, headings at column 2, text
+/// at column 6 within column 73, the indicator and the help keys).
+#[test]
+fn main_menu_help() {
+    let main = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../menus/sys/MAIN.pnlgrp");
+    let g = common::group_from(&main);
+    let s = uim::render_help(&g, "HLPMAIN", &Options::default()).unwrap();
+    let want = common::golden_rows("main-menu-help");
+    let got = s.text_rows();
+    let first = |r: &str| r.find(|c: char| c != ' ').map(|i| i + 1);
+    // Row 1: `Help` at column 2, the title centered.
+    assert_eq!(got[0].get(1..5), Some("Help"));
+    let title = got[0][5..].trim();
+    assert_eq!(first(&got[0][5..]).map(|c| c + 5), Some(1 + (80 - title.len()) / 2));
+    assert!(want[0].starts_with(" Help "));
+    // Rows 3 to 20: text at column 6, headings at 2, nothing past 73.
+    assert_eq!(first(&got[2]), Some(6));
+    let mut headings = 0;
+    for (w, o) in want[2..20].iter().zip(&got[2..20]) {
+        for row in [w, o] {
+            assert!(row.trim_end().len() <= 73, "row passes column 73: {row}");
+            assert!(matches!(first(row), None | Some(2 | 6)), "row starts oddly: {row}");
+        }
+        headings += usize::from(first(o) == Some(2));
+    }
+    assert!(headings > 0, "the help has a heading on its first page");
+    // The indicator and the keys, as the golden has them.
+    for i in 20..23 {
+        assert_eq!(got[i].trim_end(), want[i].trim_end(), "row {}", i + 1);
+    }
+}
