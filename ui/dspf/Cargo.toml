@@ -1,0 +1,18 @@
+[package]
+name = "dspf"
+description = "QS/400 display files: the DDS display-file compiler (CRTDSPF), its model, record buffers and the *FILE display payload"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+dds = { path = "../../database/dds", version = "0.1.0" }
+db = { path = "../../database/db", version = "0.1.0" }
+qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
+qsname = { path = "../../storage/qsname", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+thiserror.workspace = true
+
+[lints]
+workspace = true

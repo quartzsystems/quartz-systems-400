@@ -1,0 +1,151 @@
+QS/400 DDS compiler
+  File . . . . . . . . . . . :  QGPL/ERRORS
+  Source . . . . . . . . . . :  QGPL/QDDSSRC(ERRORS)
+  Type . . . . . . . . . . . :  Display file (DSPF)
+
+  SEQNBR  ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8  DATE
+    1.00       A* Everything the compiler refuses
+    2.00       A                                      DSPSIZ(24 80 *DS3)
+    3.00       A                                      MSGLOC(30)
+      **  DDS6303 20  MSGLOC line 30 is outside the display of 24 lines
+    4.00       A                                      CF25(25)
+      **  DDS6205 20  Command key CF25 is not valid; keys are CA01-CA24 and CF01-CF24
+    5.00       A                                      BOGUS
+      **  DDS0209 20  Keyword BOGUS is not known
+    6.00       A                                      SFLDSP
+      **  DDS0207 20  Keyword SFLDSP is not allowed at the file level of a display file
+    7.00       A          R BAD                       TEXT('Everything wrong')
+    8.00       A                                  1  1'Top left is not allowed'
+      **  DDS6509 20  Field 'Top left is ...': row 1 column 1 leaves no room for the attribute byte before the field on 24x80 (*DS3)
+    9.00       A            FLD1          10A  B  3  2
+   10.00       A            FLD2          10A  O  3  8
+      **  DDS6508 20  Field FLD2 overlaps field FLD1 on 24x80 (*DS3); a field needs the position before it for its attribute
+   11.00       A  5X                                  DSPATR(HI) OVERLAY
+      **  DDS0207 20  Keyword OVERLAY is not allowed at the field level of a display file
+      **  DDS6101 20  Conditioning " 5X      " is not valid; position 7 takes A, O or blank and positions 8-16 up to three indicators, each N or blank and 01-99
+   12.00       A            FLD1           5A  O  5  2
+      **  DDS6517 20  Field FLD1 is already defined in this record format
+   13.00       A            FLD3           5A  I 24 76
+      **  DDS6509 20  Field FLD3: an input field cannot end in the last position; its ending attribute needs one more on 24x80 (*DS3)
+   14.00       A            FLD4          15A  O 24 70
+      **  DDS6509 20  Field FLD4: extends past the last position on 24x80 (*DS3)
+   15.00       A            HID            5A  H  7  2
+      **  DDS6106 20  Field HID has usage H and takes no location
+   16.00       A            NOLOC          5A  O
+      **  DDS6105 20  Field NOLOC needs a row and column in positions 39-44
+   17.00       A            TXT            5A  O  8  2EDTCDE(J) CHECK(RB)
+      **  DDS6514 20  Keyword EDTCDE on field TXT is not valid for type A
+      **  DDS6507 20  Keyword CHECK on field TXT needs usage I or B
+   18.00       A                                      DSPATR(XX) COLOR(BLK)
+      **  DDS6513 20  Keyword DSPATR: XX is not valid; use BL, CS, HI, ND, PC, PR, RI, UL, MDT, OID, SP
+      **  DDS6513 20  Keyword COLOR: BLK is not valid; use BLU, GRN, PNK, RED, TRQ, WHT, YLW
+   19.00       A            NUM            7S 2O  9  2DSPATR(PR)
+      **  DDS6507 20  Keyword DSPATR(PR) on field NUM needs usage I or B
+   20.00       A            QQ             5Q  O 10  2
+      **  DDS6501 20  Data type 'Q' is not valid in a display file
+   21.00       A            FLD5           3A  O 10 +2
+      **  DDS6107 20  A +n column needs a field before it on the same row
+   22.00       A          R SFLONLY                   SFL
+      **  DDS6401 20  Subfile record SFLONLY must be followed by a record with SFLCTL(SFLONLY)
+   23.00       A            X              1A  O  5  2
+   24.00       A          R WIN                       WINDOW(20 70 10 60)
+      **  DDS6408 20  Window WIN with its border and attributes does not fit the display 24x80 (*DS3)
+   25.00       A                                  1  1'x'
+   26.00       A          R CTLBAD                    SFLCTL(SFLONLY)
+      **  DDS6402 20  SFLCTL(SFLONLY) must name the SFL record immediately before this one
+      **  DDS6414 10  Record format CTLBAD has no fields
+   27.00       A          R SFL9                      SFL
+   28.00       A            Y              1A  O  5  2
+   29.00       A          R CTL9                      SFLCTL(SFL9) SFLSIZ(5) SFLPAG(10)
+      **  DDS6404 20  Subfile size is not valid: SFLPAG 10 exceeds SFLSIZ 5 on *DS3
+      **  DDS6414 10  Record format CTL9 has no fields
+   30.00       A          R LOST                      SFLCTL(NOWHERE) SFLSIZ(1) SFLPAG(1)
+      **  DDS6402 20  SFLCTL(NOWHERE) must name the SFL record immediately before this one
+      **  DDS6414 10  Record format LOST has no fields
+
+  Display sizes: 24x80 (*DS3)
+  Indicators at the front of each record buffer
+  File keywords: MSGLOC(30)
+
+  Record format BAD    Everything wrong
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+                                        1    1    23                              'Top left is not allowed'
+  FLD1        A         10       B      3    2    10      0      0
+  FLD2        A         10       O      3    8    10     10                       DSPATR(HI)
+  FLD3        A          5       I     24   76     5            10
+  FLD4        A         15       O     24   70    15     20
+  TXT         A          5       O      8    2     5     35                       EDTCDE(J) CHECK(RB) DSPATR(XX) COLOR(BLK)
+  NUM         S          7    2  O      9    2     7     40                       DSPATR(PR)
+    Output buffer 47 bytes (option indicators none); input buffer 15 bytes (response indicators none); level identifier EF8D0DBD5C5EA
+
+  Record format SFLONLY    (subfile record)
+    Record keywords: SFL
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+  X           A          1       O      5    2     1      0
+    Output buffer 1 bytes (option indicators none); input buffer 0 bytes (response indicators none); level identifier D4654E72DEDB1
+
+  Record format WIN
+    Window at line 20 column 70, 10 lines by 60 columns inside the border
+    Record keywords: WINDOW(20 70 10 60)
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+                                        1    1     1                              'x'
+    Output buffer 0 bytes (option indicators none); input buffer 0 bytes (response indicators none); level identifier E3B0C44298FC1
+
+  Record format CTLBAD    (subfile control record)
+    Subfile SFLONLY: SFLSIZ 0 SFLPAG 0
+    Record keywords: SFLCTL(SFLONLY)
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+    Output buffer 0 bytes (option indicators none); input buffer 0 bytes (response indicators none); level identifier E3B0C44298FC1
+
+  Record format SFL9    (subfile record)
+    Record keywords: SFL
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+  Y           A          1       O      5    2     1      0
+    Output buffer 1 bytes (option indicators none); input buffer 0 bytes (response indicators none); level identifier 78013657012BD
+
+  Record format CTL9    (subfile control record)
+    Subfile SFL9: SFLSIZ 5 SFLPAG 10 on lines 5-14
+    Record keywords: SFLCTL(SFL9) SFLSIZ(5) SFLPAG(10)
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+    Output buffer 0 bytes (option indicators none); input buffer 0 bytes (response indicators none); level identifier E3B0C44298FC1
+
+  Record format LOST    (subfile control record)
+    Subfile NOWHERE: SFLSIZ 1 SFLPAG 1
+    Record keywords: SFLCTL(NOWHERE) SFLSIZ(1) SFLPAG(1)
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+    Output buffer 0 bytes (option indicators none); input buffer 0 bytes (response indicators none); level identifier E3B0C44298FC1
+
+  No indicators used.
+
+  Messages
+  ID       Sev       Seq  Text
+  DDS6303  20       3.00  MSGLOC line 30 is outside the display of 24 lines
+  DDS6205  20       4.00  Command key CF25 is not valid; keys are CA01-CA24 and CF01-CF24
+  DDS0209  20       5.00  Keyword BOGUS is not known
+  DDS0207  20       6.00  Keyword SFLDSP is not allowed at the file level of a display file
+  DDS6509  20       8.00  Field 'Top left is ...': row 1 column 1 leaves no room for the attribute byte before the field on 24x80...
+  DDS6508  20      10.00  Field FLD2 overlaps field FLD1 on 24x80 (*DS3); a field needs the position before it for its attribute
+  DDS0207  20      11.00  Keyword OVERLAY is not allowed at the field level of a display file
+  DDS6101  20      11.00  Conditioning " 5X      " is not valid; position 7 takes A, O or blank and positions 8-16 up to three in...
+  DDS6517  20      12.00  Field FLD1 is already defined in this record format
+  DDS6509  20      13.00  Field FLD3: an input field cannot end in the last position; its ending attribute needs one more on 24x8...
+  DDS6509  20      14.00  Field FLD4: extends past the last position on 24x80 (*DS3)
+  DDS6106  20      15.00  Field HID has usage H and takes no location
+  DDS6105  20      16.00  Field NOLOC needs a row and column in positions 39-44
+  DDS6514  20      17.00  Keyword EDTCDE on field TXT is not valid for type A
+  DDS6507  20      17.00  Keyword CHECK on field TXT needs usage I or B
+  DDS6513  20      18.00  Keyword DSPATR: XX is not valid; use BL, CS, HI, ND, PC, PR, RI, UL, MDT, OID, SP
+  DDS6513  20      18.00  Keyword COLOR: BLK is not valid; use BLU, GRN, PNK, RED, TRQ, WHT, YLW
+  DDS6507  20      19.00  Keyword DSPATR(PR) on field NUM needs usage I or B
+  DDS6501  20      20.00  Data type 'Q' is not valid in a display file
+  DDS6107  20      21.00  A +n column needs a field before it on the same row
+  DDS6401  20      22.00  Subfile record SFLONLY must be followed by a record with SFLCTL(SFLONLY)
+  DDS6408  20      24.00  Window WIN with its border and attributes does not fit the display 24x80 (*DS3)
+  DDS6402  20      26.00  SFLCTL(SFLONLY) must name the SFL record immediately before this one
+  DDS6414  10      26.00  Record format CTLBAD has no fields
+  DDS6404  20      29.00  Subfile size is not valid: SFLPAG 10 exceeds SFLSIZ 5 on *DS3
+  DDS6414  10      29.00  Record format CTL9 has no fields
+  DDS6402  20      30.00  SFLCTL(NOWHERE) must name the SFL record immediately before this one
+  DDS6414  10      30.00  Record format LOST has no fields
+  Totals by severity: 00 0  10 3  20 25  30 0
+  28 message(s); compilation ended with severity 20.

@@ -1,0 +1,108 @@
+QS/400 DDS compiler
+  File . . . . . . . . . . . :  QGPL/SUBFILE
+  Source . . . . . . . . . . :  QGPL/QDDSSRC(SUBFILE)
+  Type . . . . . . . . . . . :  Display file (DSPF)
+
+  SEQNBR  ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8  DATE
+    1.00       A* A list subfile with its control record and a message subfile
+    2.00       A                                      DSPSIZ(24 80 *DS3)
+    3.00       A                                      CF03(03 'Exit') CF05(05 'Refresh')
+    4.00       A                                      PRINT
+    5.00       A          R SFL1                      SFL
+    6.00       A                                      TEXT('Customer list line')
+    7.00       A            SEL            1A  B  9  3VALUES(' ' '2' '5')
+    8.00       A  40                                  DSPATR(PR)
+    9.00       A            SCUSNO         7S 0O  9  6EDTCDE(Z)
+   10.00       A            SCUSNM        30A  O  9 15
+   11.00       A            SBAL           9S 2O  9 47EDTCDE(J)
+   12.00       A            SRRN           5S 0H
+   13.00       A          R CTL1                      SFLCTL(SFL1)
+   14.00       A                                      SFLSIZ(50) SFLPAG(10)
+   15.00       A                                      OVERLAY ROLLUP(26) ROLLDOWN(27)
+   16.00       A  30                                  SFLDSP
+   17.00       A  31                                  SFLDSPCTL
+   18.00       A  32                                  SFLCLR
+   19.00       A N30                                  SFLEND(*MORE)
+   20.00       A                                      SFLCSRRRN(&CSRRRN)
+   21.00       A            CSRRRN         5S 0H
+   22.00       A            RCDNBR         4S 0H      SFLRCDNBR(CURSOR)
+   23.00       A                                  1 30'Work with customers' DSPATR(HI)
+   24.00       A                                  1  2DATE EDTCDE(Y)
+   25.00       A                                  3  2'Position to . . :'
+   26.00       A            POSNO          7S 0B  3 22CHECK(RZ) CHANGE(33)
+   27.00       A                                  7  2'Opt  Number  Name               +
+   28.00       A                                      Balance' DSPATR(UL)
+   29.00       A          R MSGSFL                    SFL SFLMSGRCD(24)
+   30.00       A            MSGKEY                    SFLMSGKEY
+   31.00       A            PGMQ                      SFLPGMQ
+   32.00       A          R MSGCTL                    SFLCTL(MSGSFL)
+   33.00       A                                      SFLSIZ(5) SFLPAG(1) SFLDSP SFLINZ
+   34.00       A  70                                  SFLEND
+   35.00       A            PGMQ                      SFLPGMQ
+   36.00       A          R FOOTER                    OVERLAY
+   37.00       A                                 23  2'F3=Exit   F5=Refresh' COLOR(BLU)
+
+  Display sizes: 24x80 (*DS3)
+  Indicators at the front of each record buffer
+  File keywords: CF03(03 'Exit') CF05(05 'Refresh') PRINT
+
+  Record format SFL1    Customer list line    (subfile record)
+    Record keywords: SFL
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+  SEL         A          1       B      9    3     1      1      2                VALUES(' ' '2' '5') DSPATR(PR)<40>
+  SCUSNO      S          7    0  O      9    6     7      2                       EDTCDE(Z)
+  SCUSNM      A         30       O      9   15    30      9
+  SBAL        S          9    2  O      9   47    13     39                       EDTCDE(J)
+  SRRN        S          5    0  H                       48      3
+    Output buffer 53 bytes (option indicators 40); input buffer 8 bytes (response indicators 03 05); level identifier 3B371B6B896EB
+
+  Record format CTL1    (subfile control record)
+    Subfile SFL1: SFLSIZ 50 SFLPAG 10 on lines 9-18; SFLEND(*MORE)
+    Keys: ROLLUP(26) ROLLDOWN(27)
+    Record keywords: SFLCTL(SFL1) SFLSIZ(50) SFLPAG(10) OVERLAY SFLDSP<30> SFLDSPCTL<31> SFLCLR<32> SFLEND(*MORE)<N30> SFLCSRRRN(...
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+  CSRRRN      S          5    0  H                        3      5
+  RCDNBR      S          4    0  H                        8     10                SFLRCDNBR(CURSOR)
+                                        1   30    19                              'Work with customers' DSPATR(HI)
+                                        1    2     8                              DATE EDTCDE(Y)
+                                        3    2    17                              'Position to . . :'
+  POSNO       S          7    0  B      3   22     8     12     14                CHECK(RZ) CHANGE(33)
+                                        7    2    39                              'Opt  Number  Name               Balance' DSPAT...
+    Output buffer 19 bytes (option indicators 30 31 32); input buffer 21 bytes (response indicators 03 05 26 27 33); level identifier D13B0ECF5E63B
+
+  Record format MSGSFL    (subfile record)
+    Record keywords: SFL SFLMSGRCD(24)
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+  MSGKEY      A          4       O                        0                       SFLMSGKEY
+  PGMQ        A         10       O                        4                       SFLPGMQ
+    Output buffer 14 bytes (option indicators none); input buffer 2 bytes (response indicators 03 05); level identifier 5492D0A8D5B61
+
+  Record format MSGCTL    (subfile control record)
+    Subfile MSGSFL: SFLSIZ 5 SFLPAG 1; SFLEND(*PLUS); message subfile
+    Record keywords: SFLCTL(MSGSFL) SFLSIZ(5) SFLPAG(1) SFLDSP SFLINZ SFLEND<70>
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+  PGMQ        A         10       O                        1                       SFLPGMQ
+    Output buffer 11 bytes (option indicators 70); input buffer 2 bytes (response indicators 03 05); level identifier 3F74521D511C1
+
+  Record format FOOTER
+    Record keywords: OVERLAY
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+                                       23    2    20                              'F3=Exit   F5=Refresh' COLOR(BLU)
+    Output buffer 0 bytes (option indicators none); input buffer 2 bytes (response indicators 03 05); level identifier E3B0C44298FC1
+
+  Indicator usage
+  Ind  Option at                                 Response at                               Text
+    3                                            3.00
+    5                                            3.00
+   26                                            15.00
+   27                                            15.00
+   30  16.00 19.00
+   31  17.00
+   32  18.00
+   33                                            26.00
+   40  8.00
+   70  34.00
+
+  No messages.
+  Totals by severity: 00 0  10 0  20 0  30 0
+  0 message(s); compilation ended with severity 00.

@@ -1,0 +1,37 @@
+     A* A list subfile with its control record and a message subfile
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CF03(03 'Exit') CF05(05 'Refresh')
+     A                                      PRINT
+     A          R SFL1                      SFL
+     A                                      TEXT('Customer list line')
+     A            SEL            1A  B  9  3VALUES(' ' '2' '5')
+     A  40                                  DSPATR(PR)
+     A            SCUSNO         7S 0O  9  6EDTCDE(Z)
+     A            SCUSNM        30A  O  9 15
+     A            SBAL           9S 2O  9 47EDTCDE(J)
+     A            SRRN           5S 0H
+     A          R CTL1                      SFLCTL(SFL1)
+     A                                      SFLSIZ(50) SFLPAG(10)
+     A                                      OVERLAY ROLLUP(26) ROLLDOWN(27)
+     A  30                                  SFLDSP
+     A  31                                  SFLDSPCTL
+     A  32                                  SFLCLR
+     A N30                                  SFLEND(*MORE)
+     A                                      SFLCSRRRN(&CSRRRN)
+     A            CSRRRN         5S 0H
+     A            RCDNBR         4S 0H      SFLRCDNBR(CURSOR)
+     A                                  1 30'Work with customers' DSPATR(HI)
+     A                                  1  2DATE EDTCDE(Y)
+     A                                  3  2'Position to . . :'
+     A            POSNO          7S 0B  3 22CHECK(RZ) CHANGE(33)
+     A                                  7  2'Opt  Number  Name               +
+     A                                      Balance' DSPATR(UL)
+     A          R MSGSFL                    SFL SFLMSGRCD(24)
+     A            MSGKEY                    SFLMSGKEY
+     A            PGMQ                      SFLPGMQ
+     A          R MSGCTL                    SFLCTL(MSGSFL)
+     A                                      SFLSIZ(5) SFLPAG(1) SFLDSP SFLINZ
+     A  70                                  SFLEND
+     A            PGMQ                      SFLPGMQ
+     A          R FOOTER                    OVERLAY
+     A                                 23  2'F3=Exit   F5=Refresh' COLOR(BLU)

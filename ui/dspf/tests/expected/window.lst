@@ -1,0 +1,65 @@
+QS/400 DDS compiler
+  File . . . . . . . . . . . :  QGPL/WINDOW
+  Source . . . . . . . . . . :  QGPL/QDDSSRC(WINDOW)
+  Type . . . . . . . . . . . :  Display file (DSPF)
+
+  SEQNBR  ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8  DATE
+    1.00       A* Windows: placed, default and borrowed
+    2.00       A                                      DSPSIZ(24 80 *DS3)
+    3.00       A                                      CA12(12 'Cancel')
+    4.00       A          R WIN1                      WINDOW(8 10 10 60)
+    5.00       A                                      WDWTITLE((*TEXT 'Confirm'))
+      **  DDS6210 00  Keyword WDWTITLE is kept with the file and has no effect yet
+    6.00       A                                      WDWBORDER((*COLOR BLU) +
+      **  DDS6210 00  Keyword WDWBORDER is kept with the file and has no effect yet
+    7.00       A                                      (*CHAR '........'))
+    8.00       A                                      RMVWDW
+    9.00       A                                  2  2'Delete this customer?'
+   10.00       A            ANSWER         1A  B  4  2VALUES('Y' 'N') DFT('N')
+   11.00       A                                  4  5'Y=Yes, N=No'
+   12.00       A                                  9  2'F12=Cancel' COLOR(BLU)
+   13.00       A          R WIN2                      WINDOW(*DFT 5 40) USRRSTDSP
+   14.00       A                                  1  1'Please wait...' DSPATR(BL)
+   15.00       A          R WIN3                      WINDOW(WIN1)
+   16.00       A                                  2  2'Customer deleted' DSPATR(HI)
+   17.00       A                                  9  2'Press Enter to continue'
+
+  Display sizes: 24x80 (*DS3)
+  Indicators at the front of each record buffer
+  File keywords: CA12(12 'Cancel')
+
+  Record format WIN1
+    Window at line 8 column 10, 10 lines by 60 columns inside the border
+    Record keywords: WINDOW(8 10 10 60) WDWTITLE((*TEXT 'Confirm')) WDWBORDER((*COLOR BLU) (*CHAR '........')) RMVWDW
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+                                        2    2    21                              'Delete this customer?'
+  ANSWER      A          1       B      4    2     1      0      1                VALUES('Y' 'N') DFT('N')
+                                        4    5    11                              'Y=Yes, N=No'
+                                        9    2    10                              'F12=Cancel' COLOR(BLU)
+    Output buffer 1 bytes (option indicators none); input buffer 2 bytes (response indicators 12); level identifier E1EE4C86E929B
+
+  Record format WIN2
+    Window placed by the system, 5 lines by 40 columns inside the border
+    Record keywords: WINDOW(*DFT 5 40) USRRSTDSP
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+                                        1    1    14                              'Please wait...' DSPATR(BL)
+    Output buffer 0 bytes (option indicators none); input buffer 1 bytes (response indicators 12); level identifier E3B0C44298FC1
+
+  Record format WIN3
+    Window as record WIN1, 10 lines by 60 columns inside the border
+    Record keywords: WINDOW(WIN1)
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+                                        2    2    16                              'Customer deleted' DSPATR(HI)
+                                        9    2    23                              'Press Enter to continue'
+    Output buffer 0 bytes (option indicators none); input buffer 1 bytes (response indicators 12); level identifier E3B0C44298FC1
+
+  Indicator usage
+  Ind  Option at                                 Response at                               Text
+   12                                            3.00
+
+  Messages
+  ID       Sev       Seq  Text
+  DDS6210  00       5.00  Keyword WDWTITLE is kept with the file and has no effect yet
+  DDS6210  00       6.00  Keyword WDWBORDER is kept with the file and has no effect yet
+  Totals by severity: 00 2  10 0  20 0  30 0
+  2 message(s); compilation ended with severity 00.

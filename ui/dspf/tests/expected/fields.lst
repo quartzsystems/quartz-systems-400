@@ -1,0 +1,97 @@
+QS/400 DDS compiler
+  File . . . . . . . . . . . :  QGPL/FIELDS
+  Source . . . . . . . . . . :  QGPL/QDDSSRC(FIELDS)
+  Type . . . . . . . . . . . :  Display file (DSPF)
+
+  SEQNBR  ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8  DATE
+    1.00       A* Customer maintenance: fields, constants, editing and checks
+    2.00       A                                      DSPSIZ(24 80 *DS3)
+    3.00       A                                      REF(QGPL/CUSTMAST)
+    4.00       A                                      INDTXT(50 'Protect the key')
+    5.00       A                                      CF03(03 'Exit') CF12(12 'Cancel')
+    6.00       A                                      CA05(05 'Refresh')
+    7.00       A                                      PRINT HELP ALTHELP(CA01)
+    8.00       A                                      CHGINPDFT(UL)
+    9.00       A          R CUSTREC                   TEXT('Customer maintenance')
+   10.00       A                                      OVERLAY PUTOVR KEEP
+   11.00       A  51                                  ALARM
+   12.00       A                                  1  2DATE EDTCDE(Y)
+   13.00       A                                  1 30'Customer maintenance' DSPATR(HI)
+   14.00       A                                  1 71TIME
+   15.00       A                                  2  2USER
+   16.00       A                                  2 71SYSNAME
+   17.00       A            CUSNO     R        B  4 15REFFLD(CUSNO) CHECK(RZ)
+       *       A            CUSNO          7P 0B  4 15REFFLD(CUSNO QGPL/CUSTMAST)
+   18.00       A  50                                  DSPATR(PR)
+   19.00       A                                      ERRMSG('Customer not found' 90)
+   20.00       A                                  4  2'Number . :'
+   21.00       A            CUSNM     R        B  5 15TEXT('Name')
+       *       A            CUSNM         30A  B  5 15REFFLD(CUSNM QGPL/CUSTMAST)
+   22.00       A                                  5  2'Name . . :'
+   23.00       A            BALANCE        9S 2O  6 15EDTCDE(J)
+   24.00       A                                  6  2'Balance  :'
+   25.00       A            CREDIT         7Y 2B  7 15EDTWRD('   ,   .  ') RANGE(0 99999)
+   26.00       A                                  7  2'Credit . :'
+   27.00       A            STATUS         1A  B  8 15VALUES('A' 'I' 'D') DFT('A')
+   28.00       A N50                                  DSPATR(UL)
+   29.00       A  50                                  COLOR(RED)
+   30.00       A                                  8  2'Status . :'
+   31.00       A                                  9  2'Since  . :'
+   32.00       A            SINCE           L  B  9 15DATFMT(*MDY) DATSEP('/')
+   33.00       A            LASTTM          T  O  9 +3TIMFMT(*HMS)
+   34.00       A            AMOUNT         7P 0H
+   35.00       A            COUNT          9B 0H
+   36.00       A            NOTE          40A  I 11 15CHECK(LC) AUTO(RAB) DUP(60)
+   37.00       A                                      BLANKS(61) CHANGE(62) COMP(NE ' ')
+   38.00       A                                 11  2'Note . . :'
+   39.00       A                                 23  2'F3=Exit   F12=Cancel' COLOR(BLU)
+   40.00       A            MSG           78A  O 24  2DSPATR(HI)
+
+  Display sizes: 24x80 (*DS3)
+  Indicators at the front of each record buffer
+  File keywords: REF(QGPL/CUSTMAST) INDTXT(50 'Protect the key') CF03(03 'Exit') CF12(12 'Cancel') CA05(05 'Refresh') PRINT HELP ...
+
+  Record format CUSTREC    Customer maintenance
+    Record keywords: OVERLAY PUTOVR KEEP ALARM<51>
+  Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
+                                        1    2     8                              DATE EDTCDE(Y)
+                                        1   30    20                              'Customer maintenance' DSPATR(HI)
+                                        1   71     8                              TIME
+                                        2    2    10                              USER
+                                        2   71     8                              SYSNAME
+  CUSNO       P          7    0  B      4   15     8      2      7                REFFLD(CUSNO) CHECK(RZ) DSPATR(PR)<50> ERRMSG('...
+                                        4    2    10                              'Number . :'
+  CUSNM       A         30       B      5   15    30      6     11                TEXT('Name')
+                                        5    2    10                              'Name . . :'
+  BALANCE     S          9    2  O      6   15    13     36                       EDTCDE(J)
+                                        6    2    10                              'Balance  :'
+  CREDIT      Y          7    2  B      7   15    10     45     41                EDTWRD('   ,   .  ') RANGE(0 99999)
+                                        7    2    10                              'Credit . :'
+  STATUS      A          1       B      8   15     1     52     48                VALUES('A' 'I' 'D') DFT('A') DSPATR(UL)<N50> CO...
+                                        8    2    10                              'Status . :'
+                                        9    2    10                              'Since  . :'
+  SINCE       L          8       B      9   15     8     53     49                DATFMT(*MDY) DATSEP('/')
+  LASTTM      T          8       O      9   26     8     61                       TIMFMT(*HMS)
+  AMOUNT      P          7    0  H                       69     57
+  COUNT       B          9    0  H                       73     61
+  NOTE        A         40       I     11   15    40            65                CHECK(LC) AUTO(RAB) DUP(60) BLANKS(61) CHANGE(6...
+                                       11    2    10                              'Note . . :'
+                                       23    2    20                              'F3=Exit   F12=Cancel' COLOR(BLU)
+  MSG         A         78       O     24    2    78     77                       DSPATR(HI)
+    Output buffer 155 bytes (option indicators 50 51); input buffer 105 bytes (response indicators 03 05 12 60 61 62 90); level identifier FEB91F25E3E86
+
+  Indicator usage
+  Ind  Option at                                 Response at                               Text
+    3                                            5.00
+    5                                            6.00
+   12                                            5.00
+   50  18.00 28.00 29.00                                                                   Protect the key
+   51  11.00
+   60                                            36.00
+   61                                            37.00
+   62                                            37.00
+   90                                            19.00
+
+  No messages.
+  Totals by severity: 00 0  10 0  20 0  30 0
+  0 message(s); compilation ended with severity 00.
