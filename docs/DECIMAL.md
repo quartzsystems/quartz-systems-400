@@ -76,6 +76,13 @@ dropped first, down to `63 - integer`. When the integer digits alone
 exceed 63 the operation fails with a size error. Division by zero is
 MCH1211.
 
+The pub400 capture (IBM i 7.5, `tools/conformance/oracle/qdecimal/
+results.csv`) confirms the 63-digit rule for `+`, `-` and `*`, but its
+quotients are shorter: `999.99 / 999.99` has 25 decimals there, 58
+here, and `EVAL(R)` keeps the result's decimals where ours drops to
+zero. The division rule and `*RESDECPOS` are open until the capture is
+fitted (`cargo test -p qdecimal --test oracle` lists every case).
+
 **`*RESDECPOS`** (`EXPROPTS(*RESDECPOS)` or the `R` extender): the same
 rules, except that the decimal positions of an intermediate result are
 never reduced below the result field's decimal positions. If that

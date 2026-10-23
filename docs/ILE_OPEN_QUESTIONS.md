@@ -8,11 +8,10 @@ is in `expected/` and the test passes.
 
 ## Runtime library
 
-1. **`%CHAR` of a decimal with decimal positions.** Implemented: the
-   value as `Decimal` prints it, so `1.50` gives `1.50` and `0.5`
-   gives `0.5`, negative values with a leading `-`, left-adjusted.
-   The machine may print `.5`. Oracle: `CVTCHAR` in the ILE kit
-   prints `%CHAR` of `0.5`, `-0.5`, `100`, `1.50`.
+1. **`%CHAR` of a decimal with decimal positions.** Settled on pub400
+   (IBM i 7.5): `%CHAR` shows every declared decimal and no zero before
+   the point: `1.50`, `.50`, `100`, `-.50`. Implemented as
+   `Decimal::char_text`.
 
 2. **Message identifier of an invalid date, time or timestamp.**
    Implemented: `MCH1602`, mapped to RPG status `00112`. The machine's
@@ -21,19 +20,19 @@ is in `expected/` and the test passes.
    `ADDDUR` on an invalid date under `MONMSG MCH0000` and prints the
    identifier.
 
-3. **Message identifier of a string operation out of range.**
-   Implemented: `MCH0603` for `%SUBST`, `%SCAN`, `%REPLACE` and
-   `%LEN` assignments outside the string, mapped to status `00100`
-   nowhere yet (the runtime maps `MCH0603` to `00121`, the array index
-   status). Oracle: `SUBSTBAD` prints the identifier the machine sends
-   for `%SUBST` past the end.
+3. **Message identifier of a string operation out of range.** The
+   machine answers status `00100` (the RPG runtime's `RNX0100`), not
+   `00121`. Still open here: the runtime raises `MCH0603` for `%SUBST`,
+   `%SCAN` and `%REPLACE` out of range, which the IR kit and `QIR.md`
+   describe; moving them to `RNX0100` (the condition exists in
+   `codegen::Cond`) changes the STR and MON kit cases with it.
 
-4. **Pointer arithmetic within static storage.** Implemented: every
-   static variable of a program's static area is one space, so a
-   pointer to one static may be advanced across its neighbours without
-   `MCH0601`; a pointer to an automatic variable is its own space and
-   fails one byte past it. Oracle: `PTRSTAT` advances a pointer past
-   a static field and dereferences.
+4. **Pointer arithmetic within static storage.** The machine reads one
+   byte past a static *and* past an automatic variable without error:
+   the stack is one space. Implemented: statics are one space; an
+   automatic variable is still its own space here and fails one byte
+   past it (`00222`). Open until automatic storage is modelled as the
+   entry's frame.
 
 5. **`%DEC` of text with embedded blanks.** Implemented: every blank
    is removed before parsing, so `1 2` reads as `12`. The machine may
@@ -64,20 +63,14 @@ is in `expected/` and the test passes.
    a divide by zero whose divisor a handler has since changed, and
    prints the result.
 
-10. **Where the function check is sent.** Implemented: `CPF9999` goes
-    to the entry the original escape was sent to, so every entry up to
-    the control boundary sees it again (`*PSSR` in the failing
-    program first). Oracle: `FCWHERE` prints which of two `MONMSG
-    CPF9999` ran, in the callee or the caller.
+10. **Where the function check is sent.** Settled: the caller's monitor
+    sees status `00202` (call failed), with the callee's original
+    message identifier; implemented in the handler search.
 
-11. **Condition handler result codes 30 and 31 (promote).** Implemented:
-    the new condition token's message identifier replaces the
-    condition, which goes on through the entry's remaining handlers
-    (30) or straight to its monitors (31) as if raised there; a token
-    naming no message percolates. The promoted condition carries no
-    RPG status, so an RPG `MONITOR` taking it sees `%STATUS` 0; the
-    machine may map it to `00202`. Oracle: `PROMOTE` promotes `MCH1211`
-    to a user condition and prints what the caller's monitor saw.
+11. **Condition handler result codes 30 and 31 (promote).** Settled:
+    after a promote to a user condition the monitor still sees status
+    `00102`; a promoted condition without a status of its own keeps the
+    one it replaced.
 
 12. **Feedback codes of the condition-management APIs.** Implemented:
     `CEE0801` for a procedure pointer that is not a procedure,
@@ -86,23 +79,13 @@ is in `expected/` and the test passes.
     identifiers for these cases are not certain. Oracle: `CEEFC`
     prints the feedback codes of each misuse.
 
-13. **`CEE9901` to the caller of a cancelled program.** Implemented:
-    reply `C` ends the entries down to the control boundary and sends
-    `CEE9901` as an escape to the boundary's caller, where the search
-    runs again (its own function check and inquiry when unhandled).
-    The machine sends `CEE9901` for ILE programs and `CPF9999`-based
-    escapes for OPM ones. Oracle: `CANCELTO` calls a failing program
-    under `MONMSG CEE9901` and prints the message data.
+13. **`CEE9901` to the caller of a cancelled program.** Settled: the
+    caller receives the original escape (`MCH1211`) with status `00202`;
+    `CEE9901` goes to the external queue only when there is no caller.
 
-14. **Stack overflow.** Implemented: a job process catches the
-    `SIGSEGV` on its stack's guard page (`work/qsjob/src/platform/
-    stack.rs`), lets the stack grow one more MiB so the access
-    completes, and the next call-stack entry raises `MCH0601`, so a
-    runaway recursion is an addressing violation a monitor can take;
-    the in-memory runtime measures a 1 MiB budget at every entry
-    instead. The machine's identifier for a stack overflow is not
-    certain. Oracle: `DEEPREC` recurses without end under `MONMSG
-    MCH0000` and prints the identifier.
+14. **Stack overflow.** Settled: the identifier is `MCH4429`, seen at
+    status `00202` by a monitor around the call that overflowed; the
+    budget check and the guard-page handler raise it.
 
 15. **`QCMDEXC` from a program.** Closed: since Phase 7 the command
     runs at once through the job's analyzer hook, as on the machine.

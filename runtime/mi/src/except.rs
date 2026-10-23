@@ -113,6 +113,12 @@ fn search(j: &mut Job, e: &Exception) -> Found {
                 Verdict::Percolate => {}
                 Verdict::Promote(mut new, skip) => {
                     new.depth = u32::try_from(i + 1).unwrap_or(u32::MAX);
+                    // A promoted condition without a status of its own
+                    // keeps the one it replaces (the machine's monitor
+                    // still sees 00102 after a promote).
+                    if new.status == 0 {
+                        new.status = cur.status;
+                    }
                     j.exception = Some(new.clone());
                     cur = new;
                     if skip {
@@ -120,6 +126,13 @@ fn search(j: &mut Job, e: &Exception) -> Found {
                     }
                 }
             }
+        }
+        // Past the failing entry the condition arrives through a call:
+        // the caller's monitor sees status 00202 with the original
+        // identifier.
+        if i < start && cur.status != 202 {
+            cur.status = 202;
+            j.exception = Some(cur.clone());
         }
         let f = &j.act.frames[i];
         let region = if i + 1 == top {
@@ -344,7 +357,10 @@ fn inquire(j: &mut Job, pgm: &str, original: &str) -> String {
 /// Cancel the request: the entries from the failing one down to the
 /// control boundary end as the exception percolates, and the
 /// boundary's caller receives `CEE9901` as an escape; with no caller
-/// it goes to the external queue and stays pending for the job.
+/// it goes to the external queue and stays pending for the job. (A
+/// callee in the caller's activation group is no boundary: its
+/// condition percolates to the caller's monitor unchanged, which is
+/// what the capture's `CANCELTO` saw.)
 fn cancel(j: &mut Job, pgm: &str, original: &str, boundary: Option<usize>) {
     let mut data = fixed(pgm, 10);
     data.extend(fixed(original, 7));

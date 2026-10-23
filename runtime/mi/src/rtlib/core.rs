@@ -120,12 +120,12 @@ pub extern "sysv64" fn enter(env: *mut Env, code: i64, argc: i64, opdesc: i64) {
     });
     j.act.frame_changed(adopts.as_ref(), true);
     // A fault on the guard page the job process forgave, or the
-    // in-memory budget run out: the entry fails with `MCH0601` as soon
-    // as it starts.
+    // in-memory budget run out: the entry fails with `MCH4429` (stack
+    // overflow) as soon as it starts.
     let here = std::ptr::from_ref(&code) as usize;
     let faulted = STACK_FAULT.load(Ordering::Acquire) && STACK_FAULT.swap(false, Ordering::AcqRel);
     if faulted || (j.stack_base != 0 && j.stack_base.saturating_sub(here) > j.stack_bytes) {
-        raise_on(j, Cond::Mch0601);
+        raise_on(j, Cond::Mch4429);
     }
 }
 

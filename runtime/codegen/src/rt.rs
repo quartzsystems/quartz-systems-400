@@ -411,6 +411,9 @@ impl RtFn {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[repr(u32)]
 pub enum Cond {
+    /// `RNX0100`: a string operation's position or length outside the
+    /// string (the RPG runtime's, not an MI exception).
+    Rnx0100 = 100,
     /// `MCH0601`: pointer outside its space.
     Mch0601 = 601,
     /// `MCH0602`: pointer stored unaligned.
@@ -434,6 +437,8 @@ pub enum Cond {
     Mch3601 = 3601,
     /// `MCH3602`: pointer of the wrong kind.
     Mch3602 = 3602,
+    /// `MCH4429`: stack overflow.
+    Mch4429 = 4429,
     /// `MCH4431`: a service program's signature does not match.
     Mch4431 = 4431,
     /// `MCH6801`: object domain or state violation (`QSECURITY` 40+).
@@ -444,13 +449,17 @@ impl Cond {
     /// The message identifier.
     #[must_use]
     pub fn msgid(self) -> String {
-        format!("MCH{:04}", self as u32)
+        match self {
+            Self::Rnx0100 => "RNX0100".into(),
+            _ => format!("MCH{:04}", self as u32),
+        }
     }
 
     /// From the number generated code passed.
     #[must_use]
     pub fn from_code(code: u32) -> Option<Self> {
         Some(match code {
+            100 => Self::Rnx0100,
             601 => Self::Mch0601,
             602 => Self::Mch0602,
             603 => Self::Mch0603,
@@ -462,6 +471,7 @@ impl Cond {
             3402 => Self::Mch3402,
             3601 => Self::Mch3601,
             3602 => Self::Mch3602,
+            4429 => Self::Mch4429,
             4431 => Self::Mch4431,
             6801 => Self::Mch6801,
             _ => return None,

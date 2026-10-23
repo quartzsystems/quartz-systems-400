@@ -183,8 +183,13 @@ fn convert_inner(dst: i64, dty: i64, src: i64, sty: i64, opts: i64) -> Result<()
         }
         // Number to text.
         (C::Char, C::Int | C::UInt | C::Float | C::Decimal) => {
-            let v = read_num(src, sty)?.value;
-            write_text(dst, dty, &text_of(&v.to_string()));
+            let t = read_num(src, sty)?;
+            let text = if st.class() == C::Decimal {
+                t.value.char_text(t.shape.scale)
+            } else {
+                t.value.to_string()
+            };
+            write_text(dst, dty, &text_of(&text));
         }
         // Text to date.
         (C::DateTime, C::Char) => {

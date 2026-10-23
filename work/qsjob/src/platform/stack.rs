@@ -5,7 +5,7 @@
 //! The native stack's guard page. A `SIGSEGV` there is a runaway
 //! recursion: the handler, on its own signal stack, lets the stack grow
 //! by one more MiB (`RLIMIT_STACK`) so the faulting access completes,
-//! and tells the runtime, whose next call-stack entry raises `MCH0601`
+//! and tells the runtime, whose next call-stack entry raises `MCH4429`
 //! at that instruction boundary. The only module in qsjob that uses
 //! `unsafe` and `libc`.
 

@@ -18,13 +18,17 @@ fn kit_is_current() {
     let cases = std::fs::read_to_string(dir.join("cases.csv")).expect("cases.csv is committed");
     let cases = fuzz::read_cases(&cases).expect("cases.csv parses");
     assert!(!cases.is_empty());
-    let rpg = std::fs::read_to_string(dir.join("QDFUZZ.RPGLE")).expect("QDFUZZ.RPGLE is committed");
+    let rpg = std::fs::read_to_string(dir.join("QDFUZZ.RPGLE"))
+        .expect("QDFUZZ.RPGLE is committed")
+        .replace("\r\n", "\n");
     assert_eq!(
         rpg,
         fuzz::rpg::rpg_source(),
         "QDFUZZ.RPGLE is stale; run qdfuzz kit"
     );
-    let expected = std::fs::read_to_string(dir.join("expected.csv")).expect("expected.csv");
+    let expected = std::fs::read_to_string(dir.join("expected.csv"))
+        .expect("expected.csv")
+        .replace("\r\n", "\n");
     let rows: Vec<_> = cases.iter().map(fuzz::expected).collect();
     assert_eq!(
         expected,

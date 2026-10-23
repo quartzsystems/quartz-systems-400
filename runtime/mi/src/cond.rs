@@ -47,10 +47,14 @@ impl Exception {
     /// An exception for an escape message sent to an entry.
     #[must_use]
     pub fn message(msgid: &str, msgf: &str, data: Vec<u8>, depth: u32) -> Self {
-        let cond = msgid
-            .strip_prefix("MCH")
-            .and_then(|n| n.parse::<u32>().ok())
-            .and_then(Cond::from_code);
+        let cond = if msgid == "RNX0100" {
+            Some(Cond::Rnx0100)
+        } else {
+            msgid
+                .strip_prefix("MCH")
+                .and_then(|n| n.parse::<u32>().ok())
+                .and_then(Cond::from_code)
+        };
         // The RPG statuses of the messages the runtime itself sends: a
         // cancelled callee is 202, a function check 9999.
         let status = match msgid {
@@ -102,6 +106,7 @@ impl Exception {
 #[must_use]
 pub fn status_of(c: Cond) -> u16 {
     match c {
+        Cond::Rnx0100 => 100,
         Cond::Mch1211 => 102,
         Cond::Mch1210 => 103,
         Cond::Mch0603 => 121,
@@ -113,6 +118,7 @@ pub fn status_of(c: Cond) -> u16 {
         | Cond::Mch3402
         | Cond::Mch3601
         | Cond::Mch3602
+        | Cond::Mch4429
         | Cond::Mch4431
         | Cond::Mch6801 => 222,
     }

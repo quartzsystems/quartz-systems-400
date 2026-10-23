@@ -351,6 +351,26 @@ impl Decimal {
     }
 }
 
+impl Decimal {
+    /// `%CHAR` of the value held in a field of `scale` decimals, as the
+    /// machine renders it: every declared decimal shown, no zero before
+    /// the point, the sign first.
+    #[must_use]
+    pub fn char_text(&self, scale: u8) -> String {
+        let v = self
+            .rescale(scale, Rounding::Truncate)
+            .unwrap_or_else(|_| self.clone());
+        let s = Self::render(v.neg, &v.mag, v.scale);
+        if let Some(r) = s.strip_prefix("0.") {
+            format!(".{r}")
+        } else if let Some(r) = s.strip_prefix("-0.") {
+            format!("-.{r}")
+        } else {
+            s
+        }
+    }
+}
+
 impl fmt::Display for Decimal {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.pad(&Self::render(self.neg, &self.mag, self.scale))
