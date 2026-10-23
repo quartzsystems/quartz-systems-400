@@ -13,6 +13,7 @@
 
 pub mod generate;
 pub mod payload;
+pub mod shipped;
 pub mod spec;
 pub mod stack;
 

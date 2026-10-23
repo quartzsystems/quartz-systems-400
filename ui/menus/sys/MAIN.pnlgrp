@@ -1,0 +1,51 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* MAIN: the system main menu, where a session starts.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=OPTCL BASETYPE='CHAR 3'.
+:ECLASS.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=OPTION CLASS=OPTCL.
+:VAR NAME=PANELID CLASS=NAMECL VALUE='MAIN'.
+:KEYL NAME=MENUKEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+:KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F13 ACTION='MENU INFO'.F13=Information Assistant
+:KEYI KEY=F23 ACTION='RETURN 23'.F23=Set initial menu
+:EKEYL.
+:PANEL NAME=MAIN HELP=HLPMAIN KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.QS/400 Main Menu
+:MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Select one of the following:
+:MENUI OPTION=1 ACTION='MENU USER'.User tasks
+:MENUI OPTION=2 ACTION='MENU OFCTSK'.Office tasks
+:MENUI OPTION=3 ACTION='MENU SYSTEM'.General system tasks
+:MENUI OPTION=4 ACTION='MENU DATA'.Files, libraries, and folders
+:MENUI OPTION=5 ACTION='MENU PROGRAM'.Programming
+:MENUI OPTION=6 ACTION='MENU CMN'.Communications
+:MENUI OPTION=7 ACTION='MENU DEFINE'.Define or change the system
+:MENUI OPTION=8 ACTION='MENU PROBLEM'.Problem handling
+:MENUI OPTION=9 ACTION='MENU MAJOR'.Display a menu
+:MENUI OPTION=10 ACTION='MENU INFO'.Information Assistant options
+:MENUI OPTION=11 ACTION='MENU ACCESS'.QS/400 Access tasks
+:MENUI OPTION=90 ACTION='CMD SIGNOFF'.Sign off
+:EMENU.
+:CMDLINE SIZE=LONG.Selection or command
+:EPANEL.
+:HELP NAME=HLPMAIN.QS/400 Main Menu - Help
+:P.The main menu is where a session begins. Type an option number or a
+command on the line at the bottom and press Enter. Option 9 shows the
+command menus; option 90 signs off.
+:P.F3 leaves the menu (signing off when it is the session's first),
+F4 prompts the command typed, F9 brings the previous command back,
+F12 returns to the menu shown before this one, F23 makes this menu
+the one the user's sessions start with.
+:EHELP.
+:EPNLGRP.

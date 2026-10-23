@@ -351,7 +351,42 @@ the rows its text needs. Data, menu and information areas page with
 `CSRLOC` field, else the first option field, else the command line or
 selection field, else the first input field.
 
-## 8. Open questions
+## 8. The dialog engine
+
+The job shows panels through `work/qsjob/src/display/uim.rs`: a
+`UimDialog` holds a group's variables (their `VALUE`s to start), its
+lists (every entry, the page's first index, the options typed on
+entries) and imported conditions, implements the renderer's `Dialog`,
+and `show(surface, panel)` renders the panel (§7) onto the job's
+screen (`Surface`: the 5250 device, or `slic`'s console as a panel),
+waits for a key and turns it into a `Response`:
+
+- the key's `:KEYI.` action (its `COND` evaluated), Enter being the
+  panel's `ENTER`;
+- `EXIT` and `CANCEL` return as such; `RETURN n` returns `n`, after a
+  menu's option was looked up (`MENU name`, `CMD text` and `RETURN`
+  actions of the `:MENUI.`; a number no item has leaves "Selection n
+  is not valid."), options typed on list entries were collected
+  (`Options`, each with the `:LISTACT.` action it matched, the caller
+  substituting `&VAR` from the entry and running the command), and a
+  command on the command line was returned (`Command`);
+- `PAGEUP`/`PAGEDOWN` move every list by the entries the page showed
+  (`Screen::list_shown`) and the data, menu and information areas by a
+  page; `TOP`, `BOTTOM`, `MOREKEYS` likewise stay in the engine, with
+  "Already at the top/bottom of the area." when nothing moves;
+- `HELP`, `EXTHELP`, `KEYSHELP` and `HELP module` show the module
+  (§7 R20) until Enter, F3 or F12;
+- `RETRIEVE` and `PRINT` return for the caller; `PANEL name` returns
+  the panel to show next; a key not in the list is "Function key not
+  allowed."; the other actions answer "That function is not available
+  in this release."
+
+A `:CMDLINE.` without `NAME` shows the dialog's `*CMDLINE` variable, so
+`F9=Retrieve` can fill it. Field values come back from the screen
+model by position: input variables, list cells, list options (by
+entry index), the command line and the menu selection.
+
+## 9. Open questions
 
 - The condition grammar accepts a bare name as a variable because the
   reference's operand form is not pinned down; a probe of a real

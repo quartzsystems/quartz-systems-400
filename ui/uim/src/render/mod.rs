@@ -144,6 +144,19 @@ pub fn render(
     Ok(s)
 }
 
+/// Whether a named condition of the group holds for the dialog (an
+/// imported one is the dialog's to answer).
+#[must_use]
+pub fn condition(group: &PanelGroup, dialog: &dyn Dialog, name: &str) -> bool {
+    let opts = Options::default();
+    let ctx = Ctx {
+        group,
+        dialog,
+        opts: &opts,
+    };
+    ctx.cond(Some(name))
+}
+
 /// Render a help module as a full-screen help panel (R20).
 pub fn render_help(
     group: &PanelGroup,
@@ -189,7 +202,9 @@ fn bottom_block(ctx: &Ctx, p: &Panel, keyl: &KeyList, s: &mut Screen) -> usize {
             col: 7,
             len,
             attr: Attr::Underline,
-            value: c.name.as_deref().map(|n| ctx.value(n)).unwrap_or_default(),
+            // Without a name, the dialog may still fill the line
+            // (`F9=Retrieve`) through the `*CMDLINE` variable.
+            value: ctx.value(c.name.as_deref().unwrap_or("*CMDLINE")),
             target: Target::CmdLine,
             usage: Usage::Input,
             shift: Shift::None,

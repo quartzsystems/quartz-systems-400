@@ -41,14 +41,18 @@ pub fn run(system: &mut System, name: &str, parms: &Parms) -> Option<CmdReply> {
             finish(out, name, "CPC2194", &[(&lib, 10)])
         }
         "CRTBNDCL" | "CRTCLMOD" | "CRTCLPGM" | "RTVCLSRC" => super::clpgm::run(system, name, parms),
+        "CRTPNLGRP" | "CRTMNU" => super::uicmd::run(system, name, parms),
         "CLRLIB" => clrlib(system, &parms.name("LIB")),
-        "DLTPGM" | "DLTMOD" | "DLTSRVPGM" | "DLTMSGF" | "DLTBNDDIR" | "DLTAUTL" => {
+        "DLTPGM" | "DLTMOD" | "DLTSRVPGM" | "DLTMSGF" | "DLTBNDDIR" | "DLTAUTL" | "DLTMNU"
+        | "DLTPNLGRP" => {
             let (kwd, ty) = match name {
                 "DLTPGM" => ("PGM", "*PGM"),
                 "DLTMOD" => ("MODULE", "*MODULE"),
                 "DLTSRVPGM" => ("SRVPGM", "*SRVPGM"),
                 "DLTMSGF" => ("MSGF", "*MSGF"),
                 "DLTBNDDIR" => ("BNDDIR", "*BNDDIR"),
+                "DLTMNU" => ("MENU", "*MENU"),
+                "DLTPNLGRP" => ("PNLGRP", "*PNLGRP"),
                 _ => ("AUTL", "*AUTL"),
             };
             let (n, l) = if kwd == "AUTL" {

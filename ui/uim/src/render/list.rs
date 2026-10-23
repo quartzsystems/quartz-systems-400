@@ -132,6 +132,7 @@ pub(super) fn render(ctx: &Ctx, area: &ListArea, s: &mut Screen, top: usize, hei
 
     // R10: lists always say where they stand.
     let shown = state.rows.len().min(entries);
+    s.list_shown.insert(area.listdef.clone(), entries);
     let more = state.top + entries < state.count() || (!state.complete && shown >= entries);
     super::indicator(s, last, !more);
 }

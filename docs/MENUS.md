@@ -176,7 +176,34 @@ option; `MAJOR` matches `menu-major.txt` and `menu-major-2.txt`.
 `SUBJECT` lists `CMDADMDMN` (6) and `CMDAPPN` (22), which IBM's does
 not, so the options after each are one higher here.
 
-## 5. Open questions
+## 5. `GO` in the job
+
+`work/qsjob/src/work/menu.rs` runs menus for the interactive job.
+`GO MENU(lib/name)` (also typed on any menu or at Command Entry; `*MAIN`,
+`*USER`, `*SIGNOFF` and a generic `CMD*` resolved through
+`list_objects`) starts a `MenuStack`; the current menu's `*MENU` object
+and panel group come through the storage service (`menu_open`,
+`pnlgrp_open`, the panel named like the menu) and the UIM engine shows
+it. A `MENU` option pushes; `CMD` options and typed commands run as
+`QCMD` requests with the first line of their output on the message
+line (`CALL QCMD` opens Command Entry, `SIGNOFF` ends the session, a
+nested `GO` recurses); `F3` and `F12` pop, and at the first menu
+return to where `GO` was typed, or sign off when the menu was the
+session's initial one; `F9` retrieves the previous command; `F23`
+makes the menu the user's initial menu (`CHGUSRPRF INLMNU`). `*DSPF`
+and `*PGM` menus are refused with a message. The session's `MAIN` is
+`QSYS/MAIN` through this path, the interim panel standing in when the
+object is missing.
+
+The shipped menus (`menus::shipped::FILES`: the generated command menus
+under `pnlgrp/` and the hand-written task menus under `sys/`, `MAIN`
+first) are compiled and created in `QSYS` at service start when
+missing, a `*PNLGRP` and a `*MENU` of the same name each
+(`lic/slic/src/svc/ui.rs`). `CRTPNLGRP` and `CRTMNU`
+(`lic/slic/src/cpp/uicmd.rs`) make them from a source member and from
+parameters; `DLTPNLGRP` and `DLTMNU` delete them.
+
+## 6. Open questions
 
 - IBM's subject menus are curated: whether a `CMDJOB` option such as
   `ADDJOBQE` or `CHGJOBD` is listed cannot be read from the goldens

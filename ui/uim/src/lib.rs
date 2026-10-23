@@ -23,6 +23,7 @@ pub mod listing;
 pub mod model;
 pub mod payload;
 pub mod render;
+pub mod shipped;
 pub mod source;
 pub mod spec;
 pub mod tags;

@@ -18,6 +18,7 @@ mod direct;
 mod msgfcmd;
 mod objcmd;
 mod sysinfo;
+mod uicmd;
 
 use cmd::block::Parms;
 use stg::proto::{CmdMsg, CmdReply};

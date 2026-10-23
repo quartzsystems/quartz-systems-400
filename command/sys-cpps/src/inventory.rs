@@ -153,6 +153,10 @@ pub fn orphans() -> Vec<String> {
 /// functions directly (kept in step with its match by hand).
 pub const DIRECT: &[&str] = &[
     "ADDMSGD",
+    "CRTMNU",
+    "CRTPNLGRP",
+    "DLTMNU",
+    "DLTPNLGRP",
     "ALCOBJ",
     "CHGCMD",
     "CHGCMDDFT",
@@ -232,6 +236,9 @@ pub const DIRECT: &[&str] = &[
 /// The commands `work/qsjob` runs in the job (`command/jobsite.rs` and
 /// the job words it bridges to).
 pub const JOB_SITE: &[&str] = &[
+    // --- panels: work management (work/qsjob/src/panels/work.rs)
+    // --- panels: messages and objects (panels/objects.rs)
+    // --- panels: system and security (panels/system.rs)
     "ADDBKP",
     "CALL",
     "CHGDBG",
@@ -379,6 +386,7 @@ pub const BRIDGE_WORDS: &[&str] = &[
     "crtoutq",
     "crtpf",
     "crtpgm",
+    "crtdspf",
     "crtprtf",
     "crtsbsd",
     "crtsrcpf",
@@ -449,6 +457,7 @@ pub const BRIDGE_WORDS: &[&str] = &[
     "opnqryf",
     "ovrdbf",
     "ovrmsgf",
+    "ovrdspf",
     "ovrprtf",
     "prtadpobj",
     "prtcapture",
@@ -528,7 +537,6 @@ pub const BRIDGE_WORDS: &[&str] = &[
 /// (`docs/PHASE7.md` lists them under Blocked).
 pub const UNSUPPORTED: &[&str] = &[
     "CPYLIB",
-    "CRTDSPF",
     "DSPMODSRC",
     "EDTLIBL",
     "POSDBF",

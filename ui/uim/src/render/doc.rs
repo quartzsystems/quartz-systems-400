@@ -127,7 +127,7 @@ impl Flow<'_> {
                 }
             }
             Block::List { .. } | Block::DefList { .. } | Block::ParmList(_) | Block::Note(_) => {
-                self.listing(b, col)
+                self.listing(b, col);
             }
             Block::ImHelp(name) => {
                 if self.depth < 8

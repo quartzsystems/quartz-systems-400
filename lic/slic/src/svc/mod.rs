@@ -16,6 +16,7 @@ mod sbs;
 pub(crate) mod security;
 mod spool;
 mod storage;
+pub mod ui;
 pub(crate) mod work;
 
 use std::fmt::Write as _;
@@ -142,6 +143,7 @@ pub fn reply(system: &mut System, line: &str) -> String {
         ("sysval", rest) => sysval(system, rest),
         ("mode", [m]) => mode(system, m),
         ("screen", _) => crate::ipl::display::dump(system),
+        ("tn5250", rest) => crate::ipl::link::command(system, rest),
         ("key", [name]) => key(system, name),
         ("type", _) => type_text(system, line),
         ("dbgkill", _) => dbgkill(system, line),

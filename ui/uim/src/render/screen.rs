@@ -118,6 +118,8 @@ pub struct Screen {
     pub cursor: Option<(usize, usize)>,
     /// The paging indicator.
     pub more: Option<More>,
+    /// How many entries of each list the page shows, by list name.
+    pub list_shown: std::collections::BTreeMap<String, usize>,
 }
 
 impl Screen {

@@ -49,6 +49,10 @@ pub const OLD_JOB_WORDS: &[&str] = &[
 pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Result<String, Fail> {
     let parms = parms_of(r);
     let entry = sys_cpps::entry(&r.name).expect("a job-site command is in the inventory");
+    // The system's displays as panels, for a job that shows them.
+    if let Some(res) = crate::panels::run(job, host, r, out) {
+        return res;
+    }
     match r.name.as_str() {
         "CALL" => return call(job, host, &parms),
         "RTVSYSVAL" => return rtvsysval(host, r, out),

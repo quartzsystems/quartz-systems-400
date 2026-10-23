@@ -47,16 +47,18 @@ struct Line {
 }
 
 /// What a job's session keeps between its panels.
-struct Session<'a> {
-    c: Console,
-    link: &'a Shared,
-    system: String,
-    signon: SignedOn,
+pub(super) struct Session<'a> {
+    pub(super) c: Console,
+    pub(super) link: &'a Shared,
+    pub(super) system: String,
+    pub(super) signon: SignedOn,
     /// Commands typed, oldest first, for F9.
     commands: Vec<String>,
     /// Where F9 is in `commands`; `commands.len()` after a command.
     retrieve: usize,
     history: Vec<Line>,
+    /// A message for the next Command Entry display.
+    pending: String,
     /// `F10`: second-level text shown.
     detailed: bool,
     /// `F11`: lines shown at their full width.
@@ -101,6 +103,7 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
         full: false,
         more_keys: false,
         top: None,
+        pending: String::new(),
     };
     if s.signon.next == Next::ChangePassword && !change_password(&mut s) {
         end(s, &mut ending);
@@ -116,7 +119,13 @@ pub fn run(ctl: Chan, link: &Shared, start: &Start) -> ! {
     }
     match s.signon.inlmnu.as_str() {
         "*SIGNOFF" => {}
-        "MAIN" => main_menu(&mut s),
+        // The MAIN menu object through the UIM engine; the interim
+        // panel when the object is missing.
+        "MAIN" => {
+            if super::menu::go(&mut s, "MAIN", true) == super::menu::Flow::Back {
+                main_menu(&mut s);
+            }
+        }
         _ => {
             command_entry(&mut s);
         }
@@ -210,6 +219,18 @@ fn signon_info(s: &mut Session<'_>) -> bool {
 /// The interim MAIN menu until the user signs off. F3 and F12 do
 /// nothing at the top; `CALL QCMD` opens Command Entry, whose F3 comes
 /// back here.
+impl Session<'_> {
+    /// A message for the next display.
+    pub(super) fn message(&mut self, text: &str) {
+        self.pending = text.to_string();
+    }
+}
+
+/// The job's status for the service, with its function.
+pub(super) fn status_of(s: &Session<'_>, st: Status, function: &str) {
+    status(s.link, st, function);
+}
+
 fn main_menu(s: &mut Session<'_>) {
     let mut field = String::new();
     let mut message = String::new();
@@ -282,7 +303,7 @@ fn main_menu(s: &mut Session<'_>) {
 
 /// The first line of some output, for a message line: the most
 /// specific diagnostic comes first.
-fn first_line(out: &str) -> String {
+pub(super) fn first_line(out: &str) -> String {
     out.lines()
         .find(|l| !l.trim().is_empty())
         .unwrap_or("")
@@ -301,7 +322,7 @@ fn last_line(out: &str) -> String {
 }
 
 /// Keep a command for F9: the last 25, the newest last.
-fn remember(s: &mut Session<'_>, cmd: &str) {
+pub(super) fn remember(s: &mut Session<'_>, cmd: &str) {
     if s.commands.last().is_none_or(|l| l != cmd) {
         s.commands.push(cmd.to_string());
     }
@@ -312,7 +333,7 @@ fn remember(s: &mut Session<'_>, cmd: &str) {
 }
 
 /// F9: the previous command, older at each press.
-fn retrieve(s: &mut Session<'_>) -> String {
+pub(super) fn retrieve(s: &mut Session<'_>) -> String {
     if s.commands.is_empty() {
         return String::new();
     }
@@ -372,10 +393,13 @@ fn function_key(
 }
 
 /// Command Entry until F3 (false) or sign-off (true).
-fn command_entry(s: &mut Session<'_>) -> bool {
+pub(super) fn command_entry(s: &mut Session<'_>) -> bool {
     let mut field = String::new();
     let mut message = String::new();
     loop {
+        if message.is_empty() {
+            message = std::mem::take(&mut s.pending);
+        }
         s.c.show(panel(s, &field, &message));
         status(s.link, Status::Dspw, "PGM-QCMD");
         let Some((key, fields)) = s.c.wait_input() else {
@@ -418,13 +442,22 @@ fn command_entry(s: &mut Session<'_>) -> bool {
             signoff(s, &typed);
             return true;
         }
+        if word == "go" {
+            remember(s, &typed);
+            let rest = typed.split_once(char::is_whitespace).map_or("", |(_, r)| r);
+            match super::menu::go(s, rest, false) {
+                super::menu::Flow::Back => {}
+                super::menu::Flow::SignOff | super::menu::Flow::End => return true,
+            }
+            continue;
+        }
         run_command(s, &typed, RunMode::Run);
     }
 }
 
 /// `SIGNOFF LOG(*LIST)` keeps the job log; `DROP` and `ENDCNN` have no
 /// connection to drop at the console.
-fn signoff(s: &mut Session<'_>, cmd: &str) {
+pub(super) fn signoff(s: &mut Session<'_>, cmd: &str) {
     s.c.job().log_request(cmd, ("QCMD", "QSYS"));
     let p = wm::cmd::Params::parse(cmd.trim_start().get(7..).unwrap_or(""));
     if p.upper("LOG").as_deref() == Some("*LIST") {
@@ -433,7 +466,7 @@ fn signoff(s: &mut Session<'_>, cmd: &str) {
 }
 
 /// Run a command as a request of `QCMD`; its output.
-fn command_output(s: &mut Session<'_>, cmd: &str, mode: RunMode) -> String {
+pub(super) fn command_output(s: &mut Session<'_>, cmd: &str, mode: RunMode) -> String {
     let word = cmd.split_whitespace().next().unwrap_or("");
     status(
         s.link,
