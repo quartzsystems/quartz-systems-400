@@ -1,0 +1,87 @@
+=== HLPWDG page 1
+| Help                            Widgets - Help                                 |
+|                                                                                |
+|     The Work with Widgets panel lists the widgets of a library and lets        |
+|     you change, remove, show and describe them. Type an option next to         |
+|     an entry and press Enter; the option runs for every entry you              |
+|     marked, in the order of the list.                                          |
+|                                                                                |
+| How to pick an entry                                                           |
+|                                                                                |
+|     Type the option number in the Opt column of the entry. To run the          |
+|     same option for several entries, type it next to each of them. The         |
+|     cursor's entry is GADGET when nothing is typed.                            |
+|                                                                                |
+|     To run a command instead, type it on the command line and press            |
+|     Enter.  For help on a command, type its name and press F4 (Prompt).        |
+|                                                                                |
+| Options                                                                        |
+|                                                                                |
+|     o Change: the change panel for the entry.                                  |
+|                                                                                |
+|                                                                        More... |
+| F3=Exit help   F10=Move to top   F12=Cancel   F13=Information Assistant        |
+| F14=Print help                                                                 |
+|                                                                                |
+cursor: None
+more: Some(More { row: 21, col: 73, bottom: false })
+blue: 1,2 22,2 22,17 22,35 22,48 23,2
+bright: 1,34 8,2 17,2 21,73
+=== HLPWDG page 2
+| Help                            Widgets - Help                                 |
+|                                                                                |
+|     o Remove: the entry is removed after you confirm.                          |
+|                                                                                |
+|     o Show: the display panel for the entry.                                   |
+|                                                                                |
+| Keys                                                                           |
+|                                                                                |
+|     F5        Refreshes the list from the library.                             |
+|                                                                                |
+|     F11       Shows the quantities instead of the text.                        |
+|                                                                                |
+|     Note: Options you type stay on the panel until they run.                   |
+|                                                                                |
+| Examples                                                                       |
+|                                                                                |
+|       2  GADGET     QGPL                                                       |
+|       4  SPROCKET   QGPL                                                       |
+|                                                                                |
+|     Marking two entries runs both options when you press Enter. See more       |
+|                                                                        More... |
+| F3=Exit help   F10=Move to top   F12=Cancel   F13=Information Assistant        |
+| F14=Print help                                                                 |
+|                                                                                |
+cursor: None
+more: Some(More { row: 21, col: 73, bottom: false })
+blue: 1,2 22,2 22,17 22,35 22,48 23,2
+bright: 1,34 7,2 9,6 11,6 13,6 15,2 20,14 21,73
+=== HLPMORE
+| Help                          More About Widgets                               |
+|                                                                                |
+|     Widgets hold other widgets when their holds flag is on.                    |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                         Bottom |
+| F3=Exit help   F10=Move to top   F12=Cancel   F13=Information Assistant        |
+| F14=Print help                                                                 |
+|                                                                                |
+cursor: None
+more: Some(More { row: 21, col: 74, bottom: true })
+blue: 1,2 22,2 22,17 22,35 22,48 23,2
+bright: 1,32 21,74

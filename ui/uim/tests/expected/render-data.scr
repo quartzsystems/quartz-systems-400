@@ -1,0 +1,93 @@
+=== DSPWDG page 1
+|                                 Display Widget                                 |
+|                                                             System:   QS400    |
+| Widget:   GADGET         Library:   QGPL                                       |
+|                                                                                |
+| Owner . . . . . . . . . . . . . . :   QPGMR                                    |
+| Kind of widget  . . . . . . . . . :   *GEAR                                    |
+| Quantity on hand  . . . . . . . . :      120                                   |
+| Priority (on the queue) . . . . . :        5                                   |
+| Output queue  . . . . . . . . . . :   QPRINT                                   |
+|   Library . . . . . . . . . . . . :     QGPL                                   |
+| Active  . . . . . . . . . . . . . :   *YES                                     |
+| Shared with every user  . . . . . :   *NO                                      |
+|                                                                                |
+| Started:                                                                       |
+|   Date  . . . . . . . . . . . . . :   2026-10-23                               |
+|   Time  . . . . . . . . . . . . . :   14:05:00                                 |
+| Size  . . . . . . . . . . . . . . :     4096   Units:   *BYTES                 |
+| Holds other widgets . . . . . . . :   *YES                                     |
+| Text  . . . . . . . . . . . . . . :   A gadget for the test corpus             |
+|                                                                        More... |
+| Press Enter to go back.                                                        |
+|                                                                                |
+| F3=Exit   F12=Cancel                                                           |
+|                                                                                |
+cursor: None
+more: Some(More { row: 20, col: 73, bottom: false })
+blue: 23,2 23,12 21,2
+bright: 1,34 20,73
+=== DSPWDG page 2
+|                                 Display Widget                                 |
+|                                                             System:   QS400    |
+|                                                                                |
+| Values below come from the last save.                                          |
+| Note  . . . . . . . . . . . . . . :   Nothing to note                          |
+| Saved by  . . . . . . . . . . . . :   QPGMR                                    |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                         Bottom |
+| Press Enter to go back.                                                        |
+|                                                                                |
+| F3=Exit   F12=Cancel                                                           |
+|                                                                                |
+cursor: None
+more: Some(More { row: 20, col: 74, bottom: true })
+blue: 23,2 23,12 21,2
+bright: 1,34 20,74
+=== CHGWDG two columns
+|                                 Change Widget                                  |
+|                                                                                |
+| Type the new values, press Enter.                                              |
+| Widget . . . . . . :   GADGET           Owner  . . . . . :   QPGMR             |
+| Library  . . . . . :   QGPL             Active . . . . . :   N                 |
+| Quantity . . . . . :   120              Note . . . . . . :   Nothing to note   |
+| Color  . . . . . . :   2   1=Red                                               |
+|                            2=Blue                                              |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+| F3=Exit   F12=Cancel                                                           |
+|                                                                                |
+cursor: Some((4, 25))
+more: None
+field  4,25 len  10 Underline var WNAME "GADGET"
+field  5,25 len  10 Underline var WLIB "QGPL"
+field  6,25 len   6 Underline var QTY "120"
+field  7,25 len   1 Underline var COLOR "2"
+field  5,63 len   4 Underline var ACTIVE "N"
+field  6,63 len  17 Underline var NOTE "Nothing to note"
+blue: 23,2 23,12 3,2
+bright: 1,34

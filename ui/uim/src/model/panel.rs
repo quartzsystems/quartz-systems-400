@@ -146,7 +146,7 @@ pub enum Separator {
     Rule,
     /// `NONE`.
     None,
-    /// `SYSNAM`: a line with `System:` and the system name (panels).
+    /// `SYSNAM` (also written `SYSNAME`): a line with `System:` and the system name (panels).
     SysName,
 }
 

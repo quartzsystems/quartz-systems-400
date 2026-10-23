@@ -1,0 +1,116 @@
+QS/400 UIM compiler
+  Panel group . . . . . . . :  QGPL/RENDER-MENU
+  Source  . . . . . . . . . :  QGPL/QPNLSRC(RENDER-MENU)
+
+  SEQNBR  MEMBER      ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8
+  000100              .* Rendering: a menu with a command line, one without, an information panel.
+  000200              :PNLGRP.
+  000300              :COPYR.Copyright (C) 2026 Quartz Systems
+  000400              :CLASS NAME=OPTCL BASETYPE='CHAR 2'.
+  000500              :ECLASS.
+  000600              :CLASS NAME=CMDCL BASETYPE=CMDLINE WIDTH=200.
+  000700              :ECLASS.
+  000800              :CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+  000900              :ECLASS.
+  001000              :CLASS NAME=FLAGCL BASETYPE='CHAR 1'.
+  001100              :ECLASS.
+  001200              :VAR NAME=OPTION CLASS=OPTCL.
+  001300              :VAR NAME=COMMAND CLASS=CMDCL.
+  001400              :VAR NAME=MENUID CLASS=NAMECL VALUE='QSMAIN'.
+  001500              :VAR NAME=OPERATOR CLASS=FLAGCL VALUE='N'.
+  001600              :VAR NAME=PGM CLASS=NAMECL VALUE='QGPL/MYPGM'.
+  001700              :COND NAME=ISOPR EXPR='&OPERATOR. EQ "Y"'.
+  001800              :KEYL NAME=MENUKEYS.
+  001900              :KEYI KEY=ENTER ACTION=ENTER.
+  002000              :KEYI KEY=F3 ACTION=EXIT.F3=Exit
+  002100              :KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+  002200              :KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+  002300              :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+  002400              :KEYI KEY=F13 ACTION=KEYSHELP.F13=Information Assistant
+  002500              :KEYI KEY=F23 ACTION='RETURN 23'.F23=Set initial menu
+  002600              :KEYI KEY=HELP ACTION=HELP.
+  002700              :EKEYL.
+  002800              :KEYL NAME=SELKEYS.
+  002900              :KEYI KEY=ENTER ACTION=ENTER.
+  003000              :KEYI KEY=F3 ACTION=EXIT.F3=Exit
+  003100              :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+  003200              :EKEYL.
+  003300              :PANEL NAME=QSMAIN KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAME PANELID=MENUID.Quartz Systems Menu
+  003400              :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Pick one of the entries below:
+  003500              :MENUI OPTION=1 ACTION='CALL PGM'.Everyday tasks
+  003600              :MENUI OPTION=2 ACTION='PANEL SELWDG'.Widget tasks
+  003700              :MENUI OPTION=3 ACTION='MENU GENERAL'.General system tasks
+  003800              :MENUI OPTION=4 ACTION='MENU FILES'.Files and libraries
+  003900              :MENUI OPTION=5 ACTION='MENU PGMMNU'.Programming
+  004000              :MENUI OPTION=6 ACTION='MENU CMN'.Communications
+  004100              :MENUI OPTION=7 ACTION='MENU DEFINE' COND=ISOPR.Define or change the system
+  004200              :MENUI OPTION=8 ACTION='MENU PROBLEM'.Problem handling
+  004300              :MENUI OPTION=9 ACTION='MENU DSPMNU'.Display a menu
+  004400              :MENUI OPTION=10 ACTION='MENU INFO'.Information options
+  004500              :MENUI OPTION=11 ACTION='MENU ACCESS'.Access tasks
+  004600              :MENUI OPTION=90 ACTION=EXIT.Sign off
+  004700              :MENUI OPTION='*' ACTION=CMDLINE.Run the command typed below
+  004800              :EMENU.
+  004900              :CMDLINE SIZE=LONG NAME=COMMAND.Selection or command
+  005000              :EPANEL.
+  005100              :PANEL NAME=QSCMDS KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SPACE PANELID=MENUID.Widget Commands
+  005200              :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.Pick one of the entries below:
+  005300              :MENUGRP.Commands
+  005400              :MENUI OPTION=1 ACTION='CALL PGM'.Work with widget status WRKWDGSTS
+  005500              :MENUI OPTION=2 ACTION='CALL PGM'.Work with active widgets WRKACTWDG
+  005600              :MENUI OPTION=3 ACTION='CALL PGM'.Work with alerts WRKWDGALR
+  005700              :MENUI OPTION=4 ACTION='CALL PGM'.Work with alert tables WRKWDGTBL
+  005800              :MENUI OPTION=5 ACTION='CALL PGM'.Work with widget jobs WRKWDGJOB
+  005900              :MENUI OPTION=6 ACTION='CALL PGM'.Work with widget pools WRKWDGPOOL
+  006000              :MENUI OPTION=7 ACTION='CALL PGM'.Work with widget status WRKWDGSTS2
+  006100              :MENUI OPTION=10 ACTION='CALL PGM'.Work with authority WRKWDGAUT
+  006200              :MENUI OPTION=11 ACTION='CALL PGM'.Work with widget lists WRKWDGL
+  006300              :MENUI OPTION=12 ACTION='CALL PGM'.Work with binding WRKWDGBND
+  006400              :MENUI OPTION=13 ACTION='CALL PGM'.Work with widget entries WRKWDGE
+  006500              :MENUI OPTION=14 ACTION='CALL PGM'.Work with widget classes WRKWDGCLS
+  006600              :EMENUGRP.
+  006700              :MENUGRP.Related menus
+  006800              :MENUI OPTION=20 ACTION='MENU QSMAIN'.Main menu QSMAIN
+  006900              :MENUI OPTION=21 ACTION='MENU FILES'.Files and libraries FILES
+  007000              :EMENUGRP.
+  007100              :EMENU.
+  007200              :CMDLINE SIZE=LONG NAME=COMMAND.Selection or command
+  007300              :EPANEL.
+  007400              :PANEL NAME=SELWDG KEYL=SELKEYS ENTER='RETURN 1' TOPSEP=SYSNAME.Pick a Widget Task
+  007500              :MENU DEPTH='*' OPTIONS=OPTION.Pick one of the entries below:
+  007600              :MENUI OPTION=1 ACTION='RETURN 1'.Show the widget text
+  007700              :MENUI OPTION=2 ACTION='RETURN 2'.Show the widget fields
+  007800              :MENUI OPTION=5 ACTION='RETURN 5'.Show the widget attributes
+  007900              :MENUI OPTION=30 ACTION='RETURN 30'.All of the above
+  008000              :EMENU.
+  008100              :EPANEL.
+  008200              :PANEL NAME=ABOUT KEYL=SELKEYS TOPSEP=SPACE.About Widgets
+  008300              :INFO DEPTH='*' SCROLL=YES.
+  008400              :H1.What a widget is
+  008500              :P.A widget is an object of the library it lives in. Its text, kind,
+  008600              owner and quantity are shown by the display panel and changed by the
+  008700              change panel.
+  008800              :P.Press :PK.F12:EPK. to go back to the menu.
+  008900              :EINFO.
+  009000              :TEXT DEPTH=2.
+  009100              Fixed text under the information area.
+  009200              :ETEXT.
+  009300              :BOTINST.Press Enter to go back.
+  009400              :EPANEL.
+  009500              :EPNLGRP.
+
+  Panels  . . . . . . . . . :  4
+  Print panels  . . . . . . :  0
+  Help modules  . . . . . . :  0
+  Classes . . . . . . . . . :  4
+  Variables . . . . . . . . :  5
+  Conditions  . . . . . . . :  1
+  Key lists . . . . . . . . :  2
+  Imports . . . . . . . . . :  0
+
+  Severity 10 . . . . . . . :  0
+  Severity 20 . . . . . . . :  0
+  Severity 30 . . . . . . . :  0
+  Severity 40 . . . . . . . :  0
+  Highest severity  . . . . :  00
+  Panel group created

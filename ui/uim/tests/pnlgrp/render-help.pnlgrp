@@ -1,0 +1,61 @@
+.* Rendering: a help module long enough to page, with every block kind.
+:PNLGRP.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:VAR NAME=WNAME CLASS=NAMECL VALUE='GADGET'.
+:KEYL NAME=KEYS.
+:KEYI KEY=ENTER ACTION=ENTER.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:EKEYL.
+:PANEL NAME=DUMMY KEYL=KEYS HELP=HLPWDG.Widgets
+:TEXT DEPTH=2.
+A panel so the group has one.
+:ETEXT.
+:EPANEL.
+:HELP NAME=HLPWDG.Widgets - Help
+:P.The Work with Widgets panel lists the widgets of a library and lets
+you change, remove, show and describe them. Type an option next to an
+entry and press Enter; the option runs for every entry you marked, in
+the order of the list.
+:H1.How to pick an entry
+:P.Type the option number in the Opt column of the entry. To run the
+same option for several entries, type it next to each of them. The
+cursor's entry is &WNAME. when nothing is typed.
+:P.To run a command instead, type it on the command line and press
+Enter.  For help on a command, type its name and press F4 (Prompt).
+:H2.Options
+:UL.
+:LI.Change: the change panel for the entry.
+:LI.Remove: the entry is removed after you confirm.
+:LI.Show: the display panel for the entry.
+:EUL.
+:H2.Keys
+:DL.
+:DT.F5
+:DD.Refreshes the list from the library.
+:DT.F11
+:DD.Shows the quantities instead of the text.
+:EDL.
+:NT.Options you type stay on the panel until they run.
+:ENT.
+:H2.Examples
+:XMP.
+  2  GADGET     QGPL
+  4  SPROCKET   QGPL
+:EXMP.
+:P.Marking :HP2.two:EHP2. entries runs both options when you press Enter.
+See :LINK PERFORM='DSPHELP HLPMORE'.more about widgets:ELINK. for the rest.
+:PARML.
+:PT.LIB
+:PD.The library whose widgets are listed.
+:EPARML.
+:OL.
+:LI.First step.
+:LI.Second step.
+:EOL.
+:P.The last paragraph ends the module after the page break.
+:EHELP.
+:HELP NAME=HLPMORE.More About Widgets
+:P.Widgets hold other widgets when their holds flag is on.
+:EHELP.
+:EPNLGRP.

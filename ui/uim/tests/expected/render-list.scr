@@ -1,0 +1,141 @@
+=== WRKWDG view 1, three entries
+|                               Work with Widgets                                |
+|                                                                                |
+| Choose an entry and press Enter.                                               |
+|   2=Change   4=Remove   5=Show   8=Describe widget   13=Rename widget          |
+|                                                                                |
+| Opt  Widget      Kind      Library     Text                                    |
+|      WIDGET01    *LEVER    QGPL        widget number 1 with a long text that i |
+|      WIDGET02    *GEAR     QGPL        widget number 2 with a long text that i |
+|      WIDGET03    *LEVER    QGPL        widget number 3 with a long text that i |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                         Bottom |
+| Options or command                                                             |
+| ===>                                                                           |
+| F3=Exit      F4=Prompt   F5=Refresh   F9=Retrieve   F11=Show quantities        |
+| F12=Cancel   F16=Repeat position to   F17=Position to   F24=More keys          |
+|                                                                                |
+cursor: Some((7, 2))
+more: Some(More { row: 19, col: 74, bottom: true })
+field 21, 7 len  73 Underline cmdline ""
+field  7, 2 len   2 Underline opt WIDGETS[0] ""
+field  8, 2 len   2 Underline opt WIDGETS[1] ""
+field  9, 2 len   2 Underline opt WIDGETS[2] ""
+blue: 22,2 22,15 22,27 22,40 22,54 23,2 23,15 23,40 23,58 3,2 4,4 4,15 4,26 4,35 4,55
+bright: 1,32 6,2 6,7 6,19 6,29 6,41 19,74
+=== WRKWDG view 2, more keys, a message
+|                               Work with Widgets                                |
+|                                                                                |
+| Choose an entry and press Enter.                                               |
+|   2=Change   4=Remove   5=Show   8=Describe widget   13=Rename widget          |
+|                                                                                |
+| Opt  Widget      Quantity  Library                                             |
+|      WIDGET01         7    QGPL                                                |
+|      WIDGET02        14    QGPL                                                |
+|      WIDGET03        21    QGPL                                                |
+|      WIDGET04        28    QGPL                                                |
+|      WIDGET05        35    QGPL                                                |
+|      WIDGET06        42    QGPL                                                |
+|      WIDGET07        49    QGPL                                                |
+|      WIDGET08        56    QGPL                                                |
+|      WIDGET09        63    QGPL                                                |
+|      WIDGET10        70    QGPL                                                |
+|      WIDGET11        77    QGPL                                                |
+|      WIDGET12        84    QGPL                                                |
+|      WIDGET13        91    QGPL                                                |
+|                                                                        More... |
+| Options or command                                                             |
+| ===>                                                                           |
+| F18=Bottom   F21=Rename all   F24=More keys                                    |
+| Widget WIDGET03 is in use.                                                     |
+cursor: Some((7, 2))
+more: Some(More { row: 20, col: 73, bottom: false })
+field 22, 7 len  73 Underline cmdline ""
+field  7, 2 len   2 Underline opt WIDGETS[0] ""
+field  8, 2 len   2 Underline opt WIDGETS[1] ""
+field  9, 2 len   2 Underline opt WIDGETS[2] ""
+field 10, 2 len   2 Underline opt WIDGETS[3] ""
+field 11, 2 len   2 Underline opt WIDGETS[4] ""
+field 12, 2 len   2 Underline opt WIDGETS[5] ""
+field 13, 2 len   2 Underline opt WIDGETS[6] ""
+field 14, 2 len   2 Underline opt WIDGETS[7] ""
+field 15, 2 len   2 Underline opt WIDGETS[8] ""
+field 16, 2 len   2 Underline opt WIDGETS[9] ""
+field 17, 2 len   2 Underline opt WIDGETS[10] ""
+field 18, 2 len   2 Underline opt WIDGETS[11] ""
+field 19, 2 len   2 Underline opt WIDGETS[12] ""
+blue: 23,2 23,15 23,32 3,2 4,4 4,15 4,26 4,35 4,55
+bright: 1,32 6,2 6,7 6,19 6,29 20,73 24,2
+=== WRKWDG second key set without F21
+|                               Work with Widgets                                |
+|                                                                                |
+| Choose an entry and press Enter.                                               |
+|   2=Change   4=Remove   5=Show   8=Describe widget   13=Rename widget          |
+|                                                                                |
+| Opt  Widget      Kind      Library     Text                                    |
+|      WIDGET21    *LEVER    QGPL        widget number 21 with a long text that  |
+|      WIDGET22    *GEAR     QGPL        widget number 22 with a long text that  |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                         Bottom |
+| Options or command                                                             |
+| ===>                                                                           |
+| F18=Bottom   F24=More keys                                                     |
+|                                                                                |
+cursor: Some((7, 2))
+more: Some(More { row: 20, col: 74, bottom: true })
+field 22, 7 len  73 Underline cmdline ""
+field  7, 2 len   2 Underline opt WIDGETS[20] ""
+field  8, 2 len   2 Underline opt WIDGETS[21] ""
+blue: 23,2 23,15 3,2 4,4 4,15 4,26 4,35 4,55
+bright: 1,32 6,2 6,7 6,19 6,29 6,41 20,74
+=== SHOWWDG grouped headings
+|                                  Show Widgets                                  |
+|                                                             System:   QUARTZ1  |
+| Widgets of the library, newest first.                                          |
+|   1=Pick                                                                       |
+|                                                                                |
+|                  Location                                                      |
+|      Widget                            On                                      |
+| Opt  name        Library     Kind      hand                                    |
+|      WIDGET01    QGPL        *LEVER    7                                       |
+|      WIDGET02    QGPL        *GEAR     14                                      |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                         Bottom |
+| Press Enter to go back.                                                        |
+|                                                                                |
+| F3=Exit   F12=Cancel                                                           |
+|                                                                                |
+cursor: Some((9, 3))
+more: Some(More { row: 20, col: 74, bottom: true })
+field  9, 3 len   1 Underline opt WIDGETS[0] ""
+field  9,41 len   6 Underline cell WIDGETS[0].WQTY "7"
+field 10, 3 len   1 Underline opt WIDGETS[1] ""
+field 10,41 len   6 Underline cell WIDGETS[1].WQTY "14"
+blue: 23,2 23,12 21,2 3,2 4,4
+bright: 1,35 8,2 7,7 8,7 6,19 8,19 8,31 7,41 8,41 20,74

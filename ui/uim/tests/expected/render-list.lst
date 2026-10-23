@@ -1,0 +1,100 @@
+QS/400 UIM compiler
+  Panel group . . . . . . . :  QGPL/RENDER-LIST
+  Source  . . . . . . . . . :  QGPL/QPNLSRC(RENDER-LIST)
+
+  SEQNBR  MEMBER      ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8
+  000100              .* Rendering: two list panels, views, legends, a column group, key sets.
+  000200              :PNLGRP.
+  000300              :CLASS NAME=OPTCL BASETYPE=ACTION.
+  000400              :ECLASS.
+  000500              :CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+  000600              :ECLASS.
+  000700              :CLASS NAME=KINDCL BASETYPE='CHAR 8'.
+  000800              :ECLASS.
+  000900              :CLASS NAME=TEXTCL BASETYPE='CHAR 50'.
+  001000              :ECLASS.
+  001100              :CLASS NAME=QTYCL BASETYPE='ZONED 5 0'.
+  001200              :ECLASS.
+  001300              :CLASS NAME=FLAGCL BASETYPE='CHAR 1'.
+  001400              :ECLASS.
+  001500              :VAR NAME=OPT CLASS=OPTCL.
+  001600              :VAR NAME=WNAME CLASS=NAMECL.
+  001700              :VAR NAME=WKIND CLASS=KINDCL.
+  001800              :VAR NAME=WLIB CLASS=NAMECL.
+  001900              :VAR NAME=WTEXT CLASS=TEXTCL.
+  002000              :VAR NAME=WQTY CLASS=QTYCL.
+  002100              :VAR NAME=ALLOWRNM CLASS=FLAGCL VALUE='Y'.
+  002200              :VAR NAME=POSTO CLASS=NAMECL.
+  002300              :LISTDEF NAME=WIDGETS VARS='OPT WNAME WKIND WLIB WTEXT WQTY'.
+  002400              :COND NAME=CANRENAME EXPR='&ALLOWRNM. EQ "Y"'.
+  002500              :COND NAME=HASWIDGETS EXPR='%LIST(WIDGETS) GT 0'.
+  002600              :KEYL NAME=LISTKEYS.
+  002700              :KEYI KEY=ENTER ACTION=ENTER.
+  002800              :KEYI KEY=F3 ACTION=EXIT.F3=Exit
+  002900              :KEYI KEY=F4 ACTION='RETURN 4'.F4=Prompt
+  003000              :KEYI KEY=F5 ACTION='RETURN 5'.F5=Refresh
+  003100              :KEYI KEY=F9 ACTION=RETRIEVE.F9=Retrieve
+  003200              :KEYI KEY=F11 ACTION='RETURN 11'.F11=Show quantities
+  003300              :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+  003400              :KEYI KEY=F16 ACTION='RETURN 16' COND=HASWIDGETS.F16=Repeat position to
+  003500              :KEYI KEY=F17 ACTION='RETURN 17'.F17=Position to
+  003600              :KEYI KEY=F24 ACTION=MOREKEYS.F24=More keys
+  003700              :KEYI KEY=F18 ACTION=BOTTOM.F18=Bottom
+  003800              :KEYI KEY=F21 ACTION='RETURN 21' COND=CANRENAME.F21=Rename all
+  003900              :KEYI KEY=HELP ACTION=HELP.
+  004000              :EKEYL.
+  004100              :KEYL NAME=SHOWKEYS.
+  004200              :KEYI KEY=ENTER ACTION=ENTER.
+  004300              :KEYI KEY=F3 ACTION=EXIT.F3=Exit
+  004400              :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+  004500              :EKEYL.
+  004600              :PANEL NAME=WRKWDG KEYL=LISTKEYS ENTER='RETURN 1' TOPSEP=SPACE.Work with Widgets
+  004700              :TOPINST.Choose an entry and press Enter.
+  004800              :LIST DEPTH='*' LISTDEF=WIDGETS VIEWS=2 SCROLL=YES.
+  004900              :LISTACT OPTION=2 ENTER='RETURN 2'.2=Change
+  005000              :LISTACT OPTION=4 ENTER='RETURN 4'.4=Remove
+  005100              :LISTACT OPTION=5 ENTER='RETURN 5'.5=Show
+  005200              :LISTACT OPTION=8 ENTER='RETURN 8'.8=Describe widget
+  005300              :LISTACT OPTION=13 ENTER='RETURN 13'.13=Rename widget
+  005400              :LISTCOL VAR=OPT USAGE=INPUT.Opt
+  005500              :LISTCOL VAR=WNAME USAGE=OUTPUT.Widget
+  005600              :LISTCOL VAR=WKIND USAGE=OUTPUT.Kind
+  005700              :LISTCOL VAR=WLIB USAGE=OUTPUT.Library
+  005800              :LISTCOL VAR=WTEXT USAGE=OUTPUT.Text
+  005900              :LISTCOL VAR=WQTY USAGE=OUTPUT.Quantity
+  006000              :LISTVIEW COLS='OPT WNAME WKIND WLIB WTEXT'.
+  006100              :LISTVIEW COLS='OPT WNAME WQTY WLIB'.
+  006200              :ELIST.
+  006300              :CMDLINE SIZE=SHORT.Options or command
+  006400              :EPANEL.
+  006500              :PANEL NAME=SHOWWDG KEYL=SHOWKEYS TOPSEP=SYSNAME.Show Widgets
+  006600              :TOPINST.Widgets of the library, newest first.
+  006700              :LIST DEPTH='*' LISTDEF=WIDGETS MAXHEAD=2 ACTLEN=1.
+  006800              :LISTACT OPTION=1 ENTER='RETURN 1'.1=Pick
+  006900              :LISTCOL VAR=OPT USAGE=INPUT.Opt
+  007000              :LISTCOL VAR=WNAME USAGE=OUTPUT.Widget name
+  007100              :LISTGRP.Location
+  007200              :LISTCOL VAR=WLIB USAGE=OUTPUT.Library
+  007300              :LISTCOL VAR=WKIND USAGE=OUTPUT.Kind
+  007400              :ELISTGRP.
+  007500              :LISTCOL VAR=WQTY USAGE=INPUT.On hand
+  007600              :ELIST.
+  007700              :BOTINST.Press Enter to go back.
+  007800              :EPANEL.
+  007900              :EPNLGRP.
+
+  Panels  . . . . . . . . . :  2
+  Print panels  . . . . . . :  0
+  Help modules  . . . . . . :  0
+  Classes . . . . . . . . . :  6
+  Variables . . . . . . . . :  8
+  Conditions  . . . . . . . :  2
+  Key lists . . . . . . . . :  2
+  Imports . . . . . . . . . :  0
+
+  Severity 10 . . . . . . . :  0
+  Severity 20 . . . . . . . :  0
+  Severity 30 . . . . . . . :  0
+  Severity 40 . . . . . . . :  0
+  Highest severity  . . . . :  00
+  Panel group created

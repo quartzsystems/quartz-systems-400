@@ -1,0 +1,179 @@
+=== QSMAIN
+| QSMAIN                       Quartz Systems Menu                               |
+|                                                             System:   QS400    |
+| Pick one of the entries below:                                                 |
+|                                                                                |
+|      1. Everyday tasks                                                         |
+|      2. Widget tasks                                                           |
+|      3. General system tasks                                                   |
+|      4. Files and libraries                                                    |
+|      5. Programming                                                            |
+|      6. Communications                                                         |
+|                                                                                |
+|      8. Problem handling                                                       |
+|      9. Display a menu                                                         |
+|     10. Information options                                                    |
+|     11. Access tasks                                                           |
+|                                                                                |
+|     90. Sign off                                                               |
+|                                                                                |
+| Selection or command                                                           |
+| ===>                                                                           |
+|                                                                                |
+| F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     |
+| F23=Set initial menu                                                           |
+| Copyright (C) 2026 Quartz Systems                                              |
+cursor: Some((20, 7))
+more: None
+field 20, 7 len 152 Underline cmdline ""
+blue: 1,2 22,2 22,12 22,24 22,38 22,51 23,2 3,2
+bright: 1,31 24,2
+=== QSCMDS page 1
+| QSMAIN                         Widget Commands                                 |
+|                                                                                |
+| Pick one of the entries below:                                                 |
+|                                                                                |
+|   Commands                                                                     |
+|      1. Work with widget status                                     WRKWDGSTS  |
+|      2. Work with active widgets                                    WRKACTWDG  |
+|      3. Work with alerts                                            WRKWDGALR  |
+|      4. Work with alert tables                                      WRKWDGTBL  |
+|      5. Work with widget jobs                                       WRKWDGJOB  |
+|      6. Work with widget pools                                      WRKWDGPOOL |
+|      7. Work with widget status                                     WRKWDGSTS2 |
+|                                                                                |
+|     10. Work with authority                                         WRKWDGAUT  |
+|     11. Work with widget lists                                      WRKWDGL    |
+|     12. Work with binding                                           WRKWDGBND  |
+|     13. Work with widget entries                                    WRKWDGE    |
+|                                                                        More... |
+| Selection or command                                                           |
+| ===>                                                                           |
+|                                                                                |
+| F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     |
+| F23=Set initial menu                                                           |
+| Copyright (C) 2026 Quartz Systems                                              |
+cursor: Some((20, 7))
+more: Some(More { row: 18, col: 73, bottom: false })
+field 20, 7 len 152 Underline cmdline ""
+blue: 1,2 22,2 22,12 22,24 22,38 22,51 23,2 3,2
+bright: 1,33 18,73 24,2
+=== QSCMDS page 2
+| QSMAIN                         Widget Commands                                 |
+|                                                                                |
+| Pick one of the entries below:                                                 |
+|                                                                                |
+|     14. Work with widget classes                                    WRKWDGCLS  |
+|                                                                                |
+|   Related menus                                                                |
+|     20. Main menu                                                   QSMAIN     |
+|     21. Files and libraries                                         FILES      |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                         Bottom |
+| Selection or command                                                           |
+| ===>                                                                           |
+|                                                                                |
+| F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     |
+| F23=Set initial menu                                                           |
+| Copyright (C) 2026 Quartz Systems                                              |
+cursor: Some((20, 7))
+more: Some(More { row: 18, col: 74, bottom: true })
+field 20, 7 len 152 Underline cmdline ""
+blue: 1,2 22,2 22,12 22,24 22,38 22,51 23,2 3,2
+bright: 1,33 18,74 24,2
+=== QSMAIN as the operator
+| QSMAIN                       Quartz Systems Menu                               |
+|                                                             System:   QS400    |
+| Pick one of the entries below:                                                 |
+|                                                                                |
+|      1. Everyday tasks                                                         |
+|      2. Widget tasks                                                           |
+|      3. General system tasks                                                   |
+|      4. Files and libraries                                                    |
+|      5. Programming                                                            |
+|      6. Communications                                                         |
+|      7. Define or change the system                                            |
+|      8. Problem handling                                                       |
+|      9. Display a menu                                                         |
+|     10. Information options                                                    |
+|     11. Access tasks                                                           |
+|                                                                                |
+|     90. Sign off                                                               |
+|                                                                                |
+| Selection or command                                                           |
+| ===>                                                                           |
+|                                                                                |
+| F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel   F13=Information Assistant     |
+| F23=Set initial menu                                                           |
+| Copyright (C) 2026 Quartz Systems                                              |
+cursor: Some((20, 7))
+more: None
+field 20, 7 len 152 Underline cmdline ""
+blue: 1,2 22,2 22,12 22,24 22,38 22,51 23,2 3,2
+bright: 1,31 24,2
+=== SELWDG without a command line
+|                               Pick a Widget Task                               |
+|                                                             System:   QS400    |
+| Pick one of the entries below:                                                 |
+|                                                                                |
+|      1. Show the widget text                                                   |
+|      2. Show the widget fields                                                 |
+|                                                                                |
+|      5. Show the widget attributes                                             |
+|                                                                                |
+|     30. All of the above                                                       |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+| Selection                                                                      |
+|                                                                                |
+|                                                                                |
+| F3=Exit   F12=Cancel                                                           |
+| Copyright (C) 2026 Quartz Systems                                              |
+cursor: Some((21, 7))
+more: None
+field 21, 7 len   2 Underline selection ""
+blue: 23,2 23,12 3,2
+bright: 1,32 24,2
+=== ABOUT information panel
+|                                 About Widgets                                  |
+|                                                                                |
+| What a widget is                                                               |
+|                                                                                |
+| A widget is an object of the library it lives in. Its text, kind, owner and    |
+| quantity are shown by the display panel and changed by the change panel.       |
+|                                                                                |
+| Press F12 to go back to the menu.                                              |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+|                                                                                |
+| Fixed text under the information area.                                         |
+|                                                                                |
+| Press Enter to go back.                                                        |
+|                                                                                |
+| F3=Exit   F12=Cancel                                                           |
+| Copyright (C) 2026 Quartz Systems                                              |
+cursor: None
+more: None
+blue: 23,2 23,12 21,2
+bright: 1,34 3,2 8,8 24,2
