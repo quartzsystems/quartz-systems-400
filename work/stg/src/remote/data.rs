@@ -50,7 +50,7 @@ impl RemoteData {
 
 impl DataSource for RemoteData {
     fn dtaara_lock(&mut self, name: &str, lib: &str) -> Result<(), IoFail> {
-        if name == "*LDA" {
+        if name == "*LDA" || name == "*GDA" {
             return Ok(());
         }
         self.link
@@ -59,7 +59,7 @@ impl DataSource for RemoteData {
     }
 
     fn dtaara_unlock(&mut self, name: &str, lib: &str) -> Result<(), IoFail> {
-        if name == "*LDA" {
+        if name == "*LDA" || name == "*GDA" {
             return Ok(());
         }
         self.link
@@ -68,6 +68,16 @@ impl DataSource for RemoteData {
     }
 
     fn dtaara_read(&mut self, name: &str, lib: &str) -> Result<DataAreaValue, IoFail> {
+        if name == "*GDA" {
+            let b = self
+                .link
+                .borrow_mut()
+                .with(Client::gda_read)
+                .map_err(|_| IoFail::new(1299, "CPF1311", &[]))?;
+            let mut v = DataAreaValue::chars(u32::try_from(b.len()).unwrap_or(512));
+            v.value = b;
+            return Ok(v);
+        }
         if name == "*LDA" {
             let mut v = DataAreaValue::chars(1024);
             v.value.clone_from(&self.lda.borrow());
@@ -79,6 +89,15 @@ impl DataSource for RemoteData {
     }
 
     fn dtaara_write(&mut self, name: &str, lib: &str, value: &DataAreaValue) -> Result<(), IoFail> {
+        if name == "*GDA" {
+            let mut b = value.value.clone();
+            b.resize(512, 0x40);
+            return self
+                .link
+                .borrow_mut()
+                .with(|l| l.gda_write(1, b))
+                .map_err(|_| IoFail::new(1299, "CPF1311", &[]));
+        }
         if name == "*LDA" {
             let mut b = value.value.clone();
             b.resize(LDA_LEN, 0x40);

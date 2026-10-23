@@ -3118,5 +3118,42 @@ source = "pub400"
 release = "V7R5M0"
 date = "2026-10-23"
 script = "batch9-uimpos"
+name = "sysreq-4-dspmsg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch8-sysreq"
+width = 80
+
+[[golden]]
+name = "sysreq-5-sndmsg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sysreq-5"
+width = 80
+
+[[golden]]
+name = "sysreq-7-wrkstnusr"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "sysreq-7"
+width = 80
+
+[[golden]]
+name = "attn-program"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "attn"
+width = 80
+
+[[golden]]
+name = "break-message"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "brkmsg"
 width = 80
 

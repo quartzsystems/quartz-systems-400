@@ -9,6 +9,7 @@
 //! `QCMDEXC` hook) has the same reach as one typed at the console.
 
 use std::cell::RefCell;
+use std::collections::VecDeque;
 use std::rc::Rc;
 use std::sync::mpsc::RecvTimeoutError;
 use std::time::Duration;
@@ -20,6 +21,7 @@ use stg::remote::{Lda, RemoteCmds};
 use stg::{Client, Shared};
 use wm::ctl::{FromJob, Panel, Start, ToJob};
 use wm::job::JobAttrs;
+use wm::obj::msgq::QMsg;
 
 use super::Inbox;
 use crate::work::spawn::Spawned;
@@ -28,13 +30,17 @@ use crate::work::spawn::Spawned;
 pub const BREAK_POLL: Duration = Duration::from_secs(1);
 
 /// Raise the runtime's attention flag every `BREAK_POLL`, so a running
-/// program looks for break messages at its next statement.
+/// program looks for break messages at its next statement. One timer
+/// serves every runtime job of the process.
 pub fn attention_timer() {
-    std::thread::spawn(|| {
-        loop {
-            std::thread::sleep(BREAK_POLL);
-            mi::rtlib::ATTN.store(1, std::sync::atomic::Ordering::Relaxed);
-        }
+    static STARTED: std::sync::Once = std::sync::Once::new();
+    STARTED.call_once(|| {
+        std::thread::spawn(|| {
+            loop {
+                std::thread::sleep(BREAK_POLL);
+                mi::rtlib::ATTN.store(1, std::sync::atomic::Ordering::Relaxed);
+            }
+        });
     });
 }
 
@@ -60,6 +66,8 @@ pub struct Host {
     /// The job's own display device, when it has one; the console job
     /// shows its panels through the parent instead.
     pub display: Rc<RefCell<Option<crate::display::Display>>>,
+    /// What the inbox delivered while a program ran, for the next wait.
+    pub pending: Rc<RefCell<VecDeque<ToJob>>>,
 }
 
 impl Host {
@@ -100,12 +108,26 @@ impl Host {
             .is_some_and(|s| s.lmtcpb == "*YES")
     }
 
+    /// The next message for the job: one put aside first, else the
+    /// inbox's within `d`.
+    pub fn next(&self, d: Duration) -> Result<ToJob, RecvTimeoutError> {
+        if let Some(m) = self.pending.borrow_mut().pop_front() {
+            return Ok(m);
+        }
+        self.inbox.recv_timeout(d)
+    }
+
     /// Wait for the display to answer: the key (0 for Enter) and the
-    /// fields. Breaks are taken meanwhile; `None` when the job is to
-    /// end.
+    /// fields. Breaks are taken meanwhile, and System Request,
+    /// Attention and Print are the system's (`crate::sysdsp::keys`);
+    /// `None` when the job is to end or the request was ended.
     pub fn wait_input(&self, job: &mut Job) -> Option<(u8, Vec<String>)> {
+        use crate::sysdsp::keys;
         loop {
-            match self.inbox.recv_timeout(BREAK_POLL) {
+            if keys::unwinding() {
+                return None;
+            }
+            match self.next(BREAK_POLL) {
                 Ok(ToJob::Input { key, fields }) => return Some((key, fields)),
                 Ok(ToJob::Record { flags, data, .. }) => {
                     let got = self
@@ -113,8 +135,14 @@ impl Host {
                         .borrow_mut()
                         .as_mut()
                         .and_then(|d| d.accept(flags, &data));
-                    if let Some(r) = got {
-                        return Some(r);
+                    match got {
+                        Some((k, _)) if keys::is_system(k) => {
+                            if keys::take(self, k) == keys::After::Unwind {
+                                return None;
+                            }
+                        }
+                        Some(r) => return Some(r),
+                        None => {}
                     }
                 }
                 Ok(ToJob::DeviceReset { device }) => {
@@ -131,13 +159,39 @@ impl Host {
 
     /// Wait up to `d`, taking breaks; `false` when the job is to end.
     pub fn idle(&self, job: &mut Job, d: Duration) -> bool {
-        match self.inbox.recv_timeout(d) {
+        match self.next(d) {
             Ok(ToJob::End { .. }) | Err(RecvTimeoutError::Disconnected) => false,
             _ => {
                 self.breaks(job);
                 true
             }
         }
+    }
+
+    /// The attention hook of a running program: the keys the display
+    /// sent meanwhile (System Request, Attention) are taken now, the
+    /// rest put aside for the next wait; then the breaks. A request
+    /// ended from System Request cancels the program to its control
+    /// boundary.
+    pub fn attention(&self, job: &mut Job) {
+        use crate::sysdsp::keys;
+        while let Ok(m) = self.inbox.try_recv() {
+            let system = match &m {
+                ToJob::Record { flags, .. } if self.display.borrow().is_some() => {
+                    crate::display::flag_key(*flags).filter(|k| keys::is_system(*k))
+                }
+                _ => None,
+            };
+            match system {
+                Some(k) => {
+                    if keys::take(self, k) == keys::After::Unwind && keys::cancelling() {
+                        keys::cancel_running(job);
+                    }
+                }
+                None => self.pending.borrow_mut().push_back(m),
+            }
+        }
+        self.breaks(job);
     }
 
     /// Run a line in the storage service's console table.
@@ -160,11 +214,23 @@ impl Host {
         *self.attrs.borrow_mut() = None;
     }
 
-    /// Deliver the breaks waiting for the job.
+    /// Deliver the breaks waiting for the job: a job at a display shows
+    /// them on Display Program Messages, any other writes them out; a
+    /// queue with a break-handling program calls it.
     pub fn breaks(&self, job: &mut Job) {
         let waiting = self.link.borrow_mut().with(Client::breaks);
+        self.deliver(job, waiting);
+    }
+
+    /// Deliver breaks taken from the service.
+    pub fn deliver(&self, job: &mut Job, waiting: Vec<(String, (String, String), QMsg)>) {
+        let mut shown = Vec::new();
         for (queue, (pgm, lib), m) in waiting {
             if pgm.is_empty() || pgm.starts_with('*') {
+                if self.display.borrow().is_some() {
+                    shown.push((queue, m));
+                    continue;
+                }
                 let (date, time) = wm::joblog::stamp_of(m.time);
                 self.output(&format!(
                     "\nBreak message on {queue} from {} ({date} {}):\n  {}\n",
@@ -197,6 +263,9 @@ impl Host {
                 ));
             }
             let _ = job.clear();
+        }
+        if !shown.is_empty() {
+            crate::sysdsp::msgs::breaks(self, shown);
         }
     }
 }

@@ -183,6 +183,20 @@ impl Provider for RemoteProvider {
     }
 
     fn dtaara_read(&mut self, lib: &str, name: &str) -> ApiResult<DataArea> {
+        if name == "*GDA" {
+            let value = self
+                .link
+                .borrow_mut()
+                .with(Client::gda_read)
+                .map_err(|_| ApiFail::id("CPF1311"))?;
+            return Ok(DataArea {
+                ty: DataAreaType::Char,
+                lib: String::new(),
+                len: u32::try_from(value.len()).unwrap_or(512),
+                decimals: 0,
+                value,
+            });
+        }
         if name == "*LDA" {
             return Ok(DataArea {
                 ty: DataAreaType::Char,
@@ -198,6 +212,14 @@ impl Provider for RemoteProvider {
     }
 
     fn dtaara_write(&mut self, lib: &str, name: &str, start: usize, bytes: &[u8]) -> ApiResult<()> {
+        if name == "*GDA" {
+            let at = u32::try_from(start).unwrap_or(1);
+            return self
+                .link
+                .borrow_mut()
+                .with(|l| l.gda_write(at, bytes.to_vec()))
+                .map_err(|_| ApiFail::id("CPF1311"));
+        }
         if name == "*LDA" {
             let mut lda = self.lda.borrow_mut();
             let at = start.saturating_sub(1);

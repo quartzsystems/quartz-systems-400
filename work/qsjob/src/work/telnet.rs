@@ -11,7 +11,15 @@
 //! socket and the connection. When the connection drops, `QDEVRCYACN`
 //! says what becomes of the job; a disconnected job comes back when
 //! its user signs on again, and ends after `QDSCJOBITV`.
+//!
+//! A display holds more than one job: a secondary job (`TFRSECJOB`,
+//! System Request option 1) signs on beside the first, and group jobs
+//! (`TFRGRPJOB`) start beside either. The session moves the display
+//! between them: records go to the job it shows, the others' writes
+//! are dropped, and a job that gets the display back is reset so it
+//! sends its screen whole.
 
+use std::collections::VecDeque;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::os::unix::net::UnixListener;
@@ -46,30 +54,156 @@ enum Ask {
     JobNumber(Sender<Result<u32, String>>),
 }
 
-/// A job whose connection dropped under `*DSC*` recovery.
+/// The jobs of a display whose connection dropped under `*DSC*`
+/// recovery, the one it showed first.
 struct Disconnected {
     user: String,
     device: String,
-    job: Spawned,
-    link: Chan,
+    held: Vec<Held>,
     since: Instant,
-    /// Where the job's channel readers deliver: the next session
-    /// swaps in its own sender, so no second reader is started.
+}
+
+/// A job a session holds: its process, its device channel, the
+/// senders its channel readers deliver through (the next session swaps
+/// in its own, so no second reader is started), who signed on and the
+/// side of the display it runs on (1 primary, 2 secondary).
+struct Held {
+    job: Spawned,
+    dev_chan: Chan,
     dev_tx: SharedTx,
     ctl_tx: SharedTx,
+    signed: sec::signon::SignedOn,
+    side: u8,
+}
+
+impl Held {
+    fn number(&self) -> u32 {
+        self.job.start.number
+    }
+
+    /// The display is this job's again: it sends its screen whole.
+    fn reset(&mut self, device: &str) {
+        let _ = self.dev_chan.send(&FromDevice::Reset {
+            device: device.to_string(),
+        });
+    }
+
+    /// Deliver to `tx` from now on.
+    fn deliver_to(&self, tx: &Sender<Ev>) {
+        *self.dev_tx.lock().expect("sender") = tx.clone();
+        *self.ctl_tx.lock().expect("sender") = tx.clone();
+    }
+}
+
+/// The jobs at a display: the one it shows and the ones waiting.
+struct Jobs {
+    held: Vec<Held>,
+    active: usize,
+    /// Group transfers: a job and the job that transferred to it.
+    came_from: Vec<(u32, u32)>,
+}
+
+impl Jobs {
+    fn new(held: Vec<Held>) -> Self {
+        Self {
+            held,
+            active: 0,
+            came_from: Vec::new(),
+        }
+    }
+
+    fn active(&mut self) -> &mut Held {
+        &mut self.held[self.active]
+    }
+
+    fn active_number(&self) -> u32 {
+        self.held[self.active].number()
+    }
+
+    fn index(&self, number: u32) -> Option<usize> {
+        self.held.iter().position(|h| h.number() == number)
+    }
+
+    /// Show job `i` and reset it.
+    fn switch(&mut self, i: usize, device: &str) {
+        self.active = i;
+        self.held[i].reset(device);
+    }
+
+    /// A job on the other side of the display: the one it showed last.
+    fn other_side(&self) -> Option<usize> {
+        let side = self.held[self.active].side;
+        self.held.iter().position(|h| h.side != side)
+    }
+
+    /// A job that ended leaves; the job to show now when the display
+    /// was its, `None` when no job is left or the display stays.
+    fn remove(&mut self, number: u32, link: &mut Link) -> Option<usize> {
+        let i = self.index(number)?;
+        let mut h = self.held.remove(i);
+        let _ = h.job.child.wait();
+        let _ = link.grp_leave(number);
+        let back = self
+            .came_from
+            .iter()
+            .rev()
+            .find(|(to, _)| *to == number)
+            .map(|(_, from)| *from);
+        self.came_from.retain(|(a, b)| *a != number && *b != number);
+        if self.held.is_empty() {
+            return None;
+        }
+        if i != self.active {
+            if i < self.active {
+                self.active -= 1;
+            }
+            return None;
+        }
+        let next = back
+            .and_then(|n| self.index(n))
+            .or_else(|| self.held.iter().position(|o| o.side == h.side))
+            .unwrap_or(0);
+        Some(next)
+    }
+
+    /// Every job, the one shown first.
+    fn into_ordered(mut self) -> Vec<Held> {
+        let first = self.held.remove(self.active);
+        let mut out = vec![first];
+        out.extend(self.held);
+        out
+    }
+}
+
+/// Tell the storage service which jobs the display holds.
+fn report(link: &mut Link, device: &str, jobs: &Jobs) {
+    let mut list: Vec<(u32, String, String, u8)> = Vec::new();
+    let a = &jobs.held[jobs.active];
+    list.push((a.number(), a.job.start.user.clone(), a.job.start.name.clone(), a.side));
+    for (i, h) in jobs.held.iter().enumerate() {
+        if i != jobs.active {
+            list.push((h.number(), h.job.start.user.clone(), h.job.start.name.clone(), h.side));
+        }
+    }
+    let _ = link.ws_set(device.to_string(), list);
 }
 
 /// A sender the reader threads look up before each delivery.
 type SharedTx = Arc<Mutex<Sender<Ev>>>;
 
 /// Read a job channel for the sessions, whichever one holds the job.
-fn relay<T: ipc::Wire>(mut reader: Chan, tx: SharedTx, map: impl Fn(T) -> Ev + Send + 'static) {
+fn relay<T: ipc::Wire>(
+    mut reader: Chan,
+    tx: SharedTx,
+    number: u32,
+    map: impl Fn(T) -> Ev + Send + 'static,
+) {
     std::thread::spawn(move || {
         while let Ok(m) = reader.recv::<T>() {
             let ev = map(m);
             let _ = tx.lock().expect("sender").send(ev);
         }
-        let _ = tx.lock().expect("sender").send(Ev::JobGone);
+        let _ = tx.lock().expect("sender").send(Ev::JobGone(number));
     });
 }
 
@@ -206,7 +340,9 @@ pub fn run(mut ctl: Chan, link: &Shared, start: &Start) -> ! {
         }
     }
     for d in disconnected().lock().expect("list").drain(..) {
-        end_job(d.job);
+        for h in d.held {
+            end_job(h.job);
+        }
     }
     let _ = ctl.send(&FromJob::Ending {
         reason: "ENDTCPSVR".into(),
@@ -276,7 +412,9 @@ fn sweep(minutes: Option<u64>) {
         gone
     };
     for d in expired {
-        end_job(d.job);
+        for h in d.held {
+            end_job(h.job);
+        }
     }
 }
 
@@ -300,14 +438,14 @@ enum Ev {
     Tcp(Vec<u8>),
     /// The connection ended.
     TcpGone,
-    /// The job wrote to its display.
-    Write(u8, Vec<u8>),
-    /// The job released the display.
+    /// A job (by number) wrote to its display.
+    Write(u32, u8, Vec<u8>),
+    /// A job released the display.
     Release,
-    /// The job's control channel: it is ending, or something else.
-    Job(FromJob),
-    /// The job's channels closed.
-    JobGone,
+    /// A job's control channel: it is ending, or something else.
+    Job(u32, FromJob),
+    /// A job's channels closed.
+    JobGone(u32),
 }
 
 /// The connection, plain or TLS, owned by its I/O thread.
@@ -697,19 +835,29 @@ fn serve_device(
     loop {
         link.device_status(device.to_string(), 2)
             .map_err(|e| e.to_string())??;
-        let signed = match auto.take() {
-            Some(s) => s,
-            None => {
-                match sign_on_display(tr, server, link, ev_rx, device, model, host, &message)? {
-                    Some(s) => s,
-                    None => return Ok(()),
-                }
-            }
+        let signed = if let Some(s) = auto.take() {
+            s
+        } else {
+            let mut stash = VecDeque::new();
+            let shown = sign_on_display(
+                tr, server, link, ev_rx, device, model, host, &message, false, &mut stash,
+            )?;
+            let SignOn::Signed(s) = shown else {
+                return Ok(());
+            };
+            *s
         };
         message.clear();
         link.device_status(device.to_string(), 3)
             .map_err(|e| e.to_string())??;
-        let outcome = run_job(tr, server, link, ev_rx, ev_tx, device, model, signed, peer)?;
+        let at = Place {
+            tr,
+            device,
+            model,
+            host,
+            peer,
+        };
+        let outcome = run_job(&at, server, link, ev_rx, ev_tx, &signed)?;
         match outcome {
             Outcome::SignedOff(m) => message = m,
             Outcome::ConnectionGone => return Ok(()),
@@ -722,8 +870,28 @@ enum Outcome {
     ConnectionGone,
 }
 
-/// Show the sign-on display until a sign-on is accepted. `None` when
-/// the connection went away.
+/// How a sign-on display ended.
+enum SignOn {
+    /// A user signed on.
+    Signed(Box<sec::signon::SignedOn>),
+    /// F3 or F12 on a secondary job's sign-on.
+    Cancelled,
+    /// The connection went away.
+    Gone,
+}
+
+/// Where a session's jobs run: the connection and the display.
+struct Place<'a> {
+    tr: &'a Transport,
+    device: &'a str,
+    model: Model,
+    host: &'a str,
+    peer: &'a str,
+}
+
+/// Show the sign-on display until a sign-on is accepted. A secondary
+/// job's (`cancel`) leaves with F3 or F12; the jobs' events that arrive
+/// meanwhile wait in `stash`.
 #[allow(clippy::too_many_arguments)]
 fn sign_on_display(
     tr: &Transport,
@@ -734,7 +902,9 @@ fn sign_on_display(
     model: Model,
     host: &str,
     message: &str,
-) -> Result<Option<sec::signon::SignedOn>, String> {
+    cancel: bool,
+    stash: &mut VecDeque<Ev>,
+) -> Result<SignOn, String> {
     let subsystem = subsystem_for(link, device).map_or_else(|| "QINTER".into(), |(s, _)| s);
     let long = link
         .sysval("QPWDLVL".into())
@@ -787,14 +957,17 @@ fn sign_on_display(
                         break r;
                     }
                 }
-                Ok(Ev::TcpGone) | Err(_) => return Ok(None),
-                Ok(_) => {}
+                Ok(Ev::TcpGone) | Err(_) => return Ok(SignOn::Gone),
+                Ok(other) => stash.push_back(other),
             }
         };
         let Some(inb) = m.accept(&rec.data) else {
             continue;
         };
         let key = display::key_of(rec.flags, inb.aid);
+        if cancel && matches!(key, Some(3 | 12)) {
+            return Ok(SignOn::Cancelled);
+        }
         if key != Some(0) {
             continue;
         }
@@ -825,7 +998,7 @@ fn sign_on_display(
         match checked {
             Ok(mut s) => {
                 apply_typed(&mut s, &v);
-                return Ok(Some(s));
+                return Ok(SignOn::Signed(Box::new(s)));
             }
             Err(r) => message = r.text,
         }
@@ -962,61 +1135,99 @@ fn route(link: &mut Link, device: &str, profile_jobd: &str) -> Result<Routed, St
     })
 }
 
-/// Start the user's job (or take back a disconnected one) and move
-/// records between it and the connection until it ends or the
-/// connection drops.
-#[allow(clippy::too_many_arguments, clippy::too_many_lines)] // one arm per event
+/// Start a job at the display for a sign-on, with readers on its
+/// channels delivering to the session.
+fn hold(
+    link: &mut Link,
+    at: &Place<'_>,
+    signed: &sec::signon::SignedOn,
+    side: u8,
+    ev_tx: &Sender<Ev>,
+) -> Result<Held, String> {
+    let (job, dev_chan) = start_job(link, at.device, at.model, signed.clone())?;
+    let n = job.start.number;
+    // The job's device channel and control channel, read on threads
+    // that outlive this session.
+    let dev_tx: SharedTx = Arc::new(Mutex::new(ev_tx.clone()));
+    let ctl_tx: SharedTx = Arc::new(Mutex::new(ev_tx.clone()));
+    relay::<ToDevice>(
+        dev_chan.try_clone().map_err(|e| e.to_string())?,
+        Arc::clone(&dev_tx),
+        n,
+        move |m| match m {
+            ToDevice::Write { opcode, data } => Ev::Write(n, opcode, data),
+            ToDevice::Release => Ev::Release,
+        },
+    );
+    relay::<FromJob>(
+        job.chan.try_clone().map_err(|e| e.to_string())?,
+        Arc::clone(&ctl_tx),
+        n,
+        move |m| Ev::Job(n, m),
+    );
+    Ok(Held {
+        job,
+        dev_chan,
+        dev_tx,
+        ctl_tx,
+        signed: signed.clone(),
+        side,
+    })
+}
+
+/// Keep the display's jobs for a later sign-on of their user.
+fn keep(jobs: Jobs, device: &str) {
+    let user = jobs.held[jobs.active].job.start.user.clone();
+    disconnected().lock().expect("list").push(Disconnected {
+        user,
+        device: device.to_string(),
+        held: jobs.into_ordered(),
+        since: Instant::now(),
+    });
+}
+
+/// End every job of the display.
+fn end_all(jobs: Jobs) {
+    for mut h in jobs.held {
+        let _ = h.dev_chan.send(&FromDevice::Gone);
+        end_job(h.job);
+    }
+}
+
+/// Start the user's job (or take back the disconnected ones) and move
+/// records between the job the display shows and the connection until
+/// the last job ends or the connection drops. Secondary and group jobs
+/// start and take the display on their jobs' requests.
+#[allow(clippy::too_many_lines)] // one arm per event
 fn run_job(
-    tr: &Transport,
+    at: &Place<'_>,
     server: &mut Server,
     link: &mut Link,
     ev_rx: &Receiver<Ev>,
     ev_tx: &Sender<Ev>,
-    device: &str,
-    model: Model,
-    signed: sec::signon::SignedOn,
-    peer: &str,
+    signed: &sec::signon::SignedOn,
 ) -> Result<Outcome, String> {
+    let (tr, device) = (at.tr, at.device);
     let taken = {
         let mut list = disconnected().lock().expect("list");
         list.iter()
             .position(|d| d.user == signed.user)
             .map(|i| list.remove(i))
     };
-    let (mut job, mut dev_chan, dev_tx, ctl_tx) = if let Some(d) = taken {
+    let mut jobs = if let Some(d) = taken {
         let _ = link.device_status(d.device.clone(), 1);
-        // The readers started by the first session go on; they
-        // deliver here now.
-        *d.dev_tx.lock().expect("sender") = ev_tx.clone();
-        *d.ctl_tx.lock().expect("sender") = ev_tx.clone();
-        let mut c = d.link;
-        let _ = c.send(&FromDevice::Reset {
-            device: device.to_string(),
-        });
-        (d.job, c, d.dev_tx, d.ctl_tx)
-    } else {
-        {
-            let (job, dev_chan) = start_job(link, device, model, signed)?;
-            // The job's device channel and control channel, read on
-            // threads that outlive this session.
-            let dev_tx: SharedTx = Arc::new(Mutex::new(ev_tx.clone()));
-            let ctl_tx: SharedTx = Arc::new(Mutex::new(ev_tx.clone()));
-            relay::<ToDevice>(
-                dev_chan.try_clone().map_err(|e| e.to_string())?,
-                Arc::clone(&dev_tx),
-                |m| match m {
-                    ToDevice::Write { opcode, data } => Ev::Write(opcode, data),
-                    ToDevice::Release => Ev::Release,
-                },
-            );
-            relay::<FromJob>(
-                job.chan.try_clone().map_err(|e| e.to_string())?,
-                Arc::clone(&ctl_tx),
-                Ev::Job,
-            );
-            (job, dev_chan, dev_tx, ctl_tx)
+        // The readers started by the first session go on; they deliver
+        // here now.
+        for h in &d.held {
+            h.deliver_to(ev_tx);
         }
+        let mut jobs = Jobs::new(d.held);
+        jobs.active().reset(device);
+        jobs
+    } else {
+        Jobs::new(vec![hold(link, at, signed, 1, ev_tx)?])
     };
+    report(link, device, &jobs);
     // `QINACTITV`: minutes without input before `QINACTMSGQ` acts.
     let inactive_after = link
         .sysval("QINACTITV".into())
@@ -1026,53 +1237,50 @@ fn run_job(
         .filter(|m| *m > 0)
         .map(|m| Duration::from_secs(m * 60));
     let mut last_input = Instant::now();
+    let mut queue: VecDeque<Ev> = VecDeque::new();
     let outcome = loop {
-        let ev = match ev_rx.recv_timeout(Duration::from_secs(30)) {
-            Ok(ev) => ev,
-            Err(mpsc::RecvTimeoutError::Disconnected) => break Outcome::ConnectionGone,
-            Err(mpsc::RecvTimeoutError::Timeout) => {
-                if inactive_after.is_some_and(|d| last_input.elapsed() >= d) {
-                    let action = link.sysval("QINACTMSGQ".into()).ok().flatten().map_or_else(
-                        || "*ENDJOB".into(),
-                        |v| ccsid::from_ebcdic(&v.data).trim().to_string(),
-                    );
-                    match action.split_whitespace().next().unwrap_or("*ENDJOB") {
-                        "*ENDJOB" => {
-                            end_job(job);
-                            let _ = dev_chan.send(&FromDevice::Gone);
-                            return Ok(Outcome::SignedOff(
-                                "The job ended: the display was inactive too long.".into(),
-                            ));
-                        }
-                        "*DSCJOB" => {
-                            disconnected().lock().expect("list").push(Disconnected {
-                                user: job.start.user.clone(),
-                                device: device.to_string(),
-                                job,
-                                link: dev_chan,
-                                since: Instant::now(),
-                                dev_tx,
-                                ctl_tx,
-                            });
-                            return Ok(Outcome::SignedOff(
-                                "Job disconnected after inactivity; sign on again to return to it."
-                                    .into(),
-                            ));
-                        }
-                        queue => {
-                            let (q, lib) = action
-                                .split_once(' ')
-                                .map_or((queue.to_string(), "QSYS".to_string()), |(q, l)| {
-                                    (q.to_string(), l.trim().to_string())
-                                });
-                            let _ = link.exec(format!(
-                                "SNDMSG MSG('Display {device} has been inactive for the QINACTITV interval.') TOMSGQ({lib}/{q})"
-                            ));
-                            last_input = Instant::now();
+        let ev = if let Some(e) = queue.pop_front() {
+            e
+        } else {
+            match ev_rx.recv_timeout(Duration::from_secs(30)) {
+                Ok(ev) => ev,
+                Err(mpsc::RecvTimeoutError::Disconnected) => break Outcome::ConnectionGone,
+                Err(mpsc::RecvTimeoutError::Timeout) => {
+                    if inactive_after.is_some_and(|d| last_input.elapsed() >= d) {
+                        let action = link.sysval("QINACTMSGQ".into()).ok().flatten().map_or_else(
+                            || "*ENDJOB".into(),
+                            |v| ccsid::from_ebcdic(&v.data).trim().to_string(),
+                        );
+                        match action.split_whitespace().next().unwrap_or("*ENDJOB") {
+                            "*ENDJOB" => {
+                                end_all(jobs);
+                                let _ = link.ws_set(device.to_string(), Vec::new());
+                                return Ok(Outcome::SignedOff(
+                                    "The job ended: the display was inactive too long.".into(),
+                                ));
+                            }
+                            "*DSCJOB" => {
+                                keep(jobs, device);
+                                return Ok(Outcome::SignedOff(
+                                    "Job disconnected after inactivity; sign on again to return to it."
+                                        .into(),
+                                ));
+                            }
+                            queue_name => {
+                                let (q, lib) = action
+                                    .split_once(' ')
+                                    .map_or((queue_name.to_string(), "QSYS".to_string()), |(q, l)| {
+                                        (q.to_string(), l.trim().to_string())
+                                    });
+                                let _ = link.exec(format!(
+                                    "SNDMSG MSG('Display {device} has been inactive for the QINACTITV interval.') TOMSGQ({lib}/{q})"
+                                ));
+                                last_input = Instant::now();
+                            }
                         }
                     }
+                    continue;
                 }
-                continue;
             }
         };
         match ev {
@@ -1084,7 +1292,7 @@ fn run_job(
                 for b in records {
                     if let Ok(r) = Record::decode(&b) {
                         last_input = Instant::now();
-                        let _ = dev_chan.send(&FromDevice::Record {
+                        let _ = jobs.active().dev_chan.send(&FromDevice::Record {
                             flags: r.flags,
                             opcode: r.opcode,
                             data: r.data,
@@ -1098,57 +1306,144 @@ fn run_job(
                     |v| ccsid::from_ebcdic(&v.data).trim().to_string(),
                 );
                 if action.starts_with("*ENDJOB") {
-                    let _ = dev_chan.send(&FromDevice::Gone);
-                    end_job(job);
+                    end_all(jobs);
+                    let _ = link.ws_set(device.to_string(), Vec::new());
                 } else {
                     eprintln!(
-                        "qsjob: QTVDEVICE: {peer} dropped; job of {} kept ({action})",
-                        job.start.user
+                        "qsjob: QTVDEVICE: {} dropped; jobs of {} kept ({action})",
+                        at.peer, signed.user
                     );
                     let _ = link.device_status(device.to_string(), 4);
-                    disconnected().lock().expect("list").push(Disconnected {
-                        user: job.start.user.clone(),
-                        device: device.to_string(),
-                        job,
-                        link: dev_chan,
-                        since: Instant::now(),
-                        dev_tx,
-                        ctl_tx,
-                    });
+                    keep(jobs, device);
                 }
                 return Ok(Outcome::ConnectionGone);
             }
-            Ev::Write(opcode, data) => tr.record(opcode, data)?,
-            Ev::Job(FromJob::Ending { .. }) | Ev::JobGone => {
-                break Outcome::SignedOff(String::new());
+            // Only the job the display shows writes to it.
+            Ev::Write(n, opcode, data) => {
+                if n == jobs.active_number() {
+                    tr.record(opcode, data)?;
+                }
             }
-            Ev::Job(FromJob::Disconnect) => {
-                // `DSCJOB`: the sign-on display, the job kept.
-                disconnected().lock().expect("list").push(Disconnected {
-                    user: job.start.user.clone(),
-                    device: device.to_string(),
-                    job,
-                    link: dev_chan,
-                    since: Instant::now(),
-                    dev_tx,
-                    ctl_tx,
-                });
+            Ev::Job(n, FromJob::Ending { .. }) | Ev::JobGone(n) => {
+                if let Some(next) = jobs.remove(n, link) {
+                    jobs.switch(next, device);
+                }
+                if jobs.held.is_empty() {
+                    break Outcome::SignedOff(String::new());
+                }
+                report(link, device, &jobs);
+            }
+            Ev::Job(_, FromJob::Disconnect) => {
+                // `DSCJOB`: the sign-on display, the jobs kept.
+                keep(jobs, device);
                 return Ok(Outcome::SignedOff(
                     "Job disconnected; sign on again to return to it.".into(),
                 ));
             }
-            Ev::Job(FromJob::PowerDown {
-                immediate,
-                delay,
-                restart,
-            }) => {
+            Ev::Job(n, FromJob::SecondaryJob) if n == jobs.active_number() => {
+                if let Some(i) = jobs.other_side() {
+                    jobs.switch(i, device);
+                    report(link, device, &jobs);
+                    continue;
+                }
+                let side = 3 - jobs.active().side;
+                let shown = sign_on_display(
+                    tr, server, link, ev_rx, device, at.model, at.host, "", true, &mut queue,
+                )?;
+                match shown {
+                    SignOn::Signed(s) => match hold(link, at, &s, side, ev_tx) {
+                        Ok(h) => {
+                            jobs.held.push(h);
+                            jobs.active = jobs.held.len() - 1;
+                            report(link, device, &jobs);
+                        }
+                        Err(e) => {
+                            eprintln!("qsjob: QTVDEVICE: secondary job: {e}");
+                            jobs.active().reset(device);
+                        }
+                    },
+                    SignOn::Cancelled => jobs.active().reset(device),
+                    SignOn::Gone => queue.push_front(Ev::TcpGone),
+                }
+            }
+            Ev::Job(n, FromJob::GroupTransfer { job }) if n == jobs.active_number() => {
+                let target = if job == 0 {
+                    jobs.came_from
+                        .iter()
+                        .rev()
+                        .find(|(to, _)| *to == n)
+                        .map(|(_, from)| *from)
+                } else {
+                    Some(job)
+                };
+                let side = jobs.active().side;
+                match target.and_then(|t| jobs.index(t)) {
+                    Some(i) if jobs.held[i].side == side && i != jobs.active => {
+                        let t = jobs.held[i].number();
+                        jobs.came_from.push((t, n));
+                        jobs.switch(i, device);
+                        report(link, device, &jobs);
+                    }
+                    _ => jobs.active().reset(device),
+                }
+            }
+            Ev::Job(
+                n,
+                FromJob::GroupStart {
+                    group,
+                    name,
+                    text,
+                    program,
+                },
+            ) if n == jobs.active_number() => {
+                // The new group job: the same user, its program first,
+                // Command Entry when it names none; no sign-on panels.
+                let mut s = jobs.active().signed.clone();
+                s.next = sec::signon::Next::Start;
+                s.show_info = false;
+                if program.is_empty() {
+                    s.inlpgm = "*NONE".into();
+                    s.inlmnu = "*NONE".into();
+                } else {
+                    s.inlpgm = program;
+                    s.inlmnu = "*SIGNOFF".into();
+                }
+                let side = jobs.active().side;
+                match hold(link, at, &s, side, ev_tx) {
+                    Ok(h) => {
+                        let new = h.number();
+                        let _ = link.grp_join(group, name, text, new);
+                        jobs.came_from.push((new, n));
+                        jobs.held.push(h);
+                        jobs.active = jobs.held.len() - 1;
+                        report(link, device, &jobs);
+                    }
+                    Err(e) => {
+                        eprintln!("qsjob: QTVDEVICE: group job: {e}");
+                        jobs.active().reset(device);
+                    }
+                }
+            }
+            Ev::Job(_, FromJob::GroupEnd { job }) => {
+                if let Some(i) = jobs.index(job) {
+                    let _ = jobs.held[i].job.chan.send(&ToJob::End { immediate: false });
+                }
+            }
+            Ev::Job(
+                _,
+                FromJob::PowerDown {
+                    immediate,
+                    delay,
+                    restart,
+                },
+            ) => {
                 let _ = link.power_down(immediate, delay, restart);
             }
-            Ev::Job(FromJob::Output { text }) => eprint!("{text}"),
-            Ev::Release | Ev::Job(_) => {}
+            Ev::Job(_, FromJob::Output { text }) => eprint!("{text}"),
+            Ev::Release | Ev::Job(..) => {}
         }
     };
-    let _ = job.child.wait();
+    let _ = link.ws_set(device.to_string(), Vec::new());
     Ok(outcome)
 }
 

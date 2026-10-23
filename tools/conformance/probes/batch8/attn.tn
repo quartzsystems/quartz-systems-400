@@ -1,0 +1,7 @@
+# Batch 8: one system display per session (batch 7 and batch8-sysreq
+# stalled after the first option); the Attention program.
+wait "Main Menu"
+timeout 20000
+key attn
+settle 3000
+snap attn-program

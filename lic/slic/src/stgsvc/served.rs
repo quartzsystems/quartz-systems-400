@@ -1337,6 +1337,38 @@ impl Service for Served<'_> {
 
     // --- system displays (200-219)
 
+    fn grp_chg(&mut self, name: String, text: String) -> Result<u32, String> {
+        super::sysdsp::grp_chg(self.ctx.job.number, &name, &text)
+    }
+
+    fn grp_info(&mut self) -> Option<stg::proto::GroupInfo> {
+        super::sysdsp::grp_info(self.system, self.ctx.job.number)
+    }
+
+    fn grp_join(&mut self, group: u32, name: String, text: String, number: u32) -> Result<(), String> {
+        super::sysdsp::grp_join(group, &name, &text, number)
+    }
+
+    fn grp_leave(&mut self, number: u32) {
+        super::sysdsp::grp_leave(number);
+    }
+
+    fn gda_read(&mut self) -> Result<Vec<u8>, String> {
+        super::sysdsp::gda_read(self.ctx.job.number)
+    }
+
+    fn gda_write(&mut self, start: u32, bytes: Vec<u8>) -> Result<(), String> {
+        super::sysdsp::gda_write(self.ctx.job.number, start, &bytes)
+    }
+
+    fn ws_set(&mut self, device: String, jobs: Vec<stg::proto::WsJob>) {
+        super::sysdsp::ws_set(&device, jobs);
+    }
+
+    fn ws_get(&mut self, device: String) -> Vec<stg::proto::WsJob> {
+        super::sysdsp::ws_get(self.system, &device)
+    }
+
     // --- UIM APIs (220-239)
 
     fn schidx_entries(&mut self, name: String, lib: String) -> Result<Vec<stg::proto::SchidxEntry>, String> {

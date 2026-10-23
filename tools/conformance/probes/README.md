@@ -37,6 +37,9 @@ panel shows values that change between runs.
 | `batch8-uim.tn` | the UIM engine's displays on `WRKOBJ`: field help, extended help, keys help, F1 on the title, an option that is not valid; `WRKUSRPRF`, `WRKMSGF` |
 | `batch9-uimpos.tn` | the F17 position-to windows of `WRKOBJ` and `WRKUSRPRF` |
 
+| `batch8-sysreq.tn` | the rest of batch 7 in one session (2026-10-23: option 4, the `DSPMSG` prompt, came back; the session stalled after it) |
+| `batch8/*.tn` | one system display per session: System Request options 5 and 7 (6 was dropped: other users' messages; 80 was cut off by a waiting break message), the Attention program (`ASSIST`, the same grid as `menu-assist`), a break message on Display Messages; `SNDPGMMSG` to `*EXT` is refused from a command line, so Display Program Messages has no golden |
+
 A command the pub400 account is not authorized to (`WRKSYSSTS`,
 `WRKOUTQ`, `WRKJOBQ`, `WRKJOBSCDE`, `WRKSYSVAL`) leaves a message
 instead of a panel; those snapshots were removed and the panels wait

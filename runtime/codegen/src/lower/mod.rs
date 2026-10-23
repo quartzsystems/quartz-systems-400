@@ -787,6 +787,9 @@ impl<'a, 'b> Lowerer<'a, 'b> {
         self.b.switch_to_block(slow);
         self.b.set_cold_block(slow);
         self.rt_call(RtFn::Attn, &[]);
+        // The attention hook may end the request (System Request
+        // option 2): the cancel unwinds from here.
+        self.check_pending();
         self.b.ins().jump(cont, &[]);
         self.b.switch_to_block(cont);
     }

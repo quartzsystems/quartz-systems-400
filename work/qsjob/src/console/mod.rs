@@ -56,7 +56,7 @@ pub fn serve(ctl: Chan, link: &Shared, start: &Start) -> ! {
     loop {
         status(&c.host.link, Status::Evtw, "");
         let next = loop {
-            match c.host.inbox.recv_timeout(host::BREAK_POLL) {
+            match c.host.next(host::BREAK_POLL) {
                 Ok(m) => break Ok(m),
                 Err(RecvTimeoutError::Timeout) => {
                     c.breaks();
@@ -145,6 +145,7 @@ impl Console {
             start: Rc::new(start.clone()),
             attrs: Rc::new(RefCell::new(None)),
             display: Rc::new(RefCell::new(display)),
+            pending: Rc::new(RefCell::new(std::collections::VecDeque::new())),
         };
         Self {
             host,
@@ -277,47 +278,7 @@ impl Console {
     /// The job, created on first use with its sources over the link.
     pub fn job(&mut self) -> &mut Job {
         if self.job.is_none() {
-            let link = &self.host.link;
-            let mut s = Sources::new(link);
-            // The console's `*LDA` is the job's, whether or not a
-            // program has run yet.
-            s.lda = self.host.lda.clone();
-            s.data = stg::remote::RemoteData::new(link.clone(), self.host.lda.clone());
-            s.provider = RemoteProvider::new(link.clone(), self.host.lda.clone());
-            let mut job = Job::boxed(Box::new(s.objects));
-            job.usrspcs.set_source(Box::new(s.spaces));
-            job.msgs = Box::new(s.msgs);
-            job.ident.name.clone_from(&self.host.start.name);
-            job.ident.user.clone_from(&self.host.start.user);
-            job.ident.number = format!("{:06}", self.host.start.number);
-            job.data = Some(Box::new(s.data));
-            job.io = Some(Box::new(s.io));
-            // Programs run on this process's main thread; its guard page
-            // (`platform::stack`) catches a runaway recursion, so the
-            // runtime's own budget never fires first.
-            job.stack_bytes = usize::MAX;
-            // A running program takes its break messages too.
-            let breaks_host = self.host.clone();
-            job.attn = Some(Rc::new(move |job: &mut Job| breaks_host.breaks(job)));
-            host::attention_timer();
-            job.spool = Some(Box::new(stg::remote::spool::RemoteSpool::new(link.clone())));
-            let ask = Rc::clone(link);
-            job.inquiry = Some(Box::new(move |q| stg::remote::inquiry::answer(&ask, q)));
-            let provider = Rc::new(RefCell::new(s.provider));
-            let dyn_provider: Rc<RefCell<dyn sysapi::Provider>> = provider.clone();
-            sysapi::install(&mut job, dyn_provider);
-            // Domain and state are enforced at the level of this IPL.
-            job.act.qsecurity = link.borrow_mut().with(Client::whoami).qsecurity;
-            let ctl = self.host.ctl.clone();
-            let inbox = Rc::clone(&self.host.inbox);
-            job.set_debug_hook(Box::new(move |job: &mut Job, stop| {
-                debug::session(job, stop, &mut ctl.borrow_mut(), &inbox)
-            }));
-            crate::command::install_hook(&mut job, &self.host);
-            crate::command::natives::install(&mut job, &self.host);
-            job.display = Some(Box::new(crate::display::dds::DdsDisplay::new(
-                self.host.clone(),
-            )));
+            let (job, provider) = build_job(&self.host);
             self.provider = Some(provider);
             self.job = Some(job);
             self.refresh_libl();
@@ -334,6 +295,55 @@ impl Console {
         j.ident.libl = a.libl.search();
         j.ident.curlib = a.libl.cur;
     }
+}
+
+/// A runtime job over the host: its sources over the link, the
+/// hooks for breaks, inquiries, the debugger, `QCMDEXC` and display
+/// files. The System Request and Attention levels build one of their
+/// own beside the job's.
+pub fn build_job(host: &Host) -> (Box<Job>, Rc<RefCell<RemoteProvider>>) {
+    let link = &host.link;
+    let mut s = Sources::new(link);
+    // The console's `*LDA` is the job's, whether or not a program has
+    // run yet.
+    s.lda = host.lda.clone();
+    s.data = stg::remote::RemoteData::new(link.clone(), host.lda.clone());
+    s.provider = RemoteProvider::new(link.clone(), host.lda.clone());
+    let mut job = Job::boxed(Box::new(s.objects));
+    job.usrspcs.set_source(Box::new(s.spaces));
+    job.msgs = Box::new(s.msgs);
+    job.ident.name.clone_from(&host.start.name);
+    job.ident.user.clone_from(&host.start.user);
+    job.ident.number = format!("{:06}", host.start.number);
+    job.data = Some(Box::new(s.data));
+    job.io = Some(Box::new(s.io));
+    // Programs run on this process's main thread; its guard page
+    // (`platform::stack`) catches a runaway recursion, so the runtime's
+    // own budget never fires first.
+    job.stack_bytes = usize::MAX;
+    // A running program takes its break messages too, and the keys a
+    // display sent meanwhile (System Request, Attention).
+    let breaks_host = host.clone();
+    job.attn = Some(Rc::new(move |job: &mut Job| breaks_host.attention(job)));
+    host::attention_timer();
+    job.spool = Some(Box::new(stg::remote::spool::RemoteSpool::new(link.clone())));
+    let ask = host.clone();
+    job.inquiry = Some(Box::new(move |q| crate::sysdsp::msgs::inquiry(&ask, q)));
+    let provider = Rc::new(RefCell::new(s.provider));
+    let dyn_provider: Rc<RefCell<dyn sysapi::Provider>> = provider.clone();
+    sysapi::install(&mut job, dyn_provider);
+    // Domain and state are enforced at the level of this IPL.
+    job.act.qsecurity = link.borrow_mut().with(Client::whoami).qsecurity;
+    let ctl = host.ctl.clone();
+    let inbox = Rc::clone(&host.inbox);
+    job.set_debug_hook(Box::new(move |job: &mut Job, stop| {
+        debug::session(job, stop, &mut ctl.borrow_mut(), &inbox)
+    }));
+    crate::command::install_hook(&mut job, host);
+    crate::command::natives::install(&mut job, host);
+    crate::sysdsp::install(&mut job, host);
+    job.display = Some(Box::new(crate::display::dds::DdsDisplay::new(host.clone())));
+    (job, provider)
 }
 
 /// What `slic` sends, read on a thread.

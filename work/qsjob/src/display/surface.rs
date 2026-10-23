@@ -135,11 +135,17 @@ impl Surface {
     }
 
     /// Wait for the display: the attention identifier and the cursor,
-    /// the model updated with what was typed. `None` when the job is
-    /// to end or the device is gone.
+    /// the model updated with what was typed. System Request,
+    /// Attention and Print are the system's (`crate::sysdsp::keys`).
+    /// `None` when the job is to end, the device is gone or the request
+    /// was ended.
     pub fn wait(&mut self) -> Option<(u8, (u8, u8))> {
+        use crate::sysdsp::keys;
         loop {
-            match self.host.inbox.recv_timeout(Duration::from_secs(1)) {
+            if keys::unwinding() {
+                return None;
+            }
+            match self.host.next(Duration::from_secs(1)) {
                 Ok(ToJob::Record { flags, data, .. }) => {
                     let got = self
                         .host
@@ -148,12 +154,14 @@ impl Surface {
                         .as_mut()
                         .and_then(|d| d.accept_raw(flags, &data));
                     match got {
-                        Some((k, Some(inb))) if k != key::SYSREQ && k != key::ATTN => {
-                            return Some((inb.aid, (inb.row, inb.col)));
+                        Some((k, _)) if keys::is_system(k) => {
+                            let host = self.host.clone();
+                            if keys::take(&host, k) == keys::After::Unwind {
+                                return None;
+                            }
                         }
-                        // System Request and Attention: `TODO(phase8)`
-                        // section 5; the read goes on.
-                        Some(_) => self.flush(Read::MdtFields),
+                        Some((_, Some(inb))) => return Some((inb.aid, (inb.row, inb.col))),
+                        Some((_, None)) => self.flush(Read::MdtFields),
                         None => {}
                     }
                 }
@@ -174,7 +182,13 @@ impl Surface {
                 Ok(ToJob::DeviceGone | ToJob::End { .. }) | Err(RecvTimeoutError::Disconnected) => {
                     return None;
                 }
-                Ok(_) | Err(RecvTimeoutError::Timeout) => {}
+                Err(RecvTimeoutError::Timeout) => {
+                    if self.host.display.borrow().is_some() {
+                        let host = self.host.clone();
+                        crate::sysdsp::msgs::poll(&host);
+                    }
+                }
+                Ok(_) => {}
             }
         }
     }

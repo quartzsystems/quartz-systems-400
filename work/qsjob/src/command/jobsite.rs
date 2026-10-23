@@ -53,6 +53,10 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
     if let Some(res) = crate::panels::run(job, host, r, out) {
         return res;
     }
+    // System Request, Attention, secondary and group jobs.
+    if let Some(res) = crate::sysdsp::run(job, host, r, out) {
+        return res;
+    }
     match r.name.as_str() {
         "CALL" => return call(job, host, &parms),
         "RTVSYSVAL" => return rtvsysval(host, r, out),

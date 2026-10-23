@@ -222,6 +222,11 @@ impl DisplaySource for DdsDisplay {
         let r = loop {
             self.surface.flush(Read::MdtFields);
             let Some((a, cursor)) = self.surface.wait() else {
+                if crate::sysdsp::keys::cancelling() {
+                    let mut f = IoFail::new(IoFail::REQUEST_ENDED, crate::sysdsp::keys::ENDED, &[]);
+                    f.data.clear();
+                    break Err(f);
+                }
                 break Err(IoFail::new(1299, "CPF5140", &[format, &open.lib]));
             };
             let got = self

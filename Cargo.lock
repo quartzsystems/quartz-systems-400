@@ -1736,6 +1736,7 @@ dependencies = [
  "pdm",
  "qdecimal",
  "qir",
+ "release",
  "rustls",
  "rustls-graviola",
  "sec",

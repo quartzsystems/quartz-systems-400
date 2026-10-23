@@ -166,6 +166,32 @@ pub enum FromJob {
     },
     /// `DSCJOB`: leave the job, keep it, free the display.
     Disconnect,
+    /// `TFRSECJOB`: the display goes to the other job at it, or shows
+    /// a sign-on for a secondary job when there is none.
+    SecondaryJob,
+    /// `TFRGRPJOB` to a job of the group already started (0 for the
+    /// group job that transferred here last).
+    GroupTransfer {
+        /// The job number.
+        job: u32,
+    },
+    /// `TFRGRPJOB` to a group job not started yet: the session starts
+    /// it for the same user, calling `program`, and it joins `group`.
+    GroupStart {
+        /// The group's number.
+        group: u32,
+        /// The group job name.
+        name: String,
+        /// Its text.
+        text: String,
+        /// `INLGRPPGM`, `lib/name`; empty for none.
+        program: String,
+    },
+    /// `ENDGRPJOB` of another job of the group.
+    GroupEnd {
+        /// The job number.
+        job: u32,
+    },
 }
 
 wire_enum!(FromJob {
@@ -176,6 +202,10 @@ wire_enum!(FromJob {
     4 => Show { panel },
     5 => PowerDown { immediate, delay, restart },
     6 => Disconnect,
+    7 => SecondaryJob,
+    8 => GroupTransfer { job },
+    9 => GroupStart { group, name, text, program },
+    10 => GroupEnd { job },
 });
 
 /// The service console's prompt.

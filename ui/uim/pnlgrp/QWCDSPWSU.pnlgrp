@@ -1,0 +1,64 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QWCDSPWSU: Display Work Station User (System Request option 7,
+.* DSPWSUSR): the user, the display and the interactive jobs at it,
+.* A the primary and B the secondary. The empty :DATACOL. puts the
+.* colon at column 45, where the golden has it.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=TEXTCL BASETYPE='CHAR 50'.
+:ECLASS.
+:CLASS NAME=JOBCL BASETYPE='CHAR 28'.
+:ECLASS.
+:CLASS NAME=NUMCL BASETYPE='CHAR 1'.
+:ECLASS.
+:VAR NAME=USER CLASS=NAMECL.
+:VAR NAME=USRTEXT CLASS=TEXTCL.
+:VAR NAME=WSNAME CLASS=NAMECL.
+:VAR NAME=WSTEXT CLASS=TEXTCL.
+:VAR NAME=NBRJOBS CLASS=NUMCL.
+:VAR NAME=CURJOB CLASS=NUMCL.
+:VAR NAME=JOBA CLASS=JOBCL.
+:VAR NAME=JOBB CLASS=JOBCL.
+:KEYL NAME=KEYS.
+:KEYI KEY=ENTER ACTION=EXIT.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=DSPWSUSR KEYL=KEYS HELP=DSPWSUH TOPSEP=DATETIME.Display Work Station User
+:DATA DEPTH='*'.
+:DATACOL WIDTH=44.
+:DATACOL WIDTH=78.
+:DATAI VAR=USER USAGE=OUTPUT.User
+:DATAGRP GRPSEP=NONE.
+:DATAI VAR=USRTEXT USAGE=OUTPUT.Text
+:EDATAGRP.
+:DATAC.
+:DATAI VAR=WSNAME USAGE=OUTPUT.Work station
+:DATAGRP GRPSEP=NONE.
+:DATAI VAR=WSTEXT USAGE=OUTPUT.Text
+:EDATAGRP.
+:DATAC.
+:DATAC.
+:DATAI VAR=NBRJOBS USAGE=OUTPUT.Number of interactive jobs in session
+:DATAI VAR=CURJOB USAGE=OUTPUT.Interactive job currently active
+:DATAGRP GRPSEP=NONE.
+:DATAI VAR=JOBA USAGE=OUTPUT.Interactive job A
+:DATAI VAR=JOBB USAGE=OUTPUT.Interactive job B
+:EDATAGRP.
+:EDATA.
+:BOTINST.Press Enter to continue.
+:EPANEL.
+:HELP NAME=DSPWSUH.Display Work Station User - Help
+:P.The user signed on at this display station and the interactive jobs
+running at it. Job A is the first job signed on; job B is the
+secondary job System Request option 1 started, *NONE while there is
+none. The active job is the one the display shows now.
+:EHELP.
+:EPNLGRP.

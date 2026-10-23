@@ -1,0 +1,8 @@
+# Batch 8: one system display per session (batch 7 and batch8-sysreq
+# stalled after the first option); a break message to the requester.
+wait "Main Menu"
+timeout 20000
+type sndmsg msg('A break message for the capture') tousr(*requester)
+key enter
+settle 3000
+snap break-message

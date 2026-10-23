@@ -1,0 +1,24 @@
+                           Display Work Station User                   SYSNAME  
+                                                             MM/DD/YY  HH:MM:SS 
+ User . . . . . . . . . . . . . . . . . . . :   USERNAME                        
+   Text . . . . . . . . . . . . . . . . . . :     USERNAME                      
+                                                                                
+ Work station . . . . . . . . . . . . . . . :   QPADEV000X                      
+   Text . . . . . . . . . . . . . . . . . . :     Device created for PUB400.    
+                                                                                
+                                                                                
+ Number of interactive jobs in session  . . :   1                               
+ Interactive job currently active . . . . . :   A                               
+   Interactive job A  . . . . . . . . . . . :     NNNNNN/USERNAME/QPADEV000X    
+   Interactive job B  . . . . . . . . . . . :     *NONE                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

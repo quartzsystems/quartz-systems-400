@@ -1,0 +1,101 @@
+# Batch 8: the rest of batch 7, waiting on each display instead of a
+# fixed settle: System Request options 4 to 7, the Attention program,
+# Display Program Messages for an inquiry to *EXT, DSPSGNINF, the
+# CMDSIGNOFF menu and the SIGNOFF prompt. Option 80 comes last (it may
+# disconnect at once).
+wait "Main Menu"
+continue
+timeout 30000
+key sysreq
+wait "System Request"
+type 4
+key enter
+settle 2500
+snap sysreq-4-dspmsg
+key f3
+wait "Main Menu"
+key reset
+key sysreq
+wait "System Request"
+type 5
+key enter
+settle 2500
+snap sysreq-5-sndmsg
+key f12
+settle 1500
+key reset
+key f12
+wait "Main Menu"
+key reset
+key sysreq
+wait "System Request"
+type 6
+key enter
+settle 2500
+snap sysreq-6-qsysopr
+key f3
+wait "Main Menu"
+key reset
+key sysreq
+wait "System Request"
+type 7
+key enter
+settle 2500
+snap sysreq-7-wrkstnusr +jobnum
+key f3
+settle 1500
+key reset
+key enter
+wait "Main Menu"
+key reset
+key attn
+settle 2500
+snap attn-program
+key f3
+wait "Main Menu"
+key reset
+type sndpgmmsg msg('A question for the capture') topgmq(*ext) msgtype(*inq)
+key enter
+settle 2500
+snap program-messages-inq
+type x
+key enter
+wait "Main Menu"
+key reset
+type sndmsg msg('A break message for the capture') tousr(*requester)
+key enter
+settle 3000
+snap break-message
+key f3
+settle 1500
+key reset
+key enter
+wait "Main Menu"
+key reset
+type dspsgninf
+key enter
+settle 2000
+snap dspsgninf
+key f3
+wait "Main Menu"
+type go cmdsignoff
+key enter
+settle 2000
+snap menu-cmdsignoff
+key f3
+wait "Main Menu"
+type signoff
+key f4
+settle 2000
+snap prompt-signoff
+key f12
+wait "Main Menu"
+key reset
+key sysreq
+wait "System Request"
+type 80
+key enter
+settle 2500
+snap sysreq-80
+key f12
+settle 1500

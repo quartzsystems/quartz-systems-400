@@ -142,6 +142,8 @@ fn show_stack(s: &mut Session<'_>, stack: &mut MenuStack, initial: bool) -> Flow
                 }
             };
             match r {
+                // A request System Request ended: back where it began.
+                Response::Gone if crate::sysdsp::keys::cancelling() => return Flow::Back,
                 Response::Gone => return Flow::End,
                 Response::Exit => {
                     // F3 leaves the first menu: the session's initial
@@ -227,6 +229,7 @@ fn run(s: &mut Session<'_>, text: &str, dialog: &mut UimDialog) -> Flow {
         "go" => {
             inter::remember(s, typed);
             let rest = typed.split_once(char::is_whitespace).map_or("", |(_, r)| r);
+            let _request = crate::sysdsp::keys::Request::enter();
             match go(s, rest, false) {
                 Flow::Back => Flow::Back,
                 other => other,

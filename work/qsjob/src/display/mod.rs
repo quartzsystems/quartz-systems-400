@@ -104,6 +104,36 @@ pub fn key_of(flags_: u16, a: u8) -> Option<u8> {
     }
 }
 
+/// A display's screen put aside.
+#[derive(Clone, Debug)]
+pub struct Snapshot {
+    model: ScreenModel,
+    last: Option<Panel>,
+}
+
+impl Snapshot {
+    /// A message on the last row, when no field is there.
+    pub fn message(&mut self, text: &str) {
+        let rows = self.model.rows();
+        if self.model.fields().iter().any(|f| f.row == rows) {
+            return;
+        }
+        self.model.set_error_row(rows);
+        self.model.error_line(text, attr::WHITE);
+        self.last = None;
+    }
+}
+
+/// The key of a record that carries one without fields (System
+/// Request, Attention, Test Request).
+#[must_use]
+pub fn flag_key(flags_: u16) -> Option<u8> {
+    if flags_ & (flags::SRQ | flags::ATN | flags::TRQ) != 0 {
+        return key_of(flags_, 0);
+    }
+    None
+}
+
 /// The job's end of its device.
 pub struct Display {
     chan: Chan,
@@ -208,6 +238,34 @@ impl Display {
     pub fn forget_panel(&mut self) {
         self.last = None;
     }
+
+    /// The screen as it stands, to put back after a system display.
+    #[must_use]
+    pub fn snapshot(&self) -> Snapshot {
+        Snapshot {
+            model: self.model.clone(),
+            last: self.last.clone(),
+        }
+    }
+
+    /// Put a snapshot back and send it whole, the keyboard open again
+    /// when a read was outstanding.
+    pub fn restore(&mut self, s: Snapshot) {
+        let reading = s.model.is_reading();
+        self.model = s.model;
+        self.last = s.last;
+        self.model.invalidate();
+        self.flush(if reading { Read::MdtFields } else { Read::None });
+    }
+
+    /// Put a snapshot back without sending it: something is drawn over
+    /// it before the next flush.
+    pub fn restore_quiet(&mut self, s: Snapshot) {
+        self.model = s.model;
+        self.last = None;
+        self.model.invalidate();
+    }
+
 
     /// A record from the display: the key, and the inbound record when
     /// the key carried one (System Request and Attention do not).

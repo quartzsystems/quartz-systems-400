@@ -13,8 +13,15 @@ pub const QDSIGNON: &str = include_str!("../sys/QDSIGNON.dspf");
 /// The sign-on display at password level 2 and 3.
 pub const QDSIGNON2: &str = include_str!("../sys/QDSIGNON2.dspf");
 
+/// The System Request menu.
+pub const QWSSYSRQ: &str = include_str!("../sys/QWSSYSRQ.dspf");
+
 /// Every shipped display file: name and DDS.
-pub const FILES: &[(&str, &str)] = &[("QDSIGNON", QDSIGNON), ("QDSIGNON2", QDSIGNON2)];
+pub const FILES: &[(&str, &str)] = &[
+    ("QDSIGNON", QDSIGNON),
+    ("QDSIGNON2", QDSIGNON2),
+    ("QWSSYSRQ", QWSSYSRQ),
+];
 
 #[cfg(test)]
 mod tests {
@@ -28,6 +35,9 @@ mod tests {
             assert!(diags.is_empty(), "{name}: {diags:?}");
             let c = compile_dspf(&src, &NoRefs, &CompileOpts::default());
             let df = c.definition.unwrap_or_else(|| panic!("{name}:\n{}", c.listing));
+            if !name.starts_with("QDSIGNON") {
+                continue;
+            }
             let rec = df.record("SIGNON").expect("the SIGNON format");
             for f in ["QSYSNAME", "SBSNAME", "DEVNAME", "USERID", "PASSWRD", "PROGRAM", "MENU", "CURLIB", "UBUFFER"] {
                 assert!(rec.field(f).is_some(), "{name} lacks {f}");

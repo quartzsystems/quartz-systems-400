@@ -532,7 +532,13 @@ fn job_message(system: &mut System, m: wm::ctl::FromJob) {
             delay,
             restart,
         } => power::down_ending(system, restart, immediate, delay),
-        FromJob::Ready { .. } | FromJob::Show { .. } | FromJob::Disconnect => {}
+        FromJob::Ready { .. }
+        | FromJob::Show { .. }
+        | FromJob::Disconnect
+        | FromJob::SecondaryJob
+        | FromJob::GroupTransfer { .. }
+        | FromJob::GroupStart { .. }
+        | FromJob::GroupEnd { .. } => {}
     }
 }
 

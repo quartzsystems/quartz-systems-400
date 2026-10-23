@@ -445,6 +445,7 @@ pub(super) fn command_entry(s: &mut Session<'_>) -> bool {
         if word == "go" {
             remember(s, &typed);
             let rest = typed.split_once(char::is_whitespace).map_or("", |(_, r)| r);
+            let _request = crate::sysdsp::keys::Request::enter();
             match super::menu::go(s, rest, false) {
                 super::menu::Flow::Back => {}
                 super::menu::Flow::SignOff | super::menu::Flow::End => return true,
@@ -467,6 +468,7 @@ pub(super) fn signoff(s: &mut Session<'_>, cmd: &str) {
 
 /// Run a command as a request of `QCMD`; its output.
 pub(super) fn command_output(s: &mut Session<'_>, cmd: &str, mode: RunMode) -> String {
+    let _request = crate::sysdsp::keys::Request::enter();
     let word = cmd.split_whitespace().next().unwrap_or("");
     status(
         s.link,
@@ -480,6 +482,7 @@ pub(super) fn command_output(s: &mut Session<'_>, cmd: &str, mode: RunMode) -> S
 /// Run one command and add it, its output and the messages' help to
 /// the previous commands and messages.
 fn run_command(s: &mut Session<'_>, cmd: &str, mode: RunMode) {
+    let _request = crate::sysdsp::keys::Request::enter();
     remember(s, cmd);
     let before = s.c.job().joblog.len();
     let word = cmd.split_whitespace().next().unwrap_or("");

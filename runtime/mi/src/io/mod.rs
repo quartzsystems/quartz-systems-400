@@ -48,6 +48,11 @@ pub struct IoFail {
 }
 
 impl IoFail {
+    /// The status of a display operation whose request the operator
+    /// ended (System Request option 2): the program is cancelled to
+    /// its control boundary instead of seeing an error.
+    pub const REQUEST_ENDED: u16 = u16::MAX;
+
     /// A failure with a message and blank-padded name fields.
     #[must_use]
     pub fn new(status: u16, msgid: &str, names: &[&str]) -> Self {

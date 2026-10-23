@@ -1,0 +1,81 @@
+     A*  QWSSYSRQ: the System Request menu, shown by the job when
+     A*  Sys Req is pressed. SYSRQ is the menu of a job alone on its
+     A*  display; SYSRQ2 adds the group and secondary job options:
+     A*  13 and 14 under indicator 51 (a group job), 15 under 52 (a
+     A*  secondary job waits).
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03)
+     A                                      CA12(12)
+     A                                      HELP
+     A          R SYSRQ
+     A                                  1 34'System Request'
+     A                                      DSPATR(HI)
+     A                                  2 62'System:'
+     A            SYSNAME        8A  O  2 72
+     A                                  3  2'Select one of the following:'
+     A                                      COLOR(BLU)
+     A                                  5  7'1.'
+     A                                  5 10'Display sign on for secondary job'
+     A                                  6  7'2.'
+     A                                  6 10'End previous request'
+     A                                  7  7'3.'
+     A                                  7 10'Display current job'
+     A                                  8  7'4.'
+     A                                  8 10'Display messages'
+     A                                  9  7'5.'
+     A                                  9 10'Send a message'
+     A                                 10  7'6.'
+     A                                 10 10'Display system operator messages'
+     A                                 11  7'7.'
+     A                                 11 10'Display work station user'
+     A                                 13  6'80.'
+     A                                 13 10'Disconnect job'
+     A                                 15  6'90.'
+     A                                 15 10'Sign off'
+     A                                 18 74'Bottom'
+     A                                      DSPATR(HI)
+     A                                 19  2'Selection'
+     A            SEL            2A  I 20  7DSPATR(UL)
+     A                                 22  2'F3=Exit   F12=Cancel'
+     A                                      COLOR(BLU)
+     A                                 23  2'(C) COPYRIGHT QUARTZ SYSTEMS 2026.'
+     A                                      DSPATR(HI)
+     A          R SYSRQ2
+     A                                  1 34'System Request'
+     A                                      DSPATR(HI)
+     A                                  2 62'System:'
+     A            SYSNAME        8A  O  2 72
+     A                                  3  2'Select one of the following:'
+     A                                      COLOR(BLU)
+     A                                  5  7'1.'
+     A                                  5 10'Display sign on for secondary job'
+     A                                  6  7'2.'
+     A                                  6 10'End previous request'
+     A                                  7  7'3.'
+     A                                  7 10'Display current job'
+     A                                  8  7'4.'
+     A                                  8 10'Display messages'
+     A                                  9  7'5.'
+     A                                  9 10'Send a message'
+     A                                 10  7'6.'
+     A                                 10 10'Display system operator messages'
+     A                                 11  7'7.'
+     A                                 11 10'Display work station user'
+     A  51                             12  6'13.'
+     A  51                             12 10'Transfer to group job'
+     A  51                             13  6'14.'
+     A  51                             13 10'Transfer to previous group job'
+     A  52                             14  6'15.'
+     A  52                             14 10'Transfer to secondary job'
+     A                                 16  6'80.'
+     A                                 16 10'Disconnect job'
+     A                                 17  6'90.'
+     A                                 17 10'Sign off'
+     A                                 18 74'Bottom'
+     A                                      DSPATR(HI)
+     A                                 19  2'Selection'
+     A            SEL            2A  I 20  7DSPATR(UL)
+     A                                 22  2'F3=Exit   F12=Cancel'
+     A                                      COLOR(BLU)
+     A                                 23  2'(C) COPYRIGHT QUARTZ SYSTEMS 2026.'
+     A                                      DSPATR(HI)

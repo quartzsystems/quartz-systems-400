@@ -581,6 +581,10 @@ fn display_io(
             write_infds(infds, infds_len, &info, &fb, false, "DSPIO", j.abi.cur_stmt);
             0
         }
+        Err(f) if f.status == IoFail::REQUEST_ENDED => {
+            j.cancel_request(&f.msgid, "QCPFMSG", f.data);
+            0
+        }
         Err(f) => {
             escape(j, &f);
             i32::from(f.status)

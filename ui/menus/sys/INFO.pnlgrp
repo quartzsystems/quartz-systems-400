@@ -18,6 +18,7 @@
 :KEYI KEY=F3 ACTION=EXIT.F3=Exit
 :KEYI KEY=F9 ACTION='CMD CALL QCMD'.F9=Command line
 :KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:KEYI KEY=F14 ACTION='CMD CALL QSYS/QUIABOUT'.
 :EKEYL.
 :PANEL NAME=INFO HELP=HLPINFO KEYL=MENUKEYS ENTER='RETURN 1' TOPSEP=SYSNAM PANELID=PANELID.Information Assistant Options
 :MENU DEPTH='*' SCROLL=YES OPTIONS=OPTION.To select one of the following, type its number below and press Enter:
@@ -30,6 +31,7 @@
 :P.Pointers to the system's own documentation and a way to send a comment
 on it.
 :P.Type an option number and press Enter. F9 opens a command line, F3
-leaves the menu and F12 returns to the one before it.
+leaves the menu and F12 returns to the one before it. F14 shows About
+QS/400: the release, the build and the machine this system runs on.
 :EHELP.
 :EPNLGRP.

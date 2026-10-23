@@ -1,0 +1,11 @@
+# Batch 8: one system display per session (batch 7 and batch8-sysreq
+# stalled after the first option); an inquiry to *EXT on Display Program Messages.
+wait "Main Menu"
+timeout 20000
+type sndpgmmsg msg('A question for the capture') topgmq(*ext) msgtype(*inq)
+key enter
+settle 3000
+snap program-messages-inq
+type x
+key enter
+settle 1500

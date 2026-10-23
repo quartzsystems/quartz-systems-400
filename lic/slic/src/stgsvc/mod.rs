@@ -34,6 +34,7 @@ pub use jobs::chgjob;
 mod served;
 mod sysdata;
 mod system2;
+mod sysdsp;
 
 use std::fs;
 use std::os::unix::net::UnixListener;

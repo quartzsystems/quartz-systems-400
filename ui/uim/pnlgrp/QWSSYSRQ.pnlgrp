@@ -1,0 +1,56 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QWSSYSRQ: the help of the System Request menu, whose display is the
+.* display file QSYS/QWSSYSRQ (ui/dspf/sys/). F1 or Help on the menu
+.* shows module HLPSYSRQ.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:HELP NAME=HLPSYSRQ.System Request Menu - Help
+:P.The System Request menu interrupts the job you are working in for a
+moment. While it shows, the job waits where it was; you can look at the
+job, its messages and the system's, send a message, or move to another
+job at this display. Leaving the menu with F3 or F12, or pressing Enter
+with no option typed, puts you back where you were.
+:P.The name at the upper right is the system the interrupted job runs
+on.
+:P.Type an option number on the Selection line and press Enter.
+:H3.Option 1. Secondary job (TFRSECJOB)
+:P.Starts a second interactive job at this display: a sign-on display
+comes up, and the job you sign on to runs beside the first one. When a
+secondary job exists, this option moves you between the two.
+:H3.Option 2. End previous request (ENDRQS)
+:P.Ends what the job was doing when you pressed System Request: the
+command or program running from the command line stops, and you return
+to the command line or menu it was started from.
+:H3.Option 3. Current job (DSPJOB)
+:P.Shows the interrupted job's attributes, its spooled files, job log,
+call stack, locks and library list.
+:H3.Option 4. Messages (DSPMSG)
+:P.Shows the messages on your user message queue.
+:H3.Option 5. Send a message (SNDMSG)
+:P.Prompts for a message to send to a user or a message queue.
+:H3.Option 6. System operator messages (DSPMSG QSYSOPR)
+:P.Shows the messages on the system operator's queue.
+:H3.Option 7. Work station user
+:P.Shows the display station, the user signed on to it and the jobs
+running at it.
+:H3.Options 13 and 14. Group jobs (TFRGRPJOB)
+:P.Shown for a group job only. Option 13 lists the other jobs of the
+group to transfer to; option 14 goes back to the group job you came
+from.
+:H3.Option 15. Secondary job (TFRSECJOB)
+:P.Shown when a secondary job exists: moves you to the other job at
+this display.
+:H3.Option 80. Disconnect job (DSCJOB)
+:P.Leaves the job without ending it. The sign-on display comes back;
+sign on again as the same user to return to the job where you left it.
+:H3.Option 90. Sign off (SIGNOFF)
+:P.Ends the interrupted job. A secondary job, if there is one, takes the
+display.
+:H3.Options 10 and 11
+:P.These options belong to display station pass-through, which this
+release does not have.
+:EHELP.
+:EPNLGRP.

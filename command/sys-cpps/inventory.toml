@@ -108,6 +108,30 @@ site = "job"
 note = "a panel at a display; the text form in the service otherwise"
 
 # --- system displays (work/qsjob/src/sysdsp/)
+[cmd.CHGGRPA]
+site = "job"
+note = "the group lives in the storage service (requests 200-205)"
+
+[cmd.DSPWSUSR]
+site = "job"
+note = "the device and its jobs as the TN5250 session reports them"
+
+[cmd.ENDGRPJOB]
+site = "job"
+note = "another group job is ended by the session holding the display"
+
+[cmd.SETATNPGM]
+site = "job"
+note = "the job keeps the attention program set"
+
+[cmd.TFRGRPJOB]
+site = "job"
+note = "the session holding the display moves it between the jobs"
+
+[cmd.TFRSECJOB]
+site = "job"
+note = "the session holding the display moves it between the jobs"
+
 
 # --- UIM APIs (work/qsjob/src/command/uiapi.rs)
 

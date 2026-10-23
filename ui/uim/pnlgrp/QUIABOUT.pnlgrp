@@ -1,0 +1,55 @@
+.* Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+.* licensed under the terms of the MIT license which can be found in the
+.* root directory of this project.
+.*
+.* QUIABOUT: About QS/400, reached from the Information Assistant
+.* (F13 on MAIN, then F14): the operating system's product, release
+.* and build as DSPSFWRSC lists them, and the machine's serial number,
+.* model and processor feature as the system values hold them.
+:PNLGRP.
+:COPYR.(C) COPYRIGHT QUARTZ SYSTEMS 2026.
+:CLASS NAME=NAMECL BASETYPE='CHAR 10'.
+:ECLASS.
+:CLASS NAME=TEXTCL BASETYPE='CHAR 50'.
+:ECLASS.
+:VAR NAME=PRODUCT CLASS=NAMECL.
+:VAR NAME=PRDTEXT CLASS=TEXTCL.
+:VAR NAME=RELEASE CLASS=NAMECL.
+:VAR NAME=BUILD CLASS=TEXTCL.
+:VAR NAME=SYSNAME CLASS=NAMECL.
+:VAR NAME=SERIAL CLASS=NAMECL.
+:VAR NAME=MODEL CLASS=NAMECL.
+:VAR NAME=PRCFEAT CLASS=NAMECL.
+:KEYL NAME=KEYS.
+:KEYI KEY=ENTER ACTION=EXIT.
+:KEYI KEY=HELP ACTION=HELP.
+:KEYI KEY=F1 ACTION=HELP.
+:KEYI KEY=F3 ACTION=EXIT.F3=Exit
+:KEYI KEY=F12 ACTION=CANCEL.F12=Cancel
+:EKEYL.
+:PANEL NAME=ABOUT KEYL=KEYS HELP=ABOUTH TOPSEP=SYSNAM.About QS/400
+:DATA DEPTH='*'.
+:DATAGRP.Operating system
+:DATAI VAR=PRDTEXT USAGE=OUTPUT.Product
+:DATAI VAR=PRODUCT USAGE=OUTPUT.Product identifier
+:DATAI VAR=RELEASE USAGE=OUTPUT.Release
+:DATAI VAR=BUILD USAGE=OUTPUT.Build
+:EDATAGRP.
+:DATAC.
+:DATAGRP.This system
+:DATAI VAR=SYSNAME USAGE=OUTPUT.System name
+:DATAI VAR=SERIAL USAGE=OUTPUT.Serial number
+:DATAI VAR=MODEL USAGE=OUTPUT.Model
+:DATAI VAR=PRCFEAT USAGE=OUTPUT.Processor feature
+:EDATAGRP.
+:EDATA.
+:BOTINST.Press Enter to continue.
+:EPANEL.
+:HELP NAME=ABOUTH.About QS/400 - Help
+:P.QS/400 is Quartz Systems' operating system for the AS/400 way of
+working: the same commands, displays and programs, on a machine of
+today. This display names the release this system runs and the build
+it came from, which Quartz Systems asks for with any report of a
+problem, and the serial number and model the system calls itself.
+:EHELP.
+:EPNLGRP.

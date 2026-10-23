@@ -299,20 +299,71 @@ impl DefLibs {
 }
 
 /// The job's local data area at the command line: `DSPDTAARA` and
-/// `CHGDTAARA` on `*LDA` never leave the job.
+/// `CHGDTAARA` on `*LDA` never leave the job; on `*GDA`, the group's,
+/// they reach the storage service's copy.
 mod lda {
     use std::fmt::Write as _;
 
     use cmd::{Resolved, Value};
+    use stg::Client;
     use stg::remote::LDA_LEN;
 
     use super::Fail;
     use crate::console::host::Host;
 
-    /// Whether the command's data area is `*LDA`.
+    /// Whether the command's data area is `*LDA` or `*GDA`.
     pub fn is_lda(r: &Resolved) -> bool {
+        let name = area(r).0;
         matches!(r.name.as_str(), "DSPDTAARA" | "CHGDTAARA")
-            && area(r).0.eq_ignore_ascii_case("*LDA")
+            && (name.eq_ignore_ascii_case("*LDA") || name.eq_ignore_ascii_case("*GDA"))
+    }
+
+    /// The group data area's length.
+    const GDA_LEN: usize = 512;
+
+    /// `CHGDTAARA DTAARA(*GDA ...)` and `DSPDTAARA DTAARA(*GDA)`.
+    fn gda(host: &Host, r: &Resolved, sub: Option<(usize, usize)>) -> Result<String, Fail> {
+        let fail = |e: String| {
+            let (id, text) = e.split_once(' ').unwrap_or(("CPF1311", e.as_str()));
+            Fail::new(id, text.to_string())
+        };
+        let (start, len) = sub.unwrap_or((1, GDA_LEN));
+        if start == 0 || start + len - 1 > GDA_LEN {
+            return Err(Fail::new("CPF1015", "*GDA: the substring lies outside the area"));
+        }
+        if r.name == "CHGDTAARA" {
+            let value = r
+                .get("VALUE")
+                .and_then(|b| b.value.as_ref())
+                .map(Value::source)
+                .unwrap_or_default();
+            let mut b = ccsid::to_ebcdic(&value).unwrap_or_default();
+            b.resize(len, 0x40);
+            let at = u32::try_from(start).unwrap_or(1);
+            return host
+                .link
+                .borrow_mut()
+                .with(|l| l.gda_write(at, b))
+                .map(|()| String::new())
+                .map_err(fail);
+        }
+        let all = host.link.borrow_mut().with(Client::gda_read).map_err(fail)?;
+        let text = ccsid::from_ebcdic(&all);
+        let part: String = text.chars().skip(start - 1).take(len).collect();
+        let mut out = String::new();
+        out.push_str("Data area . . . . . . . :   *GDA\n");
+        out.push_str("  Type  . . . . . . . . :   *CHAR\n");
+        let _ = writeln!(out, "  Length  . . . . . . . :   {GDA_LEN}");
+        out.push_str("  Text  . . . . . . . . :   Group data area\n");
+        out.push_str("           Value\n");
+        out.push_str("Offset      *...+....1....+....2....+....3....+....4....+....5\n");
+        let shown = part.trim_end();
+        let rows = shown.chars().count().div_ceil(50).max(1);
+        for i in 0..rows {
+            let chunk: String = shown.chars().skip(i * 50).take(50).collect();
+            let _ = writeln!(out, "{:>6}      '{chunk}'", start - 1 + i * 50);
+        }
+        Ok(out)
     }
 
     /// The area's name and the substring asked for.
@@ -376,7 +427,10 @@ mod lda {
 
     /// Run the command.
     pub fn command(host: &Host, r: &Resolved) -> Result<String, Fail> {
-        let (_, sub) = area(r);
+        let (name, sub) = area(r);
+        if name.eq_ignore_ascii_case("*GDA") {
+            return gda(host, r, sub);
+        }
         let (start, len) = sub.unwrap_or((1, LDA_LEN));
         if start == 0 || start + len - 1 > LDA_LEN {
             return Err(Fail::new(

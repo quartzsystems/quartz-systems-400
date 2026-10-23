@@ -423,6 +423,27 @@ ipc::rpc! {
     /// `DSPDEVD`: the panel's variables and values.
     191 => fn devd_panel / DevdPanel (name: String) -> Result<Vec<(String, String)>, String>;
     // --- system displays (200-219)
+    /// `CHGGRPA`: the caller becomes group job `name` (its group made
+    /// when it has none) with `text`; `*NONE` leaves the group. The
+    /// group's number.
+    200 => fn grp_chg / GrpChg (name: String, text: String) -> Result<u32, String>;
+    /// The caller's group: its number, the caller's group job name and
+    /// every member (group job name, job number, text).
+    201 => fn grp_info / GrpInfo () -> Option<GroupInfo>;
+    /// A job the session started for `TFRGRPJOB` joins `group` as `name`.
+    202 => fn grp_join / GrpJoin (group: u32, name: String, text: String, number: u32) -> Result<(), String>;
+    /// A job left its group: it ended, or `ENDGRPJOB` ended it.
+    203 => fn grp_leave / GrpLeave (number: u32) -> ();
+    /// The caller's group data area (`*GDA`), 512 bytes.
+    204 => fn gda_read / GdaRead () -> Result<Vec<u8>, String>;
+    /// Change the caller's `*GDA` from `start` (1-based).
+    205 => fn gda_write / GdaWrite (start: u32, bytes: Vec<u8>) -> Result<(), String>;
+    /// The jobs at a display device, from the session holding it: job
+    /// number, user, name and side (1 primary, 2 secondary), the job
+    /// the display shows first.
+    206 => fn ws_set / WsSet (device: String, jobs: Vec<WsJob>) -> ();
+    /// The jobs at a display device as its session last said.
+    207 => fn ws_get / WsGet (device: String) -> Vec<WsJob>;
     // --- UIM APIs (220-239)
     /// A search index's entries: title, root words, panel group
     /// (`LIB/NAME`) and help module of each topic.
@@ -474,6 +495,14 @@ pub type SchidxEntry = (String, Vec<String>, String, String);
 /// A system reply list entry for `rpyl_entries`: sequence, message
 /// identifier, compare data, its start, reply, dump.
 pub type RpyRow = (u16, String, String, u16, String, bool);
+
+/// A job's group for `grp_info`: the group's number, the job's group
+/// job name, and every member (group job name, job number, text).
+pub type GroupInfo = (u32, String, Vec<(String, u32, String)>);
+
+/// A job at a display for `ws_set`/`ws_get`: job number, user, name
+/// and side (1 primary, 2 secondary).
+pub type WsJob = (u32, String, String, u8);
 
 // --- panel data: work management types
 

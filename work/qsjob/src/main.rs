@@ -25,6 +25,8 @@ mod platform;
 #[cfg(target_os = "linux")]
 mod start;
 #[cfg(target_os = "linux")]
+mod sysdsp;
+#[cfg(target_os = "linux")]
 mod work;
 
 #[cfg(target_os = "linux")]

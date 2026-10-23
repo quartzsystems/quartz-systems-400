@@ -293,6 +293,12 @@ pub const JOB_SITE: &[&str] = &[
     "WRKAUTL",
     "DSPSECAUD",
     // --- system displays (work/qsjob/src/sysdsp/)
+    "CHGGRPA",
+    "DSPWSUSR",
+    "ENDGRPJOB",
+    "SETATNPGM",
+    "TFRGRPJOB",
+    "TFRSECJOB",
     // --- UIM APIs (work/qsjob/src/command/uiapi.rs)
     "CRTSCHIDX",
     "ADDSCHIDXE",

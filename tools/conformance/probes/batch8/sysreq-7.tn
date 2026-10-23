@@ -1,0 +1,10 @@
+# Batch 8: one system display per session (batch 7 and batch8-sysreq
+# stalled after the first option); System Request option 7.
+wait "Main Menu"
+timeout 20000
+key sysreq
+wait "System Request"
+type 7
+key enter
+settle 3000
+snap sysreq-7-wrkstnusr +jobnum
