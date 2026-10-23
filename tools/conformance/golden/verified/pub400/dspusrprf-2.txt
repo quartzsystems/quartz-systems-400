@@ -14,7 +14,7 @@
  Group authority type . . . . . . . . . . . :   *PRIVATE                        
  Supplemental groups  . . . . . . . . . . . :   *NONE                           
  Assistance level . . . . . . . . . . . . . :   *INTERMED                       
- Current library  . . . . . . . . . . . . . :   CWELLMAN1                       
+ Current library  . . . . . . . . . . . . . :   USERNAME1                       
  Initial program  . . . . . . . . . . . . . :   SETLANG                         
    Library  . . . . . . . . . . . . . . . . :     PUB400SYS                     
                                                                         More... 

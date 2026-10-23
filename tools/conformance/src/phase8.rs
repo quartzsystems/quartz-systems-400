@@ -92,9 +92,10 @@ impl Suite {
             run(&mut d, &mut ctx, "wait \"Sign On\"\n")?;
         }
         let rows = d.term.text_rows();
+        // `DEVNAME` of QDSIGNON: row 4, column 70.
         let device = rows
             .get(3)
-            .and_then(|r| r.get(67..77))
+            .and_then(|r| r.get(69..79))
             .map(str::trim)
             .unwrap_or_default()
             .to_string();
@@ -277,6 +278,109 @@ impl Suite {
         }
         s.command("CHGSYSVAL SYSVAL(QDEVRCYACN) VALUE(*DSCMSG)", CMD)?;
         Ok("*DSCMSG kept the job and brought its screen back; *ENDJOB ended it".into())
+    }
+}
+
+/// The DDS of the step's display file: a prompt with a field the
+/// program fills, an input field and an echo line.
+const CUSTDSP: &str = "
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CF03(03 'Exit')
+     A          R PROMPT
+     A                                  1 30'Customer prompt'
+     A                                      DSPATR(HI)
+     A                                  5  5'Name . . . . :'
+     A            NAME          20A  B  5 20
+     A            ECHO          40A  O  8  5
+     A                                 23  5'F3=Exit'
+";
+
+/// The CL program behind it: `SNDRCVF` until F3, echoing the name.
+const DSPPGM: &str = "
+             PGM
+             DCLF       FILE(UITEST/CUSTDSP)
+             CHGVAR     VAR(&NAME) VALUE('Quartz')
+ LOOP:       SNDRCVF    RCDFMT(PROMPT)
+             IF         COND(&IN03) THEN(GOTO CMDLBL(DONE))
+             CHGVAR     VAR(&ECHO) VALUE('You typed ' *CAT &NAME)
+             GOTO       CMDLBL(LOOP)
+ DONE:       SNDPGMMSG  MSG('Display file done') TOPGMQ(*EXT)
+             ENDPGM
+";
+
+impl Suite {
+    /// Step 54: a display file. `CRTDSPF` compiles DDS from a source
+    /// member; a CL program's `SNDRCVF` shows its format over the
+    /// session with the field the program filled, takes what was typed
+    /// and shows it back; `F3` ends it through `&IN03`.
+    pub(crate) fn telnet_display_file(&self, s: &mut Session) -> Result<String, String> {
+        let port = self
+            .launch
+            .telnet_port
+            .ok_or("the launch has no telnet port")?;
+        let lib = s.command("crtlib LIB(UITEST) TEXT('Phase 8 displays')", CMD)?;
+        if !lib.contains("UITEST") {
+            return Err(format!("crtlib UITEST: {lib}"));
+        }
+        for file in ["QDDSSRC", "QCLSRC"] {
+            let made = s.command(&format!("crtsrcpf FILE(QGPL/{file})"), CMD)?;
+            if !made.contains("created") && !made.contains("already") {
+                return Err(format!("crtsrcpf {file}: {made}"));
+            }
+        }
+        crate::qir::qemu::push(s, "CUSTDSPSRC", CUSTDSP)?;
+        let put = s.command(
+            "svc.srcput QGPL/QDDSSRC CUSTDSP SRCTYPE(DSPF) FROMSTMF(CUSTDSPSRC)",
+            CMD,
+        )?;
+        if !put.contains("written") {
+            return Err(format!("srcput CUSTDSP: {put}"));
+        }
+        let created = s.command("crtdspf FILE(UITEST/CUSTDSP) SRCFILE(QGPL/QDDSSRC)", CMD)?;
+        if !created.contains("created") {
+            return Err(format!("crtdspf: {created}"));
+        }
+        let fd = s.command("dspfd FILE(UITEST/CUSTDSP)", CMD)?;
+        if !fd.contains("*DSPF") || !fd.contains("PROMPT") {
+            return Err(format!("dspfd of the display file:\n{fd}"));
+        }
+        crate::qir::qemu::push(s, "DSPPGMSRC", DSPPGM)?;
+        let put = s.command(
+            "svc.srcput QGPL/QCLSRC DSPPGM SRCTYPE(CLLE) FROMSTMF(DSPPGMSRC)",
+            CMD,
+        )?;
+        if !put.contains("written") {
+            return Err(format!("srcput DSPPGM: {put}"));
+        }
+        let compiled = s.command("crtclpgm PGM(UITEST/DSPPGM) SRCFILE(QGPL/QCLSRC)", CMD)?;
+        if !compiled.contains("created") {
+            return Err(format!("crtclpgm DSPPGM: {compiled}"));
+        }
+        let connect = Connect::qs400(port, "QSECOFR", SECOFR_PASSWORD);
+        let options = ScriptOptions::default();
+        let mut ctx = Context::new(&connect, &options);
+        let mut d = connect_display(port)?;
+        secofr(&mut d, &mut ctx)?;
+        run(
+            &mut d,
+            &mut ctx,
+            "wait \"Main Menu\"\ntype call uitest/dsppgm\nkey enter\nwait \"Customer prompt\"\n",
+        )?;
+        let rows = d.term.text_rows();
+        if !rows[4].contains("Quartz") {
+            return Err(format!("the field the program filled is not shown:\n{}", rows.join("\n")));
+        }
+        if d.term.cursor() != (5, 20) {
+            return Err(format!("the cursor is not in the input field: {:?}", d.term.cursor()));
+        }
+        run(
+            &mut d,
+            &mut ctx,
+            "type Cody\nkey fieldexit\nkey enter\nwait \"You typed CODY\"\nkey f3\nwait \"Display file done\"\n",
+        )?;
+        run(&mut d, &mut ctx, "type signoff\nkey enter\nwait \"Sign On\"\n")?;
+        d.disconnect();
+        Ok("CRTDSPF compiled CUSTDSP; SNDRCVF showed it, read the name and echoed it; F3 set &IN03".into())
     }
 }
 

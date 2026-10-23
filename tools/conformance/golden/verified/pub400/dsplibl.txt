@@ -12,7 +12,7 @@
       QSYS2       SYS                   System Library for CPI's                
       QUSRSYS     SYS                   System Library for Users                
       QHLPSYS     SYS                                                           
-      CWELLMAN1   CUR                   USERNAME (*CURLIB your current library) 
+      USERNAME1   CUR                   USERNAME (*CURLIB your current library) 
       QGPL        USR                   General Purpose Library                 
       QTEMP       USR                                                           
       GAMES400    USR                   $ fun library                           

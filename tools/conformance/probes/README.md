@@ -27,6 +27,9 @@ panel shows values that change between runs.
 | `batch2-wrk.tn` | `DSPJOB`, `WRKSPLF`, `DSPMSG`, `WRKMSG`, `WRKUSRJOB`, `DSPUSRPRF`, `WRKSBS`, `DSPJOBLOG`, `WRKOBJ`, `DSPLIB` |
 | `batch3-wrk.tn` | `WRKJOB` and its options, `WRKSBSJOB`, `DSPSBSD`, `WRKJOBD`/`DSPJOBD`, `WRKCLS`/`DSPCLS`, `DSPSYSVAL`, `DSPOBJD`, `DSPLOG`, `WRKRPYLE` |
 | `batch4-misc.tn` | `DSPMSGD`, `WRKMSGD`, `DSPSFWRSC`, `DSPNETA`, `DSPOBJAUT`, `WRKBNDDIR`, `DSPDTAARA`, `DSPAUTUSR`, the Information Assistant, Additional Message Information, more `WRKACTJOB` keys, Command Entry's keys, two prompts |
+| `batch5-menus.tn` | every menu `GO` reaches from MAIN: `MAJOR`, `VERB`, `SUBJECT`, the `CMDxxx` command menus with their second pages, the task menus |
+| `batch6-prompts.tn` | 68 command prompts, with F10 (additional parameters), F11 (keywords) and F24 (more keys) where they differ |
+| `batch7-sysdsp.tn` | the System Request menu and options 3 to 7 and 80, the Attention program, a break message, `DSPSGNINF`, `CHGPWD`, `GO CMDSIGNOFF`, the `SIGNOFF` prompt (2026-10-23: only the menu, its help and option 3 came back before the keyboard stayed locked) |
 
 A command the pub400 account is not authorized to (`WRKSYSSTS`,
 `WRKOUTQ`, `WRKJOBQ`, `WRKJOBSCDE`, `WRKSYSVAL`) leaves a message

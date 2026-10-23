@@ -318,6 +318,8 @@ fn install(system: &mut System) -> Result<usize, String> {
     let mut txn = s.store.begin().map_err(|e| e.to_string())?;
     let mut made = wm::obj::shipped::install(&mut txn, qsys, &stamp).map_err(|e| e.to_string())?;
     made += usize::from(crate::svc::neta::ensure(&mut txn, qsys, stamp.now)?);
+    made += crate::svc::db::dspf::install_shipped(&mut txn, qsys, &stamp)?;
+    made += crate::svc::ui::install_shipped(&mut txn, qsys, &stamp)?;
     txn.commit().map_err(|e| e.to_string())?;
     Ok(made)
 }

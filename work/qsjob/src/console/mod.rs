@@ -315,6 +315,9 @@ impl Console {
             }));
             crate::command::install_hook(&mut job, &self.host);
             crate::command::natives::install(&mut job, &self.host);
+            job.display = Some(Box::new(crate::display::dds::DdsDisplay::new(
+                self.host.clone(),
+            )));
             self.provider = Some(provider);
             self.job = Some(job);
             self.refresh_libl();

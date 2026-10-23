@@ -661,6 +661,33 @@ impl Service for Served<'_> {
         Ok(id)
     }
 
+    fn menu_open(&mut self, name: String, lib: String) -> Result<(Vec<u8>, String), String> {
+        self.own_libl();
+        let r = crate::svc::ui::open_menu(self.system, &name, &lib);
+        ile::set_libl(None);
+        r
+    }
+
+    fn pnlgrp_open(&mut self, name: String, lib: String) -> Result<(Vec<u8>, String), String> {
+        self.own_libl();
+        let r = crate::svc::ui::open_pnlgrp(self.system, &name, &lib);
+        ile::set_libl(None);
+        r
+    }
+
+    fn dsp_open(
+        &mut self,
+        file: String,
+        lib: String,
+        actgrp: String,
+    ) -> Result<(Vec<u8>, String), String> {
+        self.own_libl();
+        let ovr = self.ctx.svc.dsp_overrides.clone();
+        let r = crate::svc::db::dspf::open(self.system, &ovr, (&file, &lib), &actgrp);
+        ile::set_libl(None);
+        r
+    }
+
     fn prt_open(
         &mut self,
         file: String,

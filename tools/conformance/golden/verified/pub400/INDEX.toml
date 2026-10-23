@@ -2382,3 +2382,27 @@ date = "2026-10-23"
 script = "batch6-prompts"
 width = 80
 
+[[golden]]
+name = "sysreq-menu"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch7-sysdsp"
+width = 80
+
+[[golden]]
+name = "sysreq-help"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch7-sysdsp"
+width = 80
+
+[[golden]]
+name = "sysreq-3-dspjob"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch7-sysdsp"
+width = 80
+

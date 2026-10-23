@@ -351,4 +351,15 @@ ipc::rpc! {
     134 => fn power_down / PowerDown (immediate: bool, delay: u32, restart: bool) -> Result<(), String>;
     /// Sign on with an RFC 4777 substitute instead of a password.
     135 => fn sign_on_substitute / SignOnSubstitute (user: String, device: String, proof: sec::signon::Substitute) -> Result<sec::signon::SignedOn, sec::signon::Refused>;
+    /// Open display file `lib/file` from activation group `actgrp`, the
+    /// job's overrides applied: the file's payload and its real
+    /// `lib/name`.
+    136 => fn dsp_open / DspOpen (file: String, lib: String, actgrp: String) -> Result<(Vec<u8>, String), String>;
+    /// A menu's attributes (encoded) and its real library.
+    137 => fn menu_open / MenuOpen (name: String, lib: String) -> Result<(Vec<u8>, String), String>;
+    /// A panel group's payload and its real library.
+    138 => fn pnlgrp_open / PnlgrpOpen (name: String, lib: String) -> Result<(Vec<u8>, String), String>;
+    // --- panel data: work management (140-159)
+    // --- panel data: messages and objects (160-179)
+    // --- panel data: system and security (180-199)
 }

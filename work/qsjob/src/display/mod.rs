@@ -5,8 +5,16 @@
 //! The job's display when it owns a 5250 device: the socket to the
 //! session holding the device, the screen model, and panels turned
 //! into data streams. The console job keeps sending panels to `slic`;
-//! a device job renders them here. `MIGRATE(phase8)`: the DDS runtime
-//! and UIM write through the model directly.
+//! a device job renders them here. Display files (`dds`) write through
+//! the model directly; `MIGRATE(phase8)`: UIM too.
+
+pub mod dds;
+pub mod surface;
+pub mod uim;
+
+/// The framebuffer console's device, a TN5250 client of the system's
+/// own telnet server once the IPL is complete.
+pub const CONSOLE_DEVICE: &str = "QSCONSOLE";
 
 use std::os::unix::net::UnixStream;
 use std::path::Path;
@@ -14,6 +22,7 @@ use std::sync::mpsc::Sender;
 
 use ipc::chan::Chan;
 use tn5250::ds::field::Ffw;
+use tn5250::ds::inbound::Inbound;
 use tn5250::ds::wdsf::Model;
 use tn5250::ds::{aid, attr};
 use tn5250::record::flags;
@@ -176,7 +185,8 @@ impl Display {
         });
     }
 
-    /// The display was reset: send the last panel whole again.
+    /// The display was reset: send the last panel whole again, or the
+    /// model as it stands when display files drew it.
     pub fn reset(&mut self, device: String) {
         if !device.is_empty() {
             self.device = device;
@@ -184,7 +194,30 @@ impl Display {
         self.model.invalidate();
         if let Some(p) = self.last.clone() {
             self.show(&p);
+        } else {
+            let read = if self.model.is_reading() {
+                Read::MdtFields
+            } else {
+                Read::None
+            };
+            self.flush(read);
         }
+    }
+
+    /// Display files took the screen: no panel to repeat.
+    pub fn forget_panel(&mut self) {
+        self.last = None;
+    }
+
+    /// A record from the display: the key, and the inbound record when
+    /// the key carried one (System Request and Attention do not).
+    pub fn accept_raw(&mut self, flags_: u16, data: &[u8]) -> Option<(u8, Option<Inbound>)> {
+        if flags_ & (flags::SRQ | flags::ATN | flags::TRQ) != 0 {
+            return key_of(flags_, 0).map(|k| (k, None));
+        }
+        let inb = self.model.accept(data)?;
+        let k = key_of(flags_, inb.aid)?;
+        Some((k, Some(inb)))
     }
 
     /// A record from the display: the key and the fields, when it was

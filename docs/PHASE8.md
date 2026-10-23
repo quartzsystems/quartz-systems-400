@@ -49,13 +49,55 @@ terminal and the screen model, the Phase 6 sign-on and the interim
 MAIN menu and Command Entry rendered through the model, and harness
 step 51 over a real session.
 
+## Section 2: display files
+
+See `DSPF.md`: the compiler (§1-6) and the runtime (§7). `CRTDSPF`
+compiles a DDS source member into a `*FILE` object with attribute
+`DSPF` (`lic/slic/src/svc/db/dspf.rs`; `DSPFD`, `DLTF`, `OVRDSPF` and
+`DLTOVR` know it); the job opens it through the storage service
+(`dsp_open`, the overrides applied) and its programs' `WRITE`, `READ`
+and `EXFMT` go through `work/qsjob/src/display/dds.rs` to the job's
+5250 device, or to `slic`'s console as a panel for a job without one.
+CL's `DCLF`/`SNDF`/`RCVF`/`SNDRCVF` declare `&IN01`-`&IN99` and copy
+through both buffers. The shipped `QDSIGNON` and `QDSIGNON2`
+(`ui/dspf/sys/`) are installed into `QSYS` at service start when
+missing, and the TN5250 session's sign-on is written through them.
+Harness step 54 creates a display file from DDS, compiles a CL program
+with `SNDRCVF` and drives it over a session.
+
+## Section 3: UIM
+
+See `UIM.md`: the compiler (§1-6), the renderer rules measured on the
+goldens (§7) and the dialog engine in the job (§8). `CRTPNLGRP` makes
+`*PNLGRP` objects; `pnlgrp_open` hands a job the payload. The panels
+behind the work-management, message, object and system displays and
+the `QUI*` APIs are in progress (the engine's `Response` is what each
+panel driver acts on).
+
+## Section 4: menus
+
+See `MENUS.md`: `*MENU` objects, the stack, the generator (512
+command menus), `GO` in the job (§5) and the shipped `MAIN`. The task
+menus of the inventory (`USER`, `OFCTSK`, `SYSTEM`, ...) are in
+progress.
+
+## Section 7: the console
+
+See `TN5250.md`, "The console as a client": the framebuffer console is
+a TN5250E client of the system's own telnet server (device
+`QSCONSOLE`), so one path renders every display; the console's own
+screens remain for the IPL, DST and the time the server is not there.
+
 ## Blocked
 
 - **The primary oracle shows no screens.** Ports 23, 992 and 21 do
   not reach it from this machine (only 449, 8470, 8475, 8476 do); every
   screen golden comes from pub400, whose sign-on display is customized
-  and whose user is not `QSECOFR`. `QSECOFR`-only panels and the
-  standard sign-on are compared with `unverified/` goldens.
+  and whose user is not `QSECOFR`. The DDS sign-on (`QDSIGNON`) could
+  therefore not be diffed against an oracle's; its geometry is IBM's
+  `QDSIGNON` source as known (constants at column 48, values at 70,
+  fields at 53). `QSECOFR`-only panels wait for a system that allows
+  them.
 - **ACS negotiation strings.** No ACS trace can be taken (ACS cannot
   reach the primary oracle either); the start-up response record is
   built from RFC 2877 as read and marked `BLOCKED(phase8)`.
@@ -84,10 +126,25 @@ run (`WRKSYSSTS`, `WRKOUTQ`, `WRKJOBQ`, `WRKJOBSCDE`, `WRKSYSVAL`,
 `WRKMSGD`, `DSPDTAARA`, the `CRTLIB` prompt) have no verified golden
 yet.
 
+Batch 5 (`batch5-menus.tn`) adds every menu reached by `GO` from
+MAIN: the `MAJOR`, `VERB`, `SUBJECT` and `CMDxxx` command menus with
+their second pages and the task menus (163 `menu-*` goldens). Batch 6
+(`batch6-prompts.tn`) adds 68 command prompts (`prompt-*`), each with
+F10, F11 and F24 states where they differ; the prompts of commands the
+account may not run (`CHGSYSVAL`, `CRTCLS`, `CRTJOBD`, `CRTSBSD`,
+`RSTLIB`, `SNDBRKMSG`, `WRKSYSVAL`, `RTVJOBA`) were dropped. Batch 7
+(`batch7-sysdsp.tn`) got the System Request menu, its help and option 3
+(`DSPJOB`); after that pub400 kept the keyboard locked and the rest of
+the script (the other options, the Attention program, a break message,
+`DSPSGNINF`, `CHGPWD`, the sign-off prompt) waits for a rerun with
+longer settles.
+
 Harness steps over TN5250: 51 (sign-on, MAIN, Command Entry,
 `WRKACTJOB`, sign-off, the device freed), 52 (Command Entry compared
 with the oracle's capture, characters only), 53 (device recovery:
-`*DSCMSG` keeps and resumes the job, `*ENDJOB` ends it).
+`*DSCMSG` keeps and resumes the job, `*ENDJOB` ends it), 54 (a
+display file: `CRTDSPF`, a CL `SNDRCVF` shown, read and echoed, `F3`
+through `&IN03`).
 
 ## Acceptance checklist
 
@@ -95,6 +152,6 @@ with the oracle's capture, characters only), 53 (device recovery:
 |---|---|
 | 1 tests and goldens green, `build test`, ACS checklist | in progress |
 | 2 documents | in progress |
-| 3 `missing_docs = deny`, clippy, deny, static binaries | `tn5250` denies missing docs; the rest as crates land |
+| 3 `missing_docs = deny`, clippy, deny, static binaries | `tn5250`, `dspf`, `uim`, `menus` deny missing docs; clippy clean |
 | 4 no IBM text outside goldens; tripwire extended | pending |
 | 5 `.env` untracked, no credential in the tree, `QSTEST` empty | `.env` untracked (2026-10-23) |

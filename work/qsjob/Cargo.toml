@@ -22,11 +22,15 @@ qir = { path = "../../runtime/qir", version = "0.1.0" }
 cmd = { path = "../../command/cmd", version = "0.1.0" }
 sys-cpps = { path = "../../command/sys-cpps", version = "0.1.0" }
 tn5250 = { path = "../../ui/tn5250", version = "0.1.0" }
+dspf = { path = "../../ui/dspf", version = "0.1.0" }
+uim = { path = "../../ui/uim", version = "0.1.0" }
+menus = { path = "../../ui/menus", version = "0.1.0" }
 rustls = { version = "0.23.46", default-features = false, features = ["std", "tls12"] }
 rustls-graviola = "0.4.0"
 x509-cert = { version = "0.3.0", features = ["builder"] }
 p256 = { version = "0.14.0", default-features = false, features = ["ecdsa", "pem", "std"] }
 libc = "0.2.190"
+thiserror.workspace = true
 
 [lints]
 workspace = true

@@ -125,7 +125,12 @@ fn golden_text_stays_in_the_golden_directory() {
     }
     let mut hits = Vec::new();
     for f in tracked_files(&root) {
-        if f.starts_with(root.join("tools/conformance/golden")) {
+        // The prompter's own goldens (Phase 7) are goldens too: the
+        // prompt display is the compatibility interface.
+        if f.starts_with(root.join("tools/conformance/golden"))
+            || f.starts_with(root.join("command/cmd/tests/golden"))
+            || f.starts_with(root.join("command/sys-cpps/tests/golden"))
+        {
             continue;
         }
         let Ok(text) = std::fs::read_to_string(&f) else {

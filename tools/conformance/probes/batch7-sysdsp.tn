@@ -1,0 +1,105 @@
+# Batch 7: the system displays reached from any screen: the System
+# Request menu and its options, the Attention program, Display Program
+# Messages (a SNDMSG to the user's queue with a break), DSPSGNINF-like
+# panels, and the sign-off confirmation.
+wait "Main Menu"
+continue
+timeout 60000
+key sysreq
+settle 1500
+snap sysreq-menu
+key f1
+settle 1500
+snap sysreq-help
+key f3
+settle 800
+key f12
+wait "Main Menu"
+key sysreq
+settle 1200
+type 3
+key enter
+settle 1500
+snap sysreq-3-dspjob +jobnum
+key f3
+wait "Main Menu"
+key sysreq
+settle 1200
+type 4
+key enter
+settle 1500
+snap sysreq-4-dspmsg
+key f3
+wait "Main Menu"
+key sysreq
+settle 1200
+type 5
+key enter
+settle 1500
+snap sysreq-5-sndmsg
+key f12
+wait "Main Menu"
+key sysreq
+settle 1200
+type 6
+key enter
+settle 1500
+snap sysreq-6-qsysopr
+key f3
+wait "Main Menu"
+key sysreq
+settle 1200
+type 7
+key enter
+settle 1500
+snap sysreq-7-wrkstnusr +jobnum
+key f3
+wait "Main Menu"
+key sysreq
+settle 1200
+type 80
+key enter
+settle 1500
+snap sysreq-80
+key f12
+wait "Main Menu"
+key attn
+settle 2000
+snap attn-program
+key f3
+wait "Main Menu"
+type sndmsg msg('A break message for the capture') tousr(cwellman)
+key enter
+settle 3000
+snap break-message
+key enter
+settle 1500
+key f3
+settle 800
+type dspsgninf
+key enter
+settle 1500
+snap dspsgninf
+key f3
+wait "Main Menu"
+type chgpwd
+key enter
+settle 1500
+snap chgpwd
+key f12
+wait "Main Menu"
+type go cmdsignoff
+key enter
+settle 1500
+snap menu-cmdsignoff
+key f3
+wait "Main Menu"
+type signoff
+key f4
+settle 1500
+snap prompt-signoff
+key f12
+wait "Main Menu"
+type signoff
+key enter
+settle 1500

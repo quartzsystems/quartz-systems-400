@@ -53,6 +53,24 @@ struct Disconnected {
     job: Spawned,
     link: Chan,
     since: Instant,
+    /// Where the job's channel readers deliver: the next session
+    /// swaps in its own sender, so no second reader is started.
+    dev_tx: SharedTx,
+    ctl_tx: SharedTx,
+}
+
+/// A sender the reader threads look up before each delivery.
+type SharedTx = Arc<Mutex<Sender<Ev>>>;
+
+/// Read a job channel for the sessions, whichever one holds the job.
+fn relay<T: ipc::Wire>(mut reader: Chan, tx: SharedTx, map: impl Fn(T) -> Ev + Send + 'static) {
+    std::thread::spawn(move || {
+        while let Ok(m) = reader.recv::<T>() {
+            let ev = map(m);
+            let _ = tx.lock().expect("sender").send(ev);
+        }
+        let _ = tx.lock().expect("sender").send(Ev::JobGone);
+    });
 }
 
 fn disconnected() -> &'static Mutex<Vec<Disconnected>> {
@@ -726,9 +744,36 @@ fn sign_on_display(
         .is_some_and(|l| l >= 2);
     let mut m = ScreenModel::new(model.wide());
     let mut message = message.to_string();
+    // The sign-on is the shipped display file, QDSIGNON2 from password
+    // level 2; the interim panel stands in when the file is missing.
+    let file = if long { "QDSIGNON2" } else { "QDSIGNON" };
+    let mut rt = link
+        .dsp_open(file.into(), "QSYS".into(), "*JOB".into())
+        .ok()
+        .and_then(Result::ok)
+        .and_then(|(b, _)| dspf::decode(&b).ok())
+        .map(|df| dspf::rt::Runtime::new(df, model.wide()));
+    let env = sign_on_env(link, host);
     loop {
-        let p = wm::panels::sign_on(host, &subsystem, device, long, &message);
-        display::render(&p, &mut m);
+        if let Some(rt) = rt.as_mut() {
+            let rec = rt.file().record("SIGNON").cloned();
+            let Some(rec) = rec else {
+                return Err("QDSIGNON has no SIGNON format".into());
+            };
+            let out = display::dds::out_buffer(
+                &rec,
+                &[("QSYSNAME", host), ("SBSNAME", &subsystem), ("DEVNAME", device)],
+            );
+            rt.write(&mut m, &env, "SIGNON", &out, &[])
+                .map_err(|e| e.to_string())?;
+            if !message.is_empty() {
+                m.error_line(&message, tn5250::ds::attr::WHITE);
+                m.alarm();
+            }
+        } else {
+            let p = wm::panels::sign_on(host, &subsystem, device, long, &message);
+            display::render(&p, &mut m);
+        }
         let out = m.render(ModelRead::MdtFields);
         tr.record(out.opcode, out.data)?;
         let rec = loop {
@@ -753,7 +798,21 @@ fn sign_on_display(
         if key != Some(0) {
             continue;
         }
-        let v = m.values();
+        let v: Vec<String> = match rt.as_mut() {
+            Some(rt) => match rt.input(&mut m, &env, "SIGNON", inb.aid, (inb.row, inb.col)) {
+                Ok(input) => rt.file().record("SIGNON").map_or_else(Vec::new, |rec| {
+                    ["USERID", "PASSWRD", "PROGRAM", "MENU", "CURLIB"]
+                        .iter()
+                        .map(|n| display::dds::in_text(rec, &input.record, n).unwrap_or_default())
+                        .collect()
+                }),
+                Err(p) => {
+                    message = p.to_string();
+                    continue;
+                }
+            },
+            None => m.values(),
+        };
         let user = v.first().map_or("", |s| s.trim()).to_ascii_uppercase();
         let password = v.get(1).map_or("", |s| s.trim()).to_string();
         if user.is_empty() {
@@ -771,6 +830,22 @@ fn sign_on_display(
             Err(r) => message = r.text,
         }
     }
+}
+
+/// The sign-on display's environment: the clock and the system's date
+/// format, no user yet.
+fn sign_on_env(link: &mut Link, host: &str) -> dspf::rt::Env {
+    let now = link.now().unwrap_or_default();
+    let mut sysval = |name: &str| {
+        link.sysval(name.into())
+            .ok()
+            .flatten()
+            .map(|v| ccsid::from_ebcdic(&v.data).trim().to_string())
+            .unwrap_or_default()
+    };
+    let datfmt = sysval("QDATFMT");
+    let datsep = sysval("QDATSEP");
+    display::dds::env_from(&now, &datfmt, &datsep, "", host)
 }
 
 /// What the sign-on display's fields may change, as `LMTCPB` allows.
@@ -799,6 +874,13 @@ fn apply_typed(s: &mut sec::signon::SignedOn, v: &[String]) {
 /// The active subsystem whose workstation entries take the device: a
 /// name entry for it, else a type entry for every device; with the
 /// subsystem's description.
+/// Whether a work station type entry takes `device`: every display,
+/// the virtual ones, their types, or the console for `*CONS`.
+fn type_entry_matches(entry: &str, device: &str) -> bool {
+    matches!(entry, "*ALL" | "*VRT" | "3179" | "3477")
+        || (entry == "*CONS" && device == crate::display::CONSOLE_DEVICE)
+}
+
 fn subsystem_for(link: &mut Link, device: &str) -> Option<(String, Sbsd)> {
     let active = link.sbs_list().ok()?;
     let mut by_type = None;
@@ -818,9 +900,7 @@ fn subsystem_for(link: &mut Link, device: &str) -> Option<(String, Sbsd)> {
             return Some((s.name, d));
         }
         if by_type.is_none()
-            && d.wsts
-                .iter()
-                .any(|w| matches!(w.name.as_str(), "*ALL" | "*VRT" | "3179" | "3477"))
+            && d.wsts.iter().any(|w| type_entry_matches(&w.name, device))
         {
             by_type = Some((s.name.clone(), d));
         }
@@ -849,11 +929,7 @@ fn route(link: &mut Link, device: &str, profile_jobd: &str) -> Result<Routed, St
                     .strip_suffix('*')
                     .is_some_and(|p| device.starts_with(p))
         })
-        .or_else(|| {
-            d.wsts
-                .iter()
-                .find(|w| matches!(w.name.as_str(), "*ALL" | "*VRT" | "3179" | "3477"))
-        })
+        .or_else(|| d.wsts.iter().find(|w| type_entry_matches(&w.name, device)))
         .ok_or_else(|| format!("CPF1109 subsystem {sbs} has no work station entry for {device}"))?;
     let jobd = if wse.jobd.0 == "*USRPRF" && !profile_jobd.is_empty() {
         if profile_jobd.contains('/') {
@@ -907,42 +983,40 @@ fn run_job(
             .position(|d| d.user == signed.user)
             .map(|i| list.remove(i))
     };
-    let (mut job, mut dev_chan) = match taken {
-        Some(d) => {
-            let _ = link.device_status(d.device.clone(), 1);
-            let mut c = d.link;
-            let _ = c.send(&FromDevice::Reset {
-                device: device.to_string(),
-            });
-            (d.job, c)
+    let (mut job, mut dev_chan, dev_tx, ctl_tx) = if let Some(d) = taken {
+        let _ = link.device_status(d.device.clone(), 1);
+        // The readers started by the first session go on; they
+        // deliver here now.
+        *d.dev_tx.lock().expect("sender") = ev_tx.clone();
+        *d.ctl_tx.lock().expect("sender") = ev_tx.clone();
+        let mut c = d.link;
+        let _ = c.send(&FromDevice::Reset {
+            device: device.to_string(),
+        });
+        (d.job, c, d.dev_tx, d.ctl_tx)
+    } else {
+        {
+            let (job, dev_chan) = start_job(link, device, model, signed)?;
+            // The job's device channel and control channel, read on
+            // threads that outlive this session.
+            let dev_tx: SharedTx = Arc::new(Mutex::new(ev_tx.clone()));
+            let ctl_tx: SharedTx = Arc::new(Mutex::new(ev_tx.clone()));
+            relay::<ToDevice>(
+                dev_chan.try_clone().map_err(|e| e.to_string())?,
+                Arc::clone(&dev_tx),
+                |m| match m {
+                    ToDevice::Write { opcode, data } => Ev::Write(opcode, data),
+                    ToDevice::Release => Ev::Release,
+                },
+            );
+            relay::<FromJob>(
+                job.chan.try_clone().map_err(|e| e.to_string())?,
+                Arc::clone(&ctl_tx),
+                Ev::Job,
+            );
+            (job, dev_chan, dev_tx, ctl_tx)
         }
-        None => start_job(link, device, model, signed)?,
     };
-    // The job's device channel and control channel, read on threads.
-    let mut dev_reader = dev_chan.try_clone().map_err(|e| e.to_string())?;
-    let tx = ev_tx.clone();
-    std::thread::spawn(move || {
-        while let Ok(m) = dev_reader.recv::<ToDevice>() {
-            let ev = match m {
-                ToDevice::Write { opcode, data } => Ev::Write(opcode, data),
-                ToDevice::Release => Ev::Release,
-            };
-            if tx.send(ev).is_err() {
-                return;
-            }
-        }
-        let _ = tx.send(Ev::JobGone);
-    });
-    let mut ctl_reader = job.chan.try_clone().map_err(|e| e.to_string())?;
-    let tx = ev_tx.clone();
-    std::thread::spawn(move || {
-        while let Ok(m) = ctl_reader.recv::<FromJob>() {
-            if tx.send(Ev::Job(m)).is_err() {
-                return;
-            }
-        }
-        let _ = tx.send(Ev::JobGone);
-    });
     // `QINACTITV`: minutes without input before `QINACTMSGQ` acts.
     let inactive_after = link
         .sysval("QINACTITV".into())
@@ -971,13 +1045,14 @@ fn run_job(
                             ));
                         }
                         "*DSCJOB" => {
-                            let _ = dev_chan.send(&FromDevice::Gone);
                             disconnected().lock().expect("list").push(Disconnected {
                                 user: job.start.user.clone(),
                                 device: device.to_string(),
                                 job,
                                 link: dev_chan,
                                 since: Instant::now(),
+                                dev_tx,
+                                ctl_tx,
                             });
                             return Ok(Outcome::SignedOff(
                                 "Job disconnected after inactivity; sign on again to return to it."
@@ -1022,8 +1097,8 @@ fn run_job(
                     || "*DSCMSG".into(),
                     |v| ccsid::from_ebcdic(&v.data).trim().to_string(),
                 );
-                let _ = dev_chan.send(&FromDevice::Gone);
                 if action.starts_with("*ENDJOB") {
+                    let _ = dev_chan.send(&FromDevice::Gone);
                     end_job(job);
                 } else {
                     eprintln!(
@@ -1037,6 +1112,8 @@ fn run_job(
                         job,
                         link: dev_chan,
                         since: Instant::now(),
+                        dev_tx,
+                        ctl_tx,
                     });
                 }
                 return Ok(Outcome::ConnectionGone);
@@ -1047,13 +1124,14 @@ fn run_job(
             }
             Ev::Job(FromJob::Disconnect) => {
                 // `DSCJOB`: the sign-on display, the job kept.
-                let _ = dev_chan.send(&FromDevice::Gone);
                 disconnected().lock().expect("list").push(Disconnected {
                     user: job.start.user.clone(),
                     device: device.to_string(),
                     job,
                     link: dev_chan,
                     since: Instant::now(),
+                    dev_tx,
+                    ctl_tx,
                 });
                 return Ok(Outcome::SignedOff(
                     "Job disconnected; sign on again to return to it.".into(),

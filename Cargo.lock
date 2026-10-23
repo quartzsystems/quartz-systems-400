@@ -382,9 +382,11 @@ dependencies = [
 name = "console"
 version = "0.1.0"
 dependencies = [
+ "ccsid",
  "release",
  "rustix",
  "thiserror",
+ "tn5250",
 ]
 
 [[package]]
@@ -1714,9 +1716,11 @@ version = "0.1.0"
 dependencies = [
  "ccsid",
  "cmd",
+ "dspf",
  "ile",
  "ipc",
  "libc",
+ "menus",
  "mi",
  "msgf",
  "p256",
@@ -1729,7 +1733,9 @@ dependencies = [
  "stg",
  "sys-cpps",
  "sysapi",
+ "thiserror",
  "tn5250",
+ "uim",
  "wm",
  "x509-cert",
 ]
@@ -2230,11 +2236,13 @@ dependencies = [
  "db",
  "dds",
  "diskimg",
+ "dspf",
  "ile",
  "ipc",
  "jrn",
  "libc",
  "licpart",
+ "menus",
  "mi",
  "msgf",
  "qdecimal",
@@ -2251,6 +2259,8 @@ dependencies = [
  "sys-cpps",
  "sysapi",
  "sysval",
+ "tn5250",
+ "uim",
  "wm",
 ]
 

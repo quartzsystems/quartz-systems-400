@@ -21,6 +21,10 @@ db = { path = "../../database/db", version = "0.1.0" }
 jrn = { path = "../../database/jrn", version = "0.1.0" }
 sql = { path = "../../database/sql", version = "0.1.0" }
 dds = { path = "../../database/dds", version = "0.1.0" }
+dspf = { path = "../../ui/dspf", version = "0.1.0" }
+uim = { path = "../../ui/uim", version = "0.1.0" }
+menus = { path = "../../ui/menus", version = "0.1.0" }
+tn5250 = { path = "../../ui/tn5250", version = "0.1.0" }
 qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 qir = { path = "../../runtime/qir", version = "0.1.0" }

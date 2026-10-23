@@ -1,0 +1,24 @@
+ Help                      System Request Menu - Help                           
+                                                                                
+     When the System Request menu is displayed, your secondary                  
+     interactive job temporarily stops.  You can then transfer to another       
+     job or do some tasks related to your secondary interactive job, such       
+     as, sending and displaying messages.  When you leave the System            
+     Request menu you return to the job you stopped.  You can leave the         
+     System Request menu by pressing F3 or F12, or by pressing Enter when       
+     the Option field is blank.                                                 
+                                                                                
+     The system name, located in the upper right corner of the System           
+     Request menu, identifies the system on which your secondary                
+     interactive job is running.                                                
+                                                                                
+     To select an option, type the number of the option and press the           
+     Enter key.                                                                 
+                                                                                
+ Option 1. Display sign on for secondary job (TFRSECJOB)                        
+                                                                                
+     Select this option to sign on and start a secondary interactive job.       
+                                                                        More... 
+ F3=Exit help   F10=Move to top   F12=Cancel   F13=Information Assistant        
+ F14=Print help                                                                 
+                                                                                

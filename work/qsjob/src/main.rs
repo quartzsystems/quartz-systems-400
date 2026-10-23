@@ -17,6 +17,8 @@ mod console;
 #[cfg(target_os = "linux")]
 mod display;
 #[cfg(target_os = "linux")]
+mod panels;
+#[cfg(target_os = "linux")]
 mod platform;
 #[cfg(target_os = "linux")]
 mod start;

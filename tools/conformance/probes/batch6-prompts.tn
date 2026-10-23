@@ -1,0 +1,432 @@
+# Batch 6: command prompts (F4) from Command Entry, plus F24, F9, F10 and F11 states for a few.
+wait "Main Menu"
+continue
+timeout 60000
+type call qcmd
+key enter
+wait "Command Entry"
+type crtpf
+key f4
+settle 1500
+snap prompt-crtpf
+key f10
+settle 1200
+snap prompt-crtpf-f10
+key f24
+settle 800
+snap prompt-crtpf-f24
+key f11
+settle 1000
+snap prompt-crtpf-f11
+key pgdn
+settle 800
+snap prompt-crtpf-f11-2
+key f12
+wait "Command Entry"
+type crtlf
+key f4
+settle 1500
+snap prompt-crtlf
+key f12
+wait "Command Entry"
+type crtlib
+key f4
+settle 1500
+snap prompt-crtlib
+key f12
+wait "Command Entry"
+type dspjob
+key f4
+settle 1500
+snap prompt-dspjob
+key f12
+wait "Command Entry"
+type sbmjob
+key f4
+settle 1500
+snap prompt-sbmjob
+key f10
+settle 1200
+snap prompt-sbmjob-f10
+key f24
+settle 800
+snap prompt-sbmjob-f24
+key f11
+settle 1000
+snap prompt-sbmjob-f11
+key pgdn
+settle 800
+snap prompt-sbmjob-f11-2
+key f12
+wait "Command Entry"
+type chgjob
+key f4
+settle 1500
+snap prompt-chgjob
+key f10
+settle 1200
+snap prompt-chgjob-f10
+key f24
+settle 800
+snap prompt-chgjob-f24
+key f11
+settle 1000
+snap prompt-chgjob-f11
+key pgdn
+settle 800
+snap prompt-chgjob-f11-2
+key f12
+wait "Command Entry"
+type wrksplf
+key f4
+settle 1500
+snap prompt-wrksplf
+key f10
+settle 1200
+snap prompt-wrksplf-f10
+key f24
+settle 800
+snap prompt-wrksplf-f24
+key f11
+settle 1000
+snap prompt-wrksplf-f11
+key pgdn
+settle 800
+snap prompt-wrksplf-f11-2
+key f12
+wait "Command Entry"
+type dsplibl
+key f4
+settle 1500
+snap prompt-dsplibl
+key f12
+wait "Command Entry"
+type crtdspf
+key f4
+settle 1500
+snap prompt-crtdspf
+key f12
+wait "Command Entry"
+type crtprtf
+key f4
+settle 1500
+snap prompt-crtprtf
+key f12
+wait "Command Entry"
+type crtmsgf
+key f4
+settle 1500
+snap prompt-crtmsgf
+key f12
+wait "Command Entry"
+type addmsgd
+key f4
+settle 1500
+snap prompt-addmsgd
+key f12
+wait "Command Entry"
+type crtusrprf
+key f4
+settle 1500
+snap prompt-crtusrprf
+key f10
+settle 1200
+snap prompt-crtusrprf-f10
+key f24
+settle 800
+snap prompt-crtusrprf-f24
+key f11
+settle 1000
+snap prompt-crtusrprf-f11
+key pgdn
+settle 800
+snap prompt-crtusrprf-f11-2
+key f12
+wait "Command Entry"
+type chgusrprf
+key f4
+settle 1500
+snap prompt-chgusrprf
+key f12
+wait "Command Entry"
+type grtobjaut
+key f4
+settle 1500
+snap prompt-grtobjaut
+key f12
+wait "Command Entry"
+type crtjobd
+key f4
+settle 1500
+snap prompt-crtjobd
+key f12
+wait "Command Entry"
+type crtcls
+key f4
+settle 1500
+snap prompt-crtcls
+key f12
+wait "Command Entry"
+type crtsbsd
+key f4
+settle 1500
+snap prompt-crtsbsd
+key f12
+wait "Command Entry"
+type addrtge
+key f4
+settle 1500
+snap prompt-addrtge
+key f12
+wait "Command Entry"
+type crtoutq
+key f4
+settle 1500
+snap prompt-crtoutq
+key f12
+wait "Command Entry"
+type strprtwtr
+key f4
+settle 1500
+snap prompt-strprtwtr
+key f12
+wait "Command Entry"
+type cpyf
+key f4
+settle 1500
+snap prompt-cpyf
+key f12
+wait "Command Entry"
+type ovrdbf
+key f4
+settle 1500
+snap prompt-ovrdbf
+key f12
+wait "Command Entry"
+type dspfd
+key f4
+settle 1500
+snap prompt-dspfd
+key f12
+wait "Command Entry"
+type dspffd
+key f4
+settle 1500
+snap prompt-dspffd
+key f12
+wait "Command Entry"
+type strseu
+key f4
+settle 1500
+snap prompt-strseu
+key f12
+wait "Command Entry"
+type strpdm
+key f4
+settle 1500
+snap prompt-strpdm
+key f12
+wait "Command Entry"
+type crtbndcl
+key f4
+settle 1500
+snap prompt-crtbndcl
+key f12
+wait "Command Entry"
+type crtcmd
+key f4
+settle 1500
+snap prompt-crtcmd
+key f12
+wait "Command Entry"
+type sndmsg
+key f4
+settle 1500
+snap prompt-sndmsg
+key f12
+wait "Command Entry"
+type sndbrkmsg
+key f4
+settle 1500
+snap prompt-sndbrkmsg
+key f12
+wait "Command Entry"
+type dspmsg
+key f4
+settle 1500
+snap prompt-dspmsg
+key f12
+wait "Command Entry"
+type wrkactjob
+key f4
+settle 1500
+snap prompt-wrkactjob
+key f12
+wait "Command Entry"
+type wrkobj
+key f4
+settle 1500
+snap prompt-wrkobj
+key f12
+wait "Command Entry"
+type dspobjd
+key f4
+settle 1500
+snap prompt-dspobjd
+key f12
+wait "Command Entry"
+type crtdtaara
+key f4
+settle 1500
+snap prompt-crtdtaara
+key f12
+wait "Command Entry"
+type chgdtaara
+key f4
+settle 1500
+snap prompt-chgdtaara
+key f12
+wait "Command Entry"
+type rtvjoba
+key f4
+settle 1500
+snap prompt-rtvjoba
+key f12
+wait "Command Entry"
+type crtmnu
+key f4
+settle 1500
+snap prompt-crtmnu
+key f12
+wait "Command Entry"
+type crtpnlgrp
+key f4
+settle 1500
+snap prompt-crtpnlgrp
+key f12
+wait "Command Entry"
+type strsql
+key f4
+settle 1500
+snap prompt-strsql
+key f12
+wait "Command Entry"
+type runsqlstm
+key f4
+settle 1500
+snap prompt-runsqlstm
+key f12
+wait "Command Entry"
+type call
+key f4
+settle 1500
+snap prompt-call
+key f12
+wait "Command Entry"
+type go
+key f4
+settle 1500
+snap prompt-go
+key f12
+wait "Command Entry"
+type dspusrprf
+key f4
+settle 1500
+snap prompt-dspusrprf
+key f12
+wait "Command Entry"
+type chgsysval
+key f4
+settle 1500
+snap prompt-chgsysval
+key f12
+wait "Command Entry"
+type dspsysval
+key f4
+settle 1500
+snap prompt-dspsysval
+key f12
+wait "Command Entry"
+type wrksysval
+key f4
+settle 1500
+snap prompt-wrksysval
+key f12
+wait "Command Entry"
+type savlib
+key f4
+settle 1500
+snap prompt-savlib
+key f12
+wait "Command Entry"
+type rstlib
+key f4
+settle 1500
+snap prompt-rstlib
+key f12
+wait "Command Entry"
+type endjob
+key f4
+settle 1500
+snap prompt-endjob
+key f12
+wait "Command Entry"
+type hldjob
+key f4
+settle 1500
+snap prompt-hldjob
+key f12
+wait "Command Entry"
+type wrkjob
+key f4
+settle 1500
+snap prompt-wrkjob
+key f12
+wait "Command Entry"
+type crtdevdsp
+key f4
+settle 1500
+snap prompt-crtdevdsp
+key f12
+wait "Command Entry"
+type vrycfg
+key f4
+settle 1500
+snap prompt-vrycfg
+key f12
+wait "Command Entry"
+type wrkcfgsts
+key f4
+settle 1500
+snap prompt-wrkcfgsts
+key f12
+wait "Command Entry"
+type strtcpsvr
+key f4
+settle 1500
+snap prompt-strtcpsvr
+key f12
+wait "Command Entry"
+type chgtelna
+key f4
+settle 1500
+snap prompt-chgtelna
+key f12
+wait "Command Entry"
+type crtjrn
+key f4
+settle 1500
+snap prompt-crtjrn
+key f12
+wait "Command Entry"
+type strjrnpf
+key f4
+settle 1500
+snap prompt-strjrnpf
+key f12
+wait "Command Entry"
+key f3
+wait "Main Menu"
+type signoff
+key enter
+settle 1500

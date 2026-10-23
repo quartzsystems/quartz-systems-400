@@ -1,0 +1,24 @@
+                                 System Request                                 
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Display sign on for secondary job                                      
+      2. End previous request                                                   
+      3. Display current job                                                    
+      4. Display messages                                                       
+      5. Send a message                                                         
+      6. Display system operator messages                                       
+      7. Display work station user                                              
+                                                                                
+     80. Disconnect job                                                         
+                                                                                
+     90. Sign off                                                               
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection                                                                      
+                                                                                
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            
+ Option    not correct.                                                         
