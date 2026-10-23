@@ -1474,6 +1474,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "menus"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "ccsid",
+ "thiserror",
+ "uim",
+]
+
+[[package]]
 name = "mi"
 version = "0.1.0"
 dependencies = [

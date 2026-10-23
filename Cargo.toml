@@ -46,6 +46,7 @@ members = [
     # User interface: TN5250E, display files, UIM, menus, developer tools.
     "ui/tn5250",
     "ui/uim",
+    "ui/menus",
     "tools/tn5250-driver",
 ]
 
