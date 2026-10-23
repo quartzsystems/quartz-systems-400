@@ -1,0 +1,24 @@
+ Columns . . . :    1  71        Design Report                USERNAME1/QDDSSRC 
+ RLU==>                                                               QDFUZZOUT 
+ BASE    ...+... 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7  
+        ------------------------- Start of Page 001 --------------------------- 
+QDFUZZO ------------------------ AFPDS Record Format -------------------------- 
+        --------------------------- End of Report ----------------------------- 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F11=Define field   F16=Delete field                                  
+ F22=Alternative keys         F24=More keys                                     
+Record length of source file greater than 92.                                 + 

@@ -1,0 +1,61 @@
+# DFU, second pass: the creation displays (the library typed, as the
+# general information display needs it) left with F12 before anything
+# is saved, and the Change, Delete and temporary program entry panels
+# left with F12.
+continue
+settle 3000
+# A break message from an earlier capture may show first.
+key f3
+settle 1500
+wait "Main Menu"
+timeout 30000
+type strdfu
+key enter
+settle 1500
+type 2
+key enter
+settle 1500
+type qstestdfu
+key fieldexit
+type cwellman1
+key fieldexit
+type qdfuzzin
+key fieldexit
+type cwellman1
+key fieldexit
+key enter
+settle 3000
+snap dfu-define-general
+key f12
+settle 1500
+snap dfu-define-changed
+key f12
+settle 1500
+snap dfu-create-back
+key f12
+settle 1500
+wait "Data File Utility"
+type 3
+key enter
+settle 1500
+snap dfu-change-pgm
+key f12
+settle 1500
+wait "Data File Utility"
+type 4
+key enter
+settle 1500
+snap dfu-delete-pgm
+key f12
+settle 1500
+wait "Data File Utility"
+type 5
+key enter
+settle 1500
+snap dfu-temp
+key f12
+settle 1500
+wait "Data File Utility"
+key f3
+settle 1500
+wait "Main Menu"

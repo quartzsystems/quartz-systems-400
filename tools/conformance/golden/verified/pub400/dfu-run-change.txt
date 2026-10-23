@@ -1,0 +1,24 @@
+                              Change a Data File                                
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Program . . . . . . . . . .   QSTESTDFU     Name, F4 for list                
+     Library . . . . . . . . .     *CURLIB     Name, *LIBL, *CURLIB             
+                                                                                
+   Data file . . . . . . . . .   QDFUZZIN      Name, *SAME, F4 for list         
+                                                                                
+     Library . . . . . . . . .     USERNAME1   Name, *LIBL, *CURLIB             
+   Member  . . . . . . . . . .   *FIRST        Name, *FIRST, F4 for list        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit     F4=Prompt     F12=Cancel                                           
+                                                                                

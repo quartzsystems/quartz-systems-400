@@ -1,0 +1,18 @@
+[package]
+name = "dfu"
+description = "QS/400 DFU and RLU: field values, the temporary program, DFU program definitions, the page image of a printer file and their displays"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+uim = { path = "../../ui/uim", version = "0.1.0" }
+pdm = { path = "../pdm", version = "0.1.0" }
+qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+dds = { path = "../../database/dds", version = "0.1.0" }
+thiserror.workspace = true
+
+[lints]
+workspace = true

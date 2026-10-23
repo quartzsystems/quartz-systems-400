@@ -1,0 +1,24 @@
+                                    Exit RLU                                    
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Option  . . . . . . . . . . . . . .   2              1=Save and exit         
+                                                        2=Exit without saving   
+                                                        3=Resume                
+     Member  . . . . . . . . . . . . .     QDFUZZOUT    Name                    
+     File  . . . . . . . . . . . . . .     QDDSSRC      Name                    
+     Library . . . . . . . . . . . . .     USERNAME1    Name                    
+     Text  . . . . . . . . . . . . . .                                          
+                                                                                
+   Create printer file . . . . . . . .   N              Y=Yes, N=No             
+     Change defaults . . . . . . . . .     N            Y=Yes, N=No             
+   Prototype report  . . . . . . . . .   N              Y=Yes, N=No             
+     Change defaults . . . . . . . . .     N            Y=Yes, N=No             
+   Submit to batch . . . . . . . . . .   N              Y=Yes, N=No             
+     Job description . . . . . . . . .     *USRPRF      Name, *USRPRF, *RLU     
+     Library . . . . . . . . . . . . .                  Name, *LIBL, *CURLIB    
+                                                                                
+                                                                                
+                                                                                
+ F5=Refresh   F12=Cancel                                                        
+                                                                                

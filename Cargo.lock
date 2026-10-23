@@ -718,6 +718,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "dfu"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "dds",
+ "pdm",
+ "qdecimal",
+ "thiserror",
+ "uim",
+]
+
+[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1734,6 +1746,8 @@ dependencies = [
  "ccsid",
  "cmd",
  "dbg",
+ "dds",
+ "dfu",
  "dspf",
  "ile",
  "ipc",

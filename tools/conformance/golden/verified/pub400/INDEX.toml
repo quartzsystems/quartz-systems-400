@@ -4207,5 +4207,228 @@ source = "pub400"
 release = "V7R5M0"
 date = "2026-10-23"
 script = "dbg3"
+
+[[golden]]
+name = "dfu-strdfu"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-run"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-run-change"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-run-display"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-create"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-upddta"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-upddta-badkey"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-entry"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-insert"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-change"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-select-format"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-end"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-notfound"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-record-in"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-record"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-record-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-record-bof"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-end-viewed"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "rlu-first"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "rlu-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "rlu-f24-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "rlu-exit"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu"
+width = 80
+
+[[golden]]
+name = "dfu-define-general"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu2"
+width = 80
+
+[[golden]]
+name = "dfu-define-changed"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu2"
+width = 80
+
+[[golden]]
+name = "dfu-create-back"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu2"
+width = 80
+
+[[golden]]
+name = "dfu-change-pgm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu2"
+width = 80
+
+[[golden]]
+name = "dfu-delete-pgm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu2"
+width = 80
+
+[[golden]]
+name = "dfu-temp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "dfu2"
 width = 80
 

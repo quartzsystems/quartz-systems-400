@@ -17,6 +17,7 @@ pub(crate) mod exec;
 pub(crate) mod hist;
 mod joblog;
 mod pdm;
+mod dfu;
 mod sst;
 pub(crate) mod jobqs;
 mod jobs;

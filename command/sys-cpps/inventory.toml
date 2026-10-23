@@ -296,6 +296,25 @@ note = "the list of members at a display; a printed report otherwise"
 # --- SDA (devtools/sda)
 
 # --- DFU and RLU (devtools/dfu)
+[cmd.STRDFU]
+site = "job"
+note = "DFU's menu and its panels; a display is needed"
+
+[cmd.UPDDTA]
+site = "job"
+note = "DFU's temporary program; a display is needed"
+
+[cmd.DSPDTA]
+site = "job"
+note = "a DFU program for display; a display is needed"
+
+[cmd.CHGDTA]
+site = "job"
+note = "a DFU program for change; a display is needed"
+
+[cmd.STRRLU]
+site = "job"
+note = "the page-image editor; a display is needed"
 
 # --- STRDBG screens (devtools/dbg)
 [cmd.DSPMODSRC]

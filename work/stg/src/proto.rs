@@ -492,6 +492,16 @@ ipc::rpc! {
     325 => fn pdm_defaults_put / PdmDefaultsPut (text: String) -> Result<(), String>;
     // --- SDA (340-359)
     // --- DFU and RLU (360-379)
+    /// DFU: each record format's key fields, in key order.
+    360 => fn dfu_keys / DfuKeys (lib: String, file: String) -> Result<Vec<(String, Vec<String>)>, String>;
+    /// DFU: a DFU program's real library and definition; `None` when
+    /// there is none.
+    361 => fn dfu_pgm / DfuPgm (lib: String, name: String) -> Result<Option<(String, String)>, String>;
+    /// DFU: a DFU program created (or a DFU program of the name
+    /// replaced); its real library.
+    362 => fn dfu_pgm_put / DfuPgmPut (lib: String, name: String, def: String, text: String) -> Result<String, String>;
+    /// DFU: a DFU program deleted.
+    363 => fn dfu_pgm_delete / DfuPgmDelete (lib: String, name: String) -> Result<(), String>;
     // --- STRDBG screens (380-399)
     /// The debugger: a program's modules with their source and
     /// statement lines, for Display Module Source.

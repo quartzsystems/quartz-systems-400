@@ -90,6 +90,11 @@ pub fn run(job: &mut Job, host: &Host, r: &Resolved, out: &mut Outcome) -> Resul
         "CRTSCHIDX" | "ADDSCHIDXE" => return super::uiapi::command(host, r),
         // --- STRSST (devtools/sst)
         "STRSST" => return crate::devtools::sst::run(job, host, r, out),
+        // --- DFU and RLU (devtools/dfu)
+        "STRDFU" | "UPDDTA" | "DSPDTA" | "CHGDTA" => {
+            return crate::devtools::dfu::run(job, host, r, out);
+        }
+        "STRRLU" => return crate::devtools::rlu::run(job, host, r, out),
         _ => {}
     }
     // A panel's command in a job that shows none: the service's text.

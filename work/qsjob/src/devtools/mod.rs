@@ -7,5 +7,7 @@
 
 pub mod dbg;
 pub mod pdm;
+pub mod dfu;
+pub mod rlu;
 pub mod seu;
 pub mod sst;

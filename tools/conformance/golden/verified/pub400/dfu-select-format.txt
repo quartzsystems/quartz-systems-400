@@ -1,0 +1,24 @@
+                            Select Record Format                                
+                                                                                
+ Type option, press Enter.                                                      
+   1=Select                                                                     
+                                                                                
+                                                                                
+ Opt  Format         Description                                                
+      QDFUZZINR                                                                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit          F5=Refresh          F12=Cancel                                
+                                                                                

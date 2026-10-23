@@ -1489,6 +1489,28 @@ impl Service for Served<'_> {
 
     // --- DFU and RLU (360-379)
 
+    fn dfu_keys(&mut self, lib: String, file: String) -> Result<Vec<(String, Vec<String>)>, String> {
+        super::dfu::keys(self.system, &lib, &file)
+    }
+
+    fn dfu_pgm(&mut self, lib: String, name: String) -> Result<Option<(String, String)>, String> {
+        super::dfu::get(self.system, &lib, &name)
+    }
+
+    fn dfu_pgm_put(
+        &mut self,
+        lib: String,
+        name: String,
+        def: String,
+        text: String,
+    ) -> Result<String, String> {
+        super::dfu::put(self.system, &lib, &name, &def, &text)
+    }
+
+    fn dfu_pgm_delete(&mut self, lib: String, name: String) -> Result<(), String> {
+        super::dfu::delete(self.system, &lib, &name)
+    }
+
     // --- STRDBG screens (380-399)
     fn dbg_program(&mut self, lib: String, name: String) -> Result<stg::proto::DbgProgram, String> {
         self.own_libl();

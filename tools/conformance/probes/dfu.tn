@@ -1,0 +1,161 @@
+# DFU and RLU: the STRDFU menu and its entry panels, the creation
+# panels up to the general information (left with F12, nothing saved),
+# UPDDTA's modes, keys and End Data Entry over the account's own files
+# (records shown, never changed: no Enter on a changed record), and
+# STRRLU's first display (left without saving). The account's own
+# library is its current library, so no name is typed.
+continue
+settle 3000
+# A break message from an earlier capture may show first.
+key f3
+settle 1500
+wait "Main Menu"
+timeout 30000
+type strdfu
+key enter
+settle 1500
+snap dfu-strdfu
+type 1
+key enter
+settle 1500
+snap dfu-run
+type 1
+key enter
+settle 1500
+snap dfu-run-change
+key f12
+settle 1200
+type 2
+key enter
+settle 1500
+snap dfu-run-display
+key f12
+settle 1200
+key f12
+settle 1200
+type 2
+key enter
+settle 1500
+snap dfu-create
+type qstestdfu
+key fieldexit
+key fieldexit
+type qdfuzzin
+key fieldexit
+key enter
+settle 2500
+snap dfu-define-general
+key f12
+settle 1500
+snap dfu-define-changed
+key f12
+settle 1500
+snap dfu-create-back
+key f12
+settle 1500
+type 3
+key enter
+settle 1500
+snap dfu-change-pgm
+key f12
+settle 1200
+type 4
+key enter
+settle 1500
+snap dfu-delete-pgm
+key f12
+settle 1200
+type 5
+key enter
+settle 1500
+snap dfu-temp
+key f12
+settle 1200
+key f3
+settle 1500
+wait "Main Menu"
+type upddta qdfuzzin
+key enter
+settle 2500
+snap dfu-upddta
+key f24
+settle 1000
+snap dfu-upddta-badkey
+key f10
+settle 1500
+snap dfu-entry
+key f9
+settle 1500
+snap dfu-insert
+key f11
+settle 1500
+snap dfu-change
+key f6
+settle 1500
+snap dfu-select-format
+key f12
+settle 1200
+key f3
+settle 1500
+snap dfu-end
+type n
+key enter
+settle 1500
+key home
+key eraseeof
+type 99999999
+key enter
+settle 1500
+snap dfu-notfound
+key home
+key eraseeof
+type 9
+key fieldexit
+key enter
+settle 1500
+snap dfu-record-in
+key f3
+settle 1500
+key enter
+settle 1500
+wait "Main Menu"
+type upddta qdfuzzout
+key enter
+settle 2500
+key eraseeof
+type 1
+key enter
+settle 1500
+snap dfu-record
+key pgdn
+settle 1500
+snap dfu-record-2
+key pgup
+settle 1500
+key pgup
+settle 1500
+snap dfu-record-bof
+key f3
+settle 1500
+snap dfu-end-viewed
+key enter
+settle 1500
+wait "Main Menu"
+type strrlu srcfile(*curlib/qddssrc) srcmbr(qdfuzzout)
+key enter
+settle 3000
+snap rlu-first
+key f24
+settle 1200
+snap rlu-f24
+key f24
+settle 1200
+snap rlu-f24-2
+key f24
+settle 1200
+key f3
+settle 1500
+snap rlu-exit
+key enter
+settle 1500
+snap rlu-out

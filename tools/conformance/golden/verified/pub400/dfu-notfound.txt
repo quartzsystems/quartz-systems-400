@@ -1,0 +1,24 @@
+ WORK WITH DATA IN A FILE                       Mode . . . . :   CHANGE         
+ Format . . . . :   QDFUZZINR                   File . . . . :   QDFUZZIN       
+                                                                                
+ *RECNBR: 99999999                                                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit                 F5=Refresh               F6=Select format              
+ F9=Insert               F10=Entry                F11=Change                    
+ The record was not found in member QDFUZZIN.                                   

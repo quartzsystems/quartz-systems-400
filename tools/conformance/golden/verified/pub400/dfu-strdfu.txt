@@ -1,0 +1,24 @@
+                            Data File Utility (DFU)                             
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Run a DFU program                                                      
+      2. Create a DFU program                                                   
+      3. Change a DFU program                                                   
+      4. Delete a DFU program                                                   
+      5. Update data using temporary program                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+                                          (C) COPYRIGHT IBM CORP. 1981, 2021.   

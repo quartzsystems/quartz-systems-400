@@ -1,0 +1,24 @@
+ WORK WITH DATA IN A FILE                       Mode . . . . :   CHANGE         
+ Format . . . . :   QDFUZZOUTR                  File . . . . :   QDFUZZOUT      
+                                                                                
+ *RECNBR:                                                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit                 F5=Refresh               F6=Select format              
+ F9=Insert               F10=Entry                F11=Change                    
+ The beginning or end of the file was reached.                                  

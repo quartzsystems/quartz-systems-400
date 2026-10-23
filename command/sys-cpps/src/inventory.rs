@@ -348,6 +348,11 @@ pub const JOB_SITE: &[&str] = &[
     "FNDSTRPDM",
     // --- SDA (devtools/sda)
     // --- DFU and RLU (devtools/dfu)
+    "STRDFU",
+    "UPDDTA",
+    "DSPDTA",
+    "CHGDTA",
+    "STRRLU",
     // --- STRDBG screens (devtools/dbg)
     "DSPMODSRC",
     "STRSRVJOB",

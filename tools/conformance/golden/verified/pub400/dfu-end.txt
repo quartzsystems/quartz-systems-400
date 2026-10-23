@@ -1,0 +1,24 @@
+                                End Data Entry                                  
+                                                                                
+   Number of records processed                                                  
+                                                                                
+     Added  . . . . . :           0                                             
+     Changed  . . . . :           0                                             
+     Deleted  . . . . :           0                                             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Type choice, press Enter.                                                      
+                                                                                
+   End data entry  . . . . . . .    Y           Y=Yes,  N=No                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit       F12=Cancel                                                       
+                                                                                

@@ -1,0 +1,24 @@
+                                Create a DFU Program                            
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+   Program . . . . . . . . . .   QSTESTDFU     Name, F4 for list                
+     Library . . . . . . . . .     USERNAME1   Name, *CURLIB                    
+                                                                                
+   Data file . . . . . . . . .   QDFUZZIN      Name, F4 for list                
+     Library . . . . . . . . .     USERNAME1   Name, *LIBL, *CURLIB             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit     F4=Prompt     F12=Cancel                                           
+                                                                                

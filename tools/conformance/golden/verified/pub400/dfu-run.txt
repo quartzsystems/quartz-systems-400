@@ -1,0 +1,24 @@
+                               Run a DFU Program                                
+                                                                                
+ Select one of the following:                                                   
+                                                                                
+      1. Change a data file                                                     
+      2. Display a data file                                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+                                                                                
