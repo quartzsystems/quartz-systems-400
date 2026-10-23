@@ -1,8 +1,6 @@
 # HELLO V7R5M0 pub400.com
 # captured 2026-10-23 by rpg-oracle
 created: yes
-diag: RNF2318 00 line 1 seq 
-diag: RNF3530 00 line 1 seq 
 diag: RNF2318 00 line 2 seq 000200
 diag: RNF3530 00 line 3 seq 000300
 run: ok

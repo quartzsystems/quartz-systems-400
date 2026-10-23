@@ -445,7 +445,9 @@ fn resolve_one(
             }
         }
     }
-    if kind == ExportKind::Proc && (SYSTEM_PROCS.contains(&name) || PRIVILEGED_PROCS.contains(&name)) {
+    if kind == ExportKind::Proc
+        && (SYSTEM_PROCS.contains(&name) || PRIVILEGED_PROCS.contains(&name) || name.starts_with(RPG_RUNTIME_PREFIX))
+    {
         return ImportTarget::System;
     }
     b.diags.push(Diag {
@@ -467,6 +469,10 @@ pub const SYSTEM_PROCS: &[&str] = &[
     "CEECZST", "CEEDAYS", "CEEDATE", "CEEDATM", "CEESECS", "CEEUTC", "CEELOCT", "CEEQCEN",
     "CEESCEN", "CEEGMT", "CEEGMTO", "CEERAN0", "CEE4RAGE",
 ];
+
+/// The prefix of the ILE RPG runtime library's procedures (`qrpgrt`),
+/// resolved as system imports like `QLEAWI`'s.
+pub const RPG_RUNTIME_PREFIX: &str = "_QRNX_";
 
 /// Procedures only system state may import: raw storage, the storage
 /// service's direct calls and authority bypass. A user-state program

@@ -1,0 +1,1414 @@
+// Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+// licensed under the terms of the MIT license which can be found in the
+// root directory of this project.
+
+//! Calculations into IR: assignment, the structured operations, the
+//! fixed-form compare-and-branch families, subroutines (a return-point
+//! slot per subroutine and one `switch` at `ENDSR`), `GOTO`/`TAG`,
+//! indicators, printer output, `DSPLY`, `RETURN`, calls, and the
+//! subprocedures themselves.
+
+use rpgfront::ast::{AssignOp, BinOp, CondInd, Conditioning, Expr, Fig, Lit, Proc, Stmt};
+
+use crate::decl;
+use crate::diag::ids;
+use crate::files::Dev;
+use crate::codegen::emit::{Body, quote};
+use crate::codegen::expr::{V, Vk, Want};
+use crate::codegen::{Gen, LoopEnd, Open, Subr, place_of};
+use crate::names::mangle;
+use crate::syms::{Kind, Storage, SymId};
+use crate::types::Ty;
+
+/// The decimal positions of an assignment target, for precision.
+fn target_mode(g: &Gen<'_>, t: &V, half: bool) -> qdecimal::Mode {
+    qdecimal::Mode {
+        result_scale: t.ty.shape().map_or(0, |(_, s)| s),
+        half_adjust: half,
+        resdecpos: g.ctl.resdecpos,
+    }
+}
+
+impl Gen<'_> {
+    /// Assign `src` to the place `dst`.
+    pub fn assign(&mut self, dst: &V, src: &V, half: bool) {
+        if dst.kind != Vk::Place {
+            self.err(ids::NOT_ASSIGNABLE, 30, "");
+            return;
+        }
+        let dst = self.as_chars(dst);
+        let src = if matches!(dst.ty, Ty::Ds(_)) { src.clone() } else { self.as_chars(src) };
+        let h = if half { " halfadj" } else { "" };
+        match (&dst.ty, &src.ty) {
+            (d, _) if d.is_numeric() => {
+                if let Some(f) = &src.fig {
+                    match f {
+                        Fig::Zeros | Fig::Hival | Fig::Loval => self.b.ins(format!("mov {}, {}", dst.op, src.op)),
+                        Fig::All(s) if s.chars().all(|c| c.is_ascii_digit()) => {
+                            self.b.ins(format!("mov {}, *ZEROS", dst.op));
+                        }
+                        _ => self.err(ids::TYPE_MISMATCH, 30, ""),
+                    }
+                    return;
+                }
+                if !src.ty.is_numeric() {
+                    self.err(ids::TYPE_MISMATCH, 30, "");
+                    return;
+                }
+                let s = self.dec_operand(&src);
+                self.b.ins(format!("dec.mov {}, {s}{h}", dst.op));
+            }
+            (d, _) if d.is_string() => {
+                if let Some(Fig::All(pat)) = &src.fig {
+                    let n = usize::try_from(dst.ty.str_len().unwrap_or(0)).unwrap_or(0);
+                    let lit: String = pat.chars().cycle().take(n).collect();
+                    self.b.ins(format!("mov {}, {}", dst.op, quote(&lit)));
+                    return;
+                }
+                if let Some(Fig::AllX(h)) = &src.fig {
+                    let n = usize::try_from(dst.ty.str_len().unwrap_or(0)).unwrap_or(0);
+                    let bytes: String = h.chars().collect::<Vec<_>>().chunks(2).map(|c| c.iter().collect::<String>()).cycle().take(n).collect();
+                    self.b.ins(format!("mov {}, x\"{bytes}\"", dst.op));
+                    return;
+                }
+                if src.fig.is_some() {
+                    self.b.ins(format!("mov {}, {}", dst.op, src.op));
+                    return;
+                }
+                if !src.ty.is_string() {
+                    self.err(ids::TYPE_MISMATCH, 30, "");
+                    return;
+                }
+                self.b.ins(format!("mov {}, {}", dst.op, src.op));
+            }
+            (Ty::Ind, _) => {
+                if src.ty == Ty::Ind || matches!(src.fig, Some(Fig::On | Fig::Off)) {
+                    match src.kind {
+                        Vk::Place => self.b.ins(format!("mov {}, {}", dst.op, src.op)),
+                        _ => self.b.ins(format!("store {}, {}", dst.op, src.op)),
+                    }
+                } else if src.ty.is_char() && src.kind == Vk::Lit {
+                    let v = if src.op.contains('1') { "*ON" } else { "*OFF" };
+                    self.b.ins(format!("store {}, {v}", dst.op));
+                } else if matches!(src.fig, Some(Fig::Blanks | Fig::Zeros)) {
+                    self.b.ins(format!("store {}, *OFF", dst.op));
+                } else {
+                    self.err(ids::TYPE_MISMATCH, 30, "");
+                }
+            }
+            (Ty::Ds(_), _) => {
+                let whole = format!("{}.all_", dst.op);
+                if src.ty == dst.ty && src.kind == Vk::Place {
+                    self.b.ins(format!("mov {}, {}", dst.op, src.op));
+                } else {
+                    let s = self.as_chars(&src);
+                    if s.ty.is_string() || s.fig.is_some() {
+                        let s = if let Some(Fig::All(pat)) = &s.fig {
+                            let n = usize::try_from(self.t.size(&dst.ty)).unwrap_or(0);
+                            quote(&pat.chars().cycle().take(n).collect::<String>())
+                        } else {
+                            s.op
+                        };
+                        self.b.ins(format!("mov {whole}, {s}"));
+                    } else {
+                        self.err(ids::TYPE_MISMATCH, 30, "");
+                    }
+                }
+            }
+            (Ty::Date(..) | Ty::Time(..) | Ty::Timestamp(_), _) => {
+                if src.fig.is_some() || src.ty == dst.ty {
+                    self.b.ins(format!("mov {}, {}", dst.op, src.op));
+                } else if src.ty.is_datetime() {
+                    self.b.ins(format!("cvt {}, {}", dst.op, src.op));
+                } else {
+                    self.err(ids::TYPE_MISMATCH, 30, "");
+                }
+            }
+            (Ty::Ptr | Ty::ProcPtr, _) => {
+                if src.fig == Some(Fig::Null) {
+                    let r = self.b.reg();
+                    let k = if dst.ty == Ty::ProcPtr { "procptr" } else { "ptr" };
+                    self.b.ins(format!("{r} = const.{k} *NULL"));
+                    self.b.ins(format!("store {}, {r}", dst.op));
+                } else if matches!(src.ty, Ty::Ptr | Ty::ProcPtr) {
+                    let r = self.ptr_reg(&src);
+                    self.b.ins(format!("store {}, {r}", dst.op));
+                } else {
+                    self.err(ids::TYPE_MISMATCH, 30, "");
+                }
+            }
+            _ => self.err(ids::TYPE_MISMATCH, 30, ""),
+        }
+    }
+
+    /// An `ind` register for a conditioning set (OR of ANDs).
+    pub fn conditioning(&mut self, c: &Conditioning) -> Option<String> {
+        let t = self.b.temp("ind");
+        self.b.ins(format!("store {t}, *OFF"));
+        let done = self.b.label();
+        for group in c {
+            let next = self.b.label();
+            for ind in group {
+                let r = self.cond_ind(ind)?;
+                let ok = self.b.label();
+                self.b.term(format!("brif {r}, {ok}, {next}"));
+                self.b.place(&ok);
+            }
+            self.b.ins(format!("store {t}, *ON"));
+            self.b.term(format!("br {done}"));
+            self.b.place(&next);
+        }
+        self.b.place(&done);
+        let r = self.b.reg();
+        self.b.ins(format!("{r} = load {t}"));
+        Some(r)
+    }
+
+    /// One conditioning indicator, negated when `N`.
+    fn cond_ind(&mut self, c: &CondInd) -> Option<String> {
+        let v = self.indicator(&c.ind)?;
+        let r = self.ind_reg(&v)?;
+        if c.not {
+            let n = self.b.reg();
+            self.b.ins(format!("{n} = cmp.eq {r}, *OFF"));
+            return Some(n);
+        }
+        Some(r)
+    }
+
+    /// An indicator by its fixed-form name (`01`, `LR`, `KA`, `H1`).
+    pub fn indicator(&mut self, name: &str) -> Option<V> {
+        let word = format!("*IN{name}");
+        let e = Expr::Special {
+            word,
+            index: None,
+            at: self.at,
+        };
+        self.expr(&e, Want::default())
+    }
+
+    /// Set a resulting indicator on or off from a condition register.
+    pub fn set_ind(&mut self, name: &str, r: &str) {
+        if name.is_empty() {
+            return;
+        }
+        if let Some(v) = self.indicator(name) {
+            self.b.ins(format!("store {}, {r}", v.op));
+        }
+    }
+
+    /// A condition expression as an `ind` register.
+    pub fn cond(&mut self, e: &Expr) -> Option<String> {
+        let v = self.expr(e, Want::default())?;
+        if v.ty != Ty::Ind {
+            self.err(ids::BAD_EXPRESSION_TYPE, 30, "");
+            return None;
+        }
+        self.ind_reg(&v)
+    }
+
+    /// `factor1 op factor2` of a fixed-form `IFxx`, `DOWxx`, `CABxx`...
+    pub fn cmp_suffix(&mut self, sfx: &str, f1: &Expr, f2: &Expr) -> Option<String> {
+        let a = self.expr(f1, Want::default())?;
+        let b = self.expr(f2, Want::default())?;
+        let op = match sfx {
+            "EQ" => BinOp::Eq,
+            "NE" => BinOp::Ne,
+            "GT" => BinOp::Gt,
+            "LT" => BinOp::Lt,
+            "GE" => BinOp::Ge,
+            _ => BinOp::Le,
+        };
+        let v = self.compare(op, &a, &b)?;
+        Some(v.op)
+    }
+
+    /// A fixed-form condition with its `ANDxx`/`ORxx` lines from
+    /// `stmts[k]`: the register and how many statements it took.
+    fn cmp_chain(&mut self, stmts: &[&Stmt], k: usize, sfx: &str) -> Option<(String, usize)> {
+        let s = stmts[k];
+        let f1 = s.op.f1.first()?.clone();
+        let f2 = s.op.f2.first()?.clone();
+        let mut acc = self.cmp_suffix(sfx, &f1, &f2)?;
+        let mut used = 1;
+        // Precedence: AND binds tighter than OR; fold left to right in
+        // groups.
+        let mut or_parts: Vec<String> = Vec::new();
+        while let Some(n) = stmts.get(k + used) {
+            let (base, sfx2) = rpgfront::parse::ops::split_suffix(&n.op.code);
+            if base != "AND" && base != "OR" || sfx2.is_empty() {
+                break;
+            }
+            let a = n.op.f1.first()?.clone();
+            let b = n.op.f2.first()?.clone();
+            let r = self.cmp_suffix(sfx2, &a, &b)?;
+            if base == "AND" {
+                let t = self.b.reg();
+                self.b.ins(format!("{t} = and {acc}, {r}"));
+                acc = t;
+            } else {
+                or_parts.push(acc);
+                acc = r;
+            }
+            used += 1;
+        }
+        for p in or_parts {
+            let t = self.b.reg();
+            self.b.ins(format!("{t} = or {p}, {acc}"));
+            acc = t;
+        }
+        Some((acc, used))
+    }
+
+    /// The innermost loop.
+    fn innermost_loop(&self) -> Option<(String, String)> {
+        self.open.iter().rev().find_map(|o| match o {
+            Open::Loop { iter, leave, .. } => Some((iter.clone(), leave.clone())),
+            _ => None,
+        })
+    }
+
+    /// A subroutine's record, made on first mention.
+    fn subr(&mut self, name: &str) -> &mut Subr {
+        if !self.subrs.contains_key(name) {
+            let label = self.b.label();
+            let end = self.b.label();
+            let slot = self.b.temp("i32");
+            self.subrs.insert(
+                name.to_string(),
+                Subr {
+                    label,
+                    slot,
+                    end,
+                    ..Subr::default()
+                },
+            );
+        }
+        self.subrs.get_mut(name).expect("just made")
+    }
+
+    /// `EXSR name`.
+    pub fn exsr(&mut self, name: &str) {
+        let back = self.b.label();
+        let s = self.subr(name);
+        s.returns.push(back.clone());
+        let n = s.returns.len();
+        let (slot, label) = (s.slot.clone(), s.label.clone());
+        self.b.ins(format!("store {slot}, {n}"));
+        self.b.term(format!("br {label}"));
+        self.b.place(&back);
+    }
+
+    /// One statement.
+    #[allow(clippy::too_many_lines)]
+    fn statement(&mut self, stmts: &[&Stmt], k: usize) -> usize {
+        let s = stmts[k];
+        self.mark(s.at);
+        // Conditioning indicators skip the operation when off.
+        let skip = if s.cond.is_empty() {
+            None
+        } else {
+            let r = self.conditioning(&s.cond);
+            let run = self.b.label();
+            let skip = self.b.label();
+            if let Some(r) = r {
+                self.b.term(format!("brif {r}, {run}, {skip}"));
+            }
+            self.b.place(&run);
+            Some(skip)
+        };
+        let op = &s.op;
+        let (base, sfx) = rpgfront::parse::ops::split_suffix(&op.code);
+        let half = op.ext.contains('H');
+        let mut used = 1;
+        match (base, sfx) {
+            ("EVAL" | "EVALR", _) => {
+                if let Some(Expr::Assign(aop, t, v, _)) = &op.xf2 {
+                    self.eval(*aop, t, v, half);
+                }
+            }
+            ("IF", "") => {
+                let r = op.xf2.as_ref().and_then(|e| self.cond(e));
+                self.open_if(r);
+            }
+            ("IF", sfx) => {
+                let r = self.cmp_chain(stmts, k, sfx).map(|(r, n)| {
+                    used = n;
+                    r
+                });
+                self.open_if(r);
+            }
+            ("ELSEIF", _) => {
+                let r_label = self.else_part();
+                if let Some(l) = r_label {
+                    let r = op.xf2.as_ref().and_then(|e| self.cond(e));
+                    let then = self.b.label();
+                    let next = self.b.label();
+                    if let Some(r) = r {
+                        self.b.term(format!("brif {r}, {then}, {next}"));
+                    }
+                    self.b.place(&then);
+                    if let Some(Open::If { next: n, .. }) = self.open.last_mut() {
+                        *n = next;
+                    }
+                    let _ = l;
+                }
+            }
+            ("ELSE", _) => {
+                self.else_part();
+                if let Some(Open::If { next, .. }) = self.open.last_mut() {
+                    *next = String::new();
+                }
+            }
+            ("ENDIF", _) => self.end_if(),
+            ("DOW", "") => {
+                let top = self.b.label();
+                let body = self.b.label();
+                let end = self.b.label();
+                self.b.place(&top);
+                if let Some(r) = op.xf2.as_ref().and_then(|e| self.cond(e)) {
+                    self.b.term(format!("brif {r}, {body}, {end}"));
+                }
+                self.b.place(&body);
+                self.open.push(Open::Loop {
+                    iter: top.clone(),
+                    leave: end,
+                    end: LoopEnd::Top(top),
+                });
+            }
+            ("DOW", sfx) => {
+                let top = self.b.label();
+                let body = self.b.label();
+                let end = self.b.label();
+                self.b.place(&top);
+                if let Some((r, n)) = self.cmp_chain(stmts, k, sfx) {
+                    used = n;
+                    self.b.term(format!("brif {r}, {body}, {end}"));
+                }
+                self.b.place(&body);
+                self.open.push(Open::Loop {
+                    iter: top.clone(),
+                    leave: end,
+                    end: LoopEnd::Top(top),
+                });
+            }
+            ("DOU", "") => {
+                let body = self.b.label();
+                let test = self.b.label();
+                let end = self.b.label();
+                self.b.place(&body);
+                let e = op.xf2.clone().unwrap_or(Expr::Empty(s.at));
+                self.open.push(Open::Loop {
+                    iter: test.clone(),
+                    leave: end,
+                    end: LoopEnd::Bottom(Box::new(e), body),
+                });
+            }
+            ("DOU", sfx) => {
+                let body = self.b.label();
+                let test = self.b.label();
+                let end = self.b.label();
+                self.b.place(&body);
+                let f1 = op.f1.first().cloned().unwrap_or(Expr::Empty(s.at));
+                let f2 = op.f2.first().cloned().unwrap_or(Expr::Empty(s.at));
+                self.open.push(Open::Loop {
+                    iter: test.clone(),
+                    leave: end,
+                    end: LoopEnd::BottomCmp(sfx.to_string(), Box::new(f1), Box::new(f2), body),
+                });
+            }
+            ("FOR", _) => self.for_loop(s),
+            ("DO", _) => self.counted_do(s),
+            ("ENDDO" | "ENDFOR", _) => self.end_loop(None),
+            ("END", _) => {
+                if matches!(self.open.last(), Some(Open::If { .. })) {
+                    self.end_if();
+                } else if matches!(self.open.last(), Some(Open::Select { .. })) {
+                    self.end_select();
+                } else {
+                    let inc = op.f2.first().cloned();
+                    self.end_loop(inc.as_ref());
+                }
+            }
+            ("LEAVE", _) => match self.innermost_loop() {
+                Some((_, l)) => self.b.term(format!("br {l}")),
+                None => self.err(ids::UNBALANCED, 30, "LEAVE"),
+            },
+            ("ITER", _) => match self.innermost_loop() {
+                Some((i, _)) => self.b.term(format!("br {i}")),
+                None => self.err(ids::UNBALANCED, 30, "ITER"),
+            },
+            ("SELECT", _) => {
+                let end = self.b.label();
+                self.open.push(Open::Select { next: None, end });
+            }
+            ("WHEN", sfx) => {
+                let Some(Open::Select { next, end }) = self.open.last().cloned() else {
+                    self.err(ids::UNBALANCED, 30, "WHEN");
+                    return k + 1;
+                };
+                if let Some(n) = next {
+                    self.b.term(format!("br {end}"));
+                    self.b.place(&n);
+                }
+                let r = if sfx.is_empty() {
+                    op.xf2.as_ref().and_then(|e| self.cond(e))
+                } else {
+                    self.cmp_chain(stmts, k, sfx).map(|(r, n)| {
+                        used = n;
+                        r
+                    })
+                };
+                let body = self.b.label();
+                let miss = self.b.label();
+                if let Some(r) = r {
+                    self.b.term(format!("brif {r}, {body}, {miss}"));
+                }
+                self.b.place(&body);
+                if let Some(Open::Select { next, .. }) = self.open.last_mut() {
+                    *next = Some(miss);
+                }
+            }
+            ("OTHER", _) => {
+                let Some(Open::Select { next, end }) = self.open.last().cloned() else {
+                    self.err(ids::UNBALANCED, 30, "OTHER");
+                    return k + 1;
+                };
+                self.b.term(format!("br {end}"));
+                if let Some(n) = next {
+                    self.b.place(&n);
+                }
+                if let Some(Open::Select { next, .. }) = self.open.last_mut() {
+                    *next = None;
+                }
+            }
+            ("ENDSL", _) => self.end_select(),
+            ("EXSR", _) => {
+                if let Some(n) = op.f2.first().and_then(|e| e.name().map(str::to_string).or_else(|| match e {
+                    Expr::Special { word, .. } => Some(word.clone()),
+                    _ => None,
+                })) {
+                    self.exsr(&n);
+                }
+            }
+            ("BEGSR", _) => {
+                let name = op.f1.first().and_then(|e| match e {
+                    Expr::Ref { name, .. } => Some(name.clone()),
+                    Expr::Special { word, .. } => Some(word.clone()),
+                    _ => None,
+                });
+                if let Some(n) = name {
+                    // The calculations before the first subroutine end here.
+                    if self.b.is_open() {
+                        let exit = self.main_exit.clone().unwrap_or_default();
+                        if exit.is_empty() {
+                            self.b.term("ret");
+                        } else {
+                            self.b.term(format!("br {exit}"));
+                        }
+                    }
+                    let label = self.subr(&n).label.clone();
+                    self.subr(&n).defined = true;
+                    self.b.place(&label);
+                    self.open.push(Open::Subr(n));
+                }
+            }
+            ("ENDSR", _) => {
+                if let Some(Open::Subr(n)) = self.open.last().cloned() {
+                    self.open.pop();
+                    let end = self.subr(&n).end.clone();
+                    self.b.place(&end);
+                    let idx = self.b.lines.len();
+                    self.b.term("unreachable");
+                    self.subr(&n).switch_line = Some(idx);
+                } else {
+                    self.err(ids::UNBALANCED, 30, "ENDSR");
+                }
+            }
+            ("LEAVESR", _) => {
+                let n = self.open.iter().rev().find_map(|o| match o {
+                    Open::Subr(n) => Some(n.clone()),
+                    _ => None,
+                });
+                match n {
+                    Some(n) => {
+                        let end = self.subr(&n).end.clone();
+                        self.b.term(format!("br {end}"));
+                    }
+                    None => self.err(ids::UNBALANCED, 30, "LEAVESR"),
+                }
+            }
+            ("TAG", _) => {
+                if let Some(n) = op.f1.first().and_then(|e| e.name().map(str::to_string)) {
+                    let l = self.tag_label(&n);
+                    self.b.place(&l);
+                }
+            }
+            ("GOTO", _) => {
+                if let Some(n) = op.f2.first().and_then(|e| e.name().map(str::to_string)) {
+                    let l = self.tag_label(&n);
+                    self.b.term(format!("br {l}"));
+                }
+            }
+            ("CAB", sfx) => {
+                if let (Some(a), Some(b)) = (op.f1.first().cloned(), op.f2.first().cloned())
+                    && let Some(r) = self.cmp_suffix(sfx, &a, &b)
+                {
+                    self.cmp_resind(op, &a, &b);
+                    if let Some(n) = op.result.first().and_then(|e| e.name().map(str::to_string)) {
+                        let l = self.tag_label(&n);
+                        let cont = self.b.label();
+                        self.b.term(format!("brif {r}, {l}, {cont}"));
+                        self.b.place(&cont);
+                    }
+                }
+            }
+            ("SETON" | "SETOFF", _) => {
+                let v = if base == "SETON" { "*ON" } else { "*OFF" };
+                for i in op.resind.clone() {
+                    if !i.is_empty() && let Some(x) = self.indicator(&i) {
+                        self.b.ins(format!("store {}, {v}", x.op));
+                    }
+                }
+            }
+            ("RETURN", _) => self.return_op(op.xf2.as_ref()),
+            ("CALLP", _) => {
+                if let Some(e) = &op.xf2 {
+                    let _ = self.call_statement(e);
+                }
+            }
+            ("DSPLY", _) => self.dsply(op),
+            ("WRITE", _) => self.write_op(op),
+            ("Z-ADD" | "Z-SUB", _) => {
+                if let (Some(f2), Some(r)) = (op.f2.first(), op.result.first()) {
+                    let t = self.target(r);
+                    let v = self.expr(f2, Want::default());
+                    if let (Some(t), Some(v)) = (t, v) {
+                        let v = if base == "Z-SUB" {
+                            let z = V::lit(Ty::Packed(1, 0), "0");
+                            self.arith(BinOp::Sub, &z, &v, Want::default()).unwrap_or(v)
+                        } else {
+                            v
+                        };
+                        self.assign_fixed(&t, &v, half);
+                        self.num_resind(op, &t);
+                    }
+                }
+            }
+            ("ADD" | "SUB" | "MULT" | "DIV", _) => self.fixed_arith(base, op, half),
+            ("MOVE" | "MOVEL", _) => self.move_op(base == "MOVEL", op),
+            ("CLEAR" | "RESET", _) => {
+                if let Some(r) = op.result.first() {
+                    self.clear(r);
+                }
+            }
+            ("EXCEPT" | "COMMIT" | "ROLBK" | "DUMP" | "FEOD" | "UNLOCK" | "OPEN" | "CLOSE", _) => {
+                self.err(ids::UNSUPPORTED, 30, op.code.clone());
+            }
+            ("ENDMON" | "MONITOR" | "ON-ERROR", _) => self.err(ids::UNSUPPORTED, 30, op.code.clone()),
+            ("AND" | "OR", _) => self.err(ids::UNBALANCED, 30, op.code.clone()),
+            _ => self.err(ids::UNSUPPORTED, 30, op.code.clone()),
+        }
+        if let Some(skip) = skip {
+            self.b.place(&skip);
+        }
+        k + used
+    }
+
+    fn tag_label(&mut self, name: &str) -> String {
+        if let Some(l) = self.tags.get(name) {
+            return l.clone();
+        }
+        let l = self.b.label();
+        self.tags.insert(name.to_string(), l.clone());
+        l
+    }
+
+    /// The target of an assignment.
+    pub fn target(&mut self, e: &Expr) -> Option<V> {
+        match e {
+            Expr::Ref { name, steps, .. } => {
+                let v = self.reference(name, steps, true)?;
+                if let Some(id) = v.sym
+                    && self.t.syms[id].readonly
+                {
+                    self.err(ids::NOT_ASSIGNABLE, 30, name.clone());
+                    return None;
+                }
+                if !matches!(
+                    v.sym.and_then(|i| self.t.syms[i].kind.clone()),
+                    Some(Kind::Field | Kind::Subfield | Kind::Param | Kind::Ds(_))
+                ) {
+                    self.err(ids::NOT_ASSIGNABLE, 30, name.clone());
+                    return None;
+                }
+                Some(v)
+            }
+            Expr::Special { .. } => self.expr(e, Want::default()),
+            Expr::Bif { name, args, .. } => self.bif_target(name, args),
+            _ => {
+                self.err(ids::NOT_ASSIGNABLE, 30, "");
+                None
+            }
+        }
+    }
+
+    fn eval(&mut self, aop: AssignOp, t: &Expr, v: &Expr, half: bool) {
+        let Some(tv) = self.target(t) else {
+            return;
+        };
+        let mode = target_mode(self, &tv, half);
+        let w = Want { mode };
+        let value = match aop {
+            AssignOp::Set => self.expr(v, w),
+            _ => {
+                let cur = self.expr(t, w);
+                let rhs = self.expr(v, w);
+                match (cur, rhs) {
+                    (Some(c), Some(r)) => {
+                        let op = match aop {
+                            AssignOp::Add => BinOp::Add,
+                            AssignOp::Sub => BinOp::Sub,
+                            AssignOp::Mul => BinOp::Mul,
+                            AssignOp::Div => BinOp::Div,
+                            _ => BinOp::Pow,
+                        };
+                        if op == BinOp::Add && (c.ty.is_string() || matches!(c.ty, Ty::Ds(_))) {
+                            self.expr(&Expr::Binary(BinOp::Add, Box::new(t.clone()), Box::new(v.clone()), self.at), w)
+                        } else {
+                            self.arith(op, &c, &r, w)
+                        }
+                    }
+                    _ => None,
+                }
+            }
+        };
+        if let Some(value) = value {
+            self.assign(&tv, &value, half);
+        }
+    }
+
+    fn open_if(&mut self, r: Option<String>) {
+        let then = self.b.label();
+        let next = self.b.label();
+        let end = self.b.label();
+        if let Some(r) = r {
+            self.b.term(format!("brif {r}, {then}, {next}"));
+        } else {
+            self.b.term(format!("br {then}"));
+        }
+        self.b.place(&then);
+        self.open.push(Open::If { next, end });
+    }
+
+    /// Leave the true branch of the open `IF`: the next label placed.
+    fn else_part(&mut self) -> Option<String> {
+        let Some(Open::If { next, end }) = self.open.last().cloned() else {
+            self.err(ids::UNBALANCED, 30, "ELSE");
+            return None;
+        };
+        self.b.term(format!("br {end}"));
+        if !next.is_empty() {
+            self.b.place(&next);
+        }
+        Some(next)
+    }
+
+    fn end_if(&mut self) {
+        match self.open.pop() {
+            Some(Open::If { next, end }) => {
+                if !next.is_empty() {
+                    self.b.place(&next);
+                }
+                self.b.place(&end);
+            }
+            Some(other) => {
+                self.open.push(other);
+                self.err(ids::UNBALANCED, 30, "ENDIF");
+            }
+            None => self.err(ids::UNBALANCED, 30, "ENDIF"),
+        }
+    }
+
+    fn end_select(&mut self) {
+        match self.open.pop() {
+            Some(Open::Select { next, end }) => {
+                if let Some(n) = next {
+                    self.b.place(&n);
+                }
+                self.b.place(&end);
+            }
+            Some(other) => {
+                self.open.push(other);
+                self.err(ids::UNBALANCED, 30, "ENDSL");
+            }
+            None => self.err(ids::UNBALANCED, 30, "ENDSL"),
+        }
+    }
+
+    fn end_loop(&mut self, inc: Option<&Expr>) {
+        let Some(Open::Loop { iter, leave, end }) = self.open.pop() else {
+            self.err(ids::UNBALANCED, 30, "ENDDO");
+            return;
+        };
+        match end {
+            LoopEnd::Top(top) => {
+                self.b.place(&iter);
+                let _ = top;
+                if self.b.is_open() {
+                    // `iter` is the top for DOW: the place above fell
+                    // into it already.
+                }
+                self.b.term(format!("br {iter}"));
+            }
+            LoopEnd::Bottom(cond, body) => {
+                self.b.place(&iter);
+                if let Some(r) = self.cond(&cond) {
+                    self.b.term(format!("brif {r}, {leave}, {body}"));
+                }
+            }
+            LoopEnd::BottomCmp(sfx, a, b, body) => {
+                self.b.place(&iter);
+                if let Some(r) = self.cmp_suffix(&sfx, &a, &b) {
+                    self.b.term(format!("brif {r}, {leave}, {body}"));
+                }
+            }
+            LoopEnd::For { top, index, step, down } => {
+                self.b.place(&iter);
+                let o = if down { "dec.sub" } else { "dec.add" };
+                let s = step.unwrap_or_else(|| "1".into());
+                self.b.ins(format!("{o} {index}, {index}, {s} prec(31,9)"));
+                self.b.term(format!("br {top}"));
+            }
+            LoopEnd::Counted { counter, top } => {
+                self.b.place(&iter);
+                let step = match inc {
+                    Some(e) => self.expr(e, Want::default()),
+                    None => Some(V::lit(Ty::Packed(1, 0), "1")),
+                };
+                if let Some(step) = step {
+                    let c = V::place(Ty::Packed(15, 0), counter.clone());
+                    if let Some(sum) = self.arith(BinOp::Add, &c, &step, Want::default()) {
+                        self.b.ins(format!("dec.mov {counter}, {}", sum.op));
+                    }
+                }
+                self.b.term(format!("br {top}"));
+            }
+        }
+        self.b.place(&leave);
+    }
+
+    fn for_loop(&mut self, s: &Stmt) {
+        let op = &s.op;
+        let Some(Expr::Assign(_, idx, start, _)) = &op.xf2 else {
+            self.err(ids::UNSUPPORTED, 30, "FOR");
+            return;
+        };
+        let Some(iv) = self.target(idx) else { return };
+        if let Some(v) = self.expr(start, Want::default()) {
+            self.assign(&iv, &v, false);
+        }
+        let mut limit = None;
+        let mut down = false;
+        let mut by = None;
+        for (w, e) in &op.more {
+            match w.as_str() {
+                "TO" => limit = Some(e.clone()),
+                "DOWNTO" => {
+                    limit = Some(e.clone());
+                    down = true;
+                }
+                _ => by = Some(e.clone()),
+            }
+        }
+        // The limit and step are evaluated once.
+        let lim = limit.as_ref().and_then(|e| {
+            let v = self.expr(e, Want::default())?;
+            let t = self.b.temp("packed(31,9)");
+            let opnd = self.dec_operand(&v);
+            self.b.ins(format!("dec.mov {t}, {}", opnd));
+            Some(t)
+        });
+        let step = match &by {
+            Some(e) => {
+                let v = self.expr(e, Want::default());
+                v.map(|v| {
+                    let t = self.b.temp("packed(31,9)");
+                    let opnd = self.dec_operand(&v);
+                    self.b.ins(format!("dec.mov {t}, {}", opnd));
+                    t
+                })
+            }
+            None => None,
+        };
+        let top = self.b.label();
+        let body = self.b.label();
+        let inc = self.b.label();
+        let end = self.b.label();
+        self.b.place(&top);
+        if let Some(l) = &lim {
+            let c = if down { "ge" } else { "le" };
+            let r = self.b.reg();
+            self.b.ins(format!("{r} = dec.cmp.{c} {}, {l}", iv.op));
+            self.b.term(format!("brif {r}, {body}, {end}"));
+        }
+        self.b.place(&body);
+        // The increment block, placed at ENDFOR.
+        self.open.push(Open::Loop {
+            iter: inc,
+            leave: end,
+            end: LoopEnd::For {
+                top,
+                index: iv.op.clone(),
+                step,
+                down,
+            },
+        });
+    }
+
+    fn counted_do(&mut self, s: &Stmt) {
+        let op = &s.op;
+        let counter = match op.result.first() {
+            Some(r) => match self.target(r) {
+                Some(v) => v.op,
+                None => return,
+            },
+            None => self.b.temp("packed(15,0)"),
+        };
+        let start = op.f1.first().and_then(|e| self.expr(e, Want::default())).unwrap_or_else(|| V::lit(Ty::Packed(1, 0), "1"));
+        let opnd = self.dec_operand(&start);
+        self.b.ins(format!("dec.mov {counter}, {}", opnd));
+        let limit = op.f2.first().and_then(|e| self.expr(e, Want::default())).unwrap_or_else(|| V::lit(Ty::Packed(1, 0), "1"));
+        let lim = self.b.temp("packed(31,9)");
+        let opnd = self.dec_operand(&limit);
+        self.b.ins(format!("dec.mov {lim}, {}", opnd));
+        let top = self.b.label();
+        let body = self.b.label();
+        let end = self.b.label();
+        self.b.place(&top);
+        let r = self.b.reg();
+        self.b.ins(format!("{r} = dec.cmp.le {counter}, {lim}"));
+        self.b.term(format!("brif {r}, {body}, {end}"));
+        self.b.place(&body);
+        let iter = self.b.label();
+        self.open.push(Open::Loop {
+            iter,
+            leave: end,
+            end: LoopEnd::Counted { counter, top },
+        });
+    }
+
+    /// `RETURN [value]`.
+    fn return_op(&mut self, v: Option<&Expr>) {
+        if let Some(exit) = self.main_exit.clone() {
+            // The main procedure: the cycle's end of calculations.
+            self.b.term(format!("br {exit}"));
+            return;
+        }
+        match (v, self.ret.clone()) {
+            (Some(e), Some(rt)) => {
+                let mode = qdecimal::Mode {
+                    result_scale: rt.shape().map_or(0, |(_, s)| s),
+                    ..qdecimal::Mode::default()
+                };
+                let Some(val) = self.expr(e, Want { mode }) else { return };
+                let ir = self.ir_ty(&rt);
+                if is_reg_type(&rt) {
+                    let r = match rt {
+                        Ty::Ind => self.ind_reg(&val),
+                        Ty::Ptr | Ty::ProcPtr => Some(self.ptr_reg(&val)),
+                        Ty::Float(_) => Some(self.float_reg(&val)),
+                        _ => {
+                            let t = self.b.temp(&ir);
+                            self.assign(&V::place(rt.clone(), t.clone()), &val, false);
+                            let r = self.b.reg();
+                            self.b.ins(format!("{r} = load {t}"));
+                            Some(r)
+                        }
+                    };
+                    if let Some(r) = r {
+                        let r = if rt == Ty::Float(4) {
+                            let c = self.b.reg();
+                            self.b.ins(format!("{c} = cvt.f32 {r}"));
+                            c
+                        } else {
+                            r
+                        };
+                        self.b.term(format!("ret {r}"));
+                    }
+                } else {
+                    let t = self.b.temp(&ir);
+                    self.assign(&V::place(rt, t.clone()), &val, false);
+                    self.b.term(format!("ret {t}"));
+                }
+            }
+            (None, None) => self.b.term("ret"),
+            (Some(_), None) => self.err(ids::BAD_EXPRESSION_TYPE, 30, "RETURN"),
+            (None, Some(_)) => self.err(ids::BAD_EXPRESSION_TYPE, 30, "RETURN"),
+        }
+    }
+
+    fn dsply(&mut self, op: &rpgfront::ast::Op) {
+        let Some(m) = op.f1.first().cloned() else {
+            self.b.ins("dsply \" \"");
+            return;
+        };
+        let Some(v) = self.expr(&m, Want::default()) else { return };
+        let v = self.as_chars(&v);
+        let src = if v.ty.is_numeric() && v.kind != Vk::Place {
+            let t = self.b.temp(&self.ir_ty(&Ty::Packed(31, v.ty.shape().map_or(0, |s| s.1))));
+            self.b.ins(format!("dec.mov {t}, {}", v.op));
+            t
+        } else {
+            v.op.clone()
+        };
+        match op.result.first() {
+            Some(r) => {
+                if let Some(t) = self.target(r) {
+                    self.b.ins(format!("dsply {src} reply({})", t.op));
+                }
+            }
+            None => self.b.ins(format!("dsply {src}")),
+        }
+    }
+
+    /// `WRITE file ds` to a program-described printer, and externally
+    /// described formats.
+    fn write_op(&mut self, op: &rpgfront::ast::Op) {
+        let Some(name) = op.f2.first().and_then(|e| e.name().map(str::to_string)) else {
+            self.err(ids::FILE_NOT_DEFINED, 30, "");
+            return;
+        };
+        let Some(f) = self.files.iter().find(|f| f.name == name).cloned() else {
+            self.err(ids::FILE_NOT_DEFINED, 30, name);
+            return;
+        };
+        if f.dev != Dev::Printer || f.external {
+            self.err(ids::UNSUPPORTED, 30, "WRITE");
+            return;
+        }
+        let Some(r) = op.result.first() else {
+            self.err(ids::BAD_FILE_OP, 30, name);
+            return;
+        };
+        let Some(v) = self.expr(r, Want::default()) else { return };
+        let v = self.as_chars(&v);
+        let st = self.b.reg();
+        self.b.ins(format!(
+            "{st} = prtio {} WRITE fmt({}) rec({}) ctl(0, 1, 0, 0)",
+            mangle(&f.name),
+            mangle(&f.name),
+            v.op
+        ));
+        if let Some(ind) = &f.oflind {
+            let ov = self.b.reg();
+            self.b.ins(format!("{ov} = cmp.eq {st}, 1"));
+            let on = self.b.label();
+            let cont = self.b.label();
+            self.b.term(format!("brif {ov}, {on}, {cont}"));
+            self.b.place(&on);
+            let ind = ind.trim_start_matches("*IN").to_string();
+            if let Some(x) = self.indicator(&ind) {
+                self.b.ins(format!("store {}, *ON", x.op));
+            }
+            self.b.place(&cont);
+        }
+    }
+
+    /// Fixed-form assignment: high-order digits are dropped, not an
+    /// error.
+    fn assign_fixed(&mut self, t: &V, v: &V, half: bool) {
+        if t.ty.is_numeric() && v.ty.is_numeric() {
+            let h = if half { " halfadj" } else { "" };
+            let s = self.dec_operand(v);
+            self.b.ins(format!("dec.mov {}, {s}{h} trunc", t.op));
+        } else {
+            self.assign(t, v, half);
+        }
+    }
+
+    /// The resulting indicators of a numeric result: plus, minus, zero.
+    fn num_resind(&mut self, op: &rpgfront::ast::Op, t: &V) {
+        for (i, c) in ["gt", "lt", "eq"].iter().enumerate() {
+            if op.resind[i].is_empty() {
+                continue;
+            }
+            let r = self.b.reg();
+            self.b.ins(format!("{r} = dec.cmp.{c} {}, 0", t.op));
+            let ind = op.resind[i].clone();
+            self.set_ind(&ind, &r);
+        }
+    }
+
+    /// The resulting indicators of a comparison: high, low, equal.
+    fn cmp_resind(&mut self, op: &rpgfront::ast::Op, a: &Expr, b: &Expr) {
+        for (i, sfx) in ["GT", "LT", "EQ"].iter().enumerate() {
+            if op.resind[i].is_empty() {
+                continue;
+            }
+            if let Some(r) = self.cmp_suffix(sfx, a, b) {
+                let ind = op.resind[i].clone();
+                self.set_ind(&ind, &r);
+            }
+        }
+    }
+
+    fn fixed_arith(&mut self, base: &str, op: &rpgfront::ast::Op, half: bool) {
+        let Some(r) = op.result.first().cloned() else { return };
+        let Some(t) = self.target(&r) else { return };
+        let (a, b) = match (op.f1.first(), op.f2.first()) {
+            (Some(f1), Some(f2)) => (f1.clone(), f2.clone()),
+            (None, Some(f2)) => (r.clone(), f2.clone()),
+            _ => return,
+        };
+        let w = Want { mode: target_mode(self, &t, half) };
+        let (Some(va), Some(vb)) = (self.expr(&a, w), self.expr(&b, w)) else { return };
+        let bop = match base {
+            "ADD" => BinOp::Add,
+            "SUB" => BinOp::Sub,
+            "MULT" => BinOp::Mul,
+            _ => BinOp::Div,
+        };
+        if let Some(v) = self.arith(bop, &va, &vb, w) {
+            self.assign_fixed(&t, &v, half);
+            self.num_resind(op, &t);
+        }
+    }
+
+    /// `MOVE` and `MOVEL` of character data (the full matrix is in
+    /// `qrpgrt`).
+    fn move_op(&mut self, left: bool, op: &rpgfront::ast::Op) {
+        let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else { return };
+        let Some(t) = self.target(&r) else { return };
+        let Some(v) = self.expr(&f2, Want::default()) else { return };
+        let t = self.as_chars(&t);
+        let v = self.as_chars(&v);
+        let pad = op.ext.contains('P');
+        let (dst_desc, src_desc) = (self.desc_of(&t), self.desc_of(&v));
+        let src = if v.kind == Vk::Place {
+            v.op.clone()
+        } else {
+            let tmp = self.b.temp(&self.ir_ty(&if v.ty.is_numeric() { v.ty.clone() } else { Ty::Char(v.ty.str_len().unwrap_or(1).max(1)) }));
+            self.b.ins(format!("mov {tmp}, {}", v.op));
+            tmp
+        };
+        self.externs.insert(
+            "_QRNX_MOVE".into(),
+            "extern proc _QRNX_MOVE(byval $left: i32, byval $pad: i32, $dst: bytes(1) *VARSIZE, byval $dd: i64, $src: bytes(1) *VARSIZE, byval $sd: i64)".into(),
+        );
+        self.b.ins(format!(
+            "callb _QRNX_MOVE({}, {}, {}, {dst_desc}, {src}, {src_desc})",
+            i32::from(left),
+            i32::from(pad),
+            t.op
+        ));
+    }
+
+    /// A type descriptor word for the runtime library: kind in the top
+    /// byte, digits or length in the middle, decimals in the low byte.
+    pub fn desc_of(&self, v: &V) -> i64 {
+        let (kind, len, dec): (i64, i64, i64) = match &v.ty {
+            Ty::Char(n) => (1, i64::from(*n), 0),
+            Ty::VarChar(n, _) => (2, i64::from(*n), 0),
+            Ty::Packed(d, s) => (3, i64::from(*d), i64::from(*s)),
+            Ty::Zoned(d, s) => (4, i64::from(*d), i64::from(*s)),
+            Ty::Bin(d, s) => (5, i64::from(*d), i64::from(*s)),
+            Ty::Int(d) => (6, i64::from(*d), 0),
+            Ty::Uns(d) => (7, i64::from(*d), 0),
+            Ty::Ind => (8, 1, 0),
+            Ty::Date(..) => (9, i64::from(self.t.size(&v.ty)), 0),
+            Ty::Time(..) => (10, 8, 0),
+            Ty::Timestamp(_) => (11, i64::from(self.t.size(&v.ty)), 0),
+            Ty::Float(b) => (12, i64::from(*b), 0),
+            other => (1, i64::from(self.t.size(other)), 0),
+        };
+        (kind << 56) | (len << 8) | dec
+    }
+
+    /// `CLEAR`: blanks, zeros and `*OFF` by type.
+    fn clear(&mut self, e: &Expr) {
+        let Some(t) = self.target(e) else { return };
+        let v = match &t.ty {
+            Ty::Ds(_) => {
+                if let Some(id) = t.sym {
+                    self.clear_ds(id, &t.op);
+                }
+                return;
+            }
+            ty if ty.is_numeric() => "*ZEROS",
+            Ty::Ind => "*OFF",
+            Ty::Ptr | Ty::ProcPtr => "*NULL",
+            Ty::Date(..) | Ty::Time(..) | Ty::Timestamp(_) => "*LOVAL",
+            _ => "*BLANKS",
+        };
+        if t.dim > 0 {
+            for i in 0..t.dim {
+                self.b.ins(format!("mov {}[{i}], {v}", t.op));
+            }
+        } else if matches!(t.ty, Ty::Ptr | Ty::ProcPtr) {
+            let r = self.b.reg();
+            self.b.ins(format!("{r} = const.ptr *NULL"));
+            self.b.ins(format!("store {}, {r}", t.op));
+        } else {
+            self.b.ins(format!("mov {}, {v}", t.op));
+        }
+    }
+
+    /// Each subfield of a structure to its default.
+    fn clear_ds(&mut self, id: SymId, place: &str) {
+        let Some(Kind::Ds(di)) = self.t.syms[id].kind.clone() else { return };
+        let subs = self.t.ds[di].subfields.clone();
+        let reps = self.t.syms[id].dim.max(1);
+        for r in 0..reps {
+            let base = if self.t.syms[id].dim > 0 { format!("{place}[{r}]") } else { place.to_string() };
+            for s in &subs {
+                let sym = self.t.syms[*s].clone();
+                let p = format!("{base}.{}", mangle(&sym.name));
+                default_value(self, &sym.ty, sym.dim, &p);
+            }
+        }
+    }
+}
+
+/// Whether a type is returned in a register.
+#[must_use]
+pub fn is_reg_type(t: &Ty) -> bool {
+    matches!(t, Ty::Int(_) | Ty::Uns(_) | Ty::Float(_) | Ty::Ind | Ty::Ptr | Ty::ProcPtr)
+}
+
+/// Put a type's default value into a place.
+fn default_value(g: &mut Gen<'_>, ty: &Ty, dim: u32, place: &str) {
+    let lit = match ty {
+        t if t.is_numeric() => "*ZEROS",
+        Ty::Ind => "*OFF",
+        Ty::Date(..) | Ty::Time(..) | Ty::Timestamp(_) => "*LOVAL",
+        Ty::Ptr | Ty::ProcPtr | Ty::Object => "",
+        Ty::Ds(_) => "",
+        _ => "*BLANKS",
+    };
+    let places: Vec<String> = if dim > 0 {
+        (0..dim).map(|i| format!("{place}[{i}]")).collect()
+    } else {
+        vec![place.to_string()]
+    };
+    for p in places {
+        match ty {
+            Ty::Ptr | Ty::ProcPtr | Ty::Object => {
+                let r = g.b.reg();
+                let k = if *ty == Ty::ProcPtr { "procptr" } else { "ptr" };
+                g.b.ins(format!("{r} = const.{k} *NULL"));
+                g.b.ins(format!("store {p}, {r}"));
+            }
+            Ty::Ds(i) => {
+                let len = g.t.ds_len(*i);
+                g.b.ins(format!("mov {p}.all_, {}", quote(&" ".repeat(usize::try_from(len).unwrap_or(0)))));
+            }
+            _ => g.b.ins(format!("mov {p}, {lit}")),
+        }
+    }
+}
+
+/// Initialize one symbol: `INZ` values, defaults, a structure's
+/// blanks and its subfields' values.
+pub fn init_symbol(g: &mut Gen<'_>, id: SymId) {
+    let s = g.t.syms[id].clone();
+    let place = place_of(g.t, id);
+    match &s.kind {
+        Some(Kind::Ds(di)) => {
+            let ds = g.t.ds[*di].clone();
+            let reps = s.dim.max(1);
+            for r in 0..reps {
+                let base = if s.dim > 0 { format!("{place}[{r}]") } else { place.clone() };
+                g.b.ins(format!("mov {base}.all_, *BLANKS"));
+                for &sub in &ds.subfields {
+                    let ss = g.t.syms[sub].clone();
+                    let p = format!("{base}.{}", mangle(&ss.name));
+                    match (&ss.inz, ds.inz) {
+                        (Some(Some(e)), _) => inz_value(g, &ss.ty, ss.dim, &p, e),
+                        (Some(None), _) | (None, true) => default_value(g, &ss.ty, ss.dim, &p),
+                        (None, false) => {
+                            // Pointers are null even in a blank structure.
+                            if matches!(ss.ty, Ty::Ptr | Ty::ProcPtr) {
+                                default_value(g, &ss.ty, ss.dim, &p);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Some(Kind::Field) => match &s.inz {
+            Some(Some(e)) => inz_value(g, &s.ty, s.dim, &place, e),
+            _ => default_value(g, &s.ty, s.dim, &place),
+        },
+        _ => {}
+    }
+}
+
+/// An `INZ(value)`: the value into every element.
+fn inz_value(g: &mut Gen<'_>, ty: &Ty, dim: u32, place: &str, e: &Expr) {
+    let Some(v) = g.expr(e, Want::default()) else { return };
+    let places: Vec<String> = if dim > 0 {
+        (0..dim).map(|i| format!("{place}[{i}]")).collect()
+    } else {
+        vec![place.to_string()]
+    };
+    for p in places {
+        g.assign(&V::place(ty.clone(), p), &v, false);
+    }
+}
+
+/// Generate calculations, from start to end, with their structure.
+pub fn calcs(g: &mut Gen<'_>, stmts: &[&Stmt]) {
+    let mut k = 0;
+    while k < stmts.len() {
+        k = g.statement(stmts, k);
+    }
+    while let Some(o) = g.open.pop() {
+        let what = match o {
+            Open::If { .. } => "ENDIF",
+            Open::Loop { .. } => "ENDDO",
+            Open::Select { .. } => "ENDSL",
+            Open::Monitor { .. } => "ENDMON",
+            Open::Subr(_) => "ENDSR",
+        };
+        g.err(ids::UNBALANCED, 30, what);
+    }
+}
+
+/// Fill each subroutine's `ENDSR` switch now that every `EXSR` is known.
+pub fn finish_subrs(g: &mut Gen<'_>) {
+    let subrs: Vec<(String, Subr)> = g.subrs.drain().collect();
+    for (name, s) in subrs {
+        if !s.defined {
+            g.err(ids::NOT_DEFINED, 30, name.clone());
+            // Keep the IR valid: the entry label returns at once.
+            g.b.place(&s.label);
+            g.b.place(&s.end);
+            let idx = g.b.lines.len();
+            g.b.term("unreachable");
+            fill_switch(g, idx, &s);
+            continue;
+        }
+        if let Some(idx) = s.switch_line {
+            fill_switch(g, idx, &s);
+        }
+    }
+}
+
+fn fill_switch(g: &mut Gen<'_>, idx: usize, s: &Subr) {
+    if s.returns.is_empty() {
+        g.b.lines[idx] = "  unreachable".into();
+        return;
+    }
+    let r = g.b.reg();
+    let arms: Vec<String> = s.returns.iter().enumerate().map(|(i, l)| format!("{}: {l}", i + 1)).collect();
+    let dft = s.returns[0].clone();
+    g.b.lines[idx] = format!("  {r} = load {}\n  switch {r}, [{}], default {dft}", s.slot, arms.join(", "));
+}
+
+/// A subprocedure.
+pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
+    g.b = Body::new();
+    g.scope = scope;
+    g.subrs.clear();
+    g.tags.clear();
+    g.open.clear();
+    g.main_exit = None;
+    let name = p.name.to_ascii_uppercase();
+    let proto = g
+        .t
+        .protos
+        .iter()
+        .find(|x| x.name == name && x.def_line == p.pi.as_ref().map_or(0, |d| d.at.line))
+        .cloned()
+        .or_else(|| g.t.protos.iter().rev().find(|x| x.name == name).cloned());
+    g.ret = proto.as_ref().and_then(|x| x.ret.clone());
+    let mut params = Vec::new();
+    if let Some(pr) = &proto {
+        for prm in &pr.parms {
+            let id = g.t.find_in(scope, &prm.name);
+            let ir = id.map_or_else(|| format!("$p_{}", mangle(&prm.name)), |i| g.t.syms[i].ir.clone());
+            let ty = g.t.ir_type(&prm.ty);
+            let ty = if prm.dim > 0 { format!("array[{}] of {ty}", prm.dim) } else { ty };
+            let mut s = String::new();
+            if prm.value {
+                s.push_str("byval ");
+            } else if prm.konst {
+                s.push_str("const ");
+            }
+            s.push_str(&format!("{ir}: {ty}"));
+            if prm.nopass {
+                s.push_str(" *NOPASS");
+            }
+            if prm.omit {
+                s.push_str(" *OMIT");
+            }
+            if prm.varsize {
+                s.push_str(" *VARSIZE");
+            }
+            params.push(s);
+        }
+    }
+    // Locals.
+    let local_ids: Vec<SymId> = (0..g.t.syms.len())
+        .filter(|&i| {
+            let s = &g.t.syms[i];
+            s.scope == scope && s.parent.is_none() && matches!(s.kind, Some(Kind::Field | Kind::Ds(_)))
+        })
+        .collect();
+    for &i in &local_ids {
+        let s = g.t.syms[i].clone();
+        let ty = g.t.ir_storage(&s);
+        match &s.storage {
+            Storage::Auto => g.b.decls.push(format!("auto {}: {ty}", s.ir)),
+            Storage::Based(ptr) => g.b.decls.push(format!("based {}: {ty} on {}", s.ir, g.t.syms[*ptr].ir)),
+            _ => {}
+        }
+    }
+    for &i in &local_ids {
+        if g.t.syms[i].storage == Storage::Auto {
+            init_symbol(g, i);
+        }
+    }
+    let stmts: Vec<&Stmt> = p.calcs.iter().collect();
+    calcs(g, &stmts);
+    if g.b.is_open() {
+        match g.ret.clone() {
+            None => g.b.term("ret"),
+            Some(rt) => {
+                // Falling off the end returns the type's default.
+                let ir = g.ir_ty(&rt);
+                if is_reg_type(&rt) {
+                    let r = g.b.reg();
+                    let k = match rt {
+                        Ty::Ind => "const.ind *OFF".to_string(),
+                        Ty::Float(4) => "const.f32 0.0e0".to_string(),
+                        Ty::Float(_) => "const.f64 0.0e0".to_string(),
+                        Ty::Ptr => "const.ptr *NULL".to_string(),
+                        Ty::ProcPtr => "const.procptr *NULL".to_string(),
+                        _ => format!("const.{ir} 0"),
+                    };
+                    g.b.ins(format!("{r} = {k}"));
+                    g.b.term(format!("ret {r}"));
+                } else {
+                    let t = g.b.temp(&ir);
+                    default_value(g, &rt, 0, &t);
+                    g.b.term(format!("ret {t}"));
+                }
+            }
+        }
+    }
+    finish_subrs(g);
+    let export = p.kws.iter().any(|k| k.name == "EXPORT");
+    let ret = g.ret.as_ref().map(|t| format!(" -> {}", g.t.ir_type(t))).unwrap_or_default();
+    let body = std::mem::take(&mut g.b);
+    let header = format!(
+        "proc {}({}){ret}{}",
+        mangle(&name),
+        params.join(", "),
+        if export { " export" } else { "" }
+    );
+    let _ = decl::int_arg;
+    let _ = Lit::Num(String::new());
+    body.finish(&header, "ret")
+}

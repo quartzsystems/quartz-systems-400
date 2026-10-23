@@ -25,6 +25,7 @@ mod phase8;
 mod png;
 mod qemu;
 pub mod qir;
+pub mod rpg;
 mod steps;
 
 use std::env;

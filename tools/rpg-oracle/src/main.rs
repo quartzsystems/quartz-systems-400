@@ -20,6 +20,7 @@
 
 mod session;
 
+use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
@@ -57,6 +58,12 @@ enum Cmd {
     },
     /// Delete what an interrupted run left.
     Clean,
+    /// Read the diagnostics of every outcome in a folder again from the
+    /// listing beside it.
+    Rediag {
+        /// The folder of outcomes.
+        dir: PathBuf,
+    },
 }
 
 fn main() -> Result<()> {
@@ -81,7 +88,44 @@ fn main() -> Result<()> {
             s.close();
             Ok(())
         }
+        Cmd::Rediag { dir } => rediag(&dir),
     }
+}
+
+/// Replace the `diag:` lines of each outcome with those its listing
+/// gives now.
+fn rediag(dir: &Path) -> Result<()> {
+    let mut n = 0;
+    for e in std::fs::read_dir(dir)? {
+        let p = e?.path();
+        if p.extension().is_none_or(|x| x != "out") {
+            continue;
+        }
+        let lst = p.with_extension("lst");
+        let Ok(listing) = std::fs::read_to_string(&lst) else { continue };
+        let lines: Vec<String> = listing.lines().map(str::to_string).collect();
+        let diags = rpg_oracle::listing::diags(&lines);
+        let text = std::fs::read_to_string(&p)?;
+        let mut out = String::new();
+        let mut placed = false;
+        for l in text.lines() {
+            if l.starts_with("diag: ") {
+                continue;
+            }
+            out.push_str(l);
+            out.push('\n');
+            if l.starts_with("created: ") && !placed {
+                placed = true;
+                for d in &diags {
+                    let _ = writeln!(out, "diag: {} {:02} line {} seq {}", d.msgid, d.severity, d.line, d.seq);
+                }
+            }
+        }
+        std::fs::write(&p, out)?;
+        n += 1;
+    }
+    println!("{n} outcomes read again");
+    Ok(())
 }
 
 /// Where a member's outcome goes.

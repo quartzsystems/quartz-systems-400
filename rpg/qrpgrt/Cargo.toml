@@ -1,0 +1,16 @@
+[package]
+name = "qrpgrt"
+description = "QS/400 ILE RPG runtime library: the bound procedures generated RPG code calls"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+mi = { path = "../../runtime/mi", version = "0.1.0" }
+codegen = { path = "../../runtime/codegen", version = "0.1.0" }
+qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+
+[lints]
+workspace = true

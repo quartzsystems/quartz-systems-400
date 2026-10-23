@@ -364,7 +364,11 @@ dependencies = [
  "mi",
  "qdecimal",
  "qir",
+ "qrpgrt",
  "qsname",
+ "rpg-oracle",
+ "rpgc",
+ "rpgfront",
  "sec",
  "serde_json",
  "spool",
@@ -1748,6 +1752,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "qrpgrt"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "codegen",
+ "mi",
+ "qdecimal",
+]
+
+[[package]]
 name = "qsjob"
 version = "0.1.0"
 dependencies = [
@@ -1946,6 +1960,17 @@ dependencies = [
  "ccsid",
  "clap",
  "tn5250-driver",
+]
+
+[[package]]
+name = "rpgc"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "qdecimal",
+ "qir",
+ "release",
+ "rpgfront",
 ]
 
 [[package]]

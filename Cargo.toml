@@ -62,6 +62,8 @@ members = [
     # ILE RPG: the spec tables, the compiler, its runtime.
     "rpg/specs",
     "rpg/front",
+    "rpg/compiler",
+    "rpg/qrpgrt",
 ]
 
 [workspace.package]
