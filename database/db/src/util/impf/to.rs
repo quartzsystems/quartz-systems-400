@@ -4,6 +4,8 @@
 
 //! `CPYTOIMPF`: a member as text.
 
+use std::ops::Bound;
+
 use dds::{DataType, FieldDef};
 use qsname::MemberSpec;
 use store::obj::{JobHandle, LockState, ObjectId};
@@ -14,12 +16,14 @@ use crate::error::Result;
 use crate::file;
 use crate::format::FormatDef;
 use crate::member::{Member, Slot};
+use crate::path::PathKey;
 use crate::record::datetime::{Date, Time};
 use crate::record::{self, Value};
 use crate::util::{Hold, Order, each_record, member_of};
 
-/// Write the member's records as UTF-8 text, in key order when the
-/// member is keyed.
+/// Write the member's records as UTF-8 text in arrival sequence, as the
+/// machine does even for a keyed file (the pub400 capture); a join
+/// logical file in the order [`join_order`] gives.
 pub fn cpytoimpf(
     txn: &mut Txn<'_>,
     job: JobHandle,
@@ -41,12 +45,22 @@ pub fn cpytoimpf(
     )?;
     let result = Member::open(txn, &desc, &entry).and_then(|mut m| {
         let fmt = m.format().clone();
-        let order = Order {
-            keyed: fmt.key_len > 0,
-            ..Order::default()
-        };
         let mut out = String::new();
-        each_record(txn, &mut m, &order, &mut |_, slot| {
+        if let Some(rrns) = join_order(txn, &m)? {
+            for rrn in rrns {
+                let entry = PathKey {
+                    key: Vec::new(),
+                    format: 0,
+                    rrn,
+                };
+                for slot in m.read_entries(txn, &entry)? {
+                    out.push_str(&render(&fmt, &slot, opts)?);
+                    out.push_str(opts.rcddlm.text());
+                }
+            }
+            return Ok(out.into_bytes());
+        }
+        each_record(txn, &mut m, &Order::default(), &mut |_, slot| {
             out.push_str(&render(&fmt, &slot, opts)?);
             out.push_str(opts.rcddlm.text());
             Ok(true)
@@ -55,6 +69,62 @@ pub fn cpytoimpf(
     });
     hold.release(txn);
     result
+}
+
+/// A join logical file has no arrival sequence of its own: read that
+/// way, the machine drives the join from the primary file through a
+/// keyed path over it whose first key is the join field, when one
+/// exists, else in the primary's arrival sequence. The primary's RRNs
+/// in that order; `None` for any other member.
+fn join_order(txn: &mut Txn<'_>, m: &Member) -> Result<Option<Vec<u64>>> {
+    if !m.is_logical() {
+        return Ok(None);
+    }
+    let def = m.logical(0)?.clone();
+    if !def.join {
+        return Ok(None);
+    }
+    let primary_member = m.bases[0].member;
+    let mut rrns = Vec::new();
+    let field = def
+        .joins
+        .iter()
+        .find(|j| j.from == 0)
+        .and_then(|j| j.fields.first())
+        .map(|(f, _)| *f);
+    if let (Some(field), Some((pf, _))) = (field, def.based_on.first()) {
+        let pdesc = file::describe(txn, *pf)?;
+        for d in &pdesc.dependents {
+            if d.base_member != primary_member || d.lf_member == m.id() {
+                continue;
+            }
+            let ldesc = file::describe(txn, d.lf_file)?;
+            let leads = ldesc
+                .formats
+                .first()
+                .and_then(|f| f.format.keys.first())
+                .is_some_and(|k| k.name == field);
+            if !leads || ldesc.formats.len() != 1 {
+                continue;
+            }
+            let Some(path) = crate::member::Core::load(txn, d.lf_member)?.path() else {
+                continue;
+            };
+            let mut batch = path.scan(txn, Bound::Unbounded, Bound::Unbounded, 256)?;
+            while let Some(last) = batch.last().cloned() {
+                for k in &batch {
+                    if !rrns.contains(&k.rrn) {
+                        rrns.push(k.rrn);
+                    }
+                }
+                batch = path.scan_from(txn, Bound::Excluded(&last), 256)?;
+            }
+            return Ok(Some(rrns));
+        }
+    }
+    let slots = crate::member::Core::load(txn, primary_member)?.attr.slots;
+    rrns.extend(1..=slots);
+    Ok(Some(rrns))
 }
 
 /// One record as text, without the record delimiter.

@@ -121,9 +121,10 @@ fn positioning_and_sequential_reads() {
     }
     assert_eq!(equal, ["Bob", "Carol"]);
     assert_eq!(o.fb.status, status::EOF);
-    // After the failed READE the next READ gives Grace.
-    let r = o.read(&mut t, true).unwrap().unwrap();
-    assert_eq!(who(&o, &r), "Grace");
+    // After the failed READE the file is at its end until positioned
+    // again: the next READ is end of file, as on the machine.
+    assert!(o.read(&mut t, true).unwrap().is_none());
+    assert_eq!(o.fb.status, status::EOF);
     // SETLL with a key between records: found but not equal.
     o.setll(&mut t, &KeyArg::one(num("5"))).unwrap();
     assert!(o.fb.found && !o.fb.equal);
@@ -136,6 +137,7 @@ fn positioning_and_sequential_reads() {
     assert_eq!(cusno(&o, &r), 7);
     o.setgt(&mut t, &KeyArg::one(num("10"))).unwrap();
     assert!(!o.fb.found);
+    assert_eq!(o.fb.status, status::NOT_FOUND);
     assert!(o.read(&mut t, true).unwrap().is_none());
     // Full two-field key, READE without a key repeats the last key.
     o.setll(&mut t, &KeyArg::Values(vec![num("3"), chars("Bob")]))
