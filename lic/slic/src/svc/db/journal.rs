@@ -392,7 +392,7 @@ pub fn dltovr(system: &mut System, p: &Params) -> Result<String, String> {
             .map_err(|_| format!("CPD0084 ENDLVL({n}) is not valid"))?;
         let (_, ctx) = db(system)?;
         let k = ctx.session.end_level(level);
-        let k = k + super::prtf::end_level(system, level);
+        let k = k + super::prtf::end_level(system, level) + super::dspf::end_level(system, level);
         let before = system.svc.msgf_overrides.len();
         system.svc.msgf_overrides.retain(|o| o.level < level);
         let k = k + before - system.svc.msgf_overrides.len();
@@ -413,6 +413,7 @@ pub fn dltovr(system: &mut System, p: &Params) -> Result<String, String> {
         ctx.session.dltovr_at(fname, level)
     };
     let n = n + super::prtf::dltovr(system, &file, (!every_level).then_some(level));
+    let n = n + super::dspf::dltovr(system, &file, (!every_level).then_some(level));
     let before = system.svc.msgf_overrides.len();
     system.svc.msgf_overrides.retain(|o| {
         (!every_level && o.level != level) || (!file.eq_ignore_ascii_case("*ALL") && !o.file.eq_ignore_ascii_case(&file))

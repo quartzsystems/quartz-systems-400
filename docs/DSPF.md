@@ -392,6 +392,97 @@ identifier; the indicator usage (where each indicator conditions and
 where it responds, with `INDTXT`); and the messages in source order
 with totals per severity. Lines are cut at 132 columns.
 
+## 7. Runtime
+
+`dspf::rt` is the runtime: one [`Runtime`](../ui/dspf/src/rt/mod.rs)
+per open file on one display, writing records through the `tn5250`
+screen model and reading them back from what the display sent. It
+knows the display file; the job owns the model and the device, moves
+the data stream and waits for the keys (`work/qsjob/src/display/dds.rs`
+implements the runtime's `DisplaySource` over it, and the TN5250
+session shows the sign-on through it before any job exists).
+
+**Write.** The option indicators come from the separate area
+(`INDARA`) or the bytes at the front of the output buffer. A record
+without `OVERLAY`/`PUTOVR` clears the display; with it, the records
+named by `ERASE` go, then `CLRL` says what is cleared (`*NO`, `n`
+lines from the record's first, `*END`, `*ALL`), and without `CLRL` the
+records whose lines the new one overlaps are removed and its own lines
+blanked. `ERASEINP` blanks every input field on the display, `PROTECT`
+makes them bypass fields, `ALARM` sounds at the next render, `MSGLOC`
+and the file's `MSGLOC` move the error line (the last row by default),
+`SLNO` and `WINDOW` shift the record's fields (a window gets a dotted
+border). Each displayed field whose conditioning holds is placed at
+its position for the display size in use (the file's size for a 132-
+column display when it has one, else its primary): constants as their
+text (`DATE`, `TIME`, `USER`, `SYSNAME` from the `Env` the job builds,
+`EDTCDE(Y)` putting the job's separators in a date; `MSGCON` from the
+message texts the job looked up), output values decoded from the
+buffer (numbers through `EDTCDE`/`EDTWRD`, or the plain digits with the
+sign in the last zone), input fields as 5250 fields whose attribute
+comes from `DSPATR` and `COLOR` (underline by default unless
+`CHGINPDFT`; `HI` white, `RI`, `UL`, `BL`, `ND`, `CS`, the seven
+colors; `PC` puts the cursor there, `PR` protects, `MDT` pre-sets the
+tag) and whose field format word comes from the checks (`ME`
+mandatory entry, `MF` mandatory fill, `FE` field exit required, `RZ`/
+`RB` right adjust, `LC` keeps lower case, `DUP`, `AUTO(RA)`); numeric
+fields are signed numeric fields. `ERRMSG`/`ERRMSGID` whose
+conditioning holds put the text on the error line, reverse the field,
+sound the alarm and turn the indicator off at the next read. `CSRLOC`
+places the cursor from two hidden fields.
+
+**Subfiles.** A `SFL` record's write stores its buffer at the next
+relative record number (`set_sfl_rrn` positions it; the program's RRN
+is not in the IR's `dspio` yet, `TODO(phase9)`). The control record's
+write handles `SFLCLR` (records and page go), `SFLINZ` (blank records
+to `SFLSIZ`), `SFLRCDNBR` (the page holding that record, `*TOP` puts
+it first, `CURSOR` puts the cursor on it), `SFLDSPCTL` (the control
+fields) and `SFLDSP` (the page: `SFLPAG` records from the first line,
+each record's own option indicators from its buffer). `SFLEND` shows
+`More...` (column `W-7`) or `Bottom` (`W-6`) on the line after the
+page, `Bottom` when the keyword's indicator is on and no later page
+exists; `*PLUS` puts `+` in the page's last position. A roll key on a
+control record that does not define `ROLLUP`/`ROLLDOWN` (`PAGEUP`/
+`PAGEDOWN`) moves the page and the read reports `Problem::Rolled`, so
+the job redisplays and reads again; at the end it is not allowed.
+
+**Read.** The key is checked against the record's and the file's
+`CAnn`/`CFnn`, `ROLLUP`/`ROLLDOWN`/`PAGEUP`/`PAGEDOWN`, `HELP`,
+`CLEAR`, `HOME`, `PRINT` keywords whose conditioning held at the
+write (`ALTHELP`, `ALTPAGEUP`, `ALTPAGEDWN` map their keys); Enter is
+always valid; an undefined key is `Problem::KeyNotAllowed` and the job
+shows "That key is not allowed here." and reads again. `CAnn` brings no
+field data: input fields read as they were written (`B`) or blank/zero
+(`I`). Otherwise every input field's text is checked (`CHECK(ME)`,
+`CHECK(MF)`, `CHECK(VN)`, `VALUES`, `RANGE`, `COMP` with numbers
+compared as numbers) and converted to its bytes (zoned, packed, binary,
+float through `qdecimal`; dates and times as typed); a failure is
+`Problem::Field` with the row, column and a Quartz message, which the
+job shows on the error line with the field reversed and the cursor on
+it. Response indicators are the key's, `VLDCMDKEY`, `CHANGE(nn)` for
+fields the operator modified and `BLANKS(nn)` for blank ones, minus the
+`ERRMSG` resets; they lead the input buffer (or fill the 99-byte area
+with `INDARA`), hidden fields come from the last write. The cursor and
+the subfile record under it (`sfl_rrn`, from the displayed page)
+complete the `Input`.
+
+**CL.** `DCLF` of a display file declares `&IN01`-`&IN99`; `SNDF`,
+`RCVF` and `SNDRCVF` copy the variables and the option indicators into
+the output buffer, call the runtime (`dspio`), and copy the response
+indicators and the input fields back. The compiler's record type holds
+both layouts: a field at its output offset, the same field at its input
+offset as `_Ifield`, the indicators as `_Onn` and `_Rnn`
+(`command/cl/src/lower/mod.rs`). The file opens with its first
+operation (`mi::rtlib::io::dev_io`).
+
+**Not done.** `RSTDSP`, `KEEP`, `ASSUME`, `USRDSPMGT`, `PUTRETAIN`,
+`OVRATR`/`OVRDTA`, `DSPATR(&field)`, `SFLMSGRCD` message subfiles,
+`SFLNXTCHG`/`READC` (no IR operation yet), menu bars and pull-downs,
+`WDWTITLE`, `RMVWDW`, `MNUBARDSP`, `HLP*` and `CHOICE` keywords: they
+compile and are kept in the model but the runtime ignores them. The
+shipped `QDSIGNON`/`QDSIGNON2` are the first display files written in
+DDS (`ui/dspf/sys/`).
+
 ## Payload
 
 The display attributes of a `*FILE` object: the fixed header below,

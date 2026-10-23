@@ -1,0 +1,25 @@
+     A*  QDSIGNON2: the sign-on display at password level 2 and 3,
+     A*  where a password is up to 128 characters and keeps its case.
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CHGINPDFT
+     A          R SIGNON
+     A                                  1 36'Sign On'
+     A                                      DSPATR(HI)
+     A                                  2 48'System  . . . . . :'
+     A            QSYSNAME       8A  O  2 70
+     A                                  3 48'Subsystem . . . . :'
+     A            SBSNAME       10A  O  3 70
+     A                                  4 48'Display . . . . . :'
+     A            DEVNAME       10A  O  4 70
+     A                                  6 17'User  . . . . . . . . . . . . . .'
+     A            USERID        10A  I  6 53DSPATR(UL)
+     A                                  7 17'Password  . . . . . . . . . . . .'
+     A            PASSWRD      128A  I  7 53DSPATR(ND UL) CHECK(LC)
+     A                                 10 17'Program/procedure . . . . . . . .'
+     A            PROGRAM       10A  I 10 53DSPATR(UL)
+     A                                 11 17'Menu  . . . . . . . . . . . . . .'
+     A            MENU          10A  I 11 53DSPATR(UL)
+     A                                 12 17'Current library . . . . . . . . .'
+     A            CURLIB        10A  I 12 53DSPATR(UL)
+     A                                 24 43'(C) COPYRIGHT QUARTZ SYSTEMS 2026.'
+     A            UBUFFER      128A  H

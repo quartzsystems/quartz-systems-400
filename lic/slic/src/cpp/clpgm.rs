@@ -72,13 +72,73 @@ struct StoreFiles<'a> {
     system: &'a mut System,
 }
 
+/// A display file's formats for `DCLF`: both buffers' layouts and
+/// the indicators at their fronts. `None` when `lib/name` is not a
+/// display file.
+fn display_formats(system: &mut System, lib: &str, name: &str) -> Option<Vec<cl::Format>> {
+    in_store(system, |txn, qsys, names| {
+        let id = wm::obj::find(txn, qsys, names, lib, name, types::FILE).map_err(|e| e.to_string())?;
+        let (_, h) = ops::read_header(txn, id).map_err(|e| e.to_string())?;
+        if ccsid::decode_trimmed(&h.attribute) != crate::svc::db::dspf::ATTR {
+            return Ok(None);
+        }
+        let df = dspf::decode(&wm::obj::read(txn, id).map_err(|e| e.to_string())?)
+            .map_err(|e| e.to_string())?;
+        Ok(Some(cl_formats(&df)))
+    })
+    .ok()
+    .flatten()
+}
+
+/// The CL compiler's view of a display file's record formats.
+pub fn cl_formats(df: &dspf::DisplayFile) -> Vec<cl::Format> {
+    use dspf::TypeClass;
+    df.records
+        .iter()
+        .map(|r| cl::Format {
+            name: r.name.clone(),
+            len: r.layout.output.len,
+            in_len: r.layout.input.len,
+            option_inds: r.layout.output.indicators.clone(),
+            response_inds: r.layout.input.indicators.clone(),
+            fields: r
+                .fields
+                .iter()
+                .enumerate()
+                .filter(|(_, f)| f.name.is_some())
+                .map(|(i, f)| cl::FieldDef {
+                    name: f.name.clone().unwrap_or_default(),
+                    ty: match f.ty.class {
+                        TypeClass::Zoned => 'S',
+                        TypeClass::Packed => 'P',
+                        TypeClass::Binary => 'B',
+                        TypeClass::Float => 'F',
+                        TypeClass::Date => 'L',
+                        TypeClass::Time => 'T',
+                        TypeClass::Timestamp => 'Z',
+                        TypeClass::Char | TypeClass::Graphic => 'A',
+                    },
+                    pos: r.layout.output.field(i).map_or(0, |b| b.offset + 1),
+                    len: f.bytes,
+                    digits: if f.ty.is_numeric() { f.length } else { 0 },
+                    decimals: u32::from(f.decimals),
+                    in_pos: r.layout.input.field(i).map(|b| b.offset + 1),
+                })
+                .collect(),
+        })
+        .collect()
+}
+
 impl cl::Files for StoreFiles<'_> {
     fn file(&mut self, name: &str, lib: &str) -> Option<(bool, Vec<cl::Format>)> {
+        let lib = lib_or(lib);
+        if let Some(formats) = display_formats(self.system, &lib, name) {
+            return Some((true, formats));
+        }
         if crate::svc::ile::lend(self.system).is_err() {
             return None;
         }
         let mut p = StoreProvider::new(self.system.lent.clone());
-        let lib = lib_or(lib);
         let info = p.file(&lib, name);
         let formats = p.formats(&lib, name);
         crate::svc::ile::restore(self.system);
@@ -98,8 +158,10 @@ impl cl::Files for StoreFiles<'_> {
                         len: x.len,
                         digits: x.digits,
                         decimals: x.decimals,
+                        in_pos: None,
                     })
                     .collect(),
+                ..cl::Format::default()
             })
             .collect();
         Some((info.attr == "DSPF", formats))

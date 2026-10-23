@@ -26,6 +26,7 @@ pub mod model;
 pub mod payload;
 pub mod rt;
 pub mod spec;
+pub mod sys;
 
 pub use compile::compile_dspf;
 pub use cond::{Cond, Ind};

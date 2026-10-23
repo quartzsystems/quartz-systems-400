@@ -8,6 +8,7 @@
 //! `xfer` area: named line buffers pushed and pulled over the serial line.
 
 mod bench;
+pub(crate) mod dspf;
 mod files;
 mod journal;
 pub(crate) mod prtf;
@@ -56,6 +57,7 @@ ovrdbf FILE(F) [TOFILE(LIB/F) MBR(M) SHARE(*YES) LVLCHK(*NO) INHWRT(*YES) POSITI
 dltovr FILE(F|*ALL)
 crtprtf LIB/FILE [SRCFILE(LIB/SRC) SRCMBR(M)] [PAGESIZE(l w) LPI() CPI() OVRFLW() CTLCHAR(*FCFC) OUTQ() HOLD() SCHEDULE() ...]
 chgprtf LIB/FILE keywords | ovrprtf FILE(F) [TOFILE(LIB/F) OVRSCOPE(*JOB)] keywords
+crtdspf LIB/FILE SRCFILE(LIB/SRC) [SRCMBR(M) TEXT('..')] | ovrdspf FILE(F) TOFILE(LIB/F) [OVRSCOPE(*JOB)]
 opnqryf FILE(LIB/F) [QRYSLT('FLD *EQ 3 *AND ...') KEYFLD((F1) (F2 *DESCEND)) OPTION(*INP|*ALL)] | clof FILE(F)
 sql [STATEMENT;]     SQL mode: statements end with ';', quit leaves | sqlrun NAME [COMMIT(*CHG) ERRLVL(n) NAMING(*SQL)]
 naming *SYS|*SQL | curlib LIB
@@ -101,6 +103,8 @@ pub struct State {
     pub sql: Option<SqlContext>,
     /// `OVRPRTF`s in effect, oldest first.
     pub prt_overrides: Vec<crate::stgsvc::prtf::PrtOverride>,
+    /// `OVRDSPF`s in effect, oldest first (the same shape).
+    pub dsp_overrides: Vec<crate::stgsvc::prtf::PrtOverride>,
     /// `OVRMSGF`s in effect, oldest first.
     pub msgf_overrides: Vec<MsgfOvr>,
 }
@@ -201,8 +205,12 @@ pub fn command(system: &mut System, cmd: &str, args: &[&str], line: &str) -> Opt
         "crtlf" => files::crtlf(system, &p),
         "dltf" => {
             let qual = p.pos_or(0, "FILE").unwrap_or_default();
-            prtf::dltf(system, &qual).unwrap_or_else(|| files::dltf(system, &p))
+            prtf::dltf(system, &qual)
+                .or_else(|| dspf::dltf(system, &qual))
+                .unwrap_or_else(|| files::dltf(system, &p))
         }
+        "crtdspf" => dspf::crtdspf(system, &p),
+        "ovrdspf" => dspf::ovrdspf(system, line),
         "crtprtf" => prtf::crtprtf(system, &p),
         "chgprtf" => prtf::chgprtf(system, &p),
         "ovrprtf" => prtf::ovrprtf(system, line),
@@ -219,7 +227,9 @@ pub fn command(system: &mut System, cmd: &str, args: &[&str], line: &str) -> Opt
         "cpyfrmimpf" => files::cpyfrmimpf(system, &p),
         "dspfd" => {
             let qual = p.pos_or(0, "FILE").unwrap_or_default();
-            prtf::dspfd(system, &qual).unwrap_or_else(|| files::dspfd(system, &p))
+            prtf::dspfd(system, &qual)
+                .or_else(|| dspf::dspfd(system, &qual))
+                .unwrap_or_else(|| files::dspfd(system, &p))
         }
         "dspffd" => files::dspffd(system, &p),
         "dsppfm" => files::dsppfm(system, &p),
