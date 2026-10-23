@@ -1,0 +1,24 @@
+                        Display File Description (DSPFD)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ File . . . . . . . . . . . . . . FILE                                          
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Type of information  . . . . . . TYPE           *ALL                           
+                           + for more values                                    
+ Output . . . . . . . . . . . . . OUTPUT         *                              
+ File attributes  . . . . . . . . FILEATR        *ALL                           
+                           + for more values                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

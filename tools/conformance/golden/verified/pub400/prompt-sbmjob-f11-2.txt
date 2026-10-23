@@ -1,0 +1,24 @@
+                               Submit Job (SBMJOB)                              
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Output queue . . . . . . . . . .   *CURRENT      Name, *CURRENT, *USRPRF...    
+   Library  . . . . . . . . . . .                 Name, *LIBL, *CURLIB          
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ User . . . . . . . . . . . . . .   *CURRENT      Name, *CURRENT, *JOBD         
+ Accounting code  . . . . . . . .   *CURRENT                                    
+ Print text . . . . . . . . . . .   *CURRENT                                    
+ Routing data . . . . . . . . . .   QCMDB                                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ F9=All parameters   F11=Keywords   F14=Command string   F24=More keys          
+                                                                                
+                                                                                

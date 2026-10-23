@@ -1,0 +1,24 @@
+                        Work with Spooled Files (WRKSPLF)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Select files for:                                                              
+   User . . . . . . . . . . . . .   *CURRENT      Name, generic*, *CURRENT...   
+   Print device . . . . . . . . .   *ALL          Name, *ALL, *OUTQ             
+   Form type  . . . . . . . . . .   *ALL          Form type, *ALL, *STD         
+   User data  . . . . . . . . . .   *ALL          User data, generic*, *ALL     
+   ASP  . . . . . . . . . . . . .   *ALL          1-32, *ALL, *ASPDEV           
+   Spooled file . . . . . . . . .   *ALL          Name, generic*, *ALL          
+ Job name . . . . . . . . . . . .   *ALL          Name, generic*, *ALL          
+   User . . . . . . . . . . . . .                 Name, generic*, *ALL          
+   Number . . . . . . . . . . . .                 000000-999999, *ALL           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ F9=All parameters   F11=Keywords   F14=Command string   F24=More keys          
+                                                                                
+                                                                                

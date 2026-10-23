@@ -1,0 +1,24 @@
+                               Call Program (CALL)                              
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Program  . . . . . . . . . . . . PGM                                           
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Parameters:                      PARM                                          
+   Parameter  . . . . . . . . . .                                               
+                                                                                
+   Type and length of parameter:                                                
+   Type . . . . . . . . . . . . .                *DFT                           
+   Length . . . . . . . . . . . .                                               
+   Decimal positions  . . . . . .                                               
+                           + for more values                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

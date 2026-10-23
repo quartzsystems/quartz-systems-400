@@ -535,14 +535,6 @@ script = "batch4-misc"
 width = 80
 
 [[golden]]
-name = "prompt-wrkactjob"
-source = "pub400"
-release = "V7R5M0"
-date = "2026-10-23"
-script = "batch4-misc"
-width = 80
-
-[[golden]]
 name = "prompt-wrkactjob-f10"
 source = "pub400"
 release = "V7R5M0"
@@ -1903,14 +1895,6 @@ script = "batch6-prompts"
 width = 80
 
 [[golden]]
-name = "prompt-crtlib"
-source = "pub400"
-release = "V7R5M0"
-date = "2026-10-23"
-script = "batch6-prompts"
-width = 80
-
-[[golden]]
 name = "prompt-dspjob"
 source = "pub400"
 release = "V7R5M0"
@@ -2048,6 +2032,350 @@ width = 80
 
 [[golden]]
 name = "prompt-crtdspf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-crtprtf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-crtmsgf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-addmsgd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-crtusrprf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-crtusrprf-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-crtusrprf-f24"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-crtusrprf-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-crtusrprf-f11-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-chgusrprf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-grtobjaut"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-addrtge"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-crtoutq"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-strprtwtr"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-cpyf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-ovrdbf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-dspfd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-dspffd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-strseu"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-strpdm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-crtbndcl"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-crtcmd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-sndmsg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-dspmsg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-wrkactjob"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-wrkobj"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-dspobjd"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-crtdtaara"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-chgdtaara"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-crtmnu"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-crtpnlgrp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-strsql"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-runsqlstm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-call"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-go"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-dspusrprf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-dspsysval"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-savlib"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-endjob"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-hldjob"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-wrkjob"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-crtdevdsp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-vrycfg"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-23"
+script = "batch6-prompts"
+width = 80
+
+[[golden]]
+name = "prompt-wrkcfgsts"
 source = "pub400"
 release = "V7R5M0"
 date = "2026-10-23"

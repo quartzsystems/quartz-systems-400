@@ -1,0 +1,24 @@
+                          Create Physical File (CRTPF)                          
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ File . . . . . . . . . . . . . . FILE                                          
+   Library  . . . . . . . . . . .                  *CURLIB                      
+ Source file  . . . . . . . . . . SRCFILE        QDDSSRC                        
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Source member  . . . . . . . . . SRCMBR         *FILE                          
+ Record length, if no DDS . . . . RCDLEN                                        
+ Generation severity level  . . . GENLVL         20                             
+ Flagging severity level  . . . . FLAG           0                              
+ File type  . . . . . . . . . . . FILETYPE       *DATA                          
+ Member, if desired . . . . . . . MBR            *FILE                          
+ Text 'description' . . . . . . . TEXT           *SRCMBRTXT                     
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

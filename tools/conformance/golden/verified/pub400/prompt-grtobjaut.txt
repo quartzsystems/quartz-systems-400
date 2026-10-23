@@ -1,0 +1,24 @@
+                       Grant Object Authority (GRTOBJAUT)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Object . . . . . . . . . . . . . OBJ                                           
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Object type  . . . . . . . . . . OBJTYPE                                       
+ ASP device . . . . . . . . . . . ASPDEV         *                              
+ Users  . . . . . . . . . . . . . USER                                          
+                           + for more values                                    
+ Authority  . . . . . . . . . . . AUT            *CHANGE                        
+                           + for more values                                    
+ Authorization list . . . . . . . AUTL                                          
+ Reference object . . . . . . . . REFOBJ                                        
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Reference object type  . . . . . REFOBJTYPE     *OBJTYPE                       
+ Reference ASP device . . . . . . REFASPDEV      *                              
+ Replace authority  . . . . . . . REPLACE        *NO                            
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

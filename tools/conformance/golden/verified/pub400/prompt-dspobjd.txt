@@ -1,0 +1,24 @@
+                      Display Object Description (DSPOBJD)                      
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Object . . . . . . . . . . . . . OBJ                                           
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Object type  . . . . . . . . . . OBJTYPE                                       
+                           + for more values                                    
+ Detail . . . . . . . . . . . . . DETAIL         *BASIC                         
+ ASP device:                      ASPDEV                                        
+   Device . . . . . . . . . . . .                *                              
+   Search type  . . . . . . . . .                                               
+ Output . . . . . . . . . . . . . OUTPUT         *                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

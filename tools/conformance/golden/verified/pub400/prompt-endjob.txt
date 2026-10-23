@@ -1,0 +1,24 @@
+                                End Job (ENDJOB)                                
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Job name . . . . . . . . . . . . JOB                                           
+   User . . . . . . . . . . . . .                                               
+   Number . . . . . . . . . . . .                                               
+ How to end . . . . . . . . . . . OPTION         *CNTRLD                        
+ Controlled end delay time  . . . DELAY          30                             
+ Delete spooled files . . . . . . SPLFILE        *NO                            
+ Maximum log entries  . . . . . . LOGLMT         *SAME                          
+ Additional interactive jobs  . . ADLINTJOBS     *NONE                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

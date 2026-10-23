@@ -1,0 +1,24 @@
+                        Work with Spooled Files (WRKSPLF)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Time period:                                                                   
+   Start time and date:                                                         
+   Beginning time . . . . . . . .   *AVAIL        Time, *AVAIL                  
+   Beginning date . . . . . . . .   *BEGIN        Date, *BEGIN, *CURRENT        
+   End time and date:                                                           
+   Ending time  . . . . . . . . .   *AVAIL        Time, *AVAIL                  
+   Ending date  . . . . . . . . .   *END          Date, *END                    
+ ASP device . . . . . . . . . . .   *             Name, *, *SYSBAS, *CURASPGRP  
+ Output . . . . . . . . . . . . .   *             *, *PRINT                     
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Display format . . . . . . . . .   *INLENV       *INLENV, *S36FMT, *NORMAL     
+ Assistance level . . . . . . . .   *PRV          *PRV, *USRPRF, *BASIC...      
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F9=All parameters   F11=Keywords   F14=Command string   F24=More keys          
+                                                                                
+                                                                                

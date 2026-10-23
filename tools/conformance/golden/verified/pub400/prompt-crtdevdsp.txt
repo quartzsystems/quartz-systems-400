@@ -1,0 +1,24 @@
+                    Create Device Desc (Display) (CRTDEVDSP)                    
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Device description . . . . . . . DEVD                                          
+ Device class . . . . . . . . . . DEVCLS                                        
+ Device type  . . . . . . . . . . TYPE                                          
+ Device model . . . . . . . . . . MODEL                                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

@@ -1,0 +1,24 @@
+                        Start Printer Writer (STRPRTWTR)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Printer  . . . . . . . . . . . . DEV                                           
+ Output queue . . . . . . . . . . OUTQ           *DEV                           
+   Library  . . . . . . . . . . .                                               
+ Queue for writer messages  . . . MSGQ           *DEVD                          
+   Library  . . . . . . . . . . .                                               
+ Form type options:               FORMTYPE                                      
+   Form type  . . . . . . . . . .                *ALL                           
+   Message option . . . . . . . .                *INQMSG                        
+ File separators  . . . . . . . . FILESEP        *FILE                          
+ Drawer for separators  . . . . . SEPDRAWER      *DEVD                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

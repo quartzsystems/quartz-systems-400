@@ -1,0 +1,24 @@
+                          Create Physical File (CRTPF)                          
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ File . . . . . . . . . . . . . .                 Name                          
+   Library  . . . . . . . . . . .     *CURLIB     Name, *CURLIB                 
+ Source file  . . . . . . . . . .   QDDSSRC       Name                          
+   Library  . . . . . . . . . . .     *LIBL       Name, *LIBL, *CURLIB          
+ Source member  . . . . . . . . .   *FILE         Name, *FILE                   
+ Record length, if no DDS . . . .                 Number                        
+ Generation severity level  . . .   20            0-30                          
+ Flagging severity level  . . . .   0             0-30                          
+ File type  . . . . . . . . . . .   *DATA         *DATA, *SRC                   
+ Member, if desired . . . . . . .   *FILE         Name, *FILE, *NONE            
+ Text 'description' . . . . . . .   *SRCMBRTXT                                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ F9=All parameters   F11=Keywords   F14=Command string   F24=More keys          
+                                                                                
+ Parameter FILE required.                                                       

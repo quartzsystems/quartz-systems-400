@@ -1,0 +1,24 @@
+                          Change Data Area (CHGDTAARA)                          
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Data area specification:         DTAARA                                        
+   Data area  . . . . . . . . . .                                               
+     Library  . . . . . . . . . .                  *LIBL                        
+   Substring specifications:                                                    
+   Substring starting position  .                *ALL                           
+   Substring length . . . . . . .                                               
+ New value  . . . . . . . . . . . VALUE                                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

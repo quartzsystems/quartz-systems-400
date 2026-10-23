@@ -1,0 +1,24 @@
+                               Change Job (CHGJOB)                              
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Job name . . . . . . . . . . . . JOB            *                              
+   User . . . . . . . . . . . . .                                               
+   Number . . . . . . . . . . . .                                               
+ Job priority (on JOBQ) . . . . . JOBPTY         *SAME                          
+ Output priority (on OUTQ)  . . . OUTPTY         5                              
+ Print device . . . . . . . . . . PRTDEV         PRT01                          
+ Output queue . . . . . . . . . . OUTQ           USERNAME                       
+   Library  . . . . . . . . . . .                  QGPL                         
+ Run priority . . . . . . . . . . RUNPTY         *SAME                          
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Job queue  . . . . . . . . . . . JOBQ           *SAME                          
+   Library  . . . . . . . . . . .                                               
+ Print text . . . . . . . . . . . PRTTXT         '-=* https://pub400.com *=-    
+'                                                                               
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

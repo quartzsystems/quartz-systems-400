@@ -1,0 +1,24 @@
+                      Override with Data Base File (OVRDBF)                     
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ File being overridden  . . . . . FILE                                          
+ Overriding to data base file . . TOFILE         *FILE                          
+   Library  . . . . . . . . . . .                                               
+ Overriding member  . . . . . . . MBR                                           
+ Starting position in file:       POSITION                                      
+   Retrieve order . . . . . . . .                                               
+   *RRN-rcd nbr *KEY-nbr key flds                                               
+   *KEY-rec format having key . .                                               
+   *KEY-key value . . . . . . . .                                               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+  ...                                                                           
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

@@ -1,0 +1,24 @@
+                               Submit Job (SBMJOB)                              
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Command to run . . . . . . . . . CMD                                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+  ...                                                                           
+ Job name . . . . . . . . . . . . JOB            *JOBD                          
+ Job description  . . . . . . . . JOBD           *USRPRF                        
+   Library  . . . . . . . . . . .                                               
+ Job queue  . . . . . . . . . . . JOBQ           *JOBD                          
+   Library  . . . . . . . . . . .                                               
+ Job priority (on JOBQ) . . . . . JOBPTY         *JOBD                          
+ Output priority (on OUTQ)  . . . OUTPTY         *JOBD                          
+ Print device . . . . . . . . . . PRTDEV         *CURRENT                       
+                                                                        More... 
+ F9=All parameters   F11=Choices   F14=Command string   F24=More keys           
+                                                                                
+                                                                                

@@ -1,0 +1,24 @@
+                               Start PDM (STRPDM)                               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F5=Refresh   F12=Cancel   F13=How to use this display   F24=More keys
+                                                                                
+ No parameters to show; press Enter to run, F3 to exit.                         

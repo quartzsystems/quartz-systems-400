@@ -1,0 +1,24 @@
+                       Start Source Entry Utility (STRSEU)                      
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Source file  . . . . . . . . . . SRCFILE        *PRV                           
+   Library  . . . . . . . . . . .                                               
+ Source member  . . . . . . . . . SRCMBR         *PRV                           
+ Source type  . . . . . . . . . . TYPE           *SAME                          
+ Option . . . . . . . . . . . . . OPTION         *BLANK                         
+ Text 'description' . . . . . . . TEXT           *BLANK                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

@@ -1,0 +1,24 @@
+                           Add Routing Entry (ADDRTGE)                          
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Subsystem description  . . . . . SBSD                                          
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Routing entry sequence number  . SEQNBR                                        
+ Comparison data:                 CMPVAL                                        
+   Compare value  . . . . . . . .                                               
+                                                                                
+   Starting position  . . . . . .                1                              
+ Program to call  . . . . . . . . PGM                                           
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Class  . . . . . . . . . . . . . CLS            *SBSD                          
+   Library  . . . . . . . . . . .                                               
+ Maximum active routing steps . . MAXACT         *NOMAX                         
+ Storage pool identifier  . . . . POOLID         1                              
+ Thread resources affinity:       THDRSCAFN                                     
+   Group  . . . . . . . . . . . .                *SYSVAL                        
+   Level  . . . . . . . . . . . .                                               
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

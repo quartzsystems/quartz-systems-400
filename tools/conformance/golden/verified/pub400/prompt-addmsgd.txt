@@ -1,0 +1,24 @@
+                        Add Message Description (ADDMSGD)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Message identifier . . . . . . . MSGID                                         
+ Message file . . . . . . . . . . MSGF                                          
+   Library  . . . . . . . . . . .                  *LIBL                        
+ First-level message text . . . . MSG                                           
+                                                                                
+                                                                                
+ Second-level message text  . . . SECLVL         *NONE                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+  ...                                                                           
+ Severity code  . . . . . . . . . SEV            00                             
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

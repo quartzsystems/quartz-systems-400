@@ -1,0 +1,24 @@
+                                Copy File (CPYF)                                
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ From file  . . . . . . . . . . . FROMFILE                                      
+   Library  . . . . . . . . . . .                  *LIBL                        
+ To file  . . . . . . . . . . . . TOFILE                                        
+   Library  . . . . . . . . . . .                  *LIBL                        
+ From member  . . . . . . . . . . FROMMBR        *FIRST                         
+ To member or label . . . . . . . TOMBR          *FIRST                         
+ Replace or add records . . . . . MBROPT         *NONE                          
+ Create file  . . . . . . . . . . CRTFILE        *NO                            
+ Print format . . . . . . . . . . OUTFMT         *CHAR                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

@@ -1,0 +1,24 @@
+                         Create User Profile (CRTUSRPRF)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ User profile . . . . . . . . . . USRPRF                                        
+ User password  . . . . . . . . . PASSWORD       *NONE                          
+                                                                                
+                                                                                
+ Set password to expired  . . . . PWDEXP         *NO                            
+ Status . . . . . . . . . . . . . STATUS         *ENABLED                       
+ User class . . . . . . . . . . . USRCLS         *USER                          
+ Assistance level . . . . . . . . ASTLVL         *SYSVAL                        
+ Current library  . . . . . . . . CURLIB         *CRTDFT                        
+ Initial program to call  . . . . INLPGM         *NONE                          
+   Library  . . . . . . . . . . .                                               
+ Initial menu . . . . . . . . . . INLMNU         MAIN                           
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Limit capabilities . . . . . . . LMTCPB         *NO                            
+ Text 'description' . . . . . . . TEXT           *BLANK                         
+                                                                                
+                                                                        More... 
+ F9=All parameters   F11=Choices   F14=Command string   F24=More keys           
+                                                                                
+                                                                                
