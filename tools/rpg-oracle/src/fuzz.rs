@@ -434,6 +434,44 @@ pub fn program(seed: u64) -> String {
     text
 }
 
+/// The programs of seeds `first..first + count` in one member, so that
+/// one compile on the oracle runs many: each program's declarations and
+/// statements become procedure `Snnnn`, its `FN` becomes `Fnnnn`, and
+/// the main procedure calls them in order after a line naming each.
+#[must_use]
+pub fn bundle(first: u64, count: u64) -> String {
+    let mut main = Vec::new();
+    let mut procs = Vec::new();
+    for seed in first..first + count {
+        let text = program(seed);
+        let fname = format!("F{seed:04}");
+        let mut lines = text.lines().skip(4);
+        main.push(format!("line = 'S{seed:04}';"));
+        main.push("write QSYSPRT line;".into());
+        main.push(format!("S{seed:04}();"));
+        procs.push(format!("dcl-proc S{seed:04};"));
+        for l in lines.by_ref() {
+            if l == "*inlr = *on;" {
+                break;
+            }
+            procs.push(l.replace("FN(", &format!("{fname}(")));
+        }
+        procs.push("end-proc;".into());
+        for l in lines {
+            procs.push(l.replace("dcl-proc FN;", &format!("dcl-proc {fname};")));
+        }
+    }
+    let mut out = String::from("**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+");
+    for l in main.iter().chain(std::iter::once(&"*inlr = *on;".to_string())).chain(procs.iter()) {
+        let _ = writeln!(out, "{l}");
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -447,6 +485,16 @@ mod tests {
                 assert!(l.len() <= 100, "seed {s}: {l}");
             }
         }
+    }
+
+    #[test]
+    fn a_bundle_holds_each_program_as_a_procedure() {
+        let b = bundle(10, 3);
+        for s in 10..13 {
+            assert!(b.contains(&format!("dcl-proc S{s:04};")), "{b}");
+        }
+        assert_eq!(b.matches("*inlr = *on;").count(), 1);
+        assert!(!b.contains("FN(") && !b.contains("dcl-proc FN;"));
     }
 
     #[test]
