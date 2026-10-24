@@ -7,7 +7,8 @@
 //! free form, `*; key: value` with the `*` in column 7 in fixed form.
 //!
 //! - `cmd:` the compile command, with `{lib}` and `{name}`; the
-//!   default is `CRTBNDRPG` with `DBGVIEW(*NONE) OUTPUT(*PRINT)`.
+//!   default is `CRTBNDRPG` with `DBGVIEW(*NONE) OUTPUT(*PRINT)`;
+//!   `cmd+:` lines go on with it.
 //! - `call:` the call command; `run: no` compiles only.
 //! - `rcdlen:` the source file's record length (112 by default).
 //! - `setup:` a command run before the compile (several allowed);
@@ -211,6 +212,11 @@ impl Case {
             };
             match key.as_str() {
                 "cmd" => c.cmd = value,
+                // A command too long for one record goes on.
+                "cmd+" => {
+                    c.cmd.push(' ');
+                    c.cmd.push_str(&value);
+                }
                 "call" => c.call = value,
                 "run" if value.eq_ignore_ascii_case("no") => c.call.clear(),
                 "rcdlen" => c.rcdlen = value.parse().unwrap_or(112),

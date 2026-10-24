@@ -1,6 +1,7 @@
       * Nested conditions; DEFINE names some.
       *; run: no
-      *; cmd: CRTBNDRPG PGM({lib}/{name}) SRCFILE({lib}/QRPGLESRC) SRCMBR({name}) DBGVIEW(*NONE) OUTPUT(*PRINT) OPTION(*SHOWSKP) DEFINE(ALPHA)
+      *; cmd: CRTBNDRPG PGM({lib}/{name}) SRCFILE({lib}/QRPGLESRC) SRCMBR({name}) DBGVIEW(*NONE)
+      *; cmd+: OUTPUT(*PRINT) OPTION(*SHOWSKP) DEFINE(ALPHA)
      FQSYSPRT   O    F  132        PRINTER
      DLINE             DS           132
       /IF DEFINED(ALPHA)

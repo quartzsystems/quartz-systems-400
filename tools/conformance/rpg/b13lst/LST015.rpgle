@@ -1,5 +1,6 @@
 **FREE
-//; cmd: CRTBNDRPG PGM({lib}/{name}) SRCFILE({lib}/QRPGLESRC) SRCMBR({name}) DBGVIEW(*NONE) OUTPUT(*PRINT) OPTION(*NOEXPDDS)
+//; cmd: CRTBNDRPG PGM({lib}/{name}) SRCFILE({lib}/QRPGLESRC) SRCMBR({name}) DBGVIEW(*NONE)
+//; cmd+: OUTPUT(*PRINT) OPTION(*NOEXPDDS)
 //; dds: CUSTF
 //; sqlfile: CUSTF
 ctl-opt dftactgrp(*no);

@@ -1,6 +1,7 @@
       * INDENT with two characters.
       *; run: no
-      *; cmd: CRTBNDRPG PGM({lib}/{name}) SRCFILE({lib}/QRPGLESRC) SRCMBR({name}) DBGVIEW(*NONE) OUTPUT(*PRINT) INDENT('| ')
+      *; cmd: CRTBNDRPG PGM({lib}/{name}) SRCFILE({lib}/QRPGLESRC) SRCMBR({name}) DBGVIEW(*NONE)
+      *; cmd+: OUTPUT(*PRINT) INDENT('| ')
      FQSYSPRT   O    F  132        PRINTER
      DLINE             DS           132
      DI                S              5P 0

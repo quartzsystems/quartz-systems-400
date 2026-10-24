@@ -1,6 +1,7 @@
 **FREE
 //; run: no
-//; cmd: CRTRPGMOD MODULE({lib}/{name}) SRCFILE({lib}/QRPGLESRC) SRCMBR({name}) DBGVIEW(*NONE) OUTPUT(*PRINT)
+//; cmd: CRTRPGMOD MODULE({lib}/{name}) SRCFILE({lib}/QRPGLESRC) SRCMBR({name}) DBGVIEW(*NONE)
+//; cmd+: OUTPUT(*PRINT)
 ctl-opt nomain;
 dcl-s shared int(10) export inz(5);
 dcl-s outside int(10) import;

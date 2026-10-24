@@ -521,10 +521,32 @@ M["LST040"] = ["**FREE", "//; run: no", "//; cmd: CRTBNDRPG PGM({lib}/{name}) SR
     "dcl-s n int(10) inz(1);",
 ] + p("%char(n)") + END
 
+def fit(lines, width=100):
+    """A directive too wide for the record goes on as `cmd+:` lines."""
+    out = []
+    for l in lines:
+        head = l[: l.index("cmd:")] if "cmd:" in l and len(l) > width else None
+        if head is None:
+            out.append(l)
+            continue
+        words = l[len(head) + 4:].split(" ")
+        cur, key = head + "cmd:", "cmd:"
+        for w in words:
+            if w == "":
+                continue
+            if len(cur) + 1 + len(w) > width:
+                out.append(cur)
+                key = "cmd+:"
+                cur = head + key
+            cur += " " + w
+        out.append(cur)
+    return out
+
+
 os.makedirs(OUT, exist_ok=True)
 for name, lines in M.items():
     with open(os.path.join(OUT, name + ".rpgle"), "w", encoding="utf-8", newline="\n") as f:
-        f.write("\n".join(lines) + "\n")
+        f.write("\n".join(fit(lines)) + "\n")
 for name, lines in INC.items():
     with open(os.path.join(OUT, name + ".rpginc"), "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")

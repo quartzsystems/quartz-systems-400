@@ -1,6 +1,7 @@
 **FREE
 //; run: no
-//; cmd: CRTBNDRPG PGM({lib}/{name}) SRCFILE({lib}/QRPGLESRC) SRCMBR({name}) DBGVIEW(*NONE) OUTPUT(*PRINT) INDENT('>')
+//; cmd: CRTBNDRPG PGM({lib}/{name}) SRCFILE({lib}/QRPGLESRC) SRCMBR({name}) DBGVIEW(*NONE)
+//; cmd+: OUTPUT(*PRINT) INDENT('>')
 ctl-opt dftactgrp(*no);
 dcl-f QSYSPRT printer(132);
 dcl-ds line len(132) end-ds;
