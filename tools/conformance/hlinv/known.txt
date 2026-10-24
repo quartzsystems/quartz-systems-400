@@ -1,0 +1,3 @@
+# HLINV members IBM i cannot compile either, for a reason outside RPG.
+REORDRPT its printer file's DDS uses type Y, which CRTPRTF refuses (CPD7419 on pub400)
+STKRPT its printer file's DDS uses type Y, which CRTPRTF refuses (CPD7419 on pub400)

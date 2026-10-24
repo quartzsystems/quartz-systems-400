@@ -9,6 +9,9 @@ use rpgfront::Diag;
 
 /// The texts.
 const TEXTS: &[(&str, &str)] = &[
+    ("RNF5318", "The subroutine's name is already the name of something else; the subroutine is ignored."),
+    ("RNF5428", "&1 is allowed only inside a subroutine."),
+    ("RNF7260", "&1 cannot be the factor 2 of this operation."),
     ("RNF0334", "%DECPOS needs a decimal or integer value; &1 is not one."),
     ("RNF0001", "The compiler could not generate the program: &1."),
     ("RNF0023", "Copy member &1 was not found."),

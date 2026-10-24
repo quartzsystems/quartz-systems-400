@@ -299,6 +299,10 @@ impl Gen<'_> {
     /// `EXSR name` of a main-procedure subroutine: a call; a `RETURN`
     /// inside it ends the main procedure.
     pub fn exsr_call(&mut self, name: &str) {
+        if self.bad_subrs.contains(&name.to_ascii_uppercase()) {
+            self.err(ids::BAD_FACTOR2, 30, name.to_string());
+            return;
+        }
         let rc = self.b.reg();
         self.b.ins(format!("{rc} = callb {}()", Gen::subr_proc(name)));
         let cont = self.b.label();
@@ -321,6 +325,10 @@ impl Gen<'_> {
 
     /// `EXSR name`.
     pub fn exsr(&mut self, name: &str) {
+        if self.bad_subrs.contains(&name.to_ascii_uppercase()) {
+            self.err(ids::BAD_FACTOR2, 30, name.to_string());
+            return;
+        }
         let back = self.b.label();
         let s = self.subr(name);
         s.returns.push(back.clone());
@@ -670,12 +678,14 @@ impl Gen<'_> {
                 }
                 self.output(&outputs, crate::codegen::output::Step::Except(&name));
             }
+            ("UNLOCK", _) if self.names_dtaara(op) => self.dtaara_op(op, base),
             (
                 "READ" | "READP" | "READE" | "READPE" | "CHAIN" | "SETLL" | "SETGT" | "UPDATE" | "DELETE" | "UNLOCK"
                 | "FEOD" | "OPEN" | "CLOSE" | "KLIST" | "KFLD" | "EXFMT" | "READC",
                 _,
             ) => self.db_op(op, base),
             ("PLIST" | "PARM", _) => {}
+            ("IN" | "OUT", _) => self.dtaara_op(op, base),
             ("ALLOC", _) => self.alloc_op(op),
             ("DEALLOC", _) => self.dealloc_op(op),
             ("CALL", _) => self.call_op(s),
@@ -1590,7 +1600,19 @@ pub fn split_subroutines<'a>(g: &mut Gen<'_>, stmts: &[&'a Stmt]) -> (Vec<&'a St
                     Expr::Special { word, .. } => Some(word.clone()),
                     _ => None,
                 });
-                cur = Some((name.unwrap_or_default(), vec![*s]));
+                let name = name.unwrap_or_default();
+                // A subroutine named like a field, a record format or any
+                // other name is refused; its body is not code.
+                if let Some(other) = g.t.find(g.scope, &name).filter(|_| !name.starts_with('*')) {
+                    // The name still counts as a use of a record format.
+                    if let Some(crate::syms::Kind::Format(i)) = g.t.syms[other].kind {
+                        g.used_formats.insert(i);
+                    }
+                    g.at = s.at;
+                    g.err(ids::SUBR_NAME_TAKEN, 30, String::new());
+                    g.bad_subrs.insert(name.to_ascii_uppercase());
+                }
+                cur = Some((name, vec![*s]));
             }
             "ENDSR" => {
                 if let Some(mut c) = cur.take() {

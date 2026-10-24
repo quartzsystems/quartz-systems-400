@@ -226,6 +226,9 @@ pub struct Table {
     pub entry: Vec<SymId>,
     /// The pointers they are based on, set by the entry procedure.
     pub entry_ptrs: Vec<SymId>,
+    /// Fields and structures tied to a data area (`DTAARA`): the area,
+    /// `NAME` or `LIB/NAME`.
+    pub dtaaras: HashMap<SymId, String>,
 }
 
 impl Table {

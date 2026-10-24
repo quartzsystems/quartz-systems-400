@@ -18,7 +18,6 @@ use rpg_oracle::case::{Case, DbStep, DdsKind};
 use rpg_oracle::listing;
 
 #[test]
-#[ignore = "HLINV does not compile clean yet (PHASE9.md, Blocked); run with --ignored"]
 fn hlinv_compiles_unmodified() {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("hlinv/src");
     let Ok(rd) = std::fs::read_dir(&dir) else {
@@ -80,32 +79,50 @@ fn hlinv_compiles_unmodified() {
         }
     }
     let db = rpg::files::KitDb::build(&kept).ok();
+    // Members IBM cannot compile either for a reason outside RPG.
+    let known_text = std::fs::read_to_string(dir.join("../known.txt")).unwrap_or_default();
+    let known: Vec<&str> = known_text.lines().filter(|l| !l.starts_with('#')).filter_map(|l| l.split_whitespace().next()).collect();
     let mut bad = Vec::new();
+    let mut skipped = 0;
     for p in &members {
         let text = String::from_utf8_lossy(&std::fs::read(p).expect("a member")).to_string();
         let name = p.file_stem().map(|s| s.to_string_lossy().to_ascii_uppercase()).unwrap_or_default();
+        if known.contains(&name.as_str()) {
+            skipped += 1;
+            continue;
+        }
         let mut case = Case::parse(&name, &text);
         case.call.clear();
         let c = rpg::compile(&case, db.as_ref());
-        let ours: Vec<String> = rpg::diags(&c).iter().map(|d| format!("{} {:02} {}", d.msgid, d.severity, d.line)).collect();
+        // Statements by sequence number: the listing's line numbers
+        // follow *SRCSTMT, the sequence numbers do not change.
+        let ours: Vec<String> = rpg::diags(&c).iter().map(|d| format!("{} {:02} {}", d.msgid, d.severity, d.seq)).collect();
         let worst = c.diags.iter().map(|d| d.severity).max().unwrap_or(0);
+        let lst = p.with_extension("lst");
+        if let Ok(bytes) = std::fs::read(&lst) {
+            // IBM's listing beside the member: the same diagnostics, so
+            // the same outcome, created or not.
+            let mut theirs: Vec<String> = listing::diags(&String::from_utf8_lossy(&bytes).lines().map(str::to_string).collect::<Vec<_>>())
+                .iter()
+                .map(|d| format!("{} {:02} {}", d.msgid, d.severity, d.seq))
+                .collect();
+            let mut ours = ours.clone();
+            theirs.sort();
+            ours.sort();
+            if theirs != ours {
+                bad.push(format!("{name}: diagnostics differ: ours {ours:?}, IBM's {theirs:?}"));
+            }
+            continue;
+        }
         if !c.created || worst > 10 {
             // The compiler's own failures say what they are.
             let why: Vec<String> = c.diags.iter().filter(|d| d.severity >= 50).map(rpgc::msgs::text).collect();
             bad.push(format!("{name}: not created or severity {worst}: {} {}", ours.join(", "), why.join("; ")));
-            continue;
-        }
-        let lst = p.with_extension("lst");
-        if let Ok(bytes) = std::fs::read(&lst) {
-            let theirs: Vec<String> = listing::diags(&String::from_utf8_lossy(&bytes).lines().map(str::to_string).collect::<Vec<_>>())
-                .iter()
-                .map(|d| format!("{} {:02} {}", d.msgid, d.severity, d.line))
-                .collect();
-            if theirs != ours {
-                bad.push(format!("{name}: diagnostics differ: ours {ours:?}, IBM's {theirs:?}"));
-            }
         }
     }
-    eprintln!("hlinv: {} members, {} clean", members.len(), members.len() - bad.len());
+    if skipped > 0 {
+        eprintln!("hlinv: {skipped} members left out by known.txt");
+    }
+    eprintln!("hlinv: {} members, {} clean", members.len() - skipped, members.len() - skipped - bad.len());
     assert!(bad.is_empty(), "hlinv:\n  {}", bad.join("\n  "));
 }

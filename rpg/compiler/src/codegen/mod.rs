@@ -21,6 +21,7 @@ pub mod ucs2;
 pub mod dbio;
 pub mod dates;
 pub mod dspio;
+pub mod dtaara;
 pub mod emit;
 pub mod exc;
 pub mod expr;
@@ -205,6 +206,8 @@ pub struct Gen<'a> {
     pub klists: HashMap<String, Vec<Expr>>,
     /// The `PARM` lists of `CALL`s and `PLIST`s.
     pub plists: calls::Plists,
+    /// Subroutines refused for their name.
+    pub bad_subrs: BTreeSet<String>,
     /// The subprocedure being generated, upper case; empty in the main
     /// procedure.
     pub cur_proc: String,
@@ -333,6 +336,7 @@ pub fn module(
         on_exit: None,
         klists: klists(m),
         plists: calls::plists(m),
+        bad_subrs: BTreeSet::new(),
         cur_proc: String::new(),
         inputs: m.inputs.clone(),
         in_overflow: false,
@@ -546,6 +550,14 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.subr_procs = true;
     let has_pssr = subrs.iter().any(|(n, _)| n == "*PSSR");
     for (name, body) in &subrs {
+        if g.bad_subrs.contains(&name.to_ascii_uppercase()) {
+            // Its LEAVESRs are outside any subroutine.
+            for s in body.iter().filter(|s| s.op.code == "LEAVESR") {
+                g.at = s.at;
+                g.err(ids::NOT_IN_SUBR, 30, "LEAVESR");
+            }
+            continue;
+        }
         stmt::subroutine_proc(g, name, body);
     }
     g.debug_vars(0);

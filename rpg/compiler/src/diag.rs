@@ -9,6 +9,12 @@
 pub mod ids {
     /// A name or indicator used but never declared.
     pub const NOT_DEFINED: &str = "RNF7030";
+    /// A subroutine named like something else.
+    pub const SUBR_NAME_TAKEN: &str = "RNF5318";
+    /// An operation allowed only inside a subroutine.
+    pub const NOT_IN_SUBR: &str = "RNF5428";
+    /// Factor 2 names something the operation cannot take.
+    pub const BAD_FACTOR2: &str = "RNF7260";
     /// `%DECPOS` of something that is not a fixed-point number.
     pub const DECPOS_ARG: &str = "RNF0334";
     /// An expression holds an operand that is not defined.

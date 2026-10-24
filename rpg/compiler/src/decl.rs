@@ -499,7 +499,12 @@ pub fn declare(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
                     .unwrap_or_default(),
                 ..Sym::default()
             };
-            add(cx, s, d.at)
+            let id = add(cx, s, d.at)?;
+            if let Some(k) = d.kw("DTAARA") {
+                let area = str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_else(|| d.name.to_ascii_uppercase());
+                cx.t.dtaaras.insert(id, area);
+            }
+            Some(id)
         }
         DefKind::Ds => declare_ds(cx, d),
         DefKind::Pr => {
@@ -651,6 +656,9 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         add(cx, ds_sym, d.at)
     }?;
     ds.sym = id;
+    if let Some(area) = &ds.dtaara {
+        cx.t.dtaaras.insert(id, area.to_ascii_uppercase());
+    }
     cx.t.ds.push(ds);
     if let Some(other) = like {
         let Some(oid) = cx.t.find(cx.scope, &other) else {

@@ -756,3 +756,23 @@ id = "RNF7591"
 sev = 30
 text = "&1 is not a qualified data structure; it cannot qualify a name."
 vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5318"
+sev = 30
+text = "The subroutine's name is already the name of something else; the subroutine is ignored."
+
+
+[[msg]]
+id = "RNF5428"
+sev = 30
+text = "&1 is allowed only inside a subroutine."
+vars = ["*CHAR 10"]
+
+
+[[msg]]
+id = "RNF7260"
+sev = 30
+text = "&1 cannot be the factor 2 of this operation."
+vars = ["*CHAR 50"]
+

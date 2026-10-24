@@ -992,10 +992,12 @@ pub fn file_notes(g: &mut Gen<'_>, m: &rpgfront::ast::Module) {
     for f in g.files.iter().filter(|f| f.ext.as_ref().is_some_and(|e| e.indara)) {
         g.diags.push(rpgfront::Diag::new(ids::INDARA, 0, rpgfront::ast::Pos { line: f.def_line, col: 7 }).arg(f.name.clone()));
     }
-    // A file whose description was not found is ignored.
+    // A file read only, or written only, is blocked. A file whose
+    // description was not found is ignored.
     for f in g.files.iter().filter(|f| {
-        f.dev == Dev::Disk && !f.template && f.input && !f.output && !f.update && !f.noblock && !(f.external && f.ext.is_none())
+        f.dev == Dev::Disk && !f.template && f.input != f.output && !f.update && !f.noblock && !(f.external && f.ext.is_none())
     }) {
+        let allowed: &[&str] = if f.input { &["READ", "OPEN", "CLOSE", "FEOD"] } else { &["WRITE", "OPEN", "CLOSE", "FEOD"] };
         let names: Vec<String> = std::iter::once(f.name.clone())
             .chain(g.t.recfmts.iter().filter(|r| r.file_name == f.name).map(|r| r.name.clone()))
             .collect();
@@ -1005,7 +1007,7 @@ pub fn file_notes(g: &mut Gen<'_>, m: &rpgfront::ast::Module) {
                 _ => None,
             });
             match target {
-                Some(t) if names.contains(&t) => matches!(op.code.as_str(), "READ" | "OPEN" | "CLOSE" | "FEOD"),
+                Some(t) if names.contains(&t) => allowed.contains(&op.code.as_str()),
                 _ => true,
             }
         });
