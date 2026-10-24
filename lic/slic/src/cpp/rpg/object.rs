@@ -39,6 +39,9 @@ pub struct Made {
     pub usrprf_owner: bool,
     /// Binding directories, `LIB/NAME` or `NAME`.
     pub bnddir: Vec<String>,
+    /// The debug source view (`DBGVIEW(*SOURCE)`, `*COPY`, `*LIST`,
+    /// `*ALL`), when one was asked for.
+    pub source: Option<Vec<String>>,
 }
 
 /// A binding directory named as `LIB/NAME` or `NAME`.
@@ -81,7 +84,8 @@ pub fn make(
             qir::ActGrp::Named(n) => ActGrpAttr::Named(n.clone()),
         }
     };
-    let object = ModuleObject::compile(module, create, now).map_err(|e| format!("CPF0006 {e}"))?;
+    let mut object = ModuleObject::compile(module, create, now).map_err(|e| format!("CPF0006 {e}"))?;
+    object.source.clone_from(&made.source);
     let n = Name::parse(&made.name).map_err(|e| format!("CPD0078 {e}"))?;
     let lib_name = ops::describe(txn, lib_id).map_err(|e| e.to_string())?.name;
     let ty = match made.shape {

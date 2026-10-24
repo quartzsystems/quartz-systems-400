@@ -103,6 +103,7 @@ fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> C
         replace: req.replace,
         usrprf_owner: req.usrprf_owner,
         bnddir: compiled.ctl.bnddir.clone(),
+        source: source_view(&options.dbgview, &compiled),
     };
     let create = CreateData {
         compiler: "RPGLE".into(),
@@ -247,5 +248,17 @@ impl Shape {
             Self::Module => "RNS9309",
             Self::Program | Self::SrvPgm => "RNS9310",
         }
+    }
+}
+
+/// The source view a debug view keeps: the member's own lines
+/// (`*SOURCE`), with its `/COPY` members expanded (`*COPY`, `*ALL`), or
+/// the compile listing (`*LIST`).
+fn source_view(dbgview: &str, c: &rpgc::Compiled) -> Option<Vec<String>> {
+    match dbgview {
+        "*SOURCE" => Some(c.read.lines.iter().filter(|l| l.member == 0).map(|l| l.text.clone()).collect()),
+        "*COPY" | "*ALL" => Some(c.read.lines.iter().map(|l| l.text.clone()).collect()),
+        "*LIST" => Some(c.listing.clone()),
+        _ => None,
     }
 }

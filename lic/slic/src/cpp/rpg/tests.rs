@@ -232,6 +232,7 @@ fn a_compiled_member_becomes_a_module_and_a_program() {
         replace: true,
         usrprf_owner: false,
         bnddir: Vec::new(),
+        source: Some(vec!["**FREE".into()]),
     };
     let mut txn = store.begin().unwrap();
     make(
