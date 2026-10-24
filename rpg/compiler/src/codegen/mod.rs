@@ -17,6 +17,7 @@ pub mod calls;
 pub mod cycle;
 pub mod debug;
 pub mod heap;
+pub mod ucs2;
 pub mod dbio;
 pub mod dates;
 pub mod dspio;

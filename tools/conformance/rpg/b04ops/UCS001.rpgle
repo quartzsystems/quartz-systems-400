@@ -1,0 +1,24 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s u ucs2(10) inz('Quartz');
+dcl-s v varucs2(20);
+dcl-s c char(12);
+dcl-s n int(10);
+c = u;
+line = '[' + c + ']';
+write QSYSPRT line;
+v = %trim(u) + ' sys';
+line = '[' + %char(v) + '] ' + %char(%len(v));
+write QSYSPRT line;
+v = U'00410042';
+line = %char(v) + ' ' + %char(%len(v)) + ' ' + %char(%size(u));
+write QSYSPRT line;
+u = 'ab';
+n = %scan(%ucs2('b') : u);
+line = 'scan ' + %char(n);
+write QSYSPRT line;
+line = 'sub [' + %char(%subst(u : 2 : 3)) + ']';
+write QSYSPRT line;
+*inlr = *on;

@@ -38,6 +38,14 @@ impl Gen<'_> {
         }
         let dst = self.as_chars(dst);
         let src = if matches!(dst.ty, Ty::Ds(_)) { src.clone() } else { self.as_chars(src) };
+        // Text of another class converts to the target's.
+        let src = match (super::ucs2::class(&dst.ty), super::ucs2::class(&src.ty)) {
+            (Some(to), Some(from)) if to != from && src.fig.is_none() => {
+                let Some(v) = self.to_class(&src, to) else { return };
+                v
+            }
+            _ => src,
+        };
         let h = if half { " halfadj" } else { "" };
         match (&dst.ty, &src.ty) {
             (d, _) if d.is_numeric() => {

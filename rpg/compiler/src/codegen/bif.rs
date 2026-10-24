@@ -290,6 +290,19 @@ impl Gen<'_> {
                 }
                 Some(t)
             }
+            "%UCS2" | "%GRAPH" => {
+                if !self.bif_arity(name, args, 1, 2) {
+                    return None;
+                }
+                let v = self.expr(&args[0], Want::default())?;
+                let v = self.as_chars(&v);
+                let to = if name == "%UCS2" { super::ucs2::TextClass::Ucs2 } else { super::ucs2::TextClass::Graph };
+                if !v.ty.is_string() {
+                    self.err(ids::BIF_ARGS, 30, name.to_string());
+                    return None;
+                }
+                self.to_class(&v, to)
+            }
             "%CHAR" => {
                 if !self.bif_arity(name, args, 1, 2) {
                     return None;
@@ -297,7 +310,7 @@ impl Gen<'_> {
                 let v = self.expr(&args[0], Want::default())?;
                 let v = self.as_chars(&v);
                 if v.ty.is_string() {
-                    return Some(v);
+                    return self.to_class(&v, super::ucs2::TextClass::Char);
                 }
                 if v.ty.is_numeric() {
                     return Some(self.char_of_number(&v));

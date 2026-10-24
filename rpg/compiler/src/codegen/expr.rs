@@ -165,7 +165,8 @@ impl Gen<'_> {
                 V::lit(Ty::Char(n), format!("x\"{}\"", h.to_ascii_uppercase()))
             }
             Lit::Date(_) | Lit::Time(_) | Lit::Timestamp(_) => return self.dt_literal(l),
-            Lit::Graph(_) | Lit::Ucs2(_) => {
+            Lit::Ucs2(h) => return Some(self.ucs2_literal(h)),
+            Lit::Graph(_) => {
                 self.err(ids::UNSUPPORTED, 30, "literal");
                 return None;
             }
@@ -626,15 +627,24 @@ impl Gen<'_> {
         let vb = self.as_chars(vb);
         let va = self.ind_as_char(&va);
         let vb = self.ind_as_char(&vb);
-        if !va.ty.is_char() || !vb.ty.is_char() {
+        // Two classes meet in the wider: UCS-2, graphic, character.
+        let Some(cls) = Self::meet(&va, &vb) else {
             self.err(ids::TYPE_MISMATCH, 30, "+");
             return None;
-        }
+        };
+        let va = self.to_class(&va, cls)?;
+        let vb = self.to_class(&vb, cls)?;
         let la = va.ty.str_len().unwrap_or(0);
         let lb = vb.ty.str_len().unwrap_or(0);
         let varying = va.ty.is_varying() || vb.ty.is_varying();
         let n = (la + lb).max(1);
-        let ty = if varying { Ty::VarChar(n, 2) } else { Ty::Char(n) };
+        let ty = match (cls, varying) {
+            (super::ucs2::TextClass::Ucs2, true) => Ty::VarUcs2(n, 2),
+            (super::ucs2::TextClass::Ucs2, false) => Ty::Ucs2(n),
+            (super::ucs2::TextClass::Graph, _) => Ty::Graph(n),
+            (_, true) => Ty::VarChar(n, 2),
+            (_, false) => Ty::Char(n),
+        };
         let t = self.b.temp(&self.ir_ty(&ty));
         if la + lb == 0 {
             self.b.ins(format!("mov {t}, \"\""));
@@ -703,6 +713,11 @@ impl Gen<'_> {
             return self.dt_compare(c, &va, &vb);
         }
         if (va.ty.is_string() || va.fig.is_some()) && (vb.ty.is_string() || vb.fig.is_some()) {
+            // Two classes compare in the wider.
+            let (va, vb) = match Self::meet(&va, &vb) {
+                Some(cls) => (self.to_class(&va, cls)?, self.to_class(&vb, cls)?),
+                None => (va.clone(), vb.clone()),
+            };
             // The IR compares a literal only against storage.
             let a = if va.kind == Vk::Lit && vb.kind == Vk::Lit {
                 let n = va.ty.str_len().unwrap_or(1).max(1);
