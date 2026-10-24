@@ -6,7 +6,7 @@
 //! member with an `expected/NAME.lst` is compiled (not run), both
 //! listings are normalized (`conformance::rpg::lstcmp`) and compared
 //! line for line. The normalized pair goes under
-//! `target/conformance-rpg/lst/` for a diff. Members `known_lst.txt`
+//! `target/conformance-rpg/lst/` (ours unnormalized under `raw/`) for a diff. Members `known_lst.txt`
 //! names (a member, or `batch/*`) are reported apart; any other
 //! difference fails. `QS400_LST=A,B` compares only those members.
 
@@ -22,6 +22,7 @@ fn every_listing_matches_the_oracle() {
     let _ = fs::remove_dir_all(&dir);
     fs::create_dir_all(dir.join("ours")).unwrap();
     fs::create_dir_all(dir.join("ibm")).unwrap();
+    fs::create_dir_all(dir.join("raw")).unwrap();
     let known_text = fs::read_to_string(kit.root.join("known_lst.txt")).unwrap_or_default();
     let known: Vec<&str> = known_text
         .lines()
@@ -61,6 +62,7 @@ fn every_listing_matches_the_oracle() {
         };
         let ours_n = lstcmp::normalize(&ours, true);
         let ibm_n = lstcmp::normalize(&ibm, false);
+        fs::write(dir.join("raw").join(format!("{}.lst", case.name)), ours.join("\n") + "\n").unwrap();
         fs::write(dir.join("ours").join(format!("{}.lst", case.name)), ours_n.join("\n") + "\n").unwrap();
         fs::write(dir.join("ibm").join(format!("{}.lst", case.name)), ibm_n.join("\n") + "\n").unwrap();
         match lstcmp::first_difference(&ours_n, &ibm_n) {

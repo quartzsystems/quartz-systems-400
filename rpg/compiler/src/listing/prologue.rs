@@ -79,8 +79,8 @@ pub(crate) fn prologue(out: &mut Out, o: &Options) {
     row(out, ' ', 2, "Optimization level", &o.optimize);
     row(out, ' ', 2, "Source listing indentation", &o.indent);
     row(out, ' ', 2, "Type conversion options", "*NONE");
-    row(out, ' ', 2, "Sort sequence", "*HEX");
-    row(out, ' ', 2, "Language identifier", "*JOBRUN");
+    row(out, ' ', 2, "Sort sequence", if o.sql.is_some() || super::from_precompiler(o) { "*JOB" } else { "*HEX" });
+    row(out, ' ', 2, "Language identifier", if o.sql.is_some() || super::from_precompiler(o) { "*JOB" } else { "*JOBRUN" });
     if module {
         row(out, ' ', 2, "Replace module", if o.replace { "*YES" } else { "*NO" });
     } else {
@@ -172,17 +172,22 @@ pub(crate) fn options_box(out: &mut Out, c: &Compiled, o: &Options) {
         let vals: String = chunk.iter().fold(String::new(), |a, v| a + &format!("{v:<11}"));
         boxrow(out, ' ', if i == 0 { "Compiler options" } else { "" }, vals.trim_end());
     }
-    boxrow(out, ' ', "Optimization level", &o.optimize);
-    boxrow(out, ' ', "Source listing indentation", &c.ctl.indent);
+    // The control keywords' values where given.
+    let given = |k: &str, quoted: bool, d: &str| ctl_args(c, k, quoted).map_or_else(|| d.to_string(), |v| columns(&v));
+    let (srtseq, langid) = if o.sql.is_some() || super::from_precompiler(o) { ("*JOB", "*JOB") } else { ("*HEX", "*JOBRUN") };
+    boxrow(out, ' ', "Optimization level", &given("OPTIMIZE", false, &o.optimize));
+    boxrow(out, ' ', "Source listing indentation", &given("INDENT", true, &c.ctl.indent));
     boxrow(out, ' ', "Type conversion options", "*NONE");
-    boxrow(out, ' ', "Sort sequence", "*HEX");
-    boxrow(out, ' ', "Language identifier", "*JOBRUN");
+    boxrow(out, ' ', "Sort sequence", &given("SRTSEQ", false, srtseq));
+    boxrow(out, ' ', "Language identifier", &given("LANGID", false, langid));
     if !module {
         boxrow(out, ' ', "User profile", &o.usrprf);
     }
-    boxrow(out, ' ', "Authority", "*LIBCRTAUT");
+    boxrow(out, ' ', "Authority", &given("AUT", false, "*LIBCRTAUT"));
     boxrow(out, ' ', "Truncate numeric", if c.ctl.truncnbr { "*YES" } else { "*NO" });
-    boxrow(out, ' ', "Fix numeric", "*NONE");
+    // FIXNBR's values in columns of 12.
+    let fixnbr = ctl_args(c, "FIXNBR", false).map_or_else(|| "*NONE".to_string(), |v| v.iter().fold(String::new(), |a, x| a + &format!("{x:<12}")).trim_end().to_string());
+    boxrow(out, ' ', "Fix numeric", &fixnbr);
     boxrow(out, ' ', "Allow null values", &c.ctl.alwnull);
     if module || !c.ctl.dftactgrp {
         boxrow(out, ' ', "Storage model . . .", if module { "*INHERIT" } else { "*SNGLVL" });
@@ -199,9 +204,42 @@ pub(crate) fn options_box(out: &mut Out, c: &Compiled, o: &Options) {
     if !module && !c.ctl.dftactgrp {
         boxrow(out, ' ', "Activation group", actgrp(&c.ctl.actgrp, o));
     }
-    boxrow(out, ' ', "Enable performance collection", "*PEP");
-    boxrow(out, ' ', "Profiling data", "*NOCOL");
-    boxrow(out, ' ', "Generate program interface", "*NO");
-    boxrow(out, ' ', "Require prototype for export", "*NO");
+    boxrow(out, ' ', "Enable performance collection", &given("ENBPFRCOL", false, "*PEP"));
+    boxrow(out, ' ', "Profiling data", &given("PRFDTA", false, "*NOCOL"));
+    match ctl_args(c, "PGMINFO", false) {
+        Some(v) if v.first().is_some_and(|g| g != "*NO") => {
+            out.line(' ', framed(8, "  Program interface information:", 77));
+            boxrow(out, ' ', "  Generate", &v[0]);
+            boxrow(out, ' ', "  Location", v.get(1).map_or("*MODULE", String::as_str));
+        }
+        _ => boxrow(out, ' ', "Generate program interface", "*NO"),
+    }
+    boxrow(out, ' ', "Require prototype for export", &given("REQPREXP", false, "*NO"));
     out.line(' ', rule(8, 77));
+}
+
+/// A control keyword's arguments as the options box shows them: words
+/// in upper case, literals as written (`quoted` keeps the quotes).
+fn ctl_args(c: &Compiled, name: &str, quoted: bool) -> Option<Vec<String>> {
+    let k = c.module.ctl.iter().find(|k| k.name == name)?;
+    Some(
+        k.args
+            .iter()
+            .map(|a| {
+                a.toks
+                    .iter()
+                    .map(|t| match &t.kind {
+                        rpgfront::lex::Kind::Str(s) if !quoted => s.clone(),
+                        rpgfront::lex::Kind::Str(_) => t.text(),
+                        _ => t.text().to_ascii_uppercase(),
+                    })
+                    .collect::<String>()
+            })
+            .collect(),
+    )
+}
+
+/// Values in columns of 11.
+fn columns(v: &[String]) -> String {
+    v.iter().fold(String::new(), |a, x| a + &format!("{x:<11}")).trim_end().to_string()
 }

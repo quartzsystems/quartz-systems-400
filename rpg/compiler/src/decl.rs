@@ -385,7 +385,11 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
             let (f, s) = d.kw("TIMFMT").and_then(timfmt_arg).unwrap_or((cx.timfmt, cx.timsep));
             Ty::Time(f, s)
         }
-        "Z" => Ty::Timestamp(match cols.to.trim().parse::<u32>() {
+        // The length, from the positions when they are given.
+        "Z" => Ty::Timestamp(match cols.to.trim().parse::<u32>().map(|to| match cols.from.trim().parse::<u32>() {
+            Ok(from) if from > 0 && to >= from => to - from + 1,
+            _ => to,
+        }) {
             Ok(n) if n > 20 => u8::try_from(n - 20).unwrap_or(6),
             Ok(19) => 0,
             _ => 6,

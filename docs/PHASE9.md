@@ -63,7 +63,8 @@ question), `COV131` (pub400's CCSID 273 job cannot convert to CCSID
 835), and 22 compile-error members whose only difference is IBM's
 follow-on diagnostics after `RNF3556` or an extra `RNF5410`.
 
-Listings that differ only in layout are named in `known_lst.txt`;
+Listings: 1,349 of 1,449 match IBM's line for line. The other 100
+differ only in layout and are named in `known_lst.txt` with reasons;
 their outcomes match.
 
 ## Harnesses
@@ -680,6 +681,47 @@ members known to differ.
   pair of structures: its statements, each target subfield, then
   `RNF7341` (target only) and `RNF7342` (source only), counted in the
   message summary. Each row's comment is a text (masked).
+- **CRTSQLRPGI.** The listing is the precompile listing, then the
+  compile listing of the member the precompiler writes
+  (`QTEMP/QSQLTEMP1`, `listing/sqlgen.rs`; QS/400 compiles it again
+  for its listing alone, as `CRTBNDRPG` or `CRTRPGMOD` with
+  `DBGVIEW(*STMT)`, `SRTSEQ(*JOB)`, `LANGID(*JOB)`). That member keeps
+  the source and makes each statement a comment (`//*` before free
+  text, at column 8 in fixed-format source, `C*` for `C/` and `C+`),
+  then its code at column 11 (comments at 81). The SQLCA block goes
+  before the main source's first calculation (or an earlier SQL
+  `INCLUDE`, or without one the first `DCL-PROC`) with the sequence
+  number of the record before; each scope's structures before its
+  first calculation (`STATIC` in a procedure), fixed `D DS` blocks
+  each set off with `**END-FREE`/`**FREE` in a fully free member,
+  free `DCL-DS *N` and `SQCALLnnnnnn` prototypes for `FETCH` without
+  `INTO`, multiple-row `FETCH`, `PREPARE`, `EXECUTE IMMEDIATE`,
+  `DESCRIBE` and `USING DESCRIPTOR`. Cursor declarations are numbered
+  first, `SET OPTION` takes a number per option, `INCLUDE` none. A
+  header ends at 128 until the first structure without host variables
+  (which ends it at 127 and adds a byte at 128); from then on every
+  header ends at 127 and fields still start at 129. `COMMIT` and
+  `ROLLBACK` set the data flag to `'3'` and `'5'`; `UNS(n)` is packed
+  (`PACKEVEN` for even digits); dates and times take the job's formats
+  (`*YMD-`, `*HMS:` on pub400). Free-form code takes the statement's
+  last line's sequence number, fixed form its first line's (the SQLCA's
+  for the statement at its place). The precompile listing: the options
+  page (the command's options, not `SET OPTION`'s), the records (a page
+  per run of one form, fixed form columns 1-80 and the comments after
+  the sequence number), the cross-reference (program names with SQL
+  types, columns, tables and correlation names, cursors, statements,
+  labels; a table's columns once, defined by the first statement that
+  names it, cursor declarations read first; same names in the order
+  made; a name with attributes and no references leaves a line), the
+  diagnostics (an `SQL0104` in `SET OPTION` three times; `SQL0053`
+  without statements). `lstcmp` masks the precompile texts and the
+  job's CCSID.
+- The xref lets a spaced record print on line 61; a ruler change prints
+  when its two records fit (an `INDENT` change also needs the record
+  after); `/SPACE n` adds to the next record's spacing. Undefined names
+  are listed globally (undefined subroutines in their procedure) and
+  their `RNF7030`s come first in the additional diagnostics, in name
+  order. `*IN(n)` references sort after the others.
 
 ## Oracle facts: compile errors
 

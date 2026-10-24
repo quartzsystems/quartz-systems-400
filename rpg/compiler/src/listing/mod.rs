@@ -17,6 +17,8 @@ mod page;
 mod prologue;
 mod refs;
 mod source;
+mod sqlgen;
+mod sqlxref;
 mod stmts;
 mod genlines;
 mod lines;
@@ -66,6 +68,44 @@ pub fn listing(c: &Compiled, o: &Options) -> Vec<String> {
     tail::summary(&mut out, c, &extra);
     tail::final_summary(&mut out, c, o, extra.iter().map(|(_, n)| n).sum());
     out.lines
+}
+
+/// The member IBM's SQL precompiler writes for the compile, as the
+/// `CRTSQLRPGI` listing lists it.
+#[must_use]
+pub(crate) fn sql_member(c: &Compiled) -> Option<rpgfront::Member> {
+    sqlgen::member(c)
+}
+
+/// The precompile listing's cross-reference.
+pub(crate) fn sql_xref(
+    c: &Compiled,
+    p: &rpgsqlpre::Precompiled,
+    ext: &mut dyn crate::files::ExtFiles,
+    record_of: &dyn Fn(u32) -> u32,
+) -> Vec<rpgsqlpre::listing::XrefEntry> {
+    sqlxref::entries(c, p, ext, record_of)
+}
+
+/// The options of the compile of that member: the command's, from
+/// `QTEMP/QSQLTEMP1`, with the precompiler's debugging view and
+/// target release.
+#[must_use]
+pub(crate) fn sql_options(o: &Options) -> Options {
+    let module = o.command == crate::ctl::Command::CrtRpgMod;
+    Options {
+        command: if module { crate::ctl::Command::CrtRpgMod } else { crate::ctl::Command::CrtBndRpg },
+        src: ("QTEMP".into(), "QSQLTEMP1".into(), o.name.clone()),
+        dbgview: "*STMT".into(),
+        tgtrls: "V7R5M0".into(),
+        sql: None,
+        ..o.clone()
+    }
+}
+
+/// A compile of the precompiler's member.
+pub(crate) fn from_precompiler(o: &Options) -> bool {
+    o.src.0 == "QTEMP" && o.src.1 == "QSQLTEMP1"
 }
 
 /// Whether a line is a listing directive (`/TITLE`, `/SPACE`,

@@ -30,6 +30,17 @@ enum Sect {
     Final,
     /// The EVAL-CORR summary: each subfield's comment is a text.
     Corr,
+    /// The precompile listing's diagnostics.
+    SqlDiags,
+}
+
+/// Where a precompile diagnostic's text starts.
+const SQL_TEXT: usize = 22;
+
+/// A precompile diagnostic record: ` SQLnnnn  ss  rrrrrr  text`.
+fn is_sql_diag(l: &str) -> bool {
+    let b = l.as_bytes();
+    b.len() > SQL_TEXT && b[1..4] == *b"SQL" && b[4..8].iter().all(u8::is_ascii_digit) && b[8] == b' '
 }
 
 fn is_heading(l: &str) -> bool {
@@ -52,12 +63,15 @@ fn is_diag(l: &str) -> bool {
         && b[10..12].iter().all(u8::is_ascii_digit)
 }
 
+/// A text's next line: blank up to the text after its forms control
+/// (` `, or `0` first on a page).
 fn is_continuation(l: &str, at: usize) -> bool {
-    l.len() > at && l.as_bytes()[..at].iter().all(|b| *b == b' ')
+    l.len() > at && l.as_bytes()[1..at].iter().all(|b| *b == b' ')
 }
 
 /// Normalize a listing; `ours` masks our own names first.
 #[must_use]
+#[allow(clippy::too_many_lines)]
 pub fn normalize(lines: &[String], ours: bool) -> Vec<String> {
     let lines: Vec<String> = if ours {
         let m = Mask {
@@ -99,6 +113,21 @@ pub fn normalize(lines: &[String], ours: bool) -> Vec<String> {
     let mut in_text: Option<usize> = None;
     for l in kept {
         let t = text_of(&l).trim_start();
+        // The job's CCSID is the job's, like its user.
+        if t.starts_with("Job CCSID.") {
+            out.push(format!("{}Job CCSID{{ccsid}}", &l[..1]));
+            continue;
+        }
+        if t.starts_with("DIAGNOSTIC MESSAGES") {
+            sect = Sect::SqlDiags;
+        } else if sect == Sect::SqlDiags && t.starts_with("Message Summary") {
+            sect = Sect::Other;
+        }
+        if sect == Sect::SqlDiags && is_sql_diag(&l) {
+            out.push(format!("{}{{text}}", &l[..SQL_TEXT]));
+            in_text = Some(SQL_TEXT);
+            continue;
+        }
         if t.starts_with("S o u r c e   L i s t i n g") || t.starts_with("A d d i t i o n a l   D i a g") {
             sect = Sect::Diags;
         } else if t.starts_with("M e s s a g e   S u m m a r y") {

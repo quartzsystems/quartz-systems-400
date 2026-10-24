@@ -2,7 +2,7 @@
      FQSYSPRT   O    F  132        PRINTER
      D line            DS           132
      DF00              S              1N
-     DF01              S              1P 1 inz(-.5)
+     DF01              S              1P 1 INZ(-0.5)
      DF02              S             20I 0
      DF03              S               T   INZ(t'14.30.05') TIMFMT(*iso)
      DF04              S             12A   INZ('abcdef')

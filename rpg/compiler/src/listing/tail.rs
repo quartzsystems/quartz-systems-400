@@ -27,14 +27,23 @@ pub(crate) fn additional(out: &mut Out, c: &Compiled) {
         "RNF7421" | "RNF7551" | "RNF7066" => 2,
         _ => 5,
     };
-    // The file checks come first, unused formats before blocking.
+    // The file checks come first, unused formats before blocking;
+    // the operand checks of expressions come last.
     let group = |id: &str| match id {
-        "RNF7066" => 0,
-        "RNF7086" => 1,
-        _ => 2,
+        "RNF7150" => 0,
+        "RNF7066" => 1,
+        "RNF7086" => 2,
+        "RNF7503" => 4,
+        _ => 3,
     };
-    // The module's own (line 0) last.
-    ds.sort_by_key(|d| (group(d.msgid), if d.at.line == 0 { u32::MAX } else { d.at.line }, rank(d.msgid)));
+    // The module's own (line 0) last. The names not defined come
+    // first (after RNF7451), in name order.
+    let line = |d: &rpgfront::Diag| if d.at.line == 0 { u32::MAX } else { d.at.line };
+    ds.sort_by_key(|d| match d.msgid {
+        "RNF7451" => (0, Vec::new(), 0, line(d), 0),
+        "RNF7030" => (1, super::xref::ebcdic_key(d.args.first().map_or("", String::as_str)), 0, line(d), 0),
+        _ => (2, Vec::new(), group(d.msgid), line(d), rank(d.msgid)),
+    });
     for d in ds {
         let field = if c.srcstmt() { String::new() } else { format!("{:>6}", if d.at.line == 0 { 0 } else { c.listing_line(d.at.line) }) };
         source::diag_lines(out, d, &field, &source::seq_of(c, d));
@@ -208,8 +217,9 @@ pub(crate) fn external(out: &mut Out, c: &Compiled) {
             out.line(' ', format!("{:45}{}", "", ch.concat()));
         }
     }
-    // IBM leaves the list blank after a second interface it ignored.
-    if procs.is_empty() && !c.diags.iter().any(|d| d.msgid == "RNF3768") {
+    // IBM leaves the list blank after a second interface it ignored
+    // or an EXTPROC in error.
+    if procs.is_empty() && !c.diags.iter().any(|d| matches!(d.msgid, "RNF3768" | "RNF3746")) {
         out.line(' ', "         No references in the source.");
     }
     for (title, list) in [("      Imported fields:", &imported), ("      Exported fields:", &exported)] {
@@ -291,6 +301,8 @@ fn totals(c: &Compiled) -> (usize, usize, usize, usize) {
         records += 1;
         match &l.class {
             Class::Comment => comments += 1,
+            // A blank line of a fully free member is a comment.
+            Class::Blank if l.fully_free => comments += 1,
             // Procedure boundaries are not counted as specifications.
             Class::Spec(_) | Class::Free | Class::Sql => {
                 // Calculations between procedures are ignored.

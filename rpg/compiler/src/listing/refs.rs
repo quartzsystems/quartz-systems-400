@@ -61,7 +61,7 @@ fn keeps_result(op: &str) -> bool {
 fn not_names(kw: &str) -> bool {
     matches!(
         kw,
-        "EXTNAME" | "EXTFLD" | "EXTFILE" | "EXTMBR" | "EXTPGM" | "PREFIX" | "DATFMT" | "TIMFMT" | "OPTIONS"
+        "EXTNAME" | "EXTFLD" | "EXTFILE" | "EXTMBR" | "PREFIX" | "DATFMT" | "TIMFMT" | "OPTIONS"
             | "RENAME" | "INCLUDE" | "IGNORE" | "DTAARA" | "CCSID" | "EXTDESC" | "EXPORT" | "IMPORT"
             | "OFLIND" | "RAFDATA"
     )
@@ -148,9 +148,27 @@ impl Walk<'_> {
     /// An output specification's conditioning: each `OR` group on the
     /// line after the one before.
     fn cond_on(&mut self, c: &Conditioning, line: u32) {
-        for (k, alt) in c.iter().enumerate() {
+        // Each indicator on the line it is written on: up to three a
+        // line, `AND` and `OR` lines after the first.
+        let text = |no: u32| self.c.read.lines.iter().find(|l| l.no == no).map(|l| l.text.clone()).unwrap_or_default();
+        let mut slots = Vec::new();
+        let mut no = line;
+        loop {
+            let t = text(no);
+            let n = (0..3).filter(|k| t.get(20 + 3 * k..23 + 3 * k).is_some_and(|s| !s.trim().is_empty())).count();
+            slots.extend(std::iter::repeat_n(no, n));
+            no += 1;
+            let next = text(no);
+            if !matches!(next.get(15..18).map(|s| s.trim().to_ascii_uppercase()).as_deref(), Some("AND" | "OR")) {
+                break;
+            }
+        }
+        let mut k = 0;
+        for (a, alt) in c.iter().enumerate() {
             for ci in alt {
-                self.ind(&ci.ind, line + u32::try_from(k).unwrap_or(0), ' ');
+                let at = slots.get(k).copied().unwrap_or(line + u32::try_from(a).unwrap_or(0));
+                self.ind(&ci.ind, at, ' ');
+                k += 1;
             }
         }
     }
@@ -203,8 +221,8 @@ impl Walk<'_> {
                 self.special(word, at.line, target);
                 if let Some(i) = index {
                     if let Some(n) = lit_index(i) {
-                        // An element set by an assignment is noted last.
-                        let line = if target { at.line + LATE } else { at.line };
+                        // An element named by its index is noted last.
+                        let line = at.line + LATE;
                         self.out.inds.entry(format!("{n:02}")).or_default().push((line, flag));
                     }
                     self.expr(i, false);
@@ -400,10 +418,26 @@ impl Walk<'_> {
             // SFILE names the format, then the record number field.
             let skip = usize::from(k.name.eq_ignore_ascii_case("SFILE"));
             for a in k.args.iter().skip(skip) {
-                for t in &a.toks {
+                let mut ds: Option<usize> = None;
+                for (j, t) in a.toks.iter().enumerate() {
+                    // A qualified name: the subfield of the structure.
+                    let after_dot = j >= 2 && a.toks[j - 1].text() == ".";
+                    let held = ds.take();
                     match &t.kind {
+                        TokKind::Name(n) if after_dot && held.is_some() => {
+                            if let Some(sid) = held.and_then(|di| self.c.table.subfield(di, &n.to_ascii_uppercase())) {
+                                self.sym(sid, t.at.line, ' ');
+                                if let Ty::Ds(di) = self.c.table.syms[sid].ty {
+                                    ds = Some(di);
+                                }
+                            }
+                        }
+                        TokKind::Punct(".") => ds = held,
                         TokKind::Name(n) => {
                             if let Some(id) = self.find(n) {
+                                if let Some(Kind::Ds(di)) = self.c.table.syms[id].kind {
+                                    ds = Some(di);
+                                }
                                 self.sym(id, t.at.line, ' ');
                             } else if let Some(l) = self.out.labels.get_mut(&(self.scope, n.to_ascii_uppercase())) {
                                 // A subroutine (INFSR).
@@ -425,7 +459,25 @@ impl Walk<'_> {
         if let Some(v) = &d.value {
             self.expr(v, false);
         }
+        let ds = self.find(&d.name.to_ascii_uppercase()).and_then(|id| match self.c.table.syms[id].kind {
+            Some(Kind::Ds(di)) => Some(di),
+            _ => None,
+        });
         for ch in &d.children {
+            // OVERLAY naming a subfield of a qualified structure.
+            if let Some(di) = ds
+                && let Some(k) = ch.kws.iter().find(|k| k.name.eq_ignore_ascii_case("OVERLAY"))
+                && let Some(t) = k.args.first().and_then(|a| a.toks.first())
+                && let TokKind::Name(n) = &t.kind
+                && self.find(&n.to_ascii_uppercase()).is_none()
+                && let Some(sid) = self.c.table.subfield(di, &n.to_ascii_uppercase())
+            {
+                self.sym(sid, t.at.line, ' ');
+                let mut ch = ch.clone();
+                ch.kws.retain(|k| !k.name.eq_ignore_ascii_case("OVERLAY"));
+                self.def(&ch);
+                continue;
+            }
             // An overlay of its own structure beside POS is dropped.
             let dropped = self.c.diags.iter().any(|x| x.msgid == "RNF3575" && x.at.line == ch.at.line);
             let own = |k: &&Keyword| {
@@ -560,6 +612,13 @@ pub(crate) fn collect(c: &Compiled) -> Refs {
         w.ind(&i.rid, i.at.line, 'D');
         for f in &i.fields {
             let line = if i.external { gen_lines.get(&f.name.to_ascii_uppercase()).copied().unwrap_or(f.at.line) } else { f.at.line };
+            // A program-described field input again is changed there.
+            if !i.external
+                && let Some(id) = w.find(&f.name.to_ascii_uppercase())
+                && w.c.table.syms[id].def_line != f.at.line
+            {
+                w.sym(id, f.at.line, 'M');
+            }
             for x in &f.inds {
                 w.ind(x, line, 'D');
             }
@@ -594,15 +653,25 @@ pub(crate) fn collect(c: &Compiled) -> Refs {
     }
     for (k, p) in m.procs.iter().enumerate() {
         if let Some(id) = c.table.find(0, &p.name.to_ascii_uppercase()) {
-            w.sym(id, p.at.line, ' ');
+            w.sym(id, name_start(c, p.at.line), ' ');
             // A fixed-form procedure's end specification names it too.
+            // So do a free-form END-PROC and DCL-PI that name it.
+            let names = |t: &str, word: &str| {
+                let up = t.trim_start().to_ascii_uppercase();
+                up.strip_prefix(word).is_some_and(|r| r.split([' ', ';']).find(|w| !w.is_empty()) == Some(p.name.to_ascii_uppercase().as_str()))
+            };
             let named_end = c.read.lines.iter().any(|l| {
                 l.no == p.end.line
-                    && matches!(l.class, rpgfront::reader::Class::Spec('P' | 'p'))
-                    && !l.text.get(6..21).unwrap_or("").trim().is_empty()
+                    && ((matches!(l.class, rpgfront::reader::Class::Spec('P' | 'p')) && !l.text.get(6..21).unwrap_or("").trim().is_empty())
+                        || (l.class == rpgfront::reader::Class::Free && names(&l.text, "END-PROC")))
             });
+            if let Some(pi) = &p.pi
+                && c.read.lines.iter().any(|l| l.no == pi.at.line && l.class == rpgfront::reader::Class::Free && names(&l.text, "DCL-PI"))
+            {
+                w.sym(id, pi.at.line, ' ');
+            }
             if p.end.line != p.at.line && named_end {
-                w.sym(id, p.end.line, ' ');
+                w.sym(id, name_start(c, p.end.line), ' ');
             }
         }
         w.scope = k + 1;
@@ -629,9 +698,17 @@ pub(crate) fn collect(c: &Compiled) -> Refs {
     dropped(&mut w);
     for f in c.files.iter().filter(|f| !f.auto_overflow) {
         if let Some(of) = &f.oflind {
-            w.ind(of, f.def_line, 'd');
+            // Defined on the line of the OFLIND keyword.
+            let line = m
+                .files
+                .iter()
+                .chain(m.procs.iter().flat_map(|p| p.files.iter()))
+                .filter(|d| d.at.line == f.def_line)
+                .find_map(|d| d.kws.iter().find(|k| k.name == "OFLIND").map(|k| k.at.line))
+                .unwrap_or(f.def_line);
+            w.ind(of, line, 'd');
             let word = format!("*IN{}", of.trim().to_ascii_uppercase().trim_start_matches("*IN"));
-            w.out.fields.entry(word).or_default().push((f.def_line, 'd'));
+            w.out.fields.entry(word).or_default().push((line, 'd'));
         }
     }
     w.out
@@ -705,4 +782,19 @@ pub(crate) fn has_definition(c: &Compiled, id: SymId) -> bool {
         Some(Kind::Field) if s.implicit && s.def_line == 0 => false,
         _ => true,
     }
+}
+
+/// The first line of a fixed-form name continued with `...` that ends
+/// on `line`: references are on it.
+fn name_start(c: &Compiled, line: u32) -> u32 {
+    let continued = |no: u32| {
+        c.read.lines.iter().find(|l| l.no == no).is_some_and(|l| {
+            matches!(l.class, rpgfront::reader::Class::Spec(_)) && !l.fully_free && l.text.get(6..).unwrap_or("").trim_end().ends_with("...")
+        })
+    };
+    let mut at = line;
+    while at > 1 && continued(at - 1) {
+        at -= 1;
+    }
+    at
 }

@@ -4,7 +4,7 @@
 
 //! The grammar fuzzer's programs through the compiler and the runtime:
 //! each is created (no internal error, nothing above severity 10) and
-//! runs to its end. `QS400_FUZZ_N` sets how many (2000 in a release
+//! runs to its end, as on pub400. `QS400_FUZZ_N` sets how many (2000 in a release
 //! build, 300 in a debug one);
 //! `QS400_FUZZ_WRITE=N` also writes the first N as corpus members for
 //! the oracle under `tools/conformance/rpg/b14fuzz/`.
@@ -12,6 +12,10 @@
 use conformance::rpg::{self, fuzz};
 use rpg_oracle::case::Case;
 use rpg_oracle::outcome::Run;
+
+/// Seeds whose program ends in an escape on pub400 too (their bundle's
+/// outcome): 542's `895 - %ABS(V2)` goes below zero, unsigned, status 103.
+const IBM_ESCAPES: &[u64] = &[542];
 
 #[test]
 fn fuzzed_programs_compile_and_run() {
@@ -33,7 +37,9 @@ fn fuzzed_programs_compile_and_run() {
                 if !o.created || worst > 10 {
                     let ids: Vec<&str> = o.diags.iter().map(|d| d.msgid.as_str()).collect();
                     bad.push(format!("{name}: not created, severity {worst} {ids:?} {notes}"));
-                } else if let Run::Escape(m) = &o.run {
+                } else if let Run::Escape(m) = &o.run
+                    && !IBM_ESCAPES.contains(&seed)
+                {
                     bad.push(format!("{name}: escape {m}"));
                 }
             }
@@ -58,7 +64,9 @@ fn fuzz_bundles_compile_and_run() {
                 if !o.created || worst > 10 {
                     let ids: Vec<&str> = o.diags.iter().map(|d| d.msgid.as_str()).collect();
                     bad.push(format!("{name}: not created, severity {worst} {ids:?} {notes}"));
-                } else if let Run::Escape(m) = &o.run {
+                } else if let Run::Escape(m) = &o.run
+                    && !IBM_ESCAPES.iter().any(|s| (first..first + 20).contains(s))
+                {
                     bad.push(format!("{name}: escape {m}"));
                 }
             }

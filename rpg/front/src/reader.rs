@@ -141,6 +141,9 @@ pub struct Read {
     pub sql_includes: Vec<SqlInclude>,
     /// `INCLUDE SQLDA` was seen.
     pub sqlda: bool,
+    /// The conditional directives whose group is left out (in an
+    /// included group), by line: the listing counts even an empty one.
+    pub excluded: Vec<u32>,
 }
 
 /// An SQL `INCLUDE` the reader took: of `SQLCA` or `SQLDA`, or of a
@@ -228,6 +231,8 @@ struct Frame {
     member: usize,
     next: usize,
     fully_free: bool,
+    /// Between `**END-FREE` and `**FREE` in a fully free member.
+    fixed_part: bool,
     free_block: bool,
     ctdata: bool,
     conds: usize,
@@ -246,6 +251,7 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
         next: 0,
         fully_free: is_free_marker(r.members[0].records.first().map_or("", |x| x.text.as_str())),
         free_block: false,
+        fixed_part: false,
         ctdata: false,
         conds: 0,
     }];
@@ -267,6 +273,24 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
         let depth = u8::try_from(stack.len() - 1).unwrap_or(u8::MAX);
         let top = stack.last_mut().expect("a frame");
         let active = conds.last().is_none_or(|c| c.active);
+        // A fully free member goes to fixed form at `**END-FREE` and
+        // back at `**FREE` (the precompiler's generated source).
+        let marker = rec.text.trim().to_ascii_uppercase();
+        if !first && ((top.fully_free && marker == "**END-FREE") || (top.fixed_part && marker == "**FREE")) {
+            top.fixed_part = !top.fixed_part;
+            top.fully_free = !top.fixed_part;
+            r.lines.push(Line {
+                no,
+                member: top.member,
+                seq: rec.seq,
+                date: rec.date,
+                text: rec.text,
+                class: Class::FreeMarker,
+                fully_free: true,
+                depth,
+            });
+            continue;
+        }
         let mut class = classify(&rec.text, top.fully_free, first, top.ctdata, top.free_block);
         let at = Pos { line: no, col: 7 };
         // Conditional directives work whatever the state.
@@ -319,6 +343,9 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
                 d,
                 Directive::If(..) | Directive::ElseIf(..) | Directive::Else | Directive::EndIf
             ) {
+                if !matches!(d, Directive::EndIf) && conds.last().is_some_and(|c| c.outer && !c.active) {
+                    r.excluded.push(no);
+                }
                 r.lines.push(Line {
                     no,
                     member: top.member,
@@ -408,6 +435,7 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
                         next: 0,
                         fully_free: free,
                         free_block: false,
+                        fixed_part: false,
                         ctdata: false,
                         conds: conds.len(),
                     });
@@ -441,6 +469,7 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
                 next: 0,
                 fully_free: free,
                 free_block: false,
+                fixed_part: false,
                 ctdata: false,
                 conds: conds.len(),
             });

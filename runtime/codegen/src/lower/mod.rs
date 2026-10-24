@@ -78,7 +78,8 @@ fn init_bytes(v: &qir::Var) -> Vec<u8> {
         .unwrap_or_else(|| qir::inst::literal::default_bytes(&v.ty, usz(v.ty.size()), false))
 }
 
-/// The target: `x86_64`, System V, no position independence, no probes.
+/// The target: `x86_64`, System V, no position independence, inline
+/// stack probes (a frame over a page must not skip the guard page).
 pub fn target() -> Result<OwnedTargetIsa> {
     let mut fb = settings::builder();
     let set = |fb: &mut settings::Builder, k: &str, v: &str| {
@@ -87,7 +88,8 @@ pub fn target() -> Result<OwnedTargetIsa> {
     };
     set(&mut fb, "opt_level", "speed")?;
     set(&mut fb, "is_pic", "false")?;
-    set(&mut fb, "enable_probestack", "false")?;
+    set(&mut fb, "enable_probestack", "true")?;
+    set(&mut fb, "probestack_strategy", "inline")?;
     set(&mut fb, "use_colocated_libcalls", "false")?;
     // Fat pointers travel as i128 values; the System V extension passes
     // and returns them in register pairs, as Rust does for u128.

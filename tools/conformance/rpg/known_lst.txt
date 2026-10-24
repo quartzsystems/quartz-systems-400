@@ -2,29 +2,10 @@
 # one per line (a member, or batch/*) with the reason; the listing
 # comparison (tests/rpg_listing.rs) reports them apart and does not
 # fail on them.
-b11sql/* the SQL precompiler's listing and the compile of IBM's generated source (SQL_ variables, QSQROUTE calls) are not produced
 ERR090 the binding directories do not exist: IBM's bind diagnostics section comes from binding, after the compile listing
 LST016 the oracle job's CCSID 273 shows the INDENT('| ') bar as ']' (oracle artifact)
-ERR231 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR232 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR233 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR236 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR237 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR238 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR239 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR243 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR245 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR248 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
 ERR249 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR251 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR254 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR255 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR256 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR258 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR260 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR262 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
 ERR263 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR264 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
 ERR265 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
 ERR266 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
 ERR267 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
@@ -34,96 +15,12 @@ ERR272 listing of a batch 12 member added after the listing work: diagnostic pla
 ERR273 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
 ERR274 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
 ERR275 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR276 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR277 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR278 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR279 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
 ERR282 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR283 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR284 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
 ERR285 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR289 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
 ERR290 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
 ERR291 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR292 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR293 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
 ERR294 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR296 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR299 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR307 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR308 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR309 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR311 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
 ERR312 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR313 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR314 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-ERR316 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
-FZB002 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB003 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB004 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB005 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB007 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB008 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB009 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB011 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB013 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB014 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB016 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB018 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB019 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB020 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB021 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB023 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB024 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB025 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB026 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB027 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB031 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB034 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB035 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB036 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB038 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB039 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB041 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB044 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB045 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB047 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB048 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB049 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB050 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB051 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB052 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB054 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB055 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB058 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB059 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB060 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB063 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB065 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB066 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB067 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB068 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB069 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB072 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB073 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB074 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB075 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB076 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB077 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB079 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB081 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB082 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB085 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB086 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB087 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB091 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB093 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB094 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB095 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB096 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB097 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB098 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
-FZB099 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
 COV001 the =I line of a display format in a file that does not compile has no format name
 COV002 the =I line of a display format in a file that does not compile has no format name
 COV003 the =I line of a display format in a file that does not compile has no format name
@@ -131,36 +28,20 @@ COV101 the =I line of a display format in a file that does not compile has no fo
 COV126 the =I line of a display format in a file that does not compile has no format name
 COV007 a fixed-form procedure's PI line is not a cross-reference of its prototype
 COV124 a fixed-form procedure's PI line is not a cross-reference of its prototype
-COV008 a CALLB literal is not listed in the external references
 COV125 a CALLB literal is not listed in the external references
 COV016 the summary's count of RNF7031 for a DATA-INTO handler's template
 COV037 subfields of a handler's LIKEDS template used through the parameter count as referenced
 COV018 RNF7030 of a *LIKE DEFINE base prints with the statement, not in the additional diagnostics
-COV028 the marker of a blank resulting-indicator entry is one column wide
 COV038 the *XML_ special words are not cross-references (CONST)
 COV039 the *XML_ special words are not cross-references (CONST)
 COV040 the *XML_ special words are not cross-references (CONST)
 COV050 additional diagnostics of one line print in identifier order, IBM's in the order found
-COV119 additional diagnostics of one line print in identifier order, IBM's in the order found
 COV051 the ALWNULL attribute line of a NULLIND field in the cross-reference
 COV118 the (ALWNULL) mark on a null-capable =I field
-COV055 SND-MSG's %TARGET words in the cross-reference
 COV057 an object field's O(*JAVA:class) attributes in the cross-reference
 COV111 an object field's O(*JAVA:class) attributes in the cross-reference
 COV064 recovery after RNF0312 does not reference the names after the error
-COV069 a parameter's BASED(_QRNL_PST+) attribute line
-COV116 a parameter's BASED(_QRNL_PST+) attribute line
-COV071 the marker of RNF0369 is under the operand's first character only
-COV072 the options box does not show OPTIMIZE from the control options
-COV073 the options box does not show AUT from the control options
-COV079 the options box does not show FIXNBR from the control options
-COV083 the options box shows INDENT's value unquoted
-COV084 the options box does not show REQPREXP from the control options
-COV090 the options box does not show PGMINFO from the control options
-COV093 the options box does not show SRTSEQ and LANGID from the control options
-COV094 the options box does not show the binding directory's library
 COV089 the CCSID attribute line of a field in the cross-reference
-COV087 the spacing before a statement after a diagnostic on a DCL-PROC line
 COV092 the **ALTSEQ records print as source, IBM shows them in a box
 COV095 the marker of EXTIND's indicator on the file line
 COV096 OFLIND naming an indicator field is not that field's reference
@@ -168,62 +49,20 @@ COV078 the EXTNAME structure's external description box (*EXPDDS)
 COV105 the EXTNAME structure's external description box (*EXPDDS)
 COV107 the external description box of a file whose formats are all ignored
 COV109 SAMEPOS's subfield name is not a cross-reference
-COV110 PACKEVEN's RNF3704 is in the additional diagnostics on IBM's listing
 COV108 a LIKEFILE file prints the parent's external description box
-COV112 the marker of EXTFMT's value
 COV113 the markers of an EXTFLD naming no field
 COV129 a LIKEFILE parameter is not supported (PHASE9.md, Blocked)
 COV130 a fixed-form procedure's PI line is not a cross-reference of its prototype
 COV131 the CCSID attribute line of a graphic field in the cross-reference
-COV132 the options box does not show REQPREXP from the control options
 COV133 the display file box's format-name columns
 COV134 the =I line of a display format in a file that does not compile has no format name
 COV103 the external description box of a file whose RAFDATA keyword is refused
 FEX009 the =O block before a free-form procedure lacks its ruler-switch '-' record
-DCL024 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-DCL028 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-DCL041 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-DCL075 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
 DCL106 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
 DCL121 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-DCL122 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
 DCL126 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
 DCL127 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
 DCL129 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-DCL130 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-DCL144 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-DCL147 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC029 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC034 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC035 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC040 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC053 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC068 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC077 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC081 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC087 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC089 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC093 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC094 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC097 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC100 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC112 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC114 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC118 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC128 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC135 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC136 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC137 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC138 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC139 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC141 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC142 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC143 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC147 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC149 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC151 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC152 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
-SPEC153 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
 IR004 the cross-reference gives a LIKEDS parameter's subfield references to the base structure's subfields
 IR006 the cross-reference does not count an OVERLAY keyword as a reference of the array it names
 IR007 the rulers and cross-reference around LIKEFILE parameter files (each one's format listed apart) are not matched yet

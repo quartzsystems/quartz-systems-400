@@ -72,7 +72,9 @@ pub fn items(read: &Read, diags: &mut Vec<Diag>) -> Vec<Item> {
                 // IBM reports text past it in a /FREE block, and outside
                 // one on the lines of a statement that takes more than one.
                 let (semi, open_after) = statement_ends(&rpgspecs::cut(&l.text, 8, 80));
-                if !l.fully_free && !rpgspecs::cut(&l.text, 81, 100).trim().is_empty() && (in_free_block || open_stmt || !semi) {
+                // A `//` comment there is not reported.
+                let past = rpgspecs::cut(&l.text, 81, 100);
+                if !l.fully_free && !past.trim().is_empty() && !past.trim_start().starts_with("//") && (in_free_block || open_stmt || !semi) {
                     diags.push(Diag::new(ids::FREE_COMMENT, 20, l.pos(81)));
                 }
                 open_stmt = if semi { open_after } else { open_stmt || open_after };

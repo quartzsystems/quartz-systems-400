@@ -11,7 +11,7 @@ dcl-s F05 date(*jis) inz(d'2026-03-05');
 dcl-s F06 packed(19:0);
 dcl-s F07 bindec(6:0) inz(3976);
 dcl-s F08 timestamp inz(z'2026-03-05-14.30.05.123456');
-dcl-s F09 packed(3:3) inz(.091);
+dcl-s F09 packed(3:3) inz(0.091);
 dcl-s F10 bindec(5:1) inz(4629);
 dcl-s F11 bindec(5:3) inz(41);
 line = 'F00 ' + %char(%size(F00)) + ' ' + %char(%len(F00));

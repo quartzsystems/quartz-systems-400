@@ -241,22 +241,75 @@ pub fn diags(p: &Precompiled) -> Vec<Diag> {
         .collect()
 }
 
-/// The precompile listing of a compile.
+/// The precompile listing of a compile: the main member's records and
+/// those of the members an SQL `INCLUDE` brings (a member that is not
+/// fully free set off with `**END-FREE` and `**FREE` in one that is).
 #[must_use]
-pub fn precompile_listing(c: &crate::Compiled, p: &Precompiled, opts: &crate::Options) -> Vec<String> {
-    let records: Vec<(String, String)> = c
-        .read
-        .lines
-        .iter()
-        .filter(|l| l.depth == 0)
-        .map(|l| (l.text.clone(), l.seq.clone()))
-        .collect();
+pub fn precompile_listing(c: &crate::Compiled, p: &Precompiled, opts: &crate::Options, ext: &mut dyn ExtFiles) -> Vec<String> {
+    use rpgsqlpre::listing::Record;
+    let mut records: Vec<Record> = Vec::new();
+    let mut at: std::collections::HashMap<u32, u32> = std::collections::HashMap::new();
+    let mut wrapped: Option<usize> = None;
+    let marker = |text: &str, free: bool| Record { text: text.into(), seq: "000000".into(), free };
+    for l in &c.read.lines {
+        let inc = c.read.sql_includes.iter().find(|i| i.member == Some(l.member) && l.member > 0);
+        if l.depth > 0 && inc.is_none() {
+            continue;
+        }
+        if wrapped.is_some_and(|m| m != l.member) {
+            records.push(marker("**FREE", false));
+            wrapped = None;
+        }
+        if let Some(i) = inc
+            && wrapped.is_none()
+            && c.module.fully_free
+            && !i.fully_free
+        {
+            records.push(marker("**END-FREE", true));
+            wrapped = Some(l.member);
+        }
+        records.push(Record {
+            text: l.text.clone(),
+            seq: l.seq.clone(),
+            free: l.fully_free,
+        });
+        at.insert(l.no, u32::try_from(records.len()).unwrap_or(0));
+    }
+    if wrapped.is_some() {
+        records.push(marker("**FREE", true));
+    }
+    // The **FREE that ends an included member lists as free form.
+    for r in &mut records {
+        if r.text == "**FREE" && r.seq == "000000" {
+            r.free = true;
+        }
+    }
+    let record_of = |line: u32| at.get(&line).copied().unwrap_or(line);
+    let mut srcs = Vec::new();
+    collect(&c.module.calcs, 0, &mut srcs);
+    for p in &c.module.procs {
+        collect(&p.calcs, 1, &mut srcs);
+    }
+    let xref = crate::listing::sql_xref(c, p, ext, &record_of);
+    let command = opts.sql.clone().unwrap_or_default();
+    let object = format!("{}/{}", opts.lib, opts.name);
     let h = rpgsqlpre::listing::Heading {
-        object: format!("{}/{}", opts.lib, opts.name),
         source_file: format!("{}/{}", opts.src.0, opts.src.1),
-        member: opts.src.2.clone(),
+        member: if opts.src.2 == opts.name { "*OBJ".into() } else { opts.src.2.clone() },
         objtype: if opts.command == crate::Command::CrtRpgMod { "*MODULE" } else { "*PGM" }.into(),
         release: "V7R5M0".into(),
+        options: command,
+        object,
+        statements: srcs.len(),
+        set_options: srcs
+            .iter()
+            .filter(|s| {
+                let up = s.text.to_ascii_uppercase();
+                let mut w = up.split_whitespace();
+                w.next() == Some("SET") && w.next() == Some("OPTION")
+            })
+            .map(|s| s.line)
+            .collect(),
     };
-    rpgsqlpre::listing::listing(p, &h, &records)
+    rpgsqlpre::listing::listing(p, &h, &records, &xref, &record_of)
 }

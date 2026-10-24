@@ -188,7 +188,8 @@ pub(crate) fn place(d: &Diag) -> Place {
         "RNF0328" | "RNF0329" | "RNF0331" | "RNF0334" | "RNF0336" | "RNF0345" | "RNF0362" | "RNF0365" | "RNF0371"
         | "RNF0381" | "RNF0528" | "RNF0530" | "RNF0571" | "RNF0580" | "RNF0581" | "RNF0599" | "RNF0655" | "RNF0752"
         | "RNF5159" | "RNF5191" | "RNF5202" | "RNF5276" | "RNF5343" | "RNF5403" | "RNF6029" | "RNF0203" | "RNF0224"
-        | "RNF0574" | "RNF5352" | "RNF0337" | "RNF0342" | "RNF0507" | "RNF0556" | "RNF0565" | "RNF0587" => {
+        | "RNF0574" | "RNF5352" | "RNF0337" | "RNF0342" | "RNF0507" | "RNF0556" | "RNF0565" | "RNF0587" | "RNF5123"
+        | "RNF0579" | "RNF5184" | "RNF0592" | "RNF0386" | "RNF0364" => {
             Place::Additional
         }
         id if id.starts_with("RNF7") => Place::Additional,
@@ -252,7 +253,11 @@ pub(crate) fn seq_of(c: &Compiled, d: &Diag) -> String {
 
 /// Diagnostics IBM prints without a marker.
 fn unmarked(id: &str) -> bool {
-    matches!(id, "RNF5005" | "RNF0256" | "RNF3504" | "RNF5418" | "RNF5177" | "RNF5178" | "RNF7301" | "RNF5501" | "RNF1502" | "RNF5415" | "RNF5094")
+    matches!(
+        id,
+        "RNF5005" | "RNF0256" | "RNF3504" | "RNF5418" | "RNF5177" | "RNF5178" | "RNF7301" | "RNF5501" | "RNF1502" | "RNF5415" | "RNF5094"
+            | "RNF0706" | "RNF0702" | "RNF0272" | "RNF0701"
+    )
 }
 
 /// The column a diagnostic points at: the name it is about when the
@@ -289,6 +294,13 @@ fn marker_col(d: &Diag, l: &Line) -> usize {
     if let Some(a) = d.args.first().filter(|a| !a.is_empty()) {
         let up = l.text.to_ascii_uppercase();
         let a = a.to_ascii_uppercase();
+        // A fixed-form specification's own name, in columns 7-21.
+        if !l.fully_free
+            && matches!(l.class, Class::Spec('D' | 'd' | 'P' | 'p' | 'F' | 'f'))
+            && let Some(n) = up.get(6..21).filter(|n| n.trim() == a)
+        {
+            return 7 + n.len() - n.trim_start().len();
+        }
         let name = |c: u8| c.is_ascii_alphanumeric() || matches!(c, b'_' | b'#' | b'@' | b'$');
         let b = up.as_bytes();
         let mut from = 0;
@@ -306,12 +318,11 @@ fn marker_col(d: &Diag, l: &Line) -> usize {
     usize::from(d.at.col)
 }
 
-/// Print the diagnostics released after a line: markers for those on
-/// it, then each record.
-fn release(out: &mut Out, c: &Compiled, ds: &[&Diag], last: Option<(&Line, u32)>, nums: &Numbers) {
-    if ds.is_empty() {
-        return;
-    }
+/// The diagnostics in print order, the marker rows under the last line
+/// and each diagnostic's letter.
+type Marks<'a> = (Vec<&'a Diag>, Vec<Vec<char>>, Vec<Option<char>>);
+
+fn marks<'a>(c: &Compiled, ds: &[&'a Diag], last: Option<(&Line, u32)>) -> Marks<'a> {
     let mut ds: Vec<&Diag> = ds.to_vec();
     // A statement's own first, then a procedure's, then the declarations'.
     // A definition left open and an unbalanced group come after the
@@ -381,6 +392,16 @@ fn release(out: &mut Out, c: &Compiled, ds: &[&Diag], last: Option<(&Line, u32)>
             *slot = ch;
         }
     }
+    (ds, rows, letters)
+}
+
+/// Print the diagnostics released after a line: markers for those on
+/// it, then each record.
+fn release(out: &mut Out, c: &Compiled, ds: &[&Diag], last: Option<(&Line, u32)>, nums: &Numbers) {
+    if ds.is_empty() {
+        return;
+    }
+    let (ds, rows, letters) = marks(c, ds, last);
     for r in &rows {
         out.line(' ', format!("======>{}", r.iter().collect::<String>()));
     }
@@ -407,7 +428,9 @@ fn record(l: &Line, no: Option<u32>, mark: char, info: &Info, srcid: &str) -> St
         if matches!(l.class, Class::Spec('C' | 'c')) && !xf2_op(&l.text) {
             text = dashes(&text);
         }
-        format!("{no:>6}{mark}{text:<95}{:>4}       {:<6}{srcid:>5}{}", info.level, l.date, l.seq)
+        // Columns 1-5 print in the page and line column.
+        let area: String = l.text.chars().take(5).collect();
+        format!("{no:>6}{mark}{text:<95}{:>4} {area:<5} {:<6}{srcid:>5}{}", info.level, l.date, l.seq)
     }
 }
 
@@ -519,6 +542,8 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
                     None => at_end.push(d),
                 }
             }
+            // Text past column 80 prints after its own line.
+            Some(i) if d.msgid == "RNF5501" => after.entry(i).or_default().push(d),
             Some(i) => {
                 let r = if p == Place::Group { info[i].group_end } else { info[i].stmt_end };
                 after.entry(r).or_default().push(d);
@@ -556,6 +581,7 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
     let mut box_done = !has_h;
     let mut decls_done = decls.is_empty();
     let mut cur_member = 0usize;
+    let mut deferred: Vec<&Diag> = Vec::new();
     for (i, l) in lines.iter().enumerate() {
         // Between the line before and this one: the rulers of the
         // member it is in.
@@ -573,6 +599,10 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
                 });
                 copy_box(out, c, l, id);
             }
+            // What the copy directive released prints after the box.
+            if entering {
+                release(out, c, &std::mem::take(&mut deferred), prev_printed, &nums);
+            }
             if shown(l, c) {
                 let r = if l.fully_free { free_rulers() } else { fixed_rulers() };
                 if !out.rulers_are(&r) {
@@ -580,6 +610,14 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
                 }
             }
             cur_member = l.member;
+        }
+        if !deferred.is_empty() {
+            release(out, c, &std::mem::take(&mut deferred), prev_printed, &nums);
+        }
+        // `**END-FREE` and `**FREE` in a fully free member switch the
+        // rulers.
+        if i > 0 && l.member == lines[i - 1].member && l.fully_free != lines[i - 1].fully_free && shown(l, c) {
+            out.change_rulers(if l.fully_free { free_rulers() } else { fixed_rulers() });
         }
         if Some(i) == first_not_h && !box_done {
             prologue::options_box(out, c, o);
@@ -635,8 +673,12 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
                 // Calculations between procedures are ignored: no space.
                 Ty::Spec(t) if after_proc && t == 'C' => {}
                 Ty::Spec(t) => {
+                    // A procedure after the output specifications is not
+                    // set off.
                     if t != prev {
-                        cc = '-';
+                        if !(t == 'P' && prev == 'O') {
+                            cc = '-';
+                        }
                         prev = t;
                     }
                     if t == 'P' {
@@ -672,8 +714,11 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
         let mut switched = false;
         if indent.is_some() {
             // The calculations print under their own rulers.
-            if calc && inf.starts && !in_calcs {
-                out.change_rulers(indent_rulers());
+            // INDENT from the control keywords: IBM's rulers for the
+            // calculations are blank.
+            if calc && inf.starts && !in_calcs && (l.fully_free || matches!(l.class, Class::Spec(_))) {
+                let blank = o.indent.eq_ignore_ascii_case("*NONE");
+                out.change_rulers_before(if blank { (String::new(), String::new()) } else { indent_rulers() }, 1);
                 in_calcs = true;
                 switched = true;
             } else if in_calcs && inf.starts && matches!(inf.ty, Ty::Spec('O' | 'P') | Ty::EndProc) {
@@ -702,9 +747,7 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
             }
             first = false;
         }
-        out.line(cc, text);
         let last = Some((l, nums.of[i].unwrap_or(0)));
-        prev_printed = last;
         // The declarations' diagnostics due before the next line print
         // with this line's.
         let mut ds: Vec<&Diag> = after.get(&i).cloned().unwrap_or_default();
@@ -713,7 +756,20 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
             ds.extend(decls.iter().copied());
             decls_done = true;
         }
-        release(out, c, &ds, last, &nums);
+        out.line(cc, text);
+        prev_printed = last;
+        if lines.get(i + 1).is_some_and(|n| n.depth > l.depth) {
+            deferred = ds;
+        } else {
+            release(out, c, &ds, last, &nums);
+        }
+        // A group left out with no lines in it.
+        if c.read.excluded.contains(&l.no)
+            && lines.get(i + 1).is_some_and(|n| n.class != Class::Skipped)
+            && !c.ctl.option.iter().any(|x| x.eq_ignore_ascii_case("*SHOWSKP"))
+        {
+            out.line(' ', format!("{:12}LINES EXCLUDED: 0", ""));
+        }
         for f in file_boxes.get(&i).into_iter().flatten() {
             genlines::file_box(out, c, f);
         }

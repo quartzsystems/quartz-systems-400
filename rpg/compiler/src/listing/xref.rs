@@ -159,6 +159,10 @@ fn attrs_of(c: &Compiled, s: &Sym) -> Vec<String> {
             let mut v = Vec::new();
             if let Some(r) = c.table.protos.get(*pi).and_then(|p| p.ret.clone()) {
                 v.extend(type_attrs(c, &r));
+                // RTNPARM: the value is a hidden parameter.
+                if c.table.protos[*pi].rtnparm && !v.is_empty() {
+                    v.insert(1, "BASED(_QRNL_PST+)".into());
+                }
             }
             v.push("PROTOTYPE".into());
             return v;
@@ -197,10 +201,22 @@ fn attrs_of(c: &Compiled, s: &Sym) -> Vec<String> {
     if matches!(s.ty, Ty::Ucs2(_) | Ty::VarUcs2(..)) {
         v.push("CCSID(13488)".into());
     }
-    if s.template {
+    // A module's character data under `/SET CCSID(*CHAR:*JOBRUNMIX)`.
+    if c.ctl.nomain && matches!(s.ty, Ty::Char(_) | Ty::VarChar(..) | Ty::Ds(_)) && jobrunmix(c) {
+        v.push("CCSID(JOBRUNMIX)".into());
+    }
+    // An unqualified template structure's subfields are templates too.
+    if s.template || (s.kind == Some(Kind::Subfield) && !qualified_sub(c, s) && s.parent.is_some_and(|p| c.table.syms[p].template)) {
         v.push("TEMPLATE".into());
     }
     v
+}
+
+/// Whether the source sets `CCSID(*CHAR:*JOBRUNMIX)` (the precompiler's
+/// member does): a module's character data shows it, all of it.
+fn jobrunmix(c: &Compiled) -> bool {
+    use rpgfront::reader::{Class, Directive};
+    c.read.lines.iter().any(|l| matches!(&l.class, Class::Directive(Directive::Set(k)) if k.to_ascii_uppercase().contains("*JOBRUNMIX")))
 }
 
 fn type_attrs(c: &Compiled, t: &Ty) -> Vec<String> {
@@ -223,6 +239,7 @@ fn is_value_param(c: &Compiled, s: &Sym) -> bool {
 fn shown(s: &Sym) -> bool {
     !s.name.starts_with('_')
         && !s.name.is_empty()
+        && s.name != "*N"
         && matches!(
             s.kind,
             Some(
@@ -271,7 +288,7 @@ fn item_at(c: &Compiled, w: &Refs, g: &GenRefs, id: usize, depth: usize) -> Item
         Some(d) => refs.push(*d),
         // A file's output-only field is defined on no line.
         None if generated => {}
-        None if has_definition(c, id) => refs.push((name_line(c, s.def_line), 'D')),
+        None if has_definition(c, id) => refs.push((name_line(c, s.def_line, &s.name), 'D')),
         None => {}
     }
     if generated && file_field {
@@ -344,7 +361,29 @@ fn item_at(c: &Compiled, w: &Refs, g: &GenRefs, id: usize, depth: usize) -> Item
 
 /// The line a definition's name starts on: a name continued with
 /// `...` starts on an earlier line.
-fn name_line(c: &Compiled, line: u32) -> u32 {
+fn name_line(c: &Compiled, line: u32, name: &str) -> u32 {
+    // A free-form declaration whose name is on a later line.
+    let has = |t: &str| {
+        let up = t.to_ascii_uppercase();
+        up.split(|ch: char| !(ch.is_ascii_alphanumeric() || matches!(ch, '_' | '#' | '@' | '$'))).any(|w| w == name)
+    };
+    let free = |x: &rpgfront::reader::Line| x.class == rpgfront::reader::Class::Free;
+    if !name.is_empty()
+        && let Some(i) = c.read.lines.iter().position(|x| x.no == line)
+        && free(&c.read.lines[i])
+        && !has(&c.read.lines[i].text)
+        && !c.read.lines[i].text.contains(';')
+    {
+        // Within the declaration: up to the line that ends it.
+        for x in c.read.lines[i + 1..].iter().take_while(|x| free(x)) {
+            if has(&x.text) {
+                return x.no;
+            }
+            if x.text.contains(';') {
+                break;
+            }
+        }
+    }
     let mut l = line;
     while l > 1
         && c.read.lines.iter().find(|x| x.no == l - 1).is_some_and(|x| {
@@ -425,14 +464,27 @@ fn scope_items(c: &Compiled, w: &Refs, g: &GenRefs, scope: usize) -> Vec<Item> {
         }
         v.push((ebcdic_key(name), it));
     }
+    // A name not defined is a global one; a subroutine not defined is
+    // its procedure's.
+    let exsr = |n: &str| {
+        let calcs = c.module.calcs.iter().chain(c.module.procs.iter().flat_map(|p| p.calcs.iter()));
+        calcs.filter(|s| s.op.code == "EXSR").any(|s| s.op.f2.first().and_then(|e| e.name()).is_some_and(|x| x.eq_ignore_ascii_case(n)))
+    };
     for ((sc, name), refs) in &w.undefined {
-        if *sc != scope || name.starts_with('*') {
+        let home = if *sc != 0 && !exsr(name) { 0 } else { *sc };
+        if home != scope || name.starts_with('*') {
+            continue;
+        }
+        let key = ebcdic_key(name);
+        if let Some((_, it)) = v.iter_mut().find(|(k, it)| *k == key && it.msg == "RNF7030") {
+            it.refs.extend(refs.iter().copied());
+            sort_refs(c, &mut it.refs);
             continue;
         }
         let mut refs = refs.clone();
         sort_refs(c, &mut refs);
         v.push((
-            ebcdic_key(name),
+            key,
             Item {
                 msg: "RNF7030",
                 name: name.clone(),
@@ -457,7 +509,10 @@ fn scope_items(c: &Compiled, w: &Refs, g: &GenRefs, scope: usize) -> Vec<Item> {
             // Defined (and dropped) by its own declaration, or named there.
             let defines = c.read.lines.iter().find(|l| l.no == d.at.line).is_some_and(|l| {
                 let words: Vec<String> = l.text.split_whitespace().take(2).map(|w| w.trim_end_matches(';').to_ascii_uppercase()).collect();
-                words.len() == 2 && words[0].starts_with("DCL-") && words[1] == name
+                let fixed = !l.fully_free
+                    && matches!(l.class, rpgfront::reader::Class::Spec('D' | 'd'))
+                    && l.text.get(6..21).is_some_and(|n| n.trim().eq_ignore_ascii_case(&name));
+                fixed || (words.len() == 2 && words[0].starts_with("DCL-") && words[1] == name)
             });
             v.push((
                 ebcdic_key(&name),
@@ -693,6 +748,7 @@ fn print(out: &mut Out, c: &Compiled, it: &Item) {
 
 pub(crate) fn xref(out: &mut Out, c: &Compiled, m: &Model) {
     out.new_page(None);
+    out.late = true;
     out.line('0', format!("{:26}{}", "", spaced("Cross Reference")));
     out.line('0', "      File and Record References:");
     out.line('0', "         File              Device             References (D=Defined)");
@@ -732,7 +788,12 @@ pub(crate) fn xref(out: &mut Out, c: &Compiled, m: &Model) {
             m.globals.iter().chain(&m.inds).any(|it| refers(it) || it.subs.iter().any(refers))
         });
         let files = m.proc_files.get(k).is_some_and(|f| !f.is_empty());
-        if !items.is_empty() || calcs || files {
+        // RTNPARM's hidden parameter counts as a local name.
+        let rtnparm = c.table.find(0, name).and_then(|id| match c.table.syms[id].kind {
+            Some(Kind::Proto(pi)) => c.table.protos.get(pi).map(|p| p.rtnparm),
+            _ => None,
+        }) == Some(true);
+        if !items.is_empty() || calcs || files || rtnparm {
             out.line('0', "         Field             Attributes         References (D=Defined M=Modified)");
         }
         if items.is_empty() {
@@ -748,6 +809,7 @@ pub(crate) fn xref(out: &mut Out, c: &Compiled, m: &Model) {
         print(out, c, it);
     }
     out.end_line('0', format!("{:7}{}", "", "* * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *"));
+    out.late = false;
 }
 
 /// The external references: procedures bound by name (prototypes no
@@ -780,15 +842,28 @@ pub(crate) fn externals(c: &Compiled) -> Externals {
             .filter(|t| t.starts_with('\''))
             .map(|t| t.trim_matches('\'').to_string());
         let extproc = p.extproc.clone().or(written);
-        if local || (p.extpgm.is_some() && extproc.is_none()) || p.extproc_word {
+        // An EXTPROC or EXTPGM in error drops the prototype.
+        let bad = c.diags.iter().any(|d| matches!(d.msgid, "RNF3746" | "RNF3747") && d.at.line == p.def_line);
+        if local || (p.extpgm.is_some() && extproc.is_none()) || p.extproc_word || bad {
             continue;
         }
         let name = extproc.unwrap_or_else(|| s.name.clone());
         let mut refs = vec![(p.def_line, ' ')];
         refs.extend(w.syms.get(&id).into_iter().flatten().map(|(l, _)| (*l, ' ')));
         sort_refs(c, &mut refs);
-        let slots = refs.iter().map(|r| slot(c, *r)).collect();
+        let slots: Vec<String> = refs.iter().map(|r| slot(c, *r)).collect();
         procs.push((name, slots));
+    }
+    // CALLB of a literal binds the procedure it names.
+    let calcs = c.module.calcs.iter().chain(c.module.procs.iter().flat_map(|q| q.calcs.iter()));
+    for s in calcs.filter(|s| s.op.code == "CALLB") {
+        if let Some(rpgfront::ast::Expr::Lit(rpgfront::ast::Lit::Char(n), _)) = s.op.f2.first() {
+            let slot = slot(c, (s.at.line, ' '));
+            match procs.iter_mut().find(|(p, _)| p == n) {
+                Some((_, v)) => v.push(slot),
+                None => procs.push((n.clone(), vec![slot])),
+            }
+        }
     }
     let fields = |want: Storage| {
         let mut v: Vec<(Vec<u8>, (String, String, String))> = c

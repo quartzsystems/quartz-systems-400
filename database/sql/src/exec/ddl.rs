@@ -204,9 +204,8 @@ pub fn create_table(txn: &mut Txn<'_>, ctx: &mut SqlContext, t: &CreateTable) ->
     let library = ctx.library_for(txn, &t.name)?;
     let rcdfmt = match &t.rcdfmt {
         Some(r) => SqlContext::sys_name(r)?,
-        None => {
-            Name::parse(&format!("{name}R").chars().take(10).collect::<String>()).unwrap_or(name)
-        }
+        // IBM names the format after the table.
+        None => name,
     };
     // Keys: the primary key, from the table or a column; UNIQUE
     // constraints become unique indexes afterwards.

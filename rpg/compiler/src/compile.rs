@@ -514,10 +514,11 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
             read,
             module,
             ctl,
+            table: t,
             sql_failed: true,
             ..Compiled::default()
         };
-        c.listing = crate::sql::precompile_listing(&c, p, opts);
+        c.listing = crate::sql::precompile_listing(&c, p, opts, ext);
         c.precompiled = precompiled;
         return c;
     }
@@ -550,7 +551,8 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
     let max_severity = diags.iter().map(|d| d.severity).max().unwrap_or(0);
     let mut created = max_severity <= ctl.genlvl && !ctl.option.iter().any(|o| o == "*NOGEN");
     let mut qir = qir;
-    if created {
+    // (The precompiler's member is compiled for its listing alone.)
+    if created && !listing::from_precompiler(opts) {
         // The IR must verify; a refusal is the compiler's own error.
         match qir::parse(&qir) {
             Ok(m) => {
@@ -608,10 +610,15 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
     };
     c.listing = listing::listing(&c, opts);
     if let Some(p) = precompiled {
-        let mut l = crate::sql::precompile_listing(&c, &p, opts);
+        let mut l = crate::sql::precompile_listing(&c, &p, opts, ext);
+        c.precompiled = Some(p);
+        // The compile listing is that of the member IBM's precompiler
+        // generates.
+        if let Some(m) = listing::sql_member(&c) {
+            c.listing = compile(m, includes, ext, &listing::sql_options(opts)).listing;
+        }
         l.append(&mut c.listing);
         c.listing = l;
-        c.precompiled = Some(p);
     }
     c
 }

@@ -43,6 +43,11 @@ pub(crate) struct Out {
     pub hide_generated: bool,
     /// A hidden block's blank line was just printed.
     pub after_blank: bool,
+    /// The cross-reference: a record starts a page only once one has
+    /// reached the overflow line, so a spaced record may print on 61.
+    pub late: bool,
+    /// Lines `/SPACE` adds before the next record.
+    pending: usize,
 }
 
 impl Out {
@@ -56,6 +61,8 @@ impl Out {
             subtitle: None,
             hide_generated: false,
             after_blank: false,
+            late: false,
+            pending: 0,
         }
     }
 
@@ -77,7 +84,11 @@ impl Out {
             self.page
         ));
         self.pos += 1;
-        if let Some((a, b)) = self.rulers.clone() {
+        if self.rulers.as_ref().is_some_and(|(a, b)| a.is_empty() && b.is_empty()) {
+            // Blank rulers: one record of their height.
+            self.lines.push("-".into());
+            self.pos += 3;
+        } else if let Some((a, b)) = self.rulers.clone() {
             self.lines.push(format!("0{a}"));
             self.lines.push(format!(" {b}"));
             self.pos += 3;
@@ -92,7 +103,15 @@ impl Out {
     /// A record.
     pub fn line(&mut self, cc: char, text: impl AsRef<str>) {
         let mut cc = cc;
-        if self.pos + advance(cc) > OVERFLOW {
+        if self.pending > 0 {
+            let mut total = advance(cc) + std::mem::take(&mut self.pending);
+            while total > 3 {
+                self.line('-', "");
+                total -= 3;
+            }
+            cc = [' ', ' ', '0', '-'][total];
+        }
+        if if self.late { self.overflowed() } else { self.pos + advance(cc) > OVERFLOW } {
             self.heading();
             cc = if self.rulers.is_some() { ' ' } else { more(cc) };
         }
@@ -129,11 +148,27 @@ impl Out {
     /// Change the rulers in the middle of a page: they print as two
     /// records.
     pub fn change_rulers(&mut self, rulers: (String, String)) {
+        self.change_rulers_before(rulers, 0);
+    }
+
+    /// Change the rulers before a record that takes their spacing
+    /// (`INDENT`'s calculations): `room` lines must fit after them.
+    pub fn change_rulers_before(&mut self, rulers: (String, String), room: usize) {
+        // A full page: the next one starts under the old rulers.
+        if self.overflowed() {
+            self.heading();
+        }
         self.rulers = Some(rulers.clone());
-        // The two records and the line after them must fit.
-        if self.pos + advance('-') + 2 > OVERFLOW {
+        // The two records must fit.
+        if self.pos + advance('-') + 1 + room > OVERFLOW {
             // The new page's heading carries them.
             self.heading();
+            return;
+        }
+        if rulers.0.is_empty() && rulers.1.is_empty() {
+            // Blank rulers: the second line spaces the next record.
+            self.put('-', "");
+            self.pending += 1;
             return;
         }
         self.put('-', &rulers.0);
@@ -145,14 +180,9 @@ impl Out {
         self.heading();
     }
 
-    /// `/SPACE n`: blank lines.
+    /// `/SPACE n`: the next record spaces `n` lines more.
     pub fn space(&mut self, n: u32) {
-        let mut n = n;
-        while n > 0 {
-            let k = n.min(3);
-            self.line(['?', ' ', '0', '-'][k as usize], "");
-            n -= k;
-        }
+        self.pending += usize::try_from(n).unwrap_or(0);
     }
 
     /// Whether these are the rulers in force.

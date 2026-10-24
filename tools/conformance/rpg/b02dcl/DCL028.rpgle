@@ -10,7 +10,7 @@ dcl-s F04 varchar(2) inz('xy');
 dcl-s F05 bindec(3:0);
 dcl-s F06 varchar(28);
 dcl-s F07 timestamp inz(z'2026-03-05-14.30.05.123456');
-dcl-s F08 zoned(9:9) inz(.558223837);
+dcl-s F08 zoned(9:9) inz(0.558223837);
 dcl-s F09 float(4) inz(1.5);
 dcl-s F10 date(*jis) inz(d'2026-03-05');
 dcl-s F11 float(4) inz(-2.25);

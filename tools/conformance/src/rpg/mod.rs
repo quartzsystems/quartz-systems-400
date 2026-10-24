@@ -227,6 +227,10 @@ pub fn options(case: &Case) -> rpgc::Options {
         o.truncnbr = v != "*NO";
     }
     if sql {
+        // Without SRCFILE the source file is found in the library list.
+        if word("SRCFILE").is_none() {
+            o.src.0 = "*LIBL".into();
+        }
         let mut s = rpgc::sqlpre::Options::default();
         for (kw, slot) in [
             ("COMMIT", &mut s.commit),

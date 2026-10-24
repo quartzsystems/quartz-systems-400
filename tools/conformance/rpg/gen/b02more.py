@@ -267,12 +267,12 @@ def dates_member(k, dfmts, tfmts, exts, texts):
 
 
 def no_int_digit(ln):
-    """INZ(0) of a field whose digits are all decimals is *ZEROS; a
-    literal's leading zero goes."""
+    """INZ(0) of a field whose digits are all decimals is *ZEROS (a
+    literal such as 0.5 keeps its zero: pub400 compiled it so)."""
     ln = re.sub(r"(bindec|packed|zoned)\((\d+):\2\) inz\(0\)", r"\1(\2:\2) inz(*zeros)", ln)
     if ln.startswith("     D") and ln[39:40] in "BPS" and ln[32:39].strip() and ln[32:39].strip() == ln[40:42].strip():
         ln = ln.replace("INZ(0)", "INZ(*ZEROS)")
-    return re.sub(r"(?i)\binz\((-?)0\.", r"inz(\1.", ln)
+    return ln
 
 
 def add(M, scalars):

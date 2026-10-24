@@ -10,6 +10,12 @@ help = "The precompiler looks for the member of an INCLUDE statement in the incl
 vars = ["*DEC 5 0", "*CHAR 10"]
 
 [[msg]]
+id = "SQL0053"
+sev = 10
+text = "The source holds no SQL statements."
+help = "The member was given to the SQL precompiler but embeds no SQL; the compile goes on without it."
+
+[[msg]]
 id = "SQL0084"
 sev = 30
 text = "The statement is not supported: &1."

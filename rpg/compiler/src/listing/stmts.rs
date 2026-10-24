@@ -236,18 +236,36 @@ pub(crate) fn analyze(lines: &[Line]) -> Vec<Info> {
         if let Class::Spec(letter) = line.class {
             let letter = letter.to_ascii_uppercase();
             let t = &line.text;
-            let cont = units.last().is_some_and(|u| u.fixed && u.ty == Ty::Spec(letter) && u.last + 1 >= i)
-                && continues(letter, t, long_name);
-            long_name = letter == 'D' && cols(t, 7, 21).trim_end().ends_with("...");
+            // Comment and blank lines may sit between a file's or a
+            // definition's continuation lines.
+            let near = |u: &Unit| {
+                u.last + 1 >= i
+                    || (matches!(letter, 'F' | 'D') && lines[u.last + 1..i].iter().all(|x| matches!(x.class, Class::Comment | Class::Blank)))
+            };
+            let cont = units.last().is_some_and(|u| u.fixed && u.ty == Ty::Spec(letter) && near(u)) && continues(letter, t, long_name);
+            long_name = matches!(letter, 'D' | 'P') && cols(t, 7, 80).trim_end().ends_with("...");
             if cont {
                 if let Some(u) = units.last_mut() {
                     u.last = i;
                 }
                 continue;
             }
-            let decl = cols(t, 24, 25).trim().to_ascii_uppercase();
+            // A name continued with `...`: the type is on the line that
+            // ends the name.
+            let mut decl_line = t.as_str();
+            if matches!(letter, 'D' | 'P') {
+                let mut j = i;
+                while cols(decl_line, 7, 80).trim_end().ends_with("...")
+                    && let Some(next) = lines[j + 1..].iter().position(|x| matches!(x.class, Class::Spec(_)))
+                {
+                    j += 1 + next;
+                    decl_line = lines[j].text.as_str();
+                }
+            }
+            let decl = cols(decl_line, 24, 25).trim().to_ascii_uppercase();
+            // Named constants do not end a group.
             let (opens, sub) = if letter == 'D' {
-                (matches!(decl.as_str(), "DS" | "PR" | "PI"), decl.is_empty())
+                (matches!(decl.as_str(), "DS" | "PR" | "PI"), decl.is_empty() || decl == "C")
             } else {
                 (false, false)
             };
@@ -255,7 +273,7 @@ pub(crate) fn analyze(lines: &[Line]) -> Vec<Info> {
                 in_group = false;
             }
             let op = if letter == 'C' { cols(t, 26, 35).trim().to_ascii_lowercase() } else { String::new() };
-            let ty = match (letter, cols(t, 24, 24).to_ascii_uppercase().as_str()) {
+            let ty = match (letter, cols(decl_line, 24, 24).to_ascii_uppercase().as_str()) {
                 ('P', "E") => Ty::EndProc,
                 _ => Ty::Spec(letter),
             };
@@ -346,4 +364,33 @@ pub(crate) fn analyze(lines: &[Line]) -> Vec<Info> {
         }
     }
     info
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn line(no: u32, text: &str) -> Line {
+        Line {
+            no,
+            text: text.into(),
+            class: Class::Spec(text.chars().nth(5).unwrap_or(' ')),
+            member: 0,
+            seq: String::new(),
+            date: String::new(),
+            fully_free: false,
+            depth: 0,
+        }
+    }
+
+    #[test]
+    fn a_long_name_ends_a_group() {
+        let ls = [
+            line(1, "     DLINE             DS           132"),
+            line(2, "     DTOTAL_AMOUNT_..."),
+            line(3, "     DDUE_TODAY        S             40    VARYING"),
+        ];
+        let info = analyze(&ls);
+        assert_eq!(info[0].group_end, 0);
+    }
 }

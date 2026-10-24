@@ -18,11 +18,42 @@ fn fixed_field(id: &str) -> Option<(usize, usize)> {
         "RNF5023" => (36, 49),
         "RNF5044" => (69, 70),
         "RNF5053" => (71, 76),
+        "RNF5324" => (71, 72),
         "RNF3402" | "RNF3716" => (33, 39),
         "RNF5006" => (9, 9),
         "RNF5007" => (10, 11),
+        // A file's type, designation, format, record length, device
+        // and the column after it.
+        "RNF2003" => (17, 17),
+        "RNF2079" => (18, 18),
+        "RNF2006" => (22, 22),
+        "RNF2007" => (23, 27),
+        "RNF2013" => (36, 42),
+        "RNF2016" => (43, 43),
+        // Definition type, data type, length; factor 1.
+        "RNF3304" | "RNF3703" => (24, 25),
+        "RNF3302" => (40, 40),
+        "RNF3713" => (33, 39),
+        "RNF5009" | "RNF5013" => (12, 25),
         _ => return None,
     })
+}
+
+/// A fixed-form calculation field whose first token IBM marks:
+/// factor 1 or factor 2.
+fn fixed_token(id: &str) -> Option<usize> {
+    Some(match id {
+        "RNF5215" => 12,
+        "RNF5039" => 36,
+        _ => return None,
+    })
+}
+
+/// A specification in fixed columns (not free-form text).
+fn is_fixed_spec(l: &Line) -> bool {
+    !l.fully_free
+        && l.text.chars().nth(5).is_some_and(|c| "HFDICOPhfdicop".contains(c))
+        && l.text.chars().nth(6).is_none_or(|c| c != '/' && c != '*')
 }
 
 /// How IBM chooses the marker's place.
@@ -41,20 +72,33 @@ enum Rule {
     Close,
     /// The operand after the operation (or the semicolon).
     Operand,
+    /// A keyword of the line.
+    Word(&'static str),
+    /// The directive's word.
+    Directive,
+    /// What follows `END` in an `ENDyy`.
+    EndSuffix,
+    /// The operation extender in its parentheses.
+    Extender,
 }
 
 fn rule(id: &str) -> Option<Rule> {
     Some(match id {
         "RNF0503" | "RNF3557" | "RNF0533" | "RNF3358" | "RNF3596" | "RNF0231" | "RNF3452" | "RNF0504" | "RNF3559"
         | "RNF3564" | "RNF3813" | "RNF0612" | "RNF0614" | "RNF1311" | "RNF1331" | "RNF1317" | "RNF3568" | "RNF1008"
-        | "RNF1303" | "RNF0341" | "RNF1306" | "RNF0312" | "RNF5377" => Rule::Arg(1),
+        | "RNF1303" | "RNF0341" | "RNF1306" | "RNF0312" | "RNF5377" | "RNF0369" | "RNF3450" => Rule::Arg(1),
         "RNF0512" | "RNF3561" => Rule::Arg(2),
         "RNF3327" | "RNF3312" | "RNF3322" | "RNF3323" | "RNF3740" | "RNF2416" | "RNF3333" | "RNF3575" => Rule::Raw,
         "RNF0607" | "RNF0316" | "RNF0637" => Rule::Close,
         "RNF0317" => Rule::LastColon,
         "RNF0256" => Rule::AfterFirst,
         "RNF0273" => Rule::Member,
-        "RNF5412" | "RNF5413" | "RNF5344" | "RNF5294" | "RNF5116" | "RNF3768" | "RNF7261" | "RNF3556" | "RNF3530" => Rule::Operand,
+        "RNF1524" => Rule::Word("PGMINFO"),
+        "RNF0274" => Rule::Directive,
+        "RNF5248" => Rule::EndSuffix,
+        "RNF5048" => Rule::Extender,
+        "RNF5412" | "RNF5413" | "RNF5344" | "RNF5294" | "RNF5116" | "RNF3768" | "RNF7261" | "RNF3556" | "RNF3530"
+        | "RNF5425" => Rule::Operand,
         _ => return None,
     })
 }
@@ -130,6 +174,13 @@ fn place_at(d: &Diag, l: &Line, col: usize) -> Option<(usize, usize)> {
     {
         return Some((from, to + 1 - from));
     }
+    if is_fixed_spec(l)
+        && let Some(from) = fixed_token(d.msgid)
+    {
+        let t: Vec<char> = l.text.chars().collect();
+        let j = skip_blanks(&t, from - 1);
+        return (j < t.len()).then(|| (j + 1, token(&t, j)));
+    }
     // A numeric entry not right-aligned: a file's whole entry, else
     // from the entry to its field's end.
     if !l.fully_free && d.msgid == "RNF0263" {
@@ -140,7 +191,12 @@ fn place_at(d: &Diag, l: &Line, col: usize) -> Option<(usize, usize)> {
             _ => &[],
         };
         let &(from, to) = fields.iter().find(|(f, t)| (*f..=*t).contains(&col))?;
-        let start = if l.text.chars().nth(5).is_some_and(|c| c.eq_ignore_ascii_case(&'F')) { from } else { col };
+        // A definition's from and to positions: the whole field (a
+        // length without a from position: from the entry).
+        let spec = l.text.chars().nth(5).map(|c| c.to_ascii_uppercase());
+        let has_from = l.text.get(25..32).is_some_and(|t| !t.trim().is_empty());
+        let whole = spec == Some('F') || (spec == Some('D') && from <= 33 && has_from);
+        let start = if whole { from } else { col };
         return Some((start, to + 1 - start));
     }
     let t: Vec<char> = l.text.chars().collect();
@@ -181,6 +237,25 @@ fn place_at(d: &Diag, l: &Line, col: usize) -> Option<(usize, usize)> {
             return (n > 0).then_some((j + 1, n));
         }
         Rule::AfterFirst => return Some((word_end(&t, skip_blanks(&t, 0)) + 1, 1)),
+        Rule::Word(w) => {
+            let up: String = t.iter().collect::<String>().to_ascii_uppercase();
+            let p = up.find(w)?;
+            return Some((up[..p].chars().count() + 1, w.len()));
+        }
+        Rule::Directive => {
+            let j = skip_blanks(&t, if l.fully_free { 0 } else { 6 });
+            let n = t[j..].iter().take_while(|c| !c.is_whitespace()).count();
+            return (n > 0).then_some((j + 1, n));
+        }
+        Rule::EndSuffix => {
+            let n = word_end(&t, i) - i;
+            return (n > 3).then_some((i + 4, n - 3));
+        }
+        Rule::Extender => {
+            let open = i + t[i..].iter().position(|c| *c == '(')?;
+            let n = t[open + 1..].iter().position(|c| *c == ')')?;
+            return (n > 0).then_some((open + 2, n));
+        }
         Rule::LastColon => {
             let open = t[i..].iter().position(|c| *c == '(')? + i;
             let end = group_end(&t, open);
