@@ -1,0 +1,6 @@
+     C     *ENTRY        PLIST
+     C                   PARM                    AMT               7 2
+     C                   PARM                    TXT              10
+     C                   EVAL      AMT = AMT * 3
+     C                   EVAL      TXT = 'from callee'
+     C                   RETURN

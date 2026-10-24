@@ -1,0 +1,12 @@
+**FREE
+ctl-opt main(entry) dftactgrp(*no);
+dcl-proc entry;
+  dcl-pi *n;
+    total packed(7:2);
+    note char(10) options(*nopass);
+  end-pi;
+  total *= 2;
+  if %parms() >= 2;
+    note = 'two';
+  endif;
+end-proc;

@@ -268,6 +268,114 @@ M["PRC008"] = HEAD + p("%char(viaptr(5))") + [
     "end-proc;",
 ]
 
+# CALL with PARM factor 1 and 2, a named PLIST, and the callee's %PARMS.
+INC["PRC009P"] = [
+    "      * Prints how many parameters came, then changes them.",
+    "     FQSYSPRT   O    F  132        PRINTER",
+    "     D line            DS           132",
+    "     D n               S              5I 0",
+    C(f1="*ENTRY", op="PLIST"),
+    C(op="PARM", res="A", ln=5, dec=0),
+    C(op="PARM", res="B", ln=8),
+    CX("EVAL", "n = %parms"),
+    CX("EVAL", "line = 'callee parms ' + %char(n)"),
+    C(op="WRITE", f2="QSYSPRT", res="line"),
+    CX("EVAL", "A = A + 100"),
+    C(op="IF", f2="n > 1"),
+    CX("EVAL", "B = 'changed'"),
+    C(op="ENDIF"),
+    C(op="RETURN"),
+]
+M["PRC009"] = [
+    "//; with: PRC009P",
+    "//; setup: CRTBNDRPG PGM({lib}/PRC009P) SRCFILE({lib}/QRPGLESRC) SRCMBR(PRC009P) DBGVIEW(*NONE)",
+    "//; cleanup: DLTPGM PGM({lib}/PRC009P)",
+    "     FQSYSPRT   O    F  132        PRINTER",
+    "     D line            DS           132",
+    "     D x               S              5P 0 INZ(7)",
+    "     D y               S              8    INZ('before')",
+    "     D r               S              5P 0",
+    "     D s               S              8",
+    C(op="CALL", f2="'PRC009P'"),
+    C(f1="r", op="PARM", f2="x", res="P1", ln=5, dec=0),
+    C(f1="s", op="PARM", f2="y", res="P2", ln=8),
+    CX("EVAL", "line = %char(x) + ' ' + y + ' ' + %char(r) + ' ' + s"),
+    C(op="WRITE", f2="QSYSPRT", res="line"),
+    C(f1="PL", op="PLIST"),
+    C(op="PARM", res="x"),
+    C(op="CALL", f2="'PRC009P'", res="PL"),
+    CX("EVAL", "line = %char(x)"),
+    C(op="WRITE", f2="QSYSPRT", res="line"),
+    CX("EVAL", "*INLR = *ON"),
+]
+# Fixed-form members start in column 1 with the directives as comments.
+M["PRC009"] = ["      *; " + l[4:] if l.startswith("//; ") else l for l in M["PRC009"]]
+
+# A linear-main program with parameters, called with all and with fewer.
+INC["PRC010P"] = [
+    "**FREE",
+    "ctl-opt main(entry) dftactgrp(*no);",
+    "dcl-proc entry;",
+    "  dcl-pi *n;",
+    "    total packed(7:2);",
+    "    note char(10) options(*nopass);",
+    "  end-pi;",
+    "  total *= 2;",
+    "  if %parms() >= 2;",
+    "    note = 'two';",
+    "  endif;",
+    "end-proc;",
+]
+M["PRC010"] = [
+    "**FREE",
+    "//; with: PRC010P",
+    "//; setup: CRTBNDRPG PGM({lib}/PRC010P) SRCFILE({lib}/QRPGLESRC) SRCMBR(PRC010P) DBGVIEW(*NONE)",
+    "//; cleanup: DLTPGM PGM({lib}/PRC010P)",
+    "ctl-opt dftactgrp(*no);",
+    "dcl-f QSYSPRT printer(132);",
+    "dcl-ds line len(132) end-ds;",
+    "dcl-pr callee extpgm('PRC010P');",
+    "  t packed(7:2);",
+    "  n char(10) options(*nopass);",
+    "end-pr;",
+    "dcl-s amt packed(7:2) inz(3.25);",
+    "dcl-s txt char(10) inz('one');",
+    "callee(amt : txt);",
+] + p("%char(amt) + ' ' + txt") + ["callee(amt);"] + p("%char(amt) + ' ' + txt") + ["*inlr = *on;"]
+
+# A cycle program with a global DCL-PI, and %PARMS for it.
+INC["PRC011P"] = [
+    "**FREE",
+    "dcl-f QSYSPRT printer(132);",
+    "dcl-ds line len(132) end-ds;",
+    "dcl-pi *n;",
+    "  a int(10);",
+    "  b char(3) options(*nopass);",
+    "end-pi;",
+] + p("'got ' + %char(%parms())") + [
+    "a += 1;",
+    "if %parms() > 1;",
+    "  b = 'yes';",
+    "endif;",
+    "*inlr = *on;",
+]
+M["PRC011"] = [
+    "**FREE",
+    "//; with: PRC011P",
+    "//; setup: CRTBNDRPG PGM({lib}/PRC011P) SRCFILE({lib}/QRPGLESRC) SRCMBR(PRC011P) DBGVIEW(*NONE)",
+    "//; cleanup: DLTPGM PGM({lib}/PRC011P)",
+    "ctl-opt dftactgrp(*no);",
+    "dcl-f QSYSPRT printer(132);",
+    "dcl-ds line len(132) end-ds;",
+    "dcl-pr callee extpgm('PRC011P');",
+    "  a int(10);",
+    "  b char(3) options(*nopass);",
+    "end-pr;",
+    "dcl-s n int(10) inz(41);",
+    "dcl-s c char(3) inz('no');",
+    "callee(n);",
+] + p("%char(n) + ' ' + c") + ["callee(n : c);"] + p("%char(n) + ' ' + c") + ["*inlr = *on;"]
+
 for name, lines in M.items():
     with open(os.path.join(OUT, name + ".rpgle"), "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")

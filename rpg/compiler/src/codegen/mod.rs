@@ -13,6 +13,7 @@
 
 pub mod arrays;
 pub mod bif;
+pub mod calls;
 pub mod cycle;
 pub mod dbio;
 pub mod dates;
@@ -197,6 +198,11 @@ pub struct Gen<'a> {
     pub on_exit: Option<(String, Option<String>)>,
     /// `KLIST` names and their `KFLD` fields.
     pub klists: HashMap<String, Vec<Expr>>,
+    /// The `PARM` lists of `CALL`s and `PLIST`s.
+    pub plists: calls::Plists,
+    /// The subprocedure being generated, upper case; empty in the main
+    /// procedure.
+    pub cur_proc: String,
     /// The module's input specifications.
     pub inputs: Vec<rpgfront::ast::Input>,
     /// Overflow output is being generated (no fetch inside it).
@@ -317,6 +323,8 @@ pub fn module(
         in_error_extender: false,
         on_exit: None,
         klists: klists(m),
+        plists: calls::plists(m),
+        cur_proc: String::new(),
         inputs: m.inputs.clone(),
         in_overflow: false,
         used_formats: BTreeSet::new(),
@@ -376,12 +384,17 @@ pub fn module(
         let _ = writeln!(out, "static ${}: ind", n.to_ascii_lowercase());
     }
     out.push_str("static $init_done: ind\n");
+    out.push_str("static $entry_n: i32\n");
+    // The program parameters' pointers, before the fields based on them.
+    for &p in &g.t.entry_ptrs {
+        let _ = writeln!(out, "static {}: ptr", g.t.syms[p].ir);
+    }
     out.push_str("static $status: zoned(5,0)\n");
     out.push_str("static $errind: ind\n");
     out.push_str("static $psds_none: char(1)\n");
     out.push_str(&dbio::statics(files, g.t));
     for (id, s) in g.t.syms.iter().enumerate() {
-        if s.scope != 0 || s.template || s.parent.is_some() {
+        if s.scope != 0 || s.template || s.parent.is_some() || g.t.entry_ptrs.contains(&id) {
             continue;
         }
         match s.kind {
@@ -405,7 +418,8 @@ pub fn module(
         procs.push_str(&linear_entry(&mut g, main));
     } else if !ctl.nomain {
         procs.push_str(&main_proc(&mut g, m));
-        procs.push_str(&pep(&g.opts.name, &mangle(&g.opts.name)));
+        let main = mangle(&g.opts.name);
+        procs.push_str(&calls::pep(&mut g, &main));
     }
     if ctl.main.is_some() || ctl.nomain {
         for f in files.iter().filter(|f| f.scope == 0 && !f.template) {
@@ -478,6 +492,7 @@ fn init_proc(g: &mut Gen<'_>) -> String {
                 && s.parent.is_none()
                 && matches!(s.kind, Some(Kind::Field | Kind::Ds(_)))
                 && matches!(s.storage, Storage::Static | Storage::Export)
+                && !g.t.entry_ptrs.contains(&i)
         })
         .collect();
     for id in ids {
@@ -622,14 +637,6 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     body.finish(&format!("proc {}()", mangle(&g.opts.name)), "ret")
 }
 
-/// The program entry procedure, `_QRNP_PEP_name`, as IBM names it: it
-/// calls the main procedure, so an escape the main procedure sends to
-/// its caller, or one it leaves unhandled, ends at a control boundary
-/// of its own.
-fn pep(name: &str, main: &str) -> String {
-    format!("proc _QRNP_PEP_{}() entry {{\nL0:\n  callb {main}()\n  ret\n}}\n", mangle(name))
-}
-
 /// The program entry of a linear-main module: global storage and files
 /// on the first call, then the main procedure; nothing is closed when
 /// it returns.
@@ -654,10 +661,50 @@ fn linear_entry(g: &mut Gen<'_>, main: &str) -> String {
     if !g.local_procs.contains(&up) {
         g.err(ids::NOT_DEFINED, 30, up.clone());
     }
-    g.b.ins(format!("callb {}()", mangle(&up)));
+    g.b.ins("%n = parms");
+    g.b.ins("store $entry_n, %n");
+    // The main procedure's parameters are the program's: each one the
+    // caller passed goes on, the rest as *OMIT.
+    let parms = g
+        .t
+        .find(0, &up)
+        .and_then(|id| match g.t.syms[id].kind {
+            Some(Kind::Proto(pi)) => Some(g.t.protos[pi].parms.clone()),
+            _ => None,
+        })
+        .unwrap_or_default();
+    let mut sig = Vec::new();
+    for (i, prm) in parms.iter().enumerate() {
+        let ty = g.t.ir_type(&prm.ty);
+        let ty = if prm.dim > 0 { format!("array[{}] of {ty}", prm.dim) } else { ty };
+        sig.push(format!("$p{}: {ty} *NOPASS", i + 1));
+    }
+    let done = g.b.label();
+    for k in (0..=parms.len()).rev() {
+        let (call, next) = (g.b.label(), g.b.label());
+        let f = g.b.reg();
+        g.b.ins(format!("{f} = cmp.ge %n, {k}"));
+        g.b.term(format!("brif {f}, {call}, {next}"));
+        g.b.place(&call);
+        let args: Vec<String> =
+            (0..parms.len()).map(|i| if i < k { format!("$p{}", i + 1) } else { "*OMIT".to_string() }).collect();
+        g.b.ins(format!("callb {}({})", mangle(&up), args.join(", ")));
+        g.b.term(format!("br {done}"));
+        g.b.place(&next);
+    }
+    g.b.term(format!("br {done}"));
+    g.b.place(&done);
     g.b.term("ret");
     let body = std::mem::take(&mut g.b);
-    body.finish(&format!("proc _QRNP_PEP_{}() entry", mangle(&g.opts.name)), "ret")
+    body.finish(&format!("proc _QRNP_PEP_{}({}) entry", mangle(&g.opts.name), sig.join(", ")), "ret")
+}
+
+impl Gen<'_> {
+    /// Whether a procedure is the module's linear main procedure.
+    #[must_use]
+    pub fn is_linear_main(&self, name: &str) -> bool {
+        self.ctl.main.as_deref().is_some_and(|m| m.eq_ignore_ascii_case(name))
+    }
 }
 
 /// The `KLIST`s of every procedure: each name and the `KFLD` fields

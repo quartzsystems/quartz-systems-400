@@ -130,6 +130,7 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
     let mut files = Vec::new();
     declare_scope(&mut t, &mut diags, &ctl, 0, "", &module.files, &module.defs, &module.inputs, ext, &mut files);
     crate::extfiles::declare_calc_fields(&mut t, 0, "", &module.calcs);
+    bind_entry(&mut t, &mut diags, &module);
     // A program-described printer without an overflow indicator gets
     // the first of OA to OG no other file uses.
     let used: Vec<String> = files.iter().filter_map(|f| f.oflind.clone()).collect();
@@ -274,4 +275,28 @@ fn merge_proto(mut declared: Proto, iface: &Proto) -> Proto {
         declared.ret.clone_from(&iface.ret);
     }
     declared
+}
+
+/// The program's parameter fields become based on pointers the program
+/// entry procedure sets to its caller's storage.
+fn bind_entry(t: &mut Table, diags: &mut Vec<Diag>, module: &rpgfront::Module) {
+    let mut names = t.entry_names.clone();
+    names.extend(crate::codegen::calls::entry_names(module));
+    for (i, n) in names.iter().enumerate() {
+        let Some(id) = t.find(0, n) else {
+            diags.push(Diag::new(crate::diag::ids::NOT_DEFINED, 30, rpgfront::ast::Pos::default()).arg(n.clone()));
+            continue;
+        };
+        let ptr = t.add_hidden(crate::syms::Sym {
+            name: format!("_EP{}", i + 1),
+            kind: Some(crate::syms::Kind::Field),
+            ty: crate::types::Ty::Ptr,
+            ir: format!("$_ep{}", i + 1),
+            storage: crate::syms::Storage::Static,
+            ..crate::syms::Sym::default()
+        });
+        t.syms[id].storage = crate::syms::Storage::Based(ptr);
+        t.entry.push(id);
+        t.entry_ptrs.push(ptr);
+    }
 }

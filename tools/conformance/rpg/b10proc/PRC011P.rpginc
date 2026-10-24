@@ -1,0 +1,14 @@
+**FREE
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-pi *n;
+  a int(10);
+  b char(3) options(*nopass);
+end-pi;
+line = 'got ' + %char(%parms());
+write QSYSPRT line;
+a += 1;
+if %parms() > 1;
+  b = 'yes';
+endif;
+*inlr = *on;

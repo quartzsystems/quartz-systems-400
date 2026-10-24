@@ -385,7 +385,13 @@ impl Gen<'_> {
             "%ERROR" if args.is_empty() => Some(V::place(Ty::Ind, "$errind")),
             "%PARMS" => {
                 let r = self.b.reg();
-                self.b.ins(format!("{r} = parms"));
+                // The main procedure's are the program's, which the
+                // entry procedure kept.
+                if self.scope == 0 || self.is_linear_main(&self.cur_proc.clone()) {
+                    self.b.ins(format!("{r} = load $entry_n"));
+                } else {
+                    self.b.ins(format!("{r} = parms"));
+                }
                 Some(V::reg(Ty::Int(10), r))
             }
             "%ADDR" => {

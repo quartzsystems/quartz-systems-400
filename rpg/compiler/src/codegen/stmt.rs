@@ -663,6 +663,8 @@ impl Gen<'_> {
                 | "FEOD" | "OPEN" | "CLOSE" | "KLIST" | "KFLD",
                 _,
             ) => self.db_op(op, base),
+            ("PLIST" | "PARM", _) => {}
+            ("CALL", _) => self.call_op(s),
             ("COMMIT" | "ROLBK" | "DUMP", _) => {
                 self.err(ids::UNSUPPORTED, 30, op.code.clone());
             }
@@ -1742,6 +1744,7 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
     g.open.clear();
     g.main_exit = None;
     let name = p.name.to_ascii_uppercase();
+    g.cur_proc.clone_from(&name);
     let proto = g
         .t
         .protos
@@ -1767,7 +1770,9 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
             if prm.nopass {
                 s.push_str(" *NOPASS");
             }
-            if prm.omit {
+            // The linear main procedure's parameters may be absent: the
+            // program entry passes *OMIT for those its caller left out.
+            if prm.omit || g.is_linear_main(&name) && !prm.value {
                 s.push_str(" *OMIT");
             }
             if prm.varsize {

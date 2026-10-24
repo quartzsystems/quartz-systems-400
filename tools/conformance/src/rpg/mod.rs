@@ -234,7 +234,13 @@ fn compile_member(case: &Case, db: Option<&files::KitDb>, mbr: &str, module: &st
     if c.created {
         Ok(c.qir)
     } else {
-        Err(format!("{module}: not created ({})", c.diags.iter().map(|d| d.msgid).collect::<Vec<_>>().join(" ")))
+        let ids: Vec<String> = c
+            .diags
+            .iter()
+            .filter(|d| d.severity > 10)
+            .map(|d| if d.args.is_empty() { d.msgid.to_string() } else { format!("{} {}", d.msgid, d.args.join(" ")) })
+            .collect();
+        Err(format!("{module}: not created ({})", ids.join("; ")))
     }
 }
 

@@ -219,6 +219,13 @@ pub struct Table {
     pub recfmts: Vec<crate::extfiles::RecFmt>,
     /// External descriptions `EXTNAME` names, by `LIB/FILE`.
     pub extnames: HashMap<String, crate::files::ExtFile>,
+    /// The program's parameters (`*ENTRY PLIST` or a global `DCL-PI`)
+    /// by name, as declared.
+    pub entry_names: Vec<String>,
+    /// The program's parameter fields, in order.
+    pub entry: Vec<SymId>,
+    /// The pointers they are based on, set by the entry procedure.
+    pub entry_ptrs: Vec<SymId>,
 }
 
 impl Table {

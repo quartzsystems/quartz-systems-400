@@ -1,0 +1,15 @@
+      * Prints how many parameters came, then changes them.
+     FQSYSPRT   O    F  132        PRINTER
+     D line            DS           132
+     D n               S              5I 0
+     C     *ENTRY        PLIST
+     C                   PARM                    A                 5 0
+     C                   PARM                    B                 8
+     C                   EVAL      n = %parms
+     C                   EVAL      line = 'callee parms ' + %char(n)
+     C                   WRITE     QSYSPRT       line
+     C                   EVAL      A = A + 100
+     C                   IF        n > 1
+     C                   EVAL      B = 'changed'
+     C                   ENDIF
+     C                   RETURN

@@ -405,6 +405,18 @@ pub fn declare(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             };
             add(cx, s, d.at)
         }
+        // The main procedure's interface: its parameters are fields the
+        // program entry points at its caller's storage.
+        DefKind::Pi if cx.scope == 0 => {
+            for c in &d.children {
+                let mut f = c.clone();
+                f.kind = DefKind::Standalone;
+                if declare(cx, &f).is_some() {
+                    cx.t.entry_names.push(c.name.to_ascii_uppercase());
+                }
+            }
+            None
+        }
         _ => None,
     }
 }
