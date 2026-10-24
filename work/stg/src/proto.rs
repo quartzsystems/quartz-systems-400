@@ -179,6 +179,9 @@ ipc::rpc! {
     51 => fn io / Io (handle: u32, req: OwnedRequest) -> IoResult;
     /// Close a file.
     52 => fn close_file / CloseFile (handle: u32) -> IoResult;
+    /// An embedded SQL statement (`sql::embed`): the scope, the
+    /// encoded descriptor and the inputs; the reply in its wire form.
+    53 => fn sql_run / SqlRun (scope: String, desc: String, inputs: Vec<(u8, String)>) -> sql::embed::WireReply;
 
     /// `Provider::list_objects`.
     60 => fn list_objects / ListObjects (lib: String, name: String, ty: String) -> Vec<ObjInfo>;

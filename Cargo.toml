@@ -64,6 +64,7 @@ members = [
     "rpg/front",
     "rpg/compiler",
     "rpg/qrpgrt",
+    "rpg/sqlpre",
 ]
 
 [workspace.package]

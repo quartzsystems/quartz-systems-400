@@ -80,6 +80,8 @@ pub struct Options {
     pub usrprf: String,
     /// `REPLACE`.
     pub replace: bool,
+    /// `CRTSQLRPGI`'s SQL options: the source is precompiled first.
+    pub sql: Option<rpgsqlpre::Options>,
 }
 
 impl Default for Options {
@@ -105,6 +107,7 @@ impl Default for Options {
             define: Vec::new(),
             usrprf: "*USER".into(),
             replace: true,
+            sql: None,
         }
     }
 }

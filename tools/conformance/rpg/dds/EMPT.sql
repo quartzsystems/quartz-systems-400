@@ -1,0 +1,10 @@
+-- Batch 11's employee table: keyed, nullable columns, a date.
+CREATE TABLE {lib}.EMPT (ID INT NOT NULL PRIMARY KEY,
+ NAME VARCHAR(20) CCSID 37 NOT NULL, DEPT CHAR(3) CCSID 37,
+ SAL DECIMAL(9, 2), HIRED DATE, BONUS DECIMAL(7, 2));
+INSERT INTO {lib}.EMPT VALUES
+ (1, 'Ann', 'ACC', 52000.00, '2019-03-15', 1500.00),
+ (2, 'Bob', 'DEV', 61000.50, '2020-07-01', NULL),
+ (3, 'Cid', 'DEV', 58500.25, '2018-11-30', 2000.00),
+ (4, 'Dee', 'OPS', 47000.00, '2021-01-04', NULL),
+ (5, 'Eve', 'ACC', 66000.75, '2017-05-22', 500.00);

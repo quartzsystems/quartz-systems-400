@@ -166,9 +166,10 @@ pub fn options(case: &Case) -> rpgc::Options {
         let end = rest.find(')')?;
         Some(rest[..end].trim().to_string())
     };
-    let command = if cmd.starts_with("CRTRPGMOD") {
+    let sql = cmd.starts_with("CRTSQLRPGI");
+    let command = if cmd.starts_with("CRTRPGMOD") || sql && matches!(word("OBJTYPE").as_deref(), Some("*MODULE" | "*SRVPGM")) {
         rpgc::Command::CrtRpgMod
-    } else if cmd.starts_with("CRTSQLRPGI") {
+    } else if sql {
         rpgc::Command::CrtSqlRpgi
     } else {
         rpgc::Command::CrtBndRpg
@@ -198,7 +199,29 @@ pub fn options(case: &Case) -> rpgc::Options {
     if let Some(v) = word("TRUNCNBR") {
         o.truncnbr = v != "*NO";
     }
+    if sql {
+        let mut s = rpgc::sqlpre::Options::default();
+        for (kw, slot) in [
+            ("COMMIT", &mut s.commit),
+            ("NAMING", &mut s.naming),
+            ("DATFMT", &mut s.datfmt),
+            ("DATSEP", &mut s.datsep),
+            ("TIMFMT", &mut s.timfmt),
+            ("TIMSEP", &mut s.timsep),
+            ("CLOSQLCSR", &mut s.closqlcsr),
+        ] {
+            if let Some(v) = word(kw) {
+                *slot = v;
+            }
+        }
+        o.sql = Some(s);
+    }
     o
+}
+
+/// Whether a case is precompiled.
+fn is_sql(case: &Case) -> bool {
+    case.cmd.trim_start().to_ascii_uppercase().starts_with("CRTSQLRPGI")
 }
 
 /// The member as the oracle's upload leaves it: numbered from 1.00,
@@ -275,7 +298,15 @@ pub fn diags(c: &rpgc::Compiled) -> Vec<ODiag> {
     let mut out: Vec<ODiag> = c
         .diags
         .iter()
-        .map(|d| ODiag {
+        .map(|d| if d.msgid.starts_with("SQL") {
+            // The precompile listing numbers source records.
+            ODiag {
+                line: d.at.line,
+                msgid: d.msgid.to_string(),
+                severity: d.severity,
+                seq: String::new(),
+            }
+        } else { ODiag {
             line: c.listing_line(d.at.line),
             msgid: d.msgid.to_string(),
             severity: d.severity,
@@ -286,7 +317,7 @@ pub fn diags(c: &rpgc::Compiled) -> Vec<ODiag> {
                 .find(|l| l.no == d.at.line && d.at.line > 0)
                 .map(|l| l.seq.clone())
                 .unwrap_or_default(),
-        })
+        } })
         .collect();
     out.sort();
     out.dedup();
@@ -344,7 +375,7 @@ pub fn notes(c: &rpgc::Compiled) -> String {
 /// Compile and run a case: its outcome, listing and notes.
 #[allow(clippy::many_single_char_names)]
 pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
-    let db = if case.db.is_empty() {
+    let db = if case.db.is_empty() && !is_sql(case) {
         None
     } else {
         Some(files::KitDb::build(&case.db).map_err(|e| format!("{}: {e}", case.name))?)
@@ -388,7 +419,13 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
     let notes = notes(&c);
     let mut o = Outcome {
         created: c.created,
-        cause: if c.created { String::new() } else { "RNS9310".into() },
+        cause: if c.created {
+            String::new()
+        } else if c.sql_failed {
+            "SQL9001".into()
+        } else {
+            "RNS9310".into()
+        },
         diags: diags(&c),
         ..Outcome::default()
     };
@@ -418,6 +455,7 @@ fn call_into(
         job.usrspcs.set_source(Box::new(MemUserSpaces::default()));
         if let Some(d) = db {
             job.io = Some(Box::new(d.io()?));
+            job.sql = Some(Box::new(d.sql()));
         }
         let mut provider = MemProvider::default();
         provider.clock = Some(LocalNow {

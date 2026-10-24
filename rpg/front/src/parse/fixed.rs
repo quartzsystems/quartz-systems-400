@@ -612,8 +612,13 @@ fn output_spec(b: &mut Builder<'_>, lines: &[&Line]) {
 /// factor 2 is the statement text, for the precompiler.
 pub fn sql_block(b: &mut Builder<'_>, idx: &[usize]) {
     let mut text = String::new();
+    let first = b.lines[idx[0]].no;
     for &i in idx {
         let l = &b.lines[i];
+        // A line break per source line from the first.
+        let want = l.no.saturating_sub(first) as usize;
+        let breaks = want.saturating_sub(text.matches('\n').count());
+        text.push_str(&"\n".repeat(breaks));
         let t = cut(&l.text, 8, 80);
         let up = t.trim().to_ascii_uppercase();
         let body = if up.starts_with("EXEC SQL") {
@@ -623,7 +628,7 @@ pub fn sql_block(b: &mut Builder<'_>, idx: &[usize]) {
         } else {
             t.trim_end().to_string()
         };
-        if !text.is_empty() && !body.is_empty() {
+        if !text.is_empty() && !body.is_empty() && !text.ends_with('\n') {
             text.push(' ');
         }
         text.push_str(body.trim());

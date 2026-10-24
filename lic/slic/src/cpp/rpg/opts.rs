@@ -64,6 +64,8 @@ pub struct Request {
     pub usrprf_owner: bool,
     /// `REPLACE(*YES)`.
     pub replace: bool,
+    /// `CRTSQLRPGI`'s precompile options.
+    pub sqlopts: Option<rpgc::sqlpre::Options>,
 }
 
 /// A parameter's value, or `dft` when it has none.
@@ -198,7 +200,26 @@ pub fn request(cmdname: &str, parms: &Parms) -> Result<Request, String> {
         define: words(parms, "DEFINE"),
         usrprf_owner: parms.name("USRPRF") == "*OWNER",
         replace: !parms.specified("REPLACE") || parms.yes("REPLACE"),
+        sqlopts: sql.then(|| sql_options(parms, genlvl)),
     })
+}
+
+/// `CRTSQLRPGI`'s precompile options: `COMMIT`, `CLOSQLCSR`, the date
+/// and time formats, and the naming in `OPTION` (`*SYS` or `*SQL`).
+fn sql_options(parms: &Parms, genlvl: u8) -> rpgc::sqlpre::Options {
+    let dft = rpgc::sqlpre::Options::default();
+    let naming = if words(parms, "OPTION").iter().any(|w| w == "*SQL") { "*SQL" } else { "*SYS" };
+    rpgc::sqlpre::Options {
+        commit: named(parms, "COMMIT", &dft.commit),
+        naming: naming.into(),
+        datfmt: named(parms, "DATFMT", &dft.datfmt),
+        datsep: named(parms, "DATSEP", &dft.datsep),
+        timfmt: named(parms, "TIMFMT", &dft.timfmt),
+        timsep: named(parms, "TIMSEP", &dft.timsep),
+        closqlcsr: named(parms, "CLOSQLCSR", &dft.closqlcsr),
+        genlvl,
+        other: Vec::new(),
+    }
 }
 
 impl Request {
@@ -255,6 +276,7 @@ impl Request {
             define: self.define.clone(),
             usrprf: if self.usrprf_owner { "*OWNER" } else { "*USER" }.into(),
             replace: self.replace,
+            sql: self.sqlopts.clone(),
         }
     }
 }

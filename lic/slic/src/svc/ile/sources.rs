@@ -491,6 +491,12 @@ impl MainStore {
     }
 }
 
+impl sql::embed::StoreLend for MainStore {
+    fn store(&self) -> RefMut<'_, Store> {
+        mi::io::store::StoreHandle::store(self)
+    }
+}
+
 impl mi::io::store::StoreHandle for MainStore {
     fn store(&self) -> RefMut<'_, Store> {
         RefMut::map(self.shared.borrow_mut(), |o| {

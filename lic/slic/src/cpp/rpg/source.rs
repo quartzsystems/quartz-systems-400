@@ -84,25 +84,6 @@ pub fn read(
     })
 }
 
-/// Whether the source holds embedded SQL: `EXEC SQL` outside comments.
-#[must_use]
-pub fn has_sql(m: &Member) -> bool {
-    m.records.iter().any(|r| {
-        let t = r.text.to_ascii_uppercase();
-        let code = t.split("//").next().unwrap_or("");
-        let fixed_comment = t.chars().nth(6) == Some('*');
-        !fixed_comment
-            && code
-                .split_whitespace()
-                .collect::<Vec<_>>()
-                .windows(2)
-                .any(|w| {
-                    (w[0] == "EXEC" || w[0].ends_with("/EXEC"))
-                        && w[1].trim_end_matches(';') == "SQL"
-                })
-    })
-}
-
 /// `/COPY` and `/INCLUDE` members, read from the store.
 pub struct StoreIncludes<'a, 'b> {
     /// The system, shared with the file descriptions.

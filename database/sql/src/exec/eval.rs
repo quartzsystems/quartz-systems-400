@@ -614,7 +614,9 @@ impl Evaluator<'_> {
         for row in group.iter() {
             let e = env.replaced(row.clone());
             let v = self.eval(txn, &f.args[0], &e)?;
-            if !v.is_null() {
+            if v.is_null() {
+                self.ctx.nulls_eliminated = true;
+            } else {
                 values.push(v);
             }
         }

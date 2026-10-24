@@ -455,13 +455,18 @@ impl Session {
             cause: if created { String::new() } else { cause },
             ..Outcome::default()
         };
+        // CRTSQLRPGI prints the precompile listing and then the
+        // compiler's; both are kept, in that order.
+        let sql = c.cmd.trim_start().to_ascii_uppercase().starts_with("CRTSQLRPGI");
         let mut listing = Vec::new();
         for e in self.spools()? {
             let lines = self.take_spool(&e)?;
             if e.name == "QSQ" {
                 continue;
             }
-            if listing.is_empty() || e.name == c.name {
+            if sql {
+                listing.extend(lines);
+            } else if listing.is_empty() || e.name == c.name {
                 listing = lines;
             }
         }

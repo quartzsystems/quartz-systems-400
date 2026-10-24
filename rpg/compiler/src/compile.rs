@@ -45,6 +45,10 @@ pub struct Compiled {
     pub ctl: Ctl,
     /// Lines the listing generates: before each source line, how many.
     pub generated: Vec<(u32, u32)>,
+    /// The SQL precompile, for `CRTSQLRPGI`.
+    pub precompiled: Option<rpgsqlpre::Precompiled>,
+    /// The precompile failed: nothing was compiled.
+    pub sql_failed: bool,
 }
 
 impl Compiled {
@@ -131,6 +135,10 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
     declare_scope(&mut t, &mut diags, &ctl, 0, "", &module.files, &module.defs, &module.inputs, ext, &mut files);
     crate::extfiles::declare_calc_fields(&mut t, 0, "", &module.calcs);
     bind_entry(&mut t, &mut diags, &module);
+    let sql_opts = opts.sql.clone().or_else(|| (opts.command == Command::CrtSqlRpgi).then(rpgsqlpre::Options::default));
+    if sql_opts.is_some() {
+        crate::sql::declare_sqlca(&mut t, &mut diags, &ctl);
+    }
     // A program-described printer without an overflow indicator gets
     // the first of OA to OG no other file uses.
     let used: Vec<String> = files.iter().filter_map(|f| f.oflind.clone()).collect();
@@ -217,7 +225,30 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         declare_scope(&mut t, &mut diags, &ctl, scope, &prefix, &p.files, &p.defs, &[], ext, &mut files);
         crate::extfiles::declare_calc_fields(&mut t, scope, &prefix, &p.calcs);
     }
-    let (qir, gen_diags) = codegen::module(&module, &mut t, &files, &ctl, opts, &scopes);
+    // CRTSQLRPGI: the statements precompiled; errors above the
+    // generation level end the command before the compile.
+    let precompiled = sql_opts.map(|o| crate::sql::precompile(&module, &t, &scopes, ext, &o));
+    if let Some(p) = &precompiled
+        && !p.ok
+    {
+        let mut c = Compiled {
+            diags: crate::sql::diags(p),
+            max_severity: p.max_severity,
+            read,
+            module,
+            ctl,
+            sql_failed: true,
+            ..Compiled::default()
+        };
+        c.listing = crate::sql::precompile_listing(&c, p, opts);
+        c.precompiled = precompiled;
+        return c;
+    }
+    let sql_stmts: Vec<rpgsqlpre::Stmt> = precompiled.as_ref().map(|p| p.stmts.clone()).unwrap_or_default();
+    if let Some(p) = &precompiled {
+        diags.extend(crate::sql::diags(p));
+    }
+    let (qir, gen_diags) = codegen::module(&module, &mut t, &files, &ctl, opts, &scopes, &sql_stmts);
     diags.extend(gen_diags);
     diags.sort();
     diags.dedup();
@@ -244,7 +275,12 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         qir.clear();
     }
     let max_severity = diags.iter().map(|d| d.severity).max().unwrap_or(0);
-    let generated = crate::extfiles::generated_lines(&module, &files, &t);
+    let mut generated = crate::extfiles::generated_lines(&module, &files, &t);
+    if let Some(p) = &precompiled {
+        let firsts = crate::sql::first_calcs(&module, &scopes);
+        let first = |scope: usize| firsts.iter().find(|(s, _)| *s == scope).map_or(0, |(_, l)| *l);
+        generated.extend(rpgsqlpre::lines::generated(p, &first, module.fully_free));
+    }
     let mut c = Compiled {
         generated,
         qir,
@@ -260,6 +296,12 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         ..Compiled::default()
     };
     c.listing = listing::listing(&c, opts);
+    if let Some(p) = precompiled {
+        let mut l = crate::sql::precompile_listing(&c, &p, opts);
+        l.append(&mut c.listing);
+        c.listing = l;
+        c.precompiled = Some(p);
+    }
     c
 }
 

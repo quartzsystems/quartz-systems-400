@@ -85,6 +85,8 @@ pub struct SqlContext {
     pub sort_budget: usize,
     /// Where sort runs go: the job's temporary storage.
     pub spill: Box<dyn spill::SpillArea>,
+    /// A column function left out a null value (SQLSTATE `01003`).
+    pub nulls_eliminated: bool,
 }
 
 impl SqlContext {
@@ -116,6 +118,7 @@ impl SqlContext {
             cursors: std::collections::HashMap::new(),
             sort_budget: DEFAULT_SORT_BUDGET,
             spill: Box::new(spill::MemSpill::default()),
+            nulls_eliminated: false,
         }
     }
 

@@ -9,6 +9,7 @@ publish.workspace = true
 [dependencies]
 ipc = { path = "../../work/ipc", version = "0.1.0" }
 mi = { path = "../../runtime/mi", version = "0.1.0" }
+sql = { path = "../../database/sql", version = "0.1.0" }
 ile = { path = "../../runtime/ile", version = "0.1.0" }
 msgf = { path = "../../runtime/msgf", version = "0.1.0" }
 sysapi = { path = "../../runtime/sysapi", version = "0.1.0" }

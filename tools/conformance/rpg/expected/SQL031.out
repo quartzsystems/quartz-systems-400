@@ -1,0 +1,37 @@
+# SQL031 VARCHAR(30) pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: no (RNS9310)
+diag: RNF2318 00 line 6 seq 000600
+diag: RNF3530 00 line 7 seq 000700
+diag: RNF7030 30 line 229 seq 002000
+diag: RNF7503 30 line 229 seq 002000
+diag: RNF7030 30 line 238 seq 002200
+diag: RNF7503 30 line 238 seq 002200
+diag: RNF7030 30 line 250 seq 002400
+diag: RNF7503 30 line 250 seq 002400
+diag: RNF7030 30 line 261 seq 002600
+diag: RNF7503 30 line 261 seq 002600
+diag: RNF7030 30 line 263 seq 002800
+diag: RNF7503 30 line 263 seq 002800
+diag: RNF7030 30 line 279 seq 003000
+diag: RNF7503 30 line 279 seq 003000
+diag: RNF7030 30 line 288 seq 003200
+diag: RNF7503 30 line 288 seq 003200
+diag: RNF7030 30 line 298 seq 003400
+diag: RNF7503 30 line 298 seq 003400
+diag: RNF7030 30 line 305 seq 003600
+diag: RNF7503 30 line 305 seq 003600
+diag: RNF7030 30 line 316 seq 003800
+diag: RNF7503 30 line 316 seq 003800
+diag: RNF7030 30 line 323 seq 004000
+diag: RNF7503 30 line 323 seq 004000
+diag: RNF7030 30 line 337 seq 004200
+diag: RNF7503 30 line 337 seq 004200
+diag: RNF7030 30 line 347 seq 004400
+diag: RNF7503 30 line 347 seq 004400
+diag: RNF7030 30 line 355 seq 004600
+diag: RNF7503 30 line 355 seq 004600
+diag: RNF7030 30 line 369 seq 004800
+diag: RNF7503 30 line 369 seq 004800
+diag: RNF7030 30 line 378 seq 005000
+diag: RNF7503 30 line 378 seq 005000

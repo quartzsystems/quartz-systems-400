@@ -10,6 +10,13 @@ help = "The statement or clause is outside the subset this release implements."
 vars = ["*CHAR 256"]
 
 [[msg]]
+id = "SQL0088"
+sev = 0
+text = "&1 changes every row of the table."
+help = "The statement has no WHERE clause, so it applies to the whole table. This is a warning; the statement is precompiled."
+vars = ["*CHAR 10"]
+
+[[msg]]
 id = "SQL0104"
 sev = 30
 text = "Syntax error at line &1 column &2: &3."
@@ -21,6 +28,13 @@ id = "SQL0117"
 sev = 30
 text = "The number of values does not match the number of columns."
 help = "An INSERT lists a different number of values than columns."
+
+[[msg]]
+id = "SQL0199"
+sev = 30
+text = "&1 must be the first SQL statement of the source."
+help = "SET OPTION sets the precompile options for the whole member, so no other SQL statement may come before it."
+vars = ["*CHAR 30"]
 
 [[msg]]
 id = "SQL0203"
@@ -51,6 +65,13 @@ help = "A literal or host value could not be converted to the column's type."
 vars = ["*CHAR 256"]
 
 [[msg]]
+id = "SQL0312"
+sev = 30
+text = "Host variable &1 is not defined or cannot be used here."
+help = "The name after the colon must be a field, subfield, structure or parameter the program declares before the statement, of a type SQL can use."
+vars = ["*CHAR 30"]
+
+[[msg]]
 id = "SQL0401"
 sev = 30
 text = "The operands of &1 are not compatible."
@@ -69,6 +90,13 @@ id = "SQL0501"
 sev = 30
 text = "Cursor &1 is not open."
 help = "FETCH, UPDATE or DELETE WHERE CURRENT OF needs an open cursor."
+vars = ["*CHAR 30"]
+
+[[msg]]
+id = "SQL0504"
+sev = 30
+text = "Cursor &1 is not declared before it is used."
+help = "OPEN, FETCH and CLOSE name a cursor that a DECLARE CURSOR statement earlier in the source must define."
 vars = ["*CHAR 30"]
 
 [[msg]]
@@ -105,8 +133,29 @@ help = "A row needed for update is held by another job's commit cycle."
 vars = ["*CHAR 30"]
 
 [[msg]]
+id = "SQL1103"
+sev = 10
+text = "The columns of table &1 in &2 could not be found."
+help = "The precompiler could not find the table, so it could not check the statement's columns. The program is still created; the statement is checked when it runs."
+vars = ["*CHAR 30", "*CHAR 10"]
+
+[[msg]]
+id = "SQL5066"
+sev = 0
+text = "Precompile option &1 is set by SET OPTION."
+help = "A SET OPTION statement in the source gives the option a value that replaces the command's."
+vars = ["*CHAR 10"]
+
+[[msg]]
 id = "SQL7008"
 sev = 30
 text = "&1 is not journaled."
 help = "A change under commitment control needs a journaled file."
 vars = ["*CHAR 30"]
+
+[[msg]]
+id = "SQL9001"
+sev = 30
+text = "The SQL precompile of &1 failed; the object was not created."
+help = "The precompile listing shows the statements in error. Correct them and run CRTSQLRPGI again."
+vars = ["*CHAR 10"]

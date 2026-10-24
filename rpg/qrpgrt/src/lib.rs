@@ -19,6 +19,7 @@ pub mod fmt;
 pub mod mov;
 pub mod natives;
 pub mod ops;
+pub mod sql;
 pub mod strops;
 pub mod value;
 
@@ -61,6 +62,9 @@ pub fn procedures() -> Vec<(&'static str, usize)> {
         ("_QRNX_EXTREME", ops::extreme as *const () as usize),
         ("_QRNX_STRGET", ops::strget as *const () as usize),
         ("_QRNX_STRSET", ops::strset as *const () as usize),
+        ("_QRNX_SQLIN", sql::sql_in as *const () as usize),
+        ("_QRNX_SQLOUT", sql::sql_out as *const () as usize),
+        ("_QRNX_SQLRUN", sql::sql_run as *const () as usize),
     ]
 }
 

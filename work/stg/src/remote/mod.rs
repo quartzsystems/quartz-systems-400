@@ -10,11 +10,13 @@ pub mod inquiry;
 mod objects;
 mod provider;
 pub mod spool;
+mod sql;
 
 pub use cmds::RemoteCmds;
 pub use data::{LDA_LEN, Lda, RemoteData, RemoteIo, display_wait, new_lda, status};
 pub use objects::{RemoteMsgs, RemoteObjects, RemoteSpaces};
 pub use provider::RemoteProvider;
+pub use sql::RemoteSql;
 
 use crate::Shared;
 

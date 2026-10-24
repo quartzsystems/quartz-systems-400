@@ -1,0 +1,51 @@
+**FREE
+//; cmd: CRTSQLRPGI OBJ({lib}/{name}) SRCFILE({lib}/QRPGLESRC) COMMIT(*NONE) OUTPUT(*PRINT)
+//; run: no
+//; sqlfile: EMPT
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s nm varchar(20);
+dcl-s id int(10) inz(2);
+dcl-s n int(10);
+dcl-ds rec qualified;
+  id int(10);
+  nm varchar(20);
+end-ds;
+dcl-ds rows qualified dim(5);
+  id int(10);
+end-ds;
+n = 1;
+exec sql select NAME into :nm from EMPT where ID = :id;
+n = u1;
+exec sql insert into EMPT (ID, NAME) values (:id, :nm);
+n = u2;
+exec sql select ID, NAME into :rec from EMPT where ID = :id;
+n = u3;
+exec sql values :id + 1 into :n;
+n = u4;
+exec sql declare c1 cursor for select ID from EMPT where ID > :id;
+n = u5;
+exec sql open c1;
+n = u6;
+exec sql fetch c1 for 2 rows into :rows;
+n = u7;
+exec sql get diagnostics :n = ROW_COUNT;
+n = u8;
+exec sql prepare s1 from :nm;
+n = u9;
+exec sql execute s1 using :id;
+n = u10;
+exec sql execute immediate :nm;
+n = u11;
+exec sql commit;
+n = u12;
+exec sql set :n = 5;
+n = u13;
+exec sql delete from EMPT where ID = :id;
+n = u14;
+exec sql close c1;
+n = u15;
+exec sql update EMPT set NAME = :rec.nm where ID = :rec.id;
+n = u16;
+*inlr = *on;

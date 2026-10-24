@@ -2,8 +2,9 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The RPG commands' parameters as compile options, the SQL scan, and
-//! a compiled member made into a module and a program in a store.
+//! The RPG commands' parameters as compile options, CRTSQLRPGI's
+//! precompile options, and a compiled member made into a module and a
+//! program in a store.
 
 use std::sync::Arc;
 
@@ -20,7 +21,7 @@ use store::{FormatParams, Store, StoreConfig};
 
 use super::object::{Made, Shape, make};
 use super::opts::request;
-use super::source::{Source, has_sql, member_of};
+use super::source::{Source, member_of};
 
 const NOW: u64 = 1_792_713_600;
 
@@ -125,6 +126,45 @@ fn crtrpgmod_and_crtsqlrpgi_shapes() {
 }
 
 #[test]
+fn crtsqlrpgi_precompile_options() {
+    let r = request("CRTSQLRPGI", &parms("CRTSQLRPGI OBJ(QGPL/S1)")).unwrap();
+    let o = r.sqlopts.clone().expect("SQL options");
+    assert_eq!((o.commit.as_str(), o.naming.as_str(), o.closqlcsr.as_str()), ("*CHG", "*SYS", "*ENDACTGRP"));
+    let r = request(
+        "CRTSQLRPGI",
+        &parms("CRTSQLRPGI OBJ(QGPL/S1) COMMIT(*NONE) OPTION(*SQL) CLOSQLCSR(*ENDMOD) DATFMT(*ISO)"),
+    )
+    .unwrap();
+    let o = r.sqlopts.clone().expect("SQL options");
+    assert_eq!(
+        (o.commit.as_str(), o.naming.as_str(), o.closqlcsr.as_str(), o.datfmt.as_str()),
+        ("*NONE", "*SQL", "*ENDMOD", "*ISO")
+    );
+    assert!(r.options("S1", "QGPL", &source(&[])).sql.is_some());
+    let r = request("CRTBNDRPG", &parms("CRTBNDRPG PGM(QGPL/HELLO)")).unwrap();
+    assert!(r.sqlopts.is_none());
+}
+
+#[test]
+fn embedded_sql_precompiles_and_fails_as_sql9001() {
+    let ok = source(&[
+        "**FREE",
+        "dcl-s n int(10);",
+        "exec sql values 6 * 7 into :n;",
+        "*inlr = *on;",
+    ]);
+    let req = request("CRTSQLRPGI", &parms("CRTSQLRPGI OBJ(QGPL/HELLO) COMMIT(*NONE)")).unwrap();
+    let opts = req.options("HELLO", "QGPL", &ok);
+    let c = rpgc::compile(ok.member.clone(), &mut rpgfront::NoIncludes, &mut rpgc::NoExtFiles, &opts);
+    assert!(c.created && !c.sql_failed, "{:?}", c.diags);
+    assert!(c.qir.contains("_QRNX_SQLRUN"));
+    let bad = source(&["**FREE", "exec sql values 1 into :nosuch;", "*inlr = *on;"]);
+    let c = rpgc::compile(bad.member.clone(), &mut rpgfront::NoIncludes, &mut rpgc::NoExtFiles, &opts);
+    assert!(!c.created && c.sql_failed);
+    assert_eq!(c.diags.iter().map(|d| d.msgid).collect::<Vec<_>>(), vec!["SQL0312"]);
+}
+
+#[test]
 fn ctlspec_and_bad_values() {
     let r = request("CRTBNDRPG", &parms("CRTBNDRPG SRCMBR(HELLO)")).unwrap();
     assert_eq!(
@@ -137,20 +177,6 @@ fn ctlspec_and_bad_values() {
     let err = request("CRTBNDRPG", &parms("CRTBNDRPG PGM(A) TGTRLS(V3R1M0)")).unwrap_err();
     assert!(err.starts_with("CPF0006"), "{err}");
     assert!(request("CRTBNDRPG", &parms("CRTBNDRPG PGM(A) TGTRLS(V7R5M0)")).is_ok());
-}
-
-#[test]
-fn embedded_sql_is_seen_outside_comments() {
-    assert!(has_sql(
-        &source(&["**FREE", "exec sql select 1 into :x from sysibm.sysdummy1;"]).member
-    ));
-    assert!(has_sql(
-        &source(&["     C/EXEC SQL", "     C+ SET :X = 1", "     C/END-EXEC"]).member
-    ));
-    assert!(!has_sql(
-        &source(&["**FREE", "// exec sql is not here", "dsply 'exec';"]).member
-    ));
-    assert!(!has_sql(&source(&["      * EXEC SQL in a comment"]).member));
 }
 
 fn open_new() -> (Store, ObjectId, ObjectId) {

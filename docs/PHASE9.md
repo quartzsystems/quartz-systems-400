@@ -207,12 +207,61 @@ members of batch 4, pub400 V7R5M0.
   `DIM(*AUTO)` and `DIM(*VAR)` with `%ELEM` as a target and `*NEXT`,
   the `%BITxxx` functions, `%STR` and `SORTA %SUBARR`.
 
+## Oracle facts: embedded SQL
+
+Recorded from batch 11 (`b11sql/`), pub400 V7R5M0.
+
+- `CRTSQLRPGI ... OUTPUT(*PRINT)` prints the precompile listing and
+  then the compiler's; the tool keeps both, in that order. The
+  precompile diagnostics are `SQLnnnn sev record`; a precompile above
+  `GENLVL` ends with `SQL9001` and no compile; a compile that fails is
+  `RNS9310`.
+- The compile listing numbers the generated member's lines: the SQLCA
+  block (65 lines) and the main statements' structures go before the
+  first calculation, a procedure's structures before its first
+  calculation, the call code after each statement (`lines.rs` has the
+  counts per kind). Sequence numbers stay the source's.
+- `SELECT INTO` of no row is `+100 02000`, `SQLERRD(3)` 0; of several
+  rows `-811 21000` with the first row assigned. A null without an
+  indicator is `-305 22002`; with one the variable is emptied (zero).
+  A number too large for its host variable is `-304 22003`, nothing
+  assigned; decimals are truncated. `'Hello'` into `char(3)` is `Hel`,
+  `01004`, indicator 5, `SQLWN0` and `SQLWN1` `W`.
+- An `UPDATE` or `DELETE` that changes nothing is `+100`; a column
+  function over nulls is `01003` with SQLCODE 0.
+- Cursors: `FETCH` or `CLOSE` of a cursor not open is `-501 24501`,
+  `OPEN` of an open one `-502 24502`, `WHERE CURRENT OF` a closed one
+  `-507 24501`. `FETCH ABSOLUTE` is `SQL0104` at precompile time on
+  7.5. A multiple-row `FETCH` that reaches the end gives `SQLERRD(5)`
+  100.
+- `COMMIT` and `ROLLBACK` under `COMMIT(*NONE)` are `-7007 51009` and
+  close nothing.
+- `PREPARE` reports `-104` and `-204`; `EXECUTE` of a statement whose
+  `PREPARE` failed is `-518 07003`.
+- `GET DIAGNOSTICS ... NUMBER` is 1 after a statement that worked.
+- `SET OPTION` gives `SQL5066` (00) per option; a missing table is
+  `SQL1103` (10) and `-204 42704` at run time; `DELETE` without `WHERE`
+  is `SQL0088` (00).
+- pub400's jobs run with CCSID 273: `CHAR` of a decimal has a comma.
+  The corpus keeps to integers there.
+
 ## Checks not yet made
 
 - The compile-time checks above (`RNF7021`, `RNF7262`, `RNF7531`,
   `RNF7017`, `RNF7565`, `RNF7143`, `RNF5216`, `RNF0592`, the
   never-set indicator) are not made yet; the corpus keeps to valid
   programs.
+
+## Embedded SQL not yet done
+
+- `CLOSQLCSR(*ENDMOD)` is accepted but cursors live until the job (or
+  the kit's call) ends, as `*ENDACTGRP` would leave them while the
+  activation group lives. `TODO(phase9)`.
+- Commitment control: `COMMIT(*CHG)` and the others do not start it;
+  the corpus compiles with `COMMIT(*NONE)` (pub400's work library is
+  not journaled).
+- `DESCRIBE`, SQL descriptors and `INCLUDE` of members are not
+  supported; `DESCRIBE` reaches the runtime as `-84`.
 
 ## Blocked
 

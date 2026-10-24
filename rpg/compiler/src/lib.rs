@@ -41,12 +41,14 @@ pub mod listing;
 pub mod msgs;
 pub mod names;
 pub mod reader_class;
+pub mod sql;
 pub mod syms;
 pub mod types;
 
 pub use compile::{Compiled, compile};
 pub use ctl::{Command, Options};
 pub use files::{ExtFiles, NoExtFiles};
+pub use rpgsqlpre as sqlpre;
 
 /// The IBM releases QS/400 V1R0M0 answers for in conditional
 /// compilation: every release up to the one it targets, V7R5M0.

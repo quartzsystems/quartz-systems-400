@@ -1,0 +1,11 @@
+# SQL001 VARCHAR(20) pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 5 seq 000500
+diag: RNF3530 00 line 6 seq 000600
+run: ok
+spool: QSYSPRT
+  |1/1   0 00000 Cid DEV 58500.25
+  |1/2   100 02000 Cid 0
+  |1/3   -811 21000 Bob 0
+  |1/4   0 00000 5 284501.50 Eve

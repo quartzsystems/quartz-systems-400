@@ -1,0 +1,11 @@
+# SQL017 VARCHAR(20) pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 4 seq 000400
+diag: RNF3530 00 line 5 seq 000500
+run: ok
+spool: QSYSPRT
+  |1/1   notfound 100
+  |1/2   went on 100
+  |1/3   error -803
+  |1/4   again -803

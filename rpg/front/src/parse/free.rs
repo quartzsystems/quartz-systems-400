@@ -288,12 +288,12 @@ fn source_between(b: &Builder<'_>, from: Pos, to: Pos) -> String {
             Some(i) if !piece[..i].contains('\'') => piece[..i].to_string(),
             _ => piece,
         };
-        if !out.is_empty() {
-            out.push(' ');
+        if l.no > from.line {
+            out.push('\n');
         }
         out.push_str(piece.trim());
     }
-    out.trim().to_string()
+    out.trim_matches(' ').to_string()
 }
 
 /// A calculation statement.
@@ -302,7 +302,14 @@ fn calc(b: &mut Builder<'_>, st: &FreeStmt, word: &str, n: usize) -> Option<Stmt
     // EXEC SQL keeps its text for the precompiler.
     if word == "EXEC" && toks.get(1).and_then(Tok::name) == Some("SQL") {
         let from = toks.get(2).map_or(st.end, |t| t.at);
-        let text = if toks.len() > 2 { source_between(b, from, st.end) } else { String::new() };
+        // One line break per source line, from the statement's first
+        // line, so the precompiler can tell lines apart.
+        let text = if toks.len() > 2 {
+            let lead = from.line.saturating_sub(st.at.line) as usize;
+            format!("{}{}", "\n".repeat(lead), source_between(b, from, st.end))
+        } else {
+            String::new()
+        };
         return Some(Stmt {
             at: st.at,
             op: Op {

@@ -171,6 +171,8 @@ pub struct Job {
     pub display: Option<Box<dyn crate::io::display::DisplaySource>>,
     /// Data areas and data queues.
     pub data: Option<Box<dyn crate::io::DataSource>>,
+    /// Where embedded SQL statements run; none until a job sets it.
+    pub sql: Option<Box<dyn sql::embed::Embedded>>,
     /// Open files by activation, module and file index.
     pub files: HashMap<FileKey, FileState>,
     /// The debugger, while `STRDBG` is in effect.
@@ -250,6 +252,7 @@ impl Job {
             spool: None,
             display: None,
             data: None,
+            sql: None,
             files: HashMap::new(),
             debug: None,
             stack_base: 0,

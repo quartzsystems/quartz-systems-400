@@ -24,6 +24,7 @@ pub mod emit;
 pub mod exc;
 pub mod expr;
 pub mod output;
+pub mod sql;
 pub mod stmt;
 pub mod strbif;
 pub mod strops;
@@ -214,6 +215,8 @@ pub struct Gen<'a> {
     pub used_formats: BTreeSet<usize>,
     /// The string, array and move operations' state.
     pub ops: strops::OpState,
+    /// The precompiled SQL statements, by line.
+    pub sql: BTreeMap<u32, rpgsqlpre::Stmt>,
 }
 
 impl Gen<'_> {
@@ -292,8 +295,10 @@ pub fn module(
     ctl: &Ctl,
     opts: &Options,
     locals: &[usize],
+    sql: &[rpgsqlpre::Stmt],
 ) -> (String, Vec<Diag>) {
     let mut g = Gen {
+        sql: sql.iter().map(|s| (s.line, s.clone())).collect(),
         t,
         files,
         ctl,

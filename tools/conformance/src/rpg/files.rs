@@ -154,6 +154,22 @@ impl KitDb {
         Ok(StoreIo::new(Box::new(Rc::clone(&self.store)), JobHandle(1), Box::new(resolve)))
     }
 
+    /// The job's embedded SQL over the same store.
+    #[must_use]
+    pub fn sql(&self) -> sql::embed::Session {
+        let mut s = sql::embed::Session::new(
+            Box::new(Rc::clone(&self.store)),
+            self.qsys,
+            JobHandle(1),
+            NameContext {
+                curlib: Some(self.lib),
+                libl: vec![self.lib],
+            },
+        );
+        s.ctx.now = Some(CLOCK);
+        s
+    }
+
     /// The external descriptions the compiler reads.
     #[must_use]
     pub fn ext(&self) -> KitExt {

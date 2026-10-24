@@ -1548,6 +1548,7 @@ dependencies = [
  "qir",
  "qsname",
  "spool",
+ "sql",
  "store",
  "thiserror",
  "tracing",
@@ -1759,9 +1760,12 @@ version = "0.1.0"
 dependencies = [
  "ccsid",
  "codegen",
+ "db",
+ "dds",
  "mi",
  "qdecimal",
  "qir",
+ "sql",
 ]
 
 [[package]]
@@ -1976,6 +1980,7 @@ dependencies = [
  "qir",
  "release",
  "rpgfront",
+ "rpgsqlpre",
 ]
 
 [[package]]
@@ -1991,6 +1996,14 @@ version = "0.1.0"
 dependencies = [
  "serde",
  "toml",
+]
+
+[[package]]
+name = "rpgsqlpre"
+version = "0.1.0"
+dependencies = [
+ "msgf",
+ "sql",
 ]
 
 [[package]]
@@ -2469,6 +2482,7 @@ dependencies = [
  "mi",
  "msgf",
  "sec",
+ "sql",
  "svctools",
  "sysapi",
  "tracing",

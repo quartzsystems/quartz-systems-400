@@ -52,20 +52,6 @@ pub fn run(system: &mut System, cmdname: &str, parms: &Parms) -> CmdReply {
 fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> CmdReply {
     let mut options = req.options(&req.object_name(src), lib_name, src);
     let shape = req.shape;
-    if req.sql && source::has_sql(&src.member) {
-        // BLOCKED(phase9): the SQL precompiler (EXEC SQL into RPG that
-        // calls the SQL runtime) does not exist yet; source without
-        // embedded SQL compiles below as CRTBNDRPG or CRTRPGMOD would.
-        let out = "The source holds EXEC SQL; the SQL precompiler is not available.\n";
-        let r = Refused {
-            id: "RNS9314",
-            shape,
-            name: &options.name,
-            lib: lib_name,
-            sev: None,
-        };
-        return r.reply(out);
-    }
     let compiled = compile(system, req, src, &mut options);
     let name = options.name.clone();
     let mut out = String::new();
@@ -87,7 +73,8 @@ fn create(system: &mut System, req: &Request, lib_name: &str, src: &Source) -> C
     }
     let sev = format!("{:02}", compiled.max_severity);
     let refused = Refused {
-        id: shape.not_created(),
+        // A precompile that failed ends the command before the compile.
+        id: if compiled.sql_failed { "SQL9001" } else { shape.not_created() },
         shape,
         name: &name,
         lib: lib_name,

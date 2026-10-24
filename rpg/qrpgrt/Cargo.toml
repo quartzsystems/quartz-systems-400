@@ -12,6 +12,9 @@ qir = { path = "../../runtime/qir", version = "0.1.0" }
 codegen = { path = "../../runtime/codegen", version = "0.1.0" }
 qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+sql = { path = "../../database/sql", version = "0.1.0" }
+db = { path = "../../database/db", version = "0.1.0" }
+dds = { path = "../../database/dds", version = "0.1.0" }
 
 [lints]
 workspace = true

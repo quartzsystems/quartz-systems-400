@@ -1,7 +1,6 @@
 # QRPGLEMSG: the ILE RPG compiler's messages. RNF messages are the
 # compile diagnostics the listing prints; RNS messages end the
-# CRTBNDRPG, CRTRPGMOD and CRTSQLRPGI commands (RNS9314 is our own,
-# in a number IBM leaves unused). Every text is
+# CRTBNDRPG, CRTRPGMOD and CRTSQLRPGI commands. Every text is
 # Quartz-written; the identifiers and severities are the compatibility
 # interface. A text the compiler prints (rpg/compiler/src/msgs.rs) is
 # repeated here word for word; a test keeps the two in step.
@@ -357,13 +356,6 @@ sev = 50
 text = "The compile found diagnostics up to severity &1."
 help = "Read the listing for each diagnostic, fix the source and compile again."
 vars = ["*CHAR 2"]
-
-[[msg]]
-id = "RNS9314"
-sev = 50
-text = "The SQL precompiler is not available, so &1 in &2 was not created."
-help = "The source holds EXEC SQL statements, which need the precompiler. Source without embedded SQL compiles with CRTSQLRPGI as with CRTBNDRPG or CRTRPGMOD."
-vars = ["*CHAR 10", "*CHAR 10"]
 
 [[msg]]
 id = "RNF6011"

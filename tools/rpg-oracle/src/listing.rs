@@ -29,9 +29,23 @@ pub fn diags(lines: &[String]) -> Vec<Diag> {
     let mut current: u32 = 0;
     let mut in_source = false;
     let mut in_additional = false;
+    let mut in_sql = false;
     for raw in lines {
         let body = raw.get(1..).unwrap_or("");
         let t = body.trim_start();
+        // The SQL precompile listing: `SQLnnnn sev record text`.
+        if t.starts_with("DIAGNOSTIC MESSAGES") {
+            in_sql = true;
+            continue;
+        }
+        if in_sql {
+            if t.starts_with("Message Summary") {
+                in_sql = false;
+            } else if let Some(d) = sql_diag_line(t) {
+                out.push(d);
+            }
+            continue;
+        }
         if t.starts_with("S o u r c e   L i s t i n g") {
             in_source = true;
             continue;
@@ -68,6 +82,23 @@ fn source_line_number(body: &str) -> Option<u32> {
         return None;
     }
     head.trim().parse().ok()
+}
+
+/// `SQLnnnn ss record text`, as the precompile listing prints it.
+fn sql_diag_line(t: &str) -> Option<Diag> {
+    let mut w = t.split_whitespace();
+    let msgid = w.next()?;
+    if msgid.len() != 7 || !msgid.starts_with("SQL") || !msgid[3..].chars().all(|c| c.is_ascii_digit()) {
+        return None;
+    }
+    let severity: u8 = w.next()?.parse().ok()?;
+    let line: u32 = w.next()?.parse().ok()?;
+    Some(Diag {
+        line,
+        msgid: msgid.to_string(),
+        severity,
+        seq: String::new(),
+    })
 }
 
 /// `*RNFnnnn ss [x|n] seq text`.
@@ -207,6 +238,27 @@ mod tests {
                 (5, "RNF5501", 20, "000500"),
             ]
         );
+    }
+
+    #[test]
+    fn reads_the_precompile_diagnostics() {
+        let lines: Vec<String> = [
+            "0                                             DIAGNOSTIC MESSAGES",
+            "0MSG ID  SEV  RECORD  TEXT",
+            " SQL0312  30       7  Position 28 ...",
+            "                      for reason code 1.",
+            "0SQL0104  30       8  Position 10 ...",
+            "-",
+            "                     Message Summary",
+            "   Total     Info   Warning      Error   Severe  Terminal",
+            "       2        0         0          0        2         0",
+        ]
+        .iter()
+        .map(|s| (*s).to_string())
+        .collect();
+        let d = diags(&lines);
+        let got: Vec<(u32, &str, u8)> = d.iter().map(|x| (x.line, x.msgid.as_str(), x.severity)).collect();
+        assert_eq!(got, vec![(7, "SQL0312", 30), (8, "SQL0104", 30)]);
     }
 
     #[test]

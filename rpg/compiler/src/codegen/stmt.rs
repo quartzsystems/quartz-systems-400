@@ -366,6 +366,10 @@ impl Gen<'_> {
     fn statement_body(&mut self, stmts: &[&Stmt], k: usize) -> usize {
         let s = stmts[k];
         let op = &s.op;
+        if op.code == "EXEC SQL" {
+            self.exec_sql(s);
+            return 1;
+        }
         let (base, sfx) = rpgfront::parse::ops::split_suffix(&op.code);
         let half = op.ext.contains('H');
         let mut used = 1;
@@ -817,7 +821,7 @@ impl Gen<'_> {
         self.b.ins(format!("sndpgmmsg msgid({id}) msgf({f}){d} type({kind}) to({to})"));
     }
 
-    fn tag_label(&mut self, name: &str) -> String {
+    pub(crate) fn tag_label(&mut self, name: &str) -> String {
         if let Some(l) = self.tags.get(name) {
             return l.clone();
         }

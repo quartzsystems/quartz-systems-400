@@ -1,0 +1,9 @@
+# SQL025 VARCHAR(20) pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: no (RNS9310)
+diag: RNF2318 00 line 6 seq 000600
+diag: RNF3530 00 line 7 seq 000700
+diag: RNF7030 30 line 167 seq 001600
+diag: RNF7503 30 line 167 seq 001600
+diag: RNF7030 30 line 175 seq 001800
+diag: RNF7503 30 line 175 seq 001800

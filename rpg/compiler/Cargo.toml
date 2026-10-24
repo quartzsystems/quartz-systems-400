@@ -8,6 +8,7 @@ publish.workspace = true
 
 [dependencies]
 rpgfront = { path = "../front", version = "0.1.0" }
+rpgsqlpre = { path = "../sqlpre", version = "0.1.0" }
 qir = { path = "../../runtime/qir", version = "0.1.0" }
 qdecimal = { path = "../../database/qdecimal", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }

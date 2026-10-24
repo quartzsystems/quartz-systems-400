@@ -14,6 +14,7 @@ deferred.
 | `rpgfront` | `rpg/front` | Source reading, directives, `/COPY`, the fixed-form cutters, the free-form lexer, the parser, the syntax tree |
 | `rpgc` | `rpg/compiler` | Control options, declarations and layouts, files, checking and IR generation, the listing, the message texts |
 | `qrpgrt` | `rpg/qrpgrt` | The runtime library: bound procedures `_QRNX_...` generated code calls |
+| `rpgsqlpre` | `rpg/sqlpre` | The SQL precompiler of `CRTSQLRPGI`: embedded statements, host variables, the precompile listing |
 | `rpg-oracle` | `tools/rpg-oracle` | The differential oracle (`PHASE9.md`) |
 
 The conformance kit is `tools/conformance/src/rpg/` with the test
@@ -315,6 +316,7 @@ digits from bit 8, decimals in the low byte.
 | `_QRNX_STRGET`, `_QRNX_STRSET` | `%STR` and `%STR(...) =` |
 | `_QRNX_POW` | `**` |
 | `_QRNX_SQRT` | `%SQRT`, `SQRT` |
+| `_QRNX_SQLIN`, `_QRNX_SQLOUT`, `_QRNX_SQLRUN` | embedded SQL: a statement's host variables, then the statement |
 
 **Moves** (`qrpgrt::mov`). Every operand takes part as its image:
 character data as its bytes (a varying field as its current value, its
@@ -334,6 +336,66 @@ storage, every occurrence in `$NAME__occ` and the current number in
 `RESET` restores a copy (`$NAME__rst`) that `_qrni_snap` takes when
 initialization and `*INZSR` are done. A `DIM(*AUTO)` or `DIM(*VAR)`
 array keeps its count in `$NAME__elem`.
+
+## Embedded SQL (`CRTSQLRPGI`)
+
+**The precompiler runs inside the compile.** IBM's precompiler writes
+a second member (`QTEMP/QSQLTxxxxx`) with the SQLCA, a structure per
+statement and calls to `QSQROUTE`, and compiles that. QS/400's
+compiler already knows every host variable's type, so `rpgsqlpre`
+works on the statements the front end keeps (an `EXEC SQL` operation
+whose text holds one line break per source line) and hands `rpgc` one
+`Stmt` per statement; the source keeps its own line numbers. For the
+listing and its diagnostics to number lines as the oracle's does,
+`rpgsqlpre::lines` counts what IBM's generated member adds: the
+SQLCA, prototypes and constants (65 lines) and each main-source
+statement's structure before the first calculation, each procedure's
+structures before its first calculation, and after each statement
+its call code (and three lines per active `WHENEVER ... GO TO`).
+
+**The precompiler** (`rpg/sqlpre`): each statement is classified by
+its first words. `SELECT ... INTO`, `VALUES ... INTO` and `SET :hv =`
+are a query of at most one row (`INTO` lists taken out, `SET` made a
+`VALUES`); `DECLARE CURSOR` is kept until its `OPEN`, which carries
+the query, `WITH HOLD`, `SCROLL` and the declaration's host variables
+(read when the cursor opens); `FETCH` keeps its orientation and `FOR n
+ROWS`; `PREPARE`, `EXECUTE [USING]`, `EXECUTE IMMEDIATE` and `GET
+DIAGNOSTICS` have their own kinds; `SET OPTION` (first statement only,
+`SQL5066` per option), `WHENEVER`, `INCLUDE` and `DECLARE ... STATEMENT`
+act at compile time; anything else runs as it is. Input host
+variables become `?` (a structure one per subfield); `:v :i`, `:v:i`
+and `:v INDICATOR :i` give indicators. The engine's text is parsed
+(`SQL0104`); host variables must be known (`SQL0312`), cursors declared
+before use (`SQL0504`), tables found (`SQL1103`, severity 10: the
+program is still created); `UPDATE` and `DELETE` without `WHERE` are
+`SQL0088` (00). Above `GENLVL` the command ends with `SQL9001` and
+nothing is compiled. The precompile listing comes first in the
+listing, with IBM's `DIAGNOSTIC MESSAGES` layout.
+
+**The SQLCA** is declared as IBM declares it (`SQLCODE`/`SQLCOD`,
+`SQLSTATE`/`SQLSTT`, `SQLERRD`/`SQLER1`-`6`, `SQLWARN`/`SQLWN0`-`A`,
+`SQLERRMC`, ...; 136 bytes).
+
+**Generated code** (`codegen/sql.rs`): `_QRNX_SQLIN` for each input
+(address, descriptor word, date/time format, indicator),
+`_QRNX_SQLOUT` for each output (and the element size of an array of
+structures for a multiple-row `FETCH`), then `_QRNX_SQLRUN` with the
+SQLCA, the statement's descriptor (`sql::embed::Desc`, text) and the
+module name as the scope; then the `WHENEVER` branches.
+
+**At run time** (`qrpgrt::sql`, `sql::embed`): the inputs become SQL
+values, the job's `Embedded` (`mi::Job::sql`) runs the statement and
+the row is assigned: a null into an indicator (-1, the variable
+emptied) or `-305`; character data cut sets `SQLWARN1` and `01004` and
+the indicator to the length; a number that does not fit is `-304` and
+nothing is assigned; a failed statement assigns nothing except `-811`,
+which gives the first row. `sql::embed::Session` runs over a store
+(the kit's, or in a job the storage service's, through the `SqlRun`
+request of `stg`): cursors and prepared statements per scope,
+`-501`/`-502`/`-507` for cursor states, `-518` for an unprepared
+statement, `-7007` for `COMMIT`/`ROLLBACK` without commitment
+control, `01003` when a column function left out nulls, multiple-row
+`FETCH` with `SQLERRD(5)` 100 at the last row.
 
 ## Adding a feature
 
