@@ -4,52 +4,5 @@ created: yes
 diag: RNF2318 00 line 6 seq 000600
 diag: RNF3530 00 line 7 seq 000700
 run: ok
-spool: CUSTF
-  |1/1    5770SS1 V7R5M0  220415                  Data Description               CWELLMANB/CUSTF         26-10-24  2:38:21        Page    1
-  |1/3    File name . . . . . . . . . . . . . . . . . . . . . :   CUSTF
-  |1/4      Library name  . . . . . . . . . . . . . . . . . . :   CWELLMANB
-  |1/5    File attribute  . . . . . . . . . . . . . . . . . . :   Physical
-  |1/6    Source file containing DDS  . . . . . . . . . . . . :   QDDSSRC
-  |1/7      Library name  . . . . . . . . . . . . . . . . . . :   CWELLMANB
-  |1/8    Source member containing DDS  . . . . . . . . . . . :   CUSTF
-  |1/9    Source member last changed  . . . . . . . . . . . . :   26-10-24   2:38:20
-  |1/10   Source listing options  . . . . . . . . . . . . . . :   *SOURCE    *LIST      *NOSECLVL  *NOEVENTF
-  |1/11   DDS generation severity level . . . . . . . . . . . :   20
-  |1/12   DDS flagging severity level . . . . . . . . . . . . :   00
-  |1/13   File type . . . . . . . . . . . . . . . . . . . . . :   *DATA
-  |1/14   Authority . . . . . . . . . . . . . . . . . . . . . :   *LIBCRTAUT
-  |1/15   Replace file  . . . . . . . . . . . . . . . . . . . :   *NO
-  |1/16   Text  . . . . . . . . . . . . . . . . . . . . . . . :
-  |1/17   Compiler  . . . . . . . . . . . . . . . . . . . . . :   IBM System i5 Data Description Processor
-  |1/19                                        Data Description Source
-  |1/21   SEQNBR  *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8  Date
-  |1/23      100       A                                      UNIQUE
-  |1/24      200       A                                      CCSID(37)
-  |1/25      300       A          R CUSTR
-  |1/26      400       A            CUSNO          5P 0
-  |1/27      500       A            NAME          20A
-  |1/28      600       A            CITY          12A
-  |1/29      700       A            BAL            9P 2
-  |1/30      800       A          K CUSNO
-  |1/32                           * * * * *   E N D   O F   S O U R C E   * * * * *
-  |2/1    5770SS1 V7R5M0  220415                  Data Description               CWELLMANB/CUSTF         26-10-24  2:38:21        Page    2
-  |2/3                                             Expanded Source
-  |2/4                                                                                             Field       Buffer position
-  |2/5    SEQNBR  *...+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8 length        Out     In
-  |2/7       100                                              UNIQUE CCSID(37)
-  |2/8       300                  R CUSTR
-  |2/9       400                    CUSNO          5P 0B      COLHDG('CUSNO')                          3            1       1
-  |2/10      500                    NAME          20A  B      COLHDG('NAME')                          20            4       4
-  |2/11      600                    CITY          12A  B      COLHDG('CITY')                          12           24      24
-  |2/12      700                    BAL            9P 2B      COLHDG('BAL')                            5           36      36
-  |2/13      800                  K CUSNO
-  |2/15                   * * * * *   E N D   O F   E X P A N D E D   S O U R C E   * * * * *
-  |3/1    5770SS1 V7R5M0  220415                  Data Description               CWELLMANB/CUSTF         26-10-24  2:38:21        Page    3
-  |3/3                                             Message Summary
-  |3/5       Total          Informational          Warning        Error       Severe
-  |3/6                          (0-9)              (10-19)       (20-29)      (30-99)
-  |3/8           0                 0                    0             0            0
-  |3/11  * CPC7301      00               Message . . . . :   File CUSTF created in library CWELLMANB.
-  |3/13                           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
 spool: QSYSPRT
   |1/1   Alice Adams         1251.50
