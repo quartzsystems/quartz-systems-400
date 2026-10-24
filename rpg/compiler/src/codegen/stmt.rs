@@ -47,12 +47,12 @@ impl Gen<'_> {
                         Fig::All(s) if s.chars().all(|c| c.is_ascii_digit()) => {
                             self.b.ins(format!("mov {}, *ZEROS", dst.op));
                         }
-                        _ => self.err(ids::TYPE_MISMATCH, 30, ""),
+                        _ => self.err(ids::ASSIGN_TYPE, 30, ""),
                     }
                     return;
                 }
                 if !src.ty.is_numeric() {
-                    self.err(ids::TYPE_MISMATCH, 30, "");
+                    self.err(ids::ASSIGN_TYPE, 30, "");
                     return;
                 }
                 let s = self.dec_operand(&src);
@@ -76,7 +76,7 @@ impl Gen<'_> {
                     return;
                 }
                 if !src.ty.is_string() {
-                    self.err(ids::TYPE_MISMATCH, 30, "");
+                    self.err(ids::ASSIGN_TYPE, 30, "");
                     return;
                 }
                 if let (Vk::Lit, Some(n), Some(m)) = (src.kind, dst.ty.str_len(), src.ty.str_len())
@@ -102,7 +102,7 @@ impl Gen<'_> {
                 } else if matches!(src.fig, Some(Fig::Blanks | Fig::Zeros)) {
                     self.b.ins(format!("store {}, *OFF", dst.op));
                 } else {
-                    self.err(ids::TYPE_MISMATCH, 30, "");
+                    self.err(ids::ASSIGN_TYPE, 30, "");
                 }
             }
             (Ty::Ds(_), _) => {
@@ -120,7 +120,7 @@ impl Gen<'_> {
                         };
                         self.b.ins(format!("mov {whole}, {s}"));
                     } else {
-                        self.err(ids::TYPE_MISMATCH, 30, "");
+                        self.err(ids::ASSIGN_TYPE, 30, "");
                     }
                 }
             }
@@ -135,10 +135,10 @@ impl Gen<'_> {
                     let r = self.ptr_reg(&src);
                     self.b.ins(format!("store {}, {r}", dst.op));
                 } else {
-                    self.err(ids::TYPE_MISMATCH, 30, "");
+                    self.err(ids::ASSIGN_TYPE, 30, "");
                 }
             }
-            _ => self.err(ids::TYPE_MISMATCH, 30, ""),
+            _ => self.err(ids::ASSIGN_TYPE, 30, ""),
         }
     }
 
@@ -202,7 +202,7 @@ impl Gen<'_> {
     pub fn cond(&mut self, e: &Expr) -> Option<String> {
         let v = self.expr(e, Want::default())?;
         if v.ty != Ty::Ind {
-            self.err(ids::BAD_EXPRESSION_TYPE, 30, "");
+            self.err(ids::NOT_LOGICAL, 30, "");
             return None;
         }
         self.ind_reg(&v)
@@ -1172,8 +1172,12 @@ impl Gen<'_> {
                 }
             }
             (None, None) => self.b.term("ret"),
-            (Some(_), None) => self.err(ids::BAD_EXPRESSION_TYPE, 30, "RETURN"),
-            (None, Some(_)) => self.err(ids::BAD_EXPRESSION_TYPE, 30, "RETURN"),
+            // The value is ignored.
+            (Some(_), None) => {
+                self.err(ids::RETURN_VALUE_UNWANTED, 20, "RETURN");
+                self.b.term("ret");
+            }
+            (None, Some(_)) => self.err(ids::RETURN_VALUE_MISSING, 30, "RETURN"),
         }
     }
 
@@ -1519,8 +1523,28 @@ fn inz_fits(ty: &Ty, v: &V) -> bool {
     }
 }
 
+/// Whether a literal initial value is of the field's type: a number
+/// for a number, characters for characters, '0' or '1' for an
+/// indicator.
+fn inz_type_ok(ty: &Ty, e: &Expr) -> bool {
+    match e {
+        _ if *ty == Ty::Unknown => true,
+        Expr::Lit(Lit::Char(s), _) => match ty {
+            Ty::Ind => s == "0" || s == "1",
+            t => !t.is_numeric(),
+        },
+        Expr::Lit(Lit::Num(_), _) => ty.is_numeric(),
+        _ => true,
+    }
+}
+
 /// An `INZ(value)`: the value into every element.
 fn inz_value(g: &mut Gen<'_>, ty: &Ty, dim: u32, place: &str, e: &Expr) {
+    if !inz_type_ok(ty, e) {
+        g.err(ids::INZ_TYPE, 20, String::new());
+        default_value(g, ty, dim, place);
+        return;
+    }
     if dim == 0 && g.dt_inz(ty, place, e) {
         return;
     }
@@ -1653,10 +1677,10 @@ pub fn calcs(g: &mut Gen<'_>, stmts: &[&Stmt]) {
 /// Fill each subroutine's `ENDSR` switch now that every `EXSR` is known.
 pub fn finish_subrs(g: &mut Gen<'_>) {
     let subrs: Vec<(String, Subr)> = g.subrs.drain().collect();
-    for (name, s) in subrs {
+    for (_, s) in subrs {
         if !s.defined {
-            g.err(ids::NOT_DEFINED, 30, name.clone());
-            // Keep the IR valid: the entry label returns at once.
+            // Reported with its EXSR (`blocks`). Keep the IR valid:
+            // the entry label returns at once.
             g.b.place(&s.label);
             g.b.place(&s.end);
             let idx = g.b.lines.len();

@@ -64,6 +64,10 @@ pub fn items(read: &Read, diags: &mut Vec<Diag>) -> Vec<Item> {
         let l = &lines[i];
         match &l.class {
             Class::Free => {
+                // Free form in fixed-format source ends at column 80.
+                if !l.fully_free && !rpgspecs::cut(&l.text, 81, 100).trim().is_empty() {
+                    diags.push(Diag::new(ids::FREE_COMMENT, 20, l.pos(81)));
+                }
                 free.push(i);
                 i += 1;
                 continue;
@@ -278,6 +282,9 @@ pub struct Builder<'a> {
     pub proc: Option<Proc>,
     /// The diagnostics.
     pub diags: Vec<Diag>,
+    /// Whether a procedure began or ended: main-procedure statements
+    /// are no longer allowed.
+    pub after_proc: bool,
 }
 
 impl Builder<'_> {
@@ -292,6 +299,16 @@ impl Builder<'_> {
     /// Add a definition where it belongs. A procedure interface goes
     /// to the procedure (or, globally, stands for the main procedure).
     pub fn def(&mut self, d: Def) {
+        // One interface per procedure; a second is ignored.
+        let twice = d.kind == DefKind::Pi
+            && match &self.proc {
+                Some(p) => p.pi.is_some(),
+                None => self.module.defs.iter().any(|x| x.kind == DefKind::Pi),
+            };
+        if twice {
+            self.diags.push(Diag::new(ids::PI_TWICE, 30, d.at));
+            return;
+        }
         match &mut self.proc {
             Some(p) if d.kind == DefKind::Pi => p.pi = Some(d),
             Some(p) => p.defs.push(d),
@@ -322,17 +339,20 @@ impl Builder<'_> {
     pub fn stmt(&mut self, s: Stmt) {
         match &mut self.proc {
             Some(p) => p.calcs.push(s),
+            // Between or after procedures: ignored.
+            None if self.after_proc => self.diags.push(Diag::new(ids::BETWEEN_PROCS, 30, s.at)),
             None => self.module.calcs.push(s),
         }
     }
 
     /// Close the open procedure.
     pub fn end_proc(&mut self, at: Pos) {
+        self.after_proc = true;
         if let Some(mut p) = self.proc.take() {
             p.end = at;
             self.module.procs.push(p);
         } else {
-            self.diags.push(Diag::new(ids::BLOCK_MISMATCH, 30, at));
+            self.diags.push(Diag::new(ids::PROC_END_UNMATCHED, 30, at));
         }
     }
 }
@@ -349,6 +369,7 @@ pub fn parse(read: &Read) -> (Module, Vec<Diag>) {
         },
         proc: None,
         diags,
+        after_proc: false,
     };
     let mut k = 0;
     // The open fixed-form group (`DS`, `PR`, `PI`) takes the subfield
@@ -377,7 +398,7 @@ pub fn parse(read: &Read) -> (Module, Vec<Diag>) {
     }
     if let Some(p) = &b.proc {
         let at = p.at;
-        b.diags.push(Diag::new(ids::BLOCK_MISMATCH, 30, at));
+        b.diags.push(Diag::new(ids::PROC_END_MISSING, 20, at));
         b.end_proc(at);
     }
     (b.module, b.diags)

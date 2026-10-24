@@ -116,6 +116,12 @@ impl Gen<'_> {
                 let f = self.files.get(r.file).cloned()?;
                 Some((f, Some(r)))
             }
+            // A name declared nowhere is an undefined operand.
+            None => {
+                self.err(ids::NOT_DEFINED, 30, name);
+                self.err(ids::UNDEFINED_OPERAND, 30, "");
+                None
+            }
             _ => {
                 self.err(ids::FILE_NOT_DEFINED, 30, name);
                 None
@@ -986,7 +992,10 @@ pub fn file_notes(g: &mut Gen<'_>, m: &rpgfront::ast::Module) {
     for f in g.files.iter().filter(|f| f.ext.as_ref().is_some_and(|e| e.indara)) {
         g.diags.push(rpgfront::Diag::new(ids::INDARA, 0, rpgfront::ast::Pos { line: f.def_line, col: 7 }).arg(f.name.clone()));
     }
-    for f in g.files.iter().filter(|f| f.dev == Dev::Disk && !f.template && f.input && !f.output && !f.update && !f.noblock) {
+    // A file whose description was not found is ignored.
+    for f in g.files.iter().filter(|f| {
+        f.dev == Dev::Disk && !f.template && f.input && !f.output && !f.update && !f.noblock && !(f.external && f.ext.is_none())
+    }) {
         let names: Vec<String> = std::iter::once(f.name.clone())
             .chain(g.t.recfmts.iter().filter(|r| r.file_name == f.name).map(|r| r.name.clone()))
             .collect();

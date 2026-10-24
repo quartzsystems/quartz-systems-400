@@ -18,11 +18,18 @@ pub fn keywords(toks: &[Tok], end: Pos, diags: &mut Vec<Diag>) -> Vec<Keyword> {
     let mut i = 0;
     while i < toks.len() {
         let t = &toks[i];
+        // Anything else is a keyword by its text, for the analysis to
+        // report as unknown where the keyword area belongs.
         let name = match &t.kind {
             Kind::Name(n) => n.clone(),
             Kind::Special(s) => s.clone(),
             _ => {
-                diags.push(Diag::new(ids::BAD_KEYWORD, 30, t.at).arg(t.text()));
+                out.push(Keyword {
+                    name: t.text().to_ascii_uppercase(),
+                    args: Vec::new(),
+                    parens: false,
+                    at: t.at,
+                });
                 i += 1;
                 continue;
             }

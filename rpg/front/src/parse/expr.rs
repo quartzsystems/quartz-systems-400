@@ -231,7 +231,10 @@ fn expr_prec(c: &mut Cursor<'_>, diags: &mut Vec<Diag>, min: Level) -> Option<Ex
 }
 
 fn unary(c: &mut Cursor<'_>, diags: &mut Vec<Diag>) -> Option<Expr> {
-    let t = c.peek()?;
+    let Some(t) = c.peek() else {
+        diags.push(Diag::new(ids::MISSING_OPERAND, 30, c.end));
+        return None;
+    };
     let at = t.at;
     let op = match &t.kind {
         Kind::Punct("-") => Some(UnOp::Neg),
@@ -309,14 +312,14 @@ fn args(c: &mut Cursor<'_>, diags: &mut Vec<Diag>) -> Option<Vec<Expr>> {
         if c.eat(")") {
             return Some(out);
         }
-        diags.push(Diag::new(ids::PAREN, 30, c.pos()));
+        diags.push(Diag::new(ids::RPAREN_EXPECTED, 20, c.pos()));
         return None;
     }
 }
 
 fn primary(c: &mut Cursor<'_>, diags: &mut Vec<Diag>) -> Option<Expr> {
     let Some(t) = c.next() else {
-        diags.push(Diag::new(ids::END_OF_EXPRESSION, 30, c.end));
+        diags.push(Diag::new(ids::MISSING_OPERAND, 30, c.end));
         return None;
     };
     let at = t.at;
@@ -353,7 +356,7 @@ fn primary(c: &mut Cursor<'_>, diags: &mut Vec<Diag>) -> Option<Expr> {
             } else if w == "*IN" && c.eat("(") {
                 let idx = expr(c, diags)?;
                 if !c.eat(")") {
-                    diags.push(Diag::new(ids::PAREN, 30, c.pos()));
+                    diags.push(Diag::new(ids::RPAREN_EXPECTED, 20, c.pos()));
                 }
                 Expr::Special {
                     word: w.clone(),
@@ -406,7 +409,7 @@ fn primary(c: &mut Cursor<'_>, diags: &mut Vec<Diag>) -> Option<Expr> {
                 items.push(expr(c, diags)?);
             }
             if !c.eat(")") {
-                diags.push(Diag::new(ids::PAREN, 30, c.pos()));
+                diags.push(Diag::new(ids::RPAREN_EXPECTED, 20, c.pos()));
                 return None;
             }
             if list {

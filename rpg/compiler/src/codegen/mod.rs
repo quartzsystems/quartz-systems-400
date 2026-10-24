@@ -633,11 +633,7 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
         let r = g.b.reg();
         g.b.ins(format!("{r} = dbclose {}", mangle(&f.name)));
     }
-    for name in g.called_subrs.clone() {
-        if !g.defined_subrs.contains(&name) {
-            g.err(ids::NOT_DEFINED, 30, name);
-        }
-    }
+    // An undefined subroutine was reported with its EXSR (`blocks`).
     g.b.ins("store $init_done, *OFF");
     g.b.term("ret");
     g.b.place(&ret);

@@ -287,6 +287,11 @@ impl Gen<'_> {
                                 self.err(ids::NOT_A_DS, 30, name.to_string());
                                 return None;
                             };
+                            // Only a qualified structure qualifies a name.
+                            if cur == id && matches!(sym.kind, Some(Kind::Ds(_))) && !self.t.ds[di].qualified {
+                                self.err(ids::BAD_QUALIFIED, 30, name.to_string());
+                                return None;
+                            }
                             let Some(sid) = self.t.subfield(di, f) else {
                                 self.err(ids::NOT_DEFINED, 30, f.clone());
                                 return None;
@@ -434,7 +439,8 @@ impl Gen<'_> {
             self.err(ids::UNDEFINED_OPERAND, 30, "");
             return None;
         }
-        match op {
+        let before = self.diags.len();
+        let r = match op {
             BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Gt | BinOp::Le | BinOp::Ge => self.compare(op, &va, &vb),
             BinOp::Add
                 if va.ty.is_string()
@@ -446,7 +452,14 @@ impl Gen<'_> {
             }
             BinOp::Add | BinOp::Sub if va.ty == Ty::Ptr || vb.ty == Ty::Ptr => self.ptr_arith(op, &va, &vb),
             _ => self.arith(op, &va, &vb, w),
+        };
+        // Operands that do not match: IBM goes on with the left one's
+        // type, so an assignment of the result is checked too.
+        let arith = matches!(op, BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Pow);
+        if r.is_none() && arith && self.diags[before..].iter().any(|d| d.msgid == ids::TYPE_MISMATCH) {
+            return Some(va);
         }
+        r
     }
 
     /// Pointer arithmetic: a pointer plus or minus a number of bytes,

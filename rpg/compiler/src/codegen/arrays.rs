@@ -595,6 +595,13 @@ impl Gen<'_> {
             }
             None => dst.count.clone(),
         };
+        // An expression over whole arrays is evaluated per element.
+        let mut arrays = Vec::new();
+        self.whole_arrays(v, &mut arrays);
+        if src.is_none() && !arrays.is_empty() {
+            self.elementwise(&dst, v, &arrays, w, half);
+            return true;
+        }
         let value = if src.is_none() {
             let Some(val) = self.expr(v, w) else { return true };
             // Evaluated once, into a temporary of the element type.
@@ -640,6 +647,92 @@ impl Gen<'_> {
         self.b.term(format!("br {top}"));
         self.b.place(&end);
         true
+    }
+
+    /// The whole arrays an expression names (bare names of arrays that
+    /// are not tables), each once.
+    fn whole_arrays(&self, e: &Expr, out: &mut Vec<SymId>) {
+        match e {
+            Expr::Ref { name, steps, .. } if steps.is_empty() => {
+                if let Some(id) = self.t.find(self.scope, name)
+                    && self.t.syms[id].dim > 0
+                    && !self.t.syms[id].table
+                    && matches!(self.t.syms[id].kind, Some(Kind::Field | Kind::Subfield))
+                    && !out.contains(&id)
+                {
+                    out.push(id);
+                }
+            }
+            Expr::Unary(_, a, _) => self.whole_arrays(a, out),
+            Expr::Binary(_, a, b, _) => {
+                self.whole_arrays(a, out);
+                self.whole_arrays(b, out);
+            }
+            Expr::Bif { name, args, .. } if !matches!(name.as_str(), "%ELEM" | "%SIZE" | "%ADDR" | "%XFOOT" | "%LOOKUP" | "%SUBARR") => {
+                for a in args {
+                    self.whole_arrays(a, out);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// `dst = expr` over arrays: element `k` of each array in `expr`
+    /// gives element `k` of the target, for as many elements as the
+    /// shortest has.
+    fn elementwise(&mut self, dst: &Range, v: &Expr, arrays: &[SymId], w: Want, half: bool) {
+        // The element number the expression indexes by.
+        let idx = self.b.temp(&self.ir_ty(&Ty::Int(20)));
+        let name = format!("_AX{}", self.t.syms.len());
+        let _ = self.t.add(crate::syms::Sym {
+            name: name.clone(),
+            kind: Some(Kind::Field),
+            ty: Ty::Int(20),
+            ir: idx.clone(),
+            scope: self.scope,
+            storage: crate::syms::Storage::Auto,
+            ..crate::syms::Sym::default()
+        });
+        let names: Vec<String> = arrays.iter().map(|&id| self.t.syms[id].name.clone()).collect();
+        let e = index_arrays(v, &names, &name);
+        let mut n = dst.count.clone();
+        for &id in arrays {
+            let d = self.t.syms[id].dim;
+            n = match n.parse::<u32>() {
+                Ok(m) => m.min(d).to_string(),
+                Err(_) => {
+                    let c = self.b.reg();
+                    self.b.ins(format!("{c} = cmp.lt {n}, {d}"));
+                    let m = self.b.reg();
+                    self.b.ins(format!("{m} = select {c}, {n}, {d}"));
+                    m
+                }
+            };
+        }
+        let i = self.b.temp("i64");
+        self.b.ins(format!("store {i}, 0"));
+        let top = self.b.label();
+        let body = self.b.label();
+        let end = self.b.label();
+        self.b.place(&top);
+        let k = self.b.reg();
+        self.b.ins(format!("{k} = load {i}"));
+        let c = self.b.reg();
+        self.b.ins(format!("{c} = cmp.lt {k}, {n}"));
+        self.b.term(format!("brif {c}, {body}, {end}"));
+        self.b.place(&body);
+        let k1 = self.b.reg();
+        self.b.ins(format!("{k1} = add {k}, 1"));
+        self.b.ins(format!("store {idx}, {k1}"));
+        let de = self.b.reg();
+        self.b.ins(format!("{de} = add {}, {k}", dst.start));
+        let dplace = V::place(dst.ty.clone(), format!("{}[{de}]", dst.base));
+        if let Some(val) = self.expr(&e, w) {
+            self.assign(&dplace, &val, half);
+        }
+        self.b.ins(format!("store {i}, {k1}"));
+        self.b.term(format!("br {top}"));
+        self.b.place(&end);
     }
 
     /// `%SPLIT(string [: separators])` into a temporary array of
@@ -1020,4 +1113,32 @@ pub fn snap_proc(g: &mut Gen<'_>) -> String {
     let body = std::mem::take(&mut g.b);
     let _ = Lit::Num(String::new());
     body.finish("proc _qrni_snap()", "ret")
+}
+
+/// An expression with each of the arrays named indexed by `idx`.
+fn index_arrays(e: &Expr, arrays: &[String], idx: &str) -> Expr {
+    let at = e.pos();
+    match e {
+        Expr::Ref { name, steps, .. } if steps.is_empty() && arrays.contains(name) => Expr::Ref {
+            name: name.clone(),
+            steps: vec![rpgfront::ast::Step::Args(vec![Expr::Ref {
+                name: idx.to_string(),
+                steps: Vec::new(),
+                at,
+            }])],
+            at,
+        },
+        Expr::Unary(op, a, p) => Expr::Unary(*op, Box::new(index_arrays(a, arrays, idx)), *p),
+        Expr::Binary(op, a, b, p) => {
+            Expr::Binary(*op, Box::new(index_arrays(a, arrays, idx)), Box::new(index_arrays(b, arrays, idx)), *p)
+        }
+        Expr::Bif { name, args, at } if !matches!(name.as_str(), "%ELEM" | "%SIZE" | "%ADDR" | "%XFOOT" | "%LOOKUP" | "%SUBARR") => {
+            Expr::Bif {
+                name: name.clone(),
+                args: args.iter().map(|a| index_arrays(a, arrays, idx)).collect(),
+                at: *at,
+            }
+        }
+        _ => e.clone(),
+    }
 }

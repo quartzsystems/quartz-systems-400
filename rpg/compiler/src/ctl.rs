@@ -182,9 +182,20 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
         genlvl: o.genlvl,
         ..Ctl::default()
     };
+    let mut seen: Vec<&str> = Vec::new();
     for k in kws {
+        // Each keyword is known, given once and right for the command.
         if !KNOWN.contains(&k.name.as_str()) {
-            diags.push(Diag::new(ids::BAD_KEYWORD_VALUE, 30, k.at).arg(k.name.clone()));
+            diags.push(Diag::new(ids::UNKNOWN_CTL_KEYWORD, 20, k.at).arg(k.name.clone()));
+            continue;
+        }
+        if seen.contains(&k.name.as_str()) {
+            diags.push(Diag::new(ids::CTL_KEYWORD_TWICE, 20, k.at).arg(k.name.clone()));
+            continue;
+        }
+        seen.push(&k.name);
+        if o.command == Command::CrtRpgMod && matches!(k.name.as_str(), "DFTACTGRP" | "ACTGRP" | "USRPRF") {
+            diags.push(Diag::new(ids::CTL_NOT_FOR_MODULE, 20, k.at).arg(k.name.clone()));
             continue;
         }
         match k.name.as_str() {
@@ -211,6 +222,11 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
                 if let Some((f, s)) = word_arg(k, 0).and_then(|w| crate::dtfmt::field_date(&w)) {
                     c.datfmt = f;
                     c.datsep = Some(s);
+                } else {
+                    // Not valid: *ISO, and the rest is skipped.
+                    let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+                    diags.push(Diag::new(ids::BAD_DATFMT, 20, at));
+                    diags.push(Diag::new(ids::TEXT_SKIPPED, 0, at));
                 }
             }
             "TIMFMT" => {

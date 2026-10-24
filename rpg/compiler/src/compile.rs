@@ -100,8 +100,10 @@ fn declare_scope(
             def_line: fi.def_line,
             ..Sym::default()
         };
+        // A second file of the same name is ignored.
         if t.add(s).is_err() {
-            diags.push(Diag::new(crate::diag::ids::DUPLICATE, 30, f.at).arg(fi.name.clone()));
+            diags.push(Diag::new(crate::diag::ids::FILE_TWICE, 30, f.at).arg(fi.name.clone()));
+            continue;
         }
         files.push(fi);
     }
@@ -117,9 +119,57 @@ fn declare_scope(
         datsep: ctl.datsep.unwrap_or(ctl.datfmt.sep()),
         timsep: ctl.timsep.unwrap_or(ctl.timfmt.sep()),
     };
-    for d in defs {
+    for d in in_dependency_order(defs) {
         decl::declare(&mut cx, d);
     }
+}
+
+/// The definitions in source order, except that one a keyword names
+/// (`LIKEDS`, `LIKE`, `DIM(constant)`..., its own or a subfield's) comes
+/// before the definition naming it, as IBM allows the later declaration.
+fn in_dependency_order(defs: &[Def]) -> Vec<&Def> {
+    let names: Vec<String> = defs.iter().map(|d| d.name.to_ascii_uppercase()).collect();
+    let needs = |d: &Def| -> Vec<usize> {
+        let mut out = Vec::new();
+        for x in std::iter::once(d).chain(d.children.iter()) {
+            for k in &x.kws {
+                for a in 0..k.args.len() {
+                    if let Some(w) = decl::word_arg(k, a) {
+                        let w = w.to_ascii_uppercase();
+                        if let Some(i) = names.iter().position(|n| *n == w) {
+                            out.push(i);
+                        }
+                    }
+                }
+            }
+        }
+        out
+    };
+    let deps: Vec<Vec<usize>> = defs.iter().map(needs).collect();
+    let mut done = vec![false; defs.len()];
+    let mut out = Vec::with_capacity(defs.len());
+    let mut on = vec![false; defs.len()];
+    for i in 0..defs.len() {
+        visit(i, defs, &deps, &mut done, &mut on, &mut out);
+    }
+    out
+}
+
+/// Depth first from a definition: what it needs, then it. A cycle is
+/// left to the declarations' own errors.
+fn visit<'a>(i: usize, defs: &'a [Def], deps: &[Vec<usize>], done: &mut [bool], on: &mut [bool], out: &mut Vec<&'a Def>) {
+    if done[i] || on[i] {
+        return;
+    }
+    on[i] = true;
+    for &j in &deps[i] {
+        if j != i {
+            visit(j, defs, deps, done, on, out);
+        }
+    }
+    on[i] = false;
+    done[i] = true;
+    out.push(&defs[i]);
 }
 
 /// Compile a member.
@@ -130,6 +180,9 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
     };
     let (read, module, mut diags) = rpgfront::front(main, includes, &ropts);
     let ctl = ctl::resolve(opts, &module.ctl, &mut diags);
+    if !ctl.nomain && ctl.main.is_none() && !can_end(&module) {
+        diags.push(Diag::new(crate::diag::ids::NO_END, 40, rpgfront::ast::Pos::default()));
+    }
     let mut t = Table::new();
     let mut files = Vec::new();
     declare_scope(&mut t, &mut diags, &ctl, 0, "", &module.files, &module.defs, &module.inputs, ext, &mut files);
@@ -178,10 +231,18 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
                 datsep: ctl.datsep.unwrap_or(ctl.datfmt.sep()),
                 timsep: ctl.timsep.unwrap_or(ctl.timfmt.sep()),
             };
+            decl::check_keywords(&mut cx, &iface);
+            for c in &iface.children {
+                decl::check_keywords(&mut cx, c);
+            }
             let mut pr = decl::proto(&mut cx, &iface);
             pr.name.clone_from(&pname);
             pr
         };
+        // A procedure that returns a value needs a RETURN with one.
+        if proto.ret.is_some() && !p.calcs.iter().any(|s| s.op.code == "RETURN" && s.op.xf2.is_some()) {
+            diags.push(Diag::new(crate::diag::ids::NO_RETURN, 30, p.at).arg(pname.clone()));
+        }
         for (k, prm) in proto.parms.iter().enumerate() {
             let s = Sym {
                 name: prm.name.clone(),
@@ -204,6 +265,14 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
             Some(id) => {
                 if let Some(Kind::Proto(pi)) = t.syms[id].kind.clone() {
                     let declared = t.protos[pi].clone();
+                    // Each interface parameter is its prototype's.
+                    for (k, (d, i)) in declared.parms.iter().zip(&proto.parms).enumerate() {
+                        let known = d.ty != crate::types::Ty::Unknown && i.ty != crate::types::Ty::Unknown;
+                        if known && (d.ty != i.ty || d.dim != i.dim) {
+                            let at = iface.children.get(k).map_or(iface.at, |c| c.at);
+                            diags.push(Diag::new(crate::diag::ids::PI_PARM_DIFFERS, 30, at).arg(i.name.clone()));
+                        }
+                    }
                     t.protos[pi] = merge_proto(declared, &proto);
                 }
             }
@@ -224,6 +293,10 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         }
         declare_scope(&mut t, &mut diags, &ctl, scope, &prefix, &p.files, &p.defs, &[], ext, &mut files);
         crate::extfiles::declare_calc_fields(&mut t, scope, &prefix, &p.calcs);
+    }
+    diags.extend(crate::blocks::check(&module.calcs));
+    for p in &module.procs {
+        diags.extend(crate::blocks::check(&p.calcs));
     }
     // CRTSQLRPGI: the statements precompiled; errors above the
     // generation level end the command before the compile.
@@ -248,7 +321,13 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
     if let Some(p) = &precompiled {
         diags.extend(crate::sql::diags(p));
     }
-    let (qir, gen_diags) = codegen::module(&module, &mut t, &files, &ctl, opts, &scopes, &sql_stmts);
+    let (qir, mut gen_diags) = codegen::module(&module, &mut t, &files, &ctl, opts, &scopes, &sql_stmts);
+    // A group the generator finds unbalanced follows from another
+    // error (a group whose start was in error, or one IBM reports).
+    let other = diags.iter().chain(&gen_diags).any(|d| d.severity >= 20 && d.msgid != crate::diag::ids::UNBALANCED);
+    if other {
+        gen_diags.retain(|d| d.msgid != crate::diag::ids::UNBALANCED);
+    }
     diags.extend(gen_diags);
     diags.sort();
     diags.dedup();
@@ -303,6 +382,32 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         c.precompiled = Some(p);
     }
     c
+}
+
+/// Whether a cycle main procedure can end: a primary file, `RETURN`
+/// in its calculations, or `LR` (or `*IN`) set anywhere.
+fn can_end(m: &Module) -> bool {
+    use rpgfront::ast::{Expr, Stmt, Step};
+    fn ind(e: &Expr) -> bool {
+        match e {
+            Expr::Special { word, index, .. } => word == "*INLR" || word == "*IN" || index.as_deref().is_some_and(ind),
+            Expr::Ref { steps, .. } => steps.iter().any(|s| matches!(s, Step::Args(a) if a.iter().any(ind))),
+            Expr::Bif { args, .. } | Expr::List(args, _) => args.iter().any(ind),
+            Expr::Unary(_, a, _) => ind(a),
+            Expr::Binary(_, a, b, _) | Expr::Assign(_, a, b, _) => ind(a) || ind(b),
+            _ => false,
+        }
+    }
+    fn sets_lr(s: &Stmt) -> bool {
+        let o = &s.op;
+        s.level == "LR"
+            || o.resind.iter().any(|r| r == "LR")
+            || o.f1.iter().chain(&o.f2).chain(&o.result).chain(o.xf2.iter()).chain(o.more.iter().map(|(_, e)| e)).any(ind)
+    }
+    let primary = m.files.iter().any(|f| f.fixed.as_ref().is_some_and(|c| c.designation == "P"));
+    primary
+        || m.calcs.iter().any(|s| s.op.code == "RETURN" || sets_lr(s))
+        || m.procs.iter().flat_map(|p| p.calcs.iter()).any(sets_lr)
 }
 
 /// A declared prototype checked against the interface: the

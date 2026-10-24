@@ -21,8 +21,13 @@ use crate::types::{DatFmt, Ty};
 
 impl Gen<'_> {
     fn bif_arity(&mut self, name: &str, args: &[Expr], min: usize, max: usize) -> bool {
-        if args.len() < min || args.len() > max {
-            self.err(ids::BIF_ARGS, 30, name.to_string());
+        // IBM ignores the built-in function.
+        if args.len() < min {
+            self.err(ids::BIF_TOO_FEW, 20, name.to_string());
+            return false;
+        }
+        if args.len() > max {
+            self.err(ids::BIF_TOO_MANY, 20, name.to_string());
             return false;
         }
         true
@@ -131,7 +136,7 @@ impl Gen<'_> {
                 }
                 let v = self.expr(args.first()?, w)?;
                 if v.dim == 0 {
-                    self.err(ids::BIF_ARGS, 30, name.to_string());
+                    self.err(ids::ELEM_ARG, 20, name.to_string());
                     return None;
                 }
                 Some(V::lit(Ty::Packed(10, 0), v.dim.to_string()))
@@ -162,7 +167,12 @@ impl Gen<'_> {
                     return None;
                 }
                 let s = self.str_arg(&args[0])?;
-                let start = self.int_arg(&args[1])?;
+                let sv = self.expr(&args[1], Want::default())?;
+                if !sv.ty.is_numeric() {
+                    self.err(ids::SUBST_START, 20, name.to_string());
+                    return None;
+                }
+                let start = self.int_reg(&sv)?;
                 let len = s.ty.str_len().unwrap_or(1).max(1);
                 // A constant length gives a fixed result of that length.
                 let (ty, l) = match args.get(2) {
@@ -492,7 +502,7 @@ impl Gen<'_> {
                 if let Some(r) = self.bif_ext(name, args, w) {
                     return r;
                 }
-                self.err(ids::UNKNOWN_BIF, 30, name.to_string());
+                self.err(ids::UNKNOWN_BIF, 20, name.to_string());
                 None
             }
         }
@@ -789,7 +799,12 @@ impl Gen<'_> {
         }
         let v = self.expr(e, Want::default())?;
         let v = if matches!(prm.ty, Ty::Ds(_)) { v } else { self.as_chars(&v) };
-        let same = v.ty == prm.ty && v.dim == prm.dim;
+        // Structures LIKEDS the same one are the same type.
+        let same_ds = match (&v.ty, &prm.ty) {
+            (Ty::Ds(a), Ty::Ds(b)) => self.t.ds[*a].ir_type == self.t.ds[*b].ir_type,
+            _ => false,
+        };
+        let same = (v.ty == prm.ty || same_ds) && v.dim == prm.dim;
         // OPTIONS(*STRING): text passes as the address of a copy ended
         // by a null byte.
         if prm.string && prm.ty == Ty::Ptr && v.ty.is_string() {

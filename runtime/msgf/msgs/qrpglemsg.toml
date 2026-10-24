@@ -120,7 +120,7 @@ vars = ["*CHAR 50"]
 [[msg]]
 id = "RNF2120"
 sev = 40
-text = "&1 is defined more than once."
+text = "No external description was found for file &1; the file is ignored."
 vars = ["*CHAR 50"]
 
 [[msg]]
@@ -227,12 +227,6 @@ text = "Something follows the end of the free-form statement."
 help = "Only a comment may follow the semicolon that ends a statement on the same line."
 
 [[msg]]
-id = "RNF7013"
-sev = 20
-text = "The built-in function &1 is not known."
-vars = ["*CHAR 50"]
-
-[[msg]]
 id = "RNF7014"
 sev = 30
 text = "The arguments of &1 are not valid."
@@ -249,12 +243,6 @@ id = "RNF7023"
 sev = 40
 text = "The program has no way to end."
 help = "A cycle-main program needs *INLR or RETURN, or a primary file whose end turns on *INLR."
-
-[[msg]]
-id = "RNF7028"
-sev = 30
-text = "The operation is not valid for file &1."
-vars = ["*CHAR 50"]
 
 [[msg]]
 id = "RNF7030"
@@ -412,4 +400,359 @@ vars = ["*CHAR 50"]
 id = "RNF7519"
 sev = 30
 text = "The value &1 is too short for a complete timestamp."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0231"
+sev = 20
+text = "The length given for &1 is above the largest allowed; the largest is used."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0256"
+sev = 30
+text = "A main-procedure statement after a procedure is ignored."
+
+[[msg]]
+id = "RNF0305"
+sev = 20
+text = "&1 is not a valid date in the date format in effect."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0306"
+sev = 20
+text = "&1 is not a valid time in the time format in effect."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0307"
+sev = 20
+text = "&1 is not a valid timestamp."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0312"
+sev = 20
+text = "A right parenthesis is missing."
+
+[[msg]]
+id = "RNF0316"
+sev = 20
+text = "&1 needs more arguments; the built-in function is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0317"
+sev = 20
+text = "&1 has more arguments than it takes."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0331"
+sev = 20
+text = "The argument of &1 has no elements; the built-in function is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0362"
+sev = 20
+text = "The start position of &1 must be numeric; the built-in function is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0503"
+sev = 20
+text = "&1 allows at most 63 digits; 63 is used."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0504"
+sev = 20
+text = "&1 allows at most 9 digits; 9 is used."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0512"
+sev = 20
+text = "&1 has more decimal positions than digits; none are used."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0533"
+sev = 20
+text = "&1 takes 3, 5, 10 or 20 digits; 10 is used."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0604"
+sev = 20
+text = "The built-in function &1 is not known; it is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0607"
+sev = 0
+text = "The rest of the entry is skipped after the error."
+
+[[msg]]
+id = "RNF0612"
+sev = 20
+text = "The date format is not valid; *ISO is used."
+
+[[msg]]
+id = "RNF0637"
+sev = 30
+text = "An operand is missing; the statement is ignored."
+
+[[msg]]
+id = "RNF1301"
+sev = 20
+text = "Control keyword &1 is not known; it is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF1302"
+sev = 20
+text = "Control keyword &1 is given more than once; it is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF1324"
+sev = 20
+text = "Control keyword &1 is not allowed when a module is created; it is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF1502"
+sev = 20
+text = "The procedure has no end; one is assumed."
+
+[[msg]]
+id = "RNF1509"
+sev = 30
+text = "END-PROC has no procedure to end."
+
+[[msg]]
+id = "RNF2026"
+sev = 30
+text = "File &1 is declared more than once; the declaration is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF2372"
+sev = 20
+text = "The USAGE value is not allowed for the file's device."
+
+[[msg]]
+id = "RNF3308"
+sev = 20
+text = "&1 is not a definition keyword; it is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3312"
+sev = 20
+text = "Keyword &1 is given more than once; it is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3316"
+sev = 30
+text = "&1 is defined more than once."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3327"
+sev = 20
+text = "The keyword cannot be combined with &1; it is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3358"
+sev = 30
+text = "&1 takes a length of 4 or 8 bytes; 8 is used."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3401"
+sev = 20
+text = "The name is not valid; blanks are used."
+
+[[msg]]
+id = "RNF3430"
+sev = 20
+text = "The initial value is not of the field's type; it is ignored."
+
+[[msg]]
+id = "RNF3438"
+sev = 30
+text = "&1 has no data type and no LIKE; the definition is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3452"
+sev = 20
+text = "The DIM value must be from 1 to 16773104."
+
+[[msg]]
+id = "RNF3467"
+sev = 20
+text = "The OVERLAY name is not a subfield of the structure; the keyword is ignored."
+
+[[msg]]
+id = "RNF3545"
+sev = 20
+text = "DIM on a data structure needs QUALIFIED; the keyword is ignored."
+
+[[msg]]
+id = "RNF3551"
+sev = 20
+text = "&1 has no group to end."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3556"
+sev = 20
+text = "The group has no &1; one is assumed."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3557"
+sev = 20
+text = "The length given for &1 must be at least 1; 1 is used."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3571"
+sev = 20
+text = "The LIKE adjustment must start with + or -; it is ignored."
+
+[[msg]]
+id = "RNF3576"
+sev = 20
+text = "The POS value must be a number from 1 to 16773104."
+
+[[msg]]
+id = "RNF3596"
+sev = 20
+text = "&1 needs at least one digit; 1 is used."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3599"
+sev = 20
+text = "A free-form subfield gives its place in its own structure with POS, not OVERLAY."
+
+[[msg]]
+id = "RNF3764"
+sev = 30
+text = "Parameter &1 of the interface differs from the prototype's."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3768"
+sev = 30
+text = "The procedure already has an interface; this one is ignored."
+
+[[msg]]
+id = "RNF3901"
+sev = 20
+text = "A named constant takes no keywords; the keyword is ignored."
+
+[[msg]]
+id = "RNF3905"
+sev = 30
+text = "Constant &1 has no value; the definition is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5016"
+sev = 30
+text = "ENDSR has no subroutine to end."
+
+[[msg]]
+id = "RNF5054"
+sev = 20
+text = "Subroutine &1 is defined more than once."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5141"
+sev = 30
+text = "The ending operation has no group to end."
+
+[[msg]]
+id = "RNF5177"
+sev = 30
+text = "The group begun here has no ending operation; one is assumed at the end."
+
+[[msg]]
+id = "RNF5178"
+sev = 30
+text = "The subroutine has no ENDSR before the next BEGSR; one is assumed."
+
+[[msg]]
+id = "RNF5232"
+sev = 30
+text = "LEAVE and ITER are allowed only inside a loop; the statement is ignored."
+
+[[msg]]
+id = "RNF5249"
+sev = 20
+text = "WHEN or OTHER is not inside an open SELECT group."
+
+[[msg]]
+id = "RNF5276"
+sev = 30
+text = "File &1 is not valid for this operation; the statement is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5295"
+sev = 30
+text = "ON-ERROR is allowed only inside a MONITOR group."
+
+[[msg]]
+id = "RNF5412"
+sev = 20
+text = "The procedure returns no value; the RETURN value is ignored."
+
+[[msg]]
+id = "RNF5413"
+sev = 30
+text = "The procedure returns a value; RETURN needs one."
+
+[[msg]]
+id = "RNF5415"
+sev = 30
+text = "Procedure &1 returns a value but has no RETURN with one."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7018"
+sev = 30
+text = "&1 is not a subroutine of this procedure."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7301"
+sev = 30
+text = "Subfield &1 ends past the length of its data structure."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7416"
+sev = 30
+text = "The value's type does not match the target of the assignment."
+
+[[msg]]
+id = "RNF7423"
+sev = 30
+text = "A condition must be a comparison, a logical expression or an indicator."
+
+[[msg]]
+id = "RNF7591"
+sev = 30
+text = "&1 is not a qualified data structure; it cannot qualify a name."
 vars = ["*CHAR 50"]

@@ -7,4 +7,3 @@ EXP028 float with decimal operands: last-digit differences (open question)
 EXP038 float with decimal operands: last-digit differences (open question)
 EXP048 float with decimal operands: last-digit differences (open question)
 EXP058 float with decimal operands: last-digit differences (open question)
-b12err/* the compile-error batch: its diagnostics are being written

@@ -230,6 +230,10 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
         def_line: f.at.line,
         ..File::default()
     };
+    // A keyword area token that is not a word.
+    for k in f.kws.iter().filter(|k| !k.name.starts_with(|c: char| c.is_ascii_alphabetic() || c == '*')) {
+        diags.push(Diag::new(rpgfront::diag::ids::BAD_KEYWORD, 30, k.at).arg(k.name.clone()));
+    }
     if let Some(c) = &f.fixed {
         out.dev = match c.device.as_str() {
             "PRINTER" => Dev::Printer,
@@ -287,6 +291,11 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
         }
         match kw(f, "USAGE") {
             Some(k) => {
+                // A printer only writes.
+                if out.dev == Dev::Printer && usage_words(k).iter().any(|w| w != "*OUTPUT") {
+                    let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+                    diags.push(Diag::new(ids::USAGE_DEVICE, 20, at));
+                }
                 for w in usage_words(k) {
                     match w.as_str() {
                         "*INPUT" => out.input = true,
@@ -370,7 +379,7 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
         };
         match ext.describe(&name, &lib) {
             Some(d) => out.ext = Some(d),
-            None => diags.push(Diag::new(ids::EXT_NOT_FOUND, 40, f.at).arg(name)),
+            None => diags.push(Diag::new(ids::FILE_EXT_NOT_FOUND, 40, f.at).arg(name)),
         }
     }
     out

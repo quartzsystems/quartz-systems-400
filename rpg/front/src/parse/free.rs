@@ -8,7 +8,7 @@
 //! calculations, where an assignment is an implicit `EVAL` and a bare
 //! call an implicit `CALLP`.
 
-use crate::ast::{Def, DefKind, Expr, FileDecl, Lit, Op, Pos, Proc, Stmt};
+use crate::ast::{Arg, Def, DefKind, Expr, FileDecl, Keyword, Lit, Op, Pos, Proc, Stmt};
 use crate::diag::{Diag, ids};
 use crate::lex::{Kind, Tok};
 use crate::parse::{Builder, FreeStmt, Item, expr, fixed, kw, ops};
@@ -110,11 +110,16 @@ pub fn statement(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt) -> 
             let body = &rest[1..];
             if d.kind == DefKind::Const {
                 let is_kw = body.first().and_then(Tok::name) == Some("CONST") && body.get(1).is_some_and(|t| t.is("("));
+                // The value, then any keywords (which a constant does not take).
                 if is_kw {
-                    let kws = kw::keywords(body, st.end, &mut b.diags);
+                    let mut kws = kw::keywords(body, st.end, &mut b.diags);
                     d.value = kws.first().and_then(|k| k.arg(0)).and_then(|a| a.expr.clone());
-                } else {
-                    d.value = expr::expr_all(body, st.end, &mut b.diags);
+                    kws.remove(0);
+                    d.kws = kws;
+                } else if !body.is_empty() {
+                    let mut c = expr::Cursor::new(body, st.end);
+                    d.value = expr::expr(&mut c, &mut b.diags);
+                    d.kws = kw::keywords(c.rest(), st.end, &mut b.diags);
                 }
             } else {
                 d.kws = kw::keywords(body, st.end, &mut b.diags);
@@ -132,9 +137,10 @@ pub fn statement(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt) -> 
                 return k + 1;
             };
             if let Some(open) = b.proc.take() {
-                b.diags.push(Diag::new(ids::BLOCK_MISMATCH, 30, st.at));
+                b.diags.push(Diag::new(ids::PROC_END_MISSING, 20, open.at));
                 b.module.procs.push(open);
             }
+            b.after_proc = true;
             let kws = kw::keywords(&rest[1..], st.end, &mut b.diags);
             b.proc = Some(Proc {
                 name,
@@ -148,7 +154,11 @@ pub fn statement(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt) -> 
             b.end_proc(st.at);
             k + 1
         }
-        "END-DS" | "END-PR" | "END-PI" | "END-ENUM" | "DCL-SUBF" | "DCL-PARM" => {
+        "END-DS" | "END-PR" | "END-PI" | "END-ENUM" => {
+            b.diags.push(Diag::new(ids::END_NOT_EXPECTED, 20, st.at).arg(word));
+            k + 1
+        }
+        "DCL-SUBF" | "DCL-PARM" => {
             b.diags.push(Diag::new(ids::BLOCK_MISMATCH, 30, st.at).arg(word));
             k + 1
         }
@@ -189,7 +199,7 @@ fn group(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt, rest: &[Tok
     let mut j = k + 1;
     while !closed {
         let Some(Item::Free(child)) = its.get(j) else {
-            b.diags.push(Diag::new(ids::BLOCK_MISMATCH, 30, st.at).arg(end_word.to_string()));
+            b.diags.push(Diag::new(ids::GROUP_END_MISSING, 20, st.at).arg(end_word.to_string()));
             break;
         };
         let (w, n) = head(&child.toks);
@@ -198,17 +208,63 @@ fn group(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt, rest: &[Tok
             closed = true;
             continue;
         }
+        // A structure inside a structure, one line with LIKEDS or
+        // LIKEREC, is a subfield.
+        let nested = kind == DefKind::Ds
+            && w == "DCL-DS"
+            && child.toks[n..].iter().any(|t| matches!(t.text().to_ascii_uppercase().as_str(), "LIKEDS" | "LIKEREC"));
+        // A structure inside a structure, a group of its own: its
+        // subfields become a template structure the subfield is LIKEDS,
+        // with the group's DIM.
+        if kind == DefKind::Ds && w == "DCL-DS" && !nested {
+            let inner = child.toks[n..].to_vec();
+            let iname = decl_name(inner.first()).unwrap_or_default();
+            j = group(b, its, j, child, &inner, DefKind::Ds, "END-DS");
+            let tname = format!("_NEST_{}_{}", d.name.to_ascii_uppercase(), iname.to_ascii_uppercase());
+            let mut sub_kws = Vec::new();
+            if let Some(t) = b.last_group().filter(|t| t.name.eq_ignore_ascii_case(&iname)) {
+                t.name.clone_from(&tname);
+                let (moved, kept): (Vec<_>, Vec<_>) = std::mem::take(&mut t.kws).into_iter().partition(|k| k.name == "DIM");
+                t.kws = kept;
+                for word in ["TEMPLATE", "QUALIFIED"] {
+                    t.kws.push(Keyword { name: word.into(), args: Vec::new(), parens: false, at: child.at });
+                }
+                sub_kws = moved;
+            }
+            sub_kws.push(Keyword {
+                name: "LIKEDS".into(),
+                args: vec![Arg {
+                    toks: Vec::new(),
+                    expr: Some(Expr::Ref { name: tname, steps: Vec::new(), at: child.at }),
+                }],
+                parens: true,
+                at: child.at,
+            });
+            d.children.push(Def {
+                kind: DefKind::Subfield,
+                name: iname,
+                at: child.at,
+                kws: sub_kws,
+                ..Def::default()
+            });
+            continue;
+        }
         // A declaration other than a child ends the group by mistake.
-        if w.starts_with("DCL-") && w != "DCL-SUBF" && w != "DCL-PARM" || w == "END-PROC" {
-            b.diags.push(Diag::new(ids::BLOCK_MISMATCH, 30, child.at).arg(end_word.to_string()));
+        if !nested && (w.starts_with("DCL-") && w != "DCL-SUBF" && w != "DCL-PARM" || w == "END-PROC") {
+            b.diags.push(Diag::new(ids::GROUP_END_MISSING, 20, st.at).arg(end_word.to_string()));
             break;
         }
-        let toks = if w == "DCL-SUBF" || w == "DCL-PARM" { &child.toks[n..] } else { &child.toks[..] };
-        let Some(cname) = decl_name(toks.first()) else {
+        let toks = if w == "DCL-SUBF" || w == "DCL-PARM" || nested { &child.toks[n..] } else { &child.toks[..] };
+        if toks.is_empty() {
             b.diags.push(Diag::new(ids::UNEXPECTED, 30, child.at));
             j += 1;
             continue;
-        };
+        }
+        // A name that is not one is blanks; the rest are keywords.
+        let cname = decl_name(toks.first()).unwrap_or_else(|| {
+            b.diags.push(Diag::new(ids::BAD_DEF_NAME, 20, toks[0].at));
+            String::new()
+        });
         let ckind = match kind {
             DefKind::Ds => DefKind::Subfield,
             DefKind::Enum => DefKind::Const,
@@ -341,7 +397,7 @@ fn calc(b: &mut Builder<'_>, st: &FreeStmt, word: &str, n: usize) -> Option<Stmt
             ("CALLP", expr::expr(&mut c, &mut b.diags))
         };
         if !c.done() {
-            b.diags.push(Diag::new(ids::END_OF_EXPRESSION, 30, c.pos()));
+            b.diags.push(Diag::new(ids::END_OF_EXPRESSION, 20, c.pos()));
         }
         let x = x?;
         if code == "CALLP" && !matches!(x, Expr::Ref { .. }) {

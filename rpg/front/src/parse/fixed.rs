@@ -286,9 +286,10 @@ fn proc_spec(b: &mut Builder<'_>, lines: &[&Line]) {
     match begin.as_str() {
         "B" => {
             if let Some(open) = b.proc.take() {
-                b.diags.push(Diag::new(ids::BLOCK_MISMATCH, 30, l.pos(24)));
+                b.diags.push(Diag::new(ids::PROC_END_MISSING, 20, open.at));
                 b.module.procs.push(open);
             }
+            b.after_proc = true;
             b.proc = Some(Proc {
                 name,
                 kws,

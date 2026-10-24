@@ -419,10 +419,13 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
     let notes = notes(&c);
     let mut o = Outcome {
         created: c.created,
+        // A module not created is RNS9309, a program RNS9310.
         cause: if c.created {
             String::new()
         } else if c.sql_failed {
             "SQL9001".into()
+        } else if verb == "CRTRPGMOD" {
+            "RNS9309".into()
         } else {
             "RNS9310".into()
         },

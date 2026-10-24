@@ -193,7 +193,7 @@ impl Gen<'_> {
             Lit::Date(s) => {
                 let (f, sep) = (self.ctl.datfmt, self.ctl.datsep.unwrap_or(self.ctl.datfmt.sep()));
                 if dtfmt::parse_date(f, sep, s).is_none() {
-                    self.err(ids::BAD_KEYWORD_VALUE, 30, s.clone());
+                    self.err(ids::BAD_DATE_LIT, 20, s.clone());
                     return None;
                 }
                 (Ty::Date(f, sep), s.clone())
@@ -201,14 +201,14 @@ impl Gen<'_> {
             Lit::Time(s) => {
                 let (f, sep) = (self.ctl.timfmt, self.ctl.timsep.unwrap_or(self.ctl.timfmt.sep()));
                 let Some((h, m, x)) = dtfmt::parse_time(f, sep, s) else {
-                    self.err(ids::BAD_KEYWORD_VALUE, 30, s.clone());
+                    self.err(ids::BAD_TIME_LIT, 20, s.clone());
                     return None;
                 };
                 (Ty::Time(f, sep), dtfmt::render_time(f, sep, h, m, x))
             }
             Lit::Timestamp(s) => {
                 let Some((t, p)) = iso_stamp(s) else {
-                    self.err(ids::BAD_KEYWORD_VALUE, 30, s.clone());
+                    self.err(ids::BAD_TIMESTAMP_LIT, 20, s.clone());
                     return None;
                 };
                 (Ty::Timestamp(p), t)

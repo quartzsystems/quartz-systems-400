@@ -104,11 +104,23 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
             "IND" => Ty::Ind,
             "PACKED" | "ZONED" | "BINDEC" => {
                 let digits = u8::try_from(n(0)?).ok()?;
-                let scale = u8::try_from(n(1).unwrap_or(0)).ok()?;
-                let max = if k.name == "BINDEC" { 18 } else { 63 };
-                if digits == 0 || digits > max || scale > digits {
-                    diag(cx, ids::BAD_LENGTH, 30, k.at, &k.name);
-                    return None;
+                let mut scale = u8::try_from(n(1).unwrap_or(0)).ok()?;
+                // IBM reports the error and goes on with a default.
+                let digits = if k.name == "BINDEC" && digits > 9 {
+                    diag(cx, ids::BINDEC_DIGITS, 20, k.at, &k.name);
+                    9
+                } else if digits > 63 {
+                    diag(cx, ids::TOO_MANY_DIGITS, 20, k.at, &k.name);
+                    63
+                } else if digits == 0 {
+                    diag(cx, ids::ZERO_DIGITS, 20, k.at, &k.name);
+                    1
+                } else {
+                    digits
+                };
+                if scale > digits {
+                    diag(cx, ids::SCALE_OVER_DIGITS, 20, k.at, &k.name);
+                    scale = 0;
                 }
                 match k.name.as_str() {
                     "PACKED" => Ty::Packed(digits, scale),
@@ -118,22 +130,32 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
             }
             "INT" | "UNS" => {
                 let digits = u8::try_from(n(0)?).ok()?;
-                if ![3, 5, 10, 20].contains(&digits) {
-                    diag(cx, ids::BAD_LENGTH, 30, k.at, &k.name);
-                    return None;
-                }
+                let digits = if [3, 5, 10, 20].contains(&digits) {
+                    digits
+                } else {
+                    diag(cx, ids::INT_DIGITS, 20, k.at, &k.name);
+                    10
+                };
                 if k.name == "INT" { Ty::Int(digits) } else { Ty::Uns(digits) }
             }
             "FLOAT" => {
                 let b = u8::try_from(n(0)?).ok()?;
                 if b != 4 && b != 8 {
-                    diag(cx, ids::BAD_LENGTH, 30, k.at, &k.name);
-                    return None;
+                    diag(cx, ids::FLOAT_LEN, 30, k.at, &k.name);
+                    return Some(Ty::Float(8));
                 }
                 Ty::Float(b)
             }
             "DATE" => {
-                let (f, s) = datfmt_arg(k).unwrap_or((cx.datfmt, cx.datsep));
+                let (f, s) = match datfmt_arg(k) {
+                    Some(fs) => fs,
+                    None => {
+                        if k.arg(0).is_some() {
+                            bad_datfmt(cx, k);
+                        }
+                        (cx.datfmt, cx.datsep)
+                    }
+                };
                 Ty::Date(f, s)
             }
             "TIME" => {
@@ -289,15 +311,38 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
     })
 }
 
-/// A length argument: 1 to 16773104.
+/// A length argument: 1 to 16773104; IBM goes on with a default.
 fn len_ok(cx: &mut Cx<'_>, k: &Keyword, n: Option<i64>) -> Option<u32> {
+    let n = n.or_else(|| signed_arg(k, 0));
     match n {
         Some(v) if (1..=16_773_104).contains(&v) => u32::try_from(v).ok(),
-        _ => {
+        Some(v) if v > 16_773_104 => {
+            diag(cx, ids::LEN_TOO_BIG, 20, k.at, &k.name);
+            Some(16_773_104)
+        }
+        Some(_) => {
+            diag(cx, ids::ZERO_LEN, 20, k.at, &k.name);
+            Some(1)
+        }
+        None => {
             diag(cx, ids::BAD_LENGTH, 30, k.at, &k.name);
             None
         }
     }
+}
+
+/// An integer argument written with a sign (`-1`).
+fn signed_arg(k: &Keyword, i: usize) -> Option<i64> {
+    let txt: String = k.arg(i)?.toks.iter().map(rpgfront::lex::Tok::text).collect();
+    txt.parse().ok()
+}
+
+/// A date format that is not valid: IBM uses `*ISO` and skips the rest
+/// of the keyword.
+pub fn bad_datfmt(cx: &mut Cx<'_>, k: &Keyword) {
+    let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+    cx.diags.push(Diag::new(ids::BAD_DATFMT, 20, at));
+    cx.diags.push(Diag::new(ids::TEXT_SKIPPED, 0, at));
 }
 
 /// A varying field's prefix: given, or 2 up to 65535 and 4 beyond.
@@ -318,8 +363,14 @@ fn like(cx: &mut Cx<'_>, d: &Def, k: &Keyword) -> Option<Ty> {
         return None;
     };
     let base = cx.t.syms[id].ty.clone();
+    // The adjustment is signed; without a sign it is ignored.
     let adj = k.arg(1).and_then(|a| {
         let txt: String = a.toks.iter().map(rpgfront::lex::Tok::text).collect();
+        if !txt.starts_with(['+', '-']) {
+            let at = a.toks.first().map_or(k.at, |t| t.at);
+            cx.diags.push(Diag::new(ids::LIKE_SIGN, 20, at));
+            return None;
+        }
         txt.parse::<i64>().ok()
     });
     let _ = d;
@@ -337,6 +388,49 @@ fn adjust(n: u32, a: i64) -> Option<u32> {
     u32::try_from(i64::from(n) + a).ok().filter(|&v| v > 0)
 }
 
+/// Definition keywords, the free-form types among them.
+const DEF_KEYWORDS: &[&str] = &[
+    "ALIAS", "ALIGN", "ALT", "ALTSEQ", "ASCEND", "BASED", "BINDEC", "CCSID", "CHAR", "CLASS", "CONST",
+    "CTDATA", "DATE", "DATFMT", "DESCEND", "DIM", "DTAARA", "EXPORT", "EXT", "EXTFLD", "EXTFMT", "EXTNAME",
+    "EXTPGM", "EXTPROC", "FLOAT", "FROMFILE", "GRAPH", "IMPORT", "IND", "INT", "INZ", "LEN", "LIKE",
+    "LIKEDS", "LIKEFILE", "LIKEREC", "NOOPT", "NULLIND", "OBJECT", "OCCURS", "OPDESC", "OPTIONS",
+    "OVERLAY", "OVERLOAD", "PACKED", "PACKEVEN", "PERRCD", "POINTER", "POS", "PREFIX", "PROCPTR", "PSDS",
+    "QUALIFIED", "REQPROTO", "RTNPARM", "SAMEPOS", "SQLTYPE", "STATIC", "TEMPLATE", "TIME", "TIMESTAMP",
+    "TIMFMT", "TOFILE", "UCS2", "UNS", "VALUE", "VARCHAR", "VARGRAPH", "VARUCS2", "VARYING", "ZONED",
+];
+
+/// The words of the status structures' special subfields.
+const SPECIAL_SUBFIELDS: &[&str] = &[
+    "*FILE", "*STATUS", "*OPCODE", "*ROUTINE", "*RECORD", "*SIZE", "*INP", "*OUT", "*MODE", "*PROC", "*PARMS",
+];
+
+/// Keywords that exclude one written before them.
+const EXCLUSIVE: &[(&str, &str)] = &[
+    ("EXPORT", "IMPORT"),
+    ("IMPORT", "EXPORT"),
+    ("ASCEND", "DESCEND"),
+    ("DESCEND", "ASCEND"),
+];
+
+/// A definition's keywords: each known, given once and not excluded by
+/// another; a constant takes none. IBM ignores the keyword.
+pub fn check_keywords(cx: &mut Cx<'_>, d: &Def) {
+    let mut seen: Vec<&str> = Vec::new();
+    for k in &d.kws {
+        let n = k.name.as_str();
+        if d.kind == DefKind::Const {
+            cx.diags.push(Diag::new(ids::CONST_KEYWORD, 20, k.at));
+        } else if !DEF_KEYWORDS.contains(&n) && (d.kind != DefKind::Subfield || !SPECIAL_SUBFIELDS.contains(&n)) {
+            cx.diags.push(Diag::new(ids::UNKNOWN_DEF_KEYWORD, 20, k.at).arg(n));
+        } else if seen.contains(&n) {
+            cx.diags.push(Diag::new(ids::KEYWORD_TWICE, 20, k.at).arg(n));
+        } else if let Some((first, _)) = EXCLUSIVE.iter().find(|(a, b)| *b == n && seen.contains(a)) {
+            cx.diags.push(Diag::new(ids::KEYWORD_EXCLUDED, 20, k.at).arg(*first));
+        }
+        seen.push(n);
+    }
+}
+
 /// The IR name of a symbol in the current scope.
 fn ir_name(cx: &Cx<'_>, name: &str) -> String {
     format!("${}{}", cx.prefix, names::mangle(name))
@@ -345,9 +439,20 @@ fn ir_name(cx: &Cx<'_>, name: &str) -> String {
 /// Declare one definition of a scope: a standalone field, constant,
 /// data structure (with subfields), or prototype.
 pub fn declare(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
+    check_keywords(cx, d);
+    if matches!(d.kind, DefKind::Ds | DefKind::Pr) {
+        for c in &d.children {
+            check_keywords(cx, c);
+        }
+    }
     match d.kind {
         DefKind::Const => {
-            let v = d.value.clone().unwrap_or(Expr::Empty(d.at));
+            // A constant without a value is ignored.
+            let Some(v) = d.value.clone() else {
+                diag(cx, ids::CONST_NO_VALUE, 30, d.at, &d.name.to_ascii_uppercase());
+                diag(cx, ids::NOT_DEFINED, 30, d.at, &d.name.to_ascii_uppercase());
+                return None;
+            };
             let s = Sym {
                 name: d.name.to_ascii_uppercase(),
                 kind: Some(Kind::Const(ConstVal::Expr(v))),
@@ -358,7 +463,12 @@ pub fn declare(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             add(cx, s, d.at)
         }
         DefKind::Standalone => {
-            let ty = type_of(cx, d, false).unwrap_or(Ty::Unknown);
+            let before = cx.diags.len();
+            let ty = type_of(cx, d, false);
+            if ty.is_none() && cx.diags.len() == before {
+                diag(cx, ids::NO_TYPE, 30, d.at, &d.name.to_ascii_uppercase());
+            }
+            let ty = ty.unwrap_or(Ty::Unknown);
             let dim = dim_of(cx, d);
             let storage = storage_of(cx, d);
             let s = Sym {
@@ -438,9 +548,13 @@ fn dim_of(cx: &mut Cx<'_>, d: &Def) -> u32 {
     if matches!(word_arg(k, 0).as_deref(), Some("*AUTO" | "*VAR")) {
         return int_arg(k, 1).and_then(|n| u32::try_from(n).ok()).unwrap_or(0);
     }
-    match int_arg(k, 0) {
+    match int_arg(k, 0).or_else(|| signed_arg(k, 0)) {
         Some(n) if (1..=16_773_104).contains(&n) => u32::try_from(n).unwrap_or(0),
-        _ => {
+        Some(_) => {
+            diag(cx, ids::DIM_RANGE, 20, k.at, "DIM");
+            0
+        }
+        None => {
             // `DIM(%ELEM(x))` and named constants are resolved here.
             if let Some(Some(Expr::Ref { name, .. })) = k.arg(0).map(|a| a.expr.clone())
                 && let Some(id) = cx.t.find(cx.scope, &name)
@@ -490,7 +604,13 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     };
     let qualified = d.kw("QUALIFIED").is_some() || d.kw("LIKEDS").is_some() || d.kw("LIKEREC").is_some();
     let ds_index = cx.t.ds.len();
-    let dim = dim_of(cx, d);
+    let mut dim = dim_of(cx, d);
+    // An array of structures must be qualified; DIM is ignored.
+    if dim > 0 && !qualified {
+        let at = d.kw("DIM").map_or(d.at, |k| k.at);
+        cx.diags.push(Diag::new(ids::DS_DIM_UNQUALIFIED, 20, at));
+        dim = 0;
+    }
     let storage = storage_of(cx, d);
     let ir = ir_name(cx, &name);
     let fixed_len: Option<u32> = d.fixed.as_ref().and_then(|c| {
@@ -633,7 +753,7 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
                 } else {
                     // A LIKE that names nothing was reported already.
                     if c.kw("LIKE").is_none() {
-                        diag(cx, ids::BAD_TYPE, 30, c.at, &cname);
+                        diag(cx, ids::NO_TYPE, 30, c.at, &cname);
                     }
                     (Ty::Unknown, 0)
                 }
@@ -647,7 +767,16 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             .as_ref()
             .and_then(|f| f.from.parse::<u32>().ok())
             .or_else(|| special.as_ref().map(|(_, p)| *p));
-        let pos_kw = c.kw("POS").and_then(|k| int_arg(k, 0)).and_then(|v| u32::try_from(v).ok());
+        let pos_kw = c.kw("POS").and_then(|k| {
+            match int_arg(k, 0).or_else(|| signed_arg(k, 0)) {
+                Some(v) if (1..=16_773_104).contains(&v) => u32::try_from(v).ok(),
+                _ => {
+                    let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+                    cx.diags.push(Diag::new(ids::POS_RANGE, 20, at));
+                    None
+                }
+            }
+        });
         let overlay = c.kw("OVERLAY").cloned();
         let offset = if let Some((_, o)) = special {
             o
@@ -657,8 +786,14 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             let target = word_arg(&k, 0).unwrap_or_default();
             let base_sym = cx.t.subfield(ds_index, &target);
             let base_off = base_sym.map_or(0, |s| cx.t.syms[s].offset);
+            let arg_at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
             if target != name && base_sym.is_none() {
                 diag(cx, ids::NOT_DEFINED, 30, k.at, &target);
+                cx.diags.push(Diag::new(ids::OVERLAY_TARGET, 20, arg_at));
+            }
+            // Free form overlays its own structure with POS.
+            if target == name && c.fixed.is_none() {
+                cx.diags.push(Diag::new(ids::OVERLAY_SELF, 20, arg_at));
             }
             match k.arg(1).map(|a| a.toks.iter().map(rpgfront::lex::Tok::text).collect::<String>().to_ascii_uppercase()) {
                 Some(p) if p == "*NEXT" => {
@@ -716,6 +851,17 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         };
         if let Some(s) = sid {
             cx.t.ds[ds_index].subfields.push(s);
+        }
+    }
+    // A subfield past a given length.
+    if let Some(given) = len_kw.or(fixed_len) {
+        for &s in &cx.t.ds[ds_index].subfields.clone() {
+            let sym = &cx.t.syms[s];
+            let size = cx.t.size(&sym.ty) * sym.dim.max(1);
+            if sym.offset + size > given {
+                let at = Pos { line: sym.def_line, col: 0 };
+                cx.diags.push(Diag::new(ids::PAST_DS_LEN, 30, at).arg(sym.name.clone()));
+            }
         }
     }
     let len = len_kw.or(fixed_len).unwrap_or(0).max(end);

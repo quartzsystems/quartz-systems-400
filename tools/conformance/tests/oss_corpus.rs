@@ -4,7 +4,8 @@
 
 //! The open-source corpus: RPG projects cloned into
 //! `tools/conformance/oss/src/` (gitignored; see `docs/PHASE9.md` for
-//! the list), every member compiled as a module, unmodified, with
+//! the list), every member compiled (as a module when it is NOMAIN,
+//! else as a program), unmodified, with
 //! `/COPY` and `/INCLUDE` found by name anywhere in its project. Members
 //! may need files or programs the projects do not hold, so a member that
 //! is not created is counted, not a failure; the compiler failing
@@ -40,14 +41,36 @@ fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
-/// A project's members by stem, upper case.
-struct ByStem(HashMap<String, PathBuf>);
+/// A project's members by file name and by stem, upper case; by stem
+/// an include member (`.rpgleinc`...) wins over a program source.
+struct ByStem {
+    files: HashMap<String, PathBuf>,
+    stems: HashMap<String, PathBuf>,
+}
+
+impl ByStem {
+    fn new(paths: &[PathBuf]) -> Self {
+        let mut files = HashMap::new();
+        let mut stems: HashMap<String, PathBuf> = HashMap::new();
+        for p in paths.iter().filter(|p| BROUGHT.contains(&ext(p).as_str())) {
+            let Some(base) = p.file_name().map(|n| n.to_string_lossy().to_ascii_uppercase()) else { continue };
+            files.insert(base.clone(), p.clone());
+            let stem = base.split('.').next().unwrap_or(&base).to_string();
+            let include = !MEMBER.contains(&ext(p).as_str());
+            let keep = stems.get(&stem).is_some_and(|q| !MEMBER.contains(&ext(q).as_str()) && !include);
+            if !keep {
+                stems.insert(stem, p.clone());
+            }
+        }
+        Self { files, stems }
+    }
+}
 
 impl Includes for ByStem {
     fn member(&mut self, _lib: &str, _file: &str, name: &str) -> Option<Member> {
-        let base = name.rsplit(['/', '\\']).next().unwrap_or(name);
-        let stem = base.split('.').next().unwrap_or(base).to_ascii_uppercase();
-        let p = self.0.get(&stem)?;
+        let base = name.rsplit(['/', '\\']).next().unwrap_or(name).to_ascii_uppercase();
+        let stem = base.split('.').next().unwrap_or(&base).to_string();
+        let p = self.files.get(&base).or_else(|| self.stems.get(&stem))?;
         let text = String::from_utf8_lossy(&std::fs::read(p).ok()?).to_string();
         Some(Member::from_text("OSS", "QRPGLESRC", &stem, &text))
     }
@@ -55,7 +78,7 @@ impl Includes for ByStem {
 
 #[test]
 fn open_source_members_compile_without_compiler_failures() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("oss/src");
+    let root = std::env::var("QS400_OSS_DIR").map_or_else(|_| Path::new(env!("CARGO_MANIFEST_DIR")).join("oss/src"), std::path::PathBuf::from);
     let Ok(rd) = std::fs::read_dir(&root) else {
         eprintln!("oss: no projects in {}; nothing to compile", root.display());
         return;
@@ -69,11 +92,6 @@ fn open_source_members_compile_without_compiler_failures() {
         let mut files = Vec::new();
         walk(&proj, &mut files);
         files.sort();
-        let stems: HashMap<String, PathBuf> = files
-            .iter()
-            .filter(|p| BROUGHT.contains(&ext(p).as_str()))
-            .filter_map(|p| Some((p.file_stem()?.to_string_lossy().to_ascii_uppercase(), p.clone())))
-            .collect();
         let members: Vec<&PathBuf> = files
             .iter()
             .filter(|p| MEMBER.contains(&ext(p).as_str()))
@@ -86,8 +104,13 @@ fn open_source_members_compile_without_compiler_failures() {
             let name: String = stem.chars().filter(char::is_ascii_alphanumeric).take(10).collect();
             let case = Case::parse(&name, &text);
             let mut opts = rpg::options(&case);
-            opts.command = rpgc::Command::CrtRpgMod;
-            let mut inc = ByStem(stems.clone());
+            // A NOMAIN module is a module; anything else is a program.
+            opts.command = if text.to_ascii_lowercase().contains("nomain") {
+                rpgc::Command::CrtRpgMod
+            } else {
+                rpgc::Command::CrtBndRpg
+            };
+            let mut inc = ByStem::new(&files);
             let member = Member::from_text("OSS", "QRPGLESRC", &name, &text);
             let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 rpgc::compile(member, &mut inc, &mut rpgc::NoExtFiles, &opts)
@@ -101,6 +124,10 @@ fn open_source_members_compile_without_compiler_failures() {
                     }
                     if c.created {
                         created += 1;
+                    } else if std::env::var("QS400_OSS_WHY").is_ok()
+                        && let Some(d) = c.diags.iter().find(|d| d.severity > 10)
+                    {
+                        eprintln!("why: {shown}: {} {} at {}", d.msgid, d.args.join(" "), d.at.line);
                     }
                     for d in c.diags.iter().filter(|d| d.severity > 10) {
                         *ids.entry(d.msgid.to_string()).or_default() += 1;

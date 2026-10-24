@@ -90,4 +90,22 @@ pub mod ids {
     pub const AFTER_STATEMENT: &str = "RNF5508";
     /// A numeric entry is not right-adjusted in its columns.
     pub const NOT_RIGHT_ADJUSTED: &str = "RNF0263";
+    /// A right parenthesis is missing in an expression.
+    pub const RPAREN_EXPECTED: &str = "RNF0312";
+    /// An operand is missing in an expression.
+    pub const MISSING_OPERAND: &str = "RNF0637";
+    /// A procedure is not ended before the next one or the end.
+    pub const PROC_END_MISSING: &str = "RNF1502";
+    /// `END-PROC` without `DCL-PROC`.
+    pub const PROC_END_UNMATCHED: &str = "RNF1509";
+    /// `END-DS`, `END-PR` or `END-PI` without its group.
+    pub const END_NOT_EXPECTED: &str = "RNF3551";
+    /// A group of free-form declarations has no `END-xx`.
+    pub const GROUP_END_MISSING: &str = "RNF3556";
+    /// A main-procedure statement after the first procedure.
+    pub const BETWEEN_PROCS: &str = "RNF0256";
+    /// A definition name that is not valid; blanks are used.
+    pub const BAD_DEF_NAME: &str = "RNF3401";
+    /// A second procedure interface for one procedure.
+    pub const PI_TWICE: &str = "RNF3768";
 }

@@ -29,6 +29,7 @@
     clippy::needless_pass_by_value
 )]
 
+pub mod blocks;
 pub mod compile;
 pub mod ctl;
 pub mod decl;
