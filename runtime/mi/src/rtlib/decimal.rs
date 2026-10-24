@@ -222,9 +222,12 @@ pub extern "sysv64" fn dec_un(
     halfadj: i64,
 ) {
     let r = (|| {
-        // Bit 1 (fixed-form truncation) goes the exact way.
-        if halfadj & 2 == 0 && let Some(done) = fast_un(op, dst, dty, src, sty, halfadj & 1 != 0) {
-            return done;
+        // Bit 1 (fixed-form truncation) takes the fast path only when
+        // nothing is dropped; a size error there goes the exact way.
+        match fast_un(op, dst, dty, src, sty, halfadj & 1 != 0) {
+            Some(Err(Cond::Mch1210)) if halfadj & 2 != 0 => {}
+            Some(done) => return done,
+            None => {}
         }
         let v = read_num(src, sty)?.value;
         let v = match op {

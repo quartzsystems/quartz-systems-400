@@ -143,8 +143,8 @@ impl StoreIo {
             equal: o.fb.equal,
             rrn: o.fb.rrn,
             key: o.fb.key.clone(),
-            format: o.fb.format.to_string(),
-            member: o.fb.member.to_string(),
+            format: ccsid::decode_trimmed(o.fb.format.as_bytes()),
+            member: ccsid::decode_trimmed(o.fb.member.as_bytes()),
             record: record.map(|r| r.data),
             nulls,
         }

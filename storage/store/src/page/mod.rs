@@ -8,6 +8,9 @@
 pub mod pager;
 pub mod trailer;
 
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+
 use blockdev::AlignedBuf;
 
 use crate::obj::ObjectId;
@@ -76,9 +79,21 @@ impl PageType {
 
 /// One page in memory, block aligned so it can go straight to an
 /// `O_DIRECT` device.
-#[derive(Clone)]
 pub struct Page {
-    buf: AlignedBuf,
+    /// Shared between copies until one is written.
+    buf: Arc<AlignedBuf>,
+    /// The checksum is known to match the bytes: set by `seal` and a
+    /// passed `verify`, cleared by any writable view.
+    sound: AtomicBool,
+}
+
+impl Clone for Page {
+    fn clone(&self) -> Self {
+        Self {
+            buf: Arc::clone(&self.buf),
+            sound: AtomicBool::new(self.sound.load(Ordering::Relaxed)),
+        }
+    }
 }
 
 impl Page {
@@ -86,7 +101,8 @@ impl Page {
     #[must_use]
     pub fn zeroed() -> Self {
         Self {
-            buf: AlignedBuf::new(1),
+            buf: Arc::new(AlignedBuf::new(1)),
+            sound: AtomicBool::new(false),
         }
     }
 
@@ -95,7 +111,8 @@ impl Page {
     pub fn from_bytes(bytes: &[u8]) -> Self {
         assert_eq!(bytes.len(), PAGE_SIZE, "a page is {PAGE_SIZE} bytes");
         Self {
-            buf: AlignedBuf::from_bytes(bytes),
+            buf: Arc::new(AlignedBuf::from_bytes(bytes)),
+            sound: AtomicBool::new(false),
         }
     }
 
@@ -107,7 +124,8 @@ impl Page {
 
     /// The body, writable.
     pub fn body_mut(&mut self) -> &mut [u8] {
-        &mut self.buf[..BODY_SIZE]
+        *self.sound.get_mut() = false;
+        &mut Arc::make_mut(&mut self.buf)[..BODY_SIZE]
     }
 
     /// All bytes, trailer included.
@@ -119,7 +137,8 @@ impl Page {
     /// All bytes, writable. Used by readers filling the page from a
     /// device; `seal` must follow any change before a write.
     pub fn bytes_mut(&mut self) -> &mut [u8] {
-        &mut self.buf
+        *self.sound.get_mut() = false;
+        &mut Arc::make_mut(&mut self.buf)[..]
     }
 
     /// Write the trailer and the checksum.
@@ -130,7 +149,8 @@ impl Page {
             owner,
             generation,
         }
-        .write(&mut self.buf);
+        .write(&mut Arc::make_mut(&mut self.buf)[..]);
+        *self.sound.get_mut() = true;
     }
 
     /// The trailer as stored, without verifying anything.
@@ -142,6 +162,9 @@ impl Page {
     /// Verify the checksum. `page` is only for the error.
     pub fn verify(&self, page: PageNo) -> Result<Trailer> {
         let t = self.trailer();
+        if self.sound.load(Ordering::Relaxed) {
+            return Ok(t);
+        }
         let stored = trailer::stored_crc(&self.buf);
         let computed = trailer::checksum(&self.buf);
         if stored != computed {
@@ -152,6 +175,7 @@ impl Page {
                 computed,
             });
         }
+        self.sound.store(true, Ordering::Relaxed);
         Ok(t)
     }
 
@@ -212,6 +236,8 @@ mod tests {
             trailer_hit.verify(9),
             Err(StoreError::Checksum { .. })
         ));
+        // The copies were changed, not the page they share bytes with.
+        assert!(page.verify(9).is_ok());
         assert!(matches!(
             Page::zeroed().verify(0),
             Err(StoreError::Checksum { .. })

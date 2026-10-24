@@ -22,7 +22,7 @@ use crate::{Result, StoreError};
 
 pub use codec::{DynKey, FixedKey, Value};
 pub use iter::Iter;
-use node::{MAX_KEY_LEN, MAX_VALUE_LEN, Node};
+use node::{MAX_KEY_LEN, MAX_VALUE_LEN, Node, NodeView};
 
 /// A tree: its root page and owner. Cheap to copy; the pages are on the
 /// device.
@@ -41,10 +41,6 @@ enum Put<K> {
     /// The subtree split: left page, separator, right page.
     Split(PageNo, K, PageNo),
 }
-
-/// One level of a root-to-leaf path: the node's first child, its
-/// entries, and the child index taken.
-type PathLevel<K> = (PageNo, Vec<(K, PageNo)>, usize);
 
 /// Result of deleting from a subtree.
 struct Took {
@@ -109,17 +105,16 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
             return Ok(None);
         };
         loop {
-            match self.load(p, pno)? {
-                Node::Leaf(entries) => {
-                    return match entries.binary_search_by(|(k, _)| k.cmp(key)) {
-                        Ok(i) => Ok(Some(V::from_bytes(&entries[i].1)?)),
-                        Err(_) => Ok(None),
-                    };
+            let page = self.page(p, pno)?;
+            let node = NodeView::open(page.body(), pno, self.key_len)?;
+            if node.is_leaf() {
+                let i = node.below(key);
+                if i < node.count() && node.key::<K>(i) == *key {
+                    return Ok(Some(V::from_bytes(node.value(i)?)?));
                 }
-                Node::Internal { first, entries } => {
-                    pno = child_for(first, &entries, key);
-                }
+                return Ok(None);
             }
+            pno = node.child(node.at_most(key));
         }
     }
 
@@ -128,45 +123,43 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
         let Some(mut pno) = self.root else {
             return Ok(None);
         };
-        // Path of (first, entries, chosen child index) down to the leaf.
-        let mut path: Vec<PathLevel<K>> = Vec::new();
+        // Path of (page, chosen child index) down to the leaf.
+        let mut path: Vec<(Page, PageNo, usize)> = Vec::new();
         loop {
-            match self.load(p, pno)? {
-                Node::Leaf(entries) => {
-                    let i = entries.partition_point(|(k, _)| k <= key);
-                    if i > 0 {
-                        let (k, v) = &entries[i - 1];
-                        return Ok(Some((k.clone(), V::from_bytes(v)?)));
-                    }
-                    break;
+            let page = self.page(p, pno)?;
+            let node = NodeView::open(page.body(), pno, self.key_len)?;
+            if node.is_leaf() {
+                let i = node.at_most(key);
+                if i > 0 {
+                    return Ok(Some((node.key(i - 1), V::from_bytes(node.value(i - 1)?)?)));
                 }
-                Node::Internal { first, entries } => {
-                    let i = child_index(&entries, key);
-                    pno = if i == 0 { first } else { entries[i - 1].1 };
-                    path.push((first, entries, i));
-                }
+                break;
             }
+            let i = node.at_most(key);
+            let child = node.child(i);
+            path.push((page, pno, i));
+            pno = child;
         }
         // The leaf holds nothing <= key: the answer is the last entry of
         // the nearest subtree to the left, if there is one.
-        while let Some((first, entries, i)) = path.pop() {
+        while let Some((page, at, i)) = path.pop() {
             if i == 0 {
                 continue;
             }
-            let mut pno = if i == 1 { first } else { entries[i - 2].1 };
+            let mut pno = NodeView::open(page.body(), at, self.key_len)?.child(i - 1);
             loop {
-                match self.load(p, pno)? {
-                    Node::Leaf(entries) => {
-                        let (k, v) = entries.last().ok_or_else(|| StoreError::Corrupt {
+                let page = self.page(p, pno)?;
+                let node = NodeView::open(page.body(), pno, self.key_len)?;
+                if node.is_leaf() {
+                    let Some(last) = node.count().checked_sub(1) else {
+                        return Err(StoreError::Corrupt {
                             page: pno,
                             what: "empty leaf below an internal node".into(),
-                        })?;
-                        return Ok(Some((k.clone(), V::from_bytes(v)?)));
-                    }
-                    Node::Internal { first, entries } => {
-                        pno = entries.last().map_or(first, |e| e.1);
-                    }
+                        });
+                    };
+                    return Ok(Some((node.key(last), V::from_bytes(node.value(last)?)?)));
                 }
+                pno = node.child(node.count());
             }
         }
         Ok(None)
@@ -413,8 +406,8 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
         Ok(n)
     }
 
-    /// Read and decode a node, checking page type and owner.
-    fn load(&self, p: &mut dyn Pager, pno: PageNo) -> Result<Node<K>> {
+    /// Read a node's page, checking page type and owner.
+    fn page(&self, p: &mut dyn Pager, pno: PageNo) -> Result<Page> {
         let page = p.read(pno)?;
         let t = page.verify_type(pno, PageType::BTreeNode)?;
         if t.owner != self.owner {
@@ -423,6 +416,12 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
                 what: format!("node owned by {} in a tree of {}", t.owner, self.owner),
             });
         }
+        Ok(page)
+    }
+
+    /// Read and decode a node, checking page type and owner.
+    fn load(&self, p: &mut dyn Pager, pno: PageNo) -> Result<Node<K>> {
+        let page = self.page(p, pno)?;
         Node::decode(page.body(), pno, self.key_len)
     }
 
@@ -625,11 +624,6 @@ impl<K: FixedKey, V: Value> BTree<K, V> {
 /// of the last separator `<= key`.
 fn child_index<K: FixedKey>(entries: &[(K, PageNo)], key: &K) -> usize {
     entries.partition_point(|(k, _)| k <= key)
-}
-
-fn child_for<K: FixedKey>(first: PageNo, entries: &[(K, PageNo)], key: &K) -> PageNo {
-    let i = child_index(entries, key);
-    if i == 0 { first } else { entries[i - 1].1 }
 }
 
 fn set_child<K>(first: &mut PageNo, entries: &mut [(K, PageNo)], i: usize, pno: PageNo) {

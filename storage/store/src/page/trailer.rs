@@ -4,14 +4,15 @@
 
 //! The 32-byte page trailer. See `docs/STORE_FORMAT.md` §1.
 
-use crc::{CRC_32_ISCSI, Crc};
+use crc::{CRC_32_ISCSI, Crc, Table};
 
 use crate::bytes::{get_u16, get_u32, get_u64, put_u16, put_u32, put_u64};
 use crate::obj::ObjectId;
 use crate::page::{BODY_SIZE, PAGE_SIZE};
 use crate::spec::{Layout, field};
 
-const CRC32C: Crc<u32> = Crc::<u32>::new(&CRC_32_ISCSI);
+// Slice-by-16: the same CRC, several times faster per page.
+const CRC32C: Crc<u32, Table<16>> = Crc::<u32, Table<16>>::new(&CRC_32_ISCSI);
 
 /// Trailer field offsets, relative to the trailer.
 pub const OFF_CRC: usize = 0;

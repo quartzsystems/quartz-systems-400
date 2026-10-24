@@ -30,6 +30,8 @@ pub struct Txn<'a> {
     patches: Vec<Patch>,
     next_serial: u64,
     done: bool,
+    /// A page was written in place outside the WAL.
+    wrote: bool,
 }
 
 impl<'a> Txn<'a> {
@@ -46,6 +48,7 @@ impl<'a> Txn<'a> {
             patches: Vec::new(),
             next_serial,
             done: false,
+            wrote: false,
         }
     }
 
@@ -124,6 +127,9 @@ impl<'a> Txn<'a> {
 
     /// Publish a tree root. Owner `NONE` is the object directory.
     pub fn set_root(&mut self, owner: ObjectId, root: Option<PageNo>) {
+        if owner.is_none() {
+            self.store.headers_changed();
+        }
         self.roots.retain(|(o, _)| *o != owner);
         self.roots.push((owner, root));
     }
@@ -135,6 +141,16 @@ impl<'a> Txn<'a> {
             .iter()
             .find(|(o, _)| o.is_none())
             .map_or(self.store.objdir_root(), |(_, r)| *r)
+    }
+
+    /// The header page of `id` found earlier under directory `root`.
+    pub(crate) fn header_cached(&self, root: Option<PageNo>, id: ObjectId) -> Option<PageNo> {
+        self.store.header_cached(root, id)
+    }
+
+    /// Remember the header page of `id` under directory `root`.
+    pub(crate) fn header_found(&mut self, root: Option<PageNo>, id: ObjectId, page: PageNo) {
+        self.store.header_found(root, id, page);
     }
 
     /// The next serial this transaction would hand out.
@@ -196,6 +212,16 @@ impl<'a> Txn<'a> {
     /// Make the transaction durable.
     pub fn commit(mut self) -> Result<()> {
         self.done = true;
+        // A transaction that only read has nothing to log.
+        if self.owned.is_empty()
+            && self.frees.is_empty()
+            && self.patched.is_empty()
+            && self.roots.is_empty()
+            && !self.wrote
+            && self.next_serial == self.store.next_serial()
+        {
+            return self.store.commit_empty();
+        }
         let asp = self.store.asp();
         let allocs = self
             .owned_runs()
@@ -248,6 +274,9 @@ impl<'a> Txn<'a> {
 
     fn rollback(&mut self) {
         self.store.note_abort();
+        if self.roots.iter().any(|(o, _)| o.is_none()) {
+            self.store.headers_changed();
+        }
         for r in self.owned_runs() {
             for p in r.start..r.start + r.len {
                 self.store.cache_remove(p);
@@ -303,6 +332,7 @@ impl Pager for Txn<'_> {
             self.dirty.insert(pno, page.clone());
             return Ok(());
         }
+        self.wrote = true;
         self.store.write_page(pno, page, kind, owner, self.id)
     }
 

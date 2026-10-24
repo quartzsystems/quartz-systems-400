@@ -5,7 +5,7 @@
 //! The store: an ASP with a page cache, a WAL, transactions, checkpoints
 //! and recovery.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use blockdev::BlockDev;
@@ -95,6 +95,8 @@ pub struct Store {
     stats: StoreStats,
     locks: LockTable,
     guard: Option<Arc<dyn Guard>>,
+    /// Header pages found in the object directory with this root.
+    headers: (Option<PageNo>, HashMap<ObjectId, PageNo>),
 }
 
 impl Store {
@@ -299,6 +301,7 @@ impl Store {
             stats: StoreStats::default(),
             locks: LockTable::default(),
             guard: None,
+            headers: (None, HashMap::new()),
             asp,
         }
     }
@@ -456,6 +459,35 @@ impl Store {
         {
             self.checkpoint()?;
         }
+        Ok(())
+    }
+
+    /// The header page of `id` found earlier under directory `root`.
+    pub(crate) fn header_cached(&self, root: Option<PageNo>, id: ObjectId) -> Option<PageNo> {
+        if self.headers.0 != root {
+            return None;
+        }
+        self.headers.1.get(&id).copied()
+    }
+
+    /// Remember the header page of `id` under directory `root`.
+    pub(crate) fn header_found(&mut self, root: Option<PageNo>, id: ObjectId, page: PageNo) {
+        if self.headers.0 != root || self.headers.1.len() >= 4096 {
+            self.headers.1.clear();
+            self.headers.0 = root;
+        }
+        self.headers.1.insert(id, page);
+    }
+
+    /// Forget every remembered header page: the directory changed.
+    pub(crate) fn headers_changed(&mut self) {
+        self.headers.1.clear();
+    }
+
+    /// Commit a transaction that changed nothing: no WAL record.
+    pub(crate) fn commit_empty(&mut self) -> Result<()> {
+        self.check()?;
+        self.stats.commits += 1;
         Ok(())
     }
 

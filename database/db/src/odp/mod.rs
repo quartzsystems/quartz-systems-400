@@ -758,24 +758,27 @@ impl Odp {
             what: "keyed open without an access path".into(),
         })?;
         let mut pos = self.pos.clone();
+        // A read usually takes the first entry; more once some are skipped.
+        let mut n = 1;
         loop {
             let batch = if forward {
                 match &pos {
-                    Pos::Start => p.scan(txn, Bound::Unbounded, Bound::Unbounded, 8)?,
+                    Pos::Start => p.scan(txn, Bound::Unbounded, Bound::Unbounded, n)?,
                     Pos::End => Vec::new(),
-                    Pos::Before(k) => p.scan(txn, Bound::Included(k), Bound::Unbounded, 8)?,
-                    Pos::After(k) => p.scan(txn, Bound::Excluded(k), Bound::Unbounded, 8)?,
-                    Pos::At(k) => p.scan_from(txn, Bound::Excluded(k), 8)?,
+                    Pos::Before(k) => p.scan(txn, Bound::Included(k), Bound::Unbounded, n)?,
+                    Pos::After(k) => p.scan(txn, Bound::Excluded(k), Bound::Unbounded, n)?,
+                    Pos::At(k) => p.scan_from(txn, Bound::Excluded(k), n)?,
                 }
             } else {
                 match &pos {
                     Pos::Start => Vec::new(),
-                    Pos::End => p.scan_back(txn, Bound::Unbounded, 8)?,
-                    Pos::Before(k) => p.scan_back(txn, Bound::Excluded(k), 8)?,
-                    Pos::After(k) => p.scan_back(txn, Bound::Included(k), 8)?,
-                    Pos::At(k) => p.scan_back_from(txn, Bound::Excluded(k), 8)?,
+                    Pos::End => p.scan_back(txn, Bound::Unbounded, n)?,
+                    Pos::Before(k) => p.scan_back(txn, Bound::Excluded(k), n)?,
+                    Pos::After(k) => p.scan_back(txn, Bound::Included(k), n)?,
+                    Pos::At(k) => p.scan_back_from(txn, Bound::Excluded(k), n)?,
                 }
             };
+            n = 8;
             if batch.is_empty() {
                 return Ok(None);
             }

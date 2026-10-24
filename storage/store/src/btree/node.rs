@@ -8,6 +8,8 @@
 //! in-place slot management. The key length is the tree's, passed in,
 //! so one code path serves compile-time and runtime key sizes.
 
+use std::cmp::Ordering;
+
 use crate::bytes::{get_u16, get_u64, put_u16, put_u64, u16_of};
 use crate::page::BODY_SIZE;
 use crate::page::pager::PageNo;
@@ -138,6 +140,138 @@ pub fn children(body: &[u8], page: PageNo) -> Result<Vec<PageNo>> {
             Ok(out)
         }
         l => Err(corrupt(page, format!("node level {l}"))),
+    }
+}
+
+/// A node read in place, for lookups and scans: nothing is decoded but
+/// the keys and values asked for.
+#[derive(Clone, Copy)]
+pub struct NodeView<'a> {
+    body: &'a [u8],
+    page: PageNo,
+    key_len: usize,
+    count: usize,
+    leaf: bool,
+}
+
+impl<'a> NodeView<'a> {
+    /// Check a page body's header as [`Node::decode`] does.
+    pub fn open(body: &'a [u8], page: PageNo, key_len: usize) -> Result<Self> {
+        let stored = usize::from(get_u16(body, OFF_KEY_LEN));
+        if stored != key_len {
+            return Err(corrupt(
+                page,
+                format!("key length {stored}, tree uses {key_len}"),
+            ));
+        }
+        let count = usize::from(get_u16(body, OFF_COUNT));
+        let leaf = match body[OFF_LEVEL] {
+            0 => {
+                if HEADER_LEN + count * (key_len + SLOT_EXTRA) > BODY_SIZE {
+                    return Err(corrupt(page, format!("{count} slots do not fit")));
+                }
+                true
+            }
+            1 => {
+                if HEADER_LEN + 8 + count * (key_len + ENTRY_EXTRA) > BODY_SIZE {
+                    return Err(corrupt(page, format!("{count} entries do not fit")));
+                }
+                false
+            }
+            l => return Err(corrupt(page, format!("node level {l}"))),
+        };
+        Ok(Self {
+            body,
+            page,
+            key_len,
+            count,
+            leaf,
+        })
+    }
+
+    /// Whether this is a leaf.
+    #[must_use]
+    pub fn is_leaf(&self) -> bool {
+        self.leaf
+    }
+
+    /// Keys in the node.
+    #[must_use]
+    pub fn count(&self) -> usize {
+        self.count
+    }
+
+    /// Key `i`, decoded.
+    #[must_use]
+    pub fn key<K: FixedKey>(&self, i: usize) -> K {
+        K::read(self.key_bytes(i))
+    }
+
+    /// Key `i` as stored.
+    #[must_use]
+    pub fn key_bytes(&self, i: usize) -> &'a [u8] {
+        let at = if self.leaf {
+            HEADER_LEN + i * (self.key_len + SLOT_EXTRA)
+        } else {
+            OFF_FIRST_CHILD + 8 + i * (self.key_len + ENTRY_EXTRA)
+        };
+        &self.body[at..at + self.key_len]
+    }
+
+    /// Leaf value `i`, bounds checked as [`Node::decode`] does.
+    pub fn value(&self, i: usize) -> Result<&'a [u8]> {
+        let slot = HEADER_LEN + i * (self.key_len + SLOT_EXTRA);
+        let off = usize::from(get_u16(self.body, slot + self.key_len));
+        let len = usize::from(get_u16(self.body, slot + self.key_len + 2));
+        if len > MAX_VALUE_LEN
+            || off + len > BODY_SIZE
+            || off < HEADER_LEN + self.count * (self.key_len + SLOT_EXTRA)
+        {
+            return Err(corrupt(
+                self.page,
+                format!("value at {off}+{len} out of bounds"),
+            ));
+        }
+        Ok(&self.body[off..off + len])
+    }
+
+    /// Child `i` of an internal node: 0 the first, `i` the one right of
+    /// key `i - 1`.
+    #[must_use]
+    pub fn child(&self, i: usize) -> PageNo {
+        if i == 0 {
+            get_u64(self.body, OFF_FIRST_CHILD)
+        } else {
+            get_u64(
+                self.body,
+                OFF_FIRST_CHILD + 8 + (i - 1) * (self.key_len + ENTRY_EXTRA) + self.key_len,
+            )
+        }
+    }
+
+    /// Keys below `key`.
+    pub fn below<K: FixedKey>(&self, key: &K) -> usize {
+        self.split(key, Ordering::is_lt)
+    }
+
+    /// Keys at or below `key`.
+    pub fn at_most<K: FixedKey>(&self, key: &K) -> usize {
+        self.split(key, Ordering::is_le)
+    }
+
+    /// The first index whose key, compared with `key`, fails `pred`;
+    /// keys are ascending.
+    fn split<K: FixedKey>(&self, key: &K, pred: fn(Ordering) -> bool) -> usize {
+        let (mut lo, mut hi) = (0, self.count);
+        while lo < hi {
+            let mid = lo + (hi - lo) / 2;
+            if pred(K::cmp_stored(self.key_bytes(mid), key)) {
+                lo = mid + 1;
+            } else {
+                hi = mid;
+            }
+        }
+        lo
     }
 }
 

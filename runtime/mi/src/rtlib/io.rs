@@ -38,17 +38,26 @@ const NO_DEVICE: i32 = 1299;
 
 /// The running entry's file declaration and the key of its state.
 fn file_of(env: *mut Env, file: i64) -> Option<(FileKey, qir::FileRef)> {
+    with_file(env, file, |key, fr| (key, fr.clone()))
+}
+
+/// The running entry's file key alone, without copying the declaration.
+fn file_key_of(env: *mut Env, file: i64) -> Option<FileKey> {
+    with_file(env, file, |key, _| key)
+}
+
+/// The running entry's file (or, for a file parameter, the caller's), given to `f`.
+fn with_file<T>(env: *mut Env, file: i64, f: impl FnOnce(FileKey, &qir::FileRef) -> T) -> Option<T> {
     let j = job(env);
     let statics = env_of(env).statics as u64;
-    let f = j.act.frames.last()?;
-    let p = f.program.as_ref()?;
-    let (mi, _) = p.proc_of(f.code)?;
-    let fr = p.object.modules[mi as usize]
+    let fr = j.act.frames.last()?;
+    let p = fr.program.as_ref()?;
+    let (mi, _) = p.proc_of(fr.code)?;
+    let decl = p.object.modules[mi as usize]
         .module
         .ir
         .files
-        .get(usize::try_from(file).ok()?)?
-        .clone();
+        .get(usize::try_from(file).ok()?)?;
     let key = FileKey {
         statics,
         module: mi,
@@ -56,9 +65,10 @@ fn file_of(env: *mut Env, file: i64) -> Option<(FileKey, qir::FileRef)> {
     };
     // A file parameter is the caller's file.
     if let Some((_, _, h)) = j.file_binds.iter().rev().find(|(_, k, _)| *k == key) {
-        return j.file_handles.get(*h).cloned();
+        let (k, d) = j.file_handles.get(*h)?;
+        return Some(f(*k, d));
     }
-    Some((key, fr))
+    Some(f(key, decl))
 }
 
 /// `file_ref(env, file) -> handle`.
@@ -456,7 +466,7 @@ pub extern "sysv64" fn db_io(
     nulls: i64,
     nulls_desc: i64,
 ) -> i32 {
-    let Some((fkey, _)) = file_of(env, file) else {
+    let Some(fkey) = file_key_of(env, file) else {
         return CLOSED;
     };
     if op == codegen::rt::DB_FEEDBACK {
@@ -474,7 +484,8 @@ pub extern "sysv64" fn db_io(
         state.handle,
         state.infds,
         state.infds_len,
-        state.info.clone(),
+        // Copied only when an INFDS shows it.
+        (state.infds != 0 && state.infds_len != 0).then(|| state.info.clone()),
     );
     let rec_len = if rec == 0 {
         0
@@ -541,7 +552,9 @@ pub extern "sysv64" fn db_io(
             }
         }
     }
-    write_infds(infds, infds_len, &info, &r, true, op.name(), j.abi.cur_stmt);
+    if let Some(info) = &info {
+        write_infds(infds, infds_len, info, &r, true, op.name(), j.abi.cur_stmt);
+    }
     if let Some(st) = j.files.get_mut(&fkey) {
         st.fb = i32::from(r.eof) | i32::from(r.found) << 1 | i32::from(r.equal) << 2;
     }

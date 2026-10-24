@@ -7,7 +7,7 @@
 
 pub mod record;
 
-use crc::{CRC_32_ISCSI, Crc};
+use crc::{CRC_32_ISCSI, Crc, Table};
 use tracing::debug;
 
 use crate::asp::io::AspIo;
@@ -18,7 +18,8 @@ use crate::page::{BODY_SIZE, Page, PageType};
 use crate::spec::{Layout, field};
 use crate::{Result, StoreError};
 
-const CRC32C: Crc<u32> = Crc::<u32>::new(&CRC_32_ISCSI);
+// Slice-by-16: the same CRC, several times faster per page.
+const CRC32C: Crc<u32, Table<16>> = Crc::<u32, Table<16>>::new(&CRC_32_ISCSI);
 
 /// Page header bytes.
 pub const PAGE_HEADER_LEN: usize = 32;

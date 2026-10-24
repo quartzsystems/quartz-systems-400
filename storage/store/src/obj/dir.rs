@@ -67,8 +67,13 @@ pub fn objdir(txn: &Txn<'_>) -> ObjDir {
 /// Header page of `id`. A serial below the ASP's counter that is gone
 /// is a stale reference; one at or above it never existed.
 pub fn header_page(txn: &mut Txn<'_>, id: ObjectId) -> Result<PageNo> {
+    let root = txn.objdir_root();
+    if let Some(p) = txn.header_cached(root, id) {
+        return Ok(p);
+    }
     let dir = objdir(txn);
     if let Some(p) = dir.get(txn, &id)? {
+        txn.header_found(root, id, p);
         return Ok(p);
     }
     // Same serial, any generation?

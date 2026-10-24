@@ -17,6 +17,10 @@ pub trait FixedKey: Ord + Clone + std::fmt::Debug {
     fn write(&self, out: &mut [u8]);
     /// Decode from exactly `LEN` bytes.
     fn read(bytes: &[u8]) -> Self;
+    /// Compare a stored key with `other`, as `Self::read(bytes).cmp(other)`.
+    fn cmp_stored(bytes: &[u8], other: &Self) -> std::cmp::Ordering {
+        Self::read(bytes).cmp(other)
+    }
 }
 
 /// A value.
@@ -159,5 +163,8 @@ impl FixedKey for DynKey {
     }
     fn read(bytes: &[u8]) -> Self {
         Self(bytes.to_vec())
+    }
+    fn cmp_stored(bytes: &[u8], other: &Self) -> std::cmp::Ordering {
+        bytes.cmp(other.0.as_slice())
     }
 }
