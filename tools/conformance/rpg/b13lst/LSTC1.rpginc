@@ -1,0 +1,5 @@
+**FREE
+// Prototypes for the listing batch.
+dcl-pr twice int(10);
+  n int(10) value;
+end-pr;

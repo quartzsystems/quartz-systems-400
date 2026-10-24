@@ -1,4 +1,4 @@
-     *; run: no
+      *; run: no
      H DFTACTGRP(*NO)
      D c               S             10
       /free

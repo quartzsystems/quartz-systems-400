@@ -250,7 +250,7 @@ fields keep their text but show nothing. Enter on the sign-on display shows
 ISO 9660 image written entirely in Rust (no `xorriso`, `mkisofs` or
 `genisoimage`): level 2, no Joliet, no Rock Ridge, an El Torito boot
 catalog with one EFI (platform `EF`) no-emulation entry whose boot image is
-`EFI.IMG`, a 24 MiB FAT16 volume holding `EFI/BOOT/BOOTX64.EFI`. The
+`EFI.IMG`, a 31 MiB FAT16 volume holding `EFI/BOOT/BOOTX64.EFI`. The
 volume ID is `QS400_V1R0M0`; publisher and preparer are Quartz strings.
 Timestamps come from `SOURCE_DATE_EPOCH` and directory records are sorted,
 so two builds give identical images.

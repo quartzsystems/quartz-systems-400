@@ -415,6 +415,17 @@ pub fn declare_calc_fields(t: &mut Table, scope: usize, prefix: &str, calcs: &[r
     }
 }
 
+/// Whether an output operation (`WRITE`, `UPDATE`, or an output
+/// specification) names a record format.
+#[must_use]
+pub fn written(m: &rpgfront::ast::Module, fmt: &str) -> bool {
+    let calcs = m.calcs.iter().chain(m.procs.iter().flat_map(|p| p.calcs.iter()));
+    let by_op = calcs.filter(|s| matches!(s.op.code.as_str(), "WRITE" | "UPDATE")).any(|s| {
+        s.op.f2.first().or_else(|| s.op.f1.first()).and_then(|e| e.name()).is_some_and(|n| n.eq_ignore_ascii_case(fmt))
+    });
+    by_op || m.outputs.iter().any(|o| o.name.eq_ignore_ascii_case(fmt))
+}
+
 /// The lines IBM's listing generates and numbers like source lines:
 /// each `EXTNAME` structure's subfields after its line (`=D`), the
 /// input specifications of the externally described input formats
@@ -453,7 +464,7 @@ pub fn generated_lines(m: &rpgfront::ast::Module, files: &[File], t: &Table) -> 
     let mut gen_o = 0;
     for r in &t.recfmts {
         let Some(f) = files.get(r.file) else { continue };
-        if f.scope != 0 {
+        if f.scope != 0 || r.qualified {
             continue;
         }
         if let Some(d) = &r.fmt.dsp {
@@ -476,7 +487,7 @@ pub fn generated_lines(m: &rpgfront::ast::Module, files: &[File], t: &Table) -> 
             let named = m.inputs.iter().any(|i| i.external && (i.name == r.name || i.name == r.fmt.name));
             gen_i += u32::from(!named) + u32::try_from(r.fmt.fields.iter().filter(|x| matches!(x.usage, 'I' | 'B')).count()).unwrap_or(0);
         }
-        if f.output || f.update {
+        if (f.output || f.update) && written(m, &r.name) {
             gen_o += 1 + u32::try_from(r.fmt.fields.iter().filter(|x| matches!(x.usage, 'O' | 'B')).count()).unwrap_or(0);
         }
     }

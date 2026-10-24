@@ -409,4 +409,9 @@ control, `01003` when a column function left out nulls, multiple-row
    (`QS400_RPG_ONLY=PREFIX` runs only the members whose names start
    so); our outcomes, listings and IR (with each diagnostic's text) are
    in `target/conformance-rpg/ours/`.
+3. Implement until `cargo test -p conformance --test rpg_kit` matches;
+   our outcomes, listings and IR (with each diagnostic's text) are in
+   `target/conformance-rpg/ours/`. `cargo test -p conformance --test
+   rpg_listing` compares the listings with IBM's (`docs/PHASE9.md`);
+   the normalized pair is in `target/conformance-rpg/lst/`.
 4. Keep clippy clean and commit.

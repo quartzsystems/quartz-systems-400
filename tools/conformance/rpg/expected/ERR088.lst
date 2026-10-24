@@ -48,10 +48,7 @@
 0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
  Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
 0                          S o u r c e   L i s t i n g
-0     1 *; run: no                                                                                                000000     000100
- ======>a
- *RNF0257 30 a      000100  Form-Type entry for main procedure not valid or out of
-                            sequence.
+0     1  *; run: no                                                                                               000000     000100
       2 H DFTACTGRP(*NO)                                                                                          000000     000200
          *--------------------------------------------------------------------*
          * Compiler Options in Effect:                                        *
@@ -92,6 +89,7 @@
       6    *inlr = *on;                                                                                           000000     000600
       7  /end-free                                                                                                000000     000700
 0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
 -
 1{heading} page 3
 0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
@@ -171,8 +169,6 @@
 0                          M e s s a g e   S u m m a r y
 0 Msg id  Sv Number Message text
  *RNF5501 20      1 The comment entry on a free-form specification is not valid.
- *RNF0257 30      1 Form-Type entry for main procedure not valid or out of
-                    sequence.
 0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
 -
 -
@@ -197,16 +193,16 @@
 0    Information  (00) . . . . . . . :        0
      Warning      (10) . . . . . . . :        0
      Error        (20) . . . . . . . :        1
-     Severe Error (30+)  . . . . . . :        1
+     Severe Error (30+)  . . . . . . :        0
      ---------------------------------  -------
-     Total . . . . . . . . . . . . . :        2
+     Total . . . . . . . . . . . . . :        1
 -  Source Totals:
 0    Records . . . . . . . . . . . . :        7
-     Specifications  . . . . . . . . :        5
+     Specifications  . . . . . . . . :        4
      Data records  . . . . . . . . . :        0
-     Comments  . . . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        1
 0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
- Compilation stopped. Severity 30 errors found in program.
+ Compilation stopped. Severity 20 errors found in program.
            * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
 -
 -

@@ -131,6 +131,7 @@ const TEXTS: &[(&str, &str)] = &[
     ("RNF3431", "The initial value does not fit the field."),
     ("RNF5005", "Calculations follow the subroutines."),
     ("RNF5508", "Something follows the end of the free-form statement."),
+    ("RNF7031", "No reference is made to &1."),
     ("RNF7057", "Half adjust has no effect: the result has no more decimals than the target."),
     ("RNF7503", "An operand of the expression is not defined."),
     ("RNF7504", "A constant divisor is zero."),

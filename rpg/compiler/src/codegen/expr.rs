@@ -84,6 +84,9 @@ pub struct Want {
     /// The decimal positions of the result field (the precision
     /// floor), half-adjust and `*RESDECPOS`.
     pub mode: Mode,
+    /// An operand of a comparison: no result field, so decimals are
+    /// lost against the operation's own scale.
+    pub compared: bool,
 }
 
 /// The shape of a numeric literal as written.
@@ -432,6 +435,8 @@ impl Gen<'_> {
             BinOp::In => return self.in_op(a, b),
             _ => {}
         }
+        let relational = matches!(op, BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Gt | BinOp::Le | BinOp::Ge);
+        let w = if relational { Want { compared: true, ..w } } else { w };
         let va = self.expr(a, w)?;
         let vb = self.expr(b, w)?;
         // An operand whose type could not be resolved: its own error
@@ -576,12 +581,30 @@ impl Gen<'_> {
             self.err(ids::BAD_LENGTH, 30, "");
             return None;
         };
-        // Past 63 digits the decimals may give way below the target's.
+        // Decimals are lost when the limit (63 digits, or 30 when no
+        // operand is longer) leaves fewer than both the target's and the
+        // operation's own (a product's sum, a sum's larger; a quotient
+        // has no end of its own); a compared operand has no target.
+        let natural = match op {
+            BinOp::Mul => sa.saturating_add(sb),
+            BinOp::Add | BinOp::Sub => sa.max(sb),
+            _ => u8::MAX,
+        };
         let floor = mode.result_scale + u8::from(mode.half_adjust);
-        if sh.scale < floor && sh.digits == 63 {
+        // Compared, only a quotient's decimals count as lost.
+        let quotient = self.quotients.contains(&va.op) || self.quotients.contains(&vb.op);
+        let wanted = if w.compared {
+            if quotient && op != BinOp::Div { natural } else { 0 }
+        } else {
+            floor.min(natural)
+        };
+        if sh.scale < wanted && (sh.digits == 63 || sh.digits == 30) {
             self.err(ids::DECIMALS_LOST, 10, sh.scale.to_string());
         }
         let t = self.b.temp(&format!("packed({},{})", sh.digits, sh.scale));
+        if op == BinOp::Div || quotient {
+            self.quotients.insert(t.clone());
+        }
         let o = match op {
             BinOp::Add => "dec.add",
             BinOp::Sub => "dec.sub",

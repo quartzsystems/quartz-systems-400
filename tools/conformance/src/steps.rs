@@ -493,6 +493,9 @@ impl Suite {
         reports.push(self.step(&mut s, "53 telnet device recovery", Self::telnet_recovery)?);
         reports.push(self.step(&mut s, "54 display file", Self::telnet_display_file)?);
         reports.push(self.step(&mut s, "55 developer tools", Self::telnet_tools)?);
+        reports.push(self.step(&mut s, "56 RPG program", Self::rpg_program)?);
+        reports.push(self.step(&mut s, "57 RPG embedded SQL", Self::rpg_sql)?);
+        reports.push(self.step(&mut s, "58 RPG service program", Self::rpg_service_program)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

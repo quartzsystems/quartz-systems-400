@@ -579,6 +579,7 @@ impl Gen<'_> {
                 half_adjust: half,
                 resdecpos: self.ctl.resdecpos,
             },
+            compared: false,
         };
         // The element count: the shorter range for an array source.
         let n = match &src {

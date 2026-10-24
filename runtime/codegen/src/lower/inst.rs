@@ -234,7 +234,9 @@ impl Lowerer<'_, '_> {
             }
             Operand::Place(sp) => {
                 let (saddr, sty) = self.addr(sp)?;
-                if dty == sty || (dty.size() == sty.size() && dty.class() == sty.class()) {
+                // A raw copy only between the same layouts: a varying
+                // value is its length then its data.
+                if dty == sty || (dty.size() == sty.size() && dty.class() == sty.class() && dty.is_varying() == sty.is_varying()) {
                     self.copy(daddr, saddr, dty.size());
                 } else if dty.is_string() && sty.is_string() {
                     let dd = self.i64(crate::abi::TypeDesc::of(&dty).word());

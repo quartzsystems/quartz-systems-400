@@ -1,0 +1,24 @@
+# EXP089 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: no (RNS9310)
+diag: RNF2318 00 line 3 seq 000300
+diag: RNF3530 00 line 4 seq 000400
+diag: RNF3431 20 line 24 seq 002400
+diag: RNF3431 20 line 47 seq 004700
+diag: RNF3431 20 line 60 seq 006000
+diag: RNF3431 20 line 63 seq 006300
+diag: RNF3431 20 line 72 seq 007200
+diag: RNF3431 20 line 75 seq 007500
+diag: RNF3431 20 line 78 seq 007800
+diag: RNF3431 20 line 86 seq 008600
+diag: RNF3431 20 line 96 seq 009600
+diag: RNF3431 20 line 105 seq 010500
+diag: RNF3431 20 line 111 seq 011100
+diag: RNF3431 20 line 113 seq 011300
+diag: RNF3431 20 line 114 seq 011400
+diag: RNF3431 20 line 117 seq 011700
+diag: RNF3431 20 line 120 seq 012000
+diag: RNF7057 00 line 126 seq 012600
+diag: RNF7057 00 line 225 seq 022500
+diag: RNF7057 00 line 335 seq 033500
+diag: RNF7057 00 line 555 seq 055500

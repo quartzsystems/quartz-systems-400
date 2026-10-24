@@ -36,11 +36,11 @@ pub const DISK_ESP: Spec = Spec {
     bytes_per_cluster: 2048,
 };
 
-/// The ISO boot image: 24 MiB FAT16 at 4 KiB clusters (6144 clusters).
-/// El Torito's sector count is sixteen bits of 512-byte sectors, 32 MiB
-/// at most, and FAT32 cannot be made that small.
+/// The ISO boot image: 31 MiB FAT16 at 4 KiB clusters (7936 clusters),
+/// room for the media UKI. El Torito's sector count is sixteen bits of
+/// 512-byte sectors, 32 MiB at most, and FAT32 cannot be made that small.
 pub const MEDIA_ESP: Spec = Spec {
-    bytes: 24 * 1024 * 1024,
+    bytes: 31 * 1024 * 1024,
     fat: FatType::Fat16,
     bytes_per_cluster: 4096,
 };
@@ -130,7 +130,7 @@ mod tests {
     #[test]
     fn media_image_is_fat16_with_the_boot_file() {
         let img = build(&MEDIA_ESP, &[("EFI/BOOT/BOOTX64.EFI", b"uki")]).unwrap();
-        assert_eq!(img.len(), 24 * 1024 * 1024);
+        assert_eq!(img.len(), 31 * 1024 * 1024);
         assert_eq!(
             list(&img).unwrap(),
             vec!["EFI/", "EFI/BOOT/", "EFI/BOOT/BOOTX64.EFI"]

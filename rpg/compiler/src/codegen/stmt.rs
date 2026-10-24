@@ -885,7 +885,7 @@ impl Gen<'_> {
             return;
         };
         let mode = target_mode(self, &tv, half);
-        let w = Want { mode };
+        let w = Want { mode, compared: false };
         let value = match aop {
             AssignOp::Set => self.expr(v, w),
             _ => {
@@ -1145,7 +1145,7 @@ impl Gen<'_> {
                     result_scale: rt.shape().map_or(0, |(_, s)| s),
                     ..qdecimal::Mode::default()
                 };
-                if let Some(val) = self.expr(e, Want { mode }) {
+                if let Some(val) = self.expr(e, Want { mode, compared: false }) {
                     self.assign(&V::place(rt, t.clone()), &val, false);
                 }
             }
@@ -1158,7 +1158,7 @@ impl Gen<'_> {
                     result_scale: rt.shape().map_or(0, |(_, s)| s),
                     ..qdecimal::Mode::default()
                 };
-                let Some(val) = self.expr(e, Want { mode }) else { return };
+                let Some(val) = self.expr(e, Want { mode, compared: false }) else { return };
                 let ir = self.ir_ty(&rt);
                 if is_reg_type(&rt) {
                     let r = match rt {
@@ -1309,7 +1309,7 @@ impl Gen<'_> {
             (None, Some(f2)) => (r.clone(), f2.clone()),
             _ => return,
         };
-        let w = Want { mode: target_mode(self, &t, half) };
+        let w = Want { mode: target_mode(self, &t, half), compared: false };
         let (Some(va), Some(vb)) = (self.expr(&a, w), self.expr(&b, w)) else { return };
         if base == "DIV" {
             self.keep_div(&va, &vb, &t);

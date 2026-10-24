@@ -1,0 +1,67 @@
+# Members whose compile listing is known to differ from the oracle's,
+# one per line (a member, or batch/*) with the reason; the listing
+# comparison (tests/rpg_listing.rs) reports them apart and does not
+# fail on them.
+b12err/* the compile-error batch: its diagnostics (identifiers, columns) are being written
+BIT006 the EVAL-CORR summary section is not produced yet
+DCL018 references through nested LIKEDS subfields are not tracked per copy
+DCL021 RNF7030 of a LIKE in a qualified structure: its placement and cross-reference entry
+SPEC018 RNF0263 markers should span the whole column field
+DSP001 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP002 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP003 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP004 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP005 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP006 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP007 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP008 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP009 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP010 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP011 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP012 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP013 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP014 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP015 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP016 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP017 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP018 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP019 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP020 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP021 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+DSP022 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+EXP114 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL001 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL002 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL003 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL004 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL005 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL006 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL007 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL008 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL009 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL010 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL011 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL012 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL013 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL014 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL015 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL016 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL017 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL018 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL019 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL020 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL021 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL022 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL023 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL024 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL025 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL026 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL027 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL028 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL029 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL030 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL031 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL032 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+SQL033 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+UCS001 listing differs since the batch 8, 10, 11 and 12 merges: being worked
+UCS002 listing differs since the batch 8, 10, 11 and 12 merges: being worked

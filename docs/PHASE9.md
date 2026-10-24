@@ -244,6 +244,59 @@ Recorded from batch 11 (`b11sql/`), pub400 V7R5M0.
   is `SQL0088` (00).
 - pub400's jobs run with CCSID 273: `CHAR` of a decimal has a comma.
   The corpus keeps to integers there.
+## Oracle facts: the compile listing
+
+Recorded from the 350 listings of batches 1-12, pub400 V7R5M0. The
+listing is compared line for line by `tests/rpg_listing.rs` after one
+normalization of both sides (`conformance::rpg::lstcmp`): the heading,
+user, library, dates and times are placeholders, pub400's page padding
+goes, and every message text is `{text}` with its continuation lines
+dropped (ours are Quartz-written, so they differ by rule); the
+completion line keeps only its severity. `known_lst.txt` names the
+members known to differ.
+
+- **Pages.** The overflow line is 60: a record whose spacing would pass
+  it starts a page; a section's end line may print on line 61, and a
+  page left at or past 60 gets an empty overflow page (with the source
+  rulers in the source section) before the next section. After an
+  overflow heading the first record spaces one line more, except in
+  the source section, where it is single-spaced.
+- **Source records.** Free-form source prints columns 1-100, fixed
+  form columns 6-100 under its own rulers (a fixed-form copy member or
+  an `=D` block switches the rulers with two `-` records, and back).
+  A change of specification type (H F D I C O P; comments and
+  directives do not count; `END-PROC` only outside a procedure)
+  spaces three lines; when the first record would, a blank `-` record
+  comes first. Unused resulting-indicator positions of a fixed
+  calculation print as `--`. "Do Num" is `Bnn`, `nn`, `Xnn`, `Enn`.
+  Lines conditional compilation leaves out are not numbered; with
+  `*NOSHOWSKP` each run is one `LINES EXCLUDED: n` record.
+- **Diagnostics.** A statement's diagnostics print after its last line
+  (fixed form: before the next statement), those of a data structure
+  or prototype after its group (`RNF3530`, `RNF7301`), `RNF2318`
+  before the first input, calculation or procedure specification, and
+  the RNF7xxx checks (with `RNF0331`, `RNF0334`, `RNF0362`, `RNF0599`,
+  `RNF5276`) in the additional diagnostics. One on the line just
+  printed gets a letter and a `======>` marker under its token
+  (`RNF5005`, `RNF0256`, `RNF5177`, `RNF5178`, `RNF7301` never do).
+  Each identifier's text takes a fixed number of lines
+  (`listing/lines.rs`); ours are wrapped to the same.
+- **Generated lines** (`*EXPDDS`): a box after each externally described
+  file; `=D` subfields after an `EXTNAME` structure (a `LIKEREC` one
+  only switches the rulers); `=I` before the first calculation, `=O`
+  after the main calculations for formats an output operation names.
+  Each block (and each copy member) is a source with its own id and
+  sequence numbers. Key field information, the output buffer
+  positions (once per kind of output operation), the match field
+  table and the `/COPY` members are their own sections or boxes.
+- **Cross-reference.** Names in EBCDIC order (indicators: `*IN`,
+  numbered, L1-L9, LR, overflow, MR, 1P), each reference on the line
+  its token is on, `M` where the statement changes it (a bare call of
+  a procedure is `M`, `CALLP` is not; a `FOR` index is not; `TESTB`
+  and `PARM` results are), unreferenced names `RNF7031` (counted in the
+  summaries, indicators excepted), fields of files and input
+  specifications packed, qualified subfields under their structure.
+  The message summary is in severity, then identifier order.
 
 ## Checks not yet made
 

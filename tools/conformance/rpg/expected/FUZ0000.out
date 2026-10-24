@@ -1,0 +1,13 @@
+# FUZ0000 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 3 seq 000300
+diag: RNF3530 00 line 4 seq 000400
+diag: RNF7551 10 line 77 seq 007700
+run: ok
+spool: QSYSPRT
+  |1/1   P013 V0 [abc]
+  |1/2   P014 V1 0
+  |1/3   P015 V2 35
+  |1/4   P016 V3 [zz]
+  |1/5   P017 V4 .0

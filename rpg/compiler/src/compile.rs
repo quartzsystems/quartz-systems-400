@@ -53,10 +53,18 @@ pub struct Compiled {
 
 impl Compiled {
     /// The listing's number of a source line: generated lines (`=D`,
-    /// `=I`, `=O`) are numbered too.
+    /// `=I`, `=O`) are numbered too, lines conditional compilation
+    /// leaves out are not.
     #[must_use]
     pub fn listing_line(&self, line: u32) -> u32 {
+        let skipped = self
+            .read
+            .lines
+            .iter()
+            .filter(|l| l.no < line && l.class == rpgfront::reader::Class::Skipped)
+            .count();
         line + self.generated.iter().filter(|(at, _)| *at <= line).map(|(_, n)| n).sum::<u32>()
+            - u32::try_from(skipped).unwrap_or(0)
     }
 }
 
@@ -354,7 +362,12 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         qir.clear();
     }
     let max_severity = diags.iter().map(|d| d.severity).max().unwrap_or(0);
-    let mut generated = crate::extfiles::generated_lines(&module, &files, &t);
+    // *NOEXPDDS lists no generated specifications, so numbers none.
+    let mut generated = if ctl.option.iter().any(|o| o.eq_ignore_ascii_case("*NOEXPDDS")) {
+        Vec::new()
+    } else {
+        crate::extfiles::generated_lines(&module, &files, &t)
+    };
     if let Some(p) = &precompiled {
         let firsts = crate::sql::first_calcs(&module, &scopes);
         let first = |scope: usize| firsts.iter().find(|(s, _)| *s == scope).map_or(0, |(_, l)| *l);

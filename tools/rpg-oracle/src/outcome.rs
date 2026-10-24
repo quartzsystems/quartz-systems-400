@@ -164,7 +164,10 @@ impl Outcome {
 #[must_use]
 pub fn comparable(text: &str) -> String {
     let mut out = String::new();
-    for l in text.lines().filter(|l| !l.starts_with('#')) {
+    // A spooled line printed on line 66 is under pub400's page footer
+    // there, which the tool drops: neither side's counts.
+    let footer = |l: &str| l.trim_start().strip_prefix('|').and_then(|r| r.split_whitespace().next()).is_some_and(|pl| pl.ends_with("/66"));
+    for l in text.lines().filter(|l| !l.starts_with('#') && !footer(l)) {
         out.push_str(l.trim_end_matches('\r'));
         out.push('\n');
     }

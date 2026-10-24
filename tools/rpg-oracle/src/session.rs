@@ -417,6 +417,7 @@ impl Session {
     }
 
     /// Compile and run one member: its outcome and masked listing.
+    #[allow(clippy::too_many_lines)] // one member's whole round, in order
     pub fn case(&mut self, c: &Case) -> Result<(Outcome, Vec<String>)> {
         self.source_file(c.rcdlen)?;
         let lib = self.lib.clone();
@@ -444,10 +445,8 @@ impl Session {
                 return Err(e);
             }
         };
-        // Spooled files left from before are not this member's.
-        for e in self.spools()? {
-            let _ = self.take_spool(&e);
-        }
+        // Each member's spooled files are taken and deleted; leftovers of
+        // an interrupted run are `clean`'s.
         Self::throttle()?;
         let (created, cause) = self.rcmd(&c.fill(&c.cmd, &lib))?;
         let mut o = Outcome {
@@ -458,8 +457,13 @@ impl Session {
         // CRTSQLRPGI prints the precompile listing and then the
         // compiler's; both are kept, in that order.
         let sql = c.cmd.trim_start().to_ascii_uppercase().starts_with("CRTSQLRPGI");
+        // A program called at once: its listing is read with the call's
+        // spooled files, in one query (the listing is the file named
+        // after the member).
+        let together = created && !c.call.is_empty() && !sql && c.keys.is_empty();
         let mut listing = Vec::new();
-        for e in self.spools()? {
+        let before = if together { Vec::new() } else { self.spools()? };
+        for e in before {
             let lines = self.take_spool(&e)?;
             if e.name == "QSQ" {
                 continue;
@@ -470,14 +474,6 @@ impl Session {
                 listing = lines;
             }
         }
-        if self.release.is_empty() {
-            self.release = listing
-                .iter()
-                .find_map(|l| l.split_whitespace().nth(2).filter(|w| w.starts_with('V')))
-                .unwrap_or("")
-                .to_string();
-        }
-        o.diags = listing::diags(&listing);
         if created && !c.call.is_empty() {
             let begin = format!("RPGORA BEGIN {}", c.name);
             let end = format!("RPGORA END {}", c.name);
@@ -493,11 +489,33 @@ impl Session {
             // so their spooled files can be read; this job only.
             self.try_rcmd("RCLRSC LVL(*CALLER)");
             self.try_rcmd("RCLACTGRP ACTGRP(*ELIGIBLE)");
-            o.spool = self.call_spools()?;
+            if together {
+                for e in self.spools()? {
+                    let records = self.take_spool(&e)?;
+                    if e.name == c.name && listing.is_empty() {
+                        listing = records;
+                    } else if e.name != "QSQ" {
+                        o.spool.push(Spooled {
+                            file: e.name.clone(),
+                            lines: fcfc_rows(&records, &["https://pub400.com"]),
+                        });
+                    }
+                }
+            } else {
+                o.spool = self.call_spools()?;
+            }
             if c.keys.is_empty() {
                 o.log = self.log_between(&begin, &end)?;
             }
         }
+        if self.release.is_empty() {
+            self.release = listing
+                .iter()
+                .find_map(|l| l.split_whitespace().nth(2).filter(|w| w.starts_with('V')))
+                .unwrap_or("")
+                .to_string();
+        }
+        o.diags = listing::diags(&listing);
         for cmd in ["DLTPGM PGM", "DLTMOD MODULE", "DLTSRVPGM SRVPGM"] {
             self.try_rcmd(&format!("{cmd}({lib}/{})", c.name));
         }

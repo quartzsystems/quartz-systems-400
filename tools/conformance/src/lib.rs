@@ -21,6 +21,7 @@ mod phase5;
 mod phase6;
 mod phase7;
 mod phase8;
+mod phase9;
 #[cfg(unix)]
 mod png;
 mod qemu;

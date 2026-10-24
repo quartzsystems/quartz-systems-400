@@ -1,0 +1,4 @@
+      * A fixed-form member with a nested copy.
+     DLIMIT            C                   CONST(99)
+      /COPY QRPGLESRC,LSTC3
+     DCOUNT            S              5P 0 INZ(1)

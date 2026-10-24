@@ -153,7 +153,7 @@ fn bin(op: i64, a: &Decimal, b: &Decimal, prec: Shape) -> Result<Decimal, Cond> 
     let exact = match op {
         0 => a.add_exact(b),
         1 => a.sub_exact(b),
-        2 => a.mul_exact(b),
+        2 => a.mul_to_scale(b, prec.scale),
         3 => a.div_to_scale(b, prec.scale),
         _ => a
             .div_to_scale(b, 0)

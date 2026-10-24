@@ -322,6 +322,18 @@ impl Decimal {
         )
     }
 
+    /// Product truncated to `scale` decimal positions: the decimals
+    /// dropped before the result is formed, so a product whose exact
+    /// form passes 63 digits still fits its intermediate.
+    pub fn mul_to_scale(&self, other: &Self, scale: u8) -> Result<Self> {
+        let exact = u16::from(self.scale) + u16::from(other.scale);
+        let mag = digits::mul(&self.mag, &other.mag);
+        let drop = usize::from(exact.saturating_sub(u16::from(scale)));
+        let (kept, _) = digits::shr(&mag, drop);
+        let at = u8::try_from(exact.min(u16::from(scale))).unwrap_or(scale);
+        Self::from_digits(self.neg != other.neg, kept, at)
+    }
+
     /// Quotient truncated to `scale` decimal positions.
     pub fn div_to_scale(&self, other: &Self, scale: u8) -> Result<Self> {
         if other.is_zero() {

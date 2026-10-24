@@ -1,0 +1,447 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   FUZ0016
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   FUZ0016
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 ctl-opt dftactgrp(*no);                                                                                   000000     000200
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     3 dcl-f QSYSPRT printer(132);                                                                               000000     000300
+-     4 dcl-ds line len(132) end-ds;                                                                              000000     000400
+ ======>       aaaa
+ *RNF3530 00 a      000400  Data structure LINE has no valid subfields.
+      5 dcl-s I0 int(10);                                                                                         000000     000500
+      6 dcl-s I1 int(10);                                                                                         000000     000600
+      7 dcl-s I2 int(10);                                                                                         000000     000700
+      8 dcl-s V0 ind;                                                                                             000000     000800
+      9 dcl-s V1 char(4);                                                                                         000000     000900
+     10 dcl-s V2 zoned(10:2);                                                                                     000000     001000
+     11 dcl-s V3 packed(10:2);                                                                                    000000     001100
+     12 dcl-s V4 packed(12:1);                                                                                    000000     001200
+     13 dcl-s V5 varchar(27) inz('RPG');                                                                          000000     001300
+     14 dcl-s V6 char(7) inz('x');                                                                                000000     001400
+     15 dcl-s V7 zoned(1:0);                                                                                      000000     001500
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     16 dcl-s V8 packed(1:1);                                                                                     000000     001600
+ *RNF2318 00      3 000300  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-    17 monitor;                                                                                             B01  000000     001700
+     18   V6 = %subst(V1 : 4 : 1);                                                                            01  000000     001800
+     19 on-error;                                                                                            X01  000000     001900
+     20   line = 'P001 E ' + %char(%status());                                                                01  000000     002000
+     21   write QSYSPRT line;                                                                                 01  000000     002100
+     22 endmon;                                                                                              E01  000000     002200
+     23 line = 'P002 V6 ' + '[' + V6 + ']';                                                                       000000     002300
+     24 write QSYSPRT line;                                                                                       000000     002400
+     25 for I0 = 1 to 1;                                                                                     B01  000000     002500
+     26   for I1 = 1 to 3;                                                                                   B02  000000     002600
+     27     if %char(328.15) > V1;                                                                           B03  000000     002700
+     28       monitor;                                                                                       B04  000000     002800
+     29         V3 = (V7 + %int(%int(-455)));                                                                 04  000000     002900
+     30       on-error;                                                                                      X04  000000     003000
+     31         line = 'P003 E ' + %char(%status());                                                          04  000000     003100
+     32         write QSYSPRT line;                                                                           04  000000     003200
+     33       endmon;                                                                                        E04  000000     003300
+     34       line = 'P004 V3 ' + %char(V3);                                                                  03  000000     003400
+     35       write QSYSPRT line;                                                                             03  000000     003500
+     36     elseif 497 < ((888 * V7) - V2);                                                                  X03  000000     003600
+     37       monitor;                                                                                       B04  000000     003700
+     38         V8 = ((V7 - 8.81) - V3);                                                                      04  000000     003800
+     39       on-error;                                                                                      X04  000000     003900
+     40         line = 'P005 E ' + %char(%status());                                                          04  000000     004000
+     41         write QSYSPRT line;                                                                           04  000000     004100
+     42       endmon;                                                                                        E04  000000     004200
+     43       line = 'P006 V8 ' + %char(V8);                                                                  03  000000     004300
+     44       write QSYSPRT line;                                                                             03  000000     004400
+     45       monitor;                                                                                       B04  000000     004500
+     46         eval(h) V3 = (V3 - %rem(%int(V3) : 1));                                                       04  000000     004600
+     47       on-error;                                                                                      X04  000000     004700
+     48         line = 'P007 E ' + %char(%status());                                                          04  000000     004800
+     49         write QSYSPRT line;                                                                           04  000000     004900
+     50       endmon;                                                                                        E04  000000     005000
+     51       monitor;                                                                                       B04  000000     005100
+     52         V6 = %subst(V1 : 1 : 1);                                                                      04  000000     005200
+     53       on-error;                                                                                      X04  000000     005300
+     54         line = 'P008 E ' + %char(%status());                                                          04  000000     005400
+     55         write QSYSPRT line;                                                                           04  000000     005500
+     56       endmon;                                                                                        E04  000000     005600
+     57       line = 'P009 V6 ' + '[' + V6 + ']';                                                             03  000000     005700
+     58       write QSYSPRT line;                                                                             03  000000     005800
+     59     else;                                                                                            X03  000000     005900
+     60       monitor;                                                                                       B04  000000     006000
+     61         V2 = (V8 - -946);                                                                             04  000000     006100
+     62       on-error;                                                                                      X04  000000     006200
+     63         line = 'P010 E ' + %char(%status());                                                          04  000000     006300
+     64         write QSYSPRT line;                                                                           04  000000     006400
+     65       endmon;                                                                                        E04  000000     006500
+     66       monitor;                                                                                       B04  000000     006600
+     67         V6 = %triml('RPG') + 'Quartz';                                                                04  000000     006700
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     68       on-error;                                                                                      X04  000000     006800
+     69         line = 'P011 E ' + %char(%status());                                                          04  000000     006900
+     70         write QSYSPRT line;                                                                           04  000000     007000
+     71       endmon;                                                                                        E04  000000     007100
+     72       line = 'P012 V6 ' + '[' + V6 + ']';                                                             03  000000     007200
+     73       write QSYSPRT line;                                                                             03  000000     007300
+     74       monitor;                                                                                       B04  000000     007400
+     75         eval(h) V3 = V7;                                                                              04  000000     007500
+     76       on-error;                                                                                      X04  000000     007600
+     77         line = 'P013 E ' + %char(%status());                                                          04  000000     007700
+     78         write QSYSPRT line;                                                                           04  000000     007800
+     79       endmon;                                                                                        E04  000000     007900
+     80     endif;                                                                                           E03  000000     008000
+     81   endfor;                                                                                            E02  000000     008100
+     82   if V3 <> ((V4 * V4) + (352 - 159));                                                                B02  000000     008200
+     83     select;                                                                                          B03  000000     008300
+     84     when V1 >= %trim('  pad  ');                                                                     X03  000000     008400
+     85       monitor;                                                                                       B04  000000     008500
+     86         V3 = 958;                                                                                     04  000000     008600
+     87       on-error;                                                                                      X04  000000     008700
+     88         line = 'P014 E ' + %char(%status());                                                          04  000000     008800
+     89         write QSYSPRT line;                                                                           04  000000     008900
+     90       endmon;                                                                                        E04  000000     009000
+     91       monitor;                                                                                       B04  000000     009100
+     92         V0 = V3 < 469;                                                                                04  000000     009200
+     93       on-error;                                                                                      X04  000000     009300
+     94         line = 'P015 E ' + %char(%status());                                                          04  000000     009400
+     95         write QSYSPRT line;                                                                           04  000000     009500
+     96       endmon;                                                                                        E04  000000     009600
+     97     other;                                                                                           X03  000000     009700
+     98       monitor;                                                                                       B04  000000     009800
+     99         V3 = (V7 - V3);                                                                               04  000000     009900
+    100       on-error;                                                                                      X04  000000     010000
+    101         line = 'P016 E ' + %char(%status());                                                          04  000000     010100
+    102         write QSYSPRT line;                                                                           04  000000     010200
+    103       endmon;                                                                                        E04  000000     010300
+    104       monitor;                                                                                       B04  000000     010400
+    105         V2 = V3;                                                                                      04  000000     010500
+    106       on-error;                                                                                      X04  000000     010600
+    107         line = 'P017 E ' + %char(%status());                                                          04  000000     010700
+    108         write QSYSPRT line;                                                                           04  000000     010800
+    109       endmon;                                                                                        E04  000000     010900
+    110       line = 'P018 V2 ' + %char(V2);                                                                  03  000000     011000
+    111       write QSYSPRT line;                                                                             03  000000     011100
+    112       monitor;                                                                                       B04  000000     011200
+    113         V7 = %len(V5);                                                                                04  000000     011300
+    114       on-error;                                                                                      X04  000000     011400
+    115         line = 'P019 E ' + %char(%status());                                                          04  000000     011500
+    116         write QSYSPRT line;                                                                           04  000000     011600
+    117       endmon;                                                                                        E04  000000     011700
+    118     endsl;                                                                                           E03  000000     011800
+    119   else;                                                                                              X02  000000     011900
+    120     if (-639 - (-218 - V7)) <> (%int(V2) / 8);                                                       B03  000000     012000
+    121       monitor;                                                                                       B04  000000     012100
+    122         V8 = V8;                                                                                      04  000000     012200
+    123       on-error;                                                                                      X04  000000     012300
+1{heading} page 5
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+    124         line = 'P020 E ' + %char(%status());                                                          04  000000     012400
+    125         write QSYSPRT line;                                                                           04  000000     012500
+    126       endmon;                                                                                        E04  000000     012600
+    127       line = 'P021 V8 ' + %char(V8);                                                                  03  000000     012700
+    128       write QSYSPRT line;                                                                             03  000000     012800
+    129       monitor;                                                                                       B04  000000     012900
+    130         V4 = ((%int(736) - V4) - V3);                                                                 04  000000     013000
+    131       on-error;                                                                                      X04  000000     013100
+    132         line = 'P022 E ' + %char(%status());                                                          04  000000     013200
+    133         write QSYSPRT line;                                                                           04  000000     013300
+    134       endmon;                                                                                        E04  000000     013400
+    135       monitor;                                                                                       B04  000000     013500
+    136         V5 = %char(%dec(V4 : 15 : 2));                                                                04  000000     013600
+    137       on-error;                                                                                      X04  000000     013700
+    138         line = 'P023 E ' + %char(%status());                                                          04  000000     013800
+    139         write QSYSPRT line;                                                                           04  000000     013900
+    140       endmon;                                                                                        E04  000000     014000
+    141       line = 'P024 V5 ' + '[' + V5 + ']';                                                             03  000000     014100
+    142       write QSYSPRT line;                                                                             03  000000     014200
+    143     else;                                                                                            X03  000000     014300
+    144     endif;                                                                                           E03  000000     014400
+    145   endif;                                                                                             E02  000000     014500
+    146 endfor;                                                                                              E01  000000     014600
+    147 line = 'P025 V0 ' + V0;                                                                                   000000     014700
+    148 write QSYSPRT line;                                                                                       000000     014800
+    149 line = 'P026 V1 ' + '[' + V1 + ']';                                                                       000000     014900
+    150 write QSYSPRT line;                                                                                       000000     015000
+    151 line = 'P027 V2 ' + %char(V2);                                                                            000000     015100
+    152 write QSYSPRT line;                                                                                       000000     015200
+    153 line = 'P028 V3 ' + %char(V3);                                                                            000000     015300
+    154 write QSYSPRT line;                                                                                       000000     015400
+    155 line = 'P029 V4 ' + %char(V4);                                                                            000000     015500
+    156 write QSYSPRT line;                                                                                       000000     015600
+    157 line = 'P030 V5 ' + '[' + V5 + ']';                                                                       000000     015700
+    158 write QSYSPRT line;                                                                                       000000     015800
+    159 line = 'P031 V6 ' + '[' + V6 + ']';                                                                       000000     015900
+    160 write QSYSPRT line;                                                                                       000000     016000
+    161 line = 'P032 V7 ' + %char(V7);                                                                            000000     016100
+    162 write QSYSPRT line;                                                                                       000000     016200
+    163 line = 'P033 V8 ' + %char(V8);                                                                            000000     016300
+    164 write QSYSPRT line;                                                                                       000000     016400
+    165 *inlr = *on;                                                                                              000000     016500
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+1{heading} page 6
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+ *RNF7057 00     46 004600  Half Adjust is not valid for the number of decimal
+                            positions of the result.
+ *RNF7057 00     75 007500  Half Adjust is not valid for the number of decimal
+                            positions of the result.
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 3D     21      24      32
+                                                   35      41      44      49
+                                                   55      58      64      70
+                                                   73      78      89      95
+                                                  102     108     111     116
+                                                  125     128     133     139
+                                                  142     148     150     152
+                                                  154     156     158     160
+                                                  162     164
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                  165M
+          I0                I(10,0)                 5D     25
+          I1                I(10,0)                 6D     26
+ *RNF7031 I2                I(10,0)                 7D
+          LINE              DS(132)                 4D     20M     21      23M
+                                                   24      31M     32      34M
+                                                   35      40M     41      43M
+                                                   44      48M     49      54M
+                                                   55      57M     58      63M
+                                                   64      69M     70      72M
+                                                   73      77M     78      88M
+                                                   89      94M     95     101M
+                                                  102     107M    108     110M
+                                                  111     115M    116     124M
+                                                  125     127M    128     132M
+                                                  133     138M    139     141M
+                                                  142     147M    148     149M
+                                                  150     151M    152     153M
+                                                  154     155M    156     157M
+                                                  158     159M    160     161M
+                                                  162     163M    164
+          V0                N(1)                    8D     92M    147
+          V1                A(4)                    9D     18      27      52
+                                                   84     149
+          V2                S(10,2)                10D     36      61M    105M
+                                                  110     120     151
+          V3                P(10,2)                11D     29M     34      38
+                                                   46M     46      46      75M
+                                                   82      86M     92      99M
+                                                   99     105     130     153
+          V4                P(12,1)                12D     82      82     130M
+                                                  130     136     155
+          V5                A(27)                  13D    113     136M    141
+                            VARYING(2)            157
+          V6                A(7)                   14D     18M     23      52M
+                                                   57      67M     72     159
+          V7                S(1,0)                 15D     29      36      38
+                                                   75      99     113M    120
+                                                  161
+1{heading} page 8
+0         V8                P(1,1)                 16D     38M     43      61
+                                                  122M    122     127     163
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                      165M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 10
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+ *RNF7031 00      1 The name or indicator is not referenced.
+ *RNF7057 00      2 Half Adjust is not valid for the number of decimal positions
+                    of the result.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 11
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        5
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        5
+-  Source Totals:
+0    Records . . . . . . . . . . . . :      165
+     Specifications  . . . . . . . . :      164
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        0
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program FUZ0016 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

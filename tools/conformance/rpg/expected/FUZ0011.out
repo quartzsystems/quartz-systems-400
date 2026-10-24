@@ -1,0 +1,24 @@
+# FUZ0011 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 3 seq 000300
+diag: RNF3530 00 line 4 seq 000400
+diag: RNF7057 00 line 37 seq 003700
+diag: RNF7057 00 line 69 seq 006900
+run: ok
+spool: QSYSPRT
+  |1/1   P002 V4 983
+  |1/2   P006 V1 14
+  |1/3   P008 V7 [x             ]
+  |1/4   P010 V2 0
+  |1/5   P008 V7 [x             ]
+  |1/6   P010 V2 0
+  |1/7   P012 E 103
+  |1/8   P016 V0 14
+  |1/9   P017 V1 14
+  |1/10  P018 V2 0
+  |1/11  P019 V3 [hello world   ]
+  |1/12  P020 V4 983
+  |1/13  P021 V5 0
+  |1/14  P022 V6 14
+  |1/15  P023 V7 [x             ]

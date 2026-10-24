@@ -251,6 +251,12 @@ text = "&1 is not defined."
 vars = ["*CHAR 50"]
 
 [[msg]]
+id = "RNF7031"
+sev = 0
+text = "No reference is made to &1."
+vars = ["*CHAR 50"]
+
+[[msg]]
 id = "RNF7057"
 sev = 0
 text = "Half adjust has no effect: the result has no more decimals than the target."

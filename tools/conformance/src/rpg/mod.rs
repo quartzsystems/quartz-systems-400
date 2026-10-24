@@ -82,6 +82,7 @@ fn messages(case: &Case) -> std::collections::BTreeMap<String, String> {
     }
     out
 }
+pub mod lstcmp;
 
 /// Where the corpus lives.
 pub struct Kit {
@@ -215,6 +216,30 @@ pub fn options(case: &Case) -> rpgc::Options {
             }
         }
         o.sql = Some(s);
+    }
+    if let Some(v) = word("GENLVL") {
+        o.genlvl = v.parse().unwrap_or(o.genlvl);
+    }
+    for (kw, slot) in [("OPTIMIZE", &mut o.optimize), ("ALWNULL", &mut o.alwnull), ("OUTPUT", &mut o.output)] {
+        if let Some(v) = word(kw) {
+            *slot = v;
+        }
+    }
+    // Quoted values keep their case.
+    let quoted = |kw: &str| -> Option<String> {
+        let full = case.fill(&case.cmd, "QGPL");
+        let at = full.to_ascii_uppercase().find(&format!("{kw}('"))?;
+        let rest = &full[at + kw.len() + 2..];
+        let end = rest.find("')")?;
+        Some(rest[..end].to_string())
+    };
+    if let Some(v) = quoted("TEXT") {
+        o.text = v;
+    }
+    if let Some(v) = quoted("INDENT") {
+        o.indent = format!("'{v}'");
+    } else if let Some(v) = word("INDENT") {
+        o.indent = v;
     }
     o
 }

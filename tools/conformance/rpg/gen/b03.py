@@ -10,7 +10,7 @@ import random
 import sys
 
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "b03expr")
-MEMBERS = int(sys.argv[1]) if len(sys.argv) > 1 else 60
+MEMBERS = int(sys.argv[1]) if len(sys.argv) > 1 else 125
 CASES = int(sys.argv[2]) if len(sys.argv) > 2 else 40
 
 
