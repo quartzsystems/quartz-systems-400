@@ -20,11 +20,12 @@ pub fn put_text(dst: u64, dd: &Desc, text: &[u8], pad: bool) {
     let out = bytes(dst, dd.size());
     if dd.kind == Kind::VarChar {
         // A varying target keeps its current length.
-        let cur = usize::from(u16::from_be_bytes([out[0], out[1]])).min(dd.len as usize);
+        let p = dd.prefix();
+        let cur = crate::value::var_len(out, p).min(dd.len as usize);
         let n = text.len().min(cur);
-        out[2..2 + n].copy_from_slice(&text[..n]);
+        out[p..p + n].copy_from_slice(&text[..n]);
         if pad {
-            out[2 + n..2 + cur].fill(BLANK);
+            out[p + n..p + cur].fill(BLANK);
         }
     } else {
         let n = text.len().min(out.len());

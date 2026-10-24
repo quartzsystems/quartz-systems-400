@@ -40,10 +40,7 @@ pub fn image(addr: u64, d: &Desc) -> Result<Vec<u8>, mi::Cond> {
     }
     let b = bytes(addr, d.size());
     Ok(match d.kind {
-        Kind::VarChar => {
-            let n = usize::from(u16::from_be_bytes([b[0], b[1]]));
-            b[2..2 + n.min(b.len() - 2)].to_vec()
-        }
+        Kind::VarChar => d.var_data(b).to_vec(),
         _ => b.to_vec(),
     })
 }
@@ -82,9 +79,9 @@ pub fn store_image(addr: u64, d: &Desc, img: &[u8]) -> Result<(), mi::Cond> {
     }
     let out = bytes(addr, d.size());
     if d.kind == Kind::VarChar {
-        let n = usize::from(u16::from_be_bytes([out[0], out[1]]));
-        let n = n.min(img.len());
-        out[2..2 + n].copy_from_slice(&img[..n]);
+        let p = d.prefix();
+        let n = crate::value::var_len(out, p).min(img.len()).min(out.len() - p);
+        out[p..p + n].copy_from_slice(&img[..n]);
     } else {
         let n = out.len().min(img.len());
         out[..n].copy_from_slice(&img[..n]);

@@ -1,0 +1,349 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   IR008
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   IR008
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; sqlfile: IRNUL                                                                                        000000     000200
+      3 ctl-opt dftactgrp(*no) alwnull(*usrctl);                                                                  000000     000300
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *USRCTL                      *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     4 dcl-f QSYSPRT printer(132);                                                                               000000     000400
+-     5 dcl-ds line len(132) end-ds;                                                                              000000     000500
+ ======>       aaaa
+ *RNF3530 00 a      000500  Data structure LINE has no valid subfields.
+-     6 dcl-f IRNUL keyed usage(*update:*output) rename(IRNUL:IRNULR);                                            000000     000600
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  IRNUL            {lib}/IRNUL                             *
+         * Record format(s) . . . . . :  IRNULR           IRNUL                                       *
+         *--------------------------------------------------------------------------------------------*
+-
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+      7 dcl-s tag char(2);                                                                                        000000     000700
+ *RNF2318 00      4 000400  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-     8=IIRNULR                                                                                                             1000001
+         *--------------------------------------------------------------------------------------------*                     1
+         * RPG record format  . . . . :  IRNULR                                                       *                     1
+         * External format  . . . . . :  IRNUL : {lib}/IRNUL                                      *                     1
+         *--------------------------------------------------------------------------------------------*                     1
+      9=I                             B    1    4 0K                                                                        1000002
+     10=I (ALWNULL)                   A    5    9  V                                                                        1000003
+     11=I (ALWNULL)                   P   10   12 0P                                                                        1000004
+-    12 tag = 'a';                                                                                                000000     000800
+     13 exsr show;                                                                                                000000     000900
+     14 chain (2) IRNUL;                                                                                          000000     001000
+     15 line = 'b ' + %char(%found) + ' ' + %nullind(V) + %nullind(P);                                            000000     001100
+     16 write QSYSPRT line;                                                                                       000000     001200
+     17 %nullind(V) = *off;                                                                                       000000     001300
+     18 V = 'two';                                                                                                000000     001400
+     19 update IRNULR;                                                                                            000000     001500
+     20 chain (1) IRNUL;                                                                                          000000     001600
+     21 %nullind(P) = *on;                                                                                        000000     001700
+     22 update IRNULR;                                                                                            000000     001800
+     23 chain (3) IRNUL;                                                                                          000000     001900
+     24 %nullind(V) = *on;                                                                                        000000     002000
+     25 %nullind(P) = *off;                                                                                       000000     002100
+     26 P = 33;                                                                                                   000000     002200
+     27 update IRNULR %fields(V : P);                                                                             000000     002300
+     28 K = 5;                                                                                                    000000     002400
+     29 V = 'five';                                                                                               000000     002500
+     30 P = 50;                                                                                                   000000     002600
+     31 %nullind(V) = *on;                                                                                        000000     002700
+     32 %nullind(P) = *off;                                                                                       000000     002800
+     33 write IRNULR;                                                                                             000000     002900
+     34 K = 6;                                                                                                    000000     003000
+     35 %nullind(V) = *off;                                                                                       000000     003100
+     36 %nullind(P) = *on;                                                                                        000000     003200
+     37 write IRNULR;                                                                                             000000     003300
+     38 tag = 'c';                                                                                                000000     003400
+     39 exsr show;                                                                                                000000     003500
+     40 *inlr = *on;                                                                                              000000     003600
+     41                                                                                                           000000     003700
+     42 begsr show;                                                                                               000000     003800
+     43   setll *loval IRNUL;                                                                                     000000     003900
+     44   read IRNUL;                                                                                             000000     004000
+     45   dow not %eof(IRNUL);                                                                               B01  000000     004100
+     46     line = tag + ' ' + %char(K) + ' ' + %nullind(V) + %nullind(P);                                    01  000000     004200
+     47     if not %nullind(V);                                                                              B02  000000     004300
+     48       line = %trimr(line) + ' [' + V + ']';                                                           02  000000     004400
+     49     endif;                                                                                           E02  000000     004500
+     50     if not %nullind(P);                                                                              B02  000000     004600
+     51       line = %trimr(line) + ' ' + %char(P);                                                           02  000000     004700
+     52     endif;                                                                                           E02  000000     004800
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     53     write QSYSPRT line;                                                                               01  000000     004900
+     54     read IRNUL;                                                                                       01  000000     005000
+     55   enddo;                                                                                             E01  000000     005100
+     56 endsr;                                                                                                    000000     005200
+     57=OIRNULR                                                                                                             2000001
+         *--------------------------------------------------------------------------------------------*                     2
+         * RPG record format  . . . . :  IRNULR                                                       *                     2
+         * External format  . . . . . :  IRNUL : {lib}/IRNUL                                      *                     2
+         *--------------------------------------------------------------------------------------------*                     2
+     58=O                       K                    4B BIN4      9,0                                                       2000002
+     59=O (ALWNULL)             V                    9A CHAR        5                                                       2000003
+     60=O (ALWNULL)             P                   12P PACK      5,0                                                       2000004
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-                 O u t p u t   B u f f e r   P o s i t i o n s
+0Line   Start End   Field or Constant
+0Number Pos   Pos
+     58     1     4 K
+     59     5     9 V
+     60    10    12 P
+     58     1     4 K
+     59     5     9 V
+     60    10    12 P
+0 * * * * *   E N D   O F   O U T P U T   B U F F E R   P O S I T I O N   *  * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                    K e y   F i e l d   I n f o r m a t i o n
+0         File           Internal    External
+            Record       field name  field name  Attributes
+0      2  IRNUL
+            IRNULR is the RPG name of the external format IRNUL.
+                         K                       BIN4      9,0 SIGNED
+0 * * * * *   E N D   O F   K E Y   F I E L D   I N F O R M A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          IRNUL             DISK                    6D     14      20      23
+                                                   43      44      45      54
+            IRNULR                                  6       8      19      22
+                                                   27      33      37      57
+          QSYSPRT           PRINTER                 4D     16      53
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   40M
+          K                 P(9,0)                  9M     28M     34M     46
+                                                   58
+          LINE              DS(132)                 5D     15M     16      46M
+                                                   48M     48      51M     51
+                                                   53
+          P                 P(5,0)                 11M     15      21      25
+                            ALWNULL                26M     27      30M     32
+                                                   36      46      50      51
+                                                   60
+          SHOW              BEGSR                  13      39      42D
+          TAG               A(2)                    7D     12M     38M     46
+          V                 A(5)                   10M     15      17      18M
+                            ALWNULL                24      27      29M     31
+                                                   35      46      47      48
+                                                   59
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                       40M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 10
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        2
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        2
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       60
+     Specifications  . . . . . . . . :       57
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        2
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program IR008 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

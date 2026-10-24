@@ -200,6 +200,8 @@ pub struct File {
     pub noblock: bool,
     /// `TEMPLATE`.
     pub template: bool,
+    /// A `LIKEFILE` parameter: the caller's file, bound at the call.
+    pub param: bool,
     /// The scope it belongs to (0 global).
     pub scope: usize,
     /// Where it is declared.

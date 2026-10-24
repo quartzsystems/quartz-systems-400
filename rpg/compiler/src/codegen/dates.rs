@@ -588,8 +588,8 @@ impl Gen<'_> {
         let f = self.fmt_arg(fmt, class, own)?;
         let frac = if let Ty::Timestamp(p) = v.ty { p } else { 0 };
         let f = f | i64::from(frac) << 16;
-        let t = self.b.temp(&self.ir_ty(&Ty::VarChar(40, 2)));
-        let out = V::place(Ty::VarChar(40, 2), t);
+        let t = self.b.temp(&self.ir_ty(&Ty::varchar(40)));
+        let out = V::place(Ty::varchar(40), t);
         if fmt.is_none() && v.kind == Vk::Place {
             // In its own format a value is its characters.
             self.b.ins(format!("mov {}, {}", out.op, v.op));

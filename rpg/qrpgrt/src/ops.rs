@@ -211,8 +211,8 @@ pub extern "sysv64" fn sorta(_env: *mut Env, _argc: i64, _od: i64, base: i64, st
 
 /// Text into a varying field of `cap` bytes.
 fn put_var(dst: i64, cap: i64, text: &[u8]) {
-    let n = text.len().min(n(cap));
-    crate::value::write_varchar(a(dst), &text[..n]);
+    let (cap, k) = (n(cap), text.len().min(n(cap)));
+    crate::value::write_var(a(dst), crate::value::prefix_for(cap), &text[..k]);
 }
 
 /// `_QRNX_SCANR(needle, nd, hay, hd, start, len) -> i32`.
@@ -254,7 +254,7 @@ pub extern "sysv64" fn scanrpl(
 pub extern "sysv64" fn split(env: *mut Env, _argc: i64, _od: i64, dst: i64, elen: i64, cap: i64, src: i64, sd: i64, seps: i64, pd: i64) -> i64 {
     let (Some(s), Some(p)) = (img(env, src, sd), img(env, seps, pd)) else { return 0 };
     let pieces = strops::split(&s, &p);
-    let size = i64::try_from(n(elen) + 2).unwrap_or(0);
+    let size = i64::try_from(n(elen) + crate::value::prefix_for(n(elen))).unwrap_or(0);
     let mut k = 0;
     for piece in pieces.iter().take(n(cap)) {
         put_var(dst + k * size, elen, piece);

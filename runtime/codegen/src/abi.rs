@@ -109,6 +109,12 @@ pub mod opdesc {
     pub const GRAPHIC: i32 = 6;
     /// `datatype`: a date, time or timestamp.
     pub const DATETIME: i32 = 7;
+    /// `datatype`: varying characters with a 4-byte length.
+    pub const VARCHAR4: i32 = 8;
+    /// `datatype`: varying UCS-2 with a 4-byte length.
+    pub const VARUCS24: i32 = 9;
+    /// `datatype`: varying graphic; `length` is its size.
+    pub const VARGRAPHIC: i32 = 10;
 }
 
 /// The descriptor words of an argument passed as `ty`: `desc_type`,
@@ -127,10 +133,13 @@ fn datatype(ty: &Type) -> i32 {
     use qir::TypeClass;
     match ty {
         Type::Char(_) => opdesc::CHAR,
-        Type::VarChar(_) => opdesc::VARCHAR,
+        Type::VarChar(_, 2) => opdesc::VARCHAR,
+        Type::VarChar(..) => opdesc::VARCHAR4,
         Type::Ucs2(_) => opdesc::UCS2,
-        Type::VarUcs2(_) => opdesc::VARUCS2,
+        Type::VarUcs2(_, 2) => opdesc::VARUCS2,
+        Type::VarUcs2(..) => opdesc::VARUCS24,
         Type::Graphic(_) => opdesc::GRAPHIC,
+        Type::VarGraphic(..) => opdesc::VARGRAPHIC,
         Type::Date(_) | Type::Time(_) | Type::Timestamp(_) => opdesc::DATETIME,
         t if matches!(
             t.class(),
@@ -325,8 +334,9 @@ pub fn time_fmt_index(f: TimeFmt) -> u8 {
 
 /// A type as the 64-bit word runtime calls receive beside a storage
 /// address: bits 0-7 the kind, 8-39 the length or digits, 40-47 the
-/// decimal positions or timestamp precision, 48-55 the date or time
-/// format index, bit 56 [`TypeDesc::FSIGN`].
+/// decimal positions, timestamp precision or a varying type's prefix
+/// bytes (0 for 2), 48-55 the date or time format index, bit 56
+/// [`TypeDesc::FSIGN`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct TypeDesc(pub u64);
 
@@ -361,10 +371,11 @@ impl TypeDesc {
             Type::Zoned(s) => (11, u64::from(s.digits), u64::from(s.scale), 0),
             Type::Bin(s) => (24, u64::from(s.digits), u64::from(s.scale), 0),
             Type::Char(n) => (12, u64::from(*n), 0, 0),
-            Type::VarChar(n) => (13, u64::from(*n), 0, 0),
+            Type::VarChar(n, p) => (13, u64::from(*n), pfx(*p), 0),
             Type::Ucs2(n) => (14, u64::from(*n), 0, 0),
-            Type::VarUcs2(n) => (15, u64::from(*n), 0, 0),
+            Type::VarUcs2(n, p) => (15, u64::from(*n), pfx(*p), 0),
             Type::Graphic(n) => (16, u64::from(*n), 0, 0),
+            Type::VarGraphic(n, p) => (25, u64::from(*n), pfx(*p), 0),
             Type::Date(f) => (17, u64::from(f.length()), 0, u64::from(date_fmt_index(*f))),
             Type::Time(f) => (18, 8, 0, u64::from(time_fmt_index(*f))),
             Type::Timestamp(p) => (19, ty.size(), u64::from(*p), 0),
@@ -400,10 +411,11 @@ impl TypeDesc {
             11 => Type::Zoned(shape(len, scale)?),
             24 => Type::Bin(shape(len, scale)?),
             12 => Type::Char(len),
-            13 => Type::VarChar(len),
+            13 => Type::VarChar(len, var_pfx(scale)),
             14 => Type::Ucs2(len),
-            15 => Type::VarUcs2(len),
+            15 => Type::VarUcs2(len, var_pfx(scale)),
             16 => Type::Graphic(len),
+            25 => Type::VarGraphic(len, var_pfx(scale)),
             17 => Type::Date(*DATE_FMTS.get(fmt)?),
             18 => Type::Time(*TIME_FMTS.get(fmt)?),
             19 => Type::Timestamp(scale),
@@ -428,6 +440,16 @@ impl TypeDesc {
     }
 }
 
+/// A varying prefix as its descriptor field: 0 for the 2-byte default.
+fn pfx(p: u8) -> u64 {
+    if p == 2 { 0 } else { u64::from(p) }
+}
+
+/// A varying prefix from its descriptor field.
+fn var_pfx(f: u8) -> u8 {
+    if f == 0 { 2 } else { f }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -442,7 +464,10 @@ mod tests {
             Type::Zoned(qir::Shape::new(63, 63).unwrap()),
             Type::Bin(qir::Shape::new(9, 2).unwrap()),
             Type::Char(16_773_104),
-            Type::VarUcs2(10),
+            Type::VarUcs2(10, 2),
+            Type::VarChar(70_000, 4),
+            Type::VarUcs2(5, 4),
+            Type::VarGraphic(5, 2),
             Type::Date(DateFmt::Jul),
             Type::Time(TimeFmt::Usa),
             Type::Timestamp(12),

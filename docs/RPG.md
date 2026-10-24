@@ -87,7 +87,15 @@ storage sizes (`types.rs`): `P` `digits/2+1`, `S` digits, `B` 2, 4 or 8
 by digits, `I`/`U` 1, 2, 4, 8 bytes for 3, 5, 10, 20 digits, `F` 4 or
 8, dates by format, timestamps 19 or `20+p`, pointers 16. A fixed-form
 type column left blank is packed for a standalone field with decimals,
-zoned for a subfield with decimals, character otherwise.
+zoned for a subfield with decimals, character otherwise, its length
+from `LEN(n)` when the columns have none. A varying field
+(`VARCHAR`, `VARUCS2`, `VARGRAPH`, `VARYING`) has a 2-byte length up to
+65535 and a 4-byte one past it or by `VARYING(4)` and `varchar(n:4)`,
+up to 16773100 bytes; the IR's `varchar(n:4)`, `varucs2(n:4)` and
+`vargraphic(n[:4])` hold them, and the runtime library's descriptor
+carries the prefix (a varying descriptor's low byte 4). `*BLANKS` and
+`*ZEROS` fill a varying field to its maximum length; `%LEN(v) = n`
+sets its length (`str.setlen`).
 
 A data structure is laid out in declaration order: absolute positions
 (`from`/`to`, `POS`) where given, `OVERLAY(name[:pos|*NEXT])` relative
@@ -95,7 +103,10 @@ to the named subfield, length notation at the next position, pointers
 rounded up to 16; the length is the larger of `LEN`/the `DS` line and
 the end of the last subfield. A structure without subfields is
 `RNF3530` (information). `LIKEDS` copies the layout and qualifies the
-copy.
+copy. A subfield that overlays an array subfield is an array of as
+many elements, as far apart as the base's (`*NEXT` advances within an
+element): the IR's strided array `array[n:s] of T`; `SORTA` of it sorts
+the base's whole elements by it, as IBM does.
 
 In the IR a data structure is a named struct type
 `DS_NAME = struct(len) { all_: char(len) @0, SUB: T @off, ... }`: the
@@ -209,6 +220,20 @@ open file is 01215; `CLOSE` of a closed one does nothing; `CLOSE *ALL`
 closes every global file. Program-described output records to a disk
 file are built at their end positions (data format `P`/`B` packs) and
 added (`ADD`, or any output file), updated or deleted (`DEL`).
+
+A file's flags (`%EOF`, `%FOUND`, `%EQUAL`), status and record type
+live in its control block, the static `$fcb_FILE` of type `fcb_`, with
+the runtime's handle of the open file. A `LIKEFILE` parameter is the
+caller's block by reference: the call stores `fileref FILE` in it and
+passes it, and the procedure starts with `filebind` of its own file
+(the parent's description, qualified, with copies of its formats) to
+that handle, so its operations act on the caller's open file and the
+caller sees the flags they leave. Under `ALWNULL(*USRCTL)` a format with
+null-capable fields travels with a null map (`$nm_FILE`, an indicator
+per field, `dbio ... nulls()`): a read sets each field's `%NULLIND`, a
+write or update stores them (`%FIELDS` only the named ones); the
+database's bit map is converted at the I/O interface (`mi::io`,
+`IoRequest::nulls`, `IoResult::nulls`).
 
 **File exceptions** (`codegen/dbio.rs`, `qrpgrt::exc::file_err`). An
 error status with neither `(E)` nor an error indicator stores the

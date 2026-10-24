@@ -110,7 +110,8 @@ wire_struct!(IoResult {
     key,
     format,
     member,
-    record
+    record,
+    nulls
 });
 wire_enum!(DataAreaKind {
     0 => Char,
@@ -166,6 +167,8 @@ pub struct OwnedRequest {
     pub format: Option<String>,
     /// Read without a lock.
     pub nolock: bool,
+    /// The null map to write.
+    pub nulls: Option<Vec<u8>>,
 }
 
 wire_struct!(OwnedRequest {
@@ -173,7 +176,8 @@ wire_struct!(OwnedRequest {
     record,
     key,
     format,
-    nolock
+    nolock,
+    nulls
 });
 
 impl OwnedRequest {
@@ -194,6 +198,7 @@ impl OwnedRequest {
             },
             format: r.format.map(str::to_string),
             nolock: r.nolock,
+            nulls: r.nulls.map(<[u8]>::to_vec),
         }
     }
 
@@ -216,6 +221,7 @@ impl OwnedRequest {
             },
             format: self.format.as_deref(),
             nolock: self.nolock,
+            nulls: self.nulls.as_deref(),
         }
     }
 }

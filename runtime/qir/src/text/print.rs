@@ -154,7 +154,8 @@ impl Printer<'_> {
                 out.push_str(" }");
                 out
             }
-            Type::Array { len, elem } => format!("array[{len}] of {}", self.ty(elem)),
+            Type::Array { len, elem, stride: None } => format!("array[{len}] of {}", self.ty(elem)),
+            Type::Array { len, elem, stride: Some(s) } => format!("array[{len}:{s}] of {}", self.ty(elem)),
             _ => ty.to_string(),
         }
     }

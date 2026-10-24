@@ -88,10 +88,7 @@ pub extern "sysv64" fn char_to_num(env: *mut Env, _argc: i64, _od: i64, dst: i64
     let s = Desc::of(sd);
     let raw = bytes(src.cast_unsigned(), s.size());
     let text = match s.kind {
-        Kind::VarChar => {
-            let n = usize::from(u16::from_be_bytes([raw[0], raw[1]]));
-            ccsid::from_ebcdic(&raw[2..2 + n.min(raw.len() - 2)])
-        }
+        Kind::VarChar => ccsid::from_ebcdic(s.var_data(raw)),
         _ => ccsid::from_ebcdic(raw),
     };
     let point = char::from(u8::try_from(flags & 0xFF).unwrap_or(b'.'));

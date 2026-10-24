@@ -485,7 +485,8 @@ pub(crate) fn source(out: &mut Out, c: &Compiled, o: &Options) {
     // The boxes after externally described files' declarations.
     let mut file_boxes: BTreeMap<usize, Vec<&crate::files::File>> = BTreeMap::new();
     let expdds = !c.ctl.option.iter().any(|x| x.eq_ignore_ascii_case("*NOEXPDDS"));
-    for f in c.files.iter().filter(|f| f.ext.is_some() && expdds) {
+    // A file parameter has none.
+    for f in c.files.iter().filter(|f| f.ext.is_some() && expdds && !f.param) {
         if let Some(i) = index_of(f.def_line) {
             file_boxes.entry(info[i].stmt_end).or_default().push(f);
         }

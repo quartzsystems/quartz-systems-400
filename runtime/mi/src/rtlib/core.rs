@@ -149,6 +149,12 @@ pub extern "sysv64" fn leave(env: *mut Env) {
     j.depth = j.depth.saturating_sub(1);
     let depth = j.depth;
     j.spaces.leave(depth);
+    while j.autos.last().is_some_and(|(d, _)| *d > depth) {
+        j.autos.pop();
+    }
+    while j.file_binds.last().is_some_and(|(d, _, _)| *d > depth) {
+        j.file_binds.pop();
+    }
     if j.ovr_top > depth
         && let Some(end) = j.ovr_end.clone()
     {
@@ -157,6 +163,16 @@ pub extern "sysv64" fn leave(env: *mut Env) {
     if j.resume_depth == Some(depth) {
         crate::except::resume(j);
     }
+}
+
+/// `auto_alloc(env, size, fill) -> addr`.
+pub extern "sysv64" fn auto_alloc(env: *mut Env, size: i64, fill: i64) -> i64 {
+    let j = job(env);
+    let n = usize::try_from(size).unwrap_or(0);
+    let mut b = vec![u8::try_from(fill & 0xFF).unwrap_or(0); n].into_boxed_slice();
+    let addr = b.as_mut_ptr() as i64;
+    j.autos.push((j.depth, b));
+    addr
 }
 
 /// `deref(env, lo, hi) -> addr`.
@@ -181,6 +197,11 @@ pub extern "sysv64" fn copy(dst: i64, src: i64, len: i64) {
 
 /// `mov_str(env, dst, dty, src, sty)`.
 pub extern "sysv64" fn mov_str(_env: *mut Env, dst: i64, dty: i64, src: i64, sty: i64) {
+    if let Some(b) = super::string::read_narrow(src, sty)
+        && super::string::write_narrow(dst, dty, &b)
+    {
+        return;
+    }
     let t = read_text(src, sty);
     write_text(dst, dty, &t);
 }

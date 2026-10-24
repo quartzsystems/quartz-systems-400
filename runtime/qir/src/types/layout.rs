@@ -38,9 +38,9 @@ impl Type {
                 _ => 8,
             },
             Self::Char(n) | Self::Bytes(n) => u64::from(*n),
-            Self::VarChar(n) => 2 + u64::from(*n),
+            Self::VarChar(n, p) => u64::from(*p) + u64::from(*n),
             Self::Ucs2(n) | Self::Graphic(n) => 2 * u64::from(*n),
-            Self::VarUcs2(n) => 2 + 2 * u64::from(*n),
+            Self::VarUcs2(n, p) | Self::VarGraphic(n, p) => u64::from(*p) + 2 * u64::from(*n),
             Self::Date(d) => u64::from(d.length()),
             Self::Timestamp(p) => {
                 if *p == 0 {
@@ -51,7 +51,11 @@ impl Type {
             }
             Self::Ptr | Self::ProcPtr => PTR_SIZE,
             Self::Struct(s) => u64::from(s.size),
-            Self::Array { len, elem } => u64::from(*len) * elem.size(),
+            Self::Array { len, elem, stride: None } => u64::from(*len) * elem.size(),
+            // The last element ends the array.
+            Self::Array { len, elem, stride: Some(s) } => {
+                u64::from(len.saturating_sub(1)) * u64::from(*s) + elem.size()
+            }
         }
     }
 

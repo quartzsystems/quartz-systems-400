@@ -1,0 +1,405 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   IR007
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   IR007
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; dds: CUSTF                                                                                            000000     000200
+      3 //; sqlfile: CUSTF                                                                                        000000     000300
+      4 ctl-opt dftactgrp(*no);                                                                                   000000     000400
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     5 dcl-f QSYSPRT printer(132);                                                                               000000     000500
+-     6 dcl-ds line len(132) end-ds;                                                                              000000     000600
+ ======>       aaaa
+ *RNF3530 00 a      000600  Data structure LINE has no valid subfields.
+-     7 dcl-f CUSTF keyed usage(*input) block(*no);                                                               000000     000700
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  CUSTF            {lib}/CUSTF                             *
+         * Record format(s) . . . . . :  CUSTR            CUSTR                                       *
+         *--------------------------------------------------------------------------------------------*
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+      8 dcl-ds r likerec(CUSTR);                                                                                  000000     000800
+-Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+-Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+      9 dcl-s n int(10);                                                                                          000000     000900
+ *RNF2318 00      5 000500  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-    10=ICUSTR                                                                                                              1000001
+         *--------------------------------------------------------------------------------------------*                     1
+         * RPG record format  . . . . :  CUSTR                                                        *                     1
+         * External format  . . . . . :  CUSTR : {lib}/CUSTF                                      *                     1
+         *--------------------------------------------------------------------------------------------*                     1
+     11=I                             P    1    3 0CUSNO                                                                    1000002
+     12=I                             A    4   23  NAME                                                                     1000003
+     13=I                             A   24   35  CITY                                                                     1000004
+     14=I                             P   36   40 2BAL                                                                      1000005
+-    15 setll (103) CUSTF;                                                                                        000000     001000
+     16 n = readsome(CUSTF : 3);                                                                                  000000     001100
+     17 line = 'a ' + %char(n);                                                                                   000000     001200
+     18 write QSYSPRT line;                                                                                       000000     001300
+     19 read CUSTF r;                                                                                             000000     001400
+     20 line = 'b ' + %char(r.CUSNO) + ' ' + r.NAME;                                                              000000     001500
+     21 write QSYSPRT line;                                                                                       000000     001600
+     22 line = 'c ' + %char(count(CUSTF)) + ' ' + %eof(CUSTF);                                                    000000     001700
+     23 write QSYSPRT line;                                                                                       000000     001800
+     24 if find(CUSTF : 999);                                                                                B01  000000     001900
+     25   line = 'd found';                                                                                   01  000000     002000
+     26 else;                                                                                                X01  000000     002100
+     27   line = 'd missing ' + %found(CUSTF);                                                                01  000000     002200
+     28 endif;                                                                                               E01  000000     002300
+     29 write QSYSPRT line;                                                                                       000000     002400
+     30 if find(CUSTF : 102);                                                                                B01  000000     002500
+     31   read CUSTF r;                                                                                       01  000000     002600
+     32   line = 'e ' + %char(r.CUSNO) + ' ' + %trimr(r.CITY);                                                01  000000     002700
+     33 endif;                                                                                               E01  000000     002800
+     34 write QSYSPRT line;                                                                                       000000     002900
+     35 *inlr = *on;                                                                                              000000     003000
+     36                                                                                                           000000     003100
+-    37 dcl-proc readsome;                                                                                        000000     003200
+-    38   dcl-pi *n int(10);                                                                                      000000     003300
+     39     f likefile(CUSTF);                                                                                    000000     003400
+     40     max int(10) value;                                                                                    000000     003500
+     41   end-pi;                                                                                                 000000     003600
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     42   dcl-ds x likerec(CUSTR);                                                                                000000     003700
+     43   dcl-s i int(10);                                                                                        000000     003800
+-    44   for i = 1 to max;                                                                                  B01  000000     003900
+     45     read f x;                                                                                         01  000000     004000
+     46     if %eof(f);                                                                                      B02  000000     004100
+     47       leave;                                                                                          02  000000     004200
+     48     endif;                                                                                           E02  000000     004300
+     49     line = '  ' + %char(x.CUSNO) + ' ' + x.NAME;                                                      01  000000     004400
+     50     write QSYSPRT line;                                                                               01  000000     004500
+     51   endfor;                                                                                            E01  000000     004600
+     52   return i - 1;                                                                                           000000     004700
+     53 end-proc;                                                                                                 000000     004800
+     54                                                                                                           000000     004900
+     55 dcl-proc count;                                                                                           000000     005000
+-    56   dcl-pi *n int(10);                                                                                      000000     005100
+     57     f likefile(CUSTF);                                                                                    000000     005200
+     58   end-pi;                                                                                                 000000     005300
+     59   dcl-ds x likerec(CUSTR);                                                                                000000     005400
+     60   dcl-s c int(10);                                                                                        000000     005500
+-    61   setll *loval f;                                                                                         000000     005600
+     62   read f x;                                                                                               000000     005700
+     63   dow not %eof(f);                                                                                   B01  000000     005800
+     64     c += 1;                                                                                           01  000000     005900
+     65     read f x;                                                                                         01  000000     006000
+     66   enddo;                                                                                             E01  000000     006100
+     67   return c;                                                                                               000000     006200
+     68 end-proc;                                                                                                 000000     006300
+     69                                                                                                           000000     006400
+     70 dcl-proc find;                                                                                            000000     006500
+-    71   dcl-pi *n ind;                                                                                          000000     006600
+     72     f likefile(CUSTF);                                                                                    000000     006700
+     73     key packed(5) value;                                                                                  000000     006800
+     74   end-pi;                                                                                                 000000     006900
+     75   dcl-ds x likerec(CUSTR);                                                                                000000     007000
+-    76   chain (key) f x;                                                                                        000000     007100
+     77   if %found(f);                                                                                      B01  000000     007200
+     78     setll (key) f;                                                                                    01  000000     007300
+     79   endif;                                                                                             E01  000000     007400
+     80   return %found(f);                                                                                       000000     007500
+     81 end-proc;                                                                                                 000000     007600
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+1{heading} page 5
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+ *RNF7066 00      7 000700  Record-Format CUSTR not used for input or output.
+ *RNF7066 00     39 003400  Record-Format CUSTR not used for input or output.
+ *RNF7066 00     57 005200  Record-Format CUSTR not used for input or output.
+ *RNF7066 00     72 006700  Record-Format CUSTR not used for input or output.
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                    K e y   F i e l d   I n f o r m a t i o n
+0         File           Internal    External
+            Record       field name  field name  Attributes
+0      2  CUSTF
+            CUSTR
+                         CUSNO                   PACK      5,0 SIGNED
+0 * * * * *   E N D   O F   K E Y   F I E L D   I N F O R M A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          CUSTF             DISK                    7D     15      16      19
+                                                   22      22      24      27
+                                                   30      31      39      57
+                                                   72
+            CUSTR                                   7D      8      10      39
+                                                   42      57      59      72
+                                                   75
+          QSYSPRT           PRINTER                 5D     18      21      23
+                                                   29      34      50
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   35M
+ *RNF7031 BAL               P(9,2)                 14D
+ *RNF7031 CITY              A(12)                  13D
+          COUNT             I(10,0)                22      55
+                            PROTOTYPE
+ *RNF7031 CUSNO             P(5,0)                 11D
+          FIND              N(1)                   24      30      70
+                            PROTOTYPE
+          LINE              DS(132)                 6D     17M     18      20M
+                                                   21      22M     23      25M
+                                                   27M     29      32M     34
+                                                   49M     50
+          N                 I(10,0)                 9D     16M     17
+ *RNF7031 NAME              A(20)                  12D
+          R                 DS(40)                  8D     19M     20      20
+                                                   31M     32      32
+ *RNF7031   BAL             P(9,2)                  8D
+            CITY            A(12)                   8D     32
+            CUSNO           P(5,0)                  8D     20      32
+            NAME            A(20)                   8D     20
+          READSOME          I(10,0)                16      37
+                            PROTOTYPE
+       Field References for subprocedure READSOME
+0         File              Device             References (D=Defined)
+            Record
+          F                 DISK                   39D     45      46
+            CUSTR                                  39D
+0         Field             Attributes         References (D=Defined M=Modified)
+          I                 I(10,0)                43D     44      52
+          MAX               I(10,0)                40D     44
+          X                 DS(40)                 42D     45M     49      49
+ *RNF7031   BAL             P(9,2)                 42D
+ *RNF7031   CITY            A(12)                  42D
+            CUSNO           P(5,0)                 42D     49
+            NAME            A(20)                  42D     49
+       Field References for subprocedure COUNT
+0         File              Device             References (D=Defined)
+1{heading} page 8
+0           Record
+          F                 DISK                   57D     61      62      63
+                                                   65
+            CUSTR                                  57D
+0         Field             Attributes         References (D=Defined M=Modified)
+          C                 I(10,0)                60D     64M     67
+          X                 DS(40)                 59D     62M     65M
+ *RNF7031   BAL             P(9,2)                 59D
+ *RNF7031   CITY            A(12)                  59D
+ *RNF7031   CUSNO           P(5,0)                 59D
+ *RNF7031   NAME            A(20)                  59D
+       Field References for subprocedure FIND
+0         File              Device             References (D=Defined)
+            Record
+          F                 DISK                   72D     76      77      78
+                                                   80
+            CUSTR                                  72D
+0         Field             Attributes         References (D=Defined M=Modified)
+          KEY               P(5,0)                 73D     76      78
+          X                 DS(40)                 75D     76M
+ *RNF7031   BAL             P(9,2)                 75D
+ *RNF7031   CITY            A(12)                  75D
+ *RNF7031   CUSNO           P(5,0)                 75D
+ *RNF7031   NAME            A(20)                  75D
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                       35M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 10
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+ *RNF7031 00     15 The name or indicator is not referenced.
+ *RNF7066 00      4 Record-Format name of Externally-Described file is not used.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 11
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :       21
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :       21
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       81
+     Specifications  . . . . . . . . :       69
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        5
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program IR007 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

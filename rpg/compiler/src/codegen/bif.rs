@@ -191,7 +191,7 @@ impl Gen<'_> {
                 }
                 let s = self.str_arg_or(&args[0], ids::TRIM_PARM, name)?;
                 let len = s.ty.str_len().unwrap_or(1).max(1);
-                let t = self.tmp(&Ty::VarChar(len, 2));
+                let t = self.tmp(&Ty::varchar(len));
                 let op = match name {
                     "%TRIM" => "str.trim",
                     "%TRIML" => "str.triml",
@@ -237,14 +237,16 @@ impl Gen<'_> {
                     return None;
                 }
                 let start = self.int_reg(&sv)?;
-                // A constant length gives a fixed result of that length.
+                // A constant length gives a fixed result of that length,
+                // in the source's text class.
+                let c = super::ucs2::class(&s.ty).unwrap_or(super::ucs2::TextClass::Char);
                 let (ty, l) = match args.get(2) {
                     Some(Expr::Lit(Lit::Num(n), _)) => {
                         let k: u32 = n.parse().unwrap_or(1);
-                        (Ty::Char(k.max(1)), Some(self.int_arg(&args[2])?))
+                        (super::ucs2::text_ty(c, k.max(1), false), Some(self.int_arg(&args[2])?))
                     }
-                    Some(e) => (Ty::VarChar(len, 2), Some(self.int_arg(e)?)),
-                    None => (Ty::VarChar(len, 2), None),
+                    Some(e) => (super::ucs2::text_ty(c, len, true), Some(self.int_arg(e)?)),
+                    None => (super::ucs2::text_ty(c, len, true), None),
                 };
                 let t = self.tmp(&ty);
                 match l {
@@ -332,14 +334,14 @@ impl Gen<'_> {
                 let src = self.str_arg(&args[1])?;
                 // An empty replacement: a varying temporary of length 0.
                 let repl = if repl.kind == Vk::Lit && repl.ty.str_len() == Some(0) {
-                    let t = self.tmp(&Ty::VarChar(1, 2));
+                    let t = self.tmp(&Ty::varchar(1));
                     self.b.ins(format!("str.setlen {}, 0", t.op));
                     t
                 } else {
                     repl
                 };
                 let n = repl.ty.str_len().unwrap_or(0) + src.ty.str_len().unwrap_or(0);
-                let t = self.tmp(&Ty::VarChar(n.max(1), 2));
+                let t = self.tmp(&Ty::varchar(n.max(1)));
                 let start = match args.get(2) {
                     Some(e) => self.int_arg(e)?,
                     None => "1".into(),
@@ -527,7 +529,15 @@ impl Gen<'_> {
             }
             "%PADDR" => {
                 let n = match args.first()? {
-                    Expr::Lit(Lit::Char(s), _) => s.to_ascii_uppercase(),
+                    Expr::Lit(Lit::Char(s), _) => {
+                        // A procedure of another module, bound by its name.
+                        let n = s.to_ascii_uppercase();
+                        if !self.local_procs.contains(&n) && self.t.find(self.scope, &n).is_none() {
+                            let ir = mangle(&n);
+                            self.externs.entry(ir.clone()).or_insert_with(|| format!("extern proc {ir}()"));
+                        }
+                        n
+                    }
                     Expr::Ref { name: n, .. } => {
                         if self.t.find(self.scope, n).is_none() {
                             self.err(ids::NOT_DEFINED, 30, n.clone());
@@ -538,8 +548,18 @@ impl Gen<'_> {
                     }
                     _ => return None,
                 };
+                // A prototype's procedure is declared as a call would.
+                let mut ir = mangle(&n);
+                if !self.local_procs.contains(&n.to_ascii_uppercase())
+                    && let Some(Some(crate::syms::Kind::Proto(pi))) = self.t.find(self.scope, &n.to_ascii_uppercase()).map(|i| self.t.syms[i].kind.clone())
+                {
+                    let p = self.t.protos[pi].clone();
+                    if p.extpgm.is_none() {
+                        ir = self.declare_callee(&p);
+                    }
+                }
                 let r = self.b.reg();
-                self.b.ins(format!("{r} = procaddr {}", mangle(&n)));
+                self.b.ins(format!("{r} = procaddr {ir}"));
                 Some(V::reg(Ty::ProcPtr, r))
             }
             "%ALLOC" => {
@@ -711,7 +731,7 @@ impl Gen<'_> {
         };
         let len = u32::from(d) + 2 + if s > 0 && d == s { 1 } else { 0 };
         let len = if matches!(v.ty, Ty::Float(_)) { 30 } else { len };
-        let t = self.tmp(&Ty::VarChar(len.max(1), 2));
+        let t = self.tmp(&Ty::varchar(len.max(1)));
         let src = self.num_place(v);
         let desc = self.desc_of(&src);
         self.rt_proc("_QRNX_CHARNUM", "($dst: varchar(1) *VARSIZE, $src: bytes(1) *VARSIZE, byval $desc: i64, byval $point: i32)");
@@ -816,7 +836,7 @@ impl Gen<'_> {
         let opts = qdecimal::EditOpts::default();
         let ch = code.chars().next()?;
         let width = qdecimal::code_width(shape, ch, &opts).unwrap_or(u32::from(d) as usize + 4) + 1;
-        let t = self.tmp(&Ty::VarChar(u32::try_from(width).unwrap_or(40), 2));
+        let t = self.tmp(&Ty::varchar(u32::try_from(width).unwrap_or(40)));
         let desc = self.desc_of(&src);
         self.rt_proc(
             "_QRNX_EDITC",
@@ -889,7 +909,7 @@ impl Gen<'_> {
                 }
                 let p = self.b.reg();
                 self.b.ins(format!("{p} = addr {}", base.op));
-                let off = if base.ty.is_varying() { start + 1 } else { start - 1 };
+                let off = start - 1 + base.ty.var_prefix().unwrap_or(0);
                 Some(V::place(Ty::Char(n), format!("[{p} +{off}]:char({n})")))
             }
             "%NULLIND" => self.nullind(args),
@@ -950,6 +970,9 @@ impl Gen<'_> {
             }
             return Some("*OMIT".into());
         }
+        if prm.likefile.is_some() {
+            return self.file_argument(e);
+        }
         let v = self.expr(e, Want::default())?;
         let v = if matches!(prm.ty, Ty::Ds(_)) { v } else { self.as_chars(&v) };
         // Structures LIKEDS the same one are the same type.
@@ -962,7 +985,7 @@ impl Gen<'_> {
         // by a null byte.
         if prm.string && prm.ty == Ty::Ptr && v.ty.is_string() {
             let max = v.ty.str_len().unwrap_or(1) + 1;
-            let t = self.tmp(&Ty::VarChar(max, 2));
+            let t = self.tmp(&Ty::varchar(max));
             self.b.ins(format!("str.cat {}, {}, x\"00\"", t.op, v.op));
             let a = self.b.reg();
             self.b.ins(format!("{a} = addr {}", t.op));
@@ -1067,6 +1090,29 @@ impl Gen<'_> {
         }
     }
 
+    /// A file passed to a `LIKEFILE` parameter: its control block, with
+    /// the runtime's handle of the file in it.
+    fn file_argument(&mut self, e: &Expr) -> Option<String> {
+        let f = match e {
+            Expr::Ref { name, steps, .. } if steps.is_empty() => match self.t.find(self.scope, name).map(|i| self.t.syms[i].kind.clone()) {
+                Some(Some(crate::syms::Kind::File(i))) => self.files.get(i).cloned(),
+                _ => None,
+            },
+            _ => None,
+        };
+        let Some(f) = f.filter(|f| f.dev == crate::files::Dev::Disk) else {
+            self.err(ids::PARM_TYPE, 30, "");
+            return None;
+        };
+        let n = mangle(&f.name);
+        if !f.param {
+            let h = self.b.reg();
+            self.b.ins(format!("{h} = fileref {n}"));
+            self.b.ins(format!("store $fcb_{n}.h, {h}"));
+        }
+        Some(format!("$fcb_{n}"))
+    }
+
     /// A call through the procedure pointer `EXTPROC` names: the
     /// `callpp %p as PROTO` head, the signature declared as a prototype.
     fn through_pointer(&mut self, p: &Proto) -> Option<String> {
@@ -1094,7 +1140,7 @@ impl Gen<'_> {
             .iter()
             .enumerate()
             .map(|(i, prm)| {
-                let ty = self.t.ir_type(&prm.ty);
+                let ty = if prm.likefile.is_some() { "fcb_".to_string() } else { self.t.ir_type(&prm.ty) };
                 let ty = if prm.dim > 0 { format!("array[{}] of {ty}", prm.dim) } else { ty };
                 let mut s = String::new();
                 if prm.value {

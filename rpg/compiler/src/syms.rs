@@ -127,6 +127,11 @@ pub struct Sym {
     pub fromfile: String,
     /// `TOFILE`: the file the array is written to at the end.
     pub tofile: String,
+    /// Bytes between elements when not the element's size: a subfield
+    /// that overlays an array is an array with the base's spacing.
+    pub stride: u32,
+    /// The array subfield whose elements an overlaying array lies in.
+    pub ovl_root: Option<SymId>,
 }
 
 /// A data structure's layout.
@@ -180,6 +185,8 @@ pub struct Parm {
     pub string: bool,
     /// `OPTIONS(*TRIM)`.
     pub trim: bool,
+    /// `LIKEFILE(parent)`: a file, passed as its control block.
+    pub likefile: Option<String>,
 }
 
 /// A prototype or a procedure interface.
@@ -360,6 +367,12 @@ impl Table {
     #[must_use]
     pub fn ir_storage(&self, s: &Sym) -> String {
         let t = self.ir_type(&s.ty);
-        if s.dim > 0 { format!("array[{}] of {t}", s.dim) } else { t }
+        if s.dim == 0 {
+            t
+        } else if s.stride > 0 && s.stride != self.size(&s.ty) {
+            format!("array[{}:{}] of {t}", s.dim, s.stride)
+        } else {
+            format!("array[{}] of {t}", s.dim)
+        }
     }
 }

@@ -2,6 +2,4 @@
 # line with the reason; the kit reports them apart and does not fail on
 # them. Each has an entry in docs/RPG_OPEN_QUESTIONS.md or is being worked.
 EXP118 float plus a short decimal: IBM converts 5974.6 to the nearest double here, where longer decimals go toward zero (open question)
-COV118 a null-capable file field read as null under ALWNULL(*USRCTL): the record's null map does not reach RPG (PHASE9.md, Blocked)
-COV129 a LIKEFILE parameter: a file passed to a procedure needs a file handle the IR does not have (PHASE9.md, Blocked)
 COV131 %GRAPH under CCSID(*GRAPH:835): pub400's job cannot convert its CCSID 273 data to 835 and the program fails; QS/400 converts (open question)

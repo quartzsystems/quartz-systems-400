@@ -54,7 +54,46 @@ fn file_of(env: *mut Env, file: i64) -> Option<(FileKey, qir::FileRef)> {
         module: mi,
         file: u32::try_from(file).ok()?,
     };
+    // A file parameter is the caller's file.
+    if let Some((_, _, h)) = j.file_binds.iter().rev().find(|(_, k, _)| *k == key) {
+        return j.file_handles.get(*h).cloned();
+    }
     Some((key, fr))
+}
+
+/// `file_ref(env, file) -> handle`.
+pub extern "sysv64" fn file_ref(env: *mut Env, file: i64) -> i32 {
+    let Some((key, fr)) = file_of(env, file) else {
+        raise_on(job(env), Cond::Mch3601);
+        return -1;
+    };
+    let j = job(env);
+    let i = match j.file_handles.iter().position(|(k, _)| *k == key) {
+        Some(i) => i,
+        None => {
+            j.file_handles.push((key, fr));
+            j.file_handles.len() - 1
+        }
+    };
+    i32::try_from(i).unwrap_or(-1)
+}
+
+/// `file_bind(env, file, handle)`.
+pub extern "sysv64" fn file_bind(env: *mut Env, file: i64, handle: i64) {
+    let j = job(env);
+    let h = usize::try_from(handle).ok().filter(|h| *h < j.file_handles.len());
+    let statics = env_of(env).statics as u64;
+    let module = j
+        .act
+        .frames
+        .last()
+        .and_then(|f| f.program.as_ref().and_then(|p| p.proc_of(f.code)).map(|(m, _)| m));
+    let (Some(h), Some(module), Ok(file)) = (h, module, u32::try_from(file)) else {
+        raise_on(j, Cond::Mch3601);
+        return;
+    };
+    let depth = j.depth;
+    j.file_binds.push((depth, FileKey { statics, module, file }, h));
 }
 
 /// Send an I/O failure as an escape to the running entry.
@@ -414,6 +453,8 @@ pub extern "sysv64" fn db_io(
     rrn: i64,
     fmt: i64,
     nolock: i64,
+    nulls: i64,
+    nulls_desc: i64,
 ) -> i32 {
     let Some((fkey, _)) = file_of(env, file) else {
         return CLOSED;
@@ -462,12 +503,20 @@ pub extern "sysv64" fn db_io(
         }
     };
     let format = (fmt != 0).then(|| ccsid::decode_trimmed(bytes(fmt, 10)));
+    let nulls_len = if nulls == 0 {
+        0
+    } else {
+        usize::try_from(ty(nulls_desc).size()).unwrap_or(0)
+    };
+    let null_map: Option<Vec<u8>> = (nulls != 0 && (op == IoOp::Write || op == IoOp::Update))
+        .then(|| bytes(nulls, nulls_len).to_vec());
     let req = IoRequest {
         op,
         record: record.as_deref(),
         key: keyref,
         format: format.as_deref(),
         nolock: nolock != 0,
+        nulls: null_map.as_deref(),
     };
     let Some(io) = j.io.as_mut() else {
         return CLOSED;
@@ -481,6 +530,15 @@ pub extern "sysv64" fn db_io(
         buf[..n].copy_from_slice(&data[..n]);
         if n < rec_len {
             buf[n..].fill(0x40);
+        }
+        // The record's null map, a field not given none.
+        if nulls != 0 {
+            let out = bytes(nulls, nulls_len);
+            out.fill(0xF0);
+            if let Some(m) = &r.nulls {
+                let k = m.len().min(nulls_len);
+                out[..k].copy_from_slice(&m[..k]);
+            }
         }
     }
     write_infds(infds, infds_len, &info, &r, true, op.name(), j.abi.cur_stmt);

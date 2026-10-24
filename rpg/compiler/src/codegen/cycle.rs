@@ -100,7 +100,7 @@ fn gather(g: &mut Gen<'_>, f: &File, slots: &[Slot], len: u32) -> String {
     let q = g.b.reg();
     g.b.ins(format!("{q} = addr {t}"));
     let rt = g.b.reg();
-    g.b.ins(format!("{rt} = load $rt_{n}"));
+    g.b.ins(format!("{rt} = load $fcb_{n}.rt"));
     let mut sorted = slots.to_vec();
     sorted.sort_by_key(|s| std::cmp::Reverse(s.n));
     let mut at = 0;
@@ -247,7 +247,7 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
         g.b.term(format!("brif {ok}, {got}, {next}"));
         g.b.place(&got);
         if g.t.recfmts.iter().any(|r| r.file_name == f.name) {
-            g.b.ins(format!("store $rt_{n}, 0"));
+            g.b.ins(format!("store $fcb_{n}.rt, 0"));
         } else {
             g.identify_as(f, false);
         }

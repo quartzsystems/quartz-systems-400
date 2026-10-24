@@ -385,6 +385,50 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
             diags.push(Diag::new(crate::diag::ids::NO_RETURN, 30, p.at).arg(pname.clone()));
         }
         for (k, prm) in proto.parms.iter().enumerate() {
+            // A file parameter: a file of the procedure like its parent,
+            // its control block the caller's.
+            if let Some(parent) = &prm.likefile {
+                let at = iface.children.get(k).map_or(iface.at, |c| c.at);
+                match files.iter().find(|f| f.name == *parent && !f.param).cloned() {
+                    Some(mut f) => {
+                        f.name.clone_from(&prm.name);
+                        f.scope = scope;
+                        f.param = true;
+                        f.qualified = true;
+                        f.infds = None;
+                        f.likefile = Some(parent.clone());
+                        f.def_line = at.line;
+                        f.ir_index = u32::try_from(files.len()).unwrap_or(0);
+                        let s = Sym {
+                            name: prm.name.clone(),
+                            kind: Some(Kind::File(files.len())),
+                            ir: format!("$fcb_{}", mangle(&prm.name)),
+                            scope,
+                            def_line: at.line,
+                            ..Sym::default()
+                        };
+                        if t.add(s).is_err() {
+                            diags.push(Diag::new(crate::diag::ids::DUPLICATE, 30, at).arg(prm.name.clone()));
+                        }
+                        // Its own record formats, the parent's, qualified.
+                        let copies: Vec<_> = t
+                            .recfmts
+                            .iter()
+                            .filter(|r| r.file_name == *parent)
+                            .map(|r| crate::extfiles::RecFmt {
+                                file: files.len(),
+                                file_name: prm.name.clone(),
+                                qualified: true,
+                                ..r.clone()
+                            })
+                            .collect();
+                        t.recfmts.extend(copies);
+                        files.push(f);
+                    }
+                    None => diags.push(Diag::new(crate::diag::ids::NOT_DEFINED, 30, at).arg(parent.clone())),
+                }
+                continue;
+            }
             let s = Sym {
                 name: prm.name.clone(),
                 kind: Some(Kind::Param),

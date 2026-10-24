@@ -127,7 +127,13 @@ impl StoreIo {
         }
     }
 
-    fn result_of(odp: &OdpRef, record: Option<db::odp::Record>) -> IoResult {
+    fn result_of(odp: &OdpRef, record: Option<db::odp::Record>, fmt: &db::format::FormatDef) -> IoResult {
+        // The null map as a byte per field.
+        let nulls = record.as_ref().map(|r| {
+            (0..fmt.format.fields.len())
+                .map(|i| if db::record::is_null(&r.null_map, fmt.null_index(i)) { 0xF1 } else { 0xF0 })
+                .collect()
+        });
         let o = odp.borrow();
         IoResult {
             status: o.fb.status,
@@ -140,6 +146,7 @@ impl StoreIo {
             format: o.fb.format.to_string(),
             member: o.fb.member.to_string(),
             record: record.map(|r| r.data),
+            nulls,
         }
     }
 }
@@ -281,7 +288,15 @@ impl IoSource for StoreIo {
         let odp = Rc::clone(&entry.odp);
         let mut o = odp.borrow_mut();
         let rec_len = fmt.format.record_len as usize;
-        let null_map = vec![0u8; usize::from(fmt.null_map_len)];
+        // The request's null map (a byte per field) as the record's bits.
+        let mut null_map = vec![0u8; usize::from(fmt.null_map_len)];
+        if let Some(n) = req.nulls {
+            for (i, b) in n.iter().enumerate() {
+                if let Some(x) = fmt.null_index(i) {
+                    db::record::set_null(&mut null_map, x, *b == 0xF1);
+                }
+            }
+        }
         let buffer = |r: Option<&[u8]>| {
             let mut v = r.map(<[u8]>::to_vec).unwrap_or_default();
             v.resize(rec_len, 0x40);
@@ -311,7 +326,7 @@ impl IoSource for StoreIo {
         };
         drop(o);
         let record = result.unwrap_or(None);
-        let mut out = Self::result_of(&odp, record);
+        let mut out = Self::result_of(&odp, record, fmt);
         if let Err(e) = txn.commit() {
             out.status = db::odp::status::OTHER;
             out.msgid = Some(format!("commit: {e}"));

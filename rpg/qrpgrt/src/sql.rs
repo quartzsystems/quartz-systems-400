@@ -80,11 +80,7 @@ fn time_fmt(extra: i64) -> (TimeFmt, Option<char>) {
 fn read_value(addr: u64, d: &Desc, extra: i64) -> Value {
     match d.kind {
         Kind::Char => Value::Str(text_of(addr, d.size())),
-        Kind::VarChar => {
-            let b = bytes(addr, 2);
-            let n = usize::from(u16::from_be_bytes([b[0], b[1]])).min(d.len as usize);
-            Value::Str(ccsid::from_ebcdic(&bytes(addr, 2 + n)[2..]))
-        }
+        Kind::VarChar => Value::Str(ccsid::from_ebcdic(d.var_data(bytes(addr, d.size())))),
         Kind::Ind => Value::Str(text_of(addr, 1)),
         Kind::Float => {
             let f = read_f64(addr, d).unwrap_or(0.0);
@@ -260,7 +256,8 @@ fn image(v: &Value, d: &Desc, extra: i64) -> Result<(Vec<u8>, Put), (i32, &'stat
             let put = if e.len() > cap && e[cap..].iter().any(|b| *b != BLANK) { Put::Truncated(e.len()) } else { Put::Ok };
             let mut body: Vec<u8> = e.into_iter().take(cap).collect();
             if d.kind == Kind::VarChar {
-                let mut out = u16::try_from(body.len()).unwrap_or(0).to_be_bytes().to_vec();
+                let mut out = vec![0; d.prefix()];
+                crate::value::set_var_len(&mut out, d.prefix(), body.len());
                 out.append(&mut body);
                 return Ok((out, put));
             }
@@ -346,7 +343,7 @@ fn num_image(v: &Decimal, d: &Desc) -> Option<Vec<u8>> {
 fn empty(d: &Desc, extra: i64) -> Vec<u8> {
     match d.kind {
         Kind::Char | Kind::Ind => vec![BLANK; d.size()],
-        Kind::VarChar => vec![0, 0],
+        Kind::VarChar => vec![0; d.prefix()],
         Kind::Date => ebcdic(&Date::new(1, 1, 1).map_or(String::new(), |x| x.render(date_fmt(extra).0, date_fmt(extra).1))),
         Kind::Time => ebcdic("00.00.00"),
         Kind::Timestamp => {

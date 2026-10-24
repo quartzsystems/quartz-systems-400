@@ -271,6 +271,12 @@ impl Printer<'_> {
                     IoInst::DbFb { dst, file: f } => {
                         format!("{} = dbfb {}", r(*dst), file(*f))
                     }
+                    IoInst::FileRef { dst, file: f } => {
+                        format!("{} = fileref {}", r(*dst), file(*f))
+                    }
+                    IoInst::FileBind { file: f, handle } => {
+                        format!("filebind {}, {}", file(*f), o(handle))
+                    }
                     IoInst::DbIo {
                         dst,
                         file: f,
@@ -280,6 +286,7 @@ impl Printer<'_> {
                         rrn,
                         fmt,
                         nolock,
+                        nulls,
                     } => {
                         let mut s = format!("{} = dbio {} {}", r(*dst), file(*f), op.name());
                         if let Some(x) = rec {
@@ -296,6 +303,9 @@ impl Printer<'_> {
                         }
                         if *nolock {
                             s.push_str(" nolock");
+                        }
+                        if let Some(x) = nulls {
+                            let _ = write!(s, " nulls({})", pl(x));
                         }
                         s
                     }

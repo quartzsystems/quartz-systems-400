@@ -266,9 +266,12 @@ impl R<'_> {
             11 => Type::Zoned(self.shape()?),
             26 => Type::Bin(self.shape()?),
             12 => Type::Char(self.u32()?),
-            13 => Type::VarChar(self.u32()?),
+            13 => Type::VarChar(self.u32()?, 2),
+            27 => Type::VarChar(self.u32()?, self.u8()?),
             14 => Type::Ucs2(self.u32()?),
-            15 => Type::VarUcs2(self.u32()?),
+            15 => Type::VarUcs2(self.u32()?, 2),
+            28 => Type::VarUcs2(self.u32()?, self.u8()?),
+            29 => Type::VarGraphic(self.u32()?, self.u8()?),
             16 => Type::Graphic(self.u32()?),
             17 => Type::Date(self.tag(&DATE_FMTS, "date format")?),
             18 => Type::Time(self.tag(&TIME_FMTS, "time format")?),
@@ -292,6 +295,16 @@ impl R<'_> {
                 Type::Array {
                     len,
                     elem: Box::new(self.ty()?),
+                    stride: None,
+                }
+            }
+            30 => {
+                let len = self.u32()?;
+                let stride = Some(self.u32()?);
+                Type::Array {
+                    len,
+                    elem: Box::new(self.ty()?),
+                    stride,
                 }
             }
             25 => Type::Bytes(self.u32()?),
@@ -862,6 +875,7 @@ impl R<'_> {
                 rrn: self.opt_operand()?,
                 fmt: self.opt(Self::str)?,
                 nolock: self.bool()?,
+                nulls: if self.version >= 5 { self.opt_place()? } else { None },
             },
             3 => IoInst::DevIo {
                 dst: self.reg()?,
@@ -876,6 +890,14 @@ impl R<'_> {
                 },
                 rrn: if self.version >= 3 { self.opt_operand()? } else { None },
                 inds: if self.version >= 3 { self.opt_place()? } else { None },
+            },
+            5 => IoInst::FileRef {
+                dst: self.reg()?,
+                file: self.u32()?,
+            },
+            6 => IoInst::FileBind {
+                file: self.u32()?,
+                handle: self.operand()?,
             },
             v => return Err(bad(format!("{v} is not an I/O instruction"))),
         })

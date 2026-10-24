@@ -118,16 +118,19 @@ impl Gen<'_> {
         self.literal(&rpgfront::ast::Lit::Char(text))
     }
 
+    /// A null-capable field's null indicator, declared once.
+    pub fn null_place(&mut self, s: crate::syms::SymId) -> String {
+        let place = format!("{}__null", self.t.syms[s].ir.replace('.', "_"));
+        self.externs.entry(place.clone()).or_insert_with(|| format!("static {place}: ind inz(*OFF)"));
+        place
+    }
+
     /// `%NULLIND(field)`: the field's null indicator, a place.
     pub fn nullind(&mut self, args: &[Expr]) -> Option<V> {
         let v = self.expr(args.first()?, Want::default())?;
         let null = v.sym.filter(|s| self.t.syms[*s].nullind);
         match null {
-            Some(s) => {
-                let place = format!("{}__null", self.t.syms[s].ir.replace('.', "_"));
-                self.externs.entry(place.clone()).or_insert_with(|| format!("static {place}: ind inz(*OFF)"));
-                Some(V::place(Ty::Ind, place))
-            }
+            Some(s) => Some(V::place(Ty::Ind, self.null_place(s))),
             None => {
                 self.err(ids::NOT_NULL_CAPABLE, 20, "%NULLIND");
                 None
@@ -195,7 +198,7 @@ impl Gen<'_> {
         let single = v.ty == Ty::Float(4);
         let f = self.float_reg(&v);
         let n = if single { 14 } else { 23 };
-        let t = self.tmp(&Ty::VarChar(n, 2));
+        let t = self.tmp(&Ty::varchar(n));
         self.rt_proc("_QRNX_EDITFLT", "($dst: varchar(23) *VARSIZE, byval $f: f64, byval $single: i32)");
         self.b.ins(format!("callb _QRNX_EDITFLT({}, {f}, {})", t.op, i32::from(single)));
         Some(t)

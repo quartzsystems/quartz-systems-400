@@ -121,7 +121,7 @@ pub enum RtFn {
     /// `db_close(env, file) -> status`.
     DbClose = 44,
     /// `db_io(env, file, op, rec, rec_desc, key, key_desc, rrn, fmt,
-    /// nolock) -> status`.
+    /// nolock, nulls, nulls_desc) -> status`.
     DbIo = 45,
     /// `dev_io(env, file, op, fmt, rec, rec_desc) -> status`.
     DevIo = 46,
@@ -152,6 +152,16 @@ pub enum RtFn {
     /// record's number (0 for none), `inds` the separate indicator area
     /// (0 for none).
     DspIo = 55,
+    /// `auto_alloc(env, size, fill) -> addr`: automatic storage too
+    /// large for the native stack, `size` bytes of `fill`, owned by the
+    /// current call-stack entry and released when it leaves.
+    AutoAlloc = 56,
+    /// `file_ref(env, file) -> handle`: the open file as this activation
+    /// has it, as a handle a call can pass.
+    FileRef = 57,
+    /// `file_bind(env, file, handle)`: the declared file is the handle's
+    /// until the current procedure returns.
+    FileBind = 58,
 }
 
 /// The `db_io` code that asks for the last operation's feedback bits
@@ -202,7 +212,7 @@ pub fn dtaara_op_code(op: qir::DtaaraOp) -> i64 {
 }
 
 /// Every runtime function, in table order.
-pub const RT_FNS: [RtFn; 56] = [
+pub const RT_FNS: [RtFn; 59] = [
     RtFn::Raise,
     RtFn::Enter,
     RtFn::Leave,
@@ -259,6 +269,9 @@ pub const RT_FNS: [RtFn; 56] = [
     RtFn::Attn,
     RtFn::PrtCtl,
     RtFn::DspIo,
+    RtFn::AutoAlloc,
+    RtFn::FileRef,
+    RtFn::FileBind,
 ];
 
 impl RtFn {
@@ -334,6 +347,9 @@ impl RtFn {
             Self::Attn => "attn",
             Self::PrtCtl => "prt_ctl",
             Self::DspIo => "dsp_io",
+            Self::AutoAlloc => "auto_alloc",
+            Self::FileRef => "file_ref",
+            Self::FileBind => "file_bind",
         }
     }
 
@@ -388,7 +404,7 @@ impl RtFn {
             Self::RmvMsg => (4, None),
             Self::DbOpen => (3, Some(types::I32)),
             Self::DbClose => (1, Some(types::I32)),
-            Self::DbIo => (9, Some(types::I32)),
+            Self::DbIo => (11, Some(types::I32)),
             Self::DevIo => (5, Some(types::I32)),
             Self::Dtaara => (5, None),
             Self::DtaqSnd => (4, None),
@@ -399,6 +415,9 @@ impl RtFn {
             Self::Attn => (0, None),
             Self::PrtCtl => (5, Some(types::I32)),
             Self::DspIo => (8, Some(types::I32)),
+            Self::AutoAlloc => (2, Some(types::I64)),
+            Self::FileRef => (1, Some(types::I32)),
+            Self::FileBind => (2, None),
         }
     }
 

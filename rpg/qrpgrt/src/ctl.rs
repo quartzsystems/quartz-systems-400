@@ -139,8 +139,7 @@ pub extern "sysv64" fn altseq(_env: *mut Env, _argc: i64, _od: i64, dst: i64, sr
     let d = crate::value::Desc::of(sd);
     let raw = crate::value::bytes(src.cast_unsigned(), d.size()).to_vec();
     let data = if d.kind == crate::value::Kind::VarChar {
-        let n = usize::from(u16::from_be_bytes([raw[0], raw[1]]));
-        raw[2..2 + n.min(raw.len() - 2)].to_vec()
+        d.var_data(&raw).to_vec()
     } else {
         raw
     };

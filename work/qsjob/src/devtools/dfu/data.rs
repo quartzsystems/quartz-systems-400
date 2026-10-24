@@ -188,6 +188,7 @@ impl Open {
                 key,
                 format,
                 nolock,
+                nulls: None,
             },
         )
     }

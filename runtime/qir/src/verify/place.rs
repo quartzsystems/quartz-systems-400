@@ -66,7 +66,7 @@ pub fn resolve(module: &Module, proc: &Proc, place: &Place) -> Result<Access, St
             }
             Step::Index(ix) => {
                 let (elem, len) = ty.array().ok_or_else(|| format!("{ty} is not an array"))?;
-                let stride = elem.size();
+                let stride = ty.stride().unwrap_or(0);
                 match ix {
                     Index::Const(i) => {
                         if *i >= len {

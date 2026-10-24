@@ -38,10 +38,20 @@ impl Parser {
             "zoned" => Type::Zoned(self.shape()?),
             "bin" => Type::Bin(self.shape()?),
             "char" => Type::Char(self.paren(Self::u32)?),
-            "varchar" => Type::VarChar(self.paren(Self::u32)?),
+            "varchar" => {
+                let (n, p) = self.var_len()?;
+                Type::VarChar(n, p)
+            }
             "ucs2" => Type::Ucs2(self.paren(Self::u32)?),
-            "varucs2" => Type::VarUcs2(self.paren(Self::u32)?),
+            "varucs2" => {
+                let (n, p) = self.var_len()?;
+                Type::VarUcs2(n, p)
+            }
             "graphic" => Type::Graphic(self.paren(Self::u32)?),
+            "vargraphic" => {
+                let (n, p) = self.var_len()?;
+                Type::VarGraphic(n, p)
+            }
             "bytes" => Type::Bytes(self.paren(Self::u32)?),
             "timestamp" => {
                 let p = self.paren(Self::u32)?;
@@ -64,12 +74,14 @@ impl Parser {
             "array" => {
                 self.expect_sym("[")?;
                 let len = self.u32()?;
+                let stride = if self.eat_sym(":") { Some(self.u32()?) } else { None };
                 self.expect_sym("]")?;
                 self.expect_word("of")?;
                 let elem = self.ty()?;
                 Type::Array {
                     len,
                     elem: Box::new(elem),
+                    stride,
                 }
             }
             "struct" => self.struct_type()?,
@@ -105,6 +117,19 @@ impl Parser {
             }
             _ => Err(self.unexpected("a *WORD")),
         }
+    }
+
+    /// A varying length and its prefix: `(n)` or `(n:4)`.
+    fn var_len(&mut self) -> Result<(u32, u8)> {
+        self.paren(|p| {
+            let n = p.u32()?;
+            let pfx = if p.eat_sym(":") { p.u32()? } else { 2 };
+            let pfx = u8::try_from(pfx)
+                .ok()
+                .filter(|x| matches!(x, 2 | 4))
+                .ok_or_else(|| p.err("a varying prefix is 2 or 4 bytes"))?;
+            Ok((n, pfx))
+        })
     }
 
     fn shape(&mut self) -> Result<Shape> {

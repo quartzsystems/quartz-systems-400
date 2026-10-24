@@ -492,7 +492,8 @@ impl Inst {
                 | IoInst::DbClose { dst, .. }
                 | IoInst::DbFb { dst, .. }
                 | IoInst::DbIo { dst, .. }
-                | IoInst::DevIo { dst, .. },
+                | IoInst::DevIo { dst, .. }
+                | IoInst::FileRef { dst, .. },
             )
             | Self::Msg(MsgInst::Rcv { dst, .. })
             | Self::Dtaq(DtaqInst::Rcv { dst, .. })

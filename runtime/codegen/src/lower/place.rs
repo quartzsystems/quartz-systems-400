@@ -60,6 +60,10 @@ impl Lowerer<'_, '_> {
             return false;
         }
         let v = self.m.var(*r, Some(self.p)).expect("verified");
+        // Storage from the runtime is a space of its own.
+        if self.big.contains_key(&r.index) {
+            return false;
+        }
         match &v.class {
             StorageClass::Auto => true,
             StorageClass::Param(k) => self.p.params[*k as usize].by_value,
@@ -121,6 +125,9 @@ impl Lowerer<'_, '_> {
                 let pa = self.var_addr(*on)?;
                 let fat = self.b.ins().load(types::I128, le(), pa, 0);
                 self.deref(fat)
+            }
+            (Scope::Proc, StorageClass::Auto | StorageClass::Param(_)) if self.big.contains_key(&r.index) => {
+                self.big[&r.index]
             }
             (Scope::Proc, StorageClass::Auto) => {
                 let slot = self.slots[r.index as usize].expect("auto has a slot");

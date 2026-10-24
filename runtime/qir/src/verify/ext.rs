@@ -509,6 +509,20 @@ fn io_inst(cx: &Cx, io: &IoInst) -> Result<(), String> {
             Ok(())
         }
         IoInst::DbClose { file: f, .. } => file(*f).map(|_| ()),
+        IoInst::FileRef { file: f, .. } => {
+            let fr = file(*f)?;
+            if fr.dev != FileDev::Db {
+                return Err(format!("{} is not a database file", fr.name));
+            }
+            Ok(())
+        }
+        IoInst::FileBind { file: f, handle } => {
+            let fr = file(*f)?;
+            if fr.dev != FileDev::Db {
+                return Err(format!("{} is not a database file", fr.name));
+            }
+            cx.int(handle)
+        }
         IoInst::DbFb { file: f, .. } => {
             let fr = file(*f)?;
             if fr.dev == FileDev::Printer {
@@ -523,6 +537,7 @@ fn io_inst(cx: &Cx, io: &IoInst) -> Result<(), String> {
             key,
             rrn,
             fmt,
+            nulls,
             ..
         } => {
             let fr = file(*f)?;
@@ -533,6 +548,12 @@ fn io_inst(cx: &Cx, io: &IoInst) -> Result<(), String> {
                 place_type(cx.m, cx.p, r)?;
             } else if op.reads() || op.writes() {
                 return Err(format!("{} needs rec()", op.name()));
+            }
+            if let Some(n) = nulls {
+                let t = place_type(cx.m, cx.p, n)?;
+                if t.class() != TypeClass::Aggregate && t.class() != TypeClass::Char {
+                    return Err(format!("nulls is a {t}"));
+                }
             }
             if key.is_some() && rrn.is_some() {
                 return Err("key() and rrn() together".into());

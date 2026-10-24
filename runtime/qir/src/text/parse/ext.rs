@@ -244,6 +244,10 @@ impl Parser {
                 dst,
                 file: self.file_index()?,
             }),
+            ("fileref", None) => Inst::Io(IoInst::FileRef {
+                dst,
+                file: self.file_index()?,
+            }),
             ("dbio", None) => {
                 let file = self.file_index()?;
                 let w = self.ident()?;
@@ -258,6 +262,7 @@ impl Parser {
                     rrn: None,
                     fmt: None,
                     nolock: false,
+                    nulls: None,
                 };
                 let IoInst::DbIo {
                     rec,
@@ -265,6 +270,7 @@ impl Parser {
                     rrn,
                     fmt,
                     nolock,
+                    nulls,
                     ..
                 } = &mut io
                 else {
@@ -278,6 +284,7 @@ impl Parser {
                         "rrn" => *rrn = Some(self.paren(Self::operand)?),
                         "fmt" => *fmt = Some(self.paren(Self::ident)?),
                         "nolock" => *nolock = true,
+                        "nulls" => *nulls = Some(self.paren(Self::place)?),
                         _ => return Err(self.err(format!("{w} is not a dbio option"))),
                     }
                 }
@@ -672,6 +679,14 @@ impl Parser {
             ("dealloc", None) => Inst::Dealloc {
                 ptr: self.operand()?,
             },
+            ("filebind", None) => {
+                let file = self.file_index()?;
+                self.comma()?;
+                Inst::Io(IoInst::FileBind {
+                    file,
+                    handle: self.operand()?,
+                })
+            }
             ("dtaq", Some("snd")) => {
                 let name = self.operand()?;
                 self.comma()?;

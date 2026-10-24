@@ -204,3 +204,39 @@ fn binary_round_trips_storage_instructions() {
         }
     }
 }
+
+/// Long varying types, strided arrays, file handles and null maps.
+const PHASE9: &str = r#"module P9 lang(RPGLE) ccsid(37) actgrp(QILE) dbgview(*NONE)
+type Rec = struct(30) { arr: array[3] of char(10) @0, code: array[3:10] of char(3) @0 }
+static $v: varchar(70000:4)
+static $u: varucs2(5:4)
+static $g: vargraphic(6)
+static $r: Rec
+static $nm: array[2] of ind
+static $buf: char(20)
+file F file(CUSTF) lib(*LIBL) usage(*UPDATE) keyed
+proc MAIN() entry {
+B0:
+  mov $v, "abc"
+  %n = str.len $v
+  mov $r.code[1], "xyz"
+  %h = fileref F
+  filebind F, %h
+  %s = dbio F READ rec($buf) nulls($nm)
+  ret
+}
+"#;
+
+#[test]
+fn phase9_types_and_file_handles_round_trip() {
+    let m = parse(PHASE9).unwrap_or_else(|e| panic!("{e}"));
+    verify(&m).unwrap_or_else(|e| panic!("{e}"));
+    let text = print(&m);
+    assert!(text.contains("varchar(70000:4)") && text.contains("array[3:10] of char(3)"), "{text}");
+    assert!(text.contains("filebind F, %h") && text.contains("nulls($nm)"), "{text}");
+    assert_eq!(parse(&text).unwrap(), m);
+    assert_eq!(qir::binary::read(&qir::binary::write(&m)).unwrap(), m);
+    let (_, main) = m.proc_named("MAIN").unwrap();
+    assert_eq!(main.reg_type(main.reg_named("h").unwrap()), Some(&Type::I32));
+    assert!(parse(&PHASE9.replace("varchar(70000:4)", "varchar(70000)")).is_err());
+}

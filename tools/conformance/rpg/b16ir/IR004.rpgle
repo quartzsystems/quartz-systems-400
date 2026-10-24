@@ -1,0 +1,81 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s big varchar(200000);
+dcl-s small varchar(20:4);
+dcl-s n int(10);
+dcl-ds rec qualified;
+  id int(10);
+  body varchar(70000);
+  after char(4);
+end-ds;
+big = %trimr(fill(66000));
+line = 'a ' + %char(%len(big)) + ' [' + %subst(big:65995:6) + ']';
+write QSYSPRT line;
+n = byref(big);
+line = 'b ' + %char(n) + ' ' + %char(%len(big)) + ' [' + %subst(big:%len(big)-3) + ']';
+write QSYSPRT line;
+line = 'c ' + %char(byconst(big + 'tail')) + ' ' + %char(byval(small + 'xy'));
+write QSYSPRT line;
+small = 'hello';
+n = byref4(small);
+line = 'd ' + %char(n) + ' [' + small + ']';
+write QSYSPRT line;
+rec.id = 7;
+rec.body = %subst(big:1:66001);
+rec.after = 'last';
+line = 'e ' + %char(%size(rec)) + ' ' + %char(%len(rec.body)) + ' ' + rec.after;
+line = %trimr(line) + ' ' + %char(dsparm(rec));
+write QSYSPRT line;
+*inlr = *on;
+
+dcl-proc fill;
+  dcl-pi *n varchar(100000);
+    n int(10) value;
+  end-pi;
+  dcl-s r varchar(100000);
+  dcl-s i int(10);
+  for i = 1 to %div(n:10);
+    r += '0123456789';
+  endfor;
+  return r;
+end-proc;
+
+dcl-proc byref;
+  dcl-pi *n int(10);
+    p varchar(200000);
+  end-pi;
+  p += 'more';
+  return %len(p);
+end-proc;
+
+dcl-proc byconst;
+  dcl-pi *n int(10);
+    p varchar(200000) const;
+  end-pi;
+  return %len(p) + %scan('tail':p);
+end-proc;
+
+dcl-proc byval;
+  dcl-pi *n int(10);
+    p varchar(70000) value;
+  end-pi;
+  p = p + p;
+  return %len(p);
+end-proc;
+
+dcl-proc byref4;
+  dcl-pi *n int(10);
+    p varchar(20:4);
+  end-pi;
+  p = p + ' there';
+  return %len(p);
+end-proc;
+
+dcl-proc dsparm;
+  dcl-pi *n int(10);
+    r likeds(rec);
+  end-pi;
+  return r.id + %len(r.body);
+end-proc;

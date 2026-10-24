@@ -38,27 +38,38 @@ pub enum KeyArg {
     Limit(i32),
 }
 
-/// The statics a module's files need: record buffers, feedback flags
-/// and statuses, and the last-operation flags.
+/// A file's control block: the flags `%EOF`, `%FOUND` and `%EQUAL`
+/// read, its status, the record type the cycle identified and the
+/// runtime's handle of the open file (`fileref`). A `LIKEFILE`
+/// parameter is the caller's block, by reference.
+pub const FCB_TYPE: &str =
+    "type fcb_ = struct(16) { eof: ind @0, fnd: ind @1, eq: ind @2, st: zoned(5,0) @3, rt: i32 @8, h: i32 @12 }";
+
+/// The statics a module's files need: record buffers, control blocks
+/// and the last-operation flags. Parameter files of the same name share
+/// a buffer; their blocks are the procedures' parameters.
 #[must_use]
 pub fn statics(files: &[File], t: &crate::syms::Table) -> String {
     let mut out = String::new();
+    let _ = writeln!(out, "{FCB_TYPE}");
+    let mut seen = std::collections::BTreeSet::new();
     for f in files
         .iter()
         .filter(|f| (matches!(f.dev, Dev::Disk | Dev::Workstn | Dev::Special) || f.dev == Dev::Printer && f.external) && !f.template)
     {
         let n = mangle(&f.name);
+        if !seen.insert(n.clone()) {
+            continue;
+        }
         let len = buffer_len(f, t).max(1);
         let _ = writeln!(out, "static $rb_{n}: char({len})");
         if (f.dev == Dev::Workstn || f.recno.is_some()) && f.infds.is_none() {
             // The display feedback a read by file name looks at.
             let _ = writeln!(out, "static $fi_{n}: char(416)");
         }
-        for x in ["eof", "fnd", "eq"] {
-            let _ = writeln!(out, "static ${x}_{n}: ind");
+        if !f.param {
+            let _ = writeln!(out, "static $fcb_{n}: fcb_");
         }
-        let _ = writeln!(out, "static $st_{n}: zoned(5,0)");
-        let _ = writeln!(out, "static $rt_{n}: i32");
     }
     // The last operation's flags; its status and error are the
     // program's ($status, $errind), which exceptions set too.
@@ -161,7 +172,7 @@ impl Gen<'_> {
         }
         if matches!(f.dev, Dev::Disk | Dev::Workstn) {
             let n = mangle(&f.name);
-            self.b.ins(format!("store $eof_{n}, *OFF"));
+            self.b.ins(format!("store $fcb_{n}.eof, *OFF"));
         } else {
             // Other files keep whether they are open themselves.
             let po = self.open_flag(f);
@@ -340,14 +351,17 @@ impl Gen<'_> {
                 _ => None,
             };
             match &fmt {
-                Some(r) => self.fields_out(&n, r, only.as_deref()),
+                Some(r) => {
+                    self.fields_out(&n, r, only.as_deref());
+                    self.nulls_move(&f, r, true, only.as_deref());
+                }
                 None => self.err(ids::BAD_FILE_OP, 30, f.name.clone()),
             }
         }
         let status;
         if base == "DELETE" && !matches!(key, KeyArg::None) {
             // DELETE by key: find the record, then delete it.
-            status = self.dbio(&n, "CHAIN", Some("$rb_".to_string() + &n), &key, false);
+            status = self.dbio(&n, "CHAIN", Some("$rb_".to_string() + &n), &key, false, None);
             self.feedback(&n, "CHAIN");
             let del = self.b.label();
             let done = self.b.label();
@@ -355,7 +369,7 @@ impl Gen<'_> {
             self.b.ins(format!("{ok} = cmp.eq {status}, 0"));
             self.b.term(format!("brif {ok}, {del}, {done}"));
             self.b.place(&del);
-            let s2 = self.dbio(&n, "DELETE", None, &KeyArg::None, false);
+            let s2 = self.dbio(&n, "DELETE", None, &KeyArg::None, false, None);
             self.b.ins(format!("{status} = add {s2}, 0"));
             self.b.place(&done);
         } else {
@@ -372,11 +386,17 @@ impl Gen<'_> {
             } else {
                 key.clone()
             };
-            status = self.dbio(&n, irop, rec, &key, nolock);
+            // Under ALWNULL(*USRCTL) the record's null map travels with it.
+            let nulls = if ds.is_none() && matches!(base, "READ" | "READP" | "READE" | "READPE" | "CHAIN" | "WRITE" | "UPDATE") {
+                fmt.as_ref().and_then(|r| self.null_map(&f, r))
+            } else {
+                None
+            };
+            status = self.dbio(&n, irop, rec, &key, nolock, nulls.as_deref());
             self.feedback(&n, base);
             if base == "FEOD" && f.input {
                 // The next read of the file is at its end.
-                let _ = self.dbio(&n, "SETLL", None, &KeyArg::Limit(-2), false);
+                let _ = self.dbio(&n, "SETLL", None, &KeyArg::Limit(-2), false, None);
             }
         }
         // A record read: into the program's fields.
@@ -388,7 +408,10 @@ impl Gen<'_> {
             self.b.term(format!("brif {ok}, {got}, {skip}"));
             self.b.place(&got);
             match &fmt {
-                Some(r) => self.fields_in(&n, r),
+                Some(r) => {
+                    self.fields_in(&n, r);
+                    self.nulls_move(&f, r, false, None);
+                }
                 None => self.input_specs(&f),
             }
             self.b.place(&skip);
@@ -444,7 +467,7 @@ impl Gen<'_> {
     }
 
     /// The `dbio` instruction; its status register.
-    fn dbio(&mut self, n: &str, op: &str, rec: Option<String>, key: &KeyArg, nolock: bool) -> String {
+    fn dbio(&mut self, n: &str, op: &str, rec: Option<String>, key: &KeyArg, nolock: bool, nulls: Option<&str>) -> String {
         let r = self.b.reg();
         let mut s = format!("{r} = dbio {n} {op}");
         if let Some(p) = rec {
@@ -465,8 +488,43 @@ impl Gen<'_> {
         if nolock {
             s.push_str(" nolock");
         }
+        if let Some(p) = nulls {
+            let _ = write!(s, " nulls({p})");
+        }
         self.b.ins(s);
         r
+    }
+
+    /// The null map a file's records travel with under
+    /// `ALWNULL(*USRCTL)`, an indicator per field: none when no format
+    /// of the file has a null-capable field.
+    fn null_map(&mut self, f: &File, r: &RecFmt) -> Option<String> {
+        if !self.t.alwnull_usrctl || !r.fmt.fields.iter().any(|x| x.nullable) {
+            return None;
+        }
+        let n = mangle(&f.name);
+        let k = self.t.recfmts.iter().filter(|x| x.file_name == f.name).map(|x| x.fmt.fields.len()).max().unwrap_or(1).max(1);
+        let place = format!("$nm_{n}");
+        self.externs.entry(place.clone()).or_insert_with(|| format!("static {place}: array[{k}] of ind"));
+        Some(place)
+    }
+
+    /// The fields' null indicators from the null map, or into it.
+    fn nulls_move(&mut self, f: &File, r: &RecFmt, into_map: bool, only: Option<&[String]>) {
+        let Some(map) = self.null_map(f, r) else { return };
+        for (i, fd) in r.fmt.fields.iter().enumerate() {
+            let Some(name) = r.names.get(i).cloned() else { continue };
+            if only.is_some_and(|o| !o.contains(&name)) {
+                continue;
+            }
+            let Some(id) = self.t.find(self.scope, &name).filter(|&id| fd.nullable && self.t.syms[id].nullind) else { continue };
+            let ind = self.null_place(id);
+            if into_map {
+                self.b.ins(format!("mov {map}[{i}], {ind}"));
+            } else {
+                self.b.ins(format!("mov {ind}, {map}[{i}]"));
+            }
+        }
     }
 
     /// The file's feedback after an operation into its flags and the
@@ -484,25 +542,25 @@ impl Gen<'_> {
         match base {
             "READ" | "READP" | "READE" | "READPE" => {
                 let e = bit(self, 1);
-                self.b.ins(format!("store $eof_{n}, {e}"));
+                self.b.ins(format!("store $fcb_{n}.eof, {e}"));
                 self.b.ins(format!("store $eof_, {e}"));
             }
             "CHAIN" | "SETGT" | "DELETE" => {
                 let f = bit(self, 2);
-                self.b.ins(format!("store $fnd_{n}, {f}"));
+                self.b.ins(format!("store $fcb_{n}.fnd, {f}"));
                 self.b.ins(format!("store $fnd_, {f}"));
                 if base != "DELETE" {
-                    self.b.ins(format!("store $eof_{n}, *OFF"));
+                    self.b.ins(format!("store $fcb_{n}.eof, *OFF"));
                 }
             }
             "SETLL" => {
                 let f = bit(self, 2);
                 let q = bit(self, 4);
-                self.b.ins(format!("store $fnd_{n}, {f}"));
+                self.b.ins(format!("store $fcb_{n}.fnd, {f}"));
                 self.b.ins(format!("store $fnd_, {f}"));
-                self.b.ins(format!("store $eq_{n}, {q}"));
+                self.b.ins(format!("store $fcb_{n}.eq, {q}"));
                 self.b.ins(format!("store $eq_, {q}"));
-                self.b.ins(format!("store $eof_{n}, *OFF"));
+                self.b.ins(format!("store $fcb_{n}.eof, *OFF"));
             }
             _ => {}
         }
@@ -515,7 +573,7 @@ impl Gen<'_> {
         let handled = op.ext.contains('E') || !op.resind[1].is_empty();
         // The file's status is the operation's (00012 too); the last
         // error status only changes under (E) or an error indicator.
-        self.b.ins(format!("dec.mov $st_{n}, {status}"));
+        self.b.ins(format!("dec.mov $fcb_{n}.st, {status}"));
         if handled {
             self.b.ins(format!("store $errind, {err}"));
             let st = self.b.reg();
@@ -532,29 +590,29 @@ impl Gen<'_> {
         match base {
             "READ" | "READP" | "READE" | "READPE" => {
                 let e = self.b.reg();
-                self.b.ins(format!("{e} = load $eof_{n}"));
+                self.b.ins(format!("{e} = load $fcb_{n}.eof"));
                 ind(self, 2, &e);
             }
             "CHAIN" | "SETGT" => {
                 let f = self.b.reg();
-                self.b.ins(format!("{f} = load $fnd_{n}"));
+                self.b.ins(format!("{f} = load $fcb_{n}.fnd"));
                 let nf = self.b.reg();
                 self.b.ins(format!("{nf} = cmp.eq {f}, *OFF"));
                 ind(self, 0, &nf);
             }
             "SETLL" => {
                 let f = self.b.reg();
-                self.b.ins(format!("{f} = load $fnd_{n}"));
+                self.b.ins(format!("{f} = load $fcb_{n}.fnd"));
                 let nf = self.b.reg();
                 self.b.ins(format!("{nf} = cmp.eq {f}, *OFF"));
                 ind(self, 0, &nf);
                 let q = self.b.reg();
-                self.b.ins(format!("{q} = load $eq_{n}"));
+                self.b.ins(format!("{q} = load $fcb_{n}.eq"));
                 ind(self, 2, &q);
             }
             "DELETE" if !matches!(key, KeyArg::None) => {
                 let f = self.b.reg();
-                self.b.ins(format!("{f} = load $fnd_{n}"));
+                self.b.ins(format!("{f} = load $fcb_{n}.fnd"));
                 let nf = self.b.reg();
                 self.b.ins(format!("{nf} = cmp.eq {f}, *OFF"));
                 ind(self, 0, &nf);
@@ -679,7 +737,7 @@ impl Gen<'_> {
         self.b.ins(format!("{p} = addr $rb_{n}"));
         // The other record identifying indicators keep their state (the
         // cycle turns them off itself).
-        self.b.ins(format!("store $rt_{n}, -1"));
+        self.b.ins(format!("store $fcb_{n}.rt, -1"));
         let done = self.b.label();
         for (k, r) in recs.iter().enumerate() {
             let next = self.b.label();
@@ -714,7 +772,7 @@ impl Gen<'_> {
                 }
             }
             self.b.place(&hit);
-            self.b.ins(format!("store $rt_{n}, {k}"));
+            self.b.ins(format!("store $fcb_{n}.rt, {k}"));
             if rid
                 && !r.rid.is_empty()
                 && r.rid != "**"
@@ -738,7 +796,7 @@ impl Gen<'_> {
         let n = mangle(&f.name);
         let recs = self.records_of(f);
         let rt = self.b.reg();
-        self.b.ins(format!("{rt} = load $rt_{n}"));
+        self.b.ins(format!("{rt} = load $fcb_{n}.rt"));
         for (k, r) in recs.iter().enumerate() {
             if r.rid.is_empty() || r.rid == "**" {
                 continue;
@@ -765,7 +823,7 @@ impl Gen<'_> {
         let p = self.b.reg();
         self.b.ins(format!("{p} = addr $rb_{n}"));
         let rt = self.b.reg();
-        self.b.ins(format!("{rt} = load $rt_{n}"));
+        self.b.ins(format!("{rt} = load $fcb_{n}.rt"));
         let done = self.b.label();
         let labels: Vec<String> = recs.iter().map(|_| self.b.label()).collect();
         let arms: Vec<String> = labels.iter().enumerate().map(|(k, l)| format!("{k}: {l}")).collect();
@@ -1096,7 +1154,7 @@ impl Gen<'_> {
                     None => Some(V::place(Ty::Zoned(5, 0), "$status")),
                     Some(e) => {
                         let e = e.clone();
-                        self.db_target(&e).map(|(f, _)| V::place(Ty::Zoned(5, 0), format!("$st_{}", mangle(&f.name))))
+                        self.db_target(&e).map(|(f, _)| V::place(Ty::Zoned(5, 0), format!("$fcb_{}.st", mangle(&f.name))))
                     }
                 });
             }
@@ -1123,7 +1181,7 @@ impl Gen<'_> {
             None => Some(V::place(Ty::Ind, format!("${flag}_"))),
             Some(e) => {
                 let e = e.clone();
-                let r = self.db_target(&e).map(|(f, _)| V::place(Ty::Ind, format!("${flag}_{}", mangle(&f.name))));
+                let r = self.db_target(&e).map(|(f, _)| V::place(Ty::Ind, format!("$fcb_{}.{flag}", mangle(&f.name))));
                 if r.is_none() && self.diags.last().is_some_and(|d| d.msgid == ids::NOT_DEFINED) {
                     self.err(ids::BIF_NAME_UNDEFINED, 30, name.to_string());
                 }
@@ -1215,7 +1273,7 @@ impl Gen<'_> {
             "UPDATE"
         };
         let rec = (!del).then(|| line.clone());
-        let r = self.dbio(&n, op, rec, &KeyArg::None, false);
+        let r = self.dbio(&n, op, rec, &KeyArg::None, false, None);
         let st = self.b.reg();
         self.b.ins(format!("{st} = add {r}, 0"));
     }

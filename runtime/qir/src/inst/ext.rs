@@ -564,7 +564,8 @@ pub enum IoInst {
         /// File index.
         file: u32,
     },
-    /// `%d = dbio FILE OP [rec(place)] [key(opnd)] [rrn(opnd)] [fmt(NAME)] [nolock]`.
+    /// `%d = dbio FILE OP [rec(place)] [key(opnd)] [rrn(opnd)] [fmt(NAME)] [nolock]
+    /// [nulls(place)]`.
     DbIo {
         /// Destination, an `i32`.
         dst: Reg,
@@ -582,6 +583,10 @@ pub enum IoInst {
         fmt: Option<String>,
         /// Read without a lock on an update file.
         nolock: bool,
+        /// The record's null map: one indicator per field of the format,
+        /// in order, `'1'` for null; a read fills it, a write or update
+        /// stores it; format 5.
+        nulls: Option<Place>,
     },
     /// `%d = dspio|prtio FILE OP fmt(NAME) [rec(place)] [ctl(sb, sa, kb, ka)]
     /// [rrn(x)] [inds(place)]`.
@@ -605,6 +610,23 @@ pub enum IoInst {
         /// The separate indicator area (`INDARA`), 99 indicators;
         /// format 3.
         inds: Option<Place>,
+    },
+    /// `%d = fileref FILE`: a handle (an `i32`) on the file as this
+    /// activation has it, to pass to a procedure; format 5.
+    FileRef {
+        /// Destination, an `i32`.
+        dst: Reg,
+        /// File index.
+        file: u32,
+    },
+    /// `filebind FILE, handle`: until the procedure returns, the
+    /// declared file is the one the handle names (a file parameter);
+    /// format 5.
+    FileBind {
+        /// File index.
+        file: u32,
+        /// A handle from `fileref`.
+        handle: Operand,
     },
 }
 

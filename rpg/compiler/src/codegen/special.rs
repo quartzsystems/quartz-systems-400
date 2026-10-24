@@ -95,7 +95,7 @@ impl Gen<'_> {
         if opt == 'R' {
             let eof = self.b.reg();
             self.b.ins(format!("{eof} = cmp.eq {st}, 11"));
-            self.b.ins(format!("store $eof_{n}, {eof}"));
+            self.b.ins(format!("store $fcb_{n}.eof, {eof}"));
             self.b.ins(format!("store $eof_, {eof}"));
             let got = self.b.label();
             let skip = self.b.label();

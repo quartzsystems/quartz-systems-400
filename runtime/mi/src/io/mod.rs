@@ -173,6 +173,9 @@ pub struct IoRequest<'a> {
     pub format: Option<&'a str>,
     /// Read without a lock.
     pub nolock: bool,
+    /// The null map of the record to write or update: a byte per field
+    /// of the format, in order, `F1` for null; none for no null values.
+    pub nulls: Option<&'a [u8]>,
 }
 
 /// What an operation reported: the feedback of the open data path.
@@ -198,6 +201,9 @@ pub struct IoResult {
     pub member: String,
     /// The record read.
     pub record: Option<Vec<u8>>,
+    /// The null map of the record read, as a request's: a byte per
+    /// field, `F1` for null.
+    pub nulls: Option<Vec<u8>>,
 }
 
 /// An open file's standing.

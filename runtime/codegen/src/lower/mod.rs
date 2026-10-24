@@ -46,6 +46,38 @@ const NS_STATIC_FRAME: u32 = 3;
 const NS_IMPORT_DATA: u32 = 4;
 const NS_ATTN: u32 = 5;
 
+/// An automatic larger than this lives in the runtime's storage.
+const BIG_AUTO: u64 = 32 * 1024;
+
+/// The most native stack one entry's automatics take.
+const MAX_FRAME: u64 = 256 * 1024;
+
+/// The automatics (and by-value parameters) whose storage comes from
+/// the runtime: every one over [`BIG_AUTO`], then the largest until the
+/// rest fit in [`MAX_FRAME`]. In declaration order.
+fn big_autos(vars: &[qir::Var], framed: &[bool]) -> Vec<usize> {
+    let mut idx: Vec<usize> = (0..vars.len()).filter(|&i| framed[i]).collect();
+    idx.sort_by_key(|&i| std::cmp::Reverse(vars[i].ty.size()));
+    let mut total: u64 = idx.iter().map(|&i| vars[i].ty.size()).sum();
+    let mut big = Vec::new();
+    for i in idx {
+        let n = vars[i].ty.size();
+        if n > BIG_AUTO || total > MAX_FRAME {
+            big.push(i);
+            total -= n;
+        }
+    }
+    big.sort_unstable();
+    big
+}
+
+/// The bytes a variable starts with: its `inz`, else its type's default.
+fn init_bytes(v: &qir::Var) -> Vec<u8> {
+    v.inz
+        .clone()
+        .unwrap_or_else(|| qir::inst::literal::default_bytes(&v.ty, usz(v.ty.size()), false))
+}
+
 /// The target: `x86_64`, System V, no position independence, no probes.
 pub fn target() -> Result<OwnedTargetIsa> {
     let mut fb = settings::builder();
@@ -290,6 +322,9 @@ pub(crate) struct Lowerer<'a, 'b> {
     pub vars: Vec<Variable>,
     pub blocks: Vec<Block>,
     pub slots: Vec<Option<StackSlot>>,
+    /// Automatics and by-value parameters too large for the native
+    /// stack: their storage from `auto_alloc`, by variable index.
+    pub big: HashMap<u32, Value>,
     pub env: Value,
     pub argc: Value,
     /// The operational descriptor list the caller passed, or 0.
@@ -335,6 +370,7 @@ impl<'a, 'b> Lowerer<'a, 'b> {
             vars: Vec::new(),
             blocks: Vec::new(),
             slots: Vec::new(),
+            big: HashMap::new(),
             env: zero,
             argc: zero,
             opdesc: zero,
@@ -423,72 +459,27 @@ impl<'a, 'b> Lowerer<'a, 'b> {
             self.param_vals = params[at..].to_vec();
         }
 
-        // Storage slots for automatics and by-value parameters.
-        for v in &self.p.vars {
-            let slot = match &v.class {
-                StorageClass::Auto => Some(self.slot(&v.ty)),
-                StorageClass::Param(k) => {
-                    let param = &self.p.params[*k as usize];
-                    if param.by_value {
-                        Some(self.slot(&v.ty))
-                    } else {
-                        None
-                    }
-                }
-                _ => None,
-            };
+        // Storage for automatics and by-value parameters: stack slots,
+        // and for the largest the runtime's (the native stack is small).
+        let framed: Vec<bool> = self
+            .p
+            .vars
+            .iter()
+            .map(|v| match &v.class {
+                StorageClass::Auto => true,
+                StorageClass::Param(k) => self.p.params[*k as usize].by_value,
+                _ => false,
+            })
+            .collect();
+        let big = big_autos(&self.p.vars, &framed);
+        for (i, v) in self.p.vars.iter().enumerate() {
+            let slot = (framed[i] && !big.contains(&i)).then(|| self.slot(&v.ty));
             self.slots.push(slot);
         }
-        for (i, v) in self.p.vars.iter().enumerate() {
+        for i in 0..self.p.vars.len() {
             let Some(slot) = self.slots[i] else { continue };
             let addr = self.b.ins().stack_addr(types::I64, slot, 0);
-            match &v.class {
-                StorageClass::Auto => {
-                    let bytes = v.inz.clone().unwrap_or_else(|| {
-                        qir::inst::literal::default_bytes(&v.ty, usz(v.ty.size()), false)
-                    });
-                    self.store_bytes(addr, &bytes);
-                }
-                StorageClass::Param(k) => {
-                    let k = *k as usize;
-                    let raw = self.param_vals[k];
-                    if v.ty.is_register() {
-                        // Default when not passed, else the value.
-                        let bytes =
-                            qir::inst::literal::default_bytes(&v.ty, usz(v.ty.size()), false);
-                        self.store_bytes(addr, &bytes);
-                        let passed = self.b.ins().icmp_imm_s(
-                            cranelift_codegen::ir::condcodes::IntCC::SignedGreaterThan,
-                            self.argc,
-                            i64::try_from(k).expect("few parameters"),
-                        );
-                        let store_blk = self.b.create_block();
-                        let next = self.b.create_block();
-                        self.b.ins().brif(passed, store_blk, &[], next, &[]);
-                        self.b.switch_to_block(store_blk);
-                        self.store_typed(addr, &v.ty, raw);
-                        self.b.ins().jump(next, &[]);
-                        self.b.switch_to_block(next);
-                    } else {
-                        let bytes =
-                            qir::inst::literal::default_bytes(&v.ty, usz(v.ty.size()), false);
-                        self.store_bytes(addr, &bytes);
-                        let passed = self.b.ins().icmp_imm_s(
-                            cranelift_codegen::ir::condcodes::IntCC::NotEqual,
-                            raw,
-                            0,
-                        );
-                        let copy_blk = self.b.create_block();
-                        let next = self.b.create_block();
-                        self.b.ins().brif(passed, copy_blk, &[], next, &[]);
-                        self.b.switch_to_block(copy_blk);
-                        self.copy(addr, raw, v.ty.size());
-                        self.b.ins().jump(next, &[]);
-                        self.b.switch_to_block(next);
-                    }
-                }
-                _ => {}
-            }
+            self.init_var(i, addr, false);
         }
         // The call-stack entry.
         let me = self.local_ref(self.pi);
@@ -498,7 +489,56 @@ impl<'a, 'b> Lowerer<'a, 'b> {
         let opdesc = self.opdesc;
         self.b.ins().call(enter, &[self.env, code, argc, opdesc]);
         self.check_pending();
+        // The large ones belong to the entry and go when it leaves.
+        for i in big {
+            let v = &self.p.vars[i];
+            let bytes = init_bytes(v);
+            let fill = bytes.first().copied().filter(|b| bytes.iter().all(|x| x == b));
+            let size = self.i64(i64::try_from(v.ty.size()).expect("frame fits"));
+            let f = self.i64(i64::from(fill.unwrap_or(0)));
+            let addr = self.rt_call_ret(RtFn::AutoAlloc, &[size, f]);
+            self.big.insert(index32(i), addr);
+            self.init_var(i, addr, fill.is_some());
+        }
         self.b.ins().jump(self.blocks[0], &[]);
+    }
+
+    /// Initialize an automatic or by-value parameter at `addr`: its
+    /// `inz` bytes or the type's defaults (unless `filled` already),
+    /// then the argument when one was passed.
+    fn init_var(&mut self, i: usize, addr: Value, filled: bool) {
+        let v = &self.p.vars[i];
+        let bytes = init_bytes(v);
+        if !filled {
+            self.store_bytes(addr, &bytes);
+        }
+        let StorageClass::Param(k) = &v.class else {
+            return;
+        };
+        let k = *k as usize;
+        let ty = v.ty.clone();
+        let raw = self.param_vals[k];
+        let passed = if ty.is_register() {
+            // The value when passed.
+            self.b.ins().icmp_imm_s(
+                cranelift_codegen::ir::condcodes::IntCC::SignedGreaterThan,
+                self.argc,
+                i64::try_from(k).expect("few parameters"),
+            )
+        } else {
+            self.b.ins().icmp_imm_s(cranelift_codegen::ir::condcodes::IntCC::NotEqual, raw, 0)
+        };
+        let set_blk = self.b.create_block();
+        let next = self.b.create_block();
+        self.b.ins().brif(passed, set_blk, &[], next, &[]);
+        self.b.switch_to_block(set_blk);
+        if ty.is_register() {
+            self.store_typed(addr, &ty, raw);
+        } else {
+            self.copy(addr, raw, ty.size());
+        }
+        self.b.ins().jump(next, &[]);
+        self.b.switch_to_block(next);
     }
 
     /// The unwind block: leave the call-stack entry and return zeros so
@@ -531,6 +571,15 @@ impl<'a, 'b> Lowerer<'a, 'b> {
         } else {
             self.b.ins().iconst(t, 0)
         }
+    }
+
+    /// A runtime call that returns a value.
+    pub(crate) fn rt_call_ret(&mut self, f: RtFn, args: &[Value]) -> Value {
+        let r = self.rt_ref(f);
+        let mut all = vec![self.env];
+        all.extend_from_slice(args);
+        let call = self.b.ins().call(r, &all);
+        self.b.inst_results(call)[0]
     }
 
     fn slot(&mut self, ty: &Type) -> StackSlot {

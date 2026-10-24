@@ -132,6 +132,11 @@ impl TimFmt {
     }
 }
 
+/// The IR text of a varying prefix: nothing for 2 bytes.
+fn pfx(p: u8) -> &'static str {
+    if p == 4 { ":4" } else { "" }
+}
+
 /// An RPG type.
 #[derive(Clone, Debug, PartialEq, Eq, Hash, Default)]
 pub enum Ty {
@@ -183,6 +188,39 @@ pub enum Ty {
 }
 
 impl Ty {
+    /// The prefix a varying length takes by default: 4 bytes past 65535.
+    #[must_use]
+    pub fn var_prefix_for(n: u32) -> u8 {
+        if n > 65_535 { 4 } else { 2 }
+    }
+
+    /// `varchar(n)` with its default prefix.
+    #[must_use]
+    pub fn varchar(n: u32) -> Self {
+        Self::VarChar(n, Self::var_prefix_for(n))
+    }
+
+    /// `varucs2(n)` with its default prefix.
+    #[must_use]
+    pub fn varucs2(n: u32) -> Self {
+        Self::VarUcs2(n, Self::var_prefix_for(n))
+    }
+
+    /// `vargraph(n)` with its default prefix.
+    #[must_use]
+    pub fn vargraph(n: u32) -> Self {
+        Self::VarGraph(n, Self::var_prefix_for(n))
+    }
+
+    /// The prefix bytes of a varying type.
+    #[must_use]
+    pub fn var_prefix(&self) -> Option<u32> {
+        match self {
+            Self::VarChar(_, p) | Self::VarUcs2(_, p) | Self::VarGraph(_, p) => Some(u32::from(*p)),
+            _ => None,
+        }
+    }
+
     /// The storage size in bytes; a structure's comes from `ds_len`.
     #[must_use]
     pub fn size(&self, ds_len: &dyn Fn(usize) -> u32) -> u32 {
@@ -296,11 +334,11 @@ impl Ty {
         match self {
             Self::Unknown => "char(1)".into(),
             Self::Char(n) => format!("char({n})"),
-            Self::VarChar(n, _) => format!("varchar({n})"),
+            Self::VarChar(n, p) => format!("varchar({n}{})", pfx(*p)),
             Self::Ucs2(n) => format!("ucs2({n})"),
-            Self::VarUcs2(n, _) => format!("varucs2({n})"),
+            Self::VarUcs2(n, p) => format!("varucs2({n}{})", pfx(*p)),
             Self::Graph(n) => format!("graphic({n})"),
-            Self::VarGraph(n, _) => format!("bytes({})", 2 * n + 2),
+            Self::VarGraph(n, p) => format!("vargraphic({n}{})", pfx(*p)),
             Self::Ind => "ind".into(),
             Self::Packed(d, s) => format!("packed({d},{s})"),
             Self::Zoned(d, s) => format!("zoned({d},{s})"),

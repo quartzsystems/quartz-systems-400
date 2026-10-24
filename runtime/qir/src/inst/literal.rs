@@ -90,7 +90,7 @@ fn zeros(ty: &Type, size: usize) -> Vec<u8> {
 
 fn blanks(ty: &Type, size: usize) -> Vec<u8> {
     match ty {
-        Type::VarChar(_) | Type::VarUcs2(_) => vec![0; size],
+        Type::VarChar(..) | Type::VarUcs2(..) | Type::VarGraphic(..) => vec![0; size],
         Type::Ucs2(_) | Type::Graphic(_) => [0x00, 0x20].repeat(size / 2),
         Type::Struct(_) | Type::Array { .. } => {
             let mut out = vec![ccsid::SPACE; size];
@@ -112,10 +112,11 @@ fn fill_default(ty: &Type, out: &mut [u8], zeros_text: bool) {
                 fill_default(&f.ty, &mut out[start..end], zeros_text);
             }
         }
-        Type::Array { len, elem } => {
+        Type::Array { len, elem, .. } => {
             let n = usize::try_from(elem.size()).expect("checked size");
+            let s = usize::try_from(ty.stride().unwrap_or(0)).expect("checked size");
             for i in 0..*len as usize {
-                fill_default(elem, &mut out[i * n..(i + 1) * n], zeros_text);
+                fill_default(elem, &mut out[i * s..i * s + n], zeros_text);
             }
         }
         Type::Char(_)
@@ -123,7 +124,8 @@ fn fill_default(ty: &Type, out: &mut [u8], zeros_text: bool) {
         | Type::Graphic(_)
         | Type::Date(_)
         | Type::Time(_)
-        | Type::Timestamp(_) => {}
+        | Type::Timestamp(_)
+        | Type::Bytes(_) => {}
         _ => {
             let d = default_bytes(ty, out.len(), zeros_text);
             out.copy_from_slice(&d);
@@ -273,18 +275,14 @@ fn encode_text(ty: &Type, s: &str, size: usize) -> Result<Vec<u8>, String> {
             ccsid::encode_fixed(s, &mut out).map_err(|e| e.to_string())?;
             Ok(out)
         }
-        Type::VarChar(n) => {
+        Type::VarChar(n, p) => {
             let bytes = ccsid::to_ebcdic(s).map_err(|e| e.to_string())?;
             if bytes.len() > *n as usize {
-                return Err(format!(
-                    "{} characters do not fit varchar({n})",
-                    bytes.len()
-                ));
+                return Err(format!("{} characters do not fit {ty}", bytes.len()));
             }
             let mut out = vec![0; size];
-            let len = u16::try_from(bytes.len()).map_err(|_| "too long".to_string())?;
-            out[..2].copy_from_slice(&len.to_be_bytes());
-            out[2..2 + bytes.len()].copy_from_slice(&bytes);
+            let at = put_var_len(&mut out, *p, bytes.len())?;
+            out[at..at + bytes.len()].copy_from_slice(&bytes);
             Ok(out)
         }
         Type::Ucs2(n) | Type::Graphic(n) => {
@@ -301,18 +299,17 @@ fn encode_text(ty: &Type, s: &str, size: usize) -> Result<Vec<u8>, String> {
             }
             Ok(out)
         }
-        Type::VarUcs2(n) => {
+        Type::VarUcs2(n, p) | Type::VarGraphic(n, p) => {
             let units: Vec<u16> = s.encode_utf16().collect();
             if units.len() > *n as usize {
                 return Err(format!("{} characters do not fit {ty}", units.len()));
             }
-            let mut out = Vec::with_capacity(size);
-            let len = u16::try_from(units.len()).map_err(|_| "too long".to_string())?;
-            out.extend_from_slice(&len.to_be_bytes());
+            let mut out = vec![0; size];
+            let mut at = put_var_len(&mut out, *p, units.len())?;
             for u in &units {
-                out.extend_from_slice(&u.to_be_bytes());
+                out[at..at + 2].copy_from_slice(&u.to_be_bytes());
+                at += 2;
             }
-            out.resize(size, 0);
             Ok(out)
         }
         Type::Ind => match s {
@@ -322,6 +319,20 @@ fn encode_text(ty: &Type, s: &str, size: usize) -> Result<Vec<u8>, String> {
         },
         _ if ty.is_numeric() => encode(ty, &Const::Dec(s.trim().to_string())),
         _ => Err(format!("text is not a {ty}")),
+    }
+}
+
+/// Write a varying length into its 2- or 4-byte prefix; the data's
+/// offset.
+fn put_var_len(out: &mut [u8], prefix: u8, len: usize) -> Result<usize, String> {
+    if prefix == 4 {
+        let n = u32::try_from(len).map_err(|_| "too long".to_string())?;
+        out[..4].copy_from_slice(&n.to_be_bytes());
+        Ok(4)
+    } else {
+        let n = u16::try_from(len).map_err(|_| "too long".to_string())?;
+        out[..2].copy_from_slice(&n.to_be_bytes());
+        Ok(2)
     }
 }
 
@@ -350,13 +361,31 @@ mod tests {
     }
 
     #[test]
+    fn opaque_bytes_default_without_recursing() {
+        assert_eq!(default_bytes(&Type::Bytes(3), 3, false), vec![0x40; 3]);
+        assert_eq!(default_bytes(&Type::Bytes(2), 2, true), vec![0xF0; 2]);
+    }
+
+    #[test]
+    fn long_varying_takes_a_4_byte_length() {
+        assert_eq!(
+            encode(&Type::VarChar(70_000, 4), &Const::Str("AB".into())).unwrap()[..6],
+            [0, 0, 0, 2, 0xC1, 0xC2]
+        );
+        assert_eq!(
+            encode(&Type::VarGraphic(3, 2), &Const::Str("A".into())).unwrap(),
+            vec![0, 1, 0, 0x41, 0, 0, 0, 0]
+        );
+    }
+
+    #[test]
     fn text_is_cp037_padded() {
         assert_eq!(
             encode(&Type::Char(4), &Const::Str("AB".into())).unwrap(),
             vec![0xC1, 0xC2, 0x40, 0x40]
         );
         assert_eq!(
-            encode(&Type::VarChar(4), &Const::Str("AB".into())).unwrap(),
+            encode(&Type::VarChar(4, 2), &Const::Str("AB".into())).unwrap(),
             vec![0, 2, 0xC1, 0xC2, 0, 0]
         );
         assert_eq!(

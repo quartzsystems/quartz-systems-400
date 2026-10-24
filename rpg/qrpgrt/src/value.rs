@@ -4,7 +4,8 @@
 
 //! Operands as the compiler describes them to the runtime library: an
 //! address and a descriptor word (kind in the top byte, length or
-//! digits in bits 8 to 55, decimals in the low byte).
+//! digits in bits 8 to 55, decimals in the low byte; a varying field's
+//! low byte is 4 for a 4-byte length prefix).
 
 use qdecimal::{Binary, Decimal, Float, Integer, Packed, Shape, Zoned};
 
@@ -13,7 +14,7 @@ use qdecimal::{Binary, Decimal, Float, Integer, Packed, Shape, Zoned};
 pub enum Kind {
     /// Fixed character.
     Char,
-    /// Varying character, 2-byte prefix.
+    /// Varying character, a 2- or 4-byte prefix.
     VarChar,
     /// Packed decimal.
     Packed,
@@ -79,7 +80,7 @@ impl Desc {
     pub fn size(&self) -> usize {
         let n = usize::try_from(self.len).unwrap_or(0);
         match self.kind {
-            Kind::VarChar => n + 2,
+            Kind::VarChar => n + self.prefix(),
             Kind::Packed => n / 2 + 1,
             Kind::Bin => {
                 if n <= 4 {
@@ -99,6 +100,24 @@ impl Desc {
             Kind::Ind => 1,
             _ => n,
         }
+    }
+
+    /// The length prefix of a varying field: 2 or 4 bytes; 0 otherwise.
+    #[must_use]
+    pub fn prefix(&self) -> usize {
+        match self.kind {
+            Kind::VarChar if self.dec == 4 => 4,
+            Kind::VarChar => 2,
+            _ => 0,
+        }
+    }
+
+    /// The current data of a varying field's storage.
+    #[must_use]
+    pub fn var_data<'a>(&self, b: &'a [u8]) -> &'a [u8] {
+        let p = self.prefix();
+        let n = var_len(b, p).min(b.len() - p);
+        &b[p..p + n]
     }
 
     /// The digits of a number as `MOVE` sees it (its zoned length).
@@ -161,10 +180,40 @@ pub fn read_f64(addr: u64, d: &Desc) -> Option<f64> {
 
 /// Write text into a varying character field (length, then data).
 pub fn write_varchar(addr: u64, text: &[u8]) {
-    let n = u16::try_from(text.len()).unwrap_or(u16::MAX);
-    let b = bytes(addr, 2 + usize::from(n));
-    b[..2].copy_from_slice(&n.to_be_bytes());
-    b[2..].copy_from_slice(&text[..usize::from(n)]);
+    write_var(addr, 2, text);
+}
+
+/// Text into a varying field with a `prefix`-byte length.
+pub fn write_var(addr: u64, prefix: usize, text: &[u8]) {
+    let n = if prefix == 4 { text.len().min(u32::MAX as usize) } else { text.len().min(usize::from(u16::MAX)) };
+    let b = bytes(addr, prefix + n);
+    set_var_len(b, prefix, n);
+    b[prefix..].copy_from_slice(&text[..n]);
+}
+
+/// The prefix a compiler temporary of `cap` bytes takes: 4 past 65535.
+#[must_use]
+pub fn prefix_for(cap: usize) -> usize {
+    if cap > 65_535 { 4 } else { 2 }
+}
+
+/// A varying length from its prefix.
+#[must_use]
+pub fn var_len(b: &[u8], prefix: usize) -> usize {
+    if prefix == 4 {
+        usize::try_from(u32::from_be_bytes([b[0], b[1], b[2], b[3]])).unwrap_or(0)
+    } else {
+        usize::from(u16::from_be_bytes([b[0], b[1]]))
+    }
+}
+
+/// Store a varying length in its prefix.
+pub fn set_var_len(b: &mut [u8], prefix: usize, n: usize) {
+    if prefix == 4 {
+        b[..4].copy_from_slice(&u32::try_from(n).unwrap_or(u32::MAX).to_be_bytes());
+    } else {
+        b[..2].copy_from_slice(&u16::try_from(n).unwrap_or(u16::MAX).to_be_bytes());
+    }
 }
 
 /// UTF-8 text as CP037, unmappable characters as blanks.

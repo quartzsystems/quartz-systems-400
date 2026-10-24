@@ -118,8 +118,7 @@ pub fn declare_files(t: &mut Table, diags: &mut Vec<Diag>, scope: usize, prefix:
                     storage: if scope == 0 { Storage::Static } else { Storage::Auto },
                     def_line: f.def_line,
                     implicit: true,
-                    // BLOCKED(phase9): the record's null map does not reach
-                    // the program, so the indicator stays off.
+                    // Its indicator comes and goes with the record's null map.
                     nullind: fd.nullable && t.alwnull_usrctl,
                     ..Sym::default()
                 });

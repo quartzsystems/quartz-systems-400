@@ -113,6 +113,14 @@ parameter's type.
 
 A `based` variable or a `[%p]` deref goes through the runtime's `deref`
 (§6), which validates the fat pointer and returns a native address.
+An automatic or by-value parameter over 32 KiB, and the largest until
+the rest of the entry's fit in 256 KiB, does not take a stack slot: after
+`enter` the prologue asks `auto_alloc` for it (a fill byte when its
+initial bytes are all one, else the bytes are stored), and `leave`
+releases what the entry was given; the native stack of a job thread is
+not large enough for RPG's 16 MB fields. Its address is a space of its
+own, owned by the entry.
+
 `addr` of an `auto` variable or a by-value parameter passes `frame` 1 to
 `ptr_addr`: the entry's automatic storage is one space per call-stack
 depth, grown over every automatic address the entry takes, so a pointer
@@ -148,8 +156,8 @@ fixed index (`RtFn`), the relocation names the index, and the runtime
 (`mi::rtlib::table`) fills a table of addresses in the same order. All
 take `env` first (except `copy`) and use the System V convention. A
 storage operand is a pair of `i64` words: the native address and a
-type descriptor (`TypeDesc`: kind, length or digits, scale or
-precision, date or time format, and bit 56, set in `RPGLE` modules,
+type descriptor (`TypeDesc`: kind, length or digits, scale, precision or
+a varying type's 4-byte prefix (0 for 2), date or time format, and bit 56, set in `RPGLE` modules,
 for RPG's data rules: the positive sign `F` in packed and zoned data,
 a double taken as its exact decimal value, and a decimal operand of a
 float operation rounded toward zero). An absent optional operand is 0, an
@@ -202,7 +210,7 @@ absent optional length is -1.
 | 42 | `rmvmsg` | `pgmq_kind, pgmq_n, key, clear` | |
 | 43 | `db_open` | `file, infds, infds_desc` | `i32` status |
 | 44 | `db_close` | `file` | `i32` status |
-| 45 | `db_io` | `file, op, rec, rec_desc, key, key_desc, rrn, fmt, nolock` | `i32` status |
+| 45 | `db_io` | `file, op, rec, rec_desc, key, key_desc, rrn, fmt, nolock, nulls, nulls_desc` | `i32` status; `nulls` the record's null map, a byte per field (`F1` null), filled by a read and stored by a write or update |
 | 46 | `dev_io` | `file, op, fmt, rec, rec_desc` | `i32` status |
 | 47 | `dtaara` | `op, name, lib, data, data_desc` | |
 | 48 | `dtaq_snd` | `name, lib, data, len` | |
@@ -212,6 +220,17 @@ absent optional length is -1.
 | 52 | `dbg_var` | `name, addr, desc` | debug variant only |
 | 53 | `attn` | | the attention flag was set |
 | 54 | `prt_ctl` | `file, fmt, rec, rec_desc, ctl` | `i32` status: a printer line under `ctl`, space before, space after, skip before and skip after packed 16 bits each from the top |
+| 55 | `dsp_io` | `file, op, fmt, rec, rec_desc, rrn, inds, inds_desc` | `i32` status |
+| 56 | `auto_alloc` | `size, fill` | `i64` address of `size` bytes of `fill`, owned by the running entry |
+| 57 | `file_ref` | `file` | `i32` handle on the open file |
+| 58 | `file_bind` | `file, handle` | |
+
+`fileref` gives a handle (an index into the job's table of passed
+files) on the file as the running activation has it; `filebind` makes
+the declared file the handle's until the entry leaves (a stack of
+bindings by call depth, so a recursive or nested call binds its own),
+which is how a file reaches a procedure as a parameter (RPG's
+`LIKEFILE`).
 
 `file` is the index of the module's file declaration; the runtime
 finds the declaration through the running entry's program and keeps

@@ -1,0 +1,12 @@
+# IR003 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 2 seq 000200
+diag: RNF3530 00 line 3 seq 000300
+run: ok
+spool: QSYSPRT
+  |1/1   a 80004 14 140004 14
+  |1/2   b 79993 [789END]
+  |1/3   c 6 [789END] 6
+  |1/4   d 70000 [456789]
+  |1/5   e 80000

@@ -82,6 +82,19 @@ impl Gen<'_> {
         (self.t.syms[id].dim > 0).then_some(id)
     }
 
+    /// A qualified name's subfield (`DS.SUB`) and the steps after it.
+    pub fn qualified<'s>(&self, id: SymId, steps: &'s [Step]) -> (SymId, &'s [Step]) {
+        let (mut id, mut steps) = (id, steps);
+        while let ([Step::Field(f), rest @ ..], Ty::Ds(di)) = (steps, &self.t.syms[id].ty)
+            && self.t.syms[id].dim == 0
+            && let Some(sub) = self.t.subfield(*di, f)
+        {
+            id = sub;
+            steps = rest;
+        }
+        (id, steps)
+    }
+
     /// An array operand: `ARR`, `ARR(i)` (from element i), a table,
     /// `%SUBARR(ARR:start:count)`, `DS(*).SUB` (by a subfield).
     pub fn range(&mut self, e: &Expr) -> Option<Range> {
@@ -116,11 +129,12 @@ impl Gen<'_> {
             self.undefined_name(name, at);
             return None;
         };
+        let (id, steps) = self.qualified(id, steps);
         self.t.refer(id, self.at.line, false);
         let sym = self.t.syms[id].clone();
         // A qualified structure's array subfield: `DS.ARR`.
         if sym.dim == 0
-            && let (Ty::Ds(di), [Step::Field(f)]) = (&sym.ty, steps.as_slice())
+            && let (Ty::Ds(di), [Step::Field(f)]) = (&sym.ty, steps)
             && let Some(sub) = self.t.subfield(*di, f)
             && self.t.syms[sub].dim > 0
         {
@@ -142,12 +156,12 @@ impl Gen<'_> {
             return None;
         }
         let base = place_of(self.t, id);
-        let size = self.t.size(&sym.ty);
+        let stride = if sym.stride > 0 { sym.stride } else { self.t.size(&sym.ty) };
         let mut r = Range {
             base,
             sym: id,
             ty: sym.ty.clone(),
-            stride: size,
+            stride,
             keyoff: 0,
             start: "0".into(),
             count: sym.dim.to_string(),
@@ -159,7 +173,7 @@ impl Gen<'_> {
             self.b.ins(format!("{c} = load {cv}"));
             r.count = c;
         }
-        match steps.as_slice() {
+        match steps {
             [] => {}
             [Step::Args(a)] if a.len() == 1 => {
                 let z = self.index(&a[0], sym.dim)?;
@@ -343,7 +357,13 @@ impl Gen<'_> {
             self.err(ids::SORTA_ARRAY, 30, e.name().unwrap_or_default().to_string());
             return;
         }
-        let Some(r) = self.range(&e) else { return };
+        let Some(mut r) = self.range(&e) else { return };
+        // An array over another's elements sorts the base's whole
+        // elements, keyed by this one.
+        if let Some(root) = self.t.syms[r.sym].ovl_root {
+            r.keyoff += self.t.syms[r.sym].offset - self.t.syms[root].offset;
+            r.base = place_of(self.t, root);
+        }
         let seq = self.t.syms[r.sym].seq;
         let desc = op.ext.contains('D') || seq == 2 && !op.ext.contains('A');
         let kd = self.desc_of(&V::place(r.ty.clone(), String::new()));
@@ -602,9 +622,10 @@ impl Gen<'_> {
             }
         } else {
             let whole = match t {
-                Expr::Ref { name, steps, .. } if steps.is_empty() => {
-                    self.t.find(self.scope, name).is_some_and(|id| self.t.syms[id].dim > 0 && !self.t.syms[id].table)
-                }
+                Expr::Ref { name, steps, .. } => self.t.find(self.scope, name).is_some_and(|id| {
+                    let (id, rest) = self.qualified(id, steps);
+                    rest.is_empty() && self.t.syms[id].dim > 0 && !self.t.syms[id].table
+                }),
                 _ => false,
             };
             if !whole {
@@ -806,7 +827,7 @@ impl Gen<'_> {
             }
         };
         let cap = (len / 2 + 1).min(4096);
-        let arr = self.b.temp(&format!("array[{cap}] of varchar({len})"));
+        let arr = self.b.temp(&format!("array[{cap}] of {}", self.ir_ty(&Ty::varchar(len))));
         self.rt_proc(
             "_QRNX_SPLIT",
             "($d: bytes(1) *VARSIZE, byval $el: i64, byval $cap: i64, $s: bytes(1) *VARSIZE, byval $sd: i64, $p: bytes(1) *VARSIZE, byval $pd: i64) -> i64",
@@ -820,8 +841,8 @@ impl Gen<'_> {
         Some(Range {
             base: arr,
             sym: usize::MAX,
-            ty: Ty::VarChar(len, 2),
-            stride: len + 2,
+            ty: Ty::varchar(len),
+            stride: self.t.size(&Ty::varchar(len)),
             keyoff: 0,
             start: "0".into(),
             count: c,

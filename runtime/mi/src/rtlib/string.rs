@@ -30,7 +30,28 @@ fn blank(wide: bool) -> u16 {
 }
 
 fn is_wide(t: &Type) -> bool {
-    matches!(t, Type::Ucs2(_) | Type::VarUcs2(_) | Type::Graphic(_))
+    matches!(
+        t,
+        Type::Ucs2(_) | Type::VarUcs2(..) | Type::Graphic(_) | Type::VarGraphic(..)
+    )
+}
+
+/// The current length of a varying value and its prefix size.
+pub(crate) fn var_len(b: &[u8], prefix: usize) -> usize {
+    if prefix == 4 {
+        usize::try_from(u32::from_be_bytes([b[0], b[1], b[2], b[3]])).unwrap_or(usize::MAX)
+    } else {
+        usize::from(u16::from_be_bytes([b[0], b[1]]))
+    }
+}
+
+/// Store the current length of a varying value.
+pub(crate) fn set_var_len(b: &mut [u8], prefix: usize, len: usize) {
+    if prefix == 4 {
+        b[..4].copy_from_slice(&u32::try_from(len).expect("fits").to_be_bytes());
+    } else {
+        b[..2].copy_from_slice(&u16::try_from(len).expect("fits").to_be_bytes());
+    }
 }
 
 /// Read a text operand. Dates, times, timestamps and indicators read
@@ -38,10 +59,11 @@ fn is_wide(t: &Type) -> bool {
 pub(crate) fn read_text(addr: i64, desc: i64) -> Text {
     let (b, t) = typed(addr, desc);
     match &t {
-        Type::VarChar(_) => {
-            let n = usize::from(u16::from_be_bytes([b[0], b[1]])).min(b.len() - 2);
+        Type::VarChar(_, p) => {
+            let p = usize::from(*p);
+            let n = var_len(b, p).min(b.len() - p);
             Text {
-                units: b[2..2 + n].iter().map(|x| u16::from(*x)).collect(),
+                units: b[p..p + n].iter().map(|x| u16::from(*x)).collect(),
                 wide: false,
             }
         }
@@ -52,10 +74,11 @@ pub(crate) fn read_text(addr: i64, desc: i64) -> Text {
                 .collect(),
             wide: true,
         },
-        Type::VarUcs2(_) => {
-            let n = usize::from(u16::from_be_bytes([b[0], b[1]])).min((b.len() - 2) / 2);
+        Type::VarUcs2(_, p) | Type::VarGraphic(_, p) => {
+            let p = usize::from(*p);
+            let n = var_len(b, p).min((b.len() - p) / 2);
             Text {
-                units: b[2..2 + 2 * n]
+                units: b[p..p + 2 * n]
                     .chunks(2)
                     .map(|c| u16::from_be_bytes([c[0], c[1]]))
                     .collect(),
@@ -101,18 +124,20 @@ pub(crate) fn write_text(addr: i64, desc: i64, text: &Text) {
     let wide = is_wide(&t);
     let units = to_width(text, wide);
     match &t {
-        Type::VarChar(n) => {
+        Type::VarChar(n, p) => {
             let len = units.len().min(*n as usize);
-            b[..2].copy_from_slice(&u16::try_from(len).expect("fits").to_be_bytes());
+            let p = usize::from(*p);
+            set_var_len(b, p, len);
             for (i, u) in units.iter().take(len).enumerate() {
-                b[2 + i] = u8::try_from(*u).unwrap_or(0x6F);
+                b[p + i] = u8::try_from(*u).unwrap_or(0x6F);
             }
         }
-        Type::VarUcs2(n) => {
+        Type::VarUcs2(n, p) | Type::VarGraphic(n, p) => {
             let len = units.len().min(*n as usize);
-            b[..2].copy_from_slice(&u16::try_from(len).expect("fits").to_be_bytes());
+            let p = usize::from(*p);
+            set_var_len(b, p, len);
             for (i, u) in units.iter().take(len).enumerate() {
-                b[2 + 2 * i..4 + 2 * i].copy_from_slice(&u.to_be_bytes());
+                b[p + 2 * i..p + 2 + 2 * i].copy_from_slice(&u.to_be_bytes());
             }
         }
         Type::Ucs2(_) | Type::Graphic(_) => {
@@ -128,6 +153,42 @@ pub(crate) fn write_text(addr: i64, desc: i64, text: &Text) {
             }
         }
     }
+}
+
+/// The bytes of a narrow text operand (`char`, `varchar` and the other
+/// types read as their bytes), or `None` for wide text.
+pub(crate) fn read_narrow(addr: i64, desc: i64) -> Option<Vec<u8>> {
+    let (b, t) = typed(addr, desc);
+    if is_wide(&t) {
+        return None;
+    }
+    Some(match &t {
+        Type::VarChar(_, p) => {
+            let p = usize::from(*p);
+            let n = var_len(b, p).min(b.len() - p);
+            b[p..p + n].to_vec()
+        }
+        _ => b.to_vec(),
+    })
+}
+
+/// Write narrow bytes to a narrow operand; `false` when it is wide.
+pub(crate) fn write_narrow(addr: i64, desc: i64, text: &[u8]) -> bool {
+    let (b, t) = typed(addr, desc);
+    if is_wide(&t) {
+        return false;
+    }
+    if let Type::VarChar(n, p) = &t {
+        let p = usize::from(*p);
+        let len = text.len().min(*n as usize);
+        set_var_len(b, p, len);
+        b[p..p + len].copy_from_slice(&text[..len]);
+    } else {
+        let len = text.len().min(b.len());
+        b[..len].copy_from_slice(&text[..len]);
+        b[len..].fill(0x40);
+    }
+    true
 }
 
 /// A position or length outside the text.
@@ -153,6 +214,13 @@ pub extern "sysv64" fn str_cat(
     b: i64,
     bty: i64,
 ) {
+    // Narrow text joins as bytes.
+    if let (Some(mut x), Some(y)) = (read_narrow(a, aty), read_narrow(b, bty)) {
+        x.extend_from_slice(&y);
+        if write_narrow(dst, dty, &x) {
+            return;
+        }
+    }
     let x = read_text(a, aty);
     let y = read_text(b, bty);
     let wide = x.wide || y.wide;
@@ -360,15 +428,15 @@ pub extern "sysv64" fn str_len(_env: *mut Env, src: i64, sty: i64) -> i32 {
 pub extern "sysv64" fn str_setlen(env: *mut Env, dst: i64, dty: i64, n: i64) {
     let (b, t) = typed(dst, dty);
     let max = t.string_len().unwrap_or(0);
-    let Ok(len) = u16::try_from(n) else {
+    let Ok(len) = u32::try_from(n) else {
         raise_on(job(env), Cond::Rnx0100);
         return;
     };
-    if u32::from(len) > max || !t.is_varying() {
+    let Some(prefix) = t.var_prefix().filter(|_| len <= max) else {
         raise_on(job(env), Cond::Rnx0100);
         return;
-    }
-    b[..2].copy_from_slice(&len.to_be_bytes());
+    };
+    set_var_len(b, prefix as usize, len as usize);
 }
 
 /// `str_replace(env, dst, dty, src, sty, repl, rty, start, len)`.

@@ -34,6 +34,19 @@ pub fn class(t: &Ty) -> Option<TextClass> {
     })
 }
 
+/// The text type of a class: `n` characters, varying or fixed.
+#[must_use]
+pub fn text_ty(c: TextClass, n: u32, varying: bool) -> Ty {
+    match (c, varying) {
+        (TextClass::Char, false) => Ty::Char(n),
+        (TextClass::Char, true) => Ty::varchar(n),
+        (TextClass::Ucs2, false) => Ty::Ucs2(n),
+        (TextClass::Ucs2, true) => Ty::varucs2(n),
+        (TextClass::Graph, false) => Ty::Graph(n),
+        (TextClass::Graph, true) => Ty::vargraph(n),
+    }
+}
+
 impl Gen<'_> {
     /// A text value in another class, converted into a temporary of that
     /// class (varying when the value is), the same length in characters.
@@ -45,14 +58,7 @@ impl Gen<'_> {
             return Some(v.clone());
         }
         let n = v.ty.str_len().unwrap_or(1).max(1);
-        let varying = v.ty.is_varying();
-        let ty = match (to, varying) {
-            (TextClass::Char, false) => Ty::Char(n),
-            (TextClass::Char, true) => Ty::VarChar(n, 2),
-            (TextClass::Ucs2, false) => Ty::Ucs2(n),
-            (TextClass::Ucs2, true) => Ty::VarUcs2(n, 2),
-            (TextClass::Graph, _) => Ty::Graph(n),
-        };
+        let ty = text_ty(to, n, v.ty.is_varying());
         // A literal goes through a place of its own type first.
         let src = if v.kind == Vk::Place {
             v.op.clone()

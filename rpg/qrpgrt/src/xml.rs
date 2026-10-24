@@ -596,7 +596,7 @@ fn store_scalar(addr: u64, d: &crate::value::Desc, text: &str) -> Result<(), Int
         K::VarChar => {
             let mut e = crate::value::ebcdic(text);
             e.truncate(usize::try_from(d.len).unwrap_or(0));
-            crate::value::write_varchar(addr, &e);
+            crate::value::write_var(addr, d.prefix(), &e);
         }
         K::Ind => {
             crate::value::bytes(addr, 1)[0] = match text.trim() {
@@ -706,10 +706,7 @@ fn text_of(addr: i64, desc: i64) -> String {
     let d = crate::value::Desc::of(desc);
     let raw = crate::value::bytes(addr.cast_unsigned(), d.size());
     match d.kind {
-        crate::value::Kind::VarChar => {
-            let n = usize::from(u16::from_be_bytes([raw[0], raw[1]]));
-            ccsid::from_ebcdic(&raw[2..2 + n.min(raw.len() - 2)])
-        }
+        crate::value::Kind::VarChar => ccsid::from_ebcdic(d.var_data(raw)),
         _ => ccsid::from_ebcdic(raw),
     }
 }

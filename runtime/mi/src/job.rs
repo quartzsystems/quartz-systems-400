@@ -148,6 +148,9 @@ pub struct Job {
     pub depth: u32,
     /// The deepest the call stack has been.
     pub max_depth: u32,
+    /// Automatic storage too large for the native stack: the depth of
+    /// the entry that owns it and the bytes.
+    pub autos: Vec<(u32, Box<[u8]>)>,
     /// Spaces pointers address.
     pub spaces: Spaces,
     /// Lines `dsply` wrote; the console job shows them
@@ -178,6 +181,11 @@ pub struct Job {
     pub sql: Option<Box<dyn sql::embed::Embedded>>,
     /// Open files by activation, module and file index.
     pub files: HashMap<FileKey, FileState>,
+    /// Files passed to procedures: what each handle names.
+    pub file_handles: Vec<(FileKey, qir::FileRef)>,
+    /// Declared files bound to a caller's (file parameters): the depth
+    /// of the procedure that bound it, the declared file, the handle.
+    pub file_binds: Vec<(u32, FileKey, usize)>,
     /// The debugger, while `STRDBG` is in effect.
     pub debug: Option<crate::debug::Debugger>,
     /// Where the native stack stood at the first entry call; the stack
@@ -244,6 +252,7 @@ impl Job {
             cmtctl: false,
             depth: 0,
             max_depth: 0,
+            autos: Vec::new(),
             spaces: Spaces::default(),
             console: Vec::new(),
             replies: VecDeque::new(),
@@ -258,6 +267,8 @@ impl Job {
             data: None,
             sql: None,
             files: HashMap::new(),
+            file_handles: Vec::new(),
+            file_binds: Vec::new(),
             debug: None,
             stack_base: 0,
             stack_bytes: 1 << 20,

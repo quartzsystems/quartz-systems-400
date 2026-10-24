@@ -109,12 +109,12 @@ impl Gen<'_> {
         match base {
             "READC" => {
                 let e = flag(self, 1);
-                self.b.ins(format!("store $eof_{n}, {e}"));
+                self.b.ins(format!("store $fcb_{n}.eof, {e}"));
                 self.b.ins(format!("store $eof_, {e}"));
             }
             "CHAIN" => {
                 let x = flag(self, 2);
-                self.b.ins(format!("store $fnd_{n}, {x}"));
+                self.b.ins(format!("store $fcb_{n}.fnd, {x}"));
                 self.b.ins(format!("store $fnd_, {x}"));
             }
             _ => {}
@@ -179,7 +179,7 @@ impl Gen<'_> {
     fn dsp_result(&mut self, op: &Op, base: &str, n: &str, status: &str) {
         let err = self.b.reg();
         self.b.ins(format!("{err} = cmp.ge {status}, 1000"));
-        self.b.ins(format!("dec.mov $st_{n}, {status}"));
+        self.b.ins(format!("dec.mov $fcb_{n}.st, {status}"));
         if op.ext.contains('E') || !op.resind[1].is_empty() {
             self.b.ins(format!("store $errind, {err}"));
             let st = self.b.reg();
@@ -195,7 +195,7 @@ impl Gen<'_> {
                 let name = op.resind[2].clone();
                 if !name.is_empty() {
                     let e = self.b.reg();
-                    self.b.ins(format!("{e} = load $eof_{n}"));
+                    self.b.ins(format!("{e} = load $fcb_{n}.eof"));
                     self.set_ind(&name, &e);
                 }
             }
@@ -203,7 +203,7 @@ impl Gen<'_> {
                 let name = op.resind[0].clone();
                 if !name.is_empty() {
                     let x = self.b.reg();
-                    self.b.ins(format!("{x} = load $fnd_{n}"));
+                    self.b.ins(format!("{x} = load $fcb_{n}.fnd"));
                     let nf = self.b.reg();
                     self.b.ins(format!("{nf} = cmp.eq {x}, *OFF"));
                     self.set_ind(&name, &nf);

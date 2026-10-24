@@ -89,6 +89,15 @@ impl Gen<'_> {
                     self.b.ins(format!("mov {}, x\"{bytes}\"", dst.op));
                     return;
                 }
+                // *BLANKS or *ZEROS fills a varying field to its maximum.
+                if let (Ty::VarChar(n, p), Some(Fig::Blanks | Fig::Zeros)) = (&dst.ty, &src.fig) {
+                    let (r, a) = (self.b.reg(), self.b.reg());
+                    self.b.ins(format!("{r} = const.i64 {n}"));
+                    self.b.ins(format!("str.setlen {}, {r}", dst.op));
+                    self.b.ins(format!("{a} = addr {}", dst.op));
+                    self.b.ins(format!("mov [{a} +{p}]:char({n}), {}", src.op));
+                    return;
+                }
                 if src.fig.is_some() {
                     self.b.ins(format!("mov {}, {}", dst.op, src.op));
                     return;
@@ -1158,6 +1167,13 @@ impl Gen<'_> {
         if self.eval_hook(aop, t, v, half) {
             return;
         }
+        if let Expr::Bif { name, args, .. } = t
+            && name == "%LEN"
+            && args.len() == 1
+        {
+            self.set_len(aop, t, &args[0], v);
+            return;
+        }
         let Some(tv) = self.target(t) else {
             return;
         };
@@ -1202,6 +1218,35 @@ impl Gen<'_> {
             }
             self.assign(&tv, &value, half);
         }
+    }
+
+    /// `%LEN(v) = n` (or `+=` and the others): a varying field's
+    /// current length.
+    fn set_len(&mut self, aop: AssignOp, t: &Expr, base: &Expr, v: &Expr) {
+        let Some(b) = self.target(base) else {
+            return;
+        };
+        if !b.ty.is_varying() {
+            self.err(ids::NOT_ASSIGNABLE, 30, "%LEN");
+            return;
+        }
+        let value = match aop {
+            AssignOp::Set => self.expr(v, Want::default()),
+            _ => {
+                let op = match aop {
+                    AssignOp::Add => BinOp::Add,
+                    AssignOp::Sub => BinOp::Sub,
+                    AssignOp::Mul => BinOp::Mul,
+                    AssignOp::Div => BinOp::Div,
+                    _ => BinOp::Pow,
+                };
+                self.expr(&Expr::Binary(op, Box::new(t.clone()), Box::new(v.clone()), self.at), Want::default())
+            }
+        };
+        let Some(n) = value.and_then(|x| self.int_reg(&x)) else {
+            return;
+        };
+        self.b.ins(format!("str.setlen {}, {n}", b.op));
     }
 
     fn open_if(&mut self, r: Option<String>) {
@@ -1513,7 +1558,7 @@ impl Gen<'_> {
                 // The reply as text; an empty one (a batch job's default)
                 // leaves the field as it was.
                 if let Some(t) = self.target(r) {
-                    let reply = self.tmp(&Ty::VarChar(52, 2));
+                    let reply = self.tmp(&Ty::varchar(52));
                     self.b.ins(format!("dsply {src} reply({})", reply.op));
                     let n = self.b.reg();
                     self.b.ins(format!("{n} = str.len {}", reply.op));
@@ -1663,7 +1708,7 @@ impl Gen<'_> {
     pub fn desc_of(&self, v: &V) -> i64 {
         let (kind, len, dec): (i64, i64, i64) = match &v.ty {
             Ty::Char(n) => (1, i64::from(*n), 0),
-            Ty::VarChar(n, _) => (2, i64::from(*n), 0),
+            Ty::VarChar(n, p) => (2, i64::from(*n), if *p == 4 { 4 } else { 0 }),
             Ty::Packed(d, s) => (3, i64::from(*d), i64::from(*s)),
             Ty::Zoned(d, s) => (4, i64::from(*d), i64::from(*s)),
             Ty::Bin(d, s) => (5, i64::from(*d), i64::from(*s)),
@@ -2250,7 +2295,7 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
             let pname = pname.as_str();
             let id = g.t.find_in(scope, pname);
             let ir = id.map_or_else(|| format!("$p_{}", mangle(pname)), |i| g.t.syms[i].ir.clone());
-            let ty = g.t.ir_type(&prm.ty);
+            let ty = if prm.likefile.is_some() { "fcb_".to_string() } else { g.t.ir_type(&prm.ty) };
             let ty = if prm.dim > 0 { format!("array[{}] of {ty}", prm.dim) } else { ty };
             let mut s = String::new();
             if prm.value {
@@ -2271,6 +2316,15 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
                 s.push_str(" *VARSIZE");
             }
             params.push(s);
+        }
+    }
+    // A file parameter is the caller's file while the procedure runs.
+    if let Some(pr) = &proto {
+        for prm in pr.parms.iter().filter(|p| p.likefile.is_some()) {
+            let n = mangle(&prm.name);
+            let h = g.b.reg();
+            g.b.ins(format!("{h} = load $fcb_{n}.h"));
+            g.b.ins(format!("filebind {n}, {h}"));
         }
     }
     // Locals.

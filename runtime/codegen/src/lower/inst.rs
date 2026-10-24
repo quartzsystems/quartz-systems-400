@@ -225,7 +225,18 @@ impl Lowerer<'_, '_> {
         let (daddr, dty) = self.addr(dst)?;
         match src {
             Operand::Const(c) => {
-                let bytes = qir::inst::literal::encode(&dty, c).map_err(|e| self.unsupported(e))?;
+                let mut bytes = qir::inst::literal::encode(&dty, c).map_err(|e| self.unsupported(e))?;
+                // A varying value stores its length and data only.
+                if let Some(p) = dty.var_prefix() {
+                    let p = p as usize;
+                    let n = if p == 4 {
+                        u32::from_be_bytes(bytes[..4].try_into().expect("4")) as usize
+                    } else {
+                        usize::from(u16::from_be_bytes([bytes[0], bytes[1]]))
+                    };
+                    let unit = if dty.class() == qir::TypeClass::Char { 1 } else { 2 };
+                    bytes.truncate(p + n * unit);
+                }
                 self.store_bytes(daddr, &bytes);
             }
             Operand::Reg(_) => {
@@ -236,7 +247,15 @@ impl Lowerer<'_, '_> {
                 let (saddr, sty) = self.addr(sp)?;
                 // A raw copy only between the same layouts: a varying
                 // value is its length then its data.
-                if dty == sty || (dty.size() == sty.size() && dty.class() == sty.class() && dty.is_varying() == sty.is_varying()) {
+                if dty == sty && let Type::Array { len, elem, stride: Some(s) } = &dty {
+                    // A strided array moves its elements, not the gaps.
+                    for i in 0..u64::from(*len) {
+                        let off = i64::try_from(i * u64::from(*s)).expect("fits");
+                        let d = self.b.ins().iadd_imm_s(daddr, off);
+                        let sa = self.b.ins().iadd_imm_s(saddr, off);
+                        self.copy(d, sa, elem.size());
+                    }
+                } else if dty == sty || (dty.size() == sty.size() && dty.class() == sty.class() && dty.var_prefix() == sty.var_prefix()) {
                     self.copy(daddr, saddr, dty.size());
                 } else if dty.is_string() && sty.is_string() {
                     let dd = self.i64(crate::abi::TypeDesc::of(&dty).word());

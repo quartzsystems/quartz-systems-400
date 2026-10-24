@@ -244,6 +244,8 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
             Some(1)
         }
         (None, Some(t)) => Some(t),
+        // A blank length takes LEN(n).
+        (None, None) => d.kw("LEN").and_then(|k| int_arg(k, 0)).and_then(|v| u32::try_from(v).ok()).filter(|&v| v > 0),
         _ => None,
     };
     // More decimal positions than digits: as many as the digits (by
@@ -256,21 +258,20 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
     }
     let positional = from.is_some();
     let varying = d.kw("VARYING").is_some();
+    // VARYING(4) asks for a 4-byte prefix; a longer field takes one.
+    let vpfx = |n: u32, chars: u32| -> u8 {
+        match d.kw("VARYING").and_then(|k| int_arg(k, 0)) {
+            Some(4) => 4,
+            Some(_) => 2,
+            None => Ty::var_prefix_for(if positional { n.saturating_sub(2) / chars } else { n }),
+        }
+    };
     // A data type IBM does not know is blank.
     let ty_col = if cols.ty.is_empty() || "ACGNPSBIUFDTZ*O".contains(cols.ty.as_str()) {
         cols.ty.as_str()
     } else {
         cx.diags.push(Diag::new(ids::BAD_TYPE_ENTRY, 20, d.at));
         ""
-    };
-    // VARYING(2|4): the prefix; 4 by default past 65535.
-    let vprefix = |n: u32| -> u32 {
-        match d.kw("VARYING").and_then(|k| int_arg(k, 0)) {
-            Some(4) => 4,
-            Some(_) => 2,
-            None if n > 65535 => 4,
-            None => 2,
-        }
     };
     let code = if ty_col.is_empty() {
         if d.kw("LIKE").is_some() {
@@ -298,24 +299,32 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
         "A" => {
             let n = need_len(cx)?;
             if varying {
-                let p = vprefix(n);
-                let n = if positional { n.saturating_sub(p) } else { n };
-                Ty::VarChar(n, u8::try_from(p).unwrap_or(2))
+                let p = vpfx(n, 1);
+                let n = if positional { n.saturating_sub(u32::from(p)) } else { n };
+                Ty::VarChar(n, p)
             } else {
                 Ty::Char(n)
             }
         }
         "C" => {
             let n = need_len(cx)?;
-            let p = if varying { vprefix(n * 2) } else { 0 };
-            let n = if positional { n.saturating_sub(p) / 2 } else { n };
-            if varying { Ty::VarUcs2(n, u8::try_from(p).unwrap_or(2)) } else { Ty::Ucs2(n) }
+            if varying {
+                let p = vpfx(n, 2);
+                let n = if positional { n.saturating_sub(u32::from(p)) / 2 } else { n };
+                Ty::VarUcs2(n, p)
+            } else {
+                Ty::Ucs2(if positional { n / 2 } else { n })
+            }
         }
         "G" => {
             let n = need_len(cx)?;
-            let p = if varying { vprefix(n * 2) } else { 0 };
-            let n = if positional { n.saturating_sub(p) / 2 } else { n };
-            if varying { Ty::VarGraph(n, u8::try_from(p).unwrap_or(2)) } else { Ty::Graph(n) }
+            if varying {
+                let p = vpfx(n, 2);
+                let n = if positional { n.saturating_sub(u32::from(p)) / 2 } else { n };
+                Ty::VarGraph(n, p)
+            } else {
+                Ty::Graph(if positional { n / 2 } else { n })
+            }
         }
         "N" => Ty::Ind,
         "P" => {
@@ -1261,11 +1270,28 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         if twice {
             continue;
         }
+        // A subfield over an array subfield is an array of as many
+        // elements, as far apart as the base's.
+        let base = c
+            .kw("OVERLAY")
+            .and_then(|k| word_arg(k, 0))
+            .and_then(|t| cx.t.subfield(ds_index, &t))
+            .filter(|&b| sdim == 0 && cx.t.syms[b].dim > 0 && b != id);
+        let (sdim, stride, ovl_root) = match base {
+            Some(b) => {
+                let bs = &cx.t.syms[b];
+                let stride = if bs.stride > 0 { bs.stride } else { cx.t.size(&bs.ty) };
+                (bs.dim, stride, Some(bs.ovl_root.unwrap_or(b)))
+            }
+            None => (sdim, 0, None),
+        };
         let sub = Sym {
             name: cname.clone(),
             kind: Some(Kind::Subfield),
             ty,
             dim: sdim,
+            stride,
+            ovl_root,
             ir: String::new(),
             scope: cx.scope,
             storage: Storage::InDs,
@@ -1371,6 +1397,7 @@ pub fn proto(cx: &mut Cx<'_>, d: &Def) -> Proto {
             varsize: opts.iter().any(|o| o == "*VARSIZE"),
             string: opts.iter().any(|o| o == "*STRING"),
             trim: opts.iter().any(|o| o == "*TRIM"),
+            likefile: c.kw("LIKEFILE").and_then(|k| word_arg(k, 0)).map(|n| n.to_ascii_uppercase()),
         });
     }
     p

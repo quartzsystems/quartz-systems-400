@@ -214,7 +214,7 @@ impl Walk<'_> {
                 // %SUBST and the like as a target change their first
                 // operand; %NULLIND changes only the null indicator.
                 for (k, a) in args.iter().enumerate() {
-                    self.expr(a, target && k == 0 && name != "%LEN" && name != "%NULLIND");
+                    self.expr(a, target && k == 0 && name != "%NULLIND");
                 }
             }
             Expr::Unary(_, a, _) => self.expr(a, false),

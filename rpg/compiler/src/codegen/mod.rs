@@ -429,7 +429,12 @@ pub fn module(
         out.push_str(&ty);
         out.push('\n');
     }
+    let mut declared = BTreeSet::new();
     for f in files.iter().filter(|f| f.dev != Dev::Special) {
+        // Parameter files of one name are one declaration.
+        if !declared.insert(mangle(&f.name)) {
+            continue;
+        }
         let dev = match f.dev {
             Dev::Printer => " dev(*PRT)",
             Dev::Workstn => " dev(*DSP)",

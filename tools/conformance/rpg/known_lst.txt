@@ -224,3 +224,7 @@ SPEC149 new batch 1/2 member: listing layout (cross-reference, markers, spacing)
 SPEC151 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
 SPEC152 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
 SPEC153 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+IR004 the cross-reference gives a LIKEDS parameter's subfield references to the base structure's subfields
+IR006 the cross-reference does not count an OVERLAY keyword as a reference of the array it names
+IR007 the rulers and cross-reference around LIKEFILE parameter files (each one's format listed apart) are not matched yet
+IR008 the external description box of a RENAMEd record format shows the RPG name for the external one

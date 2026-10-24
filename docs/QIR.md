@@ -34,10 +34,11 @@ boundaries; a structure holding a pointer anywhere has alignment 16.
 | `zoned(d,s)` | `d` | `DECIMAL.md` §2 |
 | `bin(d,s)` | 2, 4 or 8 | big-endian two's complement with `s` implied decimals; up to 4, 9 or 18 digits (RPG and DDS `B`) |
 | `char(n)` | `n` | CP037, blank padded; 1 ≤ n ≤ 16773104 |
-| `varchar(n)` | `2 + n` | big-endian length then data; n ≤ 65535 |
+| `varchar(n)`, `varchar(n:4)` | `2 + n`, `4 + n` | big-endian length of 2 (n ≤ 65535) or 4 bytes, then data |
 | `ucs2(n)` | `2n` | UCS-2 big-endian, blank (`0020`) padded |
-| `varucs2(n)` | `2 + 2n` | length in code units; n ≤ 65535 |
+| `varucs2(n)`, `varucs2(n:4)` | `2 + 2n`, `4 + 2n` | length in code units; a 2-byte length for n ≤ 65535 |
 | `graphic(n)` | `2n` | DBCS |
+| `vargraphic(n)`, `vargraphic(n:4)` | `2 + 2n`, `4 + 2n` | length in characters |
 | `date(*FMT)` | 10, 8 or 6 | characters in `DATFMT` form; `*ISO *USA *EUR *JIS` 10, `*MDY *DMY *YMD` 8, `*JUL` 6 |
 | `time(*FMT)` | 8 | `*HMS *ISO *USA *EUR *JIS` |
 | `timestamp(p)` | 19 or `20 + p` | `yyyy-mm-dd-hh.mm.ss[.f…]`, 0 ≤ p ≤ 12 |
@@ -46,6 +47,7 @@ boundaries; a structure holding a pointer anywhere has alignment 16.
 | `procptr` | 16 | procedure pointer; aligned 16 |
 | `struct(size) { f: T @off, … }` | `size` | explicit offsets, overlays allowed; default size is the end of the last field |
 | `array[n] of T` | `n × size(T)` | zero-based index in the IR |
+| `array[n:s] of T` | `(n - 1) × s + size(T)` | elements `s` bytes apart, `s ≥ size(T)` (an RPG overlay of an array subfield; the gaps belong to other fields, a `mov` moves only the elements) |
 | `bytes(n)` | `n` | opaque |
 
 Register types: the integers, the floats, `ind`, `ptr`, `procptr`.
@@ -297,7 +299,9 @@ Level checks happen at `dbopen` (`CPF4131` as an escape message).
 |---|---|
 | `%d = dbopen FILE [infds(place)]` | open the declared file; the runtime keeps `infds` current |
 | `%d = dbclose FILE` | |
-| `%d = dbio FILE OP [rec(place)] [key(x)] [rrn(x)] [fmt(NAME)] [nolock]` | `READ READP READE READPE CHAIN SETLL SETGT WRITE UPDATE DELETE UNLOCK FEOD`; reads and writes need `rec`, positioning needs `key` or `rrn` |
+| `%d = dbio FILE OP [rec(place)] [key(x)] [rrn(x)] [fmt(NAME)] [nolock] [nulls(place)]` | `READ READP READE READPE CHAIN SETLL SETGT WRITE UPDATE DELETE UNLOCK FEOD`; reads and writes need `rec`, positioning needs `key` or `rrn`; `nulls` is the record's null map, an indicator per field of the format in order (`'1'` null), filled by a read and stored by a write or update |
+| `%d = fileref FILE` | an `i32` handle on the database file as this activation has it, for a call to pass |
+| `filebind FILE, h` | until the procedure returns, the declared file is the one handle `h` names (a file parameter) |
 | `%d = dbfb FILE` | the feedback of the database file's last operation as bits: 1 end of file, 2 found, 4 equal, 8 open (`%EOF`, `%FOUND`, `%EQUAL`, `%OPEN`); 0 for a file that is not open. For a display file bits 8-15 are the last read's attention identifier and bits 16-30 its subfile record number |
 | `%d = dspio FILE OP fmt(NAME) [rec(place)] [rrn(x)] [inds(place)]` | `WRITE READ EXFMT CHAIN UPDATE READC` on a `dev(*DSP)` file: `WRITE` with `rrn` puts a subfile record at that number, `CHAIN` reads one by number, `UPDATE` replaces the one last read, `READC` reads the next changed one; a read whose `fmt` is not a record of the file reads the one last written that takes input; `inds` is the separate indicator area (`INDARA`), its response indicators set by a read |
 | `%d = prtio FILE WRITE fmt(NAME) [rec(place)] [ctl(sb, sa, kb, ka)]` | print a record of a `dev(*PRT)` file: 0, or 1 when the carriage reached the overflow line; `ctl` gives the line's carriage control (space before, space after, skip before, skip after, integers, 0 for none), as RPG output does for a program-described file |
@@ -409,7 +413,9 @@ and smallest values (`FF`/`00` for text), `*NULL` sixteen zero bytes,
 
 ## 8. Format version
 
-`FORMAT_VERSION` is 3 (version 2 added `prtio`'s `ctl`, at the end of
+`FORMAT_VERSION` is 5 (version 5 added the 4-byte varying types,
+`vargraphic`, strided arrays and `fileref`/`filebind` as new tags, and
+`dbio`'s `nulls` at the end of its record; version 2 added `prtio`'s `ctl`, at the end of
 the device I/O record, and `dec.mov`'s `trunc`, at the end of its;
 version 3 the type `bin(d,s)`, tag 26, and `dspio`'s `CHAIN`, `UPDATE`
 and `READC` as new tags with its `rrn` and `inds` at the end of the

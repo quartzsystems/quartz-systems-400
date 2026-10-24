@@ -134,7 +134,7 @@ impl Gen<'_> {
                 // An empty literal: a varying value of no characters.
                 let tmp = self.b.temp("varchar(1)");
                 self.b.ins(format!("mov {tmp}, \"\""));
-                Rt { desc: self.desc_of(&V::place(Ty::VarChar(1, 2), tmp.clone())), op: tmp }
+                Rt { desc: self.desc_of(&V::place(Ty::varchar(1), tmp.clone())), op: tmp }
             }
             (t, _) => {
                 let n = t.str_len().unwrap_or(1).max(1);

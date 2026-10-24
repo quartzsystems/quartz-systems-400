@@ -787,13 +787,7 @@ impl Gen<'_> {
         let lb = vb.ty.str_len().unwrap_or(0);
         let varying = va.ty.is_varying() || vb.ty.is_varying();
         let n = (la + lb).max(1);
-        let ty = match (cls, varying) {
-            (super::ucs2::TextClass::Ucs2, true) => Ty::VarUcs2(n, 2),
-            (super::ucs2::TextClass::Ucs2, false) => Ty::Ucs2(n),
-            (super::ucs2::TextClass::Graph, _) => Ty::Graph(n),
-            (_, true) => Ty::VarChar(n, 2),
-            (_, false) => Ty::Char(n),
-        };
+        let ty = super::ucs2::text_ty(cls, n, varying);
         let t = self.b.temp(&self.ir_ty(&ty));
         if la + lb == 0 {
             self.b.ins(format!("mov {t}, \"\""));

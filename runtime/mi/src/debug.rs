@@ -252,7 +252,7 @@ impl Job {
 /// `EVAL`'s view of a value.
 fn format_value(v: &DbgVar, t: &Type, bytes: &[u8]) -> String {
     match t.class() {
-        TypeClass::Char | TypeClass::Graphic if !matches!(t, Type::VarChar(_)) => {
+        TypeClass::Char | TypeClass::Graphic if !t.is_varying() => {
             format!("'{}'", ccsid::from_ebcdic(bytes))
         }
         TypeClass::Char | TypeClass::Ucs2 | TypeClass::Graphic | TypeClass::DateTime => {

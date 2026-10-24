@@ -1,0 +1,367 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   IR004
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   IR004
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 ctl-opt dftactgrp(*no);                                                                                   000000     000200
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     3 dcl-f QSYSPRT printer(132);                                                                               000000     000300
+-     4 dcl-ds line len(132) end-ds;                                                                              000000     000400
+ ======>       aaaa
+ *RNF3530 00 a      000400  Data structure LINE has no valid subfields.
+      5 dcl-s big varchar(200000);                                                                                000000     000500
+      6 dcl-s small varchar(20:4);                                                                                000000     000600
+      7 dcl-s n int(10);                                                                                          000000     000700
+      8 dcl-ds rec qualified;                                                                                     000000     000800
+      9   id int(10);                                                                                             000000     000900
+     10   body varchar(70000);                                                                                    000000     001000
+     11   after char(4);                                                                                          000000     001100
+     12 end-ds;                                                                                                   000000     001200
+ *RNF2318 00      3 000300  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     13 big = %trimr(fill(66000));                                                                                000000     001300
+     14 line = 'a ' + %char(%len(big)) + ' [' + %subst(big:65995:6) + ']';                                        000000     001400
+     15 write QSYSPRT line;                                                                                       000000     001500
+     16 n = byref(big);                                                                                           000000     001600
+     17 line = 'b ' + %char(n) + ' ' + %char(%len(big)) + ' [' + %subst(big:%len(big)-3) + ']';                   000000     001700
+     18 write QSYSPRT line;                                                                                       000000     001800
+     19 line = 'c ' + %char(byconst(big + 'tail')) + ' ' + %char(byval(small + 'xy'));                            000000     001900
+     20 write QSYSPRT line;                                                                                       000000     002000
+     21 small = 'hello';                                                                                          000000     002100
+     22 n = byref4(small);                                                                                        000000     002200
+     23 line = 'd ' + %char(n) + ' [' + small + ']';                                                              000000     002300
+     24 write QSYSPRT line;                                                                                       000000     002400
+     25 rec.id = 7;                                                                                               000000     002500
+     26 rec.body = %subst(big:1:66001);                                                                           000000     002600
+     27 rec.after = 'last';                                                                                       000000     002700
+     28 line = 'e ' + %char(%size(rec)) + ' ' + %char(%len(rec.body)) + ' ' + rec.after;                          000000     002800
+     29 line = %trimr(line) + ' ' + %char(dsparm(rec));                                                           000000     002900
+     30 write QSYSPRT line;                                                                                       000000     003000
+     31 *inlr = *on;                                                                                              000000     003100
+     32                                                                                                           000000     003200
+-    33 dcl-proc fill;                                                                                            000000     003300
+-    34   dcl-pi *n varchar(100000);                                                                              000000     003400
+     35     n int(10) value;                                                                                      000000     003500
+     36   end-pi;                                                                                                 000000     003600
+     37   dcl-s r varchar(100000);                                                                                000000     003700
+     38   dcl-s i int(10);                                                                                        000000     003800
+-    39   for i = 1 to %div(n:10);                                                                           B01  000000     003900
+     40     r += '0123456789';                                                                                01  000000     004000
+     41   endfor;                                                                                            E01  000000     004100
+     42   return r;                                                                                               000000     004200
+     43 end-proc;                                                                                                 000000     004300
+     44                                                                                                           000000     004400
+     45 dcl-proc byref;                                                                                           000000     004500
+-    46   dcl-pi *n int(10);                                                                                      000000     004600
+     47     p varchar(200000);                                                                                    000000     004700
+     48   end-pi;                                                                                                 000000     004800
+-    49   p += 'more';                                                                                            000000     004900
+     50   return %len(p);                                                                                         000000     005000
+     51 end-proc;                                                                                                 000000     005100
+     52                                                                                                           000000     005200
+     53 dcl-proc byconst;                                                                                         000000     005300
+-    54   dcl-pi *n int(10);                                                                                      000000     005400
+     55     p varchar(200000) const;                                                                              000000     005500
+     56   end-pi;                                                                                                 000000     005600
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     57   return %len(p) + %scan('tail':p);                                                                       000000     005700
+     58 end-proc;                                                                                                 000000     005800
+     59                                                                                                           000000     005900
+     60 dcl-proc byval;                                                                                           000000     006000
+-    61   dcl-pi *n int(10);                                                                                      000000     006100
+     62     p varchar(70000) value;                                                                               000000     006200
+     63   end-pi;                                                                                                 000000     006300
+-    64   p = p + p;                                                                                              000000     006400
+     65   return %len(p);                                                                                         000000     006500
+     66 end-proc;                                                                                                 000000     006600
+     67                                                                                                           000000     006700
+     68 dcl-proc byref4;                                                                                          000000     006800
+-    69   dcl-pi *n int(10);                                                                                      000000     006900
+     70     p varchar(20:4);                                                                                      000000     007000
+     71   end-pi;                                                                                                 000000     007100
+-    72   p = p + ' there';                                                                                       000000     007200
+     73   return %len(p);                                                                                         000000     007300
+     74 end-proc;                                                                                                 000000     007400
+     75                                                                                                           000000     007500
+     76 dcl-proc dsparm;                                                                                          000000     007600
+-    77   dcl-pi *n int(10);                                                                                      000000     007700
+     78     r likeds(rec);                                                                                        000000     007800
+     79   end-pi;                                                                                                 000000     007900
+-    80   return r.id + %len(r.body);                                                                             000000     008000
+     81 end-proc;                                                                                                 000000     008100
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 3D     15      18      20
+                                                   24      30
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   31M
+          BIG               A(200000)               5D     13M     14      14
+                            VARYING(4)             16      17      17      17
+                                                   19      26
+          BYCONST           I(10,0)                19      53
+                            PROTOTYPE
+          BYREF             I(10,0)                16      45
+                            PROTOTYPE
+          BYREF4            I(10,0)                22      68
+                            PROTOTYPE
+          BYVAL             I(10,0)                19      60
+                            PROTOTYPE
+          DSPARM            I(10,0)                29      76
+                            PROTOTYPE
+          FILL              A(100000)              13      33
+                            VARYING(4)
+                            PROTOTYPE
+          LINE              DS(132)                 4D     14M     15      17M
+                                                   18      19M     20      23M
+                                                   24      28M     29M     29
+                                                   30
+          N                 I(10,0)                 7D     16M     17      22M
+                                                   23
+          REC               DS(70012)               8D     25M     26M     27M
+                                                   28      28      28      29
+                                                   78
+            AFTER           A(4)                   11D     27      28
+            BODY            A(70000)               10D     26      28
+                            VARYING(4)
+            ID              I(10,0)                 9D     25
+          SMALL             A(20)                   6D     19      21M     22
+                            VARYING(4)             23
+       Field References for subprocedure FILL
+0         Field             Attributes         References (D=Defined M=Modified)
+          I                 I(10,0)                38D     39
+          N                 I(10,0)                35D     39
+          R                 A(100000)              37D     40M     42
+                            VARYING(4)
+       Field References for subprocedure BYREF
+0         Field             Attributes         References (D=Defined M=Modified)
+          P                 A(200000)              47D     49M     50
+                            BASED(_QRNL_PST+)
+                            VARYING(4)
+       Field References for subprocedure BYCONST
+1{heading} page 7
+-         Field             Attributes         References (D=Defined M=Modified)
+          P                 A(200000)              55D     57      57
+                            BASED(_QRNL_PST+)
+                            VARYING(4)
+       Field References for subprocedure BYVAL
+0         Field             Attributes         References (D=Defined M=Modified)
+          P                 A(70000)               62D     64M     64      64
+                            VARYING(4)             65
+       Field References for subprocedure BYREF4
+0         Field             Attributes         References (D=Defined M=Modified)
+          P                 A(20)                  70D     72M     72      73
+                            BASED(_QRNL_PST+)
+                            VARYING(4)
+       Field References for subprocedure DSPARM
+0         Field             Attributes         References (D=Defined M=Modified)
+          R                 DS(70012)              78D     80      80
+                            BASED(_QRNL_PST+)
+            BODY            A(70000)               80
+                            VARYING(4)
+            ID              I(10,0)                80
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                       31M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+ *RNF7031 00      1 The name or indicator is not referenced.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 10
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        3
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        3
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       81
+     Specifications  . . . . . . . . :       62
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        6
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program IR004 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

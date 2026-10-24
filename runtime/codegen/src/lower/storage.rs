@@ -327,13 +327,24 @@ impl Lowerer<'_, '_> {
                 let v = self.rt_call(RtFn::DbClose, &[f]).expect("result");
                 self.b.def_var(self.vars[dst.0 as usize], v);
             }
+            IoInst::FileRef { dst, file } => {
+                let f = self.i64(i64::from(*file));
+                let v = self.rt_call(RtFn::FileRef, &[f]).expect("result");
+                self.b.def_var(self.vars[dst.0 as usize], v);
+            }
+            IoInst::FileBind { file, handle } => {
+                let f = self.i64(i64::from(*file));
+                let h = self.value(handle, &Type::I32)?;
+                let h = self.b.ins().sextend(types::I64, h);
+                self.rt_call(RtFn::FileBind, &[f, h]);
+            }
             IoInst::DbFb { dst, file } => {
                 // `db_io` with the feedback code answers without I/O.
                 let f = self.i64(i64::from(*file));
                 let opv = self.i64(crate::rt::DB_FEEDBACK);
                 let z = self.i64(0);
                 let v = self
-                    .rt_call(RtFn::DbIo, &[f, opv, z, z, z, z, z, z, z])
+                    .rt_call(RtFn::DbIo, &[f, opv, z, z, z, z, z, z, z, z, z])
                     .expect("result");
                 self.b.def_var(self.vars[dst.0 as usize], v);
             }
@@ -346,6 +357,7 @@ impl Lowerer<'_, '_> {
                 rrn,
                 fmt,
                 nolock,
+                nulls,
             } => {
                 let f = self.i64(i64::from(*file));
                 let opv = self.i64(db_op_code(*op));
@@ -366,8 +378,12 @@ impl Lowerer<'_, '_> {
                     None => (self.i64(0), self.i64(0)),
                 };
                 let nl = self.i64(i64::from(*nolock));
+                let (na, nd) = match nulls {
+                    Some(p) => self.place_pair(p)?,
+                    None => (self.i64(0), self.i64(0)),
+                };
                 let v = self
-                    .rt_call(RtFn::DbIo, &[f, opv, ra, rd, ka, kd, rr, fa, nl])
+                    .rt_call(RtFn::DbIo, &[f, opv, ra, rd, ka, kd, rr, fa, nl, na, nd])
                     .expect("result");
                 self.b.def_var(self.vars[dst.0 as usize], v);
             }

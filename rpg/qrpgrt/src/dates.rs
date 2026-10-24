@@ -568,10 +568,7 @@ pub fn read(addr: u64, d: &Desc, f: Fmt) -> Result<Dt, DtErr> {
     }
     let b = bytes(addr, d.size());
     let text = match d.kind {
-        Kind::VarChar => {
-            let n = usize::from(u16::from_be_bytes([b[0], b[1]]));
-            text_of(&b[2..2 + n.min(b.len() - 2)])
-        }
+        Kind::VarChar => text_of(d.var_data(b)),
         _ => text_of(b),
     };
     let text = if matches!(d.kind, Kind::Char | Kind::VarChar) {
@@ -594,7 +591,7 @@ pub fn write(addr: u64, d: &Desc, f: Fmt, v: Dt) -> Result<(), DtErr> {
     let e: Vec<u8> = s.chars().map(|c| ccsid::byte_of(c).unwrap_or(0x40)).collect();
     if d.kind == Kind::VarChar {
         let max = usize::try_from(d.len).unwrap_or(0);
-        crate::value::write_varchar(addr, &e[..e.len().min(max)]);
+        crate::value::write_var(addr, d.prefix(), &e[..e.len().min(max)]);
     } else {
         let out = bytes(addr, d.size());
         out.fill(0x40);

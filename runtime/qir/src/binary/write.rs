@@ -138,6 +138,7 @@ impl W {
         self.list(&m.procs, Self::proc);
     }
 
+    #[allow(clippy::too_many_lines)]
     fn ty(&mut self, t: &Type) {
         match t {
             Type::I8 => self.u8(0),
@@ -169,17 +170,32 @@ impl W {
                 self.u8(12);
                 self.u32(*n);
             }
-            Type::VarChar(n) => {
+            Type::VarChar(n, 2) => {
                 self.u8(13);
                 self.u32(*n);
+            }
+            Type::VarChar(n, p) => {
+                self.u8(27);
+                self.u32(*n);
+                self.u8(*p);
             }
             Type::Ucs2(n) => {
                 self.u8(14);
                 self.u32(*n);
             }
-            Type::VarUcs2(n) => {
+            Type::VarUcs2(n, 2) => {
                 self.u8(15);
                 self.u32(*n);
+            }
+            Type::VarUcs2(n, p) => {
+                self.u8(28);
+                self.u32(*n);
+                self.u8(*p);
+            }
+            Type::VarGraphic(n, p) => {
+                self.u8(29);
+                self.u32(*n);
+                self.u8(*p);
             }
             Type::Graphic(n) => {
                 self.u8(16);
@@ -209,9 +225,15 @@ impl W {
                     w.ty(&f.ty);
                 });
             }
-            Type::Array { len, elem } => {
+            Type::Array { len, elem, stride: None } => {
                 self.u8(24);
                 self.u32(*len);
+                self.ty(elem);
+            }
+            Type::Array { len, elem, stride: Some(s) } => {
+                self.u8(30);
+                self.u32(*len);
+                self.u32(*s);
                 self.ty(elem);
             }
             Type::Bytes(n) => {
@@ -988,6 +1010,7 @@ impl W {
                 rrn,
                 fmt,
                 nolock,
+                nulls,
             } => {
                 self.u8(2);
                 self.reg(*dst);
@@ -998,6 +1021,7 @@ impl W {
                 self.opt_operand(rrn.as_ref());
                 self.opt(fmt.as_ref(), |w, f| w.str(f));
                 self.bool(*nolock);
+                self.opt_place(nulls.as_ref());
             }
             IoInst::DevIo {
                 dst,
@@ -1022,6 +1046,16 @@ impl W {
                 });
                 self.opt_operand(rrn.as_ref());
                 self.opt_place(inds.as_ref());
+            }
+            IoInst::FileRef { dst, file } => {
+                self.u8(5);
+                self.reg(*dst);
+                self.u32(*file);
+            }
+            IoInst::FileBind { file, handle } => {
+                self.u8(6);
+                self.u32(*file);
+                self.operand(handle);
             }
         }
     }

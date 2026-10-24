@@ -281,7 +281,7 @@ impl Gen<'_> {
         };
         let src = self.rt_of(&s, None);
         self.b.ins(format!("str.subst {t}, {}, {start}, {n}", src.op));
-        Some(V::place(Ty::VarChar(len, 2), t))
+        Some(V::place(Ty::varchar(len), t))
     }
 
     /// `%CONCAT(sep : a : b ...)` and `%CONCATARR(sep : array)`: the
@@ -321,7 +321,7 @@ impl Gen<'_> {
         let v = self.expr(&e, Want::default())?;
         let n = v.ty.str_len().unwrap_or(1).max(1);
         let t = self.b.temp(&format!("varchar({n})"));
-        let tv = V::place(Ty::VarChar(n, 2), t);
+        let tv = V::place(Ty::varchar(n), t);
         self.assign(&tv, &v, false);
         Some(tv)
     }
@@ -391,7 +391,7 @@ impl Gen<'_> {
             "callb _QRNX_SCANRPL({t}, {cap}, {}, {}, {}, {}, {}, {}, {st}, {ln})",
             s.op, s.desc, r.op, r.desc, src.op, src.desc
         ));
-        Some(V::place(Ty::VarChar(cap, 2), t))
+        Some(V::place(Ty::varchar(cap), t))
     }
 
     /// `%MAXARR(array [: start [: count]])` and `%MINARR`.
@@ -458,7 +458,7 @@ impl Gen<'_> {
         let t = self.b.temp(&format!("varchar({cap})"));
         self.rt_proc("_QRNX_STRGET", "($d: bytes(1) *VARSIZE, byval $cap: i64, $s: bytes(1) *VARSIZE)");
         self.b.ins(format!("callb _QRNX_STRGET({t}, {cap}, [{r}]:char({cap}))"));
-        Some(V::place(Ty::VarChar(cap, 2), t))
+        Some(V::place(Ty::varchar(cap), t))
     }
 
     /// `%STR(pointer : maximum) = value`.

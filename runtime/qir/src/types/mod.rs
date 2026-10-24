@@ -23,6 +23,9 @@ pub const MAX_TIMESTAMP_PRECISION: u8 = 12;
 /// Largest `char`, `varchar`, `bytes` or `graphic` length.
 pub const MAX_STRING_LEN: u32 = 16_773_104;
 
+/// Largest length of a varying type with a 2-byte prefix.
+pub const MAX_VAR2_LEN: u32 = 65_535;
+
 /// A type.
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum Type {
@@ -55,14 +58,19 @@ pub enum Type {
     Bin(Shape),
     /// Fixed character, CP037 bytes, blank padded.
     Char(u32),
-    /// Variable character: a 2-byte big-endian length then `n` bytes.
-    VarChar(u32),
+    /// Variable character: a big-endian length of 2 or 4 bytes (the
+    /// second field) then `n` bytes.
+    VarChar(u32, u8),
     /// Fixed UCS-2, `n` code units of 2 bytes.
     Ucs2(u32),
-    /// Variable UCS-2: a 2-byte length (in code units) then `n` units.
-    VarUcs2(u32),
+    /// Variable UCS-2: a 2- or 4-byte length (in code units) then `n`
+    /// units.
+    VarUcs2(u32, u8),
     /// Double-byte graphic, `n` characters of 2 bytes.
     Graphic(u32),
+    /// Variable graphic: a 2- or 4-byte length (in characters) then
+    /// `n` characters of 2 bytes.
+    VarGraphic(u32, u8),
     /// A date in a format, as characters.
     Date(DateFmt),
     /// A time in a format, 8 characters.
@@ -77,12 +85,16 @@ pub enum Type {
     ProcPtr,
     /// A structure with explicit field offsets; fields may overlap.
     Struct(Box<StructType>),
-    /// `len` elements of a type, contiguous.
+    /// `len` elements of a type, contiguous or `stride` bytes apart
+    /// (an RPG overlay of an array subfield: the gaps hold other fields).
     Array {
         /// Element count.
         len: u32,
         /// Element type.
         elem: Box<Type>,
+        /// Bytes from one element to the next when not the element's
+        /// size; at least the element's size.
+        stride: Option<u32>,
     },
     /// `n` opaque bytes.
     Bytes(u32),
@@ -146,9 +158,9 @@ impl Type {
             Self::U8 | Self::U16 | Self::U32 | Self::U64 => TypeClass::UInt,
             Self::F32 | Self::F64 => TypeClass::Float,
             Self::Packed(_) | Self::Zoned(_) | Self::Bin(_) => TypeClass::Decimal,
-            Self::Char(_) | Self::VarChar(_) => TypeClass::Char,
-            Self::Ucs2(_) | Self::VarUcs2(_) => TypeClass::Ucs2,
-            Self::Graphic(_) => TypeClass::Graphic,
+            Self::Char(_) | Self::VarChar(..) => TypeClass::Char,
+            Self::Ucs2(_) | Self::VarUcs2(..) => TypeClass::Ucs2,
+            Self::Graphic(_) | Self::VarGraphic(..) => TypeClass::Graphic,
             Self::Date(_) | Self::Time(_) | Self::Timestamp(_) => TypeClass::DateTime,
             Self::Ind => TypeClass::Ind,
             Self::Ptr => TypeClass::Ptr,
@@ -199,7 +211,16 @@ impl Type {
     /// A variable-length string type.
     #[must_use]
     pub fn is_varying(&self) -> bool {
-        matches!(self, Self::VarChar(_) | Self::VarUcs2(_))
+        self.var_prefix().is_some()
+    }
+
+    /// The length prefix of a varying type in bytes: 2 or 4.
+    #[must_use]
+    pub fn var_prefix(&self) -> Option<u32> {
+        match self {
+            Self::VarChar(_, p) | Self::VarUcs2(_, p) | Self::VarGraphic(_, p) => Some(u32::from(*p)),
+            _ => None,
+        }
     }
 
     /// Declared length of a string type in characters.
@@ -207,10 +228,11 @@ impl Type {
     pub fn string_len(&self) -> Option<u32> {
         match self {
             Self::Char(n)
-            | Self::VarChar(n)
+            | Self::VarChar(n, _)
             | Self::Ucs2(n)
-            | Self::VarUcs2(n)
-            | Self::Graphic(n) => Some(*n),
+            | Self::VarUcs2(n, _)
+            | Self::Graphic(n)
+            | Self::VarGraphic(n, _) => Some(*n),
             _ => None,
         }
     }
@@ -265,16 +287,23 @@ impl Type {
                 }
             }
             Self::Char(n)
-            | Self::VarChar(n)
+            | Self::VarChar(n, _)
             | Self::Ucs2(n)
-            | Self::VarUcs2(n)
+            | Self::VarUcs2(n, _)
             | Self::Graphic(n)
+            | Self::VarGraphic(n, _)
             | Self::Bytes(n) => {
                 if *n == 0 || *n > MAX_STRING_LEN {
                     return Err(bad(format!("length must be 1 to {MAX_STRING_LEN}")));
                 }
-                if self.is_varying() && *n > u32::from(u16::MAX) {
-                    return Err(bad("a varying length is at most 65535".into()));
+                match self.var_prefix() {
+                    Some(2) if *n > MAX_VAR2_LEN => {
+                        return Err(bad(format!(
+                            "a varying length with a 2-byte prefix is at most {MAX_VAR2_LEN}"
+                        )));
+                    }
+                    Some(2 | 4) | None => {}
+                    Some(_) => return Err(bad("a varying prefix is 2 or 4 bytes".into())),
                 }
             }
             Self::Timestamp(p) if *p > MAX_TIMESTAMP_PRECISION => {
@@ -282,12 +311,20 @@ impl Type {
                     "timestamp precision is at most {MAX_TIMESTAMP_PRECISION}"
                 )));
             }
-            Self::Array { len, elem } => {
+            Self::Array { len, elem, stride } => {
                 if *len == 0 {
                     return Err(bad("an array has at least one element".into()));
                 }
                 elem.check()?;
-                if elem.size().saturating_mul(u64::from(*len)) > u64::from(u32::MAX) {
+                if let Some(s) = stride {
+                    if u64::from(*s) < elem.size() {
+                        return Err(bad("the stride is less than the element's size".into()));
+                    }
+                    if elem.align() == PTR_ALIGN && s % PTR_ALIGN != 0 {
+                        return Err(bad("an element holding a pointer needs a stride of a multiple of 16".into()));
+                    }
+                }
+                if self.size() > u64::from(u32::MAX) {
                     return Err(bad("array is larger than 4 GiB".into()));
                 }
             }
@@ -327,11 +364,20 @@ impl Type {
         }
     }
 
+    /// Bytes from one element of an array type to the next.
+    #[must_use]
+    pub fn stride(&self) -> Option<u64> {
+        match self {
+            Self::Array { elem, stride, .. } => Some(stride.map_or_else(|| elem.size(), u64::from)),
+            _ => None,
+        }
+    }
+
     /// Element type and count of an array type.
     #[must_use]
     pub fn array(&self) -> Option<(&Type, u32)> {
         match self {
-            Self::Array { len, elem } => Some((elem, *len)),
+            Self::Array { len, elem, .. } => Some((elem, *len)),
             _ => None,
         }
     }
@@ -372,6 +418,11 @@ impl StructType {
     }
 }
 
+/// The text of a varying prefix: nothing for the 2-byte default.
+fn pfx(p: u8) -> String {
+    if p == 2 { String::new() } else { format!(":{p}") }
+}
+
 impl fmt::Display for Type {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -389,10 +440,11 @@ impl fmt::Display for Type {
             Self::Zoned(s) => write!(f, "zoned({},{})", s.digits, s.scale),
             Self::Bin(s) => write!(f, "bin({},{})", s.digits, s.scale),
             Self::Char(n) => write!(f, "char({n})"),
-            Self::VarChar(n) => write!(f, "varchar({n})"),
+            Self::VarChar(n, p) => write!(f, "varchar({n}{})", pfx(*p)),
             Self::Ucs2(n) => write!(f, "ucs2({n})"),
-            Self::VarUcs2(n) => write!(f, "varucs2({n})"),
+            Self::VarUcs2(n, p) => write!(f, "varucs2({n}{})", pfx(*p)),
             Self::Graphic(n) => write!(f, "graphic({n})"),
+            Self::VarGraphic(n, p) => write!(f, "vargraphic({n}{})", pfx(*p)),
             Self::Date(d) => write!(f, "date({})", d.name()),
             Self::Time(t) => write!(f, "time({})", t.name()),
             Self::Timestamp(p) => write!(f, "timestamp({p})"),
@@ -400,7 +452,8 @@ impl fmt::Display for Type {
             Self::Ptr => f.write_str("ptr"),
             Self::ProcPtr => f.write_str("procptr"),
             Self::Bytes(n) => write!(f, "bytes({n})"),
-            Self::Array { len, elem } => write!(f, "array[{len}] of {elem}"),
+            Self::Array { len, elem, stride: None } => write!(f, "array[{len}] of {elem}"),
+            Self::Array { len, elem, stride: Some(s) } => write!(f, "array[{len}:{s}] of {elem}"),
             Self::Struct(s) => {
                 write!(f, "struct({}) {{", s.size)?;
                 for (i, fl) in s.fields.iter().enumerate() {
@@ -431,9 +484,11 @@ mod tests {
         assert_eq!(Type::Bin(shape(4, 2)).size(), 2);
         assert_eq!(Type::Bin(shape(9, 2)).size(), 4);
         assert_eq!(Type::Bin(shape(18, 0)).size(), 8);
-        assert_eq!(Type::VarChar(10).size(), 12);
+        assert_eq!(Type::VarChar(10, 2).size(), 12);
+        assert_eq!(Type::VarChar(10, 4).size(), 14);
         assert_eq!(Type::Ucs2(5).size(), 10);
-        assert_eq!(Type::VarUcs2(5).size(), 12);
+        assert_eq!(Type::VarUcs2(5, 2).size(), 12);
+        assert_eq!(Type::VarGraphic(5, 4).size(), 14);
         assert_eq!(Type::Date(DateFmt::Iso).size(), 10);
         assert_eq!(Type::Date(DateFmt::Jul).size(), 6);
         assert_eq!(Type::Time(TimeFmt::Usa).size(), 8);
@@ -481,7 +536,16 @@ mod tests {
         let t = Type::Array {
             len: 3,
             elem: Box::new(Type::Packed(shape(5, 2))),
+            stride: None,
         };
         assert_eq!(t.to_string(), "array[3] of packed(5,2)");
+        let s = Type::Array {
+            len: 3,
+            elem: Box::new(Type::Char(3)),
+            stride: Some(10),
+        };
+        assert_eq!(s.to_string(), "array[3:10] of char(3)");
+        assert_eq!(s.size(), 23);
+        assert_eq!(s.stride(), Some(10));
     }
 }

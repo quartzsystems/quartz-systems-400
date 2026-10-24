@@ -1,0 +1,76 @@
+**FREE
+//; dds: CUSTF
+//; sqlfile: CUSTF
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-f CUSTF keyed usage(*input) block(*no);
+dcl-ds r likerec(CUSTR);
+dcl-s n int(10);
+setll (103) CUSTF;
+n = readsome(CUSTF : 3);
+line = 'a ' + %char(n);
+write QSYSPRT line;
+read CUSTF r;
+line = 'b ' + %char(r.CUSNO) + ' ' + r.NAME;
+write QSYSPRT line;
+line = 'c ' + %char(count(CUSTF)) + ' ' + %eof(CUSTF);
+write QSYSPRT line;
+if find(CUSTF : 999);
+  line = 'd found';
+else;
+  line = 'd missing ' + %found(CUSTF);
+endif;
+write QSYSPRT line;
+if find(CUSTF : 102);
+  read CUSTF r;
+  line = 'e ' + %char(r.CUSNO) + ' ' + %trimr(r.CITY);
+endif;
+write QSYSPRT line;
+*inlr = *on;
+
+dcl-proc readsome;
+  dcl-pi *n int(10);
+    f likefile(CUSTF);
+    max int(10) value;
+  end-pi;
+  dcl-ds x likerec(CUSTR);
+  dcl-s i int(10);
+  for i = 1 to max;
+    read f x;
+    if %eof(f);
+      leave;
+    endif;
+    line = '  ' + %char(x.CUSNO) + ' ' + x.NAME;
+    write QSYSPRT line;
+  endfor;
+  return i - 1;
+end-proc;
+
+dcl-proc count;
+  dcl-pi *n int(10);
+    f likefile(CUSTF);
+  end-pi;
+  dcl-ds x likerec(CUSTR);
+  dcl-s c int(10);
+  setll *loval f;
+  read f x;
+  dow not %eof(f);
+    c += 1;
+    read f x;
+  enddo;
+  return c;
+end-proc;
+
+dcl-proc find;
+  dcl-pi *n ind;
+    f likefile(CUSTF);
+    key packed(5) value;
+  end-pi;
+  dcl-ds x likerec(CUSTR);
+  chain (key) f x;
+  if %found(f);
+    setll (key) f;
+  endif;
+  return %found(f);
+end-proc;
