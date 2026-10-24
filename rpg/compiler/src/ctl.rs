@@ -173,7 +173,7 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
         actgrp: o.actgrp.clone(),
         decedit: ('.', ','),
         decprec: 31,
-        bnddir: o.bnddir.clone(),
+        bnddir: o.bnddir.iter().filter(|b| !b.starts_with('*')).cloned().collect(),
         text: o.text.clone(),
         alwnull: o.alwnull.clone(),
         indent: o.indent.clone(),

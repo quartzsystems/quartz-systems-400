@@ -129,9 +129,11 @@ pub fn make(
         lib: LibSpec::Name(lib_name),
         name: n,
     };
+    // BNDDIR(*NONE) names no directory.
     let dirs = made
         .bnddir
         .iter()
+        .filter(|b| !b.starts_with('*'))
         .map(|b| bnddir_spec(b))
         .collect::<Result<Vec<_>, _>>()?;
     let bound = ile::store::crtpgm(txn, c, lib_id, &[spec], &dirs, options, &made.text)

@@ -518,6 +518,29 @@ impl Gen<'_> {
             return None;
         }
         let float = matches!(va.ty, Ty::Float(_)) || matches!(vb.ty, Ty::Float(_)) || op == BinOp::Pow;
+        // A float with a decimal or integer operand: done exactly, the
+        // result the double toward zero from it, as IBM does it.
+        let fa_only = matches!(va.ty, Ty::Float(_)) && !matches!(vb.ty, Ty::Float(_));
+        let fb_only = matches!(vb.ty, Ty::Float(_)) && !matches!(va.ty, Ty::Float(_));
+        if (fa_only || fb_only) && matches!(op, BinOp::Add | BinOp::Sub | BinOp::Mul | BinOp::Div) {
+            let (f, d) = if fa_only { (va, vb) } else { (vb, va) };
+            let fr = self.float_reg(f);
+            let dp = self.num_place(d);
+            let desc = self.desc_of(&dp);
+            let code = match op {
+                BinOp::Add => 0,
+                BinOp::Sub => 1,
+                BinOp::Mul => 2,
+                _ => 3,
+            };
+            self.rt_proc(
+                "_QRNX_FLTMIX",
+                "(byval $op: i32, byval $f: f64, $d: bytes(1) *VARSIZE, byval $desc: i64, byval $first: i32) -> f64",
+            );
+            let r = self.b.reg();
+            self.b.ins(format!("{r} = callb _QRNX_FLTMIX({code}, {fr}, {}, {desc}, {})", dp.op, i32::from(fa_only)));
+            return Some(V::reg(Ty::Float(8), r));
+        }
         if float {
             let fa = self.float_reg(va);
             let fb = self.float_reg(vb);

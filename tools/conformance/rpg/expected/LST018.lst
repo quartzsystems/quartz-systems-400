@@ -1,0 +1,439 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   LST018
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   LST018
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; run: no                                                                                               000000     000200
+      3 ctl-opt dftactgrp(*no);                                                                                   000000     000300
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     4 dcl-f QSYSPRT printer(132);                                                                               000000     000400
+-     5 dcl-ds line len(132) end-ds;                                                                              000000     000500
+ ======>       aaaa
+ *RNF3530 00 a      000500  Data structure LINE has no valid subfields.
+      6 dcl-s v01 packed(7:2) inz(1);                                                                             000000     000600
+      7 dcl-s v02 packed(7:2) inz(2);                                                                             000000     000700
+      8 dcl-s v03 packed(7:2) inz(3);                                                                             000000     000800
+      9 dcl-s v04 packed(7:2) inz(4);                                                                             000000     000900
+     10 dcl-s v05 packed(7:2) inz(5);                                                                             000000     001000
+     11 dcl-s v06 packed(7:2) inz(6);                                                                             000000     001100
+     12 dcl-s v07 packed(7:2) inz(7);                                                                             000000     001200
+     13 dcl-s v08 packed(7:2) inz(8);                                                                             000000     001300
+     14 dcl-s v09 packed(7:2) inz(9);                                                                             000000     001400
+     15 dcl-s v10 packed(7:2) inz(10);                                                                            000000     001500
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     16 dcl-s v11 packed(7:2) inz(11);                                                                            000000     001600
+     17 dcl-s v12 packed(7:2) inz(12);                                                                            000000     001700
+     18 dcl-s v13 packed(7:2) inz(13);                                                                            000000     001800
+     19 dcl-s v14 packed(7:2) inz(14);                                                                            000000     001900
+     20 dcl-s v15 packed(7:2) inz(15);                                                                            000000     002000
+     21 dcl-s v16 packed(7:2) inz(16);                                                                            000000     002100
+     22 dcl-s v17 packed(7:2) inz(17);                                                                            000000     002200
+     23 dcl-s v18 packed(7:2) inz(18);                                                                            000000     002300
+     24 dcl-s v19 packed(7:2) inz(19);                                                                            000000     002400
+     25 dcl-s v20 packed(7:2) inz(20);                                                                            000000     002500
+     26 dcl-s v21 packed(7:2) inz(21);                                                                            000000     002600
+     27 dcl-s v22 packed(7:2) inz(22);                                                                            000000     002700
+     28 dcl-s v23 packed(7:2) inz(23);                                                                            000000     002800
+     29 dcl-s v24 packed(7:2) inz(24);                                                                            000000     002900
+     30 dcl-s v25 packed(7:2) inz(25);                                                                            000000     003000
+     31 dcl-s v26 packed(7:2) inz(26);                                                                            000000     003100
+     32 dcl-s v27 packed(7:2) inz(27);                                                                            000000     003200
+     33 dcl-s v28 packed(7:2) inz(28);                                                                            000000     003300
+     34 dcl-s v29 packed(7:2) inz(29);                                                                            000000     003400
+     35 dcl-s v30 packed(7:2) inz(30);                                                                            000000     003500
+     36 dcl-s v31 packed(7:2) inz(31);                                                                            000000     003600
+     37 dcl-s v32 packed(7:2) inz(32);                                                                            000000     003700
+     38 dcl-s v33 packed(7:2) inz(33);                                                                            000000     003800
+     39 dcl-s v34 packed(7:2) inz(34);                                                                            000000     003900
+     40 dcl-s v35 packed(7:2) inz(35);                                                                            000000     004000
+     41 dcl-s v36 packed(7:2) inz(36);                                                                            000000     004100
+     42 dcl-s v37 packed(7:2) inz(37);                                                                            000000     004200
+     43 dcl-s v38 packed(7:2) inz(38);                                                                            000000     004300
+     44 dcl-s v39 packed(7:2) inz(39);                                                                            000000     004400
+     45 dcl-s v40 packed(7:2) inz(40);                                                                            000000     004500
+     46 dcl-s v41 packed(7:2) inz(41);                                                                            000000     004600
+     47 dcl-s v42 packed(7:2) inz(42);                                                                            000000     004700
+     48 dcl-s v43 packed(7:2) inz(43);                                                                            000000     004800
+     49 dcl-s v44 packed(7:2) inz(44);                                                                            000000     004900
+     50 dcl-s v45 packed(7:2) inz(45);                                                                            000000     005000
+     51 dcl-s v46 packed(7:2) inz(46);                                                                            000000     005100
+     52 dcl-s v47 packed(7:2) inz(47);                                                                            000000     005200
+     53 dcl-s v48 packed(7:2) inz(48);                                                                            000000     005300
+     54 dcl-s v49 packed(7:2) inz(49);                                                                            000000     005400
+     55 dcl-s v50 packed(7:2) inz(50);                                                                            000000     005500
+     56 dcl-s v51 packed(7:2) inz(51);                                                                            000000     005600
+     57 dcl-s v52 packed(7:2) inz(52);                                                                            000000     005700
+     58 dcl-s v53 packed(7:2) inz(53);                                                                            000000     005800
+     59 dcl-s v54 packed(7:2) inz(54);                                                                            000000     005900
+     60 dcl-s v55 packed(7:2) inz(55);                                                                            000000     006000
+     61 dcl-s v56 packed(7:2) inz(56);                                                                            000000     006100
+     62 dcl-s v57 packed(7:2) inz(57);                                                                            000000     006200
+     63 dcl-s v58 packed(7:2) inz(58);                                                                            000000     006300
+     64 dcl-s v59 packed(7:2) inz(59);                                                                            000000     006400
+     65 dcl-s v60 packed(7:2) inz(60);                                                                            000000     006500
+ *RNF2318 00      4 000400  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-    66 v01 = v01 * 2;                                                                                            000000     006600
+     67 v02 = v02 * 2;                                                                                            000000     006700
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     68 v03 = v03 * 2;                                                                                            000000     006800
+     69 v04 = v04 * 2;                                                                                            000000     006900
+     70 v05 = v05 * 2;                                                                                            000000     007000
+     71 v06 = v06 * 2;                                                                                            000000     007100
+     72 v07 = v07 * 2;                                                                                            000000     007200
+     73 v08 = v08 * 2;                                                                                            000000     007300
+     74 v09 = v09 * 2;                                                                                            000000     007400
+     75 v10 = v10 * 2;                                                                                            000000     007500
+     76 v11 = v11 * 2;                                                                                            000000     007600
+     77 v12 = v12 * 2;                                                                                            000000     007700
+     78 v13 = v13 * 2;                                                                                            000000     007800
+     79 v14 = v14 * 2;                                                                                            000000     007900
+     80 v15 = v15 * 2;                                                                                            000000     008000
+     81 eval(h) v15 = v15 + 1;                                                                                    000000     008100
+     82 v16 = v16 * 2;                                                                                            000000     008200
+     83 v17 = v17 * 2;                                                                                            000000     008300
+     84 v18 = v18 * 2;                                                                                            000000     008400
+     85 v19 = v19 * 2;                                                                                            000000     008500
+     86 v20 = v20 * 2;                                                                                            000000     008600
+     87 v21 = v21 * 2;                                                                                            000000     008700
+     88 v22 = v22 * 2;                                                                                            000000     008800
+     89 v23 = v23 * 2;                                                                                            000000     008900
+     90 v24 = v24 * 2;                                                                                            000000     009000
+     91 v25 = v25 * 2;                                                                                            000000     009100
+     92 v26 = v26 * 2;                                                                                            000000     009200
+     93 v27 = v27 * 2;                                                                                            000000     009300
+     94 v28 = v28 * 2;                                                                                            000000     009400
+     95 v29 = v29 * 2;                                                                                            000000     009500
+     96 v30 = v30 * 2;                                                                                            000000     009600
+     97 eval(h) v30 = v30 + 1;                                                                                    000000     009700
+     98 v31 = v31 * 2;                                                                                            000000     009800
+     99 v32 = v32 * 2;                                                                                            000000     009900
+    100 v33 = v33 * 2;                                                                                            000000     010000
+    101 v34 = v34 * 2;                                                                                            000000     010100
+    102 v35 = v35 * 2;                                                                                            000000     010200
+    103 v36 = v36 * 2;                                                                                            000000     010300
+    104 v37 = v37 * 2;                                                                                            000000     010400
+    105 v38 = v38 * 2;                                                                                            000000     010500
+    106 v39 = v39 * 2;                                                                                            000000     010600
+    107 v40 = v40 * 2;                                                                                            000000     010700
+    108 v41 = v41 * 2;                                                                                            000000     010800
+    109 v42 = v42 * 2;                                                                                            000000     010900
+    110 v43 = v43 * 2;                                                                                            000000     011000
+    111 v44 = v44 * 2;                                                                                            000000     011100
+    112 v45 = v45 * 2;                                                                                            000000     011200
+    113 eval(h) v45 = v45 + 1;                                                                                    000000     011300
+    114 v46 = v46 * 2;                                                                                            000000     011400
+    115 v47 = v47 * 2;                                                                                            000000     011500
+    116 v48 = v48 * 2;                                                                                            000000     011600
+    117 v49 = v49 * 2;                                                                                            000000     011700
+    118 v50 = v50 * 2;                                                                                            000000     011800
+    119 v51 = v51 * 2;                                                                                            000000     011900
+    120 v52 = v52 * 2;                                                                                            000000     012000
+    121 v53 = v53 * 2;                                                                                            000000     012100
+    122 v54 = v54 * 2;                                                                                            000000     012200
+    123 v55 = v55 * 2;                                                                                            000000     012300
+1{heading} page 5
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+    124 v56 = v56 * 2;                                                                                            000000     012400
+    125 v57 = v57 * 2;                                                                                            000000     012500
+    126 v58 = v58 * 2;                                                                                            000000     012600
+    127 v59 = v59 * 2;                                                                                            000000     012700
+    128 v60 = v60 * 2;                                                                                            000000     012800
+    129 eval(h) v60 = v60 + 1;                                                                                    000000     012900
+    130 line = %char(v01);                                                                                        000000     013000
+    131 write QSYSPRT line;                                                                                       000000     013100
+    132 *inlr = *on;                                                                                              000000     013200
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+ *RNF7057 00     81 008100  Half Adjust is not valid for the number of decimal
+                            positions of the result.
+ *RNF7057 00     97 009700  Half Adjust is not valid for the number of decimal
+                            positions of the result.
+ *RNF7057 00    113 011300  Half Adjust is not valid for the number of decimal
+                            positions of the result.
+ *RNF7057 00    129 012900  Half Adjust is not valid for the number of decimal
+                            positions of the result.
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 4D    131
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                  132M
+          LINE              DS(132)                 5D    130M    131
+          V01               P(7,2)                  6D     66M     66     130
+          V02               P(7,2)                  7D     67M     67
+          V03               P(7,2)                  8D     68M     68
+          V04               P(7,2)                  9D     69M     69
+          V05               P(7,2)                 10D     70M     70
+          V06               P(7,2)                 11D     71M     71
+          V07               P(7,2)                 12D     72M     72
+          V08               P(7,2)                 13D     73M     73
+          V09               P(7,2)                 14D     74M     74
+          V10               P(7,2)                 15D     75M     75
+          V11               P(7,2)                 16D     76M     76
+          V12               P(7,2)                 17D     77M     77
+          V13               P(7,2)                 18D     78M     78
+          V14               P(7,2)                 19D     79M     79
+          V15               P(7,2)                 20D     80M     80      81M
+                                                   81
+          V16               P(7,2)                 21D     82M     82
+          V17               P(7,2)                 22D     83M     83
+          V18               P(7,2)                 23D     84M     84
+          V19               P(7,2)                 24D     85M     85
+          V20               P(7,2)                 25D     86M     86
+          V21               P(7,2)                 26D     87M     87
+          V22               P(7,2)                 27D     88M     88
+          V23               P(7,2)                 28D     89M     89
+          V24               P(7,2)                 29D     90M     90
+          V25               P(7,2)                 30D     91M     91
+          V26               P(7,2)                 31D     92M     92
+          V27               P(7,2)                 32D     93M     93
+          V28               P(7,2)                 33D     94M     94
+          V29               P(7,2)                 34D     95M     95
+          V30               P(7,2)                 35D     96M     96      97M
+                                                   97
+          V31               P(7,2)                 36D     98M     98
+          V32               P(7,2)                 37D     99M     99
+          V33               P(7,2)                 38D    100M    100
+          V34               P(7,2)                 39D    101M    101
+          V35               P(7,2)                 40D    102M    102
+          V36               P(7,2)                 41D    103M    103
+          V37               P(7,2)                 42D    104M    104
+          V38               P(7,2)                 43D    105M    105
+          V39               P(7,2)                 44D    106M    106
+          V40               P(7,2)                 45D    107M    107
+          V41               P(7,2)                 46D    108M    108
+          V42               P(7,2)                 47D    109M    109
+          V43               P(7,2)                 48D    110M    110
+1{heading} page 8
+0         V44               P(7,2)                 49D    111M    111
+          V45               P(7,2)                 50D    112M    112     113M
+                                                  113
+          V46               P(7,2)                 51D    114M    114
+          V47               P(7,2)                 52D    115M    115
+          V48               P(7,2)                 53D    116M    116
+          V49               P(7,2)                 54D    117M    117
+          V50               P(7,2)                 55D    118M    118
+          V51               P(7,2)                 56D    119M    119
+          V52               P(7,2)                 57D    120M    120
+          V53               P(7,2)                 58D    121M    121
+          V54               P(7,2)                 59D    122M    122
+          V55               P(7,2)                 60D    123M    123
+          V56               P(7,2)                 61D    124M    124
+          V57               P(7,2)                 62D    125M    125
+          V58               P(7,2)                 63D    126M    126
+          V59               P(7,2)                 64D    127M    127
+          V60               P(7,2)                 65D    128M    128     129M
+                                                  129
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                      132M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 10
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+ *RNF7057 00      4 Half Adjust is not valid for the number of decimal positions
+                    of the result.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 11
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        6
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        6
+-  Source Totals:
+0    Records . . . . . . . . . . . . :      132
+     Specifications  . . . . . . . . :      130
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        1
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program LST018 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

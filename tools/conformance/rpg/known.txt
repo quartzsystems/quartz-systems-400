@@ -1,18 +1,6 @@
 # Members whose outcome is known to differ from the oracle's, one per
 # line with the reason; the kit reports them apart and does not fail on
 # them. Each has an entry in docs/RPG_OPEN_QUESTIONS.md or is being worked.
-EXP008 float with decimal operands: last-digit differences (open question)
-EXP018 float with decimal operands: last-digit differences (open question)
-EXP028 float with decimal operands: last-digit differences (open question)
-EXP038 float with decimal operands: last-digit differences (open question)
-EXP048 float with decimal operands: last-digit differences (open question)
-EXP058 float with decimal operands: last-digit differences (open question)
-EXP068 float with decimal operands: last-digit differences (open question)
-EXP078 float with decimal operands: last-digit differences (open question)
-EXP088 float with decimal operands: last-digit differences (open question)
-EXP098 float with decimal operands: last-digit differences (open question)
-EXP108 float with decimal operands: last-digit differences (open question)
-EXP118 float with decimal operands: last-digit differences (open question)
 EXP114 RNF7551 for a quotient kept to 9 decimals for a 4-decimal target: IBM's division rule is not known (open question)
 ERR090 new compile-error member: its diagnostics are being written
 ERR091 new compile-error member: its diagnostics are being written
@@ -154,3 +142,21 @@ ERR226 new compile-error member: its diagnostics are being written
 ERR227 new compile-error member: its diagnostics are being written
 ERR228 new compile-error member: its diagnostics are being written
 ERR229 new compile-error member: its diagnostics are being written
+EXP118 float plus a short decimal: IBM converts 5974.6 to the nearest double here, where longer decimals go toward zero (open question)
+LST004 new listing member: its outcome is being matched
+LST008 new listing member: its outcome is being matched
+LST010 new listing member: its outcome is being matched
+LST013 new listing member: its outcome is being matched
+LST014 new listing member: its outcome is being matched
+LST015 new listing member: its outcome is being matched
+LST023 new listing member: its outcome is being matched
+LST025 new listing member: its outcome is being matched
+LST027 new listing member: its outcome is being matched
+LST029 new listing member: its outcome is being matched
+LST031 new listing member: its outcome is being matched
+LST032 new listing member: its outcome is being matched
+LST033 new listing member: its outcome is being matched
+LST035 new listing member: its outcome is being matched
+LST038 new listing member: its outcome is being matched
+LST039 new listing member: its outcome is being matched
+LST040 new listing member: its outcome is being matched

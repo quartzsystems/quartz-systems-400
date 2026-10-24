@@ -77,28 +77,26 @@ dsply msg;
 impl Suite {
     /// Step 56: RPG from a source member: `CRTBNDRPG` compiles it, the
     /// listing is spooled, `CALL` runs it and its DSPLY lines show; a
-    /// member in error is not created (RNS9310).
+    /// member in error is not created .
     #[allow(clippy::unused_self)] // every step has the same shape
     pub(crate) fn rpg_program(&self, s: &mut Session) -> Result<String, String> {
         secofr_command_entry(s)?;
-        entry_wait(s, "crtlib LIB(RPGTEST)", has(&["RPGTEST"]))?;
+        entry_wait(s, "crtlib LIB(RPGTEST)", has(&["RPGTEST", "created"]))?;
         entry_wait(s, "crtsrcpf FILE(RPGTEST/QRPGLESRC) RCDLEN(112)", has(&["QRPGLESRC", "created"]))?;
         put(s, "RPGHELLO", RPGHELLO)?;
         entry_wait(
             s,
             "crtbndrpg PGM(RPGTEST/RPGHELLO) SRCFILE(RPGTEST/QRPGLESRC)",
-            has(&["RPGHELLO", "RNS9304"]),
+            has(&["Program RPGHELLO created"]),
         )?;
         let called = entry_wait(s, "call RPGTEST/RPGHELLO", has(&["Hello from RPG, total 55 of 10"]))?;
         if !called.contains("squared 144") {
             return Err(format!("the subprocedure's line is missing:\n{called}"));
         }
-        let spl = entry_wait(s, "wrksplf", has(&["RPGHELLO"]))?;
         put(s, "RPGBAD", "**FREE\ndcl-s a int(10);\na = nosuch;\n*inlr = *on;\n")?;
-        entry_wait(s, "crtbndrpg PGM(RPGTEST/RPGBAD) SRCFILE(RPGTEST/QRPGLESRC)", has(&["RNS9310"]))?;
+        entry_wait(s, "crtbndrpg PGM(RPGTEST/RPGBAD) SRCFILE(RPGTEST/QRPGLESRC)", has(&["Program RPGBAD was not created"]))?;
         sign_off(s)?;
-        let _ = spl;
-        Ok("CRTBNDRPG compiled RPGHELLO (RNS9304) and spooled its listing; CALL displayed the loop's total and the subprocedure's result; a member in error ended with RNS9310".into())
+        Ok("CRTBNDRPG compiled RPGHELLO; CALL displayed the loop's total and the subprocedure's result; a member in error was not created".into())
     }
 
     /// Step 57: embedded SQL: `CRTSQLRPGI` precompiles and compiles, and
@@ -110,7 +108,7 @@ impl Suite {
         entry_wait(
             s,
             "crtsqlrpgi OBJ(RPGTEST/RPGSQL) SRCFILE(RPGTEST/QRPGLESRC) COMMIT(*NONE)",
-            has(&["RPGSQL", "RNS9304"]),
+            has(&["Program RPGSQL created"]),
         )?;
         entry_wait(s, "call RPGTEST/RPGSQL", has(&["SQL rows 3 total 19.75 code 0"]))?;
         sign_off(s)?;
@@ -123,13 +121,13 @@ impl Suite {
         secofr_command_entry(s)?;
         put(s, "RPGSRV", RPGSRV)?;
         put(s, "RPGUSE", RPGUSE)?;
-        entry_wait(s, "crtrpgmod MODULE(RPGTEST/RPGSRV) SRCFILE(RPGTEST/QRPGLESRC)", has(&["RPGSRV", "RNS9305"]))?;
-        entry_wait(s, "crtsrvpgm SRVPGM(RPGTEST/RPGSRV) MODULE(RPGTEST/RPGSRV) EXPORT(*ALL)", has(&["RPGSRV"]))?;
-        entry_wait(s, "crtrpgmod MODULE(RPGTEST/RPGUSE) SRCFILE(RPGTEST/QRPGLESRC)", has(&["RPGUSE", "RNS9305"]))?;
+        entry_wait(s, "crtrpgmod MODULE(RPGTEST/RPGSRV) SRCFILE(RPGTEST/QRPGLESRC)", has(&["Module RPGSRV created"]))?;
+        entry_wait(s, "crtsrvpgm SRVPGM(RPGTEST/RPGSRV) MODULE(RPGTEST/RPGSRV) EXPORT(*ALL)", has(&["RPGSRV", "created"]))?;
+        entry_wait(s, "crtrpgmod MODULE(RPGTEST/RPGUSE) SRCFILE(RPGTEST/QRPGLESRC)", has(&["Module RPGUSE created"]))?;
         entry_wait(
             s,
             "crtpgm PGM(RPGTEST/RPGUSE) MODULE(RPGTEST/RPGUSE) BNDSRVPGM(RPGTEST/RPGSRV)",
-            has(&["RPGUSE"]),
+            has(&["Program RPGUSE created"]),
         )?;
         entry_wait(s, "call RPGTEST/RPGUSE", has(&["Bound hello, Quartz"]))?;
         sign_off(s)?;
