@@ -28,7 +28,7 @@ use sysapi::{LocalNow, MemProvider};
 use crate::qir::CLOCK;
 
 pub mod build;
-pub mod fuzz;
+pub use rpg_oracle::fuzz;
 
 /// How long one member may run in the kit before its request ends.
 const LIMIT_MS: u64 = 10_000;
@@ -105,7 +105,7 @@ impl Kit {
         for entry in fs::read_dir(&self.root)? {
             let dir = entry?.path();
             let batch = dir.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
-            if !dir.is_dir() || matches!(batch.as_str(), "expected" | "oracle") {
+            if !dir.is_dir() || matches!(batch.as_str(), "expected" | "oracle" | "perf") {
                 continue;
             }
             for f in fs::read_dir(&dir)? {

@@ -5,7 +5,8 @@
 //! `rpg_bench`: the compiler over the fuzzer's programs (lines a second,
 //! front end and code generation apart), and a program's loop of a
 //! million decimal EVALs and a hundred thousand subprocedure calls,
-//! timed; the numbers go into `PHASE9.md`.
+//! timed, and the timed members of `rpg/perf/` the oracle runs too;
+//! the numbers go into `PHASE9.md`.
 //! `cargo test --release -p conformance --test rpg_bench -- --ignored --nocapture`
 
 use std::time::Instant;
@@ -80,4 +81,25 @@ fn rpg_bench() {
         ran.as_secs_f64() * 1e3,
         shown.join(" | ").trim()
     );
+
+    // The timed members the oracle runs too (`rpg/perf/`): what each
+    // program measured of itself.
+    let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("rpg/perf");
+    let mut members: Vec<_> = std::fs::read_dir(&dir).expect("rpg/perf").filter_map(|e| e.ok().map(|e| e.path())).collect();
+    members.sort();
+    for p in members {
+        let name = p.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_string();
+        // The machine-model query is for the oracle's catalog only.
+        if p.extension().is_some_and(|e| e == "sqlrpgle") {
+            continue;
+        }
+        let case = Case::load(&p).expect("a member");
+        let t = Instant::now();
+        let (o, _, notes) = rpg::run(&case).expect("a timed member runs");
+        let ran = t.elapsed();
+        assert!(o.created, "{name}: {notes}");
+        let shown: Vec<String> = o.spool.iter().flat_map(|s| s.lines.iter().cloned()).filter(|l| l.contains(" ms ") || l.contains("cycle")).collect();
+        let shown = if shown.is_empty() { vec![format!("{:?} {}", o.run, o.spool.iter().flat_map(|s| s.lines.iter().rev().take(3).cloned()).collect::<Vec<_>>().join(" | "))] } else { shown };
+        println!("{name}: {:.1} ms in all: {}", ran.as_secs_f64() * 1e3, shown.join(" | ").trim());
+    }
 }

@@ -11,6 +11,7 @@ use qdecimal::{Binary, Decimal, DecimalError, Float, Integer, Packed, Rounding, 
 use qir::Type;
 
 use super::core::raise_on;
+use super::fastdec;
 use super::mem::{job, typed};
 
 /// The condition a decimal error maps to.
@@ -164,6 +165,21 @@ fn bin(op: i64, a: &Decimal, b: &Decimal, prec: Shape) -> Result<Decimal, Cond> 
     exact.fit(prec, Rounding::Truncate).map_err(|e| cond_of(&e))
 }
 
+/// `dec_bin` on the fast path, when it applies (`fastdec`).
+#[allow(clippy::too_many_arguments, clippy::many_single_char_names)]
+fn fast_bin(op: i64, dst: i64, dty: i64, a: i64, aty: i64, b: i64, bty: i64, digits: u8, scale: u8, halfadj: bool) -> Option<Result<(), Cond>> {
+    let (ab, at) = typed(a, aty);
+    let x = fastdec::read(ab, &at)?;
+    let (bb, bt) = typed(b, bty);
+    let y = fastdec::read(bb, &bt)?;
+    let v = match fastdec::bin(op, x, y, digits, scale)? {
+        Ok(v) => v,
+        Err(c) => return Some(Err(c)),
+    };
+    let (db, dt) = typed(dst, dty);
+    fastdec::write(db, &dt, v, scale, halfadj, dty.cast_unsigned() & codegen::abi::TypeDesc::FSIGN != 0)
+}
+
 /// `dec_bin(env, op, dst, dty, a, aty, b, bty, prec, flags)`.
 #[allow(clippy::too_many_arguments)]
 pub extern "sysv64" fn dec_bin(
@@ -179,10 +195,13 @@ pub extern "sysv64" fn dec_bin(
     flags: i64,
 ) {
     let r = (|| {
-        let av = read_num(a, aty)?;
-        let bv = read_num(b, bty)?;
         let digits = u8::try_from(prec & 0xFF).map_err(|_| Cond::Mch1210)?;
         let scale = u8::try_from((prec >> 8) & 0xFF).map_err(|_| Cond::Mch1210)?;
+        if let Some(done) = fast_bin(op, dst, dty, a, aty, b, bty, digits, scale, flags & dec_flags::HALFADJ != 0) {
+            return done;
+        }
+        let av = read_num(a, aty)?;
+        let bv = read_num(b, bty)?;
         let shape = Shape::new(digits, scale).map_err(|_| Cond::Mch1210)?;
         let v = bin(op, &av.value, &bv.value, shape)?;
         write_num(dst, dty, &v, rounding(flags & dec_flags::HALFADJ != 0))
@@ -203,6 +222,10 @@ pub extern "sysv64" fn dec_un(
     halfadj: i64,
 ) {
     let r = (|| {
+        // Bit 1 (fixed-form truncation) goes the exact way.
+        if halfadj & 2 == 0 && let Some(done) = fast_un(op, dst, dty, src, sty, halfadj & 1 != 0) {
+            return done;
+        }
         let v = read_num(src, sty)?.value;
         let v = match op {
             1 => v.negated(),
@@ -218,8 +241,35 @@ pub extern "sysv64" fn dec_un(
     }
 }
 
+/// `dec_un` on the fast path, when it applies.
+fn fast_un(op: i64, dst: i64, dty: i64, src: i64, sty: i64, halfadj: bool) -> Option<Result<(), Cond>> {
+    let (sb, st) = typed(src, sty);
+    let (v, s) = fastdec::read(sb, &st)?;
+    let v = match op {
+        1 => v.checked_neg()?,
+        2 => v.checked_abs()?,
+        _ => v,
+    };
+    let (db, dt) = typed(dst, dty);
+    fastdec::write(db, &dt, v, s, halfadj, dty.cast_unsigned() & codegen::abi::TypeDesc::FSIGN != 0)
+}
+
 /// `dec_cmp(env, a, aty, b, bty) -> -1|0|1`.
+#[allow(clippy::many_single_char_names)]
 pub extern "sysv64" fn dec_cmp(env: *mut Env, a: i64, aty: i64, b: i64, bty: i64) -> i32 {
+    let fast = || {
+        let (ab, at) = typed(a, aty);
+        let (x, sx) = fastdec::read(ab, &at)?;
+        let (bb, bt) = typed(b, bty);
+        let (y, sy) = fastdec::read(bb, &bt)?;
+        let s = sx.max(sy);
+        let x = x.checked_mul(10i128.checked_pow(u32::from(s - sx))?)?;
+        let y = y.checked_mul(10i128.checked_pow(u32::from(s - sy))?)?;
+        Some(x.cmp(&y) as i32)
+    };
+    if let Some(c) = fast() {
+        return c;
+    }
     match (read_num(a, aty), read_num(b, bty)) {
         (Ok(x), Ok(y)) => match x.value.cmp(&y.value) {
             std::cmp::Ordering::Less => -1,

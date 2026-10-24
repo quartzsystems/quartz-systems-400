@@ -457,7 +457,14 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
         }
         g.b.place(&skip);
     }
+    let done = g.b.label();
+    g.calcs_end = Some(done.clone());
     stmt::calcs(g, &detail);
+    g.calcs_end = None;
+    if g.b.is_open() {
+        g.b.term(format!("br {done}"));
+    }
+    g.b.place(&done);
     let rt = g.b.reg();
     g.b.ins(format!("{rt} = load $inrt"));
     g.b.term(format!("brif {rt}, {ret}, {top}"));

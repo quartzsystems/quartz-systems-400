@@ -582,7 +582,7 @@ impl Gen<'_> {
                 if let Some(n) = name {
                     // The calculations before the first subroutine end here.
                     if self.b.is_open() {
-                        let exit = self.main_exit.clone().unwrap_or_default();
+                        let exit = self.calcs_end.clone().or_else(|| self.main_exit.clone()).unwrap_or_default();
                         if exit.is_empty() {
                             self.b.term("ret");
                         } else {

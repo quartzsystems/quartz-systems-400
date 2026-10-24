@@ -163,6 +163,9 @@ pub struct Gen<'a> {
     pub tags: HashMap<String, String>,
     /// Where `RETURN` goes in the main procedure.
     pub main_exit: Option<String>,
+    /// Where the calculations before the first subroutine end, when not
+    /// at `main_exit` (the cycle goes on to its next record).
+    pub calcs_end: Option<String>,
     /// The procedure's return type.
     pub ret: Option<Ty>,
     /// The statement being generated.
@@ -317,6 +320,7 @@ pub fn module(
         externs: BTreeMap::new(),
         tags: HashMap::new(),
         main_exit: None,
+        calcs_end: None,
         ret: None,
         at: Pos::default(),
         marked: BTreeSet::new(),

@@ -13,7 +13,7 @@ use crate::steps::{CMD, Suite};
 /// says what it computed with DSPLY.
 const RPGHELLO: &str = "**FREE
 ctl-opt dftactgrp(*no);
-dcl-ds totals qualified;
+dcl-ds totals qualified inz;
   sum packed(7:0);
   count int(10);
 end-ds;
@@ -43,10 +43,10 @@ dcl-s n int(10);
 dcl-s total packed(9:2);
 dcl-s msg char(40);
 exec sql set option commit = *none;
-exec sql drop table rpgtest.parts;
-exec sql create table rpgtest.parts (id int, price decimal(7,2));
-exec sql insert into rpgtest.parts values (1, 2.50), (2, 7.25), (3, 10.00);
-exec sql select count(*), sum(price) into :n, :total from rpgtest.parts;
+exec sql drop table rpgtest/parts;
+exec sql create table rpgtest/parts (id int, price decimal(7,2));
+exec sql insert into rpgtest/parts values (1, 2.50), (2, 7.25), (3, 10.00);
+exec sql select count(*), sum(price) into :n, :total from rpgtest/parts;
 msg = 'SQL rows ' + %char(n) + ' total ' + %char(total) + ' code ' + %char(sqlcode);
 dsply msg;
 *inlr = *on;

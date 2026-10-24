@@ -5,7 +5,8 @@
 //! The RPG differential oracle's shared half: what a corpus member
 //! asks for (`case`), the operator's answers to its screens (`keys`),
 //! how a compile listing is read and masked (`listing`), and the
-//! normalized outcome both systems are reduced to (`outcome`). The
+//! normalized outcome both systems are reduced to (`outcome`), and the
+//! grammar fuzzer's programs (`fuzz`). The
 //! `rpg-oracle` binary fills outcomes from an IBM i; the conformance
 //! kit fills them from QS/400 and compares.
 
@@ -13,6 +14,7 @@
 #![allow(clippy::many_single_char_names)]
 
 pub mod case;
+pub mod fuzz;
 pub mod keys;
 pub mod listing;
 pub mod outcome;

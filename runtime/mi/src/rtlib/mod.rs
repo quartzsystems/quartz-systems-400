@@ -13,6 +13,7 @@ mod core;
 mod date;
 mod debug;
 mod decimal;
+mod fastdec;
 mod heap;
 mod io;
 pub(crate) mod mem;

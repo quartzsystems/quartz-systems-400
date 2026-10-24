@@ -8,6 +8,7 @@
 //! ```text
 //! rpg-oracle run MEMBER.rpgle... [--out DIR]
 //! rpg-oracle refresh DIR [--out DIR] [--missing]
+//! rpg-oracle fuzz [--count N] [--per K] [--dir DIR]
 //! rpg-oracle clean
 //! ```
 //!
@@ -57,6 +58,19 @@ enum Cmd {
         #[arg(long)]
         missing: bool,
     },
+    /// Write the grammar fuzzer's programs as members, `per` to a
+    /// member, and run those without an outcome; the kit compares them.
+    Fuzz {
+        /// How many programs.
+        #[arg(long, default_value_t = 2000)]
+        count: u64,
+        /// Programs to a member.
+        #[arg(long, default_value_t = 20)]
+        per: u64,
+        /// Where the members go.
+        #[arg(long, default_value = "tools/conformance/rpg/b14fuzz")]
+        dir: PathBuf,
+    },
     /// Delete what an interrupted run left.
     Clean,
     /// Read the diagnostics of every outcome in a folder again from the
@@ -82,6 +96,17 @@ fn main() -> Result<()> {
                 .collect();
             files.sort();
             run(&files, out.as_deref(), missing)
+        }
+        Cmd::Fuzz { count, per, dir } => {
+            std::fs::create_dir_all(&dir)?;
+            let per = per.max(1);
+            let mut files = Vec::new();
+            for first in (0..count).step_by(usize::try_from(per)?) {
+                let p = dir.join(format!("FZB{:03}.rpgle", first / per));
+                std::fs::write(&p, rpg_oracle::fuzz::bundle(first, per.min(count - first)))?;
+                files.push(p);
+            }
+            run(&files, None, true)
         }
         Cmd::Clean => {
             let mut s = session::Session::open()?;

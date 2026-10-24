@@ -42,3 +42,28 @@ fn fuzzed_programs_compile_and_run() {
     }
     assert!(bad.is_empty(), "{} of {n} fuzzed programs failed:\n  {}", bad.len(), bad.join("\n  "));
 }
+
+/// The members `rpg-oracle fuzz` writes, 20 programs to a member: each
+/// is created and runs to its end, as its programs do alone.
+#[test]
+fn fuzz_bundles_compile_and_run() {
+    let n: u64 = if cfg!(debug_assertions) { 100 } else { 2000 };
+    let mut bad = Vec::new();
+    for first in (0..n).step_by(20) {
+        let name = format!("FZB{:03}", first / 20);
+        let case = Case::parse(&name, &fuzz::bundle(first, 20));
+        match rpg::run(&case) {
+            Ok((o, _, notes)) => {
+                let worst = o.diags.iter().map(|d| d.severity).max().unwrap_or(0);
+                if !o.created || worst > 10 {
+                    let ids: Vec<&str> = o.diags.iter().map(|d| d.msgid.as_str()).collect();
+                    bad.push(format!("{name}: not created, severity {worst} {ids:?} {notes}"));
+                } else if let Run::Escape(m) = &o.run {
+                    bad.push(format!("{name}: escape {m}"));
+                }
+            }
+            Err(e) => bad.push(format!("{name}: {e}")),
+        }
+    }
+    assert!(bad.is_empty(), "{} bundles failed:\n  {}", bad.len(), bad.join("\n  "));
+}

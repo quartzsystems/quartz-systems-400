@@ -1,0 +1,32 @@
+**FREE
+// A million decimal EVAL pairs and 100,000 calls, timed by the program.
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s i int(10);
+dcl-s acc packed(15:2);
+dcl-s r packed(9:4);
+dcl-s t0 timestamp;
+dcl-s ms int(20);
+t0 = %timestamp();
+for i = 1 to 1000000;
+  acc += i * 1.25;
+  r = %rem(i : 7) / 3;
+endfor;
+ms = %diff(%timestamp() : t0 : *mseconds) / 1000;
+line = 'eval ms ' + %char(ms);
+write QSYSPRT line;
+t0 = %timestamp();
+for i = 1 to 100000;
+  acc = step(acc);
+endfor;
+ms = %diff(%timestamp() : t0 : *mseconds) / 1000;
+line = 'call ms ' + %char(ms) + ' ' + %editc(acc : 'X');
+write QSYSPRT line;
+*inlr = *on;
+dcl-proc step;
+  dcl-pi *n packed(15:2);
+    a packed(15:2) value;
+  end-pi;
+  return a - 1;
+end-proc;
