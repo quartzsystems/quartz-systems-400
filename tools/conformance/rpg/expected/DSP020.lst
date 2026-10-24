@@ -1,0 +1,353 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   DSP020
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   DSP020
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; dds: CUSTF                                                                                            000000     000200
+      3 //; sqlfile: CUSTF                                                                                        000000     000300
+      4 //; dds: B8S                                                                                              000000     000400
+      5 //; keys: pgdn                                                                                            000000     000500
+      6 //; keys: f3                                                                                              000000     000600
+      7 ctl-opt dftactgrp(*no);                                                                                   000000     000700
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     8 dcl-f CUSTF keyed;                                                                                        000000     000800
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  CUSTF            {lib}/CUSTF                             *
+         * Record format(s) . . . . . :  CUSTR            CUSTR                                       *
+         *--------------------------------------------------------------------------------------------*
+      9 dcl-f B8S workstn sfile(CSFL: rrn);                                                                       000000     000900
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  B8S              {lib}/B8S                               *
+         * Record format(s) . . . . . :  CSFL             CSFL                                        *
+         *                               CCTL             CCTL                                        *
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+         *--------------------------------------------------------------------------------------------*
+-    10 dcl-s rrn packed(4: 0);                                                                                   000000     001000
+     11 // Customers read from the database into a subfile.                                                       000000     001100
+-    12=ICUSTR                                                                                                              1000001
+         *--------------------------------------------------------------------------------------------*                     1
+         * RPG record format  . . . . :  CUSTR                                                        *                     1
+         * External format  . . . . . :  CUSTR : {lib}/CUSTF                                      *                     1
+         *--------------------------------------------------------------------------------------------*                     1
+     13=I                             P    1    3 0CUSNO                                                                    1000002
+     14=I                             A    4   23  NAME                                                                     1000003
+     15=I                             A   24   35  CITY                                                                     1000004
+     16=I                             P   36   40 2BAL                                                                      1000005
+     17=ICSFL                                                                                                               2000001
+         *--------------------------------------------------------------------------------------------*                     2
+         * RPG record format  . . . . :  CSFL                                                         *                     2
+         * External format  . . . . . :  CSFL : {lib}/B8S                                         *                     2
+         *--------------------------------------------------------------------------------------------*                     2
+     18=I                             N    1    1  *IN03                           Exit                                     2000002
+     19=I                             S    2    6 0CUSNO                                                                    2000003
+     20=I                             A    7   26  NAME                                                                     2000004
+     21=I                             A   27   38  CITY                                                                     2000005
+     22=ICCTL                                                                                                               3000001
+         *--------------------------------------------------------------------------------------------*                     3
+         * RPG record format  . . . . :  CCTL                                                         *                     3
+         * External format  . . . . . :  CCTL : {lib}/B8S                                         *                     3
+         *--------------------------------------------------------------------------------------------*                     3
+     23=I                             N    1    1  *IN03                           Exit                                     3000002
+-    24 *in33 = *on;                                                                                              000000     001200
+     25 write CCTL;                                                                                               000000     001300
+     26 *in33 = *off;                                                                                             000000     001400
+     27 read CUSTF;                                                                                               000000     001500
+     28 dow not %eof(CUSTF);                                                                                 B01  000000     001600
+     29 rrn += 1;                                                                                             01  000000     001700
+     30 write CSFL;                                                                                           01  000000     001800
+     31 read CUSTF;                                                                                           01  000000     001900
+     32 enddo;                                                                                               E01  000000     002000
+     33 TOTAL = rrn;                                                                                              000000     002100
+     34 *in31 = rrn > 0;                                                                                          000000     002200
+     35 *in34 = *on;                                                                                              000000     002300
+     36 dou *in03;                                                                                           B01  000000     002400
+     37 exfmt CCTL;                                                                                           01  000000     002500
+     38 enddo;                                                                                               E01  000000     002600
+     39 *inlr = *on;                                                                                              000000     002700
+     40=OCSFL                                                                                                               4000001
+         *--------------------------------------------------------------------------------------------*                     4
+         * RPG record format  . . . . :  CSFL                                                         *                     4
+         * External format  . . . . . :  CSFL : {lib}/B8S                                         *                     4
+         *--------------------------------------------------------------------------------------------*                     4
+     41=O                       CUSNO                5S ZONE      5,0                                                       4000002
+     42=O                       NAME                25A CHAR       20                                                       4000003
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     43=O                       CITY                37A CHAR       12                                                       4000004
+     44=OCCTL                                                                                                               5000001
+         *--------------------------------------------------------------------------------------------*                     5
+         * RPG record format  . . . . :  CCTL                                                         *                     5
+         * External format  . . . . . :  CCTL : {lib}/B8S                                         *                     5
+         *--------------------------------------------------------------------------------------------*                     5
+     45=O                       *IN31                1N CHAR        1                                                       5000002
+     46=O                       *IN33                2N CHAR        1                                                       5000003
+     47=O                       *IN34                3N CHAR        1                                                       5000004
+     48=O                       TOTAL                8S ZONE      5,0                                                       5000005
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+ *RNF7066 00      8 000800  Record-Format CUSTR not used for input or output.
+ *RNF7086 00      8 000800  RPG handles blocking for file CUSTF. INFDS is updated only
+                            when blocks of data are transferred.
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-                 O u t p u t   B u f f e r   P o s i t i o n s
+0Line   Start End   Field or Constant
+0Number Pos   Pos
+     41     1     5 CUSNO
+     42     6    25 NAME
+     43    26    37 CITY
+     45     1     1 *IN31
+     46     2     2 *IN33
+     47     3     3 *IN34
+     48     4     8 TOTAL
+0 * * * * *   E N D   O F   O U T P U T   B U F F E R   P O S I T I O N   *  * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                    K e y   F i e l d   I n f o r m a t i o n
+0         File           Internal    External
+            Record       field name  field name  Attributes
+0      1  CUSTF
+            CUSTR
+                         CUSNO                   PACK      5,0 SIGNED
+0 * * * * *   E N D   O F   K E Y   F I E L D   I N F O R M A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          B8S               WORKSTN                 9D
+            CSFL                                    9D     17      30      40
+            CCTL                                    9D     22      25      37
+                                                   44
+          CUSTF             DISK                    8D     27      28      31
+            CUSTR                                   8D     12
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   39M
+          *IN03             N(1)                   18D     23M     36
+          *IN31             N(1)                   34M     45
+          *IN33             N(1)                   24M     26M     46
+          *IN34             N(1)                   35M     47
+ *RNF7031 BAL               P(9,2)                 16D
+          CITY              A(12)                  15M     21M     43
+          CUSNO             P(5,0)                 13M     19M     41
+          NAME              A(20)                  14M     20M     42
+          RRN               P(4,0)                  9      10D     29M     33
+                                                   34
+          TOTAL             P(5,0)                 33M     48
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          03                                       18M     23M     36
+          31                                       34M     45
+          33                                       24M     26M     46
+          34                                       35M     47
+          LR                                       39M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF7031 00      1 The name or indicator is not referenced.
+ *RNF7066 00      1 Record-Format name of Externally-Described file is not used.
+ *RNF7086 00      1 RPG handles blocking for the file. INFDS is updated only when
+                    blocks of data are transferred.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 10
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        3
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        3
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       48
+     Specifications  . . . . . . . . :       41
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        6
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program DSP020 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

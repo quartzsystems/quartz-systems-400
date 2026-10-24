@@ -310,6 +310,7 @@ impl Lowerer<'_, '_> {
     }
 
     /// Lower a file I/O instruction: every operation yields its status.
+    #[allow(clippy::too_many_lines)] // one arm per instruction
     fn io_inst(&mut self, io: &IoInst) -> Result<()> {
         match io {
             IoInst::DbOpen { dst, file, infds } => {
@@ -377,9 +378,12 @@ impl Lowerer<'_, '_> {
                 fmt,
                 rec,
                 ctl,
+                rrn,
+                inds,
             } => {
                 let f = self.i64(i64::from(*file));
                 let opv = self.i64(dev_op_code(*op));
+                let display = self.m.files.get(*file as usize).is_some_and(|x| x.dev == qir::FileDev::Display);
                 let (fa, _) = self.sop(
                     &Operand::Const(Const::Str(fmt.clone())),
                     Some(&Type::Char(10)),
@@ -399,6 +403,16 @@ impl Lowerer<'_, '_> {
                         word = self.b.ins().bor(shifted, x);
                     }
                     self.rt_call(RtFn::PrtCtl, &[f, fa, ra, rd, word]).expect("result")
+                } else if display {
+                    let n = match rrn {
+                        Some(o) => self.int_op(o)?,
+                        None => self.i64(0),
+                    };
+                    let (ia, id) = match inds {
+                        Some(p) => self.place_pair(p)?,
+                        None => (self.i64(0), self.i64(0)),
+                    };
+                    self.rt_call(RtFn::DspIo, &[f, opv, fa, ra, rd, n, ia, id]).expect("result")
                 } else {
                     self.rt_call(RtFn::DevIo, &[f, opv, fa, ra, rd]).expect("result")
                 };

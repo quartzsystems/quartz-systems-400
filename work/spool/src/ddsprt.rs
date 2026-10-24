@@ -97,7 +97,8 @@ fn content(f: &PrtField, data: &[u8], page: u32, clock: &Clock) -> Vec<u8> {
                 ebcdic(t)
             }
         }
-        PrtKind::PagNbr => ebcdic(&format!("{:>4}", page % 10_000)),
+        // Four zoned digits, edited when the field says so.
+        PrtKind::PagNbr => numeric(&ebcdic(&format!("{:04}", page % 10_000)), 4, 0, &f.edit),
     }
 }
 
@@ -377,7 +378,7 @@ mod tests {
         assert_eq!(p.records, 3, "overprints are not records");
         let (pages, _) = decode(&p.take());
         let l = &pages[0].lines;
-        assert_eq!(l[&1], "REPORT             10/21/26            PAGE    1");
+        assert_eq!(l[&1], "REPORT             10/21/26            PAGE 0001");
         assert_eq!(l[&3], "    ACME       123.45  *");
         assert_eq!(l[&4], "    ACME       123.45");
     }

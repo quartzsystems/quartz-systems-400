@@ -40,6 +40,7 @@ pub struct Session {
     ddssrc: bool,
     in_sql_listing: bool,
     release: String,
+    display: Option<crate::display::Display>,
     _lock: Lock,
 }
 
@@ -69,10 +70,13 @@ impl Session {
             ddssrc: false,
             in_sql_listing: false,
             release: String::new(),
+            display: None,
             _lock: lock,
         };
         s.ftp.command("SITE NAMEFMT 1")?;
-        s.rcmd("CHGJOB INQMSGRPY(*DFT)")?;
+        // Inquiries take their defaults; printer and display files edit
+        // numbers with a decimal point, as the kit's job does.
+        s.rcmd("CHGJOB INQMSGRPY(*DFT) DECFMT(*BLANK)")?;
         // The work library first in this job's list: /COPY members and
         // programs called by name are found there.
         let lib = s.lib.clone();
@@ -155,7 +159,7 @@ impl Session {
         let mut batch: Vec<String> = Vec::new();
         for (i, step) in c.db.iter().enumerate() {
             match step {
-                DbStep::Dds { name, logical, source } => {
+                DbStep::Dds { name, kind, source } => {
                     if !self.ddssrc {
                         self.try_rcmd(&format!("DLTF FILE({lib}/QDDSSRC)"));
                         let (ok, cause) = self.rcmd(&format!(
@@ -169,13 +173,30 @@ impl Session {
                     self.try_rcmd(&format!("DLTF FILE({lib}/{name})"));
                     self.try_rcmd(&format!("RMVM FILE({lib}/QDDSSRC) MBR({name})"));
                     self.put_source("QDDSSRC", name, source, 80)?;
-                    let cmd = if *logical { "CRTLF" } else { "CRTPF" };
+                    let cmd = kind.command();
                     let (ok, cause) = self.rcmd(&format!(
                         "{cmd} FILE({lib}/{name}) SRCFILE({lib}/QDDSSRC) SRCMBR({name})"
                     ))?;
                     self.try_rcmd(&format!("RMVM FILE({lib}/QDDSSRC) MBR({name})"));
                     if !ok {
-                        bail!("{cmd} {name} failed {cause}");
+                        // The compile listing says why.
+                        let mut why = Vec::new();
+                        if let Ok(list) = self.spools() {
+                            for e in list {
+                                if let Ok(lines) = self.take_spool(&e)
+                                    && e.name == *name
+                                {
+                                    // Each message with the source line above it.
+                                    for (i, l) in lines.iter().enumerate() {
+                                        if l.contains("CPD") && !l.contains("Message . . . .") {
+                                            why.push(lines[i.saturating_sub(1)].clone());
+                                            why.push(l.clone());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        bail!("{cmd} {name} failed {cause}\n{}", why.join("\n"));
                     }
                     made.push(name.clone());
                 }
@@ -455,25 +476,22 @@ impl Session {
         if created && !c.call.is_empty() {
             let begin = format!("RPGORA BEGIN {}", c.name);
             let end = format!("RPGORA END {}", c.name);
-            self.try_rcmd(&format!("SNDPGMMSG MSG('{begin}') TOPGMQ(*SAME)"));
-            let (ok, cause) = self.rcmd(&c.fill(&c.call, &lib))?;
-            self.try_rcmd(&format!("SNDPGMMSG MSG('{end}') TOPGMQ(*SAME)"));
-            o.run = if ok { Run::Ok } else { Run::Escape(cause) };
+            if c.keys.is_empty() {
+                self.try_rcmd(&format!("SNDPGMMSG MSG('{begin}') TOPGMQ(*SAME)"));
+                let (ok, cause) = self.rcmd(&c.fill(&c.call, &lib))?;
+                self.try_rcmd(&format!("SNDPGMMSG MSG('{end}') TOPGMQ(*SAME)"));
+                o.run = if ok { Run::Ok } else { Run::Escape(cause) };
+            } else {
+                self.call_at_display(c, &mut o)?;
+            }
             // Files a program left open (it returned without LR) close,
             // so their spooled files can be read; this job only.
             self.try_rcmd("RCLRSC LVL(*CALLER)");
             self.try_rcmd("RCLACTGRP ACTGRP(*ELIGIBLE)");
-            for e in self.spools()? {
-                let records = self.take_spool(&e)?;
-                if e.name == "QSQ" {
-                    continue;
-                }
-                o.spool.push(Spooled {
-                    file: e.name.clone(),
-                    lines: fcfc_rows(&records, &["https://pub400.com"]),
-                });
+            o.spool = self.call_spools()?;
+            if c.keys.is_empty() {
+                o.log = self.log_between(&begin, &end)?;
             }
-            o.log = self.log_between(&begin, &end)?;
         }
         for cmd in ["DLTPGM PGM", "DLTMOD MODULE", "DLTSRVPGM SRVPGM"] {
             self.try_rcmd(&format!("{cmd}({lib}/{})", c.name));
@@ -499,6 +517,46 @@ impl Session {
         Ok((o, listing::mask(&listing, &m)))
     }
 
+    /// The spooled files a call wrote, as page/line rows.
+    fn call_spools(&mut self) -> Result<Vec<Spooled>> {
+        let mut out = Vec::new();
+        for e in self.spools()? {
+            let records = self.take_spool(&e)?;
+            if e.name != "QSQ" {
+                out.push(Spooled {
+                    file: e.name.clone(),
+                    lines: fcfc_rows(&records, &["https://pub400.com"]),
+                });
+            }
+        }
+        Ok(out)
+    }
+
+    /// Call a member at a display (the 5250 session) and answer its
+    /// screens.
+    fn call_at_display(&mut self, c: &Case, o: &mut Outcome) -> Result<()> {
+        let lib = self.lib.clone();
+        if self.display.is_none() {
+            self.display = Some(crate::display::Display::open(&lib)?);
+        }
+        let d = self.display.as_mut().expect("the display");
+        match d.call(&c.fill(&c.call, &lib), &c.keys) {
+            Ok((run, screens)) => {
+                o.run = run;
+                o.screens = screens;
+            }
+            Err(e) => {
+                // A broken session is not used again.
+                if let Some(d) = self.display.take() {
+                    d.close();
+                }
+                eprintln!("{}: the display failed: {e:#}", c.name);
+                o.run = Run::Escape("DISPLAY".into());
+            }
+        }
+        Ok(())
+    }
+
     /// Delete the run's files and any spooled file left behind.
     pub fn clean(&mut self) {
         if let Ok(list) = self.spools() {
@@ -514,6 +572,9 @@ impl Session {
 
     /// Delete the work files and say goodbye.
     pub fn close(mut self) {
+        if let Some(d) = self.display.take() {
+            d.close();
+        }
         let lib = self.lib.clone();
         for f in ["QRPGLESRC", "QDDSSRC", "RPGSPL"] {
             self.try_rcmd(&format!("DLTF FILE({lib}/{f})"));

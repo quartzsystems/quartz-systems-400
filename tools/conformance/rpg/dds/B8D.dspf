@@ -1,0 +1,11 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'Exit')
+     A                                      CF05(05 'Data')
+     A                                      CA12(12 'Cancel')
+     A          R KEYS
+     A                                      CF10(10)
+     A                                  1  2'B8D keys'
+     A                                  3  2'Value:'
+     A            VAL           10A  B  3 10
+     A            RES           70A  O  5  2
+     A            RES2          70A  O  6  2

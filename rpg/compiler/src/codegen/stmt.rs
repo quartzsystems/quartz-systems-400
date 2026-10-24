@@ -660,7 +660,7 @@ impl Gen<'_> {
             }
             (
                 "READ" | "READP" | "READE" | "READPE" | "CHAIN" | "SETLL" | "SETGT" | "UPDATE" | "DELETE" | "UNLOCK"
-                | "FEOD" | "OPEN" | "CLOSE" | "KLIST" | "KFLD",
+                | "FEOD" | "OPEN" | "CLOSE" | "KLIST" | "KFLD" | "EXFMT" | "READC",
                 _,
             ) => self.db_op(op, base),
             ("PLIST" | "PARM", _) => {}

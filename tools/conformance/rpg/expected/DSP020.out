@@ -1,0 +1,22 @@
+# DSP020 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF7066 00 line 8 seq 000800
+diag: RNF7086 00 line 8 seq 000800
+run: ok
+screen: 1
+   1| B8S customers
+   2|     8
+   5| 00101   Alice Adams           Boston
+   6| 00102   Bob Brown             Chicago
+   7| 00103   Carol Clark           Boston
+   8| 00104   Dan Davis             Denver
+   9| 00105   Eve Evans             Chicago
+  10| 00106   Frank Fox             Denver
+  11|                                                                        More...
+screen: 2
+   1| B8S customers
+   2|     8
+   5| 00107   Grace Green           Boston
+   6| 00108   Hank Hill             Austin
+  11|                                                                         Bottom

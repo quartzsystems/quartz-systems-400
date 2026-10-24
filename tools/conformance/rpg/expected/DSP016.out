@@ -1,0 +1,8 @@
+# DSP016 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+run: ok
+screen: 1
+   1| B8D keys
+   3| Value:
+   5| open before 0 after 1 status 01215 err 1

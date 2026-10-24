@@ -1,0 +1,15 @@
+# DSP006 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+run: ok
+screen: 1
+   1| B8F message identifiers
+   3| Code:
+screen: 2
+   1| B8F message identifiers
+   3| Code:   X
+  24| The code must be OK
+screen: 3
+   1| B8F message identifiers
+   3| Code:   OK
+   6| Code accepted

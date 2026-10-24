@@ -51,6 +51,12 @@ fn has_role(r: &Record, want: fn(&SflRole) -> bool) -> bool {
 fn subfiles(df: &mut DisplayFile, diags: &mut Diagnostics) {
     let sizes = df.file.sizes.clone();
     let n = df.records.len();
+    for r in &df.records {
+        // SFLEND is shown only while the program says the end is there.
+        for k in r.keywords.iter().filter(|k| k.name == "SFLEND" && k.cond.indicators().next().is_none()) {
+            diags.push(ids::needs_indicator(k.line, &k.name));
+        }
+    }
     for i in 0..n {
         for f in &df.records[i].fields {
             for k in &f.keywords {
@@ -113,6 +119,7 @@ fn subfiles(df: &mut DisplayFile, diags: &mut Diagnostics) {
                         )
                     })
                     .collect();
+                let ctl_name = df.records[i].name.clone();
                 let Some(s) = df.records[i].subfile.as_mut() else {
                     continue;
                 };
@@ -160,6 +167,13 @@ fn subfiles(df: &mut DisplayFile, diags: &mut Diagnostics) {
                         {
                             diags.push(ids::ctl_in_page(*fline, label, *row));
                         }
+                    }
+                    let rows: Vec<u32> = ctl_fields
+                        .iter()
+                        .filter_map(|(_, _, r)| r.get(j).copied().flatten().map(u32::from))
+                        .collect();
+                    if rows.iter().any(|r| *r < first) && rows.iter().any(|r| *r > last) {
+                        diags.push(ids::ctl_spans_page(line, &ctl_name, first, last));
                     }
                 }
                 if message {
@@ -420,6 +434,8 @@ struct Span {
     end: u32,
     line: usize,
     label: String,
+    /// Conditioned by option indicators: it may share positions.
+    optioned: bool,
 }
 
 fn positions(df: &DisplayFile, diags: &mut Diagnostics) {
@@ -433,7 +449,8 @@ fn positions(df: &DisplayFile, diags: &mut Diagnostics) {
             };
             let mut spans = Vec::new();
             for f in r.fields.iter().filter(|f| f.is_displayed()) {
-                if let Some(s) = span(f, j, size, width, height, in_window, diags) {
+                if let Some(mut s) = span(f, j, size, width, height, in_window, diags) {
+                    s.optioned = f.cond.indicators().next().is_some();
                     spans.push(s);
                 }
             }
@@ -442,6 +459,7 @@ fn positions(df: &DisplayFile, diags: &mut Diagnostics) {
             for s in &spans {
                 if let Some(prev) = reach
                     && s.start <= prev.end
+                    && !(s.optioned || prev.optioned)
                 {
                     diags.push(ids::overlap(s.line, &s.label, &prev.label, &size.label()));
                 }
@@ -520,6 +538,7 @@ fn span(
         end,
         line: f.line,
         label,
+        optioned: false,
     })
 }
 

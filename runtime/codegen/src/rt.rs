@@ -147,6 +147,11 @@ pub enum RtFn {
     /// printer line with its carriage control, packed 16 bits each:
     /// space before, space after, skip before, skip after.
     PrtCtl = 54,
+    /// `dsp_io(env, file, op, fmt, rec, rec_desc, rrn, inds, inds_desc)
+    /// -> status`: a display file operation; `rrn` is a subfile
+    /// record's number (0 for none), `inds` the separate indicator area
+    /// (0 for none).
+    DspIo = 55,
 }
 
 /// The `db_io` code that asks for the last operation's feedback bits
@@ -179,6 +184,9 @@ pub fn dev_op_code(op: qir::DevOp) -> i64 {
         qir::DevOp::Write => 1,
         qir::DevOp::Read => 2,
         qir::DevOp::ExFmt => 3,
+        qir::DevOp::Chain => 4,
+        qir::DevOp::Update => 5,
+        qir::DevOp::ReadC => 6,
     }
 }
 
@@ -194,7 +202,7 @@ pub fn dtaara_op_code(op: qir::DtaaraOp) -> i64 {
 }
 
 /// Every runtime function, in table order.
-pub const RT_FNS: [RtFn; 55] = [
+pub const RT_FNS: [RtFn; 56] = [
     RtFn::Raise,
     RtFn::Enter,
     RtFn::Leave,
@@ -250,6 +258,7 @@ pub const RT_FNS: [RtFn; 55] = [
     RtFn::DbgVar,
     RtFn::Attn,
     RtFn::PrtCtl,
+    RtFn::DspIo,
 ];
 
 impl RtFn {
@@ -324,6 +333,7 @@ impl RtFn {
             Self::DbgVar => "dbg_var",
             Self::Attn => "attn",
             Self::PrtCtl => "prt_ctl",
+            Self::DspIo => "dsp_io",
         }
     }
 
@@ -388,6 +398,7 @@ impl RtFn {
             Self::DbgVar => (3, None),
             Self::Attn => (0, None),
             Self::PrtCtl => (5, Some(types::I32)),
+            Self::DspIo => (8, Some(types::I32)),
         }
     }
 

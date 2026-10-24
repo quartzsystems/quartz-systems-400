@@ -1,0 +1,27 @@
+# DSP008 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+diag: RNF7089 00 line 8 seq 000800
+run: ok
+screen: 1
+   1| B8H indicator area
+   3| Thirty off
+   4| Input:
+   6| n=1 six=0 in30=1 in06=0 inp=
+screen: 2
+   1| B8H indicator area
+   3| Thirty on
+   4| Input:  ONE
+   6| n=2 six=0 in30=1 in06=0 inp=ONE
+screen: 3
+   1| B8H indicator area
+   3| Thirty off
+   4| Input:  TWO
+   6| n=3 six=1 in30=1 in06=0 inp=TWO
+   7| Shown with 31
+screen: 4
+   1| B8H indicator area
+   3| Thirty on
+   4| Input:  TWO
+   6| n=4 six=0 in30=1 in06=0 inp=TWO
+   7| Shown with 31

@@ -1,0 +1,15 @@
+# DSP022 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+run: ok
+spool: B8P
+  |1/1    B8P report                            Page 0001
+  |1/3    00001   Name 1                          12.50
+  |1/4    00002   Name 2                          25.00
+  |1/5    00003   Name 3                *         37.50
+  |1/6    00004   Name 4                          50.00
+  |1/7    00005   Name 5                          62.50
+  |1/8    00006   Name 6                *         75.00
+  |1/9    00007   Name 7                          87.50
+  |1/10   00008   Name 8                         100.00
+  |1/12   Total                                  450.00

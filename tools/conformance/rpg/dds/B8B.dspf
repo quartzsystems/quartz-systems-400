@@ -1,0 +1,14 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'Exit')
+     A          R HDR
+     A                                  1  2'B8B several formats'
+     A            HTXT          30A  O  2  2
+     A          R QRY                       OVERLAY
+     A                                      CF05(05 'Refresh')
+     A                                  5  2'Code:'
+     A            CODE           4A  I  5  8
+     A                                  6  2'Qty:'
+     A            QTY            3Y 0I  6  8
+     A          R FTR                       OVERLAY
+     A            RESULT        40A  O 21  2
+     A                                 23  2'F3=Exit   F5=Refresh'

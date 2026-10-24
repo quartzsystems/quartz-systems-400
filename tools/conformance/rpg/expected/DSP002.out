@@ -1,0 +1,32 @@
+# DSP002 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+run: ok
+screen: 1
+   1| B8B several formats
+   2| Header written once
+   5| Code:
+   6| Qty:
+  21| Nothing yet
+  23| F3=Exit   F5=Refresh
+screen: 2
+   1| B8B several formats
+   2| Header written once
+   5| Code:
+   6| Qty:
+  21| Code AB12 qty 7 n 1
+  23| F3=Exit   F5=Refresh
+screen: 3
+   1| B8B several formats
+   2| Header written once
+   5| Code:
+   6| Qty:
+  21| Refresh 2
+  23| F3=Exit   F5=Refresh
+screen: 4
+   1| B8B several formats
+   2| Header written once
+   5| Code:
+   6| Qty:
+  21| Code ZZ   qty 0 n 3
+  23| F3=Exit   F5=Refresh

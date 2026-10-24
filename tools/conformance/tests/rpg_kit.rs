@@ -31,7 +31,9 @@ fn every_member_matches_the_oracle() {
         .filter_map(|l| l.split_whitespace().next())
         .collect();
     let mut known_hit = Vec::new();
-    for (batch, case) in &cases {
+    // QS400_RPG_ONLY=PREFIX runs only the members whose names start so.
+    let only = std::env::var("QS400_RPG_ONLY").unwrap_or_default();
+    for (batch, case) in cases.iter().filter(|(_, c)| c.name.starts_with(&only)) {
         let (o, listing, notes) = match run(case) {
             Ok(x) => x,
             Err(e) => {

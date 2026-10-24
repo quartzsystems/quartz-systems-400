@@ -1,0 +1,12 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      INDARA
+     A                                      CA03(03 'Exit')
+     A          R SCR
+     A                                      CF06(06)
+     A                                  1  2'B8H indicator area'
+     A  30                              3  2'Thirty on'
+     A N30                              3  2'Thirty off'
+     A                                  4  2'Input:'
+     A            INP            5A  B  4 10
+     A            RES           60A  O  6  2
+     A  31                              7  2'Shown with 31'

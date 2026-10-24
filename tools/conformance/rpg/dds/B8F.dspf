@@ -1,0 +1,8 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'Exit')
+     A          R ENTRY
+     A                                  1  2'B8F message identifiers'
+     A                                  3  2'Code:'
+     A            CODE           4A  B  3 10
+     A  52                                  ERRMSGID(USR8001 B8MSGF 52)
+     A            DONE          40A  O  6  2

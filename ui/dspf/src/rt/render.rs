@@ -216,7 +216,12 @@ pub fn ffw_of(f: &Field, look: Look) -> Ffw {
     let check = |code: &str| f.check.iter().any(|c| c == code);
     let has_kw = |name: &str| f.keywords.iter().any(|k| k.name == name);
     let numeric = f.ty.is_numeric();
-    let shift = if numeric {
+    // Numeric only (Y) leaves the digits where they were typed; the
+    // host aligns them.
+    let numeric_only = numeric && f.ty.letter == 'Y';
+    let shift = if numeric_only {
+        Shift::NumericOnly
+    } else if numeric {
         Shift::SignedNumeric
     } else {
         Shift::AlphaShift
@@ -225,7 +230,7 @@ pub fn ffw_of(f: &Field, look: Look) -> Ffw {
         Adjust::MandatoryFill
     } else if check("RZ") {
         Adjust::RightZero
-    } else if check("RB") || numeric {
+    } else if check("RB") || numeric && !numeric_only {
         Adjust::RightBlank
     } else {
         Adjust::None

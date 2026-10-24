@@ -331,7 +331,10 @@ Windows. `WINDOW(row col lines cols)` places the upper-left corner of
 the border; the usable area has `lines` by `cols`. With the border and
 its attribute bytes the window takes `lines + 2` rows and `cols + 4`
 columns, so `row + lines + 1` and `col + cols + 3` must be within the
-display on every size (`DDS6408`). `WINDOW(*DFT lines cols)` leaves the
+display on every size (`DDS6408`). Inside it, line 1 is row `row + 1`
+and position 1 is column `col + 2` (pub400: `WINDOW(5 10 6 40)` puts
+its border at columns 10 to 53 and a constant at position 2 in column
+13). `WINDOW(*DFT lines cols)` leaves the
 place to the system and `WINDOW(record)` borrows another record's
 window, which must exist (`DDS6409`). `RMVWDW`, `USRRSTDSP`, `WDWTITLE`
 and record-level `WDWBORDER` need `WINDOW` on the record.
@@ -347,6 +350,14 @@ Keys. `CAnn`/`CFnn`, `ROLLUP`, `ROLLDOWN`, `PAGEUP`, `PAGEDOWN`,
 same number, is refused (`DDS6208`). File-level keys apply to every
 record.
 
+`SFLEND` needs an option indicator (`DDS6519`; pub400's `CPD7490`). A
+subfile control record with fields both above and below its subfile's
+page overlaps the page, since a record holds the lines from its first
+field to its last (`DDS6520`; `CPD7812`). Fields conditioned by option
+indicators may share positions (`N40` and `40` on one spot). An
+input-capable numeric-only (`Y`) field without an edit code takes its
+length on the display, no sign position (`S` fields keep one).
+
 ## 5. Buffers
 
 Each record format has an output buffer (what the program writes) and
@@ -354,13 +365,17 @@ an input buffer (what it reads):
 
 - The output buffer holds the fields with usage `O` (or blank), `B`,
   `H`, `M` and `P` in source order; the input buffer those with `I`, `B`
-  and `H`. Constants have no bytes.
+  and `H`, and a subfile record's input buffer its output fields too
+  (`CHAIN` and `READC` give them back; pub400's RPG listing shows them
+  as input fields). Constants have no bytes.
 - Without `INDARA`, each buffer begins with one byte per indicator the
-  format uses, in ascending order: the option indicators (every
-  indicator conditioning a field or keyword of the record) in the
-  output buffer, the response indicators (keys at file and record
-  level, `SETOF`, `CHANGE`, `DUP`, `BLANKS`, `ERRMSG`, `MNUCNL`...) in
-  the input buffer. With `INDARA` both lists are empty and the
+  format uses, each where it first appears, file-level keys first: the
+  option indicators (every indicator conditioning a field or keyword of
+  the record) in the output buffer, the response indicators (keys at
+  file and record level, `SETOF`, `CHANGE`, `DUP`, `BLANKS`, `ERRMSG`,
+  `MNUCNL`...) in the input buffer. On pub400 a file with `CA03`,
+  `CF05`, `CA12` and a record with `CF10` reads `*IN03 *IN05 *IN12
+  *IN10`. With `INDARA` both lists are empty and the
   indicators live in a separate 99-byte area, one byte per indicator
   01-99.
 - Bytes follow the external type as `docs/DB_FORMAT.md` lays records
@@ -426,14 +441,25 @@ colors; `PC` puts the cursor there, `PR` protects, `MDT` pre-sets the
 tag) and whose field format word comes from the checks (`ME`
 mandatory entry, `MF` mandatory fill, `FE` field exit required, `RZ`/
 `RB` right adjust, `LC` keeps lower case, `DUP`, `AUTO(RA)`); numeric
-fields are signed numeric fields. `ERRMSG`/`ERRMSGID` whose
-conditioning holds put the text on the error line, reverse the field,
-sound the alarm and turn the indicator off at the next read. `CSRLOC`
-places the cursor from two hidden fields.
+numeric fields are signed numeric fields, numeric-only (`Y`) fields
+numeric-only fields left where they were typed. `ERRMSG`/`ERRMSGID`
+whose conditioning holds put the first such message on the error line,
+reverse its field, sound the alarm and turn every such indicator off at
+the next read; on a record already on the display only the message
+goes out and what the operator typed stays (pub400). `CSRLOC` places
+the cursor from two hidden fields. The `CAnn` keys in effect go to the
+display in the start of header's command key switches (a bit on for
+each key that returns no data, F24-F17, F16-F9, F8-F1, as pub400 sends
+them), so the terminal sends no fields for them.
 
 **Subfiles.** A `SFL` record's write stores its buffer at the next
-relative record number (`set_sfl_rrn` positions it; the program's RRN
-is not in the IR's `dspio` yet, `TODO(phase9)`). The control record's
+relative record number, or at the program's (`sfl_write`; `SFLNXTCHG`
+in effect marks it changed). A control record's read takes the page's
+typed fields into the records (changed ones are marked), and so does a
+roll; `sfl_readc` gives the next changed record and clears its mark,
+`sfl_chain` a record by number, `sfl_update` replaces the one last
+read (changed again only under `SFLNXTCHG`); a control record's read
+or write starts `READC` again from the first record. The control record's
 write handles `SFLCLR` (records and page go), `SFLINZ` (blank records
 to `SFLSIZ`), `SFLRCDNBR` (the page holding that record, `*TOP` puts
 it first, `CURSOR` puts the cursor on it), `SFLDSPCTL` (the control
@@ -461,8 +487,9 @@ float through `qdecimal`; dates and times as typed); a failure is
 job shows on the error line with the field reversed and the cursor on
 it. Response indicators are the key's, `VLDCMDKEY`, `CHANGE(nn)` for
 fields the operator modified and `BLANKS(nn)` for blank ones, minus the
-`ERRMSG` resets; they lead the input buffer (or fill the 99-byte area
-with `INDARA`), hidden fields come from the last write. The cursor and
+`ERRMSG` resets; they lead the input buffer (or, with `INDARA`, take
+their places in the 99-byte area, the other indicators as the write
+left them), hidden fields come from the last write. The cursor and
 the subfile record under it (`sfl_rrn`, from the displayed page)
 complete the `Input`.
 

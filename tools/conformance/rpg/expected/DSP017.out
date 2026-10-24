@@ -1,0 +1,16 @@
+# DSP017 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+run: ok
+screen: 1
+   1| B8D keys
+   3| Value:
+   5| Fixed form
+screen: 2
+   1| B8D keys
+   3| Value:  FIX
+   5| KE FIX
+screen: 3
+   1| B8D keys
+   3| Value:  FIX
+   5| KL FIX

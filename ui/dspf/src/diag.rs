@@ -502,4 +502,24 @@ pub mod ids {
             format!("Field {name} of {len} positions does not fit the display {size}"),
         )
     }
+
+    /// A subfile control record with lines both above and below its
+    /// subfile's page: a record holds the lines from its first to its
+    /// last.
+    pub fn ctl_spans_page(line: usize, name: &str, first: u32, last: u32) -> Diagnostic {
+        err(
+            "DDS6520",
+            line,
+            format!("Record {name} has fields above and below its subfile's lines {first}-{last}; its lines overlap them"),
+        )
+    }
+
+    /// A keyword that is only taken under an option indicator.
+    pub fn needs_indicator(line: usize, kw: &str) -> Diagnostic {
+        err(
+            "DDS6519",
+            line,
+            format!("Keyword {kw} needs an option indicator"),
+        )
+    }
 }

@@ -93,6 +93,23 @@ pub struct Outcome {
     pub spool: Vec<Spooled>,
     /// Job log messages of the call, in order.
     pub log: Vec<Logged>,
+    /// The screens the call read.
+    pub screens: Vec<Screen>,
+}
+
+/// A screen as the outcome keeps it: the rows that hold something, row
+/// number and text.
+pub type Screen = Vec<(usize, String)>;
+
+/// A screen's text rows as the outcome keeps them: the rows that hold
+/// something, numbered from 1, blanks at their ends dropped.
+#[must_use]
+pub fn screen_rows(rows: &[String]) -> Screen {
+    rows.iter()
+        .enumerate()
+        .filter(|(_, r)| !r.trim().is_empty())
+        .map(|(i, r)| (i + 1, r.trim_end().to_string()))
+        .collect()
 }
 
 impl Outcome {
@@ -127,6 +144,12 @@ impl Outcome {
             let _ = writeln!(s, "spool: {}", f.file);
             for l in &f.lines {
                 let _ = writeln!(s, "  |{l}");
+            }
+        }
+        for (i, sc) in self.screens.iter().enumerate() {
+            let _ = writeln!(s, "screen: {}", i + 1);
+            for (r, t) in sc {
+                let _ = writeln!(s, "  {r:>2}|{t}");
             }
         }
         for m in &self.log {

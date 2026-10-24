@@ -87,7 +87,14 @@ const DB_OPS: [DbOp; 12] = [
     DbOp::Unlock,
     DbOp::Feod,
 ];
-const DEV_OPS: [DevOp; 3] = [DevOp::Write, DevOp::Read, DevOp::ExFmt];
+const DEV_OPS: [DevOp; 6] = [
+    DevOp::Write,
+    DevOp::Read,
+    DevOp::ExFmt,
+    DevOp::Chain,
+    DevOp::Update,
+    DevOp::ReadC,
+];
 const MSG_TYPES: [MsgType; 11] = [
     MsgType::Info,
     MsgType::Comp,
@@ -866,6 +873,8 @@ impl R<'_> {
                 } else {
                     None
                 },
+                rrn: if self.version >= 3 { self.opt_operand()? } else { None },
+                inds: if self.version >= 3 { self.opt_place()? } else { None },
             },
             v => return Err(bad(format!("{v} is not an I/O instruction"))),
         })

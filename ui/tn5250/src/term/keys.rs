@@ -147,7 +147,12 @@ impl Terminal {
         match k {
             Key::Char(c) => self.type_char(c),
             Key::Enter => self.aid_key(aid::ENTER, true),
-            Key::F(n) => self.aid_key(aid::function(n), true),
+            Key::F(n) => {
+                // A command attention key brings no field data.
+                let data = !(1..=24).contains(&n)
+                    || self.key_switches[usize::from(2 - (n - 1) / 8)] & (1 << ((n - 1) % 8)) == 0;
+                self.aid_key(aid::function(n), data)
+            }
             Key::PageUp => self.aid_key(aid::ROLL_DOWN, true),
             Key::PageDown => self.aid_key(aid::ROLL_UP, true),
             Key::Help => self.aid_key(aid::HELP, false),

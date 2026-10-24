@@ -36,15 +36,15 @@ QS/400 DDS compiler
                                         3    2    10                20 N21 22     'Rush order' DSPATR(BL)<20 N21 22> COLOR(PNK)<3...
   ORDNO       S          7    0  B      5   15     8      0      0                DSPATR(PR)<50> DSPATR(HI)<N50>
                                         5    2    10                              'Order  . :'
-  QTY         Y          5    0  B      6   15     6      7      7                ERRMSG('Quantity is not valid' 60)<60>
+  QTY         Y          5    0  B      6   15     5      7      7                ERRMSG('Quantity is not valid' 60)<60>
                                         6    2    10                              'Quantity :'
-    Output buffer 12 bytes (option indicators 20 21 22 30 31 50 60); input buffer 12 bytes (response indicators 03 40 41 60 99); level identifier 093D91D0BB117
+    Output buffer 12 bytes (option indicators 20 21 22 30 31 50 60); input buffer 12 bytes (response indicators 99 03 40 41 60); level identifier 093D91D0BB117
 
   Record format FOOTER
     Record keywords: OVERLAY CLRL(*NO) PROTECT<90>
   Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
                                        23    2     7                              'F3=Exit'
-    Output buffer 0 bytes (option indicators 90); input buffer 0 bytes (response indicators 03 99); level identifier E3B0C44298FC1
+    Output buffer 0 bytes (option indicators 90); input buffer 0 bytes (response indicators 99 03); level identifier E3B0C44298FC1
 
   Indicator usage
   Ind  Option at                                 Response at                               Text

@@ -63,8 +63,13 @@ pub struct Input {
     pub aid: u8,
     /// Cursor row and column, 1-based.
     pub cursor: (u16, u16),
-    /// The subfile record the cursor was in, 0 when none.
+    /// The subfile record the cursor was in (a control record's read)
+    /// or the one read (`CHAIN`, `READC`), 0 when none.
     pub sfl_rrn: u32,
+    /// The lowest subfile record number on the display, 0 when none.
+    pub sfl_top: u32,
+    /// How many records the subfile holds.
+    pub sfl_count: u32,
 }
 
 /// Why a read did not complete: the display must be shown the problem

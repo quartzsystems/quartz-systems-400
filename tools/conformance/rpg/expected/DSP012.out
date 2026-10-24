@@ -1,0 +1,31 @@
+# DSP012 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+run: ok
+screen: 1
+   1| B8K options
+   3| Type 1 to mark, 4 to drop.
+   5| Opt Item
+   6|     KEEP1
+   7|     KEEP2
+   8|     KEEP3
+  11|                                                                         Bottom
+  21| Mark one
+screen: 2
+   1| B8K options
+   3| Type 1 to mark, 4 to drop.
+   5| Opt Item
+   6| 1   KEEP1      Seen 1 opt 1
+   7|     KEEP2
+   8|     KEEP3
+  11|                                                                         Bottom
+  21| Read 1
+screen: 3
+   1| B8K options
+   3| Type 1 to mark, 4 to drop.
+   5| Opt Item
+   6| 1   KEEP1      Seen 1 opt 1
+   7|     KEEP2
+   8|     KEEP3
+  11|                                                                         Bottom
+  21| Read 1

@@ -75,6 +75,31 @@ pub struct ExtFormat {
     pub fields: Vec<ExtField>,
     /// Key field names, in key order.
     pub keys: Vec<String>,
+    /// A display record format's two buffers.
+    pub dsp: Option<DspLayout>,
+}
+
+/// A display record format's buffers: the output buffer holds the
+/// option indicators and the fields shown, the input buffer the
+/// response indicators and the fields read (without `INDARA` the
+/// indicators come first, one byte each).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct DspLayout {
+    /// The output buffer's length.
+    pub out_len: u32,
+    /// The input buffer's length.
+    pub in_len: u32,
+    /// The option indicators at the front of the output buffer.
+    pub option_inds: Vec<u8>,
+    /// The response indicators at the front of the input buffer.
+    pub response_inds: Vec<u8>,
+    /// Each field's offset in the output and in the input buffer, by
+    /// the format's field index.
+    pub offsets: Vec<(Option<u32>, Option<u32>)>,
+    /// A subfile record format (`SFL`).
+    pub subfile: bool,
+    /// The subfile a control record format controls (`SFLCTL`).
+    pub sflctl: Option<String>,
 }
 
 /// An external file description.
@@ -86,6 +111,8 @@ pub struct ExtFile {
     pub dev: Dev,
     /// Its formats.
     pub formats: Vec<ExtFormat>,
+    /// A display file with a separate indicator area (`INDARA`).
+    pub indara: bool,
 }
 
 /// Where external descriptions come from at compile time.

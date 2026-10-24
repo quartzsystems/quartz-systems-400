@@ -1,0 +1,38 @@
+# DSP010 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+run: ok
+screen: 1
+   1| B8J load all
+   5| Num   Name
+   6|   3   Entry number 1
+   7|   6   Entry number 2
+   8|   9   Entry number 3
+   9|  12   Entry number 4
+  10|                                                                        More...
+  23| F3=Exit
+screen: 2
+   1| B8J load all
+   5| Num   Name
+   6|  15   Entry number 5
+   7|  18   Entry number 6
+   8|  21   Entry number 7
+   9|  24   Entry number 8
+  10|                                                                        More...
+  23| F3=Exit
+screen: 3
+   1| B8J load all
+   5| Num   Name
+   6|  27   Entry number 9
+   7|  30   Entry number 10
+  10|                                                                         Bottom
+  23| F3=Exit
+screen: 4
+   1| B8J load all
+   5| Num   Name
+   6|  15   Entry number 5
+   7|  18   Entry number 6
+   8|  21   Entry number 7
+   9|  24   Entry number 8
+  10|                                                                        More...
+  23| F3=Exit

@@ -1,0 +1,274 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   DSP019
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   DSP019
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; dds: B8R                                                                                              000000     000200
+      3 //; keys: 10,10=1250 enter                                                                                000000     000300
+      4 //; keys: 10,10=3 enter                                                                                   000000     000400
+      5 //; keys: f3                                                                                              000000     000500
+      6 ctl-opt dftactgrp(*no);                                                                                   000000     000600
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     7 dcl-f B8R workstn;                                                                                        000000     000700
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  B8R              {lib}/B8R                               *
+         * Record format(s) . . . . . :  NUMS             NUMS                                        *
+         *--------------------------------------------------------------------------------------------*
+      8 // Numbers with edit codes and an edit word; a typed number.                                              000000     000800
+-     9=INUMS                                                                                                               1000001
+         *--------------------------------------------------------------------------------------------*                     1
+         * RPG record format  . . . . :  NUMS                                                         *                     1
+         * External format  . . . . . :  NUMS : {lib}/B8R                                         *                     1
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+         *--------------------------------------------------------------------------------------------*                     1
+     10=I                             N    1    1  *IN03                           Exit                                     1000002
+     11=I                             S    2    8 2INN                                                                      1000003
+-    12 N1 = -1234.5;                                                                                             000000     000900
+     13 N2 = 98765.43;                                                                                            000000     001000
+     14 N3 = 0;                                                                                                   000000     001100
+     15 N4 = 1234567;                                                                                             000000     001200
+     16 N5 = 102326;                                                                                              000000     001300
+     17 N6 = -1.25;                                                                                               000000     001400
+     18 dou *in03;                                                                                           B01  000000     001500
+     19 exfmt NUMS;                                                                                           01  000000     001600
+     20 N3 = INN * 2;                                                                                         01  000000     001700
+     21 N1 = INN - 100;                                                                                       01  000000     001800
+     22 enddo;                                                                                               E01  000000     001900
+     23 *inlr = *on;                                                                                              000000     002000
+     24=ONUMS                                                                                                               2000001
+         *--------------------------------------------------------------------------------------------*                     2
+         * RPG record format  . . . . :  NUMS                                                         *                     2
+         * External format  . . . . . :  NUMS : {lib}/B8R                                         *                     2
+         *--------------------------------------------------------------------------------------------*                     2
+     25=O                       N1                   9S ZONE      9,2                                                       2000002
+     26=O                       N2                  18S ZONE      9,2                                                       2000003
+     27=O                       N3                  27S ZONE      9,2                                                       2000004
+     28=O                       N4                  34S ZONE      7,0                                                       2000005
+     29=O                       N5                  40S ZONE      6,0                                                       2000006
+     30=O                       N6                  45S ZONE      5,2                                                       2000007
+     31=O                       INN                 52S ZONE      7,2                                                       2000008
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-                 O u t p u t   B u f f e r   P o s i t i o n s
+0Line   Start End   Field or Constant
+0Number Pos   Pos
+     25     1     9 N1
+     26    10    18 N2
+     27    19    27 N3
+     28    28    34 N4
+     29    35    40 N5
+     30    41    45 N6
+     31    46    52 INN
+0 * * * * *   E N D   O F   O U T P U T   B U F F E R   P O S I T I O N   *  * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          B8R               WORKSTN                 7D
+            NUMS                                    7D      9      19      24
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   23M
+          *IN03             N(1)                   10D     18
+          INN               P(7,2)                 11M     20      21      31
+          N1                P(9,2)                 12M     21M     25
+          N2                P(9,2)                 13M     26
+          N3                P(9,2)                 14M     20M     27
+          N4                P(7,0)                 15M     28
+          N5                P(6,0)                 16M     29
+          N6                P(5,2)                 17M     30
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          03                                       10M     18
+          LR                                       23M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        0
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        0
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       31
+     Specifications  . . . . . . . . :       25
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        5
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program DSP019 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

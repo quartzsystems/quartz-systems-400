@@ -1004,6 +1004,8 @@ impl W {
                 fmt,
                 rec,
                 ctl,
+                rrn,
+                inds,
             } => {
                 self.u8(3);
                 self.reg(*dst);
@@ -1016,6 +1018,8 @@ impl W {
                         w.operand(o);
                     }
                 });
+                self.opt_operand(rrn.as_ref());
+                self.opt_place(inds.as_ref());
             }
         }
     }

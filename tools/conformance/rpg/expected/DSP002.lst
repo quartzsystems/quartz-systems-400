@@ -1,0 +1,312 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   DSP002
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   DSP002
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; dds: B8B                                                                                              000000     000200
+      3 //; keys: 5,8=AB12 6,8=7 enter                                                                            000000     000300
+      4 //; keys: f5                                                                                              000000     000400
+      5 //; keys: 5,8=ZZ enter                                                                                    000000     000500
+      6 //; keys: f3                                                                                              000000     000600
+      7 ctl-opt dftactgrp(*no);                                                                                   000000     000700
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     8 dcl-f B8B workstn;                                                                                        000000     000800
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  B8B              {lib}/B8B                               *
+         * Record format(s) . . . . . :  HDR              HDR                                         *
+         *                               QRY              QRY                                         *
+         *                               FTR              FTR                                         *
+         *--------------------------------------------------------------------------------------------*
+-     9 dcl-s n int(10);                                                                                          000000     000900
+     10 // A header, a footer and a query record over them (OVERLAY).                                             000000     001000
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     11=IHDR                                                                                                                1000001
+         *--------------------------------------------------------------------------------------------*                     1
+         * RPG record format  . . . . :  HDR                                                          *                     1
+         * External format  . . . . . :  HDR : {lib}/B8B                                          *                     1
+         *--------------------------------------------------------------------------------------------*                     1
+     12=I                             N    1    1  *IN03                           Exit                                     1000002
+     13=IQRY                                                                                                                2000001
+         *--------------------------------------------------------------------------------------------*                     2
+         * RPG record format  . . . . :  QRY                                                          *                     2
+         * External format  . . . . . :  QRY : {lib}/B8B                                          *                     2
+         *--------------------------------------------------------------------------------------------*                     2
+     14=I                             N    1    1  *IN03                           Exit                                     2000002
+     15=I                             N    2    2  *IN05                           Refresh                                  2000003
+     16=I                             A    3    6  CODE                                                                     2000004
+     17=I                             S    7    9 0QTY                                                                      2000005
+     18=IFTR                                                                                                                3000001
+         *--------------------------------------------------------------------------------------------*                     3
+         * RPG record format  . . . . :  FTR                                                          *                     3
+         * External format  . . . . . :  FTR : {lib}/B8B                                          *                     3
+         *--------------------------------------------------------------------------------------------*                     3
+     19=I                             N    1    1  *IN03                           Exit                                     3000002
+-    20 HTXT = 'Header written once';                                                                             000000     001100
+     21 write HDR;                                                                                                000000     001200
+     22 RESULT = 'Nothing yet';                                                                                   000000     001300
+     23 dou *in03;                                                                                           B01  000000     001400
+     24 write FTR;                                                                                            01  000000     001500
+     25 exfmt QRY;                                                                                            01  000000     001600
+     26 n += 1;                                                                                               01  000000     001700
+     27 if *in05;                                                                                            B02  000000     001800
+     28 RESULT = 'Refresh ' + %char(n);                                                                       02  000000     001900
+     29 elseif not *in03;                                                                                    X02  000000     002000
+     30 RESULT = 'Code ' + CODE + ' qty ' + %char(QTY) + ' n ' + %char(n);                                    02  000000     002100
+     31 endif;                                                                                               E02  000000     002200
+     32 enddo;                                                                                               E01  000000     002300
+     33 *inlr = *on;                                                                                              000000     002400
+     34=OHDR                                                                                                                4000001
+         *--------------------------------------------------------------------------------------------*                     4
+         * RPG record format  . . . . :  HDR                                                          *                     4
+         * External format  . . . . . :  HDR : {lib}/B8B                                          *                     4
+         *--------------------------------------------------------------------------------------------*                     4
+     35=O                       HTXT                30A CHAR       30                                                       4000002
+     36=OQRY                                                                                                                5000001
+         *--------------------------------------------------------------------------------------------*                     5
+         * RPG record format  . . . . :  QRY                                                          *                     5
+         * External format  . . . . . :  QRY : {lib}/B8B                                          *                     5
+         *--------------------------------------------------------------------------------------------*                     5
+     37=OFTR                                                                                                                6000001
+         *--------------------------------------------------------------------------------------------*                     6
+         * RPG record format  . . . . :  FTR                                                          *                     6
+         * External format  . . . . . :  FTR : {lib}/B8B                                          *                     6
+         *--------------------------------------------------------------------------------------------*                     6
+     38=O                       RESULT              40A CHAR       40                                                       6000002
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-                 O u t p u t   B u f f e r   P o s i t i o n s
+0Line   Start End   Field or Constant
+0Number Pos   Pos
+     35     1    30 HTXT
+     38     1    40 RESULT
+0 * * * * *   E N D   O F   O U T P U T   B U F F E R   P O S I T I O N   *  * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          B8B               WORKSTN                 8D
+            HDR                                     8D     11      21      34
+            QRY                                     8D     13      25      36
+            FTR                                     8D     18      24      37
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   33M
+          *IN03             N(1)                   12D     14M     19M     23
+                                                   29
+          *IN05             N(1)                   15D     27
+          CODE              A(4)                   16D     30
+          HTXT              A(30)                  20M     35
+          N                 I(10,0)                 9D     26M     28      30
+          QTY               P(3,0)                 17D     30
+          RESULT            A(40)                  22M     28M     30M     38
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          03                                       12M     14M     19M     23
+                                                   29
+          05                                       15M     27
+          LR                                       33M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        0
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        0
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       38
+     Specifications  . . . . . . . . :       31
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        6
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program DSP002 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

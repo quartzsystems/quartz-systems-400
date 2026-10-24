@@ -1,0 +1,23 @@
+# DSP005 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+run: ok
+screen: 1
+   1| B8E error messages
+   3| Amount: 00000
+   4| Note:
+screen: 2
+   1| B8E error messages
+   3| Amount: 150
+   4| Note:
+  24| Amount over 99
+screen: 3
+   1| B8E error messages
+   3| Amount: 50
+   4| Note:
+  24| Note is required
+screen: 4
+   1| B8E error messages
+   3| Amount: 00050
+   4| Note:   PAID
+   6| Accepted 50 PAID

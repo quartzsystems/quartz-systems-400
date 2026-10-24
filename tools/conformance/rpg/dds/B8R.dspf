@@ -1,0 +1,12 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'Exit')
+     A          R NUMS
+     A                                  1  2'B8R numbers'
+     A            N1             9Y 2O  3  2EDTCDE(J)
+     A            N2             9Y 2O  4  2EDTCDE(1)
+     A            N3             9Y 2O  5  2EDTCDE(Z)
+     A            N4             7Y 0O  6  2EDTCDE(3)
+     A            N5             6Y 0O  7  2EDTWRD('  /  /  ')
+     A            N6             5S 2O  8  2
+     A                                 10  2'Type:'
+     A            INN            7Y 2B 10 10

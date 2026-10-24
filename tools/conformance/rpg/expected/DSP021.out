@@ -1,0 +1,16 @@
+# DSP021 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+run: ok
+screen: 1
+   1| B8T write then read
+   3| Word:
+   5| Nothing seen
+screen: 2
+   1| B8T write then read
+   3| Word:
+   5| By format: FIRST    in03 0
+screen: 3
+   1| B8T write then read
+   3| Word:
+   5| By file: SECOND   in03 0

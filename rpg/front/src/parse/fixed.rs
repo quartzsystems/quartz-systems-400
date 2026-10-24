@@ -197,6 +197,7 @@ fn def_spec(b: &mut Builder<'_>, lines: &[&Line], group: bool) -> bool {
         ty: c("type"),
         decimals: c("decimals"),
     };
+    let before = b.diags.len();
     let kws = keyword_area(b, &lines[k..], 44);
     let kind = match deftype.as_str() {
         "S" => DefKind::Standalone,
@@ -229,6 +230,8 @@ fn def_spec(b: &mut Builder<'_>, lines: &[&Line], group: bool) -> bool {
             d.value = k.arg(0).and_then(|a| a.expr.clone());
             d.kws.retain(|x| x.name != "CONST");
         } else {
+            // The area is the value, not keywords.
+            b.diags.truncate(before);
             let areas: Vec<(u32, String)> = lines[k..]
                 .iter()
                 .map(|l| (l.no, cut(&l.text, 44, 80).trim_end().to_string()))

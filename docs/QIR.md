@@ -298,12 +298,20 @@ Level checks happen at `dbopen` (`CPF4131` as an escape message).
 | `%d = dbopen FILE [infds(place)]` | open the declared file; the runtime keeps `infds` current |
 | `%d = dbclose FILE` | |
 | `%d = dbio FILE OP [rec(place)] [key(x)] [rrn(x)] [fmt(NAME)] [nolock]` | `READ READP READE READPE CHAIN SETLL SETGT WRITE UPDATE DELETE UNLOCK FEOD`; reads and writes need `rec`, positioning needs `key` or `rrn` |
-| `%d = dbfb FILE` | the feedback of the database file's last operation as bits: 1 end of file, 2 found, 4 equal, 8 open (`%EOF`, `%FOUND`, `%EQUAL`, `%OPEN`); 0 for a file that is not open |
-| `%d = dspio FILE OP fmt(NAME) [rec(place)]` | `WRITE READ EXFMT` on a `dev(*DSP)` file; `TODO(phase8)` |
+| `%d = dbfb FILE` | the feedback of the database file's last operation as bits: 1 end of file, 2 found, 4 equal, 8 open (`%EOF`, `%FOUND`, `%EQUAL`, `%OPEN`); 0 for a file that is not open. For a display file bits 8-15 are the last read's attention identifier and bits 16-30 its subfile record number |
+| `%d = dspio FILE OP fmt(NAME) [rec(place)] [rrn(x)] [inds(place)]` | `WRITE READ EXFMT CHAIN UPDATE READC` on a `dev(*DSP)` file: `WRITE` with `rrn` puts a subfile record at that number, `CHAIN` reads one by number, `UPDATE` replaces the one last read, `READC` reads the next changed one; a read whose `fmt` is not a record of the file reads the one last written that takes input; `inds` is the separate indicator area (`INDARA`), its response indicators set by a read |
 | `%d = prtio FILE WRITE fmt(NAME) [rec(place)] [ctl(sb, sa, kb, ka)]` | print a record of a `dev(*PRT)` file: 0, or 1 when the carriage reached the overflow line; `ctl` gives the line's carriage control (space before, space after, skip before, skip after, integers, 0 for none), as RPG output does for a program-described file |
 
 `dbopen` and `dbclose` also open and close a printer file: the open
-creates its spooled file (`OPN`), the close makes it ready. An
+creates its spooled file (`OPN`), the close makes it ready. On a
+display file they open and close it through the job's display source,
+and the information data structure gets the display part after a read:
+the attention identifier at 368, the cursor row and column at 369, the
+data length at 371, the subfile record number at 375, the lowest one
+shown at 377, the record count at 379, the return code `0000` at 400.
+A display operation of an RPG module keeps a failure as its status; a
+CL module's is sent as an escape (and a CL file opens with its first
+operation). An
 externally described printer file prints the record format `fmt`
 names from the record (option indicators first, one byte each, unless
 the file has `INDARA`); a program-described one prints the record as
@@ -318,8 +326,8 @@ truncated) and taken whole on a write or update. A key operand holds
 the key fields in record layout, as many as it has room for; `rrn`
 positions by relative record number. A negative `rrn` positions at a
 limit: -1 `*START`, -2 `*END`, -3 `*LOVAL`, -4 `*HIVAL`; `rrn(0)` on
-`READE`/`READPE` compares with the key of the current record. Display files return `01299`
-until Phase 8.
+`READE`/`READPE` compares with the key of the current record. `READC`
+at the end of the subfile returns `00011`.
 
 The information data structure, when given, is kept current after
 every operation: file name at 0 (8), open flag at 8, end-of-file flag
@@ -403,7 +411,9 @@ and smallest values (`FF`/`00` for text), `*NULL` sixteen zero bytes,
 
 `FORMAT_VERSION` is 3 (version 2 added `prtio`'s `ctl`, at the end of
 the device I/O record, and `dec.mov`'s `trunc`, at the end of its;
-version 3 the type `bin(d,s)`, tag 26). `*MODULE` objects store the binary IR that
+version 3 the type `bin(d,s)`, tag 26, and `dspio`'s `CHAIN`, `UPDATE`
+and `READC` as new tags with its `rrn` and `inds` at the end of the
+device I/O record). `*MODULE` objects store the binary IR that
 `qir::binary::write` produces: the magic `QIRM`, a `u16` version, a
 `u16` of zero, then the module as tagged fields in a fixed order
 (little-endian integers, `u32`-prefixed strings and byte arrays,

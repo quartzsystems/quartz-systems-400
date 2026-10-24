@@ -15,6 +15,7 @@ path = "src/main.rs"
 
 [dependencies]
 tn5250-driver = { path = "../tn5250-driver", version = "0.1.0" }
+tn5250 = { path = "../../ui/tn5250", version = "0.1.0" }
 ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
 anyhow.workspace = true
 clap.workspace = true

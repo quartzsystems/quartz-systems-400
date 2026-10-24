@@ -61,6 +61,27 @@ fn watchdog() {
 }
 
 pub mod files;
+pub mod screen;
+
+/// The message descriptions a case's setup adds (`ADDMSGD`), by
+/// identifier, for its display files' `ERRMSGID`.
+fn messages(case: &Case) -> std::collections::BTreeMap<String, String> {
+    let mut out = std::collections::BTreeMap::new();
+    for s in &case.setup {
+        let cmd = case.fill(s, "QGPL");
+        if !cmd.trim_start().to_ascii_uppercase().starts_with("ADDMSGD") {
+            continue;
+        }
+        let id = build::kwd(&cmd, "MSGID");
+        // The text as written: kwd() upper-cases.
+        let text = cmd
+            .find("MSG('")
+            .and_then(|at| cmd[at + 5..].find("')").map(|end| cmd[at + 5..at + 5 + end].replace("''", "'")))
+            .unwrap_or_default();
+        out.insert(id, text);
+    }
+    out
+}
 
 /// Where the corpus lives.
 pub struct Kit {
@@ -115,13 +136,17 @@ impl Kit {
     }
 }
 
-/// The kit's spooled files.
+/// The kit's spooled files, with the member's printer files' formats.
 #[derive(Clone, Default)]
-struct KitSpool(Rc<RefCell<MemSpool>>);
+struct KitSpool(Rc<RefCell<MemSpool>>, Vec<(String, Rc<dds::prtf::PrtfDefinition>)>);
 
 impl SpoolSink for KitSpool {
     fn open(&mut self, file: &str, lib: &str, actgrp: &str) -> Result<PrinterOpen, IoFail> {
-        self.0.borrow_mut().open(file, lib, actgrp)
+        let mut o = self.0.borrow_mut().open(file, lib, actgrp)?;
+        if let Some((_, def)) = self.1.iter().find(|(n, _)| n.eq_ignore_ascii_case(file)) {
+            o.prtf.formats = dds::prtf::codec::encode(def);
+        }
+        Ok(o)
     }
     fn put(&mut self, id: u32, data: &[u8], pages: u32, records: u32) -> Result<(), IoFail> {
         self.0.borrow_mut().put(id, data, pages, records)
@@ -403,8 +428,14 @@ fn call_into(
         });
         sysapi::install(&mut job, Rc::new(RefCell::new(provider)));
         qrpgrt::install(&mut job);
-        let spool = KitSpool::default();
+        let spool = KitSpool(Rc::default(), db.map(|d| d.printers.clone()).unwrap_or_default());
         job.spool = Some(Box::new(spool.clone()));
+        let display = db
+            .filter(|d| !d.displays.is_empty())
+            .map(|d| screen::KitDisplay::new(d.displays.clone(), &case.keys, messages(case)));
+        if let Some(d) = &display {
+            job.display = Some(Box::new(d.clone()));
+        }
         // Past the deadline the attention hook ends the request.
         watchdog();
         job.attn = Some(Rc::new(|j: &mut Job| {
@@ -425,6 +456,9 @@ fn call_into(
         };
         sysapi::uninstall(&job);
         o.spool = spooled(&spool.0.borrow());
+        if let Some(d) = display {
+            o.screens.clone_from(&d.0.borrow().shown);
+        }
     }
     Ok(())
 }

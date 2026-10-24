@@ -23,6 +23,7 @@ use qir::Type;
 use super::core::raise_on;
 use super::mem::{bytes, env as env_of, job, ty};
 use crate::io::spool::PrinterState;
+use crate::io::display::DisplayInput;
 use crate::io::{
     DataAreaKind, DataAreaValue, FileInfo, IoFail, IoOp, IoRequest, IoResult, KeyRef, OpenSpec,
 };
@@ -625,8 +626,8 @@ fn display_io(
         return NO_DEVICE;
     };
     let r = match op {
-        0 => d.write(handle, format, record, &[]).map(|()| None),
-        1 => d.read(handle, format).map(Some),
+        1 => d.write(handle, format, record, &[]).map(|()| None),
+        2 => d.read(handle, format).map(Some),
         _ => d.exfmt(handle, format, record, &[]).map(Some),
     };
     match r {
@@ -658,6 +659,270 @@ fn display_io(
             i32::from(f.status)
         }
     }
+}
+
+/// The display-specific part of the information data structure: the
+/// attention identifier at 368, the cursor row and column at 369, the
+/// data length at 371, the subfile record number at 375, the lowest
+/// one displayed at 377, the subfile's record count at 379 and the
+/// major and minor return code at 400.
+fn write_dsp_infds(addr: u64, len: usize, input: &DisplayInput) {
+    if addr == 0 || len == 0 {
+        return;
+    }
+    let buf = bytes(addr.cast_signed(), len);
+    put(buf, 368, &[input.aid]);
+    put(
+        buf,
+        369,
+        &[
+            u8::try_from(input.cursor.0).unwrap_or(0),
+            u8::try_from(input.cursor.1).unwrap_or(0),
+        ],
+    );
+    put(
+        buf,
+        371,
+        &u32::try_from(input.record.len()).unwrap_or(0).to_be_bytes(),
+    );
+    let half = |n: u32| u16::try_from(n).unwrap_or(u16::MAX).to_be_bytes();
+    put(buf, 375, &half(input.sfl_rrn));
+    put(buf, 377, &half(input.sfl_top));
+    put(buf, 379, &half(input.sfl_count));
+    put_text(buf, 400, 4, "0000");
+}
+
+/// `dsp_io(env, file, op, fmt, rec, rec_desc, rrn, inds, inds_desc) ->
+/// status`: a display file's `WRITE` (1; at `rrn` for a subfile
+/// record), `READ` (2; an empty format reads the last one written),
+/// `EXFMT` (3), subfile `CHAIN` (4), `UPDATE` (5) and `READC` (6). A
+/// read copies the input buffer over the record and the response
+/// indicators into the separate indicator area; the feedback keeps the
+/// attention identifier and the subfile record number for `dbfb`, and
+/// the information data structure its display part. `CHAIN` that finds
+/// nothing clears the found bit, `READC` at the end sets end of file.
+#[allow(clippy::too_many_arguments)]
+pub extern "sysv64" fn dsp_io(
+    env: *mut Env,
+    file: i64,
+    op: i64,
+    fmt: i64,
+    rec: i64,
+    rec_desc: i64,
+    rrn: i64,
+    inds: i64,
+    inds_desc: i64,
+) -> i32 {
+    let Some((key, fr)) = file_of(env, file) else {
+        return CLOSED;
+    };
+    let j = job(env);
+    // RPG keeps an I/O failure as a status; CL's is an escape.
+    let rpg = module_lang(env) == qir::Lang::Rpgle;
+    if !j.files.contains_key(&key) && fr.dev == qir::FileDev::Display && !rpg {
+        // A CL program's file opens with its first operation.
+        let st = open_display(j, key, &fr, 0, 0);
+        if st != 0 {
+            return st;
+        }
+    }
+    let format = if fmt == 0 {
+        String::new()
+    } else {
+        ccsid::decode_trimmed(bytes(fmt, 10))
+    };
+    let size = |p: i64, d: i64| {
+        if p == 0 {
+            0
+        } else {
+            usize::try_from(ty(d).size()).unwrap_or(0)
+        }
+    };
+    let rec_len = size(rec, rec_desc);
+    let inds_len = size(inds, inds_desc);
+    let record = if rec == 0 {
+        Vec::new()
+    } else {
+        bytes(rec, rec_len).to_vec()
+    };
+    let area = if inds == 0 {
+        Vec::new()
+    } else {
+        bytes(inds, inds_len).to_vec()
+    };
+    let Some(state) = j.files.get(&key) else {
+        return CLOSED;
+    };
+    if !state.display {
+        return NO_DEVICE;
+    }
+    let (handle, infds, infds_len, info) = (
+        state.handle,
+        state.infds,
+        state.infds_len,
+        state.info.clone(),
+    );
+    let Some(d) = j.display.as_mut() else {
+        return NO_DEVICE;
+    };
+    let n = u32::try_from(rrn).unwrap_or(0);
+    // read that found nothing.
+    let read = |o: Option<DisplayInput>| o.map_or(Got::None, Got::Record);
+    let r: Result<Got, IoFail> = match op {
+        1 if n > 0 => d.sfl_write(handle, &format, n, &record, &area).map(|()| Got::Output),
+        1 => d.write(handle, &format, &record, &area).map(|()| Got::Output),
+        2 => d.read(handle, &format).map(Got::Record),
+        3 => d.exfmt(handle, &format, &record, &area).map(Got::Record),
+        4 => d.sfl_chain(handle, &format, n).map(read),
+        5 => d.sfl_update(handle, &format, &record, &area).map(|()| Got::Output),
+        _ => d.sfl_readc(handle, &format).map(read),
+    };
+    let opname = match op {
+        1 => "WRITE",
+        2 => "READ",
+        3 => "EXFMT",
+        4 => "CHAIN",
+        5 => "UPDATE",
+        _ => "READC",
+    };
+    let at = DspAt {
+        key,
+        op,
+        opname,
+        rec,
+        rec_len,
+        inds,
+        inds_len,
+        infds,
+        infds_len,
+        rpg,
+    };
+    dsp_result(j, &at, &info, format, r)
+}
+
+/// What a display operation brought back.
+enum Got {
+    /// An output: nothing.
+    Output,
+    /// A record read.
+    Record(DisplayInput),
+    /// No subfile record: not found (`CHAIN`) or the end (`READC`).
+    None,
+}
+
+/// Where a display operation's results go.
+struct DspAt {
+    key: FileKey,
+    op: i64,
+    opname: &'static str,
+    rec: i64,
+    rec_len: usize,
+    inds: i64,
+    inds_len: usize,
+    infds: u64,
+    infds_len: usize,
+    rpg: bool,
+}
+
+/// A display operation's result into the record, the indicator area,
+/// the feedback and the information data structure: its status.
+fn dsp_result(
+    j: &mut Job,
+    at: &DspAt,
+    info: &FileInfo,
+    format: String,
+    r: Result<Got, IoFail>,
+) -> i32 {
+    let DspAt {
+        key,
+        op,
+        opname,
+        rec,
+        rec_len,
+        inds,
+        inds_len,
+        infds,
+        infds_len,
+        rpg,
+    } = *at;
+    match r {
+        Ok(got) => {
+            let mut fb = IoResult {
+                format: format.clone(),
+                ..IoResult::default()
+            };
+            let mut bits = 0;
+            let mut input = None;
+            match got {
+                Got::Record(i) => {
+                    if rec != 0 {
+                        let dst = bytes(rec, rec_len);
+                        let m = i.record.len().min(rec_len);
+                        dst[..m].copy_from_slice(&i.record[..m]);
+                    }
+                    if inds != 0 && !i.indicators.is_empty() {
+                        let dst = bytes(inds, inds_len);
+                        let m = i.indicators.len().min(inds_len);
+                        dst[..m].copy_from_slice(&i.indicators[..m]);
+                    }
+                    fb.format.clone_from(&i.format);
+                    bits = 2;
+                    input = Some(i);
+                }
+                Got::None if op == 4 => {}
+                Got::None => {
+                    fb.eof = true;
+                    fb.status = 11;
+                    bits = 1;
+                }
+                Got::Output => {}
+            }
+            write_infds(infds, infds_len, info, &fb, true, opname, j.abi.cur_stmt);
+            let mut word = bits;
+            if let Some(i) = &input {
+                write_dsp_infds(infds, infds_len, i);
+                word |= i32::from(i.aid) << 8 | i32::try_from(i.sfl_rrn.min(0x7FFF)).unwrap_or(0) << 16;
+            } else if let Some(st) = j.files.get(&key) {
+                // An output keeps the last input's identifier and number.
+                word |= st.fb & !0xFF;
+            }
+            if let Some(st) = j.files.get_mut(&key) {
+                st.fb = word;
+            }
+            i32::from(fb.status)
+        }
+        Err(f) if f.status == IoFail::REQUEST_ENDED => {
+            j.cancel_request(&f.msgid, "QCPFMSG", f.data);
+            0
+        }
+        Err(f) => {
+            let fb = IoResult {
+                status: f.status,
+                msgid: Some(f.msgid.clone()),
+                format,
+                ..IoResult::default()
+            };
+            write_infds(infds, infds_len, info, &fb, true, opname, j.abi.cur_stmt);
+            if !rpg {
+                escape(j, &f);
+            }
+            i32::from(f.status)
+        }
+    }
+}
+
+/// The language of the running entry's module.
+fn module_lang(env: *mut Env) -> qir::Lang {
+    let j = job(env);
+    j.act
+        .frames
+        .last()
+        .and_then(|f| {
+            let p = f.program.as_ref()?;
+            let (mi, _) = p.proc_of(f.code)?;
+            Some(p.object.modules[mi as usize].module.ir.lang)
+        })
+        .unwrap_or_default()
 }
 
 /// The value of a numeric place as a decimal.

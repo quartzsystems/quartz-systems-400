@@ -1,0 +1,11 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'Exit')
+     A          R ENTRY
+     A                                  1  2'B8E error messages'
+     A                                  3  2'Amount:'
+     A            AMT            5Y 0B  3 10
+     A  50                                  ERRMSG('Amount over 99' 50)
+     A                                  4  2'Note:'
+     A            NOTE          20A  B  4 10
+     A  51                                  ERRMSG('Note is required' 51)
+     A            DONE          40A  O  6  2

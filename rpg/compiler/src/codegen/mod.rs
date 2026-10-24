@@ -19,6 +19,7 @@ pub mod debug;
 pub mod heap;
 pub mod dbio;
 pub mod dates;
+pub mod dspio;
 pub mod emit;
 pub mod exc;
 pub mod expr;
@@ -372,7 +373,9 @@ pub fn module(
             line.push_str(" keyed");
         }
         if let Some(ext) = &f.ext {
-            for fm in &ext.formats {
+            // Formats without a level identifier (printer files) are
+            // not checked at open.
+            for fm in ext.formats.iter().filter(|f| f.level_id.len() == 13) {
                 let _ = write!(line, " fmt({}:{})", mangle(&fm.name), emit::quote(&fm.level_id));
             }
         }

@@ -456,6 +456,22 @@ pub fn generated_lines(m: &rpgfront::ast::Module, files: &[File], t: &Table) -> 
         if f.scope != 0 {
             continue;
         }
+        if let Some(d) = &r.fmt.dsp {
+            // A display format: its indicators (without INDARA) and the
+            // fields of each buffer.
+            let indara = f.ext.as_ref().is_some_and(|e| e.indara);
+            let count = |n: usize| u32::try_from(n).unwrap_or(0);
+            if f.input {
+                let named = m.inputs.iter().any(|i| i.external && (i.name == r.name || i.name == r.fmt.name));
+                let inds = if indara { 0 } else { d.response_inds.len() };
+                gen_i += u32::from(!named) + count(inds) + count(d.offsets.iter().filter(|o| o.1.is_some()).count());
+            }
+            if f.output {
+                let inds = if indara { 0 } else { d.option_inds.len() };
+                gen_o += 1 + count(inds) + count(d.offsets.iter().filter(|o| o.0.is_some()).count());
+            }
+            continue;
+        }
         if f.input || f.update {
             let named = m.inputs.iter().any(|i| i.external && (i.name == r.name || i.name == r.fmt.name));
             gen_i += u32::from(!named) + u32::try_from(r.fmt.fields.iter().filter(|x| matches!(x.usage, 'I' | 'B')).count()).unwrap_or(0);

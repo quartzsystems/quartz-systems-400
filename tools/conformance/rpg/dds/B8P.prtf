@@ -1,0 +1,13 @@
+     A          R HDR                       SKIPB(1)
+     A                                     2'B8P report'
+     A                                    40'Page'
+     A                                    45PAGNBR
+     A                                      SPACEA(2)
+     A          R DTL                       SPACEA(1)
+     A            DNUM           5S 0      2
+     A            DNAME         20A       10
+     A  50                                32'*'
+     A            DAMT           9S 2     35EDTCDE(J)
+     A          R TOT                       SPACEB(1)
+     A                                     2'Total'
+     A            TAMT          11S 2     33EDTCDE(J)

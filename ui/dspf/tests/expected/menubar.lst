@@ -49,25 +49,25 @@ QS/400 DDS compiler
   Record format MENUBAR    (menu bar record)
     Record keywords: MNUBAR
   Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
-  MNUFLD      Y          2    0  B      1    2     3      0      2                MNUBARCHC(1 PULLFILE 'File') MNUBARCHC(2 PULLED...
+  MNUFLD      Y          2    0  B      1    2     2      0      2                MNUBARCHC(1 PULLFILE 'File') MNUBARCHC(2 PULLED...
     Output buffer 2 bytes (option indicators none); input buffer 4 bytes (response indicators 03 12); level identifier D311D73D350A5
 
   Record format PULLFILE    (pull-down record)
     Record keywords: PULLDOWN
   Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
-  FILECHC     Y          2    0  B      1    1     3      0      2                SNGCHCFLD CHOICE(1 '>Open') CHOICE(2 '>Save') C...
+  FILECHC     Y          2    0  B      1    1     2      0      2                SNGCHCFLD CHOICE(1 '>Open') CHOICE(2 '>Save') C...
     Output buffer 2 bytes (option indicators none); input buffer 4 bytes (response indicators 03 12); level identifier 2D1A8296B4A6B
 
   Record format PULLEDIT    (pull-down record)
     Record keywords: PULLDOWN
   Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
-  EDITCHC     Y          2    0  B      1    1     3      0      2                SNGCHCFLD CHOICE(1 '>Copy') CHOICE(2 '>Paste')
+  EDITCHC     Y          2    0  B      1    1     2      0      2                SNGCHCFLD CHOICE(1 '>Copy') CHOICE(2 '>Paste')
     Output buffer 2 bytes (option indicators none); input buffer 4 bytes (response indicators 03 12); level identifier 4DEFFFB5F6067
 
   Record format PULLHELP    (pull-down record)
     Record keywords: PULLDOWN
   Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
-  HELPCHC     Y          2    0  B      1    1     3      0      2                SNGCHCFLD CHOICE(1 '>About')
+  HELPCHC     Y          2    0  B      1    1     2      0      2                SNGCHCFLD CHOICE(1 '>About')
     Output buffer 2 bytes (option indicators none); input buffer 4 bytes (response indicators 03 12); level identifier A4D2270473E5A
 
   Record format APPREC
@@ -75,7 +75,7 @@ QS/400 DDS compiler
   Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
   MNUCHC      Y          2    0  H                        0      2
                                         5    2    16                              'Application area'
-  BTN         Y          2    0  B     20    2     3      2      4                PSHBTNFLD PSHBTNCHC(1 '>Ok' CF03) PSHBTNCHC(2 '...
+  BTN         Y          2    0  B     20    2     2      2      4                PSHBTNFLD PSHBTNCHC(1 '>Ok' CF03) PSHBTNCHC(2 '...
     Output buffer 4 bytes (option indicators none); input buffer 6 bytes (response indicators 03 12); level identifier 7B7DDFC368310
 
   Indicator usage

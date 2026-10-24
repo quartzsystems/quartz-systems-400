@@ -1,0 +1,26 @@
+# DSP014 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+run: ok
+screen: 1
+   1| B8K options
+   3| Type 1 to mark, 4 to drop.
+   5| Opt Item
+   6|     ROW1       Before
+   7|     ROW2       Before
+   8|     ROW3       After chain ROW3
+   9|     ROW4       Before
+  10|     ROW5       Five
+  11|                                                                        More...
+  21| found 9 0 item ROW3
+screen: 2
+   1| B8K options
+   3| Type 1 to mark, 4 to drop.
+   5| Opt Item
+   6|     ROW1       Before
+   7|     ROW2       Before
+   8|     ROW3       After chain ROW3
+   9|     ROW4       Before
+  10|     ROW5       Five
+  11|                                                                        More...
+  21| found 9 0 item ROW3

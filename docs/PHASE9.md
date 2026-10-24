@@ -49,10 +49,11 @@ in the system temporary folder (`qs400-rpg-oracle/session.lock`), where
 the last compile's time is kept too, so parallel worktrees share the
 compile gap.
 
-**Database files.** A member's `dds: NAME` directive creates
-`NAME` from `rpg/dds/NAME.pf` (or `.lf`) in the work library before
-the compile (the source goes into a `QDDSSRC` there, `CRTPF`/`CRTLF`,
-the member removed); `sql: STATEMENT` and `sqlfile: NAME` (the
+**Database, display and printer files.** A member's `dds: NAME`
+directive creates `NAME` from `rpg/dds/NAME.pf` (or `.lf`, `.dspf`,
+`.prtf`) in the work library before the compile (the source goes into
+a `QDDSSRC` there, `CRTPF`/`CRTLF`/`CRTDSPF`/`CRTPRTF`, the member
+removed; a failing create reports its `CPD` messages); `sql: STATEMENT` and `sqlfile: NAME` (the
 statements of `rpg/dds/NAME.sql`) run through `RUNSQLSTM` with `{lib}`
 the work library, a run of statements in one member. Every file a step
 creates is deleted after the run, the last first. The work library is
@@ -65,6 +66,22 @@ as `{lib}`; the compiler reads the formats from those `*FILE` objects
 `StoreIo` runs over the same store. A failing `RUNSQLSTM` reports the
 `SQL` lines of its listing. Statements are cut into lines at blanks,
 so a literal must not hold two blanks in a row.
+
+**Display files.** A member with `keys:` lines is called at a display:
+`rpg-oracle` signs on to pub400 through the 5250 driver
+(`tn5250-driver`, automatic sign-on with the account from the `.env`
+file, one session per run), adds the work library to the job's list,
+sets `CHGJOB INQMSGRPY(*DFT) DECFMT(*BLANK)` and types the call on the
+command line. Each screen the program reads is kept as its text rows,
+and the member's next `keys:` step is played on the terminal (fields
+typed with or without Field Exit, the cursor placed, the key pressed);
+when the steps run out the session waits for the command line again,
+and a program still reading is ended with System Request 2 (`CPF1907`).
+The kit plays the same steps on the same `tn5250` terminal over the
+QS/400 display-file runtime (`conformance::rpg::screen`), its display
+files compiled by `dspf`, so both sides read their screens the same
+way. The outcome's `screen: n` sections hold the rows. The FTP job runs
+with `DECFMT(*BLANK)` too, so printer files edit as the kit's do.
 
 Queries run as `RUNSQLSTM` over an uploaded member because an `RCMD`
 line holds only about 250 characters; their tables have fixed-width
@@ -116,6 +133,35 @@ Recorded from batches 6 and 7 (`b06cycle`, `b07io`), pub400 V7R5M0.
   cycle; `L1`-`L9` set at a break stay on through the detail output of
   the next cycle; overflow lines print after total output, then the
   indicator goes off; fetch overflow prints them before the record.
+
+## Oracle facts: display files
+
+Recorded from batch 8 (`b08dsp/`), pub400 V7R5M0.
+
+- A display format's input buffer starts with its response indicators
+  in the order they first appear, file-level keys first; the output
+  buffer with the option indicators the same way. A subfile record's
+  input buffer holds its output-only fields: `CHAIN` and `READC` give
+  them back. With `INDARA` the RPG listing has no indicator lines and
+  notes `RNF7089` (00) at the file.
+- The 5250 start of header carries the `CAnn` keys as command key
+  switches (a bit on for no data); a terminal that honours them sends
+  no fields, and the program's fields stay as they were.
+- `ERRMSG` on a record already shown sends only the message: the
+  operator's typing stays on the screen; only the first message in
+  effect shows.
+- A numeric-only (`Y`) input field without an edit code takes its
+  length on the display; typed digits without a decimal point are
+  whole units (`1250` in a `7Y 2` field is 1250.00).
+- Edit codes in display and printer files follow the job's decimal
+  format (pub400's default is the comma); an unedited `PAGNBR` prints
+  four digits (`0001`).
+- A window's border is at its `WINDOW` position, its inside starts two
+  columns in, and it is `cols + 4` wide.
+- `SFLEND` needs an option indicator (`CPD7490`); a control record with
+  fields above and below its subfile's page overlaps it (`CPD7812`).
+- `NEXT` is an operation code: `next += 1;` in free form does not
+  compile (`RNF5309`).
 
 ## Intentional differences
 
@@ -185,3 +231,12 @@ members of batch 4, pub400 V7R5M0.
   `*HMS:` for times, and `TIME` into a 12- or 14-digit field appends
   the date as `*MDY` (`mmddyy`, `mmddyyyy`). The corpus tests these
   only by round trip, never by printing them.
+  until its source is placed in `tools/conformance/hlinv/src/`. With
+  the source there, the harness builds the application's DDS
+  (`QDDSSRC/`: physical and logical, display and printer files) in
+  memory for the compiler; `ITEMINQ` and `INVMENU` compile clean.
+  Still failing: the printer files use data type `Y`, which `CRTPRTF`
+  refuses on pub400 too (`CPD7419`), so `STKRPT` and `REORDRPT` miss
+  their printer formats; `%DATE()` and `%TIME()` (`ITEMMNT`,
+  `TRNPOST`) and the data area operations `IN`/`OUT` (`TRNPOST`) are
+  not compiled yet.

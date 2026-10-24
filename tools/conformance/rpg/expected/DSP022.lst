@@ -1,0 +1,278 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   DSP022
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   DSP022
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; dds: B8P                                                                                              000000     000200
+      3 ctl-opt dftactgrp(*no);                                                                                   000000     000300
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     4 dcl-f B8P printer oflind(*in90);                                                                          000000     000400
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  B8P              {lib}/B8P                               *
+         * Record format(s) . . . . . :  HDR              HDR                                         *
+         *                               DTL              DTL                                         *
+         *                               TOT              TOT                                         *
+         *--------------------------------------------------------------------------------------------*
+-     5 dcl-s i int(10);                                                                                          000000     000500
+      6 // An externally described printer file: formats, an option indicator.                                    000000     000600
+-     7 write HDR;                                                                                                000000     000700
+      8 for i = 1 to 8;                                                                                      B01  000000     000800
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+      9 DNUM = i;                                                                                             01  000000     000900
+     10 DNAME = 'Name ' + %char(i);                                                                           01  000000     001000
+     11 DAMT = i * 12.5;                                                                                      01  000000     001100
+     12 *in50 = %rem(i: 3) = 0;                                                                               01  000000     001200
+     13 TAMT += DAMT;                                                                                         01  000000     001300
+     14 write DTL;                                                                                            01  000000     001400
+     15 if *in90;                                                                                            B02  000000     001500
+     16 write HDR;                                                                                            02  000000     001600
+     17 *in90 = *off;                                                                                         02  000000     001700
+     18 endif;                                                                                               E02  000000     001800
+     19 endfor;                                                                                              E01  000000     001900
+     20 write TOT;                                                                                                000000     002000
+     21 *inlr = *on;                                                                                              000000     002100
+     22=OHDR                                                                                                                1000001
+         *--------------------------------------------------------------------------------------------*                     1
+         * RPG record format  . . . . :  HDR                                                          *                     1
+         * External format  . . . . . :  HDR : {lib}/B8P                                          *                     1
+         *--------------------------------------------------------------------------------------------*                     1
+     23=ODTL                                                                                                                2000001
+         *--------------------------------------------------------------------------------------------*                     2
+         * RPG record format  . . . . :  DTL                                                          *                     2
+         * External format  . . . . . :  DTL : {lib}/B8P                                          *                     2
+         *--------------------------------------------------------------------------------------------*                     2
+     24=O                       *IN50                1N CHAR        1                                                       2000002
+     25=O                       DNUM                 6S ZONE      5,0                                                       2000003
+     26=O                       DNAME               26A CHAR       20                                                       2000004
+     27=O                       DAMT                35S ZONE      9,2                                                       2000005
+     28=OTOT                                                                                                                3000001
+         *--------------------------------------------------------------------------------------------*                     3
+         * RPG record format  . . . . :  TOT                                                          *                     3
+         * External format  . . . . . :  TOT : {lib}/B8P                                          *                     3
+         *--------------------------------------------------------------------------------------------*                     3
+     29=O                       TAMT                11S ZONE     11,2                                                       3000002
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-                 O u t p u t   B u f f e r   P o s i t i o n s
+0Line   Start End   Field or Constant
+0Number Pos   Pos
+     24     1     1 *IN50
+     25     2     6 DNUM
+     26     7    26 DNAME
+     27    27    35 DAMT
+     29     1    11 TAMT
+0 * * * * *   E N D   O F   O U T P U T   B U F F E R   P O S I T I O N   *  * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          B8P               PRINTER                 4D
+            HDR                                     4D      7      16      22
+            DTL                                     4D     14      23
+            TOT                                     4D     20      28
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   21M
+          *IN50             N(1)                   12M     24
+          *IN90             N(1)                    4D     15      17M
+          DAMT              P(9,2)                 11M     13      27
+          DNAME             A(20)                  10M     26
+          DNUM              P(5,0)                  9M     25
+          I                 I(10,0)                 5D      8       9      10
+                                                   11      12
+          TAMT              P(11,2)                13M     29
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          50                                       12M     24
+          90                                        4D     15      17M
+          LR                                       21M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        0
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        0
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       29
+     Specifications  . . . . . . . . :       26
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        2
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program DSP022 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

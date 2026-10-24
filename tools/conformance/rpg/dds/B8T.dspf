@@ -1,0 +1,7 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'Exit')
+     A          R ASK
+     A                                  1  2'B8T write then read'
+     A                                  3  2'Word:'
+     A            WORD           8A  I  3 10
+     A            SEEN          50A  O  5  2

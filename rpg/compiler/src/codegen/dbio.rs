@@ -43,10 +43,17 @@ pub enum KeyArg {
 #[must_use]
 pub fn statics(files: &[File], t: &crate::syms::Table) -> String {
     let mut out = String::new();
-    for f in files.iter().filter(|f| f.dev == Dev::Disk && !f.template) {
+    for f in files
+        .iter()
+        .filter(|f| (matches!(f.dev, Dev::Disk | Dev::Workstn) || f.dev == Dev::Printer && f.external) && !f.template)
+    {
         let n = mangle(&f.name);
         let len = buffer_len(f, t).max(1);
         let _ = writeln!(out, "static $rb_{n}: char({len})");
+        if f.dev == Dev::Workstn && f.infds.is_none() {
+            // The display feedback a read by file name looks at.
+            let _ = writeln!(out, "static $fi_{n}: char(416)");
+        }
         for x in ["eof", "fnd", "eq"] {
             let _ = writeln!(out, "static ${x}_{n}: ind");
         }
@@ -120,12 +127,19 @@ impl Gen<'_> {
     /// register.
     pub fn db_open(&mut self, f: &File) -> String {
         let r = self.b.reg();
-        let infds = f.infds.as_ref().and_then(|n| self.t.find(self.scope, n)).map(|id| crate::codegen::place_of(self.t, id));
+        let infds = if f.dev == Dev::Workstn {
+            match f.infds.as_ref().and_then(|n| self.t.find(self.scope, n)) {
+                Some(id) => Some(crate::codegen::place_of(self.t, id)),
+                None => Some(format!("$fi_{}", mangle(&f.name))),
+            }
+        } else {
+            f.infds.as_ref().and_then(|n| self.t.find(self.scope, n)).map(|id| crate::codegen::place_of(self.t, id))
+        };
         match infds {
             Some(p) => self.b.ins(format!("{r} = dbopen {} infds({p})", mangle(&f.name))),
             None => self.b.ins(format!("{r} = dbopen {}", mangle(&f.name))),
         }
-        if f.dev == Dev::Disk {
+        if matches!(f.dev, Dev::Disk | Dev::Workstn) {
             let n = mangle(&f.name);
             self.b.ins(format!("store $eof_{n}, *OFF"));
         }
@@ -145,6 +159,12 @@ impl Gen<'_> {
             return;
         };
         let Some((f, fmt)) = self.db_target(&target) else { return };
+        if f.dev == Dev::Workstn {
+            return self.dsp_op(op, base, &f, fmt, &target);
+        }
+        if f.dev == Dev::Printer && f.external && base == "WRITE" {
+            return self.prt_write(&f, fmt);
+        }
         if f.dev != Dev::Disk {
             self.err(ids::BAD_FILE_OP, 30, f.name.clone());
             return;
@@ -750,7 +770,7 @@ impl Gen<'_> {
         let n = mangle(&f.name);
         let st = self.b.temp("i32");
         // Already open: 01215.
-        if f.dev == Dev::Disk {
+        if matches!(f.dev, Dev::Disk | Dev::Workstn) {
             let fb = self.b.reg();
             self.b.ins(format!("{fb} = dbfb {n}"));
             let a = self.b.reg();
@@ -774,7 +794,7 @@ impl Gen<'_> {
         }
         let s = self.b.reg();
         self.b.ins(format!("{s} = load {st}"));
-        if f.dev == Dev::Disk {
+        if matches!(f.dev, Dev::Disk | Dev::Workstn) {
             self.db_result(op, "OPEN", &n, &s, &KeyArg::None);
             self.infds_opcode(&f, "OPEN", true);
         }
@@ -793,7 +813,7 @@ impl Gen<'_> {
         };
         for f in files {
             let n = mangle(&f.name);
-            if f.dev == Dev::Disk {
+            if matches!(f.dev, Dev::Disk | Dev::Workstn) {
                 let fb = self.b.reg();
                 self.b.ins(format!("{fb} = dbfb {n}"));
                 let a = self.b.reg();
@@ -839,7 +859,7 @@ impl Gen<'_> {
                 let Some((f, _)) = self.db_target(&e) else {
                     return Some(None);
                 };
-                if f.dev != Dev::Disk {
+                if !matches!(f.dev, Dev::Disk | Dev::Workstn) {
                     return Some(Some(V::lit(Ty::Ind, "*ON")));
                 }
                 let fb = self.b.reg();
@@ -962,6 +982,9 @@ pub fn file_notes(g: &mut Gen<'_>, m: &rpgfront::ast::Module) {
             let line = g.files.get(r.file).map_or(0, |f| f.def_line);
             g.diags.push(rpgfront::Diag::new(ids::FORMAT_UNUSED, 0, rpgfront::ast::Pos { line, col: 7 }).arg(r.name.clone()));
         }
+    }
+    for f in g.files.iter().filter(|f| f.ext.as_ref().is_some_and(|e| e.indara)) {
+        g.diags.push(rpgfront::Diag::new(ids::INDARA, 0, rpgfront::ast::Pos { line: f.def_line, col: 7 }).arg(f.name.clone()));
     }
     for f in g.files.iter().filter(|f| f.dev == Dev::Disk && !f.template && f.input && !f.output && !f.update && !f.noblock) {
         let names: Vec<String> = std::iter::once(f.name.clone())

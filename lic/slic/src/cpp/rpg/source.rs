@@ -4,12 +4,12 @@
 
 //! RPG source from the store: a member with its sequence numbers and
 //! change dates, the `/COPY` members it names, and the external
-//! descriptions of the database files it declares.
+//! descriptions of the database and display files it declares.
 
 use std::cell::RefCell;
 
 use qsname::{MemberSpec, Name};
-use rpgc::files::{Dev, ExtField, ExtFile, ExtFormat};
+use rpgc::files::{Dev, DspLayout, ExtField, ExtFile, ExtFormat};
 use rpgc::types::{DatFmt, TimFmt, Ty};
 use rpgfront::source::Record;
 use rpgfront::{Includes, Member};
@@ -136,6 +136,9 @@ impl rpgc::ExtFiles for StoreFiles<'_, '_> {
     fn describe(&mut self, name: &str, lib: &str) -> Option<ExtFile> {
         let mut sys = self.system.borrow_mut();
         let lib = lib_or(lib);
+        if let Some(d) = display_file(&mut sys, &lib, name) {
+            return Some(d);
+        }
         if crate::svc::ile::lend(&mut sys).is_err() {
             return None;
         }
@@ -145,12 +148,13 @@ impl rpgc::ExtFiles for StoreFiles<'_, '_> {
         crate::svc::ile::restore(&mut sys);
         let info = info?;
         if info.attr != "PF" && info.attr != "LF" {
-            // TODO(phase9): display and printer files' formats.
+            // TODO(phase9): printer files' formats.
             return None;
         }
         Some(ExtFile {
             lib: info.lib,
             dev: Dev::Disk,
+            indara: false,
             formats: formats
                 .into_iter()
                 .map(|f| ExtFormat {
@@ -170,9 +174,89 @@ impl rpgc::ExtFiles for StoreFiles<'_, '_> {
                         })
                         .collect(),
                     keys: Vec::new(),
+                    dsp: None,
                 })
                 .collect(),
         })
+    }
+}
+
+/// `lib/name` as a display file, `None` when it is not one.
+fn display_file(system: &mut System, lib: &str, name: &str) -> Option<ExtFile> {
+    in_store(system, |txn, qsys, names| {
+        let id = wm::obj::find(txn, qsys, names, lib, name, types::FILE).map_err(|e| e.to_string())?;
+        let (_, h) = ops::read_header(txn, id).map_err(|e| e.to_string())?;
+        if ccsid::decode_trimmed(&h.attribute) != crate::svc::db::dspf::ATTR {
+            return Ok(None);
+        }
+        let found = ops::describe(txn, h.library).map_or_else(|_| lib.to_string(), |l| l.name.to_string());
+        let df = dspf::decode(&wm::obj::read(txn, id).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+        Ok(Some(display_desc(&df, &found)))
+    })
+    .ok()
+    .flatten()
+}
+
+/// A display file as the compiler sees it: each record format's named
+/// fields and both buffers' layouts.
+#[must_use]
+pub fn display_desc(df: &dspf::DisplayFile, lib: &str) -> ExtFile {
+    use dspf::TypeClass;
+    let formats = df
+        .records
+        .iter()
+        .map(|r| {
+            let named: Vec<(usize, &dspf::Field)> =
+                r.fields.iter().enumerate().filter(|(_, f)| f.name.is_some()).collect();
+            let out_of = |i: usize| r.layout.output.field(i).map(|b| b.offset);
+            let in_of = |i: usize| r.layout.input.field(i).map(|b| b.offset);
+            let ty = |f: &dspf::Field| {
+                let d = u8::try_from(f.length).unwrap_or(63);
+                match f.ty.class {
+                    TypeClass::Char => Ty::Char(f.length),
+                    TypeClass::Graphic => Ty::Graph(f.length),
+                    TypeClass::Zoned => Ty::Zoned(d, f.decimals),
+                    TypeClass::Packed => Ty::Packed(d, f.decimals),
+                    TypeClass::Binary => Ty::Bin(d, f.decimals),
+                    TypeClass::Float => Ty::Float(if f.bytes == 4 { 4 } else { 8 }),
+                    TypeClass::Date => Ty::Date(DatFmt::Iso, '-'),
+                    TypeClass::Time => Ty::Time(TimFmt::Iso, '.'),
+                    TypeClass::Timestamp => Ty::Timestamp(6),
+                }
+            };
+            ExtFormat {
+                name: r.name.clone(),
+                level_id: r.layout.level_id.clone(),
+                len: r.layout.output.len.max(r.layout.input.len),
+                fields: named
+                    .iter()
+                    .map(|(i, f)| ExtField {
+                        name: f.name.clone().unwrap_or_default(),
+                        ty: ty(f),
+                        offset: out_of(*i).or_else(|| in_of(*i)).unwrap_or(0),
+                        usage: f.usage.letter(),
+                        alias: String::new(),
+                        nullable: false,
+                    })
+                    .collect(),
+                keys: Vec::new(),
+                dsp: Some(DspLayout {
+                    out_len: r.layout.output.len,
+                    in_len: r.layout.input.len,
+                    option_inds: r.layout.output.indicators.clone(),
+                    response_inds: r.layout.input.indicators.clone(),
+                    offsets: named.iter().map(|(i, _)| (out_of(*i), in_of(*i))).collect(),
+                    subfile: r.kind == dspf::RecordKind::Subfile,
+                    sflctl: r.subfile.as_ref().map(|s| s.record.clone()),
+                }),
+            }
+        })
+        .collect();
+    ExtFile {
+        lib: lib.to_string(),
+        dev: Dev::Workstn,
+        formats,
+        indara: df.file.indara,
     }
 }
 

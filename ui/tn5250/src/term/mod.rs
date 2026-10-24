@@ -92,6 +92,8 @@ pub struct Terminal {
     pub(crate) structured: Vec<Sf>,
     /// Lines the trace wants: what each record did.
     pub(crate) notes: Vec<String>,
+    /// The start of header's three command key switch bytes.
+    pub(crate) key_switches: [u8; 3],
 }
 
 impl Terminal {
@@ -118,7 +120,14 @@ impl Terminal {
             windows: Vec::new(),
             structured: Vec::new(),
             notes: Vec::new(),
+            key_switches: [0; 3],
         }
+    }
+
+    /// The command key switches of the last start of header: three
+    /// bytes, F24 to F17, F16 to F9, F8 to F1.
+    pub fn key_switches(&self) -> [u8; 3] {
+        self.key_switches
     }
 
     /// Rows on the display now.
@@ -341,6 +350,9 @@ impl Terminal {
                         self.error_row = usize::from(row) - 1;
                     } else {
                         self.error_row = self.rows - 1;
+                    }
+                    for (k, b) in self.key_switches.iter_mut().enumerate() {
+                        *b = bytes.get(4 + k).copied().unwrap_or(0);
                     }
                 }
                 Order::Sf {

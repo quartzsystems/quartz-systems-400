@@ -1,0 +1,28 @@
+# DSP004 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+run: ok
+screen: 1
+   1| B8D keys
+   3| Value:
+   5| Start
+screen: 2
+   1| B8D keys
+   3| Value:  ABC
+   5| k05=1 k10=0 k12=0 val=ABC
+   6| ke=1 kj=0 kl=0 kc=0
+screen: 3
+   1| B8D keys
+   3| Value:  ABC
+   5| k05=0 k10=0 k12=1 val=ABC
+   6| ke=0 kj=0 kl=1 kc=0
+screen: 4
+   1| B8D keys
+   3| Value:  QQ
+   5| k05=0 k10=1 k12=0 val=QQ
+   6| ke=0 kj=1 kl=0 kc=0
+screen: 5
+   1| B8D keys
+   3| Value:  QQ
+   5| k05=0 k10=0 k12=0 val=QQ
+   6| ke=0 kj=0 kl=0 kc=0

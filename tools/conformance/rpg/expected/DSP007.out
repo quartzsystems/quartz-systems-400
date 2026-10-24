@@ -1,0 +1,20 @@
+# DSP007 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+run: ok
+screen: 1
+   1| B8D keys
+   3| Value:
+   5| Start
+screen: 2
+   1| B8D keys
+   3| Value:
+   5| fmt=KEYS aid=241 row=3 col=12
+screen: 3
+   1| B8D keys
+   3| Value:
+   5| fmt=KEYS aid=53 row=5 col=20
+screen: 4
+   1| B8D keys
+   3| Value:
+   5| fmt=KEYS aid=58 row=1 col=1

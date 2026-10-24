@@ -1,0 +1,9 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'Exit')
+     A          R SCR1
+     A                                  1  2'B8A first screen'
+     A                                  3  2'Name:'
+     A            NAME          10A  B  3 10
+     A                                  4  2'Count:'
+     A            CNT            5Y 0B  4 10EDTCDE(Z)
+     A            MSG           40A  O  6  2

@@ -1,0 +1,18 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'Exit')
+     A          R SFL1                      SFL
+     A            SNUM           3Y 0O  6  2EDTCDE(Z)
+     A            SNAM          20A  O  6  8
+     A          R CTL1                      SFLCTL(SFL1)
+     A                                      SFLSIZ(0020)
+     A                                      SFLPAG(0004)
+     A                                      OVERLAY
+     A  31                                  SFLDSP
+     A  32                                  SFLDSPCTL
+     A  33                                  SFLCLR
+     A  34                                  SFLEND(*MORE)
+     A                                  1  2'B8J load all'
+     A                                  5  2'Num'
+     A                                  5  8'Name'
+     A          R FTR                       OVERLAY
+     A                                 23  2'F3=Exit'

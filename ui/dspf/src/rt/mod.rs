@@ -62,6 +62,35 @@ struct Sfl {
     next_rrn: usize,
     /// The page is on the display.
     displayed: bool,
+    /// Input buffers taken from the display, by record.
+    inputs: Vec<Option<Vec<u8>>>,
+    /// Each record's separate indicator area (`INDARA`), as written.
+    areas: Vec<Vec<u8>>,
+    /// Records changed (typed into, or written with `SFLNXTCHG`) and
+    /// not yet read by `READC`.
+    changed: Vec<bool>,
+    /// Where the next `READC` starts looking.
+    readc_from: usize,
+    /// The record `CHAIN` or `READC` read last, 1-based; 0 for none.
+    last: usize,
+}
+
+impl Sfl {
+    /// Make room for record `rrn` (1-based).
+    fn grow(&mut self, rrn: usize) {
+        if self.records.len() < rrn {
+            self.records.resize(rrn, None);
+        }
+        if self.inputs.len() < self.records.len() {
+            self.inputs.resize(self.records.len(), None);
+        }
+        if self.changed.len() < self.records.len() {
+            self.changed.resize(self.records.len(), false);
+        }
+        if self.areas.len() < self.records.len() {
+            self.areas.resize(self.records.len(), Vec::new());
+        }
+    }
 }
 
 /// One open display file's state on one display.
@@ -74,6 +103,7 @@ pub struct Runtime {
     last_inds: BTreeMap<String, Inds>,
     subfiles: BTreeMap<String, Sfl>,
     reset_inds: Vec<u8>,
+    last_written: Option<String>,
 }
 
 impl Runtime {
@@ -96,6 +126,7 @@ impl Runtime {
             last_inds: BTreeMap::new(),
             subfiles: BTreeMap::new(),
             reset_inds: Vec::new(),
+            last_written: None,
         }
     }
 
@@ -180,8 +211,34 @@ impl Runtime {
         self.last_out.insert(rec.name.clone(), out.to_vec());
         self.last_inds.insert(rec.name.clone(), inds);
         if rec.kind == RecordKind::Subfile {
-            self.put_sfl_record(&rec, out);
+            self.put_sfl_record(&rec, out, indara);
             return Ok(());
+        }
+        // An error message on a record the display shows: only the
+        // message goes out; what the operator typed stays.
+        if self.is_shown(&rec.name) && self.errmsg_on(&rec, &inds) {
+            self.show_errmsg(m, env, &rec, &inds);
+            return Ok(());
+        }
+        let takes_input = rec.fields.iter().any(|f| f.usage.is_input()) || rec.kind == RecordKind::SubfileControl;
+        if takes_input || self.last_written.is_none() {
+            self.last_written = Some(rec.name.clone());
+        }
+        if takes_input {
+            // The command attention keys in effect return no data: the
+            // display is told in the start of header.
+            let size = self.size_name();
+            let ca: Vec<u8> = rec
+                .keys
+                .iter()
+                .chain(self.df.file.keys.iter())
+                .filter(|k| cond_on(&k.cond, &inds, &size))
+                .filter_map(|k| match k.key {
+                    KeyName::Ca(n) => Some(n),
+                    _ => None,
+                })
+                .collect();
+            m.set_no_data_keys(&ca);
         }
         let rows = m.rows();
         let msgloc = rec
@@ -192,7 +249,10 @@ impl Runtime {
             .or_else(|| self.df.file.msgloc.map(usize::from))
             .unwrap_or(rows);
         m.set_error_row(msgloc);
-        let overlay = self.kw_on(&rec, "OVERLAY", &inds) || self.kw_on(&rec, "PUTOVR", &inds);
+        // A window keeps what is under it.
+        let overlay = self.kw_on(&rec, "OVERLAY", &inds)
+            || self.kw_on(&rec, "PUTOVR", &inds)
+            || rec.window.is_some();
         let (row_shift, col_shift) = self.shifts(&rec, out);
         let extent = rec.extent(self.size).map(|(lo, hi)| {
             (
@@ -348,9 +408,10 @@ impl Runtime {
                 WindowOrigin::Default => Some((1, 1)),
             };
             if let Some((r, c)) = origin {
-                // Fields are placed relative to the window's inside.
+                // Fields are placed relative to the window's inside,
+                // which starts after the left border and its attribute.
                 row += r;
-                col += c;
+                col += c + 1;
             }
         }
         (row, col)
@@ -369,6 +430,7 @@ impl Runtime {
         col_shift: i32,
     ) {
         let size = self.size_name();
+        let mut shown_msg = false;
         for (i, f) in rec.fields.iter().enumerate() {
             if !f.is_displayed() || !cond_on(&f.cond, inds, &size) {
                 continue;
@@ -399,6 +461,14 @@ impl Runtime {
                 if !cond_on(&e.cond, inds, &size) {
                     continue;
                 }
+                if let Some(ind) = e.ind {
+                    self.reset_inds.push(ind);
+                }
+                // Only the first message in effect is shown.
+                if shown_msg {
+                    continue;
+                }
+                shown_msg = true;
                 let text = e
                     .text
                     .clone()
@@ -410,9 +480,56 @@ impl Runtime {
                     m.set_cursor(row, col);
                 }
                 m.alarm();
+            }
+        }
+    }
+
+    /// Whether an `ERRMSG` or `ERRMSGID` of the record is in effect.
+    fn errmsg_on(&self, rec: &Record, inds: &Inds) -> bool {
+        let size = self.size_name();
+        rec.fields
+            .iter()
+            .any(|f| cond_on(&f.cond, inds, &size) && f.errmsg.iter().any(|e| cond_on(&e.cond, inds, &size)))
+    }
+
+    /// The first error message in effect on the error line, its field
+    /// in reverse image with the cursor on it.
+    fn show_errmsg(&mut self, m: &mut ScreenModel, env: &Env, rec: &Record, inds: &Inds) {
+        let size = self.size_name();
+        let (row_shift, col_shift) = self
+            .shown
+            .iter()
+            .find(|s| s.name == rec.name)
+            .map_or((0, 0), |s| (s.row_shift, s.col_shift));
+        let mut shown_msg = false;
+        for f in &rec.fields {
+            if !cond_on(&f.cond, inds, &size) {
+                continue;
+            }
+            for e in f.errmsg.iter().filter(|e| cond_on(&e.cond, inds, &size)) {
                 if let Some(ind) = e.ind {
                     self.reset_inds.push(ind);
                 }
+                if shown_msg {
+                    continue;
+                }
+                shown_msg = true;
+                let text = e
+                    .text
+                    .clone()
+                    .or_else(|| e.id.as_ref().and_then(|(id, _)| env.messages.get(id).cloned()))
+                    .unwrap_or_default();
+                m.error_line(&text, attr::WHITE);
+                if let Some(p) = f.position(self.size) {
+                    let row = shifted(usize::from(p.row), row_shift);
+                    let col = shifted(usize::from(p.col), col_shift);
+                    if let Some(ix) = m.field_index_at(row, col) {
+                        let a = m.fields()[ix].attr | 0x01;
+                        m.set_attr(ix, a);
+                    }
+                    m.set_cursor(row, col);
+                }
+                m.alarm();
             }
         }
     }
@@ -432,14 +549,236 @@ impl Runtime {
     }
 
     /// A subfile record written: the next relative record number.
-    fn put_sfl_record(&mut self, rec: &Record, out: &[u8]) {
+    fn put_sfl_record(&mut self, rec: &Record, out: &[u8], indara: &[u8]) {
+        let rrn = self.subfiles.get(&rec.name).map_or(0, |s| s.next_rrn) + 1;
+        self.store_sfl(rec, rrn, out, indara);
+    }
+
+    /// Keep a subfile record's output buffer at `rrn`; `SFLNXTCHG` in
+    /// effect marks it changed.
+    fn store_sfl(&mut self, rec: &Record, rrn: usize, out: &[u8], indara: &[u8]) {
+        let inds = self.inds_of(rec, out, indara);
+        let next_change = self.kw_on(rec, "SFLNXTCHG", &inds);
         let st = self.subfiles.entry(rec.name.clone()).or_default();
-        let rrn = st.next_rrn + 1;
-        if st.records.len() < rrn {
-            st.records.resize(rrn, None);
-        }
+        st.grow(rrn);
         st.records[rrn - 1] = Some(out.to_vec());
+        st.inputs[rrn - 1] = None;
+        st.changed[rrn - 1] = next_change;
+        st.areas[rrn - 1] = indara.to_vec();
         st.next_rrn = rrn;
+    }
+
+    /// The format a read of the file names when it names none: the
+    /// last one written that takes input.
+    #[must_use]
+    pub fn last_format(&self) -> Option<String> {
+        self.last_written.clone()
+    }
+
+    fn sfl_record(&self, format: &str) -> Result<Record, RtError> {
+        let rec = self
+            .df
+            .record(format)
+            .cloned()
+            .ok_or_else(|| RtError::NoFormat(format.to_string()))?;
+        if rec.kind == RecordKind::Subfile {
+            Ok(rec)
+        } else {
+            Err(RtError::NoSubfile(format.to_string()))
+        }
+    }
+
+    /// A program's `WRITE` of a subfile record at `rrn` (1-based).
+    pub fn sfl_write(&mut self, format: &str, rrn: usize, out: &[u8], indara: &[u8]) -> Result<(), RtError> {
+        let rec = self.sfl_record(format)?;
+        self.store_sfl(&rec, rrn.max(1), out, indara);
+        Ok(())
+    }
+
+    /// `CHAIN`: the input buffer of subfile record `rrn`, `None` when
+    /// there is none.
+    pub fn sfl_chain(&mut self, format: &str, rrn: usize) -> Result<Option<Input>, RtError> {
+        let rec = self.sfl_record(format)?;
+        let Some(st) = self.subfiles.get_mut(&rec.name) else {
+            return Ok(None);
+        };
+        if rrn == 0 || !matches!(st.records.get(rrn - 1), Some(Some(_))) {
+            return Ok(None);
+        }
+        st.last = rrn;
+        Ok(Some(self.sfl_input(&rec, rrn)))
+    }
+
+    /// `READC`: the next changed subfile record, which is no longer
+    /// changed; `None` at the end.
+    pub fn sfl_readc(&mut self, format: &str) -> Result<Option<Input>, RtError> {
+        let rec = self.sfl_record(format)?;
+        let Some(st) = self.subfiles.get_mut(&rec.name) else {
+            return Ok(None);
+        };
+        let from = st.readc_from;
+        let Some(i) = (from..st.records.len()).find(|&i| st.changed.get(i).copied().unwrap_or(false) && st.records[i].is_some()) else {
+            st.readc_from = st.records.len();
+            return Ok(None);
+        };
+        st.changed[i] = false;
+        st.readc_from = i + 1;
+        st.last = i + 1;
+        Ok(Some(self.sfl_input(&rec, i + 1)))
+    }
+
+    /// `UPDATE`: the subfile record last read takes a new output
+    /// buffer; it is changed again only under `SFLNXTCHG`.
+    pub fn sfl_update(&mut self, format: &str, out: &[u8], indara: &[u8]) -> Result<bool, RtError> {
+        let rec = self.sfl_record(format)?;
+        let last = self.subfiles.get(&rec.name).map_or(0, |s| s.last);
+        if last == 0 {
+            return Ok(false);
+        }
+        let next = self.subfiles.get(&rec.name).map_or(0, |s| s.next_rrn);
+        self.store_sfl(&rec, last, out, indara);
+        if let Some(st) = self.subfiles.get_mut(&rec.name) {
+            st.next_rrn = next;
+            st.last = last;
+        }
+        Ok(true)
+    }
+
+    /// A subfile record's input buffer: what the display gave it, or
+    /// its output fields as written.
+    fn sfl_input(&self, rec: &Record, rrn: usize) -> Input {
+        let st = &self.subfiles[&rec.name];
+        let record = if let Some(Some(b)) = st.inputs.get(rrn - 1) {
+            b.clone()
+        } else {
+            let out = st.records[rrn - 1].clone().unwrap_or_default();
+            Self::input_from_out(rec, &out)
+        };
+        Input {
+            record,
+            indicators: if self.df.file.indara {
+                vec![0xF0; 99]
+            } else {
+                Vec::new()
+            },
+            sfl_rrn: u32::try_from(rrn).unwrap_or(0),
+            sfl_count: u32::try_from(st.records.len()).unwrap_or(0),
+            sfl_top: u32::try_from(st.top + 1).unwrap_or(0),
+            ..Input::default()
+        }
+    }
+
+    /// An input buffer from an output buffer: the fields in both, the
+    /// response indicators off, input-only fields blank or zero.
+    fn input_from_out(rec: &Record, out: &[u8]) -> Vec<u8> {
+        let mut record: Vec<u8> = vec![0xF0; rec.layout.input.indicators.len()];
+        for bf in &rec.layout.input.fields {
+            let f = &rec.fields[bf.field];
+            let bytes = field_bytes(rec, bf.field, out).unwrap_or_else(|| {
+                if f.ty.is_numeric() {
+                    edit::zero_bytes(f)
+                } else {
+                    vec![ccsid::SPACE; bf.len as usize]
+                }
+            });
+            let at = bf.offset as usize;
+            if record.len() < at {
+                record.resize(at, ccsid::SPACE);
+            }
+            record.truncate(at);
+            record.extend(bytes);
+        }
+        record.resize(rec.layout.input.len as usize, ccsid::SPACE);
+        record
+    }
+
+    /// The subfile page on the display read back: each record's typed
+    /// fields into its input buffer (and its output buffer, so a roll
+    /// shows them again), a typed record marked changed.
+    fn capture_page(&mut self, m: &ScreenModel, ctl: &Record) -> Result<(), Problem> {
+        let Some(sfl) = ctl.subfile.clone() else {
+            return Ok(());
+        };
+        let Some(sfl_rec) = self.df.record(&sfl.record).cloned() else {
+            return Ok(());
+        };
+        let Some(st) = self.subfiles.get(&sfl.record) else {
+            return Ok(());
+        };
+        if !st.displayed {
+            return Ok(());
+        }
+        let page = usize::from(sfl.size(self.size).page).max(1);
+        let rec_lines = usize::from(sfl.record_lines.max(1));
+        let first_line = usize::from(sfl.first_line.get(self.size).or(sfl.first_line.first()).copied().unwrap_or(0));
+        if first_line == 0 {
+            return Ok(());
+        }
+        let sfl_first = sfl_rec.extent(self.size).map_or(first_line, |(lo, _)| usize::from(lo));
+        let top = st.top;
+        let count = st.records.len();
+        for slot in 0..page {
+            let idx = top + slot;
+            if idx >= count {
+                break;
+            }
+            let Some(out) = self.subfiles[&sfl.record].records[idx].clone() else {
+                continue;
+            };
+            let line = first_line + slot * rec_lines;
+            let shift = i32::try_from(line).unwrap_or(0) - i32::try_from(sfl_first).unwrap_or(0);
+            let mut input = Self::input_from_out(&sfl_rec, &out);
+            let mut out2 = out.clone();
+            let mut typed = false;
+            for bf in &sfl_rec.layout.input.fields {
+                let field = &sfl_rec.fields[bf.field];
+                if !field.usage.is_input() {
+                    continue;
+                }
+                let Some(pos) = field.position(self.size) else { continue };
+                let row = shifted(usize::from(pos.row), shift);
+                let col = usize::from(pos.col);
+                let Some(ix) = m.field_index_at(row, col) else { continue };
+                let fld = &m.fields()[ix];
+                if !fld.modified {
+                    continue;
+                }
+                typed = true;
+                let text = fld.text();
+                if let Some(msg) = input::validate(field, &text) {
+                    return Err(Problem::Field { row, col, text: msg });
+                }
+                let bytes = input::typed_bytes(field, &text).map_err(|e| Problem::Field {
+                    row,
+                    col,
+                    text: input::bad_value_text(&e),
+                })?;
+                let at = bf.offset as usize;
+                input[at..at + bytes.len()].copy_from_slice(&bytes);
+                if let Some(ob) = sfl_rec.layout.output.field(bf.field) {
+                    let out_at = ob.offset as usize;
+                    if out_at + bytes.len() <= out2.len() {
+                        out2[out_at..out_at + bytes.len()].copy_from_slice(&bytes);
+                    }
+                }
+            }
+            if typed && let Some(st) = self.subfiles.get_mut(&sfl.record) {
+                st.inputs[idx] = Some(input);
+                st.records[idx] = Some(out2);
+                st.changed[idx] = true;
+            }
+        }
+        Ok(())
+    }
+
+    /// The lowest record number displayed and the record count of a
+    /// control record's subfile.
+    fn sfl_state(&self, ctl: &Record) -> (u32, u32) {
+        let Some(st) = ctl.subfile.as_ref().and_then(|s| self.subfiles.get(&s.record)) else {
+            return (0, 0);
+        };
+        let top = if st.displayed && !st.records.is_empty() { st.top + 1 } else { 0 };
+        (u32::try_from(top).unwrap_or(0), u32::try_from(st.records.len()).unwrap_or(0))
     }
 
     /// Position the next subfile record write at `rrn` (1-based): a
@@ -517,8 +856,13 @@ impl Runtime {
             let st = self.subfiles.entry(sfl.record.clone()).or_default();
             if clr {
                 st.records.clear();
+                st.inputs.clear();
+                st.changed.clear();
+                st.areas.clear();
                 st.top = 0;
                 st.next_rrn = 0;
+                st.last = 0;
+                st.readc_from = 0;
                 st.displayed = false;
                 if first_line > 0 {
                     m.clear_rows(first_line, first_line + page * rec_lines - 1);
@@ -526,7 +870,11 @@ impl Runtime {
             }
             if inz {
                 st.records = vec![Some(Self::blank_record(&sfl_rec)); total];
+                st.inputs = vec![None; total];
+                st.changed = vec![false; total];
+                st.areas = vec![Vec::new(); total];
             }
+            st.readc_from = 0;
             if let Some((n, _, to_top)) = rcdnbr
                 && n >= 1
             {
@@ -566,10 +914,10 @@ impl Runtime {
         rec_lines: usize,
         end: Option<SflEnd>,
     ) {
-        let (top, records) = {
+        let (top, records, areas) = {
             let st = self.subfiles.entry(sfl_rec.name.clone()).or_default();
             st.displayed = true;
-            (st.top, st.records.clone())
+            (st.top, st.records.clone(), st.areas.clone())
         };
         let sfl_first = sfl_rec
             .extent(self.size)
@@ -580,7 +928,8 @@ impl Runtime {
                 continue;
             };
             let line = first_line + k * rec_lines;
-            let inds = self.inds_of(sfl_rec, buf, &[]);
+            let area = areas.get(top + k).map_or(&[][..], Vec::as_slice);
+            let inds = self.inds_of(sfl_rec, buf, area);
             let shift = i32::try_from(line).unwrap_or(0) - i32::try_from(sfl_first).unwrap_or(0);
             self.place(m, env, sfl_rec, &inds, Some(buf), shift, 0);
         }
@@ -618,6 +967,7 @@ impl Runtime {
         let first_line = usize::from(sfl.first_line.get(self.size).or(sfl.first_line.first()).copied()?);
         let rec_lines = usize::from(sfl.record_lines.max(1));
         let inds = self.last_inds.get(&rec.name).copied().unwrap_or([false; 100]);
+        let _ = self.capture_page(m, rec);
         {
             let st = self.subfiles.get_mut(&sfl.record)?;
             if !st.displayed {
@@ -714,6 +1064,12 @@ impl Runtime {
             };
         }
         let (key_ind, data) = self.key_check(&rec, key, &inds)?;
+        if rec.kind == RecordKind::SubfileControl && data {
+            self.capture_page(m, &rec)?;
+        }
+        if let Some(st) = rec.subfile.as_ref().and_then(|s| self.subfiles.get_mut(&s.record)) {
+            st.readc_from = 0;
+        }
         let size = self.size_name();
         let mut resp = [false; 100];
         if let Some(i) = key_ind {
@@ -766,19 +1122,32 @@ impl Runtime {
         }
         record.resize(rec.layout.input.len as usize, ccsid::SPACE);
         let indicators = if self.df.file.indara {
+            // The response indicators as the read set them, the others
+            // as the write left them.
+            let responses = &rec.layout.response_inds;
             (1..=99usize)
-                .map(|n| if resp[n] { 0xF1 } else { 0xF0 })
+                .map(|n| {
+                    let on = if responses.iter().any(|r| usize::from(*r) == n) {
+                        resp[n]
+                    } else {
+                        inds[n]
+                    };
+                    if on { 0xF1 } else { 0xF0 }
+                })
                 .collect()
         } else {
             Vec::new()
         };
         let sfl_rrn = self.sfl_rrn_at(&rec, usize::from(cursor.0));
+        let (sfl_top, sfl_count) = self.sfl_state(&rec);
         Ok(Input {
             record,
             indicators,
             aid,
             cursor: (u16::from(cursor.0), u16::from(cursor.1)),
             sfl_rrn,
+            sfl_top,
+            sfl_count,
         })
     }
 
@@ -916,17 +1285,18 @@ struct Taken {
     col_shift: i32,
 }
 
-/// A window's border: dots above and below, colons at the sides.
+/// A window's border: dots above and below, colons at the sides, each
+/// side with an attribute position between it and the inside.
 fn draw_border(m: &mut ScreenModel, w: &crate::model::Window, row_shift: i32, col_shift: i32) {
     let top = shifted(0, row_shift);
-    let left = shifted(0, col_shift);
+    let left = shifted(0, col_shift - 1);
     let lines = usize::from(w.lines);
     let cols = usize::from(w.cols);
     // Dots across the top, colons at the bottom corners.
-    m.put(top, left, &".".repeat(cols + 2), attr::GREEN);
-    m.put(top + lines + 1, left, &format!(":{}:", ".".repeat(cols)), attr::GREEN);
+    m.put(top, left, &".".repeat(cols + 4), attr::GREEN);
+    m.put(top + lines + 1, left, &format!(":{}:", ".".repeat(cols + 2)), attr::GREEN);
     for r in 1..=lines {
-        m.put(top + r, left, &format!(":{}:", " ".repeat(cols)), attr::GREEN);
+        m.put(top + r, left, &format!(":{}:", " ".repeat(cols + 2)), attr::GREEN);
     }
 }
 
@@ -1078,13 +1448,14 @@ mod tests {
         assert!(matches!(p, Problem::Field { row: 9, col: 53, .. }), "{p:?}");
         rt.show_problem(&mut m, &p);
         assert!(m.text_rows()[23].contains("range"));
-        // ERRMSG at write: the message shows, the field is reversed and
-        // indicator 50 comes back off.
+        // ERRMSG at write: the message shows, the field is reversed, what
+        // was typed stays, and indicator 50 comes back off.
         let mut flagged = out.clone();
         flagged[0] = 0xF1;
         rt.write(&mut m, &env(), "SIGNON", &flagged, &[]).unwrap();
         assert!(m.text_rows()[23].contains("Amount too high"));
-        let (aid, cursor) = round_trip(&mut m, &mut t, &[Key::Enter], &[]);
+        assert!(m.text_rows()[8].contains("123456"));
+        let (aid, cursor) = round_trip(&mut m, &mut t, &[Key::Reset, Key::Enter], &["", "", "20"]);
         let input = rt.input(&mut m, &env(), "SIGNON", aid, cursor).unwrap();
         assert_eq!(input.record[2], 0xF0);
     }

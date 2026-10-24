@@ -3,15 +3,17 @@
 // root directory of this project.
 
 //! The RPG differential oracle's shared half: what a corpus member
-//! asks for (`case`), how a compile listing is read and masked
-//! (`listing`), and the normalized outcome both systems are reduced to
-//! (`outcome`). The `rpg-oracle` binary fills outcomes from an IBM i;
-//! the conformance kit fills them from QS/400 and compares.
+//! asks for (`case`), the operator's answers to its screens (`keys`),
+//! how a compile listing is read and masked (`listing`), and the
+//! normalized outcome both systems are reduced to (`outcome`). The
+//! `rpg-oracle` binary fills outcomes from an IBM i; the conformance
+//! kit fills them from QS/400 and compares.
 
 #![deny(missing_docs)]
 #![allow(clippy::many_single_char_names)]
 
 pub mod case;
+pub mod keys;
 pub mod listing;
 pub mod outcome;
 

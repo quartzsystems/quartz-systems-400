@@ -1,0 +1,343 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   DSP012
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   DSP012
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; dds: B8K                                                                                              000000     000200
+      3 //; keys: 6,2:1 enter                                                                                     000000     000300
+      4 //; keys: enter                                                                                           000000     000400
+      5 //; keys: f3                                                                                              000000     000500
+      6 ctl-opt dftactgrp(*no);                                                                                   000000     000600
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     7 dcl-f B8K workstn sfile(SFL2: rrn);                                                                       000000     000700
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  B8K              {lib}/B8K                               *
+         * Record format(s) . . . . . :  SFL2             SFL2                                        *
+         *                               CTL2             CTL2                                        *
+         *                               FTR2             FTR2                                        *
+         *--------------------------------------------------------------------------------------------*
+-     8 dcl-s rrn packed(4: 0);                                                                                   000000     000800
+      9 dcl-s i int(10);                                                                                          000000     000900
+     10 dcl-s n int(10);                                                                                          000000     001000
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     11 // SFLNXTCHG: an updated record is read by READC again.                                                   000000     001100
+-    12=ISFL2                                                                                                               1000001
+         *--------------------------------------------------------------------------------------------*                     1
+         * RPG record format  . . . . :  SFL2                                                         *                     1
+         * External format  . . . . . :  SFL2 : {lib}/B8K                                         *                     1
+         *--------------------------------------------------------------------------------------------*                     1
+     13=I                             N    1    1  *IN03                           Exit                                     1000002
+     14=I                             A    2    2  OPT                                                                      1000003
+     15=I                             A    3   12  ITEM                                                                     1000004
+     16=I                             A   13   32  DESC                                                                     1000005
+     17=ICTL2                                                                                                               2000001
+         *--------------------------------------------------------------------------------------------*                     2
+         * RPG record format  . . . . :  CTL2                                                         *                     2
+         * External format  . . . . . :  CTL2 : {lib}/B8K                                         *                     2
+         *--------------------------------------------------------------------------------------------*                     2
+     18=I                             N    1    1  *IN03                           Exit                                     2000002
+     19=IFTR2                                                                                                               3000001
+         *--------------------------------------------------------------------------------------------*                     3
+         * RPG record format  . . . . :  FTR2                                                         *                     3
+         * External format  . . . . . :  FTR2 : {lib}/B8K                                         *                     3
+         *--------------------------------------------------------------------------------------------*                     3
+     20=I                             N    1    1  *IN03                           Exit                                     3000002
+-    21 *in33 = *on;                                                                                              000000     001200
+     22 write CTL2;                                                                                               000000     001300
+     23 *in33 = *off;                                                                                             000000     001400
+     24 for i = 1 to 3;                                                                                      B01  000000     001500
+     25 ITEM = 'KEEP' + %char(i);                                                                             01  000000     001600
+     26 DESC = *blanks;                                                                                       01  000000     001700
+     27 OPT = ' ';                                                                                            01  000000     001800
+     28 rrn = i;                                                                                              01  000000     001900
+     29 write SFL2;                                                                                           01  000000     002000
+     30 endfor;                                                                                              E01  000000     002100
+     31 *in31 = *on;                                                                                              000000     002200
+     32 *in34 = *on;                                                                                              000000     002300
+     33 MSG = 'Mark one';                                                                                         000000     002400
+     34 dou *in03;                                                                                           B01  000000     002500
+     35 write FTR2;                                                                                           01  000000     002600
+     36 exfmt CTL2;                                                                                           01  000000     002700
+     37 if *in03;                                                                                            B02  000000     002800
+     38 leave;                                                                                                02  000000     002900
+     39 endif;                                                                                               E02  000000     003000
+     40 n = 0;                                                                                                01  000000     003100
+     41 readc SFL2;                                                                                           01  000000     003200
+     42 dow not %eof;                                                                                        B02  000000     003300
+     43 n += 1;                                                                                               02  000000     003400
+     44 DESC = 'Seen ' + %char(n) + ' opt ' + OPT;                                                            02  000000     003500
+     45 *in50 = *on;                                                                                          02  000000     003600
+     46 update SFL2;                                                                                          02  000000     003700
+     47 *in50 = *off;                                                                                         02  000000     003800
+     48 readc SFL2;                                                                                           02  000000     003900
+     49 enddo;                                                                                               E02  000000     004000
+     50 MSG = 'Read ' + %char(n);                                                                             01  000000     004100
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     51 enddo;                                                                                               E01  000000     004200
+     52 *inlr = *on;                                                                                              000000     004300
+     53=OSFL2                                                                                                               4000001
+         *--------------------------------------------------------------------------------------------*                     4
+         * RPG record format  . . . . :  SFL2                                                         *                     4
+         * External format  . . . . . :  SFL2 : {lib}/B8K                                         *                     4
+         *--------------------------------------------------------------------------------------------*                     4
+     54=O                       *IN50                1N CHAR        1                                                       4000002
+     55=O                       OPT                  2A CHAR        1                                                       4000003
+     56=O                       ITEM                12A CHAR       10                                                       4000004
+     57=O                       DESC                32A CHAR       20                                                       4000005
+     58=OCTL2                                                                                                               5000001
+         *--------------------------------------------------------------------------------------------*                     5
+         * RPG record format  . . . . :  CTL2                                                         *                     5
+         * External format  . . . . . :  CTL2 : {lib}/B8K                                         *                     5
+         *--------------------------------------------------------------------------------------------*                     5
+     59=O                       *IN31                1N CHAR        1                                                       5000002
+     60=O                       *IN33                2N CHAR        1                                                       5000003
+     61=O                       *IN34                3N CHAR        1                                                       5000004
+     62=OFTR2                                                                                                               6000001
+         *--------------------------------------------------------------------------------------------*                     6
+         * RPG record format  . . . . :  FTR2                                                         *                     6
+         * External format  . . . . . :  FTR2 : {lib}/B8K                                         *                     6
+         *--------------------------------------------------------------------------------------------*                     6
+     63=O                       MSG                 40A CHAR       40                                                       6000002
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-                 O u t p u t   B u f f e r   P o s i t i o n s
+0Line   Start End   Field or Constant
+0Number Pos   Pos
+     54     1     1 *IN50
+     55     2     2 OPT
+     56     3    12 ITEM
+     57    13    32 DESC
+     54     1     1 *IN50
+     55     2     2 OPT
+     56     3    12 ITEM
+     57    13    32 DESC
+     59     1     1 *IN31
+     60     2     2 *IN33
+     61     3     3 *IN34
+     63     1    40 MSG
+0 * * * * *   E N D   O F   O U T P U T   B U F F E R   P O S I T I O N   *  * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          B8K               WORKSTN                 7D
+            SFL2                                    7D     12      29      41
+                                                   46      48      53
+            CTL2                                    7D     17      22      36
+                                                   58
+            FTR2                                    7D     19      35      62
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   52M
+          *IN03             N(1)                   13D     18M     20M     34
+                                                   37
+          *IN31             N(1)                   31M     59
+          *IN33             N(1)                   21M     23M     60
+          *IN34             N(1)                   32M     61
+          *IN50             N(1)                   45M     47M     54
+          DESC              A(20)                  16M     26M     44M     57
+          I                 I(10,0)                 9D     24      25      28
+          ITEM              A(10)                  15M     25M     56
+          MSG               A(40)                  33M     50M     63
+          N                 I(10,0)                10D     40M     43M     44
+                                                   50
+          OPT               A(1)                   14M     27M     44      55
+          RRN               P(4,0)                  7       8D     28M
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          03                                       13M     18M     20M     34
+                                                   37
+          31                                       31M     59
+          33                                       21M     23M     60
+          34                                       32M     61
+          50                                       45M     47M     54
+          LR                                       52M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+1{heading} page 7
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        0
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        0
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       63
+     Specifications  . . . . . . . . :       57
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        5
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program DSP012 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

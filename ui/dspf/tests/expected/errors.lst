@@ -81,8 +81,8 @@ QS/400 DDS compiler
   Record format SFLONLY    (subfile record)
     Record keywords: SFL
   Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
-  X           A          1       O      5    2     1      0
-    Output buffer 1 bytes (option indicators none); input buffer 0 bytes (response indicators none); level identifier D4654E72DEDB1
+  X           A          1       O      5    2     1      0      0
+    Output buffer 1 bytes (option indicators none); input buffer 1 bytes (response indicators none); level identifier D4654E72DEDB1
 
   Record format WIN
     Window at line 20 column 70, 10 lines by 60 columns inside the border
@@ -100,8 +100,8 @@ QS/400 DDS compiler
   Record format SFL9    (subfile record)
     Record keywords: SFL
   Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
-  Y           A          1       O      5    2     1      0
-    Output buffer 1 bytes (option indicators none); input buffer 0 bytes (response indicators none); level identifier 78013657012BD
+  Y           A          1       O      5    2     1      0      0
+    Output buffer 1 bytes (option indicators none); input buffer 1 bytes (response indicators none); level identifier 78013657012BD
 
   Record format CTL9    (subfile control record)
     Subfile SFL9: SFLSIZ 5 SFLPAG 10 on lines 5-14

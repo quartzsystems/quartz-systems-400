@@ -30,8 +30,8 @@ QS/400 DDS compiler
   Record format SFL2    (subfile record)
     Record keywords: SFL
   Field       Type  Length  Dec  Use  Row  Col   Scr    Out     In  Indicators    Keywords
-  LINE        A         70       O      5    3    70      0                       [*DS4:5,3]
-    Output buffer 70 bytes (option indicators none); input buffer 1 bytes (response indicators 03); level identifier 311088853A52F
+  LINE        A         70       O      5    3    70      0      1                [*DS4:5,3]
+    Output buffer 70 bytes (option indicators none); input buffer 71 bytes (response indicators 03); level identifier 311088853A52F
 
   Record format CTL2    (subfile control record)
     Subfile SFL2: SFLSIZ 100 SFLPAG 15 on lines 5-19 (*DS3); SFLSIZ 100 SFLPAG 18 on lines 5-22 (*DS4); SFLEND(*MORE)

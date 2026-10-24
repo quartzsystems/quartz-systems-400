@@ -1,0 +1,16 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'Exit')
+     A          R SFL3                      SFL
+     A            LNUM           4Y 0O  6  2
+     A            LTXT          20A  O  6  8
+     A          R CTL3                      SFLCTL(SFL3)
+     A                                      SFLSIZ(0004)
+     A                                      SFLPAG(0004)
+     A                                      ROLLUP(25)
+     A                                      OVERLAY
+     A  31                                  SFLDSP
+     A                                      SFLDSPCTL
+     A  33                                  SFLCLR
+     A  34                                  SFLEND(*MORE)
+     A                                  1  2'B8L page at a time'
+     A            PAGES          3Y 0O  2  2

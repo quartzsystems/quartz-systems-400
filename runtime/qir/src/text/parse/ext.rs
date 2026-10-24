@@ -324,6 +324,16 @@ impl Parser {
                 } else {
                     None
                 };
+                let rrn = if self.eat_word("rrn") {
+                    Some(self.paren(Self::operand)?)
+                } else {
+                    None
+                };
+                let inds = if self.eat_word("inds") {
+                    Some(self.paren(Self::place)?)
+                } else {
+                    None
+                };
                 Inst::Io(IoInst::DevIo {
                     dst,
                     file,
@@ -331,6 +341,8 @@ impl Parser {
                     fmt,
                     rec,
                     ctl,
+                    rrn,
+                    inds,
                 })
             }
             ("rcvmsg", None) => {

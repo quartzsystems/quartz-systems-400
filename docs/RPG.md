@@ -192,6 +192,42 @@ closes every global file. Program-described output records to a disk
 file are built at their end positions (data format `P`/`B` packs) and
 added (`ADD`, or any output file), updated or deleted (`DEL`).
 
+**Display files** (`codegen/dspio.rs`). A `WORKSTN` file is externally
+described from its `*FILE` display object (`dspf`): `rpgc::ExtFiles`
+gives each record format its named fields and both buffers' layouts
+(`DspLayout`: the output buffer's option indicators and fields, the
+input buffer's response indicators and fields, a subfile record's
+input holding its output fields too) and the file's `INDARA`. The
+formats and fields are declared as for database files. The file has
+one record buffer: an output (`WRITE`, `EXFMT`, `UPDATE`) moves the
+format's shown fields and option indicators into it, an input (`READ`,
+`EXFMT`, `CHAIN`, `READC`) moves the fields read and the response
+indicators back. Indicators are `*IN01`-`*IN99`, or the `INDDS`
+structure's positions; with `INDARA` the area (`INDDS`, or `*IN`)
+goes with the operation as `dspio ... inds()`, and the listing notes
+`RNF7089`. `EXFMT` writes then reads; `WRITE` of a subfile record puts
+it at its `SFILE(fmt:field)` number; `CHAIN n fmt` reads one (`%FOUND`,
+the not-found indicator); `READC` the next changed one (`%EOF`, the
+number into the `SFILE` field); `UPDATE` replaces the record last read.
+A `READ` by file name reads the format last written that takes input,
+and its fields move by the format name the information data structure
+names (the program's `INFDS`, or a hidden one). After a read the
+attention identifier (`dbfb` bits 8-15) sets `*INKA`-`*INKY` for F1 to
+F24, all others off. The `INFDS` has IBM's display part (the attention
+identifier at 369, the cursor at 370-371). `OPEN`, `CLOSE`, `USROPN`,
+`%OPEN` and `%STATUS` work as for database files (`OPEN` of an open file
+is 01215). The generated input and output specifications of a display
+format count its indicators (without `INDARA`) and its fields.
+
+In a real interactive job the operations go to the job's display
+(`work/qsjob/src/display/dds.rs`, the `DisplaySource` the 5250 session
+shows); in the kit, to a scripted terminal (`PHASE9.md`).
+
+An externally described printer file's formats come from its DDS
+(`dds::prtf`): `WRITE fmt` moves the fields and option indicators into
+the buffer and prints the format; at the overflow line the `OFLIND`
+indicator goes on.
+
 **Printers.** A program-described printer without `OFLIND` gets the
 first unused of `*INOA`-`*INOG` (`RNF2318`, information). A `WRITE` of
 a structure to it prints one line and spaces one after; output records
@@ -307,7 +343,8 @@ array keeps its count in `$NAME__elem`.
    `QSYSPRT`, one statement per line, at most 100 characters a line.
 2. Run them on the oracle: `cargo run -p rpg-oracle -- run FILES` (or
    `refresh DIR --missing`); the outcomes land in `expected/`.
-3. Implement until `cargo test -p conformance --test rpg_kit` matches;
-   our outcomes, listings and IR (with each diagnostic's text) are in
-   `target/conformance-rpg/ours/`.
+3. Implement until `cargo test -p conformance --test rpg_kit` matches
+   (`QS400_RPG_ONLY=PREFIX` runs only the members whose names start
+   so); our outcomes, listings and IR (with each diagnostic's text) are
+   in `target/conformance-rpg/ours/`.
 4. Keep clippy clean and commit.

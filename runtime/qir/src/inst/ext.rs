@@ -499,6 +499,12 @@ pub enum DevOp {
     Read,
     /// `EXFMT`: write then read.
     ExFmt,
+    /// `CHAIN` a subfile record by relative record number (format 3).
+    Chain,
+    /// `UPDATE` the subfile record last read (format 3).
+    Update,
+    /// `READC`: the next changed subfile record (format 3).
+    ReadC,
 }
 
 impl DevOp {
@@ -509,6 +515,9 @@ impl DevOp {
             Self::Write => "WRITE",
             Self::Read => "READ",
             Self::ExFmt => "EXFMT",
+            Self::Chain => "CHAIN",
+            Self::Update => "UPDATE",
+            Self::ReadC => "READC",
         }
     }
 
@@ -519,6 +528,9 @@ impl DevOp {
             "WRITE" => Self::Write,
             "READ" => Self::Read,
             "EXFMT" => Self::ExFmt,
+            "CHAIN" => Self::Chain,
+            "UPDATE" => Self::Update,
+            "READC" => Self::ReadC,
             _ => return None,
         })
     }
@@ -571,7 +583,8 @@ pub enum IoInst {
         /// Read without a lock on an update file.
         nolock: bool,
     },
-    /// `%d = dspio|prtio FILE OP fmt(NAME) [rec(place)] [ctl(sb, sa, kb, ka)]`.
+    /// `%d = dspio|prtio FILE OP fmt(NAME) [rec(place)] [ctl(sb, sa, kb, ka)]
+    /// [rrn(x)] [inds(place)]`.
     DevIo {
         /// Destination, an `i32`.
         dst: Reg,
@@ -586,6 +599,12 @@ pub enum IoInst {
         /// A printer line's carriage control: space before, space
         /// after, skip before, skip after (0 for none); format 2.
         ctl: Option<Box<[Operand; 4]>>,
+        /// A subfile record's relative record number (`WRITE`,
+        /// `CHAIN`); format 3.
+        rrn: Option<Operand>,
+        /// The separate indicator area (`INDARA`), 99 indicators;
+        /// format 3.
+        inds: Option<Place>,
     },
 }
 

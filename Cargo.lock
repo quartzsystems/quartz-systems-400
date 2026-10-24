@@ -359,6 +359,7 @@ dependencies = [
  "crc",
  "db",
  "dds",
+ "dspf",
  "ile",
  "jrn",
  "mi",
@@ -1962,6 +1963,7 @@ dependencies = [
  "anyhow",
  "ccsid",
  "clap",
+ "tn5250",
  "tn5250-driver",
 ]
 

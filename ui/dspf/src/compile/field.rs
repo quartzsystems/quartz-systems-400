@@ -1004,6 +1004,8 @@ fn edited_len(f: &Field) -> u32 {
                 .map_or(f.length, |n| u32::try_from(n).unwrap_or(f.length))
         }
         Edit::Word(w) => u32::try_from(w.chars().count()).unwrap_or(f.length),
+        // Numeric only (Y) has no sign position.
+        Edit::None if f.usage.is_input() && f.ty.letter == 'Y' => f.length,
         Edit::None if f.usage.is_input() => f.length + 1 + u32::from(f.decimals > 0),
         Edit::None => f.length,
     }

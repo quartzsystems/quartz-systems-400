@@ -219,6 +219,12 @@ impl DisplaySource for DdsDisplay {
         let Some(mut open) = self.files.remove(&handle) else {
             return Err(IoFail::new(1299, "CPF4101", &[format]));
         };
+        let named = if format.is_empty() {
+            open.rt.last_format().unwrap_or_default()
+        } else {
+            format.to_string()
+        };
+        let format = named.as_str();
         let r = loop {
             self.surface.flush(Read::MdtFields);
             let Some((a, cursor)) = self.surface.wait() else {
@@ -241,6 +247,8 @@ impl DisplaySource for DdsDisplay {
                         aid: input.aid,
                         cursor: input.cursor,
                         sfl_rrn: input.sfl_rrn,
+                        sfl_top: input.sfl_top,
+                        sfl_count: input.sfl_count,
                     });
                 }
                 Err(Problem::NotShown(_)) => {
@@ -253,9 +261,77 @@ impl DisplaySource for DdsDisplay {
         r
     }
 
+    fn sfl_write(
+        &mut self,
+        handle: u32,
+        format: &str,
+        rrn: u32,
+        record: &[u8],
+        indicators: &[u8],
+    ) -> Result<(), IoFail> {
+        let open = self.open_file(handle, format)?;
+        let lib = open.lib.clone();
+        open.rt
+            .sfl_write(format, rrn as usize, record, indicators)
+            .map_err(|_| IoFail::new(1299, "CPF5123", &[format, &lib]))
+    }
+
+    fn sfl_chain(&mut self, handle: u32, format: &str, rrn: u32) -> Result<Option<DisplayInput>, IoFail> {
+        let open = self.open_file(handle, format)?;
+        let lib = open.lib.clone();
+        let got = open
+            .rt
+            .sfl_chain(format, rrn as usize)
+            .map_err(|_| IoFail::new(1299, "CPF5123", &[format, &lib]))?;
+        Ok(got.map(|i| sfl_input(format, i)))
+    }
+
+    fn sfl_update(&mut self, handle: u32, format: &str, record: &[u8], indicators: &[u8]) -> Result<(), IoFail> {
+        let open = self.open_file(handle, format)?;
+        let lib = open.lib.clone();
+        match open.rt.sfl_update(format, record, indicators) {
+            Ok(true) => Ok(()),
+            // No record was read first.
+            Ok(false) => Err(IoFail::new(1221, "CPF5034", &[format, &lib])),
+            Err(_) => Err(IoFail::new(1299, "CPF5123", &[format, &lib])),
+        }
+    }
+
+    fn sfl_readc(&mut self, handle: u32, format: &str) -> Result<Option<DisplayInput>, IoFail> {
+        let open = self.open_file(handle, format)?;
+        let lib = open.lib.clone();
+        let got = open
+            .rt
+            .sfl_readc(format)
+            .map_err(|_| IoFail::new(1299, "CPF5123", &[format, &lib]))?;
+        Ok(got.map(|i| sfl_input(format, i)))
+    }
+
     fn close(&mut self, handle: u32) -> Result<(), IoFail> {
         self.files.remove(&handle);
         Ok(())
+    }
+}
+
+impl DdsDisplay {
+    fn open_file(&mut self, handle: u32, format: &str) -> Result<&mut Open, IoFail> {
+        self.files
+            .get_mut(&handle)
+            .ok_or_else(|| IoFail::new(1299, "CPF4101", &[format]))
+    }
+}
+
+/// A subfile record read, as the runtime gives it back.
+fn sfl_input(format: &str, i: dspf::rt::Input) -> DisplayInput {
+    DisplayInput {
+        format: format.to_string(),
+        record: i.record,
+        indicators: i.indicators,
+        aid: i.aid,
+        cursor: i.cursor,
+        sfl_rrn: i.sfl_rrn,
+        sfl_top: i.sfl_top,
+        sfl_count: i.sfl_count,
     }
 }
 

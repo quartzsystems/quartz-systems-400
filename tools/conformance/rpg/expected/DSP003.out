@@ -1,0 +1,40 @@
+# DSP003 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+run: ok
+screen: 1
+   1| B8C indicators
+   3| Indicator 40 is off
+   5| Option:
+   7| Pass 1 opt
+  10| 001
+screen: 2
+   1| B8C indicators
+   3| Indicator 40 is on
+   5| Option:
+   7| Pass 2 opt
+   8| Shown with 43
+  10| 002
+screen: 3
+   1| B8C indicators
+   3| Indicator 40 is off
+   5| Option:
+   7| Pass 3 opt
+   8| Shown with 43
+  10| 003
+screen: 4
+   1| B8C indicators
+   3| Indicator 40 is on
+   5| Option:
+   7| Pass 4 opt
+   8| Shown with 43
+   9| Shown with 43 and 44
+  10| 004
+screen: 5
+   1| B8C indicators
+   3| Indicator 40 is off
+   5| Option:
+   7| Pass 5 opt
+   8| Shown with 43
+   9| Shown with 43 and 44
+  10| 005

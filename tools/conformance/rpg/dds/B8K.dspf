@@ -1,0 +1,21 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'Exit')
+     A          R SFL2                      SFL
+     A  50                                  SFLNXTCHG
+     A            OPT            1A  B  6  2
+     A            ITEM          10A  O  6  6
+     A            DESC          20A  O  6 17
+     A          R CTL2                      SFLCTL(SFL2)
+     A                                      SFLSIZ(0010)
+     A                                      SFLPAG(0005)
+     A                                      OVERLAY
+     A  31                                  SFLDSP
+     A                                      SFLDSPCTL
+     A  33                                  SFLCLR
+     A  34                                  SFLEND(*MORE)
+     A                                  1  2'B8K options'
+     A                                  3  2'Type 1 to mark, 4 to drop.'
+     A                                  5  2'Opt'
+     A                                  5  6'Item'
+     A          R FTR2                      OVERLAY
+     A            MSG           40A  O 21  2

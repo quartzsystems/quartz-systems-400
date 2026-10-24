@@ -1,0 +1,13 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'Exit')
+     A          R SCR
+     A                                  1  2'B8C indicators'
+     A N40                              3  2'Indicator 40 is off'
+     A  40                              3  2'Indicator 40 is on'
+     A                                  5  2'Option:'
+     A  41        OPT            1A  B  5 10
+     A            STAT          20A  O  7  2
+     A  42                                  DSPATR(HI)
+     A  43                              8  2'Shown with 43'
+     A  43 44                           9  2'Shown with 43 and 44'
+     A            COUNT          3S 0O 10  2

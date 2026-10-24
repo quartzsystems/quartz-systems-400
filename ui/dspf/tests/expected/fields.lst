@@ -78,7 +78,7 @@ QS/400 DDS compiler
                                        11    2    10                              'Note . . :'
                                        23    2    20                              'F3=Exit   F12=Cancel' COLOR(BLU)
   MSG         A         78       O     24    2    78     77                       DSPATR(HI)
-    Output buffer 155 bytes (option indicators 50 51); input buffer 105 bytes (response indicators 03 05 12 60 61 62 90); level identifier FEB91F25E3E86
+    Output buffer 155 bytes (option indicators 51 50); input buffer 105 bytes (response indicators 03 12 05 90 60 61 62); level identifier FEB91F25E3E86
 
   Indicator usage
   Ind  Option at                                 Response at                               Text

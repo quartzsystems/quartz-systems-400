@@ -1,0 +1,48 @@
+# DSP011 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+run: ok
+screen: 1
+   1| B8K options
+   3| Type 1 to mark, 4 to drop.
+   5| Opt Item
+   6|     ITEM1      Description 1
+   7|     ITEM2      Description 2
+   8|     ITEM3      Description 3
+   9|     ITEM4      Description 4
+  10|     ITEM5      Description 5
+  11|                                                                         Bottom
+  21| Type options
+screen: 2
+   1| B8K options
+   3| Type 1 to mark, 4 to drop.
+   5| Opt Item
+   6|     ITEM1      Marked at 1
+   7|     ITEM2      Description 2
+   8|     ITEM3      Dropped at 3
+   9|     ITEM4      Description 4
+  10|     ITEM5      Description 5
+  11|                                                                         Bottom
+  21| 2 changed
+screen: 3
+   1| B8K options
+   3| Type 1 to mark, 4 to drop.
+   5| Opt Item
+   6|     ITEM1      Marked at 1
+   7|     ITEM2      Marked at 2
+   8|     ITEM3      Dropped at 3
+   9|     ITEM4      Description 4
+  10|     ITEM5      Description 5
+  11|                                                                         Bottom
+  21| 1 changed
+screen: 4
+   1| B8K options
+   3| Type 1 to mark, 4 to drop.
+   5| Opt Item
+   6|     ITEM1      Marked at 1
+   7|     ITEM2      Marked at 2
+   8|     ITEM3      Dropped at 3
+   9|     ITEM4      Description 4
+  10|     ITEM5      Description 5
+  11|                                                                         Bottom
+  21| 0 changed

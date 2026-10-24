@@ -786,7 +786,7 @@ impl Suite {
         }
         let shown = s.command("dspsplf KITPRT JOB(QSVCJOB) SPLNBR(*LAST)", CMD)?;
         for want in [
-            "Kit_report                             Page    1",
+            "Kit_report                             Page 0001",
             "    ACME            1,234.50  *",
             "    ZENITH              7.50-",
             "    End of report",

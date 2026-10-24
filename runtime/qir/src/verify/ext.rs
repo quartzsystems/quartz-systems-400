@@ -490,6 +490,7 @@ fn pointer(cx: &Cx, pt: &PtrInst) -> Result<(), String> {
     }
 }
 
+#[allow(clippy::too_many_lines)] // one arm per instruction
 fn io_inst(cx: &Cx, io: &IoInst) -> Result<(), String> {
     let file = |ix: u32| {
         cx.m.files
@@ -498,10 +499,7 @@ fn io_inst(cx: &Cx, io: &IoInst) -> Result<(), String> {
     };
     match io {
         IoInst::DbOpen { file: f, infds, .. } => {
-            let fr = file(*f)?;
-            if fr.dev == FileDev::Display {
-                return Err(format!("{} is a display file", fr.name));
-            }
+            file(*f)?;
             if let Some(ds) = infds {
                 let t = place_type(cx.m, cx.p, ds)?;
                 if t.class() != TypeClass::Aggregate && t.class() != TypeClass::Char {
@@ -513,8 +511,8 @@ fn io_inst(cx: &Cx, io: &IoInst) -> Result<(), String> {
         IoInst::DbClose { file: f, .. } => file(*f).map(|_| ()),
         IoInst::DbFb { file: f, .. } => {
             let fr = file(*f)?;
-            if fr.dev != FileDev::Db {
-                return Err(format!("{} is not a database file", fr.name));
+            if fr.dev == FileDev::Printer {
+                return Err(format!("{} is a printer file", fr.name));
             }
             Ok(())
         }
@@ -563,12 +561,24 @@ fn io_inst(cx: &Cx, io: &IoInst) -> Result<(), String> {
             Ok(())
         }
         IoInst::DevIo {
-            file: f, op, rec, ctl, ..
+            file: f,
+            op,
+            rec,
+            ctl,
+            rrn,
+            inds,
+            ..
         } => {
             if let Some(c) = ctl {
                 for o in c.iter() {
                     cx.int(o)?;
                 }
+            }
+            if let Some(n) = rrn {
+                cx.int(n)?;
+            }
+            if let Some(p) = inds {
+                place_type(cx.m, cx.p, p)?;
             }
             let fr = file(*f)?;
             if fr.dev == FileDev::Db {

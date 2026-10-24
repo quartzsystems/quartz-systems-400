@@ -1,0 +1,17 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'Exit')
+     A                                      REF(CUSTF)
+     A          R CSFL                      SFL
+     A            CUSNO     R        O  5  2
+     A            NAME      R        O  5 10
+     A            CITY      R        O  5 32
+     A          R CCTL                      SFLCTL(CSFL)
+     A                                      SFLSIZ(0050)
+     A                                      SFLPAG(0006)
+     A                                      OVERLAY
+     A  31                                  SFLDSP
+     A                                      SFLDSPCTL
+     A  33                                  SFLCLR
+     A  34                                  SFLEND(*MORE)
+     A                                  1  2'B8S customers'
+     A            TOTAL          5Y 0O  2  2EDTCDE(Z)

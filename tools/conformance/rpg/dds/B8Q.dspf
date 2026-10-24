@@ -1,0 +1,10 @@
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'Exit')
+     A          R BACK
+     A                                  1  2'B8Q background'
+     A            BTXT          30A  O  3  2
+     A          R WIN1                      WINDOW(5 10 6 40)
+     A                                      CA12(12)
+     A                                  1  2'In a window'
+     A                                  3  2'Code:'
+     A            WCODE          4A  B  3  9

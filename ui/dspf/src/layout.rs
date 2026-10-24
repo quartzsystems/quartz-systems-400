@@ -5,9 +5,10 @@
 //! The buffers a program exchanges with a record format. The output
 //! buffer holds the fields with usage O, B, H, M and P in source order,
 //! the input buffer those with I, B and H; without `INDARA` each starts
-//! with one byte per indicator the format uses, ascending (option
-//! indicators in the output buffer, response indicators in the input
-//! buffer). Bytes follow the external type as the database lays its
+//! with one byte per indicator the format uses, in the order they
+//! first appear, file-level keys first (option indicators in the output
+//! buffer, response indicators in the input buffer); a subfile record's
+//! input buffer holds its output fields too. Bytes follow the external type as the database lays its
 //! records out. The format level identifier is the database's, over
 //! the named fields in source order.
 
@@ -37,19 +38,24 @@ pub fn lay_out(rec: &mut Record, indara: bool, file_responses: &[u8]) {
         }
         response.extend(f.responses.iter().map(|r| r.0));
     }
-    option.sort_unstable();
-    option.dedup();
-    response.sort_unstable();
-    response.dedup();
+    // Each indicator once, where it first appears: file-level keys,
+    // then the record's.
+    first_seen(&mut option);
+    first_seen(&mut response);
     let output = buffer(
         &rec.fields,
         if indara { &[] } else { &option },
         Field::in_output,
     );
+    // A subfile record reads back its output fields too (CHAIN, READC).
     let input = buffer(
         &rec.fields,
         if indara { &[] } else { &response },
-        Field::in_input,
+        if rec.kind == crate::model::RecordKind::Subfile {
+            in_subfile_input
+        } else {
+            Field::in_input
+        },
     );
     rec.layout = RecordLayout {
         output,
@@ -58,6 +64,18 @@ pub fn lay_out(rec: &mut Record, indara: bool, file_responses: &[u8]) {
         response_inds: response,
         level_id: level_id(&rec.fields),
     };
+}
+
+/// Keep each value's first appearance.
+fn first_seen(v: &mut Vec<u8>) {
+    let mut seen = [false; 256];
+    v.retain(|n| !std::mem::replace(&mut seen[usize::from(*n)], true));
+}
+
+/// A subfile record's field in its input buffer: every one with bytes
+/// in either buffer.
+fn in_subfile_input(f: &Field) -> bool {
+    f.in_input() || f.in_output() && !matches!(f.usage, crate::model::Usage::Message | crate::model::Usage::Program)
 }
 
 fn buffer(fields: &[Field], indicators: &[u8], keep: fn(&Field) -> bool) -> Buffer {
@@ -147,7 +165,8 @@ mod tests {
         lay_out(&mut r, false, &[12]);
         let l = &r.layout;
         assert_eq!(l.option_inds, [31, 50]);
-        assert_eq!(l.response_inds, [3, 12, 44]);
+        // File-level keys' indicators come first.
+        assert_eq!(l.response_inds, [12, 3, 44]);
         // Output: 2 indicator bytes, NAME 20, AMT 4, KEY 4, CNT 4.
         assert_eq!(l.output.indicators, [31, 50]);
         let offs: Vec<(usize, u32, u32)> = l

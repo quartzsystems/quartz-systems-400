@@ -74,6 +74,10 @@ pub struct ScreenModel {
     reading: bool,
     /// Sound the alarm at the next render.
     alarm: bool,
+    /// The command key switches the start of header carries: a bit on
+    /// for each function key that returns no data (F24-F17, F16-F9,
+    /// F8-F1).
+    key_switches: [u8; 3],
 }
 
 /// What the model sends: the stream and the record's operation code.
@@ -99,6 +103,21 @@ impl ScreenModel {
             known: None,
             reading: false,
             alarm: false,
+            key_switches: [0; 3],
+        }
+    }
+
+    /// The function keys that return no field data (command attention
+    /// keys): a changed set goes out with the next full render.
+    pub fn set_no_data_keys(&mut self, keys: &[u8]) {
+        let mut sw = [0u8; 3];
+        for &n in keys.iter().filter(|n| (1..=24).contains(*n)) {
+            let i = usize::from(2 - (n - 1) / 8);
+            sw[i] |= 1 << ((n - 1) % 8);
+        }
+        if sw != self.key_switches {
+            self.key_switches = sw;
+            self.known = None;
         }
     }
 
@@ -394,7 +413,8 @@ impl ScreenModel {
         b.wtd(cc1, cc2);
         if full {
             let err = self.error_row as u8;
-            b.soh(&[0, 0, 0, err, 0, 0, 0]);
+            let k = self.key_switches;
+            b.soh(&[0, 0, 0, err, k[0], k[1], k[2]]);
         }
         for r in changed {
             self.render_row(&mut b, r);
@@ -483,6 +503,17 @@ impl ScreenModel {
             self.cells[s..s + f.len].copy_from_slice(&v);
             if let Some(k) = self.known.as_mut() {
                 k[s..s + f.len].copy_from_slice(&v);
+            }
+        }
+        if inb.fields.is_empty()
+            && let Some(k) = self.known.as_mut()
+        {
+            // A key that brings no data (a command attention key) may
+            // leave typed text the model never saw: those rows go out
+            // again with the next render.
+            for f in self.fields.iter().filter(|f| !f.ffw.bypass) {
+                let s = f.start(cols);
+                k[s..s + f.len].fill(0xFF);
             }
         }
         self.cursor = None;

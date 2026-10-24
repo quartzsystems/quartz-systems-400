@@ -1,0 +1,14 @@
+# DSP001 V7R5M0 pub400.com
+# captured 2026-10-23 by rpg-oracle
+created: yes
+run: ok
+screen: 1
+   1| B8A first screen
+   3| Name:
+   4| Count:
+   6| Type a name
+screen: 2
+   1| B8A first screen
+   3| Name:   ALICE
+   4| Count:     42
+   6| Hello ALICE 84

@@ -18,6 +18,7 @@
 
 #![allow(clippy::many_single_char_names)]
 
+mod display;
 mod session;
 
 use std::fmt::Write as _;

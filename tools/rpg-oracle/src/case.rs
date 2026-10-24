@@ -17,9 +17,10 @@
 //!   their own names.
 //! - `cleanup:` a command run after the call (several allowed): the
 //!   objects the setup made.
-//! - `dds: NAME` a physical or logical file created from the DDS in
-//!   `rpg/dds/NAME.pf` or `NAME.lf` (beside the batch folders) before
-//!   the compile, in the work library, and deleted after the run.
+//! - `dds: NAME` a physical, logical, display or printer file created
+//!   from the DDS in `rpg/dds/NAME.pf`, `.lf`, `.dspf` or `.prtf` (beside the
+//!   batch folders) before the compile, in the work library, and
+//!   deleted after the run.
 //! - `sql: STATEMENT` an SQL statement run before the compile, after
 //!   the files above it (`{lib}` is the work library): `CREATE TABLE
 //!   {lib}.T (...)` (character columns `CCSID 37`), `INSERT INTO
@@ -27,6 +28,14 @@
 //! - `sqlfile: NAME` the statements of `rpg/dds/NAME.sql`, each as a
 //!   `sql:` step (cut at semicolons).
 //! - `target:` `pub400`, the only system with a compiler.
+//! - `keys:` the operator's answer to one screen (several, in order):
+//!   `R,C=TEXT` types `TEXT` (quoted with `'` when it holds blanks)
+//!   into the field at row `R`, column `C` and presses Field Exit
+//!   (`R,C:TEXT` types without it),
+//!   `@R,C` puts the cursor there, and the last word is the key
+//!   (`enter`, `f1`-`f24`, `pgdn`, `pgup`, `help`). A member with
+//!   `keys:` is called at a display (`rpg-oracle` signs on through the
+//!   5250 driver) and every screen it reads is kept in the outcome.
 //!
 //! `dds:` and `sql:` steps run in order, the same on the oracle and in
 //! the kit, so both sides hold the same files and records.
@@ -56,17 +65,56 @@ pub struct Case {
     pub with_names: Vec<String>,
     /// Database files and SQL statements, in order.
     pub db: Vec<DbStep>,
+    /// The operator's answers, one per screen read.
+    pub keys: Vec<String>,
+}
+
+/// What a DDS source describes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DdsKind {
+    /// A physical file (`.pf`).
+    Pf,
+    /// A logical file (`.lf`).
+    Lf,
+    /// A display file (`.dspf`).
+    Dspf,
+    /// A printer file (`.prtf`).
+    Prtf,
+}
+
+impl DdsKind {
+    /// The source file's extension.
+    #[must_use]
+    pub fn ext(self) -> &'static str {
+        match self {
+            Self::Pf => "pf",
+            Self::Lf => "lf",
+            Self::Dspf => "dspf",
+            Self::Prtf => "prtf",
+        }
+    }
+
+    /// The command that creates the file.
+    #[must_use]
+    pub fn command(self) -> &'static str {
+        match self {
+            Self::Pf => "CRTPF",
+            Self::Lf => "CRTLF",
+            Self::Dspf => "CRTDSPF",
+            Self::Prtf => "CRTPRTF",
+        }
+    }
 }
 
 /// One database setup step of a member.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DbStep {
-    /// A file from DDS: its name, whether it is logical, the source.
+    /// A file from DDS: its name, what it is, the source.
     Dds {
         /// The file name.
         name: String,
-        /// A logical file.
-        logical: bool,
+        /// What the DDS describes.
+        kind: DdsKind,
         /// The DDS source lines.
         source: Vec<String>,
     },
@@ -155,6 +203,7 @@ impl Case {
             with: Vec::new(),
             with_names: Vec::new(),
             db: Vec::new(),
+            keys: Vec::new(),
         };
         for l in c.lines.clone() {
             let Some((key, value)) = directive(&l) else {
@@ -172,11 +221,12 @@ impl Case {
                     .extend(value.split([',', ' ']).filter(|s| !s.is_empty()).map(str::to_ascii_uppercase)),
                 "dds" => c.db.push(DbStep::Dds {
                     name: value.to_ascii_uppercase(),
-                    logical: false,
+                    kind: DdsKind::Pf,
                     source: Vec::new(),
                 }),
                 "sql" => c.db.push(DbStep::Sql(value)),
                 "sqlfile" => c.db.push(DbStep::SqlFile(value.to_ascii_uppercase())),
+                "keys" => c.keys.push(value),
                 _ => {}
             }
         }
@@ -212,12 +262,13 @@ impl Case {
         for step in std::mem::take(&mut c.db) {
             match step {
                 DbStep::Dds { name, .. } => {
-                    let pf = dir.join(format!("{name}.pf"));
-                    let lf = dir.join(format!("{name}.lf"));
-                    let (p, logical) = if pf.exists() { (pf, false) } else { (lf, true) };
-                    let t = read(&p)?;
+                    let kind = [DdsKind::Pf, DdsKind::Dspf, DdsKind::Prtf, DdsKind::Lf]
+                        .into_iter()
+                        .find(|k| dir.join(format!("{name}.{}", k.ext())).exists())
+                        .unwrap_or(DdsKind::Lf);
+                    let t = read(&dir.join(format!("{name}.{}", kind.ext())))?;
                     let source = t.lines().map(|l| l.trim_end_matches('\r').to_string()).collect();
-                    steps.push(DbStep::Dds { name, logical, source });
+                    steps.push(DbStep::Dds { name, kind, source });
                 }
                 DbStep::SqlFile(name) => {
                     let t = read(&dir.join(format!("{name}.sql")))?;

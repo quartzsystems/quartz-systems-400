@@ -802,7 +802,8 @@ mod tests {
         let m = parse(&src);
         let one = &m.records[0];
         assert_eq!(one.elements[1].pos, Some((2, 8)));
-        assert_eq!(one.elements[2].width, 6);
+        // A numeric-only field has no sign position.
+        assert_eq!(one.elements[2].width, 5);
         assert!(!one.elements[3].displayed());
         assert_eq!(m.records[1].ty, RecordType::Subfile);
         assert_eq!(m.records[2].ty, RecordType::SubfileControl);
