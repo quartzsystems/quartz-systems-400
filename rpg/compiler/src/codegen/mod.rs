@@ -16,6 +16,7 @@ pub mod bif;
 pub mod calls;
 pub mod cycle;
 pub mod debug;
+pub mod heap;
 pub mod dbio;
 pub mod dates;
 pub mod emit;

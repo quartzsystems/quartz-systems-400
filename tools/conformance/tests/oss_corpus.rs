@@ -54,7 +54,6 @@ impl Includes for ByStem {
 }
 
 #[test]
-#[ignore = "the corpus still finds compiler failures; run with --ignored"]
 fn open_source_members_compile_without_compiler_failures() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("oss/src");
     let Ok(rd) = std::fs::read_dir(&root) else {
@@ -105,6 +104,9 @@ fn open_source_members_compile_without_compiler_failures() {
                     }
                     for d in c.diags.iter().filter(|d| d.severity > 10) {
                         *ids.entry(d.msgid.to_string()).or_default() += 1;
+                        if std::env::var("QS400_OSS_DETAIL").is_ok_and(|v| v == d.msgid) {
+                            eprintln!("detail: {} {} {}:{}", d.msgid, d.args.join(" "), shown, d.at.line);
+                        }
                     }
                 }
             }

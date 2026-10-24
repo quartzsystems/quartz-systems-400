@@ -664,6 +664,8 @@ impl Gen<'_> {
                 _,
             ) => self.db_op(op, base),
             ("PLIST" | "PARM", _) => {}
+            ("ALLOC", _) => self.alloc_op(op),
+            ("DEALLOC", _) => self.dealloc_op(op),
             ("CALL", _) => self.call_op(s),
             ("COMMIT" | "ROLBK" | "DUMP", _) => {
                 self.err(ids::UNSUPPORTED, 30, op.code.clone());

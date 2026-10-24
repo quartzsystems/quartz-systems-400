@@ -377,6 +377,26 @@ M["PRC011"] = [
     "callee(n);",
 ] + p("%char(n) + ' ' + c") + ["callee(n : c);"] + p("%char(n) + ' ' + c") + ["*inlr = *on;"]
 
+# The heap: ALLOC, %ALLOC, %REALLOC, DEALLOC(N), fields based on it.
+M["PRC012"] = HEAD + [
+    "dcl-s p pointer;",
+    "dcl-s q pointer;",
+    "dcl-s buf char(10) based(p);",
+    "dcl-s wide char(20) based(p);",
+    "dcl-s n int(10) based(q);",
+    "p = %alloc(10);",
+    "buf = 'heap text';",
+    "p = %realloc(p : 20);",
+    "%subst(wide : 11 : 10) = 'more here';",
+] + p("'[' + wide + ']'") + [
+    "dealloc(n) p;",
+] + p("'null ' + %char(p = *null)") + [
+    "q = %alloc(4);",
+    "n = 1234;",
+] + p("%char(n)") + [
+    "dealloc q;",
+] + p("'kept ' + %char(q <> *null)") + ["*inlr = *on;"]
+
 for name, lines in M.items():
     with open(os.path.join(OUT, name + ".rpgle"), "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")

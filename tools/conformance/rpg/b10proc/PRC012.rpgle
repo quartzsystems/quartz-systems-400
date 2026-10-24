@@ -1,0 +1,26 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s p pointer;
+dcl-s q pointer;
+dcl-s buf char(10) based(p);
+dcl-s wide char(20) based(p);
+dcl-s n int(10) based(q);
+p = %alloc(10);
+buf = 'heap text';
+p = %realloc(p : 20);
+%subst(wide : 11 : 10) = 'more here';
+line = '[' + wide + ']';
+write QSYSPRT line;
+dealloc(n) p;
+line = 'null ' + %char(p = *null);
+write QSYSPRT line;
+q = %alloc(4);
+n = 1234;
+line = %char(n);
+write QSYSPRT line;
+dealloc q;
+line = 'kept ' + %char(q <> *null);
+write QSYSPRT line;
+*inlr = *on;

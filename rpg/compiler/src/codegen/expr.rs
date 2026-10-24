@@ -703,8 +703,10 @@ impl Gen<'_> {
             return Some(V::reg(Ty::Ind, r));
         }
         if matches!(va.ty, Ty::Ptr | Ty::ProcPtr) || matches!(vb.ty, Ty::Ptr | Ty::ProcPtr) {
-            let a = self.ptr_reg(&va);
-            let b = self.ptr_reg(&vb);
+            // *NULL takes the other side's kind of pointer.
+            let proc = va.ty == Ty::ProcPtr || vb.ty == Ty::ProcPtr;
+            let a = self.ptr_reg_of(&va, proc);
+            let b = self.ptr_reg_of(&vb, proc);
             self.b.ins(format!("{r} = cmp.{c} {a}, {b}"));
             return Some(V::reg(Ty::Ind, r));
         }
@@ -761,11 +763,18 @@ impl Gen<'_> {
 
     /// A pointer value as a register.
     pub fn ptr_reg(&mut self, v: &V) -> String {
+        self.ptr_reg_of(v, v.ty == Ty::ProcPtr)
+    }
+
+    /// A pointer operand as a register; `*NULL` as a procedure pointer
+    /// when `proc`.
+    pub fn ptr_reg_of(&mut self, v: &V, proc: bool) -> String {
         match v.kind {
             Vk::Reg => v.op.clone(),
             Vk::Lit => {
                 let r = self.b.reg();
-                self.b.ins(format!("{r} = const.ptr *NULL"));
+                let k = if proc { "procptr" } else { "ptr" };
+                self.b.ins(format!("{r} = const.{k} *NULL"));
                 r
             }
             Vk::Place => {
