@@ -1,0 +1,292 @@
+     D*begin_generated_IBM_copyright_prolog
+     D*This is an automatically generated copyright prolog.
+     D*After initializing,  DO NOT MODIFY OR MOVE
+     D*-----------------------------------------------------------------
+     D*
+     D*Product(s):
+     D*5770-SS1
+     D*
+     D*(C)Copyright IBM Corp.  2018, 2019
+     D*
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*---------------------------------------------------------------
+     D*
+     D*end_generated_IBM_copyright_prolog
+     D*** START HEADER FILE SPECIFICATIONS *******************************
+     D*
+     D*Header File Name:  qsotlsa.h
+     D*
+     D*Descriptive Name: Retrieve TLS Attributes API Definition
+     D*
+     D*Description:
+     D*
+     D*     Defines prototypes, macros, and structures to be used
+     D*     with the QsoRtvTLSA API.
+     D*
+     D*Header Files Included:
+     D*
+     D*
+     D*Macros List:
+     D*
+     D*
+     D*Structure List:
+     D*
+     D*     QsoRtvTLSA_TLSA0100_t
+     D*     QsoRtvTLSA_TLSA0200_t
+     D*
+     D*Function Prototype List:
+     D*
+     D*     QsoRtvTLSA
+     D*
+     D*Change Activity:
+     D*
+     D*CFD List:
+     D*
+     D*FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION
+     D*---- ------------ ----- ------- -------- ----------------------
+     D*$A0= Dxxxxxxxx    7D40  171116  ROCH     New include.
+     D*$A1= Dxxxxxxxx    7D40  190523  ROCH     Format updates.
+     D*$A2= DFWxxxxxx    7D40  190523  ROCH     Add format TLSA0200.
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity:
+     D*
+     D*End Change Activity
+     D*
+     D*** END HEADER FILE SPECIFICATIONS *********************************
+     D********************************************************************
+     D*Structures
+     D********************************************************************
+     D********************************************************************
+     D*Type definition for the TLSA0100 format of the receiver variable.
+     D********************************************************************
+     D*                                                         @A1C
+     DQSOA0100         DS
+     D*                                             QsoRtvTLSA TLSA0100
+     D QSOSPL                  1     20U 0 DIM(00010)
+     D*                                          Supported protocols
+     D QSOSPC                 21     24U 0
+     D*                                Number of supported protocols
+     D QSOEDPL                25     44U 0 DIM(00010)
+     D*                                              Elig def protos
+     D QSOEDPC                45     48U 0
+     D*                                       Number elig def protos
+     D QSODPL                 49     68U 0 DIM(00010)
+     D*                                            Default protocols
+     D QSODPC                 69     72U 0
+     D*                                  Number of default protocols
+     D QSOSCL                 73    200U 0 DIM(00064)
+     D*                                      Supported cipher suites
+     D QSOSCC                201    204U 0
+     D*                            Number of supported cipher suites
+     D QSOEDCL               205    332U 0 DIM(00064)
+     D*                                             Elig def ciphers
+     D QSOEDCC               333    336U 0
+     D*                                      Number elig def ciphers
+     D QSODCL                337    464U 0 DIM(00064)
+     D*                                        Default cipher suites
+     D QSODCC                465    468U 0
+     D*                              Number of default cipher suites
+     D QSOSSAL               469    532U 0 DIM(00032)
+     D*                                       Supported sig alg list
+     D QSOSSAC               533    536U 0
+     D*                                 Number of supported sig algs
+     D QSODSAL               537    600U 0 DIM(00032)
+     D*                                         Default sig alg list
+     D QSODSAC               601    604U 0
+     D*                                   Number of default sig algs
+     D QSOSSACL              605    668U 0 DIM(00032)
+     D*                                         Sup sig alg cert list
+     D QSOSSACC              669    672U 0
+     D*                                   Number of sup sig alg certs
+     D QSODSACL              673    736U 0 DIM(00032)
+     D*                                         Def sig alg cert list
+     D QSODSACC              737    740U 0
+     D*                               Number of default sig alg certs
+     D QSOSNCL               741    804U 0 DIM(00032)
+     D*                                        Supported named curves
+     D QSOSNCC               805    808U 0
+     D*                                 Number supported named curves
+     D QSODNCL               809    872U 0 DIM(00032)
+     D*                                          Default named curves
+     D QSODNCC               873    876U 0
+     D*                                Number of default named curves
+     D QSOMRKS               877    880U 0
+     D*                             Default minimum RSA key size
+     D QSOTRT                881    884U 0
+     D*                             TLS renegotiation without RFC5746
+     D QSOV2HSC              885    888U 0
+     D*                             SSLv2 handshake connection count
+     D QSOV3HSC              889    892U 0
+     D*                             SSLv3 handshake connection count
+     D QSO10HSC              893    896U 0
+     D*                             TLSv10 handshake connection count
+     D QSO11HSC              897    900U 0
+     D*                             TLSv11 handshake connection count
+     D QSO12HSC              901    904U 0
+     D*                             TLSv12 handshake connection count
+     D QSO13HSC              905    908U 0
+     D*                             TLSv13 handshake connection count
+     D QSOOCR                909    912U 0
+     D*                          OCSP certificate revocation check @A2A
+     D QSORSV1               913    976U 0 DIM(00016)
+     D*                             Reserved                     @A2C
+     D QSOBITS               977    980
+     D* QSOEHC                 1           BIT
+     D*                             Handshake counting enabled
+     D* QSOSSC                 1           BIT
+     D*                                Secure session caching enabled
+     D* QSO746RC               1           BIT
+     D*                             RFC5746 client required flag
+     D* QSO746RS               1           BIT
+     D*                             RFC5746 server required flag
+     D* QSO66EMC               1           BIT
+     D*                         RFC7366 client hello supported flag
+     D* QSO66EMR               1           BIT
+     D*                                RFC7366 required flag
+     D* QSO7EMSC               1           BIT
+     D*                         RFC7627 client hello supported flag
+     D* QSO7EMSR               1           BIT
+     D*                                RFC7627 required flag
+     D* QSOMCM                 1           BIT
+     D*                                 Middlebox compatibility mode
+     D* QSONTS                 1           BIT
+     D*                                Audit secure telnet handshakes
+     D* QSORSV2               22           BITS
+     D*                             Reserved
+     D QSOPAD                981    992
+     D*                             Padding (ignored)
+     D********************************************************************
+     D*Type definition for the TLSA0200 format of the receiver variable.
+     D********************************************************************
+     D*                                                         @A2A
+     DQSOA0200         DS
+     D*                                             QsoRtvTLSA TLSA0200
+     D QSOEHC01                1      4U 0
+     D*                             Handshake counting enabled
+     D QSOV2HSC01              5      8U 0
+     D*                             SSLv2 handshake connection count
+     D QSOV3HSC01              9     12U 0
+     D*                             SSLv3 handshake connection count
+     D QSO10HSC01             13     16U 0
+     D*                             TLSv10 handshake connection count
+     D QSO11HSC01             17     20U 0
+     D*                             TLSv11 handshake connection count
+     D QSO12HSC01             21     24U 0
+     D*                             TLSv12 handshake connection count
+     D QSO13HSC01             25     28U 0
+     D*                             TLSv13 handshake connection count
+     D QSORSV101              29     48U 0 DIM(00005)
+     D*                             Reserved
+     D*                      Cipher suite handshake connection counts
+     D QSOS256C09             49     52U 0
+     D*                                           *AES_128_GCM_SHA256
+     D QSOS384C05             53     56U 0
+     D*                                           *AES_256_GCM_SHA384
+     D QSO1305C               57     60U 0
+     D*                                     *CHACHA20_POLY1305_SHA256
+     D QSOS256C10             61     64U 0
+     D*                                             ecdheEcdsaAes128GcmSha256Cnt
+     D*                          *ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+     D QSOS384C06             65     68U 0
+     D*                                             ecdheEcdsaAes256GcmSha384Cnt
+     D*                          *ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+     D QSO1305C00             69     72U 0
+     D*                                             ecdheEcdsaChaCha20P1305Cnt
+     D*                    *ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
+     D QSOS256C11             73     76U 0
+     D*                                             ecdheRsaAes128GcmSha256Cnt
+     D*                            *ECDHE_RSA_WITH_AES_128_GCM_SHA256
+     D QSOS384C07             77     80U 0
+     D*                                             ecdheRsaAes256GcmSha384Cnt
+     D*                            *ECDHE_RSA_WITH_AES_256_GCM_SHA384
+     D QSO1305C01             81     84U 0
+     D*                                             ecdheRsaChaCha20P1305Cnt
+     D*                      *ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+     D QSOS256C12             85     88U 0
+     D*                                             rsaAes128GcmSha256Cnt
+     D*                                  *RSA_WITH_AES_128_GCM_SHA256
+     D QSOS384C08             89     92U 0
+     D*                                             rsaAes256GcmSha384Cnt
+     D*                                  *RSA_WITH_AES_256_GCM_SHA384
+     D QSOS256C13             93     96U 0
+     D*                                             ecdheEcdsaAes128CbcSha256Cnt
+     D*                          *ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
+     D QSOS384C09             97    100U 0
+     D*                                             ecdheEcdsaAes256CbcSha384Cnt
+     D*                          *ECDHE_ECDSA_WITH_AES_256_CBC_SHA384
+     D QSOS256C14            101    104U 0
+     D*                                             ecdheRsaAes128CbcSha256Cnt
+     D*                            *ECDHE_RSA_WITH_AES_128_CBC_SHA256
+     D QSOS384C10            105    108U 0
+     D*                                             ecdheRsaAes256CbcSha384Cnt
+     D*                            *ECDHE_RSA_WITH_AES_256_CBC_SHA384
+     D QSOS256C15            109    112U 0
+     D*                                             rsaAes128CbcSha256Cnt
+     D*                                  *RSA_WITH_AES_128_CBC_SHA256
+     D QSO28CSC00            113    116U 0
+     D*                                     *RSA_WITH_AES_128_CBC_SHA
+     D QSOS256C16            117    120U 0
+     D*                                             rsaAes256CbcSha256Cnt
+     D*                                  *RSA_WITH_AES_256_CBC_SHA256
+     D QSO56CSC00            121    124U 0
+     D*                                     *RSA_WITH_AES_256_CBC_SHA
+     D QSODECSC02            125    128U 0
+     D*                                             ecdheEcdsa3DesEdeCbcShaCnt
+     D*                            *ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA
+     D QSODECSC03            129    132U 0
+     D*                                             ecdheRsa3DesEdeCbcShaCnt
+     D*                              *ECDHE_RSA_WITH_3DES_EDE_CBC_SHA
+     D QSODECSC04            133    136U 0
+     D*                                    *RSA_WITH_3DES_EDE_CBC_SHA
+     D QSO128SC02            137    140U 0
+     D*                                             ecdheEcdsaRc4128ShaCnt
+     D*                                 *ECDHE_ECDSA_WITH_RC4_128_SHA
+     D QSO128SC03            141    144U 0
+     D*                                   *ECDHE_RSA_WITH_RC4_128_SHA
+     D QSO128SC04            145    148U 0
+     D*                                         *RSA_WITH_RC4_128_SHA
+     D QSO28M5C01            149    152U 0
+     D*                                         *RSA_WITH_RC4_128_MD5
+     D QSORDCSC              153    156U 0
+     D*                                         *RSA_WITH_DES_CBC_SHA
+     D QSO40M5C01            157    160U 0
+     D*                                   *RSA_EXPORT_WITH_RC4_40_MD5
+     D QSO40M5C02            161    164U 0
+     D*                                             rsaExportRc2Cbc40Md5Cnt
+     D*                               *RSA_EXPORT_WITH_RC2_CBC_40_MD5
+     D QSOEENSC              165    168U 0
+     D*                                    *ECDHE_ECDSA_WITH_NULL_SHA
+     D QSOERNSC              169    172U 0
+     D*                                      *ECDHE_RSA_WITH_NULL_SHA
+     D QSOS256C17            173    176U 0
+     D*                                         *RSA_WITH_NULL_SHA256
+     D QSORNSC               177    180U 0
+     D*                                            *RSA_WITH_NULL_SHA
+     D QSORNM5C              181    184U 0
+     D*                                            *RSA_WITH_NULL_MD5
+     D QSOECM5C00            185    188U 0
+     D*                                    *RSA_WITH_3DES_EDE_CBC_MD5
+     D QSODCM5C00            189    192U 0
+     D*                                         *RSA_WITH_DES_CBC_MD5
+     D QSO28M5C02            193    196U 0
+     D*                                     *RSA_WITH_RC2_CBC_128_MD5
+     D QSORSV201             197    304U 0 DIM(00027)
+     D*                             Reserved
+     D********************************************************************
+     D*Function prototypes
+     D********************************************************************
+     D********************************************************************
+     D*Macros for returned attribute values from QsoRtvTLSA
+     D********************************************************************
+     D*The following TLS/SSL protocol values may be returned
+     D*The following TLS cipher suite values may be returned
+     D*The following TLS signature algorithm values may be returned
+     D*The following TLS elliptical curve named curve values may be returned

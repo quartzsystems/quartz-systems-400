@@ -1,0 +1,104 @@
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name:  netinet/udp.h                                  */
+/*                                                                   */
+/* Descriptive Name: UDP header                                      */
+/*                                                                   */
+/*                                                                   */
+/* 5763-SS1, 5716-SS1                                                */
+/* (C) Copyright IBM Corp. 1993, 1995                                */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/* Copyright (c) 1982, 1986 Regents of the University of California. */
+/* All rights reserved.  The Berkeley software License Agreement     */
+/* specifies the terms and conditions for redistribution.            */
+/*                                                                   */
+/*                                                                   */
+/* Description:                                                      */
+/*                                                                   */
+/*          Defines macros, variables, and structures to             */
+/*          be used with the UDP protocol.                           */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*                                                                   */
+/*          sys/types.h                                              */
+/*                                                                   */
+/* Macros List:                                                      */
+/*                                                                   */
+/*          None                                                     */
+/*                                                                   */
+/* Structure List:                                                   */
+/*                                                                   */
+/*          udphdr                                                   */
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*                                                                   */
+/*          None                                                     */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/*   CFD List:                                                       */
+/*                                                                   */
+/*   FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION     */
+/*   ---- ------------ ----- ------- -------- ---------------------- */
+/*   $A0= D3188200     3D10  930806  ROCH     New include.           */
+/*                                                                   */
+/*   End CFD List.                                                   */
+/*                                                                   */
+/*   Additional notes about the Change Activity:                     */
+/*                                                                   */
+/* End Change Activity                                               */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __udp_h
+  #define __udp_h
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+/*********************************************************************/
+/* Header files                                                      */
+/*********************************************************************/
+
+#include <sys/types.h>                /* common typedefs             */
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+struct udphdr {                       /* UDP header                  */
+
+    u_short     uh_sport;             /* source port                 */
+    u_short     uh_dport;             /* destination port            */
+    short       uh_ulen;              /* UDP length                  */
+    u_short     uh_sum;               /* UDP checksum                */
+
+};
+
+
+#endif /* #ifndef __udp_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

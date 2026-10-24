@@ -1,0 +1,862 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5763-SS1                                                      */
+/*     5716-SS1                                                      */
+/*     5769-SS1                                                      */
+/*     5722-SS1                                                      */
+/*     5761-SS1                                                      */
+/*     5770-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  1993, 2011                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name:  netinet/in.h                                   */
+/*                                                                   */
+/* Descriptive Name: Define the AF_INET sockets domain               */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/* Copyright (c) 1982, 1986 Regents of the University of California. */
+/* All rights reserved.  The Berkeley software License Agreement     */
+/* specifies the terms and conditions for redistribution.            */
+/*                                                                   */
+/*                                                                   */
+/* Description:                                                      */
+/*                                                                   */
+/*          Defines macros, variables, and structures to be          */
+/*          used with Internet domain sockets.                       */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*                                                                   */
+/*          sys/types.h                                              */
+/*          inttypes.h                                           @A4A*/
+/*                                                                   */
+/* Macros List:                                                      */
+/*                                                                   */
+/*          IPPROTO_EGP                                              */
+/*          IPPROTO_GGP                                              */
+/*          IPPROTO_ICMP                                             */
+/*          IPPROTO_IP                                               */
+/*          IPPROTO_MAX                                              */
+/*          IPPROTO_PUP                                              */
+/*          IPPROTO_RAW                                              */
+/*          IPPROTO_TCP                                              */
+/*          IPPROTO_UDP                                              */
+/*                                                                   */
+/*          IPPROTO_HOPOPTS                                      @A5A*/
+/*          IPPROTO_IPV6                                         @A5A*/
+/*          IPPROTO_ROUTING                                      @A5A*/
+/*          IPPROTO_FRAGMENT                                     @A5A*/
+/*          IPPROTO_ESP                                          @A5A*/
+/*          IPPROTO_AH                                           @A5A*/
+/*          IPPROTO_ICMPV6                                       @A5A*/
+/*          IPPROTO_NONE                                         @A5A*/
+/*          IPPROTO_DSTOPTS                                      @A5A*/
+/*                                                                   */
+/*          IP_OPTIONS                                               */
+/*          IP_TOS                                                   */
+/*          IP_TTL                                                   */
+/*                                                                   */
+/*          IP_MULTICAST_IF                                      @A2A*/
+/*          IP_MULTICAST_TTL                                     @A2A*/
+/*          IP_MULTICAST_LOOP                                    @A2A*/
+/*          IP_ADD_MEMBERSHIP                                    @A2A*/
+/*          IP_BLOCK_SOURCE                                      @A7A*/
+/*          IP_UNBLOCK_SOURCE                                    @A7A*/
+/*          IP_ADD_SOURCE_MEMBERSHIP                             @A7A*/
+/*          IP_DROP_SOURCE_MEMBERSHIP                            @A7A*/
+/*          IP_DROP_MEMBERSHIP                                   @A2A*/
+/*                                                                   */
+/*          MCAST_JOIN_GROUP                                     @A7A*/
+/*          MCAST_BLOCK_SOURCE                                   @A7A*/
+/*          MCAST_UNBLOCK_SOURCE                                 @A7A*/
+/*          MCAST_LEAVE_GROUP                                    @A7A*/
+/*          MCAST_JOIN_SOURCE_GROUP                              @A7A*/
+/*          MCAST_LEAVE_SOURCE_GROUP                             @A7A*/
+/*          MCAST_EXCLUDE                                        @A7A*/
+/*          MCAST_INCLUDE                                        @A7A*/
+/*                                                                   */
+/*          IP_RECVPKTINFO                                       @A8A*/
+/*          IP_PKTINFO                                           @A8A*/
+/*          IP_RECVLCLIFADDR                                     @A3A*/
+/*                                                                   */
+/*          IP_DEFAULT_MULTICAST_TTL                             @A2A*/
+/*          IP_DEFAULT_MULTICAST_LOOP                            @A2A*/
+/*          IP_MAX_MEMBERSHIPS                                   @A2A*/
+/*                                                                   */
+/*          IPV6_V6ONLY                                          @A5A*/
+/*          IPV6_RECVHOPLIMIT                                    @A5A*/
+/*          IPV6_HOPLIMIT                                        @A5A*/
+/*          IPV6_UNICAST_HOPS                                    @A5A*/
+/*          IPV6_MULTICAST_HOPS                                  @A5A*/
+/*          IPV6_MULTICAST_IF                                    @A5A*/
+/*          IPV6_MULTICAST_LOOP                                  @A5A*/
+/*          IPV6_JOIN_GROUP                                      @A5A*/
+/*          IPV6_LEAVE_GROUP                                     @A5A*/
+/*          IPV6_CHECKSUM                                        @A5A*/
+/*          IPV6_DONTFRAG                                        @A6A*/
+/*          IPV6_RECVDSTOPTS                                     @A7A*/
+/*          IPV6_DSTOPTS                                         @A7A*/
+/*          IPV6_RECVHOPOPTS                                     @A7A*/
+/*          IPV6_HOPOPTS                                         @A7A*/
+/*          IPV6_NEXTHOP                                         @A7A*/
+/*          IPV6_RECVPKTINFO                                     @A7A*/
+/*          IPV6_PKTINFO                                         @A7A*/
+/*          IPV6_RECVPATHMTU                                     @A7A*/
+/*          IPV6_PATHMTU                                         @A7A*/
+/*          IPV6_USE_MIN_MTU                                     @A7A*/
+/*          IPV6_RECVRTHDR                                       @A7A*/
+/*          IPV6_RTHDR                                           @A7A*/
+/*          IPV6_RTHDRDSTOPTS                                    @A7A*/
+/*          IPV6_RECVTCLASS                                      @A7A*/
+/*          IPV6_TCLASS                                          @A7A*/
+/*          IPV6_PREFER_TEMPADDR                                 @A7A*/
+/*          IPV6_ADDR_PREFERENCES                                @A8A*/
+/*          IPV6_PREFER_SRC_HOME                                 @A8A*/
+/*          IPV6_PREFER_SRC_COA                                  @A8A*/
+/*          IPV6_PREFER_SRC_TMP                                  @A8A*/
+/*          IPV6_PREFER_SRC_PUBLIC                               @A8A*/
+/*          IPV6_PREFER_SRC_CGA                                  @A8A*/
+/*          IPV6_PREFER_SRC_NONCGA                               @A8A*/
+/*          IPV6_PREFER_SRC_MASK                                 @A8A*/
+/*                                                                   */
+/*          IPV6_RTHDR_TYPE_0                                    @A7A*/
+/*                                                                   */
+/*          ICMP6_FILTER                                         @A5A*/
+/*                                                                   */
+/*          INET_ADDRSTRLEN                                      @A5A*/
+/*          INET6_ADDRSTRLEN                                     @A5A*/
+/*          SIN6_LEN                                             @A5A*/
+/*                                                                   */
+/*          INADDR_ANY                                               */
+/*          INADDR_BROADCAST                                         */
+/*          INADDR_LOOPBACK                                          */
+/*          INADDR_NONE                                              */
+/*          IN6ADDR_ANY_INIT                                     @A5A*/
+/*          IN6ADDR_LOOPBACK_INIT                                @A5A*/
+/*                                                                   */
+/*          INADDR_UNSPEC_GROUP                                  @A2A*/
+/*          INADDR_ALLHOSTS_GROUP                                @A2A*/
+/*          INADDR_MAX_LOCAL_GROUP                               @A2A*/
+/*                                                                   */
+/*          IPPORT_RESERVED                                          */
+/*                                                                   */
+/*          htonl                                                    */
+/*          htons                                                    */
+/*          ntohl                                                    */
+/*          ntohs                                                    */
+/*                                                                   */
+/*          IN_CLASSA                                                */
+/*          IN_CLASSA_NET                                            */
+/*          IN_CLASSA_NSHIFT                                         */
+/*          IN_CLASSA_HOST                                           */
+/*          IN_CLASSA_MAX                                            */
+/*                                                                   */
+/*          IN_CLASSB                                                */
+/*          IN_CLASSB_NET                                            */
+/*          IN_CLASSB_NSHIFT                                         */
+/*          IN_CLASSB_HOST                                           */
+/*          IN_CLASSB_MAX                                            */
+/*                                                                   */
+/*          IN_CLASSC                                                */
+/*          IN_CLASSC_NET                                            */
+/*          IN_CLASSC_NSHIFT                                         */
+/*          IN_CLASSC_HOST                                           */
+/*                                                                   */
+/*          IN_CLASSD                                            @A2A*/
+/*          IN_MULTICAST                                         @A2A*/
+/*                                                                   */
+/*          IN6_IS_ADDR_UNSPECIFIED                              @A5A*/
+/*          IN6_IS_ADDR_LOOPBACK                                 @A5A*/
+/*          IN6_IS_ADDR_MULTICAST                                @A5A*/
+/*          IN6_IS_ADDR_LINKLOCAL                                @A5A*/
+/*          IN6_IS_ADDR_SITELOCAL                                @A5A*/
+/*          IN6_IS_ADDR_V4MAPPED                                 @A5A*/
+/*          IN6_IS_ADDR_V4COMPAT                                 @A5A*/
+/*          IN6_IS_ADDR_MC_NODELOCAL                             @A5A*/
+/*          IN6_IS_ADDR_MC_LINKLOCAL                             @A5A*/
+/*          IN6_IS_ADDR_MC_SITELOCAL                             @A5A*/
+/*          IN6_IS_ADDR_MC_ORGLOCAL                              @A5A*/
+/*          IN6_IS_ADDR_MC_GLOBAL                                @A5A*/
+/*          IN6_ARE_ADDR_EQUAL                                   @A5A*/
+/*                                                                   */
+/* Typedef List:                                                     */
+/*                                                                   */
+/*          in_addr_t                                            @A4A*/
+/*          in_port_t                                            @A4A*/
+/*          sa_family_t                                          @A5A*/
+/*                                                                   */
+/* Structure List:                                                   */
+/*                                                                   */
+/*          in_addr                                                  */
+/*          ip_opts                                                  */
+/*          sockaddr_in                                              */
+/*          ip_mreq                                              @A2A*/
+/*          ip_mreq_source                                       @A7A*/
+/*          in6_addr                                             @A5A*/
+/*          sockaddr_in6                                         @A5A*/
+/*          ipv6_mreq                                            @A5A*/
+/*          in_pktinfo                                           @A8A*/
+/*          in6_pktinfo                                          @A7A*/
+/*          ip6_mtuinfo                                          @A7A*/
+/*          group_req                                            @A7A*/
+/*          group_source_req                                     @A7A*/
+/*          sockaddr_afinetx                                     @A9A*/
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*                                                                   */
+/*          inet6_opt_append                                     @A7A*/
+/*          inet6_opt_get_val                                    @A7A*/
+/*          inet6_opt_find                                       @A7A*/
+/*          inet6_opt_finish                                     @A7A*/
+/*          inet6_opt_init                                       @A7A*/
+/*          inet6_opt_next                                       @A7A*/
+/*          inet6_opt_set_val                                    @A7A*/
+/*          inet6_rth_add                                        @A7A*/
+/*          inet6_rth_getaddr                                    @A7A*/
+/*          inet6_rth_init                                       @A7A*/
+/*          inet6_rth_reverse                                    @A7A*/
+/*          inet6_rth_segments                                   @A7A*/
+/*          inet6_rth_space                                      @A7A*/
+/*          setsourcefilter                                      @A7A*/
+/*          getsourcefilter                                      @A7A*/
+/*          qso_setsourcefilter98                                @A7A*/
+/*          qso_getsourcefilter98                                @A7A*/
+/*          inet6_is_srcaddr                                     @A8A*/
+/*          bind2addrsel                                         @A8A*/
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/*   CFD List:                                                       */
+/*                                                                   */
+/*   FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION     */
+/*   ---- ------------ ----- ------- -------- ---------------------- */
+/*   $A0= D3188200     3D10  930806  ROCH     New include.           */
+/*   $A1= P3608209     3D20  951215  ROCH     Add definitions of     */
+/*                                            bits in internet       */
+/*                                            address integers.      */
+/*   $A2= D9506600     4D20  961122  ROCH     Add definitions for    */
+/*                                            IP Multicast.          */
+/*   $A3= P3640857     4D20  970303  ROCH     Add definition to      */
+/*                                            receive the local      */
+/*                                            interface address.     */
+/*   $A4= D98822.1     5D20  010401  ROCH     Update to _XOPEN_SOURCE*/
+/*   $A5= D98671.1     5D20  010521  ROCH     Add IPv6 support       */
+/*   $A6= D99259.1     5D40  040514  ROCH     Add IPV6_DONTFRAG      */
+/*   $A7= D93466.3     6D10  060601  ROCH     Add IPv6 socket options*/
+/*   $A8= D92127       7D10  080604  ROCH     Add IPv6 socket options*/
+/*   $A9= D92127.3     7D10  081020  ROCH     Add sockaddr_afinetx   */
+/*   End CFD List.                                                   */
+/*                                                                   */
+/*   Additional notes about the Change Activity:                     */
+/*                                                                   */
+/* End Change Activity                                               */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __in_h
+  #define __in_h
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+/*********************************************************************/
+/* Header files                                                      */
+/*********************************************************************/
+
+#include <sys/types.h>                /* common typedefs             */
+#include <inttypes.h>                 /* common integer typedefs @A5M*/
+#ifndef _H_SOCKET                                              /*@A7A*/
+#include <sys/socket.h>                                        /*@A7A*/
+#endif                                                         /*@A7A*/
+
+#if (__OS400_TGTVRM__>=510)                                    /*@A7A*/
+#pragma datamodel(P128)                                        /*@A7A*/
+#endif                                                         /*@A7A*/
+
+/*********************************************************************/
+/* Macros to denote protocols                                        */
+/*********************************************************************/
+
+#define IPPROTO_IP         0          /* choose default              */
+#define IPPROTO_HOPOPTS    0          /* IPv6 Hop-by-Hop options @A5A*/
+#define IPPROTO_ICMP       1          /* Internet Control Message    */
+#define IPPROTO_TCP        6          /* Transmission Control        */
+#define IPPROTO_EGP        8          /* Exterior Gateway            */
+#define IPPROTO_PUP       12          /* Parc Universal Packet       */
+#define IPPROTO_UDP       17          /* User Datagram               */
+#define IPPROTO_IPV6      41          /* IPv6                    @A5A*/
+#define IPPROTO_ROUTING   43          /* IPv6 Routing header     @A5A*/
+#define IPPROTO_FRAGMENT  44          /* IPv6 fragment header    @A5A*/
+#define IPPROTO_ESP       50          /* encaps security payload @A5A*/
+#define IPPROTO_AH        51          /* authentication header   @A5A*/
+#define IPPROTO_ICMPV6    58          /* ICMPv6                  @A5A*/
+#define IPPROTO_NONE      59          /* IPv6 no next header     @A5A*/
+#define IPPROTO_DSTOPTS   60          /* IPv6 Destination options@A5A*/
+#define IPPROTO_RAW      255          /* Raw IP                      */
+#define IPPROTO_MAX      256          /* maximum protocol            */
+
+/*********************************************************************/
+/* Macros for IP level options (via setsockopt() and getsockopt())   */
+/*********************************************************************/
+
+#define IP_OPTIONS         5          /* IP header options           */
+#define IP_TOS            10          /* IP type-of-service          */
+#define IP_TTL            15          /* IP time-to-live             */
+
+#define IP_MULTICAST_IF   20          /* Multicast interface     @A2A*/
+#define IP_MULTICAST_TTL  25          /* Multicast time-to-live  @A2A*/
+#define IP_MULTICAST_LOOP 30          /* Multicast loopback      @A2A*/
+#define IP_ADD_MEMBERSHIP 35          /* Add IP group membership @A2A*/
+#define IP_DROP_MEMBERSHIP 40         /* Drop IP group membership@A2A*/
+#define IP_DONTFRAG        55         /* IP don't fragment flag      */
+
+#define IP_BLOCK_SOURCE           65  /* Block data from a given source
+                                         to a given group        @A7A*/
+#define IP_UNBLOCK_SOURCE         70  /* Undo block source       @A7A*/
+#define IP_ADD_SOURCE_MEMBERSHIP  75  /* Join src-specific grp   @A7A*/
+#define IP_DROP_SOURCE_MEMBERSHIP 80  /* Leave src-specific grp  @A7A*/
+#define IP_RECVPKTINFO    96          /* Receive IPv4 pkt addr   @A8A*/
+#define IP_PKTINFO        97          /* IPv4 pkt addr ancillary @A8A*/
+#define IP_RECVLCLIFADDR  99          /* IP receive local interface
+                                         address                 @A3A*/
+#define IPV6_V6ONLY         100       /* Restrict to IPv6 only   @A5A*/
+#define IPV6_RECVHOPLIMIT   101       /* Receive hop limit       @A5A*/
+#define IPV6_UNICAST_HOPS   IP_TTL              /*               @A5A*/
+#define IPV6_MULTICAST_IF   IP_MULTICAST_IF     /*               @A5A*/
+#define IPV6_MULTICAST_HOPS IP_MULTICAST_TTL    /*               @A5A*/
+#define IPV6_MULTICAST_LOOP IP_MULTICAST_LOOP   /*               @A5A*/
+#define IPV6_JOIN_GROUP     IP_ADD_MEMBERSHIP   /*               @A5A*/
+#define IPV6_LEAVE_GROUP    IP_DROP_MEMBERSHIP  /*               @A5A*/
+#define IPV6_DONTFRAG       IP_DONTFRAG         /*               @A6A*/
+#define IPV6_CHECKSUM       105                 /*               @A5A*/
+#define IPV6_RECVDSTOPTS    110  /* Receive destination options  @A7A*/
+#define IPV6_HOPLIMIT       115  /* ancillary data hop limit     @A5A*/
+#define IPV6_DSTOPTS        120  /* Set/Receive dest opts post hr@A7A*/
+#define IPV6_RECVHOPOPTS    125  /* Receive hop-by-hop options   @A7A*/
+#define IPV6_HOPOPTS        130  /* Set/Receive hop-by-hop option@A7A*/
+#define IPV6_NEXTHOP        135  /* Set/Receive next hop address @A7A*/
+#define IPV6_RECVPKTINFO    140  /* Receive IP addr+interfaceindx@A7A*/
+#define IPV6_PKTINFO        145  /* Set/Receive source IP/index  @A7A*/
+
+#define ICMP6_FILTER        150                 /*               @A5A*/
+
+#define IPV6_RECVPATHMTU    155  /* Ancillary data path MTU size @A7A*/
+#define IPV6_PATHMTU        160  /* Retrieve dest path MTU size  @A7A*/
+#define IPV6_USE_MIN_MTU    165  /* Enable path MTU discovery    @A7A*/
+#define IPV6_RECVRTHDR      170  /* Receive routing header       @A7A*/
+#define IPV6_RTHDR          175  /* Set/Receive routing header   @A7A*/
+#define IPV6_RTHDRDSTOPTS   180  /* Set/Receive dest opts pre hdr@A7A*/
+#define IPV6_RECVTCLASS     185  /* Receive traffic class        @A7A*/
+#define IPV6_TCLASS         190  /* Set/Receive traffic class    @A7A*/
+#define IPV6_PREFER_TEMPADDR 195 /* Source address selection     @A7A*/
+
+/*********************************************************************/
+/* Macros defining routing header types                          @A7A*/
+/*********************************************************************/
+#define IPV6_RTHDR_TYPE_0     0  /* IPv6 routing header type 0   @A7A*/
+
+/*********************************************************************/
+/* Macros defining any-source multicast source filter            @A7A*/
+/*********************************************************************/
+#define MCAST_JOIN_GROUP          200 /* Join an any-srce group  @A7A*/
+#define MCAST_BLOCK_SOURCE        205 /* Block data from a src   @A7A*/
+#define MCAST_UNBLOCK_SOURCE      210 /* Unblock data from src   @A7A*/
+#define MCAST_LEAVE_GROUP         215 /* Leave an any-src group  @A7A*/
+#define MCAST_JOIN_SOURCE_GROUP   220 /* Join a src-specific gp  @A7A*/
+#define MCAST_LEAVE_SOURCE_GROUP  225 /* Leave src-specific gp   @A7A*/
+
+/*********************************************************************/
+/* Macros defining filter mode for multicast source filtering    @A7A*/
+/*********************************************************************/
+#define MCAST_EXCLUDE               0 /* Exclude filter mode     @A7A*/
+#define MCAST_INCLUDE               1 /* Include filter mode     @A7A*/
+
+#define IPV6_ADDR_PREFERENCES     230 /* Address selection prefs @A8A*/
+/*********************************************************************/
+/* Flags to set IPV6_ADDR_PREFERENCES for preferred source address   */
+/*********************************************************************/
+#define IPV6_PREFER_SRC_HOME   0x00000001 /* Prefer Home addr    @A8A*/
+#define IPV6_PREFER_SRC_COA    0x00000002 /* Prefer Care-of addr @A8A*/
+#define IPV6_PREFER_SRC_TMP    0x00000004 /* Prefer Temp addr    @A8A*/
+#define IPV6_PREFER_SRC_PUBLIC 0x00000008 /* Prefer Public addr  @A8A*/
+#define IPV6_PREFER_SRC_CGA    0x00000010 /* Prefer CGA addr     @A8A*/
+#define IPV6_PREFER_SRC_NONCGA 0x00000020 /* Prefer non-CGA addr @A8A*/
+#define IPV6_PREFER_SRC_MASK   0x0000003F /* Valid SAS flags mask@A8A*/
+
+/*********************************************************************/
+/* Macros for Internet address specifications                        */
+/*********************************************************************/
+
+#define INADDR_ANY        (u_long)0x00000000  /* any local address   */
+#define INADDR_BROADCAST  (u_long)0xffffffff  /* broadcast address   */
+#define INADDR_LOOPBACK   (u_long)0x7f000001  /* loopback address    */
+#define INADDR_NONE               0xffffffff  /* A "-1" returned
+                                                 from inet_addr()    */
+#define INADDR_UNSPEC_GROUP    (u_long)0xe0000000 /* 224.0.0.0   @A2A*/
+#define INADDR_ALLHOSTS_GROUP  (u_long)0xe0000001 /* 224.0.0.1   @A2A*/
+#define INADDR_MAX_LOCAL_GROUP (u_long)0xe00000ff /* 224.0.0.255 @A2A*/
+
+#define IN6ADDR_ANY_INIT      {0, 0, 0, 0}    /* any local addr  @A5A*/
+#define IN6ADDR_LOOPBACK_INIT {0, 0, 0, 1}    /* loopback addr   @A5A*/
+#define INET_ADDRSTRLEN       16              /* ip4 text len    @A5A*/
+#define INET6_ADDRSTRLEN      46              /* ip6 text len    @A5A*/
+
+/*********************************************************************/
+/* Macros for port numbers                                           */
+/*********************************************************************/
+
+#define IPPORT_RESERVED   1024        /* Provided for compatibility
+                                         only, since OS/400
+                                         restricts port access via
+                                         CFGTCP configuration        */
+
+/*********************************************************************/
+/* Macros defining multicast operation                           @A2A*/
+/*********************************************************************/
+
+#define IP_DEFAULT_MULTICAST_TTL   1  /* Limit mcasts to 1 hop   @A2A*/
+#define IP_DEFAULT_MULTICAST_LOOP  1  /* Recv sends if a member  @A2A*/
+#define IP_MAX_MEMBERSHIPS        200 /* Max per socket     @A2A @A7C*/
+
+/*********************************************************************/
+/* Macros for number representation conversions                      */
+/*********************************************************************/
+
+#define htonl(qso_htonl) (qso_htonl)  /* host byte order to long     */
+#define htons(qso_htons) (qso_htons)  /* host byte order to short    */
+#define ntohl(qso_ntohl) (qso_ntohl)  /* long to host byte order     */
+#define ntohs(qso_ntohs) (qso_ntohs)  /* short to host byte order    */
+
+/*********************************************************************/
+/* Macros for definitions of bits in internet address integers       */
+/*********************************************************************/
+
+#ifndef IN_CLASSA
+  #define IN_CLASSA(i)       (((long)(i) & 0x80000000) == 0)  /* @A1A*/
+#endif
+#ifndef IN_CLASSA_NET
+  #define IN_CLASSA_NET      0xff000000                       /* @A1A*/
+#endif
+#ifndef IN_CLASSA_NSHIFT
+  #define IN_CLASSA_NSHIFT   24                               /* @A1A*/
+#endif
+#ifndef IN_CLASSA_HOST
+  #define IN_CLASSA_HOST     0x00ffffff                       /* @A1A*/
+#endif
+#ifndef IN_CLASSA_MAX
+  #define IN_CLASSA_MAX      128                              /* @A1A*/
+#endif
+
+#ifndef IN_CLASSB
+  #define IN_CLASSB(i)       (((long)(i) & 0xc0000000) == 0x80000000)
+                                                              /* @A1A*/
+#endif
+#ifndef IN_CLASSB_NET
+  #define IN_CLASSB_NET      0xffff0000                       /* @A1A*/
+#endif
+#ifndef IN_CLASSB_NSHIFT
+  #define IN_CLASSB_NSHIFT   16                               /* @A1A*/
+#endif
+#ifndef IN_CLASSB_HOST
+  #define IN_CLASSB_HOST     0x0000ffff                       /* @A1A*/
+#endif
+#ifndef IN_CLASSB_MAX
+  #define IN_CLASSB_MAX      65536                            /* @A1A*/
+#endif
+
+#ifndef IN_CLASSC
+  #define IN_CLASSC(i)       (((long)(i) & 0xe0000000) == 0xc0000000)
+                                                              /* @A1A*/
+#endif
+#ifndef IN_CLASSC_NET
+  #define IN_CLASSC_NET      0xffffff00                       /* @A1A*/
+#endif
+#ifndef IN_CLASSC_NSHIFT
+  #define IN_CLASSC_NSHIFT   8                                /* @A1A*/
+#endif
+#ifndef IN_CLASSC_HOST
+  #define IN_CLASSC_HOST     0x000000ff                       /* @A1A*/
+#endif
+
+#ifndef IN_CLASSD
+  #define IN_CLASSD(i)       (((long)(i) & 0xf0000000) == 0xe0000000)
+                                                              /* @A2A*/
+#endif
+
+#ifndef IN_MULTICAST
+  #define IN_MULTICAST(i)    IN_CLASSD(i)                     /* @A2A*/
+                                                              /* @A2A*/
+#endif
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+#if ((_XOPEN_SOURCE+1>520) && !defined(COMPAT_43))            /* @A4A*/
+/* _XOPEN_SOURCE is defined to be >= 520 & not BSD 4.3 compatibility */
+
+#ifndef _IN_ADDR_T                                            /* @A4A*/
+  typedef int in_addr_t;                                      /* @A4A*/
+  #define _IN_ADDR_T                                          /* @A4A*/
+#endif                                                        /* @A4A*/
+
+#endif /* End changes for _XOPEN_SOURCE                          @A4A*/
+
+#ifndef _IN_PORT_T                    /* transport layer port    @A5M*/
+  typedef unsigned short in_port_t;
+  #define _IN_PORT_T
+#endif
+
+struct in_addr {                      /* internet address            */
+
+   u_long          s_addr;            /* IP address                  */
+
+};
+
+#ifndef __cplusplus
+struct ip_opts {                      /* IP options                  */
+
+   struct in_addr ip_dst;             /* first address if source
+                                         routing option exists,
+                                         zero if no source routing
+                                         option                      */
+   char    ip_opts[40];               /* IP options (variable size)  */
+
+};
+#endif
+struct in6_addr {                     /* internet address        @A5A*/
+        union {
+                uint32_t        u6_addr32[4];
+                uint16_t        u6_addr16[8];
+                uint8_t         u6_addr8[16];
+        } u6_addr;
+};
+#define s6_addr32       u6_addr.u6_addr32                     /* @A5A*/
+#define s6_addr16       u6_addr.u6_addr16                     /* @A5A*/
+#define s6_addr8        u6_addr.u6_addr8                      /* @A5A*/
+#define s6_addr         u6_addr.u6_addr8                      /* @A5A*/
+
+extern const struct in6_addr in6addr_any, in6addr_loopback;   /* @A5A*/
+
+/* Start changes for _XOPEN_SOURCE                               @A4A*/
+#if ((_XOPEN_SOURCE+1>520) && !defined(COMPAT_43))
+/* _XOPEN_SOURCE is defined to be >= 520 & not BSD 4.3 compatibility */
+
+#ifndef _SA_FAMILY_T
+  typedef uchar sa_family_t;
+  #define _SA_FAMILY_T
+#endif
+
+struct sockaddr_in {                  /* socket address (internet)   */
+
+   uint8_t         sin_len;           /* address length              */
+   sa_family_t     sin_family;        /* address family (AF_INET)    */
+   u_short         sin_port;          /* port number                 */
+   struct in_addr  sin_addr;          /* IP address                  */
+   char            sin_zero[8];       /* reserved - must be 0x00's   */
+
+};
+
+struct sockaddr_in6 {
+   uint8_t         sin6_len;       /* length of this struct      @A5A*/
+   sa_family_t     sin6_family;    /* AF_INET6                   @A5A*/
+   in_port_t       sin6_port;      /* transport layer port #     @A5A*/
+   uint32_t        sin6_flowinfo;  /* IPv6 flow information      @A5A*/
+   struct in6_addr sin6_addr;      /* IPv6 address               @A5A*/
+   uint32_t        sin6_scope_id;  /* set of scope interfaces    @A5A*/
+};
+#define SIN6_LEN                   /*                            @A5A*/
+
+#else
+/* _XOPEN_SOURCE is not defined to be >= 520 or BSD 4.3 compatibility*/
+
+#ifndef _SA_FAMILY_T
+  typedef unsigned short sa_family_t;
+  #define _SA_FAMILY_T
+#endif
+
+struct sockaddr_in {                  /* socket address (internet)   */
+
+   short           sin_family;        /* address family (AF_INET)    */
+   u_short         sin_port;          /* port number                 */
+   struct in_addr  sin_addr;          /* IP address                  */
+   char            sin_zero[8];       /* reserved - must be 0x00's   */
+
+};
+
+struct sockaddr_in6 {
+   sa_family_t     sin6_family;    /* AF_INET6                   @A5A*/
+   in_port_t       sin6_port;      /* transport layer port #     @A5A*/
+   uint32_t        sin6_flowinfo;  /* IPv6 traffic class & flow  @A5A*/
+   struct in6_addr sin6_addr;      /* IPv6 address               @A5A*/
+   uint32_t        sin6_scope_id;  /* set of scope interfaces    @A5A*/
+};
+
+#endif /* End changes for _XOPEN_SOURCE                          @A4A*/
+
+/*********************************************************************/
+/* sockaddr_afinetx structure for AF_INET and AF_INET6 addresses @A9A*/
+/*********************************************************************/
+union sockaddr_afinetx                                        /* @A9A*/
+{                                                             /* @A9A*/
+  struct sockaddr_in  sinstruct;                              /* @A9A*/
+  struct sockaddr_in6 sin6struct;                             /* @A9A*/
+};                                                            /* @A9A*/
+
+/*********************************************************************/
+/* Argument structure for IP_ADD_MEMBERSHIP and IP_DROP_MEMBERSHIP.  */
+/*                                                               @A2A*/
+/*********************************************************************/
+struct ip_mreq {                /*                               @A2A*/
+  struct in_addr imr_multiaddr; /* IP multicast address of group @A2A*/
+  struct in_addr imr_interface; /* local IP address of interface @A2A*/
+};                              /*                               @A2A*/
+
+/*********************************************************************/
+/* Argument structure for IP_BLOCK_SOURCE, IP_UNBLOCK_SOURCE,        */
+/* IP_ADD_SOURCE_MEMBERSHIP, and IP_DROP_SOURCE_MEMBERSHIP       @A7A*/
+/*********************************************************************/
+struct ip_mreq_source {         /*                               @A7A*/
+  struct in_addr imr_multiaddr; /* IP multicast address of group @A7A*/
+  struct in_addr imr_sourceaddr;/* local IP address of source    @A7A*/
+  struct in_addr imr_interface; /* local IP address of interface @A7A*/
+};                              /*                               @A7A*/
+
+/*********************************************************************/
+/* Argument structure for IPV6_JOIN_GROUP and IPV6_LEAVE_GROUP   @A5A*/
+/*********************************************************************/
+struct ipv6_mreq {                  /*                           @A5A*/
+  struct in6_addr ipv6mr_multiaddr; /* IPv6 multicast address    @A5A*/
+  unsigned int    ipv6mr_interface; /* IPv6 interface index      @A5A*/
+};                                  /*                           @A5A*/
+
+/*********************************************************************/
+/* Argument structure for IP_PKTINFO                             @A8A*/
+/*********************************************************************/
+struct in_pktinfo {
+  struct in_addr ipi_addr;       /* IPv4 destination address     @A8A*/
+  struct in_addr ipi_interface;  /* Interface which pkt was rcvd @A8A*/
+};
+
+/*********************************************************************/
+/* Argument structure for IPV6_PKTINFO                           @A7A*/
+/*********************************************************************/
+struct in6_pktinfo {
+  struct in6_addr ipi6_addr;        /* Src/dst IPv6 address      @A7A*/
+  uint32_t        ipi6_ifindex;     /* Send/recv interface index @A7A*/
+};
+
+/*********************************************************************/
+/* Argument structure for IPV6_PATHMTU                           @A7A*/
+/*********************************************************************/
+struct ip6_mtuinfo {
+  struct sockaddr_in6 ip6m_addr; /* Dst addr including zone ID   @A7A*/
+  uint32_t            ip6m_mtu;  /* Path MTU in host byte order  @A7A*/
+};
+/*********************************************************************/
+/* Argument structure for MCAST_JOIN_GROUP and MCAST_LEAVE_GROUP @A7A*/
+/*********************************************************************/
+struct group_req {                     /*                        @A7A*/
+  uint32_t                gr_interface;/* Interface index        @A7A*/
+  struct sockaddr_storage gr_group;    /* Group address          @A7A*/
+};                                     /*                        @A7A*/
+
+/*********************************************************************/
+/* Argument structure for MCAST_BLOCK_SOURCE, MCAST_UNBLOCK_SOURCE,  */
+/* MCASE_JOIN_SOURCE_GROUP and MCAST_LEAVE_SOURCE_GROUP          @A7A*/
+/*********************************************************************/
+struct group_source_req {               /*                       @A7A*/
+  uint32_t                gsr_interface;/* Interface index       @A7A*/
+  struct sockaddr_storage gsr_group;    /* Group address         @A7A*/
+  struct sockaddr_storage gsr_source;   /* Source address        @A7A*/
+};                                      /*                       @A7A*/
+
+/*********************************************************************/
+/* IPv6 address macros (see RFC 2553 & RFC 2292)                 @A5A*/
+/*********************************************************************/
+#define IS_UNSPECIFIED6(a) \
+        (((a).s6_addr32[0] == 0) &&  \
+         ((a).s6_addr32[1] == 0) &&  \
+         ((a).s6_addr32[2] == 0) &&  \
+         ((a).s6_addr32[3] == 0))
+#define IN6_IS_ADDR_UNSPECIFIED(p)      IS_UNSPECIFIED6(*p)
+
+#define IS_LOOPBACK6(a) \
+        (((a).s6_addr32[0] == 0) &&  \
+         ((a).s6_addr32[1] == 0) &&  \
+         ((a).s6_addr32[2] == 0) &&  \
+         ((a).s6_addr32[3] == 1))
+#define IN6_IS_ADDR_LOOPBACK(p)         IS_LOOPBACK6(*p)
+
+#define IS_MULTIADDR6(a) \
+      ((a).s6_addr8[0] == 0xff)
+#define IS_LOCALADDR6(a)  \
+      ((a).s6_addr8[0] == 0xfe)
+#define IS_LINKLADDR6(a) \
+        (IS_LOCALADDR6(a) && (((a).s6_addr8[1] & 0xc0) == 0x80))
+#define IS_SITELADDR6(a) \
+        (IS_LOCALADDR6(a) && (((a).s6_addr8[1] & 0xc0) == 0xc0))
+#define IN6_IS_ADDR_MULTICAST(p)        IS_MULTIADDR6(*p)
+#define IN6_IS_ADDR_LINKLOCAL(p)        IS_LINKLADDR6(*p)
+#define IN6_IS_ADDR_SITELOCAL(p)        IS_SITELADDR6(*p)
+
+#define IS_V4MAPPED6(a) \
+        (((a).s6_addr32[0] == 0) &&  \
+         ((a).s6_addr32[1] == 0) &&  \
+         ((a).s6_addr32[2] == 0x0000FFFF))
+#define IS_V4COMPAT6(a) \
+        (((a).s6_addr32[0] == 0) &&  \
+         ((a).s6_addr32[1] == 0) &&  \
+         ((a).s6_addr32[2] == 0) &&  \
+         ((a).s6_addr8[12] != 0))
+#define IN6_IS_ADDR_V4MAPPED(p)         IS_V4MAPPED6(*p)
+#define IN6_IS_ADDR_V4COMPAT(p)         IS_V4COMPAT6(*p)
+
+#define MADDR6_SCOPE(a)         ((a).s6_addr8[1] & 0x0f)
+
+#define MADDR6_SCP_NODE         0x1     /* node-local scope */
+#define MADDR6_SCP_LINK         0x2     /* link-local scope */
+#define MADDR6_SCP_SITE         0x5     /* site-local scope */
+#define MADDR6_SCP_ORG          0x8     /* organization-local scope */
+#define MADDR6_SCP_GLO          0xe     /* global scope */
+
+#define IN6_IS_ADDR_MC_NODELOCAL(p) \
+        (IS_MULTIADDR6(*p) && (MADDR6_SCOPE(*p) == MADDR6_SCP_NODE))
+#define IN6_IS_ADDR_MC_LINKLOCAL(p) \
+        (IS_MULTIADDR6(*p) && (MADDR6_SCOPE(*p) == MADDR6_SCP_LINK))
+#define IN6_IS_ADDR_MC_SITELOCAL(p) \
+        (IS_MULTIADDR6(*p) && (MADDR6_SCOPE(*p) == MADDR6_SCP_SITE))
+#define IN6_IS_ADDR_MC_ORGLOCAL(p) \
+        (IS_MULTIADDR6(*p) && (MADDR6_SCOPE(*p) == MADDR6_SCP_ORG))
+#define IN6_IS_ADDR_MC_GLOBAL(p) \
+        (IS_MULTIADDR6(*p) && (MADDR6_SCOPE(*p) == MADDR6_SCP_GLO))
+
+#define ARE_EQUAL6(a,b) \
+        (((a).s6_addr32[0] == (b).s6_addr32[0]) &&  \
+         ((a).s6_addr32[1] == (b).s6_addr32[1]) &&  \
+         ((a).s6_addr32[2] == (b).s6_addr32[2]) &&  \
+         ((a).s6_addr32[3] == (b).s6_addr32[3]))
+#define IN6_ARE_ADDR_EQUAL(pa,pb)       ARE_EQUAL6(*pa,*pb)
+
+
+/*********************************************************************/
+/* Hop-by-hop and destination options header functions(RFC 3542) @A7A*/
+/*********************************************************************/
+#if (__OS400_TGTVRM__ < 510) || \
+  ((__OS400_TGTVRM__ >= 510) && !defined(__LLP64_IFC__))      /* @A7A*/
+
+QBFC_EXTERN int inet6_opt_append(void *, socklen_t, int,
+                                 uint8_t, socklen_t, uint32_t,
+				 void **);                     /*@A7A*/
+
+QBFC_EXTERN int inet6_opt_find(void *, socklen_t, int, uint8_t,
+                               socklen_t *, void **);          /*@A7A*/
+
+QBFC_EXTERN int inet6_opt_next(void *, socklen_t, int,
+                               uint8_t *, socklen_t *,
+                               void **);                       /*@A7A*/
+
+#else
+QBFC_EXTERN int inet6_opt_append(void *__ptr64, socklen_t, int,
+                                 uint8_t, socklen_t, uint32_t,
+				 void * __ptr64 * __ptr64);    /*@A7A*/
+
+QBFC_EXTERN int inet6_opt_find(void * __ptr64, socklen_t, int, uint8_t,
+                               socklen_t * __ptr64,
+			       void * __ptr64 * __ptr64);      /*@A7A*/
+
+QBFC_EXTERN int inet6_opt_next(void * __ptr64, socklen_t, int,
+                               uint8_t * __ptr64, socklen_t * __ptr64,
+                               void * __ptr64 * __ptr64);      /*@A7A*/
+
+  #pragma map(inet6_opt_append, "inet6_opt_append_ts64")      /* @A7A*/
+  #pragma map(inet6_opt_find, "inet6_opt_find_ts64")          /* @A7A*/
+  #pragma map(inet6_opt_next, "inet6_opt_next_ts64")          /* @A7A*/
+#endif /* ... __LLP64_IFC__                                      @A7A*/
+QBFC_EXTERN int inet6_opt_get_val(void *, int, void *,         /*@A7A*/
+                                  socklen_t);                  /*@A7A*/
+QBFC_EXTERN int inet6_opt_finish(void *, socklen_t, int);      /*@A7A*/
+QBFC_EXTERN int inet6_opt_init(void *, socklen_t);             /*@A7A*/
+QBFC_EXTERN int inet6_opt_set_val(void *, int, void *,         /*@A7A*/
+                                  socklen_t);                  /*@A7A*/
+
+/*********************************************************************/
+/* Routing options header functions (RFC 3542)                   @A7A*/
+/*********************************************************************/
+QBFC_EXTERN int inet6_rth_add(void *, const struct in6_addr *);/*@A7A*/
+QBFC_EXTERN struct in6_addr *inet6_rth_getaddr(const void *,   /*@A7A*/
+                                               int);           /*@A7A*/
+QBFC_EXTERN void *inet6_rth_init(void *, socklen_t, int, int); /*@A7A*/
+QBFC_EXTERN int inet6_rth_reverse(const void *, void *);       /*@A7A*/
+QBFC_EXTERN int inet6_rth_segments(const void *);              /*@A7A*/
+QBFC_EXTERN socklen_t inet6_rth_space(int, int);               /*@A7A*/
+
+/*********************************************************************/
+/* Protocol-Independent Multicast Source Filter APIs (RFC3678)   @A7A*/
+/*********************************************************************/
+QBFC_EXTERN int setsourcefilter(int, uint32_t,                 /*@A7A*/
+                                struct sockaddr *, socklen_t,  /*@A7A*/
+                                uint32_t, uint32_t,            /*@A7A*/
+                                struct sockaddr_storage *);    /*@A7A*/
+QBFC_EXTERN int getsourcefilter(int, uint32_t,                 /*@A7A*/
+                                struct sockaddr *, socklen_t,  /*@A7A*/
+                                uint32_t *, uint32_t *,        /*@A7A*/
+                                struct sockaddr_storage *);    /*@A7A*/
+
+/*********************************************************************/
+/* Source address selection APIs (RFC5014)                       @A8A*/
+/*********************************************************************/
+QBFC_EXTERN int16_t inet6_is_srcaddr(struct sockaddr_in6 *,
+                                     uint32_t);                /*@A8A*/
+QBFC_EXTERN int bind2addrsel(int, const struct sockaddr*,
+                             socklen_t);                       /*@A8A*/
+
+/* Start changes for _XOPEN_SOURCE                               @A7A*/
+#if ((_XOPEN_SOURCE+1>520) && !defined(COMPAT_43))             /*@A7A*/
+/* _XOPEN_SOURCE is defined to be >= 520 & not BSD 4.3 compatibility */
+#pragma map(setsourcefilter, "qso_setsourcefilter98")          /*@A7A*/
+#pragma map(getsourcefilter, "qso_getsourcefilter98")          /*@A7A*/
+#pragma map(inet6_is_srcaddr, "qso_inet6_is_srcaddr98")        /*@A8A*/
+#pragma map(bind2addrsel, "qso_bind2addrsel98")                /*@A8A*/
+#endif                                                         /*@A7A*/
+/* End changes for _XOPEN_SOURCE                                 @A7A*/
+
+#if (__OS400_TGTVRM__>=510)                                    /*@A7A*/
+#pragma datamodel(pop)                                         /*@A7A*/
+#endif                                                         /*@A7A*/
+
+#endif /* __in_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

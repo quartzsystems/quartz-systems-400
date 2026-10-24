@@ -1,0 +1,173 @@
+     D*** START HEADER FILE SPECIFICATIONS *******************************
+     D*
+     D*Header File Name       :  H/QP0LSCAN
+     D*
+     D*Descriptive Name       :  Scan related include for:
+     D*                      QIBM_QP0L_SCAN_OPEN (IFS Open Exit Pgm)
+     D*                      QIBM_QP0L_SCAN_CLOSE(IFS Close Exit Pgm)
+     D*                      and other integrated file system APIs
+     D*                      which deal with scan information.
+     D*
+     D*
+     D*5722-SS1  (C) Copyright IBM Corp. 2003
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*Description            :  This file contains the structures for
+     D*                      the scan-related exit programs etc.
+     D*
+     D*Macros List            :
+     D*                      QP0L_SCAN_CALL_ADDL
+     D*                      QP0L_SCAN_CALL_FIRST
+     D*                      QP0L_SCAN_CLOSE
+     D*                      QP0L_SCAN_FAILURE
+     D*                      QP0L_SCAN_FAIL_WANT_MODIFY
+     D*                      QP0L_SCAN_MODIFY
+     D*                      QP0L_SCAN_NO
+     D*                      QP0L_SCAN_NOT_REQUIRED
+     D*                      QP0L_SCAN_OPEN
+     D*                      QP0L_SCAN_PENDING_CVN
+     D*                      QP0L_SCAN_REQUIRED
+     D*                      QP0L_SCAN_ROOT_QOPENSYS_UDFS
+     D*                      QP0L_SCAN_SUCCESS
+     D*                      QP0L_SCAN_YES
+     D*                      QP0L_SCCL0100
+     D*                      QP0L_SCOP0100
+     D*
+     D*Type Definition List   :
+     D*                      Qp0l_Scan_Exit_Information_t
+     D*                      Qp0l_Scan_Program_Data_t
+     D*                      Qp0l_Scan_Key_t
+     D*                      Qp0l_Scan_KeySign_t
+     D*                      Qp0l_Scan_Status_Information_t
+     D*
+     D*Structure List         :
+     D*                      Qp0l_Scan_Exit_Information
+     D*                      Qp0l_Scan_Program_Data
+     D*                      Qp0l_Scan_Status_Information
+     D*
+     D*Class List             :  None.
+     D*
+     D*Function Prototype List:  None.
+     D*
+     D*Change Activity        :
+     D*
+     D*CFD List               :
+     D*
+     D*FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION
+     D*---- ------------ ----- ------ --------- -----------------------
+     D*$A0= D9868002     5D30  020330 ROCH    : New Include
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*
+     D*End Change Activity.
+     D*
+     D*** END HEADER FILE SPECIFICATIONS *********************************
+     D*****************************************************************
+     D*Type Definitions
+     D*****************************************************************
+     D***   START OF STRUCTURE DESCRIPTION   *****************************
+     D*
+     D*Structure Name   :  Qp0l_Scan_Program_Data_t
+     D*
+     D*Structure Purpose:  This structure is used to package the
+     D*                information required when registering
+     D*                a scan-related exit program.
+     D*
+     D***   END OF STRUCTURE DESCRIPTION   *******************************
+     DQP0LSPD          DS
+     D*
+     D QP0UP                   1     10
+     D*                                    User profile
+     D QP0SK                  11     30
+     D*                                    Scan key
+     D QP0SKS                 31     42
+     D*                                    Scan key signature
+     D***   START OF STRUCTURE DESCRIPTION   *****************************
+     D*
+     D*Structure Name   :  Qp0l_Scan_Exit_Information_t
+     D*
+     D*Structure Purpose:  This structure is used to package the
+     D*                information that is passed from the system
+     D*                to a scan-related exit program.
+     D*
+     D***   END OF STRUCTURE DESCRIPTION   *******************************
+     DQP0LSEI          DS
+     D*
+     D QP0IL                   1      4I 0
+     D*                                  Length of exit info
+     D*                                   in buffer (bytes)
+     D QP0EPN                  5     24
+     D*                                  Exit point name
+     D QP0EPF                 25     32
+     D*                                  Exit point format name
+     D QP0LS00                33     36I 0
+     D*                                  Length of status information
+     D*                                   buffer allocated (bytes)
+     D QP0SD01                37     40I 0
+     D*                                  Scan descriptor
+     D QP0CCSID05             41     44U 0
+     D*                                  From CCSID
+     D QP0CCSID06             45     48U 0
+     D*                                  To CCSID
+     D QP0CCSID07             49     52U 0
+     D*                                  Last Failure CCSID
+     D QP0FLAGS               53     56I 0
+     D*                                  Oflags
+     D QP0FILID               57     72
+     D*                                  File identifier
+     D QP0OT01                73     82
+     D*                                  Object type
+     D QP0FILS                83     83
+     D*                                  File system indicator
+     D QP0AC                  84     84
+     D*                                  Additional call
+     D QP0OM                  85     85
+     D*                                  Object modified since
+     D*                                  last scan
+     D QP0SD02                86     86
+     D*                                  Scan signatures are
+     D*                                  different
+     D QP0CAF                 87     87
+     D*                                  Call after previous
+     D*                                  failure
+     D***   START OF STRUCTURE DESCRIPTION   *****************************
+     D*
+     D*Structure Name   :  Qp0l_Scan_Status_Information_t
+     D*
+     D*Structure Purpose:  This structure is used to package the
+     D*                information that is passed from the scan
+     D*                related exit program back to the system.
+     D*
+     D***   END OF STRUCTURE DESCRIPTION   *******************************
+     DQP0LSSI          DS
+     D*
+     D QP0IL00                 1      4I 0
+     D*                                  Length of status info
+     D*                                   in buffer (in bytes)
+     D QP0CCSID08              5      8U 0
+     D*                                  Failing CCSID
+     D QP0USI                  9      9
+     D*                                  Update object scan
+     D*                                  information
+     D QP0SS03                10     10
+     D*                                  Scan status
+     D********************************************************************
+     D*Macro constants common to the scan-related exit programs and to
+     D*other integrated file system APIs.
+     D********************************************************************
+     D*Values used generically in several fields
+     D*Values for Scan status
+     D********************************************************************
+     D*Macro constants common to just the scan-related exit programs
+     D********************************************************************
+     D*Values for the Additional call field
+     D*Values for exit point names
+     D*Value for exit program format names
+     D*Values for the File systems field

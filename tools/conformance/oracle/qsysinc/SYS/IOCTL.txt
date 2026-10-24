@@ -1,0 +1,201 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5763-SS1                                                      */
+/*     5716-SS1                                                      */
+/*     5769-SS1                                                      */
+/*     5722-SS1                                                      */
+/*     5761-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  1993, 2007                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/*  Header File NAME:   sys/ioctl.h                                  */
+/*                                                                   */
+/*  Descriptive: ioctl macro definitions.                            */
+/*                                                                   */
+/*                                                                   */
+/*  Description: Defines prototypes and macros to be used with       */
+/*               ioctl API.                                          */
+/*                                                                   */
+/*  Header Files Included : None                                     */
+/*                                                                   */
+/*  Macros List : _QP0L_DEV_SOCKET                                   */
+/*                _QP0L_DEV_FILE                                     */
+/*                _QP0L_CREATE_UNIQUE_MASK                           */
+/*                FIOASYNC         FIOCCSID           FIOGETOWN      */
+/*                FIONREAD         FIONBIO            FIOSETOWN      */
+/*                SIOCADDRT        SIOCATMARK         SIOCDELRT      */
+/*                SIOCGIFADDR      SIOCGIFBRDADDR     SIOCGIFCONF    */
+/*                SIOCGIFFLAGS     SIOCGIFLIND        SIOCGIFMTU     */
+/*                SIOCGIFNETMASK   SIOCGIFRBUFS       SIOCGIFTOS     */
+/*                SIOCGPGRP        SIOCGPXRTCONF      SIOCGPXRTE     */
+/*                SIOCGPXSRV       SIOCGPXSRVCONF     SIOCGRTCONF    */
+/*                SIOCPXADVSRV     SIOCPXSHDSRV       SIOCSENDQ      */
+/*                SIOCSPGRP        SIOCSTELRSC        SIOCADDRT6     */
+/*                SIOCDELRT6                                         */
+/*                                                                   */
+/*  Structure List : None                                            */
+/*                                                                   */
+/*  Function Prototype List : ioctl                                  */
+/*                                                                   */
+/*  Change Activity :                                                */
+/*                                                                   */
+/*  CFD List:                                                        */
+/*                                                                   */
+/*  FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION      */
+/*  ---- ------------ ----- ------ --------- ----------------------- */
+/*  $A0= D28418       3D10  940307 ROCH      New Include             */
+/*  $A1= P3978797     3d60  950306 ROCH      New Constants           */
+/*  $A2= P3992252     3D60  950522 ROCH      Add __cplusplus #ifdef  */
+/*                                           and #pragma info(none)  */
+/*  $A3= PTH01765     3D60  950804 ROCH      Correct #pragma info    */
+/*  $A4= D16187       4D40  980804 ROCH      New Constant            */
+/*  $A5= D97496       4D50  990412 ROCH      Add SIOCSENDQ           */
+/*  $A6= D97651.1     5D10  990604 ROCH      Add FIOCCSID            */
+/*  $A7= D98212.05    5D10  000104 ROCH      Datamodel changes       */
+/*  $A8= D93466.6     6D10  060404 ROCH      Add SIOC(ADD/DEL)RT6    */
+/*  End CFD List                                                     */
+/*                                                                   */
+/*   Additional notes about the Change Activity                      */
+/*  End Change Activity                                              */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __ioctl_h
+  #define __ioctl_h 1
+
+#if (__OS400_TGTVRM__>=510)                                   /* @A7A*/
+#pragma datamodel(P128)                                       /* @A7A*/
+#endif                                                        /* @A7A*/
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+
+/* ================================================================= */
+/* type of ioctl macros                                              */
+/* ================================================================= */
+#define _QP0L_DEV_SOCKET      1               /* for socket          */
+#define _QP0L_DEV_FILE        2               /* for  file  system   */
+
+
+/* ================================================================= */
+/* For use to create ioctl macros.                                   */
+/* 't' is the device number for use to identify the type of ioctl    */
+/*     macros.                                                       */
+/* 'op' is the sequence number which is used to control the          */
+/*      uniqueness of the ioctl macros.                              */
+/* 'flag' is a reserved field.                                       */
+/* ================================================================= */
+#define _QP0L_CREATE_UNIQUE_MASK(t, op, flag) \
+           (((t)<<16) | (unsigned long)0 | (op) | (flag))
+
+
+/* ================================================================= */
+/* File system ioctl macros                                          */
+/* ================================================================= */
+#define FIONREAD    _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_FILE,  1, 0)
+#define FIONBIO     _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_FILE,  2, 0)
+#define FIOCCSID    _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_FILE, 13, 0)
+                           /* The FIOCCSID command returns the CCSID
+                              of the open instance and the object
+                              CCSID in the storage pointed to by
+                              the third parameter of the ioctl()
+                              API                                @A6A*/
+
+ /* Structure returned by FIOCCSID ioctl macro                   @A6A*/
+ struct Qp0lFIOCCSID {
+   int object_CCSID;   /* CCSID of the object                    @A6A*/
+   int open_CCSID;     /* CCSID of the open instance             @A6A*/
+ };                                                           /* @A6A*/
+
+/* ================================================================= */
+/* Socket ioctl macros                                               */
+/* ================================================================= */
+#define SIOCATMARK     _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET, 1,0)
+#define SIOCADDRT      _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET, 2,0)
+#define SIOCDELRT      _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET, 3,0)
+#define SIOCGRTCONF    _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET, 4,0)
+#define SIOCGIFADDR    _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET, 5,0)
+#define SIOCGIFFLAGS   _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET, 6,0)
+#define SIOCGIFBRDADDR _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET, 7,0)
+#define SIOCGIFNETMASK _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET, 8,0)
+#define SIOCGIFMTU     _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET, 9,0)
+#define SIOCGIFRBUFS   _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET,10,0)
+#define SIOCGIFLIND    _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET,11,0)
+#define SIOCGIFTOS     _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET,12,0)
+#define SIOCGIFCONF    _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET,13,0)
+#define SIOCGPXRTCONF  _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET,14,0)
+                                                           /* @A1A */
+#define SIOCGPXRTE     _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET,15,0)
+                                                           /* @A1A */
+#define SIOCGPXSRVCONF _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET,16,0)
+                                                           /* @A1A */
+#define SIOCPXADVSRV _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET,19,0)
+                                                           /* @A1A */
+#define SIOCPXSHDSRV _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET,20,0)
+                                                           /* @A1A */
+#define SIOCGPXSRV  _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET,23,0)
+                                                           /* @A1A */
+#define SIOCGPGRP  _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET,24,0)
+                                                           /* @A1A */
+#define SIOCSPGRP  _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET,25,0)
+                                                           /* @A1A */
+#define SIOCSTELRSC _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET,26,0)
+                                                             /*@A4A*/
+#define SIOCSENDQ   _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET,29,0)
+                                                             /*@A5A*/
+#define SIOCADDRT6  _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET,30,0)
+                                                            /* @A8A*/
+#define SIOCDELRT6  _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_SOCKET,31,0)
+                                                            /* @A8A*/
+
+#define FIOASYNC  _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_FILE,  3, 0)
+                                                           /* @A1A */
+#define FIOSETOWN  _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_FILE,  9, 0)
+                                                           /* @A1A */
+#define FIOGETOWN  _QP0L_CREATE_UNIQUE_MASK(_QP0L_DEV_FILE, 10, 0)
+                                                           /* @A1A */
+/* ================================================================= */
+/* ioctl function prototype                                          */
+/* ================================================================= */
+QBFC_EXTERN int ioctl(int, unsigned long,...);
+
+#if (__OS400_TGTVRM__>=510)                                   /* @A7A*/
+#pragma datamodel(pop)                                        /* @A7A*/
+#endif                                                        /* @A7A*/
+
+#endif /* __ioctl_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

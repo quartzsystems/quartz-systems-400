@@ -1,0 +1,181 @@
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/*  Header File Name: sys/mman.h                                     */
+/*                                                                   */
+/*  Descriptive Name: memory management definitions                  */
+/*                                                                   */
+/*  5722-SS1                                                         */
+/*  (C) Copyright IBM Corp. 1999, 2000                               */
+/*  All rights reserved.                                             */
+/*  US Government Users Restricted Rights -                          */
+/*  Use, duplication or disclosure restricted                        */
+/*  by GSA ADP Schedule Contract with IBM Corp.                      */
+/*                                                                   */
+/*  Licensed Materials-Property of IBM                               */
+/*                                                                   */
+/*  Description: Defines prototypes and  macros to be used           */
+/*               with the memory management APIs.                    */
+/*                                                                   */
+/*  Header Files Included:  <sys/types.h>                            */
+/*                                                                   */
+/*  Macros list:                                                     */
+/*                                                                   */
+/*    The following symbol represents mapping failure.               */
+/*                                                                   */
+/*          MAP_FAILED                                               */
+/*                                                                   */
+/*    The following protection options are defined:                  */
+/*                                                                   */
+/*          PROT_EXEC     Page can be executed                       */
+/*          PROT_NONE     Page can not be accessed                   */
+/*          PROT_READ     Page can be read                           */
+/*          PROT_WRITE    Page can be written                        */
+/*                                                                   */
+/*    The following flag optoins are defined:                        */
+/*                                                                   */
+/*          MAP_FIXED     Interpret addr exactly                     */
+/*          MAP_PRIVATE   Changes are private                        */
+/*          MAP_SHARED    Share changes                              */
+/*                                                                   */
+/*    The following flags are defined for msync():                   */
+/*                                                                   */
+/*          MS_ASYNC      Perform asynchronous writes                */
+/*          MS_INVALIDATE Invalidate mappings                        */
+/*          MS_SYNC       Perform synchronous writes                 */
+/*                                                                   */
+/*                                                                   */
+/*  Structure List:                                                  */
+/*                                                                   */
+/*  Function prototype list :  mmap()                                */
+/*                             mmap64()                              */
+/*                             mprot()                               */
+/*                             msync()                               */
+/*                             munmap()                              */
+/*                                                                   */
+/*  Change Activity:                                                 */
+/*                                                                   */
+/*  CFD List:                                                        */
+/*                                                                   */
+/*  FLAG REASON       LEVEL DATE   PGMR     CHANGE DESCRIPTION       */
+/*  ---- ------------ ----- ------ -------- ------------------------ */
+/*  $A0= D9762801     5d10  990625 ROCH     New Include              */
+/*  $A1= D9821205     5d10  000104 ROCH     program model enablement */
+/*  End CFD List.                                                    */
+/*                                                                   */
+/*   Additional notes about the Change Activity                      */
+/*  End Changed Activity.                                            */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+#include <sys/types.h>
+
+#ifndef __MMAN_CLEINC_
+  #define __MMAN_CLEINC_  1
+
+#if (__OS400_TGTVRM__>=510)                                   /* @A1A*/
+#pragma datamodel(P128)                                       /* @A1A*/
+#endif                                                        /* @A1A*/
+
+#ifndef __QBFC_EXTERN
+#ifdef __ILEC400__
+#define QBFC_EXTERN extern
+#else
+#define QBFC_EXTERN extern "C"
+#endif
+
+#define __QBFC_EXTERN
+#endif
+
+
+
+/********************************************************************/
+/*  Turn on the Large File Support when *IFS64IO is specified       */
+/*  as C compiler option.                                           */
+/********************************************************************/
+#ifdef __IFS64_IO__
+   #ifndef _LARGE_FILES
+      #define _LARGE_FILES
+   #endif
+   #ifndef _LARGE_FILE_API
+      #define _LARGE_FILE_API
+   #endif
+#endif
+
+/*********************************************************************/
+/*    The following defines the failure indicator for mmap.          */
+/*********************************************************************/
+#define MAP_FAILED    ((void*)0)
+/*********************************************************************/
+/*    The following protection options are defined:                  */
+/*********************************************************************/
+
+#define  PROT_READ     01
+#define  PROT_WRITE    02
+#define  PROT_EXEC     04
+#define  PROT_NONE    010
+/*********************************************************************/
+/*    The following flag options are defined:                        */
+/*********************************************************************/
+
+#define   MAP_FIXED     01
+#define   MAP_PRIVATE   02
+#define   MAP_SHARED    04
+/*********************************************************************/
+/*    The following flags are defined for msync():                   */
+/*********************************************************************/
+#define   MS_ASYNC        01
+#define   MS_SYNC         02
+#define   MS_INVALIDATE   04
+
+/*******************************************************************/
+/* Map Existing APIs to 64 bit version                             */
+/*******************************************************************/
+#ifdef _LARGE_FILES
+#pragma map (mmap, "mmap64")
+#endif
+
+QBFC_EXTERN void *mmap( void *addr,
+                        size_t len,
+                        int protection,
+                        int flags,
+                        int fildes,
+                        off_t off);
+
+QBFC_EXTERN int  mprotect( void *addr,
+                           size_t len,
+                           int protection);
+
+QBFC_EXTERN int  msync( void *addr,
+                        size_t len,
+                        int flags);
+
+QBFC_EXTERN int  munmap( void *addr,
+                         size_t len);
+
+/*******************************************************************/
+/* New APIs for Large File Support                                 */
+/*******************************************************************/
+#ifdef _LARGE_FILE_API
+QBFC_EXTERN void *mmap64( void *addr,
+                          size_t len,
+                          int prot,
+                          int flags,
+                          int fd,
+                          off64_t off);
+#endif
+
+#if (__OS400_TGTVRM__>=510)                                   /* @A1A*/
+#pragma datamodel(pop)                                        /* @A1A*/
+#endif                                                        /* @A1A*/
+
+#endif /* __MMAN_CLEINC_ */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

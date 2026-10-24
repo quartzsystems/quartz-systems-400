@@ -1,0 +1,129 @@
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name:  sys/unc.h                                      */
+/*                                                                   */
+/* Descriptive Name: Define the AF_UNIX_CCSID sockets domain         */
+/*                                                                   */
+/*                                                                   */
+/* 5722-SS1,                                                         */
+/* (C) Copyright IBM Corp. 2000, 2000                                */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/* Description:                                                      */
+/*                                                                   */
+/*          Defines prototypes, macros, variables, and               */
+/*          structures to be used with Qlg_Path_Name_T               */
+/*          format local domain sockets.                             */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*                                                                   */
+/*           stdio.h                                                 */
+/*           qlg.h                                                   */
+/*                                                                   */
+/* Macros List:                                                      */
+/*                                                                   */
+/*          none                                                     */
+/*                                                                   */
+/* Structure List:                                                   */
+/*                                                                   */
+/*          sockaddr_unc                                             */
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*                                                                   */
+/*          None                                                     */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/*   CFD List:                                                       */
+/*                                                                   */
+/*   FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION     */
+/*   ---- ------------ ----- ------- -------- ---------------------- */
+/*   $A0  D97658       5D10  990520  ROCH :   Implement AF_UNIX_CCSID*/
+/*                                                                   */
+/*   End CFD List.                                                   */
+/*                                                                   */
+/*   Additional notes about the Change Activity:                     */
+/*                                                                   */
+/* End Change Activity                                               */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __unc_h
+  #define __unc_h
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+
+/*********************************************************************/
+/* Header files                                                      */
+/*********************************************************************/
+
+#include <stdlib.h>                   /* wchar_t                     */
+#include <qlg.h>                      /* Qlg_Path_Name               */
+#if (__OS400_TGTVRM__>=510)  /* @B1A*/
+#pragma datamodel(P128)      /* @B1A*/
+#endif                       /* @B1A*/
+
+/*********************************************************************/
+/* Macros to define sunc_format constants                            */
+/*********************************************************************/
+
+#define SO_UNC_DEFAULT    0      /* sunc_qlg is ignored.             */
+                                 /* Default UNICODE CCSID is used.   */
+                                 /* sunc_path.wide contains the path.*/
+
+#define SO_UNC_USE_QLG    1      /* sunc_qlg is used to define the   */
+                                 /* CCSID and the format of sunc_path*/
+
+/* Define a constant for the size of the fixed portion of the        */
+/* address before the sunc_path union.                               */
+
+#define SO_UNC_FIXED_SIZE (16 + sizeof(Qlg_Path_Name_T))
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+struct sockaddr_unc {                 /* socket address (UNIX CCSID) */
+
+   short           sunc_family;       /* address family AF_UNIX_CCSID*/
+   short           sunc_format;       /* format of sunc_path         */
+   char            sunc_zero[12];     /* reserved - must be 0x00's   */
+   Qlg_Path_Name_T sunc_qlg;          /* path name national language */
+   union {
+      char            unix[126];
+      wchar_t         wide[126];
+      char*           p_unix;
+      wchar_t*        p_wide;
+   }               sunc_path;         /* path name                   */
+};
+#if (__OS400_TGTVRM__>=510)  /* @B1A*/
+#pragma datamodel(pop)       /* @B1A*/
+#endif                       /* @B1A*/
+
+#endif /* #ifndef __unc_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

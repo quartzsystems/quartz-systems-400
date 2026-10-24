@@ -1,0 +1,158 @@
+#ifndef _WAIT_H
+#define _WAIT_H
+/*********************************************************************/
+/*                                                                   */
+/* Header File Name: sys/wait.h                                      */
+/*                                                                   */
+/* Header File Description: wait declarations                        */
+/*                                                                   */
+/*                                                                   */
+/* 5716-SS1,5722-SS1 (C) Copyright IBM Corp. 1994,2000               */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/* Description:                                                      */
+/*      Define macros and prototypes for the wait functions.         */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*           sys/types.h                                             */
+/*                                                                   */
+/* Macros List:                                                      */
+/*           WEXITSTATUS()                                           */
+/*           WIFEXITED()                                             */
+/*           WIFSIGNALED()                                           */
+/*           WIFSTOPPED()                                            */
+/*           WIFEXCEPTION()                                          */
+/*           WSTOPSIG()                                              */
+/*           WTERMSIG()                                              */
+/*           WEXCEPTNUMBER()                                         */
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*           wait()                                              @A4A*/
+/*           waitpid()                                           @A4A*/
+/*           Qp0zWait()                                              */
+/*           Qp0zWaitpid()                                           */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/* CFD List:                                                         */
+/* $A0=P3979521 v3r6m0.cpa  950104 ROCH      : Creation              */
+/* $A1=P3982299 v3r1m0l.cpa 950218 ROCH      : Fix WIFEXITED()       */
+/* $A2=         v3r1m0l.cpa 950202 ROCH      : Add waitpid() support */
+/* $A3=P3615585 v3r7m0.xpf  960322 ROCH      : Fix WEXCEPTNUMBER()   */
+/* $A4=D97767.18 v5r1m0.xpf 991218 ROCH      : directly declare      */
+/*                                             wait() and waitpid()  */
+/* End CFD List.                                                     */
+/*                                                                   */
+/*  Additional notes about the Change Activity                       */
+/*                                                                   */
+/* End Change Activity.                                              */
+/*                                                                   */
+/*********************************************************************/
+
+/*********************************************************************/
+/*  Includes                                                         */
+/*********************************************************************/
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+#include <sys/types.h>
+
+#if (__OS400_TGTVRM__>=510)                                    /*@A4A*/
+  #pragma datamodel(P128)                                      /*@A4A*/
+#endif /* __OS400_TGTVRM__>=510 */                             /*@A4A*/
+
+/*********************************************************************/
+/*  Macros                                                           */
+/*********************************************************************/
+
+/* Evaluates to the low-order 8 bits from the childs exit status.    */
+#define WEXITSTATUS(x)   (WIFEXITED(x) ? ((x) & 0x000000FF) : -1)
+
+/* Evaluates to a non-zero value if child terminated normally.       */
+#define WIFEXITED(x)     (((x) & 0xFFFF0000) ? 0 : 0x00010000)
+
+/* Evaluates to a non-zero value if child terminated abnormally.     */
+#define WIFSIGNALED(x)   ((x) & 0x00020000)
+
+/* Evaluates to a non-zero value if status returned for a stopped    */
+/* child.                                                            */
+#define WIFSTOPPED(x)    ((x) & 0x00040000)
+
+/* Evaluates to a non-zero value if status returned for a            */
+/* child process that terminated due to an error state.              */
+#define WIFEXCEPTION(x)  ((x) & 0x00080000)
+
+/* Evaluates to the number of the signal that caused the child to    */
+/* stop.                                                             */
+#define WSTOPSIG(x)      (WIFSTOPPED(x) ? ((x) & 0x0000FFFF) : -1)
+
+/* Evaluates to the number of the signal that caused the child to    */
+/* terminate.                                                        */
+#define WTERMSIG(x)      (WIFSIGNALED(x) ? ((x) & 0x0000FFFF) : -1)
+
+/* Evaluates to the number of the OS/400 Exception that caused the   */
+/* child to terminate.                                               */
+#define WEXCEPTNUMBER(x) (WIFEXCEPTION(x) ? ((x) & 0x0000FFFF) : -1)
+
+/* ----------------------------------------------------------------- */
+/* Exception numbers returned by WEXCEPTNUMBER() can be turned into  */
+/* exception id's by using the following process:                    */
+/*                                                                   */
+/* If the number returned (in hex) is 0x0000wwyy, and if zz is the   */
+/* decimal conversion of ww, then the exception id is "MCHzzyy".  $A3*/
+/*                                                                   */
+/* Example: WEXCEPTNUMBER(my_status) --> 0x00002401 then the         */
+/*          exception id would be "MCH3601".                         */
+/* ----------------------------------------------------------------- */
+
+/*********************************************************************/
+/*  Constants                                                        */
+/*********************************************************************/
+
+#define         WCONTINUED      0x80000000    /* Unsupported      $A2*/
+#define         WUNTRACED       0x40000000    /* Unsupported      $A2*/
+#define         WNOHANG         0x00000001    /* Don't block      $A2*/
+
+/*********************************************************************/
+/*  Data Types                                                       */
+/*********************************************************************/
+
+/*********************************************************************/
+/*  Function Prototypes                                              */
+/*********************************************************************/
+
+QBFC_EXTERN pid_t wait(int      *stat_loc);                    /*@A4A*/
+
+QBFC_EXTERN pid_t waitpid(pid_t  pid,                          /*@A4A*/
+                          int   *stat_loc,
+                          int    options);
+
+#if (__OS400_TGTVRM__<510)                                     /*@A4A*/
+  QBFC_EXTERN pid_t Qp0zWait(int      *stat_loc);
+
+  QBFC_EXTERN pid_t Qp0zWaitpid(pid_t  pid,                     /*$A2*/
+                                int   *stat_loc,                /*$A2*/
+                                int    options);                /*$A2*/
+  #pragma map(wait,"Qp0zWait")                                 /*@A4A*/
+  #pragma map(waitpid,"Qp0zWaitpid")                           /*@A4A*/
+#endif /* __OS400_TGTVRM__<510 */                              /*@A4A*/
+
+#if (__OS400_TGTVRM__>=510)                                    /*@A4A*/
+  #pragma datamodel(pop)                                       /*@A4A*/
+#endif /* __OS400_TGTVRM__>=510 */                             /*@A4A*/
+
+#endif /* _WAIT_H */
+

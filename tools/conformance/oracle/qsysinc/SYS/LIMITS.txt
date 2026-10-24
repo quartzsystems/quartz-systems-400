@@ -1,0 +1,173 @@
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/*  Header File Name:   limits.h                                     */
+/*                                                                   */
+/*  Header File Description: System limit definitions                */
+/*                                                                   */
+/*                                                                   */
+/*  5763-SS1, 5769-SS1, 5722-SS1                                     */
+/*  (C) Copyright IBM Corp. 1993, 2004                               */
+/*  All rights reserved.                                             */
+/*  US Government Users Restricted Rights -                          */
+/*  Use, duplication or disclosure restricted                        */
+/*  by GSA ADP Schedule Contract with IBM Corp.                      */
+/*                                                                   */
+/*  Licensed Materials-Property of IBM                               */
+/*                                                                   */
+/*  Description: Defines system limit macros.                        */
+/*                                                                   */
+/*  Header Files Included: None.                                     */
+/*                                                                   */
+/*  Macros List: _POSIX_LINK_MAX            _POSIX_LINK_MAX          */
+/*               _POSIX_NGROUPS_MAX         _POSIX_OPEN_MAX          */
+/*               _POSIX_PATH_MAX            _POSIX_SEM_NSEMS_MAX     */
+/*               _POSIX_SEM_VALUE_MAX       _POSIX_SSIZE_MAX         */
+/*               _POSIX_STREAM_MAX          _POSIX2_COLL_WEIGHTS_MAX */
+/*               COLL_WEIGHTS_MAX           NGROUPS_MAX              */
+/*               NL_TEXTMAX                 NL_ARGMAX                */
+/*               NL_MSGMAX                  NL_SETMAX                */
+/*               POSIX_SYMLOOP              SEM_NSEMS_MAX            */
+/*               SEM_VALUE_MAX              SSIZE_MAX                */
+/*                                                                   */
+/*  Structure List: None.                                            */
+/*                                                                   */
+/*  Function Prototype List: None                                    */
+/*                                                                   */
+/*  Change Activity:                                                 */
+/*                                                                   */
+/*  CFD List:                                                        */
+/*                                                                   */
+/*  FLAG REASON       LEVEL DATE    PGMR      CHANGE DESCRIPTION     */
+/*  ---- ------------ ----- ------- --------- ---------------------- */
+/*  $A0= D28418       3D10  940307  ROCH      New Include            */
+/*  $A1= D28709       3D60  940817  ROCH      New symbolic constant  */
+/*  $A2= D28709       3D60  941128  ROCH      Change constant value  */
+/*  $A3= P3981269     3D60  950207  ROCH      Compatibility changes  */
+/*  $A4= P3992252     3D60  950522  ROCH      Add __cplusplus #ifdef */
+/*                                            and #pragma info(none) */
+/*  $A5= PTH01765     3D60  950804  ROCH      Correct #pragma info   */
+/*  $A6= D94927       4D10  961204  ROCH      Add constants          */
+/*  $A7= D38(ETSW)    4D30  980113  ROCH      Added NL_ARGMAX        */
+/*  $A8= D95601       4D40  980421  ROCH      Added SEM constants    */
+/*  $A9= D99124       5D30  030317  ROCH      Changed NL_TEXTMAX for */
+/*                                            support of larger      */
+/*                                            message catalogs.      */
+/*                                                                   */
+/*  End CFD List.                                                    */
+/*                                                                   */
+/*   Additional notes about the Change Activity                      */
+/*  End Change Activity                                              */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __sys_limits_h
+#define __sys_limits_h  1
+
+/*********************************************
+     Minimum Values
+*********************************************/
+
+#define _POSIX_LINK_MAX      8     /* The value of a file's link
+                                    * count                        */
+#define _POSIX_NAME_MAX     14     /* The number of bytes in a
+                                    * filename                     */
+#define _POSIX_NGROUPS_MAX   0     /* The number of simultaneous
+                                    * supplementary group IDS per
+                                    * process                      */
+#define _POSIX_OPEN_MAX     16     /* The number of files that one
+                                    * process can have open at one
+                                    * time                         */
+#define _POSIX_PATH_MAX    255     /* The number of bytes in a
+                                    * pathname                     */
+#define _POSIX_SSIZE_MAX 32767     /* The value that can be stored
+                                    * in an object of type ssize_t */
+#define _POSIX_STREAM_MAX    8     /* The number of streams that
+                                    * one process can have open at
+                                    * one time                     */
+
+#define _POSIX2_COLL_WEIGHTS_MAX  3 /* The maximum number of weights
+                                     * that can be assigned to an
+                                     * entry of the LC_COLLATE order
+                                     * keyword in the locale definition
+                                     * file.
+                                     *                         @A1A
+                                     *                         @A2C */
+#define COLL_WEIGHTS_MAX          _POSIX2_COLL_WEIGHTS_MAX  /* @A1A */
+
+#define _POSIX_SEM_NSEMS_MAX 256                            /* @A8A */
+#define _POSIX_SEM_VALUE_MAX 32767                          /* @A8A */
+
+/*********************************************
+   NAMED AND UNNAMED SEMAPHORE DEFINITIONS
+**********************************************/
+/* not POSIX.1 or POSIX.1a defined symbolic constants */
+#if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE))
+#define SEM_VALUE_MAX 2147483647                            /* @A8A */
+#define SEM_NSEMS_MAX 2147483647                            /* @A8A */
+#define SEM_NAME_MAX 1024                                   /* @A8A */
+#endif
+
+/*********************************************
+     Message Catalog Values
+*********************************************/
+/* not POSIX.1 or POSIX.1a defined symbolic constants */
+#if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE))
+  #define NL_TEXTMAX     16384      /* The maximum length of a message
+                                     * in a message catalog.    @A6A
+                                                                @A9C*/
+  #define NL_MSGMAX      65535      /* The maximum number of messages
+                                     * per set in a message catalog
+                                     *                          @A6A*/
+  #define NL_SETMAX      65535      /* The maximum number of sets in
+                                     * a message catalog.       @A6A*/
+#endif
+
+/*********************************************
+     Runtime Increasable Values
+*********************************************/
+
+#define NGROUPS_MAX         16     /* Maximum number of simultaneous
+                                    * supplementary group IDs per
+                                    * process                      */
+
+
+/*********************************************
+     Invariant Values
+*********************************************/
+
+#define SSIZE_MAX      INT_MAX     /* Maximum value that can be
+                                    * stored in an object of type
+                                    * ssize_t                      */
+
+/* POSIX.1a defined symbolic constant */
+#if ((!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE)) \
+     || ((defined _POSIX1_SOURCE) && (_POSIX1_SOURCE != 1)))
+  #define POSIX_SYMLOOP       16     /* Number of symbolic links that
+                                      * can be traversed in the
+                                      * resolution of a pathname in
+                                      * the absence of a loop.
+                                      */
+#endif /* POSIX.1a defined symbolic constant */
+
+/*********************************************
+    XPG4 Support constant
+*********************************************/
+
+#define NL_ARGMAX   256           /* Maximum number of positional
+                                     parameters that can be used in
+                                     the printf/scanf family of
+                                     function                 @A7A*/
+
+#endif /* __sys_limits_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

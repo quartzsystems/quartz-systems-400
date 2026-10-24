@@ -1,0 +1,120 @@
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name:  arpa/rexec.h                                   */
+/*                                                                   */
+/* Descriptive Name: Remote Execution API definition                 */
+/*                                                                   */
+/* 5722-SS1                                                          */
+/* (C) Copyright IBM Corp. 2000, 2000.                               */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/* Copyright (c) 1982, 1986 Regents of the University of California. */
+/* All rights reserved.  The Berkeley software License Agreement     */
+/* specifies the terms and conditions for redistribution.            */
+/*                                                                   */
+/* Description:                                                      */
+/*                                                                   */
+/*          Defines prototypes to be used with the remote            */
+/*          execution APIs.                                          */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*                                                                   */
+/*          sys/types.h                                              */
+/*          netdb.h                                                  */
+/*                                                                   */
+/* Macros List:                                                      */
+/*                                                                   */
+/*          None                                                     */
+/*                                                                   */
+/* Structure List:                                                   */
+/*                                                                   */
+/*          None                                                     */
+/*                                                                   */
+/* Function Prototype List:   (Thread-Safe)                          */
+/*                                                                   */
+/*          rexec                                                    */
+/*          rexec_r                                                  */
+/*          rexec_ts64                                           @A1A*/
+/*          rexec_r_ts64                                         @A1A*/
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/*   CFD List:                                                       */
+/*                                                                   */
+/*   FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION     */
+/*   ---- ------------ ----- ------- -------- ---------------------- */
+/*   $A0= D9770300     5D10  990628  ROCH     New include.           */
+/*   $A1= D97767       5D10  000512  ROCH     Teraspace wrappers     */
+/*   End CFD List.                                                   */
+/*                                                                   */
+/*   Additional notes about the Change Activity:                     */
+/*                                                                   */
+/* End Change Activity                                               */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+#ifndef __rexec_h
+    #define __rexec_h
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+/*********************************************************************/
+/* Header files                                                      */
+/*********************************************************************/
+#include <sys/types.h>                /* common typedefs             */
+#include <netdb.h>                    /* struct hostent_data         */
+#if (__OS400_TGTVRM__>=510)                                   /* @A1A*/
+#pragma datamodel(P128)                                       /* @A1A*/
+#endif                                                        /* @A1A*/
+
+/*********************************************************************/
+/* Function Prototypes                                               */
+/*********************************************************************/
+
+#if (__OS400_TGTVRM__ < 510) || \
+  ((__OS400_TGTVRM__ >= 510) && !defined(__LLP64_IFC__))
+QBFC_EXTERN int  rexec(char **, int, char *, char *, char *, int *);
+QBFC_EXTERN int  rexec_r(char **, int, char *, char *, char *,
+                                 int *, struct hostent_data *);
+#else
+QBFC_EXTERN int  rexec(char * __ptr64 * __ptr64,
+                      int, char * __ptr64, char * __ptr64,
+                      char * __ptr64, int * __ptr64);       /*@A1A*/
+
+QBFC_EXTERN int  rexec_r(char * __ptr64 * __ptr64,
+                    int, char * __ptr64, char *__ptr64,
+                    char *__ptr64, int *__ptr64,
+                    struct hostent_data *__ptr64);          /*@A1A*/
+
+  #pragma map(rexec,"rexec_ts64")             /* @A1A*/
+  #pragma map(rexec_r,"rexec_r_ts64")      /* @A1A*/
+#endif /* __OS400_TGTVRM__ < 510                             @A1A*/
+
+#if (__OS400_TGTVRM__>=510)                                /* @A1A*/
+#pragma datamodel(pop)                                     /* @A1A*/
+#endif                                                     /* @A1A*/
+#endif /* #ifndef __rexec_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

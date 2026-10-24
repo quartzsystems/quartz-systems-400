@@ -1,0 +1,346 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5763-SS1                                                      */
+/*     5716-SS1                                                      */
+/*     5722-SS1                                                      */
+/*     5770-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  1993, 2013                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+/* ----------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------- */
+
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name:  netinet/ip.h                                   */
+/*                                                                   */
+/* Descriptive Name: Internet Protocol Header                        */
+/*                                                                   */
+/* Copyright (c) 1982, 1986 Regents of the University of California. */
+/* All rights reserved.                                              */
+/* Redistribution and use in source and binary forms are permitted   */
+/* provided that this notice is preserved and that due credit is     */
+/* given to the University of California at Berkeley. The name of the*/
+/* University may not be used to endorse or promote products derived */
+/* from this software without specific prior written permission.     */
+/* This software is provided ``as is'' without express or implied    */
+/* warranty.                                                         */
+/*                                                                   */
+/*                                                                   */
+/* Description:                                                      */
+/*                                                                   */
+/*          Defines macros, variables, and structures that           */
+/*          describe the Internet Protocol header.                   */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*                                                                   */
+/*          netinet/in.h                                             */
+/*          sys/types.h                                              */
+/*                                                                   */
+/* Macros List:                                                      */
+/*                                                                   */
+/*   RFC1038               IPTOS_NORMAL               IPOPT_COPIED   */
+/*   IPVERSION             IPTOS_MINCOST              IPOPT_CLASS    */
+/*   MAXTTL                IPTOS_RELIABILITY          IPOPT_NUMBER   */
+/*   IPFRAGTTL             IPTOS_THROUGHPUT           IPOPT_CONTROL  */
+/*   IPTTLDEC              IPTOS_LOWDELAY             IPOPT_RESERVED1*/
+/*   IP_MAXPACKET                                     IPOPT_DEBMEAS  */
+/*   IP_MSS                IPTOS_PREC_NETCONTROL      IPOPT_RESERVED2*/
+/*                         IPTOS_PREC_INTERNETCONTROL IPOPT_EOL      */
+/*   IP_DF                 IPTOS_PREC_CRITIC_ECP      IPOPT_NOP      */
+/*   IP_MF                 IPTOS_PREC_FLASHOVERRIDE   IPOPT_RR       */
+/*                         IPTOS_PREC_FLASH           IPOPT_TS       */
+/*   IPOPT_SECUR_NONE      IPTOS_PREC_IMMEDIATE       IPOPT_SECURITY */
+/*   IPOPT_SECUR_UNCLASS   IPTOS_PREC_PRIORITY        IPOPT_LSRR     */
+/*   IPOPT_SECUR_CONFID    IPTOS_PREC_ROUTINE         IPOPT_SATID    */
+/*   IPOPT_SECUR_SECRET                               IPOPT_SSRR     */
+/*   IPOPT_SECUR_TOPSECRET IPOPT_TS_TSONLY            IPOPT_OPTVAL   */
+/*   IPOPT_SECUR_EFTO      IPOPT_TS_TSANDADDR         IPOPT_OLEN     */
+/*   IPOPT_SECUR_MMMM      IPOPT_TS_PRESPEC           IPOPT_OFFSET   */
+/*   IPOPT_SECUR_PROG                                 IPOPT_MINOFF   */
+/*   IPOPT_SECUR_RESTR                                               */
+/*                                                                   */
+/*   IP_QOS_CLASSIFICATION_DATA                                  @A1A*/
+/*   IP_QOS_CURRENT_VERSION                                      @A1A*/
+/*   IP_QOS_CONNECTION_LEVEL                                     @A1A*/
+/*   IP_QOS_MESSAGE_LEVEL                                        @A1A*/
+/*   IP_SET_QOSLEVEL_W_APPL_TOKEN_ASCII                          @A1A*/
+/*   IP_SET_QOSLEVEL_W_APPL_TOKEN_EBCDIC                         @A1A*/
+/*   IP_SET_QOSLEVEL_EXPIDITED                                   @A1A*/
+/*   IP_SET_QOSLEVEL_HIGH                                        @A1A*/
+/*   IP_SET_QOSLEVEL_MEDIUM                                      @A1A*/
+/*   IP_SET_QOSLEVEL_LOW                                         @A1A*/
+/*   IP_SET_QOSLEVEL_BEST_EFFORT                                 @A1A*/
+/*                                                                   */
+/* Structure List:                                                   */
+/*                                                                   */
+/*          ip                                                       */
+/*          ip_timestamp                                             */
+/*          ip_qos_classification_data                           @A1A*/
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*                                                                   */
+/*          None                                                     */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/*   CFD List:                                                       */
+/*                                                                   */
+/*   FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION     */
+/*   ---- ------------ ----- ------- -------- ---------------------- */
+/*   $A0= D3188200     3D10  930806  ROCH     New include.           */
+/*   $A1= D99277.03    5D30  021112  ROCH     QOS defines and struct */
+/*   $A2= FW585012     7D20  120518  ROCH     IP header struct update*/
+/*                                                                   */
+/*   End CFD List.                                                   */
+/*                                                                   */
+/*   Additional notes about the Change Activity:                     */
+/*                                                                   */
+/* End Change Activity                                               */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __ip_h
+  #define __ip_h
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+/*********************************************************************/
+/*  Header files                                                     */
+/*********************************************************************/
+
+#include <sys/types.h>             /* common typedefs                */
+#include <netinet/in.h>            /* struct in_addr                 */
+
+/*********************************************************************/
+/*  Miscellaneous defines                                            */
+/*********************************************************************/
+
+#define MAXTTL          255        /* maximum time to live (seconds) */
+
+#define IPFRAGTTL       60         /* time to live for fragments     */
+#define IPTTLDEC        1          /* subtracted when forwarding     */
+#define IP_MAXPACKET    65535      /* maximum size of IP datagram    */
+#define IP_MSS          576        /* default maximum segment size   */
+
+#define IPVERSION       4          /* current IP protocol version    */
+
+#define RFC1038                    /* define to determine which
+                                      security bits to use           */
+
+/*********************************************************************/
+/*  Defines for security bits                                        */
+/*********************************************************************/
+
+#ifdef RFC1038
+
+ #define        IPOPT_SECUR_NONE        0xff
+ #define        IPOPT_SECUR_UNCLASS     0x55
+ #define        IPOPT_SECUR_CONFID      0x7a
+ #define        IPOPT_SECUR_SECRET      0xad
+ #define        IPOPT_SECUR_TOPSECRET   0xde
+
+#else
+
+ #define        IPOPT_SECUR_UNCLASS     0x0000
+ #define        IPOPT_SECUR_CONFID      0xf135
+ #define        IPOPT_SECUR_EFTO        0x789a
+ #define        IPOPT_SECUR_MMMM        0xbc4d
+ #define        IPOPT_SECUR_PROG        0x5e26
+ #define        IPOPT_SECUR_RESTR       0xaf13
+ #define        IPOPT_SECUR_SECRET      0xd788
+ #define        IPOPT_SECUR_TOPSECRET   0x6bc5
+
+#endif  /* RFC1038 */
+
+/*********************************************************************/
+/*  Defines for ip_off (fragment offset) in ip structure             */
+/*********************************************************************/
+
+#define IP_DF 0x4000                    /* do not fragment flag      */
+#define IP_MF 0x2000                    /* more fragments flag       */
+
+/*********************************************************************/
+/*  Defines for ip_tos (type of service) in ip structure             */
+/*********************************************************************/
+
+#define IPTOS_NORMAL            0x00
+#define IPTOS_MINCOST           0x02
+#define IPTOS_RELIABILITY       0x04
+#define IPTOS_THROUGHPUT        0x08
+#define IPTOS_LOWDELAY          0x10
+
+/*********************************************************************/
+/*  Defines for IP precedence (also part of ip_tos) in ip_structure  */
+/*********************************************************************/
+
+#define IPTOS_PREC_NETCONTROL           0xe0
+#define IPTOS_PREC_INTERNETCONTROL      0xc0
+#define IPTOS_PREC_CRITIC_ECP           0xa0
+#define IPTOS_PREC_FLASHOVERRIDE        0x80
+#define IPTOS_PREC_FLASH                0x60
+#define IPTOS_PREC_IMMEDIATE            0x40
+#define IPTOS_PREC_PRIORITY             0x20
+#define IPTOS_PREC_ROUTINE              0x10
+
+/*********************************************************************/
+/*  Defines for options                                              */
+/*********************************************************************/
+                                       /* Macros to mask off:        */
+#define IPOPT_COPIED(o) ((o)&0x80)     /*   Option copy bit          */
+#define IPOPT_CLASS(o)  ((o)&0x60)     /*   Option class bits        */
+#define IPOPT_NUMBER(o) ((o)&0x1f)     /*   Option number            */
+
+                                       /* Option class definitions:  */
+#define IPOPT_CONTROL           0x00   /*   Control                  */
+#define IPOPT_RESERVED1         0x20   /*   Reserved for future use  */
+#define IPOPT_DEBMEAS           0x40   /*   Debugging and measurment */
+#define IPOPT_RESERVED2         0x60   /*   Reserved for future use  */
+
+#define IPOPT_EOL               0      /* end of option list         */
+#define IPOPT_NOP               1      /* no operation               */
+
+#define IPOPT_RR                7      /* record packet route        */
+#define IPOPT_TS                68     /* timestamp                  */
+#define IPOPT_SECURITY          130    /* provide s,c,h,tcc          */
+#define IPOPT_LSRR              131    /* loose source route         */
+#define IPOPT_SATID             136    /* satnet id                  */
+#define IPOPT_SSRR              137    /* strict source route        */
+
+/*********************************************************************/
+/*  Offsets to fields in options other than EOL and NOP              */
+/*********************************************************************/
+
+#define IPOPT_OPTVAL            0       /* option ID                 */
+#define IPOPT_OLEN              1       /* option length             */
+#define IPOPT_OFFSET            2       /* offset within option      */
+#define IPOPT_MINOFF            4       /* min value of above        */
+
+
+/*********************************************************************/
+/*  Defines for ipt_flg in ip_timestamp structure                    */
+/*********************************************************************/
+
+#define IPOPT_TS_TSONLY         0       /* timestamps only           */
+#define IPOPT_TS_TSANDADDR      1       /* timestamps and addresses  */
+#define IPOPT_TS_PRESPEC        3       /* specified modules only    */
+
+
+/*********************************************************************/
+/*  The sendmsg() cmsg_type value and version of QoS structure   @A1A*/
+/*********************************************************************/
+
+#define IP_QOS_CLASSIFICATION_DATA  0x80000001 /* Specify in     @A1A*/
+                                               /* cmsg_type      @A1A*/
+#define IP_QOS_CURRENT_VERSION      0x00000001 /* Current vers   @A1A*/
+                                               /* of data struct @A1A*/
+
+/*********************************************************************/
+/*  Defines for ip_qos_classification_scope                      @A1A*/
+/*********************************************************************/
+
+#define IP_QOS_CONNECTION_LEVEL     0x0001                    /* @A1A*/
+#define IP_QOS_MESSAGE_LEVEL        0x0002                    /* @A1A*/
+
+/*********************************************************************/
+/*  Defines for ip_qos_classification_type                       @A1A*/
+/*********************************************************************/
+
+#define IP_SET_QOSLEVEL_W_APPL_TOKEN_ASCII   0x0001           /* @A1A*/
+#define IP_SET_QOSLEVEL_W_APPL_TOKEN_EBCDIC  0x0002           /* @A1A*/
+#define IP_SET_QOSLEVEL_EXPEDITED            0x0010           /* @A1A*/
+#define IP_SET_QOSLEVEL_HIGH                 0x0020           /* @A1A*/
+#define IP_SET_QOSLEVEL_MEDIUM               0x0040           /* @A1A*/
+#define IP_SET_QOSLEVEL_LOW                  0x0080           /* @A1A*/
+#define IP_SET_QOSLEVEL_BEST_EFFORT          0x0100           /* @A1A*/
+
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+struct ip {                           /* IP header w/out options     */
+
+    unsigned       ip_v:4;            /* version                     */
+    unsigned       ip_hl:4;           /* header length               */
+    u_char         ip_tos;            /* type of service             */
+    u_short        ip_len;            /* total length            @A2C*/
+    u_short        ip_id;             /* identification              */
+    u_short        ip_off;            /* fragment offset field   @A2C*/
+    u_char         ip_ttl;            /* time to live                */
+    u_char         ip_p;              /* protocol                    */
+    u_short        ip_sum;            /* checksum                    */
+    struct in_addr ip_src;            /* source address              */
+    struct in_addr ip_dst;            /* destination address         */
+
+};
+
+struct ip_timestamp {                 /* Time stamp option structure */
+
+    u_char       ipt_code;            /* IPOPT_TS                    */
+    u_char       ipt_len;             /* size of structure           */
+    u_char       ipt_ptr;             /* index of current entry      */
+    unsigned ipt_oflw:4;              /* overflow counter            */
+    unsigned ipt_flg:4;               /* flags, see below            */
+    union ipt_timestamp {             /* Recording space layout      */
+        u_long  ipt_time[1];          /* Used for times only mode    */
+        struct  ipt_ta {              /* Used for time/address mode: */
+            struct in_addr ipt_addr;  /*  Recorded/specified address */
+            u_long ipt_time;          /*  Recorded time              */
+        } ipt_ta[1];
+    } ipt_timestamp;
+
+};
+
+/*********************************************************************/
+/* Ancillary data format for passing QoS classification data     @A1A*/
+/* on sendmsg() API                                              @A1A*/
+/*********************************************************************/
+
+struct ip_qos_classification_data {                           /* @A1A*/
+
+    int    ip_qos_version;               /* Version of struct    @A1A*/
+    int    ip_qos_classification_scope;  /* Classification scope @A1A*/
+    int    ip_qos_classification_type;   /* Classification type  @A1A*/
+    u_char ip_qos_reserved[12];          /* Reserved             @A1A*/
+    int    ip_qos_appl_token_len;        /* Length of appl data  @A1A*/
+ /* u_char ip_qos_appl_token[];   */     /* Application          @A1A*/
+                                         /* classification data  @A1A*/
+};                                                            /* @A1A*/
+
+#endif /* __ip_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

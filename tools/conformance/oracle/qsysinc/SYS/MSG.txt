@@ -1,0 +1,169 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5716-SS1                                                      */
+/*     5769-SS1                                                      */
+/*     5722-SS1                                                      */
+/*     5761-SS1                                                      */
+/*     5770-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  1980, 2018                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+#ifdef __ILEC400__
+  #pragma nomargins nosequence
+  #pragma checkout(suspend)
+#endif
+
+#ifndef _MSG_H
+#define _MSG_H
+
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name: msg.h                                           */
+/*                                                                   */
+/* Descriptive Name: Interprocess communication (IPC) message queue  */
+/*                   structures and prototypes                       */
+/*                                                                   */
+/* Description: Include header file for interprocess communications  */
+/*              message queue services.                              */
+/*                                                                   */
+/* Macros List:                                                      */
+/*     MSG_NO_ERROR                                                  */
+/*                                                                   */
+/* Structure List:                                                   */
+/*     msqid_ds                                                      */
+/*     msqid_ds_time64                                               */
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*     msgctl                                                        */
+/*     msgctl_time64                                                 */
+/*     msgget                                                        */
+/*     msgrcv                                                        */
+/*     msgsnd                                                        */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/* CFD List:                                                         */
+/*                                                                   */
+/* FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION       */
+/* ---- ------------ ----- ------ --------- -----------------------  */
+/* $A0= D9178700     3D60  941016 ROCH    : New include              */
+/* $B1= D9776700     5D10  991205 ROCH    : Added datamodel pragma   */
+/* $B2= RFW661322    V7R4M0 161018 ChenBin: Support time64 for       */
+/*                                           message queue and       */
+/*                                           semaphore set.          */
+/* $B3=PFW665639  V7R4M0 170308 ChenBin: Change comments to C style  */
+/*                                                                   */
+/* End CFD List.                                                     */
+/*                                                                   */
+/*  Additional notes about the Change Activity                       */
+/*                                                                   */
+/* End Change Activity.                                              */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+/*********************************************************************/
+/* Includes                                                          */
+/*********************************************************************/
+
+#include <sys/ipc.h>
+#include <sys/types.h>
+
+#pragma datamodel(P128)      /* @B1A*/
+
+/*********************************************************************/
+/* Constants                                                         */
+/*********************************************************************/
+
+#define MSG_NOERROR   010000 /* No error if big message 0x1000 */
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+typedef unsigned int msgqnum_t; /* Used for number of msgs in a queue */
+typedef unsigned int msglen_t;  /* Used for number of bytes in a queue */
+
+/* Message queue information */
+typedef struct msqid_ds {
+  struct ipc_perm msg_perm;   /* Permissions */
+  msgqnum_t       msg_qnum;   /* Number of messages currently on queue */
+  msglen_t        msg_qbytes; /* Maximum number of bytes allowed on queue */
+  pid_t           msg_lspid;  /* Process ID of last msgsnd() */
+  pid_t           msg_lrpid;  /* Process ID of last msgrcv() */
+#if ((defined _64_BIT_TIME) && (__OS400_TGTVRM__ >= 740)) /*@B2A*/
+  time64_t        msg_stime;  /* Time of last msgsnd() */ /*@B2A*/
+  time64_t        msg_rtime;  /* Time of last msgrcv() */ /*@B2A*/
+  time64_t        msg_ctime;  /* Time of last change by msgctl_time64() @B2A*/
+#else                                                     /*@B2A*/
+  time_t          msg_stime;  /* Time of last msgsnd() */
+  time_t          msg_rtime;  /* Time of last msgrcv() */
+  time_t          msg_ctime;  /* Time of last change by msgctl() */
+#endif                                                    /*@B2A*/
+} msqid_ds_t;
+
+#if (__OS400_TGTVRM__ >= 740)                             /*@B2A*/
+typedef struct msqid_ds_time64 {                          /*@B2A*/
+  struct ipc_perm msg_perm;   /* Permissions */           /*@B2A*/
+  msgqnum_t       msg_qnum;   /* Number of messages currently on queue @B2A*/
+  msglen_t        msg_qbytes; /* Maximum number of bytes allowed on queue @B2A*/
+  pid_t           msg_lspid;  /* Process ID of last msgsnd() */  /*@B2A*/
+  pid_t           msg_lrpid;  /* Process ID of last msgrcv() */  /*@B2A*/
+  time64_t        msg_stime;  /* Time of last msgsnd() */        /*@B2A*/
+  time64_t        msg_rtime;  /* Time of last msgrcv() */        /*@B2A*/
+  time64_t        msg_ctime;  /* Time of last change by msgctl_time64() B2A*/
+} msqid_ds_time64_t;                                             /*@B2A*/
+#endif                                                           /*@B2A*/
+
+
+/*********************************************************************/
+/* Function Prototypes                                               */
+/*********************************************************************/
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+         #define QBFC_EXTERN extern
+    #else
+         #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+QBFC_EXTERN int msgctl(int msqid, int cmd, struct msqid_ds *buf);
+QBFC_EXTERN int msgget(key_t key, int msgflg);
+QBFC_EXTERN int msgrcv(int msqid, void *msgp, size_t msgsz,
+                       long int msgtyp, int msgflg);
+QBFC_EXTERN int msgsnd(int msqid, const void *msgp, size_t msgsz,
+                       int msgflg);
+
+#if (__OS400_TGTVRM__>=740)                                        /*@B2A*/
+  #if ((!defined(_POSIX_SOURCE)) && (!defined(_POSIX1_SOURCE)))    /*@B2A*/
+       QBFC_EXTERN int msgctl_time64 (int msqid, int cmd,
+                                     struct msqid_ds_time64 *buf); /*@B2A*/
+	#ifdef _64_BIT_TIME                                        /*@B2A*/
+            #pragma map(msgctl, "msgctl_time64")                   /*@B2A*/
+    	#endif                                                     /*@B2A*/
+  #endif                                                           /*@B2A*/
+#endif                                                             /*@B2A*/
+
+#pragma datamodel(pop)       /* @B1A*/
+
+#endif /* _MSG_H */
+
+#ifdef __ILEC400__
+  #pragma checkout(resume)
+#endif

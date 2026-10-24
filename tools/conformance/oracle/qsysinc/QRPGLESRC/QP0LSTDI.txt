@@ -1,0 +1,860 @@
+     D*begin_generated_IBM_copyright_prolog
+     D*This is an automatically generated copyright prolog.
+     D*After initializing,  DO NOT MODIFY OR MOVE
+     D*-----------------------------------------------------------------
+     D*
+     D*Product(s):
+     D*5763-SS1
+     D*5716-SS1
+     D*5769-SS1
+     D*5722-SS1
+     D*5761-SS1
+     D*5770-SS1
+     D*
+     D*(C)Copyright IBM Corp.  1994, 2009
+     D*
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*---------------------------------------------------------------
+     D*
+     D*end_generated_IBM_copyright_prolog
+     D*** START HEADER FILE SPECIFICATIONS ****************************
+     D*
+     D*Header File Name:  Qp0lstdi.h
+     D*
+     D*Descriptive Name: Integrated File System definitions
+     D*
+     D*Description: This header file defines multiple APIs.  They @C1A
+     D*         are identified in the Function Prototype List @C1A
+     D*         below.  The rename() function is redirected   @C1A
+     D*         with #pragma map.                             @C1A
+     D*
+     D*Header Files Included: sys/types.h
+     D*                   qlg.h
+     D*                   qp0lscan.h
+     D*
+     D*Macros List:
+     D*         QP0L_ALLDIR                                   @C6A
+     D*         QP0L_ALLQSYS                                  @C6A
+     D*         QP0L_ALLSTMF                                  @C6A
+     D*         QP0L_ALWCKPWRT                                @B4A
+     D*         QP0L_ALWSAV_NO                                @CAA
+     D*         QP0L_ALWSAV_YES                               @CAA
+     D*         QP0L_APYJRNCHG_REQ_YES                        @CDA
+     D*         QP0L_APYJRNCHG_REQ_NO                         @CDA
+     D*         QP0L_ATTR_ACCESS_TIME                         @A5C
+     D*         QP0L_ATTR_ALLOC_SIZE                          @A4A
+     D*         QP0L_ATTR_ALLOC_SIZE_64                       @B1A
+     D*         QP0L_ATTR_ALWCKPWRT                           @B4A
+     D*         QP0L_ATTR_ALWSAV                              @CAA
+     D*         QP0L_ATTR_ASP                                 @A9A
+     D*         QP0L_ATTR_AUDIT                               @C8A
+     D*         QP0L_ATTR_AUTH                                @A5C
+     D*         QP0L_ATTR_CCSID                               @BBA
+     D*         QP0L_ATTR_CHANGE_TIME                         @A5C
+     D*         QP0L_ATTR_CHECKED_OUT                         @A5A
+     D*         QP0L_ATTR_CODEPAGE                            @B2A
+     D*         QP0L_ATTR_CREATE_TIME                         @A5C
+     D*         QP0L_ATTR_CRTOBJAUD                           @CEA
+     D*         QP0L_ATTR_CRTOBJSCAN                          @C9A
+     D*         QP0L_ATTR_DATA_SIZE                           @A4A
+     D*         QP0L_ATTR_DATA_SIZE_64                        @B1A
+     D*         QP0L_ATTR_DIR_FORMAT                          @C5A
+     D*         QP0L_ATTR_DISK_STG_OPT                        @C5A
+     D*         QP0L_ATTR_EXTENDED_ATTR_SIZE                  @A5A
+     D*         QP0L_ATTR_FILE_FORMAT                         @B3A
+     D*         QP0L_ATTR_FILE_ID                             @A8A
+     D*         QP0L_ATTR_JOURNAL_EXTENDED_INFORMATION        @CGA
+     D*         QP0L_ATTR_JOURNAL_INFORMATION                 @B6A
+     D*         QP0L_ATTR_LOCAL_REMOTE                        @A4A
+     D*         QP0L_ATTR_MAIN_STG_OPT                        @C5A
+     D*         QP0L_ATTR_MODIFY_TIME                         @A5C
+     D*         QP0L_ATTR_MULT_SIGS                           @C5A
+     D*         QP0L_ATTR_OBJTYPE                             @A4A
+     D*         QP0L_ATTR_PC_ARCHIVE                          @B2A
+     D*         QP0L_ATTR_PC_HIDDEN                           @B2A
+     D*         QP0L_ATTR_PC_READ_ONLY                        @B2A
+     D*         QP0L_ATTR_PC_SYSTEM                           @B2A
+     D*         QP0L_ATTR_RESET_DATE                          @B2A
+     D*         QP0L_ATTR_RSTDRNMUNL                          @CBA
+     D*         QP0L_ATTR_SCAN                                @C9A
+     D*         QP0L_ATTR_SCAN_INFO                           @C9A
+     D*         QP0L_ATTR_SGID                                @BBA
+     D*         QP0L_ATTR_SIGNED                              @BCA
+     D*         QP0L_ATTR_STG_FREE                            @A5C
+     D*         QP0L_ATTR_SUID                                @BBA
+     D*         QP0L_ATTR_SYS_SIGNED                          @C5A
+     D*         QP0L_ATTR_SYSTEM_ARCHIVE                      @B2A
+     D*         QP0L_ATTR_SYSTEM_USE                          @CGA
+     D*         QP0L_ATTR_TEMPORARY                           @CIA
+     D*         QP0L_ATTR_UDFS_DEFAULT_FORMAT                 @B3A
+     D*         QP0L_ATTR_UDFS_TEMPORARY                      @CIA
+     D*         QP0L_ATTR_USAGE_INFORMATION                   @B2A
+     D*         QP0L_AUD_ALL                                  @CEA
+     D*         QP0L_AUD_CHANGE                               @CEA
+     D*         QP0L_AUD_NONE                                 @CEA
+     D*         QP0L_AUD_NOTAVL                               @CFA
+     D*         QP0L_AUD_SYSVAL                               @CEA
+     D*         QP0L_AUD_USRPRF                               @CEA
+     D*         QP0L_BYPASS_NO_ERRORID                        @A4A
+     D*         QP0L_CHECKED_OUT                              @A5A
+     D*         QP0L_DIR_FORMAT_TYPE1                         @C5A
+     D*         QP0L_DIR_FORMAT_TYPE2                         @C5A
+     D*         QP0L_DONOT_FOLLOW_SYMLNK                      @A5C
+     D*         QP0L_END_PROCESS_SUBTREE                      @A4A
+     D*         QP0L_EXCLUSION_TYPE                           @A4A
+     D*         QP0L_FILE_FORMAT_TYPE1                        @B3A
+     D*         QP0L_FILE_FORMAT_TYPE2                        @B3A
+     D*         QP0L_FOLLOW_SYMLNK                            @A5C
+     D*         QP0L_INCLUSION_TYPE                           @A4A
+     D*         QP0L_JOBLOG_NO_ERRORID                        @A4A
+     D*         QP0L_JOURNAL_AFTER_IMAGES                     @B6A
+     D*         QP0L_JOURNAL_BEFORE_IMAGES                    @B6A
+     D*         QP0L_JOURNAL_OPTIONAL_ENTRIES                 @B6A
+     D*         QP0L_JOURNAL_SUBTREE                          @B6A
+     D*         QP0L_JOURNALED                                @B6A
+     D*         QP0L_LOCAL_OBJ                                @A4A
+     D*         QP0L_LOCAL_REMOTE_OBJ                         @A4A
+     D*         QP0L_MBR                                      @C6A
+     D*         QP0L_MLTTHDACN_MSG                            @B5A
+     D*         QP0L_MLTTHDACN_NO                             @B5A
+     D*         QP0L_MLTTHDACN_NOMSG                          @B5A
+     D*         QP0L_MLTTHDACN_SYSVAL                         @B5A
+     D*         QP0L_MULT_SIGS_NO                             @C5A
+     D*         QP0L_MULT_SIGS_YES                            @C5A
+     D*         QP0L_NO                                       @A4A
+     D*         QP0L_NOQSYS                                   @C6A
+     D*         QP0L_NOT_ALWCKPWRT                            @B4A
+     D*         QP0L_NOT_CHECKED_OUT                          @A5A
+     D*         QP0L_NOT_JOURNALED                            @B6A
+     D*         QP0L_NOT_SIGNED                               @BCA
+     D*         QP0L_NULLNAME_ERRORID                         @A4A
+     D*         QP0L_PASS_WITH_ERRORID                        @A4A
+     D*         QP0L_PC_CHANGED                               @B2A
+     D*         QP0L_PC_HIDDEN                                @B2A
+     D*         QP0L_PC_NOT_CHANGED                           @B2A
+     D*         QP0L_PC_NOT_HIDDEN                            @B2A
+     D*         QP0L_PC_NOT_READONLY                          @B2A
+     D*         QP0L_PC_NOT_SYSTEM                            @B2A
+     D*         QP0L_PC_READONLY                              @B2A
+     D*         QP0L_PC_SYSTEM                                @B2A
+     D*         QP0L_REMOTE_OBJ                               @A4A
+     D*         QP0L_ROLLBACK_END_YES                         @CDA
+     D*         QP0L_ROLLBACK_END_NO                          @CDA
+     D*         QP0L_RSTDRNMUNL_OFF                           @CBA
+     D*         QP0L_RSTDRNMUNL_ON                            @CBA
+     D*         QP0L_SCANNING_CHGONLY                         @C9A
+     D*         QP0L_SCANNING_NO                              @C9A
+     D*         QP0L_SCANNING_YES                             @C9A
+     D*         QP0L_SELECT_DONE                              @A4A
+     D*         QP0L_SELECT_FAILED                            @A4A
+     D*         QP0L_SELECT_NOT_OK                            @A4A
+     D*         QP0L_SELECT_OK                                @A4A
+     D*         QP0L_SGID_OFF                                 @C5A
+     D*         QP0L_SGID_ON                                  @C5A
+     D*         QP0L_SIGNED                                   @BCA
+     D*         QP0L_STG_DYNAMIC                              @C5A
+     D*         QP0L_STG_MINIMIZE                             @C5A
+     D*         QP0L_STG_NORMAL                               @C5A
+     D*         QP0L_SUBTREE_NO                               @A4A
+     D*         QP0L_SUBTREE_YES                              @A4A
+     D*         QP0L_SUID_OFF                                 @C5A
+     D*         QP0L_SUID_ON                                  @C5A
+     D*         QP0L_SYS_NOT_STG_FREE                         @A5A
+     D*         QP0L_SYS_STG_FREE                             @A5A
+     D*         QP0L_SYSTEM_CHANGED                           @B2A
+     D*         QP0L_SYSTEM_NOT_CHANGED                       @B2A
+     D*         QP0L_SYSTEM_SIGNED_NO                         @C5A
+     D*         QP0L_SYSTEM_SIGNED_YES                        @C5A
+     D*         QP0L_UDFS_DEFAULT_TYPE1                       @B3A
+     D*         QP0L_UDFS_DEFAULT_TYPE2                       @B3A
+     D*         QP0L_SYSUSE_NONE                              @CGA
+     D*         QP0L_SYSUSE_NWSSTG                            @CGA
+     D*         QP0L_SYSUSE_VRTVOL                            @CGA
+     D*         QP0L_TEMPORARY_NO                             @CIA
+     D*         QP0L_TEMPORARY_YES                            @CIA
+     D*         QP0L_UDFS_TEMPORARY_NO                        @CIA
+     D*         QP0L_UDFS_TEMPORARY_YES                       @CIA
+     D*         QP0L_USER_FUNCTION_PGM                        @A4A
+     D*         QP0L_USER_FUNCTION_PTR                        @A4A
+     D*         QP0L_YES                                      @A4A
+     D*         rename
+     D*
+     D*Structure List: Qp0l_AttrTypes_List_t
+     D*            Qp0l_Attr_Header_t                         @B2A
+     D*            Qp0l_Authority_General_t
+     D*            Qp0l_Authority_Users_t
+     D*            Qp0l_Checkout_t
+     D*            Qp0l_IN_EXclusion_List_t
+     D*            Qp0l_Journal_Extended_Info_t               @CDA
+     D*            Qp0l_Journal_Info_t                        @C3A
+     D*            Qp0l_Objtypes_List_t
+     D*            Qp0l_Pathnames_t                           @A7A
+     D*            Qp0l_QSYS_Info_t
+     D*            Qp0l_Scan_Info_t                           @C9A
+     D*            Qp0l_StgFree_Function_t                    @A7A
+     D*            Qp0l_Usage_t                               @B2A
+     D*            Qp0l_User_Function_t
+     D*
+     D*Function Prototype List: QlgCvtPathToQSYSObjName           @C1A
+     D*                     QlgGetAttr                        @C1A
+     D*                     QlgGetPathFromFileID              @C1A
+     D*                     QlgOpen                           @C1A
+     D*                     QlgProcessSubtree                 @C1A
+     D*                     QlgRenameKeep                     @C1A
+     D*                     QlgRenameUnlink                   @C1A
+     D*                     QlgSaveStgFree                    @C1A
+     D*                     QlgSetAttr                        @C1A
+     D*                     QlgUnlink                         @C1A
+     D*                     Qp0lCvtPathToQSYSObjName
+     D*                     Qp0lGetAttr
+     D*                     Qp0lGetPathFromFileID
+     D*                     Qp0lOpen                          @B7A
+     D*                     Qp0lProcessSubtree
+     D*                     Qp0lRenameKeep
+     D*                     Qp0lRenameUnlink
+     D*                     Qp0lSaveStgFree
+     D*                     Qp0lSetAttr                       @B2A
+     D*                     Qp0lUnlink                        @B7A
+     D*
+     D*Change Activity:
+     D*
+     D*CFD List:
+     D*
+     D*FLAG REASON       LEVEL DATE   PGMR     CHANGE DESCRIPTION
+     D*---- ------------ ----- ------ -------- ----------------------
+     D*$A0= D28253       3D10  940309 ROCH     New Include
+     D*$A1= P3992252     3D60  950522 ROCH     Add __cplusplus #ifdef
+     D*                                    and #pragma info(none)
+     D*$A2= PTH01765     3D60  950804 ROCH     Need to include types.h
+     D*                                    Correct #pragma info
+     D*$A3= P3624985     4D10  960813 ROCH     Move types.h
+     D*$A4= D9499200     4D30  970625 ROCH:    Add Qp0lProcessSubtree
+     D*                                    and Qp0lGetAttr
+     D*$A5= D9499200     4D30  970721 ROCH:    Adding macros for
+     D*                                    Qp0lGetAttr
+     D*$A6= D95721       4D30  970820 ROCH:    Adding API Qp0lCvt-
+     D*                                    PathToQSYSObjName
+     D*$A7= D9499200     4D30  970904 ROCH:    Add Qp0lSaveStgFree
+     D*$A8= D9539701     4D30  971021 ROCH:    Adding new macro
+     D*                                    QP0L_ATTR_FILE_ID
+     D*$A9= P3662129     4D30  971222 ROCH:    Adding new macro
+     D*                                    QP0L_ATTR_ASP
+     D*$B1= D9588102     4D40  980321 ROCH:    Add new macros
+     D*                                    QP0L_ATTR_ALLOC_64
+     D*                                    QP0L_ATTR_DATA_SIZE_64
+     D*$B2= D9704000     4D40  980321 ROCH:    Add QP0lSetAttr and
+     D*                                    new macros for
+     D*                                    Qp0lGetAttr.
+     D*$B3= D9584401     4D40  980422 ROCH:    Add support to
+     D*                                    identify file formats
+     D*$B4= D9707700     4D40  980616 ROCH:    Add support for
+     D*                                    QP0L_ATTR_ALWCKPWRT
+     D*$B5= D9705800     4D40  980609 ROCH:    Add support for
+     D*                                    multithread actions
+     D*$B6= D9714800     4D40  980629 ROCH:    Add new macros
+     D*                                    for Qp0lGetAttr.
+     D*                                    Add Qp0l_Journal_Info_t
+     D*                                    structure.
+     D*$B7= D9732500     4D40  980618 ROCH:    Add Qp0lOpen and
+     D*                                    Qp0lUnlink
+     D*$B8= PSA75675     4D40  980804 ROCH:    Add _POSIX_SOURCE
+     D*                                    #ifdefs for new data
+     D*                                    types
+     D*$B9= D9746400     5D10  990406 ROCH:    Update journal info.
+     D*$BA= P3696489     5D10  990422 ROCH:    Replace #define with
+     D*                                    #pragma map for
+     D*                                    rename
+     D*$BB= D9746401     5D10  990525 ROCH:    Update journal info.
+     D*$BB= D9765101     5D10  990623 ROCH:    Add QP0L_ATTR_CCSID
+     D*$BC= D9754500     5D10  990714 ROCH:    Add QP0L_ATTR_SIGNED
+     D*$C1= D9765800     5D10  990607 ROCH:    Add 'Qlg' API support
+     D*$C2= D98212.05    5D10  000104 ROCH:    Datamodel changes
+     D*$C3= P9929484     5D10  000928 ROCH:    Update prologue.
+     D*$C4= D9841621     5D20  010611 ROCH:    Add field to
+     D*                                    Qp0l_QSYS_Info_t
+     D*$C5= D9864901     5D20  010627 ROCH:    QP0L_ATTR_SYS_SIGNED
+     D*                                    QP0L_ATTR_MULT_SIGS
+     D*                                    QP0L_ATTR_DISK_STG_OPT
+     D*                                    QP0L_ATTR_MAIN_STG_OPT
+     D*                                    QP0L_ATTR_DIR_FORMAT
+     D*$C6= D9841624     5D20  010822 ROCH:    QP0L_ALLDIR, QP0L_MBR,
+     D*                                    QP0L_ALLQSYS,
+     D*                                    QP0L_NOQSYS,
+     D*                                    QP0L_ALLSTMF
+     D*$C7= P9953683     5D20  010922 ROCH:    Comment fix
+     D*$C8= D9909300     5D20  011211 ROCH:    QP0L_ATTR_AUDIT
+     D*$C9= D9986000     5D30  020330 ROCH:    Scan-related changes
+     D*$CA= D9936500     5D30  020506 ROCH:    QP0L_ATTR_ALWSAV
+     D*$CB= D9909605     5D30  020918 ROCH:    QP0L_ATTR_RSTDRNMUNL
+     D*$CC= D9923000     5D30  021206 ROCH:    CCSID neutral rename
+     D*$CD= D9920705     5D30  021223 ROCH:    Add new macros
+     D*                                    for Qp0lGetAttr. Add
+     D*                               Qp0l_Journal_Extended_info_t
+     D*                                    structure.
+     D*$CE= D9981200   v5r4m0  031202 ROCH:    QP0L_ATTR_CRTOBJAUD
+     D*$CF= D9976601   v5r4m0  040301 ROCH:    QP0L_AUD_NOTAVL
+     D*$CG= D9979403   v5r4m0  040402 ROCH:    QP0L_ATTR_SYSTEM_USE
+     D*$CH= P9B31321   v6r1m0  060724 ROCH:    Update size of the
+     D*                                    reserved field in
+     D*                                    Qp0l_Usage_t to
+     D*                                    reflect the actual
+     D*                                    structure length
+     D*$CI= D92406     v7r1m0  090506 ROCH:    Temporary file system
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*End Change Activity.
+     D*** END HEADER FILE SPECIFICATIONS ******************************
+     D*Protect POSIX source                                       @B8A
+     D*Protect POSIX source                                       @B8A
+     D*****************************************************************
+     D*Type Definitions
+     D*****************************************************************
+     D*Protect POSIX source                                       @B8A
+     D*Qp0lProcessSubtree() API Object types list                 @A4A
+     D*                                                       @A4A
+     DQP0LOL           DS
+     D*                                                       @A4A
+     D QP0NBROO00              1      4U 0
+     D*                                  Number of object     @A4A
+     D*                                    types in the list  @A4A
+     D*QP0TYPES                5     15    DIM(00011)
+     D*
+     D*                                 Variable length entry @A4A
+     D*                                                       @A4A
+     D*Qp0lProcessSubtree() API IN_EXclusion list type            @A4A
+     DQP0INEXL         DS
+     D QP0INEX                 1      4U 0
+     D*                                  Inclusion list or    @A4A
+     D*                                    exclusion list     @A4A
+     D*                                    type identifier    @A4A
+     D QP0NBROP                5      8U 0
+     D*                                  Number of path name  @A4A
+     D*                                    pointers in the    @A4A
+     D*                                    inclusion or       @A4A
+     D*                                    exclusion list     @A4A
+     D QP0ERVED18              9     16
+     D*                                  Must be zero         @A4A
+     D*                                                       @A4A
+     D*                                 Variable length entry @A4A
+     D*QP0PNP                 17     32*   DIM(00001)
+     D*                                             Path Name Ptrs
+     D*
+     D*                                                       @A4A
+     D*                                                       @A4A
+     D*Qp0lProcessSubtree() API type definition for the user      @A4A
+     D*specified exit program                                     @A4A
+     D*                                                       @A4A
+     D*Qp0lProcessSubtree() API user function                     @A4A
+     DQP0LUF           DS
+     D*                                             Qp0l User Function t
+     D QP0FT                   1      4U 0
+     D*                                  Procedure or program @A4A
+     D*                                    type flag          @A4A
+     D QP0BRARY                5     14
+     D*                                  Program library      @A4A
+     D QP0OGRAM               15     24
+     D*                                  Program name         @A4A
+     D QP0HDACN               25     25
+     D*                                  Multithread action   @B5A
+     D QP0ERVED19             26     32
+     D*                                  must be zero         @B5C
+     D QP0LPS                 33     48*   PROCPTR
+     D*                                  Procedure pointer    @A4A
+     D*Qp0lGetAttr() API attribute types list                     @A5A
+     D*                                                       @A5A
+     DQP0LATL          DS
+     D*                                                       @A5A
+     D QP0NORA                 1      4U 0
+     D*                                  Number of requested  @A5A
+     D*                                    attributes in the  @A5A
+     D*                                    list               @A5A
+     D*QP0AT                   5      8U 0 DIM(00001)
+     D*
+     D*                                 Variable length entry @A5A
+     D*                                                       @A5A
+     D*Qp0lGetAttr() API object checked out information           @A5A
+     D*                                                       @A5A
+     DQP0LC            DS
+     D*                                                       @A5A
+     D QP0COF                  1      1
+     D*                                  Whether or not object@A5A
+     D*                                    is checked out     @A5A
+     D QP0UN                   2     11
+     D*                                  Name of user who has @A5A
+     D*                                    it checked out     @A5A
+     D QP0ERVED20             12     12
+     D*                                  Reserved field.      @A5A
+     D QP0COT                 13     16U 0
+     D*                                  Time, in seconds     @A5A
+     D*                                    since Epoch, when  @A5A
+     D*                                    checked out        @A5A
+     D*Qp0lGetAttr() API format for general authority information.@A5A
+     D*                                                       @A5A
+     DQP0LAG           DS
+     D*                                             Qp0l Authority General t
+     D*                                                       @A5A
+     D QP0OBJO                 1     10
+     D*                                  Object owner         @A5A
+     D QP0PG                  11     20
+     D*                                  Primary group        @A5A
+     D QP0ALN                 21     30
+     D*                                  Authorization list   @A5A
+     D*                                  name                 @A5A
+     D QP0RSV1                31     40
+     D*                                  (must be zero)       @A5A
+     D QP0UAO                 41     44U 0
+     D*                                  Offset to Array of   @A5A
+     D*                                  users                @A5A
+     D QP0NBROU               45     48U 0
+     D*                                  Number of users      @A5A
+     D QP0UES                 49     52U 0
+     D*                                  Size of user entry   @A5A
+     D*                                    field entry        @A5A
+     D QP0RSV2                53     64
+     D*                                  (must be zero)       @A5A
+     D*QP0AOU                 65     65
+     D*
+     D*                                 Variable length entry @A5A
+     D*                                                       @A5A
+     D*Qp0lCvtPathToQSYSObjName() API struct for info             @A6A
+     D*returned about the QSYS object name.                       @A6A
+     DQP0QSYSI         DS
+     D*                                                       @A6A
+     D QP0BRTN03               1      4U 0
+     D*                                  # bytes actually     @A6A
+     D*                                    returned to caller @A6A
+     D QP0BAVL03               5      8U 0
+     D*                                  # bytes total        @A6A
+     D*                                    available          @A6A
+     D QP0CSIDO                9     12U 0
+     D*                                  CCSID that names and @A6A
+     D*                                    types returned in  @A6A
+     D QP0LN                  13     40
+     D*                                  Name of library      @A6A
+     D QP0LT00                41     60
+     D*                                  Type of library      @A6A
+     D QP0ON                  61     88
+     D*                                  Name of object       @A6A
+     D QP0OT                  89    108
+     D*                                  Type of object       @A6A
+     D QP0MN02               109    136
+     D*                                  Name of member       @A6A
+     D QP0MT03               137    156
+     D*                                  Type of member       @A6A
+     D QP0AN00               157    184
+     D*                                  Name of ASP          @C4A
+     D*Qp0lGetAttr() API format for information returned for users@A5A
+     D*                                                       @A5A
+     DQP0LAU           DS
+     D*                                                       @A5A
+     D QP0UN00                 1     10
+     D*                                  User name            @A5A
+     D QP0UDA                 11     20
+     D*                                  User data authority  @A5A
+     D QP0JMGTR               21     21
+     D*                                  Object management    @A5A
+     D QP0XISTR               22     22
+     D*                                  Object existence auth@A5A
+     D QP0LTERR               23     23
+     D*                                  Object alter         @A5A
+     D QP0JREFR               24     24
+     D*                                  Object reference     @A5A
+     D QP0RSV100              25     34
+     D*                                  (must be zero)       @A5A
+     D QP0OPRDR               35     35
+     D*                                  Object operational   @A5A
+     D QP0EADDR               36     36
+     D*                                  Read                 @A5A
+     D QP0ADDDR               37     37
+     D*                                  Add                  @A5A
+     D QP0ATEDR               38     38
+     D*                                  Update               @A5A
+     D QP0ETEDR               39     39
+     D*                                  Delete               @A5A
+     D QP0UTEDR               40     40
+     D*                                  Execute              @A5A
+     D QP0UDEDR               41     41
+     D*                                  Exclude              @A5A
+     D QP0RSV200              42     48
+     D*                                  (must be zero)       @A5A
+     D*Qp0lSaveStgFree() API pathnames for Exit programs         @A7A
+     D*                                                       @A7A
+     DQP0LP            DS
+     D*                                                       @A7A
+     D QP0NBRON                1      4U 0
+     D*                                   Number of path name @A7A
+     D*                                     pointers in the   @A7A
+     D QP0ERVED21              5     16
+     D*                                   (must be zero)      @A7A
+     D*QP0NP                  17     32*   DIM(00001)
+     D*
+     D*                                   Variable length     @A7A
+     D*                                     entry             @A7A
+     D*Qp0lSaveStgFree() API type definition for the user         @A7A
+     D*specified exit program                                     @A7A
+     D*                                                       @A7A
+     D*                                                       @A7A
+     D*Qp0lSaveStgFree() API user function                        @A7A
+     D*                                                       @A7A
+     DQP0LSFF          DS
+     D*                                                       @A7A
+     D QP0FT00                 1      4U 0
+     D*                                   Procedure or        @A7A
+     D*                                     program type      @A7A
+     D QP0BRARY00              5     14
+     D*                                   Program library     @A7A
+     D QP0OGRAM00             15     24
+     D*                                   Program name        @A7A
+     D QP0HDACN00             25     25
+     D*                                   Multithread action  @B5A
+     D QP0ERVED22             26     32
+     D*                                   must be zero        @B5C
+     D QP0LSSF                33     48*    PROCPTR
+     D*                                   Procedure pointer   @A7A
+     D*Qp0lGetAttr() and Qp0lSetAttr() attribute data header      @B2A
+     DQP0LAH           DS
+     D QP0NAO                  1      4U 0
+     D*                                  Offset to next attr  @B2A
+     D*                                   in buffer (in bytes)@B2A
+     D QP0AID                  5      8U 0
+     D*                                  Attribute ID         @B2A
+     D QP0AS                   9     12U 0
+     D*                                  Size of attr data    @B2A
+     D*                                   in bytes (not incl. @B2A
+     D*                                   padding).           @B2A
+     D QP0ERVED23             13     16
+     D*                                  Reserved field.      @B2A
+     D*Qp0lGetAttr() API usage information                        @B2A
+     D*                                                       @B2A
+     DQP0LU            DS
+     D*                                                       @B2A
+     D QP0RD03                 1      4U 0
+     D*                                  Date, in seconds     @B2A
+     D*                                   since Epoch, that   @B2A
+     D*                                   the Days_used_count @B2A
+     D*                                   was reset.          @B2A
+     D QP0LUD                  5      8U 0
+     D*                                  Date, in seconds     @B2A
+     D*                                   since Epoch, that   @B2A
+     D*                                   the object was most @B2A
+     D*                                   recently used.      @B2A
+     D QP0DUC                  9     10U 0
+     D*                                  Count, incremented   @B2A
+     D*                                   once each day, when @B2A
+     D*                                   an object is used.  @B2A
+     D QP0ERVED24             11     16
+     D*                                  (must be zero)       @CHC
+     D*Qp0lGetAttr() API journal information                      @B6A
+     D*                                                       @B6A
+     DQP0LJI           DS
+     D*                                                       @B6A
+     D QP0TATUS01              1      1
+     D*                                  Current journaling   @B6A
+     D*                                   status              @B6A
+     D QP0TIONS                2      2
+     D*                                  Current Options      @B6A
+     D QP0JI                   3     12
+     D*                                      JID              @B6A
+     D QP0JN12                13     22
+     D*                                  Current or last      @B6A
+     D*                                   journal name.       @B6A
+     D QP0JLIB                23     32
+     D*                                  Current or last      @B6A
+     D*                                   journal library     @B6A
+     D*                                   name.               @B6A
+     D QP0TLS                 33     36U 0
+     D*                                  Date and time, in    @B6A
+     D*                                   seconds since Epoch,@B6A
+     D*                                   that journaling was @B6A
+     D*                                   last started on the @B6A
+     D*                                   object.             @B6A
+     D*Qp0lGetAttr() API journal extended information             @CDA
+     D*                                                       @CDA
+     DQP0LJEI          DS
+     D*                                                       @CDA
+     D QP0TATUS02              1      1
+     D*                                  Current journaling   @CDA
+     D*                                   status              @CDA
+     D QP0TIONS00              2      2
+     D*                                  Current Options      @CDA
+     D QP0JI00                 3     12
+     D*                                      JID              @CDA
+     D QP0JN27                13     22
+     D*                                  Current or last      @CDA
+     D*                                   journal name.       @CDA
+     D QP0JLIB00              23     32
+     D*                                  Current or last      @CDA
+     D*                                   journal library     @CDA
+     D*                                   name.               @CDA
+     D QP0TLS00               33     36U 0
+     D*                                  Date and time, in    @CDA
+     D*                                   seconds since Epoch,@CDA
+     D*                                   that journaling was @CDA
+     D*                                   last started on the @CDA
+     D*                                   object.             @CDA
+     D QP0RN                  37     46
+     D*                                   Journal rcv name    @CDA
+     D*                                   from the last save  @CDA
+     D*                                   or oldest trans.    @CDA
+     D*                                   prior to save.      @CDA
+     D QP0RLIB                47     56
+     D*                                   Journal rcv library @CDA
+     D*                                   name from the last  @CDA
+     D*                                   save or oldest      @CDA
+     D*                                   transaction prior   @CDA
+     D*                                   to save.            @CDA
+     D QP0RASPD               57     66
+     D*                                   Journal rcv ASP     @CDA
+     D*                                   device from last    @CDA
+     D*                                   save or oldest      @CDA
+     D*                                   trans prior to      @CDA
+     D*                                   save.               @CDA
+     D QP0AJCR                67     67
+     D*                                                       @CDA
+     D*                                  QP0L_APYJRNCHG_REQ_NO@CDA
+     D*                                  - Loaded object has  @CDA
+     D*                                    no partial trans.  @CDA
+     D*                                 QP0L_APYJRNCHG_REQ_YES@CDA
+     D*                                  - Loaded object has  @CDA
+     D*                                    partial trans.     @CDA
+     D QP0RBE                 68     68
+     D*                                  QP0L_ROLLBACK_END_NO @CDA
+     D*                                  - Rollback did not   @CDA
+     D*                                    ended prior to     @CDA
+     D*                                    full completion.   @CDA
+     D*                                  QP0L_ROLLBACK_END_YES@CDA
+     D*                                  - Rollback abruptly  @CDA
+     D*                                    ended prior to     @CDA
+     D*                                    full completion.   @CDA
+     D QP0RSV023              69     80
+     D*                                   Reserved space.     @CDA
+     D*Qp0lGetAttr() API scan information                         @C9A
+     D*                                                       @C9A
+     DQP0LSI00         DS
+     D*                                                       @C9A
+     D QP0TATUS03              1      1
+     D*                                  Scan status          @C9A
+     D QP0SD04                 2      2
+     D*                                  Scan signatures are
+     D*                                  different            @C9A
+     D QP0INARY                3      3
+     D*                                  Binary scan          @C9A
+     D QP0ERVED53              4      4
+     D*                                  Reserved field.      @C9A
+     D QP0CSID1                5      8U 0
+     D*                                  CCSID #1             @C9A
+     D QP0CSID2                9     12U 0
+     D*                                  CCSID #2             @C9A
+     D*Protect POSIX source                                       @B8A
+     D*****************************************************************
+     D*POSIX sensitive defines
+     D*****************************************************************
+     D*****************************************************************
+     D*Macros
+     D*****************************************************************
+     D*Protect POSIX source                                       @B8A
+     D*****************************************************************
+     D*Macros for Qp0lProcessSubtree API                          @A4A
+     D*****************************************************************
+     D*Qp0lProcessSubtree() API user function type is either a    @A4A
+     D*procedure pointer or a library/program name              @A4A
+     D*Qp0lProcessSubtree() API path name list is either an inclusion
+     D*list or an exclusion list                                @A4A
+     D*Choose to open and process subdirectories or not            @A4A
+     D*                                  subdirectories       @A4A
+     D*Choose to process local objects only, remote objects only   @A4A
+     D*or both local and remote objects                         @A4A
+     D*                                                       @A4A
+     D*Choose Qp0lProcessSubtree() API recovery actions            @A4A
+     D*                                   error message       @A4A
+     D*                                   an error message    @A4A
+     D*                                   joblog without an   @A4A
+     D*                                   error message       @A4A
+     D*                                   an error message    @A4A
+     D*Qp0lProcessSubtree() API selection status passed to the    @A4A
+     D*called function                                            @A4A
+     D*Qp0lProcessSubtree() API object type special values        @C6A
+     D*************************************************************@A4A
+     D*Macros for Qp0lGetAttr() and Qp0lSetAttr() APIs            @B2C
+     D*************************************************************@A4A
+     D*Qp0lGetAttr() API attribute selection constants            @A4A
+     D*                                 Object Type           @A4A
+     D*                                 Data size, no headers @A4A
+     D*                                 Disk allocation size  @A4A
+     D*                                 Size used by extended @A5A
+     D*                                 attributes.           @A5A
+     D*                                 Object creation time  @A5C
+     D*                                 Last data accessed    @A5C
+     D*                                 time                  @A5C
+     D*                                 Last attr change time @A5C
+     D*                                 Last data change time @A5C
+     D*                                 Storage Free indicator@A5C
+     D*                                 Is object checked out @A5A
+     D*                                 is on Local DASD or   @A5A
+     D*                                 not                   @A5A
+     D*                                 Authorities           @A5C
+     D*                                 File Identifier       @A8A
+     D*                                 ASP that object       @A9A
+     D*                                 resides in            @A9A
+     D* Attributes for Large Files                            @B1A
+     D*                           Large data size, no headers @B1A
+     D*                           Large disk allocation size  @B1A
+     D*                                 Get usage data.
+     D*                                 Can only be used with
+     D*                                 Qp0lGetAttr() api.    @B2A
+     D*                                 PC read only          @B2A
+     D*                                 PC hidden object      @B2A
+     D*                                 PC system file        @B2A
+     D*                                 PC archive            @B2A
+     D*                                 System archive        @B2A
+     D*                                 Codepage              @B2A
+     D*                                 *STMF file format     @B3A
+     D*                                 UDFS default file format.
+     D*                                                       @B3A
+     D*                                 Journaling info.      @B6A
+     D*                                 Share with readers and
+     D*                                 writers during a save @B4A
+     D*                                 CCSID                 @BBA
+     D*                                 Object signature flag @BCA
+     D*                                 Whether object signed @C5A
+     D*                                 by a system-trusted   @C5A
+     D*                                 source.               @C5A
+     D*                                 Whether object has    @C5A
+     D*                                 more than one         @C5A
+     D*                                 signature.            @C5A
+     D*                                 Disk storage option   @C5A
+     D*                                 attribute.            @C5A
+     D*                                 Main storage option   @C5A
+     D*                                 attribute.            @C5A
+     D*                                 Directory format flag @C5A
+     D*                                 Audit information flag@C8A
+     D*                                 Create object scanning@C9A
+     D*                                 Object scanning       @C9A
+     D*                                 Object scan info      @C9A
+     D*                                 Can be saved          @CAA
+     D*                                 Restricted rename and @CBA
+     D*                                 unlink                @CBA
+     D*                                 Journaling extended   @CDA
+     D*                                 information.          @CDA
+     D*                                 Create object auditing@CEA
+     D*                                 Streamfile special usage
+     D*                                                       @CGA
+     D*                                 Temporary object
+     D*                                                       @CIA
+     D*                                 UDFS contains temporary
+     D*                                 objects
+     D*                                                       @CIA
+     D*                                 Days_used_count reset
+     D*                                 date.  Can only be used
+     D*                                 with Qp0lSetAttr()
+     D*                                 API                   @B2A
+     D*                                 The SUID mode bit was
+     D*                                 changed.              @B9A
+     D*                                 The SGID mode bit was
+     D*                                 changed.              @B9A
+     D*Qp0lGetAttr() and Qp0lSetAttr()  APIs
+     D*              indicator for following a symlink        @B2C
+     D*Qp0lGetAttr() API on/off indicators for object and data rights
+     D*or other items needing a yes or no response               @A4A
+     D*Qp0lGetAttr() API macros for storage-free object attribute@A5A
+     D*                                   freed              @A5A
+     D*                                   freed              @A5A
+     D*Qp0lGetAttr() API macros for object checked-out attribute @A5A
+     D*                                 out                  @A5A
+     D*Qp0lGetAttr() and Qp0lSetAttr() API macros for PC attributes
+     D*                                                      @B2A
+     D*                                   only               @B2A
+     D*                                   hidden             @B2A
+     D*                                   system file        @B2A
+     D*                                   file               @B2A
+     D*                                   changed            @B2A
+     D*Qp0lGetAttr() and Qp0lSetAttr() API macros for system attributes
+     D*                                                      @B2A
+     D*                                   changed since save @B2A
+     D*                                   since save         @B2A
+     D*Qp0lGetAttr() API macros for identifying file format for  @B3A
+     D*a *STMF file and default file format for a UDFS.          @B3A
+     D*                                 format type 1        @B3A
+     D*                                 format type 2        @B3A
+     D*Qp0lGetAttr() and Qp0lSetAttr() API macros for            @B4A
+     D*identifying whether an object can be shared with readers  @B4A
+     D*and writers during a save.                                @B4A
+     D*                                 with readers only    @B4A
+     D*                                 during a save        @B4A
+     D*                                 with readers and     @B4A
+     D*                                 writers during a     @B4A
+     D*                                 save                 @B4A
+     D*Qp0lGetAttr() API macros for identifying whether an       @BCA
+     D*object has a signature.                                   @BCA
+     D*                                 have a signature.    @BCA
+     D*                                 signature.           @BCA
+     D*Qp0lGetAttr() API macros for system signed attribute      @C5A
+     D*                                   a source trusted   @C5A
+     D*                                   by the system.     @C5A
+     D*                                   source trusted by  @C5A
+     D*                                   the system.        @C5A
+     D*Qp0lGetAttr() API macros for multiple signature attribute @C5A
+     D*                                   have multiple      @C5A
+     D*                                   signatures         @C5A
+     D*                                   multiple signatures@C5A
+     D*Qp0lGetAttr() API macros for identifying directory type   @C5A
+     D*Macros for Qp0lGetAttr() and Qp0lSetAttr() APIs for       @C5A
+     D*getting/setting main storage and disk storage options     @C5A
+     D*on stream files.                                          @C5A
+     D*Macros for Qp0lGetAttr() and Qp0lSetAttr() APIs for       @C5A
+     D*setting/getting the S_ISUID bit.                          @C5A
+     D*Macros for Qp0lGetAttr() and Qp0lSetAttr() APIs for       @C5A
+     D*setting/getting the S_ISGID bit.                          @C5A
+     D*Macros for declaring multithread actions                  @B5A
+     D*                                 system value to      @B5A
+     D*                                 determine the action @B5A
+     D*                                 without an informa-  @B5A
+     D*                                 tional message       @B5A
+     D*                                 with an informa-     @B5A
+     D*                                 tional message       @B5A
+     D*                                 program in a multi-  @B5A
+     D*                                 threaded environment @B5A
+     D*Qp0lGetAttr() API macros for journaling attributes.       @B6A
+     D*                                  journaled.          @B6A
+     D*Qp0lGetAttr() API macros for journaling options.          @B6A
+     D*                                        semantics @B9A@BBC
+     D*                                        are journaled @B6A
+     D*                                        are journaled @B6A
+     D*                                        entries       @B6A
+     D*                                        are journaled @B6A
+     D*Qp0lGetAttr() API macros for journaling extended info     @CDA
+     D*                                  no partial trans.   @CDA
+     D*                                  partial trans.      @CDA
+     D*                                  ended prior to      @CDA
+     D*                                  full completion     @CDA
+     D*                                  ended prior to      @CDA
+     D*                                  full completion     @CDA
+     D*Qp0lGetAttr() and Qp0lSetAttr() API macros for create object
+     D*scanning and object scanning                             @C9A
+     D*Qp0lGetAttr() API macros for scan information, see qp0lscan.h
+     D*include.                                                  @C9A
+     D*Qp0lGetAttr() and Qp0lSetAttr() API macros for allow save @CAA
+     D*Macros for Qp0lGetAttr() and Qp0lSetAttr() APIs for       @CBA
+     D*setting/getting the restricted rename and unlink          @CBA
+     D*(S_ISVTX) bit.                                            @CBA
+     D*                                 and unlink is OFF    @CBA
+     D*                                 and unlink is ON     @CBA
+     D*Qp0lGetAttr() and Qp0lSetAttr() API macros for audit and  @CEA
+     D*create object auditing values                           @CEA
+     D*Qp0lGetAttr() API macros for system use values.           @CGA
+     D*Qp0lGetAttr() API macros for temporary values.            @CIA
+     D*Qp0lGetAttr() API macros for temporary UDFS values.       @CIA
+     D*Protect POSIX source                                      @B8A
+     D****************************************************************
+     D*function prototypes
+     D****************************************************************
+     D*Protect POSIX source                                          @B8A
+     D*Protect POSIX source                                          @B8A

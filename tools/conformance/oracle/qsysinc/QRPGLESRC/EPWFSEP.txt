@@ -1,0 +1,133 @@
+     D*begin_generated_IBM_copyright_prolog
+     D*This is an automatically generated copyright prolog.
+     D*After initializing,  DO NOT MODIFY OR MOVE
+     D*-----------------------------------------------------------------
+     D*
+     D*Product(s):
+     D*5716-SS1
+     D*5722-SS1
+     D*5770-SS1
+     D*
+     D*(C)Copyright IBM Corp.  1995, 2015
+     D*
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*---------------------------------------------------------------
+     D*
+     D*end_generated_IBM_copyright_prolog
+     D*** START HEADER FILE SPECIFICATIONS ****************************
+     D*
+     D*Header File Name: H/EPWFSEP
+     D*
+     D*Descriptive Name: File Server Exit Program Parameters.
+     D*
+     D*Description: The File Server Exit Program Parameters define
+     D*          the parameters passed to the File Server exit
+     D*          program.
+     D*
+     D*Header Files Included: None.
+     D*
+     D*Macros List: None.
+     D*
+     D*Structure List: EPWQEP, EPWEP200
+     D*
+     D*Function Prototype List: None.
+     D*
+     D*Change Activity:
+     D*
+     D*CFD List:
+     D*
+     D*FLAG REASON      LEVEL  DATE   PGMR      CHANGE DESCRIPTION
+     D*---- ---------   -----  ------ --------- ----------------------
+     D*$A0= D9193500    3D60   950131 ROCHESTER New Include
+     D*$A1= D98212.1    V5R1M0 001006 ROCH      Teraspace stage 2
+     D*$A2= RFW629185   V7R3M0 141007 ROCH      PWFS0200, QPWFS_COPY,
+     D*                                      Qpwfs_Exit_Parms200_t
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*End Change Activity.
+     D*** END HEADER FILE SPECIFICATIONS ******************************
+     D*****************************************************************
+     D*Type Definition for the File Server Exit Program Parameters
+     D*for the PWFS0100 format.
+     D****                                                          ***
+     D*NOTE: The following type definition only defines the fixed
+     D*   portion of the format.  Any varying length field will
+     D*   have to be defined by the user.
+     D*****************************************************************
+     DEPWQEP           DS
+     D*                                             Qpwfs Exit Parms
+     D EPWQU                   1     10
+     D*                                 User profile.
+     D EPWQAN                 11     20
+     D*                                 Server ID
+     D EPWQRF                 21     24I 0
+     D*                                 Requested Function ID
+     D EPWQFN                 25     32
+     D*                                 Format Name
+     D EPWQRO                 33     33
+     D*                                 Read Access
+     D EPWQWO                 34     34
+     D*                                 Write Access
+     D EPWQRWO                35     35
+     D*                                 Read/Write Access
+     D EPWQDA                 36     36
+     D*                                 Delete Allowed
+     D EPWQFL                 37     40I 0
+     D*                                 File name length
+     D*EPWQF                  41     41
+     D*
+     D*                                 File name (varying length)
+     D*****************************************************************
+     D*Type Definition for the File Server Exit Program Parameters
+     D*for the PWFS0200 format
+     D****                                                          ***
+     D*NOTE: The following type definition only defines the fixed
+     D*   portion of the format.  Any varying length field will
+     D*   have to be defined by the user.
+     D*****************************************************************
+     DEPWEP200         DS
+     D*                                             Qpwfs Exit Parms200
+     D EPWUP                   1     10
+     D*                                 User profile.
+     D EPWSID                 11     20
+     D*                                 Server ID
+     D EPWFID                 21     24I 0
+     D*                                 Requested Function ID
+     D EPWFN                  25     32
+     D*                                 Format Name
+     D EPWRDO                 33     33
+     D*                                 Read Access
+     D EPWWRO                 34     34
+     D*                                 Write Access
+     D EPWRDWRO               35     35
+     D*                                 Read/Write Access
+     D EPWDA                  36     36
+     D*                                 Delete Allowed
+     D EPWOBJT                37     46
+     D*                                 Object type for create
+     D EPWRSV1                47     52
+     D*                                 Reserved
+     D EPWSFO                 53     56U 0
+     D*                                       Offset to source
+     D EPWSFL                 57     60U 0
+     D*                                       File name length
+     D EPWTFO                 61     64U 0
+     D*                                       Offset to target
+     D EPWTFL                 65     68U 0
+     D*                                       File name length
+     D EPWRSV2                69    132
+     D*                                  Reserved
+     D*EPWSF                 133    133
+     D*                                             Source Filename
+     D*                                  File name (varying length)
+     D*EPWTF                 134    134
+     D*                                             Target Filenme
+     D*                                  File name (varying length)

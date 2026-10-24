@@ -1,0 +1,171 @@
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name:  arpa/inet.h                                    */
+/*                                                                   */
+/* Descriptive Name: Internet Protocol address manipulation routines */
+/*                                                                   */
+/*                                                                   */
+/* 5763-SS1, 5716-SS1, 5769-SS1, 5722-SS1                            */
+/* (C) Copyright IBM Corp. 1993, 1995, 1998, 2002                    */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/* Copyright (c) 1983 Regents of the University of California.       */
+/* All rights reserved.  The Berkeley software License Agreement     */
+/* specifies the terms and conditions for redistribution.            */
+/*                                                                   */
+/*                                                                   */
+/* Description:                                                      */
+/*                                                                   */
+/*          Defines internet protocol address manipulation routines. */
+/*                                                                   */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*                                                                   */
+/*          netinet/in.h                                             */
+/*                                                                   */
+/* Macros List:                                                      */
+/*                                                                   */
+/*          None                                                     */
+/*                                                                   */
+/* Structure List:                                                   */
+/*                                                                   */
+/*          None                                                     */
+/*                                                                   */
+/* Function Prototype List:   (Thread-Safe)                          */
+/*                                                                   */
+/*          inet_addr                                                */
+/*          inet_lnaof                                               */
+/*          inet_makeaddr                                            */
+/*          inet_netof                                               */
+/*          inet_network                                             */
+/*          inet_ntoa_r                                              */
+/*          qso_inet_addr98                                      @A2A*/
+/*          qso_inet_lnaof98                                     @A2A*/
+/*          qso_inet_makeaddr98                                  @A2A*/
+/*          qso_inet_netof98                                     @A2A*/
+/*          qso_inet_network98                                   @A2A*/
+/*          inet_pton                                            @A3A*/
+/*          inet_ntop                                            @A3A*/
+/*                                                                   */
+/* Function Prototype List:   (Not Thread-Safe)                      */
+/*                                                                   */
+/*          inet_ntoa                                                */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/*   CFD List:                                                       */
+/*                                                                   */
+/*   FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION     */
+/*   ---- ------------ ----- ------- -------- ---------------------- */
+/*   $A0= D3188200     3D10  930806  ROCH     New include.           */
+/*   $A1= D94779.4     4D20  960916  ROCH     Add thread-safe        */
+/*                                            prototype              */
+/*                                            inet_ntoa_r.           */
+/*   $A2= D98822.1     5D20  010401  ROCH     Update to _XOPEN_SOURCE*/
+/*   $A3= D98671.1     5D20  010524  ROCH     Add inet_pton and      */
+/*                                            inet_ntop.             */
+/*                                                                   */
+/*   End CFD List.                                                   */
+/*                                                                   */
+/*   Additional notes about the Change Activity:                     */
+/*                                                                   */
+/* End Change Activity                                               */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __inet_h
+  #define __inet_h
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+/*********************************************************************/
+/* Header files                                                      */
+/*********************************************************************/
+
+#include <netinet/in.h>               /* in_addr structure           */
+
+#if (__OS400_TGTVRM__>=510)  /* @B1A*/
+#pragma datamodel(P128)      /* @B1A*/
+#endif                       /* @B1A*/
+
+#ifndef _SOCKLEN_T                                            /* @A3A*/
+  typedef int   socklen_t;                                    /* @A3A*/
+  #define _SOCKLEN_T                                          /* @A3A*/
+#endif                                                        /* @A3A*/
+
+/*********************************************************************/
+/* Function prototypes - not thread-safe.                            */
+/*********************************************************************/
+QBFC_EXTERN char *            inet_ntoa(struct in_addr); /* Not
+                                                     Thread-Safe @A1M*/
+
+
+/*********************************************************************/
+/* Function prototypes - thread-safe.                                */
+/*********************************************************************/
+/* Start changes for _XOPEN_SOURCE                               @A2A*/
+
+#if ((_XOPEN_SOURCE+1>520) && !defined(COMPAT_43))
+/* _XOPEN_SOURCE is defined to be >= 520 & not BSD 4.3 compatibility */
+
+QBFC_EXTERN in_addr_t         inet_addr(const char *);
+QBFC_EXTERN in_addr_t         inet_lnaof(struct in_addr);
+QBFC_EXTERN struct in_addr    inet_makeaddr(in_addr_t,in_addr_t);
+QBFC_EXTERN in_addr_t         inet_netof(struct in_addr);
+QBFC_EXTERN in_addr_t         inet_network(const char *);
+
+#pragma map(inet_addr, "qso_inet_addr98")
+#pragma map(inet_lnaof, "qso_inet_lnaof98")
+#pragma map(inet_makeaddr, "qso_inet_makeaddr98")
+#pragma map(inet_netof, "qso_inet_netof98")
+#pragma map(inet_network, "qso_inet_network98")
+
+#else
+/* _XOPEN_SOURCE is not defined to be >= 520 or BSD 4.3 compatibility*/
+
+QBFC_EXTERN unsigned long     inet_addr(char *);
+QBFC_EXTERN unsigned long     inet_lnaof(struct in_addr);
+QBFC_EXTERN struct in_addr    inet_makeaddr(int, int);
+QBFC_EXTERN unsigned long     inet_netof(struct in_addr);
+QBFC_EXTERN unsigned long     inet_network(char *);
+
+#endif
+/* End changes for _XOPEN_SOURCE                                 @A2A*/
+
+QBFC_EXTERN int               inet_ntoa_r(struct in_addr, char *, int);
+                                                               /*@A1A*/
+QBFC_EXTERN int               inet_pton(int, const char *, void *);
+                                                               /*@A3A*/
+QBFC_EXTERN const char       *inet_ntop(int, const void *, char *,
+                                       socklen_t);             /*@A3A*/
+
+#if (__OS400_TGTVRM__>=510)  /* @B1A*/
+#pragma datamodel(pop)       /* @B1A*/
+#endif                       /* @B1A*/
+
+#endif /* __inet_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

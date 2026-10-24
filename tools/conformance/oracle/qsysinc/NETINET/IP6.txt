@@ -1,0 +1,274 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5722-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  2002, 2007                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name:  netinet/ip6.h                                  */
+/*                                                                   */
+/* Descriptive Name: Definitions for internet protocol version 6.    */
+/*                                                                   */
+/* Description:                                                      */
+/*                                                                   */
+/*          Defines prototypes, macros, variables, and               */
+/*          structures to be used with internet protocol 6.          */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*                                                                   */
+/*          inttypes.h                                               */
+/*          netinet/in.h                                             */
+/*                                                                   */
+/* Macros List:                                                      */
+/*                                                                   */
+/*                                                                   */
+/* Structure List:                                                   */
+/*                                                                   */
+/*          ip6_hdr                                                  */
+/*          ip6_ext                                                  */
+/*          ip6_hbh                                                  */
+/*          ip6_dest                                                 */
+/*          ip6_rthdr0                                               */
+/*          ip6_frag                                                 */
+/*          ip6_opt                                                  */
+/*          ip6_opt_jumbo                                            */
+/*          ip6_opt_nsap                                             */
+/*          ip6_tunner                                               */
+/*          ip6_opt_router                                           */
+/*          ip6_opt_binding_update                              @A1D */
+/*          ip6_opt_binding_ack                                 @A1D */
+/*          ip6_opt_binding_request                             @A1D */
+/*          ip6_opt_home_address                                     */
+/*                                                                   */
+/* Function Prototype List:   (Not Thread-safe)                      */
+/*                                                                   */
+/*                                                                   */
+/* Function Prototype List:  (Thread Safe)                           */
+/*                                                                   */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/*   CFD List:                                                       */
+/*                                                                   */
+/*   FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION     */
+/*   ---- ------------ ----- ------- -------- ---------------------- */
+/*   $A0= D98671.1     5D20  010502  ROCH     New include.           */
+/*   $A1= D93466.4     5D50  060914  ROCH     Delete obsolete binding*/
+/*                                            options & update field */
+/*                                                                   */
+/*   End CFD List.                                                   */
+/*                                                                   */
+/*   Additional notes about the Change Activity:                     */
+/*                                                                   */
+/* End Change Activity                                               */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __ip6_h
+  #define __ip6_h
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+/*********************************************************************/
+/* Header files                                                      */
+/*********************************************************************/
+#include <inttypes.h>
+#include <netinet/in.h>
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+/*********************************************************************/
+/* The ip6_hdr Structure                                             */
+/*********************************************************************/
+
+struct ip6_hdr {
+  union {
+    struct ip6_hdrctl {
+      uint32_t ip6_un1_flow; /* 4 bits version, 8 bits TC, 20 bits flow-ID */
+      uint16_t ip6_un1_plen; /* payload length */
+      uint8_t  ip6_un1_nxt;  /* next header */
+      uint8_t  ip6_un1_hlim; /* hop limit */
+    } ip6_un1;
+    uint8_t ip6_un2_vfc;     /* 4 bits version, top 4 bits tclass */
+  } ip6_ctlun;
+  struct in6_addr ip6_src;   /* source address */
+  struct in6_addr ip6_dst;   /* destination address */
+};
+
+#define ip6_vfc   ip6_ctlun.ip6_un2_vfc
+#define ip6_flow  ip6_ctlun.ip6_un1.ip6_un1_flow
+#define ip6_plen  ip6_ctlun.ip6_un1.ip6_un1_plen
+#define ip6_nxt   ip6_ctlun.ip6_un1.ip6_un1_nxt
+#define ip6_hlim  ip6_ctlun.ip6_un1.ip6_un1_hlim
+#define ip6_hops  ip6_ctlun.ip6_un1.ip6_un1_hlim
+
+/*********************************************************************/
+/* IPv6 Extension Headers                                            */
+/*********************************************************************/
+/*
+ * Generic extension header structure used by many extension headers.
+ * Note that not all headers have this format. E.g. the fragmentation
+ * header is different.
+*/
+struct ip6_ext {
+  uint8_t  ip6e_nxt;        /* next header */
+  uint8_t  ip6e_len;        /* length in units of 8 octets */
+};
+
+/* Hop-by-Hop options header */
+struct ip6_hbh {
+  uint8_t  ip6h_nxt;        /* next header */
+  uint8_t  ip6h_len;        /* length in units of 8 octets */
+    /* followed by options */
+};
+
+/* Destination options header */
+struct ip6_dest {
+  uint8_t  ip6d_nxt;        /* next header */
+  uint8_t  ip6d_len;        /* length in units of 8 octets */
+    /* followed by options */
+};
+
+/* Routing header */
+struct ip6_rthdr {
+  uint8_t  ip6r_nxt;        /* next header */
+  uint8_t  ip6r_len;        /* length in units of 8 octets */
+  uint8_t  ip6r_type;       /* routing type */
+  uint8_t  ip6r_segleft;    /* segments left */
+    /* followed by routing type specific data */
+};
+
+/* Type 0 Routing header */
+struct ip6_rthdr0 {
+  uint8_t  ip6r0_nxt;       /* next header */
+  uint8_t  ip6r0_len;       /* length in units of 8 octets */
+  uint8_t  ip6r0_type;      /* always zero */
+  uint8_t  ip6r0_segleft;   /* segments left */
+  uint32_t ip6r0_reserved;  /* reserved field */
+    /* followed by up to 127 struct in6_addr */
+};
+
+/* Fragment header */
+struct ip6_frag {
+  uint8_t   ip6f_nxt;       /* next header */
+  uint8_t   ip6f_reserved;  /* reserved field */
+  uint16_t  ip6f_offlg;     /* offset, reserved, and flag */
+  uint32_t  ip6f_ident;     /* identification */
+};
+
+#define IP6F_OFF_MASK       0xfff8  /* mask out offset from _offlg */
+#define IP6F_RESERVED_MASK  0x0006  /* reserved bits in ip6f_offlg */
+#define IP6F_MORE_FRAG      0x0001  /* more-fragments flag */
+
+/*********************************************************************/
+/* IPv6 Options                                                      */
+/*********************************************************************/
+
+/* IPv6 options */
+struct ip6_opt {
+  uint8_t  ip6o_type;
+  uint8_t  ip6o_len;
+};
+
+/*
+ * The high-order 3 bits of the option type define the behavior
+ * when processing an unknown option and whether or not the option
+ * content changes in flight.
+ */
+#define IP6OPT_TYPE(o)        ((o) & 0xc0)
+#define IP6OPT_TYPE_SKIP      0x00
+#define IP6OPT_TYPE_DISCARD   0x40
+#define IP6OPT_TYPE_FORCEICMP 0x80
+#define IP6OPT_TYPE_ICMP      0xc0
+#define IP6OPT_MUTABLE        0x20
+#define IP6OPT_PAD1           0x00  /* 00 0 00000 */
+#define IP6OPT_PADN           0x01  /* 00 0 00001 */
+#define IP6OPT_JUMBO          0xc2  /* 11 0 00010 = 194 */
+#define IP6OPT_NSAP_ADDR      0xc3  /* 11 0 00011 */
+#define IP6OPT_TUNNEL_LIMIT   0x04  /* 00 0 00100 */
+#define IP6OPT_ROUTER_ALERT   0x05  /* 00 0 00101 */
+#define IP6OPT_HOME_ADDRESS   0xc9  /* 11 0 01001 */
+#define IP6OPT_EID            0x8a  /* 10 0 01010 */
+
+/* Jumbo Payload Option */
+struct ip6_opt_jumbo {
+  uint8_t  ip6oj_type;
+  uint8_t  ip6oj_len;
+  uint8_t  ip6oj_jumbo_len[4];
+};
+#define IP6OPT_JUMBO_LEN   6
+
+/* NSAP Address Option */
+struct ip6_opt_nsap {
+  uint8_t  ip6on_type;
+  uint8_t  ip6on_len;
+  uint8_t  ip6on_src_nsap_len;
+  uint8_t  ip6on_dst_nsap_len;
+    /* followed by source NSAP */
+    /* followed by destination NSAP */
+};
+
+/* Tunnel Limit Option */
+struct ip6_opt_tunnel {
+  uint8_t  ip6ot_type;
+  uint8_t  ip6ot_len;
+  uint8_t  ip6ot_encap_limit;
+};
+
+/* Router Alert Option */
+struct ip6_opt_router {
+  uint8_t  ip6or_type;
+  uint8_t  ip6or_len;
+  uint8_t  ip6or_value[2];
+};
+
+/* Router alert values (in network byte order) */
+#define IP6_ALERT_MLD      0x0000
+#define IP6_ALERT_RSVP     0x0001
+#define IP6_ALERT_AN       0x0002
+
+/* Home Address Option */
+struct ip6_opt_home_address {
+  uint8_t  ip6oha_type;                     /* @A1C */
+  uint8_t  ip6oha_len;                      /* @A1C */
+  uint8_t  ip6oha_addr[16];    /* Home Address @A1C */
+    /* followed by sub-options */
+};
+
+#endif  /* __ip6_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

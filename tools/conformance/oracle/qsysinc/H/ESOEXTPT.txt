@@ -1,0 +1,110 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5770-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  2010, 2009                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+/* ----------------------------------------------------------------- */
+
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name       :  H/ESOEXTPT                              */
+/*                                                                   */
+/* Descriptive Name       :  Sockets APIs                            */
+/*                           exit program structures                 */
+/*                                                                   */
+/*                                                                   */
+/* Description: This include defines the parameter structures for    */
+/*              the exit points:                                     */
+/*                                                                   */
+/*              QIBM_QSO_ACCEPT format ACPT0100                      */
+/*              QIBM_QSO_CONNECT format CONN0100                     */
+/*              QIBM_QSO_LISTEN format LSTN0100                      */
+/*                                                                   */
+/* Header Files Included: None.                                      */
+/*                                                                   */
+/* Macros List: None.                                                */
+/*                                                                   */
+/* Structure List: Qso_ACPT0100_Format_t                             */
+/*                 Qso_CONN0100_Format_t                             */
+/*                 Qso_LSTN0100_Format_t                             */
+/*                                                                   */
+/* Function Prototype List: None.                                    */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/* CFD List:                                                         */
+/*                                                                   */
+/* FLAG REASON       LEVEL  DATE   PGMR      CHANGE DESCRIPTION      */
+/* ---- ------------ -----  ------ --------- ----------------------  */
+/* $A0= D92194       V7R1M0 080807 ROCHESTER: New Include            */
+/*                                                                   */
+/* End CFD List.                                                     */
+/*                                                                   */
+/*  Additional notes about the Change Activity                       */
+/* End Change Activity.                                              */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef ESOEXTPT_h
+#define ESOEXTPT_h
+
+/*********************************************************************/
+/* Header files                                                      */
+/*********************************************************************/
+#include <netinet/in.h>
+
+#pragma datamodel(P128)
+
+/********************************************************************/
+/* Typedef for exit program input structures                        */
+/********************************************************************/
+
+typedef _Packed struct Qso_ACPT0100_Format
+{
+    int  Local_Bound_Address_Length;  /* Len of local bound address */
+    union sockaddr_afinetx
+      Local_Bound_Address;            /* Address of listening sock  */
+    int  Local_Incoming_Address_Length; /* Length of incoming addr  */
+    union sockaddr_afinetx
+      Local_Incoming_Address;      /* Address connection came in on */
+    int  Remote_Address_Length; /* Length of the remote address     */
+    union sockaddr_afinetx
+      Remote_Address;           /* Address the connection came from */
+} Qso_ACPT0100_Format_t;
+
+typedef _Packed struct Qso_CONN0100_Format
+{
+    int  Local_Address_Length;  /* Length of the local address      */
+    union sockaddr_afinetx
+      Local_Address;          /* Address of the socket connecting   */
+    int  Destination_Address_Length; /* Length of the dest address  */
+    union sockaddr_afinetx
+      Destination_Address;    /* Destination Address of the connect */
+} Qso_CONN0100_Format_t;
+
+typedef _Packed struct Qso_LSTN0100_Format
+{
+    int  Backlog;               /* Listen backlog queue size        */
+    int  Local_Address_Length;  /* Length of the local address      */
+    union sockaddr_afinetx
+      Local_Address;            /* Address of the listening socket  */
+} Qso_LSTN0100_Format_t;
+
+#pragma datamodel(pop)
+
+#endif
+

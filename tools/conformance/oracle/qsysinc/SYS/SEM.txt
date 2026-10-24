@@ -1,0 +1,189 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5716-SS1                                                      */
+/*     5769-SS1                                                      */
+/*     5722-SS1                                                      */
+/*     5761-SS1                                                      */
+/*     5770-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  1980, 2018                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+#ifdef __ILEC400__
+  #pragma nomargins nosequence
+  #pragma checkout(suspend)
+#endif
+
+#ifndef _SEM_H
+#define _SEM_H
+
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name: sem.h                                           */
+/*                                                                   */
+/* Descriptive Name: Interprocess communication (IPC) semaphore set  */
+/*                   structures and prototypes                       */
+/*                                                                   */
+/* Description: Include header file for interprocess communications  */
+/*              semaphore set services.                              */
+/*                                                                   */
+/* Macros List:                                                      */
+/*     GETALL                                                        */
+/*     GETNCNT                                                       */
+/*     GETPID                                                        */
+/*     GETVAL                                                        */
+/*     GETZCNT                                                       */
+/*     SEM_UNDO                                                      */
+/*     SETALL                                                        */
+/*     SETVAL                                                        */
+/*                                                                   */
+/* Structure/Type List:                                              */
+/*     sem                                                           */
+/*     sembuf                                                        */
+/*     semid_ds                                                      */
+/*     semid_ds_time64                                               */
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*     semctl                                                        */
+/*     semctl_time64                                                 */
+/*     semget                                                        */
+/*     semop                                                         */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/* CFD List:                                                         */
+/*                                                                   */
+/* FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION       */
+/* ---- ------------ ----- ------ --------- -----------------------  */
+/* $A0= D9178700     3D60  941016 ROCH    : New include              */
+/* $B1= D9776700     5D10  991205 ROCH    : Added datamodel pragma   */
+/* $B2= RFW661322    V7R4M0 161018 ChenBin: Support time64 for       */
+/*                                           message queue and       */
+/*                                           semaphore set.          */
+/* $B3=PFW665639  V7R4M0 170308 ChenBin: Change comments to C style  */
+/*                                                                   */
+/* End CFD List.                                                     */
+/*                                                                   */
+/*  Additional notes about the Change Activity                       */
+/*                                                                   */
+/* End Change Activity.                                              */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+/*********************************************************************/
+/* Includes                                                          */
+/*********************************************************************/
+
+#include <sys/ipc.h>
+#include <sys/types.h>
+
+#pragma datamodel(P128)      /* @B1A*/
+
+/*********************************************************************/
+/* Constants                                                         */
+/*********************************************************************/
+
+/* Semaphore operation flags */
+#define SEM_UNDO   0X1000    /* Set up adjust on exit */
+
+/* Command definitions for semctl() */
+#define GETNCNT         3    /* Get semncnt for semaphore */
+#define GETPID          4    /* Get sempid for semaphore */
+#define GETVAL          5    /* Get semval for semaphore */
+#define GETALL          6    /* Get semval for all semaphores */
+#define GETZCNT         7    /* Get semzcnt for semaphore */
+#define SETVAL          8    /* Set semval for semaphore */
+#define SETALL          9    /* Set semval for all semaphores */
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+/* Semaphore set information */
+typedef struct semid_ds {
+  struct ipc_perm sem_perm;  /* Permissions */
+  unsigned short  sem_nsems; /* Number of semaphores in set */
+#if ((defined _64_BIT_TIME) && (__OS400_TGTVRM__ >= 740))          /*@B2A*/
+  time64_t        sem_otime; /* Time of last semop() */            /*@B2A*/
+  time64_t        sem_ctime; /* Time of last change by semctl_time64() @B2A*/
+#else                                                              /*@B2A*/
+  time_t          sem_otime; /* Time of last semop() */
+  time_t          sem_ctime; /* Time of last change by semctl() */
+#endif                                                             /*@B2A*/
+} semtablentry_t;
+
+#if (__OS400_TGTVRM__ >= 740)                                      /*@B2A*/
+/* Semaphore set information */                                    /*@B2A*/
+typedef struct semid_ds_time64 {                                   /*@B2A*/
+  struct ipc_perm sem_perm;  /* Permissions */                     /*@B2A*/
+  unsigned short  sem_nsems; /* Number of semaphores in set */     /*@B2A*/
+  time64_t        sem_otime; /* Time of last semop() */            /*@B2A*/
+  time64_t        sem_ctime; /* Time of last change by semctl_time64() @B2A*/
+} semtablentry_time64_t;                                           /*@B2A*/
+#endif                                                             /*@B2A*/
+
+/* Semaphore */
+typedef struct sem {
+  unsigned int     semval;   /* Semaphore value */
+  pid_t            sempid;   /* Process ID of last operation */
+  unsigned short   semncnt;  /* Number of processes waiting for semval
+                                to become greater than current value */
+  unsigned short   semzcnt;  /* Number of processes waiting for semval
+                                to become zero. */
+} semaphore_t;
+
+/* Semaphore operations */
+struct sembuf {
+  unsigned short  sem_num;   /* Semaphore number */
+  short           sem_op;    /* Semaphore operation */
+  short           sem_flg;   /* Operation flags */
+};
+
+/*********************************************************************/
+/* Function Prototypes                                               */
+/*********************************************************************/
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+         #define QBFC_EXTERN extern
+    #else
+         #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+QBFC_EXTERN int semctl(int semid, int semnum, int cmd, ...);
+QBFC_EXTERN int semget(key_t key, int nsems, int semflg);
+QBFC_EXTERN int semop(int semid, struct sembuf *sops, size_t nsops);
+
+#if (__OS400_TGTVRM__>=740)                                     /*@B2A*/
+  #if ((!defined(_POSIX_SOURCE)) && (!defined(_POSIX1_SOURCE))) /*@B2A*/
+       QBFC_EXTERN int semctl_time64(int semid, int semnum,
+                                     int cmd, ...);             /*@B2A*/
+	#ifdef _64_BIT_TIME                                     /*@B2A*/
+            #pragma map(semctl, "semctl_time64")                /*@B2A*/
+    	#endif                                                  /*@B2A*/
+  #endif                                                        /*@B2A*/
+#endif                                                          /*@B2A*/
+
+#pragma datamodel(pop)       /* @B1A*/
+
+#endif  /* _SEM_H */
+
+#ifdef __ILEC400__
+  #pragma checkout(resume)
+#endif

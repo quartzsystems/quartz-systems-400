@@ -1,0 +1,633 @@
+     D*begin_generated_IBM_copyright_prolog
+     D*This is an automatically generated copyright prolog.
+     D*After initializing,  DO NOT MODIFY OR MOVE
+     D*-----------------------------------------------------------------
+     D*
+     D*Product(s):
+     D*5722-SS1
+     D*5761-SS1
+     D*
+     D*(C)Copyright IBM Corp.  2003, 2007
+     D*
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*---------------------------------------------------------------
+     D*
+     D*end_generated_IBM_copyright_prolog
+     D*** START HEADER FILE SPECIFICATIONS *******************************
+     D*
+     D*Header File Name       :  H/QP0LROR
+     D*
+     D*Descriptive Name       :  Retrieve Object References API include
+     D*
+     D*Description            :  This file contains the structures and
+     D*                          prototype for the QP0LROR API.
+     D*
+     D*Macros List            :  QP0LROR_RORO0100_FORMAT
+     D*                          QP0LROR_RORO0200_FORMAT
+     D*
+     D*Type Definition List   :  Qp0l_Ext_Ref_Types_Output_T
+     D*                          Qp0l_Job_Using_Object_T
+     D*                          Qp0l_RORO0100_Output_T
+     D*                          Qp0l_RORO0200_Output_T
+     D*                          Qp0l_Session_Using_Object_T       @A3A
+     D*                          Qp0l_Sim_Ref_Types_Output_T
+     D*
+     D*Structure List         :  Qp0l_Ext_Ref_Types_Output
+     D*                          Qp0l_Job_Using_Object
+     D*                          Qp0l_RORO0100_Output
+     D*                          Qp0l_RORO0200_Output
+     D*                          Qp0l_Session_Using_Object         @A3A
+     D*                          Qp0l_Sim_Ref_Types_Output
+     D*
+     D*Class List             :  None.
+     D*
+     D*Function Prototype List:  QP0LROR
+     D*
+     D*Change Activity        :
+     D*
+     D*CFD List               :
+     D*
+     D*FLAG REASON     LEVEL   DATE   PGMR      CHANGE DESCRIPTION
+     D*---- -------    ------- ------ --------- -----------------------
+     D*$A0=D9884400      5D20  010419 ROCH    : New Include
+     D*$A1=P9A52232    v5r3m0f 040107 ROCH    : Add cplusplus ifdef to
+     D*                                         end of header
+     D*$A2=P9A55370    v5r4m0  040202 ROCH    : Add void to function call
+     D*$A3=D9988407    v5r4m0  040630 ROCH    : Add session information
+     D*$A4=D9333410    v6r1m0  060905 ROCH    : Add NFS Server Reference
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*
+     D*End Change Activity.
+     D*
+     D*** END HEADER FILE SPECIFICATIONS *********************************
+     D***   START OF STRUCTURE DESCRIPTION   *****************************
+     D*
+     D*Structure Name   :  Qp0l_Sim_Ref_Types_Output
+     D*
+     D*Structure Purpose:  This structure is used to package the
+     D*                various reference types that may be
+     D*                returned for an object.  This is the
+     D*                simple version, containing individual
+     D*                reference types that may or may not be
+     D*                associated with other simple reference
+     D*                types.
+     D*
+     D*
+     D***   END OF STRUCTURE DESCRIPTION   *******************************
+     DQP0LSRTO         DS
+     D*                                             Qp0l Sim Ref Types Output
+     D QP0READ01               1      4U 0
+     D*                             Read access
+     D QP0WRITE                5      8U 0
+     D*                             Write access
+     D QP0RDWR                 9     12U 0
+     D*                             Read/Write access
+     D QP0ECUTE01             13     16U 0
+     D*                             Execute access
+     D QP0SR                  17     20U 0
+     D*                             Share with Readers
+     D QP0SW00                21     24U 0
+     D*                             Share with Writers
+     D QP0SRW                 25     28U 0
+     D*                             Share with Readers and Writers.
+     D QP0SN00                29     32U 0
+     D*                             Share with neither Readers
+     D*                             nor Writers.
+     D QP0BUTES               33     36U 0
+     D*                             Attribute lock.
+     D QP0SAVE                37     40U 0
+     D*                             Save in progress.
+     D QP0SI00                41     44U 0
+     D*                             Object in use by a Save operation
+     D*                             on other object(s).
+     D QP0LINKS               45     48U 0
+     D*                             Link changes lock.
+     D QP0CO                  49     52U 0
+     D*                             Checked Out.
+     D QP0CON                 53     62
+     D*                             Name of user that has object
+     D*                             checked out.  Set to blanks (x'40)
+     D*                             if CheckedOut is x'00'.
+     D QP0RSV007              63     64
+     D*                             Reserved.  Set to binary zeros.
+     D***   START OF STRUCTURE DESCRIPTION   *****************************
+     D*
+     D*Structure Name   :  Qp0l_RORO0100_Output
+     D*
+     D*Structure Purpose:  This structure is used when the input
+     D*                Format is QP0L_RORO0100_FORMAT.
+     D*
+     D***   END OF STRUCTURE DESCRIPTION   *******************************
+     DQP00100O00       DS
+     D*                                             Qp0l RORO0100 Output
+     D QP0BRTN04               1      4U 0
+     D*                               Number of bytes returned in this
+     D*                               output buffer.
+     D QP0BAVL04               5      8U 0
+     D*                               Number of bytes that were
+     D*                               available to be returned.
+     D QP0STO                  9     12U 0
+     D*                               Offset from beginning of this
+     D*                               structure to the beginning of
+     D*                               the Types field containing the
+     D*                               simple reference types.
+     D QP0STL                 13     16U 0
+     D*                               Length of the information
+     D*                               provided in the ExtTypes
+     D*                               structure.
+     D QP0COUNT               17     20U 0
+     D*                               Reference count.
+     D QP0INUSE               21     24U 0
+     D*                               In-use indicator.  This will be
+     D*                               one of the following values:
+     D*                               QP0L_OBJECT_NOT_IN_USE - the
+     D*                                 object is not in use and all
+     D*                                 of the reference type fields
+     D*                                 returned are 0.
+     D*                               QP0L_OBJECT_IN_USE - the object
+     D*                                 is in use.  At least one of the
+     D*                                 reference type fields is
+     D*                                 greater than 0.  This condition
+     D*                                 may occur even if the Count
+     D*                                 field's value is 0.  See the
+     D*                                 QP0LROR documentation for more
+     D*                                 information.
+     D*QP0ST00                       64
+     D* QP0READ02             25     28U 0
+     D* QP0WRITE00            29     32U 0
+     D* QP0RDWR00             33     36U 0
+     D* QP0ECUTE02            37     40U 0
+     D* QP0SR00               41     44U 0
+     D* QP0SW01               45     48U 0
+     D* QP0SRW00              49     52U 0
+     D* QP0SN01               53     56U 0
+     D* QP0BUTES00            57     60U 0
+     D* QP0SAVE00             61     64U 0
+     D* QP0SI01               65     68U 0
+     D* QP0LINKS00            69     72U 0
+     D* QP0CO00               73     76U 0
+     D* QP0CON00              77     86
+     D* QP0RSV008             87     88
+     D*
+     D*                                     Simple reference types.
+     D***   START OF STRUCTURE DESCRIPTION   *****************************
+     D*
+     D*Structure Name   :  Qp0l_Ext_Ref_Types_Output
+     D*
+     D*Structure Purpose:  This structure is used to package the
+     D*                various reference types that may be
+     D*                returned for an object.  This is the
+     D*                extended version, containing associations
+     D*                between some of the simple reference types
+     D*                contained in the Qp0l_Sim_Ref_Types_Output
+     D*                structure.
+     D*
+     D***   END OF STRUCTURE DESCRIPTION   *******************************
+     DQP0LERTO         DS
+     D*                                             Qp0l Ext Ref Types Output
+     D QP0RSR                  1      4U 0
+     D*                             Read access, share with Readers.
+     D QP0RSW                  5      8U 0
+     D*                             Read access, share with Writers.
+     D QP0RSRW                 9     12U 0
+     D*                             Read access, share with Readers and
+     D*                             Writers.
+     D QP0RSN                 13     16U 0
+     D*                             Read access, share with neither
+     D*                             Readers nor Writers.
+     D QP0WSR                 17     20U 0
+     D*                             Write access, share with Readers.
+     D QP0WSW                 21     24U 0
+     D*                             Write access, share with Writers.
+     D QP0WSRW                25     28U 0
+     D*                             Write access, share with Readers
+     D*     and Writers.
+     D QP0WSN                 29     32U 0
+     D*                             Write access, share with neither
+     D*                             Readers nor Writers.
+     D QP0RWSR                33     36U 0
+     D*                             Read/Write access, share with
+     D*                             Readers.
+     D QP0RWSW                37     40U 0
+     D*                             Read/Write access, share with
+     D*                             Writers.
+     D QP0RWSRW               41     44U 0
+     D*                             Read/Write access, share with
+     D*                             Readers and Writers.
+     D QP0RWSN                45     48U 0
+     D*                             Read/Write access, share with
+     D*                             neither Readers nor Writers.
+     D QP0ESR                 49     52U 0
+     D*                             Execute access, share with
+     D*                             Readers.
+     D QP0ESW                 53     56U 0
+     D*                             Execute access, share with
+     D*                             Writers.
+     D QP0ESRW                57     60U 0
+     D*                             Execute access, share with Readers
+     D*     and Writers.
+     D QP0ESN                 61     64U 0
+     D*                             Execute access, share with neither
+     D*     Readers nor Writers.
+     D QP0ERSR                65     68U 0
+     D*                             Execute/Read access, share with
+     D*                             Readers.
+     D QP0ERSW                69     72U 0
+     D*                             Execute/Read access, share with
+     D*                             Writers.
+     D QP0ERSRW               73     76U 0
+     D*                             Execute/Read access, share with
+     D*                             Readers and Writers.
+     D QP0ERSN                77     80U 0
+     D*                             Execute/Read access, share with
+     D*                             neither Readers nor Writers.
+     D QP0BUTES01             81     84U 0
+     D*                             Attribute lock.
+     D QP0SAVE01              85     88U 0
+     D*                             Save in progress.
+     D QP0SI02                89     92U 0
+     D*                             Object in use by a Save operation
+     D*                             on other object(s).
+     D QP0LINKS01             93     96U 0
+     D*                             Link changes lock.
+     D QP0CD                  97    100U 0
+     D*                             Current directory of job.
+     D QP0RD                 101    104U 0
+     D*                             Root directory of job.
+     D QP0FSREF              105    108U 0
+     D*                             File Server reference.
+     D QP0FSWD               109    112U 0
+     D*                             File Server working directory
+     D*                             reference.
+     D QP0CO01               113    116U 0
+     D*                             Checked Out.
+     D QP0CON01              117    126
+     D*                             Name of user that has object
+     D*                             checked out.  Set to blanks (x'40)
+     D*                             if CheckedOut is x'00'.
+     D QP0RSV009             127    128
+     D*                             Reserved.  Set to binary zeros.
+     D QP0NFSR               129    132U 0
+     D*                             NFS Server reference
+     D*                                                          @A4A
+     D***   START OF STRUCTURE DESCRIPTION   *****************************
+     D*
+     D*Structure Name   :  Qp0l_Session_Using_Object
+     D*
+     D*Structure Purpose:  This structure is used to return a iSeries
+     D*                NetServer session with a reference.
+     D*
+     D***   END OF STRUCTURE DESCRIPTION   *******************************
+     DQP0LSUO          DS
+     D*                                             Qp0l Session Using Object
+     D QP0SI09                 1      8U 0
+     D*                                     iSeries NetServer Session
+     D*                              identifier                  @A3A
+     D QP0NSD                  9     12U 0
+     D*                                     Displacement from beginning
+     D*                              of this structure to the beginning
+     D*                              of the next
+     D*                              Qp0l_Session_Using_Object array
+     D*                              element.  If this is the last
+     D*                              element in the array, then this
+     D*                              offset is 0.                @A3A
+     D QP0UN11                13     22
+     D*                              User name                   @A3A
+     D QP0WN                  23     37
+     D*                              Workstation name            @A3A
+     D QP0WA                  38     82
+     D*                              Workstation IP address      @A3A
+     D QP0RSV018              83     96
+     D*                              Reserved.  Set to binary zeros.
+     D*                                                          @A3A
+     D***   START OF STRUCTURE DESCRIPTION   *****************************
+     D*
+     D*Structure Name   :  Qp0l_Job_Using_Object
+     D*
+     D*Structure Purpose:  This structure is used to return a job with
+     D*                the references that job is known to hold.
+     D*
+     D***   END OF STRUCTURE DESCRIPTION   *******************************
+     DQP0LJUO          DS
+     D*                                             Qp0l Job Using Object
+     D QP0STD                  1      4U 0
+     D*                                  Displacement from beginning of
+     D*                              this structure to the beginning of
+     D*                              the SimTypes structure.
+     D QP0STL00                5      8U 0
+     D*                                  Length of the information
+     D*                              provided in the SimTypes
+     D*                              structure.
+     D QP0ETD                  9     12U 0
+     D*                                  Displacement from beginning of
+     D*                              this structure to the beginning of
+     D*                              the ExtTypes structure.
+     D QP0ETL                 13     16U 0
+     D*                                  Length of the information
+     D*                              provided in the ExtTypes
+     D*                              structure.
+     D QP0NJD                 17     20U 0
+     D*                                 Displacement from beginning of
+     D*                              this structure to the beginning of
+     D*                              the next Qp0l_Job_Using_Object
+     D*                              array element.  If this is the
+     D*                              last element in the array, then
+     D*                              this offset is 0.
+     D QP0NAME                21     30
+     D*                     Job name.
+     D QP0USER12              31     40
+     D*                     Job user name.
+     D QP0UMBER13             41     46
+     D*                     Job number.
+     D QP0RSV010              47     48
+     D*                     Reserved.  Set to binary zeros.
+     D QP0SLD                 49     52U 0
+     D*                                     Displacement from the
+     D*                              beginning of this structure to the
+     D*                              beginning of the iSeries NetServer
+     D*				     session list structure      @A3A
+     D QP0SRTN                53     56U 0
+     D*                                 Number of iSeries NetServer
+     D*				     sessions in the sessions array
+     D*				                                 @A3A
+     D*QP0ST01                       64
+     D* QP0READ03             57     60U 0
+     D* QP0WRITE01            61     64U 0
+     D* QP0RDWR01             65     68U 0
+     D* QP0ECUTE03            69     72U 0
+     D* QP0SR01               73     76U 0
+     D* QP0SW02               77     80U 0
+     D* QP0SRW01              81     84U 0
+     D* QP0SN02               85     88U 0
+     D* QP0BUTES02            89     92U 0
+     D* QP0SAVE02             93     96U 0
+     D* QP0SI03               97    100U 0
+     D* QP0LINKS02           101    104U 0
+     D* QP0CO02              105    108U 0
+     D* QP0CON02             109    118
+     D* QP0RSV011            119    120
+     D*
+     D*                                       Simple reference types
+     D*                                       that this job is known
+     D*                                       to have on the object.
+     D*QP0ET03                      132
+     D* QP0RSR00             121    124U 0
+     D* QP0RSW00             125    128U 0
+     D* QP0RSRW00            129    132U 0
+     D* QP0RSN00             133    136U 0
+     D* QP0WSR00             137    140U 0
+     D* QP0WSW00             141    144U 0
+     D* QP0WSRW00            145    148U 0
+     D* QP0WSN00             149    152U 0
+     D* QP0RWSR00            153    156U 0
+     D* QP0RWSW00            157    160U 0
+     D* QP0RWSRW00           161    164U 0
+     D* QP0RWSN00            165    168U 0
+     D* QP0ESR00             169    172U 0
+     D* QP0ESW00             173    176U 0
+     D* QP0ESRW00            177    180U 0
+     D* QP0ESN00             181    184U 0
+     D* QP0ERSR00            185    188U 0
+     D* QP0ERSW00            189    192U 0
+     D* QP0ERSRW00           193    196U 0
+     D* QP0ERSN00            197    200U 0
+     D* QP0BUTES03           201    204U 0
+     D* QP0SAVE03            205    208U 0
+     D* QP0SI04              209    212U 0
+     D* QP0LINKS03           213    216U 0
+     D* QP0CD00              217    220U 0
+     D* QP0RD00              221    224U 0
+     D* QP0FSREF00           225    228U 0
+     D* QP0FSWD00            229    232U 0
+     D* QP0CO03              233    236U 0
+     D* QP0CON03             237    246
+     D* QP0RSV012            247    248
+     D* QP0NFSR00            249    252U 0
+     D*
+     D*                                       Extended reference
+     D*                                       types that this job is
+     D*                                       known to have on the
+     D*					     object.
+     D*QP0SL                         96    DIM(00001)
+     D* QP0SI10                      20U 0 OVERLAY(QP0SL:00001)
+     D* QP0NSD00                     10U 0 OVERLAY(QP0SL:00009)
+     D* QP0UN12                      10    OVERLAY(QP0SL:00013)
+     D* QP0WN00                      15    OVERLAY(QP0SL:00023)
+     D* QP0WA00                      45    OVERLAY(QP0SL:00038)
+     D* QP0RSV019                    14    OVERLAY(QP0SL:00083)
+     D*
+     D*                                             Variable length
+     D*					      field that is an array
+     D*					      of iSeries NetServer
+     D*					      Sessions associated with
+     D*                                       the job currently
+     D*					      referencing the object.
+     D*					      This array's size is
+     D*				              determined by the
+     D*					      SessionsReturned field.
+     D*				                                 @A3A
+     D***   START OF STRUCTURE DESCRIPTION   *****************************
+     D*
+     D*Structure Name   :  Qp0l_RORO0200_Output
+     D*
+     D*Structure Purpose:  This structure is used when the input
+     D*                Format is QP0L_RORO0200_FORMAT.
+     D*
+     D***   END OF STRUCTURE DESCRIPTION   *******************************
+     DQP00200O         DS
+     D*                                             Qp0l RORO0200 Output
+     D QP0BRTN05               1      4U 0
+     D*                               Number of bytes returned in this
+     D*                               output buffer.
+     D QP0BAVL05               5      8U 0
+     D*                               Number of bytes that were
+     D*                               available to be returned.
+     D QP0COUNT00              9     12U 0
+     D*                               Reference count.
+     D QP0INUSE00             13     16U 0
+     D*                               In-use indicator.  This will be
+     D*                               one of the following values:
+     D*                               QP0L_OBJECT_NOT_IN_USE - the
+     D*                                 object is not in use and all
+     D*                                 of the reference type fields
+     D*                                 returned are 0.
+     D*                               QP0L_OBJECT_IN_USE - the object
+     D*                                 is in use.  At least one of the
+     D*                                 reference type fields is
+     D*                                 greater than 0.  This condition
+     D*                                 may occur even if the Count
+     D*                                 field's value is 0.  See the
+     D*                                 QP0LROR documentation for more
+     D*                                 information.
+     D QP0STO00               17     20U 0
+     D*                               Offset from beginning of this
+     D*                               structure to the beginning of
+     D*                               the SimTypes.
+     D QP0STL01               21     24U 0
+     D*                               Length of the information
+     D*                               provided in the SimTypes
+     D*                               structure.
+     D QP0ETO                 25     28U 0
+     D*                               Offset from beginning of this
+     D*                               structure to the beginning of
+     D*                               the ExtTypes.
+     D QP0ETL00               29     32U 0
+     D*                               Length of the information
+     D*                               provided in the ExtTypes
+     D*                               structure.
+     D QP0JO                  33     36U 0
+     D*                               Offset from beginning of this
+     D*                               structure to the beginning of
+     D*                               the Jobs field array.
+     D QP0JRTN                37     40U 0
+     D*                               Number of jobs in the
+     D*                               Jobs array.
+     D QP0JAVL                41     44U 0
+     D*                               Total number of jobs
+     D*                               that could be returned
+     D*                               in the Jobs array
+     D*QP0ENCES                      64
+     D* QP0READ04             45     48U 0
+     D* QP0WRITE02            49     52U 0
+     D* QP0RDWR02             53     56U 0
+     D* QP0ECUTE04            57     60U 0
+     D* QP0SR02               61     64U 0
+     D* QP0SW03               65     68U 0
+     D* QP0SRW02              69     72U 0
+     D* QP0SN03               73     76U 0
+     D* QP0BUTES04            77     80U 0
+     D* QP0SAVE04             81     84U 0
+     D* QP0SI05               85     88U 0
+     D* QP0LINKS04            89     92U 0
+     D* QP0CO04               93     96U 0
+     D* QP0CON04              97    106
+     D* QP0RSV013            107    108
+     D*
+     D*                                         Simple Reference Types
+     D*QP0ET04                      132
+     D* QP0RSR01             109    112U 0
+     D* QP0RSW01             113    116U 0
+     D* QP0RSRW01            117    120U 0
+     D* QP0RSN01             121    124U 0
+     D* QP0WSR01             125    128U 0
+     D* QP0WSW01             129    132U 0
+     D* QP0WSRW01            133    136U 0
+     D* QP0WSN01             137    140U 0
+     D* QP0RWSR01            141    144U 0
+     D* QP0RWSW01            145    148U 0
+     D* QP0RWSRW01           149    152U 0
+     D* QP0RWSN01            153    156U 0
+     D* QP0ESR01             157    160U 0
+     D* QP0ESW01             161    164U 0
+     D* QP0ESRW01            165    168U 0
+     D* QP0ESN01             169    172U 0
+     D* QP0ERSR01            173    176U 0
+     D* QP0ERSW01            177    180U 0
+     D* QP0ERSRW01           181    184U 0
+     D* QP0ERSN01            185    188U 0
+     D* QP0BUTES05           189    192U 0
+     D* QP0SAVE05            193    196U 0
+     D* QP0SI06              197    200U 0
+     D* QP0LINKS05           201    204U 0
+     D* QP0CD01              205    208U 0
+     D* QP0RD01              209    212U 0
+     D* QP0FSREF01           213    216U 0
+     D* QP0FSWD01            217    220U 0
+     D* QP0CO05              221    224U 0
+     D* QP0CON05             225    234
+     D* QP0RSV014            235    236
+     D* QP0NFSR01            237    240U 0
+     D*
+     D*                                       Extended Reference Types
+     D*QP0JOBS                      348    DIM(00001)
+     D* QP0STD00                     10U 0 OVERLAY(QP0JOBS:00001)
+     D* QP0STL02                     10U 0 OVERLAY(QP0JOBS:00005)
+     D* QP0ETD00                     10U 0 OVERLAY(QP0JOBS:00009)
+     D* QP0ETL01                     10U 0 OVERLAY(QP0JOBS:00013)
+     D* QP0NJD00                     10U 0 OVERLAY(QP0JOBS:00017)
+     D* QP0NAME00                    10    OVERLAY(QP0JOBS:00021)
+     D* QP0USER13                    10    OVERLAY(QP0JOBS:00031)
+     D* QP0UMBER14                    6    OVERLAY(QP0JOBS:00041)
+     D* QP0RSV015                     2    OVERLAY(QP0JOBS:00047)
+     D* QP0SLD00                     10U 0 OVERLAY(QP0JOBS:00049)
+     D* QP0SRTN00                    10U 0 OVERLAY(QP0JOBS:00053)
+     D* QP0ST02                      64
+     D*  QP0READ05                   10U 0 OVERLAY(QP0JOBS:00001)
+     D*  QP0WRITE03                  10U 0 OVERLAY(QP0JOBS:00005)
+     D*  QP0RDWR03                   10U 0 OVERLAY(QP0JOBS:00009)
+     D*  QP0ECUTE05                  10U 0 OVERLAY(QP0JOBS:00013)
+     D*  QP0SR03                     10U 0 OVERLAY(QP0JOBS:00017)
+     D*  QP0SW04                     10U 0 OVERLAY(QP0JOBS:00021)
+     D*  QP0SRW03                    10U 0 OVERLAY(QP0JOBS:00025)
+     D*  QP0SN04                     10U 0 OVERLAY(QP0JOBS:00029)
+     D*  QP0BUTES06                  10U 0 OVERLAY(QP0JOBS:00033)
+     D*  QP0SAVE06                   10U 0 OVERLAY(QP0JOBS:00037)
+     D*  QP0SI07                     10U 0 OVERLAY(QP0JOBS:00041)
+     D*  QP0LINKS06                  10U 0 OVERLAY(QP0JOBS:00045)
+     D*  QP0CO06                     10U 0 OVERLAY(QP0JOBS:00049)
+     D*  QP0CON06                    10    OVERLAY(QP0JOBS:00053)
+     D*  QP0RSV016                    2    OVERLAY(QP0JOBS:00063)
+     D* QP0ET05                     132
+     D*  QP0RSR02                    10U 0 OVERLAY(QP0JOBS:00001)
+     D*  QP0RSW02                    10U 0 OVERLAY(QP0JOBS:00005)
+     D*  QP0RSRW02                   10U 0 OVERLAY(QP0JOBS:00009)
+     D*  QP0RSN02                    10U 0 OVERLAY(QP0JOBS:00013)
+     D*  QP0WSR02                    10U 0 OVERLAY(QP0JOBS:00017)
+     D*  QP0WSW02                    10U 0 OVERLAY(QP0JOBS:00021)
+     D*  QP0WSRW02                   10U 0 OVERLAY(QP0JOBS:00025)
+     D*  QP0WSN02                    10U 0 OVERLAY(QP0JOBS:00029)
+     D*  QP0RWSR02                   10U 0 OVERLAY(QP0JOBS:00033)
+     D*  QP0RWSW02                   10U 0 OVERLAY(QP0JOBS:00037)
+     D*  QP0RWSRW02                  10U 0 OVERLAY(QP0JOBS:00041)
+     D*  QP0RWSN02                   10U 0 OVERLAY(QP0JOBS:00045)
+     D*  QP0ESR02                    10U 0 OVERLAY(QP0JOBS:00049)
+     D*  QP0ESW02                    10U 0 OVERLAY(QP0JOBS:00053)
+     D*  QP0ESRW02                   10U 0 OVERLAY(QP0JOBS:00057)
+     D*  QP0ESN02                    10U 0 OVERLAY(QP0JOBS:00061)
+     D*  QP0ERSR02                   10U 0 OVERLAY(QP0JOBS:00065)
+     D*  QP0ERSW02                   10U 0 OVERLAY(QP0JOBS:00069)
+     D*  QP0ERSRW02                  10U 0 OVERLAY(QP0JOBS:00073)
+     D*  QP0ERSN02                   10U 0 OVERLAY(QP0JOBS:00077)
+     D*  QP0BUTES07                  10U 0 OVERLAY(QP0JOBS:00081)
+     D*  QP0SAVE07                   10U 0 OVERLAY(QP0JOBS:00085)
+     D*  QP0SI08                     10U 0 OVERLAY(QP0JOBS:00089)
+     D*  QP0LINKS07                  10U 0 OVERLAY(QP0JOBS:00093)
+     D*  QP0CD02                     10U 0 OVERLAY(QP0JOBS:00097)
+     D*  QP0RD02                     10U 0 OVERLAY(QP0JOBS:00101)
+     D*  QP0FSREF02                  10U 0 OVERLAY(QP0JOBS:00105)
+     D*  QP0FSWD02                   10U 0 OVERLAY(QP0JOBS:00109)
+     D*  QP0CO07                     10U 0 OVERLAY(QP0JOBS:00113)
+     D*  QP0CON07                    10    OVERLAY(QP0JOBS:00117)
+     D*  QP0RSV017                    2    OVERLAY(QP0JOBS:00127)
+     D*  QP0NFSR02                   10U 0 OVERLAY(QP0JOBS:00129)
+     D* QP0SL00                      96    DIM(00001)
+     D*  QP0SI11                     20U 0 OVERLAY(QP0SL00:00001)
+     D*  QP0NSD01                    10U 0 OVERLAY(QP0SL00:00009)
+     D*  QP0UN13                     10    OVERLAY(QP0SL00:00013)
+     D*  QP0WN01                     15    OVERLAY(QP0SL00:00023)
+     D*  QP0WA01                     45    OVERLAY(QP0SL00:00038)
+     D*  QP0RSV020                   14    OVERLAY(QP0SL00:00083)
+     D*
+     D*                                  Variable length field that is
+     D*                                  an array of jobs currently
+     D*                                  referencing the object.
+     D*                                  This array's size is
+     D*                                  determined by the
+     D*                                  NumberOfJobs field.
+     D*                                  NOTE:  Elements themselves
+     D*                                  in this array are variable
+     D*                                  length, and may differ in
+     D*                                  length from each other.
+     D*Macro constants for the InUse fields in the Qp0l_RORO0100_Output
+     D*and Qp0l_RORO0200_Output formats.
+     D*Macro constants to use for the Format parameter of QP0LROR.
+     D QP0LROR         C                   'QP0LROR'

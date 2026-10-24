@@ -1,0 +1,668 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5763-SS1                                                      */
+/*     5716-SS1                                                      */
+/*     5769-SS1                                                      */
+/*     5722-SS1                                                      */
+/*     5770-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  1993, 2009                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name:  sys/socket.h                                   */
+/*                                                                   */
+/* Descriptive Name: Sockets API definition                          */
+/*                                                                   */
+/* Copyright (c) 1982, 1986 Regents of the University of California. */
+/* All rights reserved.  The Berkeley software License Agreement     */
+/* specifies the terms and conditions for redistribution.            */
+/*                                                                   */
+/*                                                                   */
+/* Description:                                                      */
+/*                                                                   */
+/*          Defines prototypes, macros, variables, and               */
+/*          structures to be used with the sockets API.              */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*                                                                   */
+/*          sys/types.h                                              */
+/*          sys/uio.h                                                */
+/*          unistd.h                                                 */
+/*          inttypes.h                                           @A6A*/
+/*                                                                   */
+/* Macros List:                                                      */
+/*                                                                   */
+/*          AF_UNSPEC                                            @A7A*/
+/*          AF_INET                                                  */
+/*          AF_NS                                                    */
+/*          AF_UNIX                                                  */
+/*          AF_INET6                                             @A7A*/
+/*          AF_UNIX_CCSID                                        @A5A*/
+/*                                                                   */
+/*          SOCK_DGRAM                                               */
+/*          SOCK_RAW                                                 */
+/*          SOCK_SEQPACKET                                           */
+/*          SOCK_STREAM                                              */
+/*                                                                   */
+/*          PF_UNSPEC                                            @A7A*/
+/*          PF_INET                                                  */
+/*          PF_NS                                                    */
+/*          PF_UNIX                                                  */
+/*          PF_INET6                                             @A7A*/
+/*          PF_UNIX_CCSID                                        @A5A*/
+/*                                                                   */
+/*          SO_ACCEPTCON                                         @A6A*/
+/*          SO_BROADCAST                                             */
+/*          SO_DEBUG                                                 */
+/*          SO_DONTROUTE                                             */
+/*          SO_ERROR                                                 */
+/*          SO_KEEPALIVE                                             */
+/*          SO_LINGER                                                */
+/*          SO_OOBINLINE                                             */
+/*          SO_RCVBUF                                                */
+/*          SO_RCVLOWAT                                              */
+/*          SO_RCVTIMEO                                              */
+/*          SO_REUSEADDR                                             */
+/*          SO_SNDBUF                                                */
+/*          SO_SNDLOWAT                                              */
+/*          SO_SNDTIMEO                                              */
+/*          SO_TYPE                                                  */
+/*          SO_USELOOPBACK                                           */
+/*                                                                   */
+/*          MSG_CTRUNC                                           @A6A*/
+/*          MSG_DONTROUTE                                            */
+/*          MSG_EOR                                              @A6A*/
+/*          MSG_OOB                                                  */
+/*          MSG_PEEK                                                 */
+/*          MSG_TRUNC                                            @A6A*/
+/*          MSG_WAITALL                                          @A6A*/
+/*                                                                   */
+/*          MSG_MAXIOVLEN                                            */
+/*          SOL_SOCKET                                               */
+/*          SOMAXCONN                                                */
+/*                                                                   */
+/*          CMSG_DATA                                            @A6A*/
+/*          _CMSG_ALIGN                                          @A6A*/
+/*          CMSG_NXTHDR                                          @A6A*/
+/*          CMSG_FIRSTHDR                                        @A6A*/
+/*          CMSG_SPACE                                           @A9A*/
+/*          CMSG_LEN                                             @A9A*/
+/*                                                                   */
+/*          SCM_RIGHTS                                           @A6A*/
+/*                                                                   */
+/*          SF_CLOSE                                             @A3A*/
+/*          SF_REUSE                                             @A3A*/
+/*                                                                   */
+/*          SHUT_RD                                              @A6A*/
+/*          SHUT_WR                                              @A6A*/
+/*          SHUT_RDWR                                            @A6A*/
+/*                                                                   */
+/* Structure List:                                                   */
+/*                                                                   */
+/*          sa_family_t                                          @A6A*/
+/*                                                                   */
+/*          cmsghdr                                              @A6A*/
+/*          linger                                                   */
+/*          msghdr                                                   */
+/*          sockaddr                                                 */
+/*          sockaddr_storage                                     @A6A*/
+/*          sf_parms                                             @A3A*/
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*                                                                   */
+/*          accept                                                   */
+/*          accept_and_recv                                      @A3A*/
+/*          bind                                                     */
+/*          Rbind                                                @A2A*/
+/*          connect                                                  */
+/*          getpeername                                              */
+/*          getsockname                                              */
+/*          getsockopt                                               */
+/*          givedescriptor                                           */
+/*          listen                                                   */
+/*          recv                                                     */
+/*          recvfrom                                                 */
+/*          recvmsg                                                  */
+/*          send                                                     */
+/*          send_file                                            @A3A*/
+/*          sendmsg                                                  */
+/*          sendto                                                   */
+/*          setsockopt                                               */
+/*          shutdown                                                 */
+/*          socket                                                   */
+/*          socketpair                                               */
+/*          takedescriptor                                           */
+/*          qso_accept98                                         @A6A*/
+/*          qso_accept_and_recv98                                @A6A*/
+/*          qso_bind98                                           @A6A*/
+/*          qso_Rbind98                                          @A6A*/
+/*          qso_connect98                                        @A6A*/
+/*          qso_getpeername98                                    @A6A*/
+/*          qso_getsockname98                                    @A6A*/
+/*          qso_getsockopt98                                     @A6A*/
+/*          qso_recv98                                           @A6A*/
+/*          qso_recvfrom98                                       @A6A*/
+/*          qso_recvmsg98                                        @A6A*/
+/*          qso_send98                                           @A6A*/
+/*          qso_sendmsg98                                        @A6A*/
+/*          qso_sendto98                                         @A6A*/
+/*          qso_setsockopt98                                     @A6A*/
+/*          qso_socketpair98                                     @A6A*/
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/*   CFD List:                                                       */
+/*                                                                   */
+/*   FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION     */
+/*   ---- ------------ ----- ------- -------- ---------------------- */
+/*   $A0= D3188200     3D10  930806  ROCH     New include.           */
+/*   $A1= D9121800     4D10  940808  ROCH     Add AF_NS support      */
+/*   $A2= D9534600     4D20  970321  ROCH     Add Rbind prototype    */
+/*   $A3= D9575200     4D30  971021  ROCH     Add accept_and_recv    */
+/*                                               and send_file       */
+/*   $A4= D9577102     4D40  980706  ROCH     Add 64 bit changes     */
+/*                                               and AF_TELEPHONY    */
+/*   $A5= D9765801     5D10  990526  ROCH     Add AF_UNIX_CCSID      */
+/*   $A6= D98822.1     5D20  010401  ROCH     Update to _XOPEN_SOURCE*/
+/*   $A7= D98671.1     5D20  010521  ROCH     Add AF_INET6 support   */
+/*   $A8= xxxxxxxx     5D40  041130  ROCH     SO_ACCEPTECONNABORTED  */
+/*   $A9= D93466.3     5D50  060628  ROCH     Add ancillary macros   */
+/*   $AA= D93466.9     5D50  070126  ROCH     Fix CMSG_NXTHDR        */
+/*   $AB= D92127.2     7D10  080912  ROCH     SO_ACCEPTEPERM         */
+/*   End CFD List.                                                   */
+/*                                                                   */
+/*   Additional notes about the Change Activity:                     */
+/*                                                                   */
+/* End Change Activity                                               */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __socket_h
+  #define __socket_h
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+/*********************************************************************/
+/* Header files                                                      */
+/*********************************************************************/
+
+#include <sys/types.h>                /* common typedefs             */
+#include <sys/uio.h>                  /* IOV_MAX, struct iovec       */
+#include <unistd.h>                   /* getdomainname, setdomainname,
+                                         gethostid, sethostid,
+                                         gethostname, sethostname,
+                                         function prototypes         */
+#include <inttypes.h>                 /* integral typedefs       @A6A*/
+
+
+#if (__OS400_TGTVRM__>=510)  /* @B1A*/
+#pragma datamodel(P128)      /* @B1A*/
+#endif                       /* @B1A*/
+
+/*********************************************************************/
+/* Macros to denote address families                                 */
+/*********************************************************************/
+
+#define AF_UNSPEC      0              /* Unspecified             @A7A*/
+#define AF_UNIX        1              /* UNIX (local) domain         */
+#define AF_INET        2              /* Internet domain             */
+#define AF_NS          6              /* Network Services domain     */
+#define AF_INET6      24              /* IPv6                    @A7A*/
+#define AF_UNIX_CCSID 98              /* UNIX with CCSID support @A5A*/
+#define AF_TELEPHONY  99              /* Telephony domain        @A4A*/
+
+
+/*********************************************************************/
+/* Macros to denote type of a socket                                 */
+/*********************************************************************/
+
+#define SOCK_STREAM    1              /* stream                      */
+#define SOCK_DGRAM     2              /* datagram                    */
+#define SOCK_RAW       3              /* raw                         */
+#define SOCK_SEQPACKET 5              /* sequential packet           */
+
+
+/*********************************************************************/
+/* Macros to denote protocol families                                */
+/*********************************************************************/
+
+#define PF_UNSPEC      AF_UNSPEC      /* Unspecified             @A7A*/
+#define PF_INET        AF_INET        /* Internet domain             */
+#define PF_INET6       AF_INET6       /* Internet domain         @A7A*/
+#define PF_UNIX        AF_UNIX        /* UNIX (local) domain         */
+#define PF_NS          AF_NS          /* Network Services domain     */
+#define PF_UNIX_CCSID  AF_UNIX_CCSID  /* UNIX with CCSID support @A5A*/
+#define PF_TELEPHONY   AF_TELEPHONY   /* Telephony domain        @A4A*/
+
+
+/*********************************************************************/
+/* Macros for socket level options (via setsockopt() & getsockopt()) */
+/*********************************************************************/
+
+#define SO_BROADCAST   5              /* allow broadcast messages    */
+#define SO_ACCEPTECONNABORTED   6     /* return ECONNABORTED from
+                                         accept (IBM only)      @A7A */
+#define SO_ACCEPTEPERM  7             /* return EPERM in
+                                         accept (IBM only)      @ABA */
+#define SO_DEBUG       10             /* record debugging information*/
+#define SO_DONTROUTE   15             /* just use interface addresses*/
+#define SO_ERROR       20             /* socket error status         */
+#define SO_KEEPALIVE   25             /* connections are kept alive
+                                         with periodic messages      */
+#define SO_LINGER      30             /* socket lingers on close     */
+#define SO_OOBINLINE   35             /* out-of-band data is
+                                         received in-line            */
+#define SO_RCVBUF      40             /* receive buffer size         */
+#define SO_RCVLOWAT    45             /* receive low water mark      */
+#define SO_RCVTIMEO    50             /* receive timeout value       */
+#define SO_REUSEADDR   55             /* allow local address reuse   */
+#define SO_SNDBUF      60             /* send buffer size            */
+#define SO_SNDLOWAT    65             /* send low water mark         */
+#define SO_SNDTIMEO    70             /* send timeout value          */
+#define SO_TYPE        75             /* socket type                 */
+#define SO_USELOOPBACK 80             /* sender receives a copy
+                                         of each message that is
+                                         transmitted                 */
+#define SO_ACCEPTCONN  85             /* socket has had listen() @A6A*/
+
+/*********************************************************************/
+/* Macros to be used for the flag parameter of input/output routines */
+/*********************************************************************/
+
+#define MSG_DONTROUTE  0x0001         /* do not route off the
+                                         physical network            */
+#define MSG_OOB        0x0004         /* out-of-band data            */
+#define MSG_PEEK       0x0008         /* do not destroy the message
+                                         on reading (give a copy)    */
+#define MSG_TRUNC      0x0010         /* data discarded before
+                                         delivery                @A6A*/
+#define MSG_CTRUNC     0x0020         /* control data lost before
+                                         delivery                @A6A*/
+#define MSG_WAITALL    0x0040         /* wait for full request or
+                                         error                   @A6A*/
+#define MSG_EOR        0x0080         /* data completes record   @A6A*/
+
+/*********************************************************************/
+/* Miscellaneous macros                                              */
+/*********************************************************************/
+
+#define MSG_MAXIOVLEN  IOV_MAX        /* maximum number of iovec
+                                         structures that may be used
+                                         on any socket function      */
+#define SOL_SOCKET     -1             /* socket level option         */
+#define SOMAXCONN      512            /* maximum number of queued
+                                         connection requests         */
+
+/*********************************************************************/
+/* Macros to be used for the flag parameter on send_file()       @A3A*/
+/*********************************************************************/
+
+#define SF_CLOSE        1             /* Close down the socket
+                                         connection              @A3A*/
+#define SF_REUSE        2             /* Close down the socket
+                                         connection and allow the
+                                         socket to be reused     @A3A*/
+
+/*********************************************************************/
+/* Macros to be used for the how parameter on shutdown()         @A6A*/
+/*********************************************************************/
+#define SHUT_RD         0       /* shut down for reading         @A6A*/
+#define SHUT_WR         1       /* shut down for writing         @A6A*/
+#define SHUT_RDWR       2       /* shut down for read & write    @A6A*/
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+struct linger {                       /* linger                      */
+
+   int            l_onoff;            /* option setting - on/off     */
+   int            l_linger;           /* time to linger - seconds    */
+
+};
+
+/* Start changes for _XOPEN_SOURCE                               @A6A*/
+
+#ifndef _SOCKLEN_T
+  typedef int socklen_t;
+  #define _SOCKLEN_T
+#endif
+
+#if ((_XOPEN_SOURCE+1>520) && !defined(COMPAT_43))
+/* _XOPEN_SOURCE is defined to be >= 520 & not BSD 4.3 compatibility */
+
+#ifndef _SA_FAMILY_T
+  typedef uchar sa_family_t;
+  #define _SA_FAMILY_T
+#endif
+
+/* Define a structure large enough and aligned for any socket address*/
+
+#define _SS_MAXSIZE 304               /* AF_UNIX_CCSID is 304 bytes  */
+#define _SS_ALIGNSIZE (sizeof (char*))/* and requires char* alignment*/
+
+#define _SS_PAD1SIZE (_SS_ALIGNSIZE - \
+                     (sizeof(uint8_t) + sizeof(sa_family_t)))
+#define _SS_PAD2SIZE (_SS_MAXSIZE - (sizeof(uint8_t) + \
+                      sizeof(sa_family_t) + \
+                      _SS_PAD1SIZE + _SS_ALIGNSIZE))
+
+struct sockaddr_storage {
+     uint8_t       ss_len;
+     sa_family_t   ss_family;
+     char         _ss_pad1[_SS_PAD1SIZE];
+     char*        _ss_align;
+     char         _ss_pad2[_SS_PAD2SIZE];
+ };
+
+struct sockaddr {                     /* generic socket address      */
+
+    uint8_t       sa_len;             /* address length              */
+    sa_family_t   sa_family;          /* address family              */
+    char          sa_data[14];        /* address                     */
+
+};
+
+struct msghdr {                       /* message header              */
+
+   void         * msg_name;           /* address                     */
+   socklen_t      msg_namelen;        /* address length              */
+   struct iovec * msg_iov;            /* buffer array                */
+   int            msg_iovlen;         /* number of elements in
+                                         buffer array                */
+   void         * msg_control;        /* ancillary data, see below   */
+   socklen_t      msg_controllen;     /* ancillary data buffer len   */
+   int            msg_flags;          /* flags on received message   */
+
+};
+
+/* Header for ancillary data objects in msg_control buffer.          */
+/* The format is a sequence of message elements headed by            */
+/* cmsghdr structures.                                               */
+
+struct cmsghdr {
+   socklen_t  cmsg_len;            /* len of this header + data      */
+   int     cmsg_level;             /* originating protocol           */
+   int     cmsg_type;              /* protocol-specific type         */
+};
+
+/* Given a pointer to a struct cmsghdr, return a pointer to the data.*/
+#define CMSG_DATA(cmsg) ((uchar *)(((struct cmsghdr *)cmsg) + 1))
+
+/* Align a length to a struct cmsghdr boundary (int boundary).      */
+#define _CMSG_ALIGN(p) (((uint)(p) + (sizeof(int) - 1))\
+                         &~ (sizeof(int) - 1))
+
+/* Given a pointer to a struct msghdr and its                        */
+/*  ancillary data (cmsghdr), return the next cmsghdr or NULL.       */
+/* The returned cmsghdr will not be truncated but the user still must*/
+/*  verify that the data is within msg_controllen                    */
+#define CMSG_NXTHDR(mhdr, cmsg) \
+(((cmsg) == NULL) ? ((struct cmsghdr *)(mhdr)->msg_control) : \
+    (((caddr_t)(cmsg) + _CMSG_ALIGN((cmsg)->cmsg_len) + \
+      sizeof(struct cmsghdr)) > \
+     ((caddr_t)((mhdr)->msg_control) + (mhdr)->msg_controllen)) ? \
+    (struct cmsghdr *) NULL : (struct cmsghdr *)((caddr_t)(cmsg) + \
+                              _CMSG_ALIGN((cmsg)->cmsg_len)))/* @AAC */
+
+
+/* Given a pointer to a struct msghdr return the first struct cmsghdr*/
+#define CMSG_FIRSTHDR(mhdr) ((struct cmsghdr *)(mhdr)->msg_control)
+
+/* Given the length of the ancillary data return how much space needs
+to be allocated for the data to satisfy boundary alignments.    @A9A */
+#define CMSG_SPACE(length) (sizeof(struct cmsghdr) + \
+                            _CMSG_ALIGN(length))             /* @A9A */
+
+/* Given the length of the ancillary data return the value to store in
+the cmsg_len member of the cmsghdr structure.                   @A9A */
+#define CMSG_LEN(length) (sizeof(struct cmsghdr) + length )  /* @A9A */
+
+
+/* "Socket"-level control message types:                             */
+#define SCM_RIGHTS      0x01            /* access rights             */
+
+#else
+/* _XOPEN_SOURCE is not defined to be >= 520 or BSD 4.3 compatibility*/
+
+#ifndef _SA_FAMILY_T
+  typedef unsigned short sa_family_t;
+  #define _SA_FAMILY_T
+#endif
+
+#define _SS_MAXSIZE 304              /* AF_UNIX_CCSID is 304 bytes  */
+#define _SS_ALIGNSIZE (sizeof(char*))/* and requires char* alignment*/
+
+#define _SS_PAD1SIZE (_SS_ALIGNSIZE - sizeof(sa_family_t))
+#define _SS_PAD2SIZE (_SS_MAXSIZE - (sizeof(sa_family_t) + \
+                      _SS_PAD1SIZE + _SS_ALIGNSIZE))
+
+struct sockaddr_storage {
+     sa_family_t   ss_family;
+     char         _ss_pad1[_SS_PAD1SIZE];
+     char*        _ss_align;
+     char         _ss_pad2[_SS_PAD2SIZE];
+ };
+
+struct sockaddr {                     /* generic socket address      */
+
+    u_short       sa_family;          /* address family              */
+    char          sa_data[14];        /* address                     */
+
+};
+
+struct msghdr {                       /* message header              */
+
+   caddr_t        msg_name;           /* address                     */
+   int            msg_namelen;        /* address length              */
+   struct iovec * msg_iov;            /* buffer array                */
+   int            msg_iovlen;         /* number of elements in
+                                         buffer array                */
+   caddr_t        msg_accrights;      /* access rights               */
+   int            msg_accrightslen;   /* access rights length        */
+
+};
+
+#endif
+/* End changes for _XOPEN_SOURCE                                 @A6A*/
+
+struct sf_parms {                     /* send_file() parameters  @A3A*/
+
+#ifndef _LARGE_FILES                                           /*@A4A*/
+   void          *header_data;        /* header buffer           @A3A*/
+   size_t         header_length;      /* length of header        @A3A*/
+                                      /*                         @A3A*/
+   int            file_descriptor;    /* file descriptor         @A3A*/
+   size_t         file_size;          /* length of the file      @A3A*/
+   off_t          file_offset;        /* offset into the file    @A3A*/
+   ssize_t        file_bytes;         /* number bytes to send    @A3A*/
+                                      /* from the file           @A3A*/
+                                      /*                         @A3A*/
+   void          *trailer_data;       /* trailer buffer          @A3A*/
+   size_t         trailer_length;     /* length of trailer       @A3A*/
+                                      /*                         @A3A*/
+   size_t         bytes_sent;         /* number of bytes sent    @A3A*/
+
+#else  /* Map sf_parms to sf_parms64 structure                   @A4A*/
+
+   void              *header_data;     /* header buffer          @A4A*/
+   size_t             header_length;   /* length of header       @A4A*/
+                                       /*                        @A4A*/
+   int                file_descriptor; /* file descriptor        @A4A*/
+   unsigned long long file_size;       /* length of the file     @A4A*/
+   long long          file_offset;     /* offset into the file   @A4A*/
+   long long          file_bytes;      /* number bytes to send   @A4A*/
+                                       /* from the file          @A4A*/
+                                       /*                        @A4A*/
+   void              *trailer_data;    /* trailer buffer         @A4A*/
+   size_t             trailer_length;  /* length of trailer      @A4A*/
+                                       /*                        @A4A*/
+   unsigned long long bytes_sent;      /* number of bytes sent   @A4A*/
+#endif                                 /*                        @A4A*/
+};                                     /*                        @A3A*/
+
+/*********************************************************************/
+/* sf_parms64 structure for _LARGE_FILE_API support              @A4A*/
+/*********************************************************************/
+#ifdef _LARGE_FILE_API                 /*                        @A4A*/
+struct sf_parms64 {                    /*                        @A4A*/
+   void              *header_data;     /* header buffer          @A4A*/
+   size_t             header_length;   /* length of header       @A4A*/
+                                       /*                        @A4A*/
+   int                file_descriptor; /* file descriptor        @A4A*/
+   unsigned long long file_size;       /* length of the file     @A4A*/
+   long long          file_offset;     /* offset into the file   @A4A*/
+   long long          file_bytes;      /* number bytes to send   @A4A*/
+                                       /* from the file          @A4A*/
+                                       /*                        @A4A*/
+   void              *trailer_data;    /* trailer buffer         @A4A*/
+   size_t             trailer_length;  /* length of trailer      @A4A*/
+                                       /*                        @A4A*/
+   unsigned long long bytes_sent;      /* number of bytes sent   @A4A*/
+};                                     /*                        @A4A*/
+#endif                                 /*                        @A4A*/
+
+
+/*********************************************************************/
+/* Function prototypes                                               */
+/*********************************************************************/
+/* Start changes for _XOPEN_SOURCE                               @A6A*/
+#if ((_XOPEN_SOURCE+1>520) && !defined(COMPAT_43))
+/* _XOPEN_SOURCE is defined to be >= 520 & not BSD 4.3 compatibility */
+
+QBFC_EXTERN int     accept(int, struct sockaddr *, socklen_t *);
+QBFC_EXTERN int     accept_and_recv(int, int *,
+                                   struct sockaddr *, socklen_t *,
+                                   struct sockaddr *, socklen_t *,
+                                   void *, size_t);
+QBFC_EXTERN int     bind(int, const struct sockaddr *, socklen_t);
+QBFC_EXTERN int     Rbind(int, const struct sockaddr *, socklen_t);
+QBFC_EXTERN int     connect(int, const struct sockaddr *, socklen_t);
+QBFC_EXTERN int     getpeername(int, struct sockaddr *, socklen_t *);
+QBFC_EXTERN int     getsockname(int, struct sockaddr *, socklen_t *);
+QBFC_EXTERN int     getsockopt(int, int, int, void *, socklen_t *);
+QBFC_EXTERN int     listen(int, int);
+QBFC_EXTERN ssize_t recv(int, void *, size_t, int);
+QBFC_EXTERN ssize_t recvfrom(int, void *, size_t, int,
+                             struct sockaddr *, socklen_t *);
+QBFC_EXTERN ssize_t recvmsg(int, struct msghdr *, int);
+QBFC_EXTERN ssize_t send(int, const void *, size_t, int);
+QBFC_EXTERN ssize_t sendmsg(int, const struct msghdr *, int);
+QBFC_EXTERN ssize_t sendto(int, const void *, size_t, int,
+                           const struct sockaddr *, socklen_t);
+QBFC_EXTERN int     setsockopt(int, int, int, const void *, socklen_t);
+QBFC_EXTERN int     shutdown(int, int);
+QBFC_EXTERN int     socket(int, int, int);
+QBFC_EXTERN int     socketpair(int, int, int, int[2]);
+
+#pragma map(accept, "qso_accept98")
+#pragma map(accept_and_recv, "qso_accept_and_recv98")
+#pragma map(bind, "qso_bind98")
+#pragma map(Rbind, "qso_Rbind98")
+#pragma map(connect, "qso_connect98")
+#pragma map(getpeername, "qso_getpeername98")
+#pragma map(getsockname, "qso_getsockname98")
+#pragma map(getsockopt, "qso_getsockopt98")
+#pragma map(listen, "qso_listen98")
+#pragma map(recv, "qso_recv98")
+#pragma map(recvfrom, "qso_recvfrom98")
+#pragma map(recvmsg, "qso_recvmsg98")
+#pragma map(send, "qso_send98")
+#pragma map(sendmsg, "qso_sendmsg98")
+#pragma map(sendto, "qso_sendto98")
+#pragma map(setsockopt, "qso_setsockopt98")
+#pragma map(shutdown, "qso_shutdown98")
+#pragma map(socket, "qso_socket98")
+#pragma map(socketpair, "qso_socketpair98")
+
+#else
+/* _XOPEN_SOURCE is not defined to be >= 520 or BSD 4.3 compatibility*/
+
+QBFC_EXTERN int    accept(int, struct sockaddr *, int *);
+QBFC_EXTERN int    accept_and_recv(int, int *,
+                                   struct sockaddr *, size_t *,
+                                   struct sockaddr *, size_t *,
+                                   void *, size_t);           /* @A3A*/
+QBFC_EXTERN int    bind(int, struct sockaddr *, int);
+QBFC_EXTERN int    Rbind(int, struct sockaddr *, int);        /* @A2A*/
+QBFC_EXTERN int    connect(int, struct sockaddr *, int);
+QBFC_EXTERN int    getpeername(int, struct sockaddr *, int *);
+QBFC_EXTERN int    getsockname(int, struct sockaddr *, int *);
+QBFC_EXTERN int    getsockopt(int, int, int, char *, int *);
+QBFC_EXTERN int    listen(int, int);
+QBFC_EXTERN int    recv(int, char *, int, int);
+QBFC_EXTERN int    recvfrom(int, char *, int, int,
+                            struct sockaddr *, int *);
+QBFC_EXTERN int    recvmsg(int, struct msghdr *, int);
+QBFC_EXTERN int    send(int, char *, int, int);
+QBFC_EXTERN int    sendmsg(int, struct msghdr *, int);
+QBFC_EXTERN int    sendto(int, char *, int, int,
+                          struct sockaddr *, int);
+QBFC_EXTERN int    setsockopt(int, int, int, char *, int);
+QBFC_EXTERN int    shutdown(int, int);
+QBFC_EXTERN int    socket(int, int, int);
+QBFC_EXTERN int    socketpair(int, int, int, int *);
+
+#endif
+/* End changes for _XOPEN_SOURCE                                 @A6A*/
+
+QBFC_EXTERN int    givedescriptor(int, char *);
+QBFC_EXTERN int    send_file(int *, struct sf_parms *, int);  /* @A3A*/
+QBFC_EXTERN int    takedescriptor(char *);
+
+/*********************************************************************/
+/* Map 32 bit version API to 64 bit version if _LARGE_FILES      @A4A*/
+/* macro is used by the application                              @A4A*/
+/*********************************************************************/
+#ifdef _LARGE_FILES                                           /* @A4A*/
+#pragma map (send_file, "send_file64")                        /* @A4A*/
+#endif                                                        /* @A4A*/
+
+#ifdef _LARGE_FILE_API                                        /* @A4A*/
+QBFC_EXTERN int send_file64(int *, struct sf_parms64 *, int); /* @A4A*/
+#endif                                                        /* @A4A*/
+
+
+#ifdef __Rbind                                                /* @A2A*/
+    #define bind Rbind                                        /* @A2A*/
+#endif                                                        /* @A2A*/
+#if (__OS400_TGTVRM__>=510)  /* @B1A*/
+#pragma datamodel(pop)       /* @B1A*/
+#endif                       /* @B1A*/
+
+#endif /* #ifndef __socket_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

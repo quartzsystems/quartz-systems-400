@@ -1,0 +1,109 @@
+     D*** START HEADER FILE SPECIFICATIONS ****************************
+     D*
+     D*Header File Name: H/QTOCLPPJ
+     D*
+     D*Descriptive Name: List TCP/IP Point-to-Point Jobs
+     D*
+     D*5769-SS1  (C) Copyright IBM Corp. 1998,1999
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*
+     D*Description: The QTOCLPPJ API returns information about each
+     D*          point-to-point job connecton job currently
+     D*          associated with the specified point-to-point
+     D*          connection profile.
+     D*
+     D*****************************************************************
+     D*
+     D*WARNING:          This macro/include is a CUE.
+     D*               This macro/include provides an interface
+     D*               that is externally documented to customers
+     D*               or is function that any user could create.
+     D*               Any changes to this part MUST be upward
+     D*               compatible at compile and run time.
+     D*               This interface may be generated as in-line
+     D*               code in customer programs.
+     D*
+     D*               CSTATUS:  OT
+     D*
+     D*****************************************************************
+     D*
+     D*Header Files Included: None.
+     D*
+     D*Macros List: None.
+     D*
+     D*Structure List: Qtoc_LPPJ_Input_t
+     D*             Qtoc_LPPJ_Header_t
+     D*             Qtoc_PPPJ0100_t
+     D*
+     D*Function Prototype List: QTOCLPPJ
+     D*
+     D*Change Activity:
+     D*
+     D*CFD List:
+     D*
+     D*FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION
+     D*---- ------------ ----- ------ --------- ----------------------
+     D*$A0= D97138       4D40  981002 MBULLOCK: New Include
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*End Change Activity.
+     D*** END HEADER FILE SPECIFICATIONS ******************************
+     D*****************************************************************
+     D*Prototype for calling List PtP Jobs APIQTOCLPPJ OPM
+     D*****************************************************************
+     D QTOCLPPJ        C                   'QTOCLPPJ'
+     D*****************************************************************
+     D*Type Definition for the Input Parameter Section.
+     D*****************************************************************
+     DQTOLPPJI         DS
+     D*                                             Qtoc LPPJ Input
+     D QTOUSS                  1     10
+     D*                                             User Space Specified
+     D QTOUSLS                11     20
+     D*                                             User Space Lib Specified
+     D QTOFN                  21     28
+     D*                                             Format Name
+     D QTOCPS                 29     38
+     D*                                             Cnn Profile Specified
+     D*****************************************************************
+     D*Type Definition for the Header Section.
+     D*****************************************************************
+     DQTOLPPJH         DS
+     D*                                             Qtoc LPPJ Header
+     D QTOUSU                  1     10
+     D*                                             User Space Used
+     D QTOUSLU                11     20
+     D*                                             User Space Lib Used
+     D QTOCPN                 21     30
+     D*                                             Cnn Profile Name
+     D*****************************************************************
+     D*Type Definition for the PPPJ0100 Format.
+     D*****************************************************************
+     DQTOJ0100         DS
+     D*                                             Qtoc PPPJ0100
+     D QTOPPJJN                1     10
+     D*                                             PPPJ Job Name
+     D QTOPPJJU               11     20
+     D*                                             PPPJ Job User
+     D QTOPPJJN00             21     26
+     D*                                             PPPJ Job Number
+     D QTOPPJJI               27     42
+     D*                                             PPPJ Job Internal
+     D QTOPPJLN               43     52
+     D*                                             PPPJ Line Name
+     D QTOPPJCS               53     56I 0
+     D*                                             PPPJ Cnn Status
+     D QTOJLIPA               57     71
+     D*                                             PPPJ LocalIP Addr
+     D QTOJRIPA               72     86
+     D*                                             PPPJ RemoteIP Addr
+     D QTOPJCUN               87    134
+     D*                                             PPPJ Cnn User Name

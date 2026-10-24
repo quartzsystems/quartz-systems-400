@@ -1,0 +1,285 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5763-SS1                                                      */
+/*     5722-SS1                                                      */
+/*     5761-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  1993, 2007                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name:  net/route.h                                    */
+/*                                                                   */
+/* Descriptive Name: Internet Protocol Routing                       */
+/*                                                                   */
+/*                                                                   */
+/* Copyright (c) 1980, 1986 Regents of the University of California. */
+/* All rights reserved.  The Berkeley software License Agreement     */
+/* specifies the terms and conditions for redistribution.            */
+/*                                                                   */
+/*                                                                   */
+/* Description:                                                      */
+/*                                                                   */
+/*          Defines macros, variables, and structures to be          */
+/*          used when accessing routing data using sockets           */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*                                                                   */
+/*          net/if.h                                                 */
+/*          sys/socket.h                                             */
+/*          sys/types.h                                              */
+/*                                                                   */
+/* Macros List:                                                      */
+/*                                                                   */
+/*          RTF_BLACKHOLE                                            */
+/*          RTF_DYNAMIC                                              */
+/*          RTF_GATEWAY                                              */
+/*          RTF_GATEWAY_PROBLEMATIC                                  */
+/*          RTF_HOST                                                 */
+/*          RTF_MODIFIED                                             */
+/*          RTF_NOREBIND_IFC_FAIL                                    */
+/*          RTF_NOREBIND_IFC_ACTV                                    */
+/*          RTF_UP                                                   */
+/*          RTF_TOS_IS_PRIORITY                                 @A1A */
+/*                                                                   */
+/*          RTP_BGP                                                  */
+/*          RTP_BSIGRP                                               */
+/*          RTP_CIGRP                                                */
+/*          RTP_CONFIG                                               */
+/*          RTP_EGP                                                  */
+/*          RTP_ESIS                                                 */
+/*          RTP_GGP                                                  */
+/*          RTP_HELLO                                                */
+/*          RTP_ICMP                                                 */
+/*          RTP_ISIS                                                 */
+/*          RTP_OSPF                                                 */
+/*          RTP_OTHER                                                */
+/*          RTP_RIP                                                  */
+/*          RTP_SNMP                                                 */
+/*                                                                   */
+/*          IP6_RTP_OTHER                                       @A2A */
+/*          IP6_RTP_LOCAL                                       @A2A */
+/*          IP6_RTP_NETMGMT                                     @A2A */
+/*          IP6_RTP_NDISC                                       @A2A */
+/*          IP6_RTP_RIP                                         @A2A */
+/*          IP6_RTP_OSPF                                        @A2A */
+/*          IP6_RTP_BGP                                         @A2A */
+/*          IP6_RTP_IDRP                                        @A2A */
+/*          IP6_RTP_IGRP                                        @A2A */
+/*                                                                   */
+/*          RTP_LOW_PRIORITY                                    @A1A */
+/*          RTP_MEDIUM_PRIORITY                                 @A1A */
+/*          RTP_HIGH_PRIORITY                                   @A1A */
+/*                                                                   */
+/*          rtc_buf                                                  */
+/*          rtc_req                                                  */
+/*                                                                   */
+/* Structure List:                                                   */
+/*                                                                   */
+/*          rtconf                                                   */
+/*          rtentry                                                  */
+/*          ip6rtentry                                          @A1A */
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*                                                                   */
+/*          None                                                     */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/*   CFD List:                                                       */
+/*                                                                   */
+/*   FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION     */
+/*   ---- ------------ ----- ------- -------- ---------------------- */
+/*   $A0= D3188200     3D10  930806  ROCH     New include.           */
+/*   $A1= D93466.3     6D10  060404  ROCH     Add struct ip6rtentry  */
+/*   $A2= P9C09039     6D10  071106  ROCH     IPV6 RTP6 constants    */
+/*                                                                   */
+/*   End CFD List.                                                   */
+/*                                                                   */
+/*   Additional notes about the Change Activity:                     */
+/*                                                                   */
+/* End Change Activity                                               */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __route_h
+  #define __route_h
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+/*********************************************************************/
+/* Header files                                                      */
+/*********************************************************************/
+
+#include <net/if.h>                   /* interface macros/structures */
+#include <sys/socket.h>               /* sockaddr structure          */
+#include <sys/types.h>                /* common typedefs             */
+#ifndef _H_IN                                                  /*@A1A*/
+#include <netinet/in.h>                                        /*@A1A*/
+#endif                                                         /*@A1A*/
+#if (__OS400_TGTVRM__>=510)  /* @B1A*/
+#pragma datamodel(P128)      /* @B1A*/
+#endif                       /* @B1A*/
+
+/*********************************************************************/
+/* Macros for rt_flags field in rtentry structure                    */
+/*********************************************************************/
+
+#define RTF_BLACKHOLE            0x0040  /* route is black hole -
+                                            silently drop            */
+#define RTF_DYNAMIC              0x0010  /* created dynamically      */
+#define RTF_GATEWAY              0x0002  /* destination is a gateway */
+#define RTF_GATEWAY_PROBLEMATIC  0x0080  /* route gateway may have
+                                            problems                 */
+#define RTF_HOST                 0x0004  /* host entry (otherwise
+                                            network entry)           */
+#define RTF_MODIFIED             0x0020  /* modified dynamically     */
+#define RTF_NOREBIND_IFC_ACTV    0x0200  /* do not rebind route to
+                                            another interface on
+                                            activation/deactivation
+                                            of interfaces            */
+#define RTF_NOREBIND_IFC_FAIL    0x0100  /* do not rebind route to
+                                            another interface if
+                                            interface fails          */
+#define RTF_TOS_IS_PRIORITY      0x0400  /* indicates rt_TOS field in
+                                            the rtentry structure will
+                                            contain the route priority
+                                            rather than the type of
+                                            service             @A1A */
+#define RTF_UP                   0x0001  /* route is usable          */
+
+/*********************************************************************/
+/* Macros for rt_protocol field in rtentry structure                 */
+/*********************************************************************/
+
+#define RTP_OTHER                1    /* route learned, sockets, etc */
+#define RTP_CONFIG               2    /* route learned, configuration*/
+#define RTP_SNMP                 3    /* route learned, SNMP         */
+#define RTP_ICMP                 4    /* route learned, ICMP         */
+#define RTP_EGP                  5    /* route learned, EGP          */
+#define RTP_GGP                  6    /* route learned, GGP          */
+#define RTP_HELLO                7    /* route learned, HELLO        */
+#define RTP_RIP                  8    /* route learned, RIP          */
+#define RTP_ISIS                 9    /* route learned, IS-IS        */
+#define RTP_ESIS                10    /* route learned, ES-IS        */
+#define RTP_CIGRP               11    /* route learned, Cisco IGRP   */
+#define RTP_BSIGRP              12    /* route learned, BBN SPF IGRP */
+#define RTP_OSPF                13    /* route learned, OSPF         */
+#define RTP_BGP                 14    /* route learned, BGP          */
+
+
+/*********************************************************************/
+/* Macros for rt_protocol field in ip6rtentry structure              */
+/*********************************************************************/
+
+#define IP6_RTP_OTHER      1    /* route learned, sockets, etc  @A2A */
+#define IP6_RTP_LOCAL      2    /* route learned, configuration @A2A */
+#define IP6_RTP_NETMGMT    3    /* route learned, netwrk mgmt   @A2A */
+#define IP6_RTP_NDISC      4    /* route learned, neighbor disc @A2A */
+#define IP6_RTP_RIP        5    /* route learned, RIPng         @A2A */
+#define IP6_RTP_OSPF       6    /* route learned, OSPF          @A2A */
+#define IP6_RTP_BGP        7    /* route learned, BGP           @A2A */
+#define IP6_RTP_IDRP       8    /* route learned, InterDomain   @A2A */
+#define IP6_RTP_IGRP       9    /* route learned, InterGateway  @A2A */
+
+/*********************************************************************/
+/* Macros for rt_priority field in ip6rtentry structure         @A1A */
+/*********************************************************************/
+
+#define RTP_LOW_PRIORITY        -1    /* low priority           @A1A */
+#define RTP_MEDIUM_PRIORITY      0    /* medium priority        @A1A */
+#define RTP_HIGH_PRIORITY        1    /* high priority          @A1A */
+
+/*********************************************************************/
+/* Macros to simplify access to rtc_rtcu union in rtconf structure   */
+/*********************************************************************/
+
+#define rtc_buf    rtc_rtcu.rtcu_buf
+#define rtc_req    rtc_rtcu.rtcu_req
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+struct rtentry {                      /* route entry                 */
+
+  struct sockaddr rt_dst;             /* route destination
+                                         net/subnet/host             */
+  struct sockaddr rt_mask;            /* route mask                  */
+  struct sockaddr rt_gateway;         /* gateway's IP address        */
+  int     rt_mtu;                     /* MTU for route               */
+  u_short rt_flags;                   /* route flags                 */
+  u_short rt_refcnt;                  /* number held references      */
+  u_char  rt_protocol;                /* route protocol, how route
+                                         was learned                 */
+  u_char  rt_TOS;                     /* route type-of-service       */
+  char    rt_if[IFNAMSIZ];            /* interface used for route    */
+
+};
+
+struct ip6rtentry {                   /* IPv6 route entry       @A1A */
+  struct  sockaddr_in6 rt_dst;        /* route destination
+                                         net/subnet/host        @A1A */
+  struct  sockaddr_in6 rt_nexthop;    /* next hop IP address    @A1A */
+  int     rt_mtu;                     /* MTU for route          @A1A */
+  u_short rt_flags;                   /* route flags            @A1A */
+  u_char  rt_prefixlen;               /* length of the prefix   @A1A */
+  u_char  rt_protocol;                /* route protocol, how route
+                                         was learned            @A1A */
+  char    rt_priority;                /* route priority         @A1A */
+  char    rt_if[32];                  /* interface used for route@A1A*/
+};                                                           /* @A1A */
+
+struct rtconf {                       /* route configuration list    */
+
+  int rtc_len;                        /* size of user-supplied buffer*/
+  int rtc_configured;                 /* number of interfaces
+                                         configured                  */
+  int rtc_returned;                   /* number of interfaces
+                                         returned                    */
+  union {
+     caddr_t      rtcu_buf;           /* user-supplied buffer address*/
+     struct rtentry *rtcu_req;        /* returned list of interfaces */
+  } rtc_rtcu;
+
+};
+
+#if (__OS400_TGTVRM__>=510)  /* @B1A*/
+#pragma datamodel(pop)       /* @B1A*/
+#endif                       /* @B1A*/
+
+#endif /* __route_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

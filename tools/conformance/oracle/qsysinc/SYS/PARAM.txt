@@ -1,0 +1,84 @@
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name:  sys/param.h                                    */
+/*                                                                   */
+/* Descriptive Name: Miscellaneous system parameters                 */
+/*                                                                   */
+/* 5763-SS1, 5716-SS1                                                */
+/* (C) Copyright IBM Corp. 1993, 1995                                */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/* Description:                                                      */
+/*                                                                   */
+/*          Defines some miscellaneous macros which define some      */
+/*          miscellaneous limits.                                    */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*                                                                   */
+/*          None                                                     */
+/*                                                                   */
+/* Macros List:                                                      */
+/*                                                                   */
+/*          MAXHOSTNAMELEN                                           */
+/*                                                                   */
+/* Structure List:                                                   */
+/*                                                                   */
+/*          None                                                     */
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*                                                                   */
+/*          None                                                     */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/*   CFD List:                                                       */
+/*                                                                   */
+/*   FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION     */
+/*   ---- ------------ ----- ------- -------- ---------------------- */
+/*   $A0= D3188200     3D10  930806  ROCH     New include.           */
+/*                                                                   */
+/*   End CFD List.                                                   */
+/*                                                                   */
+/*   Additional notes about the Change Activity:                     */
+/*                                                                   */
+/* End Change Activity                                               */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __param_h
+  #define __param_h
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+/*********************************************************************/
+/* Miscellaneous macros                                              */
+/*********************************************************************/
+
+#define MAXHOSTNAMELEN   255          /* maximum host name length    */
+
+#endif /* #ifndef __param_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

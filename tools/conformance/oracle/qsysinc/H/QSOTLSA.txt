@@ -1,0 +1,323 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5770-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  2018, 2019                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name:  qsotlsa.h                                      */
+/*                                                                   */
+/* Descriptive Name: Retrieve TLS Attributes API Definition          */
+/*                                                                   */
+/* Description:                                                      */
+/*                                                                   */
+/*          Defines prototypes, macros, and structures to be used    */
+/*          with the QsoRtvTLSA API.                                 */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*                                                                   */
+/*                                                                   */
+/* Macros List:                                                      */
+/*                                                                   */
+/*                                                                   */
+/* Structure List:                                                   */
+/*                                                                   */
+/*          QsoRtvTLSA_TLSA0100_t                                    */
+/*          QsoRtvTLSA_TLSA0200_t                                    */
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*                                                                   */
+/*          QsoRtvTLSA                                               */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/*   CFD List:                                                       */
+/*                                                                   */
+/*   FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION     */
+/*   ---- ------------ ----- ------- -------- ---------------------- */
+/*   $A0= Dxxxxxxxx    7D40  171116  ROCH     New include.           */
+/*   $A1= Dxxxxxxxx    7D40  190523  ROCH     Format updates.        */
+/*   $A2= DFWxxxxxx    7D40  190523  ROCH     Add format TLSA0200.   */
+/*                                                                   */
+/*   End CFD List.                                                   */
+/*                                                                   */
+/*   Additional notes about the Change Activity:                     */
+/*                                                                   */
+/* End Change Activity                                               */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __qsotlsa_h
+  #define __qsotlsa_h
+
+#ifndef __QSO_EXTERN
+  #ifdef __ILEC400__
+    #define QSO_EXTERN extern
+  #else
+    #define QSO_EXTERN extern "C"
+  #endif
+
+  #define __QSO_EXTERN
+#endif
+
+#if (__OS400_TGTVRM__>=510)
+#pragma datamodel(P128)
+#endif
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+/*********************************************************************/
+/* Type definition for the TLSA0100 format of the receiver variable. */
+/*********************************************************************/
+typedef _Packed struct QsoRtvTLSA_TLSA0100                   /* @A1C */
+{
+  unsigned short supportedProtocolList[10];  /*  Supported protocols */
+  unsigned supportedProtocolCount;  /* Number of supported protocols */
+  unsigned short eligibleDefaultProtocolList[10];/*  Elig def protos */
+  unsigned eligibleDefaultProtocolCount;   /* Number elig def protos */
+  unsigned short defaultProtocolList[10];    /*    Default protocols */
+  unsigned defaultProtocolCount;      /* Number of default protocols */
+
+  unsigned short supportedCipherList[64]; /* Supported cipher suites */
+  unsigned supportedCipherCount;/* Number of supported cipher suites */
+  unsigned short eligibleDefaultCipherList[64];  /* Elig def ciphers */
+  unsigned eligibleDefaultCipherCount;    /* Number elig def ciphers */
+  unsigned short defaultCipherList[64];     /* Default cipher suites */
+  unsigned defaultCipherCount;    /* Number of default cipher suites */
+
+  unsigned short supportedSigAlgList[32];  /* Supported sig alg list */
+  unsigned supportedSigAlgCount;     /* Number of supported sig algs */
+  unsigned short defaultSigAlgList[32];      /* Default sig alg list */
+  unsigned defaultSigAlgCount;        /*  Number of default sig algs */
+
+  unsigned short supportedSigAlgCertList[32];/* Sup sig alg cert list */
+  unsigned supportedSigAlgCertCount;   /* Number of sup sig alg certs */
+  unsigned short defaultSigAlgCertList[32];  /* Def sig alg cert list */
+  unsigned defaultSigAlgCertCount; /* Number of default sig alg certs */
+
+  unsigned short supportedNamedCurveList[32];/*Supported named curves */
+  unsigned supportedNamedCurveCount; /* Number supported named curves */
+  unsigned short defaultNamedCurveList[32];  /*  Default named curves */
+  unsigned defaultNamedCurveCount;  /* Number of default named curves */
+
+  unsigned minimumRsaKeySize;    /* Default minimum RSA key size      */
+  unsigned tlsRenegotiationType; /* TLS renegotiation without RFC5746 */
+  unsigned sslV2HSCount;         /* SSLv2 handshake connection count  */
+  unsigned sslV3HSCount;  	 /* SSLv3 handshake connection count  */
+  unsigned tlsV10HSCount; 	 /* TLSv10 handshake connection count */
+  unsigned tlsV11HSCount; 	 /* TLSv11 handshake connection count */
+  unsigned tlsV12HSCount; 	 /* TLSv12 handshake connection count */
+  unsigned tlsV13HSCount; 	 /* TLSv13 handshake connection count */
+  unsigned ocspCertRevocation;/* OCSP certificate revocation check @A2A */
+  unsigned reserved1[16];        /* Reserved                     @A2C */
+
+  int  enableHandshakeCount :1;  /* Handshake counting enabled        */
+  int  secureSessionCaching :1;     /* Secure session caching enabled */
+  int  rfc5746RequiredClient :1; /* RFC5746 client required flag      */
+  int  rfc5746RequiredServer :1; /* RFC5746 server required flag      */
+  int  rfc7366EtMClient :1;  /* RFC7366 client hello supported flag   */
+  int  rfc7366EtMRequired :1;       /* RFC7366 required flag          */
+  int  rfc7627EMSClient :1;  /* RFC7627 client hello supported flag   */
+  int  rfc7627EMSRequired :1;       /* RFC7627 required flag          */
+  int  middleboxCompatibilityMode:1; /* Middlebox compatibility mode  */
+  int  netsecureTelnetServer :1;    /* Audit secure telnet handshakes */
+  int  reserved2 : 22;           /* Reserved                          */
+  char pad[12];                  /* Padding (ignored)                 */
+
+} QsoRtvTLSA_TLSA0100_t;                                     /* @A1C */
+
+/*********************************************************************/
+/* Type definition for the TLSA0200 format of the receiver variable. */
+/*********************************************************************/
+typedef _Packed struct QsoRtvTLSA_TLSA0200                   /* @A2A */
+{
+  unsigned enableHandshakeCount; /* Handshake counting enabled        */
+  unsigned sslV2HSCount;         /* SSLv2 handshake connection count  */
+  unsigned sslV3HSCount;  	 /* SSLv3 handshake connection count  */
+  unsigned tlsV10HSCount; 	 /* TLSv10 handshake connection count */
+  unsigned tlsV11HSCount; 	 /* TLSv11 handshake connection count */
+  unsigned tlsV12HSCount; 	 /* TLSv12 handshake connection count */
+  unsigned tlsV13HSCount; 	 /* TLSv13 handshake connection count */
+  unsigned reserved1[5];         /* Reserved                          */
+                          /* Cipher suite handshake connection counts */
+  unsigned aes128GcmSha256Cnt;                 /* *AES_128_GCM_SHA256 */
+  unsigned aes256GcmSha384Cnt;                 /* *AES_256_GCM_SHA384 */
+  unsigned chaCha20P1305Cnt;             /* *CHACHA20_POLY1305_SHA256 */
+  unsigned ecdheEcdsaAes128GcmSha256Cnt;
+                              /* *ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 */
+  unsigned ecdheEcdsaAes256GcmSha384Cnt;
+                              /* *ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 */
+  unsigned ecdheEcdsaChaCha20P1305Cnt;
+                        /* *ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 */
+  unsigned ecdheRsaAes128GcmSha256Cnt;
+	                        /* *ECDHE_RSA_WITH_AES_128_GCM_SHA256 */
+  unsigned ecdheRsaAes256GcmSha384Cnt;
+                                /* *ECDHE_RSA_WITH_AES_256_GCM_SHA384 */
+  unsigned ecdheRsaChaCha20P1305Cnt;
+                          /* *ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 */
+  unsigned rsaAes128GcmSha256Cnt;
+                                      /* *RSA_WITH_AES_128_GCM_SHA256 */
+  unsigned rsaAes256GcmSha384Cnt;
+                                      /* *RSA_WITH_AES_256_GCM_SHA384 */
+  unsigned ecdheEcdsaAes128CbcSha256Cnt;
+                              /* *ECDHE_ECDSA_WITH_AES_128_CBC_SHA256 */
+  unsigned ecdheEcdsaAes256CbcSha384Cnt;
+                              /* *ECDHE_ECDSA_WITH_AES_256_CBC_SHA384 */
+  unsigned ecdheRsaAes128CbcSha256Cnt;
+                                /* *ECDHE_RSA_WITH_AES_128_CBC_SHA256 */
+  unsigned ecdheRsaAes256CbcSha384Cnt;
+                                /* *ECDHE_RSA_WITH_AES_256_CBC_SHA384 */
+  unsigned rsaAes128CbcSha256Cnt;
+                                      /* *RSA_WITH_AES_128_CBC_SHA256 */
+  unsigned rsaAes128CbcShaCnt;           /* *RSA_WITH_AES_128_CBC_SHA */
+  unsigned rsaAes256CbcSha256Cnt;
+                                      /* *RSA_WITH_AES_256_CBC_SHA256 */
+  unsigned rsaAes256CbcShaCnt;           /* *RSA_WITH_AES_256_CBC_SHA */
+  unsigned ecdheEcdsa3DesEdeCbcShaCnt;
+                                /* *ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA */
+  unsigned ecdheRsa3DesEdeCbcShaCnt;
+                                  /* *ECDHE_RSA_WITH_3DES_EDE_CBC_SHA */
+  unsigned rsa3DesEdeCbcShaCnt;         /* *RSA_WITH_3DES_EDE_CBC_SHA */
+  unsigned ecdheEcdsaRc4128ShaCnt;
+                                     /* *ECDHE_ECDSA_WITH_RC4_128_SHA */
+  unsigned ecdheRsaRc4128ShaCnt;       /* *ECDHE_RSA_WITH_RC4_128_SHA */
+  unsigned rsaRc4128ShaCnt;                  /* *RSA_WITH_RC4_128_SHA */
+  unsigned rsaRc4128Md5Cnt;                  /* *RSA_WITH_RC4_128_MD5 */
+  unsigned rsaDesCbcShaCnt;                  /* *RSA_WITH_DES_CBC_SHA */
+  unsigned rsaExportRc440Md5Cnt;       /* *RSA_EXPORT_WITH_RC4_40_MD5 */
+  unsigned rsaExportRc2Cbc40Md5Cnt;
+                                   /* *RSA_EXPORT_WITH_RC2_CBC_40_MD5 */
+  unsigned ecdheEcdsaNullShaCnt;        /* *ECDHE_ECDSA_WITH_NULL_SHA */
+  unsigned ecdheRsaNullShaCnt;            /* *ECDHE_RSA_WITH_NULL_SHA */
+  unsigned rsaNullSha256Cnt;                 /* *RSA_WITH_NULL_SHA256 */
+  unsigned rsaNullShaCnt;                       /* *RSA_WITH_NULL_SHA */
+  unsigned rsaNullMd5Cnt;                       /* *RSA_WITH_NULL_MD5 */
+  unsigned rsa3DesEdeCbcMd5Cnt;         /* *RSA_WITH_3DES_EDE_CBC_MD5 */
+  unsigned rsaDesCbcMd5Cnt;                  /* *RSA_WITH_DES_CBC_MD5 */
+  unsigned rsaRc2Cbc128Md5Cnt;           /* *RSA_WITH_RC2_CBC_128_MD5 */
+  unsigned reserved2[27];        /* Reserved                          */
+
+} QsoRtvTLSA_TLSA0200_t;
+
+/*********************************************************************/
+/* Function prototypes                                               */
+/*********************************************************************/
+
+QSO_EXTERN void QsoRtvTLSA(char *, char *, int *, char *);
+
+/*********************************************************************/
+/* Macros for returned attribute values from QsoRtvTLSA              */
+/*********************************************************************/
+/* The following TLS/SSL protocol values may be returned */
+#define TLSA_SSLV2_PROTOCOL                      0x0002
+#define TLSA_SSLV3_PROTOCOL                      0x0300
+#define TLSA_TLSV10_PROTOCOL                     0x0301
+#define TLSA_TLSV11_PROTOCOL                     0x0302
+#define TLSA_TLSV12_PROTOCOL                     0x0303
+#define TLSA_TLSV13_PROTOCOL                     0x0304
+
+/* The following TLS cipher suite values may be returned */
+#define TLSA_RSA_WITH_NULL_MD5                         0x0001
+#define TLSA_RSA_WITH_NULL_SHA                         0x0002
+#define TLSA_RSA_WITH_NULL_SHA256                      0x003B
+#define TLSA_RSA_WITH_RC4_128_SHA                      0x0005
+#define TLSA_RSA_WITH_DES_CBC_SHA                      0x0009
+#define TLSA_RSA_WITH_3DES_EDE_CBC_SHA                 0x000A
+
+#define TLSA_RSA_EXPORT_WITH_RC4_40_MD5                0x0003
+#define TLSA_RSA_WITH_RC4_128_MD5                      0x0004
+#define TLSA_RSA_EXPORT_WITH_RC2_CBC_40_MD5            0x0006
+
+#define TLSA_RSA_WITH_RC2_CBC_128_MD5                  0xFF01
+#define TLSA_RSA_WITH_DES_CBC_MD5                      0xFF02
+#define TLSA_RSA_WITH_3DES_EDE_CBC_MD5                 0xFF03
+
+#define TLSA_RSA_WITH_AES_128_CBC_SHA                  0x002F
+#define TLSA_RSA_WITH_AES_256_CBC_SHA                  0x0035
+#define TLSA_RSA_WITH_AES_128_CBC_SHA256               0x003C
+#define TLSA_RSA_WITH_AES_256_CBC_SHA256               0x003D
+
+#define TLSA_RSA_WITH_AES_128_GCM_SHA256               0x009C
+#define TLSA_RSA_WITH_AES_256_GCM_SHA384               0x009D
+#define TLSA_ECDHE_ECDSA_WITH_NULL_SHA                 0xC006
+#define TLSA_ECDHE_ECDSA_WITH_RC4_128_SHA              0xC007
+#define TLSA_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA         0xC008
+#define TLSA_ECDHE_RSA_WITH_NULL_SHA                   0xC010
+#define TLSA_ECDHE_RSA_WITH_RC4_128_SHA                0xC011
+#define TLSA_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA           0xC012
+#define TLSA_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256       0xC023
+#define TLSA_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384       0xC024
+#define TLSA_ECDHE_RSA_WITH_AES_128_CBC_SHA256         0xC027
+#define TLSA_ECDHE_RSA_WITH_AES_256_CBC_SHA384         0xC028
+#define TLSA_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256       0xC02B
+#define TLSA_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384       0xC02C
+#define TLSA_ECDHE_RSA_WITH_AES_128_GCM_SHA256         0xC02F
+#define TLSA_ECDHE_RSA_WITH_AES_256_GCM_SHA384         0xC030
+#define TLSA_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256   0xCCA8  /* @A2A */
+#define TLSA_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 0xCCA9  /* @A2A */
+#define TLSA_AES_128_GCM_SHA256                        0x1301
+#define TLSA_AES_256_GCM_SHA384                        0x1302
+#define TLSA_CHACHA20_POLY1305_SHA256                  0x1303
+
+/* The following TLS signature algorithm values may be returned */
+#define TLSA_SIG_ALG_RSA_MD5                     0x0101
+#define TLSA_SIG_ALG_RSA_SHA1                    0x0201
+#define TLSA_SIG_ALG_RSA_SHA224                  0x0301
+#define TLSA_SIG_ALG_RSA_SHA256                  0x0401
+#define TLSA_SIG_ALG_RSA_SHA384                  0x0501
+#define TLSA_SIG_ALG_RSA_SHA512                  0x0601
+#define TLSA_SIG_ALG_ECDSA_SHA1                  0x0203
+#define TLSA_SIG_ALG_ECDSA_SHA224                0x0303
+#define TLSA_SIG_ALG_ECDSA_SHA256                0x0403
+#define TLSA_SIG_ALG_ECDSA_SHA384                0x0503
+#define TLSA_SIG_ALG_ECDSA_SHA512                0x0603
+#define TLSA_SIG_ALG_RSA_PSS_SHA256              0x0804
+#define TLSA_SIG_ALG_RSA_PSS_SHA384              0x0805
+#define TLSA_SIG_ALG_RSA_PSS_SHA512              0x0806
+#define TLSA_SIG_ALG_ED25519                     0x0807
+#define TLSA_SIG_ALG_ED448                       0x0808
+
+/* The following TLS elliptical curve named curve values may be returned */
+#define TLSA_CURVE_SECP192R1                     0x0013
+#define TLSA_CURVE_SECP224R1                     0x0015
+#define TLSA_CURVE_SECP256R1                     0x0017
+#define TLSA_CURVE_SECP384R1                     0x0018
+#define TLSA_CURVE_SECP521R1                     0x0019
+#define TLSA_CURVE_X25519                        0x001D
+#define TLSA_CURVE_X448                          0x001E
+
+#if (__OS400_TGTVRM__>=510)
+#pragma datamodel(pop)
+#endif
+
+#endif  /* #ifndef __qsotlsa_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

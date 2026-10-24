@@ -1,0 +1,145 @@
+     D*** START HEADER FILE SPECIFICATIONS ****************************
+     D*
+     D*Header File Name: H/QLG
+     D*
+     D*Descriptive Name: Common structures for LG component
+     D*
+     D*5716-SS1 5722-SS1 (C) Copyright IBM Corp. 1994,2000
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*
+     D*Description: The common structures that could be used by more
+     D*          than one LG component include.
+     D*
+     D*Macros List:
+     D*          QLG_CHAR_DOUBLE                               @A2A
+     D*          QLG_CHAR_SINGLE                               @A2A
+     D*          QLG_PTR_DOUBLE                                @A2A
+     D*          QLG_PTR_SINGLE                                @A2A
+     D*
+     D*Structure List: Qlg_CCSID_ReqCtlBlk_T
+     D*             Qlg_Table_ReqCtlBlk_T
+     D*             Qlg_Qual_Tbl_Name_T
+     D*             Qlg_UsrDef_ReqCtlBlk_T
+     D*             Qlg_Path_Name_T
+     D*
+     D*Function Prototype List: None
+     D*
+     D*Change Activity:
+     D*
+     D*CFD List:
+     D*
+     D*FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION
+     D*---- ------------ ----- ------ --------- ----------------------
+     D*$A0= D2827200     3D10  940227 ROCH    : New Include
+     D*$A1= D2870900     3D60  941204 ROCH    : Add NLS enabled path
+     D*                                      name structure
+     D*$A2= D9765800     5D10  990620 ROCH    : Added Path_type
+     D*                                      macros
+     D*$A3= P9934931    V5R1M0 001105 VIET    : Teraspace stage 2
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*End Change Activity.
+     D*** END HEADER FILE SPECIFICATIONS ******************************
+     D*******************************************************************
+     D*Structure for CCSID based request
+     D*******************************************************************
+     DQLGIDRCB00       DS
+     D*                                             Qlg CCSID ReqCtlBlk
+     D QLGTOR02                1      4I 0
+     D*                                             Type of Request
+     D QLGIDOID00              5      8I 0
+     D*                                             CCSID of Input Data
+     D QLGCR00                 9     12I 0
+     D*                                             Case Request
+     D QLGERVED04             13     22
+     D*                                             Reserved
+     D*******************************************************************
+     D*Structures for request using table (*TBL)
+     D*******************************************************************
+     DQLGQTN01         DS
+     D*                                             Qlg Qual Tbl Name
+     D QLGTN04                 1     10
+     D*                                             Tbl Name
+     D QLGLIB01               11     20
+     D*                                             Lib
+     DQLGTRCB00        DS
+     D*                                             Qlg Table ReqCtlBlk
+     D QLGTOR03                1      4I 0
+     D*                                             Type of Request
+     D QLGDBCSI01              5      8I 0
+     D*                                             DBCS Indicator
+     D*QLGQTN02                      20
+     D*                                             Qual Tbl Name
+     D  QLGTN05                9     18
+     D*                                             Tbl Name
+     D  QLGLIB02              19     28
+     D*                                             Lib
+     D*******************************************************************
+     D*Structure for request using a user-defined conversion map
+     D*******************************************************************
+     DQLGUDRCB00       DS
+     D*                                             UsrDef ReqCtlBlk
+     D QLGTOR04                1      4I 0
+     D*                                             Type of Request
+     D QLGDBCSI02              5      8I 0
+     D*                                             DBCS Indicator
+     D QLGERVED06              9     12I 0
+     D*                                             Reserved
+     D QLGENGTH00             13     16I 0
+     D*                                             Length
+     D*char CvtMap[];                           Variable length field
+     D*******************************************************************
+     D*Structure for NLS enabled path name
+     D****                                                            ***
+     D*NOTE: The following type definition only defines the fixed
+     D*  portion of the format.  Any varying length field will
+     D*  have to be defined by the user.
+     D*******************************************************************
+     DQLGPN            DS
+     D*                                             Qlg Path Name
+     D QLGCCSID02              1      4I 0
+     D*                                             CCSID
+     D QLGCID                  5      6
+     D*                                 Country or region ID
+     D QLGLID                  7      9
+     D*                                             Language ID
+     D QLGERVED07             10     12
+     D*                                             Reserved
+     D QLGPT                  13     16U 0
+     D*                                             Path Type
+     D QLGPL                  17     20I 0
+     D*                                             Path Length
+     D QLGPND                 21     22
+     D*                                             Path Name Delimiter
+     D QLGRSV200              23     32
+     D*                                             Reserved2
+     D*QLGPN00                33     33
+     D*
+     D*                                   Variable length field
+     D*************************************************************@A2A
+     D*Macros for Path_Type in the Qlg_Path_Name structure.       @A2A
+     D*************************************************************@A2A
+     D*                                 The Path_Name is a    @A2A
+     D*                                 character string and  @A2A
+     D*                                 the delimiter is one  @A2A
+     D*                                 byte long.            @A2A
+     D*                                 The Path_Name is a    @A2A
+     D*                                 pointer and the       @A2A
+     D*                                 delimiter is one      @A2A
+     D*                                 byte long.            @A2A
+     D*                                 The Path_Name is a    @A2A
+     D*                                 character string and  @A2A
+     D*                                 the delimiter is two  @A2A
+     D*                                 bytes long.           @A2A
+     D*                                 The Path_Name is a    @A2A
+     D*                                 pointer and the       @A2A
+     D*                                 delimiter is two      @A2A
+     D*                                 bytes long.           @A2A

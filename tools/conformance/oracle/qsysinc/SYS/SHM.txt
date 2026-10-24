@@ -1,0 +1,269 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5716-SS1                                                      */
+/*     5769-SS1                                                      */
+/*     5722-SS1                                                      */
+/*     5770-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  1995, 2013                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+
+#ifdef __ILEC400__
+  #pragma nomargins nosequence
+  #pragma checkout(suspend)
+#endif
+
+#ifndef _SHM_H
+#define _SHM_H
+
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name: shm.h                                           */
+/*                                                                   */
+/* Descriptive Name: Interprocess communication (IPC) shared memory  */
+/*                   structures and prototypes                       */
+/*                                                                   */
+/* Description: Include header file for interprocess communications  */
+/*              shared memory services.                              */
+/*                                                                   */
+/* Macros List:                                                      */
+/*     SHMLBA                                                        */
+/*     SHM_DEST                                                      */
+/*     SHM_MAP_FIXED_NP                                          @A1A*/
+/*     SHM_RESIZE_NP                                             @A1A*/
+/*     SHM_TS_NP                                                 @A1A*/
+/*     SHM_RDONLY                                                    */
+/*     SHM_RND                                                       */
+/*     SHM_SIZE                                                  @A2A*/
+/*     SHM_PAGESIZE                                              @B4A*/
+/*     SHM_4KB_PAGESIZE                                          @B4A*/
+/*     SHM_64KB_PAGESIZE                                         @B4A*/
+/*                                                                   */
+/* Typedef List:                                                     */
+/*     shmatt_t                                                  @B3A*/
+/*                                                                   */
+/* Structure List:                                                   */
+/*     shmid_ds                                                      */
+/*     shmid_ds64                                                @B3A*/
+/*     shmid_ds64_time64                                         @B5A*/
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*     qp0zShmgetTs                                              @A1A*/
+/*     shmat                                                         */
+/*     shmctl                                                        */
+/*     shmctl64                                                  @B3A*/
+/*     shmctl64_time64                                           @B5A*/
+/*     shmdt                                                         */
+/*     shmget                                                        */
+/*     shmget64                                                  @B3A*/
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/* CFD List:                                                         */
+/*                                                                   */
+/* FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION       */
+/* ---- ------------ ----- ------ --------- -----------------------  */
+/* $A0= D9178700     3D60  941016 ROCH    : New include              */
+/* $A1= D9594400     4D40  980508 ROCH    : Add teraspace storage    */
+/* $A2= D9594400     4D40  980511 ROCH    : add SHM_SIZE             */
+/* $B1= D9776700     5D10  991205 ROCH    : Added datamodel pragma   */
+/* $B2= P9928875     5D10  000903 ROCH    : Changed type of shm_segsz*/
+/* $B3= D9351301     5D50  060517 ROCH    : 64-bit support           */
+/* $B4= D9351501     5D50  060713 ROCH    : 64KB page support        */
+/* $B5= RFW586107    v7r2  120612 lichfeng : Add time64_t support    */
+/*                                                                   */
+/* End CFD List.                                                     */
+/*                                                                   */
+/*  Additional notes about the Change Activity                       */
+/*                                                                   */
+/* End Change Activity.                                              */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+/*********************************************************************/
+/* Includes                                                          */
+/*********************************************************************/
+
+#include <sys/ipc.h>
+#include <sys/types.h>
+
+#pragma datamodel(P128)      /* @B1A*/
+
+/*********************************************************************/
+/* Constants                                                         */
+/*********************************************************************/
+
+/* Shared memory operation flags */
+#define SHM_RDONLY           0X00001000 /* Attach read-only */
+#define SHM_RND              0X00002000 /* Round attach address to SHMLBA */
+#define SHM_DEST             0X00000400 /* Not used */
+#define SHM_TS_NP            0x00010000 /* Create teraspace segment @A1A*/
+#define SHM_RESIZE_NP        0x00040000 /* Allow resizeable teraspace
+                                           segments @A1A*/
+#define SHM_MAP_FIXED_NP     0x00100000 /* Attach teraspace segment at same
+                                           address in all processes @A1A*/
+
+/* Values */
+#define SHMLBA             (0x10000000) /* Segment low boundary address
+                                           multiple */
+
+/* Command definitions for shmctl() and/or shmctl64() */
+#define SHM_SIZE  6  /* Command: Resize shared memory segment.   @A2A*/
+#if (__OS400_TGTVRM__ >= 550)                                 /* @B4A*/
+  #if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE)) /* @B4A*/
+    /* Command: Set shared memory segment page size.             @B4A*/
+    #define SHM_PAGESIZE  200                                 /* @B4A*/
+  #endif                                                      /* @B4A*/
+#endif                                                        /* @B4A*/
+
+/* Possible shared memory page size values */
+#if (__OS400_TGTVRM__ >= 550)                                 /* @B4A*/
+  #if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE)) /* @B4A*/
+    #define SHM_4KB_PAGESIZE             4096                 /* @B4A*/
+    #define SHM_64KB_PAGESIZE           65536                 /* @B4A*/
+  #endif                                                      /* @B4A*/
+#endif                                                        /* @B4A*/
+
+/*********************************************************************/
+/* Typedefs                                                          */
+/*********************************************************************/
+#if (__OS400_TGTVRM__ >= 550)                                 /* @B3A*/
+  typedef unsigned int  shmatt_t;                             /* @B3A*/
+#endif                                                        /* @B3A*/
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+/* Basic shared memory segment information */
+typedef struct shmid_ds {
+  struct ipc_perm shm_perm;   /* Permissions */
+  size_t          shm_segsz;  /* Size of segment in bytes @B2C*/
+  pid_t           shm_lpid;   /* Process ID of last shared memory operation */
+  pid_t           shm_cpid;   /* Process ID of creator */
+  int             shm_nattch; /* Number of current attaches */
+  time_t          shm_atime;  /* Time of last shmat() */
+  time_t          shm_dtime;  /* Time of last shmdt() */
+  time_t          shm_ctime;  /* Time of last change by shmctl() */
+} shmtablentry_t;
+
+#if (__OS400_TGTVRM__ >= 550)                                 /* @B3A*/
+  #if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE)) /* @B3A*/
+  /* Extended (64-Bit Enabled) shared memory segment information @B3A*/
+    typedef struct shmid_ds64 {                               /* @B3A*/
+    #if ((defined _64_BIT_TIME) && (__OS400_TGTVRM__ >= 720))/* @B5A*/
+      struct ipc_perm  shm_perm;   /* Permissions                @B5A*/
+      pid_t            shm_lpid;   /* Process ID of last shared
+                                      memory operation           @B5A*/
+      pid_t            shm_cpid;   /* Process ID of creator      @B5A*/
+      shmatt_t         shm_nattch; /* Number of current attaches @B5A*/
+      size64_t         shm_segsz;  /* Size of segment in bytes   @B5A*/
+      time64_t         shm_atime;  /* Time of last shmat()       @B5A*/
+      time64_t         shm_dtime;  /* Time of last shmdt()       @B5A*/
+      time64_t         shm_ctime;  /* Time of last change by
+                                      shmctl()                   @B5A*/
+      psize_t          shm_pagesize; /* Page size                @B5A*/
+      char             shm_reserved4[24]; /* Reserved space      @B5A*/
+    #else                                                     /* @B5A*/
+      struct ipc_perm  shm_perm;   /* Permissions                @B3A*/
+      pid_t            shm_lpid;   /* Process ID of last shared
+                                      memory operation           @B3A*/
+      pid_t            shm_cpid;   /* Process ID of creator      @B3A*/
+      shmatt_t         shm_nattch; /* Number of current attaches @B3A*/
+      size64_t         shm_segsz;  /* Size of segment in bytes   @B3A*/
+      char             shm_reserved1[4]; /* Reserved space       @B3A*/
+      time_t           shm_atime;  /* Time of last shmat()       @B3A*/
+      char             shm_reserved2[4]; /* Reserved space       @B3A*/
+      time_t           shm_dtime;  /* Time of last shmdt()       @B3A*/
+      char             shm_reserved3[4]; /* Reserved space       @B3A*/
+      time_t           shm_ctime;  /* Time of last change by
+                                      shmctl()                   @B3A*/
+      psize_t          shm_pagesize; /* Page size                @B4A*/
+      char             shm_reserved4[24]; /* Reserved space      @B4C*/
+    #endif                                                    /* @B5A*/
+    } shmtablentry64_t;                                       /* @B3A*/
+
+    #if (__OS400_TGTVRM__ >= 720)                             /* @B5A*/
+    typedef struct shmid_ds64_time64 {                        /* @B5A*/
+      struct ipc_perm  shm_perm;   /* Permissions                @B5A*/
+      pid_t            shm_lpid;   /* Process ID of last shared
+                                      memory operation           @B5A*/
+      pid_t            shm_cpid;   /* Process ID of creator      @B5A*/
+      shmatt_t         shm_nattch; /* Number of current attaches @B5A*/
+      size64_t         shm_segsz;  /* Size of segment in bytes   @B5A*/
+      time64_t         shm_atime;  /* Time of last shmat()       @B5A*/
+      time64_t         shm_dtime;  /* Time of last shmdt()       @B5A*/
+      time64_t         shm_ctime;  /* Time of last change by
+                                      shmctl()                   @B5A*/
+      psize_t          shm_pagesize; /* Page size                @B5A*/
+      char             shm_reserved4[24]; /* Reserved space      @B5A*/
+    } shmtablentry64_time64_t;                                /* @B5A*/
+    #endif                                                    /* @B5A*/
+  #endif                                                      /* @B3A*/
+#endif
+
+/*********************************************************************/
+/* Function Prototypes                                               */
+/*********************************************************************/
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+         #define QBFC_EXTERN extern
+    #else
+         #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+QBFC_EXTERN void *shmat(int shmid, const void *shmaddr, int shmflg);
+QBFC_EXTERN int   shmctl(int shmid, int cmd, struct shmid_ds *buf);
+QBFC_EXTERN int   shmdt(const void *shmaddr);
+QBFC_EXTERN int   shmget(key_t key, size_t size, int shmflg);
+QBFC_EXTERN int   qp0zShmgetTs(key_t key, size_t size, int shmflg); /* @A1A*/
+
+#if (__OS400_TGTVRM__>=550)                                         /* @B3A*/
+  #if ((!defined(_POSIX_SOURCE)) && (!defined(_POSIX1_SOURCE)))     /* @B3A*/
+    QBFC_EXTERN int shmctl64(int shmid, int cmd, struct shmid_ds64 *buf);
+                                                                    /* @B3A*/
+    QBFC_EXTERN int shmget64(key_t key, size64_t size, int shmflg); /* @B3A*/
+  #endif                                                            /* @B3A*/
+#endif                                                              /* @B3A*/
+
+#if (__OS400_TGTVRM__>=720)                                         /* @B5A*/
+  #if ((!defined(_POSIX_SOURCE)) && (!defined(_POSIX1_SOURCE)))     /* @B5A*/
+    QBFC_EXTERN int shmctl64_time64(int shmid, int cmd,
+                 struct shmid_ds64_time64 *buf);                    /* @B5A*/
+    #ifdef _64_BIT_TIME                                             /* @B5A*/
+      #pragma map(shmctl64, "shmctl64_time64")                      /* @B5A*/
+    #endif                                                          /* @B5A*/
+  #endif                                                            /* @B5A*/
+#endif                                                              /* @B5A*/
+
+#if defined(__TERASPACE__)
+  #if !defined(__TS_SHM_NO_MAP)
+    #pragma map(shmget, "qp0zShmgetTs")
+  #endif
+#endif /* @A1A*/
+
+#pragma datamodel(pop)       /* @B1A*/
+
+#endif /* _SHM_H */
+
+#ifdef __ILEC400__
+  #pragma checkout(resume)
+#endif

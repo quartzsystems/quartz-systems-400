@@ -1,0 +1,705 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5763-SS1                                                      */
+/*     5716-SS1                                                      */
+/*     5769-SS1                                                      */
+/*     5722-SS1                                                      */
+/*     5770-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  1993, 2013                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/*********************************************************************/
+/**** W A R N I N G ****** W A R N I N G ****** W A R N I N G ********/
+/**** Some information in this file has a SLIC counterpart in    *****/
+/****  RunTime/sys/P0lStat.H.                                    *****/
+/*********************************************************************/
+/*                                                                   */
+/*  Header File Name:  sys/stat.h                                    */
+/*                                                                   */
+/*  Descriptive Name: File System API definition.                    */
+/*                                                                   */
+/*  Header File Description: Defines the structure, macro, and       */
+/*                           function prototypes.                    */
+/*                                                                   */
+/*  Header Files Included: sys/types.h                               */
+/*                         qlg.h                                 @B1A*/
+/*                                                                   */
+/*  Macros List: _S_IFBLK                                            */
+/*               _S_IFCHR                                            */
+/*               _S_IFDIR                                            */
+/*               _S_IFFIFO                                           */
+/*               _S_IFLNK                                            */
+/*               _S_IFNATIVE                                         */
+/*               _S_IFREG                                            */
+/*               _S_IFSOCK                                           */
+/*                S_IRGRP                                            */
+/*                S_IROTH                                            */
+/*                S_IRUSR                                            */
+/*                S_IRWXG                                            */
+/*                S_IRWXO                                            */
+/*                S_IRWXU                                            */
+/*                S_ISBLK                                            */
+/*                S_ISCHR                                            */
+/*                S_ISDIR                                            */
+/*                S_ISFIFO                                           */
+/*                S_ISGID                                        @A9A*/
+/*                S_ISLNK                                            */
+/*                S_ISNATIVE                                         */
+/*                S_ISREG                                            */
+/*                S_ISSOCK                                           */
+/*                S_ISUID                                        @A9A*/
+/*                S_ISVTX                                        @B6A*/
+/*                S_IWGRP                                            */
+/*                S_IWOTH                                            */
+/*                S_IWUSR                                            */
+/*                S_IXGRP                                            */
+/*                S_IXOTH                                            */
+/*                S_IXUSR                                            */
+/*                                                                   */
+/*  Structure List: stat                                             */
+/*                                                                   */
+/*  Function Prototype List: chmod                                   */
+/*                           fchmod                                  */
+/*                           fstat                                   */
+/*                           fstat64                             @A6A*/
+/*                           fstat64_time64                      @B8A*/
+/*                           lstat                                   */
+/*                           lstat64                             @A6A*/
+/*                           lstat64_time64                      @B8A*/
+/*                           mkdir                                   */
+/*                           QlgChmod                            @B1A*/
+/*                           QlgLstat                            @B1A*/
+/*                           QlgLstat64                          @B1A*/
+/*                           QlgLstat64_time64                   @B8A*/
+/*                           QlgMkdir                            @B1A*/
+/*                           QlgStat                             @B1A*/
+/*                           QlgStat64                           @B1A*/
+/*                           QlgStat64_time64                    @B8A*/
+/*                           stat                                    */
+/*                           stat64                              @A6A*/
+/*                           stat64_time64                       @B8A*/
+/*                           umask                                   */
+/*  Change Activity:                                                 */
+/*                                                                   */
+/*  CFD List:                                                        */
+/*                                                                   */
+/*  FLAG REASON      LEVEL DATE   PGMR      CHANGE DESCRIPTION       */
+/*  ---- ----------- ----- ------ --------- ------------------------ */
+/*  $A0= D28418      3D10  940307 ROCH      New Include              */
+/*  $A1= P3968186    3P10  940915 ROCH      Update S_IS macros.      */
+/*  $A2= D91979      3D60  941219 ROCH      File Generation ID       */
+/*                                          added to struct          */
+/*  $A3= P3977661    3D60  950105 ROCH      Changes to               */
+/*                                          documentation            */
+/*  $A4= P3992252    3D60  950522 ROCH      Add __cplusplus #ifdef   */
+/*                                          and #pragma info(none)   */
+/*  $A5= PTH01765    3D60  950804 ROCH      Correct #pragma info     */
+/*  $A6= D9588102    4D40  980603 ROCH      Add stat64 structure and */
+/*                                          functions for Large File */
+/*                                          support: stat64,         */
+/*                                          fstat64, and lstat64.    */
+/*  $A7= D9588105    4D40  980626 ROCH      Fix #pragma map and      */
+/*                                          stat structure mapping.  */
+/*  $A8= P3682997    4D40  981102 ROCH      Large Files support for  */
+/*                                          *IFS64IO                 */
+/*  $A9= D9756602    4D50  990331 ROCH      Add S_ISUID, S_ISGID bits*/
+/*  $AA= D9765101    5D10  990604 ROCH      Add st_ccsid to stat     */
+/*                                          structure                */
+/*  $B1= D9765800    5D10  990607 ROCH      Add 'Qlg' APIs and qlg.h */
+/*  $B2= D9821205    5D10  000104 ROCH      Datamodel changes        */
+/*  $B3= D9829001    5D10  000518 ROCH      Add mkfifo(), QlgMkfifo()*/
+/*  $B4= D9839101    5D20  000928 ROCH      Add st_rdev, st_rdev64,  */
+/*                                          and st_dev64             */
+/*  $B5= D9876109    5D20  010725 ROCH      Add st_nlink32           */
+/*  $B6= D9909605    5D30  020918 ROCH      Add S_ISVTX              */
+/*  $B7= D9980700   v5r4m0 040205 ROCH      Add st_vfs               */
+/* $B8= RFW589941   v7r2m0 120904 ROCH      Add stat64_time64 and    */
+/*                                          new functions for 64-bit */
+/*                                          time support             */
+/*                                                                   */
+/*  End CFD List.                                                    */
+/*                                                                   */
+/*   Additional notes about the Change Activity                      */
+/*  End Change Activity                                              */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __stat_h
+  #define __stat_h 1
+
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+
+#include <sys/types.h>             /* Include types used in stat
+                                      structure and definitions
+                                      of primitive system data types */
+
+/* Protect POSIX source                                         @B1A*/
+#if  ((!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE)) \
+      || ((defined _POSIX1_SOURCE) && (_POSIX1_SOURCE != 1)))
+
+#include <qlg.h>                     /* Include Qlg_Path_Name_T @B1A*/
+
+/* Protect POSIX source                                         @B1A*/
+#endif
+
+#if (__OS400_TGTVRM__>=510)                                  /* @B2A*/
+#pragma datamodel(P128)                                      /* @B2A*/
+#endif                                                       /* @B2A*/
+
+/********************************************************************/
+/*  Turn on the Large File Support when *IFS64IO is specified   @A8A*/
+/*  as C compiler option.                                       @A8A*/
+/********************************************************************/
+#ifdef __IFS64_IO__                                          /* @A8A*/
+   #ifndef _LARGE_FILES                                      /* @A8A*/
+      #define _LARGE_FILES                                   /* @A8A*/
+   #endif                                                    /* @A8A*/
+   #ifndef _LARGE_FILE_API                                   /* @A8A*/
+      #define _LARGE_FILE_API                                /* @A8A*/
+   #endif                                                    /* @A8A*/
+#endif                                                       /* @A8A*/
+
+
+/*********************************************************************/
+/* Definitions of File Modes and File Types                          */
+/*********************************************************************/
+
+#ifndef S_IRUSR
+   #define S_IRUSR 0000400    /* Read for owner                      */
+#endif
+
+#ifndef S_IWUSR
+   #define S_IWUSR 0000200    /* Write for owner                     */
+#endif
+
+#ifndef S_IXUSR
+   #define S_IXUSR 0000100    /* Execute and Search for owner        */
+#endif
+
+#ifndef S_IRWXU
+   #define S_IRWXU (S_IRUSR|S_IWUSR|S_IXUSR)  /* Read, Write,
+                                                 Execute for owner   */
+#endif
+
+#ifndef S_IRGRP
+   #define S_IRGRP 0000040         /* Read for group                 */
+#endif
+
+#ifndef S_IWGRP
+   #define S_IWGRP 0000020         /* Write for group                */
+#endif
+
+#ifndef S_IXGRP
+   #define S_IXGRP 0000010         /* Execute and Search for group   */
+#endif
+
+#ifndef S_IRWXG
+   #define S_IRWXG (S_IRGRP|S_IWGRP|S_IXGRP)  /* Read, Write,
+                                                 Execute for group   */
+#endif
+
+#ifndef S_IROTH
+   #define S_IROTH 0000004         /* Read for other                 */
+#endif
+
+#ifndef S_IWOTH
+   #define S_IWOTH 0000002         /* Write for other                */
+#endif
+
+#ifndef S_IXOTH
+   #define S_IXOTH 0000001         /* Execute and Search for other   */
+#endif
+
+#ifndef S_IRWXO
+   #define S_IRWXO (S_IROTH|S_IWOTH|S_IXOTH)  /* Read, Write,
+                                                 Execute for other   */
+#endif
+
+#ifndef S_ISUID                                               /* @A9A*/
+   #define S_ISUID 0004000         /* Set user ID on execution   @A9A*/
+#endif                                                        /* @A9A*/
+
+#ifndef S_ISGID                                               /* @A9A*/
+   #define S_ISGID 0002000         /* Set group ID on execution  @A9A*/
+#endif                                                        /* @A9A*/
+
+/* Protect POSIX source                                          @B6A*/
+#if  ((!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE)) \
+      || ((defined _POSIX1_SOURCE) && (_POSIX1_SOURCE != 1)))
+#ifndef S_ISVTX                                               /* @B6A*/
+   #define S_ISVTX 0001000         /* Restricted rename          @B6A*/
+                                   /* and unlink                 @B6A*/
+#endif                                                        /* @B6A*/
+/* Protect POSIX source                                          @B6A*/
+#endif
+
+#define _S_IFFIFO   0010000     /* FIFO                              */
+#define _S_IFCHR    0020000     /* character special                 */
+#define _S_IFDIR    0040000     /* Directory                         */
+#define _S_IFBLK    0060000     /* block special                     */
+#define _S_IFREG    0100000     /* Regular file                      */
+#define _S_IFLNK    0120000     /* Symbolic link                     */
+#define _S_IFSOCK   0140000     /* Socket                            */
+#define _S_IFNATIVE 0200000     /* AS/400 native object              */
+
+#ifndef S_ISDIR
+   #define S_ISDIR(m)  (((m) & 0370000) == _S_IFDIR) /* Test for
+                                                        directory    */
+#endif
+
+#ifndef S_ISREG
+   #define S_ISREG(m)  (((m) & 0370000) == _S_IFREG) /* Test for
+                                                        regular file */
+#endif
+
+#ifndef S_ISLNK
+   #define S_ISLNK(m)  (((m) & 0370000) == _S_IFLNK) /* Test for
+                                                        symbolic link*/
+#endif
+
+#ifndef S_ISSOCK
+   #define S_ISSOCK(m)  (((m) & 0370000) == _S_IFSOCK)
+                                           /* Test for socket */
+#endif
+
+#ifndef S_ISNATIVE
+   #define S_ISNATIVE(m)  (((m) & 0370000) == _S_IFNATIVE)
+                                      /* Test for AS/400 native
+                                         object                    */
+#endif
+
+#ifndef S_ISFIFO
+   #define S_ISFIFO(m)  (((m) & 0370000) == _S_IFFIFO)
+                                      /* Test for FIFO special     */
+#endif
+
+#ifndef S_ISCHR
+   #define S_ISCHR(m)   (((m) & 0370000) == _S_IFCHR)
+                                      /* Test for Character special*/
+#endif
+
+#ifndef S_ISBLK
+   #define S_ISBLK(m)  (((m) & 0370000) == _S_IFBLK)
+                                      /* Test for Block special    */
+#endif
+
+/*******************************************************************/
+/* _64_BIT_TIME is not defined before 7.2, and is dependent on     */
+/* the definition of time64_t.                                     */
+/*******************************************************************/
+#if ((__OS400_TGTVRM__<720) || !(defined __time64_t))       /* @B8A*/
+#undef _64_BIT_TIME                                         /* @B8A*/
+#endif                                                      /* @B8A*/
+
+struct stat {
+/*******************************************************************/
+/* If neither _LARGE_FILES nor _64_BIT_TIME is defined, then we    */
+/* declare the stat structure with 32-bit sizes and times.         */
+/*******************************************************************/
+#if (!(defined _LARGE_FILES) && !(defined _64_BIT_TIME))    /* @B8C*/
+  mode_t         st_mode;       /* File mode                       */
+  ino_t          st_ino;        /* File serial number              */
+  nlink_t        st_nlink;      /* Number of links                 */
+  unsigned short st_reserved2;  /* Reserved                    @B4A*/
+  uid_t          st_uid;        /* User ID of the owner of file    */
+  gid_t          st_gid;        /* Group ID of the group of file   */
+  off_t          st_size;       /* For regular files, the file
+                                   size in bytes                   */
+  time_t         st_atime;      /* Time of last access             */
+  time_t         st_mtime;      /* Time of last data modification  */
+  time_t         st_ctime;      /* Time of last file status change */
+  dev_t          st_dev;        /* ID of device containing file    */
+  size_t         st_blksize;    /* Size of a block of the file     */
+  unsigned long  st_allocsize;  /* Allocation size of the file     */
+  qp0l_objtype_t st_objtype;    /* AS/400 object type              */
+  char           st_reserved3;  /* Reserved                    @B4A*/
+  unsigned short st_codepage;   /* Object data codepage            */
+  unsigned short st_ccsid;      /* Object data ccsid           @AAA*/
+  dev_t          st_rdev;       /* Device ID (if character special */
+                                /* or block special file)      @B4A*/
+#if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE))
+  nlink32_t      st_nlink32;    /* Number of links-32 bit      @B5C*/
+  dev64_t        st_rdev64;     /* Device ID - 64 bit form     @B4A*/
+  dev64_t        st_dev64;      /* ID of device containing file -  */
+                                /* 64 bit form.                @B4A*/
+  unsigned int   st_vfs;        /* Unique mount ID of the file sys */
+                                /*  containing the object. Use     */
+                                /*  QP0LFLOP() to get more info on */
+                                /*  the mounted file system.   @B7A*/
+  char           st_reserved1[32]; /* Reserved            @B4A @B7C*/
+#else
+  char           st_reserved1[56]; /* Reserved                 @B4C*/
+#endif
+  unsigned int   st_ino_gen_id; /* File serial number generation id
+                                                               @A2A*/
+/*******************************************************************/
+/* If _LARGE_FILES is defined, but not _64_BIT_TIME, then we       */
+/* declare the stat structure with 64-bit sizes and 32-bit times,  */
+/* laid out exactly like the stat64 structure                      */
+/*******************************************************************/
+#else /* Not standard stat structure                           @B8C*/
+#ifndef _64_BIT_TIME /* Map to stat64 structure                @B8A*/
+  mode_t         st_mode;       /* File mode                       */
+  ino_t          st_ino;        /* File serial number              */
+  uid_t          st_uid;        /* User ID of the owner of file    */
+  gid_t          st_gid;        /* Group ID of the group of file   */
+  off_t          st_size;       /* For regular files, the file
+                                   size in bytes                   */
+  time_t         st_atime;      /* Time of last access             */
+  time_t         st_mtime;      /* Time of last data modification  */
+  time_t         st_ctime;      /* Time of last file status change */
+  dev_t          st_dev;        /* ID of device containing file    */
+  size_t         st_blksize;    /* Size of a block of the file     */
+  nlink_t        st_nlink;      /* Number of links                 */
+  unsigned short st_codepage;   /* Object data codepage            */
+  unsigned long long st_allocsize; /* Allocation size of the file  */
+  unsigned int   st_ino_gen_id; /* File serial number generation id
+                                                               @A2A*/
+  qp0l_objtype_t st_objtype;    /* AS/400 object type              */
+  char           st_reserved2[5]; /* Reserved                  @B4A*/
+  dev_t          st_rdev;       /* Device ID (if character special */
+                                /* or block special file)      @B4A*/
+#if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE))
+  dev64_t        st_rdev64;     /* Device ID - 64 bit form     @B4A*/
+  dev64_t        st_dev64;      /* ID of device containing file -  */
+                                /* 64 bit form.                @B4A*/
+  nlink32_t      st_nlink32;    /* Number of links-32 bit      @B5A*/
+  unsigned int   st_vfs;        /* Unique mount ID of the file sys */
+                                /*  containing the object. Use     */
+                                /*  QP0LFLOP() to get more info on */
+                                /*  the mounted file system.   @B7A*/
+  char           st_reserved1[22]; /* Reserved       @B4A @B5C @B7C*/
+#else
+  char           st_reserved1[46]; /* Reserved                 @B4C*/
+#endif
+  unsigned short st_ccsid;      /* Object data ccsid           @AAA*/
+/*******************************************************************/
+/* If _64_BIT_TIME is defined, then we declare the stat structure  */
+/* with 64-bit sizes and 64-bit times, laid out exactly like the   */
+/* stat64_time64 structure                                         */
+/*******************************************************************/
+#else /* map to stat64_time64 structure                        @B8A*/
+  mode_t         st_mode;       /* File mode                       */
+  ino_t          st_ino;        /* File serial number              */
+  uid_t          st_uid;        /* User ID of the owner of file    */
+  gid_t          st_gid;        /* Group ID of the group of file   */
+  off64_t        st_size;       /* For regular files, the file
+                                   size in bytes                   */
+  time64_t       st_atime;      /* Time of last access         @B8C*/
+  time64_t       st_mtime;      /* Time of last data modification
+                                                               @B8C*/
+  time64_t       st_ctime;      /* Time of last file status change
+                                                               @B8C*/
+  dev_t          st_dev;        /* ID of device containing file    */
+  size_t         st_blksize;    /* Size of a block of the file     */
+  nlink_t        st_nlink;      /* Number of links                 */
+  unsigned short st_codepage;   /* Object data codepage            */
+  unsigned int   st_ino_gen_id; /* File serial number generation id*/
+  unsigned long long st_allocsize; /* Allocation size of the file  */
+  qp0l_objtype_t st_objtype;    /* AS/400 object type              */
+  char           st_reserved2[1]; /* Reserved                  @B8C*/
+  dev_t          st_rdev;       /* Device ID (if character special */
+                                /* or block special file)          */
+#if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE))
+  dev64_t        st_rdev64;     /* Device ID - 64 bit form         */
+  dev64_t        st_dev64;      /* ID of device containing file -  */
+                                /* 64 bit form.                    */
+  nlink32_t      st_nlink32;    /* Number of links-32 bit          */
+  unsigned int   st_vfs;        /* Unique mount ID of the file sys */
+                                /*  containing the object. Use     */
+                                /*  QP0LFLOP() to get more info on */
+                                /*  the mounted file system.       */
+  char           st_reserved1[14]; /* Reserved                 @B8C*/
+#else
+  char           st_reserved1[38]; /* Reserved                 @B8C*/
+#endif
+  unsigned short st_ccsid;      /* Object data ccsid               */
+#endif /* map to stat64_time64 structure                       @B8A*/
+#endif /* map to stat64 structure                                  */
+};
+
+/*******************************************************************/
+/* stat64 structure for _LARGE_FILE_API support.               @A6A*/
+/*******************************************************************/
+#ifdef _LARGE_FILE_API                                      /* @A6A*/
+struct stat64 {
+/*******************************************************************/
+/* If _64_BIT_TIME is not defined, then we declare the stat64      */
+/* structure with 64-bit sizes and 32-bit times.                   */
+/*******************************************************************/
+#ifndef _64_BIT_TIME                                        /* @B8A*/
+  mode_t         st_mode;       /* File mode                       */
+  ino_t          st_ino;        /* File serial number              */
+  uid_t          st_uid;        /* User ID of the owner of file    */
+  gid_t          st_gid;        /* Group ID of the group of file   */
+  off64_t        st_size;       /* For regular files, the file
+                                   size in bytes                   */
+  time_t         st_atime;      /* Time of last access             */
+  time_t         st_mtime;      /* Time of last data modification  */
+  time_t         st_ctime;      /* Time of last file status change */
+  dev_t          st_dev;        /* ID of device containing file    */
+  size_t         st_blksize;    /* Size of a block of the file     */
+  nlink_t        st_nlink;      /* Number of links                 */
+  unsigned short st_codepage;   /* Object data codepage            */
+  unsigned long long st_allocsize; /* Allocation size of the file  */
+  unsigned int   st_ino_gen_id; /* File serial number generation id
+                                                               @A2A*/
+  qp0l_objtype_t st_objtype;    /* AS/400 object type              */
+  char           st_reserved2[5]; /* Reserved                  @B4A*/
+  dev_t          st_rdev;       /* Device ID (if character special */
+                                /* or block special file)      @B4A*/
+#if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE))
+  dev64_t        st_rdev64;     /* Device ID - 64 bit form     @B4A*/
+  dev64_t        st_dev64;      /* ID of device containing file -  */
+                                /* 64 bit form.                @B4A*/
+  nlink32_t      st_nlink32;    /* Number of links-32 bit      @B5A*/
+  unsigned int   st_vfs;        /* Unique mount ID of the file sys */
+                                /*  containing the object. Use     */
+                                /*  QP0LFLOP() to get more info on */
+                                /*  the mounted file system.   @B7A*/
+  char           st_reserved1[22]; /* Reserved       @B4A @B5C @B7C*/
+#else
+  char           st_reserved1[46]; /* Reserved                 @B4C*/
+#endif
+  unsigned short st_ccsid;      /* Object data ccsid           @AAA*/
+/*******************************************************************/
+/* If _64_BIT_TIME is defined, then we declare the stat64          */
+/* structure with 64-bit sizes and 64-bit times, laid out exactly  */
+/* like the stat64_time64 structure                                */
+/*******************************************************************/
+#else  /* map to stat64_time64 structure                       @B8A*/
+  mode_t         st_mode;       /* File mode                       */
+  ino_t          st_ino;        /* File serial number              */
+  uid_t          st_uid;        /* User ID of the owner of file    */
+  gid_t          st_gid;        /* Group ID of the group of file   */
+  off64_t        st_size;       /* For regular files, the file
+                                   size in bytes                   */
+  time64_t       st_atime;      /* Time of last access         @B8C*/
+  time64_t       st_mtime;      /* Time of last data modification
+                                                               @B8C*/
+  time64_t       st_ctime;      /* Time of last file status change
+                                                               @B8C*/
+  dev_t          st_dev;        /* ID of device containing file    */
+  size_t         st_blksize;    /* Size of a block of the file     */
+  nlink_t        st_nlink;      /* Number of links                 */
+  unsigned short st_codepage;   /* Object data codepage            */
+  unsigned int   st_ino_gen_id; /* File serial number generation id*/
+  unsigned long long st_allocsize; /* Allocation size of the file  */
+  qp0l_objtype_t st_objtype;    /* AS/400 object type              */
+  char           st_reserved2[1]; /* Reserved                  @B8C*/
+  dev_t          st_rdev;       /* Device ID (if character special */
+                                /* or block special file)          */
+#if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE))
+  dev64_t        st_rdev64;     /* Device ID - 64 bit form         */
+  dev64_t        st_dev64;      /* ID of device containing file -  */
+                                /* 64 bit form.                    */
+  nlink32_t      st_nlink32;    /* Number of links-32 bit          */
+  unsigned int   st_vfs;        /* Unique mount ID of the file sys */
+                                /*  containing the object. Use     */
+                                /*  QP0LFLOP() to get more info on */
+                                /*  the mounted file system.       */
+  char           st_reserved1[14]; /* Reserved                 @B8C*/
+#else
+  char           st_reserved1[38]; /* Reserved                 @B8C*/
+#endif
+  unsigned short st_ccsid;      /* Object data ccsid               */
+#endif /* map to stat64_time64 structure                       @B8A*/
+};
+
+#if ((__OS400_TGTVRM__>=720) && (defined __time64_t))       /* @B8A*/
+/*******************************************************************/
+/* stat64_time64 structure for 64-bit size and time support.   @B8A*/
+/*******************************************************************/
+struct stat64_time64 {                                      /* @B8A*/
+  mode_t         st_mode;       /* File mode                       */
+  ino_t          st_ino;        /* File serial number              */
+  uid_t          st_uid;        /* User ID of the owner of file    */
+  gid_t          st_gid;        /* Group ID of the group of file   */
+  off64_t        st_size;       /* For regular files, the file
+                                   size in bytes                   */
+  time64_t       st_atime;      /* Time of last access         @B8C*/
+  time64_t       st_mtime;      /* Time of last data modification
+                                                               @B8C*/
+  time64_t       st_ctime;      /* Time of last file status change
+                                                               @B8C*/
+  dev_t          st_dev;        /* ID of device containing file    */
+  size_t         st_blksize;    /* Size of a block of the file     */
+  nlink_t        st_nlink;      /* Number of links                 */
+  unsigned short st_codepage;   /* Object data codepage            */
+  unsigned int   st_ino_gen_id; /* File serial number generation id*/
+  unsigned long long st_allocsize; /* Allocation size of the file  */
+  qp0l_objtype_t st_objtype;    /* AS/400 object type              */
+  char           st_reserved2[1]; /* Reserved                  @B8C*/
+  dev_t          st_rdev;       /* Device ID (if character special */
+                                /* or block special file)          */
+#if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE))
+  dev64_t        st_rdev64;     /* Device ID - 64 bit form         */
+  dev64_t        st_dev64;      /* ID of device containing file -  */
+                                /* 64 bit form.                    */
+  nlink32_t      st_nlink32;    /* Number of links-32 bit          */
+  unsigned int   st_vfs;        /* Unique mount ID of the file sys */
+                                /*  containing the object. Use     */
+                                /*  QP0LFLOP() to get more info on */
+                                /*  the mounted file system.       */
+  char           st_reserved1[14]; /* Reserved                 @B8C*/
+#else
+  char           st_reserved1[38]; /* Reserved                 @B8C*/
+#endif
+  unsigned short st_ccsid;      /* Object data ccsid               */
+};
+#endif                          /* Target is 7.2 or later      @B8A*/
+
+#endif                          /* _LARGE_FILE_API defined     @A6A*/
+
+/*******************************************************************/
+/* function prototypes                                             */
+/*******************************************************************/
+QBFC_EXTERN int chmod(const char *, mode_t);
+
+/*******************************************************************/
+/* APIs mapping for large file support                         @A6A*/
+/* Map 32 bit version APIs to 64 bit version if _LARGE_FILES   @A6A*/
+/* macro is used by the applications.                          @A6A*/
+/*******************************************************************/
+#if ((defined _LARGE_FILES) && \
+     (!(defined _64_BIT_TIME) || (__OS400_TGTVRM__<720)))   /* @B8C*/
+#pragma map (fstat, "fstat64")                         /* @A6A @A7C*/
+#pragma map (lstat, "lstat64")                         /* @A6A @A7C*/
+#pragma map (stat, "stat64")                           /* @A6A @A7C*/
+                                                           /* @B1A */
+#if  ((!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE)) \
+      || ((defined _POSIX1_SOURCE) && (_POSIX1_SOURCE != 1)))
+  #pragma map (QlgLstat, "QlgLstat64")                      /* @B1A*/
+  #pragma map (QlgStat, "QlgStat64")                        /* @B1A*/
+ #endif                                                     /* @B1A*/
+#endif                                                      /* @A6A*/
+
+/*******************************************************************/
+/* API mapping for 64-bit time support. Map all APIs to 64-bit     */
+/* time versions if _64_BIT_TIME is defined and target release     */
+/* is 7.2 or later.                                                */
+/*******************************************************************/
+#if ((defined _64_BIT_TIME) && (__OS400_TGTVRM__>=720))     /* @B8A*/
+#pragma map (fstat, "fstat64_time64")                       /* @B8A*/
+#pragma map (lstat, "lstat64_time64")                       /* @B8A*/
+#pragma map (stat, "stat64_time64")                         /* @B8A*/
+#pragma map (fstat64, "fstat64_time64")                     /* @B8A*/
+#pragma map (lstat64, "lstat64_time64")                     /* @B8A*/
+#pragma map (stat64, "stat64_time64")                       /* @B8A*/
+#if  ((!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE)) \
+      || ((defined _POSIX1_SOURCE) && (_POSIX1_SOURCE != 1)))
+  #pragma map (QlgLstat, "QlgLstat64_time64")               /* @B8A*/
+  #pragma map (QlgStat, "QlgStat64_time64")                 /* @B8A*/
+  #pragma map (QlgLstat64, "QlgLstat64_time64")             /* @B8A*/
+  #pragma map (QlgStat64, "QlgStat64_time64")               /* @B8A*/
+ #endif                                                     /* @B8A*/
+#endif                                                      /* @B8A*/
+
+
+/* not POSIX.1 defined API */
+#if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE))
+  QBFC_EXTERN int fchmod(int, mode_t);
+#endif
+
+QBFC_EXTERN int fstat(int, struct stat *);
+
+#ifdef _LARGE_FILE_API                                      /* @A6A*/
+  QBFC_EXTERN int fstat64(int, struct stat64 *);            /* @A6A*/
+  #if ((__OS400_TGTVRM__>=720) && (defined __time64_t))     /* @B8A*/
+  QBFC_EXTERN int fstat64_time64(int,
+                                 struct stat64_time64 *);   /* @B8A*/
+  #endif                                                    /* @B8A*/
+#endif                                                      /* @A6A*/
+
+/* POSIX.1a defined API */
+#if  ((!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE)) \
+      || ((defined _POSIX1_SOURCE) && (_POSIX1_SOURCE != 1)))
+  QBFC_EXTERN int lstat(const char *, struct stat *);
+
+  #ifdef _LARGE_FILE_API                                      /* @A6A*/
+    QBFC_EXTERN int lstat64(const char *, struct stat64 *);   /* @A6A*/
+    #if ((__OS400_TGTVRM__>=720) && (defined __time64_t))     /* @B8A*/
+    QBFC_EXTERN int lstat64_time64(const char *,
+                                   struct stat64_time64 *);   /* @B8A*/
+    #endif                                                    /* @B8A*/
+  #endif                                                      /* @A6A*/
+#endif
+
+QBFC_EXTERN int mkdir(const char *, mode_t);
+QBFC_EXTERN int stat(const char *, struct stat *);
+QBFC_EXTERN mode_t umask(mode_t);
+QBFC_EXTERN int mkfifo(const char *, mode_t);                 /* @B3A*/
+
+#ifdef _LARGE_FILE_API                                       /* @A6A*/
+  QBFC_EXTERN int stat64(const char *, struct stat64 *);     /* @A6A*/
+  #if ((__OS400_TGTVRM__>=720) && (defined __time64_t))      /* @B8A*/
+  QBFC_EXTERN int stat64_time64(const char *,
+                                struct stat64_time64 *);     /* @B8A*/
+  #endif                                                     /* @B8A*/
+#endif                                                       /* @A6A*/
+
+/* POSIX.1a defined API */                                     /*@B1A*/
+#if ((!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE)) \
+    || ((defined _POSIX1_SOURCE) && (_POSIX1_SOURCE != 1)))    /*@B1A*/
+
+  QBFC_EXTERN int QlgChmod(const Qlg_Path_Name_T *, mode_t);   /*@B1A*/
+  QBFC_EXTERN int QlgMkdir(const Qlg_Path_Name_T *, mode_t);   /*@B1A*/
+  QBFC_EXTERN int QlgStat(const Qlg_Path_Name_T *,struct stat *);/*@B1A*/
+  QBFC_EXTERN int QlgLstat(const Qlg_Path_Name_T *,struct stat *);/*@B1A*/
+  QBFC_EXTERN int QlgMkfifo(const Qlg_Path_Name_T *,mode_t);  /* @B3A*/
+
+ #ifdef _LARGE_FILE_API                                        /*@B1A*/
+  QBFC_EXTERN int QlgLstat64(const Qlg_Path_Name_T *,          /*@B1A*/
+                                struct stat64 *);              /*@B1A*/
+  QBFC_EXTERN int QlgStat64(const Qlg_Path_Name_T *,           /*@B1A*/
+                                struct stat64 *);              /*@B1A*/
+  #if ((__OS400_TGTVRM__>=720) && (defined __time64_t))       /* @B8A*/
+  QBFC_EXTERN int QlgLstat64_time64(const Qlg_Path_Name_T *,
+                                    struct stat64_time64 *);  /* @B8A*/
+  QBFC_EXTERN int QlgStat64_time64(const Qlg_Path_Name_T *,
+                                   struct stat64_time64 *);   /* @B8A*/
+  #endif                                                      /* @B8A*/
+ #endif                                                        /*@B1A*/
+#endif                                                         /*@B1A*/
+#if (__OS400_TGTVRM__>=510)                                   /* @B2A*/
+#pragma datamodel(pop)                                        /* @B2A*/
+#endif                                                        /* @B2A*/
+
+#endif /* __stat_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

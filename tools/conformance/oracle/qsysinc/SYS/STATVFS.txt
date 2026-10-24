@@ -1,0 +1,291 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5769-SS1                                                      */
+/*     5722-SS1                                                      */
+/*     5770-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  1997, 2010                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/*  Header File Name: sys/statvfs.h                                  */
+/*                                                                   */
+/*  Descriptive Name: File system information definitions.           */
+/*                                                                   */
+/*  Description: Defines prototypes, macros, and structures to be    */
+/*               used with the file system information APIs.         */
+/*                                                                   */
+/*  Header Files Included:  mih/micommon.h                           */
+/*                          qlg.h                                @B2A*/
+/*                                                                   */
+/*                                                                   */
+/*  Macros list: ST_CASE_SENSITIVE                                   */
+/*               ST_CHOWN_RESTRICTED                                 */
+/*               ST_DYNAMIC_MOUNT                                    */
+/*               ST_NO_EXPORTS                                       */
+/*               ST_NO_MOUNT_OVER                                    */
+/*               ST_NOSUID                                           */
+/*               ST_PREFER_SSD                                   @B6A*/
+/*               ST_RDONLY                                           */
+/*               ST_SYNCHRONOUS                                      */
+/*               ST_TEMPORARY                                    @B5A*/
+/*               ST_THREAD_SAFE                                      */
+/*                                                                   */
+/*                                                                   */
+/*  Structure List: statvfs                                          */
+/*                  statvfs64                                    @A1A*/
+/*                                                                   */
+/*  Function prototype list :  fstatvfs()                            */
+/*                             QlgStatvfs                        @B2A*/
+/*                             QlgStatvfs64                      @B2A*/
+/*                             statvfs()                             */
+/*                                                                   */
+/*                                                                   */
+/*                                                                   */
+/*  Change Activity:                                                 */
+/*                                                                   */
+/*  CFD List:                                                        */
+/*                                                                   */
+/*  FLAG REASON       LEVEL DATE   PGMR     CHANGE DESCRIPTION       */
+/*  ---- ------------ ----- ------ -------- ------------------------ */
+/*  $A0= D9540900     4D20  970312 ROCH     New Include              */
+/*  $A1= D9588102     4D40  980603 ROCH     Add statvfs64 structure  */
+/*  $A1= D9588105     4D40  980626 ROCH     Fix #pragma map          */
+/*  $B1= P3682997     4D40  981102 ROCH     Large Files support for  */
+/*                                          *IFS64IO                 */
+/*  $B2= D9765800     5D10  990607 ROCH     Add 'Qlg' APIs and qlg.h */
+/*  $B3= D98212.05    5D10  000104 ROCH     Datamodel changes        */
+/*  $B4= D98391       5D20  000928 ROCH     Add f_fsid64             */
+/*  $B5= D92406     v7r1m0  090506 ROCH:    Temporary file system    */
+/*  $B6= PFW513699  v7r1m0f 100122 ROCH:    Preferred storage unit   */
+/*                                                                   */
+/*  End CFD List.                                                    */
+/*                                                                   */
+/*   Additional notes about the Change Activity                      */
+/*  End Changed Activity.                                            */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+
+#ifndef __statvfs_h
+  #define __statvfs_h  1
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+#include <mih/micommon.h>               /* include _Bin8 data type   */
+
+/* Protect POSIX source                                         @B2A*/
+#if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE))  /* @B2A*/
+
+  #include <qlg.h>                   /* Include Qlg_Path_Name_T @B2A*/
+
+/* Protect POSIX source                                         @B2A*/
+#endif
+
+#if (__OS400_TGTVRM__>=510)                                  /* @B3A*/
+#pragma datamodel(P128)                                      /* @B3A*/
+#endif                                                       /* @B3A*/
+
+/********************************************************************/
+/*  Turn on the Large File Support when *IFS64IO is specified   @B1A*/
+/*  as C compiler option.                                       @B1A*/
+/********************************************************************/
+#ifdef __IFS64_IO__                                          /* @B1A*/
+   #ifndef _LARGE_FILES                                      /* @B1A*/
+      #define _LARGE_FILES                                   /* @B1A*/
+   #endif                                                    /* @B1A*/
+   #ifndef _LARGE_FILE_API                                   /* @B1A*/
+      #define _LARGE_FILE_API                                /* @B1A*/
+   #endif                                                    /* @B1A*/
+#endif                                                       /* @B1A*/
+
+
+/*********************************************************************/
+/* Values for the f_flag field of the statvfs structure              */
+/*********************************************************************/
+#define ST_RDONLY           00000000001 /* Read-only file system     */
+#define ST_NOSUID           00000000002 /* File system does not support
+                                           setuid/setgid semantics   */
+#define ST_CASE_SENSITIVE   00000000004 /* File system is
+                                           case sensitive            */
+#define ST_CHOWN_RESTRICTED 00000000010 /* Changing the owner or
+                                           primary group is
+                                           restricted to a process
+                                           having appropriate
+                                           privileges                */
+#define ST_THREAD_SAFE      00000000020 /* File system is thread-safe
+                                           when accessed with a
+                                           thread-safe API           */
+#define ST_DYNAMIC_MOUNT    00000000040 /* Allows itself to be
+                                           dynamically mounted and
+                                           unmounted                 */
+
+#define ST_NO_MOUNT_OVER    00000000100 /* File system does not
+                                           support having any part of
+                                           it become mounted over    */
+#define ST_NO_EXPORTS       00000000200 /* File system does not
+                                           allow any of its objects
+                                           to be exported to the
+                                           Network File System (NFS)
+                                           Server                    */
+#define ST_SYNCHRONOUS      00000000400 /* File system supports the
+                                           "synchronous write"
+                                           semantic of NFS version 2 */
+#define ST_TEMPORARY        00000001000 /* File system contains only
+                                           Temporary objects     @B5A*/
+#define ST_PREFER_SSD       00000002000 /* File system's preferred
+                                           storage media is solid state
+                                           drive storage         @B6A*/
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+struct statvfs {
+  unsigned long f_bsize;        /* File system block size            */
+  unsigned long f_frsize;       /* Fundamental file system block size*/
+#ifdef _LARGE_FILES             /* If _LARGE_FILES is specified,
+                                   redefine the following fields @A1A*/
+  unsigned long long f_blocks;  /* Total number of blocks on file
+                                   system in units of f_frsize       */
+  unsigned long long f_bfree;   /* Total number of free blocks       */
+  unsigned long long f_bavail;  /* Number of free blocks available to
+                                   a non-privileged process          */
+#else                           /* No Large File Support         @A1A*/
+  _Bin8         f_blocks;       /* Total number of blocks on file
+                                   system in units of f_frsize       */
+  _Bin8         f_bfree;        /* Total number of free blocks       */
+  _Bin8         f_bavail;       /* Number of free blocks available to
+                                   a non-privileged process          */
+#endif                                                        /* @A1A*/
+  unsigned long f_files;        /* Total number of file serial
+                                   numbers                           */
+  unsigned long f_ffree;        /* Total number of free file serial
+                                   numbers                           */
+  unsigned long f_favail;       /* Number of file serial numbers
+                                   available to a non-privileged
+                                   process                           */
+  unsigned long f_fsid;         /* File system id                    */
+  unsigned long f_flag;         /* Bit mask of f_flag values         */
+  unsigned long f_namemax;      /* Maximum file name length          */
+  unsigned long f_pathmax;      /* Maximum path length               */
+  long          f_objlinkmax;   /* Maximum number of hard links for
+                                   objects other than directories    */
+  long          f_dirlinkmax;   /* Maximum number of hard links for
+                                   a directory                       */
+  char          f_reserved1[4]; /* Reserved                      @B4C*/
+  unsigned long long f_fsid64;  /* File system ID - 64 bit form  @B4A*/
+  char          f_basetype[80]; /* File system type name             */
+};
+
+/*********************************************************************/
+/* Define statvfs64 structure for applications that are compiled @A1A*/
+/* with _LARGE_FILE_API flag.                                    @A2A*/
+/*********************************************************************/
+
+#ifdef _LARGE_FILE_API                                        /* @A1A*/
+struct statvfs64 {
+  unsigned long f_bsize;        /* File system block size            */
+  unsigned long f_frsize;       /* Fundamental file system block size*/
+  unsigned long long f_blocks;  /* Total number of blocks on file
+                                   system in units of f_frsize       */
+  unsigned long long f_bfree;   /* Total number of free blocks       */
+  unsigned long long f_bavail;  /* Number of free blocks available to
+                                   a non-privileged process          */
+  unsigned long f_files;        /* Total number of file serial
+                                   numbers                           */
+  unsigned long f_ffree;        /* Total number of free file serial
+                                   numbers                           */
+  unsigned long f_favail;       /* Number of file serial numbers
+                                   available to a non-privileged
+                                   process                           */
+  unsigned long f_fsid;         /* File system id                    */
+  unsigned long f_flag;         /* Bit mask of f_flag values         */
+  unsigned long f_namemax;      /* Maximum file name length          */
+  unsigned long f_pathmax;      /* Maximum path length               */
+  long          f_objlinkmax;   /* Maximum number of hard links for
+                                   objects other than directories    */
+  long          f_dirlinkmax;   /* Maximum number of hard links for
+                                   a directory                       */
+  char          f_reserved1[4]; /* Reserved                      @B4C*/
+  unsigned long long f_fsid64;  /* File system ID - 64 bit form  @B4A*/
+  char          f_basetype[80]; /* File system type name             */
+};
+#endif                                                        /* @A1A*/
+
+/*********************************************************************/
+/* Function Prototypes                                               */
+/*********************************************************************/
+
+/*********************************************************************/
+/* Map existing APIs to 64 bit version for _LARGE_FILES flag.    @A1A*/
+/*********************************************************************/
+#ifdef _LARGE_FILES             /* Map for Large File support    @A1A*/
+  #pragma map (statvfs, "statvfs64")                     /* @A1A @A2C*/
+  #pragma map (fstatvfs, "fstatvfs64")                   /* @A1A @A2C*/
+#endif
+
+QBFC_EXTERN int statvfs(const char *, struct statvfs *);
+QBFC_EXTERN int fstatvfs(int, struct statvfs *);
+
+/*********************************************************************/
+/* Define new APIs _LARGE_FILE_API flag.                         @A1A*/
+/*********************************************************************/
+#ifdef _LARGE_FILE_API        /* New APIs for Large File Support @A1A*/
+  QBFC_EXTERN int statvfs64(const char *, struct statvfs64 *);/* @A1A*/
+  QBFC_EXTERN int fstatvfs64(int, struct statvfs64 *);        /* @A1A*/
+#endif                                                        /* @A1A*/
+
+#if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE))    /*@B2A*/
+
+  #ifdef _LARGE_FILES              /* Map for Large File support @B2A*/
+     #pragma map (QlgStatvfs, "QlgStatvfs64")                 /* @B2A*/
+  #endif
+                                                               /*@B2A*/
+  QBFC_EXTERN int QlgStatvfs(const Qlg_Path_Name_T *,                /*@B2A*/
+                             struct statvfs *);                /*@B2A*/
+   #ifdef _LARGE_FILE_API                                      /*@B2A*/
+     QBFC_EXTERN int QlgStatvfs64(const Qlg_Path_Name_T *,           /*@B2A*/
+                             struct statvfs64 *);              /*@B2A*/
+   #endif                                                      /*@B2A*/
+                                                               /*@B2A*/
+#endif                                                         /*@B2A*/
+
+#if (__OS400_TGTVRM__>=510)                                   /* @B3A*/
+#pragma datamodel(pop)                                        /* @B3A*/
+#endif                                                        /* @B3A*/
+
+#endif /* __statvfs_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

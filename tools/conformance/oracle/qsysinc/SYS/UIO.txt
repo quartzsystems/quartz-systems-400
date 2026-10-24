@@ -1,0 +1,109 @@
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/*  Header File Name:  sys/uio.h                                     */
+/*                                                                   */
+/*  Descriptive Name:  File System API definition.                   */
+/*                                                                   */
+/*  5763-SS1, 5716-SS1, 5722-SS1                                     */
+/*  (C) Copyright IBM Corp. 1993, 2000                               */
+/*  All rights reserved.                                             */
+/*  US Government Users Restricted Rights -                          */
+/*  Use, duplication or disclosure restricted                        */
+/*  by GSA ADP Schedule Contract with IBM Corp.                      */
+/*                                                                   */
+/*  Licensed Materials-Property of IBM                               */
+/*                                                                   */
+/*  Description:   Defines prototypes, macros, variables, and        */
+/*                 structures to be used with the file system        */
+/*                 scatter read and write API.                       */
+/*                                                                   */
+/*  Header Files Included : unistd.h                                 */
+/*                                                                   */
+/*  Macrso List : IOV_MAX                                            */
+/*                                                                   */
+/*  Structure List: iovec                                            */
+/*                                                                   */
+/*  Function Prototype : writev                                      */
+/*                       readv                                       */
+/*                                                                   */
+/*  Change Activity:                                                 */
+/*                                                                   */
+/*  CFD List:                                                        */
+/*                                                                   */
+/*  FLAG REASON       LEVEL DATE    PGMR      CHANGE DESCRIPTION     */
+/*  ---- ------------ ----- ------- --------- ---------------------- */
+/*  $A0= D28418       3D10  940307  ROCH      New Include            */
+/*  $A1= P3992252     3D60  950522  ROCH      Add __cplusplus #ifdef */
+/*                                            and #pragma info(none) */
+/*  $A2= PTH01765     3D60  950804  ROCH      Correct #pragma info   */
+/*  $A3= D98212.05    5D10  000104  ROCH      Datamodel changes      */
+/*  $A4= P9908943     5D10  991220  ROCH      Correct iov_len        */
+/*                                                                   */
+/*  End CFD List.                                                    */
+/*                                                                   */
+/*   Additional notes about the Change Activity                      */
+/*  End Change Activity                                              */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __uio_h
+  #define __uio_h  1
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+/*******************************************************************/
+/* include ssize_t type definition                                 */
+/*******************************************************************/
+#include <unistd.h>
+
+#if (__OS400_TGTVRM__>=510)                                 /* @A3A*/
+#pragma datamodel(P128)                                     /* @A3A*/
+#endif                                                      /* @A3A*/
+
+
+/*******************************************************************/
+/* define maximum number of I/O vector                             */
+/*******************************************************************/
+#ifndef IOV_MAX
+  #define IOV_MAX 16
+#endif
+
+/*******************************************************************/
+/* I/O vector structure definition                                 */
+/*******************************************************************/
+struct iovec {
+    void       *iov_base;
+    size_t     iov_len;                                     /* @A4C*/
+    };
+
+/*******************************************************************/
+/* File System function prototypes                                 */
+/*******************************************************************/
+QBFC_EXTERN int readv(int,  struct iovec *, int);
+QBFC_EXTERN int writev(int, struct iovec *, int);
+
+#if (__OS400_TGTVRM__>=510)                                 /* @A3A*/
+#pragma datamodel(pop)                                      /* @A3A*/
+#endif                                                      /* @A3A*/
+
+
+#endif /* __uio_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

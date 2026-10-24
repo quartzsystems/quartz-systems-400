@@ -1,0 +1,124 @@
+#ifdef __ILEC400__
+  #pragma nomargins nosequence
+  #pragma checkout(suspend)
+#endif
+
+#ifndef _IPC_H
+#define _IPC_H
+
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name: ipc.h                                           */
+/*                                                                   */
+/* Descriptive Name: Interprocess communication (IPC) base           */
+/*                   structures and prototypes                       */
+/*                                                                   */
+/* 5716-SS1, 5769-SS1, 5722-SS1                                      */
+/* (C) Copyright IBM Corp. 1995,2000                                 */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*                                                                   */
+/* Description: Include header file for interprocess communications. */
+/*                                                                   */
+/* Macros List:                                                      */
+/*     IPC_CREAT                                                     */
+/*     IPC_EXCL                                                      */
+/*     IPC_NOWAIT                                                    */
+/*     IPC_PRIVATE                                                   */
+/*     IPC_RMID                                                      */
+/*     IPC_SET                                                       */
+/*     IPC_STAT                                                      */
+/*                                                                   */
+/* Structure List:                                                   */
+/*     ipc_perm                                                      */
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*     ftok                                                          */
+/*     QlgFtok                                                   @A1A*/
+/*                                                               @A3A*/
+/* Change Activity:                                                  */
+/*                                                                   */
+/* CFD List:                                                         */
+/*                                                                   */
+/* FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION       */
+/* ---- ------------ ----- ------ --------- -----------------------  */
+/* $A0= D9178700     3D60  941016 ROCH    : New include              */
+/* $A1= P3663712     4D30  980206 ROCH    : add ftok()               */
+/* $A3= D97658.5     5D10  991008 ROCH    : add QlgFtok()            */
+/* $B1= D9776700     5D10  991205 ROCH    : Added datamodel pragma   */
+/*                                                                   */
+/* End CFD List.                                                     */
+/*                                                                   */
+/*  Additional notes about the Change Activity                       */
+/*                                                                   */
+/* End Change Activity.                                              */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+/*********************************************************************/
+/* Includes                                                          */
+/*********************************************************************/
+
+#include <sys/types.h>
+#include <qlg.h>             /* @A3A*/
+
+#pragma datamodel(P128)      /* @B1A*/
+
+/*********************************************************************/
+/* Constants                                                         */
+/*********************************************************************/
+
+/* Mode bits */
+#define IPC_CREAT     0X200  /* Create entry if key does not exist */
+#define IPC_EXCL      0X400  /* Fail if key exists */
+#define IPC_NOWAIT    0X800  /* Error if request must wait */
+
+/* Keys */
+#define IPC_PRIVATE (key_t)0 /* Private key */
+
+/* Command definitions for msgctl(), semctl(), shmctl() */
+#define IPC_RMID        0    /* Remove identifier */
+#define IPC_SET         1    /* Set options */
+#define IPC_STAT        2    /* Get options */
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+typedef struct ipc_perm {
+  uid_t  uid;                /* Owner's user ID */
+  gid_t  gid;                /* Owner's group ID */
+  uid_t  cuid;               /* Creator's user ID */
+  gid_t  cgid;               /* Creator's group ID */
+  mode_t mode;               /* Permissions */
+} ipc_perm_t;
+
+/*********************************************************************/
+/* Function Prototypes                                               */
+/*********************************************************************/
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+         #define QBFC_EXTERN extern
+    #else
+         #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+QBFC_EXTERN key_t ftok(const char *path, int ID); /* @A1A*/
+QBFC_EXTERN key_t QlgFtok(const Qlg_Path_Name_T *path, int ID); /* @A3A*/
+
+#pragma datamodel(pop)       /* @B1A*/
+
+#endif /* _IPC_H */
+
+#ifdef __ILEC400__
+  #pragma checkout(resume)
+#endif

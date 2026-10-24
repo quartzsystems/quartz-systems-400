@@ -1,0 +1,977 @@
+     D*begin_generated_IBM_copyright_prolog
+     D*This is an automatically generated copyright prolog.
+     D*After initializing,  DO NOT MODIFY OR MOVE
+     D*-----------------------------------------------------------------
+     D*
+     D*Product(s):
+     D*5769-SS1
+     D*5722-SS1
+     D*5761-SS1
+     D*5770-SS1
+     D*
+     D*(C)Copyright IBM Corp.  1997, 2009
+     D*
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*---------------------------------------------------------------
+     D*
+     D*end_generated_IBM_copyright_prolog
+     D*** START HEADER FILE SPECIFICATIONS ****************************
+     D*
+     D*Header File Name: H/QP0LFLOP
+     D*
+     D*Descriptive Name: Perform File System Operation.
+     D*
+     D*Description: The Perform File System Operation API
+     D*          performs miscellaneous operations on objects
+     D*          in the integrated file system.  See each
+     D*          individual operation below for details.
+     D*
+     D*Header Files Included: sys/types.h
+     D*
+     D*Macros List: QP0L_RETRIEVE_NETGROUP_FILE_ENTRIES
+     D*             QP0L_WRITE_NETGROUP_FILE_ENTRIES
+     D*             QP0L_RETRIEVE_REMOTE_EXPORTS                  @A2A
+     D*             QP0L_RETRIEVE_MOUNTED_FILE_SYSTEMS            @A2A
+     D*
+     D*             QP0L_MEMBER_IS_A_HOST_NAME
+     D*             QP0L_MEMBER_IS_A_NETGROUP_NAME
+     D*             QP0L_MEMBER_IS_AN_IP_ADDRESS
+     D*             QP0L_MEMBER_IS_UNKNOWN
+     D*
+     D*Structure List: Qp0l_FLOP0100_Netgroup_Entry_T
+     D*                Qp0l_FLOP0100_Member_Name_T
+     D*                Qp0l_FLOP0100_Output_T
+     D*                Qp0l_FLOP0200_Input_T
+     D*                Qp0l_FLOP0300_Input_T                      @A2A
+     D*                Qp0l_FLOP0300_Output_T                     @A2A
+     D*                Qp0l_FLOP0300_Export_Entry_T               @A2A
+     D*                Qp0l_FLOP0300_Export_Item_T                @A2A
+     D*                Qp0l_FLOP0400_Input_T                      @A2A
+     D*                Qp0l_FLOP0400_Output_T                     @A2A
+     D*                Qp0l_FLOP0400_MFS_Entry_T                  @A2A
+     D*
+     D*Function Prototype List: QP0LFLOP
+     D*
+     D*Change Activity:
+     D*
+     D*CFD List:
+     D*
+     D*FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION
+     D*---- ------------ ----- ------ --------- ----------------------
+     D*$A0= D9589200     4D30  971115 ROCH:     New Include
+     D*$A1= D98212.05    5D10  000104 ROCH:     Datamodel changes
+     D*$A2= D99097.03    5D30  021115 ROCH:     New file system Ops
+     D*$A3= D9352105     6D10  060510 ROCH:     Unsupported NetWare
+     D*                                         comments and update
+     D*                                         Qp0lFlop_ALL_DYNAMIC
+     D*$A4= D9333410   v6r1m0  060909 ROCH:     Add NFSv4 and update
+     D*                                         Qp0lFlop_ALL_DYNAMIC
+     D*$A5= D92406     v7r1m0  090506 ROCH:     Temporary file system
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*End Change Activity.
+     D*** END HEADER FILE SPECIFICATIONS ******************************
+     D*****************************************************************
+     D*The following values are valid File Ops:
+     D*
+     D*QP0L_RETRIEVE_NETGROUP_FILE_ENTRIES - This will return all of
+     D*  the netgroup definitions from the /etc/netgroup file.
+     D*  Invoke the QP0LFLOP API as follows:
+     D*
+     D*  QP0LFLOP(QP0L_RETRIEVE_NETGROUP_FILE_ENTRIES,
+     D*           (char *)NULL,
+     D*           0,
+     D*           (char *)buffer, --> see Qp0l_FLOP0100_Output_T
+     D*           buffer_length,
+     D*           (void *)error_buffer);
+     D*
+     D*QP0L_WRITE_NETGROUP_FILE_ENTRIES - This will over-write the
+     D*  the netgroup definitions in the /etc/netgroup file with
+     D*  entries you provide.
+     D*  Invoke the QP0LFLOP API as follows:
+     D*
+     D*  QP0LFLOP(QP0L_WRITE_NETGROUP_FILE_ENTRIES,
+     D*           (char *)buffer, --> see Qp0l_FLOP0200_Input_T
+     D*           buffer_length,
+     D*           (char *)NULL,
+     D*           0,
+     D*           (void *)error_buffer);
+     D*
+     D*QP0L_RETRIEVE_REMOTE_EXPORTS - This will return all of the
+     D*                                                                 @A2A
+     D*  remote Network File System (NFS) exports for a given
+     D*                                                                 @A2A
+     D*  server. Remote Procedure Call (RPC) is used to obtain
+     D*                                                                 @A2A
+     D*  this information from the requested server name.
+     D*                                                                 @A2A
+     D*  Invoke the QP0LFLOP API as follows:
+     D*                                                                 @A2A
+     D*
+     D*                                                                 @A2A
+     D*  QP0L_FLOP(QP0L_RETRIEVE_REMOTE_EXPORTS,
+     D*                                                                 @A2A
+     D*            (char *)in_buf, --> see Qp0l_FLOP0300_Input_T
+     D*                                                                 @A2A
+     D*            in_buf_length,
+     D*                                                                 @A2A
+     D*            (char *)out_buf, --> see Qp0l_FLOP0300_Output_T
+     D*                                                                 @A2A
+     D*            out_buf_length,
+     D*                                                                 @A2A
+     D*            (void *)error_buffer);
+     D*                                                                 @A2A
+     D*
+     D*                                                                 @A2A
+     D*QP0L_RETRIEVE_MOUNTED_FILE_SYSTEMS - This will return all (or
+     D*                                                                 @A2A
+     D*  a subset) of the mounted file systems in the current
+     D*                                                                 @A2A
+     D*  system's namespace, along with limited information about
+     D*                                                                 @A2A
+     D*  each file system.
+     D*                                                                 @A2A
+     D*  Invoke the QP0LFLOP API as follows:
+     D*                                                                 @A2A
+     D*
+     D*                                                                 @A2A
+     D*  QP0L_FLOP(QP0L_RETRIEVE_MOUNTED_FILE_SYSTEMS,
+     D*                                                                 @A2A
+     D*            (char *)in_buf, --> see Qp0l_FLOP0400_Input_T
+     D*                                                                 @A2A
+     D*            in_buf_length,
+     D*                                                                 @A2A
+     D*            (char *)out_buf, --> see Qp0l_FLOP0400_Output_T
+     D*                                                                 @A2A
+     D*            out_buf_length,
+     D*                                                                 @A2A
+     D*            (void *)error_buffer);
+     D*                                                                 @A2A
+     D*****************************************************************
+     D*****************************************************************
+     D*The following are valid values for Member_Name_Status:
+     D*
+     D*QP0L_MEMBER_IS_A_HOST_NAME - The member name refers to a
+     D*   host name.
+     D*
+     D*QP0L_MEMBER_IS_A_NETGROUP_NAME - The member name refers to a
+     D*   netgroup name.
+     D*
+     D*QP0L_MEMBER_IS_AN_IP_ADDRESS - The member name refers to an
+     D*   IP address of the form xxx.xxx.xxx.xxx  .
+     D*
+     D*****************************************************************
+     DQP0100NE         DS
+     D*                                             Qp0l FLOP0100 Netgroup Entry
+     D QP0LOE                  1      4U 0
+     D*                                             Length of Entry
+     D QP0LONN                 5      8U 0
+     D*                                             Length of Netgroup Name
+     D QP0DTMN                 9     12U 0
+     D*                                             Displacement to Member Names
+     D QP0NOMN                13     16U 0
+     D*                                             Number of Member Names
+     D*QP0NN                  17     17
+     D*
+     D*                                           varying len data
+     DQP0100MN         DS
+     D*                                             Qp0l FLOP0100 Member Name
+     D QP0LOMNE                1      4U 0
+     D*                                             Length of Member Name Entry
+     D QP0MNS                  5      8U 0
+     D*                                             Member Name Status
+     D QP0LOMN                 9     12U 0
+     D*                                             Length of Member Name
+     D*QP0MN                  13     13
+     D*
+     D*                                         varying len data
+     DQP00100O         DS
+     D*                                             Qp0l FLOP0100 Output
+     D QP0BRTN02               1      4U 0
+     D*                                             Bytes Returned
+     D QP0BAVL02               5      8U 0
+     D*                                             Bytes Available
+     D QP0NBROE                9     12U 0
+     D*                                             Number of Entries
+     D*QP0NE                         17
+     D* QP0LOE00              13     16U 0
+     D* QP0LONN00             17     20U 0
+     D* QP0DTMN00             21     24U 0
+     D* QP0NOMN00             25     28U 0
+     D* QP0NN00               29     29
+     D*
+     D*                                                 vary len data
+     D*QP0MNE                        13
+     D*                                             Member Name Entry
+     D* QP0LOMNE00            30     33U 0
+     D*                                             Length of Member Name Entry
+     D* QP0MNS00              34     37U 0
+     D*                                             Member Name Status
+     D* QP0LOMN00             38     41U 0
+     D*                                             Length of Member Name
+     D* QP0MN00               42     42
+     D*                                             Member Name
+     D*
+     D*================================================================
+     D*The format of what is included in the buffer that starts
+     D*with the Netgroup_Entry is as follows:
+     D*
+     D*The first byte of Netgroup_Entry is the first byte of the
+     D*Qp0l_FLOP0100_Netgroup_Entry structure:
+     D*        |
+     D*        ---------------------|
+     D*                             V
+     D*unsigned int              Length_of_Entry;
+     D*unsigned int              Length_of_Netgroup_Name;
+     D*unsigned int         ---- Displacement_to_Member_Names;
+     D*unsigned int         |    Number_of_Member_Names;
+     D*char                 |    Netgroup_Name; (varying length)
+     D*                  |
+     D*                  V
+     D*          Qp0l_FLOP0100_Member_Name structure:
+     D*
+     D*unsigned int         ---- Length_of_Member_Name_Entry;
+     D*unsigned int         |    Member_Name_Status;
+     D*unsigned int         |    Length_of_Member_Name;
+     D*char                 |    Member_Name;   (varying length)
+     D*                  |
+     D*                  V
+     D*          Qp0l_FLOP0100_Member_Name structure:
+     D*
+     D*unsigned int         ---- Length_of_Member_Name_Entry;
+     D*unsigned int         |    Member_Name_Status;
+     D*unsigned int         |    Length_of_Member_Name;
+     D*char                 |    Member_Name;   (varying length)
+     D*                  |
+     D*                  V
+     D*          This sequence of Qp0l_FLOP0100_Member_Name
+     D*          structures continues until there have been
+     D*          Number_of_Member_Names of them.
+     D*
+     D*================================================================
+     DQP00200I         DS
+     D*                                             Qp0l FLOP0200 Input
+     D QP0NBROE00              1      4U 0
+     D*                                             Number of Entries
+     D*QP0NE00                       17
+     D* QP0LOE01               5      8U 0
+     D* QP0LONN01              9     12U 0
+     D* QP0DTMN01             13     16U 0
+     D* QP0NOMN01             17     20U 0
+     D* QP0NN01               21     21
+     D*
+     D*                                                 vary len data
+     D*QP0MNE00                      13
+     D*                                             Member Name Entry
+     D* QP0LOMNE01            22     25U 0
+     D*                                             Length of Member Name Entry
+     D* QP0MNS01              26     29U 0
+     D*                                             Member Name Status
+     D* QP0LOMN01             30     33U 0
+     D*                                             Length of Member Name
+     D* QP0MN01               34     34
+     D*                                             Member Name
+     D*
+     D*================================================================
+     D*The format of what is included in the buffer that starts
+     D*with the Netgroup_Entry is the same as for the
+     D*Qp0l_FLOP0100_Output_T described above.
+     D*
+     D*================================================================
+     D*================================================================
+     D*                                                                @A2A
+     D*Structure:   Qp0l_FLOP0300_Input
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*Field Notes:
+     D*                                                                @A2A
+     D*Preferred_Output_CCSID - The CCSID into which the output
+     D*                                                                @A2A
+     D*                         will be converted.  If a
+     D*                                                                @A2A
+     D*                         conversion failure occurs, the
+     D*                                                                @A2A
+     D*                         output may be returned in another
+     D*                                                                @A2A
+     D*                         CCSID.  A value of 0 indicates
+     D*                                                                @A2A
+     D*                         that the data should be returned
+     D*                                                                @A2A
+     D*                         in the default job CCSID.
+     D*                                                                @A2A
+     D*Expected_CCSID - Assume the data comes from the NFS server
+     D*                                                                @A2A
+     D*                 in this CCSID. If 0, then calculate an
+     D*                                                                @A2A
+     D*                 ASCII CCSID based on the default job
+     D*                                                                @A2A
+     D*                 CCSID.
+     D*                                                                @A2A
+     D*Length_of_Server_Name - The length of the data passed in
+     D*                                                                @A2A
+     D*                        the Server_Name paramter.
+     D*                                                                @A2A
+     D*CCSID_of_Server_Name - The value indicates the CCSID of
+     D*                                                                @A2A
+     D*                       the Server_Name parameter.  A value
+     D*                                                                @A2A
+     D*                       of 0 indicates that the data is in
+     D*                                                                @A2A
+     D*                       the default job CCSID.
+     D*                                                                @A2A
+     D*Server_Name - Remote NFS Server to obtain list of exported
+     D*                                                                @A2A
+     D*              file systems from.
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*                                                                @A2A
+     DQP00300I         DS
+     D*                                             Qp0l FLOP0300 Input
+     D*                                                                @A2A
+     D QP0CCSID09              1      4U 0
+     D*                                             Preferred Output CCSID
+     D*                                                                @A2A
+     D QP0CCSID10              5      8U 0
+     D*                                             Expected CCSID
+     D*                                                                @A2A
+     D QP0LOSN                 9     12U 0
+     D*                                             Length of Server Name
+     D*                                                                @A2A
+     D QP0IDOSN               13     16U 0
+     D*                                             CCSID of Server Name
+     D*                                                                @A2A
+     D QP0SN05                17    272
+     D*                                             Server Name
+     D*                                                                @A2A
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*Structure:   Qp0l_FLOP0300_Export_Entry
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*Field Notes:
+     D*                                                                @A2A
+     D*Length_of_Entry - The length of the current export entry.
+     D*                                                                @A2A
+     D*Length_of_Export_Name - The length of the data returned in
+     D*                                                                @A2A
+     D*                        the Export_Name parameter.
+     D*                                                                @A2A
+     D*CCSID_of_Export_Name - The CCSID of the data returned in
+     D*                                                                @A2A
+     D*                       the Export_Name parameter.
+     D*                                                                @A2A
+     D*Displacement_to_Export_Items - The offset from the
+     D*                                                                @A2A
+     D*                               beginning of the export
+     D*                                                                @A2A
+     D*                               entry to the export items.
+     D*                                                                @A2A
+     D*Number_of_Export_Items - The number of export items for
+     D*                                                                @A2A
+     D*                         this export entry.
+     D*                                                                @A2A
+     D*Export_Name - Path name of exported file system.
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*                                                                @A2A
+     DQP0300EE         DS
+     D*                                             Qp0l FLOP0300 Export Entry
+     D*                                                                @A2A
+     D QP0LOE02                1      4U 0
+     D*                                             Length of Entry
+     D*                                                                @A2A
+     D QP0LOEN                 5      8U 0
+     D*                                             Length of Export Name
+     D*                                                                @A2A
+     D QP0IDOEN                9     12U 0
+     D*                                             CCSID of Export Name
+     D*                                                                @A2A
+     D QP0DTEI                13     16U 0
+     D*                                             Displacement to Export Items
+     D*                                                                @A2A
+     D QP0NOEI                17     20U 0
+     D*                                             Number of Export Items
+     D*                                                                @A2A
+     D*QP0EN                  21     21
+     D*
+     D*                                         varying len data
+     D*                                                                @A2A
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*Structure:   Qp0l_FLOP0300_Export_Item
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*NOTE: Export Items are given by the remote server, but are
+     D*                                                                @A2A
+     D*  implementation specific and not generally interpretable.
+     D*                                                                @A2A
+     D*  Typically, the items are properties of the export or
+     D*                                                                @A2A
+     D*  names of hosts that are allowed to mount the export.
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*                                                                @A2A
+     DQP0300EI         DS
+     D*                                             Qp0l FLOP0300 Export Item
+     D*                                                                @A2A
+     D QP0LOEIE                1      4U 0
+     D*                                             Length of Export Item Entry
+     D*                                                                @A2A
+     D QP0LOEI                 5      8U 0
+     D*                                             Length of Export Item
+     D*                                                                @A2A
+     D QP0IDOEI                9     12U 0
+     D*                                             CCSID of Export Item
+     D*                                                                @A2A
+     D*QP0EI                  13     13
+     D*
+     D*                                         varying len data
+     D*                                                                @A2A
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*Structure:   Qp0l_FLOP0300_Output
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*                                                                @A2A
+     DQP00300O         DS
+     D*                                             Qp0l FLOP0300 Output
+     D*                                                                @A2A
+     D QP0BRTN22               1      4U 0
+     D*                                             Bytes Returned
+     D*                                                                @A2A
+     D QP0BAVL22               5      8U 0
+     D*                                             Bytes Available
+     D*                                                                @A2A
+     D QP0NBROE01              9     12U 0
+     D*                                             Number of Entries
+     D*                                                                @A2A
+     D*QP0EE                         21
+     D* QP0LOE03              13     16U 0
+     D* QP0LOEN00             17     20U 0
+     D* QP0IDOEN00            21     24U 0
+     D* QP0DTEI00             25     28U 0
+     D* QP0NOEI00             29     32U 0
+     D* QP0EN00               33     33
+     D*
+     D*                                             vary len data
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*The format of what is included in the buffer that starts
+     D*                                                                @A2A
+     D*with the Export_Entry is as follows:
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*The first byte of Export_Entry is the first byte of the
+     D*                                                                @A2A
+     D*Qp0l_FLOP0300_Export_Entry structure:
+     D*                                                                @A2A
+     D*        |
+     D*                                                                @A2A
+     D*        ---------------------|
+     D*                                                                @A2A
+     D*                             V
+     D*                                                                @A2A
+     D*unsigned int              Length_of_Entry;
+     D*                                                                @A2A
+     D*unsigned int              Length_of_Export_Name;
+     D*                                                                @A2A
+     D*unsigned int              CCSID_of_Export_Name;
+     D*                                                                @A2A
+     D*unsigned int         ---- Displacement_to_Export_Items;
+     D*                                                                @A2A
+     D*unsigned int         |    Number_of_Export_Items;
+     D*                                                                @A2A
+     D*char                 |    Export_Name; (varying length)
+     D*                                                                @A2A
+     D*                  |
+     D*                                                                @A2A
+     D*                  V
+     D*                                                                @A2A
+     D*          Qp0l_FLOP0300_Export_Item structure:
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*unsigned int         ---- Length_of_Export_Item_Entry;
+     D*                                                                @A2A
+     D*unsigned int         |    Length_of_Export_Item;
+     D*                                                                @A2A
+     D*unsigned int         |    CCSID_of_Export_Item;
+     D*                                                                @A2A
+     D*char                 |    Export_Item;   (varying length)
+     D*                                                                @A2A
+     D*                  |
+     D*                                                                @A2A
+     D*                  V
+     D*                                                                @A2A
+     D*          This sequence of Qp0l_FLOP0300_Export_Item
+     D*                                                                @A2A
+     D*          structures continues until there have been
+     D*                                                                @A2A
+     D*          Number_of_Export_Items of them.
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*The following set of enumerated constants are the set of flags
+     D*                                                                @A2A
+     D*that may be assigned to the File_System_Type parameter of the
+     D*                                                                @A2A
+     D*Qp0l_FLOP0400_MFS_Entry structure to indicate the file system
+     D*                                                                @A2A
+     D*type.
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*The flag meanings are as follows:
+     D*                                                                @A2A
+     D*Qp0lFlop_MNT_OTHER -    Unknown file system type
+     D*                                                                @A2A
+     D*Qp0lFlop_MNT_ROOT -     Root(/) file system
+     D*                                                                @A2A
+     D*Qp0lFlop_MNT_QOPENSYS - /QOpenSys file system
+     D*                                                                @A2A
+     D*Qp0lFlop_MNT_QDLS -     /QDLS file system
+     D*                                                                @A2A
+     D*Qp0lFlop_MNT_QSYS -     /QSYS.LIB file system
+     D*                                                                @A2A
+     D*Qp0lFlop_MNT_NFS2 -     Version 2 Network File System
+     D*                                                                @A2A
+     D*Qp0lFlop_MNT_NFS3 -     Version 3 Network File System
+     D*                                                                @A2A
+     D*Qp0lFlop_MNT_UDFS -     User-defined file system
+     D*                                                                @A2A
+     D*Qp0lFlop_MNT_QOPT -     Optical file system
+     D*                                                                @A2A
+     D*Qp0lFlop_MNT_RFS -      QFileSvr.400 file system
+     D*                                                                @A2A
+     D*The following file system is no longer supported.                   @A3A
+     D*Qp0lFlop_MNT_NETWARE -  Netware file system
+     D*                                                                @A2A
+     D*Qp0lFlop_MNT_QNTC -     Windows NT Server file system
+     D*                                                                @A2A
+     D*Qp0lFlop_MNT_ASPQSYS -  Independent ASP QSYS.LIB file system
+     D*                                                                @A2A
+     D*Qp0lFlop_MNT_UDFSMGT -  UDFS management (/dev/QASPxx) file
+     D*                                                                @A2A
+     D*                     system
+     D*                                                                @A2A
+     D*Qp0lFlop_MNT_NFS4 -     Version 4 Network File System
+     D*                                                                @A4A
+     D*Qp0lFlop_ALL_DYNAMIC -  All dynamically mountable file systems
+     D*                                                                @A2A
+     D*Qp0lFlop_ALL_FS -       All mounted file systems
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*The following set of enumerated constants are the set of flags
+     D*                                                                @A2A
+     D*that may be assigned to the Mount_Flags parameter of the
+     D*                                                                @A2A
+     D*Qp0l_FLOP0400_MFS_Entry structure to indicate the file system
+     D*                                                                @A2A
+     D*mount options.
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*The flag meanings are as follows:
+     D*                                                                @A2A
+     D*Qp0lFlop_FS_READ_ONLY -       File system is mounted as
+     D*                                                                @A2A
+     D*                           read-only.
+     D*                                                                @A2A
+     D*Qp0lFlop_FS_NO_MIXED_CASE -   File system is not case
+     D*                                                                @A2A
+     D*                           sensitive.
+     D*                                                                @A2A
+     D*Qp0lFlop_FS_RENAME_CASE -     If the file system is not case
+     D*                                                                @A2A
+     D*                           sensitive, renaming of a file
+     D*                                                                @A2A
+     D*                           to a different casing of the
+     D*                                                                @A2A
+     D*                           same name will change the
+     D*                                                                @A2A
+     D*                           casing of the name.
+     D*                                                                @A2A
+     D*Qp0lFlop_FS_NO_MOUNT_OVER -   File system cannot be mounted
+     D*                                                                @A2A
+     D*                           over.
+     D*                                                                @A2A
+     D*Qp0lFlop_FS_NO_EXPORTS -      File system cannot be exported
+     D*                                                                @A2A
+     D*                           through NFS.
+     D*                                                                @A2A
+     D*Qp0lFlop_FS_DYN_MNT_ENABLED - File system can be dynamically
+     D*                                                                @A2A
+     D*                           unmounted.
+     D*                                                                @A2A
+     D*Qp0lFlop_FS_SYNC_WRITES -     File system supports
+     D*                                                                @A2A
+     D*                           synchronous writes.
+     D*                                                                @A2A
+     D*Qp0lFlop_FS_THREAD_SAFE -     File system is thread safe.
+     D*                                                                @A2A
+     D*Qp0lFlop_FS_DFT_STMF_TYPE1 -  Default file format for *STMF
+     D*                                                                @A2A
+     D*                           objects is *TYPE1.
+     D*                                                                @A2A
+     D*Qp0lFlop_FS_NO_SUID -         File system supports the SUID
+     D*                                                                @A2A
+     D*                           and SGID mode bits, but the
+     D*                                                                @A2A
+     D*                           bits are not surfaced.
+     D*                                                                @A2A
+     D*Qp0lFlop_FS_HARD_MNT -        File system is an NFS hard
+     D*                                                                @A2A
+     D*                           mount.
+     D*                                                                @A2A
+     D*Qp0lFlop_FS_TEMPORARY -       File system contains temporary
+     D*                                                                @A5A
+     D*                           objects
+     D*                                                                @A5A
+     D*================================================================
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*Structure:   Qp0l_FLOP0400_Input
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*Field notes:
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*Preferred_Output_CCSID - The CCSID into which the output
+     D*                                                                @A2A
+     D*         will be converted.  If a conversion failure
+     D*                                                                @A2A
+     D*         occurs, the output may be returned in another
+     D*                                                                @A2A
+     D*         CCSID.  A value of 0 means to return the data in
+     D*                                                                @A2A
+     D*         the default job CCSID.
+     D*                                                                @A2A
+     D*File_System_Type_Filter - Only file systems with a type
+     D*                                                                @A2A
+     D*         allowed by this filter are returned (ORing of
+     D*                                                                @A2A
+     D*         Qp0lFlop_fstype_flags).
+     D*                                                                @A2A
+     D*Only_Topmost_Mounts - If 1, then only the accessible
+     D*                                                                @A2A
+     D*         mounted file systems matching the other criteria
+     D*                                                                @A2A
+     D*         are returned. Roots of file systems that have
+     D*                                                                @A2A
+     D*         been mounted over are excluded.
+     D*                                                                @A2A
+     D*         If 0, all mounted file systems matching the other
+     D*                                                                @A2A
+     D*         criteria are returned.
+     D*                                                                @A2A
+     D*         All other values are invalid.
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*                                                                @A2A
+     DQP00400I         DS
+     D*                                             Qp0l FLOP0400 Input
+     D*                                                                @A2A
+     D QP0CCSID11              1      4U 0
+     D*                                             Preferred Output CCSID
+     D*                                                                @A2A
+     D QP0FSTF                 5      8U 0
+     D*                                             File System Type Filter
+     D*                                                                @A2A
+     D QP0OTM                  9     12U 0
+     D*                                             Only Topmost Mounts
+     D*                                                                @A2A
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*Structure:   Qp0l_FLOP0400_MFS_Entry
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*Field Notes:
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*File_System_Id - Unique identifier associated with each
+     D*                                                                @A2A
+     D*                mounted file system.
+     D*                                                                @A2A
+     D*File_System_Type - One of the Qp0lFlop_MNT_xxx types
+     D*                                                                @A2A
+     D*Mount_Flags - Set of flags describing the mount; ORed
+     D*                                                                @A2A
+     D*             value of Qp0lFlop_mnt_flags
+     D*                                                                @A2A
+     D*Unique_Mount_Id - For dynamic mount points this value
+     D*                                                                @A2A
+     D*      gives indication of the order mounted. For example,
+     D*                                                                @A2A
+     D*      multiple file systems may be mounted over the
+     D*                                                                @A2A
+     D*      same directory. The topmost one (and therefore the
+     D*                                                                @A2A
+     D*      one with the Is_Visible attribute set) will be the
+     D*                                                                @A2A
+     D*      one with the largest Unique_Mount_Id.
+     D*                                                                @A2A
+     D*Time_of_Mount - Time when the file system was mounted. This
+     D*                                                                @A2A
+     D*               is represented as the number of seconds
+     D*                                                                @A2A
+     D*               since the Epoch.
+     D*                                                                @A2A
+     D*Is_Visible - If non-zero, then this mount has not been
+     D*                                                                @A2A
+     D*            mounted over and is accessible through the
+     D*                                                                @A2A
+     D*            parent file system.
+     D*                                                                @A2A
+     D*MFS_Name - Source path of the mounted file system
+     D*                                                                @A2A
+     D*Mnt_Ovr_Dir_Name - Path that the file system is mounted
+     D*                                                                @A2A
+     D*                  over
+     D*                                                                @A2A
+     D*Remote_Host_Name - If the file system is remote (e.g. NFS),
+     D*                                                                @A2A
+     D*                  then this string contains the name or
+     D*                                                                @A2A
+     D*                  IP address of the serving machine.
+     D*                                                                @A2A
+     D*Mnt_Options - String of valid options used to mount the
+     D*                                                                @A2A
+     D*             file system
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*                                                                @A2A
+     DQP00MFSE         DS
+     D*                                             Qp0l FLOP0400 MFS Entry
+     D*                                                                @A2A
+     D QP0LOE04                1      4U 0
+     D*                                             Length of Entry
+     D*                                                                @A2A
+     D QP0FILSI00              5     12U 0
+     D*                                             File System Id
+     D*                                                                @A2A
+     D QP0FILST00             13     16U 0
+     D*                                             File System Type
+     D*                                                                @A2A
+     D QP0MF                  17     20U 0
+     D*                                             Mount Flags
+     D*                                                                @A2A
+     D QP0UMI                 21     24U 0
+     D*                                             Unique Mount Id
+     D*                                                                @A2A
+     D QP0TOM                 25     28I 0
+     D*                                             Time of Mount
+     D*                                                                @A2A
+     D QP0IV                  29     32U 0
+     D*                                             Is Visible
+     D*                                                                @A2A
+     D QP0TMFSN               33     36U 0
+     D*                                             Disp to MFS Name
+     D*                                                                @A2A
+     D QP0OMFSN               37     40U 0
+     D*                                             Length of MFS Name
+     D*                                                                @A2A
+     D QP0OMFSN00             41     44U 0
+     D*                                             CCSID of MFS Name
+     D*                                                                @A2A
+     D QP0TMODN               45     48U 0
+     D*                                             Disp to Mnt Ovr Dir Name
+     D*                                                                @A2A
+     D QP0OMODN               49     52U 0
+     D*                                             Length of Mnt Ovr Dir Name
+     D*                                                                @A2A
+     D QP0OMODN00             53     56U 0
+     D*                                             CCSID of Mnt Ovr Dir Name
+     D*                                                                @A2A
+     D QP0DTRHN               57     60U 0
+     D*                                             Disp to Remote Host Name
+     D*                                                                @A2A
+     D QP0LORHN               61     64U 0
+     D*                                             Length of Remote Host Name
+     D*                                                                @A2A
+     D QP0DORHN               65     68U 0
+     D*                                             CCSID of Remote Host Name
+     D*                                                                @A2A
+     D QP0DTMO                69     72U 0
+     D*                                             Disp to Mnt Options
+     D*                                                                @A2A
+     D QP0LOMO                73     76U 0
+     D*                                             Length of Mnt Options
+     D*                                                                @A2A
+     D QP0IDOMO               77     80U 0
+     D*                                             CCSID of Mnt Options
+     D*                                                                @A2A
+     D*=============================================================
+     D*                                                                @A2A
+     D*Variable length data:
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*char                      MFS_Name;
+     D*                                                                @A2A
+     D*char                      Mnt_Ovr_Dir_Name;
+     D*                                                                @A2A
+     D*char                      Remote_Host_Name;
+     D*                                                                @A2A
+     D*char                      Mnt_Options;
+     D*                                                                @A2A
+     D*=============================================================
+     D*                                                                @A2A
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*Structure:   Qp0l_FLOP0400_Output
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*================================================================
+     D*                                                                @A2A
+     D*                                                                @A2A
+     DQP00400O         DS
+     D*                                             Qp0l FLOP0400 Output
+     D*                                                                @A2A
+     D QP0BRTN23               1      4U 0
+     D*                                             Bytes Returned
+     D*                                                                @A2A
+     D QP0BAVL23               5      8U 0
+     D*                                             Bytes Available
+     D*                                                                @A2A
+     D QP0NBROE02              9     12U 0
+     D*                                             Number of Entries
+     D*                                                                @A2A
+     D*QP0MFSE                       80
+     D* QP0LOE05              13     16U 0
+     D* QP0FILSI01            17     24U 0
+     D* QP0FILST01            25     28U 0
+     D* QP0MF00               29     32U 0
+     D* QP0UMI00              33     36U 0
+     D* QP0TOM00              37     40B 0
+     D* QP0IV00               41     44U 0
+     D* QP0TMFSN00            45     48U 0
+     D* QP0OMFSN01            49     52U 0
+     D* QP0OMFSN02            53     56U 0
+     D* QP0TMODN00            57     60U 0
+     D* QP0OMODN01            61     64U 0
+     D* QP0OMODN02            65     68U 0
+     D* QP0DTRHN00            69     72U 0
+     D* QP0LORHN00            73     76U 0
+     D* QP0DORHN00            77     80U 0
+     D* QP0DTMO00             81     84U 0
+     D* QP0LOMO00             85     88U 0
+     D* QP0IDOMO00            89     92U 0
+     D*
+     D*                                         varying len data
+     D*                                                                @A2A
+     D*=============================================================
+     D*                                                                @A2A
+     D* The format of what is included in the buffer that starts
+     D*                                                                @A2A
+     D* with the MFS_Entry is as follows:
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D* The first byte of MFS_Entry is the first byte of the
+     D*                                                                @A2A
+     D* Qp0l_FLOP0400_MFS_Entry structure:
+     D*                                                                @A2A
+     D*           |
+     D*                                                                @A2A
+     D*           ---------------------|
+     D*                                                                @A2A
+     D*                                V
+     D*                                                                @A2A
+     D*unsigned int         ---- Length_of_Entry;
+     D*                                                                @A2A
+     D*dev64_t              |    File_System_Id;
+     D*                                                                @A2A
+     D*unsigned int         |    File_System_Type;
+     D*                                                                @A2A
+     D*unsigned int         |    Mount_Flags;
+     D*                                                                @A2A
+     D*unsinged int         |    Unique_Mount_Id;
+     D*                                                                @A2A
+     D*time_t               |    Time_of_Mount;
+     D*                                                                @A2A
+     D*unsigned int         |    Is_Visible;
+     D*                                                                @A2A
+     D*unsigned int         |    Disp_to_MFS_Name;
+     D*                                                                @A2A
+     D*unsigned int         |    Length_of_MFS_Name;
+     D*                                                                @A2A
+     D*unsigned int         |    CCSID_of_MFS_Name;
+     D*                                                                @A2A
+     D*unsigned int         |    Disp_to_Mnt_Ovr_Dir_Name;
+     D*                                                                @A2A
+     D*unsigned int         |    Length_of_Mnt_Ovr_Dir_Name;
+     D*                                                                @A2A
+     D*unsigned int         |    CCSID_of_Mnt_Ovr_Dir_Name;
+     D*                                                                @A2A
+     D*unsigned int         |    Disp_to_Remote_Host_Name;
+     D*                                                                @A2A
+     D*unsigned int         |    Length_of_Remote_Host_Name;
+     D*                                                                @A2A
+     D*unsigned int         |    CCSID_of_Remote_Host_Name;
+     D*                                                                @A2A
+     D*unsigned int         |    Disp_to_Mnt_Options;
+     D*                                                                @A2A
+     D*unsigned int         |    Length_of_Mnt_Options;
+     D*                                                                @A2A
+     D*unsigned int         |    CCSID_of_Mnt_Options;
+     D*                                                                @A2A
+     D*char                 |    MFS_Name; (varying length)
+     D*                                                                @A2A
+     D*                     |
+     D*                                                                @A2A
+     D*                     V
+     D*                                                                @A2A
+     D*        Next Qp0l_FLOP0400_MFS_Entry structure...
+     D*                                                                @A2A
+     D*
+     D*                                                                @A2A
+     D*=============================================================
+     D*                                                                @A2A
+     D*****************************************************************
+     D*Prototype for calling Security API QP0LFLOP
+     D*****************************************************************
+     D QP0LFLOP        C                   'QP0LFLOP'

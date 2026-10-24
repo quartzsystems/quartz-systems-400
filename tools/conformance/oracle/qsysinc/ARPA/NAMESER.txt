@@ -1,0 +1,653 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5763-SS1                                                      */
+/*     5716-SS1                                                      */
+/*     5722-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  1994, 2007                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name: arpa/nameser.h                                  */
+/*                                                                   */
+/* Descriptive Name: Define the sockets Resolver API                 */
+/*                                                                   */
+/* Copyright (c) 1983 Regents of the University of California.       */
+/* All rights reserved.  The Berkeley software License Agreement     */
+/* specifies the terms and conditions for redistribution.            */
+/*                                                                   */
+/*                                                                   */
+/* Description:                                                      */
+/*                                                                   */
+/*          Defines macros, variables, structures and                */
+/*          prototypes for the sockets resolver interface.           */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*                                                                   */
+/*          sys/types.h                                              */
+/*          nameser_u.h                                          @A2A*/
+/*                                                                   */
+/* Macros List:                                                      */
+/*                                                                   */
+/*          INDIR_MASK                                               */
+/*          MAXCDNAME                                                */
+/*          MAXDNAME                                                 */
+/*          MAXLABEL                                                 */
+/*          PACKETSZ                                                 */
+/*          QFIXEDSZ                                                 */
+/*          RRFIXEDSZ                                                */
+/*                                                                   */
+/*          C_ANY                                                    */
+/*          C_IN                                                     */
+/*                                                                   */
+/*          IQUERY                                                   */
+/*          QUERY                                                    */
+/*                                                                   */
+/*          T_A                                                      */
+/*          T_ANY                                                    */
+/*          T_CNAME                                                  */
+/*          T_HINFO                                                  */
+/*          T_MX                                                     */
+/*          T_NS                                                     */
+/*          T_PTR                                                    */
+/*          T_SOA                                                    */
+/*          T_TXT                                                    */
+/*          T_WKS                                                    */
+/*                                                                   */
+/*          FORMERR                                                  */
+/*          NOERROR                                                  */
+/*          NOTIMP                                                   */
+/*          NXDOMAIN                                                 */
+/*          REFUSED                                                  */
+/*          SERVFAIL                                                 */
+/*                                                                   */
+/*                                                                   */
+/*          _getlong                                                 */
+/*          _getshort                                                */
+/*          _putlong                                                 */
+/*          _putshort                                                */
+/*                                                                   */
+/*          NS_TSIG_ALG_HMAC_MD5                                 @A2A*/
+/*                                                                   */
+/*          NS_TSIG_ERROR_NO_TSIG                                @A2A*/
+/*          NS_TSIG_ERROR_NO_SPACE                               @A2A*/
+/*          NS_TSIG_ERROR_FORMERR                                @A2A*/
+/*          NS_TSIG_ERROR_ID_MISMATCH                            @A2A*/
+/*                                                                   */
+/* Structure List:                                                   */
+/*                                                                   */
+/*          HEADER                                                   */
+/*          rrec                                                     */
+/*                                                                   */
+/*          ns_updrec                                            @A2A*/
+/*          ns_tsig_key                                          @A2A*/
+/*                                                                   */
+/* Enum List:                                                    @A2A*/
+/*          ns_class                                             @A2A*/
+/*          ns_type                                              @A2A*/
+/*          ns_opcode                                            @A2A*/
+/*          ns_rcode                                             @A2A*/
+/*          ns_opcode                                            @A2A*/
+/*          ns_sect                                              @A2A*/
+/*          ns_update_operation                                  @A2A*/
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*                                                                   */
+/*          dn_comp                                                  */
+/*          dn_comp_ts64                                         @A1A*/
+/*          dn_expand                                                */
+/*          dn_find                                                  */
+/*          dn_find_ts64                                         @A1A*/
+/*          dn_skipname                                              */
+/*          res_close                                                */
+/*          res_init                                                 */
+/*          res_mkquery                                              */
+/*          res_query                                                */
+/*          res_search                                               */
+/*          res_send                                                 */
+/*          res_xlate                                                */
+/*          res_nclose                                           @A2A*/
+/*          res_ninit                                            @A2A*/
+/*          res_nmkquery                                         @A2A*/
+/*          res_nquery                                           @A2A*/
+/*          res_nsearch                                          @A2A*/
+/*          res_nsend                                            @A2A*/
+/*          res_nisourserver                                     @A2A*/
+/*          res_hostalias                                        @A2A*/
+/*          res_nquerydomain                                     @A2A*/
+/*          res_nsendsigned                                      @A2A*/
+/*          res_nupdate                                          @A2A*/
+/*          res_nfindprimary                                     @A2A*/
+/*          res_nsendupdate                                      @A2A*/
+/*          res_nmkupdate                                        @A2A*/
+/*          res_findzonecut                                      @A2A*/
+/*          res_findzonecut2                                     @C1A*/
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/*   CFD List:                                                       */
+/*                                                                   */
+/*   FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION     */
+/*   ---- ------------ ----- ------- -------- ---------------------- */
+/*   $A0= D3188200     3D10  940225  ROCH     New include.           */
+/*   $A1= D97767.12    5D10  991116  ROCH     Add dn_comp_ts64 and   */
+/*                                            dn_find_ts64           */
+/*                                            prototypes.            */
+/*   $A2= Dxxxxxxx     5D10  991122  ROCH     Updated with new       */
+/*                                            threadsafe routines and*/
+/*                                            dynamic update routines*/
+/*   $B1= D97767       5D10  991229  ROCH     Teraspace stage II     */
+/*   $A3= Dxxxxxxx     5D10  000713  ROCH     Fix the enum sizes     */
+/*   $A4= D98671.2     5D20  010604  ROCH     Add AAAA support       */
+/*   $C1= D93466.7     5D50  061027  ROCH     Add res_findzonecut2   */
+/*   $C2= FW616249     7D20  131216  ROCH     Add ns_t_rrsig         */
+/*   End CFD List.                                                   */
+/*                                                                   */
+/*   Additional notes about the Change Activity:                     */
+/*                                                                   */
+/* End Change Activity                                               */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __nameser_h
+  #define __nameser_h
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+
+/*********************************************************************/
+/* AS/400 uses some BIND 4 constants by default, unless overridden   */
+/* with __NAMESER_H_NO_BIND_4_COMPAT                                 */
+/*********************************************************************/
+#ifndef __NAMESER_H_NO_BIND_4_COMPAT                          /* @A2A*/
+#define BIND_4_COMPAT 1                                       /* @A2A*/
+#endif                                                        /* @A2A*/
+
+
+/*********************************************************************/
+/* Header files                                                      */
+/*********************************************************************/
+
+#include <sys/types.h>                /* common typedefs             */
+
+#if (__OS400_TGTVRM__>=510)                                   /* @B1A*/
+#pragma datamodel(P128)                                       /* @B1A*/
+#endif                                                        /* @B1A*/
+
+/*********************************************************************/
+/* Forward defines                                                   */
+/*********************************************************************/
+struct state;
+
+typedef struct state *res_state;                              /* @A1A*/
+union res_sockaddr_union;                                     /* @C1A*/
+
+/*********************************************************************/
+/* Miscellaneous macros                                              */
+/*********************************************************************/
+
+
+#define NS_CMPRSFLGS       0xc0       /* Mask for handling pointers in
+                                        a compressed domain name first
+                                        two bits are set on      @A2A*/
+
+
+#define NS_MAXCDNAME        255       /* maximum length of compressed
+                                         domain name             @A2A*/
+#define NS_MAXDNAME        1025       /* maximum length of domain
+                                         name in ns records      @A2A*/
+#define NS_MAXLABEL          63       /* domain label maximum length
+                                                                 @A2A*/
+#define NS_PACKETSZ         512       /* UDP maximum packet size @A2A*/
+#define NS_QFIXEDSZ           4       /* size of type and class
+                                         portions of a query     @A2A*/
+#define NS_RRFIXEDSZ         10       /* data size in response
+                                         structure               @A2A*/
+#define NS_HFIXEDSZ          12       /* #/bytes of fixed data in
+                                         header                  @A2A*/
+#define NS_INT32SZ            4       /* #/bytes of data in a
+                                         u_int32_t               @A2A*/
+#define NS_INT16SZ            2       /* #/bytes of data in a
+                                         u_int16_t               @A2A*/
+#define NS_INT8SZ             1       /* #/bytes of data in a
+                                         u_int8_t                @A2A*/
+#define NS_INADDRSZ           4       /* IPv4 T_A                @A2A*/
+#define NS_IN6ADDRSZ         16       /* IPv6 T_AAAA             @A4A*/
+#define NS_DEFAULTPORT       53       /* For both TCP and UDP    @A2A*/
+
+#ifdef BIND_4_COMPAT                                          /* @A2A*/
+#define MAXDNAME     256               /* Local domain name limit    */
+#define PACKETSZ     NS_PACKETSZ                              /* @A2C*/
+#define MAXCDNAME    NS_MAXCDNAME                             /* @A2C*/
+#define MAXLABEL     NS_MAXLABEL                              /* @A2C*/
+#define QFIXEDSZ     NS_QFIXEDSZ                              /* @A2C*/
+#define RRFIXEDSZ    NS_RRFIXEDSZ                             /* @A2C*/
+#define INDIR_MASK   NS_CMPRSFLGS                             /* @A2C*/
+#endif  /* BIND_4_COMPAT                                         @A2A*/
+
+
+/*********************************************************************/
+/* New, expanded BIND 8.2.1 enum values for the class                */
+/*********************************************************************/
+typedef enum __ns_class {
+   ns_c_invalid =    0,            /* Cookie.                        */
+   ns_c_in =         1,            /* Internet.                      */
+   ns_c_2 =          2,            /* unallocated/unsupported.       */
+   ns_c_chaos =      3,            /* MIT Chaos-net.                 */
+   ns_c_hs =         4,            /* MIT Hesiod.                    */
+   /* Query class values which do not appear in resource records     */
+   ns_c_none =     254,            /* for prereq. sections in
+                                      update requests                */
+   ns_c_any =      255,            /* Wildcard match.                */
+   ns_c_max =    65536
+} ns_class;                                                   /* @A2A*/
+
+/*********************************************************************/
+/* Macros for class parameter on resolver routines                   */
+/*********************************************************************/
+
+#ifdef BIND_4_COMPAT                                          /* @A2A*/
+#define C_ANY           ns_c_any      /* wildcard query          @A2C*/
+#define C_IN            ns_c_in       /* query is Internet class @A2C*/
+#endif  /* BIND_4_COMPAT                                         @A2A*/
+
+/*********************************************************************/
+/* New, expanded BIND 8.2.1 enum values for the type value           */
+/*********************************************************************/
+typedef enum __ns_type {
+   ns_t_invalid =    0,      /* Cookie.                              */
+   ns_t_a =          1,      /* Host address.                        */
+   ns_t_ns =         2,      /* Authoritative server.                */
+   ns_t_md =         3,      /* Mail destination.                    */
+   ns_t_mf =         4,      /* Mail forwarder.                      */
+   ns_t_cname =      5,      /* Canonical name.                      */
+   ns_t_soa =        6,      /* Start of authority zone.             */
+   ns_t_mb =         7,      /* Mailbox domain name.                 */
+   ns_t_mg =         8,      /* Mail group member.                   */
+   ns_t_mr =         9,      /* Mail rename name.                    */
+   ns_t_null =      10,      /* Null resource record.                */
+   ns_t_wks =       11,      /* Well known service.                  */
+   ns_t_ptr =       12,      /* Domain name pointer.                 */
+   ns_t_hinfo =     13,      /* Host information.                    */
+   ns_t_minfo =     14,      /* Mailbox information.                 */
+   ns_t_mx =        15,      /* Mail routing information.            */
+   ns_t_txt =       16,      /* Text strings.                        */
+   ns_t_rp =        17,      /* Responsible person.                  */
+   ns_t_afsdb =     18,      /* AFS cell database.                   */
+   ns_t_x25 =       19,      /* X_25 calling address.                */
+   ns_t_isdn =      20,      /* ISDN calling address.                */
+   ns_t_rt =        21,      /* Router.                              */
+   ns_t_nsap =      22,      /* NSAP address.                        */
+   ns_t_nsap_ptr =  23,      /* Reverse NSAP lookup(deprecated).     */
+   ns_t_sig =       24,      /* Security signature.                  */
+   ns_t_key =       25,      /* Security key.                        */
+   ns_t_px =        26,      /* X.400 mail mapping.                  */
+   ns_t_gpos =      27,      /* Geographical position(withdrawn).    */
+   ns_t_aaaa =      28,      /* Ip6 Address.                         */
+   ns_t_loc =       29,      /* Location Information.                */
+   ns_t_nxt =       30,      /* Next domain (security).              */
+   ns_t_eid =       31,      /* Endpoint identifier.                 */
+   ns_t_nimloc =    32,      /* Nimrod Locator.                      */
+   ns_t_srv =       33,      /* Server Selection.                    */
+   ns_t_atma =      34,      /* ATM Address                          */
+   ns_t_naptr =     35,      /* Naming Authority PoinTeR             */
+   ns_t_kx =        36,      /* Key Exchange                         */
+   ns_t_cert =      37,      /* Certification record                 */
+   ns_t_a6 =        38,      /* IPv6 address (deprecates AAAA)       */
+   ns_t_dname =     39,      /* Non-terminal DNAME (for IPv6)        */
+   ns_t_sink =      40,      /* Kitchen sink (experimental)          */
+   ns_t_opt =       41,      /* EDNS0 option (meta-RR)               */
+   ns_t_rrsig =     46,      /* DNSSEC signature.               @C2A */
+   /* Query type values which do not appear in resource records.     */
+   ns_t_tsig =     250,      /* Transaction signature.               */
+   ns_t_ixfr =     251,      /* Incremental zone transfer.           */
+   ns_t_axfr =     252,      /* Transfer zone of authority.          */
+   ns_t_mailb =    253,      /* Transfer mailbox records.            */
+   ns_t_maila =    254,      /* Transfer mail agent records.         */
+   ns_t_any =      255,      /* Wildcard match.                      */
+   ns_t_zxfr =     256,      /* BIND-specific, nonstandard.          */
+   ns_t_max =    65536
+} ns_type;                                                    /* @A2A*/
+
+/*********************************************************************/
+/* Macros for type parameter on resolver routines                    */
+/*********************************************************************/
+
+#ifdef BIND_4_COMPAT                                          /* @A2A*/
+#define T_A             ns_t_a      /* internet host address     @A2C*/
+#define T_NS            ns_t_ns     /* authoritative name server @A2C*/
+#define T_CNAME         ns_t_cname  /* canonical or primary name @A2C*/
+#define T_SOA           ns_t_soa    /* start of authority        @A2C*/
+#define T_WKS           ns_t_wks    /* well known service        @A2C*/
+#define T_PTR           ns_t_ptr    /* domain name pointer       @A2C*/
+#define T_HINFO         ns_t_hinfo  /* general host information  @A2C*/
+#define T_MX            ns_t_mx     /* mail exchange             @A2C*/
+#define T_TXT           ns_t_txt    /* text string record        @A2C*/
+#define T_ANY           ns_t_any    /* wildcard                  @A2C*/
+#endif  /* BIND_4_COMPAT                                         @A2A*/
+
+/*********************************************************************/
+/* New, expanded BIND 8.2.1 enum values for the opcode               */
+/*********************************************************************/
+typedef enum __ns_opcode {
+   ns_o_query =  0,    /* Standard query.                            */
+   ns_o_iquery = 1,    /* Inverse query (deprecated)                 */
+   ns_o_status = 2,    /* Name server status query(unsupported).     */
+                       /* Opcode 3 is undefined/reserved.            */
+   ns_o_notify = 4,    /* Zone change notification.                  */
+   ns_o_update = 5,    /* Zone update message.                       */
+   ns_o_max =    6,
+   ns_o_rsvd   = 65536 /* Force the enum to be a 4 byte int      @A3A*/
+} ns_opcode;                                                  /* @A2A*/
+
+/*********************************************************************/
+/* Macros for opcode field in HEADER structure                       */
+/*********************************************************************/
+
+#ifdef BIND_4_COMPAT                                          /* @A2A*/
+#define QUERY            ns_o_query   /* query (by name)         @A2C*/
+#define IQUERY           ns_o_iquery  /* inverse query           @A2C*/
+                                      /* (by address)            @A2C*/
+#endif  /* BIND_4_COMPAT                                         @A2A*/
+
+
+/*********************************************************************/
+/* New, expanded BIND 8.2.1 enum values for the rcode                */
+/*********************************************************************/
+typedef  enum __ns_rcode {
+   ns_r_noerror =  0,   /* No error occurred.                        */
+   ns_r_formerr =  1,   /* Format error.                             */
+   ns_r_servfail = 2,   /* Server failure.                           */
+   ns_r_nxdomain = 3,   /* Name error.                               */
+   ns_r_notimpl =  4,   /* Unimplemented.                            */
+   ns_r_refused =  5,   /* Operation refused.                        */
+   /* these are for BIND_UPDATE                                      */
+   ns_r_yxdomain = 6,   /* Name exists                               */
+   ns_r_yxrrset =  7,   /* RRset exists                              */
+   ns_r_nxrrset =  8,   /* RRset does not exist                      */
+   ns_r_notauth =  9,   /* Not authoritative for zone                */
+   ns_r_notzone = 10,   /* Zone of record dif from zone section      */
+   ns_r_max =     11,
+   /* The following are TSIG extended errors */
+   ns_r_badsig =  16,
+   ns_r_badkey =  17,
+   ns_r_badtime = 18,
+   ns_r_rsvd = 65536   /* Force the enum to be a 4 byte int      @A3A*/
+} ns_rcode;                                                   /* @A2A*/
+
+/*********************************************************************/
+/* Macros for rcode field in HEADER structure                        */
+/*********************************************************************/
+
+#ifdef BIND_4_COMPAT                                          /* @A2A*/
+#define NOERROR         ns_r_noerror  /* query was understood        */
+#define FORMERR         ns_r_formerr  /* query format not understood */
+#define SERVFAIL        ns_r_servfail /* problem with name server    */
+#define NXDOMAIN        ns_r_nxdomain /* domain name does not exist  */
+#define NOTIMP          ns_r_notimpl  /* query type not implemented  */
+#define REFUSED         ns_r_refused  /* server refused to
+                                         process query               */
+#endif  /* BIND_4_COMPAT                                         @A2A*/
+
+/*********************************************************************/
+/* New, expanded BIND 8.2.1 enum values for the section              */
+/*********************************************************************/
+typedef enum __ns_sect {
+   ns_s_qd = 0,             /* Query: Question.                      */
+   ns_s_zn = 0,             /* Update: Zone.                         */
+   ns_s_an = 1,             /* Query: Answer.                        */
+   ns_s_pr = 1,             /* Update: Prerequisites.                */
+   ns_s_ns = 2,             /* Query: Name servers.                  */
+   ns_s_ud = 2,             /* Update: Update.                       */
+   ns_s_ar = 3,             /* Query|Update: Additional records.     */
+   ns_s_max = 4,
+   ns_s_rsvd   = 65536 /* Force the enum to be a 4 byte int      @A3A*/
+} ns_sect;                                                    /* @A2A*/
+
+/*********************************************************************/
+/* Macros to manipulate integers in a query packet                   */
+/*********************************************************************/
+
+#define _getlong(qso_msgp)               \
+  (*(unsigned long *)qso_msgp)              /* get long integer      */
+
+#define _getshort(qso_msgp)              \
+  (*(unsigned short *)qso_msgp)             /* get short integer     */
+
+#define _putlong(qso_long, qso_msgp)     \
+  *(unsigned long *)qso_msgp = qso_long;    /* put long integer      */
+
+#define _putshort(qso_short, qso_msgp)   \
+  *(unsigned short *)qso_msgp = qso_short;  /* put short integer     */
+
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+typedef _Packed struct {              /* packet header               */
+
+  u_short    id;                      /* packet identifier           */
+  u_int      qr:1;                    /* query (0) or response (1)   */
+  u_int      opcode:4;                /* type of query               */
+  u_int      aa:1;                    /* authoritative answer        */
+  u_int      tc:1;                    /* truncation                  */
+  u_int      rd:1;                    /* recursion desired           */
+  u_int      ra:1;                    /* recursion available         */
+  u_int      unused:3;                /* unused                      */
+  u_int      rcode:4;                 /* return code                 */
+  u_short    qdcount;                 /* count of question records
+                                         in packet                   */
+  u_short    ancount;                 /* count of answer records
+                                         in packet                   */
+  u_short    nscount;                 /* count of authority records
+                                         in packet                   */
+  u_short    arcount;                 /* count of additional records
+                                         in packet                   */
+} HEADER;
+
+struct rrec {                         /* reserved                    */
+
+  char       reserved[256];           /* reserved field              */
+
+};
+
+/*********************************************************************/
+/* This structure is used for TSIG authenticated messages            */
+/*********************************************************************/
+
+struct ns_tsig_key_t {
+        char name[NS_MAXDNAME], alg[NS_MAXDNAME];
+        unsigned char *data;
+        int len;
+};                                                            /* @A2A*/
+typedef struct ns_tsig_key_t ns_tsig_key;                     /* @A2A*/
+
+/*********************************************************************/
+/* The only supported value for ns_tsig_key.alg                      */
+/*********************************************************************/
+#define NS_TSIG_ALG_HMAC_MD5 "HMAC-MD5.SIG-ALG.REG.INT"       /* @A2A*/
+
+/*********************************************************************/
+/* TSIG error codes                                                  */
+/*********************************************************************/
+#define NS_TSIG_ERROR_NO_TSIG  -110   /* message missing a TSIG  @A2A*/
+#define NS_TSIG_ERROR_NO_SPACE -111   /* message too small to add TSIG
+                                                                 @A2A*/
+#define NS_TSIG_ERROR_FORMERR  -112   /* message is malformed    @A2A*/
+#define NS_TSIG_ERROR_ID_MISMATCH -113 /* message id mismatch    @A2A*/
+
+/*********************************************************************/
+/* UPDATE and TSIG definitions and prototypes                        */
+/*********************************************************************/
+typedef enum __ns_update_operation {
+   ns_uop_delete = 0,
+   ns_uop_add =    1,
+   ns_uop_max =    2,
+   ns_uop_rsvd = 65536 /* Force the enum to be a 4 byte int      @A3A*/
+} ns_update_operation;                                        /* @A2A*/
+
+/*********************************************************************/
+/* This RR-like structure is particular to UPDATE.                   */
+/*********************************************************************/
+struct ns_updrec {
+   struct {
+      struct ns_updrec *prev, *next;/* previous and next record for  */
+   } r_link, r_glink;               /* regular and group.            */
+   ns_sect           r_section;     /* ZONE/PREREQUISITE/UPDATE      */
+   char *            r_dname;       /* owner of the RR               */
+   ns_class          r_class;       /* class number                  */
+   ns_type           r_type;        /* type number                   */
+   unsigned          r_ttl;         /* time to live                  */
+   u_char *          r_data;        /* rdata fields as text string   */
+   u_int             r_size;        /* size of r_data field          */
+   int               r_opcode;      /* type of operation             */
+/* The following fields are ignored by the resolver routines         */
+   struct databuf   *r_dp;          /* databuf to process            */
+   struct databuf   *r_deldp;       /* databuf's deleted/overwritten */
+   u_int             r_zone;        /* zone number on server         */
+};                                                            /* @A2A*/
+typedef struct ns_updrec ns_updrec;                           /* @A2A*/
+
+/*********************************************************************/
+/* Function prototypes                                               */
+/*********************************************************************/
+
+#if (__OS400_TGTVRM__ < 510) || \
+  ((__OS400_TGTVRM__ >= 510) && !defined(__LLP64_IFC__))
+  QBFC_EXTERN int   dn_comp(u_char *, u_char *,
+                            int, u_char **, u_char **);        /*@A1A*/
+  QBFC_EXTERN int   dn_find(u_char *, u_char *,
+                            u_char **, u_char **);             /*@A1A*/
+#else
+
+  QBFC_EXTERN int   dn_comp(u_char * __ptr64,
+                                 u_char * __ptr64, int,
+                                 u_char * __ptr64 * __ptr64,
+                                 u_char * __ptr64 * __ptr64);  /*@A1A*/
+
+
+  QBFC_EXTERN int   dn_find(u_char * __ptr64,
+                                 u_char * __ptr64,
+                                 u_char * __ptr64 * __ptr64,
+                                 u_char * __ptr64 * __ptr64); /*@A1A*/
+
+  #pragma map(dn_comp, "dn_comp_ts64")       /* @A1A*/
+  #pragma map(dn_find, "dn_find_ts64")                       /* @A1A*/
+ #endif /* __OS400_TGTVRM__ < 510                               @A1A*/
+
+
+QBFC_EXTERN int   dn_expand(u_char *, u_char *,
+                            u_char *, u_char *, int);
+QBFC_EXTERN int   dn_skipname(u_char *, u_char *);
+
+QBFC_EXTERN char* hstrerror(int);                    /* @A2A*/
+QBFC_EXTERN void  res_close(void);
+QBFC_EXTERN void  res_init(void);
+QBFC_EXTERN int   res_mkquery(int, char *, int, int, char *,
+                              int, struct rrec *, char *, int);
+QBFC_EXTERN int   res_query(char *, int, int, char *, int);
+QBFC_EXTERN int   res_search(char *, int, int, char *, int);
+QBFC_EXTERN int   res_send(char *, int, char *, int);
+QBFC_EXTERN int   res_xlate(int, char *, int, int, char *, int);
+
+QBFC_EXTERN void  res_nclose(res_state);              /* @A2A*/
+QBFC_EXTERN int   res_ninit(res_state);                /* @A2A*/
+QBFC_EXTERN int   res_nmkquery(res_state, int, const char *, int, int,
+                              const u_char *, int, const u_char *,
+                              u_char *, int);                 /* @A2A*/
+QBFC_EXTERN int   res_nquery(res_state, const char *, int, int,
+                             u_char *, int);                  /* @A2A*/
+QBFC_EXTERN int   res_nsearch(res_state,const char *, int, int,
+                              u_char *, int);                 /* @A2A*/
+QBFC_EXTERN int   res_nsend(res_state,  const u_char *, int,
+                            u_char *, int);                   /* @A2A*/
+QBFC_EXTERN int   res_nisourserver(const res_state,
+                                   const struct sockaddr_in *);
+                                                              /* @A2A*/
+QBFC_EXTERN const char *
+                  res_hostalias(const res_state, const char *,
+                                char *, size_t);              /* @A2A*/
+QBFC_EXTERN int   res_nquerydomain(res_state, const char *,
+                                   const char *, int, int,
+                                   u_char *, int);            /* @A2A*/
+QBFC_EXTERN int   res_nsendsigned(res_state, const u_char *, int,
+                                  ns_tsig_key *, u_char *, int);
+                                                              /* @A2A*/
+QBFC_EXTERN int   res_nupdate(res_state, ns_updrec *,
+                                ns_tsig_key *);               /* @A2A*/
+QBFC_EXTERN int   res_findzonecut (res_state, const char *,
+                                   ns_class, int, char *,
+                                   size_t, struct in_addr *,
+                                   int);                      /* @A2A*/
+QBFC_EXTERN int   res_findzonecut2 (res_state, const char *,
+                                   ns_class, int, char *,
+                                   size_t, union res_sockaddr_union *,
+                                   int);                      /* @C1A*/
+QBFC_EXTERN void  res_setservers(res_state,
+                                 const union res_sockaddr_union *,
+                                 int);                        /* @C1A*/
+QBFC_EXTERN int   res_getservers(res_state,
+                                 union res_sockaddr_union *,
+                                 int);                        /* @C1A*/
+
+/* _XOPEN_SOURCE is defined to be >= 520 & not BSD 4.3 compatibility */
+#if ((_XOPEN_SOURCE+1>520) && !defined(COMPAT_43))
+
+#pragma map(res_findzonecut2, "qso_res_findzonecut298")       /* @C1A*/
+#pragma map(res_getservers, "qso_res_getservers98")           /* @C1A*/
+
+#endif
+/* End _XOPEN_SOURCE                                                 */
+
+QBFC_EXTERN int   res_nmkupdate(res_state, ns_updrec *, u_char *, int);
+
+
+#ifdef __NAMESER_H_EXTENSIONS                                 /* @A2A*/
+/* These are user defined extensions to nameser.h.
+   This header does not exist by default and must be created by
+   the user.  A sample nameser_u.h is stored in save file
+   QUSRTOOL/QATTSYSC.   This sample may be restored to a user header
+   file.                                                         @A2A*/
+#include "nameser_u.h"                                        /* @A2A*/
+#endif                                                        /* @A2A*/
+
+#if (__OS400_TGTVRM__>=510)                                   /* @B1A*/
+#pragma datamodel(pop)                                        /* @B1A*/
+#endif                                                        /* @B1A*/
+
+#endif /* __nameser_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

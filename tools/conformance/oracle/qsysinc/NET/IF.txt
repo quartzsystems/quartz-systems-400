@@ -1,0 +1,285 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5763-SS1                                                      */
+/*     5716-SS1                                                      */
+/*     5769-SS1                                                      */
+/*     5722-SS1                                                      */
+/*     5770-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  1993, 2011                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name:  net/if.h                                       */
+/*                                                                   */
+/* Descriptive Name: Interface tables                                */
+/*                                                                   */
+/* Copyright (c) 1982, 1986 Regents of the University of California. */
+/* All rights reserved.  The Berkeley software License Agreement     */
+/* specifies the terms and conditions for redistribution.            */
+/*                                                                   */
+/*                                                                   */
+/* Description:                                                      */
+/*                                                                   */
+/*          Defines macros, variables, and structures to be          */
+/*          to be used when accessing interface data using sockets.  */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*                                                                   */
+/*          sys/socket.h                                             */
+/*          sys/types.h                                              */
+/*                                                                   */
+/* Macros List:                                                      */
+/*                                                                   */
+/*          IFNAMSIZ                                                 */
+/*          IFLINSIZ                                                 */
+/*          IFLINVLANSIZ                                         @A5A*/
+/*          IF_NAMESIZE                                          @A3A*/
+/*                                                                   */
+/*          IFF_ALLMULTI                                             */
+/*          IFF_BRIDGE                                               */
+/*          IFF_BROADCAST                                            */
+/*          IFF_COMPAC                                               */
+/*          IFF_COMPPROT                                             */
+/*          IFF_DEBUG                                                */
+/*          IFF_LOOPBACK                                             */
+/*          IFF_NOARP                                                */
+/*          IFF_NOTRAILERS                                           */
+/*          IFF_PROMISC                                              */
+/*          IFF_POINTOPOINT                                          */
+/*          IFF_RUNNING                                              */
+/*          IFF_SNAP                                                 */
+/*          IFF_UP                                                   */
+/*          IFF_MULTICAST                                        @A1A*/
+/*          IFF_UNNUMBERED                                       @A3A*/
+/*          IFF_DEPRECATED                                       @A3A*/
+/*          IFF_ADDRCONF                                         @A3A*/
+/*          IFF_NONUD                                            @A3A*/
+/*          IFF_ANYCAST                                          @A3A*/
+/*          IFF_TEMPORARY                                        @A3A*/
+/*          IFF_VIRTUALIP                                        @A3A*/
+/*          IFF_DHCPRUNNING                                      @A4A*/
+/*                                                                   */
+/*          ifc_buf                                                  */
+/*          ifc_req                                                  */
+/*                                                                   */
+/*          ifr_addr                                                 */
+/*          ifr_mask                                                 */
+/*          ifr_broadaddr                                            */
+/*          ifr_flags                                                */
+/*          ifr_mtu                                                  */
+/*          ifr_rbufsize                                             */
+/*          ifr_linename                                             */
+/*          ifr_TOS                                                  */
+/*                                                                   */
+/* Structure List:                                                   */
+/*                                                                   */
+/*          if_req                                                   */
+/*          if_conf                                                  */
+/*          if_nameindex                                         @A2A*/
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*                                                                   */
+/*          if_nametoindex                                       @A2A*/
+/*          if_indextoname                                       @A2A*/
+/*          if_nameindex                                         @A2A*/
+/*          if_freenameindex                                     @A2A*/
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/*   CFD List:                                                       */
+/*                                                                   */
+/*   FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION     */
+/*   ---- ------------ ----- ------- -------- ---------------------- */
+/*   $A0= D3188200     3D10  930806  ROCH     New include.           */
+/*   $A1= D9506600     4D20  970206  ROCH     Add definitions for    */
+/*                                            IP Multicast.          */
+/*   $A2= D99259       5D40  040514  ROCH     Add IPv6 Interface     */
+/*                                            identification         */
+/*   $A3= D93466       5D50  060201  ROCH     Add getifaddrs flags   */
+/*   $A4= D92127       7D10  080805  ROCH     Add IFF_DHCPRUNNING    */
+/*   $A5= FW529277     7.2   100909  ROCH     VLAN ID Support        */
+/*                                                                   */
+/*   End CFD List.                                                   */
+/*                                                                   */
+/*   Additional notes about the Change Activity:                     */
+/*                                                                   */
+/* End Change Activity                                               */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __if_h
+  #define __if_h
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+/*********************************************************************/
+/* Header files                                                      */
+/*********************************************************************/
+
+#include <sys/socket.h>               /* sockaddr structure          */
+#include <sys/types.h>                /* common typedefs             */
+#if (__OS400_TGTVRM__>=510)  /* @B1A*/
+#pragma datamodel(P128)      /* @B1A*/
+#endif                       /* @B1A*/
+
+/*********************************************************************/
+/* Miscellaneous macros                                              */
+/*********************************************************************/
+
+#define IFNAMSIZ          16          /* maximum interface name size */
+#define IFLINSIZ          10          /* maximum line description
+                                         name                        */
+#define IFLINVLANSIZ      16          /* maximum line description  @A5A
+                                         name including vlan id      */
+#define IF_NAMESIZE       IFNAMSIZ    /* max interface name size @A3A*/
+
+/*********************************************************************/
+/* Macros for ifru_flags field in ifreq structure                    */
+/* and ifa_flags field in ifaddrs structure                      @A3A*/
+/*********************************************************************/
+
+#define IFF_ALLMULTI      0x0001      /* receive all multicast packet*/
+#define IFF_BRIDGE        0x0002      /* token-ring routing supported*/
+#define IFF_BROADCAST     0x0004      /* IP broadcast address valid  */
+#define IFF_COMPAC        0x0008      /* compress PPP address/control*/
+#define IFF_COMPPROT      0x0010      /* compress PPP protocol       */
+#define IFF_DEBUG         0x0020      /* activate interface debugging*/
+#define IFF_LOOPBACK      0x0040      /* loopback network interface  */
+#define IFF_NOARP         0x0080      /* ARP not supported           */
+#define IFF_NOTRAILERS    0x0100      /* do not use trailers         */
+#define IFF_PROMISC       0x0200      /* receive all packets         */
+#define IFF_POINTOPOINT   0x0400      /* interface is point-to-point
+                                         link                        */
+#define IFF_RUNNING       0x0800      /* resources allocated and
+                                         running                     */
+#define IFF_SNAP          0x1000      /* extended SAP header
+                                         supported                   */
+#define IFF_UP            0x2000      /* logical interfaces up and
+                                         active                      */
+#define IFF_MULTICAST     0x4000      /* supports IP multicast   @A1A*/
+
+#define IFF_UNNUMBERED    0x8000      /* non-unique address      @A3A*/
+
+/*********************************************************************/
+/* ifru_flags field is only 16 bits so ioctl() can not return any of */
+/* the following flags. They will only be returned on getifaddrs()   */
+/*********************************************************************/
+#define IFF_DEPRECATED    0x00010000  /* interface address
+                                         deprecated              @A3A*/
+#define IFF_ADDRCONF      0x00020000  /* address from stateless
+                                         addrconf                @A3A*/
+#define IFF_NONUD         0x00040000  /* Neighbor Unreachable
+                                         Detected not supported  @A3A*/
+#define IFF_ANYCAST       0x00080000  /* supports IP anycast     @A3A*/
+#define IFF_TEMPORARY     0x00100000  /* temporary addr (RFC3041)@A3A*/
+#define IFF_VIRTUALIP     0x00200000  /* indicates a VIPA        @A3A*/
+#define IFF_DHCPRUNNING   0x00400000  /* indicates a DHCP client @A4A*/
+
+/*********************************************************************/
+/* Macros to simplify access to ifc_ifcu union in ifconf structure   */
+/*********************************************************************/
+
+#define ifc_buf         ifc_ifcu.ifcu_buf
+#define ifc_req         ifc_ifcu.ifcu_req
+
+/*********************************************************************/
+/* Macros to simplify access to ifr_ifru union in ifreq structure    */
+/*********************************************************************/
+
+#define ifr_addr        ifr_ifru.ifru_addr
+#define ifr_mask        ifr_ifru.ifru_mask
+#define ifr_broadaddr   ifr_ifru.ifru_broadaddr
+#define ifr_flags       ifr_ifru.ifru_flags
+#define ifr_mtu         ifr_ifru.ifru_mtu
+#define ifr_rbufsize    ifr_ifru.ifru_rbufsize
+#define ifr_linename    ifr_ifru.ifru_linename
+#define ifr_TOS         ifr_ifru.ifru_TOS
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+struct ifreq {                        /* interface entry request     */
+
+  char ifr_name[IFNAMSIZ];            /* interface name              */
+  union {
+     struct sockaddr ifru_addr;       /* local IP address            */
+     struct sockaddr ifru_mask;       /* subnetwork mask             */
+     struct sockaddr ifru_broadaddr;  /* broadcast address           */
+     short  ifru_flags;               /* interface flags             */
+     int    ifru_mtu;                 /* interface MTU size          */
+     int    ifru_rbufsize;            /* reassembly buffer size      */
+     char   ifru_linename[IFLINVLANSIZ];/* line description name @A5C*/
+     u_char ifru_TOS;                 /* type-of-service             */
+  } ifr_ifru;
+
+};
+
+struct ifconf {                       /* interface configuration list*/
+
+  int ifc_len;                        /* size of user-supplied buffer*/
+  int ifc_configured;                 /* number of interfaces
+                                         configured                  */
+  int ifc_returned;                   /* number of interfaces
+                                         returned                    */
+  union {
+     caddr_t      ifcu_buf;           /* user-supplied buffer address*/
+     struct ifreq *ifcu_req;          /* returned list of interfaces */
+  } ifc_ifcu;
+
+};
+
+struct if_nameindex {
+  unsigned int if_index;                      /* 1, 2, ...               @A2A*/
+  char *if_name;                              /* null terminated name    @A2A*/
+};
+
+
+/*********************************************************************/
+/* Function prototypes                                               */
+/*********************************************************************/
+
+QBFC_EXTERN unsigned int if_nametoindex(const char *);                /* @A2A*/
+QBFC_EXTERN char *if_indextoname(unsigned int, char *);               /* @A2A*/
+QBFC_EXTERN struct if_nameindex *if_nameindex(void);                  /* @A2A*/
+QBFC_EXTERN void   if_freenameindex(struct if_nameindex *);           /* @A2A*/
+
+#if (__OS400_TGTVRM__>=510)  /* @B1A*/
+#pragma datamodel(pop)       /* @B1A*/
+#endif                       /* @B1A*/
+#endif /* __if_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

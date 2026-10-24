@@ -1,0 +1,111 @@
+     D*** START HEADER FILE SPECIFICATIONS *******************************
+     D*
+     D*Header File Name       :  H/ENPSEP
+     D*
+     D*Descriptive Name       :  Network Print Server Exit Program
+     D*                      structures
+     D*
+     D*5716-SS1  (C) Copyright IBM Corp. 1994,1995
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*Description: This include defines the parameter structures for
+     D*         the two exit points defined for the Network Print
+     D*         Server.
+     D*
+     D*          1) QIBM_QNPS_ENTRY format ENTR0100
+     D*               Called when a conversation is allocated for
+     D*               the Network Print Server
+     D*
+     D*          2) QIBM_QNPS_SPLF format SPLF0100
+     D*               Called for a specified spooled file
+     D*
+     D*Header Files Included: None.
+     D*
+     D*Macros List: None.
+     D*
+     D*Structure List:
+     D*            Qnps_Server_Info_t
+     D*            Qnps_Exit_Pgm_RC_t
+     D*            Qnps_Splf_ID_t
+     D*            Qnps_Exit_Pgm_Data_t
+     D*
+     D*Function Prototype List: None.
+     D*
+     D*Change Activity:
+     D*
+     D*CFD List:
+     D*
+     D*FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION
+     D*---- ------------ ----- ------ --------- ----------------------
+     D*$A0= P3981775     3D60  950208 SUTTER:   New Include
+     D*$A1= D97260       5D20  010723 SMURPHY:  Decouple spooled files
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*End Change Activity.
+     D*** END HEADER FILE SPECIFICATIONS *********************************
+     D*Server ID constants
+     D*Format name constants
+     D*Function ID constants
+     D*******************************************************************
+     D*Typedef for Entry exit point format and
+     D*Typedef for Spooled File exit point format
+     D*******************************************************************
+     DENPQSI           DS
+     D*                                             Qnps Server Info
+     D ENPUP                   1     10
+     D*                                   User profile name
+     D ENPSID                 11     20
+     D*                                   Server identifier
+     D ENPFN                  21     28
+     D*                                   User exit format name
+     D ENPFID                 29     32I 0
+     D*                                   Requested function id
+     D*******************************************************************
+     D*Typedef for Spooled File return code format
+     D*Common to all NPS Exit Points
+     D*******************************************************************
+     DENPQEPRC         DS
+     D*                                             Qnps Exit Pgm RC
+     D ENPVALUE                1      1
+     D*                                             Value
+     D*******************************************************************
+     D*Typedef for Spooled File ID
+     D*Specific to QIBM_QNPS_SPLF
+     D*******************************************************************
+     DENPQSID          DS
+     D*                                             Spooled File ID
+     D ENPJN                   1     10
+     D*                                             Job Name
+     D ENPUN                  11     20
+     D*                                             User Name
+     D ENPJNBR                21     26
+     D*                                             Job Number
+     D ENPSN                  27     36
+     D*                                             Splf Name
+     D ENPSNBR                37     40I 0
+     D*                                             Splf Number
+     D ENPJSN                 41     48
+     D*                                             Job Sys Name
+     D ENPCD                  49     55
+     D*                                             Creation Date
+     D ENPCT                  56     61
+     D*                                             Creation Time
+     D*******************************************************************
+     D*Typedef for Exit Program Data
+     D*Specific to QIBM_QNPS_SPLF
+     D*******************************************************************
+     DENPQEPD          DS
+     D*                                             Qnps Exit Pgm Data
+     D ENPLEN                  1      4I 0
+     D*                                             Len
+     D ENPDATA                 5      5
+     D*                       Data[1] is intended to be a variable
+     D*                       length array, however, it can not be
+     D*                       easily defined to faciliate variable

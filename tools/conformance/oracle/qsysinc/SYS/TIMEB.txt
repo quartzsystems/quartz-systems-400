@@ -1,0 +1,97 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5722-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  2003, 2005                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+/* ----------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------- */
+
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/*  Header File Name:  sys/timeb.cleinc                              */
+/*                                                                   */
+/*  Descriptive Name:  ftime API definition                          */
+/*                                                                   */
+/*  Description: Defines structures to be used with the hardware     */
+/*               clock APIs.                                         */
+/*                                                                   */
+/*  Header Files Include : None                                      */
+/*                                                                   */
+/*  Macros List          : _sys_timeb_h                              */
+/*                                                                   */
+/*  Structure List       : timeb                                     */
+/*                                                                   */
+/*  Function Prototype   : ftime                                     */
+/*                                                                   */
+/*  Change Activity :                                                */
+/*                                                                   */
+/*  CFD List:                                                        */
+/*                                                                   */
+/*  FLAG REASON     LEVEL   DATE   PGMR      CHANGE DESCRIPTION      */
+/*  ---- ---------- ------- ------ --------- ----------------------- */
+/*  $01= D9914516   v5r3m0  030330 ROCH      New Include             */
+/*  $A1= P9A62905   v5r3m0f 040402 ROCH      Fix ftime prototype     */
+/*  End CFD List.                                                    */
+/*                                                                   */
+/*   Additional notes about the Change Activity                      */
+/*  End Change Activity                                              */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __sys_timeb_h
+#define __sys_timeb_h  1
+
+#ifndef __QBFC_EXTERN
+  #ifdef __ILEC400__
+    #define QBFC_EXTERN extern
+  #else
+    #define QBFC_EXTERN extern "C"
+  #endif
+  #define __QBFC_EXTERN
+#endif
+
+
+#if (__OS400_TGTVRM__>=510)
+    #pragma datamodel(P128)
+#endif
+
+/*-------------------------------------------------------------------*/
+/*                      Structure definitions                        */
+/*-------------------------------------------------------------------*/
+
+struct timeb
+{
+     long  time;                    /* second                        */
+     long  millitm;                 /* milliseconds                  */
+     int   timezone;                /* minutes west of Greenwich     */
+     int   dstflag;                 /* daylight savings time flag    */
+};
+
+/*-------------------------------------------------------------------*/
+/*                       Function prototypes                         */
+/*-------------------------------------------------------------------*/
+
+QBFC_EXTERN   int ftime(struct timeb * tp);
+
+#if (__OS400_TGTVRM__>=510)
+    #pragma datamodel(pop)
+#endif
+
+#endif                              /* __sys_timeb_h                  */
+
+

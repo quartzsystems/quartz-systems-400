@@ -1,0 +1,401 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/* 5722-SS1                                                          */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  2006, 2007                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+ /*** START HEADER FILE SPECIFICATIONS *****************************/
+ /*                                                                */
+ /* Header File Name: H/QTOOOSPF1                                   */
+ /*                                                                */
+ /* Descriptive Name: Retrieve OSPF State Information              */
+ /*                                                                */
+ /* Description: The Retrieve OSPF State Information(QtooRtvOSPFDta)*/
+ /*              API retrieves information about OSPF that runs    */
+ /*              under the OMPROUTED server.                       */
+ /*                                                                */
+ /* Header Files Included: None.                                   */
+ /*                                                                */
+ /* Macros List: None.                                             */
+ /*                                                                */
+ /* Structure List:                                                */
+ /* Qtoo_SPFI0100_t                 (OSPF General info)            */
+ /*Qtoo_IPv4_OSPF_Area_Entry_t      (OSPF IPv4 Area List Entry)    */
+ /*Qtoo_IPv6_OSPF_Area_Entry_t      (OSPF IPv6 Area List Entry)    */
+ /*Qtoo_IPv4_OSPF_Ifc_Entry_t       (OSPF IPv4 Interface Entry)    */
+ /*Qtoo_IPv6_OSPF_Ifc_Entry_t       (OSPF IPv6 Interface Entry)    */
+ /*Qtoo_IPv4_OSPF_Neighbor_Entry_t  (OSPF IPv4 Neigbhor Entry)     */
+ /*Qtoo_IPv6_OSPF_Neighbor_Entry_t  (OSPF IPv6 Neigbhor Entry)     */
+ /*Qtoo_IPv4_OSPF_Vtl_Link_Entry_t  (OSPF IPv4 Virtual Link Entry) */
+ /*Qtoo_IPv6_OSPF_Vtl_Link_Entry_t  (OSPF IPv6 Virtual Link Entry) */
+ /*Qtoo_IPv4_OSPF_LSA_Entry_t       (OSPF IPv4 LSA Entry)          */
+ /*Qtoo_IPv6_OSPF_LSA_Entry_t       (OSPF IPv6 LSA Entry)          */
+ /*                                                                */
+ /* Function Prototype List: QtooRtvOSPFDta                        */
+ /*                                                                */
+ /* Change Activity:                                               */
+ /*                                                                */
+ /* CFD List:                                                      */
+ /*                                                                */
+ /* FLAG REASON     LEVEL DATE   PGMR        CHANGE DESCRIPTION    */
+ /* ---- ---------- ----- ------ ---------   ----------------------*/
+ /* $A0= D93756     V5R5M0 060710 ROCH:      New Include           */
+
+ #ifndef QTOOOSPF1_H
+ #define QTOOOSPF1_H
+
+ #if (__OS400_TGTVRM__>=510)
+     #pragma datamodel(P128)
+ #endif
+
+/********************************************************************/
+/*                     Interface States                             */
+/********************************************************************/
+#define IFSDOWN        0x01  /* Interface down            */
+#define IFSBACKUP      0x02  /* Interface backup          */
+#define IFSLOOPED      0x04  /* Looped back               */
+#define IFSWAIT        0x08  /* Waiting for DR selection  */
+#define IFSPP          0x10  /* Point-to-point or virtual */
+#define IFSOTHER       0x20  /* Neither DR or Backup      */
+#define IFSBDR         0x40  /* Backup Designated Router  */
+#define IFSDR          0x80  /* Designated Router         */
+
+/********************************************************************/
+/*                     Interface Types                              */
+/********************************************************************/
+#define BCST        1           /* Broadcast interface          */
+#define PP          2           /* Point-to-point interface     */
+#define MA          3           /* Multi-access, non-broadcast  */
+#define VL          4           /* Virtual link                 */
+
+/*******************************************************************/
+/*                     Neighbor States                             */
+/*******************************************************************/
+#define DOWN        0x01            /* Neighbor is unreachable  */
+#define ATTEMPT     0x02            /* Attempting to contact
+                                           neighbor             */
+#define INIT        0x04            /* Have seen its hellos     */
+#define WA2Y        0x08            /* And it has seen ours     */
+#define EXSTART     0x10            /* Master/slave negotiation */
+#define EXCHANGE    0x20            /* Database exchange        */
+#define LOADING     0x40            /* requesting newer pieces  */
+#define FULL        0x80            /* Fully adjacent           */
+
+/*******************************************************************/
+/*                     Virtual Link States                         */
+/*******************************************************************/
+#define VTDOWN          0x01  /* Virtual Link down                 */
+#define VTPP            0x10  /* Virtual Link up                   */
+
+/*******************************************************************/
+/*                    IPv4 Link State Advertisement                */
+/*******************************************************************/
+#define LSTRL          1             /* Router links advertisement  */
+#define LSTNL          2             /* Network links advertisement */
+#define LSTSL          3             /* Summary link advertisement  */
+#define LSTSRL         4             /* Summary to ASBR             */
+#define LSTASL         5             /* AS external link            */
+
+/*******************************************************************/
+/*                    IPv6 Link State Advertisement                */
+/*******************************************************************/
+#define LST6RL          0x2001          /* Router LSA                */
+#define LST6NL          0x2002          /* Network LSA               */
+#define INTERPL         0x2003          /* Inter-Area Prefix LSA     */
+#define INTERRL         0x2004          /* Inter-Area Router LSA     */
+#define LST6ASL         0x4005          /* AS external LSA           */
+#define LST6LL          0x0008          /* Link LSA                  */
+#define INTRAPL         0x2009          /* Intra-Area Prefix LSA     */
+
+
+ /******************************************************************/
+ /* Prototype for calling Retrieve OSPF State Information API      */
+ /* (QtooRtvOSPFDta)                                                  */
+ /******************************************************************/
+ #ifdef  __ILEC400__
+       #pragma argument(QtooRtvOSPFDta,OS,nowiden)
+  void QtooRtvOSPFDta(void *,   /* Receiver variable              */
+                       int,      /* Length of receiver variable    */
+                       char *,   /* Format name                    */
+                       void *);  /* Error code                     */
+
+ #else
+ extern "C"  void QtooRtvOSPFDta(void *,/* Receiver variable      */
+                                  int,    /* Length of receiver variable*/
+                                  char *, /* Format name            */
+                                  void *);/* Error code             */
+
+ #endif
+
+ /******************************************************************/
+ /* Type Definition for the IPv4 OSPF Area List Entry - it contains*/
+ /* the fields for OSPF Area Information.                          */
+ /****                                                          ****/
+ /******************************************************************/
+
+ typedef _Packed struct Qtoo_IPv4_OSPF_Area_Entry
+ {
+       unsigned char  AreaID [15];
+       unsigned char  Reserved [1];
+       unsigned long  SPF_Runs;
+       unsigned long  Area_BR_Count;
+       unsigned long  Total_Number_of_LSA_Area;
+ } Qtoo_IPv4_OSPF_Area_Entry_t;
+
+/******************************************************************/
+/* Type Definition for the IPv6 OSPF Area List Entry - it contains*/
+/* the fields for OSPF Area Information.                          */
+/****                                                          ****/
+/******************************************************************/
+
+ typedef _Packed struct Qtoo_IPv6_OSPF_Area_Entry
+ {
+       unsigned char  AreaID [15];
+       unsigned char  Reserved [1];
+       unsigned long  SPF_Runs;
+       unsigned long  Area_BR_Count;
+       unsigned long  Total_Number_of_LSA_Area;
+ } Qtoo_IPv6_OSPF_Area_Entry_t;
+
+
+
+ /******************************************************************/
+ /* Type Definition for the IPv4 OSPF Interface Entry              */
+ /******************************************************************/
+
+ typedef _Packed struct Qtoo_IPv4_OSPF_Ifc_Entry
+    {
+       char IP_Address[15];
+       char AreaID[15];
+       unsigned char  Reserved1 [2];
+       unsigned long  Interface_Type;
+       unsigned long  Designated_Router_Pri;
+       unsigned long  Transmission_Dly;
+       unsigned long  Retransmission_Dly;
+       unsigned long  Hello_Interval;
+       unsigned long  Inactive_Router_Interval;
+       unsigned long  Poll_Interval;
+       unsigned long  Interface_State;
+       unsigned long  Designated_Router[15];
+       unsigned long  Backup_Designated_Router[15];
+       unsigned char  Reserved2 [2];
+       unsigned long  Cost;
+       char PPP_Connection_Profile[10];
+       unsigned char  Reserved3[2];
+    } Qtoo_IPv4_OSPF_Ifc_Entry_t;
+
+/******************************************************************/
+/* Type Definition for the IPv6 OSPF Interface Entry              */
+/******************************************************************/
+
+ typedef _Packed struct Qtoo_IPv6_OSPF_Ifc_Entry
+    {
+       unsigned char IPv6_Address[45];
+       unsigned char AreaID[15];
+       unsigned long Interface_Type;
+       unsigned long Designated_Router_Pri;
+       unsigned long Transmission_Dly;
+       unsigned long Retransmission_Dly;
+       unsigned long Hello_Interval;
+       unsigned long Inactive_Router_Interval;
+       unsigned long Poll_Interval;
+       unsigned long Interface_State;
+       unsigned char Designated_Router[45];
+       unsigned char Backup_Designated_Router[45];
+       unsigned char Reserved4[2];
+       unsigned long Cost;
+    } Qtoo_IPv6_OSPF_Ifc_Entry_t;
+
+
+/******************************************************************/
+/* Type Definition for the IPv4 OSPF Neighbor Entry               */
+/******************************************************************/
+
+ typedef _Packed struct Qtoo_IPv4_OSPF_Neighbor_Entry
+    {
+       unsigned char Ifc_IP_address     [15];
+       unsigned char Neighbor_IP_Address[15];
+       unsigned char RouterID[15];
+       unsigned char  Reserved5 [3];
+       unsigned long  Neighbor_Options;
+       unsigned long  Neighbor_Priority;
+       unsigned long  Neighbor_State;
+       unsigned long  Neighbor_Events;
+    } Qtoo_IPv4_OSPF_Neighbor_Entry_t;
+
+/******************************************************************/
+/* Type Definition for the IPv6 OSPF Neighbor Entry               */
+/******************************************************************/
+
+ typedef _Packed struct Qtoo_IPv6_OSPF_Neighbor_Entry
+    {
+       unsigned char  Ifc_IP_address     [45];
+       unsigned char  Neighbor_IP_Address[45];
+       unsigned char  RouterID[15];
+       unsigned char  Reserved6 [3];
+       unsigned long  Neighbor_Options;
+       unsigned long  Neighbor_Priority;
+       unsigned long  Neighbor_State;
+       unsigned long  Neighbor_Events;
+    } Qtoo_IPv6_OSPF_Neighbor_Entry_t;
+
+
+
+/******************************************************************/
+/* Type Definition for the IPv4 OSPF Virtual Link Entry           */
+/******************************************************************/
+
+ typedef _Packed struct Qtoo_IPv4_OSPF_Vtl_Link_Entry
+    {
+       unsigned char Transist_Area[15];
+       unsigned char RouterID[15];
+       unsigned char Reserved7 [2];
+       unsigned long Vtl_Link_Transit_Dly;
+       unsigned long Vtl_Link_Retransmission_Dly;
+       unsigned long Vtl_Link_Hello_Interval;
+       unsigned long Vtl_Link_State;
+    } Qtoo_IPv4_OSPF_Vtl_Link_Entry_t;
+
+/******************************************************************/
+/* Type Definition for the IPv6 OSPF Virtual Link Entry           */
+/******************************************************************/
+
+ typedef _Packed struct Qtoo_IPv6_OSPF_Vtl_Link_Entry
+ {
+       unsigned char Transist_Area[15];
+       unsigned char RouterID[15];
+       unsigned char Reserved8 [2];
+       unsigned long Vtl_Link_Transit_Dly;
+       unsigned long Vtl_Link_Retransmission_Dly;
+       unsigned long Vtl_Link_Hello_Interval;
+       unsigned long Vtl_Link_State;
+ }Qtoo_IPv6_OSPF_Vtl_Link_Entry_t;
+
+
+
+ /******************************************************************/
+ /* Type Definition for the IPv4 OSPF LSA Entry                    */
+ /******************************************************************/
+
+ typedef _Packed struct Qtoo_IPv4_OSPF_LSA_Entry
+    {
+       unsigned char  LSA_Area_ID[15];
+       unsigned char  Reserved9 [1];
+       unsigned long  LSA_Type;
+       unsigned char  LSA_State_ID [15];
+       unsigned char  LSA_Router_ID[15];
+       unsigned char  Reserved10 [2];
+       unsigned long  LSA_Sequence;
+       unsigned long  LSA_Age;
+       unsigned long  LSA_Checksum;
+    } Qtoo_IPv4_OSPF_LSA_Entry_t;
+
+/******************************************************************/
+/* Type Definition for the IPv6 OSPF LSA Entry                    */
+/******************************************************************/
+
+ typedef _Packed struct Qtoo_IPv6_OSPF_LSA_Entry
+    {
+       unsigned char  LSA_Area_ID[15];
+       unsigned char  Reserved11 [1];
+       unsigned long  LSA_Type;
+       unsigned char  LSA_State_ID [15];
+       unsigned char  LSA_Router_ID[15];
+       unsigned char  Reserved12 [2];
+       unsigned long  LSA_Sequence;
+       unsigned long  LSA_Age;
+       unsigned long  LSA_Checksum;
+    } Qtoo_IPv6_OSPF_LSA_Entry_t;
+
+
+
+
+ /******************************************************************/
+ /* Type Definition for the SPFI0100 format - General OSPF Info    */
+ /****                                                          ****/
+ /* NOTE: The following type definition only defines the fixed     */
+ /*       portion of the format.  Any varying length field will    */
+ /*       have to be defined by the user.                          */
+ /******************************************************************/
+
+ typedef _Packed struct Qtoo_SPFI0100
+    {
+       unsigned long  Bytes_Returned;
+       unsigned long  Bytes_Available;
+       unsigned char  RouterID[15];
+       unsigned char  Reserved13 [1];
+       unsigned long  Attached_Areas;
+       unsigned long  Dijkstra_Runs;
+       unsigned long  OSPFPkt_Received;
+       unsigned long  LSA_Allocated;
+       unsigned long  Offset_To_IPv4_Area_Lst;
+       unsigned long  Number_Of_IPv4_Area_Lst_Ent;
+       unsigned long  Length_Of_IPv4_Area_Lst_Ent;
+       unsigned long  Offset_To_IPv6_Area_Lst;
+       unsigned long  Number_Of_IPv6_Area_Lst_Ent;
+       unsigned long  Length_Of_IPv6_Area_Lst_Ent;
+       unsigned long  Offset_To_IPv4_Ifc_Lst;
+       unsigned long  Number_Of_IPv4_Ifc_Lst_Ent;
+       unsigned long  Length_To_IPv4_Ifc_Lst_Ent;
+       unsigned long  Offset_To_IPv6_Ifc_Lst;
+       unsigned long  Number_Of_IPv6_Ifc_Lst_Ent;
+       unsigned long  Length_To_IPv6_Ifc_Lst_Ent;
+       unsigned long  Offset_To_IPv4_Neigh_Lst;
+       unsigned long  Number_Of_IPv4_Neigh_Lst_Ent;
+       unsigned long  Length_To_IPv4_Neigh_Lst_Ent;
+       unsigned long  Offset_To_IPv6_Neigh_Lst;
+       unsigned long  Number_Of_IPv6_Neigh_Lst_Ent;
+       unsigned long  Length_To_IPv6_Neigh_Lst_Ent;
+       unsigned long  Offset_To_IPv4_Vtl_Lst;
+       unsigned long  Number_Of_IPv4_Vtl_Lst_Ent;
+       unsigned long  Length_to_IPv4_Vtl_Lst_Ent;
+       unsigned long  Offset_To_IPv6_Vtl_Lst;
+       unsigned long  Number_Of_IPv6_Vtl_Lst_Ent;
+       unsigned long  Length_to_IPv6_Vtl_Lst_Ent;
+       unsigned long  Offset_to_IPv4_LSA_Lst;
+       unsigned long  Number_Of_IPv4_LSA_Lst_Ent;
+       unsigned long  Length_to_IPv4_LSA_Lst_Ent;
+       unsigned long  Offset_to_IPv6_LSA_Lst;
+       unsigned long  Number_Of_IPv6_LSA_Lst_Ent;
+       unsigned long  Length_to_IPv6_LSA_Lst_Ent;
+/*Qtoo_IPv4_OSPF_Area_Entry_t Qtoo_IPv4_OSPF_Area_Entry[];*/
+/*Qtoo_IPv6_OSPF_Area_Entry_t Qtoo_IPv6_OSPF_Area_Entry[];*/
+/*Qtoo_IPv4_OSPF_Ifc_Entry_t Qtoo_IPv4_OSPF_Ifc_Entry[]; */
+/*Qtoo_IPv6_OSPF_Ifc_Entry_t Qtoo_IPv6_OSPF_Ifc_Entry[]; */
+/*Qtoo_IPv4_OSPF_Neighbor_Entry_t Qtoo_IPv4_OSPF_Neighbor_Entry[];*/
+/*Qtoo_IPv6_OSPF_Neighbor_Entry_t Qtoo_IPv6_OSPF_Neighbor_Entry[];*/
+/*Qtoo_IPv4_OSPF_Vtl_Link_Entry_t Qtoo_IPv4_OSPF_Vtl_Link_Entry[];*/
+/*Qtoo_IPv6_OSPF_Vtl_Link_Entry_t Qtoo_IPv6_OSPF_Vtl_Link_Entry[];*/
+/*Qtoo_IPv4_OSPF_LSA_Entry_t Qtoo_IPv4_OSPF_LSA_Entry[];*/
+/*Qtoo_IPv6_OSPF_LSA_Entry_t Qtoo_IPv6_OSPF_LSA_Entry[];*/
+    } Qtoo_SPFI0100_t;
+
+
+
+ #if (__OS400_TGTVRM__>=510)
+     #pragma datamodel(pop)
+ #endif
+
+
+ #endif // QTOOOSPF1_H
+
+
+
+
+
+
+

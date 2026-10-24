@@ -1,0 +1,243 @@
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name:  netinet/ip_icmp.h                              */
+/*                                                                   */
+/* Descriptive Name: Internet Control Message Protocol Header        */
+/*                                                                   */
+/*                                                                   */
+/* 5763-SS1, 5716-SS1                                                */
+/* (C) Copyright IBM Corp. 1993, 1995                                */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/* Copyright (c) 1982, 1986 Regents of the University of California. */
+/* All rights reserved.                                              */
+/* Redistribution and use in source and binary forms are permitted   */
+/* provided that this notice is preserved and that due credit is     */
+/* given to the University of California at Berkeley. The name of the*/
+/* University may not be used to endorse or promote products derived */
+/* from this software without specific prior written permission.     */
+/* This software is provided ``as is'' without express or implied    */
+/* warranty.                                                         */
+/*                                                                   */
+/*                                                                   */
+/* Description:                                                      */
+/*                                                                   */
+/*          Defines macros, variables, and structures that           */
+/*          describe the Internet Control Message Protocol.          */
+/*          Per RFC 792, September 1981 and RFC 1122, October 1989.  */
+/*                                                                   */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*                                                                   */
+/*          sys/types.h                                              */
+/*          netinet/ip.h                                             */
+/*                                                                   */
+/* Macros List:                                                      */
+/*                                                                   */
+/*   ICMP_MINLEN         ICMP_PARAMPROB     ICMP_UNREACH_NET         */
+/*   ICMP_TSLEN          ICMP_TSTAMP        ICMP_UNREACH_HOST        */
+/*   ICMP_MASKLEN        ICMP_TSTAMPREPLY   ICMP_UNREACH_PROTOCOL    */
+/*                       ICMP_IREQ          ICMP_UNREACH_PORT        */
+/*   ICMP_ADVLENMIN      ICMP_IREQREPLY     ICMP_UNREACH_NEEDFRAG    */
+/*   ICMP_ADVLEN         ICMP_MASKREQ       ICMP_UNREACH_SRCFAIL     */
+/*                       ICMP_MASKREPLY     ICMP_TIMXCEED_INTRANS    */
+/*   ICMP_ECHOREPLY                         ICMP_TIMXCEED_REASS      */
+/*   ICMP_UNREACH        ICMP_MAXTYPE       ICMP_REDIRECT_NET        */
+/*   ICMP_SOURCEQUENCH                      ICMP_REDIRECT_HOST       */
+/*   ICMP_REDIRECT       ICMP_INFOTYPE      ICMP_REDIRECT_TOSNET     */
+/*   ICMP_ECHO                              ICMP_REDIRECT_TOSHOST    */
+/*   ICMP_TIMXCEED                                                   */
+/*                                                                   */
+/* Structure List:                                                   */
+/*                                                                   */
+/*          icmp                                                     */
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*                                                                   */
+/*          None                                                     */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/*   CFD List:                                                       */
+/*                                                                   */
+/*   FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION     */
+/*   ---- ------------ ----- ------- -------- ---------------------- */
+/*   $A0= D3188200     3D10  930806  ROCH     New include.           */
+/*                                                                   */
+/*   End CFD List.                                                   */
+/*                                                                   */
+/*   Additional notes about the Change Activity:                     */
+/*                                                                   */
+/* End Change Activity                                               */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __ip_icmp_h
+  #define __ip_icmp_h
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+
+/*********************************************************************/
+/*  Header Files                                                     */
+/*********************************************************************/
+
+#include <sys/types.h>            /* common typedefs                 */
+#include <netinet/ip.h>           /* IP declarations                 */
+
+/*********************************************************************/
+/* Defines to simplify using icmp_hun union in icmp structure        */
+/*********************************************************************/
+
+#define icmp_pptr       icmp_hun.ih_pptr
+#define icmp_gwaddr     icmp_hun.ih_gwaddr
+#define icmp_id         icmp_hun.ih_idseq.icd_id
+#define icmp_seq        icmp_hun.ih_idseq.icd_seq
+#define icmp_void       icmp_hun.ih_void
+
+/*********************************************************************/
+/* Defines to simplify using icmp_dun union in icmp structure        */
+/*********************************************************************/
+
+#define icmp_otime      icmp_dun.id_ts.its_otime
+#define icmp_rtime      icmp_dun.id_ts.its_rtime
+#define icmp_ttime      icmp_dun.id_ts.its_ttime
+#define icmp_ip         icmp_dun.id_ip.idi_ip
+#define icmp_mask       icmp_dun.id_mask
+#define icmp_data       icmp_dun.id_data
+
+/*********************************************************************/
+/* Lower bounds on packet lengths for various types                  */
+/*********************************************************************/
+
+#define ICMP_MINLEN  8                        /* minimum length      */
+#define ICMP_TSLEN   (8 + 3 * sizeof(u_long)) /* timestamp length    */
+#define ICMP_MASKLEN 12                       /* address mask length */
+
+/*********************************************************************/
+/* Macro to compute the minimum length if ICMP error type messages   */
+/* which contain imbedded IP datagram fragments                      */
+/*********************************************************************/
+
+#define ICMP_ADVLENMIN  (8 + sizeof (struct ip) + 8)
+
+/*********************************************************************/
+/* Macro to compute the actual length if ICMP error type messages    */
+/* which contain imbedded IP datagram fragments                      */
+/*********************************************************************/
+
+#define ICMP_ADVLEN(p)  (8 + ((p)->icmp_ip.ip_hl << 2) + 8)
+
+/*********************************************************************/
+/* Definition of ICMP message type field values                      */
+/*********************************************************************/
+
+#define ICMP_ECHOREPLY        0    /* Echo reply                     */
+#define ICMP_UNREACH          3    /* Destination unreachable        */
+#define ICMP_SOURCEQUENCH     4    /* Source quench                  */
+#define ICMP_REDIRECT         5    /* Redirect (change a route)      */
+#define ICMP_ECHO             8    /* Echo request                   */
+#define ICMP_TIMXCEED         11   /* Time exceeded for datagram     */
+#define ICMP_PARAMPROB        12   /* Parameter problem on datagram  */
+#define ICMP_TSTAMP           13   /* Timestamp request              */
+#define ICMP_TSTAMPREPLY      14   /* Timestamp reply                */
+#define ICMP_IREQ             15   /* Information request            */
+#define ICMP_IREQREPLY        16   /* Information reply              */
+#define ICMP_MASKREQ          17   /* Address mask request           */
+#define ICMP_MASKREPLY        18   /* Address mask reply             */
+
+#define ICMP_MAXTYPE          18
+
+/*********************************************************************/
+/* Definition of ICMP message type sub code field values             */
+/*********************************************************************/
+
+#define ICMP_UNREACH_NET        0  /* Network unreachable            */
+#define ICMP_UNREACH_HOST       1  /* Host unreachable               */
+#define ICMP_UNREACH_PROTOCOL   2  /* Protocol unreachable           */
+#define ICMP_UNREACH_PORT       3  /* Port unreachable               */
+#define ICMP_UNREACH_NEEDFRAG   4  /* Fragmentation needed & DF set  */
+#define ICMP_UNREACH_SRCFAIL    5  /* Source route failed            */
+
+#define ICMP_TIMXCEED_INTRANS   0  /* Time-to-live count exceeded    */
+#define ICMP_TIMXCEED_REASS     1  /* Frag. reassembly time exceeded */
+
+#define ICMP_REDIRECT_NET       0  /* Redirect for network           */
+#define ICMP_REDIRECT_HOST      1  /* Redirect for the host          */
+#define ICMP_REDIRECT_TOSNET    2  /* Redirect for tos and network   */
+#define ICMP_REDIRECT_TOSHOST   3  /* Redirect for tos and host      */
+
+/*********************************************************************/
+/* Macro for identifying INFO-type ICMP messages                     */
+/*********************************************************************/
+
+#define ICMP_INFOTYPE(type)                                      \
+  ((type) == ICMP_ECHOREPLY || (type) == ICMP_ECHO ||            \
+   (type) == ICMP_TSTAMP || (type) == ICMP_TSTAMPREPLY ||        \
+   (type) == ICMP_IREQ || (type) == ICMP_IREQREPLY ||            \
+   (type) == ICMP_MASKREQ || (type) == ICMP_MASKREPLY)
+
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+struct icmp {                     /* ICMP header                     */
+
+    u_char      icmp_type;        /* ICMP message type               */
+    u_char      icmp_code;        /* type sub code                   */
+    u_short     icmp_cksum;       /* ICMP checksum                   */
+
+    union {                       /* Message type substructures:     */
+        u_char ih_pptr;           /*   Parameter problem pointer     */
+        struct in_addr ih_gwaddr; /*   Redirect gateway address      */
+        struct ih_idseq {         /*   Echo/Timestamp Request/Reply  */
+            u_short     icd_id;   /*      Indentifier                */
+            u_short     icd_seq;  /*      Sequence number            */
+        } ih_idseq;
+        int ih_void;              /* Unused part of some messages    */
+    } icmp_hun;
+
+    union {
+        struct id_ts {            /* Timestamp substructure          */
+            u_long its_otime;     /*    Originate timestamp          */
+            u_long its_rtime;     /*    Receive timestamp            */
+            u_long its_ttime;     /*    Transmit timestamp           */
+        } id_ts;
+        struct id_ip  {           /* Imbedded 'original' IP header   */
+            struct ip idi_ip;     /* in ICMP error-type messages.    */
+                                  /* Includes IP header,IP options,  */
+                                  /* and 64 bits of data.            */
+        } id_ip;
+        u_long  id_mask;          /* Address mask request/reply      */
+        char    id_data[1];       /* Beginning of echo request data  */
+    } icmp_dun;
+
+};
+
+#endif  /* __ip_icmp_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

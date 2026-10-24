@@ -1,0 +1,72 @@
+     D*begin_generated_IBM_copyright_prolog
+     D*This is an automatically generated copyright prolog.
+     D*After initializing,  DO NOT MODIFY OR MOVE
+     D*-----------------------------------------------------------------
+     D*
+     D*Product(s):
+     D*5722-SS1
+     D*
+     D*(C)Copyright IBM Corp.  2007, 2007
+     D*
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*---------------------------------------------------------------
+     D*
+     D*end_generated_IBM_copyright_prolog
+     D*** START HEADER FILE SPECIFICATIONS ****************************
+     D*
+     D*Header File Name: H/ETOCSVRE
+     D*
+     D*Descriptive Name: User-defined Server Exit Declarations
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*
+     D*Description: The Start TCP/IP, Start TCP/IP Server,
+     D*         End TCP/IP, and End TCP/IP Server commands call
+     D*         user-written program for user-defined servers.
+     D*
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*
+     D*Header Files Included: None
+     D*
+     D*Macros List: None
+     D*
+     D*Structure List: Qtoc_Server_Action
+     D*
+     D*Function Prototype List: None.
+     D*
+     D*Change Activity:
+     D*FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION
+     D*---- ----------- -----  ------ --------- ----------------------
+     D*$A0= D93424      v5r5m0 030224           New part
+     D*
+     D*End Change Activity.
+     D*****************************************************************
+     D*****************************************************************
+     D*Structure for user-defined server exit program call
+     D*****************************************************************
+     DETOQSA           DS
+     D*                                             Qtoc Server Action
+     D ETOCTION                1     10
+     D*                                             Action
+     D ETOERVED               11     32
+     D*                                             Reserved
+     D ETOIN                  33     64
+     D*                                             Instance Name
+     D ETOOTSV                65     68I 0
+     D*                                             Offset to Startup Values
+     D ETOLOSV                69     72I 0
+     D*                                             Length Of Startup Values
+     D*ETOSV                  73     73
+     D*
+     D*                                  variable length data

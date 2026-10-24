@@ -1,0 +1,403 @@
+     D*** START HEADER FILE SPECIFICATIONS ****************************
+     D*
+     D*Header File Name: H/QUSREG
+     D*
+     D*Descriptive Name: Standard Registration Structures.
+     D*
+     D*5763-SS1  (C) Copyright IBM Corp. 1994,1994
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*
+     D*Description: All of the structures that are used in the
+     D*          Registration facilities are kept here to avoid
+     D*          conflict due to repetition.
+     D*
+     D*Header Files Included: None.
+     D*
+     D*Macros List: None.
+     D*
+     D*Structure List: Qus_Prep_Exit_t
+     D*             Qus_Qmff_t
+     D*             Qus_Selcrtr_t
+     D*             Qus_Select_Entry_t
+     D*             Qus_Program_Data_t
+     D*             Qus_EXTI0100_t
+     D*             Qus_EXTI0100_Entry_t
+     D*             Qus_EXTI0200_t
+     D*             Qus_EXTI0200_Entry_t
+     D*             Qus_EXTI0300_t
+     D*             Qus_EXTI0300_Entry_t
+     D*
+     D*Function Prototype List: none.
+     D*
+     D*Change Activity:
+     D*
+     D*CFD List:
+     D*
+     D*FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION
+     D*---- ------------ ----- ------ --------- ----------------------
+     D*$A0= D2862000     3D10  940327 LUPA:     New Include
+     D*$B1= D9705820     4D40  980819 MBAILEY:  Add threadsafe and
+     D*                                      multithreaded job
+     D*                                      action.
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*End Change Activity.
+     D*** END HEADER FILE SPECIFICATIONS ******************************
+     D*****************************************************************
+     D*Format structure for the Preprocessing Exit Program Format for
+     D*QusRegisterExitPoint API.
+     D*****************************************************************
+     DQUSPE            DS
+     D*                                             Qus Prep Exit
+     D QUSPPN                  1     10
+     D*                                             Prep Prog Name
+     D QUSPPLIB               11     20
+     D*                                             Prep Prog Library
+     D QUSPPF                 21     28
+     D*                                             Prep Prog Format
+     D*****************************************************************
+     D*Format structure for the Qualified Message File Format for the
+     D*entire sevice program.
+     D*****************************************************************
+     DQUSQMFF          DS
+     D*                                             Qus Qmff
+     D QUSMFIL                 1     10
+     D*                                             Message File
+     D QUSMLIB                11     20
+     D*                                             Message Library
+     D QUSMI                  21     27
+     D*                                             Message Id
+     D*****************************************************************
+     D*Format structure for the Exit Program Selection Criteria of the
+     D*QusRetrieveExitInformation API.
+     D****                                                          ***
+     D*NOTE: This structure only defines fixed fields. Any varying
+     D*   length or repeating field will have to be defined by
+     D*   the user.
+     D*****************************************************************
+     DQUSSE            DS
+     D*                                             Qus Select Entry
+     D QUSSE00                 1      4I 0
+     D*                                             Size Entry
+     D QUSCO                   5      8I 0
+     D*                                             Comp Operator
+     D QUSSPD                  9     12I 0
+     D*                                             Start Pgm Data
+     D QUSLCD                 13     16I 0
+     D*                                             Length Comp Data
+     D*QUSCD                  17     17
+     D*
+     D*                                     Varying length
+     DQUSS             DS
+     D*                                             Qus Selcrtr
+     D QUSNBRSC                1      4I 0
+     D*                                             Number Sel Criteria
+     D*QUSARRAY                      17    DIM(00001)
+     D* QUSSE01                       9B 0 OVERLAY(QUSARRAY:00001)
+     D* QUSCO00                       9B 0 OVERLAY(QUSARRAY:00005)
+     D* QUSSPD00                      9B 0 OVERLAY(QUSARRAY:00009)
+     D* QUSLCD00                      9B 0 OVERLAY(QUSARRAY:00013)
+     D* QUSCD00                       1    OVERLAY(QUSARRAY:00017)
+     D*
+     D*                                     Varying length
+     D*****************************************************************
+     D*Format Structure for the Program Data.  This structure has
+     D*set up to facilitate COBOL and RPG pointer basing.
+     D*****************************************************************
+     DQUSPGMD          DS
+     D*                                             Qus Program Data
+     D QUSDATA01               1      1
+     D*                                     Varying length
+     D*****************************************************************
+     D*Format structure for the EXTI0100 Format for the
+     D*QusRetrieveExitInformation API.
+     D****                                                          ***
+     D*NOTE: This structure only defines fixed fields. Any varying
+     D*   length or repeating field will have to be defined by
+     D*   the user.
+     D*****************************************************************
+     DQUS0100E         DS
+     D*                                             Qus EXTI0100 Entry
+     D QUSEPN00                1     20
+     D*                                             Exit Point Name
+     D QUSFN08                21     28
+     D*                                             Format Name
+     D QUSMEP                 29     32I 0
+     D*                                             Max Exit Programs
+     D QUSNBREP               33     36I 0
+     D*                                             Number Exit Programs
+     D QUSAD                  37     37
+     D*                                             Allow Deregistration
+     D QUSACC                 38     38
+     D*                                             Allow Change Control
+     D QUSREP                 39     39
+     D*                                             Registered Exit Point
+     D QUSPNAP                40     49
+     D*                                             Prep Name Add Pgm
+     D QUSPLAP                50     59
+     D*                                             Prep Lib Add Pgm
+     D QUSPFA                 60     67
+     D*                                             Prep Format Add
+     D QUSPNRP                68     77
+     D*                                             Prep Name Rmv Pgm
+     D QUSPLRP                78     87
+     D*                                             Prep Lib Rmv Pgm
+     D QUSPFR                 88     95
+     D*                                             Prep Format Rmv
+     D QUSPNRI                96    105
+     D*                                             Prep Name Rtv Info
+     D QUSPLRI               106    115
+     D*                                             Prep Lib Rtv Info
+     D QUSPFR00              116    123
+     D*                                             Prep Format Rtv
+     D QUSDI                 124    124
+     D*                                             Desc Indicator
+     D QUSDMFIL              125    134
+     D*                                             Desc Msg File
+     D QUSDMLIB              135    144
+     D*                                             Desc Msg Library
+     D QUSDMI                145    151
+     D*                                             Desc Msg Id
+     D QUSTD                 152    201
+     D*                                             Text Description
+     D*QUSERVED03            202    202
+     D*
+     D*                                      Varying length
+     DQUSI0100         DS
+     D*                                             Qus EXTI0100
+     D QUSBRTN                 1      4I 0
+     D*                                             Bytes Returned
+     D QUSBAVL00               5      8I 0
+     D*                                             Bytes Available
+     D QUSCH                   9     24
+     D*                                             Continue Handle
+     D QUSOEPE                25     28I 0
+     D*                                             Offset Exit Point Entry
+     D QUSNBRPR               29     32I 0
+     D*                                             Number Points Returned
+     D QUSLEPE                33     36I 0
+     D*                                             Length Exit Point Entry
+     D*QUSERVED04             37     37
+     D*
+     D*                                      Varying length
+     D*QUSARRAY00                   202    DIM(00001)
+     D* QUSEPN01                     20    OVERLAY(QUSARRAY00:00001)
+     D* QUSFN09                       8    OVERLAY(QUSARRAY00:00021)
+     D* QUSMEP00                      9B 0 OVERLAY(QUSARRAY00:00029)
+     D* QUSNBREP00                    9B 0 OVERLAY(QUSARRAY00:00033)
+     D* QUSAD00                       1    OVERLAY(QUSARRAY00:00037)
+     D* QUSACC00                      1    OVERLAY(QUSARRAY00:00038)
+     D* QUSREP00                      1    OVERLAY(QUSARRAY00:00039)
+     D* QUSPNAP00                    10    OVERLAY(QUSARRAY00:00040)
+     D* QUSPLAP00                    10    OVERLAY(QUSARRAY00:00050)
+     D* QUSPFA00                      8    OVERLAY(QUSARRAY00:00060)
+     D* QUSPNRP00                    10    OVERLAY(QUSARRAY00:00068)
+     D* QUSPLRP00                    10    OVERLAY(QUSARRAY00:00078)
+     D* QUSPFR01                      8    OVERLAY(QUSARRAY00:00088)
+     D* QUSPNRI00                    10    OVERLAY(QUSARRAY00:00096)
+     D* QUSPLRI00                    10    OVERLAY(QUSARRAY00:00106)
+     D* QUSPFR02                      8    OVERLAY(QUSARRAY00:00116)
+     D* QUSDI00                       1    OVERLAY(QUSARRAY00:00124)
+     D* QUSDMFIL00                   10    OVERLAY(QUSARRAY00:00125)
+     D* QUSDMLIB00                   10    OVERLAY(QUSARRAY00:00135)
+     D* QUSDMI00                      7    OVERLAY(QUSARRAY00:00145)
+     D* QUSTD00                      50    OVERLAY(QUSARRAY00:00152)
+     D* QUSERVED05                    1    OVERLAY(QUSARRAY00:00202)
+     D*
+     D*                                      Varying length
+     D*****************************************************************
+     D*Format structure for the EXTI0200 Format for the
+     D*QusRetrieveExitInformation API.
+     D****                                                          ***
+     D*NOTE: This structure only defines fixed fields. Any varying
+     D*   length or repeating field will have to be defined by
+     D*   the user.
+     D*****************************************************************
+     DQUS0200E         DS
+     D*                                             Qus EXTI0200 Entry
+     D QUSONE                  1      4I 0
+     D*                                             Offset Next Entry
+     D QUSEPN02                5     24
+     D*                                             Exit Point Name
+     D QUSFN10                25     32
+     D*                                             Format Name
+     D QUSREP01               33     33
+     D*                                             Registered Exit Pt
+     D QUSCE                  34     34
+     D*                                             Complete Entry
+     D QUSERVED06             35     36
+     D*                                             Reserved
+     D QUSPGMN                37     40I 0
+     D*                                             Program Number
+     D QUSPGMN00              41     50
+     D*                                             Program Name
+     D QUSPGML                51     60
+     D*                                             Program Library
+     D QUSDC                  61     64I 0
+     D*                                             Data Ccsid
+     D QUSOED                 65     68I 0
+     D*                                             Offset Exit Data
+     D QUSLED                 69     72I 0
+     D*                                             Length Exit Data
+     D QUSDSAFE               73     73
+     D*                                                        @B1A
+     D QUSMJA                 74     74
+     D*                                                        @B1A
+     D QUSSVU                 75     75
+     D*                                                        @B1A
+     D*QUSERVED06             76     76
+     D*
+     D*                                      Varying length
+     D*QUSPD                          1
+     D* QUSDATA02             77     77
+     D*
+     D*                                      Varying length
+     DQUSI0200         DS
+     D*                                             Qus EXTI0200
+     D QUSBRTN00               1      4I 0
+     D*                                             Bytes Returned
+     D QUSBAVL01               5      8I 0
+     D*                                             Bytes Available
+     D QUSCH00                 9     24
+     D*                                             Continue Handle
+     D QUSOPGME               25     28I 0
+     D*                                             Offset Program Entry
+     D QUSNBRPR00             29     32I 0
+     D*                                             Number Programs Returned
+     D QUSLPGME               33     36I 0
+     D*                                             Length Program Entry
+     D*QUSERVED07             37     37
+     D*
+     D*                                      Varying length
+     D*QUSARRAY01                    77    DIM(00001)
+     D* QUSONE00                      9B 0 OVERLAY(QUSARRAY01:00001)
+     D* QUSEPN03                     20    OVERLAY(QUSARRAY01:00005)
+     D* QUSFN11                       8    OVERLAY(QUSARRAY01:00025)
+     D* QUSREP02                      1    OVERLAY(QUSARRAY01:00033)
+     D* QUSCE00                       1    OVERLAY(QUSARRAY01:00034)
+     D* QUSERVED08                    2    OVERLAY(QUSARRAY01:00035)
+     D* QUSPGMN01                     9B 0 OVERLAY(QUSARRAY01:00037)
+     D* QUSPGMN02                    10    OVERLAY(QUSARRAY01:00041)
+     D* QUSPGML00                    10    OVERLAY(QUSARRAY01:00051)
+     D* QUSDC00                       9B 0 OVERLAY(QUSARRAY01:00061)
+     D* QUSOED00                      9B 0 OVERLAY(QUSARRAY01:00065)
+     D* QUSLED00                      9B 0 OVERLAY(QUSARRAY01:00069)
+     D* QUSDSAFE00                    1    OVERLAY(QUSARRAY01:00073)
+     D* QUSMJA00                      1    OVERLAY(QUSARRAY01:00074)
+     D* QUSSVU00                      1    OVERLAY(QUSARRAY01:00075)
+     D* QUSERVED08                    1    OVERLAY(QUSARRAY01:00076)
+     D* QUSPD00                       1
+     D*  QUSDATA03                    1    OVERLAY(QUSARRAY01:00001)
+     D*
+     D*                                      Varying length
+     D*****************************************************************
+     D*Format structure for the EXTI0300 Format for the
+     D*QusRetrieveExitInformation API.
+     D****                                                          ***
+     D*NOTE: This structure only defines fixed fields. Any varying
+     D*   length or repeating field will have to be defined by
+     D*   the user.
+     D*****************************************************************
+     DQUS0300E         DS
+     D*                                             Qus EXTI0300 Entry
+     D QUSONE01                1      4I 0
+     D*                                             Offset Next Entry
+     D QUSEPN04                5     24
+     D*                                             Exit Point Name
+     D QUSFN12                25     32
+     D*                                             Format Name
+     D QUSREP03               33     33
+     D*                                             Registered Exit Pt
+     D QUSCE01                34     34
+     D*                                             Complete Entry
+     D QUSERVED09             35     36
+     D*                                             Reserved
+     D QUSPGMN03              37     40I 0
+     D*                                             Program Number
+     D QUSPGMN04              41     50
+     D*                                             Program Name
+     D QUSPGML01              51     60
+     D*                                             Program Library
+     D QUSDI01                61     61
+     D*                                             Desc Indicator
+     D QUSMFIL00              62     71
+     D*                                             Message File
+     D QUSMFILL               72     81
+     D*                                             Message File Library
+     D QUSMI00                82     88
+     D*                                             Message Id
+     D QUSTD01                89    138
+     D*                                             Text Desc
+     D QUSRSV201             139    140
+     D*                                             Reserved2
+     D QUSDC01               141    144I 0
+     D*                                             Data Ccsid
+     D QUSOPD                145    148I 0
+     D*                                             Offset Pgm Data
+     D QUSLPD                149    152I 0
+     D*                                             Length Pgm Data
+     D QUSDSAFE01            153    153
+     D*                                                        @B1A
+     D QUSMJA01              154    154
+     D*                                                        @B1A
+     D QUSSVU01              155    155
+     D*                                                        @B1A
+     D*QUSERVED09            156    156
+     D*
+     D*                                      Varying length
+     D*QUSPD01                        1
+     D* QUSDATA04            157    157
+     D*
+     D*                                      Varying length
+     DQUSI0300         DS
+     D*                                             Qus EXTI0300
+     D QUSBRTN01               1      4I 0
+     D*                                             Bytes Returned
+     D QUSBAVL02               5      8I 0
+     D*                                             Bytes Available
+     D QUSCH01                 9     24
+     D*                                             Continue Handle
+     D QUSOPGME00             25     28I 0
+     D*                                             Offset Program Entry
+     D QUSNBRPR01             29     32I 0
+     D*                                             Number Programs Returned
+     D QUSLPGME00             33     36I 0
+     D*                                             Length Program Entry
+     D*QUSERVED10             37     37
+     D*
+     D*                                      Varying length
+     D*QUSARRAY02                   157    DIM(00001)
+     D* QUSONE02                      9B 0 OVERLAY(QUSARRAY02:00001)
+     D* QUSEPN05                     20    OVERLAY(QUSARRAY02:00005)
+     D* QUSFN13                       8    OVERLAY(QUSARRAY02:00025)
+     D* QUSREP04                      1    OVERLAY(QUSARRAY02:00033)
+     D* QUSCE02                       1    OVERLAY(QUSARRAY02:00034)
+     D* QUSERVED11                    2    OVERLAY(QUSARRAY02:00035)
+     D* QUSPGMN05                     9B 0 OVERLAY(QUSARRAY02:00037)
+     D* QUSPGMN06                    10    OVERLAY(QUSARRAY02:00041)
+     D* QUSPGML02                    10    OVERLAY(QUSARRAY02:00051)
+     D* QUSDI02                       1    OVERLAY(QUSARRAY02:00061)
+     D* QUSMFIL01                    10    OVERLAY(QUSARRAY02:00062)
+     D* QUSMFILL00                   10    OVERLAY(QUSARRAY02:00072)
+     D* QUSMI01                       7    OVERLAY(QUSARRAY02:00082)
+     D* QUSTD02                      50    OVERLAY(QUSARRAY02:00089)
+     D* QUSRSV202                     2    OVERLAY(QUSARRAY02:00139)
+     D* QUSDC02                       9B 0 OVERLAY(QUSARRAY02:00141)
+     D* QUSOPD00                      9B 0 OVERLAY(QUSARRAY02:00145)
+     D* QUSLPD00                      9B 0 OVERLAY(QUSARRAY02:00149)
+     D* QUSDSAFE02                    1    OVERLAY(QUSARRAY02:00153)
+     D* QUSMJA02                      1    OVERLAY(QUSARRAY02:00154)
+     D* QUSSVU02                      1    OVERLAY(QUSARRAY02:00155)
+     D* QUSERVED11                    1    OVERLAY(QUSARRAY02:00156)
+     D* QUSPD02                       1
+     D*  QUSDATA05                    1    OVERLAY(QUSARRAY02:00001)
+     D*
+     D*                                      Varying length

@@ -1,0 +1,65 @@
+     D*** START HEADER FILE SPECIFICATIONS *******************************
+     D*
+     D*Include File Name      :  EZHQEP
+     D*
+     D*Descriptive Name       :  Data Queue Server
+     D*                      Exit Program Structure
+     D*
+     D*5716-SS1  (C) Copyright IBM Corp. 1995.
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*Description: This include defines the parameter structures for
+     D*         the exit point defined for the Data Queue server.
+     D*
+     D*         QIBM_QZHQ_DATA_QUEUE format ZHQ00100
+     D*
+     D*
+     D*Header Files Included: None.
+     D*
+     D*Macros List: None.
+     D*
+     D*Structure List: EZHQDQF
+     D*
+     D*Function Prototype List: None.
+     D*
+     D*Change Activity:
+     D*
+     D*CFD List:
+     D*
+     D*FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION
+     D*---- ------------ ----- ------ --------- ----------------------
+     D*$A0= P3978167     3D60  950203 ROCHESTER:New Include
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*End Change Activity.
+     D*** END HEADER FILE SPECIFICATIONS *********************************
+     D*******************************************************************
+     D*Structure for Data Queue Server exit program structure
+     D*******************************************************************
+     DEZHQDQF          DS
+     D*                                             Qzhq DataQueue Format
+     D EZHUP                   1     10
+     D*                                 User profile
+     D EZHAN                  11     20
+     D*                                 Server ID
+     D EZHFN                  21     28
+     D*                                 Format name
+     D EZHCTION               29     32I 0
+     D*                                 Requested function
+     D EZHBJECT               33     42
+     D*                                 Object name
+     D EZHBRARY               43     52
+     D*                                 object library name
+     D EZHKEYOP               53     54
+     D*                                 Key Operator
+     D EZHKL                  55     58I 0
+     D*                                 Key Length
+     D EZHKV                  59    314
+     D*                                 Key Value

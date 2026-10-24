@@ -1,0 +1,91 @@
+     D*** START HEADER FILE SPECIFICATIONS ******************************
+     D*
+     D*Header File Name: H/QTMMSNDM
+     D*
+     D*Descriptive Name: SMTP Send Mail (TMM) API.
+     D*
+     D*5716-SS1  (C) Copyright IBM Corp. 1996
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*Description: Include header file for the structures and
+     D*         constants for the QtmmSendMail API.
+     D*
+     D*Header Files Included:
+     D*          None.
+     D*
+     D*Macros List: None.
+     D*
+     D*Structure List:
+     D*            Qtmm_ADDT0100_t
+     D*
+     D*Function Prototype List:
+     D*
+     D*            QtmmSendMail
+     D*
+     D*Change Activity:
+     D*
+     D*CFD List:
+     D*
+     D*FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION
+     D*---- ------------ ----- ------ -------   -----------------------
+     D*$A0= P3631187     4D10  960726 HALLMS :   New Include for V4R1
+     D*                                      PTFed to 3.7
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*
+     D*End Change Activity.
+     D*
+     D*** END HEADER FILE SPECIFICATIONS ********************************
+     D*******************************************************************
+     D*
+     D*WARNING:          This macro/include is a CUE.
+     D*              This macro/include provides an interface
+     D*              that is externally documented to customers.
+     D*              or is function that any user could create.
+     D*              Any changes to this part MUST be upward
+     D*              compatible at compile and run time.
+     D*              This interface may be generated as in-line
+     D*              code in customer programs.
+     D*
+     D*              CSTATUS:  OT
+     D*
+     D*******************************************************************
+     D*------------------------------------------------------------------
+     D** Various Defines                                                *
+     D*------------------------------------------------------------------
+     D*------------------------------------------------------------------
+     D*****    Different Distribution Types associated with Recipients **
+     D*------------------------------------------------------------------
+     D*******************************************************************
+     D*Type Definition for the ADDT0100 Format
+     D****                                                            ***
+     D*NOTE: The following type definition only defines the fixed
+     D*  portion of the format.  Any varying length field will
+     D*  have to be defined by the user.
+     D*******************************************************************
+     DQTMT0100         DS
+     D*                                             Qtmm ADDT0100
+     D QTMNASO                 1      4I 0
+     D*                                             Next Addr Structure Offset
+     D QTMAL                   5      8I 0
+     D*                                             Addr Length
+     D QTMFN                   9     16
+     D*                                             Format Name
+     D QTMDT                  17     20I 0
+     D*                                  Normal, BCC, CC recipients
+     D QTMERVED               21     24I 0
+     D*                                             Reserved
+     D*QTMADDR                25     25
+     D*
+     D*              Variable length SMTP address
+     D*******************************************************************
+     D*Prototype for calling  Send Mail
+     D*(QtmmSendMail) API
+     D*******************************************************************
+     D QTMMSM          C                   'QtmmSendMail'

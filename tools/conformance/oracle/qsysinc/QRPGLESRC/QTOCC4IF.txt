@@ -1,0 +1,93 @@
+     D*begin_generated_IBM_copyright_prolog
+     D*This is an automatically generated copyright prolog.
+     D*After initializing,  DO NOT MODIFY OR MOVE
+     D*-----------------------------------------------------------------
+     D*
+     D*Product(s):
+     D*5722-SS1
+     D*
+     D*(C)Copyright IBM Corp.  2005, 2005
+     D*
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*---------------------------------------------------------------
+     D*
+     D*end_generated_IBM_copyright_prolog
+     D*** START HEADER FILE SPECIFICATIONS ****************************
+     D*
+     D*Header File Name: H/QTOCC4IF
+     D*
+     D*Descriptive Name: Change IPv4 Interface API information
+     D*
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*Description:  Structures for calling the QTOCC4IF API
+     D*
+     D*Header Files Included:    None
+     D*
+     D*Macros List:              None
+     D*
+     D*Structure List:           Qtocc4if_PrfIfcLst_t
+     D*                      Qtoc_IFCH0100_t
+     D*
+     D*Function Prototype List:  QTOCC4IF
+     D*
+     D*
+     D*Change Activity:
+     D*
+     D*CFD List:
+     D*
+     D*FLAG REASON       LEVEL  DATE   PGMR      CHANGE DESCRIPTION
+     D*---- ------------ -----  ------ --------- --------------------
+     D*$A0  D93267       v5r4m0 050104 ROCH:     New Include
+     D*$A1  P9A93661     v5r4m0 050406 ROCH:     Misc. changes
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*End Change Activity.
+     D*** END HEADER FILE SPECIFICATIONS ******************************
+     D*****************************************************************
+     D*Type Definition for the preferred interface list information
+     D*****************************************************************
+     DQTOC4PIL         DS
+     D*                                             Qtocc4if PrfIfcLst
+     D QTOPIA                  1     15
+     D*                                             Preferred Interface Address
+     D QTORSV132              16     16
+     D*                                             Reserved 1
+     D*****************************************************************
+     D*Type Definition for the IFCH0100 format.
+     D*****************************************************************
+     DQTOH0100         DS
+     D*                                             Qtoc IFCH0100
+     D QTOLFI                  1      4I 0
+     D*                                             Length Fixed Information
+     D QTOIA02                 5     19
+     D*                                             Internet Address
+     D QTORSV133              20     20
+     D*                                             Reserved 1
+     D QTOPARPA00             21     24I 0
+     D*                                             Proxy ARP Allowed
+     D QTOOPIL                25     28I 0
+     D*                                             Offset Prf Ifc List
+     D QTONPIL                29     32I 0
+     D*                                             Number Prf Ifc List
+     D QTOLPIL                33     36I 0
+     D*                                             Length Prf Ifc List
+     D QTOIN01                37     60
+     D*                                             Interface Name
+     D*QTOPIL                        16    DIM(00001)
+     D* QTOPIA00                     15    OVERLAY(QTOPIL:00001)
+     D* QTORSV134                     1    OVERLAY(QTOPIL:00016)
+     D*
+     D*                                        Varying Length
+     D*****************************************************************
+     D*Prototype for QTOCC4IF API
+     D*****************************************************************
+     D QTOCC4IF        C                   'QTOCC4IF'

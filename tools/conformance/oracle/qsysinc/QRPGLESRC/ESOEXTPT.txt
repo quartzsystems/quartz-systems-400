@@ -1,0 +1,213 @@
+     D*begin_generated_IBM_copyright_prolog
+     D*This is an automatically generated copyright prolog.
+     D*After initializing,  DO NOT MODIFY OR MOVE
+     D*-----------------------------------------------------------------
+     D*
+     D*Product(s):
+     D*5770-SS1
+     D*
+     D*(C)Copyright IBM Corp.  2016, 2009
+     D*
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*---------------------------------------------------------------
+     D*
+     D*end_generated_IBM_copyright_prolog
+     D*-----------------------------------------------------------------
+     D*** START HEADER FILE SPECIFICATIONS *******************************
+     D*
+     D*Header File Name       :  H/ESOEXTPT
+     D*
+     D*Descriptive Name       :  Sockets APIs
+     D*                      exit program structures
+     D*
+     D*
+     D*Description: This include defines the parameter structures for
+     D*         the exit points:
+     D*
+     D*         QIBM_QSO_ACCEPT format ACPT0100
+     D*         QIBM_QSO_CONNECT format CONN0100
+     D*         QIBM_QSO_LISTEN format LSTN0100
+     D*
+     D*Header Files Included: None.
+     D*
+     D*Macros List: None.
+     D*
+     D*Structure List: Qso_ACPT0100_Format_t
+     D*            Qso_CONN0100_Format_t
+     D*            Qso_LSTN0100_Format_t
+     D*
+     D*Function Prototype List: None.
+     D*
+     D*Change Activity:
+     D*
+     D*CFD List:
+     D*
+     D*FLAG REASON       LEVEL  DATE   PGMR      CHANGE DESCRIPTION
+     D*---- ------------ -----  ------ --------- ----------------------
+     D*$A0= D92194       V7R1M0 080807 ROCHESTER: New Include
+     D*$A1= SE64598      V7R2M0 160406 ROCHESTER: Update structures
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*End Change Activity.
+     D*** END HEADER FILE SPECIFICATIONS *********************************
+     D********************************************************************
+     D*Header files
+     D********************************************************************
+      /IF DEFINED(QIBM_ESOEXTPT_INCLUDED)
+      /EOF
+      /ENDIF
+      /DEFINE QIBM_ESOEXTPT_INCLUDED
+
+      * internet address
+     D in_addr         DS                  QUALIFIED ALIGN
+      /IF DEFINED(*V6R1M0)
+     D                                     TEMPLATE
+      /ELSE
+     D                                     BASED(QIBM_TEMPLATE)
+      /ENDIF
+      *  IP address                         @A1C
+     D   s_addr                      10U 0
+
+     D u6_addr         DS                  QUALIFIED ALIGN
+      /IF DEFINED(*V6R1M0)
+     D                                     TEMPLATE
+      /ELSE
+     D                                     BASED(QIBM_TEMPLATE)
+      /ENDIF
+     D   u6_addr32                   10U 0 DIM(4) OVERLAY(u6_addr)
+     D   u6_addr16                    5U 0 DIM(8) OVERLAY(u6_addr)
+     D   u6_addr8                    16A   OVERLAY(u6_addr)
+
+      * internet address
+     D in6_addr        DS                  QUALIFIED ALIGN
+      /IF DEFINED(*V6R1M0)
+     D                                     TEMPLATE
+      /ELSE
+     D                                     BASED(QIBM_TEMPLATE)
+      /ENDIF
+     D  u6_addr                            LIKEDS(u6_addr)
+
+      * socket address (internet)
+     D sockaddr_in     DS                  QUALIFIED ALIGN
+      /IF DEFINED(*V6R1M0)
+     D                                     TEMPLATE
+      /ELSE
+     D                                     BASED(QIBM_TEMPLATE)
+      /ENDIF
+     D*  address family (AF_INET)           @A1C
+     D   sin_family                   5U 0
+     D*  port number                        @A1C
+     D   sin_port                     5U 0
+     D*  IP address
+     D   sin_addr                          LIKEDS(in_addr)
+     D*  reserved - must be *allx'00'
+     D   sin_zero                     8A
+
+      *
+     D sockaddr_in6    DS                  QUALIFIED ALIGN
+      /IF DEFINED(*V6R1M0)
+     D                                     TEMPLATE
+      /ELSE
+     D                                     BASED(QIBM_TEMPLATE)
+      /ENDIF
+      *  AF_INET6                           @A1C
+     D   sin6_family                  5U 0
+      *  transport layer port number        @A1C
+     D   sin6_port                    5U 0
+      *  IPv6 flow information              @A1C
+     D   sin6_flowinfo...
+     D                               10U 0
+      *  IPv6 address
+     D   sin6_addr                         LIKEDS(in6_addr)
+      *  set of scope interfaces            @A1C
+     D   sin6_scope_id...
+     D                               10U 0
+
+      * sockaddr_afinetx structure for AF_INET and AF_INET6 addresses
+     D sockaddr_afinetx...
+     D                 DS                  QUALIFIED ALIGN
+      /IF DEFINED(*V6R1M0)
+     D                                     TEMPLATE
+      /ELSE
+     D                                     BASED(QIBM_TEMPLATE)
+      /ENDIF
+     D   sinstruct                         LIKEDS(sockaddr_in)
+     D                                     OVERLAY(sockaddr_afinetx)
+     D   sin6struct                        LIKEDS(sockaddr_in6)
+     D                                     OVERLAY(sockaddr_afinetx)
+
+      *******************************************************************
+      *Typedef for exit program input structures
+      *******************************************************************
+      * Qso_ACPT0100_Format_t
+     D Qso_ACPT0100_Format_t...
+     D                 DS                  QUALIFIED
+      /IF DEFINED(*V6R1M0)
+     D                                     TEMPLATE
+      /ELSE
+     D                                     BASED(QIBM_TEMPLATE)
+      /ENDIF
+      *  Len of local bound address
+     D   Local_Bound_Address_Length...
+     D                               10I 0
+      *  Address of listening socket
+     D   Local_Bound_Address...
+     D                                     LIKEDS(sockaddr_afinetx)
+      *  Length of incoming address
+     D   Local_Incoming_Address_Length...
+     D                               10I 0
+      *  Address connection came in on
+     D   Local_Incoming_Address...
+     D                                     LIKEDS(sockaddr_afinetx)
+      *  Length of the remote address
+     D   Remote_Address_Length...
+     D                               10I 0
+      *  Address the connection came from
+     D   Remote_Address...
+     D                                     LIKEDS(sockaddr_afinetx)
+
+      * Qso_CONN0100_Format_t
+     D Qso_CONN0100_Format_t...
+     D                 DS                  QUALIFIED
+      /IF DEFINED(*V6R1M0)
+     D                                     TEMPLATE
+      /ELSE
+     D                                     BASED(QIBM_TEMPLATE)
+      /ENDIF
+      *  Length of the local address
+     D   Local_Address_Length...
+     D                               10I 0
+      *  Address of the socket connecting
+     D   Local_Address...
+     D                                     LIKEDS(sockaddr_afinetx)
+      *  Length of the destination address
+     D   Destination_Address_Length...
+     D                               10I 0
+      *  Destination Address of the connect
+     D   Destination_Address...
+     D                                     LIKEDS(sockaddr_afinetx)
+
+      * Qso_LSTN0100_Format_t
+     D Qso_LSTN0100_Format_t...
+     D                 DS                  QUALIFIED
+      /IF DEFINED(*V6R1M0)
+     D                                     TEMPLATE
+      /ELSE
+     D                                     BASED(QIBM_TEMPLATE)
+      /ENDIF
+      *  Listen backlog queue size
+     D   Backlog                     10I 0
+      *  Length of the local address
+     D   Local_Address_Length...
+     D                               10I 0
+      *  Address of the listening socket
+     D   Local_Address...
+     D                                     LIKEDS(sockaddr_afinetx)

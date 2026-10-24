@@ -1,0 +1,153 @@
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name:  sys/un.h                                       */
+/*                                                                   */
+/* Descriptive Name: Define the AF_UNIX sockets domain               */
+/*                                                                   */
+/*                                                                   */
+/* 5763-SS1, 5716-SS1                                                */
+/* (C) Copyright IBM Corp. 1993, 2002                                */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/* Copyright (c) 1982, 1986 Regents of the University of California. */
+/* All rights reserved.  The Berkeley software License Agreement     */
+/* specifies the terms and conditions for redistribution.            */
+/*                                                                   */
+/*                                                                   */
+/* Description:                                                      */
+/*                                                                   */
+/*          Defines prototypes, macros, variables, and               */
+/*          structures to be used with local domain sockets.         */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*                                                                   */
+/*           string.h                                                */
+/*                                                                   */
+/* Macros List:                                                      */
+/*                                                                   */
+/*          SUN_LEN                                                  */
+/*                                                                   */
+/* Structure List:                                                   */
+/*                                                                   */
+/*          sockaddr_un                                              */
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*                                                                   */
+/*          None                                                     */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/*   CFD List:                                                       */
+/*                                                                   */
+/*   FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION     */
+/*   ---- ------------ ----- ------- -------- ---------------------- */
+/*   $A0= D2877700     3D10  940225  ROCH     New include.           */
+/*   $A1=D98212.1      5d10  991107  ROCH:    Teraspace stage 2      */
+/*   $A2= D98822.1     5D20  010401  ROCH     Update to _XOPEN_SOURCE*/
+/*                                                                   */
+/*   End CFD List.                                                   */
+/*                                                                   */
+/*   Additional notes about the Change Activity:                     */
+/*                                                                   */
+/* End Change Activity                                               */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __un_h
+  #define __un_h
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+
+/*********************************************************************/
+/* Header files                                                      */
+/*********************************************************************/
+
+#include <string.h>                   /* strlen()                    */
+
+
+#if (__OS400_TGTVRM__>=510)                                    /*@A1A*/
+    #pragma datamodel(P128)                                    /*@A1A*/
+#endif                                                         /*@A1A*/
+
+
+
+
+/*********************************************************************/
+/* Miscellaneous macros                                              */
+/*********************************************************************/
+
+#define SUN_LEN(qso_su)            \
+  (sizeof(*(qso_su)) -             \
+   sizeof((qso_su)->sun_path) +    \
+   strlen((qso_su)->sun_path))        /* determine actual length
+                                         of a AF_UNIX domain address
+                                         in which the path name is
+                                         NULL-terminated and in the
+                                         single byte coded character
+                                         set (SBCS)                  */
+
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+/* Start changes for _XOPEN_SOURCE                               @A2A*/
+#if ((_XOPEN_SOURCE+1>520) && !defined(COMPAT_43))
+/* _XOPEN_SOURCE is defined to be >= 520 & not BSD 4.3 compatibility */
+#include <inttypes.h>
+
+#ifndef _SA_FAMILY_T
+  typedef unsigned char sa_family_t;
+  #define _SA_FAMILY_T
+#endif
+
+struct sockaddr_un {         /* socket address (UNIX)       */
+
+   uint8_t     sun_len;               /* address length              */
+   sa_family_t sun_family;            /* address familiy (AF_UNIX)   */
+   char        sun_path[126];         /* path name in job's CCSID    */
+};
+
+#else
+/* _XOPEN_SOURCE is not defined to be >= 520 or BSD 4.3 compatibility*/
+
+struct sockaddr_un {         /* socket address (UNIX)       */
+
+   short     sun_family;              /* address familiy (AF_UNIX)   */
+   char      sun_path[126];           /* path name in job's CCSID    */
+};
+
+#endif /* End changes for _XOPEN_SOURCE                          @A2A*/
+
+
+#if (__OS400_TGTVRM__>=510)                                   /*@A1A*/
+     #pragma datamodel(pop)                                   /*@A1A*/
+#endif                                                        /*@A1A*/
+
+#endif /* #ifndef __un_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

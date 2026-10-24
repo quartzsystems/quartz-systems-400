@@ -1,0 +1,319 @@
+     /* begin_generated_IBM_copyright_prolog                              */
+     /* This is an automatically generated copyright prolog.              */
+     /* After initializing,  DO NOT MODIFY OR MOVE                        */
+     /* ----------------------------------------------------------------- */
+     /*                                                                   */
+     /* Product(s):                                                       */
+     /*     5761-SS1                                                      */
+     /*                                                                   */
+     /* (C)Copyright IBM Corp.  2007, 2008                                */
+     /*                                                                   */
+     /* All rights reserved.                                              */
+     /* US Government Users Restricted Rights -                           */
+     /* Use, duplication or disclosure restricted                         */
+     /* by GSA ADP Schedule Contract with IBM Corp.                       */
+     /*                                                                   */
+     /* Licensed Materials-Property of IBM                                */
+     /*                                                                   */
+     /*  ---------------------------------------------------------------  */
+     /*                                                                   */
+     /* end_generated_IBM_copyright_prolog                                */
+      *** START HEADER FILE SPECIFICATIONS ***********************
+      *
+      *Header File Name: FCNTL
+      *
+      *Descriptive Name: File system file control definitions.
+      *
+      *Change Activity:
+      *
+      *CFD List:
+      *
+      *FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION
+      *---- ------------ ----- ------ --------- ----------------------
+      *$A0=              6D10  070830 BLM       New Include
+      *
+      *End CFD List.
+      *
+      *Additional notes about the Change Activity
+      *End Change Activity.
+      *** END HEADER FILE SPECIFICATIONS ******************************
+
+      * Define LARGE_FILES to get 64-bit version
+      /IF DEFINED(QIBM_FCNTL_INCLUDED)
+      /EOF
+      /ENDIF
+      /DEFINE QIBM_FCNTL_INCLUDED
+
+      /COPY QSYSINC/QRPGLESRC,SYSTYPES
+      /COPY QSYSINC/QRPGLESRC,SYSSTAT
+
+      // Definitions from QSYSINC/H, member FCNTL
+      * Duplicate a file descriptor
+     D F_DUPFD         C                   0
+      * Get file descriptor flags
+     D F_GETFD         C                   1
+      * Set file descriptor flags
+     D F_SETFD         C                   2
+
+      /IF NOT DEFINED(LARGE_FILES)
+      * Get locking information
+     D F_GETLK         C                   3
+      * Set locking information
+     D F_SETLK         C                   4
+      * Set locking information - Wait if blocked
+     D F_SETLKW        C                   5
+      /ENDIF
+
+      * Get file status flags
+     D F_GETFL         C                   6
+      * Set file status flags
+     D F_SETFL         C                   7
+
+      * Get locking information
+     D F_GETLK64       C                   12
+      * Set locking information
+     D F_SETLK64       C                   13
+      * Set locking information - Wait if blocked
+     D F_SETLKW64      C                   14
+
+      /IF DEFINED(LARGE_FILES)
+      * Map to the 64 bit versions
+
+      * Get locking information
+     D F_GETLK         C                   12
+      * Set locking information
+     D F_SETLK         C                   13
+      * Set locking information - Wait if blocked
+     D F_SETLKW        C                   14
+      /ENDIF
+
+      * Get process/group owner
+     D F_GETOWN        C                   8
+      * Set process/group owner
+     D F_SETOWN        C                   9
+
+      // File Descriptor Flags for fcntl()
+      * Close the file descriptor upon execution of a
+      * spawn()-family function.
+     D F_CLOEXEC       C                   1
+
+      // File Access Modes for open()
+      * Open for reading only
+     D O_RDONLY        C                   1
+      * Open for writing only
+     D O_WRONLY        C                   2
+      * Open for writing only
+     D O_RDWR          C                   4
+
+      // Mask for use with File Access Modes
+     D O_ACCMODE       C                   %BITOR(O_RDONLY
+     D                                      : %BITOR(O_WRONLY
+     D                                             : O_RDWR))
+
+      // oflag Values for open()
+      * Create file if it doesn't exist
+     D O_CREAT         C                   8
+      * Exclusive use flag
+     D O_EXCL          C                   16
+      * Truncate flag
+     D O_TRUNC         C                   64
+      * No controlling terminal
+     D O_NOCTTY        C                   32768
+
+      // File Status Flags for open() and fcntl()
+      * No delay...return EAGAIN if it will block
+     D O_NONBLOCK      C                   128
+      * Set append mode
+     D O_APPEND        C                   256
+      * Large file access
+     D O_LARGEFILE     C                   536870912
+      * Synchronous write operation
+     D O_SYNC          C                   1024
+      * Sync write, data only
+     D O_DSYNC         C                   2048
+      * Synchronous read operation
+     D O_RSYNC         C                   4096
+      * return EAGAIN if it will block (= O_NONBLOCK)
+     D O_NDELAY        C                   128
+      * Define FNDELAY and O_NDELAY to be the same
+     D FNDELAY         C                   128
+      * Asynchronous I/O
+     D FASYNC          C                   512
+      * The O_CODEPAGE flag is used indicate that the conversion
+      * ID parameter should be interpreted as a code page and
+      * mixed conversion is not allowed
+     D O_CODEPAGE      C                   8388608
+      * text data flag
+     D O_TEXTDATA      C                   16777216
+      * inherit mode flag
+     D O_INHERITMODE   C                   134217728
+      * The O_CCSID flag is used to indicate that the conversion
+      * ID parameter should be interpreted as a CCSID and
+      * mixed conversion is allowed
+     D O_CCSID         C                   32
+      * This flag is used in conjunction with the following
+      * flags:  O_CREAT, O_TEXTDATA, and O_CCSID or
+      * O_CODEPAGE. If all of those flags are not specified, then
+      * the O_TEXT_CREAT flag is ignored.  This flag provides
+      * for text conversion on a newly created file without needing
+      * a second open.
+     D O_TEXT_CREAT    C                   33554432
+
+      // oflag Share Mode Values for open()
+      * Share with readers only
+     D O_SHARE_RDONLY  C                   65536
+      * Share with writers only
+     D O_SHARE_WRONLY  C                   131072
+      * Share with readers and writers
+     D O_SHARE_RDWR    C                   262144
+      * Share with neither readers nor writers
+     D O_SHARE_NONE    C                   524288
+
+      // Constants for l_type in flock structure
+      * Read lock
+     D F_RDLCK         C                   1
+      * Write lock
+     D F_WRLCK         C                   2
+      * Remove the lock
+     D F_UNLCK         C                   3
+
+      // flock structure
+     D flock_t         DS                  QUALIFIED ALIGN
+      /IF DEFINED(*V6R1M0)
+     D                                     TEMPLATE
+      /ELSE
+     D                                     BASED(QIBM_TEMPLATE)
+      /ENDIF
+      * One of F_RDLCK, F_WRLCK, or F_UNLCK
+     D  l_type                        5I 0
+      * Flag for starting offset
+     D  l_whence                      5I 0
+      /IF DEFINED(LARGE_FILES)
+      * Reserved space, must be set to all x'00'
+     D  l_reserved2                   4A
+      /ENDIF
+      * Relative offset in bytes
+     D  l_start                            LIKE(off_t)
+      * Size.  If 0, EOF
+     D  l_len                              LIKE(off_t)
+      * Process id of the process holding the lock.  Returned with F_GETLK
+     D  l_pid                              LIKE(pid_t)
+      /IF DEFINED(LARGE_FILES)
+      * Reserved space, must be set to all x'00'
+     D  l_reserved3                   4A
+      /ENDIF
+      * Reserved space, must be set to *NULL (setting the
+      * entire structure to *ALLX'00' will do this)
+     D  l_reserved0                    *
+      * Reserved space, must be set to *NULL (setting the
+      * entire structure to *ALLX'00' will do this)
+     D  l_reserved1                    *
+
+      // flock64 structure
+      /IF DEFINED(LARGE_FILES)
+     D flock64_t       DS                  QUALIFIED ALIGN
+      /IF DEFINED(*V6R1M0)
+     D                                     TEMPLATE
+      /ELSE
+     D                                     BASED(QIBM_TEMPLATE)
+      /ENDIF
+      * One of F_RDLCK, F_WRLCK, or F_UNLCK
+     D  l_type                        5I 0
+      * Flag for starting offset
+     D  l_whence                      5I 0
+      * Reserved space, must be set to all x'00'
+     D  l_reserved2                   4A
+      * Relative offset in bytes
+     D  l_start                            LIKE(off64_t)
+      * Size.  If 0, EOF
+     D  l_len                              LIKE(off64_t)
+      * Process id of the process holding the lock.  Returned with F_GETLK
+     D  l_pid                              LIKE(pid_t)
+      * Reserved space, must be set to all x'00'
+     D  l_reserved3                   4A
+      * Reserved space, must be set to *NULL (setting the
+      * entire structure to *ALLX'00' will do this)
+     D  l_reserved0                    *
+      * Reserved space, must be set to *NULL (setting the
+      * entire structure to *ALLX'00' will do this)
+     D  l_reserved1                    *
+      /ENDIF
+
+      /IF DEFINED(LARGE_FILES)
+     D creat_function  C                   'creat64'
+      /ELSE
+     D creat_function  C                   'creat'
+      /ENDIF
+     D creat           PR            10I 0 EXTPROC(*CWIDEN : creat_function)
+     D  path                           *   VALUE OPTIONS(*STRING)
+     D  mode                               VALUE LIKE(mode_t)
+
+      /IF DEFINED(LARGE_FILES)
+     D open_function   C                   'open64'
+      /ELSE
+     D open_function   C                   'open'
+      /ENDIF
+     D open            PR            10I 0 EXTPROC(*CWIDEN : open_function)
+     D  path                           *   VALUE OPTIONS(*STRING)
+     D  oflag                        10I 0 VALUE
+     D  mode                               VALUE LIKE(mode_t)
+     D                                     OPTIONS(*NOPASS)
+     D  conversion_id...
+     D                               10U 0 VALUE
+     D                                     OPTIONS(*NOPASS)
+     D  text_file_creation_conversion_id...
+     D                               10U 0 VALUE
+     D                                     OPTIONS(*NOPASS)
+
+
+      /IF DEFINED(LARGE_FILES)
+     D QlgCreat_function...
+     D                 C                   'QlgCreat64'
+      /ELSE
+     D QlgCreat_function...
+     D                 C                   'QlgCreat'
+      /ENDIF
+     D QlgCreat        PR            10I 0 EXTPROC(*CWIDEN :
+     D                                             QlgCreat_function)
+     D  path                               CONST LIKE(Qlg_Path_Name_T)
+     D  mode                               VALUE LIKE(mode_t)
+
+      /IF DEFINED(LARGE_FILES)
+     D QlgOpen_function...
+     D                 C                   'QlgOpen64'
+      /ELSE
+     D QlgOpen_function...
+     D                 C                   'Qp0lOpen'
+      /ENDIF
+     D QlgOpen         PR            10I 0 EXTPROC(*CWIDEN :
+     D                                             QlgOpen_function)
+     D  path                               CONST LIKE(Qlg_Path_Name_T)
+     D  oflag                        10I 0 VALUE
+     D  mode                               VALUE LIKE(mode_t)
+     D                                     OPTIONS(*NOPASS)
+     D  conversion_id...
+     D                               10U 0 VALUE
+     D                                     OPTIONS(*NOPASS)
+     D  text_file_creation_conversion_id...
+     D                               10U 0 VALUE
+     D                                     OPTIONS(*NOPASS)
+
+      /IF DEFINED(LARGE_FILES)
+     D Qp0lOpen_function...
+     D                 C                   'QlgOpen64'
+      /ELSE
+     D Qp0lOpen_function...
+     D                 C                   'Qp0lOpen'
+      /ENDIF
+     D Qp0lOpen        PR                  EXTPROC(*CWIDEN :
+     D                                             Qp0lOpen_function)
+     D  path                               CONST LIKEDS(Qlg_Path_Name_T)
+     D  oflag                        10I 0 VALUE
+     D  mode                               VALUE LIKE(mode_t)
+     D                                     OPTIONS(*NOPASS)
+     D  conversion_id...
+     D                               10U 0 VALUE
+     D                                     OPTIONS(*NOPASS)
+     D  text_file_creation_conversion_id...
+     D                               10U 0 VALUE
+     D                                     OPTIONS(*NOPASS)

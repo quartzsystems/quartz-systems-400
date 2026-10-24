@@ -1,0 +1,296 @@
+     D*begin_generated_IBM_copyright_prolog
+     D*This is an automatically generated copyright prolog.
+     D*After initializing,  DO NOT MODIFY OR MOVE
+     D*-----------------------------------------------------------------
+     D*
+     D*Product(s):
+     D*5722-SS1
+     D*
+     D*(C)Copyright IBM Corp.  1994, 2007
+     D*
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*---------------------------------------------------------------
+     D*
+     D*end_generated_IBM_copyright_prolog
+     D*** START HEADER FILE SPECIFICATIONS *******************************
+     D*
+     D*Header File Name       :  H/EZDAEP
+     D*
+     D*Descriptive Name       :  Database Server Exit Program structures
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*Description: This include defines the parameter structures for
+     D*         the four exit points defined for the database
+     D*         server.
+     D*
+     D*          1) QIBM_QZDA_INIT format ZDAI0100
+     D*               Used when the database server is started
+     D*
+     D*          2) QIBM_QZDA_NDB1 format ZDAD0100
+     D*               Used for all native database requests, except
+     D*               the Add Library List request
+     D*             QIBM_QZDA_NDB1 format ZDAD0200
+     D*               Used for the native database Add Library List
+     D*               request
+     D*
+     D*          3) QIBM_QZDA_ROI1 format ZDAR0100
+     D*               Used for all retrieve object information
+     D*               requests, except the Foreign and Primary
+     D*               Key requests
+     D*             QIBM_QZDA_ROI1 format ZDAR0200
+     D*               Used for the retrieve object information
+     D*               Foreign and Primary Key requests
+     D*
+     D*          4) QIBM_QZDA_SQL1 format ZDAQ0100
+     D*               Used for SQL requests of 512 bytes or less
+     D*             QIBM_QZDA_SQL1 format ZDAQ0200
+     D*               Used for SQL requests of more than 512 bytes
+     D*
+     D*
+     D*Header Files Included: None.
+     D*
+     D*Macros List: None.
+     D*
+     D*Structure List: Qzda_Init_Format_t
+     D*            Qzda_NDB_Format1_t
+     D*            Qzda_NDB_Format2_t
+     D*            Qzda_ROI_Format1_t
+     D*            Qzda_ROI_Format2_t
+     D*            Qzda_SQL_Format_t
+     D*            Qzda_SQL_Format2_t
+     D*
+     D*Function Prototype List: None.
+     D*
+     D*Change Activity:
+     D*
+     D*CFD List:
+     D*
+     D*FLAG REASON    LEVEL DATE   PGMR      CHANGE DESCRIPTION
+     D*---- --------- ----- ------ --------- -------------------------
+     D*$A0= P3978167  3D60  950210 ROCHESTER:New Include
+     D*$A1= P3613759  3D70  960314 M S Moore:Add new SQL format
+     D*$A2= P9912109  4D50 20000105 V2KEA395:Varying length statement
+     D*                                  text (SQL) and varying
+     D*                                  number of libraries (NDB).
+     D*$A3= P9912659  4D50 20000105 V2KEA395:reserved area:127->129
+     D*$A3= P9934931  5D10 20001114 gchaney : Teraspace Stage 2
+     D*$B1= D9388600  v5r5m0 070322 MBAILEY:  Add new interface fields
+     D*                                   for QIBM_QZDA_INIT.
+     D*$B2= D9358617  v5r5m0 070522 MBAILEY:  Add fields to SQL1 and
+     D*                                   SQL2 exit points.
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*End Change Activity.
+     D*** END HEADER FILE SPECIFICATIONS *********************************
+     D*Server ID constants
+     D*Format name constants
+     D*Function ID constants for init portion of the database server
+     D*Function ID constants for the NDB portion of the database server
+     D*Function ID constants for the ROI portion of the database server
+     D*Function ID constants for the SQL portion of the database server
+     D*******************************************************************
+     D*Typedef for the database init exit point format
+     D*******************************************************************
+     DEZDQIF           DS
+     D*                                             Qzda Init Format
+     D EZDUP                   1     10
+     D*                                   User profile name
+     D EZDSID                 11     20
+     D*                                   Server identifier
+     D EZDFN                  21     28
+     D*                                   User exit format name
+     D EZDFID                 29     32I 0
+     D*                                   Requested function id
+     D EZDIT                  33     95
+     D*                                   Interface type         @B1A
+     D EZDIN                  96    222
+     D*                                   Interface name         @B1A
+     D EZDIL                 223    285
+     D*                                   Interface level        @B1A
+     D*******************************************************************
+     D*Typedef for the native database exit point format #1
+     D*******************************************************************
+     DEZDNDBF1         DS
+     D*                                             Qzda NDB Format1
+     D EZDUP00                 1     10
+     D*                                   User profile name
+     D EZDSID00               11     20
+     D*                                   Server identifier
+     D EZDFN00                21     28
+     D*                                   User exit format name
+     D EZDFID00               29     32I 0
+     D*                                   Requested function id
+     D EZDFILN                33    160
+     D*                                   File name
+     D EZDLN                 161    170
+     D*                                   Library name
+     D EZDMN                 171    180
+     D*                                   Member name
+     D EZDORITY              181    190
+     D*                                   Authority
+     D EZDBFILN              191    318
+     D*                                   Base file name
+     D EZDBLN                319    328
+     D*                                   Base library name
+     D EZDOFILN              329    338
+     D*                                   Override file name
+     D EZDOLN                339    348
+     D*                                   Override library name
+     D EZDOMN                349    358
+     D*                                   Override member name
+     D*******************************************************************
+     D*Typedef for the native database exit point format #2
+     D*******************************************************************
+     DEZDNDBF2         DS
+     D*                                             Qzda NDB Format2
+     D EZDUP01                 1     10
+     D*                                   User profile name
+     D EZDSID01               11     20
+     D*                                   Server identifier
+     D EZDFN01                21     28
+     D*                                   User exit format name
+     D EZDFID01               29     32I 0
+     D*                                   Requested function id
+     D EZDNOL                 33     36I 0
+     D*                                   Number of libraries in list
+     D*EZDLN00                37     37
+     D*                                             Lib Name
+     D*                                /- Varying number of
+     D*/*                                     /- library names          @A2C
+     D*******************************************************************
+     D*Typedef for retrieve object information exit point format #1
+     D*******************************************************************
+     DEZDROIF1         DS
+     D*                                             Qzda ROI Format1
+     D EZDUP02                 1     10
+     D*                                   User profile name
+     D EZDSID02               11     20
+     D*                                   Server identifier
+     D EZDFN02                21     28
+     D*                                   User exit format name
+     D EZDFID02               29     32I 0
+     D*                                   Requested function id
+     D EZDLN01                33     52
+     D*                                   Library name
+     D EZDRDBN                53     88
+     D*                                   Relational database name
+     D EZDPN                  89    108
+     D*                                   Package name
+     D EZDFILN00             109    364
+     D*                                   File name
+     D EZDMN00               365    384
+     D*                                   Member name
+     D EZDFN03               385    404
+     D*                                   Format name
+     D*******************************************************************
+     D*Typedef for retrieve object information exit point format #2
+     D*******************************************************************
+     DEZDROIF2         DS
+     D*                                             Qzda ROI Format2
+     D EZDUP03                 1     10
+     D*                                   User profile name
+     D EZDSID03               11     20
+     D*                                   Server identifier
+     D EZDFN04                21     28
+     D*                                   User exit format name
+     D EZDFID03               29     32I 0
+     D*                                   Requested function id
+     D EZDPKLN                33     42
+     D*                                   Primary key library name
+     D EZDPKN                 43    170
+     D*                                   Primary key table name
+     D EZDFKLN               171    180
+     D*                                   Foreign key library name
+     D EZDFKN                181    308
+     D*                                   Foreign key table name
+     D*******************************************************************
+     D*Typedef for the SQL exit point format
+     D*******************************************************************
+     DEZDQSQLF         DS
+     D*                                             Qzda SQL Format
+     D EZDUP04                 1     10
+     D*                                   User profile name
+     D EZDSID04               11     20
+     D*                                   Server identifier
+     D EZDFN05                21     28
+     D*                                   User exit format name
+     D EZDFID04               29     32I 0
+     D*                                   Requested function id
+     D EZDSN                  33     50
+     D*                                   Statement name
+     D EZDCN                  51     68
+     D*                                   Cursor name
+     D EZDPO                  69     70
+     D*                                   Prepare option
+     D EZDOA                  71     72
+     D*                                   Open attributes
+     D EZDPN00                73     82
+     D*                                   Package name
+     D EZDPLN                 83     92
+     D*                                   Package library name
+     D EZDRDACI               93     94I 0
+     D*                                   DRDA connect indicator
+     D EZDCI                  95     95
+     D*                                   Commit indicator
+     D EZDSQLST               96    607
+     D*                                   SQL statement text
+     D EZDECN                608    865
+     D*                                    Extended cursor name  @B2A
+     D*******************************************************************
+     D*Typedef for the SQL exit point format #2                    @A1A
+     D*******************************************************************
+     DEZDSQLF2         DS
+     D*                                             Qzda SQL Format2
+     D EZDUP05                 1     10
+     D*                                   User profile name
+     D EZDSID05               11     20
+     D*                                   Server identifier
+     D EZDFN06                21     28
+     D*                                   User exit format name
+     D EZDFID05               29     32I 0
+     D*                                   Requested function id
+     D EZDSN00                33     50
+     D*                                   Statement name
+     D EZDCN00                51     68
+     D*                                   Cursor name
+     D EZDPO00                69     70
+     D*                                   Prepare option
+     D EZDOA00                71     72
+     D*                                   Open attributes
+     D EZDPN01                73     82
+     D*                                   Package name
+     D EZDPLN00               83     92
+     D*                                   Package library name
+     D EZDRDACI00             93     94I 0
+     D*                                   DRDA connect indicator
+     D EZDCI00                95     95
+     D*                                   Commit indicator
+     D EZDDSQLL               96    105
+     D*                                   Default SQL Collection @A1A
+     D EZDRSV1               106    108
+     D*                                   Reserved               @B2A
+     D EZDOECN               109    112I 0
+     D*                                   Offset to ext'd cursor @B2A
+     D EZDLECN               113    116I 0
+     D*                                   Length of ext'd cursor @B2A
+     D EZDRSV2               117    234
+     D*                                   Res. for future use    @B2C
+     D EZDQLSTL              235    238I 0
+     D*                                   Length of SQL Stmt text@A1A
+     D*EZDSQLST00            239    239
+     D*
+     D*                                   Varying length
+     D*                                /* SQL statement text     @B2C
+     D*EZDECN00              240    240
+     D*
+     D*                                    Varying length        @B2A
+     D*                                   Extended cursor name   @B2A

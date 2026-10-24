@@ -1,0 +1,251 @@
+     D*begin_generated_IBM_copyright_prolog
+     D*This is an automatically generated copyright prolog.
+     D*After initializing,  DO NOT MODIFY OR MOVE
+     D*-----------------------------------------------------------------
+     D*
+     D*Product(s):
+     D*5722-SS1
+     D*5761-SS1
+     D*
+     D*(C)Copyright IBM Corp.  2003, 2007
+     D*
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*---------------------------------------------------------------
+     D*
+     D*end_generated_IBM_copyright_prolog
+     D*-----------------------------------------------------------------
+     D*** START HEADER FILE SPECIFICATIONS *******************************
+     D*
+     D*Header File Name       :  H/QP0LRRO
+     D*
+     D*Descriptive Name       :  Retrieve Referenced Objects API include
+     D*
+     D*Description            :  This file contains the structures and
+     D*                          prototype for the QP0LRRO API.
+     D*
+     D*Macros List            :  QP0L_JIDF0100
+     D*                          QP0L_JIDF0200
+     D*                          QP0LRRO_RROO0100_FORMAT
+     D*
+     D*Type Definition List   :  Qp0l_Obj_List_Output_T
+     D*                          Qp0l_RROO0100_Output_T
+     D*
+     D*Structure List         :  Qp0l_RROO0100_Output
+     D*                          Qp0l_Obj_List_Output
+     D*
+     D*Class List             :  None.
+     D*
+     D*Function Prototype List:  QP0LRRO
+     D*
+     D*Change Activity        :
+     D*
+     D*CFD List               :
+     D*
+     D*FLAG REASON     LEVEL   DATE   PGMR      CHANGE DESCRIPTION
+     D*---- -------    ------  ------ --------- -----------------------
+     D*$A0=D9918800    v5r3m0  020419 ROCH      : New Include
+     D*$A1=P9A52232    v5r3m0f 040107 ROCH      : Add cplusplus ifdef to
+     D*                                           end of header
+     D*$A2=P9A55370    v5r4m0  040202 ROCH      : Add void to func call
+     D*$A3=D9352105    v6r1m0  060717 ROCH      : Unsupported NetWare cmts
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*
+     D*End Change Activity.
+     D*
+     D*** END HEADER FILE SPECIFICATIONS *********************************
+     D***   START OF STRUCTURE DESCRIPTION   *****************************
+     D*
+     D*Structure Name   :  Qp0l_Obj_List_Output
+     D*
+     D*Structure Purpose:  This structure is used to package the
+     D*                object(s) in use and the objects various
+     D*                reference types that may be returned for the
+     D*                object.  This structure repeats for each
+     D*	               object associated with the specified job.
+     D*
+     D***   END OF STRUCTURE DESCRIPTION   *******************************
+     DQP0LOLO          DS
+     D*                                             Qp0l Obj List Output
+     D QP0NLED                 1      4U 0
+     D*                               Displacement to the next object
+     D*                                list output entry.
+     D QP0RD04                 5      8U 0
+     D*                         Displacement to the extended
+     D*                         reference types.
+     D QP0RL                   9     12U 0
+     D*                         Length of the extended reference
+     D*                         types.
+     D QP0RC                  13     16U 0
+     D*                         Reference Count.
+     D QP0PD                  17     20U 0
+     D*                         Displacement to returned Qlg path
+     D*                         name structure.
+     D QP0PL                  21     24U 0
+     D*                         Length of the returned path name
+     D*                         structure.
+     D QP0FILID00             25     40
+     D*                         File identifier for the object.
+     D QP0FILSI               41     48U 0
+     D*                         File system identifier.
+     D QP0FILST               49     52U 0
+     D*                         File system type. These file system
+     D*                         types are defined below.
+     D QP0FILIN               53     56U 0
+     D*                         File identifier number for the
+     D*                            object
+     D QP0GENID               57     60U 0
+     D*                         Generation identifier for the object
+     D* QP0RSR03              61     64U 0
+     D* QP0RSW03              65     68U 0
+     D* QP0RSRW03             69     72U 0
+     D* QP0RSN03              73     76U 0
+     D* QP0WSR03              77     80U 0
+     D* QP0WSW03              81     84U 0
+     D* QP0WSRW03             85     88U 0
+     D* QP0WSN03              89     92U 0
+     D* QP0RWSR03             93     96U 0
+     D* QP0RWSW03             97    100U 0
+     D* QP0RWSRW03           101    104U 0
+     D* QP0RWSN03            105    108U 0
+     D* QP0ESR03             109    112U 0
+     D* QP0ESW03             113    116U 0
+     D* QP0ESRW03            117    120U 0
+     D* QP0ESN03             121    124U 0
+     D* QP0ERSR03            125    128U 0
+     D* QP0ERSW03            129    132U 0
+     D* QP0ERSRW03           133    136U 0
+     D* QP0ERSN03            137    140U 0
+     D* QP0BUTES08           141    144U 0
+     D* QP0SAVE08            145    148U 0
+     D* QP0SI12              149    152U 0
+     D* QP0LINKS08           153    156U 0
+     D* QP0CD04              157    160U 0
+     D* QP0RD05              161    164U 0
+     D* QP0FSREF03           165    168U 0
+     D* QP0FSWD03            169    172U 0
+     D* QP0CO08              173    176U 0
+     D* QP0CON08             177    186
+     D* QP0RSV021            187    188
+     D* QP0NFSR03            189    192U 0
+     D*
+     D*                                       Extended reference type
+     D*                         structure. The extended reference type
+     D*                         output structure is contained in
+     D*                         qp0lror.h
+     D* QP0CCSID12           193    196B 0
+     D* QP0CID               197    198
+     D* QP0LID               199    201
+     D* QP0ERVED51           202    204
+     D* QP0PT                205    208U 0
+     D* QP0PL00              209    212B 0
+     D* QP0PND               213    214
+     D* QP0RSV216            215    224
+     D* QP0PN00              225    225
+     D*
+     D*                           Qlg path name structure.  The Qlg
+     D*                           path name structure is contained in
+     D*                           qlg.h
+     D***   START OF STRUCTURE DESCRIPTION   *****************************
+     D*
+     D*Structure Name   :  Qp0l_RROO0100_Output
+     D*
+     D*Structure Purpose:  This structure is used to return the objects
+     D*                and their references.
+     D*
+     D*
+     D***   END OF STRUCTURE DESCRIPTION   *******************************
+     DQP00100O01       DS
+     D*                                             Qp0l RROO0100 Output
+     D QP0BRTN06               1      4U 0
+     D*                               Number of bytes returned in
+     D*                               this output buffer.
+     D QP0BAVL06               5      8U 0
+     D*                               Number of bytes that were
+     D*                               available to be returned.
+     D QP0ORTN                 9     12U 0
+     D*                               Number of objects returned.
+     D QP0OAVL                13     16U 0
+     D*                               Number of objects available to
+     D*                               be returned.
+     D QP0OLO                 17     20U 0
+     D*                               Offset to the object list output
+     D*                               structure.
+     D QP0RS                  21     24U 0
+     D*                               Retrieve referenced object
+     D*                               status
+     D*QP0OLR                       225    DIM(00001)
+     D* QP0NLED00                    10U 0 OVERLAY(QP0OLR:00001)
+     D* QP0RD06                      10U 0 OVERLAY(QP0OLR:00005)
+     D* QP0RL00                      10U 0 OVERLAY(QP0OLR:00009)
+     D* QP0RC00                      10U 0 OVERLAY(QP0OLR:00013)
+     D* QP0PD00                      10U 0 OVERLAY(QP0OLR:00017)
+     D* QP0PL01                      10U 0 OVERLAY(QP0OLR:00021)
+     D* QP0FILID01                   16    OVERLAY(QP0OLR:00025)
+     D* QP0FILSI02                   20U 0 OVERLAY(QP0OLR:00041)
+     D* QP0FILST02                   10U 0 OVERLAY(QP0OLR:00049)
+     D* QP0FILIN00                   10U 0 OVERLAY(QP0OLR:00053)
+     D* QP0GENID00                   10U 0 OVERLAY(QP0OLR:00057)
+     D*  QP0RSR04                    10U 0 OVERLAY(QP0OLR:00001)
+     D*  QP0RSW04                    10U 0 OVERLAY(QP0OLR:00005)
+     D*  QP0RSRW04                   10U 0 OVERLAY(QP0OLR:00009)
+     D*  QP0RSN04                    10U 0 OVERLAY(QP0OLR:00013)
+     D*  QP0WSR04                    10U 0 OVERLAY(QP0OLR:00017)
+     D*  QP0WSW04                    10U 0 OVERLAY(QP0OLR:00021)
+     D*  QP0WSRW04                   10U 0 OVERLAY(QP0OLR:00025)
+     D*  QP0WSN04                    10U 0 OVERLAY(QP0OLR:00029)
+     D*  QP0RWSR04                   10U 0 OVERLAY(QP0OLR:00033)
+     D*  QP0RWSW04                   10U 0 OVERLAY(QP0OLR:00037)
+     D*  QP0RWSRW04                  10U 0 OVERLAY(QP0OLR:00041)
+     D*  QP0RWSN04                   10U 0 OVERLAY(QP0OLR:00045)
+     D*  QP0ESR04                    10U 0 OVERLAY(QP0OLR:00049)
+     D*  QP0ESW04                    10U 0 OVERLAY(QP0OLR:00053)
+     D*  QP0ESRW04                   10U 0 OVERLAY(QP0OLR:00057)
+     D*  QP0ESN04                    10U 0 OVERLAY(QP0OLR:00061)
+     D*  QP0ERSR04                   10U 0 OVERLAY(QP0OLR:00065)
+     D*  QP0ERSW04                   10U 0 OVERLAY(QP0OLR:00069)
+     D*  QP0ERSRW04                  10U 0 OVERLAY(QP0OLR:00073)
+     D*  QP0ERSN04                   10U 0 OVERLAY(QP0OLR:00077)
+     D*  QP0BUTES09                  10U 0 OVERLAY(QP0OLR:00081)
+     D*  QP0SAVE09                   10U 0 OVERLAY(QP0OLR:00085)
+     D*  QP0SI13                     10U 0 OVERLAY(QP0OLR:00089)
+     D*  QP0LINKS09                  10U 0 OVERLAY(QP0OLR:00093)
+     D*  QP0CD05                     10U 0 OVERLAY(QP0OLR:00097)
+     D*  QP0RD07                     10U 0 OVERLAY(QP0OLR:00101)
+     D*  QP0FSREF04                  10U 0 OVERLAY(QP0OLR:00105)
+     D*  QP0FSWD04                   10U 0 OVERLAY(QP0OLR:00109)
+     D*  QP0CO09                     10U 0 OVERLAY(QP0OLR:00113)
+     D*  QP0CON09                    10    OVERLAY(QP0OLR:00117)
+     D*  QP0RSV022                    2    OVERLAY(QP0OLR:00127)
+     D*  QP0NFSR04                   10U 0 OVERLAY(QP0OLR:00129)
+     D*  QP0CCSID13                   9B 0 OVERLAY(QP0OLR:00001)
+     D*  QP0CID00                     2    OVERLAY(QP0OLR:00005)
+     D*  QP0LID00                     3    OVERLAY(QP0OLR:00007)
+     D*  QP0ERVED52                   3    OVERLAY(QP0OLR:00010)
+     D*  QP0PT00                     10U 0 OVERLAY(QP0OLR:00013)
+     D*  QP0PL02                      9B 0 OVERLAY(QP0OLR:00017)
+     D*  QP0PND00                     2    OVERLAY(QP0OLR:00021)
+     D*  QP0RSV217                   10    OVERLAY(QP0OLR:00023)
+     D*  QP0PN02                      1    OVERLAY(QP0OLR:00033)
+     D*
+     D*                                           Object list output
+     D*                               structure.  Contains the object
+     D*                               path name and object references.
+     D*                               This structure repeats for each
+     D*                               object referenced by the
+     D*                               specified job.
+     D*Macro constants to use for the receiver format parameter of
+     D*QP0LRRO.
+     D*Macro constants to use for the Job format parameter of QP0LRRO.
+     D*File system types
+     D*The following file system is no longer supported  @A3A
+     D*Retrieve referenced object status
+     D QP0LRRO         C                   'QP0LRRO'

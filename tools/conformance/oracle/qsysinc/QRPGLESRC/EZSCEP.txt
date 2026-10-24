@@ -1,0 +1,116 @@
+     D*** START HEADER FILE SPECIFICATIONS *******************************
+     D*
+     D*Include File Name      :  EZSCEP
+     D*
+     D*Descriptive Name       :  Central Server Exit Program structures
+     D*
+     D*5716-SS1  (C) Copyright IBM Corp. 1995.
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*Description: This include defines the parameter structures for
+     D*         the three exit points defined for the central
+     D*         server.
+     D*
+     D*          1) QIBM_QZSC_LM format ZSCL0100
+     D*               Called for license management requests
+     D*
+     D*          2) QIBM_QZSC_SM format ZSCS0100
+     D*               Called for system (or client) management
+     D*               requests
+     D*
+     D*          3) QIBM_QZSC_NLS format ZSCN0100
+     D*               Called for conversion map requests
+     D*
+     D*Header Files Included: None.
+     D*
+     D*Macros List: None.
+     D*
+     D*Structure List: EZSQLMF
+     D*                EZSQSMF
+     D*                EZSQNMF
+     D*
+     D*Function Prototype List: None.
+     D*
+     D*Change Activity:
+     D*
+     D*CFD List:
+     D*
+     D*FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION
+     D*---- ------------ ----- ------ --------- ----------------------
+     D*$A0= P3978167     3D60  950131 ROCHESTER:New Include
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*End Change Activity.
+     D*** END HEADER FILE SPECIFICATIONS *********************************
+     D*******************************************************************
+     D*Structure for License Management exit point format
+     D*******************************************************************
+     DEZSQLMF          DS
+     D*                                             Qzsc Lic Mgmt Format
+     D EZSUP                   1     10
+     D*                                   User profile name
+     D EZSSID                 11     20
+     D*                                   Server identifier
+     D EZSFN                  21     28
+     D*                                   User exit format name
+     D EZSFID                 29     32I 0
+     D*                                   Requested function id
+     D EZSCN                  33    287
+     D*                                   Client name
+     D EZSUH                 288    295
+     D*                                   License user handle
+     D EZSPID                296    302
+     D*                                   Product ID
+     D EZSATURE              303    306
+     D*                                   Feature
+     D EZSLEASE              307    312
+     D*                                   Release
+     D EZSIT                 313    314I 0
+     D*                                   Type of license info
+     D*******************************************************************
+     D*Structure for System (or Client) Management exit point format
+     D*******************************************************************
+     DEZSQSMF          DS
+     D*                                             Qzsc Sys Mgmt Format
+     D EZSUP00                 1     10
+     D*                                   User profile name
+     D EZSSID00               11     20
+     D*                                   Server identifier
+     D EZSFN00                21     28
+     D*                                   User exit format name
+     D EZSFID00               29     32I 0
+     D*                                   Requested function id
+     D EZSCN00                33    287
+     D*                                   Client name
+     D EZSCN01               288    542
+     D*                                   Community name
+     D EZSNT                 543    543
+     D*                                   Node type
+     D EZSNN                 544    798
+     D*                                   Node Name
+     D*******************************************************************
+     D*Structure for Retrieve Conversion Map exit point format
+     D*******************************************************************
+     DEZSQNMF          DS
+     D*                                             Qzsc Nls Mgmt Format
+     D EZSUP01                 1     10
+     D*                                   User profile name
+     D EZSSID01               11     20
+     D*                                   Server identifier
+     D EZSFN01                21     28
+     D*                                   User exit format name
+     D EZSFID01               29     32I 0
+     D*                                   Requested function id
+     D EZSFC                  33     36I 0
+     D*                                   Source data CCSID
+     D EZSTC                  37     40I 0
+     D*                                   Target data CCSID
+     D EZSCMT                 41     42I 0
+     D*                                   Type of conversion

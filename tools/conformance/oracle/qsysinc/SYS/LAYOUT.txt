@@ -1,0 +1,442 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5722-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  2006, 2007                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name: SYS/LAYOUT                                      */
+/*                                                                   */
+/* Descriptive Name: This header contains all of the prototypes,     */
+/*                   constants, etc. needed to interface to any API  */
+/*                   functions contained in the QTQLAYOUT *SRVPGM.   */
+/*                                                                   */
+/*                   This service program contains the X/Open layout */
+/*                   services API's for the interface defined in     */
+/*                   "X/Open, Portable Layout Services:  Context-    */
+/*                   dependent and Directional Text", X/Open         */
+/*                   document number C616, ISBN 1-85912-142.X.       */
+/*                                                                   */
+/*                   This service program will run as *INHERIT state */
+/*                   and *USER domain.                               */
+/*                                                                   */
+/*                                                                   */
+/* Description:      This file supports the following functions:     */
+/*                                                                   */
+/*               --> m_create_layout                                 */
+/*                                                                   */
+/*                      ( Initialise a layout object               ) */
+/*                      function creates a LayoutObject associated   */
+/*                      with the locale identified by an attribute   */
+/*                      object.                                      */
+/*                                                                   */
+/*               --> m_destroy_layout                                */
+/*                                                                   */
+/*                      ( Destroy a layout object                  ) */
+/*                      function destroys a LayoutObject by          */
+/*                      deallocating the layout object and all the   */
+/*                      associated resources previously allocated    */
+/*                      by the m_create_layout() function.           */
+/*                                                                   */
+/*               --> m_getvalues_layout                              */
+/*                                                                   */
+/*                      ( Query layout values of a LayoutObject    ) */
+/*                      function is used to query the current        */
+/*                      setting of layout values within a            */
+/*                      LayoutObject.                                */
+/*                                                                   */
+/*               --> m_setvalues_layout                              */
+/*                                                                   */
+/*                      ( Set layout values of a LayoutObject      ) */
+/*                      function is used to change the layout values */
+/*                      of a LayoutObject.                           */
+/*                                                                   */
+/*               --> m_transform_layout                              */
+/*                                                                   */
+/*                      ( Layout transformation                    ) */
+/*                      function transforms the input text of an     */
+/*                      input buffer according to the current layout */
+/*                      values within a LayoutObject.                */
+/*                                                                   */
+/*               --> m_wtransform_layout                             */
+/*                                                                   */
+/*                      ( Layout transformation for wchar_t string ) */
+/*                      function transforms the input text of an     */
+/*                      input buffer for wide character strings      */
+/*                      according to the current layout values       */
+/*                      within a LayoutObject.                       */
+/*                                                                   */
+/* Header Files Included:       stddef.h                             */
+/*                                                                   */
+/* Macros List:                 None.                                */
+/*                                                                   */
+/* Function Prototype List:     m_create_layout                      */
+/*                              m_destroy_layout                     */
+/*                              m_getvalues_layout                   */
+/*                              m_setvalues_layout                   */
+/*                              m_transform_layout                   */
+/*                              m_wtransform_layout                  */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/* CFD List:                                                         */
+/*                                                                   */
+/* FLAG  REASON  RLSE   DATE   PGMR      CHANGE DESCRIPTION          */
+/* ---- -------- ---- -------- --------- --------------------------- */
+/* $A0= D9383200 5D50 04/25/07 PLG:      New Include                 */
+/*                                                                   */
+/*  Additional notes about the Change Activity                       */
+/* End Change Activity.                                              */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef _LAYOUT_H
+#define _LAYOUT_H
+
+/*********************************************************************/
+/* Includes...                                                       */
+/*********************************************************************/
+
+#include <stddef.h>
+#ifdef MEM_DEBUG
+#include "heapdbg.h" /* for memory leaks debugging */
+#endif
+
+/*********************************************************************/
+/* Constants...                                                      */
+/*********************************************************************/
+
+#define AllTextDescriptors      0x0000007f
+
+#define Orientation             (1L)
+#define Context                 (1L<<1)
+#define TypeOfText              (1L<<2)
+#define ImplicitAlg             (1L<<3)
+#define Swapping                (1L<<4)
+#define Numerals                (1L<<5)
+#define TextShaping             (1L<<6)
+
+#define ActiveDirectional       (1L<<16)
+#define ActiveShapeEditing      (1L<<17)
+#define ShapeCharset            (1L<<18)
+#define ShapeCharsetSize        (1L<<19)
+#define ShapeContextSize        (1L<<20)
+#define InOutTextDescrMask      (1L<<21)
+#define InOnlyTextDescr         (1L<<22)
+#define OutOnlyTextDescr        (1L<<23)
+#define CheckMode               (1L<<24)
+#define QueryValueSize          (1L<<25)
+
+/* Possible values for Orientation */
+#define ORIENTATION_LTR         0x00000001
+#define ORIENTATION_RTL         0x00000002
+#define ORIENTATION_TTBRL       0x00000003
+#define ORIENTATION_TTBLR       0x00000004
+#define ORIENTATION_CONTEXTUAL  0x00000005
+
+/* Possible values for Context */
+#define CONTEXT_LTR             0x00000010
+#define CONTEXT_RTL             0x00000020
+
+/* Possible values for TypeOfText */
+#define TEXT_IMPLICIT           0x00000100
+#define TEXT_EXPLICIT           0x00000200
+#define TEXT_VISUAL             0x00000300
+
+/* Possible values for ImplicitAlg */
+#define ALGOR_BASIC             0x00001000
+#define ALGOR_IMPLICIT          0x00002000
+
+/* Possible values for Swapping */
+#define SWAPPING_NO             0x00010000
+#define SWAPPING_YES            0x00020000
+
+/* Possible values for Numerals */
+#define NUMERALS_NOMINAL        0x00100000
+#define NUMERALS_NATIONAL       0x00200000
+#define NUMERALS_CONTEXTUAL     0x00300000
+
+/* Possible values for TextShaping */
+#define TEXT_SHAPED             0x01000000
+#define TEXT_NOMINAL            0x02000000
+#define TEXT_SHFORM1            0x03000000
+#define TEXT_SHFORM2            0x04000000
+#define TEXT_SHFORM3            0x05000000
+#define TEXT_SHFORM4            0x06000000
+
+/* Possible values for CheckMode */
+#define MODE_STREAM             0x00000001
+#define MODE_EDIT               0x00000002
+
+
+#define MaskAllTextDescriptors  0x0fffffff
+#define MaskOrientation         0x0000000f
+#define MaskContext             0x000000f0
+#define MaskTypeOfText          0x00000f00
+#define MaskImplicitAlg         0x0000f000
+#define MaskSwapping            0x000f0000
+#define MaskNumerals            0x00f00000
+#define MaskTextShaping         0x0f000000
+
+/* Mask for the Property parament of m_*transform() */
+#define NESTLEVEL_MASK          0x0f
+#define DISPLAYCELL_MASK        0x10
+
+/*********************************************************************/
+/* Type definitions...                                               */
+/*********************************************************************/
+
+typedef int        LayoutId;
+typedef int        BooleanValue;
+typedef void      *LayoutValue;
+
+typedef struct {
+    LayoutId       name;
+    LayoutValue    value;
+} LayoutValueRec, *LayoutValues;
+
+typedef int        LayoutDesc;
+typedef struct {
+    LayoutDesc     inp;
+    LayoutDesc     out;
+} LayoutTextDescriptorRec, *LayoutTextDescriptor;
+
+typedef struct {
+    int            front;
+    int            back;
+} LayoutEditSizeRec, *LayoutEditSize;
+
+typedef struct _LayoutObject *LayoutObject;           /* Public name */
+
+/*--**--**--**--**--**--**--**--**---**--**--**--**--**--**--**--**--*/
+/* Start of m_create_layout API function information...              */
+/*--**--**--**--**--**--**--**--**---**--**--**--**--**--**--**--**--*/
+
+/*********************************************************************/
+/*                                                                   */
+/*                    Prototype for Calling                          */
+/*                       m_create_layout                             */
+/*                                                                   */
+/*  Input/Output:                                                    */
+/*                                                                   */
+/*  const void *          -> Attribute object usually a locale.      */
+/*  const char *          -> Modifier of values for LayoutObject.    */
+/*                                                                   */
+/*  Returns:                                                         */
+/*     Success:           -> Returns a LayoutObject for use in       */
+/*                           subsequent calls to m_*_layout          */
+/*                           functions.                              */
+/*                                                                   */
+/*     Error:             -> A (LayoutObject)0 indicates that an     */
+/*                           error occured.                          */
+/*                                                                   */
+/*********************************************************************/
+
+#ifdef __cplusplus
+   extern "C"
+#endif
+
+LayoutObject m_create_layout(
+    const void *                /* attrobj */,
+    const char *                /* modifier */
+);
+
+/*--**--**--**--**--**--**--**--**---**--**--**--**--**--**--**--**--*/
+/* Start of m_destroy_layout API function information...             */
+/*--**--**--**--**--**--**--**--**---**--**--**--**--**--**--**--**--*/
+
+/*********************************************************************/
+/*                                                                   */
+/*                    Prototype for Calling                          */
+/*                       m_destroy_layout                            */
+/*                                                                   */
+/*  Input/Output:                                                    */
+/*                                                                   */
+/*  const LayoutObject    -> LayoutObject to be destroyed.           */
+/*                                                                   */
+/*  Returns:                                                         */
+/*     Success:           -> A value of zero is returned.            */
+/*                                                                   */
+/*     Error:             -> A value of -1 is returned.              */
+/*                                                                   */
+/*********************************************************************/
+
+#ifdef __cplusplus
+   extern "C"
+#endif
+
+int m_destroy_layout(
+    const LayoutObject          /* layoutobject */
+);
+
+/*--**--**--**--**--**--**--**--**---**--**--**--**--**--**--**--**--*/
+/* Start of m_getvalues_layout API function information...           */
+/*--**--**--**--**--**--**--**--**---**--**--**--**--**--**--**--**--*/
+
+/*********************************************************************/
+/*                                                                   */
+/*                    Prototype for Calling                          */
+/*                      m_getvalues_layout                           */
+/*                                                                   */
+/*  Input/Output:                                                    */
+/*                                                                   */
+/*  const LayoutObject    -> Object to query current layout values.  */
+/*        LayoutValues    -> List of layout values to be queried.    */
+/*        int *           -> Index of value causing error on query.  */
+/*                                                                   */
+/*  Returns:                                                         */
+/*     Success:           -> A value of zero is returned.            */
+/*                                                                   */
+/*     Error:             -> A value of -1 is returned.              */
+/*                                                                   */
+/*********************************************************************/
+
+#ifdef __cplusplus
+   extern "C"
+#endif
+
+int m_getvalues_layout(
+    const LayoutObject          /* layoutobject */,
+          LayoutValues          /* values */,
+          int *                 /* index_returned */
+);
+
+/*--**--**--**--**--**--**--**--**---**--**--**--**--**--**--**--**--*/
+/* Start of m_setvalues_layout API function information...           */
+/*--**--**--**--**--**--**--**--**---**--**--**--**--**--**--**--**--*/
+
+/*********************************************************************/
+/*                                                                   */
+/*                    Prototype for Calling                          */
+/*                      m_setvalues_layout                           */
+/*                                                                   */
+/*  Input/Output:                                                    */
+/*                                                                   */
+/*  const LayoutObject    -> Object to change layout values of.      */
+/*        LayoutValues    -> List of layout values to be changed.    */
+/*        int *           -> Index of value causing error on change. */
+/*                                                                   */
+/*  Returns:                                                         */
+/*     Success:           -> A value of zero is returned.            */
+/*                                                                   */
+/*     Error:             -> A value of -1 is returned.              */
+/*                                                                   */
+/*********************************************************************/
+
+#ifdef __cplusplus
+   extern "C"
+#endif
+
+int m_setvalues_layout(
+    const LayoutObject          /* layoutobject */,
+          LayoutValues          /* values */,
+          int *                 /* index_returned */
+);
+
+/*--**--**--**--**--**--**--**--**---**--**--**--**--**--**--**--**--*/
+/* Start of m_transform_layout API function information...           */
+/*--**--**--**--**--**--**--**--**---**--**--**--**--**--**--**--**--*/
+
+/*********************************************************************/
+/*                                                                   */
+/*                    Prototype for Calling                          */
+/*                      m_transform_layout                           */
+/*                                                                   */
+/*  Input/Output:                                                    */
+/*                                                                   */
+/*           LayoutObject -> Object to base transformation upon.     */
+/*  const    char *       -> Source text to be processed.            */
+/*  const    size_t       -> Number of characters in source text.    */
+/*           void *       -> Place to store transformed data.        */
+/*           size_t *     -> Number of transformed bytes.            */
+/*           size_t *     -> Cross reference source to transformed.  */
+/*           size_t *     -> Cross reference transformed to source.  */
+/*  unsigned char *       -> Weighted value for special tranforms.   */
+/*           size_t *     -> Offset to location of transformed text. */
+/*                                                                   */
+/*  Returns:                                                         */
+/*     Success:           -> A value of zero is returned.            */
+/*                                                                   */
+/*     Error:             -> A value of -1 is returned.              */
+/*                                                                   */
+/*********************************************************************/
+
+#ifdef __cplusplus
+   extern "C"
+#endif
+
+int m_transform_layout(
+             LayoutObject       /* layoutobject */,
+    const    char *             /* InpBuf */,
+    const    size_t             /* InpSize */,
+             void *             /* OutBuf */,
+             size_t *           /* OutSize */,
+             size_t *           /* InpToOut */,
+             size_t *           /* OutToInp */,
+    unsigned char *             /* Property */,
+             size_t *           /* InpBufIndex */
+);
+
+/*--**--**--**--**--**--**--**--**---**--**--**--**--**--**--**--**--*/
+/* Start of m_wtransform_layout API function information...          */
+/*--**--**--**--**--**--**--**--**---**--**--**--**--**--**--**--**--*/
+
+/*********************************************************************/
+/*                                                                   */
+/*                    Prototype for Calling                          */
+/*                     m_wtransform_layout                           */
+/*                                                                   */
+/*  Input/Output:                                                    */
+/*                                                                   */
+/*           LayoutObject -> Object to base transformation upon.     */
+/*  const    wchar_t *    -> Source text to be processed.            */
+/*  const    size_t       -> Number of characters in source text.    */
+/*           void *       -> Place to store transformed data.        */
+/*           size_t *     -> Number of transformed wide characters.  */
+/*           size_t *     -> Cross reference source to transformed.  */
+/*           size_t *     -> Cross reference transformed to source.  */
+/*  unsigned char *       -> Weighted value for special tranforms.   */
+/*           size_t *     -> Offset to location of transformed text. */
+/*                                                                   */
+/*  Returns:                                                         */
+/*     Success:           -> A value of zero is returned.            */
+/*                                                                   */
+/*     Error:             -> A value of -1 is returned.              */
+/*                                                                   */
+/*********************************************************************/
+
+#ifdef __cplusplus
+   extern "C"
+#endif
+
+int m_wtransform_layout(
+             LayoutObject       /* layoutobject */,
+    const    wchar_t *          /* InpBuf */,
+    const    size_t             /* InpSize */,
+             void *             /* OutBuf */,
+             size_t *           /* OutSize */,
+             size_t *           /* InpToOut */,
+             size_t *           /* OutToInp */,
+    unsigned char *             /* Property */,
+             size_t *           /* InpBufIndex */
+);
+
+/*--**--**--**--**--**--**--**--**---**--**--**--**--**--**--**--**--*/
+/* Start of ... API function information...                          */
+/*--**--**--**--**--**--**--**--**---**--**--**--**--**--**--**--**--*/
+
+#endif /* #ifndef _LAYOUT_H */

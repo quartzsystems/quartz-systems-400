@@ -1,0 +1,62 @@
+     /* begin_generated_IBM_copyright_prolog                              */
+     /* This is an automatically generated copyright prolog.              */
+     /* After initializing,  DO NOT MODIFY OR MOVE                        */
+     /* ----------------------------------------------------------------- */
+     /*                                                                   */
+     /* Product(s):                                                       */
+     /*     5761-SS1                                                      */
+     /*                                                                   */
+     /* (C)Copyright IBM Corp.  2007, 2008                                */
+     /*                                                                   */
+     /* All rights reserved.                                              */
+     /* US Government Users Restricted Rights -                           */
+     /* Use, duplication or disclosure restricted                         */
+     /* by GSA ADP Schedule Contract with IBM Corp.                       */
+     /*                                                                   */
+     /* Licensed Materials-Property of IBM                                */
+     /*                                                                   */
+     /*  ---------------------------------------------------------------  */
+     /*                                                                   */
+     /* end_generated_IBM_copyright_prolog                                */
+      *** START HEADER FILE SPECIFICATIONS ***********************
+      *
+      *Header File Name: IFS
+      *
+      *Descriptive Name: POSIX IFS stream I/O
+      *
+      *Change Activity:
+      *
+      *CFD List:
+      *
+      *FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION
+      *---- ------------ ----- ------ --------- ----------------------
+      *$A0=              6D10  070830 BLM       New Include
+      *
+      *End CFD List.
+      *
+      *Additional notes about the Change Activity
+      *End Change Activity.
+      *** END HEADER FILE SPECIFICATIONS ******************************
+
+      * Define LARGE_FILES to get 64-bit version
+
+      /IF DEFINED(QIBM_IFS_INCLUDED)
+      /EOF
+      /ENDIF
+      /DEFINE QIBM_IFS_INCLUDED
+
+      /COPY QSYSINC/QRPGLESRC,SYSTYPES
+      /COPY QSYSINC/QRPGLESRC,SYSSTAT
+      /COPY QSYSINC/QRPGLESRC,FCNTL
+      /COPY QSYSINC/QRPGLESRC,UNISTD
+      /COPY QSYSINC/QRPGLESRC,ERRNO
+
+     D STREAM_NEW_LINE...
+     D                 C                   X'15'
+
+     D STREAM_LINE_FEED...
+     D                 C                   X'25'
+
+     D STREAM_CARRIAGE_RETURN...
+     D                 C                   X'0D'
+

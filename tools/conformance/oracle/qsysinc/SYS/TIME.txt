@@ -1,0 +1,166 @@
+#ifdef __cplusplus
+  #pragma info(none)
+#else
+  #pragma nomargins nosequence
+  #pragma checkout(suspend)
+#endif
+
+#ifndef __sys_time_h
+  #define __sys_time_h  1
+
+
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/*  Header File Name:  sys/time.h                                    */
+/*                                                                   */
+/*  Descriptive Name:  File System API definition                    */
+/*                                                                   */
+/*  5763-SS1, 5716-SS1, 5769-SS1, 5722-SS1                           */
+/*  (C) Copyright IBM Corp. 1993, 2001                               */
+/*  All rights reserved.                                             */
+/*  US Government Users Restricted Rights -                          */
+/*  Use, duplication or disclosure restricted                        */
+/*  by GSA ADP Schedule Contract with IBM Corp.                      */
+/*                                                                   */
+/*  Licensed Materials-Property of IBM                               */
+/*                                                                   */
+/*  Description: Defines prototypes and structures to be used with   */
+/*               the file system select API and other time APIs.     */
+/*                                                                   */
+/*                                                                   */
+/*  Header Files Include : sys/types.h                               */
+/*                                                                   */
+/*  Macros List          : __sys_time_h                              */
+/*                         ITIMER_REAL                               */
+/*                         ITIMER_VIRTUAL                            */
+/*                         ITIMER_PROF                               */
+/*                                                                   */
+/*  Structure List       : timeval                                   */
+/*                         timezone                                  */
+/*                         itimerval                                 */
+/*                                                                   */
+/*  Function Prototype   : select                                    */
+/*                         adjtime                                   */
+/*                         gettimeofday                              */
+/*                         settimeofday                              */
+/*                         getitimer                                 */
+/*                         setitimer                                 */
+/*                         Qp0zAdjTime                           @A6A*/
+/*                         Qp0zGetTimeofDay                      @A6A*/
+/*                         Qp0zSetTimeofDay                      @A6A*/
+/*                                                                   */
+/*  Change Activity :                                                */
+/*                                                                   */
+/*  CFD List:                                                        */
+/*                                                                   */
+/*  FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION      */
+/*  ---- ------------ ----- ------ --------- ----------------------- */
+/*  $A0= D28418       3D10  940307 ROCH      New Include             */
+/*  $A1= P3992252     3D60  950522 ROCH      Add __cplusplus #ifdef  */
+/*                                           and #pragma info(none)  */
+/*  $A2= PTH01765     3D60  950804 ROCH      Correct #pragma info    */
+/*  $A3= D9477900     4D20  961211 ROCH      Add software clock APIs */
+/*                                           and struct timezone.    */
+/*  $A3= D9477900     4D20  970604 ROCH      Add interval timer      */
+/*                                           defines and structures. */
+/*  $A4= P3648448     4D20  970624 ROCH      Remove _POSIX_SOURCE.   */
+/*  $A5= D98212.1     5D10  991107 ROCH:     Teraspace stage 2       */
+/*  $A6= D99145       5D30  030316 ROCH:     Time modernization      */
+/*  End CFD List.                                                    */
+/*                                                                   */
+/*   Additional notes about the Change Activity                      */
+/*  End Change Activity                                              */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+
+  #ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+      #define QBFC_EXTERN extern
+    #else
+      #define QBFC_EXTERN extern "C"
+    #endif
+    #define __QBFC_EXTERN
+  #endif
+
+  #ifndef __types_h
+    #include <sys/types.h>
+  #endif
+
+ #if (__OS400_TGTVRM__>=510)                                   /*@A5A*/
+     #pragma datamodel(P128)                                   /*@A5A*/
+ #endif                                                        /*@A5A*/
+
+ /*------------------------------------------------------------------*/
+ /*                        Macro definitions                         */
+ /*------------------------------------------------------------------*/
+
+ #define ITIMER_REAL     1          /* Real time inteval timer       */
+ #define ITIMER_VIRTUAL  2          /* Virtual inteval timer         */
+ #define ITIMER_PROF     3          /* Profiling interval timer      */
+
+ /*------------------------------------------------------------------*/
+ /*                      Structure definitions                       */
+ /*------------------------------------------------------------------*/
+
+  struct timeval {
+     long  tv_sec;                  /* second                        */
+     long  tv_usec;                 /* microseconds                  */
+   };
+
+  struct itimerval {
+     struct timeval it_interval;    /* timer interval                */
+     struct timeval it_value;       /* current value                 */
+   };
+
+  struct timezone {
+      int  tz_minuteswest;          /* minutes west of Greenwich     */
+      int  tz_dsttime;              /* daylight savings time flag    */
+   };
+
+ /*------------------------------------------------------------------*/
+ /*                       Function prototypes                        */
+ /*------------------------------------------------------------------*/
+
+  QBFC_EXTERN int select( int, fd_set *, fd_set *, fd_set *,
+                          struct timeval * );
+
+  QBFC_EXTERN int adjtime( struct timeval *,
+                           struct timeval * );
+
+  QBFC_EXTERN int gettimeofday( struct timeval *,
+                                struct timezone * );
+
+  QBFC_EXTERN int settimeofday( struct timeval *,
+                                struct timezone * );
+
+  QBFC_EXTERN int getitimer( int, struct itimerval * );
+
+  QBFC_EXTERN int setitimer( int, const struct itimerval *,
+                             struct itimerval * );
+
+  QBFC_EXTERN int Qp0zAdjTime( struct timeval *,
+                               struct timeval * );             /*@A6A*/
+
+  QBFC_EXTERN int Qp0zGetTimeofDay( struct timeval *,
+                                    struct timezone * );       /*@A6A*/
+
+  QBFC_EXTERN int Qp0zSetTimeofDay( struct timeval *,
+                                    struct timezone * );       /*@A6A*/
+
+  #if (__OS400_TGTVRM__<530)                                   /*@A6A*/
+    #pragma map(adjtime, "Qp0zAdjTime")                        /*@A6A*/
+    #pragma map(gettimeofday, "Qp0zGetTimeofDay")              /*@A6A*/
+    #pragma map(settimeofday, "Qp0zSetTimeofDay")              /*@A6A*/
+  #endif                                                       /*@A6A*/
+
+#if (__OS400_TGTVRM__>=510)                                    /*@A5A*/
+    #pragma datamodel(pop)                                     /*@A5A*/
+#endif                                                         /*@A5A*/
+
+#endif                              /* __sys_time_h                  */
+
+#ifdef __cplusplus
+  #pragma info(restore)
+#else
+  #pragma checkout(resume)
+#endif

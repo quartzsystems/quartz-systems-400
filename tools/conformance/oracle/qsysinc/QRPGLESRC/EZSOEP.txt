@@ -1,0 +1,54 @@
+     D*** START HEADER FILE SPECIFICATIONS *******************************
+     D*
+     D*Include File Name      :  EZSOEP
+     D*
+     D*Descriptive Name       :  Socket SIGNON server
+     D*                      Exit Program Structure
+     D*
+     D*5716-SS1  (C) Copyright IBM Corp. 1995.
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*Description: This include defines the parameter structures for
+     D*         the exit point defined for the socket signon
+     D*         server.
+     D*
+     D*
+     D*Header Files Included: None.
+     D*
+     D*Macros List: None.
+     D*
+     D*Structure List: EZSQSF
+     D*
+     D*Function Prototype List: None.
+     D*
+     D*Change Activity:
+     D*
+     D*CFD List:
+     D*
+     D*FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION
+     D*---- ------------ ----- ------ --------- ----------------------
+     D*$A0= P3978167     3D60  950201 ROCHESTER:New Include
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*End Change Activity.
+     D*** END HEADER FILE SPECIFICATIONS *********************************
+     D******************************************************************
+     D*Structure for signon server exit program structure
+     D******************************************************************
+     DEZSQSF           DS
+     D*                                             Qzso Signon Format
+     D EZSUP02                 1     10
+     D*                               User profile
+     D EZSAN                  11     20
+     D*                               Server ID
+     D EZSFN02                21     28
+     D*                               Format name
+     D EZSCTION               29     32I 0
+     D*                               Requested function

@@ -1,0 +1,118 @@
+     D*begin_generated_IBM_copyright_prolog
+     D*This is an automatically generated copyright prolog.
+     D*After initializing,  DO NOT MODIFY OR MOVE
+     D*-----------------------------------------------------------------
+     D*
+     D*Product(s):
+     D*5716-SS1
+     D*5722-SS1
+     D*5761-SS1
+     D*
+     D*(C)Copyright IBM Corp.  1995, 2007
+     D*
+     D*All rights reserved.
+     D*US Government Users Restricted Rights -
+     D*Use, duplication or disclosure restricted
+     D*by GSA ADP Schedule Contract with IBM Corp.
+     D*
+     D*Licensed Materials-Property of IBM
+     D*
+     D*---------------------------------------------------------------
+     D*
+     D*end_generated_IBM_copyright_prolog
+     D*** START HEADER FILE SPECIFICATIONS *******************************
+     D*
+     D*Header File Name       :  H/EZRCEP
+     D*
+     D*Descriptive Name       :  Remote Command/Remote Program Call
+     D*                      Exit Program Structure
+     D*
+     D*Description: This include defines the parameter structure for
+     D*         the exit point defined for the Remote Command/
+     D*         Remote Program Call server.
+     D*
+     D*         QIBM_QZRC_RMT format CZRC0100
+     D*
+     D*
+     D*Header Files Included: None.
+     D*
+     D*Macros List: None.
+     D*
+     D*Structure List: Qzrc_Rmtsrv_Format_t
+     D*            Qzrc_Rmtsrv_Format2_t
+     D*
+     D*Function Prototype List: None.
+     D*
+     D*Change Activity:
+     D*
+     D*CFD List:
+     D*
+     D*FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION
+     D*---- ------------ ----- ------ --------- ----------------------
+     D*$A0= P3978167     3D60  950131 ROCHESTER:New Include
+     D*$A1= P9934931     5D10  001105 ROCHESTER:Teraspace stage 2
+     D*$A2= D93674       6D10  060830 ROCHESTER:Unicode-enabled commands
+     D*
+     D*End CFD List.
+     D*
+     D*Additional notes about the Change Activity
+     D*End Change Activity.
+     D*** END HEADER FILE SPECIFICATIONS *********************************
+     D*Server Id constants
+     D*Format name constants
+     D*Function Id constants
+     D******************************************************************
+     D*Typedef for Remote Cmd/Pgm Call Server exit program structure
+     D******************************************************************
+     DEZRQRF           DS
+     D*                                             Qzrc Rmtsrv Format
+     D EZRUP                   1     10
+     D*                               User profile
+     D EZRAN                  11     20
+     D*                               Server ID
+     D EZRFN                  21     28
+     D*                               Format name
+     D EZRCTION               29     32I 0
+     D*                               Requested function
+     D EZRBJECT               33     42
+     D*                               Object name
+     D EZRBRARY               43     52
+     D*                               object library name
+     D EZRLO                  53     56I 0
+     D*                               length of last field
+     D EZROTHER               57   6056
+     D*                               remaining data
+     D******************************************************************
+     D*Updated Typedef for Remote Cmd/Pgm Call Server exit program
+     D*structure.  This typedef supports Unicode-enabled commands,
+     D*and removes the 6000-byte limit on commands and parameters.
+     D******************************************************************
+     DEZRQRF2          DS
+     D*                                             Qzrc Rmtsrv Format2
+     D EZRUP00                 1     10
+     D*                               User profile
+     D EZRSID                 11     20
+     D*                               Server ID
+     D EZRFN00                21     28
+     D*                               Format name
+     D EZRFID                 29     32I 0
+     D*                               Requested function
+     D EZRRMAT2               33     42
+     D*                                             QZRC-RMTSRV-FORMAT2
+     D* CCSID-EZR-R REDEFINES QZRC-RMTSRV-FORMAT2
+     D  EZRCCSID              33     36I 0
+     D*                               Command CCSID
+     D* OBJECT-EZR-R REDEFINES QZRC-RMTSRV-FORMAT2
+     D  EZRBJECT00            33     42
+     D*                               Object name for program call
+     D EZRBRARY00             43     52
+     D*                               object library name
+     D EZRLO00                53     56I 0
+     D*                               length of last field
+     D*EZROTHER00             57     57
+     D*
+     D*                               varying length data for the
+     D*                               command or the program
+     D*                               parameters. The space for this
+     D*                               data must be provided by the
+     D*                               user's program.

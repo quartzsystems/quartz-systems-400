@@ -1,0 +1,74 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5722-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  2007, 2007                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+/*** START HEADER FILE SPECIFICATIONS *****************************/
+/*                                                                */
+/* Header File Name: H/ETOCSVRE                                   */
+/*                                                                */
+/* Descriptive Name: User-defined Server Exit Declarations        */
+/*                                                                */
+/* Licensed Materials-Property of IBM                             */
+/*                                                                */
+/*                                                                */
+/* Description: The Start TCP/IP, Start TCP/IP Server,            */
+/*              End TCP/IP, and End TCP/IP Server commands call   */
+/*              user-written program for user-defined servers.    */
+/*                                                                */
+/* Use, duplication or disclosure restricted                      */
+/* by GSA ADP Schedule Contract with IBM Corp.                    */
+/*                                                                */
+/* Licensed Materials-Property of IBM                             */
+/*                                                                */
+/*                                                                */
+/* Header Files Included: None                                    */
+/*                                                                */
+/* Macros List: None                                              */
+/*                                                                */
+/* Structure List: Qtoc_Server_Action                             */
+/*                                                                */
+/* Function Prototype List: None.                                 */
+/*                                                                */
+/* Change Activity:                                               */
+/* FLAG REASON       LEVEL DATE   PGMR      CHANGE DESCRIPTION    */
+/* ---- ----------- -----  ------ --------- ----------------------*/
+/* $A0= D93424      v5r5m0 030224           New part              */
+/*                                                                */
+/* End Change Activity.                                           */
+/******************************************************************/
+
+#ifndef ETOCSVRE_h
+#define ETOCSVRE_h
+
+#pragma datamodel(P128)
+
+/******************************************************************/
+/* Structure for user-defined server exit program call            */
+/******************************************************************/
+typedef _Packed struct  Qtoc_Server_Action {
+     char   Action[10];
+     char   Reserved[22];
+     char   Instance_Name[32];
+     int    Offset_to_Startup_Values;
+     int    Length_Of_Startup_Values;
+     /*char Startup_Values[1]; */     /* variable length data   */
+} Qtoc_Server_Action_t;
+
+#pragma datamodel(pop)
+#endif

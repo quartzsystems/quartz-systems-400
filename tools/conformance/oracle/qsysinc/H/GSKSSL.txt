@@ -1,0 +1,1396 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5722-SS1                                                      */
+/*     5770-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  2001, 2019                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name:  gskssl.h                                       */
+/*                                                                   */
+/* Descriptive Name: Secure Toolkit Layer (GSKSSL) API Definition    */
+/*                                                                   */
+/* Description:                                                      */
+/*                                                                   */
+/*          Defines prototypes, macros, variables, and               */
+/*          structures to be used with the GSK API.                  */
+/*                                                                   */
+/* Header Files Included:                                            */
+/*                                                                   */
+/*                                                                   */
+/* Macros List:                                                      */
+/*                                                                   */
+/*                                                                   */
+/* Structure List:                                                   */
+/*                                                                   */
+/*          GSKErrorMsgStr                                           */
+/*          gsk_cert_data_elem_t                                     */
+/*          data_buf_struct                                          */
+/*          SIDCacheCallBack_struct                                  */
+/*          gsk_list_t                                               */
+/*                                                                   */
+/* Function Prototype List:                                          */
+/*                                                                   */
+/*          gsk_attribute_get_buffer                                 */
+/*          gsk_attribute_get_buffer_ts64                            */
+/*          gsk_attribute_get_cert_info                              */
+/*          gsk_attribute_get_cert_info_ts64                         */
+/*          gsk_attribute_get_enum_value                             */
+/*          gsk_attribute_get_numeric_value                          */
+/*          gsk_attribute_set_buffer                                 */
+/*          gsk_attribute_set_callback                               */
+/*          gsk_attribute_set_enum                                   */
+/*          gsk_attribute_set_numeric_value                          */
+/*          gsk_environment_close                                    */
+/*          gsk_environment_init                                     */
+/*          gsk_environment_open                                     */
+/*          gsk_secure_soc_close                                     */
+/*          gsk_secure_soc_init                                      */
+/*          gsk_secure_soc_startInit                            @A1A */
+/*          gsk_secure_soc_misc                                      */
+/*          gsk_secure_soc_open                                      */
+/*          gsk_secure_soc_read                                      */
+/*          gsk_secure_soc_startRecv                                 */
+/*          gsk_secure_soc_write                                     */
+/*          gsk_secure_soc_startSend                                 */
+/*          gsk_strerror                                             */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/*   CFD List:                                                       */
+/*                                                                   */
+/*   FLAG REASON       LEVEL DATE    PGMR     CHANGE DESCRIPTION     */
+/*   ---- ------------ ----- ------- -------- ---------------------- */
+/*   $A0= DXXXXXXXX    5D10  991001  ROCH     New include.           */
+/*   $A1= DXXXXXXXX    5D20  000421  ROCH     Add startInit          */
+/*   $A2= DXXXXXXXX    5D30  020421  ROCH     GSKit 6B level         */
+/*   $A3= DXXXXXXXX    7D20  100129  ROCH     TLS 1.2                */
+/*   $A4= DXXXXXXXX    7D30  140320  ROCH     GSKit currency         */
+/*   $A5= DXXXXXXXX    7D40  170223  ROCH     GSKit currency         */
+/*   $A6= DXXXXXXXX    7D40  170818  ROCH     TLS 1.3                */
+/*   $A7= DXXXXXXXX    7D40  190528  ROCH     GSKit currency         */
+/*                                                                   */
+/*   End CFD List.                                                   */
+/*                                                                   */
+/*   Additional notes about the Change Activity:                     */
+/*                                                                   */
+/* End Change Activity                                               */
+/*                                                                   */
+/*** END HEADER FILE SPECIFICATIONS **********************************/
+
+#ifndef __gskssl_h
+  #define __gskssl_h
+
+#ifndef __QBFC_EXTERN
+  #ifdef __ILEC400__
+    #define QBFC_EXTERN extern
+  #else
+    #define QBFC_EXTERN extern "C"
+  #endif
+
+  #define __QBFC_EXTERN
+#endif
+
+#if (__OS400_TGTVRM__>=510)
+#pragma datamodel(P128)
+#endif
+
+#define PGSK_LINKAGE
+/*********************************************************************/
+/* Header files                                                      */
+/*********************************************************************/
+#include <qsoasync.h>                  /* asynchronous I/O           */
+
+/*********************************************************************/
+/* Structures                                                        */
+/*********************************************************************/
+
+#define GSK_IBMI_4BYTE_VALUE                       70000      /* @A1C */
+
+typedef void *gsk_handle;
+
+typedef enum GSK_MISC_ID_T
+{
+  GSK_RESET_CIPHER = 100,  /* Rerun handshake */
+  GSK_RESET_SESSION = 101, /* Reset SID entry */
+  GSK_RESET_CIPHER_WITHNEWSESSION = 102, /* Rerun full handshake @A3A */
+  GSK_CLOSE_NOTIFY = 103,           /* issue close_notify alert @A3A */
+               /* Force enum size to 4 bytes - do not use this value */
+  GSK_IBMI_MISC_FINAL = GSK_IBMI_4BYTE_VALUE                 /* @A1C */
+
+} GSK_MISC_ID;
+
+  /* Not all of these values are supported, see information center */
+typedef enum GSK_BUF_ID_T
+{
+  GSK_USER_DATA = 200,
+  GSK_KEYRING_FILE = 201,
+  GSK_KEYRING_PW = 202,
+  GSK_KEYRING_LABEL = 203,
+  GSK_KEYRING_STASH_FILE = 204,
+  GSK_V2_CIPHER_SPECS = 205,
+  GSK_V3_CIPHER_SPECS = 206,
+  GSK_CONNECT_CIPHER_SPEC = 207,
+  GSK_CONNECT_SEC_TYPE = 208,
+  GSK_LDAP_SERVER = 209,
+  GSK_LDAP_USER = 210,
+  GSK_LDAP_USER_PW = 211,
+  GSK_SID_VALUE = 212,
+  GSK_PKCS11_DRIVER_PATH = 213,
+  GSK_PKCS11_TOKEN_LABEL = 214,                              /* @A2A */
+  GSK_PKCS11_TOKEN_PWD = 215,                                /* @A2A */
+  GSK_CSP_NAME = 216,                                        /* @A2A */
+/*GSK_PEER_ID = 217,                                            @A3A */
+/*GSK_TLS_CIPHER_SPECS = 218,                                   @A3A */
+/*GSK_LDAP_DRIVER_PATH = 219,                                   @A3A */
+/*GSK_VERSION_NUMBER = 220,                                     @A3A */
+  GSK_OCSP_URL = 221,                                        /* @A3A */
+  GSK_OCSP_REQUEST_SIGKEYLABEL = 222,                        /* @A3A */
+  GSK_OCSP_PROXY_SERVER_NAME = 223,                          /* @A3A */
+  GSK_UNKNOWNREVOCATIONSTATUS_SUBJECT = 224,                 /* @A3A */
+/*GSK_HTTP_PROXY_SERVER_NAME = 225,                             @A3A */
+/*GSK_FACTORY_IMPL_MAP = 226,                                   @A3A */
+  GSK_SSL_EXTN_SERVERNAME_REQUEST = 230,                     /* @A3A */
+  GSK_SSL_EXTN_SERVERNAME_CRITICAL_REQUEST = 231,            /* @A3A */
+  GSK_SSL_EXTN_SERVERNAME_LIST = 232,                        /* @A3A */
+  GSK_SSL_EXTN_SERVERNAME_CRITICAL_LIST = 233,               /* @A3A */
+  GSK_SSL_EXTN_SERVERNAME = 234,                             /* @A3A */
+  GSK_VALIDATIONFAIL_SUBJECT = 235,                          /* @A3A */
+  GSK_TLSV10_CIPHER_SPECS = 236,                             /* @A3A */
+  GSK_TLSV11_CIPHER_SPECS = 237,                             /* @A3A */
+  GSK_TLSV12_CIPHER_SPECS = 238,                             /* @A3A */
+/*GSK_PEER_CERT_CHAIN = 239,                                    @A3A */
+  GSK_V3_CIPHER_SPECS_EX = 240,                              /* @A3A */
+  GSK_TLSV10_CIPHER_SPECS_EX = 241,                          /* @A3A */
+  GSK_TLSV11_CIPHER_SPECS_EX = 242,                          /* @A3A */
+  GSK_TLSV12_CIPHER_SPECS_EX = 243,                          /* @A3A */
+  GSK_CONNECT_CIPHER_SPEC_EX = 244,      /* get only, soc only  @A3A */
+  GSK_SSL_EXTN_SIGALG = 245,                                 /* @A3A */
+/*GSK_USER_ENVPTR = 246,                                        @A3A */
+  GSK_CONNECT_COMPRESSION = 247,         /* get only, soc only  @A3A */
+/*GSK_VALIDATION_LOG = 248,                                     @A3A */
+/*GSK_MSCNG_CRYPTO_PROVIDER = 249,                              @A3A */
+/*GSK_MSCNG_STORAGE_PROVIDER = 250,                             @A3A */
+/*GSK_MSCNG_PIN = 251,                                          @A3A */
+  GSK_UNKNOWNREVOCATIONSTATUS_SUBJECT_NOAIA = 252,
+/*GSK_MSCAPI_CSP_NAME = 253                                     @A3A */
+  GSK_KEYRING_LABEL_EX = 254,                                /* @A3A */
+/*GSK_SSL_LIB_PATH = 254,       				@A4A */
+/*GSK_HOST_URI_REFID = 255,     				@A4A */
+/*GSK_HOST_MATCHED_ID = 256,    				@A4A */
+/*GSK_HOST_PIN_URI_REFID = 257, 				@A4A */
+/*GSK_HOST_PIN_CERT_CHAIN = 258,				@A4A */
+/*GSK_SSL_EXTN_NEXT_PROTOCOL_NEGOTIATION = 259, 		@A4A */
+/*GSK_SSL_EXTN_SELECTED_PROTOCOL = 260, 			@A4A */
+/*GSK_DTLSV10_CIPHER_SPECS_EX = 261,    			@A4A */
+/*GSK_DTLSV12_CIPHER_SPECS_EX = 262,    			@A4A */
+/*GSK_USERTRACEMESSAGE = 264,                    set only 	@A4A */
+/*GSK_TLS12_TLS11_TLS10_CIPHER_SPECS = 265,     		@A4A */
+/*GSK_DTLS12_DTLS10_CIPHER_SPECS = 266, 			@A4A */
+/*GSK_VALIDATION_USER_INITIAL_POLICY_SET=270,   		@A4A */
+/*GSK_SSL_EXTN_SESSIONTICKET_KEY=271,   			@A4A */
+/*GSK_KEYRING_DATA = 272,       				@A4A */
+/*GSK_SSL_EXTN_TCA_ID=273,      				@A4A */
+/*GSK_SSL_EXTN_SESSIONTICKET_KEY_KEYLABEL=274,  		@A4A */
+/*GSK_SSL_EXTN_SESSIONTICKET_NAME=275,  			@A4A */
+  GSK_SSL_EXTN_ALPN = 276,                		     /* @A4A */
+  GSK_SSL_EXTN_SELECTED_ALPN_PROTOCOL = 277,       	     /* @A4A */
+/*GSK_TLSV12_TLSV11_TLSV10_CIPHER_SPECS = 278,  		@A4A */
+/*GSK_DTLSV12_DTLSV10_CIPHER_SPECS = 279,       		@A4A */
+  GSK_TLS_EXTN_SIG_SCHEME = 2001,                            /* @A6A */
+  GSK_TLS_EXTN_SIG_SCHEME_CERT = 2003,                       /* @A6A */
+  GSK_TLS_EXTN_SUPPORTED_GROUPS = 2005,                      /* @A6A */
+  GSK_TLSV13_CIPHER_SPECS_EX = 2008,                         /* @A6A */
+  GSK_IBMI_APPLICATION_ID = 6999,
+               /* Force enum size to 4 bytes - do not use this value */
+  GSK_IBMI_BUF_FINAL = GSK_IBMI_4BYTE_VALUE                  /* @A1C */
+
+} GSK_BUF_ID;
+
+#define GSK_OS400_APPLICATION_ID GSK_IBMI_APPLICATION_ID     /* @A3A */
+#define GSK_TLSV0_CIPHER_SPECS   GSK_TLSV10_CIPHER_SPECS     /* @A3A */
+#define GSK_TLSV1_CIPHER_SPECS   GSK_TLSV11_CIPHER_SPECS     /* @A3A */
+#define GSK_TLSV2_CIPHER_SPECS   GSK_TLSV12_CIPHER_SPECS     /* @A3A */
+
+/** used for optional OCSP Request signing */                /* @A3A */
+typedef enum GSK_SIGALG_ID_T {                               /* @A3A */
+/* GSK_SIGALG_NONE = 0, 					@A4A */
+   GSK_SIGALG_MD5_WITH_RSA = 1,                              /* @A3A */
+   GSK_SIGALG_SHA1_WITH_RSA = 2                              /* @A3A */
+} GSK_SIGALG_ID_T;                                           /* @A3A */
+
+/** used for optional TLS CBC Protection */
+typedef enum GSK_TLS_CBCPROTECTION_METHOD_NUM_T {            /* @A3A */
+   GSK_TLS_CBCPROTECTION_METHOD_NONE = 0,                    /* @A3A */
+   GSK_TLS_CBCPROTECTION_METHOD_ZEROBYTEFRAGMENT = 1,        /* @A3A */
+   GSK_TLS_CBCPROTECTION_METHOD_ONEBYTEFRAGMENT = 2,         /* @A3A */
+   GSK_TLS_CBCPROTECTION_METHOD_DELAYEDONEBYTEFRAGMENT = 3   /* @A3A */
+} GSK_TLS_CBCPROTECTION_METHOD_NUM;                          /* @A3A */
+
+
+  /* Not all of these values are supported, see information center */
+typedef enum GSK_NUM_ID_T
+{
+  GSK_FD = 300,
+  GSK_V2_SESSION_TIMEOUT = 301,
+  GSK_V3_SESSION_TIMEOUT = 302,
+  GSK_LDAP_SERVER_PORT = 303,
+  GSK_V2_SIDCACHE_SIZE = 304,
+  GSK_V3_SIDCACHE_SIZE = 305,
+/*GSK_LDAP_SERVER_INDEX = 306,                                  @A2A */
+/*GSK_LDAP_FAILOVER_RECONNECTION_PERIOD = 307,                  @A2A */
+/*GSK_CRL_CACHE_ENTRY_LIFETIME = 308,                           @A2A */
+/*GSK_CRL_CACHE_SIZE = 309,                                     @A2A */
+/*GSK_SKIO_TIMEOUT=310,                                         @A3A */
+  GSK_LAST_VALIDATION_ERROR=311,                             /* @A3A */
+  GSK_OCSP_PROXY_SERVER_PORT = 312,                          /* @A3A */
+  GSK_OCSP_REQUEST_SIGALG = 313,                             /* @A3A */
+/*GSK_LDAP_SERVER_VERSION = 314,                                @A3A */
+  GSK_OCSP_MAX_RESPONSE_SIZE = 315,                          /* @A3A */
+/*GSK_HTTP_CDP_MAX_RESPONSE_SIZE = 316,                         @A3A */
+/*GSK_HTTP_PROXY_SERVER_PORT = 317,                             @A3A */
+  GSK_OCSP_TIMEOUT = 318,                                    /* @A3A */
+/*GSK_HTTP_CDP_TIMEOUT = 319,                                   @A3A */
+/*GSK_MAX_SSL_MESSAGE_SIZE = 320,                               @A3A */
+  GSK_SSL_EXTN_MAXFRAGMENT_SIZE = 321,                       /* @A3A */
+/*GSK_SSL_EXTN_EXTENDEDRANDOM_SIZE = 322,                       @A3A */
+/*GSK_SSL_EXTN_EXTENDEDRANDOM_CRITICAL_SIZE = 323,              @A3A */
+  GSK_OCSP_NONCE_SIZE=324,                                   /* @A3A */
+/*GSK_ICC_PRNG_SELECTION=325,                                   @A3A */
+  GSK_OCSP_CLIENT_CACHE_SIZE=326,                            /* @A3A */
+/*GSK_HTTP_CRL_CACHE_SIZE=327,                                  @A3A */
+/*GSK_ICC_TRNG_SELECTION=328,                                   @A3A */
+  GSK_TLS_CBCPROTECTION_METHOD=329,                          /* @A3A */
+/*GSK_TLS_ALERT_VALUE=330,      				@A4A */
+/*GSK_CLOSELOCK_TIMEOUT=331,    				@A4A */
+/*GSK_ICC_NUM_RNG_SELECTION=332,				@A4A */
+/*GSK_MTU = 333,        					@A4A */
+/*GSK_DTLS_PMTU = 334,          				@A4A */
+  GSK_MIN_RSA_KEY_SIZE = 335,   			     /* @A4A */
+  GSK_HTTP_CONNECT_TIMEOUT = 336,                            /* @A7A */
+  GSK_SSL_EXTN_SESSIONTICKET_KEY_LIFETIME = 337,             /* @A6A */
+/*GSK_CERT_PENDING_EXPIRY_DAYS = 338,   			@A4A */
+/*GSK_SIDCACHE_BUCKETS = 339,   				@A4A */
+/*GSK_LDAP_SEARCH_TIMEOUT = 340,				@A4A */
+  GSK_SSL_EXTN_SESSIONTICKET_MAX_SIZE = 341,                 /* @A7A */
+/*GSK_PADDINGCHECK_PROTECT_MAXSIZE = 350,                       @A7A */
+/*GSK_PADDING_PROTECT_MAXSIZE = 351,                            @A7A */
+  GSK_SSL_EXTN_SESSIONTICKET_NUMBER = 352,                   /* @A6A */
+  GSK_IBMI_READ_TIMEOUT = 6993,                              /* @A2A */
+  GSK_CERTIFICATE_VALIDATION_CODE = 6996,
+  GSK_HANDSHAKE_TIMEOUT = 6998,
+               /* Force enum size to 4 bytes - do not use this value */
+  GSK_IBMI_NUM_FINAL = GSK_IBMI_4BYTE_VALUE                  /* @A1C */
+
+} GSK_NUM_ID;
+
+#define GSK_OS400_READ_TIMEOUT GSK_IBMI_READ_TIMEOUT         /* @A3A */
+
+  /* Not all of these values are supported, see information center */
+typedef enum GSK_ENUM_ID_T
+{
+  GSK_CLIENT_AUTH_TYPE = 401,
+  GSK_SESSION_TYPE = 402,
+  GSK_PROTOCOL_SSLV2 = 403,
+  GSK_PROTOCOL_SSLV3 = 404,
+  GSK_PROTOCOL_USED = 405,
+  GSK_SID_FIRST = 406,
+  GSK_PROTOCOL_TLSV1 = 407,
+/*GSK_ACCELERATOR_RAINBOW_CS = 408,                             @A2A */
+/*GSK_ACCELERATOR_NCIPHER_NF = 409,                             @A2A */
+  GSK_SERVER_AUTH_TYPE = 410,                                /* @A2A */
+  GSK_ENVIRONMENT_CLOSE_OPTIONS = 411,                       /* @A2A */
+/*GSK_LDAP_REQUIRED_AT_INIT = 412,                              @A2A */
+/*GSK_AES_SUPPORT = 413,                                        @A2A */
+/*GSK_T61_AS_LATIN1=414,                                        @A3A */
+/*GSK_FIPS_MODE_PROCESSING=415,                                 @A3A */
+/*GSK_BASE_CRYPTO_LIBRARY=416,                                  @A3A */
+/*GSK_PKCS11_ACCELERATOR_MODE=417,                              @A3A */
+  GSK_CC_MODE_CONTROL=418,                                   /* @A3A */
+/*GSK_RESTRICTED_PROCESSING_OPTION=419,                         @A3A */
+  GSK_SSL_FIPS_MODE_PROCESSING = 420,                        /* @A4A */
+/*GSK_ICC_FIPS_MODE_PROCESSING=421,                             @A3A */
+/*GSK_PKIX_CERT_VALIDATION_MODE=422,                            @A3A */
+  GSK_ALLOW_UNAUTHENTICATED_RESUME=423,                      /* @A3A */
+/*GSK_USE_SOC_MUTEX=424,                                        @A3A */
+/*GSK_USE_SESSION_PROTECTION_IO=425,                            @A3A */
+  GSK_OCSP_ENABLE=426,                                       /* @A3A */
+  GSK_OCSP_NONCE_CHECK_ENABLE=427,                           /* @A3A */
+  GSK_OCSP_NONCE_GENERATION_ENABLE=428,                      /* @A3A */
+/*GSK_URI_CDP_DISABLE=429,                                      @A3A */
+  GSK_VALIDATE_EXTENDEDKEYUSAGE_ENABLE=430,                  /* @A3A */
+/*GSK_PKCS11_ONLY_TRUSTED=431,                                  @A3A */
+/*GSK_ALLOW_NONCRITICALBASICCONSTRAINT=432,                     @A3A */
+/*GSK_NIST_DES_FIPS_DEPRECATION=433,                            @A3A */
+/*GSK_PKCS11_RSAPADDING_PROTECTION_ENABLE=434,                  @A3A */
+  GSK_OCSP_RETRIEVE_VIA_GET=435,                             /* @A3A */
+  GSK_PROTOCOL_TLSV10 = 436,     /* SUPPORTED */             /* @A3A */
+  GSK_PROTOCOL_TLSV11 = 437,     /* SUPPORTED */             /* @A3A */
+  GSK_PROTOCOL_TLSV12 = 438,     /* SUPPORTED */             /* @A3A */
+/*GSK_SSLV2HELLO_ENABLE = 439,                                  @A3A */
+  GSK_SSL_EXTN_CERTSTATUSREQ_ENABLE = 440,                   /* @A7A */
+/*GSK_BINARY_DN_MATCHING_ENABLE=441,                            @A3A */
+  GSK_NO_RENEGOTIATION=442,                                  /* @A3A */
+/*GSK_ALLOW_ABBREVIATED_RENEGOTIATION=443,                      @A3A */
+/*GSK_DEFLATE_ENABLE=444,                                       @A3A */
+/*GSK_DEFLATE_DISABLE=445,                                      @A3A */
+/*GSK_ALLOW_ANY_RENEGOTIATION=446,                               @A3A */
+/*GSK_ALLOW_ONLY_EXTENDED_RENEGOTIATION=447,                    @A3A */
+/*GSK_EXTENDED_RENEGOTIATION_INDICATION_ENABLE=448,             @A3A */
+/*GSK_EXTENDED_RENEGOTIATION_INDICATION_SCSV=449,               @A3A */
+/*GSK_EXTENDED_RENEGOTIATION_INDICATION_RIEXT=450,              @A3A */
+/*GSK_EXTENDED_RENEGOTIATION_INDICATION_RIEXTN=450,     	@A4A */
+  GSK_EXTENDED_RENEGOTIATION_CRITICAL_CLIENT=451,            /* @A3A */
+  GSK_EXTENDED_RENEGOTIATION_CRITICAL_SERVER=452,            /* @A3A */
+/*GSK_RENEGOTIATION_PEER_IDENTITY_CHECK=453,                    @A3A */
+  GSK_SSL_SUITEB_MODE_PROCESSING = 454,                      /* @A4A */
+  GSK_SSL_SUITEB_128BIT_MODE_PROCESSING = 455,               /* @A4A */
+  GSK_SSL_SUITEB_192BIT_MODE_PROCESSING = 456,               /* @A4A */
+  GSK_CERTREQ_DNLIST_ENABLE=457,                             /* @A3A */
+/*GSK_CRYPTOTEST_ENABLE=458,                                    @A3A */
+/*GSK_MSCNG_ENABLE=459,                                         @A3A */
+/*GSK_MSCNG_SMARTCARD_SELECT=460,                               @A3A */
+/*GSK_MSCAPI_ENABLE=461                                         @A3A */
+/*GSK_CERTIFICATEMESSAGE_NOROOT=462,    			@A4A */
+/*GSK_ENFORCE_TDEA_RESTRICTION=463,     			@A4A */
+/*GSK_TDEA_KEYCHECK=464,					@A4A */
+/*GSK_ICC_AESNI_DISABLE=465,    				@A4A */
+  GSK_STRICT_SIGALG = 466,				     /* @A4A */
+/*GSK_ALERTSPECIFIC_ERROR=467,  				@A4A */
+  GSK_STRICT_CLIENT_VERSION_CHECK = 468,  		     /* @A4A */
+/*GSK_CLIENT_DEFLATE_ENABLE=469,				@A4A */
+/*GSK_SERVER_DEFLATE_ENABLE=470,				@A4A */
+/*GSK_STRICTCHECK_CBCPADBYTES = 471,    			@A4A */
+/*GSK_STRICTCHECK_CBCPADBYTES_SSL = 472,			@A4A */
+/*GSK_USE_IO_EVENTS=473,					@A4A */
+/*GSK_PROTOCOL_DTLSV10 = 474,   				@A4A */
+/*GSK_PROTOCOL_DTLSV12 = 475,   				@A4A */
+/*GSK_STRICT_KEYFILE_ERRORS = 476,      			@A4A */
+  GSK_NIST_SP800_131A_MODE = 477,       		     /* @A4A */
+/*GSK_STRICT_EE_KEYUSAGE_CHECK = 478,   			@A4A */
+/*GSK_SSL_EXTN_MULTIPLECERTSTATUSREQ_ENABLE = 479,      	@A4A */
+/*GSK_SSL_EXTN_SESSIONTICKET_ENABLE = 480,      		@A4A */
+/*GSK_ENFORCE_RC4_RESTRICTION=482,      			@A4A */
+  GSK_SSL_EXTN_SIGALG_SELECT_ALL = 483,   		     /* @A4A */
+  GSK_SSL_EXTN_ENCRYPTTHENMAC_SERVER_ENABLE = 484,           /* @A4A */
+  GSK_SSL_EXTN_ENCRYPTTHENMAC_CLIENT_ENABLE = 485,           /* @A4A */
+  GSK_SSL_EXTN_ENCRYPTTHENMAC_NEGOTIATED = 486, 	     /* @A4A */
+/*GSK_SSL_EXTN_PADDING_ENABLE = 487,    			@A4A */
+/*GSK_CHECK_PEER_CERT_CHAIN=488,				@A4A */
+  GSK_STRICT_BASIC_CONSTRAINT = 489,      		     /* @A4A */
+/*GSK_SSL_EXTN_SESSIONTICKET_ENABLE_EPHEMERAL = 490,    	@A4A */
+/*GSK_SSL_EXTN_TCA_ENABLE=491,  				@A4A */
+/*GSK_SSL_EXTN_TCA_ID=492,    			        	@A4A */
+  GSK_OCSP_CHECK_AIA_FIRST = 493, 			     /* @A4A */
+/*GSK_USE_IO_EVENTS_HANDSHAKE=494,      			@A4A */
+  GSK_FALLBACK_SCSV_SERVER = 495,                            /* @A4A */
+  GSK_FALLBACK_SCSV_CLIENT = 496,                            /* @A4A */
+  GSK_VACCINATE = 497,  				     /* @A4A */
+/*GSK_ENFORCE_GCM_RESTRICTION = 498,    			@A4A */
+/*GSK_ALLOW_NONSTANDARD_ECCERT = 4000,  			@A4A */
+  GSK_SSL_EXTN_EXTENDEDMASTERSECRET_SERVER_ENABLE = 4002,    /* @A5A */
+  GSK_SSL_EXTN_EXTENDEDMASTERSECRET_CLIENT_ENABLE = 4003,    /* @A5A */
+  GSK_SSL_EXTN_EXTENDEDMASTERSECRET_CRITICAL = 4004,         /* @A5A */
+  GSK_SSL_EXTN_EXTENDEDMASTERSECRET_NEGOTIATED = 4005,       /* @A5A */
+  GSK_TLS_FEATURES_EXTN_ENABLE = 4013,                       /* @A7A */
+  GSK_SSL_EXTN_ENCRYPTTHENMAC_CRITICAL = 4014,               /* @A5A */
+  GSK_PROTOCOL_TLSV13 = 4030,    /* SUPPORTED */             /* @A6A */
+  GSK_TLS_EXTN_SEND_EMPTY_KEY_SHARE = 4031,                  /* @A6A */
+  GSK_TLSV13_MIDDLEBOXMODE = 4034,                           /* @A6A */
+  GSK_SSL_EXTN_SESSIONTICKET_RESUMEFORWARDSECRECY = 4037,    /* @A6A */
+               /* Force enum size to 4 bytes - do not use this value */
+  GSK_IBMI_ENUM_FINAL = GSK_IBMI_4BYTE_VALUE                 /* @A1C */
+
+} GSK_ENUM_ID ;
+
+  /* Not all of these values are supported, see information center */
+typedef enum GSK_ENUM_VALUE_T
+{
+  GSK_FALSE = 0,                                             /* @A3A */
+  GSK_TRUE = 1,                                              /* @A3A */
+  GSK_NULL = 500,                         /* Use for initial value   */
+  GSK_CLIENT_AUTH_FULL = 503,             /* GSK_CLIENT_AUTH_TYPE    */
+  GSK_CLIENT_AUTH_PASSTHRU = 505,         /* GSK_CLIENT_AUTH_TYPE    */
+  GSK_CLIENT_SESSION = 507,               /* GSK_SESSION_TYPE        */
+  GSK_SERVER_SESSION = 508,               /* GSK_SESSION_TYPE        */
+  GSK_SERVER_SESSION_WITH_CL_AUTH = 509,  /* GSK_SESSION_TYPE        */
+  GSK_PROTOCOL_SSLV2_ON = 510,            /* GSK_PROTOCOL_SSLV2      */
+  GSK_PROTOCOL_SSLV2_OFF = 511,           /* GSK_PROTOCOL_SSLV2      */
+  GSK_PROTOCOL_SSLV3_ON = 512,            /* GSK_PROTOCOL_SSLV3      */
+  GSK_PROTOCOL_SSLV3_OFF = 513,           /* GSK_PROTOCOL_SSLV3      */
+  GSK_PROTOCOL_USED_SSLV2 = 514,          /* GSK_PROTOCOL_USED       */
+  GSK_PROTOCOL_USED_SSLV3 = 515,          /* GSK_PROTOCOL_USED       */
+  GSK_SID_IS_FIRST = 516,                 /* GSK_SID_FIRST           */
+  GSK_SID_NOT_FIRST = 517,                /* GSK_SID_FIRST           */
+  GSK_PROTOCOL_TLSV1_ON = 518,            /* GSK_PROTOCOL_TLSV1      */
+  GSK_PROTOCOL_TLSV1_OFF = 519,           /* GSK_PROTOCOL_TLSV1      */
+  GSK_PROTOCOL_USED_TLSV1 = 520,          /* GSK_PROTOCOL_USED (get) */
+/*GSK_ACCELERATOR_RAINBOW_CS_ON = 530,                          @A2A */
+/*GSK_ACCELERATOR_RAINBOW_CS_OFF = 531,                         @A2A */
+/*GSK_ACCELERATOR_NCIPHER_NF_ON = 532,                          @A2A */
+/*GSK_ACCELERATOR_NCIPHER_NF_OFF = 533,                         @A2A */
+  GSK_SERVER_AUTH_FULL = 534,       /* GSK_SERVER_AUTH_FULL     @A2A */
+  GSK_SERVER_AUTH_PASSTHRU = 535,   /* GSK_SERVER_AUTH_PASSTHRU @A2A */
+  GSK_DELAYED_ENVIRONMENT_CLOSE = 536,                       /* @A2A */
+  GSK_NORMAL_ENVIRONMENT_CLOSE = 537,                        /* @A2A */
+/*GSK_INIT_CRL_LDAP_REQUIRED_ON = 538,                          @A2A */
+/*GSK_INIT_CRL_LDAP_REQUIRED_OFF = 539,                         @A2A */
+/*GSK_AES_SUPPORT_ON = 540,                                     @A2A */
+/*GSK_AES_SUPPORT_OFF = 541,                                    @A2A */
+/*GSK_T61_AS_LATIN1_ON = 542,                                   @A3A */
+/*GSK_T61_AS_LATIN1_OFF = 543,                                  @A3A */
+/*GSK_FIPS_MODE_PROCESSING_ON = 544,                            @A3A */
+/*GSK_FIPS_MODE_PROCESSING_OFF = 545,                           @A3A */
+/*GSK_BASE_CRYPTO_RSA = 546,                                    @A3A */
+/*GSK_BASE_CRYPTO_ICC = 547,                                    @A3A */
+/*GSK_BASE_CRYPTO_SYSTEM_DEFAULT = 548,                         @A3A */
+/*GSK_PKCS11_SYMMETRIC_CIPHER_ON = 549,                         @A3A */
+/*GSK_PKCS11_SYMMETRIC_CIPHER_OFF = 550,                        @A3A */
+/*GSK_PKCS11_DIGEST_ON = 551,                                   @A3A */
+/*GSK_PKCS11_DIGEST_OFF = 552,                                  @A3A */
+/*GSK_PKCS11_RANDOMDATAGEN_ON = 553,                            @A3A */
+/*GSK_PKCS11_RANDOMDATAGEN_OFF = 554,                           @A3A */
+/*GSK_CC_MODE_DISABLE_STASH_FILE_ON = 555,                      @A3A */
+/*GSK_CC_MODE_DISABLE_STASH_FILE_OFF = 556,                     @A3A */
+/*GSK_CC_MODE_FIPS_ON = 557,                                    @A3A */
+/*GSK_CC_MODE_FIPS_OFF = 558,                                   @A3A */
+/*GSK_CC_MODE_ENFORCE_STRONG_PWD_ON = 559,                      @A3A */
+/*GSK_CC_MODE_ENFORCE_STRONG_PWD_OFF = 560,                     @A3A */
+/*GSK_CC_MODE_DISABLE_PKCS11_ON = 561,                          @A3A */
+/*GSK_CC_MODE_DISABLE_PKCS11_OFF = 562,                         @A3A */
+/*GSK_CC_MODE_ENFORCE_STRONG_KDB_ON = 563,                      @A3A */
+/*GSK_CC_MODE_ENFORCE_STRONG_KDB_OFF = 564,                     @A3A */
+  GSK_CC_MODE_STRICT_BASIC_CONST_ON=565,                     /* @A3A */
+  GSK_CC_MODE_STRICT_BASIC_CONST_OFF=566,                    /* @A3A */
+/*GSK_CC_MODE_ENFORCE_RIP_ON=567,                               @A3A */
+/*GSK_CC_MODE_ENFORCE_RIP_OFF=568,                              @A3A */
+/*GSK_RESTRICTED_PROCESSING_SSL_SPECIAL_RECORD_COALESCE_OFF=569,@A3A */
+/*GSK_RESTRICTED_PROCESSING_SSL_SPECIAL_RECORD_COALESCE_ON=570, @A3A */
+/*GSK_PKCS11_PUBLICKEYGEN_ON = 571,                             @A3A */
+/*GSK_PKCS11_PUBLICKEYGEN_OFF = 572,                            @A3A */
+  GSK_SSL_FIPS_MODE_PROCESSING_ON = 573,                     /* @A4A */
+  GSK_SSL_FIPS_MODE_PROCESSING_OFF = 574,                    /* @A4A */
+/*GSK_ICC_FIPS_MODE_PROCESSING_ON = 575,                        @A3A */
+/*GSK_ICC_FIPS_MODE_PROCESSING_OFF = 576,                       @A3A */
+/*GSK_PKIX_CERT_VALIDATION_MODE_ON=577,                         @A3A */
+/*GSK_PKIX_CERT_VALIDATION_MODE_OFF=578,                        @A3A */
+  GSK_ALLOW_UNAUTHENTICATED_RESUME_ON=588,                   /* @A3A */
+  GSK_ALLOW_UNAUTHENTICATED_RESUME_OFF=589,                  /* @A3A */
+/*GSK_USE_SOC_MUTEX_ON=590,                                     @A3A */
+/*GSK_USE_SOC_MUTEX_OFF=591,                                    @A3A */
+/*GSK_USE_SESSION_PROTECTION_IO_ON=592,                         @A3A */
+/*GSK_USE_SESSION_PROTECTION_IO_OFF=593,                        @A3A */
+  GSK_SERVER_SESSION_WITH_CL_AUTH_CRITICAL=594,              /* @A3A */
+  GSK_PROTOCOL_USED_TLSV11 = 595,   /* GSK_PROTOCOL_USED (get)  @A3A */
+  GSK_PROTOCOL_USED_TLSV12 = 596,   /* GSK_PROTOCOL_USED (get)  @A3A */
+/*GSK_ICC_CC_MODE_DISABLE_ALT_TRNG_OFF = 597,   		@A3A */
+/*GSK_ICC_CC_MODE_DISABLE_ALT_TRNG_ON = 598,    		@A3A */
+  GSK_PROTOCOL_USED_TLSV13 = 5000,  /* GSK_PROTOCOL_USED (get)  @A6A */
+  GSK_IBMI_SERVER_AUTH_REQUIRED = 6994,   /* GSK_SERVER_AUTH_TYPE @A2A*/
+  GSK_IBMI_CLIENT_AUTH_REQUIRED = 6995,    /* GSK_CLIENT_AUTH_TYPE    */
+               /* Force enum size to 4 bytes - do not use this value */
+  GSK_IBMI_ENUM_VALUE_FINAL = GSK_IBMI_4BYTE_VALUE           /* @A1C */
+
+} GSK_ENUM_VALUE ;
+
+#define GSK_OS400_SERVER_AUTH_REQUIRED GSK_IBMI_SERVER_AUTH_REQUIRED /* @A3A */
+#define GSK_OS400_CLIENT_AUTH_REQUIRED GSK_IBMI_CLIENT_AUTH_REQUIRED /* @A3A */
+
+/* The following enumerated type is the identifier for the data type
+   of the elements of the array of information in the gsk_cert_data
+   structure. Note that depending on the specific certificate, some
+   data types may not be present. */
+typedef enum GSK_CERT_DATA_ID_T
+{
+  CERT_BODY_DER = 600,     /* complete certificate body, der format */
+  CERT_BODY_BASE64 = 601,  /* complete certificate body, base 64    */
+  CERT_SERIAL_NUMBER = 602,
+  CERT_COMMON_NAME = 610,
+  CERT_LOCALITY = 611,
+  CERT_STATE_OR_PROVINCE = 612,
+  CERT_COUNTRY = 613,
+  CERT_ORG = 614,
+  CERT_ORG_UNIT = 615,
+  CERT_DN_PRINTABLE = 616,
+  CERT_DN_DER = 617,
+  CERT_POSTAL_CODE = 618,
+  CERT_EMAIL = 619,
+  CERT_ISSUER_COMMON_NAME = 650,
+  CERT_ISSUER_LOCALITY = 651,
+  CERT_ISSUER_STATE_OR_PROVINCE = 652,
+  CERT_ISSUER_COUNTRY = 653,
+  CERT_ISSUER_ORG = 654,
+  CERT_ISSUER_ORG_UNIT = 655,
+  CERT_ISSUER_DN_PRINTABLE = 656,
+  CERT_ISSUER_DN_DER = 657,
+  CERT_ISSUER_POSTAL_CODE = 658,
+  CERT_ISSUER_EMAIL = 659,
+  CERT_VERSION = 660,                                         /* @A2A */
+  CERT_SIGNATURE_ALGORITHM = 661,                             /* @A2A */
+  CERT_VALID_FROM = 662,                                      /* @A2A */
+  CERT_VALID_TO = 663,                                        /* @A2A */
+  CERT_PUBLIC_KEY_ALGORITHM = 664,                            /* @A2A */
+  CERT_PUBLIC_KEY = 665,                                      /* @A2A */
+  CERT_PUBLIC_KEY_SIZE = 666,                                 /* @A2A */
+  CERT_FINGERPRINT_ALGORITHM = 667,                           /* @A2A */
+  CERT_FINGERPRINT = 668,                                     /* @A2A */
+  CERT_ISSUER_UNIQUEID = 669,                                 /* @A2A */
+  CERT_SUBJECT_UNIQUEID = 670,                                /* @A2A */
+  CERT_KEY_USAGE = 671,                                       /* @A2A */
+  CERT_SUBJECT_ALTERNATIVE_NAME_RFC822NAME = 672,             /* @A2A */
+  CERT_SUBJECT_ALTERNATIVE_NAME_DNSNAME = 673,                /* @A2A */
+  CERT_SUBJECT_ALTERNATIVE_NAME_DIRECTORYNAME = 674,          /* @A2A */
+  CERT_SUBJECT_ALTERNATIVE_NAME_URI = 675,                    /* @A2A */
+  CERT_SUBJECT_ALTERNATIVE_NAME_IPADDRESS = 676,              /* @A2A */
+  CERT_CERTIFICATE_POLICY_POLICYIDENTIFIER = 677,             /* @A2A */
+  CERT_BASIC_CONSTRAINTS_CA = 678,                            /* @A2A */
+  CERT_BASIC_CONSTRAINTS_PATH_LENGTH_CONSTRAINT = 679,        /* @A2A */
+  CERT_CRL_DISTRIBUTION_POINTS_DISTRIBUTIONPOINTNAME = 680,   /* @A2A */
+  /* extended version of date in string format */
+  CERT_VALID_FROM_EX = 681,                                   /* @A3A */
+  CERT_VALID_TO_EX = 682,                                     /* @A3A */
+  CERT_FINGERPRINT_SHA1 = 683,                                /* @A3A */
+  CERT_FINGERPRINT_SHA256 = 684,                              /* @A3A */
+  CERT_EXTENDEDKEYUSAGE_IDENTIFIER = 685,                     /* @A3A */
+/*CERT_VALID_FROM_64 = 686,             		         @A4A */
+/*CERT_VALID_TO_64 = 687,               		         @A4A */
+  CERT_AIA_ACCESS_LOCATION = 688,       		       /* A4A */
+               /* Force enum size to 4 bytes - do not use this value */
+  GSK_IBMI_CERT_DATA_FINAL = GSK_IBMI_4BYTE_VALUE             /* @A1C */
+
+
+} GSK_CERT_DATA_ID;
+
+/* To extract information about the certificate received from the partner,
+   issue the
+    gsk_attribute_get_cert_info(soc_handle,GSK_PARTNER_CERT_INFO,....)
+   function call. To extract information about the certificate to extract the
+   number of fields in the array that was sent to the partner, issue the
+    gsk_attribute_get_cert_info(soc_handle,GSK_LOCAL_CERT_INFO,....)
+   function call. In both cases the third parameter specifies the address
+   in which to place a pointer to an array of the following structures.
+   The fourth parameter specifies the address of an integer into which
+   the number of elements in the array will be stored. This information
+   is valid only after gsk_secure_soc_init.
+
+   The following structure specifies the format of each element in this
+   array of certificate data types.                                 */
+
+typedef struct gsk_cert_data_elem_t
+{
+  GSK_CERT_DATA_ID cert_data_id;  /* identifier of each data type */
+  char *cert_data_p;  /* pointer to data */
+  int cert_data_l;  /* length of data (not including trailing null) */
+
+} gsk_cert_data_elem;
+
+typedef enum GSK_CERT_ID_T
+{
+  GSK_PARTNER_CERT_INFO = 700,
+  GSK_LOCAL_CERT_INFO = 701,
+               /* Force enum size to 4 bytes - do not use this value */
+  GSK_IBMI_CERT_FINAL = GSK_IBMI_4BYTE_VALUE                 /* @A1C */
+
+} GSK_CERT_ID ;
+
+/* The following enumerated type and function call is used to set
+   pointers to 'callback' routines that override default routines. */
+typedef enum GSK_CALLBACK_ID_T
+{
+  GSK_IO_CALLBACK = 800,
+  GSK_SID_CACHE_CALLBACK = 801,
+  GSK_CLIENT_CERT_CALLBACK = 802,
+  GSK_PKCS11_CALLBACK = 803,        /* Smart card */
+  GSK_ENVIRONMENT_CLOSE_CALLBACK = 804,                      /* @A2A */
+  GSK_CERT_VALIDATION_CALLBACK = 805,                        /* @A2A */
+/*GSK_RESET_SESSION_TYPE_CALLBACK = 806,                        @A3A */
+  GSK_CIPHER_SESSION_RESET = 807,                            /* @A4A */
+/*GSK_LDAP_INIT = 808,                                          @A3A */
+/*GSK_TRACE_HOOK = 809,                                         @A3A */
+/*GSK_ICC_ATTR_SET = 810,       				@A4A */
+/*GSK_DTLS_IO_CALLBACK = 811,   				@A4A */
+/*GSK_CERT_EXPIRY_CALLBACK = 812,       			@A4A */
+/*GSK_CERT_PENDING_EXPIRY_CALLBACK = 813,       		@A4A */
+/*GSK_SID_CACHE_CALLBACK_EX = 814,      			@A4A */
+/*GSK_ICC_ATTR_GET = 815,       				@A4A */
+               /* Force enum size to 4 bytes - do not use this value */
+  GSK_IBMI_CALLBACK_FINAL = GSK_IBMI_4BYTE_VALUE             /* @A1C */
+
+} GSK_CALLBACK_ID;
+
+/* The following structure defines the entry points to routines that
+   replace the default read, write, and getpeerid routines.
+*/
+typedef enum GSK_SOCKET_OPTION_COMMANDS_T
+{
+  GSK_SET_SOCKET_STATE_FOR_HANDSHAKE = 900,
+  GSK_SET_SOCKET_STATE_FOR_READ_WRITE = 901,
+               /* Force enum size to 4 bytes - do not use this value */
+  GSK_IBMI_SOCKET_OPTION_FINAL = GSK_IBMI_4BYTE_VALUE        /* @A1C */
+
+} GSK_SOCKET_OPTION_COMMANDS;
+
+typedef struct iocallback_struct {
+
+int (* io_read)(int fd, void* data, int len, char * user_data);
+int (* io_write)(int fd, void* data, int len, char * user_data);
+unsigned long (* io_getpeerid)(int fd, char * user_data);
+int (* io_setsocketoptions) (int fd, int cmd, char * future);
+int (* io_rsvd2) (int fut2);  /*Future use - set to NULL*/
+int (* io_rsvd1) (int fut1);  /*Future use - set to NULL*/
+
+} iocallback;
+
+/* The following section specifies the functions required to replace the
+   internal SID (Session ID) cache routines. Each time an SSL connection
+   is established with a new partner, a new Session ID (SID) is created and
+   information about that session is saved in a cache. If a subsequent
+   connection is started with that same partner, information from the cache
+   can be used to save on overhead in establishing that connection. */
+typedef enum SSL_VERSION_T
+{
+  enum_SSLV2 = 20,
+  enum_SSLV3 = 30,
+               /* Force enum size to 4 bytes - do not use this value */
+  GSK_IBMI_SSL_VERSION_FINAL = GSK_IBMI_4BYTE_VALUE          /* @A1C */
+
+} SSL_VERSION ;
+
+typedef struct data_buf_struct
+{
+  unsigned length;
+  void *data;
+} DataBuffer;
+/*
+typedef struct SIDCacheCallBack_struct
+{
+  DataBuffer *(* Get)(const unsigned char *sessionID,
+                      unsigned sessionIDLen,
+                      int SSLVersion);
+
+  DataBuffer *(* Put)(DataBuffer *sslSessionData,
+                      const unsigned char *sessionID,
+                      unsigned sessionIDLen,
+                      int SSLVersion);
+
+  void (* Delete)(const unsigned char *sessionID,
+                  unsigned sessionIDLen,
+                  int SSLVersion);
+
+  void (* FreeDataBuffer)(DataBuffer *data);
+
+} SIDCacheCallBack;
+*/
+typedef struct gsk_list_t gsk_list;
+
+struct gsk_list_t
+{
+  char *gsk_string;
+  gsk_list *next;
+};
+
+
+/*typedef int (*ptgsk_read)
+            (int fd, void* data, int len, char * user_data);  @A2A */
+/*typedef int (*ptgsk_write)
+            (int fd, void* data, int len, char * user_data);  @A2A */
+/*typedef unsigned long (*ptgsk_getpeerid)
+                               (int fd, char * user_data);    @A2A */
+/*typedef int (*ptgsk_setsocketoptions)
+                      (int fd, int cmd, char * user_data);    @A2A */
+
+/*typedef int ( *pgsk_client_cert_callback)
+                                    (gsk_handle ssl_handle);  @A2A */
+
+
+typedef int (*pgsk_cert_validation_callback)
+                              ( const unsigned char *,int ); /* @A2A */
+
+typedef void ( *pGSK_ENVIRONMENT_CLOSE_CALLBACK)
+                                    (gsk_handle ssl_handle); /* @A2A */
+
+typedef void ( *pGSK_CIPHER_SESSION_RESET_CALLBACK)
+                                    (gsk_handle ssl_handle);  /* @A4A */
+
+typedef enum VALIDATE_REQUIRED_T                             /* @A2A */
+{                                                            /* @A2A */
+    GSK_NO_VALIDATION = 900,                                 /* @A2A */
+    GSK_VALIDATION_REQUIRED,                                 /* @A2A */
+    GSK_IBMI_VALIDATE_REQUIRED_FINAL = GSK_IBMI_4BYTE_VALUE  /* @A2A */
+} VALIDATE_REQUIRED;                                         /* @A2A */
+
+typedef enum CERT_NEEDED_T                                   /* @A2A */
+{                                                            /* @A2A */
+    GSK_CERTIFICATE_CHAIN_SENT_VIA_SSL = 950,                /* @A2A */
+    GSK_COMPLETED_CERTIFICATE_CHAIN,                         /* @A2A */
+    GSK_END_ENTITY_CERTIFICATE,                              /* @A2A */
+    GSK_IBMI_CERT_NEEDED_FINAL = GSK_IBMI_4BYTE_VALUE        /* @A2A */
+} CERT_NEEDED;                                               /* @A2A */
+
+typedef struct validationCallBack_struct                     /* @A2A */
+{                                                            /* @A2A */
+    int ( *validation_callback)                              /* @A2A */
+                              ( const unsigned char *,int ); /* @A2A */
+    VALIDATE_REQUIRED validateRequired;                      /* @A2A */
+    CERT_NEEDED certificateNeeded;                           /* @A2A */
+} validationCallBack;                                        /* @A2A */
+
+
+typedef enum GSK_DATA_ID_T {                                 /* @A2A */
+   GSK_DATA_ID_SUPPORTED_KEYS = 720,                         /* @A2A */
+   GSK_DATA_ID_SERVER_ISSUERS = 721,                         /* @A2A */
+   GSK_IBMI_DATA_FINAL = GSK_IBMI_4BYTE_VALUE                /* @A2A */
+} GSK_DATA_ID;                                               /* @A2A */
+
+
+
+/* This is the prototype for the callback routine that is invoked when
+   a smart card needs to be inserted into a smartcard reader. Return values:
+        GSK_SC_OK indicates that card is inserted by end user.
+        GSK_SC_CANCEL indicates user does not want to use smart card.
+   my_handle is the handle for the gsk_secure_soc_init that is
+   causing the callback to be invoked.                            */
+
+
+/*typedef int ( *ptgsk_scinsert)(gsk_handle my_handle);         @A2A */
+
+/* This is the prototype for the callback routine that is invoked when
+   SSL requires the user to be signed on to the token and needs the
+   associated password. Return values:
+        GSK_SC_OK indicates that password has been entered.
+        GSK_SC_CANCEL indicates user does not want to use smart card.
+   my_handle is the handle for the gsk_secure_soc_init that is
+   causing the callback to be invoked.                             */
+
+/*typedef int (*ptgsk_scsignon)                                 @A2A */
+/*                    (char * sc_token, char * sc_password,     @A2A */
+/*                       gsk_handle my_handle);                 @A2A */
+
+/* The following structure is passed as the third parameter to the
+   gsk_attribute_set_callback function when the second parameter is
+   GSK_PKCS11_CALLBACK. */
+/*
+typedef struct pkcs11callback_struct {                        @A2A
+  int (*sc_insert)(gsk_handle my_handle);                     @A2A
+  int (*sc_signon)(char * sc_token, char * sc_password,       @A2A
+                 gsk_handle my_handle);                       @A2A
+  int (*sc_rsvd4) ();                                         @A2A
+  int (*sc_rsvd3) ();                                         @A2A
+  int (*sc_rsvd2) ();                                         @A2A
+  int (*sc_rsvd1) ();                                         @A2A
+} pkcs11callback;                                             @A2A
+*/
+/*********************************************************************/
+/* Function prototypes                                               */
+/*********************************************************************/
+
+QBFC_EXTERN int gsk_attribute_get_enum(gsk_handle,
+                                       GSK_ENUM_ID,
+                                       GSK_ENUM_VALUE *);
+
+QBFC_EXTERN int gsk_attribute_get_numeric_value(gsk_handle,
+                                                GSK_NUM_ID,
+                                                int *);
+
+QBFC_EXTERN int gsk_attribute_get_buffer(gsk_handle,
+                                         GSK_BUF_ID,
+                                         const char **,
+                                         int *);
+
+QBFC_EXTERN int gsk_attribute_get_cert_info(gsk_handle,
+                                            GSK_CERT_ID,
+                                            const gsk_cert_data_elem **,
+                                            int *);
+
+QBFC_EXTERN int gsk_attribute_set_buffer(gsk_handle,
+                                         GSK_BUF_ID,
+                                         const char *,
+                                         int);
+
+QBFC_EXTERN int gsk_attribute_set_callback(gsk_handle,
+                                           GSK_CALLBACK_ID,
+                                           void *);
+
+QBFC_EXTERN int gsk_attribute_set_enum(gsk_handle,
+                                       GSK_ENUM_ID,
+                                       GSK_ENUM_VALUE);
+
+QBFC_EXTERN int gsk_attribute_set_numeric_value(gsk_handle,
+                                                GSK_NUM_ID,
+                                                int);
+
+QBFC_EXTERN int gsk_environment_close(gsk_handle *);
+
+QBFC_EXTERN int gsk_environment_init(gsk_handle);
+
+QBFC_EXTERN int gsk_environment_open(gsk_handle *);
+
+QBFC_EXTERN int gsk_secure_soc_close(gsk_handle *);
+
+QBFC_EXTERN int gsk_secure_soc_init(gsk_handle);
+
+QBFC_EXTERN int gsk_secure_soc_startInit(gsk_handle,
+                                         int,
+                                         Qso_OverlappedIO_t *); /* @A1A */
+
+QBFC_EXTERN int gsk_secure_soc_misc(gsk_handle,
+                                    GSK_MISC_ID);
+
+QBFC_EXTERN int gsk_secure_soc_open(gsk_handle,
+                                    gsk_handle*);
+
+QBFC_EXTERN int gsk_secure_soc_read(gsk_handle,
+                                    char *,
+                                    int,
+                                    int *);
+
+QBFC_EXTERN int gsk_secure_soc_startRecv(gsk_handle,
+                                         int,
+                                         Qso_OverlappedIO_t *);
+
+QBFC_EXTERN int gsk_secure_soc_write(gsk_handle,
+                                     char *,
+                                     int,
+                                     int *);
+
+QBFC_EXTERN int gsk_secure_soc_startSend(gsk_handle,
+                                         int,
+                                         Qso_OverlappedIO_t *);
+
+QBFC_EXTERN const char *gsk_strerror(int);
+
+/* Not supported on IBM i */
+
+/*QBFC_EXTERN int gsk_validate_password(gsk_handle,
+                                      const char *,
+                                      const char *);          @A2A */
+
+/* Not supported on IBM i */
+/*QBFC_EXTERN int gsk_attribute_get_data(gsk_handle,
+                                       GSK_DATA_ID,
+                                       void **);              @A2A */
+
+/* Not supported on IBM i */
+/*QBFC_EXTERN int gsk_get_cert_by_label(gsk_handle,
+                                      const char *,
+                                      const gsk_cert_data_elem **,
+                                      int *);                 @A2A */
+/* Not supported on IBM i */
+/*QBFC_EXTERN int gsk_start_trace(const char *,
+                                int,
+                                int);                         @A2A */
+/* Not supported on IBM i */
+/*QBFC_EXTERN int gsk_stop_trace();                             @A2A */
+/*********************************************************************/
+/* Macros for return codes from GSK routines                         */
+/*********************************************************************/
+/* The following may be returned by all functions: */
+#define GSK_OK                         0
+#define GSK_INVALID_HANDLE             1  /* except 'open' */
+#define GSK_API_NOT_AVAILABLE          2
+#define GSK_INTERNAL_ERROR             3
+#define GSK_INSUFFICIENT_STORAGE       4
+#define GSK_INVALID_STATE              5  /* except 'open' */
+#define GSK_KEY_LABEL_NOT_FOUND        6
+#define GSK_CERTIFICATE_NOT_AVAILABLE  7
+#define GSK_ERROR_CERT_VALIDATION      8
+#define GSK_ERROR_CRYPTO               9
+#define GSK_ERROR_ASN                 10
+#define GSK_ERROR_LDAP                11
+#define GSK_ERROR_UNKNOWN_ERROR       12
+#define GSK_INVALID_PARAMETER         13                     /* @A3A */
+
+/* The following may be returned by all _open functions */
+#define GSK_OPEN_CIPHER_ERROR              101 /* environment only */
+#define GSK_KEYFILE_IO_ERROR               102 /* environment only */
+#define GSK_KEYFILE_INVALID_FORMAT         103 /* environment only */
+#define GSK_KEYFILE_DUPLICATE_KEY          104 /* environment only */
+#define GSK_KEYFILE_DUPLICATE_LABEL        105 /* environment only */
+#define GSK_BAD_FORMAT_OR_INVALID_PASSWORD 106 /* environment only */
+#define GSK_KEYFILE_CERT_EXPIRED           107 /* environment only */
+#define GSK_ERROR_LOAD_GSKLIB              108 /* environment only */
+#define GSK_PENDING_CLOSE_ERROR            109               /* @A2A */
+
+/* The following may be returned by gsk_environment_init */
+#define GSK_NO_KEYFILE_PASSWORD       201  /* neither password nor
+                                            stash file */
+#define GSK_KEYRING_OPEN_ERROR        202
+#define GSK_RSA_TEMP_KEY_PAIR         203
+#define GSK_ERROR_LDAP_NO_SUCH_OBJECT 204                    /* @A2A */
+#define GSK_ERROR_LDAP_INVALID_CREDENTIALS 205               /* @A2A */
+#define GSK_ERROR_BAD_INDEX           206                    /* @A2A */
+#define GSK_ERROR_FIPS_NOT_SUPPORTED  207                    /* @A3A */
+
+/* The following may be returned by all _close functions */
+#define GSK_CLOSE_FAILED              301  /*environment close */
+
+/* The following may be returned by gsk_secure_soc_init */
+#define GSK_ERROR_BAD_DATE                       401
+#define GSK_ERROR_NO_CIPHERS                     402
+#define GSK_ERROR_NO_CERTIFICATE                 403
+#define GSK_ERROR_BAD_CERTIFICATE                404
+#define GSK_ERROR_UNSUPPORTED_CERTIFICATE_TYPE   405
+#define GSK_ERROR_IO                             406
+#define GSK_ERROR_BAD_KEYFILE_LABEL              407
+#define GSK_ERROR_BAD_KEYFILE_PASSWORD           408
+#define GSK_ERROR_BAD_KEY_LEN_FOR_EXPORT         409
+#define GSK_ERROR_BAD_MESSAGE                    410
+#define GSK_ERROR_BAD_MAC                        411
+#define GSK_ERROR_UNSUPPORTED                    412
+#define GSK_ERROR_BAD_CERT_SIG                   413
+#define GSK_ERROR_BAD_CERT                       414
+#define GSK_ERROR_BAD_PEER                       415
+#define GSK_ERROR_PERMISSION_DENIED              416
+#define GSK_ERROR_SELF_SIGNED                    417
+#define GSK_ERROR_NO_READ_FUNCTION               418
+#define GSK_ERROR_NO_WRITE_FUNCTION              419
+#define GSK_ERROR_SOCKET_CLOSED                  420
+#define GSK_ERROR_BAD_V2_CIPHER                  421
+#define GSK_ERROR_BAD_V3_CIPHER                  422
+#define GSK_ERROR_BAD_SEC_TYPE                   423
+#define GSK_ERROR_BAD_SEC_TYPE_COMBINATION       424
+#define GSK_ERROR_HANDLE_CREATION_FAILED         425
+#define GSK_ERROR_INITIALIZATION_FAILED          426
+#define GSK_ERROR_LDAP_NOT_AVAILABLE             427
+#define GSK_ERROR_NO_PRIVATE_KEY                 428
+#define GSK_ERROR_PKCS11_LIBRARY_NOTLOADED       429         /* @A2A */
+#define GSK_ERROR_PKCS11_TOKEN_LABELMISMATH      430         /* @A2A */
+#define GSK_ERROR_PKCS11_TOKEN_NOTPRESENT        431         /* @A2A */
+#define GSK_ERROR_PKCS11_TOKEN_BADPASSWORD       432         /* @A2A */
+#define GSK_ERROR_INVALID_V2_HEADER              433         /* @A2A */
+#define GSK_CSP_OPEN_ERROR                       434         /* @A2A */
+#define GSK_CONFLICTING_ATTRIBUTE_SETTING        435         /* @A2A */
+#define GSK_UNSUPPORTED_PLATFORM                 436         /* @A2A */
+#define GSK_PEERID_NOT_SET_ERROR                 437         /* @A3A */
+#define GSK_ERROR_INCORRECT_SESSION_TYPE         438         /* @A3A */
+#define GSK_ERROR_BAD_TLSV11_CIPHER              439         /* @A3A */
+#define GSK_ERROR_PKCS11_DEVICE                  440         /* @A3A */
+#define GSK_ERROR_PKCS11_DEVICE_SEVERE           441         /* @A3A */
+
+/* special conditions */
+#define GSK_ERROR_EMPTY_DATA_SEGMENT             442         /* @A3A */
+#define GSK_ERROR_NO_RI_INDICATION               443         /* @A3A */
+#define GSK_ERROR_SEQNUM_EXHAUSTED               444         /* @A3A */
+#define GSK_ERROR_NO_APPLICATION_PROTOCOL        448         /* @A4A */
+#define GSK_ERROR_NO_EXTENDEDMASTERSECRET_EXTENSION 449      /* @A5A */
+#define GSK_ERROR_NO_ENCRYPTTHENMAC_EXTENSION    450         /* @A5A */
+
+/* The following may be returned by read and write functions */
+#define GSK_INVALID_BUFFER_SIZE                  501
+#define GSK_WOULD_BLOCK                          502
+#define GSK_ERROR_SSL_CLOSED                     503         /* @A3A */
+/* The following may be returned be gsk_secure_soc_misc function */
+#define GSK_ERROR_NOT_SSLV3                      601  /* V3 required */
+#define GSK_MISC_INVALID_ID                      602
+
+/* The following may be returned by gsk_attribute_set_ functions */
+#define GSK_ATTRIBUTE_INVALID_ID                   701
+#define GSK_ATTRIBUTE_INVALID_LENGTH               702
+#define GSK_ATTRIBUTE_INVALID_ENUMERATION          703
+#define GSK_ATTRIBUTE_INVALID_SID_CACHE            704
+#define GSK_ATTRIBUTE_INVALID_NUMERIC_VALUE        705
+#define GSK_CONFLICTING_VALIDATION_SETTING         706       /* @A2A */
+#define GSK_AES_UNSUPPORTED                        707       /* @A2A */
+#define GSK_PEERID_LENGTH_ERROR                    708       /* @A3A */
+#define GSK_FIPS_CIPHER_INVALID_WHEN_FIPS_MODE_OFF 709       /* @A3A */
+#define GSK_CIPHER_INVALID_WHEN_FIPS_MODE_ON       710       /* @A3A */
+#define GSK_CIPHER_INVALID_WHEN_SUITEB_MODE_ON     711       /* @A3A */
+
+/* The following are IBM i specific error values */
+#define GSK_IBMI_ERROR_NOT_TRUSTED_ROOT            6000      /* @A3A */
+#define GSK_IBMI_ERROR_PASSWORD_EXPIRED            6001      /* @A3A */
+#define GSK_IBMI_ERROR_NOT_REGISTERED              6002      /* @A3A */
+#define GSK_IBMI_ERROR_NO_ACCESS                   6003      /* @A3A */
+#define GSK_IBMI_ERROR_CLOSED                      6004      /* @A3A */
+#define GSK_IBMI_ERROR_NO_CERTIFICATE_AUTHORITIES  6005      /* @A3A */
+#define GSK_IBMI_ERROR_NO_INITIALIZE               6007      /* @A3A */
+#define GSK_IBMI_ERROR_ALREADY_SECURE              6008      /* @A3A */
+#define GSK_IBMI_ERROR_NOT_TCP                     6009      /* @A3A */
+#define GSK_IBMI_ERROR_INVALID_POINTER             6010      /* @A3A */
+#define GSK_IBMI_ERROR_TIMED_OUT                   6011      /* @A3A */
+#define GSK_IBMI_ASYNCHRONOUS_RECV                 6012      /* @A3A */
+#define GSK_IBMI_ASYNCHRONOUS_SEND                 6013      /* @A3A */
+#define GSK_IBMI_ERROR_INVALID_OVERLAPPEDIO_T      6014      /* @A3A */
+#define GSK_IBMI_ERROR_INVALID_IOCOMPLETIONPORT    6015      /* @A3A */
+#define GSK_IBMI_ERROR_BAD_SOCKET_DESCRIPTOR       6016      /* @A3A */
+#define GSK_IBMI_ERROR_CERTIFICATE_REVOKED         6017      /* @A3A */
+#define GSK_IBMI_ERROR_CRL_INVALID                 6018      /* @A3A */
+#define GSK_IBMI_ASYNCHRONOUS_SOC_INIT             6019      /* @A1A */
+
+/* The following must be returned by additional certificate          */
+/* validation callback                                               */
+#define GSK_VALIDATION_SUCCESSFUL 0                          /* @A2A */
+#define GSK_UNKNOWN_CRIT_EXTNS    575019                     /* @A2A */
+#define GSK_NO_CRLS_FOUND         575040                     /* @A2A */
+
+/* The following are codes that can be returned from the certificate     */
+/* validation engine. The result of the last validation operation can be */
+/* retrieved by a call the gsk_get_last_validation_error                 */
+
+#define GSKKM_OK                                                  0 /* @A3A */
+#define GSKKM_ERROR_SUCCESS GSKKM_OK                                /* @A3A */
+#define GSKKM_ERROR_UNKNOWN                                       1 /* @A3A */
+#define GSKKM_ERROR_ASN                                           2 /* @A3A */
+#define GSKKM_ERROR_ASN_INITIALIZATION                            3 /* @A3A */
+#define GSKKM_ERROR_ASN_PARAMETER                                 4 /* @A3A */
+#define GSKKM_ERROR_DATABASE                                      5 /* @A3A */
+#define GSKKM_ERROR_DATABASE_OPEN                                 6 /* @A3A */
+#define GSKKM_ERROR_DATABASE_RE_OPEN                              7 /* @A3A */
+#define GSKKM_ERROR_DATABASE_CREATE                               8 /* @A3A */
+#define GSKKM_ERROR_DATABASE_ALREADY_EXISTS                       9 /* @A3A */
+#define GSKKM_ERROR_DATABASE_DELETE                              10 /* @A3A */
+#define GSKKM_ERROR_DATABASE_NOT_OPENED                          11 /* @A3A */
+#define GSKKM_ERROR_DATABASE_READ                                12 /* @A3A */
+#define GSKKM_ERROR_DATABASE_WRITE                               13 /* @A3A */
+#define GSKKM_ERROR_DATABASE_VALIDATION                          14 /* @A3A */
+#define GSKKM_ERROR_DATABASE_INVALID_VERSION                     15 /* @A3A */
+#define GSKKM_ERROR_DATABASE_INVALID_PASSWORD                    16 /* @A3A */
+#define GSKKM_ERROR_DATABASE_INVALID_FILE_TYPE                   17 /* @A3A */
+#define GSKKM_ERROR_DATABASE_CORRUPTION                          18 /* @A3A */
+#define GSKKM_ERROR_DATABASE_PASSWORD_CORRUPTION                 19 /* @A3A */
+#define GSKKM_ERROR_DATABASE_KEY_INTEGRITY                       20 /* @A3A */
+#define GSKKM_ERROR_DATABASE_DUPLICATE_KEY                       21 /* @A3A */
+#define GSKKM_ERROR_DATABASE_PASSWORD_ENCRYPTION                 22 /* @A3A */
+#define GSKKM_ERROR_DATABASE_LDAP                                23 /* @A3A */
+#define GSKKM_ERROR_CRYPTO                                       24 /* @A3A */
+#define GSKKM_ERROR_CRYPTO_ENGINE                                25 /* @A3A */
+#define GSKKM_ERROR_CRYPTO_ALGORITHM                             26 /* @A3A */
+#define GSKKM_ERROR_CRYPTO_SIGN                                  27 /* @A3A */
+#define GSKKM_ERROR_CRYPTO_VERIFY                                28 /* @A3A */
+#define GSKKM_ERROR_CRYPTO_DIGEST                                29 /* @A3A */
+#define GSKKM_ERROR_CRYPTO_PARAMETER                             30 /* @A3A */
+#define GSKKM_ERROR_CRYPTO_UNSUPPORTED_ALGORITHM                 31 /* @A3A */
+#define GSKKM_ERROR_CRYPTO_INPUT_GREATER_THAN_MODULUS            32 /* @A3A */
+#define GSKKM_ERROR_CRYPTO_UNSUPPORTED_MODULUS_SIZE              33 /* @A3A */
+#define GSKKM_ERROR_VALIDATION                                   34 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY                               35 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_DUPLICATE_EXTENSIONS              36 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY_WRONG_VERSION                 37 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY_EXTENSIONS_REQUIRED           38 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY_VALIDITY                      39 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY_VALIDITY_PERIOD               40 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY_VALIDITY_PRIVATE_KEY_USAGE    41 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY_ISSUER_NOT_FOUND              42 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY_MISSING_REQUIRED_EXTENSIONS   43 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY_BASIC_CONSTRAINTS             44 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY_SIGNATURE                     45 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY_ROOT_KEY_NOT_TRUSTED          46 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY_IS_REVOKED                    47 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY_AUTHORITY_KEY_IDENTIFIER      48 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY_PRIVATE_KEY_USAGE_PERIOD      49 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_SUBJECT_ALTERNATIVE_NAME          50 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_ISSUER_ALTERNATIVE_NAME           51 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY_USAGE                         52 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY_UNKNOWN_CRITICAL_EXTENSION    53 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_KEY_PAIR                          54 /* @A3A */
+#define GSKKM_ERROR_VALIDATION_CRL                               55 /* @A3A */
+#define GSKKM_ERROR_MUTEX                                        56 /* @A3A */
+#define GSKKM_ERROR_PARAMETER                                    57 /* @A3A */
+#define GSKKM_ERROR_NULL_PARAMETER                               58 /* @A3A */
+#define GSKKM_ERROR_NUMBER_SIZE                                  59 /* @A3A */
+#define GSKKM_ERROR_OLD_PASSWORD                                 60 /* @A3A */
+#define GSKKM_ERROR_NEW_PASSWORD                                 61 /* @A3A */
+#define GSKKM_ERROR_PASSWORD_EXPIRATION_TIME                     62 /* @A3A */
+#define GSKKM_ERROR_THREAD                                       63 /* @A3A */
+#define GSKKM_ERROR_THREAD_CREATE                                64 /* @A3A */
+#define GSKKM_ERROR_THREAD_WAIT_FOR_EXIT                         65 /* @A3A */
+#define GSKKM_ERROR_IO                                           66 /* @A3A */
+#define GSKKM_ERROR_LOAD                                         67 /* @A3A */
+#define GSKKM_ERROR_PKCS11                                       68 /* @A3A */
+#define GSKKM_ERROR_NOT_INITIALIZED                              69 /* @A3A */
+#define GSKKM_ERROR_DB_TABLE_CORRUPTED                           70 /* @A3A */
+#define GSKKM_ERROR_MEMORY_ALLOCATE                              71 /* @A3A */
+#define GSKKM_ERROR_UNSUPPORTED_OPTION                           72 /* @A3A */
+#define GSKKM_ERROR_GET_TIME                                     73 /* @A3A */
+#define GSKKM_ERROR_CREATE_MUTEX                                 74 /* @A3A */
+#define GSKKM_ERROR_CMDCAT_OPEN                                  75 /* @A3A */
+#define GSKKM_ERROR_ERRCAT_OPEN                                  76 /* @A3A */
+#define GSKKM_ERROR_FILENAME_NULL                                77 /* @A3A */
+#define GSKKM_ERROR_FILE_OPEN                                    78 /* @A3A */
+#define GSKKM_ERROR_FILE_OPEN_TO_READ                            79 /* @A3A */
+#define GSKKM_ERROR_FILE_OPEN_TO_WRITE                           80 /* @A3A */
+#define GSKKM_ERROR_FILE_OPEN_NOT_EXIST                          81 /* @A3A */
+#define GSKKM_ERROR_FILE_OPEN_NOT_ALLOWED                        82 /* @A3A */
+#define GSKKM_ERROR_FILE_WRITE                                   83 /* @A3A */
+#define GSKKM_ERROR_FILE_REMOVE                                  84 /* @A3A */
+#define GSKKM_ERROR_BASE64_INVALID_DATA                          85 /* @A3A */
+#define GSKKM_ERROR_BASE64_INVALID_MSGTYPE                       86 /* @A3A */
+#define GSKKM_ERROR_BASE64_ENCODING                              87 /* @A3A */
+#define GSKKM_ERROR_BASE64_DECODING                              88 /* @A3A */
+#define GSKKM_ERROR_DN_TAG_NULL                                  89 /* @A3A */
+#define GSKKM_ERROR_DN_CN_NULL                                   90 /* @A3A */
+#define GSKKM_ERROR_DN_C_NULL                                    91 /* @A3A */
+#define GSKKM_ERROR_INVALID_DB_HANDLE                            92 /* @A3A */
+#define GSKKM_ERROR_KEYDB_NOT_EXIST                              93 /* @A3A */
+#define GSKKM_ERROR_KEYPAIRDB_NOT_EXIST                          94 /* @A3A */
+#define GSKKM_ERROR_PWDFILE_NOT_EXIST                            95 /* @A3A */
+#define GSKKM_ERROR_PASSWORD_CHANGE_MATCH                        96 /* @A3A */
+#define GSKKM_ERROR_KEYDB_NULL                                   97 /* @A3A */
+#define GSKKM_ERROR_REQKEYDB_NULL                                98 /* @A3A */
+#define GSKKM_ERROR_KEYDB_TRUSTCA_NULL                           99 /* @A3A */
+#define GSKKM_ERROR_REQKEY_FOR_CERT_NULL                        100 /* @A3A */
+#define GSKKM_ERROR_KEYDB_PRIVATE_KEY_NULL                      101 /* @A3A */
+#define GSKKM_ERROR_KEYDB_DEFAULT_KEY_NULL                      102 /* @A3A */
+#define GSKKM_ERROR_KEYREC_PRIVATE_KEY_NULL                     103 /* @A3A */
+#define GSKKM_ERROR_KEYREC_CERTIFICATE_NULL                     104 /* @A3A */
+#define GSKKM_ERROR_CRLS_NULL                                   105 /* @A3A */
+#define GSKKM_ERROR_INVALID_KEYDB_NAME                          106 /* @A3A */
+#define GSKKM_ERROR_UNDEFINED_KEY_TYPE                          107 /* @A3A */
+#define GSKKM_ERROR_INVALID_DN_INPUT                            108 /* @A3A */
+#define GSKKM_ERROR_KEY_GET_BY_LABEL                            109 /* @A3A */
+#define GSKKM_ERROR_LABEL_LIST_CORRUPT                          110 /* @A3A */
+#define GSKKM_ERROR_INVALID_PKCS12_DATA                         111 /* @A3A */
+#define GSKKM_ERROR_PKCS12_PWD_CORRUPTION                       112 /* @A3A */
+#define GSKKM_ERROR_EXPORT_TYPE                                 113 /* @A3A */
+#define GSKKM_ERROR_PBE_ALG_UNSUPPORT                           114 /* @A3A */
+#define GSKKM_ERROR_KYR2KDB                                     115 /* @A3A */
+#define GSKKM_ERROR_KDB2KYR                                     116 /* @A3A */
+#define GSKKM_ERROR_ISSUING_CERTIFICATE                         117 /* @A3A */
+#define GSKKM_ERROR_FIND_ISSUER_CHAIN                           118 /* @A3A */
+#define GSKKM_ERROR_WEBDB_DATA_BAD_FORMAT                       119 /* @A3A */
+#define GSKKM_ERROR_WEBDB_NOTHING_TO_WRITE                      120 /* @A3A */
+#define GSKKM_ERROR_EXPIRE_DAYS_TOO_LARGE                       121 /* @A3A */
+#define GSKKM_ERROR_PWD_TOO_SHORT                               122 /* @A3A */
+#define GSKKM_ERROR_PWD_NO_NUMBER                               123 /* @A3A */
+#define GSKKM_ERROR_PWD_NO_CONTROL_KEY                          124 /* @A3A */
+
+#define GSKVAL_ERROR_UNKNOWN_ERROR                           575001 /* @A3A */
+#define GSKVAL_ERROR_ASN_ERROR                               575002 /* @A3A */
+#define GSKVAL_ERROR_KRY_ERROR                               575003 /* @A3A */
+#define GSKVAL_ERROR_DB_ERROR                                575004 /* @A3A */
+#define GSKVAL_ERROR_DIR_ERROR                               575005 /* @A3A */
+#define GSKVAL_ERROR_INVALID_IMPL_LIBRARY                    575006 /* @A3A */
+#define GSKVAL_ERROR_FAILED                                  575007 /* @A3A */
+#define GSKVAL_ERROR_NO_APPROPRIATE_VALIDATOR                575008 /* @A3A */
+#define GSKVAL_ERROR_ROOT_NOT_TRUSTED                        575009 /* @A3A */
+#define GSKVAL_ERROR_NO_CHAIN_BUILT                          575010 /* @A3A */
+#define GSKVAL_ERROR_SIGALG_MISMATCH                         575011 /* @A3A */
+#define GSKVAL_ERROR_SIGNATURE_MISMATCH                      575012 /* @A3A */
+#define GSKVAL_ERROR_VER_EXCLUDES_UNIQUE_IDS                 575013 /* @A3A */
+#define GSKVAL_ERROR_VER_EXCLUDES_EXTNS                      575014 /* @A3A */
+#define GSKVAL_ERROR_UNKNOWN_VERSION                         575015 /* @A3A */
+#define GSKVAL_ERROR_BAD_VALIDITY_RANGE                      575016 /* @A3A */
+#define GSKVAL_ERROR_CERT_NOT_YET_VALID                      575017 /* @A3A */
+#define GSKVAL_ERROR_CERT_EXPIRED                            575018 /* @A3A */
+#define GSKVAL_ERROR_UNKNOWN_CRIT_XTNS                       575019 /* @A3A */
+#define GSKVAL_ERROR_DUP_XTNS                                575020 /* @A3A */
+#define GSKVAL_ERROR_DIRNAMES_DONT_MATCH                     575021 /* @A3A */
+#define GSKVAL_ERROR_SERIAL_NUMBERS_DONT_MATCH               575022 /* @A3A */
+#define GSKVAL_ERROR_KEY_IDS_DONT_MATCH                      575023 /* @A3A */
+#define GSKVAL_ERROR_UNRECOGNIZED_ISSUERALTNAME              575024 /* @A3A */
+#define GSKVAL_ERROR_BASIC_CONTRAINTS_NOT_CA                 575025 /* @A3A */
+#define GSKVAL_ERROR_PATHLENGTH_WITH_NONCA                   575026 /* @A3A */
+#define GSKVAL_ERROR_BASIC_CONSTRAINTS_PATHLENGTH_EXCEEEDED  575027 /* @A3A */
+#define GSKVAL_ERROR_NO_SIGN_AUTH                            575028 /* @A3A */
+#define GSKVAL_ERROR_NONCA_SIGNED                            575029 /* @A3A */
+#define GSKVAL_ERROR_UNRECOGNIZED_SUBJECTALTNAME             575030 /* @A3A */
+#define GSKVAL_ERROR_INVALID_CHAIN                           575031 /* @A3A */
+#define GSKVAL_ERROR_REVOKED_CERT                            575032 /* @A3A */
+#define GSKVAL_ERROR_UNRECOGNIZED_DISTRIBUTION_POINT         575033 /* @A3A */
+#define GSKVAL_ERROR_NAME_CHAINING_FAILED                    575034 /* @A3A */
+#define GSKVAL_ERROR_CERT_NOT_IN_CHAIN                       575035 /* @A3A */
+#define GSKVAL_ERROR_CRL_NOT_YET_VALID                       575036 /* @A3A */
+#define GSKVAL_ERROR_CRL_EXPIRED                             575037 /* @A3A */
+#define GSKVAL_ERROR_VER_EXCLUDES_CRIT_EXTNS                 575038 /* @A3A */
+#define GSKVAL_ERROR_UNKNOWN_CRL_DIST_PTS                    575039 /* @A3A */
+#define GSKVAL_ERROR_NO_CRLS_FOR_CRL_DIST_PTS                575040 /* @A3A */
+#define GSKVAL_ERROR_DIST_PTS_DONT_MATCH                     575041 /* @A3A */
+#define GSKVAL_ERROR_NO_AVAILABLE_CRL_DATASOURCE             575042 /* @A3A */
+   /*--- PKIX specific */
+#define GSKVAL_ERROR_NULL_CA_SUBJECT                         575043 /* @A3A */
+#define GSKVAL_ERROR_NAMES_DONT_CHAIN                        575044 /* @A3A */
+#define GSKVAL_ERROR_MISSING_SUBJECTALTNAME                  575045 /* @A3A */
+#define GSKVAL_ERROR_UNIQUEID_MISMATCH                       575046 /* @A3A */
+#define GSKVAL_ERROR_NAME_NOT_PERMITTED                      575047 /* @A3A */
+#define GSKVAL_ERROR_NAME_EXCLUDED                           575048 /* @A3A */
+#define GSKVAL_ERROR_CA_MISSING_CRITICAL_BASIC_CONSTRAINT    575049 /* @A3A */
+#define GSKVAL_ERROR_NAME_CONSTRAINTS_NOT_CRITICAL           575050 /* @A3A */
+#define GSKVAL_ERROR_NAME_CONSTRAINTS_MIN_NOT_ZERO           575051 /* @A3A */
+#define GSKVAL_ERROR_NAME_CONSTRAINTS_MAX_PRESENT            575052 /* @A3A */
+#define GSKVAL_ERROR_UNSUPPORTED_NAME_CONSTRAINT             575053 /* @A3A */
+#define GSKVAL_ERROR_EMPTY_POLICY_CONSTRAINTS                575054 /* @A3A */
+#define GSKVAL_ERROR_BAD_CERT_POLICIES                       575055 /* @A3A */
+#define GSKVAL_ERROR_CERT_POLICIES_NOT_ACCEPTABLE            575056 /* @A3A */
+#define GSKVAL_ERROR_BAD_ACCEPTABLE_POLICIES                 575057 /* @A3A */
+#define GSKVAL_ERROR_POLICY_MAPPINGS_CRITICAL                575058 /* @A3A */
+
+#define GSKVAL_ERROR_CERT_CUR_VALID_NOT_VALID_IN_RANGE       575059 /* @A3A */
+#define GSKVAL_ERROR_NO_UPCALL_PROCESS                       575061 /* @A3A */
+
+#define GSKVAL_ERROR_EXTKEYUSG_BADAUTH                       575062 /* @A3A */
+#define GSKVAL_ERROR_OCSP_UNKNOWNVERSION                     575063 /* @A3A */
+#define GSKVAL_ERROR_OCSP_UNKNOWNRESPONSE                    575064 /* @A3A */
+#define GSKVAL_ERROR_OCSP_BAD_KEYUSAGE_XTN                   575065 /* @A3A */
+#define GSKVAL_ERROR_OCSP_BAD_NONCE                          575066 /* @A3A */
+#define GSKVAL_ERROR_OCSP_MISSING_NONCE                      575067 /* @A3A */
+#define GSKVAL_ERROR_OCSP_NO_CLIENT                          575068 /* @A3A */
+
+#define GSKVAL_ERROR_REVOCATIONSTATUS_UNDETERMINED           575961 /* @A3A */
+
+
+/* The following may be returned by certificate prompt callback routines*/
+#define GSK_SC_OK                         1501
+#define GSK_SC_CANCEL                     1502
+
+/* The following is return by gskit to pkcs11 callback routine when  */
+/* the password user entered is incorrect                            */
+#define GSK_NOT_FIRST_CALL                "0xFFFFFFFF"       /* @A2A */
+
+/* The following is return by gsk_start_trace() and gsk_stop_trace() */
+#define GSK_TRACE_STARTED                 1601               /* @A2A */
+#define GSK_TRACE_STOPPED                 1602               /* @A2A */
+#define GSK_TRACE_NOT_STARTED             1603               /* @A2A */
+#define GSK_TRACE_ALREADY_STARTED         1604               /* @A2A */
+#define GSK_TRACE_OPEN_FAILED             1605               /* @A2A */
+
+/* The following is used by gsk_start_trace and gsk_stop_trace */
+/* GSKTrace Global Options                                     */
+#define GSKTRACENOOPTIONS        (0x00000000)                /* @A2A */
+#define GSKTRACEALLOPTIONS       (0xffffffff)                /* @A2A */
+#define GSKTRACEDEFAULTOPTIONS   (0x00000000)                /* @A2A */
+#define GSKTRACENOBUFFERING      (0x00000001)                /* @A2A */
+#define GSKTRACENOCOPY           (0x00000002)
+
+/* GSKTrace Components                                               */
+#define GSKTRACENOCOMPONENTS     (0x00000000)                /* @A2A */
+#define GSKTRACEALLCOMPONENTS    (0xffffffff)                /* @A2A */
+#define GSKTRACECOMMON           (0x00000001)                /* @A2A */
+#define GSKTRACEASN              (0x00000002)                /* @A2A */
+#define GSKTRACEKRY              (0x00000004)                /* @A2A */
+#define GSKTRACEDB               (0x00000008)                /* @A2A */
+#define GSKTRACEVAL              (0x00000010)                /* @A2A */
+#define GSKTRACECMS              (0x00000020)                /* @A2A */
+#define GSKTRACESSL              (0x00000040)                /* @A2A */
+#define GSKTRACEIKM              (0x00000080)                /* @A2A */
+#define GSKTRACEDIR              (0x00000100)                /* @A2A */
+#define GSKTRACEPKCS11           (0x00000200)                /* @A2A */
+#define GSKTRACEACME             (0x00000400)                /* @A2A */
+#define GSKTRACECAPI             (0x00000800)
+#define GSKTRACEICC              (0x00001000)
+
+/* GSKTrace Reserved Events */
+#define GSKTRACE_NOEVENTS         (0x00000000)               /* @A2A */
+#define GSKTRACE_ALLEVENTS        (0xffffffff)               /* @A2A */
+#define GSKTRACE_ENTRY            (0x80000000)               /* @A2A */
+#define GSKTRACE_EXIT             (0x40000000)               /* @A2A */
+#define GSKTRACE_THREADSTART     (0x20000000)
+
+/* GSKTrace Events */
+#define GSKTRACE_MESSAGE          (0x00000001)               /* @A2A */
+#define GSKTRACE_EXCEPTION        (0x00000002)               /* @A2A */
+#define GSKTRACE_KRYALGORITHM     (0x00000004)               /* @A2A */
+#define GSKTRACE_VALCHAIN         (0x00000008)               /* @A2A */
+
+/* Algorithm OID string constants */
+#define algRSA                       "1.2.840.113549.1.1.1";       /* @A2A */
+#define algDSA                       "1.3.14.3.2.12";              /* @A2A */
+#define algMD2WithRSAencryption      "1.2.840.113549.1.1.2";       /* @A2A */
+#define algMD5WithRSAencryption      "1.2.840.113549.1.1.4";       /* @A2A */
+#define algSHA1WithRSAencryption     "1.2.840.113549.1.1.5";       /* @A2A */
+#define algSHA1WithDSAencryption     "1.2.840.10040.4.3";          /* @A2A */
+#define algPBEWithMD2AndDESCBC       "1.2.840.113549.1.5.1";       /* @A2A */
+#define algPBEWithMD5AndDESCBC       "1.2.840.113549.1.5.3";       /* @A2A */
+#define algPBEWithSHA1AndDESCBC      "1.2.840.113549.1.5.10";      /* @A2A */
+#define algPBEWithSHA1And40BitRC2    "1.2.840.113549.1.12.5.1.5";  /* @A2A */
+#define algPBEWithSHA1And128BitRC2   "1.2.840.113549.1.12.5.1.4";  /* @A2A */
+#define algPBEWithSHA1And40BitRC4    "1.2.840.113549.1.12.5.1.2";  /* @A2A */
+#define algPBEWithSHA1And128BitRC4   "1.2.840.113549.1.12.5.1.1";  /* @A2A */
+#define algPBEWithSHA1And3DESCBC     "1.2.840.113549.1.12.5.1.3";  /* @A2A */
+#define algMD5DigestAlgorithm        "1.2.840.113549.2.5";         /* @A2A */
+#define algSHA1DigestAlgorithm       "1.3.14.3.2.26";              /* @A2A */
+
+/* Key Usage */
+#define digitalSignature             0x0001;                 /* @A2A */
+#define nonRepudiation               0x0002;                 /* @A2A */
+#define KeyEncipherment              0x0004;                 /* @A2A */
+#define dataEncipherment             0x0008;                 /* @A2A */
+#define KeyAgreement                 0x0010;                 /* @A2A */
+#define KeyCertSign                  0x0020;                 /* @A2A */
+#define cRlSign                      0x0040;                 /* @A2A */
+#define encipherOnly                 0x0080;                 /* @A2A */
+#define decipherOnly                 0x0100;                 /* @A2A */
+
+/* Reserve a range specific to OS/400 for return values and    */
+/*  enumerated types.                                          */
+#define GSK_OS400_BASE         6000                          /* @A1C */
+#define GSK_OS400_BASE_END     6999                          /* @A1C */
+
+/* Reserve a range specific to OS/390 for return values and    */
+/*  enumerated types.                                          */
+#define GSK_OS390_BASE         7000
+#define GSK_OS390_BASE_END     7999
+
+/* Define OS400 constants for upward compatibility   */
+/* with V7R1 - DO NOT USE                            */
+#define GSK_OS400_ERROR_NOT_TRUSTED_ROOT           6000      /* @A1A */
+#define GSK_OS400_ERROR_PASSWORD_EXPIRED           6001      /* @A1A */
+#define GSK_OS400_ERROR_NOT_REGISTERED             6002      /* @A1A */
+#define GSK_OS400_ERROR_NO_ACCESS                  6003      /* @A1A */
+#define GSK_OS400_ERROR_CLOSED                     6004      /* @A1A */
+#define GSK_OS400_ERROR_NO_CERTIFICATE_AUTHORITIES 6005      /* @A1A */
+#define GSK_OS400_ERROR_NO_INITIALIZE              6007      /* @A1A */
+#define GSK_OS400_ERROR_ALREADY_SECURE             6008      /* @A1A */
+#define GSK_OS400_ERROR_NOT_TCP                    6009      /* @A1A */
+#define GSK_OS400_ERROR_INVALID_POINTER            6010      /* @A1A */
+#define GSK_OS400_ERROR_TIMED_OUT                  6011      /* @A1A */
+#define GSK_OS400_ASYNCHRONOUS_RECV                6012      /* @A1A */
+#define GSK_OS400_ASYNCHRONOUS_SEND                6013      /* @A1A */
+#define GSK_OS400_ERROR_INVALID_OVERLAPPEDIO_T     6014      /* @A1A */
+#define GSK_OS400_ERROR_INVALID_IOCOMPLETIONPORT   6015      /* @A1A */
+#define GSK_OS400_ERROR_BAD_SOCKET_DESCRIPTOR      6016      /* @A1A */
+#define GSK_OS400_ERROR_CERTIFICATE_REVOKED        6017
+#define GSK_OS400_ERROR_CRL_INVALID                6018
+#define GSK_OS400_ASYNCHRONOUS_SOC_INIT            6019      /* @A1A */
+
+/* Define AS400 constants for upward compatibility   */
+/* with V5R1 - DO NOT USE                            */
+#define GSK_AS400_ERROR_NOT_TRUSTED_ROOT           6000
+#define GSK_AS400_ERROR_PASSWORD_EXPIRED           6001
+#define GSK_AS400_ERROR_NOT_REGISTERED             6002
+#define GSK_AS400_ERROR_NO_ACCESS                  6003
+#define GSK_AS400_ERROR_CLOSED                     6004
+#define GSK_AS400_ERROR_NO_CERTIFICATE_AUTHORITIES 6005
+#define GSK_AS400_ERROR_NO_INITIALIZE              6007
+#define GSK_AS400_ERROR_ALREADY_SECURE             6008
+#define GSK_AS400_ERROR_NOT_TCP                    6009
+#define GSK_AS400_ERROR_INVALID_POINTER            6010
+#define GSK_AS400_ERROR_TIMED_OUT                  6011
+#define GSK_AS400_ASYNCHRONOUS_RECV                6012
+#define GSK_AS400_ASYNCHRONOUS_SEND                6013
+#define GSK_AS400_ERROR_INVALID_OVERLAPPEDIO_T     6014
+#define GSK_AS400_ERROR_INVALID_IOCOMPLETIONPORT   6015
+#define GSK_AS400_ERROR_BAD_SOCKET_DESCRIPTOR      6016
+
+#if (__OS400_TGTVRM__>=510)
+#pragma datamodel(pop)
+#endif
+
+#endif  /* #ifndef __gskssl_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif

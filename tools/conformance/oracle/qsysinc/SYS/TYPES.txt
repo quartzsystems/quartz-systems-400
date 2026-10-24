@@ -1,0 +1,408 @@
+/* begin_generated_IBM_copyright_prolog                              */
+/* This is an automatically generated copyright prolog.              */
+/* After initializing,  DO NOT MODIFY OR MOVE                        */
+/* ----------------------------------------------------------------- */
+/*                                                                   */
+/* Product(s):                                                       */
+/*     5763-SS1                                                      */
+/*     5716-SS1                                                      */
+/*     5769-SS1                                                      */
+/*     5722-SS1                                                      */
+/*     5761-SS1                                                      */
+/*                                                                   */
+/* (C)Copyright IBM Corp.  1993, 2007                                */
+/*                                                                   */
+/* All rights reserved.                                              */
+/* US Government Users Restricted Rights -                           */
+/* Use, duplication or disclosure restricted                         */
+/* by GSA ADP Schedule Contract with IBM Corp.                       */
+/*                                                                   */
+/* Licensed Materials-Property of IBM                                */
+/*                                                                   */
+/*  ---------------------------------------------------------------  */
+/*                                                                   */
+/* end_generated_IBM_copyright_prolog                                */
+
+#ifdef __cplusplus
+   #pragma info(none)
+#else
+   #pragma nomargins nosequence
+   #pragma checkout(suspend)
+#endif
+/*** START HEADER FILE SPECIFICATIONS ********************************/
+/*                                                                   */
+/* Header File Name:  sys/types.h                                    */
+/*                                                                   */
+/* Descriptive Name:  Data type definitions.                         */
+/*                                                                   */
+/* Description:  Defines various data type definitions as well as    */
+/*               the macros related to the select() system call.     */
+/*                                                                   */
+/* Header Files Included:  string.h                                  */
+/*                                                                   */
+/* Macros List:  FD_CLR                                              */
+/*               FD_ISSET                                            */
+/*               FD_SET                                              */
+/*               FD_SETSIZE                                          */
+/*               FD_ZERO                                             */
+/*               QLG_JOB_CCSID                                       */
+/*               QLG_JOB_COUNTRY                                     */
+/*               QLG_JOB_LANG                                        */
+/*               __char_double_t                                     */
+/*               __clock_t                                           */
+/*               __dev_t                                             */
+/*               __dev64_t                                       @B5A*/
+/*               __gid_t                                             */
+/*               __ino_t                                             */
+/*               __mode_t                                            */
+/*               __nlink_t                                           */
+/*               __nlink32_t                                     @B6A*/
+/*               __off_t                                             */
+/*               __off64_t                                       @B2A*/
+/*               __pid_t                                             */
+/*               __psize_t                                       @B8A*/
+/*               __size_t                                            */
+/*               __size64_t                                      @B7A*/
+/*               __ssize_t                                           */
+/*               __time_t                                            */
+/*               __time64_t                                      @B9A*/
+/*               __uid_t                                             */
+/*               __useconds_t                                        */
+/*                                                                   */
+/*                                                                   */
+/* Structure List: fd_set                                            */
+/*                 qlg_nls_t                                         */
+/*                 qp0l_objtype_t                                    */
+/*                                                                   */
+/* Function Prototype List: None                                     */
+/*                                                                   */
+/* Change Activity:                                                  */
+/*                                                                   */
+/* CFD List:                                                         */
+/*                                                                   */
+/* FLAG REASON       LEVEL DATE    PGMR      CHANGE DESCRIPTION      */
+/* ---- ------------ ----- ------- --------- ----------------------- */
+/* $A0= D28418       3D10  940307  ROCH      New Include             */
+/* $A1= D91787       4D10  940805  ROCH      Add new type            */
+/* $A3= P3977661     3D60  950105  ROCH      Changes to              */
+/*                                           documentation.          */
+/* $A4= P3992252     3D60  950522  ROCH      Add __cplusplus #ifdef  */
+/*                                           and #pragma info(none)  */
+/* $A5= PTH01765     3D60  950804  ROCH      Correct #pragma info    */
+/* $A6= P3617243     3D70  960417  ROCH      Change fd_set declare   */
+/*                                           to base its size on     */
+/*                                           FD_SETSIZE.             */
+/* $B1= D9477900     4D20  970604  ROCH      Add __useconds_t        */
+/* $B2= D9588102     4D40  990521  ROCH      Add off64_t             */
+/*                                           Map off_t to long long  */
+/* $B3= P3682997     4D40  981102 ROCH       Large Files support for */
+/*                                           *IFS64IO                */
+/* $B4= D98212.05    5D10  000104 ROCH       Datamodel changes       */
+/* $B5= D9839101     5D20  000928 ROCH       Add __dev64_t           */
+/* $B6= D9876109     5D20  010725 ROCH       Add nlink32_t           */
+/* $B7= D9351301     6D10  060517 ROCH       Add __size64_t          */
+/* $B8= D9351501     6D10  060713 ROCH       Add __psize_t           */
+/* $B9= D9383700     6D10  060901 ROCH       Add __time64_t          */
+/*                                                                   */
+/* End CFD List                                                      */
+/*                                                                   */
+/*  Additional notes about the Change Activity                       */
+/* End Change Activity                                               */
+/*** END HEADER FILES SPECIFICATIONS *********************************/
+
+#ifndef __types_h
+  #define __types_h  1
+
+#ifndef __QBFC_EXTERN
+    #ifdef __ILEC400__
+        #define QBFC_EXTERN extern
+    #else
+        #define QBFC_EXTERN extern "C"
+    #endif
+
+    #define __QBFC_EXTERN
+#endif
+
+#include <string.h>             /* include memset prototype         */
+
+#pragma datamodel(P128)                                      /* @B4A*/
+
+/********************************************************************/
+/*  Turn on the Large File Support when *IFS64IO is specified   @B3A*/
+/*  as C compiler option.                                       @B3A*/
+/********************************************************************/
+#ifdef __IFS64_IO__                                          /* @B3A*/
+   #ifndef _LARGE_FILES                                      /* @B3A*/
+      #define _LARGE_FILES                                   /* @B3A*/
+   #endif                                                    /* @B3A*/
+   #ifndef _LARGE_FILE_API                                   /* @B3A*/
+      #define _LARGE_FILE_API                                /* @B3A*/
+   #endif                                                    /* @B3A*/
+#endif                                                       /* @B3A*/
+
+
+/********************************************************************/
+/* Standard type definitions                                        */
+/********************************************************************/
+
+typedef char *                  caddr_t;
+
+
+/********************************************************************/
+/* Definitions of Primitive System Data Types                       */
+/********************************************************************/
+
+#ifndef __char_double_t
+   typedef  short char_double_t;         /*used for double byte     */
+   #define __char_double_t  1
+#endif
+
+#ifndef __clock_t
+   typedef long int clock_t;                      /* used for times */
+   #define __clock_t  1
+#endif
+
+#ifndef __dev_t
+   typedef unsigned int   dev_t;        /* Used for device numbers  */
+   #define __dev_t 1
+#endif
+
+/* not POSIX.1 defined symbolic constant @B5A*/
+#if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE)) /* @B5A*/
+  #ifndef __dev64_t                                         /* @B5A*/
+    #ifdef _LONG_LONG                                       /* @B5A*/
+      typedef unsigned long long  dev64_t;
+                                    /* Used for device numbers @B5A*/
+    #else                                                   /* @B5A*/
+      typedef char   dev64_t[8];    /* Used for device numbers @B5A*/
+    #endif                                                  /* @B5A*/
+    #define __dev64_t 1                                     /* @B5A*/
+  #endif                                                    /* @B5A*/
+#endif                                                      /* @B5A*/
+
+#ifndef __gid_t
+   typedef unsigned int   gid_t;              /* Used for group IDs */
+   #define __gid_t 1
+#endif
+
+#ifndef __ino_t
+   typedef unsigned int   ino_t;     /* Used for file serial number */
+   #define __ino_t 1
+#endif
+
+#ifndef __key_t
+   typedef int key_t;
+   #define __key_t 1
+#endif
+
+#ifndef __mode_t
+   typedef unsigned int   mode_t;  /* Used for some file
+                                      attributes, for example,
+                                      file type and file access
+                                      permissions                   */
+   #define __mode_t 1
+#endif
+
+#ifndef __nlink_t
+   typedef unsigned short nlink_t;          /* Used for link counts */
+   #define __nlink_t 1
+#endif
+
+/* not POSIX.1 defined symbolic constant                        @B6A*/
+#if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE))  /* @B6A*/
+  #ifndef __nlink32_t                                        /* @B6A*/
+    typedef unsigned long  nlink32_t;   /* Used for link counts @B6A*/
+    #define __nlink32_t 1                                    /* @B6A*/
+  #endif                                                     /* @B6A*/
+#endif                                                       /* @B6A*/
+
+
+/********************************************************************/
+/* Define off_t to be of type long long if the applications     @B2A*/
+/* are compiled with _LARGE_FILES flag.                         @B2A*/
+/********************************************************************/
+
+#ifndef __off_t
+   #ifndef _LARGE_FILES                                      /* @B2A*/
+      typedef int            off_t;         /* Used for file sizes  */
+   #else                                                     /* @B2A*/
+      typedef long long      off_t;         /* Extend off_t for Large
+                                               Files sizes.     @B2A*/
+   #endif                                                   /* @B2A*/
+   #define __off_t 1
+#endif
+
+/********************************************************************/
+/* Define off64_t for the applications that are compiled with   @B2A*/
+/* the _LARGE_FILE_API flag.                                    @B2A*/
+/********************************************************************/
+
+#ifdef _LARGE_FILE_API                                      /* @B2A*/
+  #ifndef __off64_t                                         /* @B2A*/
+    typedef long long      off64_t;        /* Used for large file
+                                              sizes.           @B2A*/
+    #define __off64_t 1                                     /* @B2A*/
+  #endif                                                    /* @B2A*/
+#endif                                                      /* @B2A*/
+
+#ifndef __pid_t
+   typedef int            pid_t;    /* Used for process IDs and
+                                     * process group IDs             */
+   #define __pid_t 1
+#endif
+
+#ifndef __size_t
+   typedef unsigned int   size_t;                 /* Used for sizes */
+   #define __size_t 1
+#endif
+
+#if (__OS400_TGTVRM__ >= 610)                                 /* @B7A*/
+  #if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE)) /* @B7A*/
+    #ifndef __size64_t                                        /* @B7A*/
+      #ifdef _LONG_LONG                                       /* @B7A*/
+        typedef unsigned long long  size64_t;                 /* @B7A*/
+                                       /* Used for 64-bit sizes  @B7A*/
+      #else                                                   /* @B7A*/
+        typedef struct {unsigned int __a[2];}  size64_t;      /* @B7A*/
+                                       /* Used for 64-bit sizes  @B7A*/
+      #endif                                                  /* @B7A*/
+      #define __size64_t 1                                    /* @B7A*/
+    #endif                                                    /* @B7A*/
+  #endif                                                      /* @B7A*/
+#endif                                                        /* @B7A*/
+
+#ifndef  __ssize_t
+    typedef int           ssize_t;     /* Used by functions that
+                                        * return a count of bytes
+                                        * or an error indication    */
+    #define __ssize_t 1
+#endif
+
+#if (__OS400_TGTVRM__ >= 610)                                 /* @B8A*/
+  #if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE)) /* @B8A*/
+    /* Used for page size support.                               @B8A*/
+    #ifndef __psize_t                                         /* @B8A*/
+      #ifdef _LONG_LONG                                       /* @B8A*/
+        typedef long long  psize_t;                           /* @B8A*/
+      #else                                                   /* @B8A*/
+        typedef struct {int __a[2];}  psize_t;                /* @B8A*/
+      #endif                                                  /* @B8A*/
+      #define __psize_t 1                                     /* @B8A*/
+    #endif                                                    /* @B8A*/
+  #endif                                                      /* @B8A*/
+#endif                                                        /* @B8A*/
+
+#ifndef __time_t
+   typedef long int time_t;            /* used for time            */
+   #define __time_t 1
+#endif
+
+#if (__OS400_TGTVRM__ >= 610)                                 /* @B9A*/
+  #if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE)) /* @B9A*/
+    #ifndef __time64_t                                        /* @B9A*/
+      #ifdef _LONG_LONG                                       /* @B9A*/
+        typedef long long  time64_t;                          /* @B9A*/
+                                       /* Used for 64-bit times  @B9A*/
+      #else                                                   /* @B9A*/
+        typedef struct {int __a[2];}  time64_t;               /* @B9A*/
+                                       /* Used for 64-bit times  @B9A*/
+      #endif                                                  /* @B9A*/
+      #define __time64_t 1                                    /* @B9A*/
+    #endif                                                    /* @B9A*/
+  #endif                                                      /* @B9A*/
+#endif                                                        /* @B9A*/
+
+#ifndef __uid_t
+   typedef unsigned int   uid_t;               /* Used for user IDs */
+   #define __uid_t 1
+#endif
+
+#ifndef __useconds_t
+   typedef unsigned int useconds_t; /* Used for time in microseconds */
+   #define __useconds_t 1
+#endif
+
+/* not POSIX.1 defined symbolic constant */
+#if (!(defined _POSIX_SOURCE) && !(defined _POSIX1_SOURCE))
+
+/********************************************************************/
+/* Standard type definitions                                        */
+/********************************************************************/
+
+typedef unsigned char           u_char;
+typedef unsigned int            u_int;
+typedef unsigned short          u_short;
+typedef unsigned long           u_long;
+
+typedef unsigned char           uchar;
+typedef unsigned int            uint;
+typedef unsigned short          ushort;
+typedef unsigned long           ulong;
+
+/********************************************************************/
+/* Definitions relating to the select() function.  Includes the     */
+/* typedef for fd_set and the macros needed to manipulate variables */
+/* of type fd_set.                                                  */
+/********************************************************************/
+
+#ifndef FD_SETSIZE
+  #define FD_SETSIZE    200           /* Maximum descriptors in set */
+#endif
+
+/******************************************/
+/* fd_set is a minimum of 7 integers  @A6A*/
+/* (up to 224 bits) for compatibility @A6A*/
+/* with previous releases.  It may be @A6A*/
+/* larger, depending on the value of  @A6A*/
+/* FD_SETSIZE.                        @A6A*/
+/******************************************/
+
+typedef struct fd_set{
+  unsigned int fdes[((FD_SETSIZE) <= 224) ? (7) :
+                    ((((FD_SETSIZE)-1)/(8*sizeof(int)))+1)]; /*@A6C*/
+} fd_set;
+
+#define FD_ZERO(fds)  (memset(fds,0,sizeof(fd_set)))  /* set all 0  */
+#define FD_SET(fd, fds)  \
+      ((fds)->fdes[(fd)/32] |= (1 << ((fd)%32)))      /* set bits   */
+#define FD_CLR(fd, fds)   \
+      ((fds)->fdes[(fd)/32] &= ~(1 << ((fd)%32)))     /* clear bits */
+#define FD_ISSET(fd, fds)  \
+(((fds)->fdes[(fd)/32]&(1 << ((fd)%32)))? 1 : 0)      /* check bits */
+
+/********************************************************************/
+/*  Constants used for fields in qlg_nls_t                          */
+/********************************************************************/
+
+  #define QLG_JOB_CCSID    0x00000000 /* Use the job CCSID value    */
+  #define QLG_JOB_COUNTRY  0x0000     /* Use the job language value */
+  #define QLG_JOB_LANG     0x000000   /* Use the job country value  */
+#endif  /* not POSIX.1 defined symbolic */
+
+/********************************************************************/
+/*  NLS structure used in path name.  This defines the extra        */
+/*  information needed to make the path names NLS enabled.          */
+/********************************************************************/
+
+typedef struct {
+   int     ccsid;              /* CCSID of the path name            */
+   char    country_id[2];      /* country identifier of path name   */
+   char    language_id[3];     /* language identifier of pathname   */
+   char    nls_reserved[3];    /* reserved, must be null            */
+} qlg_nls_t;
+
+/********************************************************************/
+/*  AS/400 Object Type used in the stat structure.                  */
+/********************************************************************/
+
+typedef char qp0l_objtype_t[11];              /* AS/400 Object Type */
+
+#pragma datamodel(pop)                                       /* @B4A*/
+
+#endif  /* __types_h */
+
+#ifdef __cplusplus
+    #pragma info(restore)
+#else
+    #pragma checkout(resume)
+#endif
