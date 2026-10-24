@@ -3,6 +3,13 @@ name = "QSQLMSG"
 text = "SQL messages"
 
 [[msg]]
+id = "SQL0004"
+sev = 30
+text = "At column &1: member &2 named by INCLUDE was not found."
+help = "The precompiler looks for the member of an INCLUDE statement in the include file (by default the source file being precompiled). Add the member or correct the name."
+vars = ["*DEC 5 0", "*CHAR 10"]
+
+[[msg]]
 id = "SQL0084"
 sev = 30
 text = "The statement is not supported: &1."

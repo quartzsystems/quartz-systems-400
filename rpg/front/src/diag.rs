@@ -46,6 +46,8 @@ impl Diag {
 pub mod ids {
     /// A character literal is missing its closing apostrophe.
     pub const MISSING_APOSTROPHE: &str = "RNF0267";
+    /// A hexadecimal literal is missing its closing apostrophe.
+    pub const HEX_APOSTROPHE: &str = "RNF0301";
     /// A character not valid in RPG source.
     pub const INVALID_CHARACTER: &str = "RNF0201";
     /// A specification type out of sequence or not valid.
@@ -64,18 +66,38 @@ pub mod ids {
     pub const BAD_OPCODE: &str = "RNF5013";
     /// An operation code that free form does not allow.
     pub const NOT_IN_FREE: &str = "RNF5346";
-    /// The /COPY or /INCLUDE member was not found.
-    pub const COPY_NOT_FOUND: &str = "RNF0023";
+    /// The /COPY or /INCLUDE member cannot be opened.
+    pub const COPY_NOT_FOUND: &str = "RNF0273";
+    /// A /COPY or /INCLUDE without a member.
+    pub const COPY_SYNTAX: &str = "RNF0272";
     /// /COPY nesting too deep or recursive.
     pub const COPY_NESTING: &str = "RNF0024";
-    /// A directive is not valid or its position is wrong.
-    pub const BAD_DIRECTIVE: &str = "RNF0037";
+    /// A directive that is not known.
+    pub const BAD_DIRECTIVE: &str = "RNF0274";
     /// /ELSE, /ELSEIF or /ENDIF without /IF.
-    pub const COND_NO_IF: &str = "RNF0039";
+    pub const COND_NO_IF: &str = "RNF0706";
     /// /IF without /ENDIF at the end of the member.
-    pub const COND_NO_ENDIF: &str = "RNF0036";
+    pub const COND_NO_ENDIF: &str = "RNF0705";
+    /// The condition of /IF or /ELSEIF is not valid.
+    pub const BAD_CONDITION: &str = "RNF0701";
+    /// /DEFINE or /UNDEFINE without a name.
+    pub const DEFINE_NO_NAME: &str = "RNF0702";
     /// A keyword is not valid.
     pub const BAD_KEYWORD: &str = "RNF0203";
+    /// Column 43 of a file specification is not blank.
+    pub const F_COL43: &str = "RNF2016";
+    /// An output indicator that is not valid; blanks are used.
+    pub const BAD_OUTPUT_IND: &str = "RNF6003";
+    /// An output record type that is not H, D, T or E; D is used.
+    pub const BAD_OUTPUT_TYPE: &str = "RNF6005";
+    /// An output data format that is not valid; blank is used.
+    pub const BAD_OUTPUT_FORMAT: &str = "RNF6028";
+    /// An output constant that is not valid; the field is ignored.
+    pub const BAD_OUTPUT_CONSTANT: &str = "RNF6030";
+    /// A subfield or parameter outside a group.
+    pub const NOT_IN_GROUP: &str = "RNF3703";
+    /// A definition type that is not valid; `S` is used.
+    pub const BAD_DEF_TYPE: &str = "RNF3304";
     /// A parenthesis is missing.
     pub const PAREN: &str = "RNF0202";
     /// A token not expected here.
@@ -112,6 +134,8 @@ pub mod ids {
     pub const UNEXPECTED_RPAREN: &str = "RNF0633";
     /// An operation extender that is not valid.
     pub const BAD_EXTENDER: &str = "RNF5048";
+    /// An extender the operation does not take.
+    pub const EXTENDER_NOT_FOR_OP: &str = "RNF5049";
     /// A fixed-form operation code that is not valid; the
     /// specification is ignored.
     pub const BAD_FIXED_OPCODE: &str = "RNF5014";
@@ -119,6 +143,19 @@ pub mod ids {
     pub const BAD_DECIMALS: &str = "RNF5044";
     /// A resulting indicator that is not valid.
     pub const BAD_RESULT_IND: &str = "RNF5051";
+    /// Factor 1 must be blank for the operation; it is ignored.
+    pub const FACTOR1_NOT_BLANK: &str = "RNF5010";
+    /// Data that is not valid in an entry; the valid part is used.
+    pub const ENTRY_DATA: &str = "RNF0289";
+    /// A conditioning indicator that is not valid; blanks are used.
+    pub const BAD_COND_IND: &str = "RNF5007";
+    /// A blank control level after one that is not; the previous is
+    /// used.
+    pub const LEVEL_BLANK_AFTER: &str = "RNF5002";
+    /// The operation needs a factor 1.
+    pub const NO_FACTOR1: &str = "RNF5009";
+    /// An indicator that cannot be a resulting indicator.
+    pub const NOT_RESULT_IND: &str = "RNF5270";
     /// `SETON` or `SETOFF` without an indicator.
     pub const NO_RESULT_IND: &str = "RNF5053";
     /// Text skipped after an error.

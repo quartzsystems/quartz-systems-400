@@ -99,3 +99,19 @@ LST037 listing being matched (new member or new outcome)
 LST038 listing being matched (new member or new outcome)
 LST039 listing being matched (new member or new outcome)
 LST040 listing being matched (new member or new outcome)
+SQL034 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
+SQL035 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
+SQL036 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
+SQL037 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
+SQL038 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
+SQL039 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
+SQL040 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
+SQL041 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
+SQL042 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
+SQL043 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
+SQL044 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
+SQL045 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
+SQL046 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
+SQL047 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
+SQL048 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
+SQL049 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked

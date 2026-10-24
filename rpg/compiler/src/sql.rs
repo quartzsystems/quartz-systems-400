@@ -59,9 +59,40 @@ dcl-ds SQLCA;
 end-ds;
 ";
 
+/// The SQLDA of `INCLUDE SQLDA`, with IBM's names and layout: the
+/// program defines the constant `SQL_NUM`, the number of entries.
+const SQLDA: &str = "**FREE
+dcl-ds SQLDA;
+  SQLDAID char(8);
+  SQLDABC bindec(9);
+  SQLN bindec(4);
+  SQLD bindec(4);
+  SQL_VAR char(80) dim(SQL_NUM);
+end-ds;
+dcl-ds SQLVAR;
+  SQLTYPE bindec(4);
+  SQLLEN bindec(4);
+  SQLRES char(12);
+  SQLDATA pointer;
+  SQLIND pointer;
+  SQLNAMELEN bindec(4);
+  SQLNAME char(30);
+end-ds;
+";
+
 /// Declare the SQLCA in the global scope.
 pub fn declare_sqlca(t: &mut Table, diags: &mut Vec<Diag>, ctl: &crate::ctl::Ctl) {
-    let m = Member::from_text("QTEMP", "QSQLSRC", "SQLCA", SQLCA);
+    declare_text(t, diags, ctl, "SQLCA", SQLCA);
+}
+
+/// Declare the SQLDA in the global scope (`INCLUDE SQLDA`).
+pub fn declare_sqlda(t: &mut Table, diags: &mut Vec<Diag>, ctl: &crate::ctl::Ctl) {
+    declare_text(t, diags, ctl, "SQLDA", SQLDA);
+}
+
+/// Declare generated definitions in the global scope.
+fn declare_text(t: &mut Table, diags: &mut Vec<Diag>, ctl: &crate::ctl::Ctl, name: &str, text: &str) {
+    let m = Member::from_text("QTEMP", "QSQLSRC", name, text);
     let (_, module, _) = rpgfront::front(m, &mut MemIncludes::default(), &ReadOptions::default());
     let mut quiet = Vec::new();
     let mut cx = Cx {

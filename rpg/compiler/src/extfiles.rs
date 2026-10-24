@@ -135,7 +135,16 @@ pub fn declare_files(t: &mut Table, diags: &mut Vec<Diag>, scope: usize, prefix:
     }
     // Program-described input fields.
     for i in inputs.iter().filter(|i| !i.external) {
+        let reclen = files.iter().find(|f| f.name == i.name).map_or(0, |f| f.reclen);
         for x in &i.fields {
+            // A field past the end of the record is ignored.
+            if reclen > 0 && x.to.trim().parse::<u32>().is_ok_and(|to| to > reclen) {
+                diags.push(Diag::new(ids::PAST_RECORD, 30, x.at));
+                if !x.name.is_empty() {
+                    diags.push(Diag::new(ids::NOT_DEFINED, 30, x.at).arg(x.name.clone()));
+                }
+                continue;
+            }
             if x.name.is_empty() || x.name.starts_with('*') || t.find_in(scope, &x.name).is_some() {
                 continue;
             }
@@ -401,11 +410,20 @@ pub const PSDS_WORDS: &[(&str, u32, u32, bool)] = &[
 /// Result fields a fixed-form calculation defines with a length
 /// (columns 64-68) and decimals: packed with decimals, character
 /// without, unless the name is defined already.
-pub fn declare_calc_fields(t: &mut Table, scope: usize, prefix: &str, calcs: &[rpgfront::ast::Stmt]) {
+pub fn declare_calc_fields(t: &mut Table, diags: &mut Vec<Diag>, scope: usize, prefix: &str, calcs: &[rpgfront::ast::Stmt]) {
     for s in calcs {
         let Ok(len) = s.op.len.trim().parse::<u32>() else { continue };
         let Some(name) = s.op.result.first().and_then(|e| e.name().map(str::to_string)) else { continue };
-        if len == 0 || t.find(scope, &name).is_some() {
+        if len == 0 {
+            continue;
+        }
+        // A length unlike the field's definition: the definition stands.
+        if let Some(id) = t.find(scope, &name) {
+            let ty = &t.syms[id].ty;
+            let had = ty.shape().map(|(d, _)| u32::from(d)).or_else(|| ty.str_len().filter(|_| !ty.is_varying()));
+            if had.is_some_and(|h| h != len) {
+                diags.push(Diag::new(crate::diag::ids::LEN_DIFFERS, 20, s.at).arg(name));
+            }
             continue;
         }
         let ty = match s.op.decimals.trim().parse::<u8>() {

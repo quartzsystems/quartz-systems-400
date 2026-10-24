@@ -1,0 +1,3 @@
+       // Host variables from an SQL INCLUDE.
+       dcl-s cnt int(10);
+       dcl-s nm varchar(20);

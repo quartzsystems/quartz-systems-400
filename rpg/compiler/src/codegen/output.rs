@@ -190,10 +190,18 @@ impl Gen<'_> {
             }
         } else {
             let name = fld.field.clone();
-            let e = Expr::Ref {
-                name: name.clone(),
-                steps: Vec::new(),
-                at: fld.at,
+            let e = if name.starts_with('*') {
+                Expr::Special {
+                    word: name.clone(),
+                    index: None,
+                    at: fld.at,
+                }
+            } else {
+                Expr::Ref {
+                    name: name.clone(),
+                    steps: Vec::new(),
+                    at: fld.at,
+                }
             };
             let v = if name == "PAGE" || name.starts_with("PAGE") && name.len() == 5 {
                 self.page_field(&name)

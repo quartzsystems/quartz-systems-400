@@ -1,0 +1,54 @@
+**FREE
+//; cmd: CRTSQLRPGI OBJ({lib}/{name}) SRCFILE({lib}/QRPGLESRC) COMMIT(*NONE) OUTPUT(*PRINT)
+//; sqlfile: EMPT
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-c SQL_NUM 4;
+exec sql include SQLDA;
+dcl-s txt varchar(200);
+dcl-s k int(10);
+dcl-s dp char(3);
+dcl-s got char(3);
+dcl-s nm varchar(20);
+// EXECUTE and OPEN USING DESCRIPTOR: the inputs from the entries.
+txt = 'update EMPT set DEPT = ? where ID = ?';
+exec sql prepare s1 from :txt;
+SQLN = SQL_NUM;
+SQLD = 2;
+SQLVAR = SQL_VAR(1);
+SQLTYPE = 452;
+SQLLEN = 3;
+SQLDATA = %addr(dp);
+SQL_VAR(1) = SQLVAR;
+SQLVAR = SQL_VAR(2);
+SQLTYPE = 496;
+SQLLEN = 4;
+SQLDATA = %addr(k);
+SQL_VAR(2) = SQLVAR;
+dp = 'NEW';
+k = 2;
+exec sql execute s1 using descriptor :sqlda;
+line = %char(sqlcode) + ' ' + %char(sqlerrd(3));
+write QSYSPRT line;
+exec sql select DEPT into :got from EMPT where ID = 2;
+line = got;
+write QSYSPRT line;
+txt = 'select NAME from EMPT where DEPT = ? and ID > ? order by ID';
+exec sql prepare s2 from :txt;
+exec sql declare c2 cursor for s2;
+dp = 'DEV';
+k = 0;
+exec sql open c2 using descriptor :sqlda;
+line = 'open ' + %char(sqlcode);
+write QSYSPRT line;
+dow 1 = 1;
+  exec sql fetch c2 into :nm;
+  if sqlcode <> 0;
+    leave;
+  endif;
+  line = nm;
+  write QSYSPRT line;
+enddo;
+exec sql close c2;
+*inlr = *on;

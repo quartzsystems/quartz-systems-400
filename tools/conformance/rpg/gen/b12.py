@@ -10,6 +10,113 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "b12err")
 HEAD = ["**FREE", "//; run: no", "ctl-opt dftactgrp(*no);"]
 
 # Each case: the declarations and statements after the heading.
+def fx(*lines):
+    """A fixed-form member that ends with LR on."""
+    return ["FIXED"] + list(lines) + ["     C                   SETON                                        LR"]
+
+
+# Appended after ERR229: fixed-form specifications, directives,
+# procedures, files and operations not yet covered.
+MORE2 = [
+    # F specifications.
+    fx("     FNOSUCH    IF   E             DISK"),
+    fx("     FQSYSPRT   X    F  132        PRINTER"),
+    fx("     FQSYSPRT   O    F  132        NOSUCHDEV"),
+    fx("     FQSYSPRT   O    F    0        PRINTER"),
+    fx("     FQSYSPRT   O    F  132        PRINTER OFLIND(*IN99) NOSUCHKW"),
+    fx("     FQSYSPRT   O    F  132        PRINTER", "     FQSYSPRT   O    F  132        PRINTER"),
+    fx("     FQSYSPRT   OA   F  132        PRINTER"),
+    fx("     FQSYSPRT   O    Q  132        PRINTER"),
+    # D specifications.
+    fx("     D a               X              5"),
+    fx("     D a               S              5Q"),
+    fx("     D a               S              5P 9"),
+    fx("     D a               S             -5"),
+    fx("     D a               S              5    NOSUCH(1)"),
+    fx("     D a               C"),
+    fx("     D a               C                   CONST(1) INZ(2)"),
+    fx("     D a               DS                  LEN(5)", "     D  b                      1     10"),
+    fx("     D a               DS", "     D  b                      5      3"),
+    fx("     D a               S              5A   DIM(3) DIM(4)"),
+    fx("     D  b                             5A"),
+    fx("     D a               PR", "     D b               PI"),
+    # C specifications.
+    fx("     C                   ADD       1             X"),
+    fx("     D a               S              5  0", "     C     a             DIV       0             a"),
+    fx("     D a               S              5  0", "     C                   MOVE      'x'           a"),
+    fx("     C                   GOTO      NOWHERE"),
+    fx("     C     TAG1          TAG", "     C     TAG1          TAG"),
+    fx("     C                   CABEQ     1             NOWHERE"),
+    fx("     D a               S              5  0", "     C     a             IFGT      1", "     C                   ENDDO"),
+    fx("     C                   DO        'x'"),
+    fx("     C                   CASEQ     1             NOSUB"),
+    fx("     C                   EXSR      NOSUB"),
+    fx("     D a               S              5  0", "     C     a             LOOKUP    a                                      01"),
+    fx("     C                   READ      NOFILE                                 99"),
+    fx("     C                   CHAIN     NOFILE                             99"),
+    fx("     D a               S              5  0", "     C                   Z-ADD     1             a                 7 0"),
+    fx("     D a               S              5  0", "     C                   EVAL(Q)   a = 1"),
+    fx("     C                   SETON                                        1P"),
+    fx("     C   N99N98N97N96    SETON                                        LR"),
+    fx("     CL9                 SETON                                        LR"),
+    fx("     C                   TIME                    X"),
+    fx("     C                   XFOOT     X             Y"),
+    # I and O specifications.
+    fx("     FQSYSPRT   O    F  132        PRINTER", "     OQSYSPRT   X    1"),
+    fx("     FQSYSPRT   O    F  132        PRINTER", "     OQSYSPRT   E            NOSUCH      1", "     O                       nofield             10"),
+    fx("     FQSYSPRT   O    F  132        PRINTER", "     OQSYSPRT   H    1", "     O                                         999 'x'"),
+    fx("     FQSYSPRT   O    F  132        PRINTER", "     OQSYSPRT   H    1", "     O                       *DATE         X     10"),
+    fx("     FINPUT     IP   F   80        DISK", "     IINPUT     NS  01", "     I                                  1   90  FIELD"),
+    # Directives.
+    ["/if defined(X)", "dcl-s a int(10);"],
+    ["/endif"],
+    ["/else"],
+    ["/define"],
+    ["/copy"],
+    ["/copy NOSUCH/QRPGLESRC,NOSUCH"],
+    ["/include NOSUCH"],
+    ["/eof", "dcl-s a int(10);"],
+    ["/if not defined(A)", "/elseif", "/endif"],
+    ["/nosuch"],
+    # Procedures.
+    ["dcl-proc p;", "  dcl-proc q;", "  end-proc;", "end-proc;"],
+    ["dcl-proc p;", "  dcl-pi *n;", "    a int(10);", "    a int(10);", "  end-pi;", "end-proc;"],
+    ["dcl-proc p;", "  dcl-pi q;", "  end-pi;", "end-proc;"],
+    ["dcl-proc p;", "  dcl-f QSYSPRT printer(132);", "end-proc;"],
+    ["dcl-proc p;", "  begsr *pssr;", "  endsr;", "  begsr *inzsr;", "  endsr;", "end-proc;"],
+    ["dcl-proc p export export;", "end-proc;"],
+    ["dcl-proc p serialize;", "end-proc;"],
+    ["dcl-pr p extproc(1);", "end-pr;"],
+    ["dcl-pr p extpgm(*xyz);", "end-pr;"],
+    ["dcl-pr p;", "  dcl-subf x int(10);", "end-pr;"],
+    # Operations, free form.
+    ["dcl-s a int(10);", "a = %int(%char(a)) + ;"],
+    ["dcl-s d date;", "d += %days('x');"],
+    ["dcl-s d date;", "d = d + 1;"],
+    ["dcl-s t time;", "t = t + %days(1);"],
+    ["dcl-s c char(5);", "c = %char(*null);"],
+    ["dcl-s a int(10) dim(3);", "sorta(z) a;"],
+    ["dcl-s a int(10);", "for a = 1 downto 3;", "endfor;"],
+    ["dcl-s a int(10);", "for a = 3 to 1 by -1;", "endfor;"],
+    ["dcl-s a int(10);", "dou;", "enddo;"],
+    ["dcl-s p pointer;", "p += 'x';"],
+    # Checks recorded from batch 5 and the string and array members.
+    fx("     D a               S              5P 0 DIM(3)", "     D b               S              5S 0 DIM(3)", "     C                   MOVEA     a             b"),
+    fx("     D a               S              5P 0 DIM(3)", "     D b               S              7P 0 DIM(3)", "     C                   MOVEA     a             b"),
+    fx("     C                   MOVE      'AB'          *IN01"),
+    fx("     C                   MOVE      'A'           *IN01"),
+    fx("     D ds              DS", "     D  sub                   1      5", "     D  sub2                  6     10", "     C                   MOVE      ds            sub"),
+    ["dcl-s v varchar(10);", "evalr v = 'x';"],
+    fx("     D x               S              5", "     C     20            SUBST     'abc'         x"),
+    fx("     D x               S              5", "     C     2             SUBST     'abc':9       x"),
+    ["dcl-s a int(10) dim(3);", "dcl-s i int(10);", "i = %lookuplt(1:a);"],
+    ["dcl-s a int(10) dim(3);", "dcl-s i int(10);", "i = %lookupge(1:a);"],
+    ["dcl-s a int(10) dim(3) ascend;", "dcl-s i int(10);", "i = %lookupge(1:a);"],
+    ["dcl-s c char(5);", "c = %subst('abc':9);"],
+    ["dcl-s c char(5);", "c = %subst('abc':1:7);"],
+    fx("     D a               S              3P 0 DIM(3)", "     C     25            LOOKUP    a                                      01"),
+]
+
 # Appended after the first 89 (their numbers stay): declarations,
 # expressions, built-ins, operations, procedures, files, fixed form.
 MORE = [
@@ -190,7 +297,7 @@ MORE = [
     ["FIXED",
      "     D a               S             10  2 INZ('x')",
      "     C                   SETON                                        LR"],
-]
+] + MORE2
 
 CASES = [
     # Names.

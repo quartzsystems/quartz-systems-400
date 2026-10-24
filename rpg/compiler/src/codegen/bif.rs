@@ -196,7 +196,8 @@ impl Gen<'_> {
                 if let Some(p) = lit(args.get(1))
                     && (p < 1 || !s.ty.is_varying() && p > i64::from(len))
                 {
-                    self.err(ids::SUBST_START, 20, name.to_string());
+                    let id = if p < 1 { ids::SUBST_START } else { ids::SUBST_START_LONG };
+                    self.err(id, 20, name.to_string());
                     return None;
                 }
                 if let (Some(p), Some(n)) = (lit(args.get(1)), lit(args.get(2)))
@@ -356,7 +357,7 @@ impl Gen<'_> {
                     self.assign_char_of_ind(&t, &v);
                     return Some(t);
                 }
-                self.err(ids::BIF_ARGS, 30, name.to_string());
+                self.err(ids::CHAR_PARM, 30, name.to_string());
                 None
             }
             "%DEC" | "%DECH" => self.dec_bif(name, args),

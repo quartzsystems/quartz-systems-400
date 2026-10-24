@@ -437,6 +437,12 @@ impl Session {
                 eprintln!("{}: setup failed: {cl}: {}", c.name, reply.trim());
             }
         }
+        // The setup's listings are not the member's.
+        if !c.setup.is_empty() {
+            for e in self.spools()? {
+                self.take_spool(&e)?;
+            }
+        }
         let made = match self.db_setup(c) {
             Ok(m) => m,
             Err(e) => {

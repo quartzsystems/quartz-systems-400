@@ -1,0 +1,196 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   ERR242
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   ERR242
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1  *; run: no                                                                                               000000     000100
+-     2 D a               S              5    NOSUCH(1)                                                           000000     000200
+ ======>                                      aaaaaa
+ *RNF3308 20 a      000200  Keyword name is not valid; the keyword is ignored.
+-     3 C                   SETON                                        LR----                                   000000     000300
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 3
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+0         No references in the source.
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+ *RNF7031 A                 A(5)                    2D
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                        3D
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF7031 00      1 The name or indicator is not referenced.
+ *RNF3308 20      1 Keyword name is not valid; the keyword is ignored.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        1
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        1
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        2
+-  Source Totals:
+0    Records . . . . . . . . . . . . :        3
+     Specifications  . . . . . . . . :        2
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        1
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Compilation stopped. Severity 20 errors found in program.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

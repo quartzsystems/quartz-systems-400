@@ -4,7 +4,7 @@
 
 //! RPG source from the store: a member with its sequence numbers and
 //! change dates, the `/COPY` members it names, and the external
-//! descriptions of the database and display files it declares.
+//! descriptions of the database, display and printer files it declares.
 
 use std::cell::RefCell;
 
@@ -117,7 +117,7 @@ impl rpgc::ExtFiles for StoreFiles<'_, '_> {
     fn describe(&mut self, name: &str, lib: &str) -> Option<ExtFile> {
         let mut sys = self.system.borrow_mut();
         let lib = lib_or(lib);
-        if let Some(d) = display_file(&mut sys, &lib, name) {
+        if let Some(d) = device_file(&mut sys, &lib, name) {
             return Some(d);
         }
         if crate::svc::ile::lend(&mut sys).is_err() {
@@ -129,7 +129,6 @@ impl rpgc::ExtFiles for StoreFiles<'_, '_> {
         crate::svc::ile::restore(&mut sys);
         let info = info?;
         if info.attr != "PF" && info.attr != "LF" {
-            // TODO(phase9): printer files' formats.
             return None;
         }
         Some(ExtFile {
@@ -162,20 +161,99 @@ impl rpgc::ExtFiles for StoreFiles<'_, '_> {
     }
 }
 
-/// `lib/name` as a display file, `None` when it is not one.
-fn display_file(system: &mut System, lib: &str, name: &str) -> Option<ExtFile> {
-    in_store(system, |txn, qsys, names| {
-        let id = wm::obj::find(txn, qsys, names, lib, name, types::FILE).map_err(|e| e.to_string())?;
-        let (_, h) = ops::read_header(txn, id).map_err(|e| e.to_string())?;
-        if ccsid::decode_trimmed(&h.attribute) != crate::svc::db::dspf::ATTR {
-            return Ok(None);
-        }
-        let found = ops::describe(txn, h.library).map_or_else(|_| lib.to_string(), |l| l.name.to_string());
-        let df = dspf::decode(&wm::obj::read(txn, id).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
-        Ok(Some(display_desc(&df, &found)))
-    })
-    .ok()
-    .flatten()
+/// `lib/name` as a display or printer file, `None` when it is neither.
+fn device_file(system: &mut System, lib: &str, name: &str) -> Option<ExtFile> {
+    in_store(system, |txn, qsys, names| device_in(txn, qsys, names, lib, name))
+        .ok()
+        .flatten()
+}
+
+/// [`device_file`] in a transaction. A program-described printer file
+/// has no formats: `None`.
+///
+/// # Errors
+///
+/// The file is not found or its object cannot be read.
+pub fn device_in(
+    txn: &mut Txn<'_>,
+    qsys: ObjectId,
+    names: &ops::NameContext,
+    lib: &str,
+    name: &str,
+) -> Result<Option<ExtFile>, String> {
+    let id = wm::obj::find(txn, qsys, names, lib, name, types::FILE).map_err(|e| e.to_string())?;
+    let (_, h) = ops::read_header(txn, id).map_err(|e| e.to_string())?;
+    let attr = ccsid::decode_trimmed(&h.attribute);
+    let is_dsp = attr == crate::svc::db::dspf::ATTR;
+    if !is_dsp && attr != "PRTF" {
+        return Ok(None);
+    }
+    let found = ops::describe(txn, h.library).map_or_else(|_| lib.to_string(), |l| l.name.to_string());
+    let payload = wm::obj::read(txn, id).map_err(|e| e.to_string())?;
+    if is_dsp {
+        let df = dspf::decode(&payload).map_err(|e| e.to_string())?;
+        return Ok(Some(display_desc(&df, &found)));
+    }
+    let f = wm::obj::prtf::Prtf::decode(&payload).map_err(|e| e.to_string())?;
+    Ok(dds::prtf::codec::decode(&f.formats).map(|def| printer_desc(&def, &found)))
+}
+
+/// A printer file as the compiler sees it: each format's fields in the
+/// record buffer after its option indicators (none under `INDARA`),
+/// as the job's printer reads them (`spool::ddsprt`).
+#[must_use]
+pub fn printer_desc(def: &dds::prtf::PrtfDefinition, lib: &str) -> ExtFile {
+    use dds::prtf::PrtKind;
+    let formats = def
+        .formats
+        .iter()
+        .map(|f| {
+            let inds = if def.indara { Vec::new() } else { f.indicators() };
+            let mut at = u32::try_from(inds.len()).unwrap_or(0);
+            let mut fields = Vec::new();
+            for x in &f.fields {
+                let ty = match x.kind {
+                    PrtKind::Char(n) => Ty::Char(u32::from(n)),
+                    PrtKind::Zoned(d, s) => Ty::Zoned(d, s),
+                    _ => continue,
+                };
+                if x.name.is_empty() {
+                    continue;
+                }
+                fields.push(ExtField {
+                    name: x.name.clone(),
+                    ty,
+                    offset: at,
+                    usage: 'O',
+                    alias: String::new(),
+                    nullable: false,
+                });
+                at += u32::try_from(x.buffer_len()).unwrap_or(0);
+            }
+            ExtFormat {
+                name: f.name.clone(),
+                level_id: String::new(),
+                len: at,
+                dsp: Some(DspLayout {
+                    out_len: at,
+                    in_len: 0,
+                    option_inds: inds,
+                    response_inds: Vec::new(),
+                    offsets: fields.iter().map(|x| (Some(x.offset), None)).collect(),
+                    subfile: false,
+                    sflctl: None,
+                }),
+                fields,
+                keys: Vec::new(),
+            }
+        })
+        .collect();
+    ExtFile {
+        lib: lib.to_string(),
+        dev: Dev::Printer,
+        formats,
+        indara: def.indara,
+    }
 }
 
 /// A display file as the compiler sees it: each record format's named

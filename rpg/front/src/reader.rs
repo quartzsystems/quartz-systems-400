@@ -57,10 +57,10 @@ pub enum Directive {
     Define(String),
     /// `/UNDEFINE name`.
     Undefine(String),
-    /// `/IF [NOT] DEFINED(name)`.
-    If(bool, String),
-    /// `/ELSEIF [NOT] DEFINED(name)`.
-    ElseIf(bool, String),
+    /// `/IF [NOT] DEFINED(name)`; `None` when the condition is not valid.
+    If(Option<(bool, String)>),
+    /// `/ELSEIF [NOT] DEFINED(name)`; `None` when it is not valid.
+    ElseIf(Option<(bool, String)>),
     /// `/ELSE`.
     Else,
     /// `/ENDIF`.
@@ -137,6 +137,57 @@ pub struct Read {
     pub diags: Vec<Diag>,
     /// The condition names defined at the end.
     pub defined: Vec<String>,
+    /// The members embedded SQL's `INCLUDE` brought in, in order.
+    pub sql_includes: Vec<SqlInclude>,
+    /// `INCLUDE SQLDA` was seen.
+    pub sqlda: bool,
+}
+
+/// An SQL `INCLUDE` the reader took: of `SQLCA` or `SQLDA`, or of a
+/// member (from the main member's source file, `INCFILE(*SRCFILE)`)
+/// read in place. The statement itself reads as a comment.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SqlInclude {
+    /// The statement's (last) line.
+    pub line: u32,
+    /// Index of the member in [`Read::members`]; none for `SQLCA` and
+    /// `SQLDA`.
+    pub member: Option<usize>,
+    /// The member is fully free.
+    pub fully_free: bool,
+}
+
+/// An SQL `INCLUDE` ending at the last line read: the name and the
+/// statement's lines. Free form takes one line; fixed form a
+/// `C/EXEC SQL INCLUDE name` line and its `C/END-EXEC`.
+fn sql_include_at(lines: &[Line], pending: &mut Option<(String, usize)>) -> Option<(String, Vec<usize>)> {
+    let i = lines.len().checked_sub(1)?;
+    let l = &lines[i];
+    match l.class {
+        Class::Free => sql_include(&l.free_area().1).map(|n| (n, vec![i])),
+        Class::Sql => {
+            let t = rpgspecs::cut(&l.text, 7, 80).trim().to_string();
+            let up = t.to_ascii_uppercase();
+            if up.starts_with("/END-EXEC") {
+                pending.take().map(|(n, at)| (n, vec![at, i]))
+            } else {
+                *pending = up.strip_prefix('/').and_then(sql_include).map(|n| (n, i));
+                None
+            }
+        }
+        _ => None,
+    }
+}
+
+/// The member an `EXEC SQL INCLUDE name` statement names.
+fn sql_include(stmt: &str) -> Option<String> {
+    let up = stmt.trim().trim_end_matches(';').to_ascii_uppercase();
+    let mut w = up.split_whitespace();
+    if w.next()? != "EXEC" || w.next()? != "SQL" || w.next()? != "INCLUDE" {
+        return None;
+    }
+    let name = w.next()?.to_string();
+    w.next().is_none().then_some(name)
 }
 
 /// What the reader needs to know.
@@ -164,6 +215,8 @@ struct Cond {
     active: bool,
     /// Some branch of the group was taken.
     taken: bool,
+    /// The `/IF` line.
+    line: u32,
     /// The group's surroundings are compiled.
     outer: bool,
     /// An `/ELSE` was seen.
@@ -197,13 +250,14 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
         conds: 0,
     }];
     let mut no: u32 = 0;
+    // A fixed-form `C/EXEC SQL INCLUDE` waiting for its `C/END-EXEC`.
+    let mut sql_pending: Option<(String, usize)> = None;
     while let Some(top) = stack.last_mut() {
         let Some(rec) = r.members[top.member].records.get(top.next).cloned() else {
             // End of member: an open /IF of this member is an error.
             let f = stack.pop().expect("a frame");
-            if conds.len() > f.conds {
-                r.diags.push(Diag::new(ids::COND_NO_ENDIF, 30, Pos { line: no, col: 0 }));
-                conds.truncate(f.conds);
+            for c in conds.drain(f.conds.min(conds.len())..) {
+                r.diags.push(Diag::new(ids::COND_NO_ENDIF, 30, Pos { line: c.line, col: 0 }));
             }
             continue;
         };
@@ -218,21 +272,27 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
         // Conditional directives work whatever the state.
         if let Class::Directive(d) = &class {
             match d {
-                Directive::If(not, name) => {
-                    let def = defined.contains(name);
-                    let hit = def != *not;
+                Directive::If(cond) => {
+                    if cond.is_none() {
+                        r.diags.push(Diag::new(ids::BAD_CONDITION, 30, at));
+                    }
+                    let hit = cond.as_ref().is_some_and(|(not, name)| defined.contains(name) != *not);
                     conds.push(Cond {
                         active: active && hit,
                         taken: hit,
+                        line: no,
                         outer: active,
                         seen_else: false,
                     });
                 }
-                Directive::ElseIf(not, name) => {
+                Directive::ElseIf(cond) => {
                     if conds.len() <= top.conds {
                         r.diags.push(Diag::new(ids::COND_NO_IF, 30, at));
                     } else if let Some(c) = conds.last_mut() {
-                        let hit = defined.contains(name) != *not;
+                        if cond.is_none() {
+                            r.diags.push(Diag::new(ids::BAD_CONDITION, 30, at));
+                        }
+                        let hit = cond.as_ref().is_some_and(|(not, name)| defined.contains(name) != *not);
                         c.active = c.outer && !c.taken && hit && !c.seen_else;
                         c.taken |= hit;
                     }
@@ -278,12 +338,21 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
         let member = top.member;
         let fully_free = top.fully_free;
         match &class {
+            Class::Directive(Directive::Define(n) | Directive::Undefine(n)) if n.is_empty() => {
+                r.diags.push(Diag::new(ids::DEFINE_NO_NAME, 30, at));
+            }
             Class::Directive(Directive::Define(n)) => {
                 if !defined.contains(n) {
                     defined.push(n.clone());
                 }
             }
             Class::Directive(Directive::Undefine(n)) => defined.retain(|x| x != n),
+            Class::Directive(Directive::Copy { member, .. }) if member.is_empty() => {
+                r.diags.push(Diag::new(ids::COPY_SYNTAX, 30, at));
+            }
+            Class::Directive(Directive::Unknown(_)) => {
+                r.diags.push(Diag::new(ids::BAD_DIRECTIVE, 30, at));
+            }
             Class::Directive(Directive::Free) => top.free_block = true,
             Class::Directive(Directive::EndFree) => top.free_block = false,
             Class::CtHeader(..) => top.ctdata = true,
@@ -293,7 +362,7 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
         let copy = match &class {
             Class::Directive(Directive::Copy {
                 lib, file, member, ..
-            }) => Some((lib.clone(), file.clone(), member.clone())),
+            }) if !member.is_empty() => Some((lib.clone(), file.clone(), member.clone())),
             _ => None,
         };
         r.lines.push(Line {
@@ -306,6 +375,46 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
             fully_free,
             depth,
         });
+        if let Some((name, at)) = sql_include_at(&r.lines, &mut sql_pending) {
+            let target = match name.as_str() {
+                "SQLCA" => Some(None),
+                "SQLDA" => {
+                    r.sqlda = true;
+                    Some(None)
+                }
+                _ => {
+                    let (lib, file) = (r.members[0].lib.clone(), r.members[0].file.clone());
+                    includes.member(&lib, &file, &name).map(Some)
+                }
+            };
+            // A member not found is the precompiler's to report.
+            if let Some(m) = target {
+                for i in at {
+                    r.lines[i].class = Class::Comment;
+                }
+                let free = m.as_ref().is_some_and(|m| is_free_marker(m.records.first().map_or("", |x| x.text.as_str())));
+                let idx = m.map(|m| {
+                    r.members.push(m);
+                    r.members.len() - 1
+                });
+                r.sql_includes.push(SqlInclude {
+                    line: no,
+                    member: idx,
+                    fully_free: free,
+                });
+                if let Some(idx) = idx {
+                    stack.push(Frame {
+                        member: idx,
+                        next: 0,
+                        fully_free: free,
+                        free_block: false,
+                        ctdata: false,
+                        conds: conds.len(),
+                    });
+                }
+                continue;
+            }
+        }
         if eof {
             // The rest of this member is not read.
             let top = stack.last_mut().expect("a frame");
@@ -337,8 +446,8 @@ pub fn read(main: Member, includes: &mut dyn Includes, opts: &Options) -> Read {
             });
         }
     }
-    if !conds.is_empty() {
-        r.diags.push(Diag::new(ids::COND_NO_ENDIF, 30, Pos { line: no, col: 0 }));
+    for c in conds {
+        r.diags.push(Diag::new(ids::COND_NO_ENDIF, 30, Pos { line: c.line, col: 0 }));
     }
     r.defined = defined;
     r
@@ -451,14 +560,8 @@ fn directive(t: &str) -> Option<Directive> {
         }
         "/DEFINE" => Directive::Define(first_word(rest)),
         "/UNDEFINE" => Directive::Undefine(first_word(rest)),
-        "/IF" => {
-            let (not, name) = defined_cond(rest)?;
-            Directive::If(not, name)
-        }
-        "/ELSEIF" => {
-            let (not, name) = defined_cond(rest)?;
-            Directive::ElseIf(not, name)
-        }
+        "/IF" => Directive::If(defined_cond(rest)),
+        "/ELSEIF" => Directive::ElseIf(defined_cond(rest)),
         "/ELSE" => Directive::Else,
         "/ENDIF" => Directive::EndIf,
         "/EOF" => Directive::Eof,
@@ -469,6 +572,14 @@ fn directive(t: &str) -> Option<Directive> {
         "/EJECT" => Directive::Eject,
         "/SET" => Directive::Set(rest.to_string()),
         "/RESTORE" => Directive::Restore(rest.to_string()),
+        // A word after the slash is a directive, known or not; a
+        // statement's continuation (`/ b;`) is not.
+        _ if word[1..].starts_with(|c: char| c.is_ascii_alphabetic())
+            && word[1..].chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+            && !t.contains(';') =>
+        {
+            Directive::Unknown(t.to_string())
+        }
         _ => return None,
     })
 }
@@ -538,6 +649,29 @@ mod tests {
         assert_eq!(c[10].1, Class::Free);
         assert_eq!(c[11].1, Class::CtHeader("CTDATA".into(), "ARR".into()));
         assert_eq!(c[12].1, Class::CtData);
+    }
+
+    #[test]
+    fn sql_include_reads_the_member_in_place() {
+        let main = Member::from_text(
+            "L",
+            "QSRC",
+            "MAIN",
+            "**FREE\nexec sql include INC;\nexec sql include sqlda;\nexec sql include NOPE;\n",
+        );
+        let mut inc = MemIncludes::default();
+        inc.members.push(Member::from_text("L", "QSRC", "INC", "       dcl-s n int(10);\n"));
+        let r = read(main, &mut inc, &Options::default());
+        let c = classes(&r);
+        assert_eq!(c[1], (2, Class::Comment));
+        assert_eq!(c[2], (3, Class::Free));
+        assert_eq!(r.lines[2].depth, 1);
+        assert_eq!(c[3], (4, Class::Comment));
+        // A member not found is left to the precompiler.
+        assert_eq!(c[4], (5, Class::Free));
+        assert!(r.sqlda);
+        assert_eq!(r.sql_includes.len(), 2);
+        assert_eq!((r.sql_includes[0].line, r.sql_includes[0].member, r.sql_includes[0].fully_free), (2, Some(1), false));
     }
 
     #[test]

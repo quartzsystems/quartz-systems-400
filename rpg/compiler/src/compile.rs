@@ -207,14 +207,30 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
     if !ctl.nomain && ctl.main.is_none() && !can_end(&module) {
         diags.push(Diag::new(crate::diag::ids::NO_END, 40, rpgfront::ast::Pos::default()));
     }
+    check_levels(&module, &mut diags);
+    // An EXCEPT name no EXCEPT operation names.
+    for o in module.outputs.iter().filter(|o| o.kind == "E" && !o.except.is_empty()) {
+        let used = module
+            .calcs
+            .iter()
+            .chain(module.procs.iter().flat_map(|p| p.calcs.iter()))
+            .any(|s| s.op.code == "EXCEPT" && s.op.f2.first().and_then(|e| e.name()).is_some_and(|n| n.eq_ignore_ascii_case(&o.except)));
+        if !used {
+            diags.push(Diag::new(crate::diag::ids::EXCEPT_UNUSED, 0, o.at).arg(o.except.clone()));
+        }
+    }
     let mut t = Table::new();
     let mut files = Vec::new();
     declare_scope(&mut t, &mut diags, &ctl, 0, "", &module.files, &module.defs, &module.inputs, ext, &mut files);
-    crate::extfiles::declare_calc_fields(&mut t, 0, "", &module.calcs);
+    crate::extfiles::declare_calc_fields(&mut t, &mut diags, 0, "", &module.calcs);
     bind_entry(&mut t, &mut diags, &module);
+    check_main_protos(&module, &ctl, opts, &mut diags);
     let sql_opts = opts.sql.clone().or_else(|| (opts.command == Command::CrtSqlRpgi).then(rpgsqlpre::Options::default));
     if sql_opts.is_some() {
         crate::sql::declare_sqlca(&mut t, &mut diags, &ctl);
+        if read.sqlda {
+            crate::sql::declare_sqlda(&mut t, &mut diags, &ctl);
+        }
     }
     // A program-described printer without an overflow indicator gets
     // the first of OA to OG no other file uses.
@@ -241,6 +257,7 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         if module.procs[..i].iter().any(|q| q.name.eq_ignore_ascii_case(&pname)) {
             diags.push(Diag::new(crate::diag::ids::PROC_TWICE, 30, p.at).arg(pname.clone()));
         }
+        check_proc(p, &ctl, &mut diags);
         let iface = p.pi.clone().unwrap_or(Def {
             kind: DefKind::Pi,
             name: pname.clone(),
@@ -285,7 +302,8 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
                 ..Sym::default()
             };
             if t.add(s).is_err() {
-                diags.push(Diag::new(crate::diag::ids::DUPLICATE, 30, iface.at).arg(prm.name.clone()));
+                let at = iface.children.get(k).map_or(iface.at, |c| c.at);
+                diags.push(Diag::new(crate::diag::ids::DUPLICATE, 30, at).arg(prm.name.clone()));
             }
         }
         // The prototype by the procedure's name.
@@ -320,7 +338,7 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
             }
         }
         declare_scope(&mut t, &mut diags, &ctl, scope, &prefix, &p.files, &p.defs, &[], ext, &mut files);
-        crate::extfiles::declare_calc_fields(&mut t, scope, &prefix, &p.calcs);
+        crate::extfiles::declare_calc_fields(&mut t, &mut diags, scope, &prefix, &p.calcs);
     }
     diags.extend(crate::blocks::check(&module.calcs));
     for p in &module.procs {
@@ -349,7 +367,8 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
     if let Some(p) = &precompiled {
         diags.extend(crate::sql::diags(p));
     }
-    let (qir, mut gen_diags) = codegen::module(&module, &mut t, &files, &ctl, opts, &scopes, &sql_stmts);
+    let endmod = precompiled.as_ref().is_some_and(|p| p.options.closqlcsr == "*ENDMOD");
+    let (qir, mut gen_diags) = codegen::module(&module, &mut t, &files, &ctl, opts, &scopes, &sql_stmts, endmod);
     // A group the generator finds unbalanced follows from another
     // error (a group whose start was in error, or one IBM reports).
     let other = diags.iter().chain(&gen_diags).any(|d| d.severity >= 20 && d.msgid != crate::diag::ids::UNBALANCED);
@@ -389,9 +408,24 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         crate::extfiles::generated_lines(&module, &files, &t)
     };
     if let Some(p) = &precompiled {
-        let firsts = crate::sql::first_calcs(&module, &scopes);
+        let mut firsts = crate::sql::first_calcs(&module, &scopes);
+        // An INCLUDE before the first calculation takes the main
+        // source's declarations.
+        if let (Some(inc), Some(main)) = (read.sql_includes.first(), firsts.first_mut())
+            && (main.1 == 0 || inc.line < main.1)
+        {
+            main.1 = inc.line;
+        }
         let first = |scope: usize| firsts.iter().find(|(s, _)| *s == scope).map_or(0, |(_, l)| *l);
         generated.extend(rpgsqlpre::lines::generated(p, &first, module.fully_free));
+        // A member that is not fully free, included in one that is, is
+        // set off with `**END-FREE` and `**FREE`.
+        for inc in read.sql_includes.iter().filter(|i| module.fully_free && !i.fully_free) {
+            let Some(m) = inc.member else { continue };
+            let last = read.lines.iter().filter(|l| l.member == m).map(|l| l.no).max().unwrap_or(inc.line);
+            generated.push((inc.line + 1, 1));
+            generated.push((last + 1, 1));
+        }
     }
     let mut c = Compiled {
         generated,
@@ -455,6 +489,79 @@ fn merge_proto(mut declared: Proto, iface: &Proto) -> Proto {
         declared.ret.clone_from(&iface.ret);
     }
     declared
+}
+
+/// A procedure's own keywords, interface name and subroutines.
+fn check_proc(p: &rpgfront::ast::Proc, ctl: &Ctl, diags: &mut Vec<Diag>) {
+    use crate::diag::ids;
+    for (i, k) in p.kws.iter().enumerate() {
+        if p.kws[..i].iter().any(|x| x.name == k.name) {
+            diags.push(Diag::new(ids::PROC_KEYWORD_TWICE, 20, k.at).arg(k.name.clone()));
+        } else if k.name == "SERIALIZE" && !ctl.thread.eq_ignore_ascii_case("*CONCURRENT") {
+            diags.push(Diag::new(ids::SERIALIZE_NOT_CONCURRENT, 20, k.at));
+        }
+    }
+    // The interface is named *N or after its procedure.
+    if let Some(pi) = &p.pi
+        && !pi.name.is_empty()
+        && !pi.name.eq_ignore_ascii_case("*N")
+        && !pi.name.eq_ignore_ascii_case(&p.name)
+    {
+        diags.push(Diag::new(ids::PI_NAME_DIFFERS, 20, pi.at).arg(pi.name.to_ascii_uppercase()));
+    }
+    // *INZSR belongs to the main procedure.
+    for s in p.calcs.iter().filter(|s| s.op.code == "BEGSR") {
+        if matches!(s.op.f1.first(), Some(rpgfront::ast::Expr::Special { word, .. }) if word == "*INZSR") {
+            diags.push(Diag::new(ids::INZSR_IN_PROC, 30, s.at));
+        }
+    }
+}
+
+/// A control level L1-L9 that no input field or resulting indicator
+/// sets is not defined (RNF7030 at its first use).
+fn check_levels(module: &Module, diags: &mut Vec<Diag>) {
+    let mut seen: Vec<&str> = Vec::new();
+    for s in &module.calcs {
+        let l = s.level.as_str();
+        let numbered = l.len() == 2 && l.starts_with('L') && matches!(l.as_bytes()[1], b'1'..=b'9');
+        if !numbered || seen.contains(&l) {
+            continue;
+        }
+        seen.push(l);
+        let by_input = module.inputs.iter().flat_map(|i| &i.fields).any(|f| f.level.eq_ignore_ascii_case(l));
+        let by_calc = module.calcs.iter().any(|c| c.op.resind.iter().any(|r| r == l));
+        if !by_input && !by_calc {
+            diags.push(Diag::new(crate::diag::ids::NOT_DEFINED, 30, s.at).arg(format!("*IN{l}")));
+        }
+    }
+}
+
+/// The main source's prototypes against the command: in the default
+/// activation group only programs are called (RNF3788), and a main
+/// interface's program is the one being created (RNF3776).
+fn check_main_protos(module: &Module, ctl: &Ctl, opts: &Options, diags: &mut Vec<Diag>) {
+    use crate::diag::ids;
+    for d in module.defs.iter().filter(|d| d.kind == DefKind::Pr) {
+        if ctl.dftactgrp && d.kw("EXTPGM").is_none() {
+            diags.push(Diag::new(ids::NEEDS_NO_DFTACTGRP, 30, d.at).arg(d.name.to_ascii_uppercase()));
+        }
+    }
+    if opts.command != Command::CrtBndRpg {
+        return;
+    }
+    let Some(pi) = module.defs.iter().find(|d| d.kind == DefKind::Pi && !d.name.is_empty() && !d.name.eq_ignore_ascii_case("*N")) else {
+        return;
+    };
+    let ext = module
+        .defs
+        .iter()
+        .find(|d| d.kind == DefKind::Pr && d.name.eq_ignore_ascii_case(&pi.name))
+        .and_then(|d| d.kw("EXTPGM"))
+        .and_then(|k| decl::str_arg(k, 0).or_else(|| decl::word_arg(k, 0)))
+        .unwrap_or_else(|| pi.name.clone());
+    if !ext.eq_ignore_ascii_case(&opts.name) {
+        diags.push(Diag::new(ids::MAIN_PGM_DIFFERS, 10, pi.at).arg(ext.to_ascii_uppercase()));
+    }
 }
 
 /// The program's parameter fields become based on pointers the program

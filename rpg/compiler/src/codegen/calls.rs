@@ -163,6 +163,10 @@ pub fn pep(g: &mut Gen<'_>, main: &str) -> String {
         b.place(&next);
     }
     b.ins(format!("callb {main}()"));
+    // CLOSQLCSR(*ENDMOD): the module is left.
+    if g.sql_endmod {
+        b.ins("callb _qrni_sqlend()");
+    }
     let mut head = String::new();
     let _ = write!(head, "proc _QRNP_PEP_{}({}) entry", mangle(&g.opts.name), sig.join(", "));
     b.finish(&head, "ret")

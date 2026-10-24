@@ -151,10 +151,18 @@ impl Objects {
                 let ir = compile(&mbr, &name, cmd)?;
                 self.modules.insert(name.clone(), module_object(&ir, &name)?);
             }
-            "CRTBNDRPG" => {
-                let name = obj_name(&kwd(cmd, "PGM"));
+            "CRTSQLRPGI" if kwd(cmd, "OBJTYPE").eq_ignore_ascii_case("*MODULE") => {
+                let name = obj_name(&kwd(cmd, "OBJ"));
                 let mbr = kwd(cmd, "SRCMBR");
-                let mbr = if mbr.is_empty() || mbr == "*PGM" { name.clone() } else { mbr };
+                let mbr = if mbr.is_empty() || mbr == "*OBJ" { name.clone() } else { mbr };
+                let ir = compile(&mbr, &name, cmd)?;
+                self.modules.insert(name.clone(), module_object(&ir, &name)?);
+            }
+            "CRTBNDRPG" | "CRTSQLRPGI" => {
+                let sql = verb == "CRTSQLRPGI";
+                let name = obj_name(&kwd(cmd, if sql { "OBJ" } else { "PGM" }));
+                let mbr = kwd(cmd, "SRCMBR");
+                let mbr = if mbr.is_empty() || mbr == "*PGM" || mbr == "*OBJ" { name.clone() } else { mbr };
                 let ir = compile(&mbr, &name, cmd)?;
                 let m = qir::parse(&ir).map_err(|e| format!("{name}: {e}"))?;
                 let actgrp = if m.dftactgrp {

@@ -135,7 +135,7 @@ pub fn lex(segments: &[Segment<'_>], diags: &mut Vec<Diag>) -> Vec<Tok> {
                     continue;
                 }
                 Quoted::Unterminated => {
-                    diags.push(Diag::new(ids::MISSING_APOSTROPHE, 20, at));
+                    diags.push(Diag::new(unclosed(prefix), 20, at));
                     out.push(literal(prefix, text, at));
                     continue;
                 }
@@ -172,7 +172,7 @@ pub fn lex(segments: &[Segment<'_>], diags: &mut Vec<Diag>) -> Vec<Tok> {
                         i = chars.len();
                     }
                     Quoted::Unterminated => {
-                        diags.push(Diag::new(ids::MISSING_APOSTROPHE, 20, at));
+                        diags.push(Diag::new(unclosed(Some(c.to_ascii_uppercase())), 20, at));
                         out.push(literal(Some(c.to_ascii_uppercase()), text, at));
                         i = chars.len();
                     }
@@ -287,7 +287,7 @@ pub fn lex(segments: &[Segment<'_>], diags: &mut Vec<Diag>) -> Vec<Tok> {
         }
     }
     if let Some((prefix, text, at, _)) = open {
-        diags.push(Diag::new(ids::MISSING_APOSTROPHE, 20, at));
+        diags.push(Diag::new(unclosed(prefix), 20, at));
         out.push(literal(prefix, text, at));
     }
     out
@@ -384,6 +384,11 @@ fn read_quoted(chars: &[char], mut i: usize, text: &mut String) -> Quoted {
         return Quoted::Open(cont);
     }
     Quoted::Unterminated
+}
+
+/// The diagnostic for a literal left open: a hexadecimal one has its own.
+fn unclosed(prefix: Option<char>) -> &'static str {
+    if prefix == Some('X') { ids::HEX_APOSTROPHE } else { ids::MISSING_APOSTROPHE }
 }
 
 fn literal(prefix: Option<char>, text: String, at: Pos) -> Tok {

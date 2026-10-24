@@ -306,6 +306,11 @@ impl Gen<'_> {
             }
         };
         let Ty::Dur(u) = dur.ty else { return None };
+        // A time takes hours, minutes and seconds only.
+        if matches!(dt.ty, Ty::Time(..)) && u <= 2 {
+            self.err(ids::TIME_DURATION, 20, "");
+            return None;
+        }
         let n = if op == BinOp::Sub {
             let r = self.b.reg();
             self.b.ins(format!("{r} = sub.chk 0, {}", dur.op));
@@ -387,6 +392,13 @@ impl Gen<'_> {
             "%YEARS" | "%MONTHS" | "%DAYS" | "%HOURS" | "%MINUTES" | "%SECONDS" | "%MSECONDS" => {
                 let u = unit_of(&format!("*{}", &name[1..]));
                 let n = args.first().and_then(|a| self.expr(a, Want::default()));
+                // The count is a number.
+                if let Some(v) = &n
+                    && !v.ty.is_numeric()
+                {
+                    self.err(ids::DURATION_PARM, 20, name.to_string());
+                    return Some(None);
+                }
                 match (u, n, args.len()) {
                     (Some(u), Some(v), 1) => self.int_reg(&v).map(|r| V::reg(Ty::Dur(u), r)),
                     _ => {
@@ -492,6 +504,15 @@ impl Gen<'_> {
             dtfmt::word(Conv { code: 32, sep: None }, 0)
         };
         self.b.ins(format!("callb _QRNX_DTNOW({}, {dd}, {df})", dst.op));
+    }
+
+    /// The current date into a numeric field in format `code`, without
+    /// separators.
+    pub fn dt_now_as(&mut self, dst: &V, code: u8) {
+        self.dt_procs();
+        let dd = self.desc_of(dst);
+        let w = dtfmt::word(Conv { code, sep: None }, 0);
+        self.b.ins(format!("callb _QRNX_DTNOW({}, {dd}, {w})", dst.op));
     }
 
     fn dt_value(&mut self, e: &Expr) -> Option<V> {
@@ -630,7 +651,13 @@ impl Gen<'_> {
             }
             "TIME" => {
                 let Some(r) = op.result.first() else { return true };
-                let Some(t) = self.target(r) else { return true };
+                let Some(t) = self.target(r) else {
+                    // An undefined result is not a field TIME can set.
+                    if r.name().is_some_and(|n| self.t.find(self.scope, n).is_none()) {
+                        self.err(ids::TIME_RESULT, 30, String::new());
+                    }
+                    return true;
+                };
                 self.dt_time_op(&t);
             }
             _ => return false,
@@ -730,7 +757,7 @@ impl Gen<'_> {
             return;
         }
         let Some((d, _)) = t.ty.shape() else {
-            self.err(ids::TYPE_MISMATCH, 30, "TIME");
+            self.err(ids::TIME_RESULT, 30, "TIME");
             return;
         };
         let hms = V::place(Ty::Zoned(6, 0), self.b.temp("zoned(6,0)"));

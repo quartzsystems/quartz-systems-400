@@ -25,6 +25,8 @@ pub mod ids {
     pub const BAD_LENGTH: &str = "RNF0618";
     /// The data type is not valid.
     pub const BAD_TYPE: &str = "RNF3304";
+    /// A fixed-form data type entry IBM does not know; blank is used.
+    pub const BAD_TYPE_ENTRY: &str = "RNF3302";
     /// A keyword's value is not valid.
     pub const BAD_KEYWORD_VALUE: &str = "RNF3313";
     /// The name is not a data structure.
@@ -46,6 +48,34 @@ pub mod ids {
     pub const INZ_TOO_LONG: &str = "RNF3431";
     /// A global file of a module without a cycle is not closed for it.
     pub const CLOSE_EXPLICITLY: &str = "RNF7534";
+    /// A result field that is not numeric where one must be.
+    pub const NOT_NUMERIC_RESULT: &str = "RNF7044";
+    /// `TIME`'s result field is not valid.
+    pub const TIME_RESULT: &str = "RNF7056";
+    /// `MOVE` into an indicator of something other than '0' or '1'.
+    pub const IND_NOT_01: &str = "RNF5184";
+    /// A structure moved into its own subfield, or the reverse.
+    pub const OVERLAPPING: &str = "RNF7017";
+    /// `MOVEA` between numeric arrays of another type or length.
+    pub const MOVEA_TYPES: &str = "RNF7262";
+    /// `EVALR` into a varying field.
+    pub const EVALR_VARYING: &str = "RNF7565";
+    /// A result field's length unlike its definition's.
+    pub const LEN_DIFFERS: &str = "RNF0510";
+    /// `SUBST`'s constant length reaches past its base.
+    pub const SUBST_LEN_PAST: &str = "RNF5215";
+    /// `SUBST`'s constant start is past its base.
+    pub const SUBST_START_PAST: &str = "RNF5216";
+    /// `LOOKUP`'s factor 2 is not an array or table.
+    pub const LOOKUP_NOT_ARRAY: &str = "RNF5123";
+    /// `LOOKUP`'s argument is not the elements' type and length.
+    pub const LOOKUP_ARG_TYPE: &str = "RNF7021";
+    /// A `TAG` name defined already.
+    pub const TAG_TWICE: &str = "RNF5013";
+    /// A `GOTO` or `CABxx` target that is not a label.
+    pub const NOT_A_LABEL: &str = "RNF7043";
+    /// `DIV` with a factor 2 of zero.
+    pub const DIV_FACTOR2_ZERO: &str = "RNF5039";
     /// A constant divisor of zero.
     pub const DIVIDE_BY_ZERO: &str = "RNF7504";
     /// A calculation after the subroutines.
@@ -76,6 +106,10 @@ pub mod ids {
     pub const UNSUPPORTED: &str = "RNF0201";
     /// An output record without space or skip entries spaces one after.
     pub const SPACE_DEFAULT: &str = "RNF6011";
+    /// An input field past the file's record length; it is ignored.
+    pub const PAST_RECORD: &str = "RNF4036";
+    /// An `EXCEPT` name on an output record no `EXCEPT` operation uses.
+    pub const EXCEPT_UNUSED: &str = "RNF7602";
     /// A record format no operation names.
     pub const FORMAT_UNUSED: &str = "RNF7066";
     /// A search argument unlike the first key field.
@@ -222,6 +256,14 @@ pub mod ids {
     pub const BIF_NAME_UNDEFINED: &str = "RNF7451";
     /// An edit word that is not valid.
     pub const BAD_EDIT_WORD: &str = "RNF6029";
+    /// A procedure keyword given twice.
+    pub const PROC_KEYWORD_TWICE: &str = "RNF1506";
+    /// `SERIALIZE` without `THREAD(*CONCURRENT)`.
+    pub const SERIALIZE_NOT_CONCURRENT: &str = "RNF1519";
+    /// A procedure interface named unlike its procedure.
+    pub const PI_NAME_DIFFERS: &str = "RNF3767";
+    /// `*INZSR` in a subprocedure.
+    pub const INZSR_IN_PROC: &str = "RNF5425";
     /// A procedure defined twice.
     pub const PROC_TWICE: &str = "RNF1504";
     /// A keyword not valid for definitions in a procedure.
@@ -240,6 +282,16 @@ pub mod ids {
     pub const FILE_KEYWORD_TWICE: &str = "RNF2416";
     /// A record length that is not valid.
     pub const BAD_RECLEN: &str = "RNF2007";
+    /// A file type that is not I, O, U or C.
+    pub const BAD_FILE_TYPE: &str = "RNF2003";
+    /// A file format that is not F or E.
+    pub const BAD_FILE_FORMAT: &str = "RNF2006";
+    /// A device that is not known; DISK is used.
+    pub const BAD_DEVICE: &str = "RNF2013";
+    /// A file keyword that is not known.
+    pub const UNKNOWN_FILE_KEYWORD: &str = "RNF2023";
+    /// A file designation that is not valid; blank is used.
+    pub const BAD_DESIGNATION: &str = "RNF2079";
     /// A keyword a printer file does not take.
     pub const NOT_FOR_PRINTER: &str = "RNF2403";
     /// `USAGE`'s parameter is not valid.
@@ -260,6 +312,17 @@ pub mod ids {
     pub const DEC_SCALE: &str = "RNF0329";
     /// `%TRIM`'s parameter is not valid.
     pub const TRIM_PARM: &str = "RNF0371";
+    /// `%SUBST`'s constant start is past the string.
+    pub const SUBST_START_LONG: &str = "RNF0364";
+    /// `%CHAR`'s first parameter is not valid.
+    pub const CHAR_PARM: &str = "RNF0386";
+    /// A duration built-in function's parameter is not a number.
+    pub const DURATION_PARM: &str = "RNF0579";
+    /// `%LOOKUPLT`, `LE`, `GT`, `GE` of an array without `ASCEND` or
+    /// `DESCEND`.
+    pub const LOOKUP_UNSEQUENCED: &str = "RNF0592";
+    /// A duration of years, months or days with a time.
+    pub const TIME_DURATION: &str = "RNF7585";
     /// `%SUBST`'s length is too big.
     pub const SUBST_LEN: &str = "RNF0365";
     /// `%SCAN`'s first parameter is not character.
@@ -288,6 +351,9 @@ pub mod ids {
     pub const NO_TYPE: &str = "RNF3438";
     /// `POS` outside 1 to 16773104.
     pub const POS_RANGE: &str = "RNF3576";
+    /// A to-position past the structure's length; the from-position is
+    /// used.
+    pub const TO_PAST_DS: &str = "RNF3713";
     /// A subfield ends past the structure's length.
     pub const PAST_DS_LEN: &str = "RNF7301";
     /// `OVERLAY` names no subfield.
@@ -300,6 +366,14 @@ pub mod ids {
     pub const BAD_QUALIFIED: &str = "RNF7591";
     /// `LIKE`'s adjustment without a sign.
     pub const LIKE_SIGN: &str = "RNF3571";
+    /// `EXTPROC`'s procedure name is not valid; the keyword is ignored.
+    pub const EXTPROC_PARM: &str = "RNF3746";
+    /// `EXTPGM`'s parameter is not valid; it is ignored.
+    pub const EXTPGM_PARM: &str = "RNF3747";
+    /// A prototype without `EXTPGM` in the default activation group.
+    pub const NEEDS_NO_DFTACTGRP: &str = "RNF3788";
+    /// The main interface's program is not the one being created.
+    pub const MAIN_PGM_DIFFERS: &str = "RNF3776";
     /// An interface parameter unlike its prototype's.
     pub const PI_PARM_DIFFERS: &str = "RNF3764";
     /// A file declared twice.
@@ -330,6 +404,8 @@ pub mod ids {
     pub const BAD_TOKEN: &str = "RNF0604";
     /// An `ENDyy` missing at the end of the calculations.
     pub const END_MISSING: &str = "RNF5177";
+    /// An `ENDyy` for another group than the open one; `END` is assumed.
+    pub const END_OUT_OF_SEQUENCE: &str = "RNF5248";
     /// An `ENDyy` without its group.
     pub const END_UNMATCHED: &str = "RNF5141";
     /// `LEAVE` or `ITER` outside a loop.
@@ -344,6 +420,10 @@ pub mod ids {
     pub const ENDSR_MISSING: &str = "RNF5178";
     /// `ENDSR` without `BEGSR`.
     pub const ENDSR_UNMATCHED: &str = "RNF5016";
+    /// `CASxx` of a name that is not a subroutine.
+    pub const CAS_NOT_SUBROUTINE: &str = "RNF7027";
+    /// A `CASxx` group without `ENDCS`; one is assumed.
+    pub const ENDCS_MISSING: &str = "RNF5094";
     /// `EXSR` of a name that is not a subroutine.
     pub const NOT_A_SUBROUTINE: &str = "RNF7018";
 }

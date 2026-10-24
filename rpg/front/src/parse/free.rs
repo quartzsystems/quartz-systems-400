@@ -168,7 +168,7 @@ pub fn statement(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt) -> 
             k + 1
         }
         "DCL-SUBF" | "DCL-PARM" => {
-            b.diags.push(Diag::new(ids::BLOCK_MISMATCH, 30, st.at).arg(word));
+            b.diags.push(Diag::new(ids::NOT_IN_GROUP, 20, st.at).arg(word));
             k + 1
         }
         _ => {
@@ -259,7 +259,9 @@ fn group(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt, rest: &[Tok
             continue;
         }
         // A declaration other than a child ends the group by mistake.
-        if !nested && (w.starts_with("DCL-") && w != "DCL-SUBF" && w != "DCL-PARM" || w == "END-PROC") {
+        // So does a child of the other kind (`DCL-SUBF` in a prototype).
+        let foreign = w == "DCL-SUBF" && kind != DefKind::Ds || w == "DCL-PARM" && kind == DefKind::Ds;
+        if !nested && (w.starts_with("DCL-") && w != "DCL-SUBF" && w != "DCL-PARM" || w == "END-PROC" || foreign) {
             b.diags.push(Diag::new(ids::GROUP_END_MISSING, 20, st.at).arg(end_word.to_string()));
             break;
         }
@@ -427,7 +429,11 @@ fn calc(b: &mut Builder<'_>, st: &FreeStmt, word: &str, n: usize) -> Option<Stmt
     };
     let mut rest = &toks[n..];
     if let Some((e, m)) = extenders(rest) {
-        op.ext = e;
+        if ops::extenders_allowed(word, &e) {
+            op.ext = e;
+        } else {
+            b.diags.push(Diag::new(ids::EXTENDER_NOT_FOR_OP, 20, rest[1].at));
+        }
         rest = &rest[m..];
     } else if let [o, Tok { kind: Kind::Name(_), .. }, c, ..] = rest
         && matches!(word, "EVAL" | "EVALR" | "EVAL-CORR" | "CALLP")

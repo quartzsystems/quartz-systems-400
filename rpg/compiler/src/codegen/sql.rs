@@ -10,6 +10,7 @@
 
 use rpgfront::ast::{BinOp, Expr, Lit, Pos, Step, Stmt};
 use rpgsqlpre::{HostRef, Rows};
+use rpgsqlpre::{Desc, Op};
 
 use crate::codegen::Gen;
 use crate::codegen::emit::quote;
@@ -192,9 +193,27 @@ impl Gen<'_> {
                 self.sql_out(&x, stride);
             }
         }
+        if let Some(h) = &st.da
+            && let Some(da) = self.host_ref(&h.name, true, Pos { line: h.line, col: 0 })
+        {
+            let mode = match st.desc.op {
+                Op::Describe | Op::Prepare => 3,
+                Op::Fetch => 2,
+                _ => 1,
+            };
+            let da = self.as_chars(&da);
+            self.rt_proc("_QRNX_SQLDA", "($da: bytes(1) *VARSIZE, byval $m: i64)");
+            self.b.ins(format!("callb _QRNX_SQLDA({}, {mode})", da.op));
+        }
         let Some(ca) = self.host_ref("SQLCA", true, s.at) else { return };
         let ca = self.as_chars(&ca);
-        let text = st.desc.encode();
+        self.sql_run(&ca.op, &st.desc);
+        self.whenever(&st.whenever, s.at);
+    }
+
+    /// `_QRNX_SQLRUN` of a statement with the SQLCA at `ca`.
+    fn sql_run(&mut self, ca: &str, desc: &Desc) {
+        let text = desc.encode();
         let lit = V::lit(Ty::Char(u32::try_from(text.len()).unwrap_or(1).max(1)), quote(&text));
         let t = self.rt_of(&lit, None);
         let scope = self.opts.name.to_ascii_uppercase();
@@ -204,15 +223,25 @@ impl Gen<'_> {
             "_QRNX_SQLRUN",
             "($ca: bytes(1) *VARSIZE, $t: bytes(1) *VARSIZE, byval $tl: i64, $s: bytes(1) *VARSIZE, byval $sl: i64)",
         );
-        self.b.ins(format!(
-            "callb _QRNX_SQLRUN({}, {}, {}, {}, {})",
-            ca.op,
-            t.op,
-            text.len(),
-            sr.op,
-            scope.len()
-        ));
-        self.whenever(&st.whenever, s.at);
+        let ca = if ca.is_empty() { t.op.clone() } else { ca.to_string() };
+        self.b.ins(format!("callb _QRNX_SQLRUN({ca}, {}, {}, {}, {})", t.op, text.len(), sr.op, scope.len()));
+    }
+
+    /// `_qrni_sqlend`, which the program entry calls as it returns under
+    /// `CLOSQLCSR(*ENDMOD)`: the module's cursors close and its
+    /// prepared statements go. The runtime leaves the SQLCA alone.
+    pub fn sql_end_proc(&mut self) -> String {
+        let saved = std::mem::take(&mut self.b);
+        let scope = std::mem::replace(&mut self.scope, 0);
+        let end = Desc {
+            op: Op::End,
+            ..Desc::default()
+        };
+        self.sql_run("", &end);
+        self.b.term("ret");
+        let body = std::mem::replace(&mut self.b, saved);
+        self.scope = scope;
+        body.finish("proc _qrni_sqlend()", "ret")
     }
 
     /// The `WHENEVER` branches after a statement.

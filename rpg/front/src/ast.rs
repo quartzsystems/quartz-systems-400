@@ -208,6 +208,9 @@ pub struct Stmt {
     pub cond: Conditioning,
     /// The operation.
     pub op: Op,
+    /// A fixed-form operation with factors (not an extended factor 2):
+    /// its operands are names and literals, not expressions.
+    pub fixed: bool,
 }
 
 /// An operation with its operands.

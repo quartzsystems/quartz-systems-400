@@ -213,6 +213,14 @@ impl File {
     }
 }
 
+/// The file keywords (free form adds the device keywords).
+const FILE_KEYWORDS: &[&str] = &[
+    "ALIAS", "BLOCK", "CCSID", "COMMIT", "DATA", "DATFMT", "DEVID", "EXTDESC", "EXTFILE", "EXTIND", "EXTMBR",
+    "FORMLEN", "FORMOFL", "HANDLER", "IGNORE", "INCLUDE", "INDDS", "INFDS", "INFSR", "KEYED", "KEYLOC",
+    "LIKEFILE", "MAXDEV", "OFLIND", "PASS", "PGMNAME", "PLIST", "PREFIX", "PRTCTL", "QUALIFIED", "RAFDATA",
+    "RECNO", "RENAME", "SAVEDS", "SAVEIND", "SFILE", "SLN", "STATIC", "TEMPLATE", "TIMFMT", "USAGE", "USROPN",
+];
+
 fn kw<'a>(f: &'a FileDecl, name: &str) -> Option<&'a Keyword> {
     f.kws.iter().find(|k| k.name == name)
 }
@@ -241,15 +249,48 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
             diags.push(Diag::new(ids::FILE_KEYWORD_TWICE, 20, k.at).arg(k.name.clone()));
         }
     }
+    // A keyword the compiler does not know is ignored.
+    for k in f.kws.iter().filter(|k| k.name.starts_with(|c: char| c.is_ascii_alphabetic())) {
+        let device = f.fixed.is_none() && matches!(k.name.as_str(), "DISK" | "PRINTER" | "WORKSTN" | "SEQ" | "SPECIAL");
+        if !device && !FILE_KEYWORDS.contains(&k.name.as_str()) {
+            diags.push(Diag::new(ids::UNKNOWN_FILE_KEYWORD, 30, k.at).arg(k.name.clone()));
+        }
+    }
     if let Some(c) = &f.fixed {
         out.dev = match c.device.as_str() {
             "PRINTER" => Dev::Printer,
             "WORKSTN" => Dev::Workstn,
             "SEQ" => Dev::Seq,
             "SPECIAL" => Dev::Special,
-            _ => Dev::Disk,
+            "DISK" => Dev::Disk,
+            _ => {
+                diags.push(Diag::new(ids::BAD_DEVICE, 20, f.at));
+                Dev::Disk
+            }
         };
-        match c.ftype.as_str() {
+        // Entries IBM does not know take their defaults.
+        let designation = if matches!(c.designation.as_str(), "" | "P" | "S" | "R" | "T" | "F") {
+            c.designation.clone()
+        } else {
+            diags.push(Diag::new(ids::BAD_DESIGNATION, 20, f.at));
+            String::new()
+        };
+        let format = if matches!(c.format.as_str(), "F" | "E") {
+            c.format.as_str()
+        } else {
+            diags.push(Diag::new(ids::BAD_FILE_FORMAT, 20, f.at));
+            "F"
+        };
+        if format == "F" && c.reclen.parse::<u32>().is_ok_and(|n| n == 0) {
+            diags.push(Diag::new(ids::BAD_RECLEN, 20, f.at));
+        }
+        let ftype = if matches!(c.ftype.as_str(), "I" | "O" | "U" | "C") {
+            c.ftype.as_str()
+        } else {
+            diags.push(Diag::new(ids::BAD_FILE_TYPE, 20, f.at));
+            if designation.is_empty() { "O" } else { "I" }
+        };
+        match ftype {
             "I" => out.input = true,
             "O" => out.output = true,
             "U" => {
@@ -261,14 +302,14 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
                 out.input = true;
                 out.output = true;
             }
-            _ => diags.push(Diag::new(ids::BAD_KEYWORD_VALUE, 30, f.at).arg(c.ftype.clone())),
+            _ => {}
         }
         if c.addition == "A" {
             out.output = true;
         }
-        out.designation.clone_from(&c.designation);
+        out.designation = designation;
         out.eof = c.eof == "E";
-        out.external = c.format == "E";
+        out.external = format == "E";
         out.reclen = c.reclen.parse().unwrap_or(0);
         out.keyed = c.rectype == "K" || c.keylen.parse::<u32>().is_ok();
     } else {

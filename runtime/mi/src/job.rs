@@ -365,11 +365,28 @@ impl Job {
     pub fn reclaim_group(&mut self, id: u32) {
         self.run_group_exits(id);
         if let Ok(bases) = self.act.reclaim_id(id) {
+            self.end_sql_group(id);
             self.close_files_of(&bases);
             for b in bases {
                 self.spaces.kill_static(b);
                 self.spaces.kill_at(b);
             }
+        }
+    }
+
+    /// An activation group ended: its embedded SQL cursors close and
+    /// its prepared statements go (`CLOSQLCSR(*ENDACTGRP)`).
+    fn end_sql_group(&mut self, id: u32) {
+        if let Some(s) = self.sql.as_mut() {
+            let req = sql::embed::Request {
+                scope: format!("{id}:"),
+                desc: sql::embed::Desc {
+                    op: sql::embed::Op::End,
+                    ..sql::embed::Desc::default()
+                },
+                inputs: Vec::new(),
+            };
+            s.run(&req);
         }
     }
 
@@ -564,6 +581,7 @@ impl Job {
             .map(|g| g.id)
             .ok_or("no such activation group")?;
         let bases = self.act.reclaim_id(id)?;
+        self.end_sql_group(id);
         for b in bases {
             self.spaces.kill_static(b);
         }
@@ -595,7 +613,13 @@ impl Job {
 
     /// `RCLACTGRP(*ELIGIBLE)`.
     pub fn rclactgrp_eligible(&mut self) {
-        for b in self.act.reclaim_eligible() {
+        let live: Vec<u32> = self.act.groups().map(|g| g.id).collect();
+        let bases = self.act.reclaim_eligible();
+        let gone: Vec<u32> = live.into_iter().filter(|id| !self.act.groups().any(|g| g.id == *id)).collect();
+        for id in gone {
+            self.end_sql_group(id);
+        }
+        for b in bases {
             self.spaces.kill_static(b);
         }
     }

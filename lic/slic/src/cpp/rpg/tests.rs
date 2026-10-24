@@ -324,3 +324,88 @@ fn a_compiled_member_becomes_a_module_and_a_program() {
             .is_some()
     );
 }
+
+/// One description, whatever the name.
+struct OneFile(rpgc::files::ExtFile);
+
+impl rpgc::ExtFiles for OneFile {
+    fn describe(&mut self, _name: &str, _lib: &str) -> Option<rpgc::files::ExtFile> {
+        Some(self.0.clone())
+    }
+}
+
+#[test]
+fn a_dds_printer_file_describes_its_formats() {
+    let dds_src = [
+        "     A          R HDR                       SKIPB(1)",
+        "     A                                     2'Report'",
+        "     A          R DTL                       SPACEA(1)",
+        "     A            DNUM           5S 0      2",
+        "     A            DNAME         20A       10",
+        "     A  50                                32'*'",
+    ]
+    .join("\n");
+    let (src, _) = dds::Source::from_text(&dds_src);
+    let opts = dds::CompileOpts {
+        file: Some("RPT".into()),
+        ..dds::CompileOpts::default()
+    };
+    let def = dds::compile_prtf(&src, &dds::NoRefs, &opts)
+        .definition
+        .expect("printer DDS");
+    let (mut store, qsys, lib) = open_new();
+    let mut txn = store.begin().unwrap();
+    let prtf = wm::obj::prtf::Prtf {
+        formats: dds::prtf::codec::encode(&def),
+        ..wm::obj::prtf::Prtf::default()
+    };
+    let stamp = wm::obj::Stamp {
+        owner: "QSECOFR".into(),
+        system: "QS400".into(),
+        now: NOW,
+    };
+    let rpt = Name::parse("RPT").unwrap();
+    wm::obj::create_attr(&mut txn, lib, (rpt, types::FILE, "PRTF"), "", &stamp, &prtf.encode())
+        .unwrap();
+    // A program-described one has no formats.
+    let plain = Name::parse("PLAIN").unwrap();
+    let encoded = wm::obj::prtf::Prtf::default().encode();
+    wm::obj::create_attr(&mut txn, lib, (plain, types::FILE, "PRTF"), "", &stamp, &encoded)
+        .unwrap();
+    let names = NameContext {
+        curlib: Some(lib),
+        libl: vec![qsys, lib],
+    };
+    let none = super::source::device_in(&mut txn, qsys, &names, "*LIBL", "PLAIN").unwrap();
+    assert!(none.is_none());
+    let ext = super::source::device_in(&mut txn, qsys, &names, "*LIBL", "RPT")
+        .unwrap()
+        .expect("a printer file");
+    assert_eq!((ext.dev, ext.lib.as_str()), (rpgc::files::Dev::Printer, "QGPL"));
+    let names: Vec<&str> = ext.formats.iter().map(|f| f.name.as_str()).collect();
+    assert_eq!(names, ["HDR", "DTL"]);
+    // DTL's buffer: indicator 50, then DNUM and DNAME.
+    let dtl = &ext.formats[1];
+    let fields: Vec<(&str, u32)> = dtl.fields.iter().map(|f| (f.name.as_str(), f.offset)).collect();
+    assert_eq!(fields, [("DNUM", 1), ("DNAME", 6)]);
+    assert_eq!(dtl.len, 26);
+    assert_eq!(dtl.dsp.as_ref().unwrap().option_inds, [50]);
+    txn.abort();
+
+    // CRTBNDRPG compiles a program against it.
+    let rpg = source(&[
+        "**FREE",
+        "dcl-f RPT printer;",
+        "write HDR;",
+        "DNUM = 7;",
+        "DNAME = 'Seven';",
+        "*in50 = *on;",
+        "write DTL;",
+        "*inlr = *on;",
+    ]);
+    let req = request("CRTBNDRPG", &parms("CRTBNDRPG PGM(QGPL/HELLO)")).unwrap();
+    let opts = req.options("HELLO", "QGPL", &rpg);
+    let c = rpgc::compile(rpg.member.clone(), &mut rpgfront::NoIncludes, &mut OneFile(ext), &opts);
+    assert!(c.created, "{:?}", c.diags);
+    assert!(c.qir.contains("prtio") && c.qir.contains("fmt(DTL)"), "{}", c.qir);
+}

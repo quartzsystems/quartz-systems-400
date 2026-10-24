@@ -294,11 +294,14 @@ fn compile_member(case: &Case, db: Option<&files::KitDb>, mbr: &str, module: &st
         ..case.clone()
     };
     let mut o = options(&sub);
-    o.command = if cmd.trim_start().to_ascii_uppercase().starts_with("CRTBNDRPG") {
-        rpgc::Command::CrtBndRpg
-    } else {
-        rpgc::Command::CrtRpgMod
-    };
+    // CRTSQLRPGI's own choice stands.
+    if !is_sql(&sub) {
+        o.command = if cmd.trim_start().to_ascii_uppercase().starts_with("CRTBNDRPG") {
+            rpgc::Command::CrtBndRpg
+        } else {
+            rpgc::Command::CrtRpgMod
+        };
+    }
     let member = Member::from_text("QGPL", "QRPGLESRC", mbr, &sub.lines.join("\n"));
     let c = match db {
         Some(d) => rpgc::compile(member, &mut includes(case), &mut d.ext(), &o),

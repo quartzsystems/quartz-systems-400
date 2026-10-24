@@ -249,6 +249,20 @@ impl Gen<'_> {
         let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else { return };
         let Some(t) = self.target(&r) else { return };
         let Some(v) = self.expr(&f2, Want::default()) else { return };
+        // An indicator takes only '0' or '1'.
+        if t.ty == Ty::Ind
+            && let Expr::Lit(Lit::Char(s), _) = &f2
+            && s != "0"
+            && s != "1"
+        {
+            self.err(ids::IND_NOT_01, 30, String::new());
+            return;
+        }
+        // A structure and its own subfield overlap.
+        if self.overlapping(&f2, &r) {
+            self.err(ids::OVERLAPPING, 30, String::new());
+            return;
+        }
         let t = self.as_chars(&t);
         if matches!(t.ty, Ty::Float(_)) || matches!(v.ty, Ty::Float(_)) {
             self.err(ids::TYPE_MISMATCH, 30, op.code.clone());
@@ -269,6 +283,26 @@ impl Gen<'_> {
             src.desc
         ));
         self.move_inds(op, &t);
+    }
+
+    /// Whether two operands are a structure and one of its subfields.
+    fn overlapping(&self, a: &Expr, b: &Expr) -> bool {
+        let sym = |e: &Expr| match e {
+            Expr::Ref { name, steps, .. } if steps.is_empty() => self.t.find(self.scope, name),
+            _ => None,
+        };
+        let (Some(x), Some(y)) = (sym(a), sym(b)) else { return false };
+        let within = |s: SymId, ds: SymId| {
+            let mut p = self.t.syms[s].parent;
+            while let Some(q) = p {
+                if q == ds {
+                    return true;
+                }
+                p = self.t.syms[q].parent;
+            }
+            false
+        };
+        within(x, y) || within(y, x)
     }
 
     /// The resulting indicators of a move: plus, minus, zero for a
@@ -335,15 +369,26 @@ impl Gen<'_> {
     /// `MOVEA`: arrays, fields and literals, from the elements named.
     fn movea(&mut self, pad: bool, op: &Op) {
         let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else { return };
-        let (dst, dcount) = match self.array_from(&r) {
-            Some(x) => x,
+        let (dst, dcount, dst_array) = match self.array_from(&r) {
+            Some((d, c)) => (d, c, true),
             None => {
                 let Some(t) = self.target(&r) else { return };
-                (self.as_chars(&t), "1".to_string())
+                (self.as_chars(&t), "1".to_string(), false)
             }
         };
         let (src, scount) = match self.array_from(&f2) {
-            Some((v, c)) => (self.rt_of(&v, None), c),
+            Some((v, c)) => {
+                // Numeric arrays move between elements of one length.
+                if dst_array
+                    && v.ty.is_numeric()
+                    && dst.ty.is_numeric()
+                    && v.ty.shape() != dst.ty.shape()
+                {
+                    self.err(ids::MOVEA_TYPES, 30, String::new());
+                    return;
+                }
+                (self.rt_of(&v, None), c)
+            }
             None => {
                 let Some(v) = self.expr(&f2, Want::default()) else { return };
                 if v.fig.is_some() && !matches!(v.fig, Some(Fig::On | Fig::Off)) {
@@ -556,6 +601,26 @@ impl Gen<'_> {
         let (Some(f2), Some(r)) = (op.f2.first().cloned(), op.result.first().cloned()) else { return };
         let Some(len) = self.int_or(op.f1.first(), -1) else { return };
         let Some(sv) = self.expr(&f2, Want::default()) else { return };
+        // Constant positions past a fixed-length base.
+        let lit = |e: Option<&Expr>| match e {
+            Some(Expr::Lit(Lit::Num(n), _)) => n.parse::<u32>().ok(),
+            _ => None,
+        };
+        if let Some(n) = sv.ty.str_len().filter(|_| !sv.ty.is_varying()) {
+            let (cl, cs) = (lit(op.f1.first()), lit(op.f2.get(1)));
+            let mut bad = false;
+            if cs.is_some_and(|s| s > n) {
+                self.err(ids::SUBST_START_PAST, 30, String::new());
+                bad = true;
+            }
+            if cl.is_some_and(|l| cs.unwrap_or(1) + l - 1 > n) {
+                self.err(ids::SUBST_LEN_PAST, 30, String::new());
+                bad = true;
+            }
+            if bad {
+                return;
+            }
+        }
         let src = self.rt_of(&sv, None);
         let Some(start) = self.int_or(op.f2.get(1), 1) else { return };
         let Some(t) = self.target(&r) else { return };
@@ -721,6 +786,11 @@ impl Gen<'_> {
     /// `EVALR`: the value right-adjusted in a fixed-length target.
     fn evalr(&mut self, aop: AssignOp, t: &Expr, v: &Expr) {
         let Some(tv) = self.target(t) else { return };
+        // The target is fixed-length character or graphic.
+        if tv.ty.is_varying() {
+            self.err(ids::EVALR_VARYING, 30, t.name().unwrap_or_default().to_string());
+            return;
+        }
         let tv = self.as_chars(&tv);
         let Some(val) = self.expr(v, Want::default()) else { return };
         if aop != AssignOp::Set || !matches!(tv.ty, Ty::Char(_)) || val.fig.is_some() {

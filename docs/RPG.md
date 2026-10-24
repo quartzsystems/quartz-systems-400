@@ -227,7 +227,11 @@ shows); in the kit, to a scripted terminal (`PHASE9.md`).
 An externally described printer file's formats come from its DDS
 (`dds::prtf`): `WRITE fmt` moves the fields and option indicators into
 the buffer and prints the format; at the overflow line the `OFLIND`
-indicator goes on.
+indicator goes on. In the real system `CRTBNDRPG` reads them from the
+`*FILE PRTF` object `CRTPRTF` made (its compiled formats,
+`lic/slic/src/cpp/rpg/source.rs`); at run time the job's printer open
+(`prt_open` of `stg`) hands back the same object, and the job prints
+each format through `spool::ddsprt` as the kit does.
 
 **Printers.** A program-described printer without `OFLIND` gets the
 first unused of `*INOA`-`*INOG` (`RNF2318`, information). A `WRITE` of
@@ -317,6 +321,7 @@ digits from bit 8, decimals in the low byte.
 | `_QRNX_POW` | `**` |
 | `_QRNX_SQRT` | `%SQRT`, `SQRT` |
 | `_QRNX_SQLIN`, `_QRNX_SQLOUT`, `_QRNX_SQLRUN` | embedded SQL: a statement's host variables, then the statement |
+| `_QRNX_SQLDA` | embedded SQL: the SQLDA of `USING DESCRIPTOR` (inputs or outputs) or of `DESCRIBE` / `PREPARE INTO` |
 
 **Moves** (`qrpgrt::mov`). Every operand takes part as its image:
 character data as its bytes (a varying field as its current value, its
@@ -420,7 +425,44 @@ before use (`SQL0504`), tables found (`SQL1103`, severity 10: the
 program is still created); `UPDATE` and `DELETE` without `WHERE` are
 `SQL0088` (00). Above `GENLVL` the command ends with `SQL9001` and
 nothing is compiled. The precompile listing comes first in the
-listing, with IBM's `DIAGNOSTIC MESSAGES` layout.
+listing, with IBM's `DIAGNOSTIC MESSAGES` layout. `SET OPTION
+CLOSQLCSR` takes `*ENDACTGRP` or `*ENDMOD` only (`SQL0104`).
+
+**`INCLUDE`.** The front end's reader takes `EXEC SQL INCLUDE name`
+(one free-form line, or `C/EXEC SQL INCLUDE name` and its
+`C/END-EXEC`) like a `/COPY` of the member from the main member's
+source file (`INCFILE(*SRCFILE)`); the statement reads as a comment
+and the member's records follow it (`rpgfront::reader::SqlInclude`).
+A member not found reaches the precompiler, which reports `SQL0004`.
+For the listing's numbering an include before the first calculation
+takes the main source's generated declarations, and a member that is
+not fully free in a `**FREE` source counts IBM's `**END-FREE` and
+`**FREE` lines. `INCLUDE SQLCA` does nothing more (the SQLCA is always
+declared); `INCLUDE SQLDA` declares IBM's `SQLDA` (`SQLDAID`,
+`SQLDABC`, `SQLN`, `SQLD`, `SQL_VAR` of 80 bytes `DIM(SQL_NUM)`, the
+program's constant) and `SQLVAR` (`SQLTYPE`, `SQLLEN`, `SQLRES`,
+`SQLDATA`, `SQLIND`, `SQLNAMELEN`, `SQLNAME`).
+
+**Descriptors.** `DESCRIBE [INPUT] s INTO :da`, `PREPARE s INTO :da
+FROM ...`, and `USING DESCRIPTOR :da` on `EXECUTE`, `OPEN` and `FETCH`
+name the SQLDA with `_QRNX_SQLDA` before the statement runs: its
+entries' `SQLDATA` and `SQLIND` pointers are read as the inputs or the
+outputs (by `SQLTYPE` and `SQLLEN`, `SQLD` entries), or the
+`DESCRIBE`'s reply fills it: `SQLDAID`, `SQLDABC` (`16 + 80 * SQLN`),
+`SQLD`, and the entries when `SQLN` has room. `sql::embed::describe`
+types a prepared statement without running it: columns from the
+tables' formats, expressions by DB2's rules (integers, decimal
+precision, `COUNT`), markers from what they are compared with or
+assigned to, null-capable; a statement that is not a query has no
+entries.
+
+**Cursors' lifetime.** A statement's scope at run time is
+`group:module`, the activation group's number and the module. When a
+group ends (a `*NEW` group's program returns, `RCLACTGRP`) `mi::Job`
+ends every scope of it (`Op::End` of `N:`), so its cursors close and
+its prepared statements go (`CLOSQLCSR(*ENDACTGRP)`); under
+`CLOSQLCSR(*ENDMOD)` the program entry calls `_qrni_sqlend` as it
+returns, which ends the module's scope.
 
 **The SQLCA** is declared as IBM declares it (`SQLCODE`/`SQLCOD`,
 `SQLSTATE`/`SQLSTT`, `SQLERRD`/`SQLER1`-`6`, `SQLWARN`/`SQLWN0`-`A`,

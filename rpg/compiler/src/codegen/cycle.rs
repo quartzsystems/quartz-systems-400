@@ -134,6 +134,7 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.scope = 0;
     g.subrs.clear();
     g.tags.clear();
+    g.scan_labels(&m.calcs);
     g.open.clear();
     g.debug_vars(0);
     let files = cycle_files(g);

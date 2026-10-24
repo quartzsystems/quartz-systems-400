@@ -79,6 +79,63 @@ pub fn extended(code: &str) -> bool {
     EXTENDED.contains(&code)
 }
 
+/// Whether every extender letter is one RPG knows.
+#[must_use]
+pub fn extenders_known(ext: &str) -> bool {
+    ext.chars().all(|c| "ADEHMNPRTZ".contains(c))
+}
+
+/// Whether the operation takes the extender letters; an operation not
+/// listed takes any.
+#[must_use]
+pub fn extenders_allowed(code: &str, ext: &str) -> bool {
+    let (base, _) = split_suffix(code);
+    let allowed = match base {
+        "ADD" | "SUB" | "MULT" | "DIV" | "Z-ADD" | "Z-SUB" | "SQRT" | "XFOOT" => "H",
+        "EVAL" | "EVAL-CORR" | "RETURN" => "HMR",
+        "EVALR" | "IF" | "DOU" | "DOW" | "WHEN" | "ELSEIF" | "FOR" => "MR",
+        "CALLP" => "EMR",
+        "CHAIN" | "READ" | "READE" | "READP" | "READPE" | "DEALLOC" => "EN",
+        "CALLB" => "DE",
+        "TEST" => "EDTZ",
+        "CAT" | "MOVE" | "MOVEL" | "MOVEA" => "P",
+        "SUBST" | "XLATE" => "EP",
+        "SORTA" => "AD",
+        "DUMP" => "A",
+        "ACQ" | "ADDDUR" | "ALLOC" | "CALL" | "CHECK" | "CHECKR" | "CLOSE" | "COMMIT" | "DELETE"
+        | "DSPLY" | "EXFMT" | "EXTRCT" | "FEOD" | "IN" | "NEXT" | "OCCUR" | "OPEN" | "OUT" | "POST" | "READC"
+        | "REALLOC" | "REL" | "ROLBK" | "SCAN" | "SETGT" | "SETLL" | "SUBDUR" | "UNLOCK" | "UPDATE" | "WRITE" => "E",
+        _ => return true,
+    };
+    ext.chars().all(|c| allowed.contains(c))
+}
+
+/// Whether the fixed-form operation must have a factor 1.
+#[must_use]
+pub fn needs_factor1(code: &str) -> bool {
+    let (base, sfx) = split_suffix(code);
+    !sfx.is_empty()
+        || matches!(
+            base,
+            "BEGSR" | "CHAIN" | "CHECK" | "CHECKR" | "COMP" | "DEFINE" | "KLIST" | "LOOKUP" | "PLIST" | "SCAN"
+                | "SETGT" | "SETLL" | "TAG"
+        )
+}
+
+/// Whether the fixed-form operation must leave factor 1 blank.
+#[must_use]
+pub fn no_factor1(code: &str) -> bool {
+    matches!(
+        code,
+        "BITOFF" | "BITON" | "CALLP" | "CLOSE" | "DEALLOC" | "DOU" | "DOW" | "ELSE" | "ELSEIF" | "END" | "ENDCS"
+            | "ENDDO" | "ENDFOR" | "ENDIF" | "ENDMON" | "ENDSL" | "EVAL" | "EVALR" | "EXCEPT" | "EXFMT" | "EXSR"
+            | "FEOD" | "FOR" | "GOTO" | "IF" | "ITER" | "LEAVE" | "LEAVESR" | "MONITOR" | "MOVEA" | "MVR"
+            | "OPEN" | "OTHER" | "READ" | "READC" | "READP" | "RETURN" | "SELECT" | "SETOFF" | "SETON" | "SORTA"
+            | "SQRT" | "TESTB" | "TESTN" | "TESTZ" | "TIME" | "UNLOCK" | "UPDATE" | "WHEN" | "WRITE" | "XFOOT"
+            | "Z-ADD" | "Z-SUB"
+    )
+}
+
 /// Whether free form refuses the operation.
 #[must_use]
 pub fn fixed_only(code: &str) -> bool {

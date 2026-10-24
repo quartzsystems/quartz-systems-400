@@ -25,6 +25,8 @@ use crate::exec::{Outcome, SqlContext, prepare};
 use crate::sqlca::Sqlca;
 use crate::value::Value;
 
+pub mod describe;
+
 /// What a statement does at run time.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Op {
@@ -47,6 +49,13 @@ pub enum Op {
     ExecImm,
     /// `GET DIAGNOSTICS`: the items, comma-separated, are the text.
     Diag,
+    /// `DESCRIBE [INPUT] name INTO :sqlda`: one row per entry (type,
+    /// length, name); `orient` is `INPUT` for the markers.
+    Describe,
+    /// The end of a scope (`CLOSQLCSR(*ENDMOD)`) or, for a scope that
+    /// ends in `:`, of every scope of an activation group: its cursors
+    /// close and its prepared statements go.
+    End,
     /// A statement with nothing to do at run time.
     Nothing,
 }
@@ -63,6 +72,8 @@ impl Op {
             Self::Execute => 'E',
             Self::ExecImm => 'I',
             Self::Diag => 'D',
+            Self::Describe => 'B',
+            Self::End => 'Z',
             Self::Nothing => 'N',
         }
     }
@@ -78,6 +89,8 @@ impl Op {
             'E' => Self::Execute,
             'I' => Self::ExecImm,
             'D' => Self::Diag,
+            'B' => Self::Describe,
+            'Z' => Self::End,
             'N' => Self::Nothing,
             _ => return None,
         })
@@ -105,6 +118,8 @@ pub struct Desc {
     pub orient: String,
     /// `*SQL` naming.
     pub sql_naming: bool,
+    /// `PREPARE ... INTO`: described as it is prepared.
+    pub into: bool,
     /// The statement text (the cursor's query for `OPEN`).
     pub text: String,
 }
@@ -116,7 +131,7 @@ impl Desc {
     pub fn encode(&self) -> String {
         let mut flags = String::new();
         flags.push(self.op.letter());
-        for (on, c) in [(self.hold, 'H'), (self.scroll, 'S'), (self.rows, 'R'), (self.sql_naming, 'N')] {
+        for (on, c) in [(self.hold, 'H'), (self.scroll, 'S'), (self.rows, 'R'), (self.sql_naming, 'N'), (self.into, 'D')] {
             if on {
                 flags.push(c);
             }
@@ -142,6 +157,7 @@ impl Desc {
             scroll: rest.contains('S'),
             rows: rest.contains('R'),
             sql_naming: rest.contains('N'),
+            into: rest.contains('D'),
             text: text.to_string(),
         })
     }
@@ -277,9 +293,11 @@ struct Scope {
     prepared: HashMap<String, String>,
 }
 
-/// A job's embedded SQL over a store. Cursors stay open until they are
-/// closed or the session ends. `TODO(phase9)`: `CLOSQLCSR(*ENDMOD)`
-/// and the end of an activation group closing a scope's cursors.
+/// A job's embedded SQL over a store. A scope is `group:module` (the
+/// activation group's number); its cursors stay open and its
+/// statements prepared until they are closed, the scope ends
+/// ([`Op::End`]: the module returned under `CLOSQLCSR(*ENDMOD)`, or the
+/// activation group ended) or the session ends.
 pub struct Session {
     store: Box<dyn StoreLend>,
     /// The SQL context: naming, library list, commitment control.
@@ -404,7 +422,9 @@ impl Session {
         let naming = d.naming();
         match d.op {
             Op::Nothing => Reply::default(),
+            Op::End => self.end(&req.scope),
             Op::Diag => self.diagnostics(&d.text),
+            Op::Describe => self.describe(req),
             Op::Query => self.with_txn(&req.scope, |txn, ctx, _| {
                 let p = match prepare(&d.text, naming) {
                     Ok(p) => p,
@@ -452,6 +472,9 @@ impl Session {
                         }
                     }
                     sc.prepared.insert(d.name.clone(), text.clone());
+                    if d.into {
+                        return describe::reply(txn, ctx, &text, naming, false);
+                    }
                     Reply::default()
                 })
             }
@@ -495,6 +518,28 @@ impl Session {
                 if r.sqlca.sqlcode == 100 { Reply::default() } else { r }
             }),
         }
+    }
+
+    /// `DESCRIBE [INPUT]` of a statement the scope prepared.
+    fn describe(&mut self, req: &Request) -> Reply {
+        let d = &req.desc;
+        self.with_txn(&req.scope, |txn, ctx, sc| {
+            let Some(text) = sc.prepared.get(&d.name).cloned() else {
+                return Reply::of(code(-516, "26501"));
+            };
+            describe::reply(txn, ctx, &text, d.naming(), d.orient == "INPUT")
+        })
+    }
+
+    /// The end of a scope, or of every scope of a group (`N:`): its
+    /// cursors and prepared statements go.
+    fn end(&mut self, scope: &str) -> Reply {
+        if scope.ends_with(':') {
+            self.scopes.retain(|k, _| !k.starts_with(scope));
+        } else {
+            self.scopes.remove(scope);
+        }
+        Reply::default()
     }
 
     /// `GET DIAGNOSTICS`: the items of the last statement.
@@ -641,6 +686,7 @@ mod tests {
             hold: true,
             rows: true,
             orient: "RELATIVE ?".into(),
+            into: true,
             text: "SELECT A | B FROM T".into(),
             ..Desc::default()
         };

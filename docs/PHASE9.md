@@ -31,7 +31,9 @@ member:
 2. uploads the member as binary data records; the server numbers the
    lines `1.00`, `2.00`, ... with zero change dates, which QS/400's
    kit reproduces;
-3. runs the member's compile command (`//; cmd:`, default `CRTBNDRPG
+3. runs the member's `//; setup:` commands and deletes the spooled
+   files they leave (their listings are not the member's), then its
+   compile command (`//; cmd:`, default `CRTBNDRPG
    ... DBGVIEW(*NONE) OUTPUT(*PRINT)`), at least 10 seconds after the
    previous compile;
 4. calls the program (`//; call:`, or `//; run: no` to compile only)
@@ -190,11 +192,13 @@ members of batch 4, pub400 V7R5M0.
 - A varying target keeps its current length under `MOVE`, `MOVEL` and
   `CAT`, with or without `(P)`; `MOVE` of a varying source moves its
   current value.
-- `MOVE` of character data into an indicator is `RNF7531`; a structure
-  moved into its own subfield is `RNF7017`; `MOVEA` between numeric
-  arrays of different type or length is `RNF7262`; `EVALR` into a
+- `MOVE` into an indicator of a literal other than `'0'` or `'1'` is
+  `RNF5184` (`'A'` too); a structure moved into its own subfield is
+  `RNF7017`; `MOVEA` between numeric arrays of different digits or
+  decimals is `RNF7262` (`5P 0` to `5S 0` is fine); `EVALR` into a
   varying field is `RNF7565`; `SUBST` with a constant length or start
-  past the base is `RNF7143` / `RNF5216`.
+  past the base is `RNF5215` / `RNF5216`; `%SUBST`'s are `RNF0365` /
+  `RNF0364` (20).
 - `LOOKUP`'s search argument must have the element's type and length,
   literals included (`RNF7021`): `25` does not search a `3P 0` array.
 - `%LOOKUPLT`, `LE`, `GT`, `GE` need an `ASCEND` or `DESCEND` array
@@ -244,6 +248,41 @@ Recorded from batch 11 (`b11sql/`), pub400 V7R5M0.
   is `SQL0088` (00).
 - pub400's jobs run with CCSID 273: `CHAR` of a decimal has a comma.
   The corpus keeps to integers there.
+- Cursors' lifetime (`SQL034`-`SQL038`: a `*NEW` program calls an SQL
+  program twice). Under `CLOSQLCSR(*ENDACTGRP)` a cursor the called
+  program left open in its caller's group is still open at the next
+  call (`OPEN` `-502`, `FETCH` goes on to the next row), even after
+  `LR`, and a statement it prepared is still prepared; in a `*NEW`
+  group of its own the cursor is gone with the group. Under
+  `CLOSQLCSR(*ENDMOD)`, from the command or `SET OPTION`, the return
+  closes the cursor and discards the prepared statement, with `LR` or
+  without (`EXECUTE` then `-518`).
+- `SET OPTION CLOSQLCSR` in an ILE program takes `*ENDACTGRP` and
+  `*ENDMOD`; `*ENDPGM`, `*ENDSQL`, `*ENDJOB` are `SQL0104` (30) at the
+  word after the `*`, and `SQL9001` (`SQL039`-`SQL041`).
+- `INCLUDE member` reads the member from the source file
+  (`INCFILE(*SRCFILE)`), declarations or statements alike; the
+  precompile listing lists its records in place, a `**FREE` source
+  switching with `**END-FREE` and `**FREE` around a member that is not
+  fully free, and the generated source has the statement as a
+  `//*exec sql include` comment before them. A member not found is
+  `SQL0004` (30), `SQL9001` (`SQL042`-`SQL044`).
+- `DESCRIBE` (`SQL045`-`SQL047`): `SQLDAID` is `SQLDA`, `SQLDABC`
+  `16 + 80 * SQLN`; each entry has the even type for `NOT NULL`
+  columns and the odd one otherwise (`INTEGER` 496, `VARCHAR` 448,
+  `CHAR` 452/453, `DECIMAL` 484/485 with `SQLLEN` precision * 256 +
+  scale, `DATE` 384/385), `SQLNAMELEN` and `SQLNAME` the column's name
+  or its `AS` name; `ID * 2` is `INTEGER`, `COUNT(*)` `INTEGER NOT
+  NULL`. A `DATE` is 8 long under `DATFMT(*JOB)` on pub400 (a two-digit
+  year job format). `DESCRIBE INPUT` gives the markers, null-capable,
+  typed by the column they are compared with, named `00001`, `00002`, ... With `SQLN` too small
+  `DESCRIBE` is SQLCODE 0 with `SQLD` set and no entries written; of a
+  statement that is not a query `SQLD` 0; of a name never prepared
+  `-516 26501`. `PREPARE ... INTO` describes as it prepares.
+- `FETCH`, `EXECUTE` and `OPEN ... USING DESCRIPTOR` take the entries'
+  `SQLDATA` (and for an odd type `SQLIND`) pointers, set with
+  `%ADDR` in `SQLVAR` and copied into `SQL_VAR(i)` (`SQL048`,
+  `SQL049`).
 ## Oracle facts: the compile listing
 
 Recorded from the 350 listings of batches 1-12, pub400 V7R5M0. The
@@ -298,23 +337,60 @@ members known to differ.
   specifications packed, qualified subfields under their structure.
   The message summary is in severity, then identifier order.
 
+## Oracle facts: compile errors
+
+Recorded from batch 12 (`b12err/`, ERR230-318), pub400 V7R5M0.
+
+- Fixed forms come in order H, F and D, I, C, O in the main source; one
+  out of order is `RNF0257` and ignored (a C after O specs leaves the
+  program without a way to end, `RNF7023`).
+- Fixed-form factors are names, not expressions: an undefined one is
+  only `RNF7030`, never `RNF7503`; a factor 1 the operation ignores
+  (`RNF5010`) is still resolved. A missing required factor 1 is
+  `RNF5009`; digits run into a name (`9N98`) are `RNF0289`, the name
+  kept.
+- Entries IBM does not know take defaults at severity 20: file type
+  (`RNF2003`, O or I), format (`RNF2006`, F), device (`RNF2013`, DISK),
+  designation (`RNF2079`), definition type (`RNF3304`, S), data type
+  (`RNF3302`, blank), conditioning (`RNF5007`) and output indicators
+  (`RNF6003`), output type (`RNF6005`, D) and data format (`RNF6028`).
+  An unknown file keyword is `RNF2023` (30).
+- Directives: `/ENDIF` missing is `RNF0705` at the `/IF`; `/ELSE`,
+  `/ELSEIF`, `/ENDIF` outside a group `RNF0706`; a bad condition
+  `RNF0701`; `/DEFINE` without a name `RNF0702`; `/COPY` without a
+  member `RNF0272`, one that cannot be opened `RNF0273` (40); an
+  unknown directive `RNF0274`.
+- The wrong `ENDyy` for the open group is `RNF5248` (20, END assumed);
+  a `CASxx` group without `ENDCS` is `RNF5094` (20); a `GOTO`/`CABxx`
+  target that is not a `TAG` is `RNF7030` and `RNF7043`; a `TAG`
+  twice `RNF5013`.
+- A prototype without `EXTPGM` under `DFTACTGRP(*YES)` is `RNF3788`; a
+  main interface named other than the program is `RNF3776` (10).
+
 ## Checks not yet made
 
-- The compile-time checks above (`RNF7021`, `RNF7262`, `RNF7531`,
-  `RNF7017`, `RNF7565`, `RNF7143`, `RNF5216`, `RNF0592`, the
-  never-set indicator) are not made yet; the corpus keeps to valid
-  programs.
+- An indicator `*INxx` that nothing sets is not reported (`RNF7030`
+  where an expression uses it): no corpus member shows IBM's rule for
+  indicators set through display files, calls and `*IN` itself.
 
 ## Embedded SQL not yet done
 
-- `CLOSQLCSR(*ENDMOD)` is accepted but cursors live until the job (or
-  the kit's call) ends, as `*ENDACTGRP` would leave them while the
-  activation group lives. `TODO(phase9)`.
+- `CLOSQLCSR(*ENDMOD)` ends the module's statements when the program
+  entry returns normally; an escape past it leaves them until the
+  activation group ends. A `NOMAIN` module's exported procedures do
+  not end them yet (a service program's cursors live with its group).
 - Commitment control: `COMMIT(*CHG)` and the others do not start it;
   the corpus compiles with `COMMIT(*NONE)` (pub400's work library is
   not journaled).
-- `DESCRIBE`, SQL descriptors and `INCLUDE` of members are not
-  supported; `DESCRIBE` reaches the runtime as `-84`.
+- `DESCRIBE`: the date length is the `*MDY` job format's (8) whatever
+  `DATFMT`; `USING NAMES|LABELS|ANY|BOTH`, `SQLVAR2` entries (LOBs,
+  distinct types) and `DESCRIBE TABLE` and `DESCRIBE CURSOR` are not
+  done. The SQLDA's generated declarations are not counted in the
+  listing's line numbers, nor is `INCLUDE` of a stream file (`'path'`)
+  read.
+- `OUT` is an operation code to IBM's free-form parser: a parameter
+  named `out` in a `DCL-PI` is `RNF3556` there and is accepted here
+  (a check not yet made); the corpus avoids it.
 
 ## Blocked
 

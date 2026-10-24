@@ -122,7 +122,7 @@ impl Suite {
         put(s, "RPGSRV", RPGSRV)?;
         put(s, "RPGUSE", RPGUSE)?;
         entry_wait(s, "crtrpgmod MODULE(RPGTEST/RPGSRV) SRCFILE(RPGTEST/QRPGLESRC)", has(&["Module RPGSRV created"]))?;
-        entry_wait(s, "crtsrvpgm SRVPGM(RPGTEST/RPGSRV) MODULE(RPGTEST/RPGSRV) EXPORT(*ALL)", has(&["RPGSRV", "created"]))?;
+        entry_wait(s, "crtsrvpgm SRVPGM(RPGTEST/RPGSRV) MODULE(RPGTEST/RPGSRV) EXPORT(*ALL)", has(&["RPGTEST/RPGSRV created"]))?;
         entry_wait(s, "crtrpgmod MODULE(RPGTEST/RPGUSE) SRCFILE(RPGTEST/QRPGLESRC)", has(&["Module RPGUSE created"]))?;
         entry_wait(
             s,

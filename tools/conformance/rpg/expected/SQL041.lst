@@ -1,0 +1,138 @@
+1{heading} page 1
+-Source type...............RPG
+ Object name...............{lib}/SQL041
+ Source file...............{lib}/QRPGLESRC
+ Member....................*OBJ
+ To source file............QTEMP/QSQLTEMP1
+ Options...................*XREF
+ RPG preprocessor options..*NONE
+ Listing option............*PRINT
+ Target release............V7R5M0
+ INCLUDE file..............*SRCFILE
+ Commit....................*NONE
+ Allow copy of data........*OPTIMIZE
+ Close SQL cursor..........*ENDACTGRP
+ Allow blocking............*ALLREAD
+ Delay PREPARE.............*NO
+ Concurrent access
+   resolution..............*DFT
+ Generation level..........10
+ Printer file..............*LIBL/QSYSPRT
+ Date format...............*JOB
+ Date separator............*JOB
+ Time format...............*HMS
+ Time separator ...........*JOB
+ Replace...................*YES
+ Relational database.......*LOCAL
+ User .....................*CURRENT
+ RDB connect method........*DUW
+ Default collection........*NONE
+ Dynamic default
+   collection..............*NO
+ Package name..............*OBJLIB/*OBJ
+ Path......................*NAMING
+ SQL rules.................*DB2
+ Created object type.......*PGM
+ Debugging view............*NONE
+ Debugging encryption key..*NONE
+ User profile .............*NAMING
+ Dynamic user profile......*USER
+ Sort sequence.............*JOB
+ Language ID...............*JOB
+ IBM SQL flagging..........*NOFLAG
+ ANS flagging..............*NONE
+ Text......................*SRCMBRTXT
+ Source file CCSID.........37
+ Job CCSID.................273
+ Decimal result options:
+   Maximum precision.......31
+   Maximum scale...........31
+   Minimum divide scale....0
+ DECFLOAT rounding mode....*HALFEVEN
+ Compiler options..........*NONE
+0Source member changed on dd-dd-dd  tt:tt:tt
+-
+1{heading} page 2
+0Record  *...+... 1 ...+... 2 ...+... 3 ...+... 4 ...+... 5 ...+... 6 ...+... 7 ...+... 8 ...+... 9 ...+... 0   SEQNBR  Last change
+0    1   **FREE                                                                                                 000100
+     2   //; cmd: CRTSQLRPGI OBJ({lib}/{name}) SRCFILE({lib}/QRPGLESRC) COMMIT(*NONE) OUTPUT(*PRINT)            000200
+     3   //; sqlfile: EMPT                                                                                      000300
+     4   ctl-opt dftactgrp(*no);                                                                                000400
+     5   dcl-f QSYSPRT printer(132);                                                                            000500
+     6   dcl-ds line len(132) end-ds;                                                                           000600
+     7   dcl-s n int(10);                                                                                       000700
+     8   // CLOSQLCSR = *ENDJOB is for programs that are not ILE.                                               000800
+     9   exec sql set option closqlcsr = *endjob;                                                               000900
+    10   exec sql select count(*) into :n from EMPT;                                                            001000
+    11   line = %char(sqlcode) + ' ' + %char(n);                                                                001100
+    12   write QSYSPRT line;                                                                                    001200
+    13   *inlr = *on;                                                                                           001300
+0                                * * * * *  E N D  O F  S O U R C E  * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 3
+0                                               CROSS REFERENCE
+0Data Names                    Define    Reference
+0BONUS                            10       DECIMAL(7,2) COLUMN IN EMPT
+0DEPT                             10       CHARACTER(3) CCSID 37 COLUMN IN EMPT
+0EMPT                             ****     TABLE
+                                           10
+ HIRED                            10       DATE(10) COLUMN IN EMPT
+0ID                               10       INTEGER PRECISION(9,0) COLUMN (NOT NULL) IN EMPT
+0LINE                             6        CHARACTER(132)
+0N                                7        INTEGER PRECISION(9,0)
+                                           10
+ NAME                             10       VARCHAR(20) CCSID 37 COLUMN (NOT NULL) IN EMPT
+0SAL                              10       DECIMAL(9,2) COLUMN IN EMPT
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0                                             DIAGNOSTIC MESSAGES
+0MSG ID  SEV  RECORD  TEXT
+ SQL0104  30       9  Position 34 Token ENDJOB was not valid. Valid tokens:
+                      ENDACTGRP ENDMOD.
+0SQL0104  30       9  Position 34 Token ENDJOB was not valid. Valid tokens:
+                      ENDACTGRP ENDMOD.
+0SQL0104  30       9  Position 34 Token ENDJOB was not valid. Valid tokens:
+                      ENDACTGRP ENDMOD.
+-
+                     Message Summary
+   Total     Info   Warning      Error   Severe  Terminal
+       3        0         0          0        3         0
+-30 level severity errors found in source
+0   13 Source records processed
+                                * * * * *  E N D  O F  L I S T I N G  * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

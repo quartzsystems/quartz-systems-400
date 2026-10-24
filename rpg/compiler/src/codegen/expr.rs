@@ -200,9 +200,22 @@ impl Gen<'_> {
                 return Some(V::place(Ty::Ind, format!("${}", up.to_ascii_lowercase())));
             }
         }
+        if word == "*DATE" {
+            return Some(self.job_date(8));
+        }
         let at = self.ref_at;
         self.undefined_name(word, at);
         None
+    }
+
+    /// The job date as `*DATE` (`mmddyyyy`) or `UDATE` (`mmddyy`): QS/400
+    /// jobs date in `*MDY` (`docs/RPG.md`).
+    pub fn job_date(&mut self, digits: u8) -> V {
+        let date = V::place(Ty::Zoned(digits, 0), self.b.temp(&format!("zoned({digits},0)")));
+        // *USA has the four-digit year, *MDY the two-digit one.
+        let code = if digits == 8 { 2 } else { 5 };
+        self.dt_now_as(&date, code);
+        date
     }
 
     /// An index expression as an IR index: a literal (checked against
@@ -248,6 +261,9 @@ impl Gen<'_> {
     /// constant, or a call.
     pub fn reference(&mut self, name: &str, steps: &[Step], modify: bool) -> Option<V> {
         let Some(id) = self.t.find(self.scope, name) else {
+            if name == "UDATE" && steps.is_empty() && !modify {
+                return Some(self.job_date(6));
+            }
             let at = self.ref_at;
             self.undefined_name(name, at);
             return None;

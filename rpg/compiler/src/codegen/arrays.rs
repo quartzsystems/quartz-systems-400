@@ -193,7 +193,21 @@ impl Gen<'_> {
     pub fn lookup_op(&mut self, op: &Op) {
         let (Some(f1), Some(f2)) = (op.f1.first().cloned(), op.f2.first().cloned()) else { return };
         let Some(arg) = self.expr(&f1, Want::default()) else { return };
+        // Factor 2 is an array or a table.
+        if let Expr::Ref { name, .. } = &f2
+            && let Some(id) = self.t.find(self.scope, name)
+            && self.t.syms[id].dim == 0
+        {
+            self.t.refer(id, self.at.line, false);
+            self.err(ids::LOOKUP_NOT_ARRAY, 30, name.clone());
+            return;
+        }
         let Some(r) = self.range(&f2) else { return };
+        // The argument has the elements' type and length.
+        if arg.fig.is_none() && !same_type_and_length(&arg.ty, &r.ty) {
+            self.err(ids::LOOKUP_ARG_TYPE, 30, String::new());
+            return;
+        }
         let mut want = 0;
         for (i, w) in [HI, LO, EQ].iter().enumerate() {
             if !op.resind[i].is_empty() {
@@ -260,11 +274,24 @@ impl Gen<'_> {
     /// `XFOOT array result`: the sum of the elements.
     pub fn xfoot_op(&mut self, op: &Op) {
         let (Some(f2), Some(res)) = (op.f2.first().cloned(), op.result.first().cloned()) else { return };
-        let Some(v) = self.expr(&f2, Want::default()) else { return };
-        if v.dim == 0 || !v.ty.is_numeric() {
-            self.err(ids::BAD_EXPRESSION_TYPE, 30, "XFOOT");
+        let undefined = |g: &Self, e: &Expr| e.name().is_some_and(|n| g.t.find(g.scope, n).is_none());
+        let v = self.expr(&f2, Want::default());
+        // Factor 2 is a numeric array; the result a number.
+        match &v {
+            Some(x) if x.dim > 0 && !x.ty.is_numeric() => {
+                self.err(ids::BAD_EXPRESSION_TYPE, 30, "XFOOT");
+                return;
+            }
+            Some(x) if x.dim > 0 => {}
+            None if !undefined(self, &f2) => return,
+            _ => self.err(ids::SORTA_ARRAY, 30, "XFOOT"),
+        }
+        if undefined(self, &res) {
+            let _ = self.target(&res);
+            self.err(ids::NOT_NUMERIC_RESULT, 30, res.name().unwrap_or_default().to_string());
             return;
         }
+        let Some(v) = v.filter(|x| x.dim > 0) else { return };
         let Some(sum) = self.sum_of(&v) else { return };
         let Some(t) = self.target(&res) else { return };
         self.assign_trunc(&t, &sum, op.ext.contains('H'));
@@ -1148,4 +1175,19 @@ fn index_arrays(e: &Expr, arrays: &[String], idx: &str) -> Expr {
         }
         _ => e.clone(),
     }
+}
+
+/// `LOOKUP`'s argument against the elements: numbers of the same
+/// digits and decimals, strings of the same length.
+fn same_type_and_length(a: &Ty, b: &Ty) -> bool {
+    if a.is_numeric() && b.is_numeric() {
+        return match (a, b) {
+            (Ty::Float(x), Ty::Float(y)) => x == y,
+            _ => a.shape().is_some() && a.shape() == b.shape(),
+        };
+    }
+    if a.is_string() && b.is_string() {
+        return a.str_len() == b.str_len();
+    }
+    a == b
 }

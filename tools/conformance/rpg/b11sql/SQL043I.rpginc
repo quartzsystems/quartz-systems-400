@@ -1,0 +1,9 @@
+       // A procedure with a statement of its own, from an SQL INCLUDE.
+       dcl-proc countOf;
+         dcl-pi *n int(10);
+           d char(3) const;
+         end-pi;
+         dcl-s n int(10);
+         exec sql select count(*) into :n from EMPT where DEPT = :d;
+         return n;
+       end-proc;

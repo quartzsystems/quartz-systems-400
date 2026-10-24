@@ -228,6 +228,14 @@ impl State<'_> {
                 self.whenever_stmt(&cx);
                 None
             }
+            // The reader reads the members it finds in place.
+            "INCLUDE" if !matches!(w1.as_str(), "SQLCA" | "SQLDA") => {
+                let end = cx.toks.get(1).map_or(0, |t| t.end);
+                let col = end - cx.src.text[..end].rfind('\n').map_or(0, |p| p + 1) + 1;
+                self.diag(cx.tok_line(1), "SQL0004", 30, vec![col.to_string(), w1]);
+                None
+            }
+            "DESCRIBE" => Some(self.describe(&cx)),
             "INCLUDE" | "BEGIN" | "END" => None,
             _ => Some(self.exec(&cx, &w0)),
         }
@@ -357,6 +365,13 @@ impl State<'_> {
                     Kind::Delim(d) | Kind::Host(d) => d.clone(),
                 })
                 .collect();
+            // An ILE program's cursors close at the end of the
+            // activation group or of the module only.
+            if name == "CLOSQLCSR" && !matches!(value.as_str(), "*ENDACTGRP" | "*ENDMOD") {
+                let at = if cx.toks.get(i + 2).is_some_and(|t| t.sym('*')) { i + 3 } else { i + 2 };
+                self.bad(cx, at);
+                return;
+            }
             self.diag(cx.src.line, "SQL5066", 0, vec![name.clone()]);
             let o = &mut self.opts;
             match name.as_str() {
@@ -433,6 +448,10 @@ impl State<'_> {
         s.desc.scroll = c.scroll;
         s.inputs = c.inputs;
         if let Some(u) = find_top(&cx.toks, 2, |t| t.is("USING")) {
+            if cx.word(u + 1) == "DESCRIPTOR" {
+                s.da = self.sqlda(cx, u + 2);
+                return s;
+            }
             let us: Vec<HostRef> = host_list(&cx.toks, u + 1, cx.toks.len()).iter().map(|h| cx.host_ref(h)).collect();
             self.check_hosts(cx.src.scope, &us);
             s.inputs.extend(us);
@@ -501,6 +520,8 @@ impl State<'_> {
         }
         if cx.word(i) == "INTO" {
             s.outputs = host_list(&cx.toks, i + 1, n).iter().map(|h| cx.host_ref(h)).collect();
+        } else if cx.word(i) == "USING" && cx.word(i + 1) == "DESCRIPTOR" {
+            s.da = self.sqlda(cx, i + 2);
         } else if i < n {
             self.bad(cx, i);
         }
@@ -513,12 +534,46 @@ impl State<'_> {
         s
     }
 
-    /// `PREPARE s FROM :hv` or `FROM 'text'`.
+    /// `PREPARE s [INTO :sqlda] FROM :hv` or `FROM 'text'`.
     fn prepare(&mut self, cx: &Cx<'_>) -> Stmt {
         let name = cx.word(1).to_string();
         let from = find_top(&cx.toks, 2, |t| t.is("FROM")).unwrap_or(cx.toks.len());
         let mut s = self.dynamic(cx, from + 1, Op::Prepare, "PREPARE");
         s.desc.name = name;
+        if cx.word(2) == "INTO" {
+            s.da = self.sqlda(cx, 3);
+            s.desc.into = true;
+        }
+        s
+    }
+
+    /// The SQLDA host variable at token `i`.
+    fn sqlda(&mut self, cx: &Cx<'_>, i: usize) -> Option<HostRef> {
+        let Some(h) = host_at(&cx.toks, i) else {
+            self.bad(cx, i);
+            return None;
+        };
+        let r = cx.host_ref(&h);
+        self.check_hosts(cx.src.scope, std::slice::from_ref(&r));
+        Some(r)
+    }
+
+    /// `DESCRIBE [INPUT|OUTPUT] s INTO :sqlda [USING ...]`.
+    fn describe(&mut self, cx: &Cx<'_>) -> Stmt {
+        let mut s = self.base(cx, "DESCRIBE", Op::Describe);
+        let mut i = 1;
+        if matches!(cx.word(i), "INPUT" | "OUTPUT") {
+            if cx.word(i) == "INPUT" {
+                s.desc.orient = "INPUT".into();
+            }
+            i += 1;
+        }
+        s.desc.name = cx.word(i).to_string();
+        if cx.word(i + 1) != "INTO" {
+            self.bad(cx, i + 1);
+            return s;
+        }
+        s.da = self.sqlda(cx, i + 2);
         s
     }
 
@@ -542,6 +597,10 @@ impl State<'_> {
         let mut s = self.base(cx, "EXECUTE", Op::Execute);
         s.desc.name = cx.word(1).to_string();
         if let Some(u) = find_top(&cx.toks, 2, |t| t.is("USING")) {
+            if cx.word(u + 1) == "DESCRIPTOR" {
+                s.da = self.sqlda(cx, u + 2);
+                return s;
+            }
             s.inputs = host_list(&cx.toks, u + 1, cx.toks.len()).iter().map(|h| cx.host_ref(h)).collect();
             self.check_hosts(cx.src.scope, &s.inputs);
         }

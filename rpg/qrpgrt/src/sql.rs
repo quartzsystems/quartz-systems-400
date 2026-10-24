@@ -37,6 +37,8 @@ struct Out {
 struct Pending {
     inputs: Vec<Value>,
     outs: Vec<Out>,
+    /// The SQLDA a `DESCRIBE` or `PREPARE INTO` fills.
+    da: Option<u64>,
 }
 
 thread_local! {
@@ -133,6 +135,102 @@ pub extern "sysv64" fn sql_out(_env: *mut Env, _argc: i64, _od: i64, var: i64, d
         stride,
     };
     PENDING.with(|p| p.borrow_mut().outs.push(o));
+}
+
+/// An SQLDA's header: SQLDAID, SQLDABC, SQLN, SQLD; its entries of 80
+/// bytes follow (SQLTYPE, SQLLEN, SQLRES, SQLDATA, SQLIND, SQLNAMELEN,
+/// SQLNAME).
+const DA_HEAD: usize = 16;
+const DA_VAR: usize = 80;
+
+fn be16(addr: u64) -> i16 {
+    let b = bytes(addr, 2);
+    i16::from_be_bytes([b[0], b[1]])
+}
+
+/// The storage a pointer in an SQLDA entry addresses; `None` for null.
+fn da_ptr(job: &mut mi::Job, addr: u64) -> Option<u64> {
+    let b: [u8; 16] = bytes(addr, 16).try_into().ok()?;
+    let p = mi::space::FatPtr::from_bytes(&b);
+    job.spaces.deref(p).ok()
+}
+
+/// An entry's SQLTYPE and SQLLEN as a host variable's descriptor.
+fn da_desc(sqltype: i16, sqllen: i16) -> Desc {
+    let len = u32::from(sqllen.cast_unsigned());
+    let (kind, len, dec) = match sqltype & !1 {
+        448 | 456 => (Kind::VarChar, len, 0),
+        484 => (Kind::Packed, len >> 8, u8::try_from(len & 0xFF).unwrap_or(0)),
+        488 => (Kind::Zoned, len >> 8, u8::try_from(len & 0xFF).unwrap_or(0)),
+        496 => (Kind::Int, 10, 0),
+        500 => (Kind::Int, 5, 0),
+        492 => (Kind::Int, 20, 0),
+        480 => (Kind::Float, len, 0),
+        384 => (Kind::Date, len, 0),
+        388 => (Kind::Time, len, 0),
+        392 => (Kind::Timestamp, len, 0),
+        _ => (Kind::Char, len, 0),
+    };
+    Desc { kind, len, dec }
+}
+
+/// `_QRNX_SQLDA(da, mode)`: a statement's SQLDA. Mode 1: `USING
+/// DESCRIPTOR`, its entries are the inputs; 2: `FETCH ... USING
+/// DESCRIPTOR`, the outputs; 3: `DESCRIBE` or `PREPARE INTO` fills it.
+pub extern "sysv64" fn sql_da(env: *mut Env, _argc: i64, _od: i64, da: i64, mode: i64) {
+    let da = da.cast_unsigned();
+    if mode == 3 {
+        PENDING.with(|p| p.borrow_mut().da = Some(da));
+        return;
+    }
+    let job = mi::storage::job_of(env);
+    let n = usize::try_from(be16(da + 14)).unwrap_or(0);
+    for k in 0..n {
+        let at = da + (DA_HEAD + k * DA_VAR) as u64;
+        let ty = be16(at);
+        let desc = da_desc(ty, be16(at + 2));
+        let Some(data) = da_ptr(job, at + 16) else { continue };
+        let ind = if ty & 1 == 1 { da_ptr(job, at + 32) } else { None };
+        if mode == 1 {
+            let v = if ind.is_some_and(|i| read_ind(i) < 0) { Value::Null } else { read_value(data, &desc, 0) };
+            PENDING.with(|p| p.borrow_mut().inputs.push(v));
+        } else {
+            let o = Out {
+                addr: data,
+                desc,
+                extra: 0,
+                ind,
+                stride: 0,
+            };
+            PENDING.with(|p| p.borrow_mut().outs.push(o));
+        }
+    }
+}
+
+/// Fill an SQLDA from a `DESCRIBE`'s rows (type, length, name): SQLD
+/// always, the entries when SQLN has room for them.
+fn write_da(da: u64, rows: &[Vec<Value>]) {
+    let sqln = usize::try_from(be16(da + 12)).unwrap_or(0);
+    let head = bytes(da, DA_HEAD);
+    head[..8].copy_from_slice(&ebcdic("SQLDA   "));
+    let bc = u32::try_from(DA_HEAD + DA_VAR * sqln).unwrap_or(0);
+    head[8..12].copy_from_slice(&bc.to_be_bytes());
+    head[14..16].copy_from_slice(&i16::try_from(rows.len()).unwrap_or(i16::MAX).to_be_bytes());
+    if rows.len() > sqln {
+        return;
+    }
+    for (k, r) in rows.iter().enumerate() {
+        let v = bytes(da + (DA_HEAD + k * DA_VAR) as u64, DA_VAR);
+        let num = |i: usize| r.get(i).and_then(|x| x.as_i64().ok()).and_then(|x| i16::try_from(x).ok()).unwrap_or(0);
+        v[..2].copy_from_slice(&num(0).to_be_bytes());
+        v[2..4].copy_from_slice(&num(1).to_be_bytes());
+        let name = r.get(2).map(Value::as_text).unwrap_or_default();
+        let mut e = ebcdic(name.trim_end());
+        e.truncate(30);
+        v[48..50].copy_from_slice(&u16::try_from(e.len()).unwrap_or(0).to_be_bytes());
+        e.resize(30, BLANK);
+        v[50..80].copy_from_slice(&e);
+    }
 }
 
 /// What assigning a value found.
@@ -355,8 +453,10 @@ pub extern "sysv64" fn sql_run(env: *mut Env, _argc: i64, _od: i64, ca: i64, tex
         return;
     };
     let job = mi::storage::job_of(env);
+    // A module's statements belong to it in its activation group.
+    let end = desc.op == sql::embed::Op::End;
     let req = Request {
-        scope,
+        scope: format!("{}:{scope}", job.act.current),
         desc,
         inputs: pending.inputs,
     };
@@ -370,7 +470,18 @@ pub extern "sysv64" fn sql_run(env: *mut Env, _argc: i64, _od: i64, ca: i64, tex
             rows: Vec::new(),
         },
     };
+    // The end of a module's statements leaves its SQLCA alone.
+    if end {
+        return;
+    }
     let mut sqlca = reply.sqlca;
+    if let Some(da) = pending.da {
+        if !sqlca.is_error() {
+            write_da(da, &reply.rows);
+        }
+        write_sqlca(ca.cast_unsigned(), &sqlca);
+        return;
+    }
     // A failed statement leaves the host variables alone, except that
     // more than one row still gives the first.
     if !sqlca.is_error() || sqlca.sqlcode == -811 {

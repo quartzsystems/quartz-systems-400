@@ -156,6 +156,9 @@ pub struct Stmt {
     pub outputs: Vec<HostRef>,
     /// `FOR n ROWS`.
     pub rows: Option<Rows>,
+    /// The SQLDA of `DESCRIBE`, `PREPARE ... INTO` and `USING
+    /// DESCRIPTOR`.
+    pub da: Option<HostRef>,
     /// `WHENEVER` in effect after it runs.
     pub whenever: Whenever,
     /// IBM's generated source declares a structure for it.

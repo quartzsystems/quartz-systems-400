@@ -155,6 +155,8 @@ pub struct Ctl {
     pub truncnbr: bool,
     /// `GENLVL`.
     pub genlvl: u8,
+    /// `THREAD`: `*SERIALIZE`, `*CONCURRENT`, or empty.
+    pub thread: String,
 }
 
 /// Control keywords the compiler accepts.
@@ -229,6 +231,7 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
                 }
             }
             "STGMDL" => c.dftactgrp = false,
+            "THREAD" => c.thread = word_arg(k, 0).unwrap_or_default(),
             "MAIN" => {
                 c.main = word_arg(k, 0);
                 c.dftactgrp = false;

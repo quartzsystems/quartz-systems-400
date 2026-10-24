@@ -9,6 +9,7 @@
 use crate::Diag;
 
 const TEXTS: &[(&str, &str)] = &[
+    ("SQL0004", "At column &1: member &2 named by INCLUDE was not found."),
     ("SQL0084", "The statement is not supported: &1."),
     ("SQL0088", "&1 changes every row of the table."),
     ("SQL0104", "Syntax error at line &1 column &2: &3."),

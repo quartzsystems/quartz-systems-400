@@ -209,8 +209,10 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
     let from: Option<u32> = cols.from.parse().ok();
     let to: Option<u32> = cols.to.trim_start_matches('+').parse().ok();
     let mut dec: Option<u8> = cols.decimals.parse().ok();
-    // A length that is not a number is blanks.
-    if !cols.to.is_empty() && to.is_none() {
+    // A length that is not a number is blanks; a negative one is a
+    // LIKE adjustment, no length.
+    let adjust = cols.to.strip_prefix('-').is_some_and(|r| !r.is_empty() && r.bytes().all(|b| b.is_ascii_digit()));
+    if !cols.to.is_empty() && to.is_none() && !adjust {
         cx.diags.push(Diag::new(ids::BAD_LEN_ENTRY, 20, d.at));
     }
     let len = match (from, to) {
@@ -231,7 +233,14 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
     }
     let positional = from.is_some();
     let varying = d.kw("VARYING").is_some();
-    let code = if cols.ty.is_empty() {
+    // A data type IBM does not know is blank.
+    let ty_col = if cols.ty.is_empty() || "ACGNPSBIUFDTZ*O".contains(cols.ty.as_str()) {
+        cols.ty.as_str()
+    } else {
+        cx.diags.push(Diag::new(ids::BAD_TYPE_ENTRY, 20, d.at));
+        ""
+    };
+    let code = if ty_col.is_empty() {
         if d.kw("LIKE").is_some() {
             return d.kw("LIKE").and_then(|k| like(cx, d, k));
         }
@@ -244,7 +253,7 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
             "A"
         }
     } else {
-        cols.ty.as_str()
+        ty_col
     };
     let at = d.at;
     let need_len = |cx: &mut Cx<'_>| -> Option<u32> {
@@ -583,6 +592,13 @@ pub fn check_keywords(cx: &mut Cx<'_>, d: &Def, ds: Option<&Def>) -> Def {
         {
             let at = k.arg(i).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
             Some(Diag::new(ids::OPTIONS_VALUE, 20, at))
+        } else if n == "EXTPROC" && matches!(k.arg(extproc_name_arg(k)).and_then(|a| a.expr.as_ref()), Some(Expr::Lit(Lit::Num(_), _))) {
+            let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+            Some(Diag::new(ids::EXTPROC_PARM, 20, at))
+        } else if n == "EXTPGM" && word_arg(k, 0).is_some_and(|w| w.starts_with('*')) {
+            let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+            cx.diags.push(Diag::new(ids::EXTPGM_PARM, 20, at));
+            Some(Diag::new(ids::TEXT_SKIPPED, 0, at))
         } else if n == "STATIC" && cx.scope == 0 {
             Some(Diag::new(ids::NOT_IN_MAIN_SOURCE, 20, k.at).arg(n))
         } else if n == "VARYING" && d.fixed.is_none() {
@@ -976,6 +992,23 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     let mut overlay_next: std::collections::HashMap<SymId, u32> = std::collections::HashMap::new();
     let is_psds = cx.t.ds[ds_index].psds;
     for c in &d.children {
+        // A to-position past the structure's given length is the
+        // from-position.
+        let clipped;
+        let c = match (len_kw.or(fixed_len), &c.fixed) {
+            (Some(given), Some(f))
+                if f.from.parse::<u32>().is_ok() && f.to.parse::<u32>().is_ok_and(|t| t > given) =>
+            {
+                cx.diags.push(Diag::new(ids::TO_PAST_DS, 20, c.at));
+                let mut n = c.clone();
+                if let Some(nf) = n.fixed.as_mut() {
+                    nf.to.clone_from(&nf.from);
+                }
+                clipped = n;
+                &clipped
+            }
+            _ => c,
+        };
         let cname = c.name.to_ascii_uppercase();
         // A subfield named twice in its structure is ignored.
         if !cname.is_empty() && cname != "*N" && cx.t.ds[ds_index].subfields.iter().any(|&s| cx.t.syms[s].name == cname) {

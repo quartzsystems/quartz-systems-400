@@ -17,9 +17,9 @@ help = "The code generated for the source was refused by the verifier. This is t
 vars = ["*CHAR 256"]
 
 [[msg]]
-id = "RNF0023"
+id = "RNF0273"
 sev = 40
-text = "Copy member &1 was not found."
+text = "Copy member &1 cannot be opened; the directive is ignored."
 help = "A /COPY or /INCLUDE directive names a member that is not in the file and library given, or in the library list."
 vars = ["*CHAR 50"]
 
@@ -31,19 +31,19 @@ help = "A member copies itself, directly or through others, or the nesting passe
 vars = ["*CHAR 50"]
 
 [[msg]]
-id = "RNF0036"
+id = "RNF0705"
 sev = 30
 text = "A conditional group has no /ENDIF."
 help = "The member ended inside a /IF group. Add the /ENDIF that closes it."
 
 [[msg]]
-id = "RNF0037"
+id = "RNF0274"
 sev = 30
-text = "The directive is not recognized."
+text = "The directive is not recognized; it is ignored."
 help = "A line starting with a slash in column 7 names no directive the compiler knows, or the directive is not allowed where it is."
 
 [[msg]]
-id = "RNF0039"
+id = "RNF0706"
 sev = 30
 text = "/ELSE, /ELSEIF or /ENDIF has no matching /IF."
 help = "The directive closes or continues a conditional group that was never opened."
@@ -124,8 +124,7 @@ text = "No overflow indicator given for the printer file; *INOA is used, with a 
 [[msg]]
 id = "RNF3304"
 sev = 20
-text = "The data type &1 is not valid."
-vars = ["*CHAR 50"]
+text = "The definition type is not valid; S is used."
 
 [[msg]]
 id = "RNF3313"
@@ -166,7 +165,7 @@ vars = ["*CHAR 50"]
 [[msg]]
 id = "RNF5013"
 sev = 30
-text = "Operation code &1 is not valid."
+text = "The TAG name &1 is defined already or is a reserved word; the specification is ignored."
 vars = ["*CHAR 50"]
 
 [[msg]]
@@ -228,8 +227,7 @@ vars = ["*CHAR 50"]
 [[msg]]
 id = "RNF7021"
 sev = 30
-text = "File &1 is not defined."
-vars = ["*CHAR 50"]
+text = "Factor 1 and factor 2 differ in type or length; the specification is ignored."
 
 [[msg]]
 id = "RNF7023"
@@ -1214,3 +1212,289 @@ vars = ["*CHAR 50"]
 id = "RNF7567"
 sev = 20
 text = "The FOR start value is not valid."
+
+[[msg]]
+id = "RNF0272"
+sev = 30
+text = "The /COPY or /INCLUDE directive names no member; it is ignored."
+
+[[msg]]
+id = "RNF0289"
+sev = 20
+text = "Part of the entry is not valid and is dropped; the rest is used."
+
+[[msg]]
+id = "RNF0301"
+sev = 20
+text = "A hexadecimal literal has no closing apostrophe; one is assumed."
+
+[[msg]]
+id = "RNF0364"
+sev = 20
+text = "The start position given to &1 lies past the end of the string; the built-in function is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0386"
+sev = 30
+text = "The first argument of &1 cannot be converted to characters."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0510"
+sev = 20
+text = "The length given for &1 here differs from its definition; the definition is used."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0579"
+sev = 20
+text = "The argument of &1 must be a number of units."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0592"
+sev = 20
+text = "&1 needs an array declared with ASCEND or DESCEND."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0701"
+sev = 30
+text = "The condition of the directive is not valid."
+
+[[msg]]
+id = "RNF0702"
+sev = 30
+text = "/DEFINE and /UNDEFINE need a condition name."
+
+[[msg]]
+id = "RNF1506"
+sev = 20
+text = "Keyword &1 is given more than once for the procedure; the repeat is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF1519"
+sev = 20
+text = "SERIALIZE needs THREAD(*CONCURRENT) on the control specification; it is ignored."
+
+[[msg]]
+id = "RNF2003"
+sev = 20
+text = "The file type must be I, O, U or C; O is used when the designation is blank, I otherwise."
+
+[[msg]]
+id = "RNF2006"
+sev = 20
+text = "The file format must be F or E; F is used."
+
+[[msg]]
+id = "RNF2013"
+sev = 20
+text = "The device is not one the compiler knows; DISK is used."
+
+[[msg]]
+id = "RNF2016"
+sev = 20
+text = "Column 43 of a file specification must be blank."
+
+[[msg]]
+id = "RNF2023"
+sev = 30
+text = "File keyword &1 is not recognized; it is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF2079"
+sev = 20
+text = "The file designation is not valid; blank is used."
+
+[[msg]]
+id = "RNF3302"
+sev = 20
+text = "The data type entry is not valid; it is taken as blank."
+
+[[msg]]
+id = "RNF3703"
+sev = 20
+text = "A subfield or parameter appears outside any structure, prototype or interface."
+
+[[msg]]
+id = "RNF3713"
+sev = 20
+text = "The to-position lies past the end of the data structure; the from-position is used."
+
+[[msg]]
+id = "RNF3746"
+sev = 20
+text = "The procedure name given to EXTPROC is not valid; the keyword is ignored."
+
+[[msg]]
+id = "RNF3747"
+sev = 20
+text = "The program name given to EXTPGM is not valid; it is ignored."
+
+[[msg]]
+id = "RNF3767"
+sev = 20
+text = "The interface's name &1 is not the name of its procedure."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3776"
+sev = 10
+text = "The main procedure's interface names program &1, not the program being created."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3788"
+sev = 30
+text = "Prototype &1 has no EXTPGM, so it needs DFTACTGRP(*NO)."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF4036"
+sev = 30
+text = "The input field ends past the file's record length; it is ignored."
+
+[[msg]]
+id = "RNF5002"
+sev = 20
+text = "A calculation without a control level follows total calculations; the previous level is used."
+
+[[msg]]
+id = "RNF5007"
+sev = 20
+text = "The conditioning indicator entry is not valid; it is taken as blank."
+
+[[msg]]
+id = "RNF5009"
+sev = 30
+text = "The operation needs a factor 1."
+
+[[msg]]
+id = "RNF5010"
+sev = 20
+text = "The operation does not take a factor 1; it is ignored."
+
+[[msg]]
+id = "RNF5039"
+sev = 30
+text = "DIV cannot have a factor 2 of zero; the specification is ignored."
+
+[[msg]]
+id = "RNF5049"
+sev = 20
+text = "The extender is not one this operation takes; it is ignored."
+
+[[msg]]
+id = "RNF5094"
+sev = 20
+text = "The CASxx group has no ENDCS; one is assumed after it."
+
+[[msg]]
+id = "RNF5123"
+sev = 30
+text = "LOOKUP's factor 2 &1 is not an array or table; the specification is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5184"
+sev = 30
+text = "An indicator result takes only '0' or '1' from factor 2."
+
+[[msg]]
+id = "RNF5215"
+sev = 30
+text = "SUBST's length reaches past the end of factor 2; the specification is ignored."
+
+[[msg]]
+id = "RNF5216"
+sev = 30
+text = "SUBST's start position lies past the end of factor 2; the specification is ignored."
+
+[[msg]]
+id = "RNF5248"
+sev = 20
+text = "The ENDyy does not match the open group; an END is assumed."
+
+[[msg]]
+id = "RNF5270"
+sev = 20
+text = "This indicator cannot be set as a resulting indicator; it is ignored."
+
+[[msg]]
+id = "RNF5425"
+sev = 30
+text = "*INZSR belongs to the main procedure, not a subprocedure."
+
+[[msg]]
+id = "RNF6003"
+sev = 20
+text = "The output indicator entry is not valid; it is taken as blank."
+
+[[msg]]
+id = "RNF6005"
+sev = 20
+text = "The output record type must be H, D, T or E; D is used."
+
+[[msg]]
+id = "RNF6028"
+sev = 20
+text = "The output data format is not valid; it is taken as blank."
+
+[[msg]]
+id = "RNF6030"
+sev = 30
+text = "The output constant is not valid; the field is ignored."
+
+[[msg]]
+id = "RNF7017"
+sev = 30
+text = "A structure and its own subfield overlap, which the operation does not allow; the specification is ignored."
+
+[[msg]]
+id = "RNF7027"
+sev = 30
+text = "&1 named by CASxx is not a subroutine."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7043"
+sev = 30
+text = "&1 is not a label, so GOTO or CABxx cannot branch to it; the specification is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7044"
+sev = 30
+text = "The result field &1 must be numeric; the specification is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7056"
+sev = 30
+text = "The result field of TIME is not one it can set."
+
+[[msg]]
+id = "RNF7262"
+sev = 30
+text = "The arrays MOVEA moves between differ in type or length; the specification is ignored."
+
+[[msg]]
+id = "RNF7565"
+sev = 30
+text = "EVALR needs a fixed-length character or graphic target; &1 is varying."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7585"
+sev = 20
+text = "Years, months or days cannot be added to or taken from a time."
+
+[[msg]]
+id = "RNF7602"
+sev = 0
+text = "No EXCEPT operation names the output name &1."
+vars = ["*CHAR 50"]

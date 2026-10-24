@@ -352,6 +352,31 @@ impl Gen<'_> {
     /// One statement.
     #[allow(clippy::too_many_lines)]
     fn statement(&mut self, stmts: &[&Stmt], k: usize) -> usize {
+        let before = self.diags.len();
+        // A factor 1 the operation ignores still names something.
+        let s = stmts[k];
+        if s.fixed && rpgfront::parse::ops::no_factor1(&s.op.code) {
+            self.at = s.at;
+            for e in &s.op.f1 {
+                if let Some(n) = e.name()
+                    && self.t.find(self.scope, n).is_none()
+                {
+                    self.undefined_name(n, e.pos());
+                }
+            }
+        }
+        let n = self.statement_conditioned(stmts, k);
+        // Factors are names, not expressions: an undefined one is only
+        // RNF7030.
+        if stmts[k].fixed {
+            let tail = self.diags.split_off(before);
+            self.diags.extend(tail.into_iter().filter(|d| d.msgid != ids::UNDEFINED_OPERAND));
+        }
+        n
+    }
+
+    /// One statement under its conditioning indicators.
+    fn statement_conditioned(&mut self, stmts: &[&Stmt], k: usize) -> usize {
         let s = stmts[k];
         self.mark(s.at);
         // Conditioning indicators skip the operation when off.
@@ -518,10 +543,10 @@ impl Gen<'_> {
             },
             ("SELECT", _) => {
                 let end = self.b.label();
-                self.open.push(Open::Select { next: None, end });
+                self.open.push(Open::Select { next: None, end, cas: false });
             }
             ("WHEN", sfx) => {
-                let Some(Open::Select { next, end }) = self.open.last().cloned() else {
+                let Some(Open::Select { next, end, .. }) = self.open.last().cloned() else {
                     self.err(ids::UNBALANCED, 30, "WHEN");
                     return k + 1;
                 };
@@ -548,7 +573,7 @@ impl Gen<'_> {
                 }
             }
             ("OTHER", _) => {
-                let Some(Open::Select { next, end }) = self.open.last().cloned() else {
+                let Some(Open::Select { next, end, .. }) = self.open.last().cloned() else {
                     self.err(ids::UNBALANCED, 30, "OTHER");
                     return k + 1;
                 };
@@ -560,7 +585,8 @@ impl Gen<'_> {
                     *next = None;
                 }
             }
-            ("ENDSL", _) => self.end_select(),
+            ("ENDSL" | "ENDCS", _) => self.end_select(),
+            ("CAS", sfx) => self.cas_op(op, sfx),
             ("EXSR", _) => {
                 if let Some(n) = op.f2.first().and_then(|e| e.name().map(str::to_string).or_else(|| match e {
                     Expr::Special { word, .. } => Some(word.clone()),
@@ -623,17 +649,31 @@ impl Gen<'_> {
             }
             ("TAG", _) => {
                 if let Some(n) = op.f1.first().and_then(|e| e.name().map(str::to_string)) {
+                    // A label defined twice: the second is ignored.
+                    if !self.placed_tags.insert(n.to_ascii_uppercase()) {
+                        self.err(ids::TAG_TWICE, 30, n);
+                        return k + 1;
+                    }
                     let l = self.tag_label(&n);
                     self.b.place(&l);
                 }
             }
             ("GOTO", _) => {
                 if let Some(n) = op.f2.first().and_then(|e| e.name().map(str::to_string)) {
+                    if !self.is_label(&n, op.f2[0].pos()) {
+                        return k + 1;
+                    }
                     let l = self.tag_label(&n);
                     self.b.term(format!("br {l}"));
                 }
             }
             ("CAB", sfx) => {
+                let target = op.result.first().and_then(|e| e.name().map(|n| (n.to_string(), e.pos())));
+                if let Some((n, at)) = &target
+                    && !self.is_label(n, *at)
+                {
+                    return k + 1;
+                }
                 if let (Some(a), Some(b)) = (op.f1.first().cloned(), op.f2.first().cloned())
                     && let Some(r) = self.cmp_suffix(sfx, &a, &b)
                 {
@@ -857,6 +897,59 @@ impl Gen<'_> {
         self.b.ins(format!("sndpgmmsg msgid({id}) msgf({f}){d} type({kind}) to({to})"));
     }
 
+    /// `CASxx f1 f2 subr`: the first true comparison of the group runs
+    /// its subroutine; a `CAS` without a suffix always does.
+    fn cas_op(&mut self, op: &rpgfront::ast::Op, sfx: &str) {
+        if !matches!(self.open.last(), Some(Open::Select { cas: true, .. })) {
+            let end = self.b.label();
+            self.open.push(Open::Select { next: None, end, cas: true });
+        }
+        let Some(Open::Select { next, end, .. }) = self.open.last().cloned() else { return };
+        if let Some(n) = next {
+            self.b.term(format!("br {end}"));
+            self.b.place(&n);
+        }
+        let body = self.b.label();
+        let miss = self.b.label();
+        let r = match (op.f1.first().cloned(), op.f2.first().cloned()) {
+            (Some(a), Some(b)) if !sfx.is_empty() => {
+                let r = self.cmp_suffix(sfx, &a, &b);
+                self.cmp_resind(op, &a, &b);
+                r
+            }
+            _ => None,
+        };
+        match r {
+            Some(r) => self.b.term(format!("brif {r}, {body}, {miss}")),
+            None => self.b.term(format!("br {body}")),
+        }
+        self.b.place(&body);
+        if let Some(n) = op.result.first().and_then(|e| e.name().map(str::to_string)) {
+            if self.subr_procs {
+                self.exsr_call(&n);
+            } else {
+                self.exsr(&n);
+            }
+        }
+        if let Some(Open::Select { next, .. }) = self.open.last_mut() {
+            *next = Some(miss);
+        }
+    }
+
+    /// Whether a `GOTO` or `CABxx` target is a label of the procedure;
+    /// one that is not is RNF7043 (and RNF7030 when nothing has the
+    /// name).
+    fn is_label(&mut self, name: &str, at: rpgfront::ast::Pos) -> bool {
+        if self.labels.contains(&name.to_ascii_uppercase()) {
+            return true;
+        }
+        if self.t.find(self.scope, name).is_none() {
+            self.undefined_name(name, at);
+        }
+        self.err(ids::NOT_A_LABEL, 30, name.to_string());
+        false
+    }
+
     pub(crate) fn tag_label(&mut self, name: &str) -> String {
         if let Some(l) = self.tags.get(name) {
             return l.clone();
@@ -987,7 +1080,7 @@ impl Gen<'_> {
 
     fn end_select(&mut self) {
         match self.open.pop() {
-            Some(Open::Select { next, end }) => {
+            Some(Open::Select { next, end, .. }) => {
                 if let Some(n) = next {
                     self.b.place(&n);
                 }
@@ -1014,7 +1107,10 @@ impl Gen<'_> {
             }
             LoopEnd::Bottom(cond, body) => {
                 self.b.place(&iter);
-                if let Some(r) = self.cond(&cond) {
+                // A DOU without its condition was reported at the DOU.
+                if matches!(*cond, Expr::Empty(_)) {
+                    self.b.term(format!("br {leave}"));
+                } else if let Some(r) = self.cond(&cond) {
                     self.b.term(format!("brif {r}, {leave}, {body}"));
                 }
             }
@@ -1135,6 +1231,10 @@ impl Gen<'_> {
         let opnd = self.dec_operand(&start);
         self.b.ins(format!("dec.mov {counter}, {}", opnd));
         let limit = op.f2.first().and_then(|e| self.expr(e, Want::default())).unwrap_or_else(|| V::lit(Ty::Packed(1, 0), "1"));
+        // The limit is a number.
+        if !limit.ty.is_numeric() && limit.fig.is_none() {
+            self.err(ids::BAD_FACTOR2, 30, "DO");
+        }
         let lim = self.b.temp("packed(31,9)");
         let opnd = self.dec_operand(&limit);
         self.b.ins(format!("dec.mov {lim}, {}", opnd));
@@ -1338,6 +1438,11 @@ impl Gen<'_> {
         };
         let w = Want { mode: target_mode(self, &t, half), compared: false };
         let (Some(va), Some(vb)) = (self.expr(&a, w), self.expr(&b, w)) else { return };
+        // DIV by a zero literal is refused as the operation's error.
+        if base == "DIV" && vb.kind == Vk::Lit && vb.op.trim_start_matches('-').chars().all(|c| c == '0' || c == '.') {
+            self.err(ids::DIV_FACTOR2_ZERO, 30, String::new());
+            return;
+        }
         if base == "DIV" {
             self.keep_div(&va, &vb, &t);
         }
@@ -1723,7 +1828,8 @@ pub fn calcs(g: &mut Gen<'_>, stmts: &[&Stmt]) {
         let what = match o {
             Open::If { .. } => "ENDIF",
             Open::Loop { .. } => "ENDDO",
-            Open::Select { .. } => "ENDSL",
+            Open::Select { cas: false, .. } => "ENDSL",
+            Open::Select { cas: true, .. } => "ENDCS",
             Open::Monitor { .. } => "ENDMON",
             Open::Subr(_) => "ENDSR",
         };
@@ -1829,6 +1935,7 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
     g.scope = scope;
     g.subrs.clear();
     g.tags.clear();
+    g.scan_labels(&p.calcs);
     g.open.clear();
     g.main_exit = None;
     let name = p.name.to_ascii_uppercase();

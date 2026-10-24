@@ -266,7 +266,8 @@ fn diag_text(diags: &[ile::Diag]) -> String {
 
 /// `crtpgm` and `crtsrvpgm`.
 fn crtpgm(system: &mut System, p: &Params, kind: PgmKind) -> Result<String, String> {
-    let qual = p.pos_or(0, "PGM")?;
+    let kw = if kind == PgmKind::SrvPgm { "SRVPGM" } else { "PGM" };
+    let qual = p.pos_or(0, kw)?;
     let (lib, name) = qualified(&qual)?;
     let modules = spec_list(p, "MODULE")?;
     if modules.is_empty() {

@@ -91,7 +91,8 @@ pub fn check(stmts: &[Stmt]) -> Vec<Diag> {
             && !defined.contains(&n)
         {
             out.push(Diag::new(ids::NOT_DEFINED, 30, at).arg(n.clone()));
-            out.push(Diag::new(ids::NOT_A_SUBROUTINE, 30, at).arg(n));
+            let id = if base == "CAS" { ids::CAS_NOT_SUBROUTINE } else { ids::NOT_A_SUBROUTINE };
+            out.push(Diag::new(id, 30, at).arg(n));
         }
         match base {
             "IF" => open.push((Group::If, at)),
@@ -140,6 +141,9 @@ pub fn check(stmts: &[Stmt]) -> Vec<Diag> {
                     if let Some((Group::Monitor { handled: false }, p)) = open.pop() {
                         out.push(Diag::new(ids::NO_ON_ERROR, 20, p));
                     }
+                } else if open.pop().is_some() {
+                    // The wrong ENDyy for the open group ends it.
+                    out.push(Diag::new(ids::END_OUT_OF_SEQUENCE, 20, at));
                 } else {
                     out.push(Diag::new(ids::END_UNMATCHED, 30, at));
                 }
@@ -184,7 +188,12 @@ fn name_of(e: &Expr) -> Option<String> {
 
 /// Groups left open: each one's `END` is assumed.
 fn open_groups_end(open: &mut Vec<(Group, Pos)>, out: &mut Vec<Diag>) {
-    for (_, at) in open.drain(..).rev() {
-        out.push(Diag::new(ids::END_MISSING, 30, at));
+    for (g, at) in open.drain(..).rev() {
+        // A CASxx group without ENDCS: IBM inserts the END.
+        if g == Group::Cas {
+            out.push(Diag::new(ids::ENDCS_MISSING, 20, at));
+        } else {
+            out.push(Diag::new(ids::END_MISSING, 30, at));
+        }
     }
 }

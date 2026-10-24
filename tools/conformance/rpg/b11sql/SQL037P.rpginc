@@ -1,0 +1,21 @@
+**FREE
+ctl-opt dftactgrp(*no) actgrp(*caller);
+dcl-pi *n;
+  res char(30);
+end-pi;
+dcl-s id int(10);
+dcl-s txt varchar(80);
+exec sql set option closqlcsr = *endmod;
+exec sql declare c1 cursor for select ID from EMPT order by ID;
+// The statement is prepared on the first call only.
+if res = 'first';
+  txt = 'update EMPT set DEPT = DEPT where ID = 1';
+  exec sql prepare s1 from :txt;
+endif;
+exec sql execute s1;
+res = %char(sqlcode);
+exec sql open c1;
+res = %trim(res) + ' ' + %char(sqlcode);
+exec sql fetch c1 into :id;
+res = %trim(res) + ' ' + %char(sqlcode) + ' ' + %char(id);
+return;

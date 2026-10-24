@@ -83,12 +83,15 @@ pub enum Open {
         /// How the loop ends.
         end: LoopEnd,
     },
-    /// `SELECT`: the label of the next `WHEN` test, the end.
+    /// `SELECT` (or a `CASxx` group): the label of the next `WHEN`
+    /// test, the end.
     Select {
         /// Where the next test goes.
         next: Option<String>,
         /// The end.
         end: String,
+        /// A `CASxx` group, ended by `ENDCS`.
+        cas: bool,
     },
     /// `MONITOR`: the region name, the end, the handlers seen.
     Monitor {
@@ -161,6 +164,10 @@ pub struct Gen<'a> {
     pub externs: BTreeMap<String, String>,
     /// `TAG` labels.
     pub tags: HashMap<String, String>,
+    /// The procedure's labels: `TAG` and `ENDSR` factor 1 names.
+    pub labels: BTreeSet<String>,
+    /// The `TAG`s placed so far.
+    pub placed_tags: BTreeSet<String>,
     /// Where `RETURN` goes in the main procedure.
     pub main_exit: Option<String>,
     /// Where the calculations before the first subroutine end, when not
@@ -226,6 +233,9 @@ pub struct Gen<'a> {
     pub ops: strops::OpState,
     /// The precompiled SQL statements, by line.
     pub sql: BTreeMap<u32, rpgsqlpre::Stmt>,
+    /// `CLOSQLCSR(*ENDMOD)`: the module's statements end when the
+    /// program entry returns.
+    pub sql_endmod: bool,
 }
 
 impl Gen<'_> {
@@ -243,6 +253,17 @@ impl Gen<'_> {
 }
 
 impl Gen<'_> {
+    /// The labels a procedure's calculations define, before any
+    /// `GOTO` or `CABxx` is generated.
+    pub fn scan_labels(&mut self, calcs: &[Stmt]) {
+        self.placed_tags.clear();
+        self.labels = calcs
+            .iter()
+            .filter(|s| matches!(s.op.code.as_str(), "TAG" | "ENDSR"))
+            .filter_map(|s| s.op.f1.first().and_then(|e| e.name().map(str::to_ascii_uppercase)))
+            .collect();
+    }
+
     /// Report a diagnostic at the current statement.
     pub fn err(&mut self, id: &'static str, sev: u8, arg: impl Into<String>) {
         self.diags.push(Diag::new(id, sev, self.at).arg(arg));
@@ -305,9 +326,11 @@ pub fn module(
     opts: &Options,
     locals: &[usize],
     sql: &[rpgsqlpre::Stmt],
+    sql_endmod: bool,
 ) -> (String, Vec<Diag>) {
     let mut g = Gen {
         sql: sql.iter().map(|s| (s.line, s.clone())).collect(),
+        sql_endmod: sql_endmod && !sql.is_empty(),
         t,
         files,
         ctl,
@@ -319,6 +342,8 @@ pub fn module(
         subrs: HashMap::new(),
         externs: BTreeMap::new(),
         tags: HashMap::new(),
+        labels: BTreeSet::new(),
+        placed_tags: BTreeSet::new(),
         main_exit: None,
         calcs_end: None,
         ret: None,
@@ -350,6 +375,20 @@ pub fn module(
         used_formats: BTreeSet::new(),
         ops: strops::OpState::default(),
     };
+    // Every output field names something, whether its record is
+    // written or not; a field line is not an expression (no RNF7503).
+    for o in &m.outputs {
+        for f in &o.fields {
+            let n = f.field.as_str();
+            let special = n.is_empty() || n.starts_with('*') || n.contains(['.', '(']) || n == "UDATE" || n.starts_with("PAGE") && n.len() <= 5;
+            if !special && g.t.find(0, n).is_none() {
+                g.undefined_at.insert(f.at.line);
+                if g.undefined.insert(n.to_string()) {
+                    g.diags.push(Diag::new(ids::NOT_DEFINED, 30, f.at).arg(n.to_string()));
+                }
+            }
+        }
+    }
     let mut out = String::new();
     let actgrp = if ctl.dftactgrp {
         "*CALLER".to_string()
@@ -452,6 +491,9 @@ pub fn module(
         procs.push_str(&stmt::subprocedure(&mut g, p, locals.get(i).copied().unwrap_or(0)));
     }
     procs.push_str(&init_proc(&mut g));
+    if g.sql_endmod && !ctl.nomain {
+        procs.push_str(&g.sql_end_proc());
+    }
     for s in std::mem::take(&mut g.subr_bodies) {
         procs.push_str(&s);
     }
@@ -546,6 +588,7 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.scope = 0;
     g.subrs.clear();
     g.tags.clear();
+    g.scan_labels(&m.calcs);
     g.open.clear();
     // Where RETURN goes: the end, closing when LR is on.
     let finish = g.b.label();
@@ -719,6 +762,9 @@ fn linear_entry(g: &mut Gen<'_>, main: &str) -> String {
     }
     g.b.term(format!("br {done}"));
     g.b.place(&done);
+    if g.sql_endmod {
+        g.b.ins("callb _qrni_sqlend()");
+    }
     g.b.term("ret");
     let body = std::mem::take(&mut g.b);
     body.finish(&format!("proc _QRNP_PEP_{}({}) entry", mangle(&g.opts.name), sig.join(", ")), "ret")

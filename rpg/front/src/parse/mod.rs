@@ -375,9 +375,31 @@ pub fn parse(read: &Read) -> (Module, Vec<Diag>) {
     // The open fixed-form group (`DS`, `PR`, `PI`) takes the subfield
     // lines that follow it.
     let mut fixed_group = false;
+    // The main source's fixed forms come in order: H, F and D, I, C, O.
+    let mut rank = 0u8;
     while k < its.len() {
         match &its[k] {
             Item::Fixed(spec) => {
+                let r = match spec.form {
+                    'H' => Some(0),
+                    'F' | 'D' => Some(1),
+                    'I' => Some(2),
+                    'C' => Some(3),
+                    'O' => Some(4),
+                    _ => None,
+                };
+                if let Some(r) = r
+                    && b.proc.is_none()
+                    && !b.after_proc
+                {
+                    if r < rank {
+                        let at = b.lines[spec.lines[0]].pos(6);
+                        b.diags.push(Diag::new(ids::FORM_SEQUENCE, 30, at).arg(spec.form.to_string()));
+                        k += 1;
+                        continue;
+                    }
+                    rank = r;
+                }
                 fixed_group = fixed::spec(&mut b, spec, fixed_group);
                 k += 1;
             }

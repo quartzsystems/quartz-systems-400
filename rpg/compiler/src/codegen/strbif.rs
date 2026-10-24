@@ -82,6 +82,14 @@ impl Gen<'_> {
             return None;
         }
         let mut r = self.range(&args[1])?;
+        // Searching for other than equal needs a sequenced array.
+        if matches!(name, "%LOOKUPLT" | "%LOOKUPLE" | "%LOOKUPGT" | "%LOOKUPGE")
+            && self.t.syms[r.sym].seq == 0
+            && !matches!(self.t.syms[r.sym].ty, Ty::Ds(_))
+        {
+            self.err(ids::LOOKUP_UNSEQUENCED, 20, name.to_string());
+            return None;
+        }
         if let Some(s) = args.get(2) {
             let s = self.expr(s, Want::default())?;
             let s = self.int_reg(&s)?;
