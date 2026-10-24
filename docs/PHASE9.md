@@ -6,6 +6,194 @@ message files. The method is differential: each corpus member is
 compiled and run on an IBM i and on QS/400 and the normalized outcomes
 are compared. `docs/RPG.md` describes the compiler.
 
+## What landed
+
+- **The compiler** (`rpg/front`, `rpg/compiler`, `rpg/specs`,
+  `rpg/sqlpre`): fixed form, column-8 free form and `**FREE`; every
+  specification, directive and continuation form; declarations of
+  every type, data structure form and keyword; IBM's intermediate
+  precision rules; every operation code and built-in function of 7.5
+  (`gen/matrix.py` lists them, at the end of this document); the
+  cycle; database, display and printer files; subprocedures,
+  prototypes, service programs and binder language; embedded SQL
+  (`CRTSQLRPGI`); the compile listing in IBM's layout; debug views.
+- **The runtime** (`rpg/qrpgrt`, with `runtime/mi`): moves, edit codes,
+  dates, strings, arrays, XML, the PSDS and INFDS, exceptions
+  (`MONITOR`, `*PSSR`, `INFSR`, the default handler and its `RNQ`/`RNX`
+  messages), commitment control, record locks.
+- **Commands and tools**: `CRTRPGMOD`, `CRTBNDRPG`, `CRTSQLRPGI` in the
+  storage service (`lic/slic/src/cpp/rpg/`); the `RNF`/`RNQ`/`RNX`
+  message files with Quartz-written texts; SEU's RPG syntax check, PDM
+  options, `STRDBG` over the debug views, `DSPSFWRSC`.
+- **Harnesses**: the `rpg-oracle` tool, the corpus kit, the listing
+  comparison, the grammar fuzzer, HLINV, the open-source corpus, the
+  bench, the layout and IBM-text checks, and QEMU steps 56-58.
+
+## Corpus
+
+Every member is compiled and run on pub400 (V7R5M0) and in memory on
+QS/400; the normalized outcomes (diagnostics, created or not, the run,
+spooled files, job log, screens) must be equal
+(`cargo test -p conformance --test rpg_kit`). The listings are
+compared line for line by `tests/rpg_listing.rs`.
+
+| Batch | Folder | Members | Known to differ |
+|---|---|---|---|
+| 1 Specifications | `b01spec` | 150 | 0 |
+| 2 Declarations | `b02dcl` | 200 | 0 |
+| 3 Expressions (about 5,000 EVAL cases) | `b03expr` | 127 | 1 |
+| 4 Operations and built-ins | `b04ops` | 74 | 0 |
+| 5 Moves | `b05move` | 22 | 0 |
+| 6 The cycle | `b06cycle` | 13 | 0 |
+| 7 File I/O | `b07io` | 37 | 0 |
+| 8 Display files | `b08dsp` | 22 | 0 |
+| 9 Exceptions | `b09exc` | 44 | 0 |
+| 10 Procedures | `b10proc` | 12 | 0 |
+| 11 Embedded SQL | `b11sql` | 55 | 0 |
+| 12 Compile errors | `b12err` | 370 | 22 |
+| 13 Listings | `b13lst` | 40 | 0 |
+| 14 Fuzzer samples and bundles | `b14fuzz` | 140 | 0 |
+| 15 Coverage of every operation, function and keyword | `b15cov` | 134 | 1 |
+| 16 IR types (long varying, strided arrays, file parameters, nulls) | `b16ir` | 8 | 0 |
+
+Known differences (`known.txt`, each with its reason): `EXP118` (a
+float operation with a one-decimal operand: IBM converts that decimal
+to the nearest double where longer ones go toward zero; open
+question), `COV131` (pub400's CCSID 273 job cannot convert to CCSID
+835), and 22 compile-error members whose only difference is IBM's
+follow-on diagnostics after `RNF3556` or an extra `RNF5410`.
+
+Listings that differ only in layout are named in `known_lst.txt`;
+their outcomes match.
+
+## Harnesses
+
+- **Fuzzer** (`tools/rpg-oracle/src/fuzz.rs`): random valid free-form
+  programs. `cargo test -p conformance --test rpg_fuzz` compiles and
+  runs 2,000 (release) and the same 2,000 as 100 bundles of 20.
+  `rpg-oracle fuzz --count 2000` wrote those bundles
+  (`b14fuzz/FZB000`-`FZB099`) and ran them on pub400: all 2,000
+  programs match, after fixes for the line of `RNF7551`, a quotient
+  set kept across procedures, and unsigned `%ABS`.
+- **HLINV** (`tests/hlinv.rs`, source in the gitignored
+  `tools/conformance/hlinv/src/`): 4 of 6 programs compile clean and
+  match IBM's listings; `STKRPT` and `REORDRPT` use printer DDS with
+  data type `Y`, which `CRTPRTF` refuses on pub400 as well, so they are
+  left out (`hlinv/known.txt`). The source is unmodified.
+- **Open-source corpus** (`tests/oss_corpus.rs`, sources in the
+  gitignored `tools/conformance/oss/src/`: noxDB, ILEastic,
+  ibmi-company_system): every member compiles without a compiler
+  failure; 181 of 303 are created, the rest need objects, copy
+  members or IFS files the projects do not hold.
+- **Layouts** (`tests/rpg_layouts.rs`): the INFDS and PSDS tables of
+  `RPG.md` against the code.
+- **IBM text** (`tests/phase9_hygiene.rs`, `tests/phase8_hygiene.rs`):
+  no IBM message text in `rpg/`, `qrpgrt` or the message sources; no
+  credential or account name in a tracked file.
+- **QEMU** steps 56 (`CRTBNDRPG` and a call), 57 (`CRTSQLRPGI`) and 58
+  (`CRTRPGMOD`, `CRTSRVPGM`, `CRTPGM BNDSRVPGM`).
+
+## Bench
+
+`cargo test --release -p conformance --test rpg_bench -- --ignored
+--nocapture` on the development PC (Windows, release build); the same
+members (`rpg/perf/`) timed themselves on pub400, an IBM Power model
+22A (processor feature ERGR, 2 processors, V7R5M0, a shared public
+system).
+
+| | QS/400 | pub400 |
+|---|---|---|
+| Compile, front end | 300,000 lines/s | |
+| Compile, to IR | 51,000 lines/s | |
+| 1,000,000 decimal EVAL pairs (`PERF01`) | 570 ms | 876 ms |
+| 100,000 subprocedure calls (`PERF01`) | 46 ms | 2 ms |
+| 100,000 keyed `CHAIN`s over 10,000 records (`PERF02`) | 231 ms | 541 ms |
+| A cycle report over 10,000 records, a break per 100 (`PERF03`) | 16 ms | 6 ms |
+
+## Phase 9b
+
+- RPG III and RPG/400 (`CRTRPGPGM`, `RPG` and `RPG36` source types) and
+  `CVTRPGSRC`.
+- `DATA-INTO`/`DATA-GEN` parsers and generators, Open Access handlers
+  and the `DUMP(A)` layout (under "Blocked": they need QS/400's own
+  `QOAR` copy members and a dump writer).
+- Job date and time formats behind `*JOBRUN` (work management).
+- The listings named in `known_lst.txt` (layout only; their outcomes
+  match) and the remaining items of "Not done" below.
+
+## Acceptance
+
+| # | Criterion | Status |
+|---|---|---|
+| 1 | Corpus passes against committed oracle results, differences listed with reasons | Pass (0 differ; 24 known, listed above) |
+| 1 | `cargo run -p build -- test` passes | Pass (see the QEMU run below) |
+| 1 | Fuzzer run complete with no unresolved differences | Pass (2,000 on pub400) |
+| 2 | HLINV compiles unmodified; batch, interactive and data diffs clean | Needs Cody: two printer files use data type `Y`, which IBM refuses too; no recorded keystroke scripts or oracle data exist for the interactive and data diffs |
+| 3 | `RPG.md` and this document: front end, tables, rules, precision, cycle, exceptions, runtime, SQL, release mapping; feature matrix; bench; fuzzer; open-source results; deferred list | Pass |
+| 3 | Spec-versus-code test for the INFDS, PSDS and listing layouts | Pass (`rpg_layouts`; the listing layout through `rpg_listing`) |
+| 4 | `missing_docs = deny` on the RPG crates and `qrpgrt`; clippy and `cargo deny` clean; static binaries | Pass |
+| 5 | No IBM text in the message files, listings or help; tripwire covers `rpg/`, `qrpgrt/`, `msgs/` | Pass |
+| 5 | Oracle artifacts only under `conformance/`; `.env` and `hlinv/src/` untracked; no credential tracked | Pass in the tree; needs Cody: commit f994a61 holds the pub400 account's library name in two outcomes (removed since; history is not rewritten here) |
+| 5 | `QSTEST` and the pub400 library empty of this phase's objects | Needs Cody to confirm (`rpg-oracle clean` run at the end) |
+
+## Intentional differences
+
+- Format level identifiers are QS/400's (`DB_FORMAT.md`), not IBM's;
+  only the check at open uses them.
+- An unhandled file error ends the program through the function check
+  and `CEE9901`, the outcome IBM's default reply gives; the `RNQ1xxx`
+  inquiry itself is not sent (no job log is compared).
+- A record another job holds is waited for `WAITRCD` long by the job
+  process (`stg::remote::RemoteIo`); the kit runs one job, so no
+  member waits. Records read under `LCKLVL(*ALL)` are locked only by
+  paths opened for update, as the oracle shows within one job; a
+  second job's input path is not refused.
+- **`*JOBRUN`** is the job's date and time format on IBM i. QS/400
+  jobs have no date format yet, so `*JOBRUN` is `*MDY/` for dates and
+  `*HMS:` for times, and `TIME` into a 12- or 14-digit field appends
+  the date as `*MDY` (`mmddyy`, `mmddyyyy`). The corpus tests these
+  only by round trip, never by printing them.
+
+## Not done
+
+**Checks.**
+
+- The follow-on diagnostics of a group child read as an operation
+  (`RNF3556`) are whatever the calculation gives here; some members
+  differ in them (`known.txt`).
+
+**Embedded SQL.**
+
+- `CLOSQLCSR(*ENDMOD)` ends the module's statements when the program
+  entry returns normally; an escape past it leaves them until the
+  activation group ends. A `NOMAIN` module's exported procedures do
+  not end them yet (a service program's cursors live with its group).
+- Commitment control (`SQL050`-`SQL055`): an activation group's commit
+  definition is not committed when the group ends normally (IBM's
+  implicit commit); the corpus ends its units of work itself.
+- `DESCRIBE`: the date length is the `*MDY` job format's (8) whatever
+  `DATFMT`; `USING NAMES|LABELS|ANY|BOTH`, `SQLVAR2` entries (LOBs,
+  distinct types) and `DESCRIBE TABLE` and `DESCRIBE CURSOR` are not
+  done. The SQLDA's generated declarations are not counted in the
+  listing's line numbers, nor is `INCLUDE` of a stream file (`'path'`)
+  read.
+
+## Blocked
+
+- **The primary oracle has no RPG compiler.** Every compile-and-run
+  result is captured on pub400 (V7R5M0) instead; nothing in the corpus
+  is verified on V7R1M0.
+- **`DATA-INTO` and `DATA-GEN`** call no parser or generator: a parser
+  is written to IBM's `QRNDTAINTO` interface and a generator to
+  `QRNDTAGEN`, copy members in `QOAR/QRPGLESRC` that QS/400 does not
+  have. Every one is status 355, as when the program cannot be called
+  (`// BLOCKED(phase9):` in `codegen/xml.rs`).
+- **Open Access** (`HANDLER`) handlers are not called; opening such a
+  file ends the program as pub400 does when the handler is missing
+  (`codegen/dbio.rs`).
+- **`DUMP(A)`** writes no formatted dump (`_QRNX_DUMP`); pub400's holds
+  the job and the dates, so the corpus does not print one.
+
 ## Oracle systems
 
 Recorded on first connection, 2026-10-23.
@@ -166,19 +354,6 @@ Recorded from batch 8 (`b08dsp/`), pub400 V7R5M0.
   fields above and below its subfile's page overlaps it (`CPD7812`).
 - `NEXT` is an operation code: `next += 1;` in free form does not
   compile (`RNF5309`).
-
-## Intentional differences
-
-- Format level identifiers are QS/400's (`DB_FORMAT.md`), not IBM's;
-  only the check at open uses them.
-- An unhandled file error ends the program through the function check
-  and `CEE9901`, the outcome IBM's default reply gives; the `RNQ1xxx`
-  inquiry itself is not sent (no job log is compared).
-- A record another job holds is waited for `WAITRCD` long by the job
-  process (`stg::remote::RemoteIo`); the kit runs one job, so no
-  member waits. Records read under `LCKLVL(*ALL)` are locked only by
-  paths opened for update, as the oracle shows within one job; a
-  second job's input path is not refused.
 
 ## Oracle facts: file exceptions
 
@@ -429,6 +604,7 @@ Recorded from batch 11 (`b11sql/`), pub400 V7R5M0.
   `SQLDATA` (and for an odd type `SQLIND`) pointers, set with
   `%ADDR` in `SQLVAR` and copied into `SQL_VAR(i)` (`SQL048`,
   `SQL049`).
+
 ## Oracle facts: the compile listing
 
 Recorded from the 350 listings of batches 1-12, pub400 V7R5M0. The
@@ -660,66 +836,6 @@ Recorded from batch 16 (`b16ir/`), pub400 V7R5M0.
   fields, `WRITE` those of every field.
 - `VARGRAPH` data moves without conversion under the job's CCSID 273;
   `%SUBST` of graphic data is graphic.
-
-## Checks not yet made
-
-- The follow-on diagnostics of a group child read as an operation
-  (`RNF3556`) are whatever the calculation gives here; some members
-  differ in them (`known.txt`).
-
-## Embedded SQL not yet done
-
-- `CLOSQLCSR(*ENDMOD)` ends the module's statements when the program
-  entry returns normally; an escape past it leaves them until the
-  activation group ends. A `NOMAIN` module's exported procedures do
-  not end them yet (a service program's cursors live with its group).
-- Commitment control (`SQL050`-`SQL055`): an activation group's commit
-  definition is not committed when the group ends normally (IBM's
-  implicit commit); the corpus ends its units of work itself.
-- `DESCRIBE`: the date length is the `*MDY` job format's (8) whatever
-  `DATFMT`; `USING NAMES|LABELS|ANY|BOTH`, `SQLVAR2` entries (LOBs,
-  distinct types) and `DESCRIBE TABLE` and `DESCRIBE CURSOR` are not
-  done. The SQLDA's generated declarations are not counted in the
-  listing's line numbers, nor is `INCLUDE` of a stream file (`'path'`)
-  read.
-
-## Blocked
-
-- **The primary oracle has no RPG compiler.** Every compile-and-run
-  result is captured on pub400 (V7R5M0) instead; nothing in the corpus
-  is verified on V7R1M0.
-- **HLINV is on neither oracle.** No user library on Cody's box holds
-  a source file, an RPG object or anything named `HLINV`, and pub400's
-  account has none either. The HLINV harness skips with a message
-  until its source is placed in `tools/conformance/hlinv/src/`.
-
-- **`DATA-INTO` and `DATA-GEN`** call no parser or generator: a parser
-  is written to IBM's `QRNDTAINTO` interface and a generator to
-  `QRNDTAGEN`, copy members in `QOAR/QRPGLESRC` that QS/400 does not
-  have. Every one is status 355, as when the program cannot be called
-  (`// BLOCKED(phase9):` in `codegen/xml.rs`).
-- **Open Access** (`HANDLER`) handlers are not called; opening such a
-  file ends the program as pub400 does when the handler is missing
-  (`codegen/dbio.rs`).
-- **`DUMP(A)`** writes no formatted dump (`_QRNX_DUMP`); pub400's holds
-  the job and the dates, so the corpus does not print one.
-
-## Intentional differences
-
-- **`*JOBRUN`** is the job's date and time format on IBM i. QS/400
-  jobs have no date format yet, so `*JOBRUN` is `*MDY/` for dates and
-  `*HMS:` for times, and `TIME` into a 12- or 14-digit field appends
-  the date as `*MDY` (`mmddyy`, `mmddyyyy`). The corpus tests these
-  only by round trip, never by printing them.
-  until its source is placed in `tools/conformance/hlinv/src/`. With
-  the source there, the harness builds the application's DDS
-  (`QDDSSRC/`: physical and logical, display and printer files) in
-  memory for the compiler; `ITEMINQ` and `INVMENU` compile clean.
-  Still failing: the printer files use data type `Y`, which `CRTPRTF`
-  refuses on pub400 too (`CPD7419`), so `STKRPT` and `REORDRPT` miss
-  their printer formats; `%DATE()` and `%TIME()` (`ITEMMNT`,
-  `TRNPOST`) and the data area operations `IN`/`OUT` (`TRNPOST`) are
-  not compiled yet.
 
 ## Feature matrix
 
