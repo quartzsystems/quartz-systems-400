@@ -10,6 +10,7 @@
 use std::collections::{HashMap, VecDeque};
 
 pub mod display;
+pub mod infds;
 pub mod spool;
 pub mod store;
 mod wire;

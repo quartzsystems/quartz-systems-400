@@ -223,11 +223,19 @@ fn open_new() -> (Store, ObjectId, ObjectId) {
 fn a_compiled_member_becomes_a_module_and_a_program() {
     let src = source(&[
         "**FREE",
+        "ctl-opt dftactgrp(*no);",
         "dcl-s n int(10) inz(1);",
         "n += 1;",
+        "n = square(n);",
         "*inlr = *on;",
+        "dcl-proc square;",
+        "  dcl-pi *n int(10);",
+        "    n int(10) value;",
+        "  end-pi;",
+        "  return n * n;",
+        "end-proc;",
     ]);
-    let req = request("CRTBNDRPG", &parms("CRTBNDRPG PGM(QGPL/HELLO)")).unwrap();
+    let req = request("CRTBNDRPG", &parms("CRTBNDRPG PGM(QGPL/HELLO) SRCFILE(QGPL/QRPGLESRC)")).unwrap();
     let opts = req.options("HELLO", "QGPL", &src);
     let compiled = rpgc::compile(
         src.member.clone(),
@@ -257,7 +265,8 @@ fn a_compiled_member_becomes_a_module_and_a_program() {
         text: "Says hello".into(),
         replace: true,
         usrprf_owner: false,
-        bnddir: Vec::new(),
+        // The command's BNDDIR(*NONE) default reaches the bind.
+        bnddir: compiled.ctl.bnddir.clone(),
         source: Some(vec!["**FREE".into()]),
     };
     let mut txn = store.begin().unwrap();

@@ -337,6 +337,56 @@ storage, every occurrence in `$NAME__occ` and the current number in
 initialization and `*INZSR` are done. A `DIM(*AUTO)` or `DIM(*VAR)`
 array keeps its count in `$NAME__elem`.
 
+## Status data structures
+
+The positions the runtime keeps current, from 1, with the special word
+that names a subfield there. `tools/conformance/tests/rpg_layouts.rs`
+compares these tables with `mi::io::infds`, `qrpgrt::exc::PSDS` and the
+compiler's special words (`rpgc::extfiles::INFDS_WORDS`, `PSDS_WORDS`).
+Positions not listed are left as the program initialized them.
+
+### `INFDS`
+
+| Position | Length | Name | Word | Contents |
+|---|---|---|---|---|
+| 1 | 8 | file | `*FILE` | file name |
+| 9 | 1 | open | | `1` while open |
+| 10 | 1 | eof | | `1` at end of file |
+| 11 | 5 | status | `*STATUS` | status code, zoned |
+| 16 | 6 | opcode | `*OPCODE` | operation: five characters and `F` or `R` |
+| 22 | 8 | routine | `*ROUTINE` | routine running |
+| 30 | 8 | stmt | | statement number |
+| 38 | 8 | record | `*RECORD` | record format |
+| 46 | 7 | msgid | | message identifier of an error |
+| 67 | 4 | | `*SIZE` | display size, zoned (display files) |
+| 71 | 2 | | `*INP` | input code page (display files) |
+| 73 | 2 | | `*OUT` | output code page (display files) |
+| 75 | 2 | | `*MODE` | mode (display files) |
+| 129 | 10 | member | | member open |
+| 397 | 4 | rrn | | relative record number, binary |
+| 401 | key | key | | key of the last record read |
+
+### `PSDS`
+
+| Position | Length | Name | Word | Contents |
+|---|---|---|---|---|
+| 1 | 10 | proc | `*PROC` | procedure |
+| 11 | 5 | status | `*STATUS` | status code, zoned |
+| 16 | 5 | prev_status | | the status before it |
+| 21 | 8 | stmt | | statement of the exception |
+| 29 | 8 | routine | `*ROUTINE` | routine running |
+| 37 | 3 | parms | `*PARMS` | parameters passed, zoned |
+| 40 | 3 | exc_type | | exception message type (`MCH`, `CPF`) |
+| 43 | 4 | exc_num | | exception message number |
+| 81 | 10 | pgm_lib | | the program's library |
+| 91 | 80 | exc_data | | exception replacement data |
+| 244 | 10 | job | | job name |
+| 254 | 10 | user | | job user |
+| 264 | 6 | job_num | | job number |
+| 334 | 10 | pgm | | program holding the procedure |
+| 344 | 10 | module | | module holding the procedure |
+| 374 | 10 | cur_user | | current user profile |
+
 ## Embedded SQL (`CRTSQLRPGI`)
 
 **The precompiler runs inside the compile.** IBM's precompiler writes

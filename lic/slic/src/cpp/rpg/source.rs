@@ -65,7 +65,7 @@ pub fn read(
     let id = wm::obj::find(txn, qsys, names, &lib_or(lib), file, types::FILE)
         .map_err(|e| format!("CPF9801 {e}"))?;
     let spec = match mbr {
-        Some(m) => MemberSpec::Name(Name::parse(m).map_err(|e| format!("CPD0078 {e}"))?),
+        Some(m) => MemberSpec::Name(Name::parse(m).map_err(|e| format!("CPD0078 SRCMBR({m}): {e}"))?),
         None => MemberSpec::First,
     };
     let sm = db::source::read_member(txn, id, spec).map_err(|e| format!("CPF9801 {e}"))?;

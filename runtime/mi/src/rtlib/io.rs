@@ -91,11 +91,7 @@ fn put_text(buf: &mut [u8], off: usize, n: usize, s: &str) {
     put(buf, off, &b);
 }
 
-/// Keep the information data structure current: file name at 0,
-/// open and end-of-file flags at 8 and 9, the status at 10, the
-/// operation code at 15, the statement at 29, the record format at
-/// 37, the message identifier at 46, the member at 128, the relative
-/// record number at 396 and the key from 400.
+/// Keep the information data structure current (`crate::io::infds`).
 fn write_infds(
     addr: u64,
     len: usize,
@@ -105,45 +101,26 @@ fn write_infds(
     opcode: &str,
     stmt: u32,
 ) {
+    use crate::io::infds as at;
     if addr == 0 || len == 0 {
         return;
     }
     let buf = bytes(addr.cast_signed(), len);
-    put_text(buf, 0, 8, &info.file);
-    put_text(buf, 8, 1, if open { "1" } else { "0" });
-    put_text(buf, 9, 1, if r.eof { "1" } else { "0" });
-    put(buf, 10, &zoned5(r.status));
-    put_text(buf, 15, 6, opcode);
-    put_text(buf, 21, 8, "*INIT");
-    put_text(buf, 29, 8, &stmt.to_string());
-    put_text(
-        buf,
-        37,
-        8,
-        if r.format.is_empty() {
-            &info.format
-        } else {
-            &r.format
-        },
-    );
-    put_text(buf, 45, 1, "");
-    put_text(buf, 46, 7, r.msgid.as_deref().unwrap_or(""));
-    put_text(
-        buf,
-        128,
-        10,
-        if r.member.is_empty() {
-            &info.member
-        } else {
-            &r.member
-        },
-    );
-    put(
-        buf,
-        396,
-        &u32::try_from(r.rrn).unwrap_or(u32::MAX).to_be_bytes(),
-    );
-    put(buf, 400, &r.key);
+    let text = |buf: &mut [u8], (off, n): (usize, usize), s: &str| put_text(buf, off, n, s);
+    text(buf, at::FILE, &info.file);
+    text(buf, at::OPEN, if open { "1" } else { "0" });
+    text(buf, at::EOF, if r.eof { "1" } else { "0" });
+    put(buf, at::STATUS.0, &zoned5(r.status));
+    text(buf, at::OPCODE, opcode);
+    text(buf, at::ROUTINE, "*INIT");
+    text(buf, at::STMT, &stmt.to_string());
+    let format = if r.format.is_empty() { &info.format } else { &r.format };
+    text(buf, at::RECORD, format);
+    text(buf, at::MSGID, r.msgid.as_deref().unwrap_or(""));
+    let member = if r.member.is_empty() { &info.member } else { &r.member };
+    text(buf, at::MEMBER, member);
+    put(buf, at::RRN.0, &u32::try_from(r.rrn).unwrap_or(u32::MAX).to_be_bytes());
+    put(buf, at::KEY.0, &r.key);
 }
 
 /// The running entry's activation group.

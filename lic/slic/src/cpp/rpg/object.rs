@@ -47,11 +47,11 @@ pub struct Made {
 /// A binding directory named as `LIB/NAME` or `NAME`.
 fn bnddir_spec(s: &str) -> Result<ObjSpec, String> {
     let (lib, name) = s.rsplit_once('/').map_or(("*LIBL", s), |(l, n)| (l, n));
-    let name = Name::parse(name).map_err(|e| format!("CPD0078 {e}"))?;
+    let name = Name::parse(name).map_err(|e| format!("CPD0078 BNDDIR({s}): {e}"))?;
     let lib = match lib {
         "*LIBL" | "" => LibSpec::Libl,
         "*CURLIB" => LibSpec::Curlib,
-        l => LibSpec::Name(Name::parse(l).map_err(|e| format!("CPD0078 {e}"))?),
+        l => LibSpec::Name(Name::parse(l).map_err(|e| format!("CPD0078 BNDDIR({s}): {e}"))?),
     };
     Ok(ObjSpec { lib, name })
 }
@@ -86,7 +86,7 @@ pub fn make(
     };
     let mut object = ModuleObject::compile(module, create, now).map_err(|e| format!("CPF0006 {e}"))?;
     object.source.clone_from(&made.source);
-    let n = Name::parse(&made.name).map_err(|e| format!("CPD0078 {e}"))?;
+    let n = Name::parse(&made.name).map_err(|e| format!("CPD0078 PGM({}): {e}", made.name))?;
     let lib_name = ops::describe(txn, lib_id).map_err(|e| e.to_string())?.name;
     let ty = match made.shape {
         Shape::Module => types::MODULE,
@@ -129,15 +129,15 @@ pub fn make(
         lib: LibSpec::Name(lib_name),
         name: n,
     };
-    // BNDDIR(*NONE) names no directory.
+    // BNDDIR(*NONE) names no directory, however qualified.
     let dirs = made
         .bnddir
         .iter()
-        .filter(|b| !b.starts_with('*'))
+        .filter(|b| !b.rsplit('/').next().unwrap_or(b).starts_with('*'))
         .map(|b| bnddir_spec(b))
         .collect::<Result<Vec<_>, _>>()?;
     let bound = ile::store::crtpgm(txn, c, lib_id, &[spec], &dirs, options, &made.text)
-        .map_err(|e| e.to_string());
+        .map_err(|e| format!("CPF5D12 {e}"));
     // The module was the binder's input only.
     ops::delete(txn, JobHandle(0), m).map_err(|e| e.to_string())?;
     bound.map(|_| ())

@@ -89,8 +89,9 @@ fn qualified(v: &Value) -> String {
     match v {
         Value::Qual(parts) => {
             let name = parts.first().map(Value::source).unwrap_or_default();
+            // A library left out comes over the job's link as `''`.
             match parts.get(1).map(Value::source).as_deref() {
-                None | Some("" | "*LIBL") => name,
+                None | Some("" | "''" | "*LIBL") => name,
                 Some(lib) => format!("{lib}/{name}"),
             }
         }

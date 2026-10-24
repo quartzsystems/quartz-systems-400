@@ -371,22 +371,32 @@ pub fn special_subfield(c: &Def, psds: bool) -> Option<(Ty, u32)> {
         Some(cols) if cols.from.starts_with('*') => cols.from.to_ascii_uppercase(),
         _ => c.kws.iter().find(|k| k.name.starts_with('*') && k.args.is_empty())?.name.clone(),
     };
-    Some(match (word.as_str(), psds) {
-        ("*FILE", false) => (Ty::Char(8), 0),
-        ("*STATUS", _) => (Ty::Zoned(5, 0), 10),
-        ("*OPCODE", false) => (Ty::Char(6), 15),
-        ("*ROUTINE", false) => (Ty::Char(8), 21),
-        ("*RECORD", false) => (Ty::Char(8), 37),
-        ("*SIZE", false) => (Ty::Zoned(4, 0), 66),
-        ("*INP", false) => (Ty::Zoned(2, 0), 70),
-        ("*OUT", false) => (Ty::Zoned(2, 0), 72),
-        ("*MODE", false) => (Ty::Zoned(2, 0), 74),
-        ("*PROC", true) => (Ty::Char(10), 0),
-        ("*ROUTINE", true) => (Ty::Char(8), 28),
-        ("*PARMS", true) => (Ty::Zoned(3, 0), 36),
-        _ => return None,
-    })
+    let table = if psds { PSDS_WORDS } else { INFDS_WORDS };
+    let &(_, off, len, digits) = table.iter().find(|(w, ..)| *w == word)?;
+    let ty = if digits { Ty::Zoned(u8::try_from(len).unwrap_or(5), 0) } else { Ty::Char(len) };
+    Some((ty, off))
 }
+
+/// The INFDS special words: word, offset from 0, length, zoned.
+pub const INFDS_WORDS: &[(&str, u32, u32, bool)] = &[
+    ("*FILE", 0, 8, false),
+    ("*STATUS", 10, 5, true),
+    ("*OPCODE", 15, 6, false),
+    ("*ROUTINE", 21, 8, false),
+    ("*RECORD", 37, 8, false),
+    ("*SIZE", 66, 4, true),
+    ("*INP", 70, 2, true),
+    ("*OUT", 72, 2, true),
+    ("*MODE", 74, 2, true),
+];
+
+/// The PSDS special words, as [`INFDS_WORDS`].
+pub const PSDS_WORDS: &[(&str, u32, u32, bool)] = &[
+    ("*PROC", 0, 10, false),
+    ("*STATUS", 10, 5, true),
+    ("*ROUTINE", 28, 8, false),
+    ("*PARMS", 36, 3, true),
+];
 
 /// Result fields a fixed-form calculation defines with a length
 /// (columns 64-68) and decimals: packed with decimals, character
