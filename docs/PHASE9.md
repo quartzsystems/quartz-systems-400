@@ -389,6 +389,88 @@ Recorded from batch 12 (`b12err/`, ERR230-318), pub400 V7R5M0.
 - A prototype without `EXTPGM` under `DFTACTGRP(*YES)` is `RNF3788`; a
   main interface named other than the program is `RNF3776` (10).
 
+## Oracle facts: coverage of the operations, functions and keywords
+
+Recorded from batch 15 (`b15cov/`, `gen/b15.py`), pub400 V7R5M0.
+
+- A `CRTBNDRPG` without control options is `DFTACTGRP(*YES)`: every
+  procedure is `RNF1520` (20) and `CALLB` `RNF5378` (30). A `USROPN`
+  file no `OPEN` names is `RNF7062` (30). `(E)` on `ADD` or `Z-ADD` is
+  `RNF5049` (20).
+- `CASxx` takes no level in the listing's Do column; a `CASxx` naming
+  no subroutine is `RNF7027`, a group with no `END` or `ENDCS`
+  `RNF5094` (20), the group ending after it.
+- `ALLOC` or `REALLOC` of length 0 is status 425, `REALLOC` of a pointer
+  the heap did not give 426. `COMMIT` and `ROLBK` without commitment
+  control are 802, and `RNF7099` (00) notes them when no file is under
+  commitment control; with `STRCMTCTL ... CMTSCOPE(*JOB)` they work.
+  `IN` of a data area that does not exist is 401; `OUT` of one the
+  program has not locked is 412.
+- A batch job's `DSPLY` with a response takes the default reply and
+  leaves the field as it was. `DUMP` without `(A)` and without
+  `DEBUG(*YES)` does nothing (`RNF5152`, 00); `DUMP(A)` always dumps,
+  and its `QPPGMDMP` holds the job, the dates and the spooled file
+  names, so no member prints one.
+- `POST` of an open printer puts its name, status and `POST F` in the
+  INFDS; of a closed one it is 01211. A `SHTDN` without a high
+  indicator is `RNF5324` (30); `%SHTDN` is off.
+- `WHEN-IS` of an operand that does not compare with `SELECT`'s is
+  `RNF0203`, and so are `%PROC` with an operand, `%PASSED` of a name
+  that is no parameter and `%OMITTED` of one without `*OMIT`;
+  `%PARMNUM` of a name that is no parameter is `RNF0369` (20).
+  `%PARMS` counts a `RTNPARM` procedure's hidden parameter.
+- `%PROC()` is the module's name in the main procedure and the external
+  name in a subprocedure (`EXTPROC(*DCLCASE)` keeps the source's case).
+  `%HIVAL` and `%LOVAL` are in 7.5. `%THIS` outside a Java method is
+  `RNF0380`; `%XML`, `%HANDLER`, `%DATA`, `%PARSER`, `%GEN` and
+  `%TARGET` outside their operations are `RNF0637` (30), and what
+  follows is read as an expression in parentheses.
+- `%FLOAT` of bad character data is 105, `%SQRT` of a negative number
+  101, `%SQRT('16')` `RNF0574` (20); `%UNS` and `%UNSH` of a negative
+  number are 103, even one that rounds to zero. `%EDITFLT` gives
+  `+1.500000000000000E+000` (23 characters) for an 8-byte float and
+  `-1.2500000E-01` (14) for a 4-byte one. `%GRAPH` is `RNF0565` (30)
+  while the CCSID of graphic data is ignored (the default), with
+  `RNF0587` for a literal without shift characters and `RNF0556` for
+  a number. `%NULLIND` of a field that is not null-capable is
+  `RNF0342` (20). `%TLOOKUPLT` of a table without `ASCEND` is
+  `RNF0507` (20).
+- `SND-MSG *ESCAPE ... %TARGET(*SELF)` is caught with status 9999, an
+  escape a called procedure sent to its caller with 202.
+- `XML-INTO`: options in a literal are checked when compiling
+  (`RNF0224`, 30); at run time a document that is not well formed is
+  00351, a missing or extra element, a root of another name or a value
+  that does not convert 00353. `trim=all` drops the ends and makes each
+  inner run of blanks one. A `%HANDLER` procedure takes the
+  communication area, a `CONST` array and `UNS(10) VALUE` (`RNF5352`
+  otherwise). The PSDS (372-379) gets the number of elements set.
+- `XML-SAX`: events without characters have length -1; an error in the
+  handler ends the operation with that error's status (222 for a null
+  pointer); a handler that returns nonzero ends it with 00351. pub400's
+  CCSID 273 turns the CP037 `!` and `[` into other characters, so the
+  corpus has no comment or CDATA in a document.
+- `DATA-INTO` and `DATA-GEN` with a parser or generator that cannot be
+  called are 00355.
+- `SERIALIZE` needs `THREAD(*CONCURRENT)` (`RNF1519`, 20); a procedure's
+  `PGMINFO` in a program is `RNF1524` (00). `SLN` needs a display
+  record with `SLNO(*VAR)` (`RNF2029`). `PACKEVEN` on a subfield that is
+  not packed is `RNF3704` (20). A `LIKEFILE` parent needs `BLOCK`
+  (`RNF2590`).
+- `EXTIND(*INU1)` with U1 off: the file is not opened, its writes are
+  ignored, `%OPEN` is off. `FORMLEN` and `FORMOFL` set the page; the
+  overflow indicator comes on once, when a line reaches the overflow
+  line; pub400's footer takes a page's last line. `PRTCTL` gives space
+  and skip as three digits each, and the line count after the line.
+- A `SPECIAL` file whose program cannot be called opens with 01217.
+  An Open Access `HANDLER` that cannot be called ends the program
+  (`CEE9901`); `(E)` does not take it.
+- Not verified by a created program: `%THIS` (only in a method of a
+  Java class, `RNF0380` elsewhere) and `RAFDATA` (only for a record
+  address file; `RNF2407` on an externally described one). `INFSR`
+  belongs to the file exception work.
+- The rpg-oracle tool now drops the spooled files of a member's setup
+  and `dds:` compiles before its own: they name the library and user.
+
 ## Checks not yet made
 
 - An indicator `*INxx` that nothing sets is not reported (`RNF7030`
@@ -424,6 +506,22 @@ Recorded from batch 12 (`b12err/`, ERR230-318), pub400 V7R5M0.
   account has none either. The HLINV harness skips with a message
   until its source is placed in `tools/conformance/hlinv/src/`.
 
+- **`DATA-INTO` and `DATA-GEN`** call no parser or generator: a parser
+  is written to IBM's `QRNDTAINTO` interface and a generator to
+  `QRNDTAGEN`, copy members in `QOAR/QRPGLESRC` that QS/400 does not
+  have. Every one is status 355, as when the program cannot be called
+  (`// BLOCKED(phase9):` in `codegen/xml.rs`).
+- **Open Access** (`HANDLER`) handlers are not called; opening such a
+  file ends the program as pub400 does when the handler is missing
+  (`codegen/dbio.rs`).
+- **Files as parameters** (`LIKEFILE` on a parameter, `COV129`): the
+  IR has no file handle a call can pass.
+- **Null maps of database records** do not reach RPG: with
+  `ALWNULL(*USRCTL)` a file's null-capable fields are never null
+  (`COV118`); the database's null map stays below the I/O interface.
+- **`DUMP(A)`** writes no formatted dump (`_QRNX_DUMP`); pub400's holds
+  the job and the dates, so the corpus does not print one.
+
 ## Intentional differences
 
 - **`*JOBRUN`** is the job's date and time format on IBM i. QS/400
@@ -440,3 +538,412 @@ Recorded from batch 12 (`b12err/`, ERR230-318), pub400 V7R5M0.
   their printer formats; `%DATE()` and `%TIME()` (`ITEMMNT`,
   `TRNPOST`) and the data area operations `IN`/`OUT` (`TRNPOST`) are
   not compiled yet.
+
+## Feature matrix
+
+<!-- matrix: generated by tools/conformance/rpg/gen/matrix.py -->
+
+### Operation codes
+
+| Operation | Status | Members |
+|---|---|---|
+| `ACQ` | verified, V7R5M0 | COV126 |
+| `ADD` | verified, V7R5M0 | SPEC002, SPEC006, SPEC011, CYC002 and 10 more |
+| `ADDDUR` | verified, V7R5M0 | DTE023 |
+| `ALLOC` | verified, V7R5M0 | COV005, COV006 |
+| `ANDxx` | verified, V7R5M0 | SPEC006, COV029 |
+| `BEGSR` | verified, V7R5M0 | ARR009, DSP013, EXC003, EXC004 and 4 more |
+| `BITOFF` | verified, V7R5M0 | BIT001 |
+| `BITON` | verified, V7R5M0 | BIT001 |
+| `CABxx` | verified, V7R5M0 | SPEC006 |
+| `CALL` | verified, V7R5M0 | PRC009, LST036 |
+| `CALLB` | verified, V7R5M0 | COV130 |
+| `CALLP` | verified, V7R5M0 | EXC010, COV053, COV055, COV067 and 3 more |
+| `CASxx` | verified, V7R5M0 | COV009 |
+| `CAT` | verified, V7R5M0 | STR001 |
+| `CHAIN` | verified, V7R5M0 | IO002, IO003, IO007, IO008 and 20 more |
+| `CHECK` | verified, V7R5M0 | STR003 |
+| `CHECKR` | verified, V7R5M0 | STR003 |
+| `CLEAR` | verified, V7R5M0 | ARR009, DTE001, OPS004, COV023 |
+| `CLOSE` | verified, V7R5M0 | IO012, IO013, IO030, DSP016 and 2 more |
+| `COMMIT` | verified, V7R5M0 | COV012, COV013 |
+| `COMP` | verified, V7R5M0 | BIT003, LST024 |
+| `DATA-GEN` | verified, V7R5M0 | COV014 |
+| `DATA-INTO` | verified, V7R5M0 | COV015, COV016 |
+| `DEALLOC` | verified, V7R5M0 | PRC012, COV005, COV074 |
+| `DEFINE` | verified, V7R5M0 | COV017 |
+| `DELETE` | verified, V7R5M0 | IO008, IO024 |
+| `DIV` | verified, V7R5M0 | SPEC002, BIT004 |
+| `DO` | verified, V7R5M0 | LST016, COV009, COV029, COV115 |
+| `DOU` | verified, V7R5M0 | OPS001, DSP001, DSP002, DSP003 and 17 more |
+| `DOUxx` | verified, V7R5M0 | SPEC006, DSP017 |
+| `DOW` | verified, V7R5M0 | OPS001, IO001, IO003, IO004 and 24 more |
+| `DOWxx` | verified, V7R5M0 | SPEC006, SPEC011, IO015, IO016 and 3 more |
+| `DSPLY` | verified, V7R5M0 | COV019, COV121 |
+| `DUMP` | verified, V7R5M0 | COV020 |
+| `ELSE` | verified, V7R5M0 | SPEC006, BIT007, IO005, DSP018 and 133 more |
+| `ELSEIF` | verified, V7R5M0 | DSP002, FUZ0000, FUZ0001, FUZ0002 and 120 more |
+| `ENDCS` | verified, V7R5M0 | COV009 |
+| `ENDDO` | verified, V7R5M0 | SPEC006, SPEC011, OPS001, IO001 and 53 more |
+| `ENDFOR` | verified, V7R5M0 | DCL016, DCL022, ARR007, ARR010 and 161 more |
+| `ENDIF` | verified, V7R5M0 | SPEC006, SPEC008, ARR006, BIT007 and 188 more |
+| `ENDMON` | verified, V7R5M0 | EXP001, EXP002, EXP003, EXP004 and 274 more |
+| `ENDSL` | verified, V7R5M0 | DTE014, OPS002, DSP011, ERR184 and 132 more |
+| `ENDSR` | verified, V7R5M0 | ARR009, DSP013, EXC003, EXC004 and 4 more |
+| `EVAL` | verified, V7R5M0 | SPEC001, SPEC002, SPEC003, SPEC004 and 330 more |
+| `EVALR` | verified, V7R5M0 | OPS006, STR006 |
+| `EVAL-CORR` | verified, V7R5M0 | BIT006 |
+| `EXCEPT` | verified, V7R5M0 | SPEC017, IO016, LST031, COV097 |
+| `EXFMT` | verified, V7R5M0 | DSP001, DSP002, DSP003, DSP004 and 18 more |
+| `EXSR` | verified, V7R5M0 | DSP013, EXC004, LST024, COV025 |
+| `EXTRCT` | verified, V7R5M0 | DTE023 |
+| `FEOD` | verified, V7R5M0 | IO020 |
+| `FOR` | verified, V7R5M0 | DCL016, DCL022, ARR007, ARR010 and 160 more |
+| `FOR-EACH` | verified, V7R5M0 | STR010 |
+| `FORCE` | verified, V7R5M0 | COV021 |
+| `GOTO` | verified, V7R5M0 | SPEC006, LST024 |
+| `IF` | verified, V7R5M0 | SPEC008, ARR006, BIT007, DTE002 and 183 more |
+| `IFxx` | verified, V7R5M0 | SPEC006, CYC002, CYC006, LST016 and 1 more |
+| `IN` | verified, V7R5M0 | COV022, COV023, COV024, COV120 |
+| `ITER` | verified, V7R5M0 | OPS001 |
+| `KFLD` | verified, V7R5M0 | IO017, LST036 |
+| `KLIST` | verified, V7R5M0 | IO017, LST036 |
+| `LEAVE` | verified, V7R5M0 | OPS001, DSP005, DSP011, DSP012 and 8 more |
+| `LEAVESR` | verified, V7R5M0 | COV025 |
+| `LOOKUP` | verified, V7R5M0 | ARR001, ARR002, ARR003 |
+| `MHHZO` | verified, V7R5M0 | MOV020 |
+| `MHLZO` | verified, V7R5M0 | MOV020 |
+| `MLHZO` | verified, V7R5M0 | MOV020 |
+| `MLLZO` | verified, V7R5M0 | MOV020 |
+| `MONITOR` | verified, V7R5M0 | EXP001, EXP002, EXP003, EXP004 and 274 more |
+| `MOVE` | verified, V7R5M0 | MOV001, MOV003, MOV005, MOV006 and 11 more |
+| `MOVEA` | verified, V7R5M0 | MOV016, MOV017, MOV018, ERR305 |
+| `MOVEL` | verified, V7R5M0 | MOV002, MOV004, MOV005, MOV007 and 10 more |
+| `MULT` | verified, V7R5M0 | SPEC002, CYC012 |
+| `MVR` | verified, V7R5M0 | BIT004 |
+| `NEXT` | verified, V7R5M0 | COV126 |
+| `OCCUR` | verified, V7R5M0 | ARR008, ARR009 |
+| `ON-ERROR` | verified, V7R5M0 | EXP001, EXP002, EXP003, EXP004 and 272 more |
+| `ON-EXCP` | verified, V7R5M0 | EXC011, COV055 |
+| `ON-EXIT` | verified, V7R5M0 | EXC010 |
+| `OPEN` | verified, V7R5M0 | IO012, IO013, IO030, DSP016 and 7 more |
+| `ORxx` | verified, V7R5M0 | SPEC006, COV029 |
+| `OTHER` | verified, V7R5M0 | DTE014, OPS002, FUZ0001, FUZ0002 and 120 more |
+| `OUT` | verified, V7R5M0 | COV022, COV023, COV024 |
+| `PARM` | verified, V7R5M0 | PRC009, LST036, COV130 |
+| `PLIST` | verified, V7R5M0 | PRC009, LST036 |
+| `POST` | verified, V7R5M0 | COV004 |
+| `READ` | verified, V7R5M0 | IO001, IO003, IO004, IO006 and 28 more |
+| `READC` | verified, V7R5M0 | DSP011, DSP012 |
+| `READE` | verified, V7R5M0 | IO003, IO009, IO017, IO023 and 2 more |
+| `READP` | verified, V7R5M0 | IO004, IO018 |
+| `READPE` | verified, V7R5M0 | IO028 |
+| `REALLOC` | verified, V7R5M0 | COV005, COV006 |
+| `REL` | verified, V7R5M0 | COV126 |
+| `RESET` | verified, V7R5M0 | ARR009 |
+| `RETURN` | verified, V7R5M0 | SPEC016, DCL022, DTE019, IO030 and 135 more |
+| `ROLBK` | verified, V7R5M0 | COV012, COV013 |
+| `SCAN` | verified, V7R5M0 | STR002 |
+| `SELECT` | verified, V7R5M0 | DTE014, OPS002, DSP011, ERR184 and 132 more |
+| `SETGT` | verified, V7R5M0 | IO004, IO005, IO014, IO018 and 1 more |
+| `SETLL` | verified, V7R5M0 | IO003, IO004, IO005, IO006 and 11 more |
+| `SETOFF` | verified, V7R5M0 | SPEC005, MOV018 |
+| `SETON` | verified, V7R5M0 | SPEC005, DTE023, DTE024, DTE025 and 22 more |
+| `SHTDN` | verified, V7R5M0 | COV027 |
+| `SORTA` | verified, V7R5M0 | ARR005, ARR010 |
+| `SQRT` | verified, V7R5M0 | BIT004 |
+| `SUB` | verified, V7R5M0 | SPEC002 |
+| `SUBDUR` | verified, V7R5M0 | DTE023 |
+| `SUBST` | verified, V7R5M0 | STR005 |
+| `TAG` | verified, V7R5M0 | SPEC006, SQL017, LST024 |
+| `TEST` | verified, V7R5M0 | DTE024 |
+| `TESTB` | verified, V7R5M0 | BIT001 |
+| `TESTN` | verified, V7R5M0 | BIT002 |
+| `TESTZ` | verified, V7R5M0 | BIT002 |
+| `TIME` | verified, V7R5M0 | DTE025 |
+| `UNLOCK` | verified, V7R5M0 | IO019, COV120 |
+| `UPDATE` | verified, V7R5M0 | IO007, IO013, IO018, IO019 and 7 more |
+| `WHEN` | verified, V7R5M0 | DTE014, OPS002, DSP011, FUZ0001 and 129 more |
+| `WHENxx` | verified, V7R5M0 | COV029 |
+| `WHEN-IN` | verified, V7R5M0 | COV031 |
+| `WHEN-IS` | verified, V7R5M0 | COV031 |
+| `WRITE` | verified, V7R5M0 | SPEC001, SPEC002, SPEC003, SPEC004 and 598 more |
+| `XFOOT` | verified, V7R5M0 | ARR004 |
+| `XLATE` | verified, V7R5M0 | STR004 |
+| `XML-INTO` | verified, V7R5M0 | COV033, COV034, COV035, COV037 and 2 more |
+| `XML-SAX` | verified, V7R5M0 | COV038, COV039, COV040, COV041 |
+| `Z-ADD` | verified, V7R5M0 | SPEC002, SPEC006, SPEC011, CYC002 and 6 more |
+| `Z-SUB` | verified, V7R5M0 | SPEC002 |
+
+### Built-in functions
+
+| Function | Status | Members |
+|---|---|---|
+| `%ABS` | verified, V7R5M0 | BIF005, DTE022, DTE025, FUZ0000 and 131 more |
+| `%ADDR` | verified, V7R5M0 | DCL020, STR008, PRC002, SQL048 and 2 more |
+| `%ALLOC` | verified, V7R5M0 | PRC012, COV074 |
+| `%BITAND` | verified, V7R5M0 | BIT005 |
+| `%BITNOT` | verified, V7R5M0 | BIT005 |
+| `%BITOR` | verified, V7R5M0 | BIT005 |
+| `%BITXOR` | verified, V7R5M0 | BIT005 |
+| `%CHAR` | verified, V7R5M0 | SPEC001, SPEC002, SPEC003, SPEC004 and 533 more |
+| `%CHARCOUNT` | verified, V7R5M0 | STR008 |
+| `%CHECK` | verified, V7R5M0 | BIF003 |
+| `%CHECKR` | verified, V7R5M0 | BIF003 |
+| `%CONCAT` | verified, V7R5M0 | STR009 |
+| `%CONCATARR` | verified, V7R5M0 | STR009 |
+| `%DATA` | verified, V7R5M0 | COV014, COV015, COV016 |
+| `%DATE` | verified, V7R5M0 | DTE007, DTE015, DTE017, DTE022 and 4 more |
+| `%DAYS` | verified, V7R5M0 | DTE009, DTE012, DTE013, DTE017 and 3 more |
+| `%DEC` | verified, V7R5M0 | BIF005, BIT004, DTE006, DTE028 and 131 more |
+| `%DECH` | verified, V7R5M0 | BIF005, COV042 |
+| `%DECPOS` | verified, V7R5M0 | DCL001, DCL002, DCL003, DCL004 and 10 more |
+| `%DIFF` | verified, V7R5M0 | DTE010, DTE011, DTE012, DTE017 and 4 more |
+| `%DIV` | verified, V7R5M0 | BIF008, DTE025 |
+| `%EDITC` | verified, V7R5M0 | BIF006, MOV006, MOV007, MOV008 and 21 more |
+| `%EDITFLT` | verified, V7R5M0 | COV045 |
+| `%EDITW` | verified, V7R5M0 | BIF007 |
+| `%ELEM` | verified, V7R5M0 | SPEC004, DCL016, DCL018, DCL022 and 2 more |
+| `%EOF` | verified, V7R5M0 | IO001, IO002, IO003, IO004 and 18 more |
+| `%EQUAL` | verified, V7R5M0 | IO005 |
+| `%ERROR` | verified, V7R5M0 | IO013, IO020, DSP016, COV004 and 7 more |
+| `%FIELDS` | verified, V7R5M0 | IO007 |
+| `%FLOAT` | verified, V7R5M0 | COV042, COV043 |
+| `%FOUND` | verified, V7R5M0 | IO002, IO003, IO005, IO008 and 8 more |
+| `%GEN` | verified, V7R5M0 | COV014 |
+| `%GRAPH` | verified, V7R5M0 | COV131 |
+| `%HANDLER` | verified, V7R5M0 | COV016, COV037, COV038, COV039 and 2 more |
+| `%HIVAL` | verified, V7R5M0 | COV065, COV066 |
+| `%HOURS` | verified, V7R5M0 | DTE011, DTE012, DTE017, DTE018 |
+| `%INT` | verified, V7R5M0 | BIF005, PRC001, FUZ0000, FUZ0001 and 135 more |
+| `%INTH` | verified, V7R5M0 | BIF005 |
+| `%KDS` | verified, V7R5M0 | IO003, IO011, LST014, LST015 |
+| `%LEFT` | verified, V7R5M0 | STR008 |
+| `%LEN` | verified, V7R5M0 | DCL001, DCL002, DCL003, DCL004 and 154 more |
+| `%LIST` | verified, V7R5M0 | BIT007, COV031 |
+| `%LOOKUP` | verified, V7R5M0 | DCL016, ARR006, ARR010 |
+| `%LOOKUPLT` | verified, V7R5M0 | ARR006 |
+| `%LOOKUPLE` | verified, V7R5M0 | ARR006 |
+| `%LOOKUPGT` | verified, V7R5M0 | ARR006 |
+| `%LOOKUPGE` | verified, V7R5M0 | ARR006, ERR315 |
+| `%LOVAL` | verified, V7R5M0 | COV065 |
+| `%LOWER` | verified, V7R5M0 | BIF004 |
+| `%MAX` | verified, V7R5M0 | BIF009, DTE014 |
+| `%MAXARR` | verified, V7R5M0 | ARR007 |
+| `%MIN` | verified, V7R5M0 | BIF009, DTE014 |
+| `%MINARR` | verified, V7R5M0 | ARR007 |
+| `%MINUTES` | verified, V7R5M0 | DTE011, DTE012, DTE017, DTE019 |
+| `%MONTHS` | verified, V7R5M0 | DTE009, DTE012, DTE018 |
+| `%MSECONDS` | verified, V7R5M0 | DTE012, DTE017, DTE021 |
+| `%NULLIND` | verified, V7R5M0 | COV051, COV118 |
+| `%OCCUR` | verified, V7R5M0 | ARR008 |
+| `%OMITTED` | verified, V7R5M0 | COV067 |
+| `%OPEN` | verified, V7R5M0 | IO012, IO030, DSP016, COV095 |
+| `%PADDR` | verified, V7R5M0 | PRC007, PRC008, COV130 |
+| `%PARMNUM` | verified, V7R5M0 | COV070 |
+| `%PARMS` | verified, V7R5M0 | PRC002, COV067, COV070, COV090 and 1 more |
+| `%PARSER` | verified, V7R5M0 | COV015, COV016 |
+| `%PASSED` | verified, V7R5M0 | COV067 |
+| `%PROC` | verified, V7R5M0 | COV053 |
+| `%RANGE` | verified, V7R5M0 | BIT007, COV031 |
+| `%REALLOC` | verified, V7R5M0 | PRC012 |
+| `%REM` | verified, V7R5M0 | BIF008, DSP003, DSP008, DSP022 and 128 more |
+| `%REPLACE` | verified, V7R5M0 | BIF004 |
+| `%RIGHT` | verified, V7R5M0 | STR008 |
+| `%SCAN` | verified, V7R5M0 | BIF002, UCS001, FUZ0000, FUZ0001 and 115 more |
+| `%SCANR` | verified, V7R5M0 | STR007 |
+| `%SCANRPL` | verified, V7R5M0 | STR007 |
+| `%SECONDS` | verified, V7R5M0 | DTE011, DTE012, DTE017 |
+| `%SHTDN` | verified, V7R5M0 | COV027 |
+| `%SIZE` | verified, V7R5M0 | DCL001, DCL002, DCL003, DCL004 and 26 more |
+| `%SPLIT` | verified, V7R5M0 | STR010 |
+| `%SQRT` | verified, V7R5M0 | COV042, COV043 |
+| `%STATUS` | verified, V7R5M0 | IO013, IO018, IO019, DSP016 and 169 more |
+| `%STR` | verified, V7R5M0 | STR008 |
+| `%SUBARR` | verified, V7R5M0 | ARR005, ARR007 |
+| `%SUBDT` | verified, V7R5M0 | DTE011, DTE012, DTE013, DTE017 and 1 more |
+| `%SUBST` | verified, V7R5M0 | BIF002, STR008, UCS001, IO011 and 126 more |
+| `%TARGET` | verified, V7R5M0 | COV055 |
+| `%THIS` | compiled, not in the corpus | |
+| `%TIME` | verified, V7R5M0 | DTE008, DTE015, DTE022, DTE025 and 2 more |
+| `%TIMESTAMP` | verified, V7R5M0 | DTE008, DTE017, DTE022, DTE025 and 1 more |
+| `%TLOOKUP` | verified, V7R5M0 | ARR006 |
+| `%TLOOKUPLT` | verified, V7R5M0 | COV058 |
+| `%TLOOKUPLE` | verified, V7R5M0 | ARR006 |
+| `%TLOOKUPGT` | verified, V7R5M0 | ARR006 |
+| `%TLOOKUPGE` | verified, V7R5M0 | COV058 |
+| `%TRIM` | verified, V7R5M0 | SPEC008, BIF001, OPS006, STR006 and 132 more |
+| `%TRIML` | verified, V7R5M0 | BIF001, FUZ0001, FUZ0002, FUZ0008 and 111 more |
+| `%TRIMR` | verified, V7R5M0 | BIF001, STR008, FUZ0001, FUZ0002 and 116 more |
+| `%UCS2` | verified, V7R5M0 | UCS001 |
+| `%UNS` | verified, V7R5M0 | COV047, COV048 |
+| `%UNSH` | verified, V7R5M0 | COV047, COV048 |
+| `%UPPER` | verified, V7R5M0 | BIF004 |
+| `%XFOOT` | verified, V7R5M0 | ARR004, ARR007, ARR010, BIF008 |
+| `%XLATE` | verified, V7R5M0 | BIF003, ERR167 |
+| `%XML` | verified, V7R5M0 | COV033, COV034, COV035, COV037 and 6 more |
+| `%YEARS` | verified, V7R5M0 | DTE009, DTE012, DTE017, DTE018 and 1 more |
+
+### Control keywords
+
+| Keyword | Status | Members |
+|---|---|---|
+| `ACTGRP` | verified, V7R5M0 | SQL034, SQL035, SQL036, SQL037 and 3 more |
+| `ALLOC` | verified, V7R5M0 | COV005, COV006, COV074 |
+| `ALTSEQ` | verified, V7R5M0 | COV091, COV092 |
+| `ALWNULL` | verified, V7R5M0 | COV051, COV118, COV119 |
+| `AUT` | verified, V7R5M0 | COV073 |
+| `BNDDIR` | verified, V7R5M0 | COV094 |
+| `CCSID` | verified, V7R5M0 | COV089, COV131 |
+| `CCSIDCVT` | verified, V7R5M0 | COV088 |
+| `COPYNEST` | verified, V7R5M0 | COV083 |
+| `COPYRIGHT` | verified, V7R5M0 | COV072 |
+| `CURSYM` | verified, V7R5M0 | COV076 |
+| `CVTOPT` | verified, V7R5M0 | COV088 |
+| `DATEDIT` | verified, V7R5M0 | COV075 |
+| `DATFMT` | verified, V7R5M0 | DCL012, DCL013, DCL014, DTE023 and 5 more |
+| `DCLOPT` | verified, V7R5M0 | COV074 |
+| `DEBUG` | verified, V7R5M0 | COV020 |
+| `DECEDIT` | verified, V7R5M0 | COV076 |
+| `DECPREC` | verified, V7R5M0 | COV077 |
+| `DFTACTGRP` | verified, V7R5M0 | DCL001, DCL002, DCL003, DCL004 and 532 more |
+| `DFTNAME` | verified, V7R5M0 | COV072 |
+| `ENBPFRCOL` | verified, V7R5M0 | COV072 |
+| `EXPROPTS` | verified, V7R5M0 | EXP003, EXP010, EXP017, EXP024 and 13 more |
+| `EXTBININT` | verified, V7R5M0 | COV078 |
+| `FIXNBR` | verified, V7R5M0 | COV079 |
+| `FLTDIV` | verified, V7R5M0 | COV080 |
+| `FORMSALIGN` | verified, V7R5M0 | COV091 |
+| `FTRANS` | verified, V7R5M0 | COV091 |
+| `GENLVL` | verified, V7R5M0 | COV081 |
+| `INDENT` | verified, V7R5M0 | COV083 |
+| `INTPREC` | verified, V7R5M0 | COV081, COV082 |
+| `LANGID` | verified, V7R5M0 | COV073, COV093 |
+| `MAIN` | verified, V7R5M0 | EXC002, COV053 |
+| `NOMAIN` | verified, V7R5M0 | SQL028, LST026 |
+| `OPENOPT` | verified, V7R5M0 | COV132 |
+| `OPTIMIZE` | verified, V7R5M0 | COV072 |
+| `OPTION` | verified, V7R5M0 | SQL018 |
+| `PGMINFO` | verified, V7R5M0 | COV090 |
+| `PRFDTA` | verified, V7R5M0 | COV072 |
+| `REQPREXP` | verified, V7R5M0 | COV132 |
+| `SRTSEQ` | verified, V7R5M0 | COV083, COV093 |
+| `STGMDL` | verified, V7R5M0 | COV073 |
+| `TEXT` | verified, V7R5M0 | DTE027, COV034, COV073 |
+| `THREAD` | verified, V7R5M0 | COV086, COV111 |
+| `TIMFMT` | verified, V7R5M0 | DCL010, DCL011, DCL012, DCL013 and 3 more |
+| `TRUNCNBR` | verified, V7R5M0 | COV127, COV128 |
+| `USRPRF` | verified, V7R5M0 | COV073 |
+| `VALIDATE` | verified, V7R5M0 | COV088 |
+
+### File keywords
+
+| Keyword | Status | Members |
+|---|---|---|
+| `ALIAS` | verified, V7R5M0 | COV104, COV105 |
+| `BLOCK` | verified, V7R5M0 | IO016, COV108, COV129 |
+| `COMMIT` | verified, V7R5M0 | SQL018, SQL019, COV012, COV013 |
+| `DATFMT` | verified, V7R5M0 | DCL012, DCL013, DCL014, DTE023 and 5 more |
+| `DEVID` | verified, V7R5M0 | COV126 |
+| `EXTDESC` | verified, V7R5M0 | IO016 |
+| `EXTFILE` | verified, V7R5M0 | IO016, COV108 |
+| `EXTIND` | verified, V7R5M0 | COV095 |
+| `EXTMBR` | verified, V7R5M0 | COV106 |
+| `FORMLEN` | verified, V7R5M0 | COV096 |
+| `FORMOFL` | verified, V7R5M0 | COV096 |
+| `HANDLER` | verified, V7R5M0 | COV102 |
+| `IGNORE` | verified, V7R5M0 | COV133 |
+| `INCLUDE` | verified, V7R5M0 | SQL042, SQL043, SQL045, SQL046 and 5 more |
+| `INDDS` | verified, V7R5M0 | DSP008 |
+| `INFDS` | verified, V7R5M0 | IO014, IO022, IO024, DSP007 and 2 more |
+| `INFSR` | compiled, not in the corpus | |
+| `KEYED` | verified, V7R5M0 | IO001, IO002, IO003, IO004 and 25 more |
+| `KEYLOC` | verified, V7R5M0 | COV098 |
+| `LIKEFILE` | verified, V7R5M0 | COV108, COV129 |
+| `MAXDEV` | verified, V7R5M0 | COV126, COV134 |
+| `OFLIND` | verified, V7R5M0 | SPEC017, CYC001, CYC002, CYC003 and 12 more |
+| `PASS` | verified, V7R5M0 | DSP003 |
+| `PGMNAME` | verified, V7R5M0 | COV099, COV100 |
+| `PLIST` | verified, V7R5M0 | PRC009, LST036 |
+| `PREFIX` | verified, V7R5M0 | IO009, IO011, IO016 |
+| `PRTCTL` | verified, V7R5M0 | COV097 |
+| `QUALIFIED` | verified, V7R5M0 | DCL017, DCL018, DCL019, DCL020 and 31 more |
+| `RAFDATA` | compiled, not in the corpus | |
+| `RECNO` | verified, V7R5M0 | COV106 |
+| `RENAME` | verified, V7R5M0 | IO009, IO016 |
+| `SAVEDS` | verified, V7R5M0 | COV134 |
+| `SAVEIND` | verified, V7R5M0 | COV134 |
+| `SFILE` | verified, V7R5M0 | DSP010, DSP011, DSP012, DSP013 and 3 more |
+| `SLN` | compiled, not in the corpus | |
+| `STATIC` | verified, V7R5M0 | DCL022, PRC008 |
+| `TEMPLATE` | verified, V7R5M0 | DCL018, COV016, COV037 |
+| `TIMFMT` | verified, V7R5M0 | DCL010, DCL011, DCL012, DCL013 and 3 more |
+| `USAGE` | verified, V7R5M0 | IO006, IO007, IO008, IO013 and 15 more |
+| `USROPN` | verified, V7R5M0 | IO012, IO013, IO030, DSP016 and 7 more |
+
+### Definition keywords
+
+| Keyword | Status | Members |
+|---|---|---|
+| `ALIAS` | verified, V7R5M0 | COV104, COV105 |
+| `ALIGN` | verified, V7R5M0 | COV109 |
+| `ALT` | verified, V7R5M0 | ARR003, ARR006, LST019, COV058 |
+| `ALTSEQ` | verified, V7R5M0 | COV091, COV092 |
+| `ASCEND` | verified, V7R5M0 | DCL016, ARR002, ARR006, ERR315 and 1 more |
+| `BASED` | verified, V7R5M0 | DCL020, PRC012, ERR112, COV005 and 4 more |
+| `CCSID` | verified, V7R5M0 | COV089, COV131 |
+| `CLASS` | verified, V7R5M0 | COV111 |
+| `CONST` | verified, V7R5M0 | DCL015, DTE019, PRC001, PRC002 and 9 more |
+| `CTDATA` | verified, V7R5M0 | SPEC011, ARR003, ARR006, LST019 and 3 more |
+| `DATFMT` | verified, V7R5M0 | DCL012, DCL013, DCL014, DTE023 and 5 more |
+| `DESCEND` | verified, V7R5M0 | ARR002, ARR005 |
+| `DIM` | verified, V7R5M0 | SPEC004, SPEC011, DCL016, DCL018 and 35 more |
+| `DTAARA` | verified, V7R5M0 | COV022, COV023, COV024, COV117 and 1 more |
+| `EXPORT` | verified, V7R5M0 | SQL028, LST026, COV130 |
+| `EXT` | verified, V7R5M0 | CYC012 |
+| `EXTFLD` | compiled, not in the corpus | |
+| `EXTFMT` | compiled, not in the corpus | |
+| `EXTNAME` | verified, V7R5M0 | IO011, LST014, LST015, COV078 and 1 more |
+| `EXTPGM` | verified, V7R5M0 | EXC012, PRC006, PRC010, PRC011 and 5 more |
+| `EXTPROC` | verified, V7R5M0 | PRC007, PRC008, LST009, LST010 and 5 more |
+| `FROMFILE` | verified, V7R5M0 | COV115 |
+| `IMPORT` | verified, V7R5M0 | PRC005, LST026 |
+| `INZ` | verified, V7R5M0 | SPEC001, SPEC002, SPEC004, SPEC006 and 414 more |
+| `LEN` | verified, V7R5M0 | DCL001, DCL002, DCL003, DCL004 and 498 more |
+| `LIKE` | verified, V7R5M0 | DCL015, DCL016, SQL026 |
+| `LIKEDS` | verified, V7R5M0 | DCL018, COV016, COV037 |
+| `LIKEFILE` | verified, V7R5M0 | COV108, COV129 |
+| `LIKEREC` | verified, V7R5M0 | IO003, IO010, IO021, COV104 and 2 more |
+| `NOOPT` | verified, V7R5M0 | COV116 |
+| `NULLIND` | verified, V7R5M0 | COV051 |
+| `OCCURS` | verified, V7R5M0 | ARR008, ARR009 |
+| `OPDESC` | verified, V7R5M0 | COV116 |
+| `OPTIONS` | verified, V7R5M0 | PRC002, PRC010, PRC011, COV067 and 2 more |
+| `OVERLAY` | verified, V7R5M0 | DCL019, BIT005, DTE024, COV079 |
+| `PACKEVEN` | verified, V7R5M0 | COV109 |
+| `PERRCD` | verified, V7R5M0 | SPEC011, ARR003, ARR006, LST019 and 4 more |
+| `POS` | verified, V7R5M0 | DCL017, STR002, STR003, IO014 and 10 more |
+| `PREFIX` | verified, V7R5M0 | IO009, IO011, IO016 |
+| `PSDS` | verified, V7R5M0 | EXC003, EXC004, EXC005, EXC009 and 1 more |
+| `QUALIFIED` | verified, V7R5M0 | DCL017, DCL018, DCL019, DCL020 and 31 more |
+| `RTNPARM` | verified, V7R5M0 | COV090, COV116 |
+| `SAMEPOS` | verified, V7R5M0 | COV109 |
+| `STATIC` | verified, V7R5M0 | DCL022, PRC008 |
+| `TEMPLATE` | verified, V7R5M0 | DCL018, COV016, COV037 |
+| `TIMFMT` | verified, V7R5M0 | DCL010, DCL011, DCL012, DCL013 and 3 more |
+| `TOFILE` | verified, V7R5M0 | COV114 |
+| `VALUE` | verified, V7R5M0 | SPEC016, DTE019, EXC006, PRC001 and 129 more |
+| `VARYING` | verified, V7R5M0 | SPEC001, SPEC003, SPEC004, DCL010 and 10 more |
+
+### Procedure keywords
+
+| Keyword | Status | Members |
+|---|---|---|
+| `EXPORT` | verified, V7R5M0 | SQL028, LST026, COV130 |
+| `PGMINFO` | verified, V7R5M0 | COV090 |
+| `REQPROTO` | verified, V7R5M0 | COV090 |
+| `RTNPARM` | verified, V7R5M0 | COV090, COV116 |
+| `SERIALIZE` | verified, V7R5M0 | COV086 |
+| `STATIC` | verified, V7R5M0 | DCL022, PRC008 |
+
+<!-- end matrix -->

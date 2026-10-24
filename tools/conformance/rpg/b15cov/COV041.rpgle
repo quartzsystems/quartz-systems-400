@@ -1,0 +1,28 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s count int(10);
+monitor;
+  xml-sax %handler(stop:count) %xml('<a><b>1</b><c>2</c></a>':'doc=string');
+on-error;
+  line = 'sax ' + %char(%status);
+  write QSYSPRT line;
+endmon;
+line = 'events ' + %char(count);
+write QSYSPRT line;
+*inlr = *on;
+dcl-proc stop;
+  dcl-pi *n int(10);
+    n int(10);
+    event int(10) value;
+    str pointer value;
+    len int(20) value;
+    exc int(10) value;
+  end-pi;
+  n += 1;
+  if n = 3;
+    return -1;
+  endif;
+  return 0;
+end-proc;

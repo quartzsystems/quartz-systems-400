@@ -353,6 +353,7 @@ impl R<'_> {
                     level: r.opt(Self::str)?,
                 })
             })?,
+            form: if self.version >= 4 { (self.u16()?, self.u16()?) } else { (0, 0) },
         })
     }
 

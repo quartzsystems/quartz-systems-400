@@ -148,6 +148,11 @@ fn place_at(d: &Diag, l: &Line, col: usize) -> Option<(usize, usize)> {
     if i >= t.len() {
         return None;
     }
+    // A built-in function only one operation takes, used elsewhere: the
+    // marker is its name.
+    if d.msgid == "RNF0637" && t[i] == '%' {
+        return Some((col, token(&t, i)));
+    }
     // A MONITOR without ON-ERROR: IBM marks six characters.
     if d.msgid == "RNF5296" && l.fully_free {
         return Some((i + 1, 6));

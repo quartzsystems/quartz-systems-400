@@ -100,32 +100,86 @@ impl Gen<'_> {
             args.push(t);
         }
         let list = args.iter().map(|a| a.op.clone()).collect::<Vec<_>>().join(", ");
-        match op.f2.first() {
-            Some(Expr::Lit(Lit::Char(name), _)) => {
-                let up = name.trim().to_ascii_uppercase();
-                let target = match up.split_once('/') {
-                    Some((l, n)) => format!("{}/{}", mangle(l), mangle(n)),
-                    None => mangle(&up),
-                };
-                self.b.ins(format!("call {target}({list})"));
+        if op.code.starts_with("CALLB") {
+            if !self.callb(op, &args, &list) {
+                return;
             }
-            Some(e) => {
-                let Some(v) = self.expr(e, Want::default()) else { return };
-                if v.kind != Vk::Place || !v.ty.is_char() {
-                    self.err(ids::TYPE_MISMATCH, 30, String::new());
+        } else {
+            match op.f2.first() {
+                Some(Expr::Lit(Lit::Char(name), _)) => {
+                    let up = name.trim().to_ascii_uppercase();
+                    let target = match up.split_once('/') {
+                        Some((l, n)) => format!("{}/{}", mangle(l), mangle(n)),
+                        None => mangle(&up),
+                    };
+                    self.b.ins(format!("call {target}({list})"));
+                }
+                Some(e) => {
+                    let Some(v) = self.expr(e, Want::default()) else { return };
+                    if v.kind != Vk::Place || !v.ty.is_char() {
+                        self.err(ids::TYPE_MISMATCH, 30, String::new());
+                        return;
+                    }
+                    self.b.ins(format!("call {}({list})", v.op));
+                }
+                None => {
+                    self.err(ids::BAD_EXPRESSION_TYPE, 30, op.code.clone());
                     return;
                 }
-                self.b.ins(format!("call {}({list})", v.op));
-            }
-            None => {
-                self.err(ids::BAD_EXPRESSION_TYPE, 30, op.code.clone());
-                return;
             }
         }
         for (p, t) in parms.iter().zip(&args) {
             if let Some(dst) = p.f1.first() {
                 let Some(d) = self.target(dst) else { return };
                 self.assign(&d, t, false);
+            }
+        }
+    }
+}
+
+impl Gen<'_> {
+    /// `CALLB proc` or `CALLB procptr`: a bound call passing the
+    /// `PARM` result fields by reference. A procedure of the module is
+    /// called directly; another is an import the binder resolves.
+    fn callb(&mut self, op: &Op, args: &[super::expr::V], list: &str) -> bool {
+        let params: Vec<String> = args
+            .iter()
+            .enumerate()
+            .map(|(i, a)| format!("$p{}: {}", i + 1, self.t.ir_type(&a.ty)))
+            .collect();
+        match op.f2.first() {
+            Some(Expr::Lit(Lit::Char(name), _)) => {
+                let up = name.trim().to_ascii_uppercase();
+                // A name is an import the binder resolves: a procedure of
+                // the module is found only when it is exported.
+                let ir = if self.local_procs.contains(&up) && !self.exported_procs.contains(&up) {
+                    format!("_QRNIMP_{}", mangle(&up))
+                } else {
+                    mangle(&up)
+                };
+                if !self.local_procs.contains(&up) || !self.exported_procs.contains(&up) {
+                    self.externs.entry(ir.clone()).or_insert_with(|| format!("extern proc {ir}({})", params.join(", ")));
+                }
+                self.b.ins(format!("callb {ir}({list})"));
+                true
+            }
+            Some(e) => {
+                let Some(v) = self.expr(e, Want::default()) else { return false };
+                if v.ty != crate::types::Ty::ProcPtr {
+                    self.err(ids::TYPE_MISMATCH, 30, String::new());
+                    return false;
+                }
+                self.callbs += 1;
+                let proto = format!("_QRNCB_{}", self.callbs);
+                self.externs.insert(proto.clone(), format!("proto {proto}({})", params.join(", ")));
+                let r = self.b.reg();
+                self.b.ins(format!("{r} = load {}", v.op));
+                self.b.ins(format!("callpp {r} as {proto}({list})"));
+                true
+            }
+            None => {
+                self.err(ids::BAD_EXPRESSION_TYPE, 30, op.code.clone());
+                false
             }
         }
     }

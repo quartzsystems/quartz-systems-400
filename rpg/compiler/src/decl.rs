@@ -57,6 +57,26 @@ pub fn word_arg(k: &Keyword, i: usize) -> Option<String> {
     }
 }
 
+/// `DTAARA({*AUTO}{:*USRCTL}{:name})`: the area (a literal, `*LDA`,
+/// `*PDA`, `*GDA` or a name), and whether it is read and written
+/// around the program (`*AUTO`).
+pub fn dtaara_of(k: &Keyword) -> (Option<String>, bool) {
+    let mut area = None;
+    let mut auto = false;
+    for i in 0..k.args.len() {
+        if let Some(s) = str_arg(k, i) {
+            area = Some(s.to_ascii_uppercase());
+            continue;
+        }
+        match word_arg(k, i).as_deref() {
+            Some("*AUTO") => auto = true,
+            Some("*USRCTL" | "*VAR") | None => {}
+            Some(w) => area = Some(w.to_ascii_uppercase()),
+        }
+    }
+    (area, auto)
+}
+
 /// Which `EXTPROC` argument names the procedure: the second after a
 /// language word (`*CL`, `*CWIDEN`, `*CNOWIDEN`, `*JAVA`), else the first.
 fn extproc_name_arg(k: &Keyword) -> usize {
@@ -551,7 +571,7 @@ const PARM_OPTIONS: &[&str] = &["*NOPASS", "*OMIT", "*VARSIZE", "*STRING", "*TRI
 
 /// Keywords that take a parameter.
 const NEEDS_PARM: &[&str] = &[
-    "ALT", "BASED", "BINDEC", "CCSID", "CHAR", "CLASS", "DATFMT", "DIM", "EXTFLD", "EXTFMT", "EXTNAME",
+    "ALT", "BASED", "BINDEC", "CCSID", "CHAR", "CLASS", "DATFMT", "DIM", "EXTFMT", "EXTNAME",
     "FLOAT", "FROMFILE", "GRAPH", "INT", "LEN", "LIKE", "LIKEDS", "LIKEFILE", "LIKEREC", "OCCURS",
     "OPTIONS", "OVERLAY", "PACKED", "PERRCD", "POS", "PREFIX", "SQLTYPE", "TIMFMT", "TOFILE", "UCS2", "UNS",
     "VARCHAR", "VARGRAPH", "VARUCS2", "ZONED",
@@ -711,6 +731,10 @@ pub fn declare(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
                     _ => 0,
                 },
                 seq: if d.kw("ASCEND").is_some() { 1 } else if d.kw("DESCEND").is_some() { 2 } else { 0 },
+                nullind: d.kw("NULLIND").is_some(),
+                altseq_none: d.kw("ALTSEQ").and_then(|k| word_arg(k, 0)).as_deref() == Some("*NONE"),
+                fromfile: d.kw("FROMFILE").and_then(|k| word_arg(k, 0)).unwrap_or_default(),
+                tofile: d.kw("TOFILE").and_then(|k| word_arg(k, 0)).unwrap_or_default(),
                 external: d
                     .kw("EXPORT")
                     .or_else(|| d.kw("IMPORT"))
@@ -720,8 +744,11 @@ pub fn declare(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             };
             let id = add(cx, s, d.at)?;
             if let Some(k) = d.kw("DTAARA") {
-                let area = str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_else(|| d.name.to_ascii_uppercase());
-                cx.t.dtaaras.insert(id, area);
+                let (area, auto) = dtaara_of(k);
+                cx.t.dtaaras.insert(id, area.unwrap_or_else(|| d.name.to_ascii_uppercase()));
+                if auto {
+                    cx.t.dtaara_auto.insert(id);
+                }
             }
             Some(id)
         }
@@ -900,8 +927,8 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         psds,
         dtaara: d
             .kw("DTAARA")
-            .map(|k| str_arg(k, 0).unwrap_or_else(|| name.clone()))
-            .or_else(|| (d.fixed.as_ref().is_some_and(|c| c.dstype == "U")).then(|| name.clone())),
+            .map(|k| dtaara_of(k).0.unwrap_or_else(|| name.clone()))
+            .or_else(|| (d.fixed.as_ref().is_some_and(|c| c.dstype == "U")).then(|| "*LDA".to_string())),
         ir_type: format!("{}DS_{}", cx.prefix.to_ascii_lowercase(), names::mangle(&name)),
         ..Ds::default()
     };
@@ -928,6 +955,10 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     ds.sym = id;
     if let Some(area) = &ds.dtaara {
         cx.t.dtaaras.insert(id, area.to_ascii_uppercase());
+        let auto = d.kw("DTAARA").is_some_and(|k| dtaara_of(k).1) || d.fixed.as_ref().is_some_and(|c| c.dstype == "U");
+        if auto {
+            cx.t.dtaara_auto.insert(id);
+        }
     }
     cx.t.ds.push(ds);
     if let Some(other) = like {
@@ -1040,6 +1071,16 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         let sdim = dim_of(cx, c);
         // A nested LIKEDS gets its own copy of the subfields.
         let mut nested_copy = None;
+        // PACKEVEN: a packed subfield of positions has an even number of
+        // digits, one fewer.
+        let ty = match (ty, c.kw("PACKEVEN")) {
+            (Some(Ty::Packed(dg, sc)), Some(_)) if dg > 1 => Some(Ty::Packed(dg - 1, sc)),
+            (t, Some(k)) => {
+                cx.diags.push(Diag::new(ids::PACKEVEN_NOT_PACKED, 20, k.at));
+                t
+            }
+            (t, None) => t,
+        };
         let (ty, size) = match ty {
             Some(t) => {
                 let one = cx.t.size(&t);
@@ -1094,8 +1135,11 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             }
         });
         let overlay = c.kw("OVERLAY").cloned();
+        let samepos = c.kw("SAMEPOS").and_then(|k| word_arg(k, 0)).and_then(|n| cx.t.subfield(ds_index, &n));
         let offset = if let Some((_, o)) = special {
             o
+        } else if let Some(s) = samepos {
+            cx.t.syms[s].offset
         } else if let Some(f) = from.or(pos_kw) {
             f.saturating_sub(1)
         } else if let Some(k) = overlay {
@@ -1138,13 +1182,18 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
                 }
             }
         } else {
-            let at = if is_ptr { next.div_ceil(16) * 16 } else { next };
+            // ALIGN: integers and floats on a multiple of their size.
+            let align = match &ty {
+                Ty::Int(_) | Ty::Uns(_) | Ty::Float(_) if d.kw("ALIGN").is_some() => cx.t.size(&ty).max(1),
+                _ => 1,
+            };
+            let at = if is_ptr { next.div_ceil(16) * 16 } else { next.div_ceil(align) * align };
             next = at + size;
             at
         };
         // An absolute position moves the next one past it too; an
         // overlay does not.
-        if c.kw("OVERLAY").is_none() {
+        if c.kw("OVERLAY").is_none() && samepos.is_none() {
             next = next.max(offset + size);
         }
         end = end.max(offset + size);
@@ -1222,7 +1271,11 @@ pub fn proto(cx: &mut Cx<'_>, d: &Def) -> Proto {
             .map(|k| str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_else(|| d.name.to_ascii_uppercase())),
         extproc: d.kw("EXTPROC").map(|k| {
             let i = extproc_name_arg(k);
-            str_arg(k, i).or_else(|| word_arg(k, i)).unwrap_or_else(|| d.name.to_ascii_uppercase())
+            match word_arg(k, i).as_deref() {
+                // The name as the source writes it.
+                Some("*DCLCASE") => d.name.clone(),
+                _ => str_arg(k, i).or_else(|| word_arg(k, i)).unwrap_or_else(|| d.name.to_ascii_uppercase()),
+            }
         }),
         extproc_word: d.kw("EXTPROC").is_some_and(|k| {
             let i = extproc_name_arg(k);
@@ -1231,6 +1284,7 @@ pub fn proto(cx: &mut Cx<'_>, d: &Def) -> Proto {
         ret,
         ret_dim: dim_of(cx, d),
         opdesc: d.kw("OPDESC").is_some(),
+        rtnparm: d.kw("RTNPARM").is_some(),
         def_line: d.at.line,
         ..Proto::default()
     };

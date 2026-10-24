@@ -1,0 +1,20 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-ds info qualified;
+  name varchar(10) inz('bolt');
+  qty int(10) inz(3);
+end-ds;
+dcl-s out varchar(200);
+monitor;
+  data-gen info %data(out:'doc=string') %gen('COVNOGEN');
+  line = 'gen ok';
+  write QSYSPRT line;
+on-error;
+  line = 'gen ' + %char(%status);
+  write QSYSPRT line;
+endmon;
+line = 'out [' + out + ']';
+write QSYSPRT line;
+*inlr = *on;

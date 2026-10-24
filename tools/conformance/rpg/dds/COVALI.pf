@@ -1,0 +1,4 @@
+     A                                      CCSID(37)
+     A          R ALIR
+     A            ITMNO          5P 0       ALIAS(ITEM_NUMBER)
+     A            ITMDSC        20A         ALIAS(ITEM_DESCRIPTION)

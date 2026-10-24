@@ -544,7 +544,7 @@ fn file_items(c: &Compiled, w: &Refs, g: &GenRefs, scope: usize) -> Vec<Item> {
         // An operation the device does not allow is no use of the file.
         let severe = |line: u32| c.diags.iter().any(|d| d.at.line == line && matches!(d.msgid, "RNF5276" | "RNF5202"));
         let unused = it.refs.iter().all(|(l, fl)| matches!(fl, 'D' | 'd' | 'n' | 'm') || severe(*l));
-        if unused && !cycle && !by_format && !not_found {
+        if (unused || !f.external && !io_used(c, &f.name)) && !cycle && !by_format && !not_found {
             it.msg = UNREF;
         }
         for r in c.table.recfmts.iter().filter(|r| r.file_name == f.name) {
@@ -805,6 +805,20 @@ pub(crate) fn externals(c: &Compiled) -> Externals {
         v.into_iter().map(|(_, x)| x).collect::<Vec<_>>()
     };
     (procs, fields(Storage::Import), fields(Storage::Export))
+}
+
+/// Whether an operation reads or writes a program-described file, or
+/// output or input specifications name it: one that is only opened,
+/// closed or posted counts as unreferenced.
+fn io_used(c: &Compiled, file: &str) -> bool {
+    let calcs = c.module.calcs.iter().chain(c.module.procs.iter().flat_map(|p| p.calcs.iter()));
+    let by_op = calcs
+        .filter(|s| !matches!(rpgfront::parse::ops::split_suffix(&s.op.code).0, "OPEN" | "CLOSE" | "POST" | "ACQ" | "REL" | "NEXT"))
+        .any(|s| s.op.f2.iter().chain(s.op.result.iter()).any(|e| e.name().is_some_and(|n| n.eq_ignore_ascii_case(file))));
+    by_op
+        || c.table.syms.iter().any(|s| s.fromfile.eq_ignore_ascii_case(file) || s.tofile.eq_ignore_ascii_case(file))
+        || c.module.outputs.iter().any(|o| o.name.eq_ignore_ascii_case(file))
+        || c.module.inputs.iter().any(|i| i.name.eq_ignore_ascii_case(file))
 }
 
 /// The key fields of keyed externally described files.

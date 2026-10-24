@@ -1,0 +1,24 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s f float(8);
+dcl-s c char(5) inz('abc');
+dcl-s n packed(5:0) inz(-4);
+monitor;
+  f = %float(c);
+  line = 'float ok';
+  write QSYSPRT line;
+on-error;
+  line = 'float ' + %char(%status);
+  write QSYSPRT line;
+endmon;
+monitor;
+  f = %sqrt(n);
+  line = 'sqrt ok';
+  write QSYSPRT line;
+on-error;
+  line = 'sqrt ' + %char(%status);
+  write QSYSPRT line;
+endmon;
+*inlr = *on;

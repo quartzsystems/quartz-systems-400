@@ -13,6 +13,7 @@
 
 pub mod arrays;
 pub mod bif;
+pub mod bifmisc;
 pub mod calls;
 pub mod cycle;
 pub mod debug;
@@ -26,10 +27,12 @@ pub mod emit;
 pub mod exc;
 pub mod expr;
 pub mod output;
+pub mod special;
 pub mod sql;
 pub mod stmt;
 pub mod strbif;
 pub mod strops;
+pub mod xml;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fmt::Write as _;
@@ -92,6 +95,8 @@ pub enum Open {
         end: String,
         /// A `CASxx` group, ended by `ENDCS`.
         cas: bool,
+        /// `SELECT operand`: what `WHEN-IS` and `WHEN-IN` test.
+        subject: Option<Box<rpgfront::ast::Expr>>,
     },
     /// `MONITOR`: the region name, the end, the handlers seen.
     Monitor {
@@ -189,8 +194,12 @@ pub struct Gen<'a> {
     pub debug: bool,
     /// Monitors made.
     pub monitors: u32,
+    /// `CALLB` prototypes made for procedure pointers.
+    pub callbs: u32,
     /// Names of the module's own procedures.
     pub local_procs: BTreeSet<String>,
+    /// Those of them that are exported.
+    pub exported_procs: BTreeSet<String>,
     /// Page counters the output uses (`PAGE`, `PAGE1`...).
     pub pages: BTreeSet<String>,
     /// The module's output specifications.
@@ -332,6 +341,7 @@ pub fn module(
     sql: &[rpgsqlpre::Stmt],
     sql_endmod: bool,
 ) -> (String, Vec<Diag>) {
+    let dropped: BTreeSet<String> = t.dropped_files.iter().cloned().collect();
     let mut g = Gen {
         sql: sql.iter().map(|s| (s.line, s.clone())).collect(),
         sql_endmod: sql_endmod && !sql.is_empty(),
@@ -357,11 +367,13 @@ pub fn module(
         marked: BTreeSet::new(),
         debug: opts.dbgview != "*NONE",
         monitors: 0,
+        callbs: 0,
         local_procs: m.procs.iter().map(|p| p.name.to_ascii_uppercase()).collect(),
+        exported_procs: m.procs.iter().filter(|p| p.kws.iter().any(|k| k.name == "EXPORT")).map(|p| p.name.to_ascii_uppercase()).collect(),
         pages: BTreeSet::new(),
         outputs: m.outputs.clone(),
         ctdata: m.ctdata.clone(),
-        undefined: BTreeSet::new(),
+        undefined: dropped,
         undefined_at: BTreeSet::new(),
         ref_at: Pos::default(),
         subr_procs: false,
@@ -417,7 +429,7 @@ pub fn module(
         out.push_str(&ty);
         out.push('\n');
     }
-    for f in files {
+    for f in files.iter().filter(|f| f.dev != Dev::Special) {
         let dev = match f.dev {
             Dev::Printer => " dev(*PRT)",
             Dev::Workstn => " dev(*DSP)",
@@ -432,6 +444,12 @@ pub fn module(
         );
         if f.keyed {
             line.push_str(" keyed");
+        }
+        if f.form.0 != 0 {
+            let _ = write!(line, " formlen({})", f.form.0);
+        }
+        if f.form.1 != 0 {
+            let _ = write!(line, " formofl({})", f.form.1);
         }
         if let Some(ext) = &f.ext {
             // Formats without a level identifier (printer files) are
@@ -627,8 +645,9 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b.ins("callb _qrni_init()");
     let files = g.files;
     for f in files.iter().filter(|f| f.scope == 0 && !f.usropn && !f.template) {
-        let _ = g.db_open(f);
+        g.init_open(f);
     }
+    g.dtaara_auto(false);
     g.init_tail(m);
     g.b.ins("store $init_done, *ON");
     g.psds_init(&g.opts.name.clone());
@@ -700,7 +719,13 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
         g.b.term("ret");
     }
     g.b.place(&end);
+    g.tofile_arrays();
+    g.dtaara_auto(true);
     for f in g.files.iter().filter(|f| f.scope == 0 && !f.template) {
+        if f.dev == crate::files::Dev::Special {
+            g.special_close(f);
+            continue;
+        }
         let r = g.b.reg();
         g.b.ins(format!("{r} = dbclose {}", mangle(&f.name)));
     }
@@ -729,8 +754,9 @@ fn linear_entry(g: &mut Gen<'_>, main: &str) -> String {
     g.b.ins("callb _qrni_init()");
     let files = g.files;
     for f in files.iter().filter(|f| f.scope == 0 && !f.usropn && !f.template) {
-        let _ = g.db_open(f);
+        g.init_open(f);
     }
+    g.dtaara_auto(false);
     g.b.ins("callb _qrni_snap()");
     g.b.ins("store $init_done, *ON");
     g.psds_init(&g.opts.name.clone());

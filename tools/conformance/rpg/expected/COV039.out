@@ -1,0 +1,23 @@
+# COV039 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 3 seq 000300
+diag: RNF3530 00 line 4 seq 000400
+run: ok
+spool: QSYSPRT
+  |1/1   startdoc -1
+  |1/2   start 1 [r]
+  |1/3   attr 1 [t]
+  |1/4   attrchars 1 [a]
+  |1/5   attrpredef 1 [&]
+  |1/6   attrchars 1 [b]
+  |1/7   endattr -1
+  |1/8   pi 3 [tgt]
+  |1/9   pidata 9 [some data]
+  |1/10  chars 3 [ x ]
+  |1/11  predef 1 [<]
+  |1/12  chars 3 [ y ]
+  |1/13  predef 1 [']
+  |1/14  end 1 [r]
+  |1/15  enddoc -1
+  |1/16  events 15

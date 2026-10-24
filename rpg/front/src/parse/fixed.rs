@@ -371,9 +371,11 @@ pub fn extended_operand(code: &str, toks: &[lex::Tok], end: Pos, diags: &mut Vec
             (e, Vec::new())
         }
         "FOR" => for_operand(toks, end, diags),
-        // Blank-separated operands: type, message, %TARGET.
-        "SND-MSG" => {
+        // Blank-separated operands: type, message, %TARGET; the target
+        // or %HANDLER, then %XML, %DATA, %PARSER or %GEN.
+        "SND-MSG" | "XML-INTO" | "XML-SAX" | "DATA-INTO" | "DATA-GEN" => {
             let mut c = expr::Cursor::new(toks, end);
+            c.operands = true;
             let mut list = Vec::new();
             while !c.done() {
                 match expr::expr(&mut c, diags) {
@@ -383,7 +385,7 @@ pub fn extended_operand(code: &str, toks: &[lex::Tok], end: Pos, diags: &mut Vec
             }
             (Some(Expr::List(list, toks.first().map_or(end, |t| t.at))), Vec::new())
         }
-        "ON-ERROR" | "ON-EXCP" | "XML-INTO" | "XML-SAX" | "DATA-INTO" | "DATA-GEN" | "WHEN-IN" => {
+        "ON-ERROR" | "ON-EXCP" | "WHEN-IN" => {
             let list = expr::operands(toks, end, diags);
             (Some(Expr::List(list, toks.first().map_or(end, |t| t.at))), Vec::new())
         }
@@ -438,7 +440,9 @@ fn calc_spec(b: &mut Builder<'_>, lines: &[&Line]) {
         b.diags.push(Diag::new(ids::BAD_EXTENDER, 20, l.pos(26)));
         ext.clear();
     } else if !ops::extenders_allowed(&code, &ext) {
-        b.diags.push(Diag::new(ids::EXTENDER_NOT_FOR_OP, 20, l.pos(26)));
+        // Under the extender (pub400).
+        let col = 26 + u16::try_from(code.len()).unwrap_or(0) + 1;
+        b.diags.push(Diag::new(ids::EXTENDER_NOT_FOR_OP, 20, l.pos(col)));
         ext.clear();
     }
     let mut op = Op {

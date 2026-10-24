@@ -155,7 +155,15 @@ impl Parser {
         literal::encode(ty, c).map_err(|e| self.err(e))
     }
 
-    /// `file NAME file(OBJ) [lib(L)] [usage(*X)] [keyed] [nolvlchk] [fmt(NAME[:LEVEL])]...`.
+    /// A page length or line number.
+    fn form_number(&mut self) -> Result<u16> {
+        match self.bump() {
+            Tok::Int(n) => u16::try_from(n).map_err(|_| self.err("a line number")),
+            _ => Err(self.err("a line number")),
+        }
+    }
+
+    /// `file NAME file(OBJ) [lib(L)] [usage(*X)] [keyed] [nolvlchk] [formlen(N)] [formofl(N)] [fmt(NAME[:LEVEL])]...`.
     fn file_decl(&mut self) -> Result<FileRef> {
         let name = self.ident()?;
         let mut f = FileRef {
@@ -167,6 +175,7 @@ impl Parser {
             lvlchk: true,
             dev: FileDev::Db,
             formats: Vec::new(),
+            form: (0, 0),
         };
         while let Tok::Ident(w) = self.peek().clone() {
             self.bump();
@@ -188,6 +197,8 @@ impl Parser {
                         .ok_or_else(|| self.err(format!("{s} is not a usage")))?;
                 }
                 "keyed" => f.keyed = true,
+                "formlen" => f.form.0 = self.paren(Self::form_number)?,
+                "formofl" => f.form.1 = self.paren(Self::form_number)?,
                 "nolvlchk" => f.lvlchk = false,
                 "dev" => {
                     let s = self.paren(|p| match p.bump() {

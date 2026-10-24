@@ -106,6 +106,12 @@ impl Printer<'_> {
                 if !f.lvlchk {
                     self.out.push_str(" nolvlchk");
                 }
+                if f.form.0 != 0 {
+                    let _ = write!(self.out, " formlen({})", f.form.0);
+                }
+                if f.form.1 != 0 {
+                    let _ = write!(self.out, " formofl({})", f.form.1);
+                }
                 for r in &f.formats {
                     match &r.level {
                         Some(l) => {

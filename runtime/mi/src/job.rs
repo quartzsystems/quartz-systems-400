@@ -141,6 +141,9 @@ pub struct Job {
     pub handled: Vec<Exception>,
     /// Every exception raised, oldest first; the dump reads it.
     pub raised: Vec<Exception>,
+    /// Commitment control is active (`STRCMTCTL`): RPG's `COMMIT` and
+    /// `ROLBK` work only then.
+    pub cmtctl: bool,
     /// Call-stack depth: procedures entered and not yet left.
     pub depth: u32,
     /// The deepest the call stack has been.
@@ -238,6 +241,7 @@ impl Job {
             exception: None,
             handled: Vec::new(),
             raised: Vec::new(),
+            cmtctl: false,
             depth: 0,
             max_depth: 0,
             spaces: Spaces::default(),
@@ -753,6 +757,11 @@ impl Job {
                     let depth = u32::try_from(i + 1).expect("few frames");
                     let mut e = Exception::message(msgid, msgf, data, depth);
                     e.key = key;
+                    // A message RPG has no status for: 202 when a called
+                    // program or procedure sent it, 9999 otherwise.
+                    if e.status == 0 && !e.is_file_error() {
+                        e.status = if from_depth > depth { 202 } else { 9999 };
+                    }
                     self.raised.push(e.clone());
                     crate::except::dispatch(self, &e);
                 }

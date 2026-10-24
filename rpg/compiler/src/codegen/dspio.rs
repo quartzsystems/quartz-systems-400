@@ -385,16 +385,12 @@ impl Gen<'_> {
         let st = self.b.reg();
         self.b.ins(format!("{st} = prtio {n} WRITE fmt({}) rec($rb_{n})", mangle(&r.fmt.name)));
         if let Some(ind) = f.oflind.clone() {
-            let ind = ind.trim_start_matches("*IN").to_string();
-            let ov = self.b.reg();
-            self.b.ins(format!("{ov} = cmp.eq {st}, 1"));
+            let ov = self.overflow_crossed(&f.name, &st);
             let on = self.b.label();
             let cont = self.b.label();
             self.b.term(format!("brif {ov}, {on}, {cont}"));
             self.b.place(&on);
-            if let Some(x) = self.indicator(&ind) {
-                self.b.ins(format!("store {}, *ON", x.op));
-            }
+            self.oflind_on(&ind);
             self.b.place(&cont);
         }
     }

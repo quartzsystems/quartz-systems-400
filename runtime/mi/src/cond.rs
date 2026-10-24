@@ -60,6 +60,8 @@ impl Exception {
         let status = match msgid {
             "CEE9901" | "CEE9902" => 202,
             "CPF9999" => 9999,
+            // A data area IN or OUT names that does not exist.
+            "CPF1015" => 401,
             // The RPG runtime's own escapes carry their status.
             _ if msgid.starts_with("RNX") => msgid[3..].parse().unwrap_or(0),
             _ => cond.map_or(0, status_of),

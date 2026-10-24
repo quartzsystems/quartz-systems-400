@@ -61,6 +61,7 @@ pub fn write(addr: u64, d: &Desc, v: &Decimal, r: Rounding) -> bool {
         Kind::Packed => Packed::new(digits, d.dec).and_then(|p| p.encode(v, r)),
         Kind::Zoned => Zoned::new(digits, d.dec).and_then(|z| z.encode(v, r)),
         Kind::Bin => Binary::new(digits, d.dec).and_then(|b| b.encode(v, r)),
+        Kind::Float => return crate::value::write_num(addr, d, v).is_ok(),
         Kind::Int | Kind::Uns => v
             .rescale(0, r)
             .and_then(|w| Integer::new(u8::try_from(d.size()).unwrap_or(8), d.kind == Kind::Int).and_then(|i| i.encode(&w))),

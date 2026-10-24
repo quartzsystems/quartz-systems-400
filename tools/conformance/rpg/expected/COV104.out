@@ -1,0 +1,11 @@
+# COV104 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 5 seq 000500
+diag: RNF3530 00 line 6 seq 000600
+diag: RNF7066 00 line 7 seq 000700
+diag: RNF7086 00 line 7 seq 000700
+run: ok
+spool: QSYSPRT
+  |1/1   1 first
+  |1/2   2 second

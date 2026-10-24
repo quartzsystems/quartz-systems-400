@@ -16,7 +16,7 @@ pub use var::{Scope, StorageClass, Var, VarRef};
 use crate::types::Type;
 
 /// The IR format version this crate writes. Within V1R it only grows.
-pub const FORMAT_VERSION: u16 = 3;
+pub const FORMAT_VERSION: u16 = 4;
 
 /// A list index as the 32-bit form the IR uses.
 #[must_use]
@@ -247,6 +247,9 @@ pub struct FileRef {
     pub lvlchk: bool,
     /// The formats and their level identifiers.
     pub formats: Vec<FormatRef>,
+    /// A printer's page length and overflow line, overriding the
+    /// printer file's (RPG's `FORMLEN` and `FORMOFL`); 0 keeps it.
+    pub form: (u16, u16),
 }
 
 /// How a prototype binds.

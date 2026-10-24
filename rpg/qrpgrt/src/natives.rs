@@ -59,14 +59,24 @@ pub extern "sysv64" fn editc(
     let Some(shape) = d.shape() else { return };
     let code = char::from_u32(u32::try_from(code).unwrap_or(0)).unwrap_or('1');
     let cur_ch = ccsid::char_of(bytes(cur.cast_unsigned(), 1)[0]);
+    // The fill in the low byte; DATEDIT's format (bits 8-9: MDY, DMY,
+    // YMD) and separator (bits 16-23, 0 for the default); DECEDIT's
+    // comma (bit 24) and leading zero (bit 25).
+    let date_sep = u8::try_from((fill >> 16) & 0xFF).ok().filter(|b| *b != 0).map(char::from);
     let opts = EditOpts {
-        fill: match fill {
+        fill: match fill & 0xFF {
             1 => Fill::Asterisk,
-            2 => Fill::Currency('$'),
-            3 => Fill::Currency(cur_ch),
+            2 | 3 => Fill::Currency(cur_ch),
             _ => Fill::Blank,
         },
-        ..EditOpts::default()
+        date_fmt: match (fill >> 8) & 3 {
+            1 => qdecimal::DateEditFmt::Dmy,
+            2 => qdecimal::DateEditFmt::Ymd,
+            _ => qdecimal::DateEditFmt::Mdy,
+        },
+        date_sep,
+        decimal_comma: fill & (1 << 24) != 0,
+        lead_zero: fill & (1 << 25) != 0,
     };
     let text = qdecimal::edit_code(&v, shape, code, &opts).unwrap_or_default();
     write_varchar(dst.cast_unsigned(), &ebcdic(&text));
@@ -207,6 +217,29 @@ fn trim_to_63(s: &str) -> &str {
 }
 
 /// `_QRNX_SQRT(a) -> f64`: `%SQRT`.
-pub extern "sysv64" fn sqrt(_env: *mut Env, _argc: i64, _od: i64, a: f64) -> f64 {
+pub extern "sysv64" fn sqrt(env: *mut Env, _argc: i64, _od: i64, a: f64) -> f64 {
+    // The square root of a negative number is status 101.
+    if a < 0.0 {
+        let _ = job(env).send_message("RNX0101", "QRNXMSG", "*LIBL", Vec::new(), qir::MsgType::Escape, mi::QueueRef::Same);
+        return 0.0;
+    }
     a.sqrt()
+}
+
+/// A float in the external form `%EDITFLT` gives: sign, one digit, the
+/// point, 15 digits (7 for a 4-byte float), `E`, sign, 3 digits (2).
+#[must_use]
+pub fn editflt_text(f: f64, single: bool) -> String {
+    #[allow(clippy::cast_possible_truncation)]
+    let s = if single { format!("{:.7e}", f as f32) } else { format!("{f:.15e}") };
+    let (m, e) = s.split_once('e').unwrap_or((&s, "0"));
+    let (neg, m) = m.strip_prefix('-').map_or((false, m), |r| (true, r));
+    let ev: i32 = e.parse().unwrap_or(0);
+    let width = if single { 2 } else { 3 };
+    format!("{}{m}E{}{:0width$}", if neg { '-' } else { '+' }, if ev < 0 { '-' } else { '+' }, ev.abs())
+}
+
+/// `_QRNX_EDITFLT(dst: varchar, f, single)`: `%EDITFLT`.
+pub extern "sysv64" fn editflt(_env: *mut Env, _argc: i64, _od: i64, dst: i64, f: f64, single: i32) {
+    write_varchar(dst.cast_unsigned(), &ebcdic(&editflt_text(f, single != 0)));
 }

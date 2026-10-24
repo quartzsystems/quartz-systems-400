@@ -228,6 +228,47 @@ pub(crate) fn call_handler(addr: usize, env: *mut Env, params: [u64; 4], count: 
     f(env, count, 0, params[0], params[1], params[2], params[3]);
 }
 
+/// An `XML-SAX` handler: the communication area, the event, the
+/// string (a pointer by value), its length and the exception code.
+/// Cranelift passes the pointer's halves on the stack when only one
+/// register is left and leaves that register unused (`r9` here), so
+/// the halves are spelled out after a filler.
+type SaxHandler = extern "sysv64" fn(*mut Env, i64, i64, u64, i32, u64, u64, u64, i64, i32) -> i32;
+
+/// An `XML-INTO` or `DATA-INTO` handler: the communication area, the
+/// elements and their count.
+type IntoHandler = extern "sysv64" fn(*mut Env, i64, i64, u64, u64, i64) -> i32;
+
+/// Call an `XML-SAX` handler procedure; its return code.
+pub fn call_sax_handler(j: &mut crate::job::Job, addr: usize, comm: u64, event: i32, string: u128, len: i64, exc: i32) -> i32 {
+    let env = j.env();
+    escape(j);
+    // SAFETY: `addr` is the code address of a procedure the program
+    // named with `%HANDLER`; the compiler checked its interface is the
+    // handler's (`comm` by reference, then the event, the pointer, the
+    // length and the exception by value), which the code generator
+    // lowers to this signature.
+    let f: SaxHandler = unsafe { std::mem::transmute::<usize, SaxHandler>(addr) };
+    #[allow(clippy::cast_possible_truncation)]
+    let (lo, hi) = (string as u64, (string >> 64) as u64);
+    let rc = f(env, 5, 0, comm, event, 0, lo, hi, len, exc);
+    escape(j);
+    rc
+}
+
+/// Call an `XML-INTO` or `DATA-INTO` handler procedure; its return code.
+pub fn call_into_handler(j: &mut crate::job::Job, addr: usize, comm: u64, items: u64, n: i64) -> i32 {
+    let env = j.env();
+    escape(j);
+    // SAFETY: as for `call_sax_handler`: the handler takes the
+    // communication area and the elements by reference and the count
+    // by value.
+    let f: IntoHandler = unsafe { std::mem::transmute::<usize, IntoHandler>(addr) };
+    let rc = f(env, 3, 0, comm, items, n);
+    escape(j);
+    rc
+}
+
 /// Call a program entry procedure with a parameter list.
 pub(crate) fn call_entry(addr: usize, env: *mut Env, args: &[u64]) {
     // The stack check in `enter` measures from here.

@@ -1,0 +1,28 @@
+**FREE
+ctl-opt dftactgrp(*no) actgrp(*caller);
+dcl-pi *n;
+  opt char(1);
+  sts char(1);
+  err zoned(5:0);
+  area char(20);
+end-pi;
+dcl-s n int(10);
+select;
+when opt = 'O';
+  n = 0;
+  sts = '0';
+when opt = 'R';
+  n += 1;
+  if n > 3;
+    sts = '1';
+  else;
+    area = 'record ' + %char(n);
+    sts = '0';
+  endif;
+when opt = 'C';
+  sts = '0';
+  *inlr = *on;
+other;
+  sts = '0';
+endsl;
+return;

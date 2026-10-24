@@ -118,6 +118,15 @@ pub struct Sym {
     pub seq: u8,
     /// `DIM(*AUTO)` 1, `DIM(*VAR)` 2, else 0.
     pub vardim: u8,
+    /// Null-capable (`NULLIND`, a file's null-capable field): its null
+    /// indicator is the place `IR__null`.
+    pub nullind: bool,
+    /// `ALTSEQ(*NONE)`: compared by the normal sequence.
+    pub altseq_none: bool,
+    /// `FROMFILE`: a pre-run-time array's input file.
+    pub fromfile: String,
+    /// `TOFILE`: the file the array is written to at the end.
+    pub tofile: String,
 }
 
 /// A data structure's layout.
@@ -192,6 +201,9 @@ pub struct Proto {
     pub parms: Vec<Parm>,
     /// `OPDESC`.
     pub opdesc: bool,
+    /// `RTNPARM`: the return value travels as a hidden first
+    /// parameter, which `%PARMS` counts.
+    pub rtnparm: bool,
     /// Where it is declared.
     pub def_line: u32,
 }
@@ -232,8 +244,19 @@ pub struct Table {
     /// Fields and structures tied to a data area (`DTAARA`): the area,
     /// `NAME` or `LIB/NAME`.
     pub dtaaras: HashMap<SymId, String>,
+    /// The ones read when the program starts and written when it ends
+    /// (`DTAARA(*AUTO)`, a `U` structure).
+    pub dtaara_auto: std::collections::BTreeSet<SymId>,
     /// The structures files name as their `INFDS`.
     pub infds: Vec<String>,
+    /// `EXTBININT(*YES)`: external binary fields without decimals are
+    /// integers.
+    pub extbinint: bool,
+    /// `ALWNULL(*USRCTL)`: null-capable fields have null indicators.
+    pub alwnull_usrctl: bool,
+    /// Files dropped because every format was ignored: their names are
+    /// undefined without a message of their own.
+    pub dropped_files: Vec<String>,
 }
 
 impl Table {

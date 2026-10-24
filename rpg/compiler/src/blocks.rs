@@ -46,7 +46,7 @@ pub fn check(stmts: &[Stmt]) -> Vec<Diag> {
         let op = &s.op;
         // The entries the operation needs. A fixed-form compare takes
         // the suffix; a free-form condition its expression.
-        let fixed_cmp = !sfx.is_empty() || !matches!(base, "IF" | "DOW" | "DOU" | "WHEN");
+        let fixed_cmp = !sfx.is_empty() || !matches!(base, "IF" | "DOW" | "DOU" | "WHEN" | "CAS");
         if NEED_F2.contains(&base) && fixed_cmp && op.f2.is_empty() && op.xf2.is_none() {
             out.push(Diag::new(ids::NO_FACTOR2, 30, at));
         }
@@ -175,6 +175,69 @@ pub fn check(stmts: &[Stmt]) -> Vec<Diag> {
     }
     open_groups_end(&mut open, &mut out);
     out
+}
+
+/// Checks of the whole module: a `USROPN` file that no `OPEN` names,
+/// and what the default activation group does not allow (procedures,
+/// `CALLB`).
+pub fn check_module(m: &rpgfront::ast::Module, files: &[crate::files::File], ctl: &crate::ctl::Ctl, program: bool, out: &mut Vec<Diag>) {
+    for p in &m.procs {
+        let kw = |n: &str| p.kws.iter().any(|k| k.name == n);
+        if let Some(k) = p.kws.iter().find(|k| k.name == "SERIALIZE")
+            && ctl.thread != "*CONCURRENT"
+        {
+            out.push(Diag::new(ids::SERIALIZE_THREAD, 20, k.at));
+        }
+        if kw("PGMINFO") && program {
+            out.push(Diag::new(ids::PGMINFO_IGNORED, 0, p.at));
+        }
+    }
+    let all: Vec<&Stmt> = m.calcs.iter().chain(m.procs.iter().flat_map(|p| p.calcs.iter())).collect();
+    // ALWNULL(*INPUTONLY): a format with null-capable fields is noted.
+    if ctl.alwnull == "*INPUTONLY" {
+        for f in files {
+            for r in f.ext.iter().flat_map(|e| e.formats.iter()).filter(|r| r.fields.iter().any(|x| x.nullable)) {
+                out.push(Diag::new(ids::NULL_CAPABLE_FORMAT, 0, Pos { line: f.def_line, col: 7 }).arg(r.name.clone()));
+            }
+        }
+    }
+    // SLN needs a record format with SLNO(*VAR).
+    for f in files {
+        if let Some(at) = f.sln_at
+            && !f.ext.as_ref().is_some_and(|e| e.formats.iter().any(|r| r.dsp.as_ref().is_some_and(|d| d.slno_var)))
+        {
+            out.push(Diag::new(ids::SLN_NO_SLNO, 30, at));
+        }
+    }
+    for f in files.iter().filter(|f| f.usropn && !f.template) {
+        let opened = all.iter().any(|s| {
+            split_suffix(&s.op.code).0 == "OPEN" && s.op.f2.first().and_then(name_of).is_some_and(|n| n.eq_ignore_ascii_case(&f.name))
+        });
+        if !opened {
+            out.push(Diag::new(ids::USROPN_NO_OPEN, 30, Pos { line: f.def_line, col: 7 }).arg(f.name.clone()));
+        }
+    }
+    // COMMIT and ROLBK with no file under commitment control.
+    let committed = m.files.iter().chain(m.procs.iter().flat_map(|p| p.files.iter())).any(|f| f.kws.iter().any(|k| k.name == "COMMIT"));
+    if !committed {
+        for s in all.iter().filter(|s| matches!(split_suffix(&s.op.code).0, "COMMIT" | "ROLBK")) {
+            out.push(Diag::new(ids::COMMIT_NO_FILES, 0, s.at));
+        }
+    }
+    // DUMP without (A) is done only under DEBUG(*YES).
+    if !ctl.debug {
+        for s in all.iter().filter(|s| s.op.code == "DUMP" && !s.op.ext.contains('A')) {
+            out.push(Diag::new(ids::DUMP_IGNORED, 0, s.at));
+        }
+    }
+    if ctl.dftactgrp {
+        for p in &m.procs {
+            out.push(Diag::new(ids::DFTACTGRP_PROC, 20, p.at));
+        }
+        for s in all.iter().filter(|s| s.op.code.starts_with("CALLB")) {
+            out.push(Diag::new(ids::DFTACTGRP_CALLB, 30, s.at));
+        }
+    }
 }
 
 /// A subroutine name.

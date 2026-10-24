@@ -1,0 +1,28 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-ds item qualified template;
+  name varchar(10);
+end-ds;
+dcl-s count int(10);
+monitor;
+  data-into %handler(got:count) %data('x':'doc=string') %parser('COVNOPRS':'opt');
+  line = 'into ok';
+  write QSYSPRT line;
+on-error;
+  line = 'into ' + %char(%status);
+  write QSYSPRT line;
+endmon;
+line = 'count ' + %char(count);
+write QSYSPRT line;
+*inlr = *on;
+dcl-proc got;
+  dcl-pi *n int(10);
+    n int(10);
+    items likeds(item) dim(5) const;
+    num int(10) value;
+  end-pi;
+  n += num;
+  return 0;
+end-proc;

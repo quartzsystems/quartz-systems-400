@@ -117,6 +117,32 @@ fn declare_scope(
         }
         let mut fi = files::file(f, scope, ext, diags);
         fi.ir_index = u32::try_from(files.len()).unwrap_or(0);
+        // Every format ignored: the file is dropped.
+        if fi.ext.as_ref().is_some_and(|e| !e.formats.is_empty() && e.formats.iter().all(|r| !crate::extfiles::kept(&fi, &r.name))) {
+            diags.push(Diag::new(crate::diag::ids::ALL_FORMATS_IGNORED, 40, f.at).arg(fi.name.clone()));
+            t.dropped_files.push(fi.name.clone());
+            continue;
+        }
+        // LIKEFILE: the parent's device, description and use; the new
+        // file is qualified.
+        if let Some(parent) = fi.likefile.clone() {
+            match files.iter().find(|p| p.name == parent.to_ascii_uppercase()).cloned() {
+                Some(p) => {
+                    fi.dev = p.dev;
+                    fi.ext = p.ext;
+                    fi.external = p.external;
+                    fi.reclen = p.reclen;
+                    fi.keyed = p.keyed;
+                    fi.keylen = p.keylen;
+                    fi.input = p.input;
+                    fi.output = p.output;
+                    fi.update = p.update;
+                    fi.delete = p.delete;
+                    fi.qualified = true;
+                }
+                None => diags.push(Diag::new(crate::diag::ids::NOT_DEFINED, 30, f.at).arg(parent)),
+            }
+        }
         let s = Sym {
             name: fi.name.clone(),
             kind: Some(Kind::File(files.len())),
@@ -217,6 +243,20 @@ fn visit<'a>(i: usize, defs: &'a [Def], deps: &[Vec<usize>], done: &mut [bool], 
     out.push(&defs[i]);
 }
 
+/// A name as the source line writes it (names are upper case once
+/// read).
+fn written_name(read: &rpgfront::reader::Read, line: u32, name: &str) -> String {
+    read.lines
+        .iter()
+        .find(|l| l.no == line)
+        .and_then(|l| {
+            let up = l.text.to_ascii_uppercase();
+            let at = up.find(&name.to_ascii_uppercase())?;
+            l.text.get(at..at + name.len()).map(str::to_string)
+        })
+        .unwrap_or_else(|| name.to_string())
+}
+
 /// Compile a member.
 pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles, opts: &Options) -> Compiled {
     let ropts = ReadOptions {
@@ -269,6 +309,8 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         }
     }
     let mut t = Table::new();
+    t.extbinint = ctl.extbinint;
+    t.alwnull_usrctl = ctl.alwnull == "*USRCTL";
     let mut files = Vec::new();
     declare_scope(&mut t, &mut diags, &ctl, 0, "", &module.files, &module.defs, &module.inputs, ext, &mut files);
     crate::extfiles::declare_calc_fields(&mut t, &mut diags, 0, "", &module.calcs);
@@ -331,6 +373,11 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
             decl::nopass_order(&mut cx, &iface);
             let mut pr = decl::proto(&mut cx, &iface);
             pr.name.clone_from(&pname);
+            // EXTPROC(*DCLCASE) on an unnamed interface: the procedure's
+            // name as written.
+            if pr.extproc.as_deref().is_some_and(|e| e.eq_ignore_ascii_case("*N")) {
+                pr.extproc = Some(written_name(&read, p.at.line, &p.name));
+            }
             pr
         };
         // A procedure that returns a value needs a RETURN with one.
@@ -393,6 +440,7 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
     for p in &module.procs {
         diags.extend(crate::blocks::check(&p.calcs));
     }
+    crate::blocks::check_module(&module, &files, &ctl, opts.command == Command::CrtBndRpg, &mut diags);
     // CRTSQLRPGI: the statements precompiled; errors above the
     // generation level end the command before the compile.
     let precompiled = sql_opts.map(|o| crate::sql::precompile(&module, &t, &scopes, ext, &o));

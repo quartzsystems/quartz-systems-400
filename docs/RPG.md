@@ -339,6 +339,14 @@ digits from bit 8, decimals in the low byte.
 | `_QRNX_SQRT` | `%SQRT`, `SQRT` |
 | `_QRNX_SQLIN`, `_QRNX_SQLOUT`, `_QRNX_SQLRUN` | embedded SQL: a statement's host variables, then the statement |
 | `_QRNX_SQLDA` | embedded SQL: the SQLDA of `USING DESCRIPTOR` (inputs or outputs) or of `DESCRIBE` / `PREPARE INTO` |
+| `_QRNX_XMLINTO`, `_QRNX_XMLSAX` | `XML-INTO` (a target's shape, or a `%HANDLER`) and `XML-SAX` (`qrpgrt::xml`) |
+| `_QRNX_COMMIT` | `COMMIT`, `ROLBK` (802 without commitment control) |
+| `_QRNX_ALLOC`, `_QRNX_REALLOC` | `ALLOC`, `REALLOC` with RPG's statuses (425, 426) |
+| `_QRNX_SPECIAL` | a `SPECIAL` file's operations, through its `PGMNAME` program |
+| `_QRNX_DTALCK` | `OUT` of a data area this job has not locked (412) |
+| `_QRNX_EDITFLT` | `%EDITFLT` |
+| `_QRNX_FIXZONED`, `_QRNX_ALTSEQ` | `FIXNBR(*ZONED)` repairs; `ALTSEQ(*SRC)` compares |
+| `_QRNX_SIGNAL`, `_QRNX_DATAPGM`, `_QRNX_NOHANDLER`, `_QRNX_DUMP` | a status found by compiled code; `DATA-INTO`/`DATA-GEN` and `HANDLER` files (blocked, `PHASE9.md`); `DUMP` |
 
 **Moves** (`qrpgrt::mov`). Every operand takes part as its image:
 character data as its bytes (a varying field as its current value, its
@@ -358,6 +366,20 @@ storage, every occurrence in `$NAME__occ` and the current number in
 `RESET` restores a copy (`$NAME__rst`) that `_qrni_snap` takes when
 initialization and `*INZSR` are done. A `DIM(*AUTO)` or `DIM(*VAR)`
 array keeps its count in `$NAME__elem`.
+
+**XML** (`qrpgrt::xml`). One parser gives `XML-SAX`'s events in
+order and the element tree `XML-INTO` matches. `XML-INTO` gets its
+target as a shape the compiler writes (`codegen::xml`: per node the
+RPG name, the descriptor word, offset, elements and element size): the
+root (or the elements `path=` names) must have the target's name under
+`case=`, every subfield must be there (`allowmissing=yes` aside) and
+nothing else (`allowextra=yes` aside); values are trimmed (`trim=all`:
+the ends dropped, inner runs one blank). The number of elements set
+goes to PSDS positions 372-379. A `%HANDLER` gets the elements in
+groups of its array's size; an `XML-SAX` handler gets each event with
+the string as a pointer (length -1 when the event has none). An error
+in a handler is the operation's error. The special words
+`*XML_START_DOCUMENT`... are integer constants (`codegen::xml::WORDS`).
 
 ## Status data structures
 

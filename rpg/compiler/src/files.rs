@@ -103,6 +103,8 @@ pub struct DspLayout {
     pub subfile: bool,
     /// The subfile a control record format controls (`SFLCTL`).
     pub sflctl: Option<String>,
+    /// `SLNO(*VAR)`: the program gives the starting line (`SLN`).
+    pub slno_var: bool,
 }
 
 /// An external file description.
@@ -200,6 +202,27 @@ pub struct File {
     pub def_line: u32,
     /// Its IR file index.
     pub ir_index: u32,
+    /// `FORMLEN` and `FORMOFL`, 0 when not given.
+    pub form: (u16, u16),
+    /// `EXTIND(*INUx)`: the file is opened only when the switch is on.
+    pub extind: Option<String>,
+    /// `PRTCTL(ds)`: the structure that controls the printer.
+    pub prtctl: Option<String>,
+    /// `PGMNAME`: the program a `SPECIAL` file calls.
+    pub pgmname: Option<String>,
+    /// Where `SLN` is given.
+    pub sln_at: Option<rpgfront::ast::Pos>,
+    /// `HANDLER`: an Open Access handler.
+    pub handler: bool,
+    /// `ALIAS`: the fields go by their alternative names.
+    pub alias: bool,
+    /// A program-described keyed file's key length (`KEYED(*CHAR:n)`,
+    /// columns 29-33).
+    pub keylen: u32,
+    /// `LIKEFILE(parent)`.
+    pub likefile: Option<String>,
+    /// `RECNO(field)`: the relative record number of each record read.
+    pub recno: Option<String>,
 }
 
 impl File {
@@ -315,6 +338,7 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
         out.external = format == "E";
         out.reclen = c.reclen.parse().unwrap_or(0);
         out.keyed = c.rectype == "K" || c.keylen.parse::<u32>().is_ok();
+        out.keylen = c.keylen.trim().parse().unwrap_or(0);
     } else {
         // Free form: the device keyword, then USAGE.
         out.external = true;
@@ -394,6 +418,7 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
             },
         }
         out.keyed = kw(f, "KEYED").is_some();
+        out.keylen = kw(f, "KEYED").and_then(|k| crate::decl::int_arg(k, 1)).and_then(|v| u32::try_from(v).ok()).unwrap_or(0);
         out.designation = "F".into();
         if out.dev == Dev::Printer {
             out.designation.clear();
@@ -404,6 +429,15 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
     out.infsr = kw(f, "INFSR").and_then(|k| word_arg(k, 0));
     out.indds = kw(f, "INDDS").and_then(|k| word_arg(k, 0));
     out.usropn = kw(f, "USROPN").is_some();
+    let num = |n: &str| kw(f, n).and_then(|k| crate::decl::int_arg(k, 0)).and_then(|v| u16::try_from(v).ok()).unwrap_or(0);
+    out.form = (num("FORMLEN"), num("FORMOFL"));
+    out.extind = kw(f, "EXTIND").and_then(|k| word_arg(k, 0));
+    out.prtctl = kw(f, "PRTCTL").and_then(|k| word_arg(k, 0));
+    out.sln_at = kw(f, "SLN").map(|k| k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at));
+    out.handler = kw(f, "HANDLER").is_some();
+    out.alias = kw(f, "ALIAS").is_some();
+    out.recno = kw(f, "RECNO").and_then(|k| word_arg(k, 0));
+    out.pgmname = kw(f, "PGMNAME").and_then(|k| crate::decl::str_arg(k, 0).or_else(|| word_arg(k, 0)));
     out.qualified = kw(f, "QUALIFIED").is_some();
     out.template = kw(f, "TEMPLATE").is_some();
     out.prefix = kw(f, "PREFIX").and_then(|k| {
@@ -442,7 +476,17 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
     out.member = kw(f, "EXTMBR")
         .and_then(|k| str_arg(k, 0).or_else(|| word_arg(k, 0)))
         .unwrap_or_else(|| "*FIRST".into());
-    if out.external {
+    // Keywords of program-described files only.
+    if out.external
+        && let Some(k) = f.kws.iter().find(|k| matches!(k.name.as_str(), "RAFDATA" | "KEYLOC" | "FORMLEN" | "FORMOFL"))
+    {
+        diags.push(Diag::new(ids::NOT_FOR_EXTERNAL, 20, k.at).arg(k.name.clone()));
+    }
+    // LIKEFILE: the description is the parent's (`compile` copies it).
+    // BLOCKED(phase9): a LIKEFILE parameter (a file passed to a
+    // procedure) is not supported; the IR has no file handle to pass.
+    out.likefile = kw(f, "LIKEFILE").and_then(|k| word_arg(k, 0));
+    if out.external && out.likefile.is_none() {
         let desc_name = kw(f, "EXTDESC").and_then(|k| str_arg(k, 0)).unwrap_or_else(|| out.name.clone());
         let (lib, name) = match desc_name.split_once('/') {
             Some((l, n)) => (l.to_string(), n.to_string()),

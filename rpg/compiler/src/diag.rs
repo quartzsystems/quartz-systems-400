@@ -434,4 +434,64 @@ pub mod ids {
     pub const ENDCS_MISSING: &str = "RNF5094";
     /// `EXSR` of a name that is not a subroutine.
     pub const NOT_A_SUBROUTINE: &str = "RNF7018";
+    /// A `CASxx` group with no `END` or `ENDCS`.
+    pub const CAS_NO_END: &str = "RNF5094";
+    /// A `USROPN` file that no `OPEN` names.
+    pub const USROPN_NO_OPEN: &str = "RNF7062";
+    /// A procedure in a program for the default activation group.
+    pub const DFTACTGRP_PROC: &str = "RNF1520";
+    /// A record format with null-capable fields under
+    /// `ALWNULL(*INPUTONLY)`.
+    pub const NULL_CAPABLE_FORMAT: &str = "RNF7150";
+    /// `EXTFLD` of a field the external description lacks.
+    pub const EXTFLD_NOT_FOUND: &str = "RNF3803";
+    /// `EXTFMT` that is not valid for the field.
+    pub const EXTFMT_PARM: &str = "RNF3450";
+    /// Every record format of a file ignored.
+    pub const ALL_FORMATS_IGNORED: &str = "RNF2109";
+    /// A keyword only a program-described file takes.
+    pub const NOT_FOR_EXTERNAL: &str = "RNF2407";
+    /// `SLN` on a file with no `SLNO(*VAR)` record format.
+    pub const SLN_NO_SLNO: &str = "RNF2029";
+    /// `PACKEVEN` on a subfield that is not packed by positions.
+    pub const PACKEVEN_NOT_PACKED: &str = "RNF3704";
+    /// A procedure's `PGMINFO` when a program is created.
+    pub const PGMINFO_IGNORED: &str = "RNF1524";
+    /// `SERIALIZE` without `THREAD(*CONCURRENT)`.
+    pub const SERIALIZE_THREAD: &str = "RNF1519";
+    /// `%GRAPH` while the CCSID of graphic data is ignored.
+    pub const GRAPH_IGNORED: &str = "RNF0565";
+    /// A `%GRAPH` literal without shift-out and shift-in.
+    pub const GRAPH_NO_SHIFT: &str = "RNF0587";
+    /// `%GRAPH` of a value that is not character data.
+    pub const GRAPH_PARM: &str = "RNF0556";
+    /// `%THIS` outside a Java method.
+    pub const THIS_OUTSIDE: &str = "RNF0380";
+    /// A built-in function's operand is not valid.
+    pub const BIF_NOT_VALID: &str = "RNF0203";
+    /// `%PARMNUM` of a name that is not a parameter.
+    pub const PARMNUM_NOT_PARM: &str = "RNF0369";
+    /// `%NULLIND` of a field that is not null-capable.
+    pub const NOT_NULL_CAPABLE: &str = "RNF0342";
+    /// `%EDITFLT` of a value that is not a number.
+    pub const EDITFLT_PARM: &str = "RNF0337";
+    /// `%TLOOKUPxx` of a table with no sequence.
+    pub const TLOOKUP_SEQ: &str = "RNF0507";
+    /// `%SQRT` of a value that is not a number.
+    pub const SQRT_PARM: &str = "RNF0574";
+    /// An operation that needs a high resulting indicator has none.
+    pub const NO_HI_IND: &str = "RNF5324";
+    /// `WHEN-IS` or `WHEN-IN` of an operand `SELECT`'s cannot be
+    /// compared with.
+    pub const WHEN_IS_TYPE: &str = "RNF0203";
+    /// `%XML` options that are not valid.
+    pub const XML_OPTIONS: &str = "RNF0224";
+    /// A `%HANDLER` procedure without the handler's interface.
+    pub const HANDLER_PROC: &str = "RNF5352";
+    /// `COMMIT` or `ROLBK` with no file under commitment control.
+    pub const COMMIT_NO_FILES: &str = "RNF7099";
+    /// `DUMP` without `(A)` and without `DEBUG(*YES)`.
+    pub const DUMP_IGNORED: &str = "RNF5152";
+    /// `CALLB` in a program for the default activation group.
+    pub const DFTACTGRP_CALLB: &str = "RNF5378";
 }

@@ -45,12 +45,12 @@ pub fn statics(files: &[File], t: &crate::syms::Table) -> String {
     let mut out = String::new();
     for f in files
         .iter()
-        .filter(|f| (matches!(f.dev, Dev::Disk | Dev::Workstn) || f.dev == Dev::Printer && f.external) && !f.template)
+        .filter(|f| (matches!(f.dev, Dev::Disk | Dev::Workstn | Dev::Special) || f.dev == Dev::Printer && f.external) && !f.template)
     {
         let n = mangle(&f.name);
         let len = buffer_len(f, t).max(1);
         let _ = writeln!(out, "static $rb_{n}: char({len})");
-        if f.dev == Dev::Workstn && f.infds.is_none() {
+        if (f.dev == Dev::Workstn || f.recno.is_some()) && f.infds.is_none() {
             // The display feedback a read by file name looks at.
             let _ = writeln!(out, "static $fi_{n}: char(416)");
         }
@@ -117,6 +117,11 @@ impl Gen<'_> {
                 Some((f, Some(r)))
             }
             // A name declared nowhere; the caller says how it is used.
+            // A file dropped at its declaration (`RNF2109`).
+            None if self.t.dropped_files.contains(&name) => {
+                self.err(ids::UNDEFINED_OPERAND, 30, "");
+                None
+            }
             None => {
                 self.err(ids::NOT_DEFINED, 30, name);
                 None
@@ -131,8 +136,18 @@ impl Gen<'_> {
     /// `OPEN` a file, at initialization or by the operation: its status
     /// register.
     pub fn db_open(&mut self, f: &File) -> String {
+        if f.dev == Dev::Special {
+            return self.special_open(f);
+        }
+        // BLOCKED(phase9): Open Access handlers are not called; opening a
+        // HANDLER file ends the program as a handler IBM i cannot find
+        // does (its error is no file error the operation can take).
+        if f.handler {
+            self.rt_proc("_QRNX_NOHANDLER", "()");
+            self.b.ins("callb _QRNX_NOHANDLER()");
+        }
         let r = self.b.reg();
-        let infds = if f.dev == Dev::Workstn {
+        let infds = if f.dev == Dev::Workstn || f.recno.is_some() {
             match f.infds.as_ref().and_then(|n| self.t.find(self.scope, n)) {
                 Some(id) => Some(crate::codegen::place_of(self.t, id)),
                 None => Some(format!("$fi_{}", mangle(&f.name))),
@@ -147,8 +162,68 @@ impl Gen<'_> {
         if matches!(f.dev, Dev::Disk | Dev::Workstn) {
             let n = mangle(&f.name);
             self.b.ins(format!("store $eof_{n}, *OFF"));
+        } else {
+            // Other files keep whether they are open themselves.
+            let po = self.open_flag(f);
+            let ok = self.b.reg();
+            self.b.ins(format!("{ok} = cmp.lt {r}, 1000"));
+            self.b.ins(format!("store {po}, {ok}"));
         }
         r
+    }
+
+    /// A file the program opens at its start: with `EXTIND`, only when
+    /// the external indicator is on.
+    pub fn init_open(&mut self, f: &File) {
+        let Some(ind) = f.extind.clone() else {
+            let _ = self.db_open(f);
+            return;
+        };
+        let Some(x) = self.indicator(ind.trim_start_matches("*IN")) else { return };
+        let on = self.b.reg();
+        self.b.ins(format!("{on} = load {}", x.op));
+        let (yes, no) = (self.b.label(), self.b.label());
+        self.b.term(format!("brif {on}, {yes}, {no}"));
+        self.b.place(&yes);
+        let _ = self.db_open(f);
+        self.b.term(format!("br {no}"));
+        self.b.place(&no);
+    }
+
+    /// `RECNO`: a record read gives its relative record number (INFDS
+    /// position 397) to the field.
+    fn recno_after(&mut self, f: &File, status: &str) {
+        let Some(name) = f.recno.clone() else { return };
+        let Some(id) = self.t.find(self.scope, &name.to_ascii_uppercase()) else {
+            self.err(ids::NOT_DEFINED, 30, name);
+            return;
+        };
+        let infds = match f.infds.as_ref().and_then(|n| self.t.find(self.scope, n)) {
+            Some(i) => crate::codegen::place_of(self.t, i),
+            None => format!("$fi_{}", mangle(&f.name)),
+        };
+        let field = crate::codegen::place_of(self.t, id);
+        let (yes, no) = (self.b.label(), self.b.label());
+        let ok = self.b.reg();
+        self.b.ins(format!("{ok} = cmp.eq {status}, 0"));
+        self.b.term(format!("brif {ok}, {yes}, {no}"));
+        self.b.place(&yes);
+        let a = self.b.reg();
+        self.b.ins(format!("{a} = addr {infds}"));
+        let r = self.b.reg();
+        self.b.ins(format!("{r} = load [{a} +396]:i32"));
+        let t = self.b.temp("i32");
+        self.b.ins(format!("store {t}, {r}"));
+        self.b.ins(format!("dec.mov {field}, {t}"));
+        self.b.term(format!("br {no}"));
+        self.b.place(&no);
+    }
+
+    /// The flag a printer or special file keeps of being open.
+    pub fn open_flag(&mut self, f: &File) -> String {
+        let po = format!("$po_{}", mangle(&f.name));
+        self.externs.entry(po.clone()).or_insert_with(|| format!("static {po}: ind inz(*OFF)"));
+        po
     }
 
     /// One database operation statement.
@@ -189,6 +264,9 @@ impl Gen<'_> {
         }
         if f.dev == Dev::Printer && f.external && base == "WRITE" {
             return self.prt_write(&f, fmt);
+        }
+        if f.dev == Dev::Special {
+            return self.special_op(op, base, &f);
         }
         if f.dev != Dev::Disk {
             self.err(ids::BAD_FILE_OP, 30, f.name.clone());
@@ -292,6 +370,9 @@ impl Gen<'_> {
             self.b.place(&skip);
         }
         self.db_result(op, base, &n, &status, &key);
+        if matches!(base, "READ" | "READP" | "READE" | "READPE" | "CHAIN") {
+            self.recno_after(&f, &status);
+        }
         let by_file = matches!(&target, Expr::Ref { name, steps, .. } if *name == f.name && steps.is_empty());
         self.infds_opcode(&f, base, by_file);
     }
@@ -381,7 +462,7 @@ impl Gen<'_> {
     }
 
     /// `%ERROR`, `%STATUS` and the resulting indicators of an operation.
-    fn db_result(&mut self, op: &Op, base: &str, n: &str, status: &str, key: &KeyArg) {
+    pub fn db_result(&mut self, op: &Op, base: &str, n: &str, status: &str, key: &KeyArg) {
         let err = self.b.reg();
         self.b.ins(format!("{err} = cmp.ge {status}, 1000"));
         let handled = op.ext.contains('E') || !op.resind[1].is_empty();
@@ -738,6 +819,18 @@ impl Gen<'_> {
             }
         };
         let Some(r) = fmt else {
+            // A program-described keyed file: the key is the value's
+            // characters, as long as the key.
+            if !f.external && f.keylen > 0 && values.len() == 1 {
+                let t = self.b.temp(&format!("char({})", f.keylen));
+                let v = self.as_chars(&values[0]);
+                if matches!(v.ty, Ty::Ds(_)) {
+                    self.b.ins(format!("mov {t}, {}.all_", v.op));
+                } else {
+                    self.assign(&V::place(Ty::Char(f.keylen), t.clone()), &v, false);
+                }
+                return Some(KeyArg::Key(t));
+            }
             self.err(ids::BAD_FILE_OP, 30, f.name.clone());
             return None;
         };
@@ -819,10 +912,59 @@ impl Gen<'_> {
         }
         let s = self.b.reg();
         self.b.ins(format!("{s} = load {st}"));
-        if matches!(f.dev, Dev::Disk | Dev::Workstn) {
+        if matches!(f.dev, Dev::Disk | Dev::Workstn | Dev::Special) {
             self.db_result(op, "OPEN", &n, &s, &KeyArg::None);
             self.infds_opcode(&f, "OPEN", true);
         }
+    }
+
+    /// `POST`, `ACQ`, `REL` and `NEXT`: a closed file is 01211; an open
+    /// one has one requester, so there is nothing to acquire, release
+    /// or switch to, and `POST` has the feedback already.
+    pub fn device_op(&mut self, op: &Op, base: &str) {
+        let Some(e) = op.f2.first().cloned() else {
+            self.err(ids::FILE_NOT_DEFINED, 30, op.code.clone());
+            return;
+        };
+        let Some((f, _)) = self.db_target(&e) else { return };
+        if base != "POST" && f.dev != Dev::Workstn {
+            self.err(ids::OP_NOT_FOR_FILE, 30, f.name.clone());
+            return;
+        }
+        for x in op.f1.clone() {
+            let _ = self.expr(&x, Want::default());
+        }
+        let n = mangle(&f.name);
+        let open = self.b.reg();
+        if matches!(f.dev, Dev::Disk | Dev::Workstn) {
+            let fb = self.b.reg();
+            self.b.ins(format!("{fb} = dbfb {n}"));
+            let a = self.b.reg();
+            self.b.ins(format!("{a} = and {fb}, 8"));
+            self.b.ins(format!("{open} = cmp.ne {a}, 0"));
+        } else {
+            let po = self.open_flag(&f);
+            self.b.ins(format!("{open} = load {po}"));
+        }
+        let (ok, closed) = (self.b.reg(), self.b.reg());
+        self.b.ins(format!("{ok} = const.i32 0"));
+        self.b.ins(format!("{closed} = const.i32 1211"));
+        let st = self.b.reg();
+        self.b.ins(format!("{st} = select {open}, {ok}, {closed}"));
+        if f.dev == Dev::Printer {
+            // A printer keeps no status of its own.
+            if op.ext.contains('E') || !op.resind[1].is_empty() {
+                let err = self.b.reg();
+                self.b.ins(format!("{err} = cmp.ge {st}, 1000"));
+                self.b.ins(format!("store $errind, {err}"));
+                self.b.ins(format!("dec.mov $status, {st}"));
+                let ind = op.resind[1].clone();
+                self.set_ind(&ind, &err);
+            }
+        } else {
+            self.db_result(op, base, &n, &st, &KeyArg::None);
+        }
+        self.infds_opcode(&f, base, true);
     }
 
     fn close_op(&mut self, op: &Op) {
@@ -852,9 +994,13 @@ impl Gen<'_> {
                 let r = self.b.reg();
                 self.b.ins(format!("{r} = dbclose {n}"));
                 self.b.place(&done);
+            } else if f.dev == Dev::Special {
+                self.special_close(&f);
             } else {
                 let r = self.b.reg();
                 self.b.ins(format!("{r} = dbclose {n}"));
+                let po = self.open_flag(&f);
+                self.b.ins(format!("store {po}, *OFF"));
             }
         }
         if op.ext.contains('E') {
@@ -885,7 +1031,8 @@ impl Gen<'_> {
                     return Some(None);
                 };
                 if !matches!(f.dev, Dev::Disk | Dev::Workstn) {
-                    return Some(Some(V::lit(Ty::Ind, "*ON")));
+                    let po = self.open_flag(&f);
+                    return Some(Some(V::place(Ty::Ind, po)));
                 }
                 let fb = self.b.reg();
                 self.b.ins(format!("{fb} = dbfb {}", mangle(&f.name)));
@@ -1020,7 +1167,7 @@ pub fn file_notes(g: &mut Gen<'_>, m: &rpgfront::ast::Module) {
     for f in g.files.iter().filter(|f| {
         f.dev == Dev::Disk && !f.template && f.input != f.output && !f.update && !f.noblock && (!f.external || f.ext.is_some())
     }) {
-        let allowed: &[&str] = if f.input { &["READ", "OPEN", "CLOSE", "FEOD"] } else { &["WRITE", "OPEN", "CLOSE", "FEOD"] };
+        let allowed: &[&str] = if f.input { &["READ", "OPEN", "CLOSE", "FEOD", "FORCE"] } else { &["WRITE", "OPEN", "CLOSE", "FEOD"] };
         let names: Vec<String> = std::iter::once(f.name.clone())
             .chain(g.t.recfmts.iter().filter(|r| r.file_name == f.name).map(|r| r.name.clone()))
             .collect();

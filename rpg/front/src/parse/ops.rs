@@ -155,7 +155,7 @@ pub fn free_only(code: &str) -> bool {
 pub fn free_takes_expression(code: &str) -> bool {
     matches!(
         code,
-        "IF" | "ELSEIF" | "DOU" | "DOW" | "WHEN" | "RETURN" | "CALLP" | "SORTA" | "ON-ERROR"
+        "IF" | "ELSEIF" | "DOU" | "DOW" | "WHEN" | "SELECT" | "RETURN" | "CALLP" | "SORTA" | "ON-ERROR"
             | "ON-EXCP" | "WHEN-IS" | "WHEN-IN" | "XML-INTO" | "XML-SAX" | "DATA-INTO" | "DATA-GEN"
             | "SND-MSG" | "ON-EXIT"
     )

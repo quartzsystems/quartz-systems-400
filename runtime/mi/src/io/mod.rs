@@ -290,6 +290,12 @@ pub trait DataSource {
     fn dtaara_read(&mut self, name: &str, lib: &str) -> Result<DataAreaValue, IoFail>;
     /// `dtaara.write`: the whole value.
     fn dtaara_write(&mut self, name: &str, lib: &str, value: &DataAreaValue) -> Result<(), IoFail>;
+    /// Whether this job holds the area's lock (`IN *LOCK`); `None` when
+    /// the source does not know. An area that does not exist is not
+    /// locked; `*LDA` is always the job's own.
+    fn dtaara_locked(&mut self, _name: &str, _lib: &str) -> Option<bool> {
+        None
+    }
     /// `dtaq.snd`.
     fn dtaq_send(&mut self, name: &str, lib: &str, data: &[u8]) -> Result<(), IoFail>;
     /// `dtaq.rcv`: the oldest entry, or none within `wait` seconds
@@ -371,6 +377,13 @@ impl DataSource for MemData {
     fn dtaara_read(&mut self, name: &str, lib: &str) -> Result<DataAreaValue, IoFail> {
         let k = Self::key(&self.areas, name, lib).ok_or_else(|| no_area(name, lib))?;
         Ok(self.areas[&k].clone())
+    }
+
+    fn dtaara_locked(&mut self, name: &str, lib: &str) -> Option<bool> {
+        if name == "*LDA" {
+            return Some(true);
+        }
+        Some(Self::key(&self.areas, name, lib).is_some_and(|k| self.locked.contains(&k)))
     }
 
     fn dtaara_write(&mut self, name: &str, lib: &str, value: &DataAreaValue) -> Result<(), IoFail> {

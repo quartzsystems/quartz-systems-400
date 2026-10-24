@@ -1,0 +1,268 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   COV001
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   COV001
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; dds: B8A                                                                                              000000     000200
+      3 ctl-opt dftactgrp(*no);                                                                                   000000     000300
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     4 dcl-f QSYSPRT printer(132);                                                                               000000     000400
+-     5 dcl-ds line len(132) end-ds;                                                                              000000     000500
+ ======>       aaaa
+ *RNF3530 00 a      000500  Data structure LINE has no valid subfields.
+-     6 dcl-f B8A workstn usropn maxdev(*file) devid(dev);                                                        000000     000600
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  B8A              {lib}/B8A                               *
+         * Record format(s) . . . . . :  SCR1             SCR1                                        *
+         *--------------------------------------------------------------------------------------------*
+-
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+      7 dcl-s dev char(10) inz('none');                                                                           000000     000700
+ *RNF2318 00      4 000400  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-     8=ISCR1                                                                                                               1000001
+         *--------------------------------------------------------------------------------------------*                     1
+         * RPG record format  . . . . :  SCR1                                                         *                     1
+         * External format  . . . . . :  SCR1 : {lib}/B8A                                         *                     1
+         *--------------------------------------------------------------------------------------------*                     1
+      9=I                             N    1    1  *IN03                           Exit                                     1000002
+     10=I                             A    2   11  NAME                                                                     1000003
+     11=I                             S   12   16 0CNT                                                                      1000004
+-    12 acq(e) 'COVNODEV' B8A;                                                                                    000000     000800
+     13 line = 'acq ' + %char(%status(B8A)) + ' ' + %error + ' ' + dev;                                           000000     000900
+     14 write QSYSPRT line;                                                                                       000000     001000
+     15 monitor;                                                                                             B01  000000     001100
+     16   acq 'COVNODEV' B8A;                                                                                 01  000000     001200
+     17   line = 'acq mon ok';                                                                                01  000000     001300
+     18   write QSYSPRT line;                                                                                 01  000000     001400
+     19 on-error;                                                                                            X01  000000     001500
+     20   line = 'acq mon ' + %char(%status);                                                                 01  000000     001600
+     21   write QSYSPRT line;                                                                                 01  000000     001700
+     22 endmon;                                                                                              E01  000000     001800
+     23 *inlr = *on;                                                                                              000000     001900
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+ *RNF7066 00      6 000600  Record-Format SCR1 not used for input or output.
+ *RNF7062 30      6 000600  There is no OPEN operation for file B8A that specifies user
+                            controlled open.
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          B8A               WORKSTN                 6D     12      13      16
+            SCR1                                    6D      8
+          QSYSPRT           PRINTER                 4D     14      18      21
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   23M
+ *RNF7031 *IN03             N(1)                    9D
+ *RNF7031 CNT               P(5,0)                 11D
+          DEV               A(10)                   6D      7D     13
+          LINE              DS(132)                 5D     13M     14      17M
+                                                   18      20M     21
+ *RNF7031 NAME              A(10)                  10D
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+ *RNF7031 03                                        9M
+          LR                                       23M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+ *RNF7031 00      3 The name or indicator is not referenced.
+ *RNF7066 00      1 Record-Format name of Externally-Described file is not used.
+ *RNF7062 30      1 There is no OPEN for a file that specifies user-controlled
+                    open; the File specification is ignored.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        6
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        1
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        7
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       23
+     Specifications  . . . . . . . . :       21
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        1
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Compilation stopped. Severity 30 errors found in program.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

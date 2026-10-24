@@ -1,0 +1,23 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s f float(8);
+dcl-s g float(4);
+dcl-s c char(10) inz(' 2.5 ');
+f = %float(3) / 4;
+line = 'a ' + %editc(%dec(f:9:4):'X');
+write QSYSPRT line;
+f = %float(c) * 2;
+line = 'b ' + %editc(%dec(f:9:4):'X');
+write QSYSPRT line;
+g = %sqrt(%float(2));
+line = 'c ' + %editc(%dech(g:9:4):'X');
+write QSYSPRT line;
+f = %sqrt(16);
+line = 'd ' + %editc(%dec(f:9:4):'X') + ' ' + %char(%int(%sqrt(81)));
+write QSYSPRT line;
+f = %float(1) / 3;
+line = 'e ' + %editc(%dech(f:15:12):'X');
+write QSYSPRT line;
+*inlr = *on;

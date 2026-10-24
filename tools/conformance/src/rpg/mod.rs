@@ -84,6 +84,30 @@ fn messages(case: &Case) -> std::collections::BTreeMap<String, String> {
 }
 pub mod lstcmp;
 
+/// The data areas a case's setup makes (`CRTDTAARA`), with `*LDA`.
+fn data_areas(case: &Case) -> mi::io::MemData {
+    let mut d = mi::io::MemData::default();
+    for s in &case.setup {
+        let cmd = case.fill(s, "QGPL");
+        if !cmd.trim_start().to_ascii_uppercase().starts_with("CRTDTAARA") {
+            continue;
+        }
+        let q = build::kwd(&cmd, "DTAARA");
+        let (lib, name) = q.split_once('/').map_or(("QGPL".to_string(), q.clone()), |(l, n)| (l.to_string(), n.to_string()));
+        let len: u32 = build::kwd(&cmd, "LEN").split_whitespace().next().and_then(|n| n.parse().ok()).unwrap_or(32);
+        let text = cmd
+            .find("VALUE('")
+            .and_then(|at| cmd[at + 7..].find("')").map(|end| cmd[at + 7..at + 7 + end].replace("''", "'")))
+            .unwrap_or_default();
+        let mut v = mi::io::DataAreaValue::chars(len);
+        for (i, b) in ccsid::to_ebcdic(&text).unwrap_or_default().into_iter().take(len as usize).enumerate() {
+            v.value[i] = b;
+        }
+        d.add_area(&lib, &name, v);
+    }
+    d
+}
+
 /// Where the corpus lives.
 pub struct Kit {
     /// `conformance/rpg`.
@@ -386,12 +410,16 @@ fn spooled(spool: &MemSpool) -> Vec<Spooled> {
         .values()
         .filter(|f| f.records > 0)
         .map(|f| {
-            let (pages, _) = spool::scs::decode(&f.data);
+            let (pages, fmt) = spool::scs::decode(&f.data);
+            // pub400 prints its footer on a page's last line.
+            let last = fmt.len;
             Spooled {
                 file: f.file.clone(),
+                // Bytes that do not print are blanks on the oracle's copy.
                 lines: spool::view::rows(&pages)
                     .into_iter()
-                    .filter(|(_, _, t)| !t.trim().is_empty())
+                    .map(|(p, l, t)| (p, l, t.chars().map(|c| if c.is_control() { ' ' } else { c }).collect::<String>()))
+                    .filter(|(_, l, t)| !t.trim().is_empty() && (last == 66 || u32::from(last) != u32::from(*l)))
                     .map(|(p, l, t)| format!("{p}/{l:<3} {}", t.trim_end()))
                     .collect(),
             }
@@ -481,8 +509,16 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
         o.cause = "RNS9310".into();
     }
     if c.created && !case.call.is_empty() && verb != "CRTRPGMOD" {
-        let p = program(&c, &case.name, &objs, &main_cmd)?;
-        call_into(case, &mut o, p, &objs, db.as_ref())?;
+        // A program that does not bind (an import nothing exports) is
+        // not created.
+        match program(&c, &case.name, &objs, &main_cmd) {
+            Ok(p) => call_into(case, &mut o, p, &objs, db.as_ref())?,
+            Err(e) if e.contains("unresolved") => {
+                o.created = false;
+                o.cause = "RNS9310".into();
+            }
+            Err(e) => return Err(e),
+        }
     }
     Ok((o, c.listing, notes))
 }
@@ -504,6 +540,8 @@ fn call_into(
         }
         let mut job = Job::boxed(Box::new(src));
         job.usrspcs.set_source(Box::new(MemUserSpaces::default()));
+        job.data = Some(Box::new(data_areas(case)));
+        job.cmtctl = case.setup.iter().any(|s| s.trim_start().to_ascii_uppercase().starts_with("STRCMTCTL"));
         if let Some(d) = db {
             job.io = Some(Box::new(d.io()?));
             job.sql = Some(Box::new(d.sql()));
@@ -519,8 +557,9 @@ fn call_into(
         qrpgrt::install(&mut job);
         let spool = KitSpool(Rc::default(), db.map(|d| d.printers.clone()).unwrap_or_default());
         job.spool = Some(Box::new(spool.clone()));
+        // A member without keys runs in a batch job: no display.
         let display = db
-            .filter(|d| !d.displays.is_empty())
+            .filter(|d| !d.displays.is_empty() && !case.keys.is_empty())
             .map(|d| screen::KitDisplay::new(d.displays.clone(), &case.keys, messages(case)));
         if let Some(d) = &display {
             job.display = Some(Box::new(d.clone()));

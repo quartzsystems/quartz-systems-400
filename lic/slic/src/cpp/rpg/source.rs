@@ -243,6 +243,7 @@ pub fn printer_desc(def: &dds::prtf::PrtfDefinition, lib: &str) -> ExtFile {
                     subfile: false,
                     sflctl: None,
                     ind_texts: Vec::new(),
+                    slno_var: false,
                 }),
                 fields,
                 keys: Vec::new(),
@@ -309,6 +310,7 @@ pub fn display_desc(df: &dspf::DisplayFile, lib: &str) -> ExtFile {
                     offsets: named.iter().map(|(i, _)| (out_of(*i), in_of(*i))).collect(),
                     subfile: r.kind == dspf::RecordKind::Subfile,
                     sflctl: r.subfile.as_ref().map(|s| s.record.clone()),
+                    slno_var: r.slno == Some(dspf::Slno::Var),
                 }),
             }
         })

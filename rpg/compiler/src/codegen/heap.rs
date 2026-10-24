@@ -2,7 +2,7 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! The heap operations `ALLOC` and `DEALLOC` (the built-ins `%ALLOC`
+//! The heap operations `ALLOC`, `REALLOC` and `DEALLOC` (the built-ins `%ALLOC`
 //! and `%REALLOC` are with the others).
 
 use rpgfront::ast::{Expr, Op};
@@ -22,9 +22,21 @@ impl Gen<'_> {
         let Some(nv) = self.expr(n, Want::default()) else { return };
         let Some(n) = self.int_reg(&nv) else { return };
         let Some(t) = self.target(t) else { return };
-        let r = self.b.reg();
-        self.b.ins(format!("{r} = alloc {n}"));
-        self.b.ins(format!("store {}, {r}", t.op));
+        self.rt_proc("_QRNX_ALLOC", "($p: ptr, byval $n: i64)");
+        self.b.ins(format!("callb _QRNX_ALLOC({}, {n})", t.op));
+    }
+
+    /// `REALLOC length pointer`: the pointer's storage made that long.
+    pub fn realloc_op(&mut self, op: &Op) {
+        let (Some(n), Some(t)) = (op.f2.first(), op.result.first()) else {
+            self.err(ids::BAD_EXPRESSION_TYPE, 30, op.code.clone());
+            return;
+        };
+        let Some(nv) = self.expr(n, Want::default()) else { return };
+        let Some(n) = self.int_reg(&nv) else { return };
+        let Some(t) = self.target(t) else { return };
+        self.rt_proc("_QRNX_REALLOC", "($p: ptr, byval $n: i64)");
+        self.b.ins(format!("callb _QRNX_REALLOC({}, {n})", t.op));
     }
 
     /// `DEALLOC pointer`; with `(N)` the pointer is also set to null.

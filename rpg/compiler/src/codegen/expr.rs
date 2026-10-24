@@ -135,7 +135,19 @@ impl Gen<'_> {
             }
             Expr::Ref { name, steps, at } => {
                 self.ref_at = *at;
-                self.reference(name, steps, false)
+                let v = self.reference(name, steps, false)?;
+                // FIXNBR(*ZONED): a zoned value's bad digits repaired.
+                if self.ctl.fixnbr_zoned
+                    && let Ty::Zoned(d, sc) = v.ty
+                    && v.kind == Vk::Place
+                    && v.dim == 0
+                {
+                    let t = self.tmp(&Ty::Zoned(d, sc));
+                    self.rt_proc("_QRNX_FIXZONED", "($dst: bytes(1) *VARSIZE, $src: bytes(1) *VARSIZE, byval $n: i32)");
+                    self.b.ins(format!("callb _QRNX_FIXZONED({}, {}, {d})", t.op, v.op));
+                    return Some(V { sym: v.sym, ..t });
+                }
+                Some(v)
             }
             Expr::Bif { name, args, .. } => self.bif(name, args, w),
             Expr::Unary(op, a, _) => self.unary(*op, a, w),
@@ -147,7 +159,8 @@ impl Gen<'_> {
         }
     }
 
-    fn literal(&mut self, l: &Lit) -> Option<V> {
+    /// A literal as a value.
+    pub fn literal(&mut self, l: &Lit) -> Option<V> {
         Some(match l {
             Lit::Num(n) => {
                 if n.to_ascii_uppercase().contains('E') {
@@ -203,6 +216,9 @@ impl Gen<'_> {
         }
         if word == "*DATE" {
             return Some(self.job_date(8));
+        }
+        if let Some(n) = crate::codegen::xml::word_value(word) {
+            return self.literal(&Lit::Num(n.to_string()));
         }
         let at = self.ref_at;
         self.undefined_name(word, at);
@@ -845,8 +861,9 @@ impl Gen<'_> {
             self.b.ins(format!("{r} = str.cmp.{c} {a}, {}", vb.op));
             return Some(V::reg(Ty::Ind, r));
         }
-        if matches!(va.ty, Ty::Ptr | Ty::ProcPtr) || matches!(vb.ty, Ty::Ptr | Ty::ProcPtr) {
-            // *NULL takes the other side's kind of pointer.
+        if matches!(va.ty, Ty::Ptr | Ty::ProcPtr | Ty::Object) || matches!(vb.ty, Ty::Ptr | Ty::ProcPtr | Ty::Object) {
+            // *NULL takes the other side's kind of pointer; an object
+            // reference compares as a pointer.
             let proc = va.ty == Ty::ProcPtr || vb.ty == Ty::ProcPtr;
             let a = self.ptr_reg_of(&va, proc);
             let b = self.ptr_reg_of(&vb, proc);

@@ -47,6 +47,12 @@ pub struct EditOpts {
     pub date_fmt: DateEditFmt,
     /// `DATEDIT` separator for edit code `Y`.
     pub date_sep: Option<char>,
+    /// `DECEDIT(',')`: the decimal point is a comma and the thousands
+    /// separator a period.
+    pub decimal_comma: bool,
+    /// `DECEDIT('0.')` or `('0,')`: a zero before the point when the
+    /// integer part is zero.
+    pub lead_zero: bool,
 }
 
 impl EditOpts {

@@ -187,7 +187,10 @@ pub(crate) fn place(d: &Diag) -> Place {
         // Checks of expressions and operations made after the source.
         "RNF0328" | "RNF0329" | "RNF0331" | "RNF0334" | "RNF0336" | "RNF0345" | "RNF0362" | "RNF0365" | "RNF0371"
         | "RNF0381" | "RNF0528" | "RNF0530" | "RNF0571" | "RNF0580" | "RNF0581" | "RNF0599" | "RNF0655" | "RNF0752"
-        | "RNF5159" | "RNF5191" | "RNF5202" | "RNF5276" | "RNF5343" | "RNF5403" | "RNF6029" => Place::Additional,
+        | "RNF5159" | "RNF5191" | "RNF5202" | "RNF5276" | "RNF5343" | "RNF5403" | "RNF6029" | "RNF0203" | "RNF0224"
+        | "RNF0574" | "RNF5352" | "RNF0337" | "RNF0342" | "RNF0507" | "RNF0556" | "RNF0565" | "RNF0587" => {
+            Place::Additional
+        }
         id if id.starts_with("RNF7") => Place::Additional,
         _ => Place::Stmt,
     }
@@ -249,7 +252,7 @@ pub(crate) fn seq_of(c: &Compiled, d: &Diag) -> String {
 
 /// Diagnostics IBM prints without a marker.
 fn unmarked(id: &str) -> bool {
-    matches!(id, "RNF5005" | "RNF0256" | "RNF3504" | "RNF5418" | "RNF5177" | "RNF5178" | "RNF7301" | "RNF5501" | "RNF1502" | "RNF5415")
+    matches!(id, "RNF5005" | "RNF0256" | "RNF3504" | "RNF5418" | "RNF5177" | "RNF5178" | "RNF7301" | "RNF5501" | "RNF1502" | "RNF5415" | "RNF5094")
 }
 
 /// The column a diagnostic points at: the name it is about when the

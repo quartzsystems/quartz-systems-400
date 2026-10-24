@@ -148,8 +148,20 @@ fn numeric(digits: &[u8], neg: bool, shape: Shape, s: Spec, opts: &EditOpts) -> 
         }
     }
     if shape.scale > 0 {
+        // DECEDIT('0.'): the units position shows its zero.
+        if opts.lead_zero && !significant && body.ends_with(fill) {
+            body.pop();
+            body.push('0');
+        }
         body.push('.');
         body.extend(frac.iter().map(|&d| digit_char(d)));
+    }
+    if opts.decimal_comma {
+        body = body.chars().map(|c| match c {
+            '.' => ',',
+            ',' => '.',
+            c => c,
+        }).collect();
     }
     // The first printed character: a digit or the decimal point.
     let first = body.find(|c: char| c != fill).unwrap_or(0);

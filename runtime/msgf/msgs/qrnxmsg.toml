@@ -105,6 +105,62 @@ sev = 50
 text = "The DSPLY operation failed."
 
 [[msg]]
+id = "RNX0351"
+sev = 50
+text = "The XML document is not well formed: parser code &1 at offset &2."
+vars = ["*BIN 4", "*CHAR *VARY 2", "*BIN 4"]
+
+[[msg]]
+id = "RNX0352"
+sev = 50
+text = "An option given to %XML is not valid."
+vars = ["*CHAR *VARY 2", "*BIN 4", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "RNX0353"
+sev = 50
+text = "The XML document does not fit the target of XML-INTO."
+vars = ["*BIN 4", "*BIN 4", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2"]
+
+[[msg]]
+id = "RNX0356"
+sev = 50
+text = "The XML handler procedure stopped the parse."
+vars = ["*BIN 4", "*BIN 4", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 2", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "RNX0355"
+sev = 50
+text = "The parser or generator program of DATA-INTO or DATA-GEN could not be called."
+vars = ["*CHAR 15", "*BIN 4", "*CHAR *VARY 4"]
+
+[[msg]]
+id = "RNX0412"
+sev = 50
+text = "Data area &1 in &2 must be locked by IN *LOCK before OUT."
+vars = ["*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "RNX0425"
+sev = 50
+text = "The heap cannot give storage of the length asked for."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "RNX0426"
+sev = 50
+text = "The pointer does not address heap storage that can be reallocated."
+help = "QS/400 sends this for status 426; the pointer was not set by ALLOC or %ALLOC, or its storage was freed."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
+id = "RNX0802"
+sev = 99
+text = "COMMIT or ROLBK ran with no commitment control active."
+help = "Start commitment control with STRCMTCTL before the program commits or rolls back."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10"]
+
+[[msg]]
 id = "RNX1011"
 sev = 99
 text = "A record of a type the program does not describe was read."

@@ -1,0 +1,13 @@
+# COV013 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 3 seq 000300
+diag: RNF3530 00 line 4 seq 000400
+diag: RNF7099 00 line 5 seq 000500
+diag: RNF7099 00 line 8 seq 000800
+diag: RNF7099 00 line 12 seq 001200
+run: ok
+spool: QSYSPRT
+  |1/1   commit 802 1
+  |1/2   rolbk 802 1
+  |1/3   commit mon 802

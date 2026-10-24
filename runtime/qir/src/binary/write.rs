@@ -271,6 +271,8 @@ impl W {
             w.str(&r.name);
             w.opt(r.level.as_ref(), |w, l| w.str(l));
         });
+        self.u16(f.form.0);
+        self.u16(f.form.1);
     }
 
     fn param(&mut self, p: &Param) {

@@ -51,7 +51,7 @@ pub fn prefixed(name: &str, prefix: Option<&(String, u32)>) -> String {
 
 /// The formats a file keeps: `INCLUDE` names the kept, `IGNORE` the
 /// dropped.
-fn kept(f: &File, fmt: &str) -> bool {
+pub fn kept(f: &File, fmt: &str) -> bool {
     if !f.include.is_empty() {
         return f.include.iter().any(|i| i == fmt);
     }
@@ -94,7 +94,11 @@ pub fn declare_files(t: &mut Table, diags: &mut Vec<Diag>, scope: usize, prefix:
             };
             let idx = t.recfmts.len();
             for fd in &fm.fields {
-                let mut pname = prefixed(&fd.name, f.prefix.as_ref());
+                let mut pname = if f.alias && !fd.alias.is_empty() {
+                    fd.alias.to_ascii_uppercase()
+                } else {
+                    prefixed(&fd.name, f.prefix.as_ref())
+                };
                 // An I spec of the format renames the field.
                 for i in inputs.iter().filter(|i| i.external && (i.name == name || i.name == fm.name)) {
                     if let Some(x) = i.fields.iter().find(|x| x.extname == fd.name && !x.name.is_empty()) {
@@ -114,6 +118,9 @@ pub fn declare_files(t: &mut Table, diags: &mut Vec<Diag>, scope: usize, prefix:
                     storage: if scope == 0 { Storage::Static } else { Storage::Auto },
                     def_line: f.def_line,
                     implicit: true,
+                    // BLOCKED(phase9): the record's null map does not reach
+                    // the program, so the indicator stays off.
+                    nullind: fd.nullable && t.alwnull_usrctl,
                     ..Sym::default()
                 });
             }
@@ -335,7 +342,66 @@ pub fn ds_subfields(cx: &mut Cx<'_>, d: &Def) -> Option<(ExtSubs, u32)> {
         cx.diags.push(Diag::new(ids::NOT_DEFINED, 30, d.at).arg(fmt.unwrap_or_default()));
         return Some((Vec::new(), 1));
     };
-    let (mut subs, len) = subfields(fm, None, which);
+    let (mut subs, mut len) = subfields(fm, None, which);
+    let fm = fm.clone();
+    // EXTBININT: binary fields without decimals are integers.
+    if cx.t.extbinint {
+        for s in &mut subs {
+            if let Ty::Bin(dg, 0) = s.1 {
+                s.1 = Ty::Int(if dg <= 4 { 5 } else { 10 });
+            }
+        }
+    }
+    // ALIAS: the fields' alternative names.
+    if d.kw("ALIAS").is_some() {
+        for s in &mut subs {
+            if let Some(f) = fm.fields.iter().find(|f| f.name == s.0 && !f.alias.is_empty()) {
+                s.0 = f.alias.to_ascii_uppercase();
+            }
+        }
+    }
+    // EXTFLD renames a field, EXTFMT changes its form; the subfields
+    // after it move when its size changes.
+    let mut resized = false;
+    for c in &d.children {
+        let Some(k) = c.kw("EXTFLD") else { continue };
+        let from = str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_else(|| c.name.clone()).to_ascii_uppercase();
+        let Some(s) = subs.iter_mut().find(|s| s.0 == from) else {
+            cx.diags.push(Diag::new(ids::EXTFLD_NOT_FOUND, 30, c.at).arg(from));
+            continue;
+        };
+        s.0 = c.name.to_ascii_uppercase();
+        if let Some(fk) = c.kw("EXTFMT") {
+            let f = str_arg(fk, 0).unwrap_or_default().to_ascii_uppercase();
+            // A packed or zoned field keeps its form (pub400).
+            if matches!(s.1, Ty::Packed(..) | Ty::Zoned(..)) {
+                let at = fk.arg(0).and_then(|a| a.toks.first()).map_or(fk.at, |t| t.at);
+                cx.diags.push(Diag::new(ids::EXTFMT_PARM, 20, at).arg("EXTFMT"));
+                continue;
+            }
+            let shape = s.1.shape();
+            if let Some((dg, sc)) = shape {
+                let nt = match f.as_str() {
+                    "S" => Some(Ty::Zoned(dg, sc)),
+                    "P" => Some(Ty::Packed(dg, sc)),
+                    "B" => Some(Ty::Bin(dg, sc)),
+                    _ => None,
+                };
+                if let Some(t) = nt {
+                    s.1 = t;
+                    resized = true;
+                }
+            }
+        }
+    }
+    if resized && which != Which::All {
+        let mut at = 0;
+        for s in &mut subs {
+            s.2 = at;
+            at += cx.t.size(&s.1);
+        }
+        len = at;
+    }
     // The structure's PREFIX renames its subfields.
     if let Some(p) = d.kw("PREFIX") {
         let text = p.arg(0).map(|a| a.toks.iter().map(rpgfront::lex::Tok::text).collect::<String>()).unwrap_or_default();
@@ -412,6 +478,10 @@ pub const PSDS_WORDS: &[(&str, u32, u32, bool)] = &[
 /// without, unless the name is defined already.
 pub fn declare_calc_fields(t: &mut Table, diags: &mut Vec<Diag>, scope: usize, prefix: &str, calcs: &[rpgfront::ast::Stmt]) {
     for s in calcs {
+        if s.op.code == "DEFINE" {
+            define(t, scope, prefix, s);
+            continue;
+        }
         let Ok(len) = s.op.len.trim().parse::<u32>() else { continue };
         let Some(name) = s.op.result.first().and_then(|e| e.name().map(str::to_string)) else { continue };
         if len == 0 {
@@ -442,6 +512,76 @@ pub fn declare_calc_fields(t: &mut Table, diags: &mut Vec<Diag>, scope: usize, p
             ..Sym::default()
         });
     }
+}
+
+/// `*LIKE DEFINE base new`: a field like another, its length changed
+/// by a signed length entry; `*DTAARA DEFINE area field`: the field
+/// tied to a data area (the field's own name when factor 2 is blank).
+fn define(t: &mut Table, scope: usize, prefix: &str, s: &rpgfront::ast::Stmt) {
+    let word = match s.op.f1.first() {
+        Some(rpgfront::ast::Expr::Special { word, .. }) => word.clone(),
+        _ => return,
+    };
+    let Some(name) = s.op.result.first().and_then(|e| match e {
+        rpgfront::ast::Expr::Special { word, .. } => Some(word.clone()),
+        e => e.name().map(str::to_string),
+    }) else {
+        return;
+    };
+    let base = s.op.f2.first().and_then(|e| e.name().map(str::to_string));
+    if word == "*DTAARA" {
+        let area = base.clone().unwrap_or_else(|| name.clone());
+        if t.find(scope, &name).is_none()
+            && let Ok(len) = s.op.len.trim().parse::<u32>()
+        {
+            let ty = match s.op.decimals.trim().parse::<u8>() {
+                Ok(d) => Ty::Packed(u8::try_from(len.min(63)).unwrap_or(63), d),
+                Err(_) => Ty::Char(len),
+            };
+            let _ = t.add(Sym {
+                name: name.clone(),
+                kind: Some(Kind::Field),
+                ty,
+                ir: format!("${prefix}{}", mangle(&name)),
+                scope,
+                storage: if scope == 0 { Storage::Static } else { Storage::Auto },
+                def_line: s.at.line,
+                implicit: true,
+                ..Sym::default()
+            });
+        }
+        if let Some(id) = t.find(scope, &name).or_else(|| t.find(0, &name)) {
+            t.dtaaras.insert(id, area.to_ascii_uppercase());
+        }
+        return;
+    }
+    if word != "*LIKE" || t.find(scope, &name).is_some() {
+        return;
+    }
+    let Some(b) = base.and_then(|b| t.find(scope, &b).or_else(|| t.find(0, &b))) else { return };
+    let src = t.syms[b].clone();
+    let adj: i64 = s.op.len.trim().replace('+', "").parse().unwrap_or(0);
+    let grow = |n: u32| u32::try_from((i64::from(n) + adj).max(1)).unwrap_or(1);
+    let grow8 = |n: u8| u8::try_from((i64::from(n) + adj).clamp(1, 63)).unwrap_or(63);
+    let ty = match src.ty {
+        Ty::Char(n) => Ty::Char(grow(n)),
+        Ty::VarChar(n, p) => Ty::VarChar(grow(n), p),
+        Ty::Packed(d, sc) => Ty::Packed(grow8(d), sc),
+        Ty::Zoned(d, sc) => Ty::Zoned(grow8(d), sc),
+        Ty::Bin(d, sc) => Ty::Bin(grow8(d), sc),
+        other => other,
+    };
+    let _ = t.add(Sym {
+        name: name.clone(),
+        kind: Some(Kind::Field),
+        ty,
+        ir: format!("${prefix}{}", mangle(&name)),
+        scope,
+        storage: if scope == 0 { Storage::Static } else { Storage::Auto },
+        def_line: s.at.line,
+        implicit: true,
+        ..Sym::default()
+    });
 }
 
 /// Whether an output operation (`WRITE`, `UPDATE`, or an output
@@ -479,7 +619,10 @@ pub fn generated_lines(m: &rpgfront::ast::Module, files: &[File], t: &Table) -> 
                 _ => None,
             })
             .unwrap_or(0);
-        out.push((d.at.line + 1, u32::try_from(n).unwrap_or(0)));
+        // Subfields the source gives come first: the block follows the
+        // free-form END-DS.
+        let at = d.children.last().map_or(d.at.line + 1, |c| c.at.line + if d.fixed.is_none() { 2 } else { 1 });
+        out.push((at, u32::try_from(n).unwrap_or(0)));
     }
     let first_calc = m.calcs.first().map(|s| s.at.line);
     let after_calcs = m

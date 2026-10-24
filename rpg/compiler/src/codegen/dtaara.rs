@@ -60,6 +60,9 @@ impl Gen<'_> {
                     self.b.ins(format!("dtaara.read {n}, {l}, {place}"));
                 }
                 "OUT" => {
+                    // The area must be locked first (status 412).
+                    self.rt_proc("_QRNX_DTALCK", "(const $n: char(10), const $l: char(10))");
+                    self.b.ins(format!("callb _QRNX_DTALCK({}, {})", quote(&format!("{:<10}", name.to_ascii_uppercase())), quote(&format!("{:<10}", lib.to_ascii_uppercase()))));
                     self.b.ins(format!("dtaara.write {n}, {l}, {place}"));
                     // Written without *LOCK, the area is released.
                     if !lock {
@@ -67,6 +70,29 @@ impl Gen<'_> {
                     }
                 }
                 _ => self.b.ins(format!("dtaara.unlock {n}, {l}")),
+            }
+        }
+    }
+
+    /// The `*AUTO` areas: read and locked at the start (`end` false),
+    /// written and released at the end.
+    pub fn dtaara_auto(&mut self, end: bool) {
+        for id in self.t.dtaara_auto.clone() {
+            let area = self.t.dtaaras[&id].clone();
+            let (lib, name) = match area.split_once('/') {
+                Some((l, n)) => (l.to_string(), n.to_string()),
+                None => ("*LIBL".to_string(), area.clone()),
+            };
+            let (n, l) = (quote(&name), quote(&lib));
+            let place = super::place_of(self.t, id);
+            if end {
+                self.b.ins(format!("dtaara.write {n}, {l}, {place}"));
+                self.b.ins(format!("dtaara.unlock {n}, {l}"));
+            } else {
+                if name != "*LDA" {
+                    self.b.ins(format!("dtaara.lock {n}, {l}"));
+                }
+                self.b.ins(format!("dtaara.read {n}, {l}, {place}"));
             }
         }
     }

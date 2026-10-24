@@ -74,7 +74,7 @@ impl Gen<'_> {
     }
 
     /// A temporary of a type.
-    fn tmp(&mut self, ty: &Ty) -> V {
+    pub(crate) fn tmp(&mut self, ty: &Ty) -> V {
         let t = self.b.temp(&self.ir_ty(ty));
         V::place(ty.clone(), t)
     }
@@ -84,6 +84,17 @@ impl Gen<'_> {
         self.externs
             .entry(name.to_string())
             .or_insert_with(|| format!("extern proc {name}{decl}"));
+    }
+
+    /// Send the runtime's escape for an RPG status when `cond` is on.
+    pub fn signal_if(&mut self, cond: &str, status: u16) {
+        self.rt_proc("_QRNX_SIGNAL", "(byval $s: i32)");
+        let (yes, no) = (self.b.label(), self.b.label());
+        self.b.term(format!("brif {cond}, {yes}, {no}"));
+        self.b.place(&yes);
+        self.b.ins(format!("callb _QRNX_SIGNAL({status})"));
+        self.b.term(format!("br {no}"));
+        self.b.place(&no);
     }
 
     /// A built-in function.
@@ -101,6 +112,9 @@ impl Gen<'_> {
             return v;
         }
         if let Some(v) = self.dt_bif(name, args) {
+            return v;
+        }
+        if let Some(v) = self.misc_bif(name, args) {
             return v;
         }
         match name {
@@ -336,6 +350,16 @@ impl Gen<'_> {
                 if !self.bif_arity(name, args, 1, 2) {
                     return None;
                 }
+                // Graphic data whose CCSID is ignored cannot be made.
+                if name == "%GRAPH" && !self.ctl.graph_ccsid {
+                    self.err(ids::GRAPH_IGNORED, 30, name.to_string());
+                    match &args[0] {
+                        Expr::Lit(Lit::Char(_), _) => self.err(ids::GRAPH_NO_SHIFT, 20, name.to_string()),
+                        Expr::Lit(Lit::Num(_), _) => self.err(ids::GRAPH_PARM, 20, name.to_string()),
+                        _ => {}
+                    }
+                    return None;
+                }
                 let v = self.expr(&args[0], Want::default())?;
                 let v = self.as_chars(&v);
                 let to = if name == "%UCS2" { super::ucs2::TextClass::Ucs2 } else { super::ucs2::TextClass::Graph };
@@ -381,6 +405,14 @@ impl Gen<'_> {
                 if v.ty.is_string() {
                     self.char_to_num(&t, &v, name.ends_with('H'));
                 } else if v.ty.is_numeric() {
+                    // %UNS of a negative value is status 103, even one
+                    // that rounds to zero.
+                    if uns {
+                        let z = self.literal(&Lit::Num("0".into()))?;
+                        if let Some(c) = self.compare(rpgfront::ast::BinOp::Lt, &v, &z) {
+                            self.signal_if(&c.op, 103);
+                        }
+                    }
                     let s = self.dec_operand(&v);
                     self.b.ins(format!("dec.mov {}, {s}{half}", t.op));
                 } else {
@@ -392,8 +424,9 @@ impl Gen<'_> {
             "%FLOAT" => {
                 let v = self.expr(args.first()?, Want::default())?;
                 if v.ty.is_string() {
+                    // By RPG's rules for numeric text: status 105.
                     let t = self.tmp(&Ty::Float(8));
-                    self.b.ins(format!("cvt {}, {}", t.op, v.op));
+                    self.char_to_num(&t, &v, false);
                     return Some(t);
                 }
                 let r = self.float_reg(&v);
@@ -449,6 +482,12 @@ impl Gen<'_> {
             "%EDITW" => self.editw(args),
             "%STATUS" if args.is_empty() => Some(V::place(Ty::Zoned(5, 0), "$status")),
             "%ERROR" if args.is_empty() => Some(V::place(Ty::Ind, "$errind")),
+            // The system is never ending: no shutdown is requested.
+            "%SHTDN" => {
+                let t = self.tmp(&Ty::Ind);
+                self.b.ins(format!("store {}, *OFF", t.op));
+                Some(t)
+            }
             "%PARMS" => {
                 let r = self.b.reg();
                 // The main procedure's are the program's, which the
@@ -457,6 +496,15 @@ impl Gen<'_> {
                     self.b.ins(format!("{r} = load $entry_n"));
                 } else {
                     self.b.ins(format!("{r} = parms"));
+                    let cur = self.cur_proc.to_ascii_uppercase();
+                    let rtnparm = self.t.find(0, &cur).is_some_and(|id| {
+                        matches!(self.t.syms[id].kind, Some(Kind::Proto(pi)) if self.t.protos[pi].rtnparm)
+                    });
+                    if rtnparm {
+                        let one = self.b.reg();
+                        self.b.ins(format!("{one} = add {r}, 1"));
+                        return Some(V::reg(Ty::Int(10), one));
+                    }
                 }
                 Some(V::reg(Ty::Int(10), r))
             }
@@ -521,6 +569,10 @@ impl Gen<'_> {
             }
             "%SQRT" => {
                 let v = self.expr(args.first()?, Want::default())?;
+                if !v.ty.is_numeric() {
+                    self.err(ids::SQRT_PARM, 20, name.to_string());
+                    return None;
+                }
                 let f = self.float_reg(&v);
                 self.rt_proc("_QRNX_SQRT", "(byval $a: f64) -> f64");
                 let r = self.b.reg();
@@ -750,7 +802,9 @@ impl Gen<'_> {
             "_QRNX_EDITC",
             "($dst: varchar(1) *VARSIZE, $src: bytes(1) *VARSIZE, byval $desc: i64, byval $code: i32, byval $fill: i32, const $cur: char(1) *VARSIZE)",
         );
+        let cur = if fill == 2 { self.ctl.cursym.to_string() } else { cur };
         let cur_lit = if cur.is_empty() { quote(" ") } else { quote(&cur) };
+        let fill = fill | self.ctl.edit_flags();
         self.b.ins(format!(
             "callb _QRNX_EDITC({}, {}, {desc}, {}, {fill}, {cur_lit})",
             t.op,
@@ -818,6 +872,7 @@ impl Gen<'_> {
                 let off = if base.ty.is_varying() { start + 1 } else { start - 1 };
                 Some(V::place(Ty::Char(n), format!("[{p} +{off}]:char({n})")))
             }
+            "%NULLIND" => self.nullind(args),
             _ => {
                 self.err(ids::NOT_ASSIGNABLE, 30, name.to_string());
                 None

@@ -1,0 +1,8 @@
+**FREE
+ctl-opt nomain;
+dcl-proc dbl export;
+  dcl-pi *n int(10);
+    n int(10) value;
+  end-pi;
+  return n * 2;
+end-proc;

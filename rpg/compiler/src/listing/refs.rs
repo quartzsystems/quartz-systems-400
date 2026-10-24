@@ -63,7 +63,7 @@ fn not_names(kw: &str) -> bool {
         kw,
         "EXTNAME" | "EXTFLD" | "EXTFILE" | "EXTMBR" | "EXTPGM" | "PREFIX" | "DATFMT" | "TIMFMT" | "OPTIONS"
             | "RENAME" | "INCLUDE" | "IGNORE" | "DTAARA" | "CCSID" | "EXTDESC" | "EXPORT" | "IMPORT"
-            | "OFLIND"
+            | "OFLIND" | "RAFDATA"
     )
 }
 
@@ -211,9 +211,10 @@ impl Walk<'_> {
                 }
             }
             Expr::Bif { name, args, .. } => {
-                // %SUBST and the like as a target change their first operand.
+                // %SUBST and the like as a target change their first
+                // operand; %NULLIND changes only the null indicator.
                 for (k, a) in args.iter().enumerate() {
-                    self.expr(a, target && k == 0 && name != "%LEN");
+                    self.expr(a, target && k == 0 && name != "%LEN" && name != "%NULLIND");
                 }
             }
             Expr::Unary(_, a, _) => self.expr(a, false),
@@ -334,14 +335,19 @@ impl Walk<'_> {
                 } else {
                     self.expr(x, false);
                 }
+            } else if matches!(op, "XML-INTO" | "XML-SAX" | "DATA-INTO") {
+                self.operands_of_into(x, op == "DATA-INTO");
             } else {
                 self.expr(x, false);
             }
         }
-        // A result field the statement defines is noted as defined only.
-        if s.op.len.trim().is_empty() {
+        // A result field the statement defines is noted as defined only;
+        // DEFINE's is defined by the statement.
+        if s.op.len.trim().is_empty() && op != "DEFINE" {
+            // A free-form DSPLY's response is changed.
+            let changes = !keeps_result(op) || op == "DSPLY" && self.free;
             for e in &s.op.result {
-                self.expr(e, !keeps_result(op));
+                self.expr(e, changes);
             }
         }
         for (_, e) in &s.op.more {
@@ -349,6 +355,26 @@ impl Walk<'_> {
         }
         for r in &s.op.resind {
             self.ind(r, line, 'D');
+        }
+    }
+
+    /// The operands of `XML-INTO`, `XML-SAX` and `DATA-INTO`: the
+    /// target, or `%HANDLER`'s communication area, is changed.
+    fn operands_of_into(&mut self, x: &Expr, handler_changed: bool) {
+        let items: Vec<&Expr> = match x {
+            Expr::List(v, _) => v.iter().collect(),
+            e => vec![e],
+        };
+        for (k, e) in items.into_iter().enumerate() {
+            match e {
+                // DATA-INTO's handler procedure counts as changed too.
+                Expr::Bif { name, args, .. } if name == "%HANDLER" => {
+                    for (i, a) in args.iter().enumerate() {
+                        self.expr(a, i == 1 || handler_changed);
+                    }
+                }
+                e => self.expr(e, k == 0),
+            }
         }
     }
 

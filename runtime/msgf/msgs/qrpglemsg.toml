@@ -64,8 +64,8 @@ help = "The opening and closing parentheses of the expression or keyword do not 
 [[msg]]
 id = "RNF0203"
 sev = 30
-text = "&1 is not a valid keyword."
-help = "The keyword is not one this specification type takes."
+text = "The operand of &1 is not valid."
+help = "The operand, or the keyword, is not one the operation, built-in function or specification takes."
 vars = ["*CHAR 50"]
 
 [[msg]]
@@ -299,6 +299,144 @@ id = "RNF7551"
 sev = 10
 text = "The intermediate result keeps fewer decimals than the target."
 help = "Decimal positions past those the intermediate result keeps are lost before the value is assigned."
+
+[[msg]]
+id = "RNF2029"
+sev = 30
+text = "SLN needs a record format of the display file with SLNO(*VAR)."
+
+[[msg]]
+id = "RNF3704"
+sev = 20
+text = "PACKEVEN is allowed only on a packed subfield given by positions; it is dropped."
+
+[[msg]]
+id = "RNF1524"
+sev = 0
+text = "A procedure's PGMINFO keyword has no effect when a program is created."
+
+[[msg]]
+id = "RNF0565"
+sev = 30
+text = "&1 cannot be used while the CCSID of graphic data is ignored (CCSID(*GRAPH:*IGNORE))."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0587"
+sev = 20
+text = "The character literal given to &1 has no shift-out and shift-in around it."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0556"
+sev = 20
+text = "The value given to &1 is not character data; the function is dropped."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0380"
+sev = 30
+text = "%THIS is allowed only in a method of a Java class."
+
+[[msg]]
+id = "RNF0369"
+sev = 20
+text = "The operand of %PARMNUM must be a parameter of the procedure."
+
+[[msg]]
+id = "RNF0342"
+sev = 20
+text = "&1 needs a field that can be null."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0337"
+sev = 30
+text = "&1 needs a numeric value."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0507"
+sev = 20
+text = "A table searched this way must be in ascending or descending order."
+
+[[msg]]
+id = "RNF0574"
+sev = 20
+text = "&1 needs a numeric value."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5324"
+sev = 30
+text = "The operation needs a high resulting indicator; none is given, so the operation is dropped."
+
+[[msg]]
+id = "RNF0224"
+sev = 30
+text = "The %XML options are not valid here: &1."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5352"
+sev = 30
+text = "The %HANDLER procedure does not have the interface this operation calls."
+
+[[msg]]
+id = "RNF7099"
+sev = 0
+text = "The program commits or rolls back, but no file of it is opened under commitment control."
+
+[[msg]]
+id = "RNF5152"
+sev = 0
+text = "DUMP is not done: neither the (A) extender nor DEBUG(*YES) is given."
+
+[[msg]]
+id = "RNF7062"
+sev = 30
+text = "File &1 is opened by the program (USROPN), but no OPEN operation names it."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF1520"
+sev = 20
+text = "Procedures are not allowed with DFTACTGRP(*YES)."
+
+[[msg]]
+id = "RNF5378"
+sev = 30
+text = "CALLB is not allowed in a program created for the default activation group (DFTACTGRP(*YES))."
+
+[[msg]]
+id = "RNF2407"
+sev = 20
+text = "&1 is not allowed for an externally described file; it is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF2109"
+sev = 40
+text = "Every record format of file &1 is ignored or in error; the file is dropped."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7150"
+sev = 0
+text = "Record format &1 has fields that can be null."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3803"
+sev = 30
+text = "Field &1 is not in the external description; the subfield is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3450"
+sev = 20
+text = "The value given to &1 is not valid here; the keyword is ignored."
+vars = ["*CHAR 50"]
 
 # Completion of the commands.
 

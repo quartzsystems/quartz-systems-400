@@ -206,6 +206,39 @@ impl Gen<'_> {
         self.expr(&e, Want::default())
     }
 
+    /// Whether a print just reached the overflow line: the printer says
+    /// so for every line at or past it, the indicator goes on only for
+    /// the first.
+    pub fn overflow_crossed(&mut self, file: &str, st: &str) -> String {
+        let prev = format!("$ovp_{}", mangle(file));
+        self.externs.entry(prev.clone()).or_insert_with(|| format!("static {prev}: ind inz(*OFF)"));
+        let ov = self.b.reg();
+        self.b.ins(format!("{ov} = cmp.eq {st}, 1"));
+        let was = self.b.reg();
+        self.b.ins(format!("{was} = load {prev}"));
+        let off = self.b.reg();
+        self.b.ins(format!("{off} = const.ind *OFF"));
+        let crossed = self.b.reg();
+        self.b.ins(format!("{crossed} = select {was}, {off}, {ov}"));
+        self.b.ins(format!("store {prev}, {ov}"));
+        crossed
+    }
+
+    /// Set a file's overflow indicator on: `*INxx`, or a named
+    /// indicator field (`OFLIND(name)`).
+    pub fn oflind_on(&mut self, ind: &str) {
+        let x = match ind.strip_prefix("*IN") {
+            Some(n) => self.indicator(n),
+            None => {
+                let e = Expr::Ref { name: ind.to_ascii_uppercase(), steps: Vec::new(), at: self.at };
+                self.expr(&e, Want::default())
+            }
+        };
+        if let Some(x) = x {
+            self.b.ins(format!("store {}, *ON", x.op));
+        }
+    }
+
     /// Set a resulting indicator on or off from a condition register.
     pub fn set_ind(&mut self, name: &str, r: &str) {
         if name.is_empty() {
@@ -238,8 +271,60 @@ impl Gen<'_> {
             "GE" => BinOp::Ge,
             _ => BinOp::Le,
         };
+        let (a, b) = self.altseq_pair(a, b);
         let v = self.compare(op, &a, &b)?;
         Some(v.op)
+    }
+
+    /// `ALTSEQ(*SRC)`: two character operands compared through the
+    /// alternate collating sequence, unless one is `ALTSEQ(*NONE)`.
+    fn altseq_pair(&mut self, a: V, b: V) -> (V, V) {
+        let Some(table) = self.altseq_table() else { return (a, b) };
+        let exempt = |g: &Self, v: &V| v.sym.is_some_and(|s| g.t.syms[s].altseq_none);
+        if !a.ty.is_char() || !b.ty.is_char() || exempt(self, &a) || exempt(self, &b) {
+            return (a, b);
+        }
+        let mut out = Vec::new();
+        for v in [a, b] {
+            let v = self.as_chars(&v);
+            let r = self.rt_of(&v, None);
+            let n = v.ty.str_len().unwrap_or(1).max(1);
+            let t = self.tmp(&Ty::Char(n));
+            self.rt_proc("_QRNX_ALTSEQ", "($dst: bytes(1) *VARSIZE, $src: bytes(1) *VARSIZE, byval $sd: i64, const $tab: char(256))");
+            self.b.ins(format!("callb _QRNX_ALTSEQ({}, {}, {}, {table})", t.op, r.op, r.desc));
+            out.push(t);
+        }
+        let b = out.pop().expect("two");
+        let a = out.pop().expect("two");
+        (a, b)
+    }
+
+    /// The alternate collating sequence of `ALTSEQ(*SRC)` and the
+    /// `**ALTSEQ` records, as a static table; none otherwise.
+    fn altseq_table(&mut self) -> Option<String> {
+        if !self.ctl.altseq_src {
+            return None;
+        }
+        let mut tab: Vec<u8> = (0..=255u8).collect();
+        for c in self.ctdata.iter().filter(|c| c.kind == "ALTSEQ") {
+            for r in &c.records {
+                // Columns 11-80: pairs of from and to, two hex digits each.
+                let body: String = r.chars().skip(10).take(70).collect();
+                let hex: Vec<u8> = body.as_bytes().chunks(2).filter_map(|p| std::str::from_utf8(p).ok().and_then(|h| u8::from_str_radix(h, 16).ok())).collect();
+                for pair in hex.chunks(2) {
+                    if let [from, to] = pair {
+                        tab[usize::from(*from)] = *to;
+                    }
+                }
+            }
+        }
+        let lit = tab.iter().fold(String::new(), |mut acc, b| {
+            let _ = std::fmt::Write::write_fmt(&mut acc, format_args!("{b:02X}"));
+            acc
+        });
+        let name = "$altseq_tab".to_string();
+        self.externs.entry(name.clone()).or_insert_with(|| format!("static {name}: char(256) inz(x\"{lit}\")"));
+        Some(name)
     }
 
     /// A fixed-form condition with its `ANDxx`/`ORxx` lines from
@@ -543,10 +628,11 @@ impl Gen<'_> {
             },
             ("SELECT", _) => {
                 let end = self.b.label();
-                self.open.push(Open::Select { next: None, end, cas: false });
+                let subject = op.xf2.clone().map(Box::new);
+                self.open.push(Open::Select { next: None, end, cas: false, subject });
             }
-            ("WHEN", sfx) => {
-                let Some(Open::Select { next, end, .. }) = self.open.last().cloned() else {
+            ("WHEN" | "WHEN-IS" | "WHEN-IN", sfx) => {
+                let Some(Open::Select { next, end, subject, .. }) = self.open.last().cloned() else {
                     self.err(ids::UNBALANCED, 30, "WHEN");
                     return k + 1;
                 };
@@ -554,7 +640,32 @@ impl Gen<'_> {
                     self.b.term(format!("br {end}"));
                     self.b.place(&n);
                 }
-                let r = if sfx.is_empty() {
+                let r = if base != "WHEN" {
+                    // The operand compared, or looked for in the list.
+                    let at = s.at;
+                    match (subject, op.xf2.clone()) {
+                        (Some(subj), Some(e)) => {
+                            let e = match e {
+                                Expr::List(mut v, _) if v.len() == 1 => v.remove(0),
+                                e => e,
+                            };
+                            let bop = if base == "WHEN-IS" { rpgfront::ast::BinOp::Eq } else { rpgfront::ast::BinOp::In };
+                            let before = self.diags.len();
+                            let r = self.cond(&Expr::Binary(bop, subj, Box::new(e), at));
+                            // Operands of types that do not compare.
+                            for d in &mut self.diags[before..] {
+                                if d.msgid == ids::TYPE_MISMATCH {
+                                    d.msgid = ids::WHEN_IS_TYPE;
+                                }
+                            }
+                            r
+                        }
+                        _ => {
+                            self.err(ids::UNBALANCED, 30, base.to_string());
+                            None
+                        }
+                    }
+                } else if sfx.is_empty() {
                     op.xf2.as_ref().and_then(|e| self.cond(e))
                 } else {
                     self.cmp_chain(stmts, k, sfx).map(|(r, n)| {
@@ -644,7 +755,7 @@ impl Gen<'_> {
                         let end = self.subr(&n).end.clone();
                         self.b.term(format!("br {end}"));
                     }
-                    None => self.err(ids::UNBALANCED, 30, "LEAVESR"),
+                    None => self.err(ids::NOT_IN_SUBR, 30, "LEAVESR"),
                 }
             }
             ("TAG", _) => {
@@ -742,13 +853,51 @@ impl Gen<'_> {
                 | "FEOD" | "OPEN" | "CLOSE" | "KLIST" | "KFLD" | "EXFMT" | "READC",
                 _,
             ) => self.db_op(op, base),
+            ("POST" | "ACQ" | "REL" | "NEXT", _) => self.device_op(op, base),
+            ("FORCE", _) => self.force_op(op),
             ("PLIST" | "PARM", _) => {}
+            // Declared before generation (`extfiles::define`); the names
+            // are referenced here.
+            ("DEFINE", _) => {
+                let like = matches!(op.f1.first(), Some(Expr::Special { word, .. }) if word == "*LIKE");
+                if let Some(b) = op.f2.first().and_then(|e| e.name().map(str::to_string)) {
+                    match self.t.find(self.scope, &b).or_else(|| self.t.find(0, &b)) {
+                        Some(id) => self.t.refer(id, self.at.line, false),
+                        None if like => self.err(ids::NOT_DEFINED, 30, b),
+                        None => {}
+                    }
+                }
+                if let Some(n) = op.result.first().and_then(|e| e.name().map(str::to_string))
+                    && let Some(id) = self.t.find(self.scope, &n).or_else(|| self.t.find(0, &n))
+                {
+                    self.t.refer(id, self.at.line, true);
+                }
+            }
             ("IN" | "OUT", _) => self.dtaara_op(op, base),
             ("ALLOC", _) => self.alloc_op(op),
+            ("REALLOC", _) => self.realloc_op(op),
             ("DEALLOC", _) => self.dealloc_op(op),
-            ("CALL", _) => self.call_op(s),
-            ("COMMIT" | "ROLBK" | "DUMP", _) => {
-                self.err(ids::UNSUPPORTED, 30, op.code.clone());
+            ("CALL" | "CALLB", _) => self.call_op(s),
+            ("COMMIT" | "ROLBK", _) => {
+                self.rt_proc("_QRNX_COMMIT", "(byval $k: i32)");
+                self.b.ins(format!("callb _QRNX_COMMIT({})", i32::from(base == "ROLBK") + 1));
+            }
+            // A dump is taken only with DEBUG(*YES).
+            ("DUMP", _) => {
+                if self.ctl.debug {
+                    self.rt_proc("_QRNX_DUMP", "()");
+                    self.b.ins("callb _QRNX_DUMP()");
+                }
+            }
+            // No shutdown is requested: the indicator goes off.
+            ("SHTDN", _) => {
+                let ind = op.resind[0].clone();
+                if ind.is_empty() {
+                    // At the high indicator's columns (71-72).
+                    self.diags.push(rpgfront::Diag::new(ids::NO_HI_IND, 30, rpgfront::ast::Pos { line: self.at.line, col: 71 }));
+                } else if let Some(x) = self.indicator(&ind) {
+                    self.b.ins(format!("store {}, *OFF", x.op));
+                }
             }
             ("MONITOR", _) => {
                 self.monitors += 1;
@@ -767,6 +916,9 @@ impl Gen<'_> {
             ("ON-ERROR" | "ON-EXCP", _) => self.on_error(op, base == "ON-EXCP"),
             ("ENDMON", _) => self.end_monitor(),
             ("SND-MSG", _) => self.snd_msg(op),
+            ("XML-INTO", _) => self.xml_into(op),
+            ("XML-SAX", _) => self.xml_sax(op),
+            ("DATA-INTO" | "DATA-GEN", _) => self.data_op(op, base == "DATA-GEN"),
             ("AND" | "OR", _) => self.err(ids::UNBALANCED, 30, op.code.clone()),
             _ if self.strop(base, s) => {}
             (b, _) if self.dt_op(b, op) => {}
@@ -902,7 +1054,7 @@ impl Gen<'_> {
     fn cas_op(&mut self, op: &rpgfront::ast::Op, sfx: &str) {
         if !matches!(self.open.last(), Some(Open::Select { cas: true, .. })) {
             let end = self.b.label();
-            self.open.push(Open::Select { next: None, end, cas: true });
+            self.open.push(Open::Select { next: None, end, cas: true, subject: None });
         }
         let Some(Open::Select { next, end, .. }) = self.open.last().cloned() else { return };
         if let Some(n) = next {
@@ -1342,8 +1494,25 @@ impl Gen<'_> {
         };
         match op.result.first() {
             Some(r) => {
+                // The reply as text; an empty one (a batch job's default)
+                // leaves the field as it was.
                 if let Some(t) = self.target(r) {
-                    self.b.ins(format!("dsply {src} reply({})", t.op));
+                    let reply = self.tmp(&Ty::VarChar(52, 2));
+                    self.b.ins(format!("dsply {src} reply({})", reply.op));
+                    let n = self.b.reg();
+                    self.b.ins(format!("{n} = str.len {}", reply.op));
+                    let some = self.b.reg();
+                    self.b.ins(format!("{some} = cmp.gt {n}, 0"));
+                    let (yes, no) = (self.b.label(), self.b.label());
+                    self.b.term(format!("brif {some}, {yes}, {no}"));
+                    self.b.place(&yes);
+                    if t.ty.is_numeric() {
+                        self.char_to_num(&t, &reply, false);
+                    } else {
+                        self.assign(&t, &reply, false);
+                    }
+                    self.b.term(format!("br {no}"));
+                    self.b.place(&no);
                 }
             }
             None => self.b.ins(format!("dsply {src}")),
@@ -1368,6 +1537,16 @@ impl Gen<'_> {
         };
         let Some(v) = self.expr(r, Want::default()) else { return };
         let v = self.as_chars(&v);
+        // A file EXTIND left closed is not written.
+        let skip = f.extind.is_some().then(|| {
+            let po = self.open_flag(&f);
+            let open = self.b.reg();
+            self.b.ins(format!("{open} = load {po}"));
+            let (yes, no) = (self.b.label(), self.b.label());
+            self.b.term(format!("brif {open}, {yes}, {no}"));
+            self.b.place(&yes);
+            no
+        });
         let st = self.b.reg();
         self.b.ins(format!(
             "{st} = prtio {} WRITE fmt({}) rec({}) ctl(0, 1, 0, 0)",
@@ -1376,17 +1555,18 @@ impl Gen<'_> {
             v.op
         ));
         if let Some(ind) = &f.oflind {
-            let ov = self.b.reg();
-            self.b.ins(format!("{ov} = cmp.eq {st}, 1"));
+            let ov = self.overflow_crossed(&f.name, &st);
             let on = self.b.label();
             let cont = self.b.label();
             self.b.term(format!("brif {ov}, {on}, {cont}"));
             self.b.place(&on);
-            let ind = ind.trim_start_matches("*IN").to_string();
-            if let Some(x) = self.indicator(&ind) {
-                self.b.ins(format!("store {}, *ON", x.op));
-            }
+            let ind = ind.clone();
+            self.oflind_on(&ind);
             self.b.place(&cont);
+        }
+        if let Some(no) = skip {
+            self.b.term(format!("br {no}"));
+            self.b.place(&no);
         }
     }
 
@@ -1396,7 +1576,9 @@ impl Gen<'_> {
         if t.ty.is_numeric() && v.ty.is_numeric() {
             let h = if half { " halfadj" } else { "" };
             let s = self.dec_operand(v);
-            self.b.ins(format!("dec.mov {}, {s}{h} trunc", t.op));
+            // TRUNCNBR(*NO): an overflow is an error, not dropped digits.
+            let tr = if self.ctl.truncnbr { " trunc" } else { "" };
+            self.b.ins(format!("dec.mov {}, {s}{h}{tr}", t.op));
         } else {
             self.assign(t, v, half);
         }

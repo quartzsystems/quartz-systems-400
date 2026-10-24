@@ -1,0 +1,9 @@
+# COV007 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: no (RNS9310)
+diag: RNF2318 00 line 1 seq 000100
+diag: RNF3530 00 line 2 seq 000200
+diag: RNF5378 30 line 5 seq 000500
+diag: RNF5378 30 line 9 seq 000900
+diag: RNF1520 20 line 14 seq 001400
+diag: RNF1520 20 line 19 seq 001900

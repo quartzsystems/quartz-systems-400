@@ -145,7 +145,15 @@ fn open_printer(j: &mut Job, key: FileKey, fr: &qir::FileRef, infds: u64, infds_
         None => Err(IoFail::new(1299, "CPF4101", &[&fr.file, &fr.lib])),
     };
     match opened {
-        Ok(o) => {
+        Ok(mut o) => {
+            // The program's page length and overflow line, if it gives them.
+            if fr.form.0 != 0 {
+                o.prtf.page_len = fr.form.0;
+                o.prtf.ovrflw = o.prtf.ovrflw.min(fr.form.0);
+            }
+            if fr.form.1 != 0 {
+                o.prtf.ovrflw = fr.form.1;
+            }
             write_infds(
                 infds,
                 infds_len,
@@ -183,7 +191,7 @@ fn open_printer(j: &mut Job, key: FileKey, fr: &qir::FileRef, infds: u64, infds_
 }
 
 /// Open a display file through the job's display source.
-fn open_display(j: &mut Job, key: FileKey, fr: &qir::FileRef, infds: u64, infds_len: usize) -> i32 {
+fn open_display(j: &mut Job, key: FileKey, fr: &qir::FileRef, infds: u64, infds_len: usize, rpg: bool) -> i32 {
     let mut info = FileInfo {
         file: fr.file.clone(),
         lib: fr.lib.clone(),
@@ -192,8 +200,10 @@ fn open_display(j: &mut Job, key: FileKey, fr: &qir::FileRef, infds: u64, infds_
     let ag = actgrp(j);
     let opened = match j.display.as_mut() {
         Some(d) => d.open(&fr.file, &fr.lib, &ag),
-        None => Err(IoFail::new(1299, "CPF4101", &[&fr.file, &fr.lib])),
+        // A job without a display (a batch job): the open fails.
+        None => Err(IoFail::new(1217, "CPF4101", &[&fr.file, &fr.lib])),
     };
+    let no_display = j.display.is_none();
     match opened {
         Ok(o) => {
             info.lib = o.lib;
@@ -227,7 +237,10 @@ fn open_display(j: &mut Job, key: FileKey, fr: &qir::FileRef, infds: u64, infds_
                 ..IoResult::default()
             };
             write_infds(infds, infds_len, &info, &r, false, "OPEN", j.abi.cur_stmt);
-            escape(j, &f);
+            // An RPG module keeps a batch job's failure as the status.
+            if !(rpg && no_display) {
+                escape(j, &f);
+            }
             i32::from(f.status)
         }
     }
@@ -249,7 +262,9 @@ pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc:
         return open_printer(j, key, &fr, infds.cast_unsigned(), infds_len);
     }
     if fr.dev == qir::FileDev::Display {
-        return open_display(j, key, &fr, infds.cast_unsigned(), infds_len);
+        let rpg = module_lang(env) == qir::Lang::Rpgle;
+        let j = job(env);
+        return open_display(j, key, &fr, infds.cast_unsigned(), infds_len, rpg);
     }
     let spec = OpenSpec {
         file: fr.file.clone(),
@@ -490,7 +505,7 @@ pub extern "sysv64" fn dev_io(
     };
     let j = job(env);
     if !j.files.contains_key(&key) && fr.dev == qir::FileDev::Display {
-        let st = open_display(j, key, &fr, 0, 0);
+        let st = open_display(j, key, &fr, 0, 0, false);
         if st != 0 {
             return st;
         }
@@ -698,7 +713,7 @@ pub extern "sysv64" fn dsp_io(
     let rpg = module_lang(env) == qir::Lang::Rpgle;
     if !j.files.contains_key(&key) && fr.dev == qir::FileDev::Display && !rpg {
         // A CL program's file opens with its first operation.
-        let st = open_display(j, key, &fr, 0, 0);
+        let st = open_display(j, key, &fr, 0, 0, false);
         if st != 0 {
             return st;
         }

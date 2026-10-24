@@ -145,6 +145,7 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     // The cycle's own storage.
     g.b.decls.push("static $cy_first: ind".into());
     g.b.decls.push("static $cy_sel: i32".into());
+    g.b.decls.push("static $cy_force: i32 inz(-1)".into());
     g.b.decls.push(format!("static $cy_lv: char({})", clen.max(1)));
     for f in &files {
         let n = mangle(&f.name);
@@ -161,8 +162,9 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b.ins("callb _qrni_init()");
     let all = g.files;
     for f in all.iter().filter(|f| f.scope == 0 && !f.usropn && !f.template) {
-        let _ = g.db_open(f);
+        g.init_open(f);
     }
+    g.dtaara_auto(false);
     g.init_tail(m);
     g.b.ins("store $init_done, *ON");
     g.psds_init(&g.opts.name.clone());
@@ -251,9 +253,28 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
         }
         g.b.place(&next);
     }
-    // Selection.
+    // Selection: a file FORCE named, when it has a record.
     g.b.ins("store $cy_sel, -1");
     let chosen = g.b.label();
+    let forced = g.b.reg();
+    g.b.ins(format!("{forced} = load $cy_force"));
+    g.b.ins("store $cy_force, -1");
+    for (k, f) in files.iter().enumerate() {
+        let n = mangle(&f.name);
+        let mine = g.b.reg();
+        g.b.ins(format!("{mine} = cmp.eq {forced}, {k}"));
+        let (look, next) = (g.b.label(), g.b.label());
+        g.b.term(format!("brif {mine}, {look}, {next}"));
+        g.b.place(&look);
+        let has = g.b.reg();
+        g.b.ins(format!("{has} = load $cy_has_{n}"));
+        let take = g.b.label();
+        g.b.term(format!("brif {has}, {take}, {next}"));
+        g.b.place(&take);
+        g.b.ins(format!("store $cy_sel, {k}"));
+        g.b.term(format!("br {chosen}"));
+        g.b.place(&next);
+    }
     if mlen > 0 {
         // The lowest matching value; the earlier file on a tie.
         let best = g.b.temp(&format!("char({mlen})"));
@@ -474,7 +495,13 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b.ins(format!("{lr2} = load $inlr"));
     g.b.term(format!("brif {lr2}, {end}, {ret}"));
     g.b.place(&end);
+    g.tofile_arrays();
+    g.dtaara_auto(true);
     for f in all.iter().filter(|f| f.scope == 0 && !f.template) {
+        if f.dev == crate::files::Dev::Special {
+            g.special_close(f);
+            continue;
+        }
         let r = g.b.reg();
         g.b.ins(format!("{r} = dbclose {}", mangle(&f.name)));
     }
@@ -513,5 +540,20 @@ fn total_calcs(g: &mut Gen<'_>, total: &[&Stmt]) {
             g.b.place(&skip);
         }
         k = e;
+    }
+}
+
+impl Gen<'_> {
+    /// `FORCE file`: the next cycle takes its record from that primary
+    /// or secondary file.
+    pub fn force_op(&mut self, op: &rpgfront::ast::Op) {
+        let Some(name) = op.f2.first().and_then(|e| e.name().map(str::to_ascii_uppercase)) else {
+            self.err(crate::diag::ids::FILE_NOT_DEFINED, 30, op.code.clone());
+            return;
+        };
+        match cycle_files(self).iter().position(|f| f.name == name) {
+            Some(k) => self.b.ins(format!("store $cy_force, {k}")),
+            None => self.err(crate::diag::ids::FILE_NOT_DEFINED, 30, name),
+        }
     }
 }

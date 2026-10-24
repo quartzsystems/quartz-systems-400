@@ -1,0 +1,20 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s i int(10);
+dcl-s n int(10);
+exsr count;
+line = 'n ' + %char(n);
+write QSYSPRT line;
+*inlr = *on;
+begsr count;
+  for i = 1 to 10;
+    n += i;
+    if n > 10;
+      leavesr;
+    endif;
+  endfor;
+  line = 'not here';
+  write QSYSPRT line;
+endsr;

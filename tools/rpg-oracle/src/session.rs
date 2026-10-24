@@ -439,12 +439,6 @@ impl Session {
                 eprintln!("{}: setup failed: {cl}: {}", c.name, reply.trim());
             }
         }
-        // The setup's listings are not the member's.
-        if !c.setup.is_empty() {
-            for e in self.spools()? {
-                self.take_spool(&e)?;
-            }
-        }
         let made = match self.db_setup(c) {
             Ok(m) => m,
             Err(e) => {
@@ -453,6 +447,13 @@ impl Session {
                 return Err(e);
             }
         };
+        // The setup's and the files' compile listings are no part of
+        // the outcome (they name the library and the user).
+        if !c.db.is_empty() || !c.setup.is_empty() {
+            for e in self.spools()? {
+                let _ = self.take_spool(&e);
+            }
+        }
         // Each member's spooled files are taken and deleted; leftovers of
         // an interrupted run are `clean`'s.
         Self::throttle()?;

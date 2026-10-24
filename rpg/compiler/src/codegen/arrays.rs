@@ -1109,9 +1109,82 @@ impl Gen<'_> {
         self.b.ins(format!("dec.mov {place}, {}{lit}", if neg { "-" } else { "" }));
     }
 
+    /// Pre-run-time arrays (`FROMFILE`): their elements read from the
+    /// file's records, `PERRCD` to a record, before the first cycle.
+    fn prerun_arrays(&mut self) {
+        let arrays: Vec<SymId> = (0..self.t.syms.len()).filter(|&i| !self.t.syms[i].fromfile.is_empty()).collect();
+        for id in arrays {
+            let s = self.t.syms[id].clone();
+            let Some(f) = self.files.iter().find(|f| f.name.eq_ignore_ascii_case(&s.fromfile)).cloned() else {
+                self.err(ids::FILE_NOT_DEFINED, 30, s.fromfile.clone());
+                continue;
+            };
+            let n = mangle(&f.name);
+            let elen = self.t.size(&s.ty);
+            let per = s.perrcd.max(1);
+            let place = place_of(self.t, id);
+            let done = self.b.label();
+            for rec in 0..s.dim.div_ceil(per) {
+                let st = self.b.reg();
+                self.b.ins(format!("{st} = dbio {n} READ rec($rb_{n})"));
+                let ok = self.b.reg();
+                self.b.ins(format!("{ok} = cmp.eq {st}, 0"));
+                let take = self.b.label();
+                self.b.term(format!("brif {ok}, {take}, {done}"));
+                self.b.place(&take);
+                let a = self.b.reg();
+                self.b.ins(format!("{a} = addr $rb_{n}"));
+                for j in 0..per {
+                    let k = rec * per + j;
+                    if k >= s.dim {
+                        break;
+                    }
+                    self.b.ins(format!("mov {place}[{k}], [{a} +{}]:{}", j * elen, self.ir_ty(&s.ty)));
+                }
+            }
+            self.b.term(format!("br {done}"));
+            self.b.place(&done);
+        }
+    }
+
+    /// `TOFILE` arrays written when the program ends, `PERRCD` elements
+    /// to a record.
+    pub fn tofile_arrays(&mut self) {
+        let arrays: Vec<SymId> = (0..self.t.syms.len()).filter(|&i| !self.t.syms[i].tofile.is_empty()).collect();
+        for id in arrays {
+            let s = self.t.syms[id].clone();
+            let Some(f) = self.files.iter().find(|f| f.name.eq_ignore_ascii_case(&s.tofile)).cloned() else { continue };
+            let n = mangle(&f.name);
+            let elen = self.t.size(&s.ty);
+            let per = s.perrcd.max(1);
+            let len = if f.reclen == 0 { 132 } else { f.reclen };
+            let place = place_of(self.t, id);
+            for rec in 0..s.dim.div_ceil(per) {
+                let line = self.b.temp(&format!("char({len})"));
+                self.b.ins(format!("mov {line}, *BLANKS"));
+                let a = self.b.reg();
+                self.b.ins(format!("{a} = addr {line}"));
+                for j in 0..per {
+                    let k = rec * per + j;
+                    if k >= s.dim || (j + 1) * elen > len {
+                        break;
+                    }
+                    self.b.ins(format!("mov [{a} +{}]:{}, {place}[{k}]", j * elen, self.ir_ty(&s.ty)));
+                }
+                let st = self.b.reg();
+                if f.dev == crate::files::Dev::Printer {
+                    self.b.ins(format!("{st} = prtio {n} WRITE fmt({n}) rec({line}) ctl(0, 1, 0, 0)"));
+                } else {
+                    self.b.ins(format!("{st} = dbio {n} WRITE rec({line})"));
+                }
+            }
+        }
+    }
+
     /// The call `RESET` needs once initialization is done: `*INZSR`,
     /// then the copies taken.
     pub fn init_tail(&mut self, m: &Module) {
+        self.prerun_arrays();
         let inzsr = m.calcs.iter().any(|s| {
             s.op.code == "BEGSR" && matches!(s.op.f1.first(), Some(Expr::Special { word, .. }) if word == "*INZSR")
         });

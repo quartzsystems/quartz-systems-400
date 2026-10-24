@@ -1,0 +1,25 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s da char(10) dtaara('COVNODA');
+in(e) da;
+line = 'in ' + %char(%status) + ' ' + %error;
+write QSYSPRT line;
+monitor;
+  in da;
+  line = 'in mon ok';
+  write QSYSPRT line;
+on-error;
+  line = 'in mon ' + %char(%status);
+  write QSYSPRT line;
+endmon;
+monitor;
+  out da;
+  line = 'out mon ok';
+  write QSYSPRT line;
+on-error;
+  line = 'out mon ' + %char(%status);
+  write QSYSPRT line;
+endmon;
+*inlr = *on;

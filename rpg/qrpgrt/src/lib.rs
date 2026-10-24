@@ -10,6 +10,7 @@
 #![deny(missing_docs)]
 #![allow(clippy::too_many_arguments, clippy::many_single_char_names, clippy::trivially_copy_pass_by_ref, clippy::unreadable_literal)]
 
+pub mod ctl;
 pub mod cvt;
 pub mod exc;
 pub mod arrays;
@@ -22,6 +23,7 @@ pub mod ops;
 pub mod sql;
 pub mod strops;
 pub mod value;
+pub mod xml;
 
 /// Every procedure with its code address.
 #[must_use]
@@ -37,6 +39,7 @@ pub fn procedures() -> Vec<(&'static str, usize)> {
         ("_QRNX_DTTEST", dtnat::test as *const () as usize),
         ("_QRNX_EDITC", natives::editc as *const () as usize),
         ("_QRNX_EDITW", natives::editw as *const () as usize),
+        ("_QRNX_EDITFLT", natives::editflt as *const () as usize),
         ("_QRNX_MOVE", natives::move_ as *const () as usize),
         ("_QRNX_POW", natives::pow as *const () as usize),
         ("_QRNX_FLTMIX", natives::flt_mix as *const () as usize),
@@ -67,6 +70,19 @@ pub fn procedures() -> Vec<(&'static str, usize)> {
         ("_QRNX_SQLOUT", sql::sql_out as *const () as usize),
         ("_QRNX_SQLRUN", sql::sql_run as *const () as usize),
         ("_QRNX_SQLDA", sql::sql_da as *const () as usize),
+        ("_QRNX_COMMIT", ctl::commit as *const () as usize),
+        ("_QRNX_DUMP", ctl::dump as *const () as usize),
+        ("_QRNX_ALLOC", ctl::alloc as *const () as usize),
+        ("_QRNX_NOHANDLER", ctl::no_handler as *const () as usize),
+        ("_QRNX_ALTSEQ", ctl::altseq as *const () as usize),
+        ("_QRNX_FIXZONED", ctl::fix_zoned as *const () as usize),
+        ("_QRNX_SPECIAL", ctl::special as *const () as usize),
+        ("_QRNX_SIGNAL", ctl::signal_status as *const () as usize),
+        ("_QRNX_DATAPGM", ctl::data_pgm as *const () as usize),
+        ("_QRNX_DTALCK", ctl::dta_locked as *const () as usize),
+        ("_QRNX_REALLOC", ctl::realloc as *const () as usize),
+        ("_QRNX_XMLINTO", xml::xml_into as *const () as usize),
+        ("_QRNX_XMLSAX", xml::xml_sax as *const () as usize),
     ]
 }
 

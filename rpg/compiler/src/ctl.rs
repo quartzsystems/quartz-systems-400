@@ -155,15 +155,46 @@ pub struct Ctl {
     pub truncnbr: bool,
     /// `GENLVL`.
     pub genlvl: u8,
+    /// `CCSID(*GRAPH:ccsid)` other than `*IGNORE`: graphic data has a
+    /// CCSID, so `%GRAPH` converts.
+    pub graph_ccsid: bool,
     /// `THREAD`: `*SERIALIZE`, `*CONCURRENT`, or empty.
     pub thread: String,
+    /// `FORMSALIGN(*YES)`.
+    pub formsalign: bool,
+    /// `DATEDIT`: edit code `Y`'s order (0 `*MDY`, 1 `*DMY`, 2 `*YMD`)
+    /// and separator (`'\0'` for the default).
+    pub datedit: (u8, char),
+    /// `CURSYM`.
+    pub cursym: char,
+    /// `DECEDIT('0.')` or `('0,')`: a zero before the point.
+    pub lead_zero: bool,
+    /// `FIXNBR(*ZONED)`: zoned data with bad digits is repaired.
+    pub fixnbr_zoned: bool,
+    /// `ALTSEQ(*SRC)`: the `**ALTSEQ` records give the collating
+    /// sequence of fixed-form compares.
+    pub altseq_src: bool,
+    /// `EXTBININT(*YES)`.
+    pub extbinint: bool,
+}
+
+impl Ctl {
+    /// The edit options `_QRNX_EDITC` takes above its fill byte
+    /// (`qrpgrt::natives::editc`).
+    #[must_use]
+    pub fn edit_flags(&self) -> i32 {
+        i32::from(self.datedit.0) << 8
+            | (u32::from(self.datedit.1).cast_signed() & 0xFF) << 16
+            | i32::from(self.decedit.0 == ',') << 24
+            | i32::from(self.lead_zero) << 25
+    }
 }
 
 /// Control keywords the compiler accepts.
 const KNOWN: &[&str] = &[
     "ACTGRP", "ALLOC", "ALTSEQ", "ALWNULL", "AUT", "BNDDIR", "CCSID", "CCSIDCVT", "COPYNEST", "COPYRIGHT",
     "CURSYM", "CVTOPT", "DATEDIT", "DATFMT", "DCLOPT", "DEBUG", "DECEDIT", "DECPREC", "DFTACTGRP", "DFTNAME",
-    "ENBPFRCOL", "EXPROPTS", "EXTBININT", "FIXNBR", "FLTDIV", "FTRANS", "GENLVL", "INDENT", "INTPREC",
+    "ENBPFRCOL", "EXPROPTS", "EXTBININT", "FIXNBR", "FLTDIV", "FORMSALIGN", "FTRANS", "GENLVL", "INDENT", "INTPREC",
     "LANGID", "MAIN", "NOMAIN", "OPENOPT", "OPTIMIZE", "OPTION", "PGMINFO", "PRFDTA", "REQPREXP", "SRTSEQ",
     "STGMDL", "TEXT", "THREAD", "TIMFMT", "TRUNCNBR", "USRPRF", "VALIDATE",
 ];
@@ -184,6 +215,7 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
         dftactgrp: o.dftactgrp && o.command == Command::CrtBndRpg,
         actgrp: o.actgrp.clone(),
         decedit: ('.', ','),
+        cursym: '$',
         decprec: 31,
         bnddir: o.bnddir.iter().filter(|b| !b.starts_with('*')).cloned().collect(),
         text: o.text.clone(),
@@ -262,10 +294,17 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
             }
             "DATEDIT" => {
                 let w = word_arg(k, 0).unwrap_or_default();
-                if !["*MDY", "*DMY", "*YMD"].iter().any(|f| w.starts_with(f) && w.len() <= f.len() + 1) {
+                if ["*MDY", "*DMY", "*YMD"].iter().any(|f| w.starts_with(f) && w.len() <= f.len() + 1) {
+                    let fmt = if w.starts_with("*DMY") { 1 } else { u8::from(w.starts_with("*YMD")) * 2 };
+                    c.datedit = (fmt, w.chars().nth(4).unwrap_or('\0'));
+                } else {
                     bad_parm(diags, k, ids::CTL_DATEDIT, false);
                 }
             }
+            "FIXNBR" => c.fixnbr_zoned = (0..k.args.len()).any(|i| word_arg(k, i).as_deref() == Some("*ZONED")),
+            "EXTBININT" => c.extbinint = word_arg(k, 0).as_deref() != Some("*NO"),
+            "ALTSEQ" => c.altseq_src = word_arg(k, 0).as_deref() == Some("*SRC"),
+            "CURSYM" => c.cursym = str_arg(k, 0).and_then(|s| s.chars().next()).unwrap_or('$'),
             "DECEDIT" => {
                 let ok = str_arg(k, 0).is_some_and(|s| matches!(s.as_str(), "." | "," | "0." | "0,"))
                     || word_arg(k, 0).as_deref() == Some("*JOBRUN") && str_arg(k, 0).is_none();
@@ -274,6 +313,7 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
                     continue;
                 }
                 if let Some(s) = str_arg(k, 0) {
+                    c.lead_zero = s.starts_with('0');
                     c.decedit = match s.as_str() {
                         "," => (',', '.'),
                         "0," => (',', '.'),
@@ -318,6 +358,12 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
                 c.option.extend((0..k.args.len()).filter_map(|i| word_arg(k, i)));
             }
             "TRUNCNBR" => c.truncnbr = word_arg(k, 0).as_deref() != Some("*NO"),
+            "FORMSALIGN" => c.formsalign = word_arg(k, 0).as_deref() != Some("*NO"),
+            "CCSID" => {
+                if word_arg(k, 0).as_deref() == Some("*GRAPH") {
+                    c.graph_ccsid = word_arg(k, 1).as_deref() != Some("*IGNORE");
+                }
+            }
             "GENLVL" => c.genlvl = int_arg(k, 0).and_then(|v| u8::try_from(v).ok()).unwrap_or(10),
             _ => {}
         }

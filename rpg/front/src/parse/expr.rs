@@ -16,13 +16,19 @@ pub struct Cursor<'a> {
     i: usize,
     /// Where the tokens end, for messages about a missing operand.
     pub end: Pos,
+    /// The operands of `XML-INTO`, `XML-SAX`, `DATA-INTO`, `DATA-GEN`
+    /// or `SND-MSG`, where their own built-ins are allowed.
+    pub operands: bool,
 }
+
+/// Built-in functions only one operation's operands take.
+const OPERAND_BIFS: &[&str] = &["%XML", "%HANDLER", "%DATA", "%PARSER", "%GEN", "%TARGET"];
 
 impl<'a> Cursor<'a> {
     /// A cursor at the first token.
     #[must_use]
     pub fn new(toks: &'a [Tok], end: Pos) -> Self {
-        Self { toks, i: 0, end }
+        Self { toks, i: 0, end, operands: false }
     }
 
     /// The token under the cursor.
@@ -396,6 +402,25 @@ fn primary(c: &mut Cursor<'_>, diags: &mut Vec<Diag>) -> Option<Expr> {
             Expr::Bif {
                 name: name.clone(),
                 args: Vec::new(),
+                at,
+            }
+        }
+        // Elsewhere one of these is no operand: what follows it is
+        // read as an expression in parentheses.
+        Kind::Bif(name) if OPERAND_BIFS.contains(&name.as_str()) && !c.operands => {
+            diags.push(Diag::new(ids::MISSING_OPERAND, 30, at));
+            if !c.eat("(") {
+                return None;
+            }
+            let e = expr(c, diags)?;
+            if !c.eat(")") {
+                diags.push(Diag::new(ids::RPAREN_EXPECTED, 20, c.pos()));
+                c.next();
+            }
+            // The statement is dropped; its names are still checked.
+            Expr::Bif {
+                name: "%DROPPED".into(),
+                args: vec![e],
                 at,
             }
         }

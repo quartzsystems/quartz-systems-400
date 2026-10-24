@@ -125,6 +125,11 @@ impl Gen<'_> {
         }
         let arg = self.expr(&args[0], Want::default())?;
         let r = self.range(&args[1])?;
+        // Only %TLOOKUP searches a table in no order.
+        if name != "%TLOOKUP" && self.t.syms[r.sym].seq == 0 {
+            self.err(ids::TLOOKUP_SEQ, 20, name.to_string());
+            return None;
+        }
         let res = self.search(&arg, &r, wants(name)?)?;
         let found = self.b.reg();
         self.b.ins(format!("{found} = cmp.ne {res}, 0"));

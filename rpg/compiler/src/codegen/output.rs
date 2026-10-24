@@ -115,7 +115,7 @@ impl Gen<'_> {
             return;
         }
         self.at = o.at;
-        if o.space.iter().all(|s| s.trim().is_empty()) {
+        if o.space.iter().all(|s| s.trim().is_empty()) && f.prtctl.is_none() {
             self.diags.push(rpgfront::Diag::new(ids::SPACE_DEFAULT, 0, o.at));
         }
         let skip = self.b.label();
@@ -144,23 +144,31 @@ impl Gen<'_> {
         let n = |s: &str| s.trim().parse::<u16>().unwrap_or(0);
         let (sb, sa, kb, ka) = (n(&o.space[0]), n(&o.space[1]), n(&o.space[2]), n(&o.space[3]));
         let sa = if o.space.iter().all(|s| s.trim().is_empty()) { 1 } else { sa };
+        let ctl = match self.prtctl_place(&f) {
+            Some(p) => self.prtctl_read(&f, &p),
+            None => [sb, sa, kb, ka].map(|v| v.to_string()),
+        };
         let st = self.b.reg();
         self.b.ins(format!(
-            "{st} = prtio {} WRITE fmt({}) rec({line}) ctl({sb}, {sa}, {kb}, {ka})",
+            "{st} = prtio {} WRITE fmt({}) rec({line}) ctl({}, {}, {}, {})",
             mangle(&f.name),
-            mangle(&f.name)
+            mangle(&f.name),
+            ctl[0],
+            ctl[1],
+            ctl[2],
+            ctl[3]
         ));
+        if let Some(p) = self.prtctl_place(&f) {
+            self.prtctl_line(&f, &p, &ctl);
+        }
         if let Some(ind) = &f.oflind {
-            let ov = self.b.reg();
-            self.b.ins(format!("{ov} = cmp.eq {st}, 1"));
+            let ov = self.overflow_crossed(&f.name, &st);
             let on = self.b.label();
             let cont = self.b.label();
             self.b.term(format!("brif {ov}, {on}, {cont}"));
             self.b.place(&on);
-            let ind = ind.trim_start_matches("*IN").to_string();
-            if let Some(x) = self.indicator(&ind) {
-                self.b.ins(format!("store {}, *ON", x.op));
-            }
+            let ind = ind.clone();
+            self.oflind_on(&ind);
             self.b.place(&cont);
         }
         self.b.place(&skip);
@@ -298,9 +306,10 @@ impl Gen<'_> {
                 "($dst: varchar(1) *VARSIZE, $src: bytes(1) *VARSIZE, byval $desc: i64, byval $code: i32, byval $fill: i32, const $cur: char(1) *VARSIZE)",
             );
             self.b.ins(format!(
-                "callb _QRNX_EDITC({t}, {}, {desc}, {}, 0, {})",
+                "callb _QRNX_EDITC({t}, {}, {desc}, {}, {}, {})",
                 src.op,
                 u32::from(code),
+                self.ctl.edit_flags(),
                 quote(" ")
             ));
             let c = self.b.temp(&format!("char({})", width.max(1)));
@@ -336,5 +345,55 @@ impl Gen<'_> {
         self.pages.insert(place.clone());
         self.b.ins(format!("dec.add {place}, {place}, 1 prec(5,0)"));
         V::place(Ty::Zoned(4, 0), place)
+    }
+}
+
+impl Gen<'_> {
+    /// The address of a printer's `PRTCTL` structure, when it has one.
+    fn prtctl_place(&mut self, f: &crate::files::File) -> Option<String> {
+        let n = f.prtctl.as_ref()?;
+        let id = self.t.find(self.scope, n)?;
+        let place = crate::codegen::place_of(self.t, id);
+        let a = self.b.reg();
+        self.b.ins(format!("{a} = addr {place}"));
+        Some(a)
+    }
+
+    /// The space before, space after, skip before and skip after the
+    /// `PRTCTL` structure gives (positions 1-12, three digits each), as
+    /// registers.
+    fn prtctl_read(&mut self, _f: &crate::files::File, p: &str) -> [String; 4] {
+        let mut out: [String; 4] = Default::default();
+        for (k, o) in out.iter_mut().enumerate() {
+            let src = V::place(Ty::Char(3), format!("[{p} +{}]:char(3)", k * 3));
+            let t = self.tmp(&Ty::Int(10));
+            self.char_to_num(&t, &src, false);
+            let r = self.b.reg();
+            self.b.ins(format!("{r} = cvt.i64 {}", t.op));
+            *o = r;
+        }
+        out
+    }
+
+    /// The line count after a `PRTCTL` line, into positions 13-15: the
+    /// program keeps it (`$pl_FILE`), a skip setting it and the spaces
+    /// adding to it.
+    fn prtctl_line(&mut self, f: &crate::files::File, p: &str, ctl: &[String; 4]) {
+        let pl = format!("$pl_{}", mangle(&f.name));
+        self.externs.entry(pl.clone()).or_insert_with(|| format!("static {pl}: i64 inz(1)"));
+        let cur = self.b.reg();
+        self.b.ins(format!("{cur} = load {pl}"));
+        let has_skip = self.b.reg();
+        self.b.ins(format!("{has_skip} = cmp.gt {}, 0", ctl[2]));
+        let at = self.b.reg();
+        self.b.ins(format!("{at} = select {has_skip}, {}, {cur}", ctl[2]));
+        let a1 = self.b.reg();
+        self.b.ins(format!("{a1} = add {at}, {}", ctl[0]));
+        let a2 = self.b.reg();
+        self.b.ins(format!("{a2} = add {a1}, {}", ctl[1]));
+        self.b.ins(format!("store {pl}, {a2}"));
+        let w = self.tmp(&Ty::Int(20));
+        self.b.ins(format!("store {}, {a2}", w.op));
+        self.b.ins(format!("dec.mov [{p} +12]:zoned(3,0), {} trunc", w.op));
     }
 }

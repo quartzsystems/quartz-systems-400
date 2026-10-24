@@ -1,0 +1,361 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   COV040
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   COV040
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 ctl-opt dftactgrp(*no);                                                                                   000000     000200
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     3 dcl-f QSYSPRT printer(132);                                                                               000000     000300
+-     4 dcl-ds line len(132) end-ds;                                                                              000000     000400
+ ======>       aaaa
+ *RNF3530 00 a      000400  Data structure LINE has no valid subfields.
+      5 dcl-s count int(10);                                                                                      000000     000500
+ *RNF2318 00      3 000300  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-     6 monitor;                                                                                             B01  000000     000600
+      7   xml-sax %handler(hdl:count) %xml('<a><b></a>':'doc=string');                                        01  000000     000700
+      8 on-error;                                                                                            X01  000000     000800
+      9   line = 'sax ' + %char(%status);                                                                     01  000000     000900
+     10   write QSYSPRT line;                                                                                 01  000000     001000
+     11 endmon;                                                                                              E01  000000     001100
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     12 line = 'events ' + %char(count);                                                                          000000     001200
+     13 write QSYSPRT line;                                                                                       000000     001300
+     14 *inlr = *on;                                                                                              000000     001400
+-    15 dcl-proc hdl;                                                                                             000000     001500
+-    16   dcl-pi *n int(10);                                                                                      000000     001600
+     17     n int(10);                                                                                            000000     001700
+     18     event int(10) value;                                                                                  000000     001800
+     19     str pointer value;                                                                                    000000     001900
+     20     len int(20) value;                                                                                    000000     002000
+     21     exc int(10) value;                                                                                    000000     002100
+     22   end-pi;                                                                                                 000000     002200
+     23   dcl-s val char(100) based(str);                                                                         000000     002300
+     24   dcl-s nm varchar(12);                                                                                   000000     002400
+-    25   n += 1;                                                                                                 000000     002500
+     26   select;                                                                                            B01  000000     002600
+     27   when event = *XML_START_DOCUMENT;                                                                  X01  000000     002700
+     28     nm = 'startdoc';                                                                                  01  000000     002800
+     29   when event = *XML_VERSION_INFO;                                                                    X01  000000     002900
+     30     nm = 'version';                                                                                   01  000000     003000
+     31   when event = *XML_ENCODING_DECL;                                                                   X01  000000     003100
+     32     nm = 'encoding';                                                                                  01  000000     003200
+     33   when event = *XML_START_ELEMENT;                                                                   X01  000000     003300
+     34     nm = 'start';                                                                                     01  000000     003400
+     35   when event = *XML_CHARS;                                                                           X01  000000     003500
+     36     nm = 'chars';                                                                                     01  000000     003600
+     37   when event = *XML_PREDEF_REF;                                                                      X01  000000     003700
+     38     nm = 'predef';                                                                                    01  000000     003800
+     39   when event = *XML_END_ELEMENT;                                                                     X01  000000     003900
+     40     nm = 'end';                                                                                       01  000000     004000
+     41   when event = *XML_ATTR_NAME;                                                                       X01  000000     004100
+     42     nm = 'attr';                                                                                      01  000000     004200
+     43   when event = *XML_ATTR_CHARS;                                                                      X01  000000     004300
+     44     nm = 'attrchars';                                                                                 01  000000     004400
+     45   when event = *XML_ATTR_PREDEF_REF;                                                                 X01  000000     004500
+     46     nm = 'attrpredef';                                                                                01  000000     004600
+     47   when event = *XML_END_ATTR;                                                                        X01  000000     004700
+     48     nm = 'endattr';                                                                                   01  000000     004800
+     49   when event = *XML_COMMENT;                                                                         X01  000000     004900
+     50     nm = 'comment';                                                                                   01  000000     005000
+     51   when event = *XML_START_CDATA;                                                                     X01  000000     005100
+     52     nm = 'cdata';                                                                                     01  000000     005200
+     53   when event = *XML_END_CDATA;                                                                       X01  000000     005300
+     54     nm = 'endcdata';                                                                                  01  000000     005400
+     55   when event = *XML_PI_TARGET;                                                                       X01  000000     005500
+     56     nm = 'pi';                                                                                        01  000000     005600
+     57   when event = *XML_PI_DATA;                                                                         X01  000000     005700
+     58     nm = 'pidata';                                                                                    01  000000     005800
+     59   when event = *XML_END_DOCUMENT;                                                                    X01  000000     005900
+     60     nm = 'enddoc';                                                                                    01  000000     006000
+     61   when event = *XML_EXCEPTION;                                                                       X01  000000     006100
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     62     nm = 'exception';                                                                                 01  000000     006200
+     63   other;                                                                                             X01  000000     006300
+     64     nm = 'other';                                                                                     01  000000     006400
+     65   endsl;                                                                                             E01  000000     006500
+     66   if len > 0 and len <= 100;                                                                         B01  000000     006600
+     67     line = nm + ' ' + %char(len) + ' [' + %subst(val:1:len) + ']';                                    01  000000     006700
+     68   else;                                                                                              X01  000000     006800
+     69     line = nm + ' ' + %char(len);                                                                     01  000000     006900
+     70   endif;                                                                                             E01  000000     007000
+     71   if event = *XML_EXCEPTION;                                                                         B01  000000     007100
+     72     line = %trimr(line) + ' exc ' + %char(exc);                                                       01  000000     007200
+     73   endif;                                                                                             E01  000000     007300
+     74   write QSYSPRT line;                                                                                     000000     007400
+     75   return 0;                                                                                               000000     007500
+     76 end-proc;                                                                                                 000000     007600
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 3D     10      13      74
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   14M
+          COUNT             I(10,0)                 5D      7M     12
+          HDL               I(10,0)                 7      15
+                            PROTOTYPE
+          LINE              DS(132)                 4D      9M     10      12M
+                                                   13      67M     69M     72M
+                                                   72      74
+       Field References for subprocedure HDL
+0         Field             Attributes         References (D=Defined M=Modified)
+          *XML_ATTR_CHARS   CONST                  43
+          *XML_ATTR_NAME    CONST                  41
+          *XML_ATTR_PREDEF_REF...
+                            CONST                  45
+          *XML_CHARS        CONST                  35
+          *XML_COMMENT      CONST                  49
+          *XML_ENCODING_DECL...
+                            CONST                  31
+          *XML_END_ATTR     CONST                  47
+          *XML_END_CDATA    CONST                  53
+          *XML_END_DOCUMENT CONST                  59
+          *XML_END_ELEMENT  CONST                  39
+          *XML_EXCEPTION    CONST                  61      71
+          *XML_PI_DATA      CONST                  57
+          *XML_PI_TARGET    CONST                  55
+          *XML_PREDEF_REF   CONST                  37
+          *XML_START_CDATA  CONST                  51
+          *XML_START_DOCUMENT...
+                            CONST                  27
+          *XML_START_ELEMENT...
+                            CONST                  33
+          *XML_VERSION_INFO CONST                  29
+          EVENT             I(10,0)                18D     27      29      31
+                                                   33      35      37      39
+                                                   41      43      45      47
+                                                   49      51      53      55
+                                                   57      59      61      71
+          EXC               I(10,0)                21D     72
+          LEN               I(20,0)                20D     66      66      67
+                                                   67      69
+          N                 I(10,0)                17D     25M
+                            BASED(_QRNL_PST+)
+          NM                A(12)                  24D     28M     30M     32M
+                            VARYING(2)             34M     36M     38M     40M
+                                                   42M     44M     46M     48M
+                                                   50M     52M     54M     56M
+                                                   58M     60M     62M     64M
+1{heading} page 7
+0                                                  67      69
+          STR               *(16)                  19D     23
+          VAL               A(100)                 23D     67
+                            BASED(STR)
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                       14M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 10
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        2
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        2
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       76
+     Specifications  . . . . . . . . :       73
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        0
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program COV040 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

@@ -138,9 +138,9 @@ fn level_kind(op: &str) -> Option<char> {
     let op = op.split('(').next().unwrap_or("");
     let b = ["if", "dow", "dou", "for", "for-each", "select", "monitor", "do"];
     let x = ["else", "elseif", "when", "when-in", "when-is", "other", "on-error", "on-excp", "on-exit"];
-    let e = ["end", "endif", "enddo", "endfor", "endsl", "endmon", "endcs"];
+    let e = ["end", "endif", "enddo", "endfor", "endsl", "endmon"];
     if b.contains(&op) || (op.len() == 4 && (op.starts_with("ifl") || op.starts_with("ifg") || op.starts_with("ife") || op.starts_with("ifn")))
-        || (op.len() == 5 && (op.starts_with("dow") || op.starts_with("dou") || op.starts_with("cas")))
+        || (op.len() == 5 && (op.starts_with("dow") || op.starts_with("dou")))
     {
         return Some('B');
     }
@@ -278,15 +278,31 @@ pub(crate) fn analyze(lines: &[Line]) -> Vec<Info> {
     // last line, fixed form just before the next statement.
     let next_first: Vec<usize> = units.iter().skip(1).map(|u| u.first).chain(std::iter::once(n)).collect();
     let mut level: usize = 0;
+    let mut cas: Vec<usize> = Vec::new();
     let mut group_start: Option<usize> = None;
     for (k, u) in units.iter().enumerate() {
         // Comments and directives before the next statement belong to
         // a fixed-form one.
         let end = if u.fixed { next_first[k].saturating_sub(1).max(u.last) } else { u.last };
-        let mark = match u.ty {
+        let mut mark = match u.ty {
             Ty::Spec('C') => level_kind(&u.op),
             _ => None,
         };
+        // A CASxx group takes no level of its own: its ENDCS, or the END
+        // that closes it, prints none either.
+        if u.ty == Ty::Spec('C') {
+            let op = u.op.split('(').next().unwrap_or("");
+            if op == "cas" || (op.len() == 5 && op.starts_with("cas")) {
+                if cas.last() != Some(&level) {
+                    cas.push(level);
+                }
+            } else if op == "endcs" || (op == "end" && cas.last() == Some(&level)) {
+                cas.pop();
+                mark = None;
+            } else if cas.last() == Some(&level) {
+                cas.pop();
+            }
+        }
         let text = match mark {
             Some('B') => {
                 level += 1;

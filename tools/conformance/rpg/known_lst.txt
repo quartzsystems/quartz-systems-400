@@ -124,3 +124,58 @@ FZB096 listing of a 20-program fuzz bundle: not compared line for line yet (its 
 FZB097 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
 FZB098 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
 FZB099 listing of a 20-program fuzz bundle: not compared line for line yet (its outcome matches)
+COV001 the =I line of a display format in a file that does not compile has no format name
+COV002 the =I line of a display format in a file that does not compile has no format name
+COV003 the =I line of a display format in a file that does not compile has no format name
+COV101 the =I line of a display format in a file that does not compile has no format name
+COV126 the =I line of a display format in a file that does not compile has no format name
+COV007 a fixed-form procedure's PI line is not a cross-reference of its prototype
+COV124 a fixed-form procedure's PI line is not a cross-reference of its prototype
+COV008 a CALLB literal is not listed in the external references
+COV125 a CALLB literal is not listed in the external references
+COV016 the summary's count of RNF7031 for a DATA-INTO handler's template
+COV037 subfields of a handler's LIKEDS template used through the parameter count as referenced
+COV018 RNF7030 of a *LIKE DEFINE base prints with the statement, not in the additional diagnostics
+COV028 the marker of a blank resulting-indicator entry is one column wide
+COV038 the *XML_ special words are not cross-references (CONST)
+COV039 the *XML_ special words are not cross-references (CONST)
+COV040 the *XML_ special words are not cross-references (CONST)
+COV050 additional diagnostics of one line print in identifier order, IBM's in the order found
+COV119 additional diagnostics of one line print in identifier order, IBM's in the order found
+COV051 the ALWNULL attribute line of a NULLIND field in the cross-reference
+COV118 the (ALWNULL) mark on a null-capable =I field
+COV055 SND-MSG's %TARGET words in the cross-reference
+COV057 an object field's O(*JAVA:class) attributes in the cross-reference
+COV111 an object field's O(*JAVA:class) attributes in the cross-reference
+COV064 recovery after RNF0312 does not reference the names after the error
+COV069 a parameter's BASED(_QRNL_PST+) attribute line
+COV116 a parameter's BASED(_QRNL_PST+) attribute line
+COV071 the marker of RNF0369 is under the operand's first character only
+COV072 the options box does not show OPTIMIZE from the control options
+COV073 the options box does not show AUT from the control options
+COV079 the options box does not show FIXNBR from the control options
+COV083 the options box shows INDENT's value unquoted
+COV084 the options box does not show REQPREXP from the control options
+COV090 the options box does not show PGMINFO from the control options
+COV093 the options box does not show SRTSEQ and LANGID from the control options
+COV094 the options box does not show the binding directory's library
+COV089 the CCSID attribute line of a field in the cross-reference
+COV087 the spacing before a statement after a diagnostic on a DCL-PROC line
+COV092 the **ALTSEQ records print as source, IBM shows them in a box
+COV095 the marker of EXTIND's indicator on the file line
+COV096 OFLIND naming an indicator field is not that field's reference
+COV078 the EXTNAME structure's external description box (*EXPDDS)
+COV105 the EXTNAME structure's external description box (*EXPDDS)
+COV107 the external description box of a file whose formats are all ignored
+COV109 SAMEPOS's subfield name is not a cross-reference
+COV110 PACKEVEN's RNF3704 is in the additional diagnostics on IBM's listing
+COV108 a LIKEFILE file prints the parent's external description box
+COV112 the marker of EXTFMT's value
+COV113 the markers of an EXTFLD naming no field
+COV129 a LIKEFILE parameter is not supported (PHASE9.md, Blocked)
+COV130 a fixed-form procedure's PI line is not a cross-reference of its prototype
+COV131 the CCSID attribute line of a graphic field in the cross-reference
+COV132 the options box does not show REQPREXP from the control options
+COV133 the display file box's format-name columns
+COV134 the =I line of a display format in a file that does not compile has no format name
+COV103 the external description box of a file whose RAFDATA keyword is refused

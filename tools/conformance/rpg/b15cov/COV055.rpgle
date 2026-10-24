@@ -1,0 +1,20 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+monitor;
+  snd-msg *escape %msg('CPF9898':'QCPFMSG':'to self') %target(*self);
+on-excp 'CPF9898';
+  line = 'self ' + %char(%status);
+  write QSYSPRT line;
+endmon;
+monitor;
+  callp raise();
+on-excp 'CPF9898';
+  line = 'caller ' + %char(%status);
+  write QSYSPRT line;
+endmon;
+*inlr = *on;
+dcl-proc raise;
+  snd-msg *escape %msg('CPF9898':'QCPFMSG':'up one') %target(*caller);
+end-proc;
