@@ -111,9 +111,13 @@ impl Objects {
             }
             dirs.push(d);
         }
+        // A directory the setup did not make is not found (IBM's own,
+        // Q-named, hold nothing the kit binds).
         for b in bnddirs {
-            if let Some(d) = self.bnddirs.get(b) {
-                dirs.push(d.clone());
+            match self.bnddirs.get(b) {
+                Some(d) => dirs.push(d.clone()),
+                None if b.starts_with('Q') => {}
+                None => return Err(format!("binding directory {b} not found")),
             }
         }
         let lookup = |e: &BndDirEntry| -> Option<Resolved> {

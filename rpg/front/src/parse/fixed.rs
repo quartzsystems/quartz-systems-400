@@ -402,7 +402,8 @@ fn calc_spec(b: &mut Builder<'_>, lines: &[&Line]) {
         return;
     }
     if !ops::known(&code) || ops::free_only(&code) {
-        b.diags.push(Diag::new(ids::BAD_OPCODE, 30, l.pos(26)).arg(code.clone()));
+        b.diags.push(Diag::new(ids::BAD_FIXED_OPCODE, 30, l.pos(26)).arg(code.clone()));
+        return;
     }
     op.f1 = factor(b, l, 12, 25);
     if ops::extended(&code) {
@@ -430,11 +431,25 @@ fn calc_spec(b: &mut Builder<'_>, lines: &[&Line]) {
         op.result = factor(b, l, 50, 63);
         op.len = cf.cut(&l.text, "len").trim().to_string();
         op.decimals = cf.cut(&l.text, "decimals").trim().to_string();
+        if !op.decimals.is_empty() && op.decimals.parse::<u8>().ok().is_none_or(|d| d > 63) {
+            b.diags.push(Diag::new(ids::BAD_DECIMALS, 20, l.pos(69)));
+            op.decimals.clear();
+        }
         op.resind = [
             cf.cut(&l.text, "hi").trim().to_ascii_uppercase(),
             cf.cut(&l.text, "lo").trim().to_ascii_uppercase(),
             cf.cut(&l.text, "eq").trim().to_ascii_uppercase(),
         ];
+        // An indicator that is not one is blanks.
+        for (r, col) in op.resind.iter_mut().zip([71u16, 73, 75]) {
+            if !r.is_empty() && !valid_indicator(r) {
+                b.diags.push(Diag::new(ids::BAD_RESULT_IND, 20, l.pos(col)));
+                r.clear();
+            }
+        }
+        if matches!(code.as_str(), "SETON" | "SETOFF") && op.resind.iter().all(String::is_empty) {
+            b.diags.push(Diag::new(ids::NO_RESULT_IND, 30, l.pos(71)));
+        }
     }
     b.stmt(Stmt {
         at: l.pos(26),
@@ -644,4 +659,24 @@ pub fn sql_block(b: &mut Builder<'_>, idx: &[usize]) {
         },
         ..Stmt::default()
     });
+}
+
+/// An indicator a resulting-indicator entry may name.
+fn valid_indicator(s: &str) -> bool {
+    let b = s.as_bytes();
+    if b.len() != 2 {
+        return false;
+    }
+    let (x, y) = (b[0], b[1]);
+    match x {
+        b'0'..=b'9' => y.is_ascii_digit() && s != "00",
+        b'L' => y == b'R' || (b'1'..=b'9').contains(&y),
+        b'H' => (b'1'..=b'9').contains(&y),
+        b'O' => (b'A'..=b'G').contains(&y) || y == b'V',
+        b'U' => (b'1'..=b'8').contains(&y),
+        b'K' => y.is_ascii_uppercase() && y != b'O' && y != b'Z',
+        b'R' => y == b'T',
+        b'M' => y == b'R',
+        _ => false,
+    }
 }

@@ -145,10 +145,11 @@ fn mixed_source_and_errors() {
 ";
     let (m, d) = run(src);
     let ids: Vec<&str> = d.iter().map(|x| x.msgid).collect();
-    assert!(ids.contains(&"RNF5013"), "{ids:?}");
+    // A fixed-form operation that is not one is RNF5014, and ignored.
+    assert!(ids.contains(&"RNF5014"), "{ids:?}");
     assert_eq!(m.defs.len(), 2);
     let codes: Vec<&str> = m.calcs.iter().map(|s| s.op.code.as_str()).collect();
-    // The IF without its semicolon swallows ENDIF; the bad operation
-    // is reported and still listed.
+    // The IF without its semicolon swallows ENDIF.
     assert_eq!(codes[..2], ["EVAL", "EVAL"]);
+    assert!(!codes.contains(&"FROBNICATE"));
 }

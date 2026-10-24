@@ -111,13 +111,6 @@ text = "This item cannot be the target of an assignment."
 help = "Constants, literals, built-in function results and read-only parameters cannot be changed."
 
 [[msg]]
-id = "RNF2109"
-sev = 40
-text = "No external description was found for file &1."
-help = "An externally described file must exist when the source is compiled; its record formats give the fields."
-vars = ["*CHAR 50"]
-
-[[msg]]
 id = "RNF2120"
 sev = 40
 text = "No external description was found for file &1; the file is ignored."
@@ -782,3 +775,442 @@ sev = 30
 text = "&1 cannot be the factor 2 of this operation."
 vars = ["*CHAR 50"]
 
+[[msg]]
+id = "RNF0328"
+sev = 30
+text = "The digits given for &1 are not valid."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0329"
+sev = 30
+text = "The decimal positions given for &1 are not valid."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0336"
+sev = 30
+text = "The argument of &1 is not valid."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0341"
+sev = 20
+text = "The argument of %ADDR has no storage; the built-in function is ignored."
+
+[[msg]]
+id = "RNF0345"
+sev = 20
+text = "The first argument of &1 must be character data."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0365"
+sev = 20
+text = "The length given for &1 reaches past the end of the string."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0371"
+sev = 20
+text = "The argument of &1 must be character data; the built-in function is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0381"
+sev = 20
+text = "The first argument of &1 is not valid."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0528"
+sev = 20
+text = "&1 is not an array; the index is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0530"
+sev = 20
+text = "Index &1 is outside the array; the index is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0571"
+sev = 20
+text = "The second argument of &1 must be an array."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0580"
+sev = 20
+text = "The first argument of &1 must be a date, time or timestamp."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0581"
+sev = 20
+text = "The second argument of &1 must be a date, time or timestamp."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0603"
+sev = 20
+text = "Keyword &1 needs a parameter."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF0614"
+sev = 20
+text = "The time format is not valid; *ISO is used."
+
+[[msg]]
+id = "RNF0623"
+sev = 20
+text = "The qualified name is not written as a structure and one of its subfields."
+
+[[msg]]
+id = "RNF0633"
+sev = 20
+text = "A right parenthesis closes nothing; it is ignored."
+
+[[msg]]
+id = "RNF0655"
+sev = 30
+text = "&1 is a template and has no storage to use here."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF1008"
+sev = 20
+text = "The DATEDIT value is not valid."
+
+[[msg]]
+id = "RNF1303"
+sev = 20
+text = "The DECEDIT value is not valid; the keyword is ignored."
+
+[[msg]]
+id = "RNF1304"
+sev = 20
+text = "NOMAIN is not allowed when a program is created; it is ignored."
+
+[[msg]]
+id = "RNF1306"
+sev = 20
+text = "The COPYRIGHT value must be a character literal."
+
+[[msg]]
+id = "RNF1311"
+sev = 20
+text = "The EXPROPTS value is not valid."
+
+[[msg]]
+id = "RNF1317"
+sev = 20
+text = "The ACTGRP value is not valid; the keyword is ignored."
+
+[[msg]]
+id = "RNF1331"
+sev = 20
+text = "The OPTION value is not valid; it is ignored."
+
+[[msg]]
+id = "RNF1504"
+sev = 30
+text = "Procedure &1 is defined more than once."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF2007"
+sev = 20
+text = "The record length is not valid."
+
+[[msg]]
+id = "RNF2370"
+sev = 20
+text = "The USAGE value must be *INPUT, *OUTPUT, *UPDATE or *DELETE."
+
+[[msg]]
+id = "RNF2403"
+sev = 20
+text = "A printer file does not take keyword &1; it is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF2416"
+sev = 20
+text = "File keyword &1 is given more than once; it is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3315"
+sev = 20
+text = "Subfield &1 is already in this data structure; the definition is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3322"
+sev = 20
+text = "The keyword cannot follow &1; it is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3323"
+sev = 20
+text = "The keyword cannot be combined with BASED; it is ignored."
+
+[[msg]]
+id = "RNF3333"
+sev = 20
+text = "The keyword cannot be combined with OCCURS; it is ignored."
+
+[[msg]]
+id = "RNF3402"
+sev = 20
+text = "The length entry is not a number; it is taken as blank."
+
+[[msg]]
+id = "RNF3415"
+sev = 20
+text = "Fractional seconds must be from 0 to 12."
+
+[[msg]]
+id = "RNF3422"
+sev = 20
+text = "CTDATA needs an array or table; the keyword is ignored."
+
+[[msg]]
+id = "RNF3459"
+sev = 20
+text = "LIKE cannot name the definition itself."
+
+[[msg]]
+id = "RNF3504"
+sev = 20
+text = "INZ(*LIKEDS) needs LIKEDS on the same data structure."
+
+[[msg]]
+id = "RNF3511"
+sev = 40
+text = "A program status structure is already defined; this one is an ordinary structure."
+
+[[msg]]
+id = "RNF3520"
+sev = 20
+text = "The OCCURS value must be at least 1; the keyword is ignored."
+
+[[msg]]
+id = "RNF3523"
+sev = 40
+text = "No external description &1 was found for the data structure."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3558"
+sev = 20
+text = "Keyword &1 is for fixed-form definitions only; it is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3559"
+sev = 20
+text = "The length given for &1 must be at least 1; 1 is used."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3561"
+sev = 20
+text = "The prefix size of &1 must be 2 or 4."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3564"
+sev = 20
+text = "The length given for &1 must be at least 1; 1 is used."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3568"
+sev = 20
+text = "The POINTER value must be *PROC."
+
+[[msg]]
+id = "RNF3575"
+sev = 20
+text = "The keyword cannot be combined with POS; it is ignored."
+
+[[msg]]
+id = "RNF3588"
+sev = 20
+text = "EXTPGM and EXTPROC cannot both be given; the second is ignored."
+
+[[msg]]
+id = "RNF3601"
+sev = 20
+text = "A standalone field does not take keyword &1; it is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3716"
+sev = 20
+text = "The to-position is before the from-position."
+
+[[msg]]
+id = "RNF3740"
+sev = 20
+text = "The keyword cannot be combined with VALUE; it is ignored."
+
+[[msg]]
+id = "RNF3744"
+sev = 20
+text = "The OPTIONS value is not valid; the rest is skipped."
+
+[[msg]]
+id = "RNF3753"
+sev = 20
+text = "A VALUE parameter cannot take this OPTIONS value."
+
+[[msg]]
+id = "RNF3756"
+sev = 20
+text = "Parameter &1 follows an optional one, so it needs OPTIONS(*NOPASS) too."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3757"
+sev = 20
+text = "Keyword &1 is not allowed for definitions in a procedure; it is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3760"
+sev = 20
+text = "Keyword &1 is not allowed for global definitions; it is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF3813"
+sev = 20
+text = "The parameter of &1 must be a character literal or *DCLCASE."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5014"
+sev = 30
+text = "Operation code &1 is not valid; the specification is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5023"
+sev = 30
+text = "The operation needs a factor 2."
+
+[[msg]]
+id = "RNF5030"
+sev = 30
+text = "The operation needs a result field."
+
+[[msg]]
+id = "RNF5044"
+sev = 20
+text = "The decimal positions entry must be blank or 0 to 63; it is taken as blank."
+
+[[msg]]
+id = "RNF5048"
+sev = 20
+text = "The operation extender is not valid; it is ignored."
+
+[[msg]]
+id = "RNF5051"
+sev = 20
+text = "The resulting indicator is not valid; it is taken as blank."
+
+[[msg]]
+id = "RNF5053"
+sev = 30
+text = "The operation needs a resulting indicator."
+
+[[msg]]
+id = "RNF5056"
+sev = 30
+text = "TEST of a date, time or timestamp needs (E) or an error indicator."
+
+[[msg]]
+id = "RNF5116"
+sev = 20
+text = "The ENDSR return point is not valid."
+
+[[msg]]
+id = "RNF5159"
+sev = 30
+text = "&1 is not an array."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5191"
+sev = 30
+text = "Writing program-described file &1 needs a data structure."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5202"
+sev = 30
+text = "The operation is not allowed for file &1."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5250"
+sev = 20
+text = "OTHER is not inside a SELECT group, or follows another OTHER."
+
+[[msg]]
+id = "RNF5294"
+sev = 20
+text = "The ON-ERROR status code is not valid."
+
+[[msg]]
+id = "RNF5296"
+sev = 20
+text = "The MONITOR group has no ON-ERROR."
+
+[[msg]]
+id = "RNF5343"
+sev = 30
+text = "An array is used where one element is needed."
+
+[[msg]]
+id = "RNF5344"
+sev = 30
+text = "The operation needs an expression."
+
+[[msg]]
+id = "RNF5403"
+sev = 30
+text = "&1 returns no value, so it cannot be called in an expression."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF5418"
+sev = 30
+text = "A module with MAIN or NOMAIN has no main-procedure calculations; the statement is ignored."
+
+[[msg]]
+id = "RNF6029"
+sev = 20
+text = "The edit word is not valid."
+
+[[msg]]
+id = "RNF7261"
+sev = 30
+text = "The result field is not valid for the operation."
+
+[[msg]]
+id = "RNF7451"
+sev = 30
+text = "The name &1 refers to is not defined; the built-in function is ignored."
+vars = ["*CHAR 50"]
+
+[[msg]]
+id = "RNF7567"
+sev = 20
+text = "The FOR start value is not valid."

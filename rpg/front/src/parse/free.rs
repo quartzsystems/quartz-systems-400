@@ -114,6 +114,15 @@ pub fn statement(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt) -> 
                 if is_kw {
                     let mut kws = kw::keywords(body, st.end, &mut b.diags);
                     d.value = kws.first().and_then(|k| k.arg(0)).and_then(|a| a.expr.clone());
+                    // A value that does not parse: the rest is skipped.
+                    if d.value.is_none()
+                        && let Some(a) = kws.first().and_then(|k| k.arg(0)).filter(|a| !a.toks.is_empty())
+                    {
+                        let at = a.toks.last().map_or(st.at, |t| t.at);
+                        b.diags.push(Diag::new(ids::RPAREN_EXPECTED, 20, at));
+                        b.diags.push(Diag::new(ids::TEXT_SKIPPED, 0, at));
+                        d.value = Some(Expr::Empty(at));
+                    }
                     kws.remove(0);
                     d.kws = kws;
                 } else if !body.is_empty() {
@@ -396,10 +405,8 @@ fn calc(b: &mut Builder<'_>, st: &FreeStmt, word: &str, n: usize) -> Option<Stmt
         } else {
             ("CALLP", expr::expr(&mut c, &mut b.diags))
         };
-        if !c.done() {
-            b.diags.push(Diag::new(ids::END_OF_EXPRESSION, 20, c.pos()));
-        }
         let x = x?;
+        expr::trailing(&c, &mut b.diags);
         if code == "CALLP" && !matches!(x, Expr::Ref { .. }) {
             b.diags.push(Diag::new(ids::NOT_ASSIGNABLE, 30, st.at));
             return None;
@@ -422,6 +429,16 @@ fn calc(b: &mut Builder<'_>, st: &FreeStmt, word: &str, n: usize) -> Option<Stmt
     if let Some((e, m)) = extenders(rest) {
         op.ext = e;
         rest = &rest[m..];
+    } else if let [o, Tok { kind: Kind::Name(_), .. }, c, ..] = rest
+        && matches!(word, "EVAL" | "EVALR" | "EVAL-CORR" | "CALLP")
+        && o.is("(")
+        && c.is(")")
+        && o.at.col == st.at.col + u16::try_from(word.len()).unwrap_or(0)
+    {
+        // Letters in parentheses right after the operation code are
+        // extenders; ones that are not valid are ignored.
+        b.diags.push(Diag::new(ids::BAD_EXTENDER, 20, rest[1].at));
+        rest = &rest[3..];
     }
     if ops::fixed_only(word) {
         b.diags.push(Diag::new(ids::NOT_IN_FREE, 30, st.at).arg(word.to_string()));
@@ -445,6 +462,17 @@ fn calc(b: &mut Builder<'_>, st: &FreeStmt, word: &str, n: usize) -> Option<Stmt
             } else {
                 c.skip_all();
             }
+        }
+        // Operands past the last one the operation takes.
+        let names = |e: &&Expr| !matches!(e, Expr::Special { word, .. } if word == "*NOKEY" || word == "*ALL");
+        let extra = match word {
+            "CLEAR" | "RESET" => list.iter().filter(names).nth(1),
+            "DSPLY" => list.get(3),
+            _ => None,
+        };
+        if let Some(e) = extra {
+            b.diags.push(Diag::new(ids::END_OF_EXPRESSION, 20, e.pos()));
+            return None;
         }
         ops::assign_free_roles(&mut op, list);
     }

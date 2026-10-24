@@ -36,6 +36,16 @@ impl Gen<'_> {
             self.err(ids::NOT_ASSIGNABLE, 30, "");
             return;
         }
+        // A whole array assigned to one field.
+        if src.dim > 0 && dst.dim == 0 && src.kind == Vk::Place && !matches!(dst.ty, Ty::Ds(_)) {
+            self.err(ids::ARRAY_NOT_INDEXED, 30, "");
+            return;
+        }
+        // A field whose definition was in error is not defined.
+        if dst.ty == Ty::Unknown || src.ty == Ty::Unknown && src.kind == Vk::Place {
+            self.err(ids::UNDEFINED_OPERAND, 30, "");
+            return;
+        }
         let dst = self.as_chars(dst);
         let src = if matches!(dst.ty, Ty::Ds(_)) { src.clone() } else { self.as_chars(src) };
         // Text of another class converts to the target's.
@@ -657,6 +667,14 @@ impl Gen<'_> {
                 if let (Some(f2), Some(r)) = (op.f2.first(), op.result.first()) {
                     let t = self.target(r);
                     let v = self.expr(f2, Want::default());
+                    // Factor 2 is a number.
+                    if let Some(x) = &v
+                        && !x.ty.is_numeric()
+                        && x.fig.is_none()
+                    {
+                        self.err(ids::BAD_FACTOR2, 30, base.to_string());
+                        return k + 1;
+                    }
                     if let (Some(t), Some(v)) = (t, v) {
                         let v = if base == "Z-SUB" {
                             let z = V::lit(Ty::Packed(1, 0), "0");
@@ -1039,7 +1057,12 @@ impl Gen<'_> {
         };
         let Some(iv) = self.target(idx) else { return };
         if let Some(v) = self.expr(start, Want::default()) {
-            self.assign(&iv, &v, false);
+            // The start is a number.
+            if !v.ty.is_numeric() && v.fig.is_none() {
+                self.err(ids::FOR_INITIAL, 20, "FOR");
+            } else {
+                self.assign(&iv, &v, false);
+            }
         }
         let mut limit = None;
         let mut down = false;
@@ -1134,7 +1157,11 @@ impl Gen<'_> {
     /// `RETURN [value]`.
     fn return_op(&mut self, v: Option<&Expr>) {
         if let Some(exit) = self.main_exit.clone() {
-            // The main procedure: the cycle's end of calculations.
+            // The main procedure: the cycle's end of calculations; it
+            // returns no value.
+            if v.is_some() {
+                self.err(ids::RETURN_VALUE_UNWANTED, 20, "RETURN");
+            }
             self.b.term(format!("br {exit}"));
             return;
         }
@@ -1236,7 +1263,7 @@ impl Gen<'_> {
             return;
         };
         let Some(r) = op.result.first() else {
-            self.err(ids::BAD_FILE_OP, 30, name);
+            self.err(ids::WRITE_NO_DS, 30, name);
             return;
         };
         let Some(v) = self.expr(r, Want::default()) else { return };

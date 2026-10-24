@@ -93,9 +93,19 @@ fn timfmt_arg(k: &Keyword) -> Option<(TimFmt, char)> {
 pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
     // Free-form type keywords.
     for k in &d.kws {
-        let n = |i| int_arg(k, i);
+        // Numbers, named constants and %LEN, %SIZE or %ELEM of what is
+        // declared already.
+        let nums: Vec<Option<i64>> = (0..3)
+            .map(|i| int_arg(k, i).or_else(|| k.arg(i).and_then(|a| a.expr.as_ref()).and_then(|e| const_int(cx, e))))
+            .collect();
+        let n = |i: usize| nums.get(i).copied().flatten();
         let ty = match k.name.as_str() {
             "CHAR" => Ty::Char(len_ok(cx, k, n(0))?),
+            "VARCHAR" | "VARUCS2" | "VARGRAPH" if n(1).is_some_and(|p| p != 2 && p != 4) => {
+                let at = k.arg(1).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+                cx.diags.push(Diag::new(ids::VARYING_PREFIX, 20, at).arg(k.name.clone()));
+                return None;
+            }
             "VARCHAR" => Ty::VarChar(len_ok(cx, k, n(0))?, prefix(n(1), n(0))),
             "UCS2" => Ty::Ucs2(len_ok(cx, k, n(0))?),
             "VARUCS2" => Ty::VarUcs2(len_ok(cx, k, n(0))?, prefix(n(1), n(0))),
@@ -159,17 +169,33 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
                 Ty::Date(f, s)
             }
             "TIME" => {
-                let (f, s) = timfmt_arg(k).unwrap_or((cx.timfmt, cx.timsep));
+                let (f, s) = match timfmt_arg(k) {
+                    Some(fs) => fs,
+                    None => {
+                        if k.arg(0).is_some() {
+                            skip_bad(cx, k, ids::BAD_TIMFMT);
+                        }
+                        (cx.timfmt, cx.timsep)
+                    }
+                };
                 Ty::Time(f, s)
             }
-            "TIMESTAMP" => Ty::Timestamp(u8::try_from(n(0).unwrap_or(6)).unwrap_or(6)),
-            "POINTER" => {
-                if word_arg(k, 0).as_deref() == Some("*PROC") {
-                    Ty::ProcPtr
-                } else {
+            "TIMESTAMP" => match n(0) {
+                Some(p) if !(0..=12).contains(&p) => {
+                    let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+                    cx.diags.push(Diag::new(ids::STAMP_PRECISION, 20, at));
+                    Ty::Timestamp(6)
+                }
+                p => Ty::Timestamp(u8::try_from(p.unwrap_or(6)).unwrap_or(6)),
+            },
+            "POINTER" => match word_arg(k, 0).as_deref() {
+                Some("*PROC") => Ty::ProcPtr,
+                None => Ty::Ptr,
+                Some(_) => {
+                    skip_bad(cx, k, ids::POINTER_PARM);
                     Ty::Ptr
                 }
-            }
+            },
             "OBJECT" => Ty::Object,
             "LIKE" => return like(cx, d, k),
             _ => continue,
@@ -182,12 +208,27 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
     // Fixed form: the type column, the length or positions, decimals.
     let from: Option<u32> = cols.from.parse().ok();
     let to: Option<u32> = cols.to.trim_start_matches('+').parse().ok();
-    let dec: Option<u8> = cols.decimals.parse().ok();
+    let mut dec: Option<u8> = cols.decimals.parse().ok();
+    // A length that is not a number is blanks.
+    if !cols.to.is_empty() && to.is_none() {
+        cx.diags.push(Diag::new(ids::BAD_LEN_ENTRY, 20, d.at));
+    }
     let len = match (from, to) {
         (Some(f), Some(t)) if t >= f => Some(t - f + 1),
+        (Some(_), Some(_)) => {
+            cx.diags.push(Diag::new(ids::TO_BEFORE_FROM, 20, d.at));
+            Some(1)
+        }
         (None, Some(t)) => Some(t),
         _ => None,
     };
+    // More decimal positions than digits: none.
+    if let (Some(dc), Some(n)) = (dec, len)
+        && !positional_digits_ok(&cols.ty, from.is_some(), n, dc)
+    {
+        cx.diags.push(Diag::new(ids::SCALE_OVER_DIGITS, 20, d.at));
+        dec = Some(0);
+    }
     let positional = from.is_some();
     let varying = d.kw("VARYING").is_some();
     let code = if cols.ty.is_empty() {
@@ -321,7 +362,13 @@ fn len_ok(cx: &mut Cx<'_>, k: &Keyword, n: Option<i64>) -> Option<u32> {
             Some(16_773_104)
         }
         Some(_) => {
-            diag(cx, ids::ZERO_LEN, 20, k.at, &k.name);
+            let id = match k.name.as_str() {
+                "UCS2" => ids::ZERO_LEN_UCS2,
+                "GRAPH" => ids::ZERO_LEN_GRAPH,
+                _ => ids::ZERO_LEN,
+            };
+            let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+            cx.diags.push(Diag::new(id, 20, at).arg(k.name.clone()));
             Some(1)
         }
         None => {
@@ -340,9 +387,49 @@ fn signed_arg(k: &Keyword, i: usize) -> Option<i64> {
 /// A date format that is not valid: IBM uses `*ISO` and skips the rest
 /// of the keyword.
 pub fn bad_datfmt(cx: &mut Cx<'_>, k: &Keyword) {
+    skip_bad(cx, k, ids::BAD_DATFMT);
+}
+
+/// A keyword parameter that is not valid, the rest of it skipped.
+fn skip_bad(cx: &mut Cx<'_>, k: &Keyword, id: &'static str) {
     let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
-    cx.diags.push(Diag::new(ids::BAD_DATFMT, 20, at));
+    cx.diags.push(Diag::new(id, 20, at).arg(k.name.clone()));
     cx.diags.push(Diag::new(ids::TEXT_SKIPPED, 0, at));
+}
+
+/// A number known when declaring: a literal, a named constant of
+/// one, or `%LEN`, `%SIZE` or `%ELEM` of a literal or of something
+/// declared already.
+pub fn const_int(cx: &Cx<'_>, e: &Expr) -> Option<i64> {
+    match e {
+        Expr::Lit(Lit::Num(n), _) => n.parse().ok(),
+        Expr::Ref { name, steps, .. } if steps.is_empty() => {
+            let id = cx.t.find(cx.scope, name)?;
+            match &cx.t.syms[id].kind {
+                Some(Kind::Const(ConstVal::Expr(v))) => const_int(cx, &v.clone()),
+                _ => None,
+            }
+        }
+        Expr::Bif { name, args, .. } if args.len() == 1 => {
+            let a = &args[0];
+            if let Expr::Lit(Lit::Char(s), _) = a {
+                return matches!(name.as_str(), "%LEN" | "%SIZE").then(|| i64::try_from(s.chars().count()).ok()).flatten();
+            }
+            let id = cx.t.find(cx.scope, a.name()?)?;
+            let s = &cx.t.syms[id];
+            match name.as_str() {
+                "%ELEM" => Some(i64::from(s.dim)).filter(|&d| d > 0),
+                "%SIZE" => Some(i64::from(cx.t.size(&s.ty))),
+                "%LEN" => match &s.ty {
+                    t if t.is_string() => t.str_len().map(i64::from),
+                    t if t.is_numeric() && !matches!(t, Ty::Float(_)) => t.shape().map(|(d, _)| i64::from(d)),
+                    _ => None,
+                },
+                _ => None,
+            }
+        }
+        _ => None,
+    }
 }
 
 /// A varying field's prefix: given, or 2 up to 65535 and 4 beyond.
@@ -357,7 +444,29 @@ fn prefix(given: Option<i64>, len: Option<i64>) -> u8 {
 
 /// `LIKE(name[:adjust])`.
 fn like(cx: &mut Cx<'_>, d: &Def, k: &Keyword) -> Option<Ty> {
+    let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+    // A qualified name: of a qualified structure's subfield.
+    if let Some(Some(Expr::Ref { name, steps, .. })) = k.arg(0).map(|a| a.expr.clone())
+        && let Some(rpgfront::ast::Step::Field(f)) = steps.first()
+    {
+        let ds = cx.t.find(cx.scope, &name).and_then(|id| match cx.t.syms[id].kind {
+            Some(Kind::Ds(i)) if cx.t.ds[i].qualified => Some(i),
+            _ => None,
+        });
+        let sub = ds.and_then(|i| cx.t.subfield(i, f)).filter(|_| steps.len() == 1);
+        return match sub {
+            Some(s) => Some(cx.t.syms[s].ty.clone()),
+            None => {
+                cx.diags.push(Diag::new(ids::BAD_SIMPLE_QUALIFIED, 20, at));
+                diag(cx, ids::NOT_DEFINED, 30, k.at, f);
+                None
+            }
+        };
+    }
     let name = word_arg(k, 0)?;
+    if name.eq_ignore_ascii_case(&d.name) {
+        cx.diags.push(Diag::new(ids::LIKE_SELF, 20, at));
+    }
     let Some(id) = cx.t.find(cx.scope, &name) else {
         diag(cx, ids::NOT_DEFINED, 30, k.at, &name);
         return None;
@@ -399,35 +508,112 @@ const DEF_KEYWORDS: &[&str] = &[
     "TIMFMT", "TOFILE", "UCS2", "UNS", "VALUE", "VARCHAR", "VARGRAPH", "VARUCS2", "VARYING", "ZONED",
 ];
 
-/// The words of the status structures' special subfields.
-const SPECIAL_SUBFIELDS: &[&str] = &[
-    "*FILE", "*STATUS", "*OPCODE", "*ROUTINE", "*RECORD", "*SIZE", "*INP", "*OUT", "*MODE", "*PROC", "*PARMS",
+/// The special subfields of a program status structure.
+const PSDS_SUBFIELDS: &[&str] = &["*PROC", "*STATUS", "*ROUTINE", "*PARMS"];
+
+/// The special subfields of a file information structure.
+const INFDS_SUBFIELDS: &[&str] = &["*FILE", "*STATUS", "*OPCODE", "*ROUTINE", "*RECORD", "*SIZE", "*INP", "*OUT", "*MODE"];
+
+/// Keywords not allowed after another, with IBM's identifier.
+const EXCLUSIVE: &[(&str, &str, &str)] = &[
+    ("EXPORT", "IMPORT", ids::KEYWORD_EXCLUDED),
+    ("IMPORT", "EXPORT", ids::KEYWORD_EXCLUDED),
+    ("ASCEND", "DESCEND", ids::AFTER_ASCEND),
+    ("DESCEND", "ASCEND", ids::AFTER_ASCEND),
+    ("BASED", "INZ", ids::AFTER_BASED),
+    ("BASED", "EXPORT", ids::AFTER_BASED),
+    ("BASED", "IMPORT", ids::AFTER_BASED),
+    ("OCCURS", "DIM", ids::AFTER_OCCURS),
+    ("POS", "OVERLAY", ids::AFTER_POS),
+    ("EXTPGM", "EXTPROC", ids::PR_EXCLUDED),
+    ("EXTPROC", "EXTPGM", ids::PR_EXCLUDED),
+    ("VALUE", "CONST", ids::AFTER_VALUE),
 ];
 
-/// Keywords that exclude one written before them.
-const EXCLUSIVE: &[(&str, &str)] = &[
-    ("EXPORT", "IMPORT"),
-    ("IMPORT", "EXPORT"),
-    ("ASCEND", "DESCEND"),
-    ("DESCEND", "ASCEND"),
+/// The values `OPTIONS` takes.
+const PARM_OPTIONS: &[&str] = &["*NOPASS", "*OMIT", "*VARSIZE", "*STRING", "*TRIM", "*RIGHTADJ", "*NULLIND", "*CONVERT", "*EXACT"];
+
+/// Keywords that take a parameter.
+const NEEDS_PARM: &[&str] = &[
+    "ALT", "BASED", "BINDEC", "CCSID", "CHAR", "CLASS", "DATFMT", "DIM", "EXTFLD", "EXTFMT", "EXTNAME",
+    "FLOAT", "FROMFILE", "GRAPH", "INT", "LEN", "LIKE", "LIKEDS", "LIKEFILE", "LIKEREC", "OCCURS",
+    "OPTIONS", "OVERLAY", "PACKED", "PERRCD", "POS", "PREFIX", "SQLTYPE", "TIMFMT", "TOFILE", "UCS2", "UNS",
+    "VARCHAR", "VARGRAPH", "VARUCS2", "ZONED",
 ];
 
-/// A definition's keywords: each known, given once and not excluded by
-/// another; a constant takes none. IBM ignores the keyword.
-pub fn check_keywords(cx: &mut Cx<'_>, d: &Def) {
+/// Keywords a standalone field does not take.
+const NOT_FOR_FIELD: &[&str] = &["EXTFLD", "OVERLAY", "POS", "EXTNAME", "OCCURS", "PREFIX", "PSDS", "QUALIFIED"];
+
+/// A definition's keywords: each known, given once, with a parameter
+/// when it takes one, and not excluded by another; a constant takes
+/// none. IBM ignores such a keyword: the definition comes back without
+/// it. `ds` is the structure of a subfield.
+pub fn check_keywords(cx: &mut Cx<'_>, d: &Def, ds: Option<&Def>) -> Def {
     let mut seen: Vec<&str> = Vec::new();
+    let mut keep = Vec::new();
+    let psds = ds.is_some_and(|p| p.kw("PSDS").is_some() || p.fixed.as_ref().is_some_and(|c| c.dstype == "S"))
+        && !cx.t.ds.iter().any(|x| x.psds);
+    let infds = ds.is_some_and(|p| cx.t.infds.contains(&p.name.to_ascii_uppercase()));
     for k in &d.kws {
         let n = k.name.as_str();
-        if d.kind == DefKind::Const {
-            cx.diags.push(Diag::new(ids::CONST_KEYWORD, 20, k.at));
-        } else if !DEF_KEYWORDS.contains(&n) && (d.kind != DefKind::Subfield || !SPECIAL_SUBFIELDS.contains(&n)) {
-            cx.diags.push(Diag::new(ids::UNKNOWN_DEF_KEYWORD, 20, k.at).arg(n));
+        let special = d.kind == DefKind::Subfield
+            && (psds && PSDS_SUBFIELDS.contains(&n) || infds && INFDS_SUBFIELDS.contains(&n));
+        let bad = if d.kind == DefKind::Const {
+            // A second value is the constant's value twice.
+            let id = if n.starts_with(|c: char| c.is_ascii_alphabetic() || c == '*') { ids::CONST_KEYWORD } else { ids::KEYWORD_TWICE };
+            Some(Diag::new(id, 20, k.at))
+        } else if !DEF_KEYWORDS.contains(&n) && !special {
+            Some(Diag::new(ids::UNKNOWN_DEF_KEYWORD, 20, k.at).arg(n))
         } else if seen.contains(&n) {
-            cx.diags.push(Diag::new(ids::KEYWORD_TWICE, 20, k.at).arg(n));
-        } else if let Some((first, _)) = EXCLUSIVE.iter().find(|(a, b)| *b == n && seen.contains(a)) {
-            cx.diags.push(Diag::new(ids::KEYWORD_EXCLUDED, 20, k.at).arg(*first));
-        }
+            Some(Diag::new(ids::KEYWORD_TWICE, 20, k.at).arg(n))
+        } else if let Some((first, _, id)) = EXCLUSIVE.iter().find(|(a, b, _)| *b == n && seen.contains(a)) {
+            Some(Diag::new(id, 20, k.at).arg(*first))
+        } else if NEEDS_PARM.contains(&n) && k.args.is_empty() {
+            Some(Diag::new(ids::NEEDS_PARM, 20, k.at).arg(n))
+        } else if d.kind == DefKind::Standalone && NOT_FOR_FIELD.contains(&n) {
+            Some(Diag::new(ids::NOT_FOR_FIELD, 20, k.at).arg(n))
+        } else if matches!(n, "EXPORT" | "IMPORT") && cx.scope != 0 {
+            Some(Diag::new(ids::NOT_IN_PROC, 20, k.at).arg(n))
+        } else if n == "OPTIONS" && (0..k.args.len()).any(|i| word_arg(k, i).is_none_or(|w| !PARM_OPTIONS.contains(&w.as_str()))) {
+            let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+            cx.diags.push(Diag::new(ids::OPTIONS_PARM, 20, at));
+            Some(Diag::new(ids::TEXT_SKIPPED, 0, at))
+        } else if n == "OPTIONS" && seen.contains(&"VALUE")
+            && let Some(i) = (0..k.args.len()).find(|&i| matches!(word_arg(k, i).as_deref(), Some("*OMIT" | "*VARSIZE" | "*NULLIND")))
+        {
+            let at = k.arg(i).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+            Some(Diag::new(ids::OPTIONS_VALUE, 20, at))
+        } else if n == "STATIC" && cx.scope == 0 {
+            Some(Diag::new(ids::NOT_IN_MAIN_SOURCE, 20, k.at).arg(n))
+        } else if n == "VARYING" && d.fixed.is_none() {
+            Some(Diag::new(ids::FIXED_ONLY_KEYWORD, 20, k.at).arg(n))
+        } else if n == "CTDATA" && d.kw("DIM").is_none() {
+            Some(Diag::new(ids::CTDATA_NOT_ARRAY, 20, k.at))
+        } else if matches!(n, "EXPORT" | "IMPORT") && k.arg(0).is_some() && str_arg(k, 0).is_none() && word_arg(k, 0).as_deref() != Some("*DCLCASE") {
+            let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+            Some(Diag::new(ids::EXPORT_PARM, 20, at).arg(n))
+        } else {
+            None
+        };
         seen.push(n);
+        match bad {
+            Some(x) => cx.diags.push(x),
+            None => keep.push(k.clone()),
+        }
+    }
+    Def { kws: keep, ..d.clone() }
+}
+
+/// Once a parameter is `OPTIONS(*NOPASS)`, every one after it is too.
+pub fn nopass_order(cx: &mut Cx<'_>, d: &Def) {
+    let nopass = |c: &Def| c.kw("OPTIONS").is_some_and(|k| (0..k.args.len()).any(|i| word_arg(k, i).as_deref() == Some("*NOPASS")));
+    let mut after = false;
+    for c in &d.children {
+        if nopass(c) {
+            after = true;
+        } else if after {
+            cx.diags.push(Diag::new(ids::NOPASS_MISSING, 20, c.at).arg(c.name.to_ascii_uppercase()));
+        }
     }
 }
 
@@ -439,12 +625,17 @@ fn ir_name(cx: &Cx<'_>, name: &str) -> String {
 /// Declare one definition of a scope: a standalone field, constant,
 /// data structure (with subfields), or prototype.
 pub fn declare(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
-    check_keywords(cx, d);
+    let mut d = check_keywords(cx, d, None);
     if matches!(d.kind, DefKind::Ds | DefKind::Pr) {
-        for c in &d.children {
-            check_keywords(cx, c);
+        let parent = d.clone();
+        for c in &mut d.children {
+            *c = check_keywords(cx, c, (parent.kind == DefKind::Ds).then_some(&parent));
         }
     }
+    if d.kind == DefKind::Pr {
+        nopass_order(cx, &d);
+    }
+    let d = &d;
     match d.kind {
         DefKind::Const => {
             // A constant without a value is ignored.
@@ -465,8 +656,8 @@ pub fn declare(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         DefKind::Standalone => {
             let before = cx.diags.len();
             let ty = type_of(cx, d, false);
-            if ty.is_none() && cx.diags.len() == before {
-                diag(cx, ids::NO_TYPE, 30, d.at, &d.name.to_ascii_uppercase());
+            if ty.is_none() && cx.diags[before..].iter().all(|x| x.msgid == ids::BAD_LEN_ENTRY) {
+                no_type(cx, d.at, &d.name.to_ascii_uppercase(), d.fixed.is_some());
             }
             let ty = ty.unwrap_or(Ty::Unknown);
             let dim = dim_of(cx, d);
@@ -599,6 +790,28 @@ fn storage_of(cx: &Cx<'_>, d: &Def) -> Storage {
     Storage::Static
 }
 
+/// A definition without a type: IBM asks for LIKE (in fixed form, or
+/// when the name was not valid either) and names it as not defined.
+fn no_type(cx: &mut Cx<'_>, at: Pos, name: &str, fixed: bool) {
+    if fixed || name.is_empty() {
+        cx.diags.push(Diag::new(ids::NO_TYPE, 30, at).arg(name));
+    }
+    if !name.is_empty() {
+        cx.diags.push(Diag::new(ids::NOT_DEFINED, 30, at).arg(name));
+    }
+}
+
+/// Whether a fixed-form numeric field's decimals fit its digits.
+fn positional_digits_ok(ty: &str, positional: bool, len: u32, dec: u8) -> bool {
+    let digits = match (ty, positional) {
+        ("P" | "", true) => 2 * len - 1,
+        ("B", true) => if len == 2 { 4 } else { 9 },
+        ("I" | "U" | "F" | "A" | "D" | "T" | "Z" | "N" | "*" | "G" | "C" | "O", _) => return true,
+        _ => len,
+    };
+    u32::from(dec) <= digits
+}
+
 /// A data structure and its subfields.
 fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     let unnamed = d.name.is_empty() || d.name == "*N";
@@ -621,13 +834,39 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     let fixed_len: Option<u32> = d.fixed.as_ref().and_then(|c| {
         if c.from.is_empty() { c.to.parse().ok() } else { None }
     });
-    let len_kw = d.kw("LEN").and_then(|k| int_arg(k, 0)).and_then(|v| u32::try_from(v).ok());
+    // LEN(0) is no length.
+    let len_kw = d.kw("LEN").and_then(|k| int_arg(k, 0)).and_then(|v| u32::try_from(v).ok()).filter(|&v| v > 0);
+    let occurs = match d.kw("OCCURS") {
+        Some(k) => match int_arg(k, 0).or_else(|| k.arg(0).and_then(|a| a.expr.as_ref()).and_then(|e| const_int(cx, e))) {
+            Some(n) if n >= 1 => u32::try_from(n).unwrap_or(0),
+            _ => {
+                let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+                cx.diags.push(Diag::new(ids::OCCURS_PARM, 20, at));
+                0
+            }
+        },
+        None => 0,
+    };
+    // One program status structure; a second is an ordinary one.
+    let mut psds = d.fixed.as_ref().is_some_and(|c| c.dstype == "S") || d.kw("PSDS").is_some();
+    if psds && cx.t.ds.iter().any(|x| x.psds) {
+        let at = d.kw("PSDS").map_or(d.at, |k| k.at);
+        cx.diags.push(Diag::new(ids::PSDS_TWICE, 40, at));
+        psds = false;
+    }
+    // INZ(*LIKEDS) only with LIKEDS.
+    if d.kw("LIKEDS").is_none()
+        && let Some(k) = d.kw("INZ")
+        && word_arg(k, 0).as_deref() == Some("*LIKEDS")
+    {
+        cx.diags.push(Diag::new(ids::INZ_LIKEDS, 20, d.at));
+    }
     let mut ds = Ds {
         len: 0,
         qualified,
         inz: d.kw("INZ").is_some(),
-        occurs: d.kw("OCCURS").and_then(|k| int_arg(k, 0)).and_then(|v| u32::try_from(v).ok()).unwrap_or(0),
-        psds: d.fixed.as_ref().is_some_and(|c| c.dstype == "S") || d.kw("PSDS").is_some(),
+        occurs,
+        psds,
         dtaara: d
             .kw("DTAARA")
             .map(|k| str_arg(k, 0).unwrap_or_else(|| name.clone()))
@@ -738,6 +977,11 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     let is_psds = cx.t.ds[ds_index].psds;
     for c in &d.children {
         let cname = c.name.to_ascii_uppercase();
+        // A subfield named twice in its structure is ignored.
+        if !cname.is_empty() && cname != "*N" && cx.t.ds[ds_index].subfields.iter().any(|&s| cx.t.syms[s].name == cname) {
+            cx.diags.push(Diag::new(ids::SUBFIELD_TWICE, 20, c.at).arg(cname));
+            continue;
+        }
         let special = crate::extfiles::special_subfield(c, is_psds);
         let ty = match &special {
             Some((t, _)) => Some(t.clone()),
@@ -761,7 +1005,7 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
                 } else {
                     // A LIKE that names nothing was reported already.
                     if c.kw("LIKE").is_none() {
-                        diag(cx, ids::NO_TYPE, 30, c.at, &cname);
+                        no_type(cx, c.at, &cname, c.fixed.is_some());
                     }
                     (Ty::Unknown, 0)
                 }

@@ -729,7 +729,7 @@ impl Gen<'_> {
         }
         let val = self.as_chars(&val);
         if !val.ty.is_char() {
-            self.err(ids::TYPE_MISMATCH, 30, "EVALR");
+            self.err(ids::ASSIGN_TYPE, 30, "EVALR");
             return;
         }
         let src = self.rt_of(&val, None);

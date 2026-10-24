@@ -5,7 +5,7 @@
 //! The heap operations `ALLOC` and `DEALLOC` (the built-ins `%ALLOC`
 //! and `%REALLOC` are with the others).
 
-use rpgfront::ast::Op;
+use rpgfront::ast::{Expr, Op};
 
 use super::Gen;
 use super::expr::Want;
@@ -33,6 +33,10 @@ impl Gen<'_> {
             self.err(ids::BAD_EXPRESSION_TYPE, 30, op.code.clone());
             return;
         };
+        // A literal was reported (`blocks`).
+        if matches!(e, Expr::Lit(..)) {
+            return;
+        }
         let Some(t) = self.target(e) else { return };
         if t.ty != Ty::Ptr {
             self.err(ids::TYPE_MISMATCH, 30, String::new());

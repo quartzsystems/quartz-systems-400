@@ -75,6 +75,12 @@ impl Gen<'_> {
             return None;
         }
         let arg = self.expr(&args[0], Want::default())?;
+        if let Some(id) = args[1].name().and_then(|n| self.t.find(self.scope, n))
+            && self.t.syms[id].dim == 0
+        {
+            self.err(ids::LOOKUP_ARRAY, 20, name.to_string());
+            return None;
+        }
         let mut r = self.range(&args[1])?;
         if let Some(s) = args.get(2) {
             let s = self.expr(s, Want::default())?;

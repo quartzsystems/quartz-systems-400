@@ -457,6 +457,14 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
         diags: diags(&c),
         ..Outcome::default()
     };
+    // A program that names binding directories is bound even when it
+    // is not run: one that is not found means no program.
+    if c.created && case.call.is_empty() && verb == "CRTBNDRPG" && !c.ctl.bnddir.is_empty()
+        && program(&c, &case.name, &objs, &main_cmd).is_err()
+    {
+        o.created = false;
+        o.cause = "RNS9310".into();
+    }
     if c.created && !case.call.is_empty() && verb != "CRTRPGMOD" {
         let p = program(&c, &case.name, &objs, &main_cmd)?;
         call_into(case, &mut o, p, &objs, db.as_ref())?;

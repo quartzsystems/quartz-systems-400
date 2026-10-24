@@ -229,6 +229,8 @@ pub struct Table {
     /// Fields and structures tied to a data area (`DTAARA`): the area,
     /// `NAME` or `LIB/NAME`.
     pub dtaaras: HashMap<SymId, String>,
+    /// The structures files name as their `INFDS`.
+    pub infds: Vec<String>,
 }
 
 impl Table {

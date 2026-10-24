@@ -234,6 +234,13 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
     for k in f.kws.iter().filter(|k| !k.name.starts_with(|c: char| c.is_ascii_alphabetic() || c == '*')) {
         diags.push(Diag::new(rpgfront::diag::ids::BAD_KEYWORD, 30, k.at).arg(k.name.clone()));
     }
+    // Each keyword once (the repeatable ones aside).
+    for (i, k) in f.kws.iter().enumerate() {
+        let again = f.kws[..i].iter().any(|x| x.name == k.name);
+        if again && !matches!(k.name.as_str(), "RENAME" | "IGNORE" | "INCLUDE" | "SFILE" | "PREFIX") {
+            diags.push(Diag::new(ids::FILE_KEYWORD_TWICE, 20, k.at).arg(k.name.clone()));
+        }
+    }
     if let Some(c) = &f.fixed {
         out.dev = match c.device.as_str() {
             "PRINTER" => Dev::Printer,
@@ -285,11 +292,31 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
         {
             out.external = false;
             out.reclen = u32::try_from(n).unwrap_or(0);
+            if n < 1 {
+                let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+                diags.push(Diag::new(ids::BAD_RECLEN, 20, at));
+            }
         }
+        // Keywords a printer does not take.
+        if out.dev == Dev::Printer {
+            for k in f.kws.iter().filter(|k| matches!(k.name.as_str(), "KEYED" | "BLOCK" | "COMMIT" | "RECNO" | "SFILE")) {
+                diags.push(Diag::new(ids::NOT_FOR_PRINTER, 20, k.at).arg(k.name.clone()));
+            }
+        }
+        // A USAGE value that is not one: as if none were given.
+        let usage = kw(f, "USAGE").filter(|k| {
+            let ok = usage_words(k).iter().all(|w| matches!(w.as_str(), "*INPUT" | "*OUTPUT" | "*UPDATE" | "*DELETE"));
+            if !ok {
+                let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+                diags.push(Diag::new(ids::USAGE_PARM, 20, at));
+                diags.push(Diag::new(ids::TEXT_SKIPPED, 0, at));
+            }
+            ok
+        });
         if matches!(out.dev, Dev::Seq | Dev::Special) {
             out.external = false;
         }
-        match kw(f, "USAGE") {
+        match usage {
             Some(k) => {
                 // A printer only writes.
                 if out.dev == Dev::Printer && usage_words(k).iter().any(|w| w != "*OUTPUT") {

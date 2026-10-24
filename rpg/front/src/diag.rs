@@ -106,6 +106,23 @@ pub mod ids {
     pub const BETWEEN_PROCS: &str = "RNF0256";
     /// A definition name that is not valid; blanks are used.
     pub const BAD_DEF_NAME: &str = "RNF3401";
+    /// An operator without its left operand.
+    pub const OPERANDS_INCOMPATIBLE: &str = "RNF7421";
+    /// A right parenthesis that closes nothing.
+    pub const UNEXPECTED_RPAREN: &str = "RNF0633";
+    /// An operation extender that is not valid.
+    pub const BAD_EXTENDER: &str = "RNF5048";
+    /// A fixed-form operation code that is not valid; the
+    /// specification is ignored.
+    pub const BAD_FIXED_OPCODE: &str = "RNF5014";
+    /// A decimal-positions entry that is not blank or 0 to 63.
+    pub const BAD_DECIMALS: &str = "RNF5044";
+    /// A resulting indicator that is not valid.
+    pub const BAD_RESULT_IND: &str = "RNF5051";
+    /// `SETON` or `SETOFF` without an indicator.
+    pub const NO_RESULT_IND: &str = "RNF5053";
+    /// Text skipped after an error.
+    pub const TEXT_SKIPPED: &str = "RNF0607";
     /// A second procedure interface for one procedure.
     pub const PI_TWICE: &str = "RNF3768";
 }

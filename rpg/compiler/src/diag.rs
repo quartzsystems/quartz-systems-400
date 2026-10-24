@@ -71,7 +71,7 @@ pub mod ids {
     /// A parameter does not match its prototype.
     pub const PARM_TYPE: &str = "RNF7536";
     /// The external description of a file is not found.
-    pub const EXT_NOT_FOUND: &str = "RNF2109";
+    pub const EXT_NOT_FOUND: &str = "RNF3523";
     /// A feature this release does not compile.
     pub const UNSUPPORTED: &str = "RNF0201";
     /// An output record without space or skip entries spaces one after.
@@ -106,6 +106,24 @@ pub mod ids {
     pub const LEN_TOO_BIG: &str = "RNF0231";
     /// `DIM` outside 1 to 16773104.
     pub const DIM_RANGE: &str = "RNF3452";
+    /// A time format that is not valid.
+    pub const BAD_TIMFMT: &str = "RNF0614";
+    /// `ACTGRP`'s parameter is not valid.
+    pub const CTL_ACTGRP: &str = "RNF1317";
+    /// `DATEDIT`'s parameter is not valid.
+    pub const CTL_DATEDIT: &str = "RNF1008";
+    /// `DECEDIT`'s parameter is not valid.
+    pub const CTL_DECEDIT: &str = "RNF1303";
+    /// `EXPROPTS`'s parameter is not valid.
+    pub const CTL_EXPROPTS: &str = "RNF1311";
+    /// `OPTION`'s parameter is not valid.
+    pub const CTL_OPTION: &str = "RNF1331";
+    /// `COPYRIGHT`'s parameter is not valid.
+    pub const CTL_COPYRIGHT: &str = "RNF1306";
+    /// `NOMAIN` when a program is created.
+    pub const NOMAIN_PROGRAM: &str = "RNF1304";
+    /// Main-procedure calculations in a module with `MAIN` or `NOMAIN`.
+    pub const NO_MAIN_CALCS: &str = "RNF5418";
     /// A date format that is not valid.
     pub const BAD_DATFMT: &str = "RNF0612";
     /// Text skipped after an error.
@@ -124,6 +142,138 @@ pub mod ids {
     pub const KEYWORD_TWICE: &str = "RNF3312";
     /// A keyword that excludes one before it.
     pub const KEYWORD_EXCLUDED: &str = "RNF3327";
+    /// A keyword not allowed after `ASCEND` or `DESCEND`.
+    pub const AFTER_ASCEND: &str = "RNF3322";
+    /// A keyword not allowed after `BASED`.
+    pub const AFTER_BASED: &str = "RNF3323";
+    /// A keyword not allowed after `OCCURS`.
+    pub const AFTER_OCCURS: &str = "RNF3333";
+    /// A keyword not allowed after `POS`.
+    pub const AFTER_POS: &str = "RNF3575";
+    /// A keyword without the parameter it needs.
+    pub const NEEDS_PARM: &str = "RNF0603";
+    /// A keyword a standalone field does not take.
+    pub const NOT_FOR_FIELD: &str = "RNF3601";
+    /// A keyword not allowed in the main source section.
+    pub const NOT_IN_MAIN_SOURCE: &str = "RNF3760";
+    /// A fixed-form keyword in a free-form declaration.
+    pub const FIXED_ONLY_KEYWORD: &str = "RNF3558";
+    /// `CTDATA` on something that is not an array.
+    pub const CTDATA_NOT_ARRAY: &str = "RNF3422";
+    /// `EXPORT` or `IMPORT` with a parameter that is not a name.
+    pub const EXPORT_PARM: &str = "RNF3813";
+    /// A varying field's prefix other than 2 or 4.
+    pub const VARYING_PREFIX: &str = "RNF3561";
+    /// A UCS-2 length of zero or less.
+    pub const ZERO_LEN_UCS2: &str = "RNF3559";
+    /// A graphic length of zero or less.
+    pub const ZERO_LEN_GRAPH: &str = "RNF3564";
+    /// Fractional seconds outside 0 to 12.
+    pub const STAMP_PRECISION: &str = "RNF3415";
+    /// `POINTER`'s parameter is not valid.
+    pub const POINTER_PARM: &str = "RNF3568";
+    /// `LIKE` names the definition itself.
+    pub const LIKE_SELF: &str = "RNF3459";
+    /// A qualified name not written as one.
+    pub const BAD_SIMPLE_QUALIFIED: &str = "RNF0623";
+    /// `OCCURS`'s parameter is not valid.
+    pub const OCCURS_PARM: &str = "RNF3520";
+    /// A second program status structure.
+    pub const PSDS_TWICE: &str = "RNF3511";
+    /// `INZ(*LIKEDS)` without `LIKEDS`.
+    pub const INZ_LIKEDS: &str = "RNF3504";
+    /// A subfield named twice in one structure.
+    pub const SUBFIELD_TWICE: &str = "RNF3315";
+    /// A template used where storage is needed.
+    pub const TEMPLATE_USED: &str = "RNF0655";
+    /// A constant index outside the array.
+    pub const BAD_INDEX: &str = "RNF0530";
+    /// An index on a name that is not an array.
+    pub const NOT_ARRAY: &str = "RNF0528";
+    /// A whole array where one element is needed.
+    pub const ARRAY_NOT_INDEXED: &str = "RNF5343";
+    /// A FOR's initial value that is not numeric.
+    pub const FOR_INITIAL: &str = "RNF7567";
+    /// A condition left blank.
+    pub const NO_EXPRESSION: &str = "RNF5344";
+    /// `OTHER` outside a `SELECT` group (or a second one).
+    pub const OTHER_OUTSIDE: &str = "RNF5250";
+    /// A `MONITOR` group without `ON-ERROR`.
+    pub const NO_ON_ERROR: &str = "RNF5296";
+    /// An `ON-ERROR` status code that is not valid.
+    pub const ON_ERROR_STATUS: &str = "RNF5294";
+    /// Factor 2 is missing.
+    pub const NO_FACTOR2: &str = "RNF5023";
+    /// The result field is missing.
+    pub const NO_RESULT: &str = "RNF5030";
+    /// `TEST` of a date, time or timestamp without (E) or an error
+    /// indicator.
+    pub const TEST_NO_ERROR: &str = "RNF5056";
+    /// A result field the operation cannot take.
+    pub const BAD_RESULT: &str = "RNF7261";
+    /// `ENDSR`'s return point is not valid.
+    pub const ENDSR_POINT: &str = "RNF5116";
+    /// `SORTA` of something that is not an array.
+    pub const SORTA_ARRAY: &str = "RNF5159";
+    /// A call to a procedure with no return value inside an
+    /// expression.
+    pub const CALL_NO_VALUE: &str = "RNF5403";
+    /// A built-in function's file or procedure is not defined.
+    pub const BIF_NAME_UNDEFINED: &str = "RNF7451";
+    /// An edit word that is not valid.
+    pub const BAD_EDIT_WORD: &str = "RNF6029";
+    /// A procedure defined twice.
+    pub const PROC_TWICE: &str = "RNF1504";
+    /// A keyword not valid for definitions in a procedure.
+    pub const NOT_IN_PROC: &str = "RNF3757";
+    /// A keyword not allowed after another on a prototype.
+    pub const PR_EXCLUDED: &str = "RNF3588";
+    /// `OPTIONS`'s parameter is not valid.
+    pub const OPTIONS_PARM: &str = "RNF3744";
+    /// A keyword not allowed after `VALUE`.
+    pub const AFTER_VALUE: &str = "RNF3740";
+    /// `OPTIONS(*OMIT)`, `*VARSIZE` or `*NULLIND` with `VALUE`.
+    pub const OPTIONS_VALUE: &str = "RNF3753";
+    /// A parameter after an `OPTIONS(*NOPASS)` one without it.
+    pub const NOPASS_MISSING: &str = "RNF3756";
+    /// A file keyword given twice.
+    pub const FILE_KEYWORD_TWICE: &str = "RNF2416";
+    /// A record length that is not valid.
+    pub const BAD_RECLEN: &str = "RNF2007";
+    /// A keyword a printer file does not take.
+    pub const NOT_FOR_PRINTER: &str = "RNF2403";
+    /// `USAGE`'s parameter is not valid.
+    pub const USAGE_PARM: &str = "RNF2370";
+    /// `WRITE` of a program-described file without a structure.
+    pub const WRITE_NO_DS: &str = "RNF5191";
+    /// The operation is not allowed for the file.
+    pub const OP_NOT_FOR_FILE: &str = "RNF5202";
+    /// A length entry that is not valid.
+    pub const BAD_LEN_ENTRY: &str = "RNF3402";
+    /// A to-position before the from-position.
+    pub const TO_BEFORE_FROM: &str = "RNF3716";
+    /// A built-in function's parameter that is not valid.
+    pub const BIF_PARM: &str = "RNF0336";
+    /// `%DEC`'s digits are not valid.
+    pub const DEC_DIGITS: &str = "RNF0328";
+    /// `%DEC`'s decimal positions are not valid.
+    pub const DEC_SCALE: &str = "RNF0329";
+    /// `%TRIM`'s parameter is not valid.
+    pub const TRIM_PARM: &str = "RNF0371";
+    /// `%SUBST`'s length is too big.
+    pub const SUBST_LEN: &str = "RNF0365";
+    /// `%SCAN`'s first parameter is not character.
+    pub const SCAN_PARM: &str = "RNF0345";
+    /// `%REPLACE`'s first parameter is not valid.
+    pub const REPLACE_PARM: &str = "RNF0381";
+    /// `%LOOKUP`'s second parameter is not an array.
+    pub const LOOKUP_ARRAY: &str = "RNF0571";
+    /// `%DIFF`'s first parameter is not valid.
+    pub const DIFF_FIRST: &str = "RNF0580";
+    /// `%DIFF`'s second parameter is not valid.
+    pub const DIFF_SECOND: &str = "RNF0581";
+    /// `%ADDR`'s parameter is not valid.
+    pub const ADDR_PARM: &str = "RNF0341";
     /// A constant without a value.
     pub const CONST_NO_VALUE: &str = "RNF3905";
     /// A keyword on a named constant.

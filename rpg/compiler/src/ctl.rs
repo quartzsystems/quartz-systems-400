@@ -166,6 +166,16 @@ const KNOWN: &[&str] = &[
     "STGMDL", "TEXT", "THREAD", "TIMFMT", "TRUNCNBR", "USRPRF", "VALIDATE",
 ];
 
+/// A control keyword's parameter that is not valid; with `skip`, IBM
+/// also skips the rest of the keyword.
+fn bad_parm(diags: &mut Vec<Diag>, k: &Keyword, id: &'static str, skip: bool) {
+    let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+    diags.push(Diag::new(id, 20, at).arg(k.name.clone()));
+    if skip {
+        diags.push(Diag::new(ids::TEXT_SKIPPED, 0, at));
+    }
+}
+
 /// Merge the command options and the control keywords.
 pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
     let mut c = Ctl {
@@ -189,7 +199,8 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
             diags.push(Diag::new(ids::UNKNOWN_CTL_KEYWORD, 20, k.at).arg(k.name.clone()));
             continue;
         }
-        if seen.contains(&k.name.as_str()) {
+        // BNDDIR alone may be repeated.
+        if seen.contains(&k.name.as_str()) && k.name != "BNDDIR" {
             diags.push(Diag::new(ids::CTL_KEYWORD_TWICE, 20, k.at).arg(k.name.clone()));
             continue;
         }
@@ -201,7 +212,12 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
         match k.name.as_str() {
             "DFTACTGRP" => c.dftactgrp = word_arg(k, 0).as_deref() == Some("*YES"),
             "ACTGRP" => {
-                c.actgrp = str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_default().to_ascii_uppercase();
+                let w = str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_default().to_ascii_uppercase();
+                if str_arg(k, 0).is_none() && !matches!(w.as_str(), "*NEW" | "*CALLER" | "*STGMDL") {
+                    bad_parm(diags, k, ids::CTL_ACTGRP, true);
+                    continue;
+                }
+                c.actgrp = w;
                 c.dftactgrp = false;
             }
             "BNDDIR" => {
@@ -216,6 +232,10 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
             "MAIN" => {
                 c.main = word_arg(k, 0);
                 c.dftactgrp = false;
+            }
+            // A program has a main procedure.
+            "NOMAIN" if o.command == Command::CrtBndRpg => {
+                diags.push(Diag::new(ids::NOMAIN_PROGRAM, 20, k.at));
             }
             "NOMAIN" => c.nomain = true,
             "DATFMT" => {
@@ -233,9 +253,23 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
                 if let Some((f, s)) = word_arg(k, 0).and_then(|w| crate::dtfmt::field_time(&w)) {
                     c.timfmt = f;
                     c.timsep = Some(s);
+                } else {
+                    bad_parm(diags, k, ids::BAD_TIMFMT, true);
+                }
+            }
+            "DATEDIT" => {
+                let w = word_arg(k, 0).unwrap_or_default();
+                if !["*MDY", "*DMY", "*YMD"].iter().any(|f| w.starts_with(f) && w.len() <= f.len() + 1) {
+                    bad_parm(diags, k, ids::CTL_DATEDIT, false);
                 }
             }
             "DECEDIT" => {
+                let ok = str_arg(k, 0).is_some_and(|s| matches!(s.as_str(), "." | "," | "0." | "0,"))
+                    || word_arg(k, 0).as_deref() == Some("*JOBRUN") && str_arg(k, 0).is_none();
+                if !ok {
+                    bad_parm(diags, k, ids::CTL_DECEDIT, false);
+                    continue;
+                }
                 if let Some(s) = str_arg(k, 0) {
                     c.decedit = match s.as_str() {
                         "," => (',', '.'),
@@ -246,6 +280,11 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
                 }
             }
             "EXPROPTS" => {
+                let known = ["*MAXDIGITS", "*RESDECPOS", "*ALWBLANKNUM", "*USEDECEDIT", "*STRICTKEYS"];
+                if (0..k.args.len()).any(|i| word_arg(k, i).is_none_or(|w| !known.contains(&w.as_str()))) {
+                    bad_parm(diags, k, ids::CTL_EXPROPTS, true);
+                    continue;
+                }
                 for i in 0..k.args.len() {
                     if word_arg(k, i).as_deref() == Some("*RESDECPOS") {
                         c.resdecpos = true;
@@ -256,9 +295,25 @@ pub fn resolve(o: &Options, kws: &[Keyword], diags: &mut Vec<Diag>) -> Ctl {
             "TEXT" => c.text = str_arg(k, 0).unwrap_or_default(),
             "ALWNULL" => c.alwnull = word_arg(k, 0).unwrap_or_else(|| "*NO".into()),
             "DEBUG" => c.debug = word_arg(k, 0).is_none_or(|w| w == "*YES" || w == "*DUMP"),
-            "COPYRIGHT" => c.copyright = str_arg(k, 0).unwrap_or_default(),
+            "COPYRIGHT" => match str_arg(k, 0) {
+                Some(s) => c.copyright = s,
+                None => bad_parm(diags, k, ids::CTL_COPYRIGHT, false),
+            },
             "INDENT" => c.indent = str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_default(),
-            "OPTION" => c.option.extend((0..k.args.len()).filter_map(|i| word_arg(k, i))),
+            "OPTION" => {
+                let known = [
+                    "XREF", "GEN", "SECLVL", "SHOWCPY", "EXPDDS", "EXT", "SHOWSKP", "SRCSTMT", "DEBUGIO", "UNREF",
+                ];
+                let ok = |w: &str| {
+                    let w = w.strip_prefix('*').unwrap_or("");
+                    known.contains(&w.strip_prefix("NO").unwrap_or(w)) || known.contains(&w)
+                };
+                if (0..k.args.len()).any(|i| word_arg(k, i).is_none_or(|w| !ok(&w))) {
+                    bad_parm(diags, k, ids::CTL_OPTION, true);
+                    continue;
+                }
+                c.option.extend((0..k.args.len()).filter_map(|i| word_arg(k, i)));
+            }
             "TRUNCNBR" => c.truncnbr = word_arg(k, 0).as_deref() != Some("*NO"),
             "GENLVL" => c.genlvl = int_arg(k, 0).and_then(|v| u8::try_from(v).ok()).unwrap_or(10),
             _ => {}

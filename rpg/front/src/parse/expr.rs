@@ -96,10 +96,18 @@ impl<'a> Cursor<'a> {
 pub fn expr_all(toks: &[Tok], end: Pos, diags: &mut Vec<Diag>) -> Option<Expr> {
     let mut c = Cursor::new(toks, end);
     let e = expr(&mut c, diags)?;
-    if !c.done() {
-        diags.push(Diag::new(ids::END_OF_EXPRESSION, 20, c.pos()));
-    }
+    trailing(&c, diags);
     Some(e)
+}
+
+/// Tokens left after an expression: a right parenthesis that closes
+/// nothing, or anything else where the expression should end.
+pub fn trailing(c: &Cursor<'_>, diags: &mut Vec<Diag>) {
+    if c.done() {
+        return;
+    }
+    let id = if c.peek().is_some_and(|t| t.is(")")) { ids::UNEXPECTED_RPAREN } else { ids::END_OF_EXPRESSION };
+    diags.push(Diag::new(id, 20, c.pos()));
 }
 
 /// Parse a token list as operands split at top-level colons.
@@ -236,6 +244,11 @@ fn unary(c: &mut Cursor<'_>, diags: &mut Vec<Diag>) -> Option<Expr> {
         return None;
     };
     let at = t.at;
+    // A binary operator with nothing on its left.
+    if matches!(&t.kind, Kind::Punct("*" | "/" | "**")) {
+        diags.push(Diag::new(ids::OPERANDS_INCOMPATIBLE, 30, at));
+        return None;
+    }
     let op = match &t.kind {
         Kind::Punct("-") => Some(UnOp::Neg),
         Kind::Punct("+") => Some(UnOp::Plus),
@@ -369,6 +382,21 @@ fn primary(c: &mut Cursor<'_>, diags: &mut Vec<Diag>) -> Option<Expr> {
                     index: None,
                     at,
                 }
+            }
+        }
+        // A built-in function that takes no arguments ends at its name.
+        Kind::Bif(name) if matches!(name.as_str(), "%PARMS" | "%SHTDN" | "%THIS")
+            && c.peek().is_some_and(|t| t.is("("))
+            && c.peek_at(1).is_some_and(|t| !t.is(")")) =>
+        {
+            let at = c.peek().map_or(at, |t| t.at);
+            diags.push(Diag::new(ids::RPAREN_EXPECTED, 20, at));
+            diags.push(Diag::new(ids::END_OF_EXPRESSION, 20, at));
+            c.skip_all();
+            Expr::Bif {
+                name: name.clone(),
+                args: Vec::new(),
+                at,
             }
         }
         Kind::Bif(name) => {

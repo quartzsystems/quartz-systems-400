@@ -681,9 +681,7 @@ fn linear_entry(g: &mut Gen<'_>, main: &str) -> String {
     g.psds_init(&g.opts.name.clone());
     g.b.place(&start);
     let up = main.to_ascii_uppercase();
-    if !g.local_procs.contains(&up) {
-        g.err(ids::NOT_DEFINED, 30, up.clone());
-    }
+    // A MAIN procedure that is not defined was reported (`compile`).
     g.b.ins("%n = parms");
     g.b.ins("store $entry_n, %n");
     // The main procedure's parameters are the program's: each one the

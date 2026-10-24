@@ -241,12 +241,12 @@ impl Gen<'_> {
         if let Some(f) = &src.fig {
             match fig_text(&dst.ty, f) {
                 Some(s) => self.b.ins(format!("mov {}, {}", dst.op, quote(&s))),
-                None => self.err(ids::TYPE_MISMATCH, 30, ""),
+                None => self.err(ids::ASSIGN_TYPE, 30, ""),
             }
             return;
         }
         if !src.ty.is_datetime() || class_of(&src.ty) != class_of(&dst.ty) {
-            self.err(ids::TYPE_MISMATCH, 30, "");
+            self.err(ids::ASSIGN_TYPE, 30, "");
             return;
         }
         if src.ty == dst.ty && src.kind == Vk::Place {
@@ -335,7 +335,16 @@ impl Gen<'_> {
             None | Some(Expr::Empty(_)) => dft,
             Some(Expr::Special { word, index: None, .. }) => {
                 let Some(c) = dtfmt::parse(word, class) else {
-                    self.err(BAD_FORMAT, 20, word.clone());
+                    // A format name that does not fit, or a word that
+                    // names no format at all.
+                    let root = word.trim_start_matches('*').trim_end_matches(['/', '-', '.', ',', '&', '0', ':']);
+                    let formats = ["MDY", "DMY", "YMD", "JUL", "ISO", "USA", "EUR", "JIS", "CYMD", "CMDY", "CDMY", "LONGJUL", "HMS", "JOBRUN"];
+                    if formats.contains(&root.to_ascii_uppercase().as_str()) {
+                        self.err(BAD_FORMAT, 20, word.clone());
+                    } else {
+                        self.err(ids::UNKNOWN_BIF, 20, word.clone());
+                        self.err(rpgfront::diag::ids::MISSING_OPERAND, 30, "");
+                    }
                     return None;
                 };
                 c
@@ -499,8 +508,19 @@ impl Gen<'_> {
             self.err(ids::BIF_ARGS, 30, "%DIFF");
             return None;
         }
-        let a = self.dt_value(&args[0])?;
-        let b = self.dt_value(&args[1])?;
+        // Both values are dates, times or timestamps.
+        let a = self.expr(&args[0], Want::default())?;
+        let b = self.expr(&args[1], Want::default())?;
+        let mut bad = false;
+        for (v, id) in [(&a, ids::DIFF_FIRST), (&b, ids::DIFF_SECOND)] {
+            if !v.ty.is_datetime() {
+                self.err(id, 20, "%DIFF");
+                bad = true;
+            }
+        }
+        if bad {
+            return None;
+        }
         let Some(u) = unit_word(&args[2]) else {
             self.err(ids::BIF_ARGS, 30, "%DIFF");
             return None;

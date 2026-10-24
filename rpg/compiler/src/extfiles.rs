@@ -315,6 +315,7 @@ pub fn ds_subfields(cx: &mut Cx<'_>, d: &Def) -> Option<(ExtSubs, u32)> {
     };
     let Some(desc) = cx.t.extnames.get(&format!("{lib}/{name}")).cloned() else {
         cx.diags.push(Diag::new(ids::EXT_NOT_FOUND, 40, d.at).arg(name));
+        cx.diags.push(Diag::new(ids::DS_NO_SUBFIELDS, 0, d.at));
         return Some((Vec::new(), 1));
     };
     let fm = match &fmt {

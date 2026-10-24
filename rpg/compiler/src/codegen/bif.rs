@@ -44,6 +44,17 @@ impl Gen<'_> {
         Some(v)
     }
 
+    /// A string argument; anything else is `id` (sev 20).
+    fn str_arg_or(&mut self, e: &Expr, id: &'static str, name: &str) -> Option<V> {
+        let v = self.expr(e, Want::default())?;
+        let v = self.as_chars(&v);
+        if !v.ty.is_string() && v.fig.is_none() {
+            self.err(id, 20, name.to_string());
+            return None;
+        }
+        Some(v)
+    }
+
     /// An integer argument as an `i64` register.
     fn int_arg(&mut self, e: &Expr) -> Option<String> {
         let v = self.expr(e, Want::default())?;
@@ -125,7 +136,11 @@ impl Gen<'_> {
                 }
             }
             "%SIZE" => {
-                let n = self.size_of(args.first()?)?;
+                let Some(a) = args.first() else {
+                    self.err(rpgfront::diag::ids::MISSING_OPERAND, 30, name.to_string());
+                    return None;
+                };
+                let n = self.size_of(a)?;
                 let all = args.get(1).is_some_and(|a| matches!(a, Expr::Special { word, .. } if word == "*ALL"));
                 let n = if all { n.0 * n.1.max(1) } else { n.0 };
                 Some(V::lit(Ty::Packed(10, 0), n.to_string()))
@@ -145,7 +160,7 @@ impl Gen<'_> {
                 if !self.bif_arity(name, args, 1, 2) {
                     return None;
                 }
-                let s = self.str_arg(&args[0])?;
+                let s = self.str_arg_or(&args[0], ids::TRIM_PARM, name)?;
                 let len = s.ty.str_len().unwrap_or(1).max(1);
                 let t = self.tmp(&Ty::VarChar(len, 2));
                 let op = match name {
@@ -172,8 +187,26 @@ impl Gen<'_> {
                     self.err(ids::SUBST_START, 20, name.to_string());
                     return None;
                 }
-                let start = self.int_reg(&sv)?;
                 let len = s.ty.str_len().unwrap_or(1).max(1);
+                // Constant positions inside a fixed-length string.
+                let lit = |e: Option<&Expr>| match e {
+                    Some(Expr::Lit(Lit::Num(n), _)) => n.parse::<i64>().ok(),
+                    _ => None,
+                };
+                if let Some(p) = lit(args.get(1))
+                    && (p < 1 || !s.ty.is_varying() && p > i64::from(len))
+                {
+                    self.err(ids::SUBST_START, 20, name.to_string());
+                    return None;
+                }
+                if let (Some(p), Some(n)) = (lit(args.get(1)), lit(args.get(2)))
+                    && !s.ty.is_varying()
+                    && p + n - 1 > i64::from(len)
+                {
+                    self.err(ids::SUBST_LEN, 20, name.to_string());
+                    return None;
+                }
+                let start = self.int_reg(&sv)?;
                 // A constant length gives a fixed result of that length.
                 let (ty, l) = match args.get(2) {
                     Some(Expr::Lit(Lit::Num(n), _)) => {
@@ -204,7 +237,7 @@ impl Gen<'_> {
                 if !self.bif_arity(name, args, 2, 3) {
                     return None;
                 }
-                let n = self.str_arg(&args[0])?;
+                let n = self.str_arg_or(&args[0], ids::SCAN_PARM, name)?;
                 let h = self.str_arg(&args[1])?;
                 let r = self.b.reg();
                 match args.get(2) {
@@ -265,7 +298,7 @@ impl Gen<'_> {
                 if !self.bif_arity(name, args, 2, 4) {
                     return None;
                 }
-                let repl = self.str_arg(&args[0])?;
+                let repl = self.str_arg_or(&args[0], ids::REPLACE_PARM, name)?;
                 let src = self.str_arg(&args[1])?;
                 // An empty replacement: a varying temporary of length 0.
                 let repl = if repl.kind == Vk::Lit && repl.ty.str_len() == Some(0) {
@@ -380,7 +413,7 @@ impl Gen<'_> {
                         Some(tm)
                     }
                     _ => {
-                        self.err(ids::BIF_ARGS, 30, name.to_string());
+                        self.err(ids::BIF_PARM, 30, name.to_string());
                         None
                     }
                 }
@@ -420,7 +453,7 @@ impl Gen<'_> {
             "%ADDR" => {
                 let v = self.expr(args.first()?, Want::default())?;
                 if v.kind != Vk::Place {
-                    self.err(ids::BIF_ARGS, 30, name.to_string());
+                    self.err(ids::ADDR_PARM, 20, name.to_string());
                     return None;
                 }
                 let r = self.b.reg();
@@ -430,7 +463,14 @@ impl Gen<'_> {
             "%PADDR" => {
                 let n = match args.first()? {
                     Expr::Lit(Lit::Char(s), _) => s.to_ascii_uppercase(),
-                    Expr::Ref { name, .. } => name.clone(),
+                    Expr::Ref { name: n, .. } => {
+                        if self.t.find(self.scope, n).is_none() {
+                            self.err(ids::NOT_DEFINED, 30, n.clone());
+                            self.err(ids::BIF_NAME_UNDEFINED, 30, name.to_string());
+                            return None;
+                        }
+                        n.clone()
+                    }
                     _ => return None,
                 };
                 let r = self.b.reg();
@@ -639,8 +679,12 @@ impl Gen<'_> {
                 _ => (63, 15),
             },
         };
-        if d == 0 || d > 63 || s > d {
-            self.err(ids::BIF_ARGS, 30, name.to_string());
+        if d == 0 || d > 63 {
+            self.err(ids::DEC_DIGITS, 30, name.to_string());
+            return None;
+        }
+        if s > d {
+            self.err(ids::DEC_SCALE, 30, name.to_string());
             return None;
         }
         let t = self.tmp(&Ty::Packed(d, s));
@@ -711,6 +755,11 @@ impl Gen<'_> {
             return None;
         }
         let v = self.expr(&args[0], Want::default())?;
+        // The edit word is a character literal.
+        if !matches!(&args[1], Expr::Lit(Lit::Char(_), _)) && self.expr(&args[1], Want::default()).is_some_and(|w| !w.ty.is_string()) {
+            self.err(ids::BAD_EDIT_WORD, 20, "%EDITW");
+            return None;
+        }
         let word = self.str_arg(&args[1])?;
         if !v.ty.is_numeric() {
             self.err(ids::BIF_ARGS, 30, "%EDITW");
@@ -772,6 +821,11 @@ impl Gen<'_> {
             return None;
         };
         let p = self.t.protos[pi].clone();
+        // In an expression the procedure must return a value.
+        if p.ret.is_none() {
+            self.err(ids::CALL_NO_VALUE, 30, p.name.clone());
+            return None;
+        }
         let args: Vec<Expr> = match steps.first() {
             Some(Step::Args(a)) => a.clone(),
             _ => Vec::new(),
@@ -786,7 +840,8 @@ impl Gen<'_> {
             return None;
         };
         let Some(id) = self.t.find(self.scope, name) else {
-            self.err(ids::NO_PROTOTYPE, 30, name.clone());
+            self.err(ids::NOT_DEFINED, 30, name.clone());
+            self.err(ids::UNDEFINED_OPERAND, 30, "");
             return None;
         };
         self.t.refer(id, self.at.line, false);

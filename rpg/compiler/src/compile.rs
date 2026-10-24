@@ -99,6 +99,9 @@ fn declare_scope(
 ) {
     let first = files.len();
     for f in files_in {
+        if let Some(n) = f.kws.iter().find(|k| k.name == "INFDS").and_then(|k| decl::word_arg(k, 0)) {
+            t.infds.push(n.to_ascii_uppercase());
+        }
         let mut fi = files::file(f, scope, ext, diags);
         fi.ir_index = u32::try_from(files.len()).unwrap_or(0);
         let s = Sym {
@@ -188,6 +191,19 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
     };
     let (read, module, mut diags) = rpgfront::front(main, includes, &ropts);
     let ctl = ctl::resolve(opts, &module.ctl, &mut diags);
+    // A linear module has no main-procedure calculations, and its MAIN
+    // procedure is one of its own.
+    if ctl.nomain || ctl.main.is_some() {
+        for s in &module.calcs {
+            diags.push(Diag::new(crate::diag::ids::NO_MAIN_CALCS, 30, s.at));
+        }
+    }
+    if let Some(m) = &ctl.main
+        && !module.procs.iter().any(|p| p.name.eq_ignore_ascii_case(m))
+    {
+        let at = module.ctl.iter().find(|k| k.name == "MAIN").map_or_else(rpgfront::ast::Pos::default, |k| k.at);
+        diags.push(Diag::new(crate::diag::ids::NOT_DEFINED, 30, at).arg(m.clone()));
+    }
     if !ctl.nomain && ctl.main.is_none() && !can_end(&module) {
         diags.push(Diag::new(crate::diag::ids::NO_END, 40, rpgfront::ast::Pos::default()));
     }
@@ -222,6 +238,9 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         scopes.push(scope);
         let prefix = format!("L{}_", i + 1);
         let pname = p.name.to_ascii_uppercase();
+        if module.procs[..i].iter().any(|q| q.name.eq_ignore_ascii_case(&pname)) {
+            diags.push(Diag::new(crate::diag::ids::PROC_TWICE, 30, p.at).arg(pname.clone()));
+        }
         let iface = p.pi.clone().unwrap_or(Def {
             kind: DefKind::Pi,
             name: pname.clone(),
@@ -239,10 +258,11 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
                 datsep: ctl.datsep.unwrap_or(ctl.datfmt.sep()),
                 timsep: ctl.timsep.unwrap_or(ctl.timfmt.sep()),
             };
-            decl::check_keywords(&mut cx, &iface);
-            for c in &iface.children {
-                decl::check_keywords(&mut cx, c);
+            let mut iface = decl::check_keywords(&mut cx, &iface, None);
+            for c in &mut iface.children {
+                *c = decl::check_keywords(&mut cx, c, None);
             }
+            decl::nopass_order(&mut cx, &iface);
             let mut pr = decl::proto(&mut cx, &iface);
             pr.name.clone_from(&pname);
             pr

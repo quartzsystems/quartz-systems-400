@@ -116,10 +116,9 @@ impl Gen<'_> {
                 let f = self.files.get(r.file).cloned()?;
                 Some((f, Some(r)))
             }
-            // A name declared nowhere is an undefined operand.
+            // A name declared nowhere; the caller says how it is used.
             None => {
                 self.err(ids::NOT_DEFINED, 30, name);
-                self.err(ids::UNDEFINED_OPERAND, 30, "");
                 None
             }
             _ => {
@@ -164,7 +163,27 @@ impl Gen<'_> {
             self.err(ids::FILE_NOT_DEFINED, 30, op.code.clone());
             return;
         };
-        let Some((f, fmt)) = self.db_target(&target) else { return };
+        let Some((f, fmt)) = self.db_target(&target) else {
+            // An undefined file of an operation with a search argument.
+            if !op.f1.is_empty() && self.diags.last().is_some_and(|d| d.msgid == ids::NOT_DEFINED) {
+                self.err(ids::UNDEFINED_OPERAND, 30, "");
+            }
+            return;
+        };
+        // What a printer cannot do.
+        if f.dev == Dev::Printer {
+            match base {
+                "CHAIN" | "SETLL" | "SETGT" | "DELETE" | "UPDATE" | "UNLOCK" => {
+                    self.err(ids::OP_NOT_FOR_FILE, 30, f.name.clone());
+                    return;
+                }
+                "WRITE" if !f.external && op.result.is_empty() => {
+                    self.err(ids::WRITE_NO_DS, 30, f.name.clone());
+                    return;
+                }
+                _ => {}
+            }
+        }
         if f.dev == Dev::Workstn {
             return self.dsp_op(op, base, &f, fmt, &target);
         }
@@ -882,7 +901,11 @@ impl Gen<'_> {
             None => Some(V::place(Ty::Ind, format!("${flag}_"))),
             Some(e) => {
                 let e = e.clone();
-                self.db_target(&e).map(|(f, _)| V::place(Ty::Ind, format!("${flag}_{}", mangle(&f.name))))
+                let r = self.db_target(&e).map(|(f, _)| V::place(Ty::Ind, format!("${flag}_{}", mangle(&f.name))));
+                if r.is_none() && self.diags.last().is_some_and(|d| d.msgid == ids::NOT_DEFINED) {
+                    self.err(ids::BIF_NAME_UNDEFINED, 30, name.to_string());
+                }
+                r
             }
         })
     }

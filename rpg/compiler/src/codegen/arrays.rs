@@ -291,6 +291,12 @@ impl Gen<'_> {
     /// subfield; descending for `(D)` or a `DESCEND` array.
     pub fn sorta_op(&mut self, op: &Op) {
         let Some(e) = op.xf2.clone().or_else(|| op.f2.first().cloned()) else { return };
+        if let Some(id) = e.name().and_then(|n| self.t.find(self.scope, n))
+            && self.t.syms[id].dim == 0
+        {
+            self.err(ids::SORTA_ARRAY, 30, e.name().unwrap_or_default().to_string());
+            return;
+        }
         let Some(r) = self.range(&e) else { return };
         let seq = self.t.syms[r.sym].seq;
         let desc = op.ext.contains('D') || seq == 2 && !op.ext.contains('A');

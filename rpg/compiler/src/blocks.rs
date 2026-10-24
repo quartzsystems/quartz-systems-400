@@ -19,9 +19,18 @@ enum Group {
     If,
     Loop,
     Select { other: bool },
-    Monitor,
+    Monitor { handled: bool },
     Cas,
 }
+
+/// Operations whose factor 2 must be given.
+const NEED_F2: &[&str] = &["EXSR", "IF", "DOW", "DOU", "WHEN", "CAB", "CAS", "AND", "OR", "COMP", "ADD", "SUB", "MULT", "DIV", "Z-ADD", "Z-SUB", "MOVE", "MOVEL", "MOVEA", "CAT", "SCAN", "CHECK", "CHECKR", "XLATE", "SUBST", "LOOKUP", "XFOOT", "SQRT", "OCCUR"];
+
+/// Operations whose result field must be given.
+const NEED_RESULT: &[&str] = &["ADD", "SUB", "MULT", "DIV", "Z-ADD", "Z-SUB", "MOVE", "MOVEL", "MOVEA", "CAT", "XLATE", "SUBST", "XFOOT", "SQRT", "MVR"];
+
+/// The return points `ENDSR` may name.
+const RETURN_POINTS: &[&str] = &["*DETL", "*GETIN", "*TOTC", "*TOTL", "*OFL", "*DETC", "*CANCL"];
 
 /// The diagnostics for a list of calculations.
 #[must_use]
@@ -33,7 +42,45 @@ pub fn check(stmts: &[Stmt]) -> Vec<Diag> {
     let defined: Vec<String> = stmts.iter().filter(|s| s.op.code == "BEGSR").filter_map(|s| s.op.f1.first().and_then(name_of)).collect();
     for s in stmts {
         let at = s.at;
-        let (base, _) = split_suffix(&s.op.code);
+        let (base, sfx) = split_suffix(&s.op.code);
+        let op = &s.op;
+        // The entries the operation needs. A fixed-form compare takes
+        // the suffix; a free-form condition its expression.
+        let fixed_cmp = !sfx.is_empty() || !matches!(base, "IF" | "DOW" | "DOU" | "WHEN");
+        if NEED_F2.contains(&base) && fixed_cmp && op.f2.is_empty() && op.xf2.is_none() {
+            out.push(Diag::new(ids::NO_FACTOR2, 30, at));
+        }
+        if matches!(base, "IF" | "DOW" | "DOU" | "WHEN" | "ELSEIF") && sfx.is_empty() && op.xf2.is_none() {
+            out.push(Diag::new(ids::NO_EXPRESSION, 30, at));
+        }
+        if NEED_RESULT.contains(&base) && op.result.is_empty() && !op.f2.is_empty() {
+            out.push(Diag::new(ids::NO_RESULT, 30, at));
+        }
+        // A literal where a field is needed.
+        if matches!(base, "TEST" | "DEALLOC") && matches!(op.result.first(), Some(Expr::Lit(..))) {
+            out.push(Diag::new(ids::BAD_RESULT, 30, at));
+        }
+        // TEST of a date or time reports through (E) or an indicator.
+        if base == "TEST" && op.ext.contains(['D', 'T', 'Z']) && !op.ext.contains('E') && op.resind[1].is_empty() {
+            out.push(Diag::new(ids::TEST_NO_ERROR, 30, at));
+        }
+        if base == "ENDSR"
+            && let Some(Expr::Lit(rpgfront::ast::Lit::Char(p), _)) = op.f2.first()
+            && !RETURN_POINTS.contains(&p.to_ascii_uppercase().as_str())
+        {
+            out.push(Diag::new(ids::ENDSR_POINT, 20, at));
+        }
+        if base == "ON-ERROR" {
+            let items: Vec<&Expr> = match &op.xf2 {
+                Some(Expr::List(v, _)) => v.iter().collect(),
+                Some(e) => vec![e],
+                None => Vec::new(),
+            };
+            let big = |e: &&Expr| matches!(e, Expr::Lit(rpgfront::ast::Lit::Num(n), _) if n.parse::<u64>().is_ok_and(|c| c > 99_999));
+            if items.iter().any(big) {
+                out.push(Diag::new(ids::ON_ERROR_STATUS, 20, at));
+            }
+        }
         // A subroutine called is defined in the same procedure.
         let called = match base {
             "EXSR" => s.op.f2.first(),
@@ -50,7 +97,7 @@ pub fn check(stmts: &[Stmt]) -> Vec<Diag> {
             "IF" => open.push((Group::If, at)),
             "DOW" | "DOU" | "DO" | "FOR" | "FOR-EACH" => open.push((Group::Loop, at)),
             "SELECT" => open.push((Group::Select { other: false }, at)),
-            "MONITOR" => open.push((Group::Monitor, at)),
+            "MONITOR" => open.push((Group::Monitor { handled: false }, at)),
             "CAS" => {
                 if !matches!(open.last(), Some((Group::Cas, _))) {
                     open.push((Group::Cas, at));
@@ -67,14 +114,13 @@ pub fn check(stmts: &[Stmt]) -> Vec<Diag> {
                 }
             }
             "OTHER" => match open.last_mut() {
-                Some((Group::Select { other }, _)) => *other = true,
-                _ => out.push(Diag::new(ids::WHEN_OUTSIDE, 20, at)),
+                Some((Group::Select { other }, _)) if !*other => *other = true,
+                _ => out.push(Diag::new(ids::OTHER_OUTSIDE, 20, at)),
             },
-            "ON-ERROR" | "ON-EXCP" => {
-                if !matches!(open.last(), Some((Group::Monitor, _))) {
-                    out.push(Diag::new(ids::ON_ERROR_OUTSIDE, 30, at));
-                }
-            }
+            "ON-ERROR" | "ON-EXCP" => match open.last_mut() {
+                Some((Group::Monitor { handled }, _)) => *handled = true,
+                _ => out.push(Diag::new(ids::ON_ERROR_OUTSIDE, 30, at)),
+            },
             "LEAVE" | "ITER" => {
                 if !open.iter().any(|(g, _)| *g == Group::Loop) {
                     out.push(Diag::new(ids::NOT_IN_LOOP, 30, at));
@@ -85,12 +131,15 @@ pub fn check(stmts: &[Stmt]) -> Vec<Diag> {
                     "ENDIF" => g == Group::If,
                     "ENDDO" | "ENDFOR" => g == Group::Loop,
                     "ENDSL" => matches!(g, Group::Select { .. }),
-                    "ENDMON" => g == Group::Monitor,
+                    "ENDMON" => matches!(g, Group::Monitor { .. }),
                     "ENDCS" => g == Group::Cas,
-                    _ => g != Group::Monitor,
+                    _ => !matches!(g, Group::Monitor { .. }),
                 };
                 if open.last().is_some_and(|(g, _)| fits(*g)) {
-                    open.pop();
+                    // A MONITOR group needs a handler.
+                    if let Some((Group::Monitor { handled: false }, p)) = open.pop() {
+                        out.push(Diag::new(ids::NO_ON_ERROR, 20, p));
+                    }
                 } else {
                     out.push(Diag::new(ids::END_UNMATCHED, 30, at));
                 }

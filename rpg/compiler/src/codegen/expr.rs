@@ -211,7 +211,7 @@ impl Gen<'_> {
         if let Expr::Lit(Lit::Num(n), _) = e {
             let k: i64 = n.parse().ok()?;
             if k < 1 || k > i64::from(dim) {
-                self.err(ids::INDEX_RANGE, 30, n.clone());
+                self.err(ids::BAD_INDEX, 20, n.clone());
                 return None;
             }
             return Some((k - 1).to_string());
@@ -261,6 +261,11 @@ impl Gen<'_> {
             }
             Some(Kind::Proto(_)) => self.call_expr(id, steps),
             Some(Kind::Field | Kind::Subfield | Kind::Param | Kind::Ds(_)) => {
+                // A template has no storage.
+                if sym.template || sym.parent.is_some_and(|p| self.t.syms[p].template) {
+                    self.err(ids::TEMPLATE_USED, 30, name.to_string());
+                    return None;
+                }
                 let mut place = place_of(self.t, id);
                 let mut ty = sym.ty.clone();
                 let mut dim = sym.dim;
@@ -308,7 +313,11 @@ impl Gen<'_> {
                             cur = sid;
                         }
                         Step::Args(a) => {
-                            if dim == 0 || a.len() != 1 {
+                            if dim == 0 {
+                                self.err(ids::NOT_ARRAY, 20, name.to_string());
+                                return None;
+                            }
+                            if a.len() != 1 {
                                 self.err(ids::INDEX_RANGE, 30, name.to_string());
                                 return None;
                             }
