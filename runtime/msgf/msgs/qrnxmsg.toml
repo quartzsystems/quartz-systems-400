@@ -167,6 +167,19 @@ text = "A record of a type the program does not describe was read."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
 
 [[msg]]
+id = "RNX1021"
+sev = 99
+text = "A record with the same key is already in the file."
+help = "The file allows each key once; the write or update would have added it a second time."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
+
+[[msg]]
+id = "RNX1215"
+sev = 99
+text = "An OPEN was tried on a file that is open already."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10"]
+
+[[msg]]
 id = "RNX1211"
 sev = 99
 text = "An operation was tried on a file that is not open."
@@ -382,6 +395,20 @@ id = "RNQ1011"
 sev = 99
 text = "A record of a type the program does not describe was read."
 vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ1021"
+sev = 99
+text = "A record with the same key is already in the file."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10", "*CHAR 33"]
+reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
+
+[[msg]]
+id = "RNQ1215"
+sev = 99
+text = "An OPEN was tried on a file that is open already."
+vars = ["*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 10", "*CHAR 7", "*BIN 2", "*CHAR 10"]
 reply = { default = "C", valid = ["D", "S", "G", "C", "F"] }
 
 [[msg]]

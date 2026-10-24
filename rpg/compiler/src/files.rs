@@ -142,6 +142,8 @@ pub struct File {
     pub name: String,
     /// The object it opens (`EXTFILE`), library and name.
     pub obj: (String, String),
+    /// The file its description comes from at compile time (`EXTDESC`).
+    pub desc: String,
     /// `EXTMBR`.
     pub member: String,
     /// The device.
@@ -492,6 +494,7 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
             Some((l, n)) => (l.to_string(), n.to_string()),
             None => (out.obj.0.clone(), desc_name),
         };
+        out.desc = name.to_ascii_uppercase();
         match ext.describe(&name, &lib) {
             Some(d) => out.ext = Some(d),
             None => diags.push(Diag::new(ids::FILE_EXT_NOT_FOUND, 40, f.at).arg(name)),

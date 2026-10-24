@@ -27,6 +27,9 @@ pub mod rp {
     /// `*DETC`, `*DETL`, `*TOTC`, `*TOTL`, `*OFL`, `*INIT`: resumed at
     /// the cycle's top for now.
     pub const OTHER: i32 = 4;
+    /// An exception the subroutine did not handle; the caller sends it
+    /// again.
+    pub const FAILED: i32 = 5;
 }
 
 /// The code of an `ENDSR` return point.

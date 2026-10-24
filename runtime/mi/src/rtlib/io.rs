@@ -343,7 +343,10 @@ pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc:
                 "OPEN",
                 j.abi.cur_stmt,
             );
-            escape(j, &f);
+            // RPG takes the status (01216, 01217); CL the escape.
+            if module_lang(env) != qir::Lang::Rpgle {
+                escape(job(env), &f);
+            }
             i32::from(f.status)
         }
     }

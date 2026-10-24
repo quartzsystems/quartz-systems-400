@@ -179,3 +179,4 @@ COV132 the options box does not show REQPREXP from the control options
 COV133 the display file box's format-name columns
 COV134 the =I line of a display format in a file that does not compile has no format name
 COV103 the external description box of a file whose RAFDATA keyword is refused
+FEX009 the =O block before a free-form procedure lacks its ruler-switch '-' record

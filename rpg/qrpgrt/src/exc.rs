@@ -149,11 +149,14 @@ pub extern "sysv64" fn psds_err(env: *mut Env, _argc: i64, _od: i64, ds: i64, le
         return;
     }
     let ds = bytes(ds.cast_unsigned(), n);
-    if n >= 15 {
-        let old = ds[10..15].to_vec();
-        put(ds, PREV_STATUS.0, &old);
+    // A file error leaves the program status as it was.
+    if !e.is_file_error() {
+        if n >= 15 {
+            let old = ds[10..15].to_vec();
+            put(ds, PREV_STATUS.0, &old);
+        }
+        put(ds, STATUS.0, &zoned(st, 5));
     }
-    put(ds, STATUS.0, &zoned(st, 5));
     put_text(ds, STMT, &format!("{:08}", j.abi.cur_stmt));
     let id: Vec<char> = e.msgid.chars().collect();
     let ty: String = id.iter().take(3).collect();
@@ -171,4 +174,16 @@ pub extern "sysv64" fn reraise(env: *mut Env, _argc: i64, _od: i64) {
     let j = job(env);
     let Some(e) = j.handled.last().cloned() else { return };
     let _ = j.send_message(&e.msgid, &e.msgf, "*LIBL", e.data, qir::MsgType::Escape, mi::QueueRef::Same);
+}
+
+/// `_QRNX_FILEERR(status, file)`: a file operation's error that neither
+/// `(E)` nor an error indicator takes, sent as the escape `RNXnnnn` of
+/// its status to the running entry; the file name is its data's `&7`.
+pub extern "sysv64" fn file_err(env: *mut Env, _argc: i64, _od: i64, status: i32, file: i64) {
+    let j = job(env);
+    let mut data = vec![0x40; 47];
+    data.extend([0, 0]);
+    data.extend_from_slice(bytes(file.cast_unsigned(), 10));
+    let id = format!("RNX{:04}", status.clamp(0, 9999));
+    let _ = j.send_message(&id, "QRNXMSG", "*LIBL", data, qir::MsgType::Escape, mi::QueueRef::Same);
 }

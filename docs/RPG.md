@@ -210,6 +210,34 @@ closes every global file. Program-described output records to a disk
 file are built at their end positions (data format `P`/`B` packs) and
 added (`ADD`, or any output file), updated or deleted (`DEL`).
 
+**File exceptions** (`codegen/dbio.rs`, `qrpgrt::exc::file_err`). An
+error status with neither `(E)` nor an error indicator stores the
+file's number in `$ferr` and sends the escape `RNXnnnn` of its status
+(`RNX1221`, `RNX1021`, ...) to the running entry; the runtime gives it
+that status, so `ON-ERROR 1221`, `*FILE` and `*ALL` take it and
+`*PROGRAM` does not. An explicit `OPEN` that fails is 01217, a file the
+program opens itself 01216 (RPG's `db_open` returns the status, it
+sends no `CPF` escape). With no `MONITOR` the cycle's region takes it:
+in a cycle-main module with a `*PSSR` or an `INFSR` the cycle is one
+`monitor` region whose `*PROGRAM` handler runs `*PSSR` and whose `*FILE`
+handler runs the `INFSR` of the file `$ferr` names (`INFSR(*PSSR)`
+too); a file without one, or no region at all, leaves it unhandled, so
+the function check and the inquiry end the program with `CEE9901` at
+the caller: `*PSSR` never sees a file error of a file without `INFSR`,
+and the region passes the function check `CPF9999` on unhandled. The
+handler's `ENDSR` return point decides the rest: `*GETIN` and `*DETC`
+(and the other cycle points) go back to the cycle's top, `RETURN` ends
+as `LR` says, blank or `*CANCL` hand the exception on. A file error
+leaves the PSDS status as it was (the exception identifier is still
+noted at 40); `%STATUS` is the file's, and an operation on a closed
+file puts 01211 in the INFDS from the generated code (the runtime knows
+the INFDS only while the file is open). A program-described printer's
+`WRITE` sets `%STATUS` to 0. In a subprocedure the escape
+percolates: the caller's `MONITOR` sees 00202. A subroutine is a
+procedure of its own: its body is one region whose handler returns
+`exc::rp::FAILED`, and the `EXSR` sends the exception again, so the
+main procedure's handlers see the status itself, not 00202.
+
 **Display files** (`codegen/dspio.rs`). A `WORKSTN` file is externally
 described from its `*FILE` display object (`dspf`): `rpgc::ExtFiles`
 gives each record format its named fields and both buffers' layouts

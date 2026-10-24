@@ -279,7 +279,7 @@ fn io_block(c: &Compiled, at: u32, kind: char) -> Block {
         if let Some((p, n)) = &f.prefix {
             rows.push(Row::Box(boxrow("Prefix", &format!("{} : {n}", p.trim_matches('\'')))));
         }
-        rows.push(Row::Box(boxrow("External format", &format!("{} : {lib}/{}", r.fmt.name, f.obj.1))));
+        rows.push(Row::Box(boxrow("External format", &format!("{} : {lib}/{}", r.fmt.name, f.desc))));
         rows.push(Row::Box(rule(8, 101)));
         // A display or printer format: its indicators first.
         if let Some(d) = dsp
@@ -442,7 +442,7 @@ pub(crate) fn file_box(out: &mut Out, c: &Compiled, file: &crate::files::File) {
     let Some(e) = &file.ext else { return };
     out.line(' ', rule(8, 101));
     out.line(' ', framed(8, &format!("{:31}{:<17}External name", "", "RPG name"), 101));
-    out.line(' ', framed(8, &format!(" File name. . . . . . . . . :  {:<17}{}/{}", file.name, e.lib, file.obj.1), 101));
+    out.line(' ', framed(8, &format!(" File name. . . . . . . . . :  {:<17}{}/{}", file.name, e.lib, file.desc), 101));
     let fmts: Vec<_> = c.table.recfmts.iter().filter(|r| r.file_name == file.name).collect();
     for (k, r) in fmts.iter().enumerate() {
         let label = if k == 0 { " Record format(s) . . . . . :" } else { "                             " };

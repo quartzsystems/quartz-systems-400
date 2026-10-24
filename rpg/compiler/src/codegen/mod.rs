@@ -475,6 +475,7 @@ pub fn module(
     }
     out.push_str("static $status: zoned(5,0)\n");
     out.push_str("static $errind: ind\n");
+    out.push_str("static $ferr: i32\n");
     out.push_str("static $psds_none: char(1)\n");
     out.push_str(&dbio::statics(files, g.t));
     // Pointers BASED declared come before the fields based on them.
@@ -656,12 +657,38 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     let outputs = g.outputs.clone();
     let top = g.b.label();
     g.b.place(&top);
-    // With a *PSSR, the cycle is one monitor region; its handler runs
-    // the subroutine and resumes at the top (re-entering the region)
-    // or hands the exception on.
+    // With a *PSSR or an INFSR, the cycle is one monitor region: program
+    // errors go to *PSSR, file errors to the failing file's INFSR (by
+    // `$ferr`); each handler runs its subroutine and resumes at the top
+    // (re-entering the region) or hands the exception on.
+    let infsrs: Vec<(usize, String)> = g
+        .files
+        .iter()
+        .enumerate()
+        .filter(|(_, f)| f.scope == 0)
+        .filter_map(|(k, f)| {
+            let s = f.infsr.as_ref()?;
+            subrs
+                .iter()
+                .find(|(n, _)| n.eq_ignore_ascii_case(s) && !g.bad_subrs.contains(&n.to_ascii_uppercase()))
+                .map(|(n, _)| (k + 1, n.clone()))
+        })
+        .collect();
     let pssr_handler = g.b.label();
-    if has_pssr {
-        g.b.ins(format!("monitor PSSR, *ALL -> {pssr_handler}"));
+    let infsr_handler = g.b.label();
+    let monitored = has_pssr || !infsrs.is_empty();
+    // The function check of an error neither takes goes on to the
+    // default handler, past *PSSR.
+    let fcheck = g.b.label();
+    if monitored {
+        let mut sels = vec![format!("CPF9999 -> {fcheck}")];
+        if has_pssr {
+            sels.push(format!("*PROGRAM -> {pssr_handler}"));
+        }
+        if !infsrs.is_empty() {
+            sels.push(format!("*FILE -> {infsr_handler}"));
+        }
+        g.b.ins(format!("monitor PSSR, {}", sels.join(", ")));
     }
     g.psds_routine("*DETL");
     g.output(&outputs, output::Step::HeadingDetail);
@@ -690,25 +717,46 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b.place(&finish);
     g.b.ins("%lr2 = load $inlr");
     g.b.term(format!("brif %lr2, {end}, {ret}"));
-    if has_pssr {
+    if monitored {
         let close = g.b.label();
         g.b.place(&close);
         g.b.ins("endmon PSSR");
         g.b.term("unreachable");
-        g.b.place(&pssr_handler);
-        g.psds_error();
-        let rc = g.b.reg();
-        g.b.ins(format!("{rc} = callb {}()", Gen::subr_proc("*PSSR")));
         let again = g.b.label();
         let on = g.b.label();
-        // RETURN in *PSSR: the end decided by LR, outside the region.
+        // RETURN in the subroutine: the end decided by LR, outside the
+        // region; a blank return point or *CANCL hands the exception on.
         let finish_out = g.b.label();
-        g.b.term(format!(
-            "switch {rc}, [{}: {top}, {}: {top}, {}: {finish_out}], default {on}",
-            exc::rp::GETIN,
-            exc::rp::OTHER,
-            exc::rp::RETURN
-        ));
+        let returned = |g: &mut Gen<'_>, subr: &str| {
+            let rc = g.b.reg();
+            g.b.ins(format!("{rc} = callb {}()", Gen::subr_proc(subr)));
+            g.b.term(format!(
+                "switch {rc}, [{}: {top}, {}: {top}, {}: {finish_out}], default {on}",
+                exc::rp::GETIN,
+                exc::rp::OTHER,
+                exc::rp::RETURN
+            ));
+        };
+        g.b.place(&fcheck);
+        g.b.term(format!("br {on}"));
+        if has_pssr {
+            g.b.place(&pssr_handler);
+            g.psds_error();
+            returned(g, "*PSSR");
+        }
+        if !infsrs.is_empty() {
+            g.b.place(&infsr_handler);
+            g.psds_error();
+            let k = g.b.reg();
+            g.b.ins(format!("{k} = load $ferr"));
+            let labels: Vec<String> = infsrs.iter().map(|_| g.b.label()).collect();
+            let arms: Vec<String> = infsrs.iter().zip(&labels).map(|((n, _), l)| format!("{n}: {l}")).collect();
+            g.b.term(format!("switch {k}, [{}], default {on}", arms.join(", ")));
+            for ((_, s), l) in infsrs.iter().zip(&labels) {
+                g.b.place(l);
+                returned(g, s);
+            }
+        }
         g.b.place(&finish_out);
         g.b.ins("%lr3 = load $inlr");
         g.b.term(format!("brif %lr3, {end}, {ret}"));

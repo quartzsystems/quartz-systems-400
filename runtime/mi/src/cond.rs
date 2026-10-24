@@ -98,10 +98,14 @@ impl Exception {
     }
 
     /// Whether a file operation raised it: the `CPF4` and `CPF5`
-    /// families.
+    /// families, or an RPG file status (01000-09998). Arriving through
+    /// a call (00202) it is a program error.
     #[must_use]
     pub fn is_file_error(&self) -> bool {
-        self.msgid.starts_with("CPF4") || self.msgid.starts_with("CPF5")
+        self.status != 202
+            && ((1000..9999).contains(&self.status)
+                || self.msgid.starts_with("CPF4")
+                || self.msgid.starts_with("CPF5"))
     }
 }
 

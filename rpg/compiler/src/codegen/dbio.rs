@@ -176,7 +176,7 @@ impl Gen<'_> {
     /// the external indicator is on.
     pub fn init_open(&mut self, f: &File) {
         let Some(ind) = f.extind.clone() else {
-            let _ = self.db_open(f);
+            self.implicit_open(f);
             return;
         };
         let Some(x) = self.indicator(ind.trim_start_matches("*IN")) else { return };
@@ -185,7 +185,7 @@ impl Gen<'_> {
         let (yes, no) = (self.b.label(), self.b.label());
         self.b.term(format!("brif {on}, {yes}, {no}"));
         self.b.place(&yes);
-        let _ = self.db_open(f);
+        self.implicit_open(f);
         self.b.term(format!("br {no}"));
         self.b.place(&no);
     }
@@ -224,6 +224,20 @@ impl Gen<'_> {
         let po = format!("$po_{}", mangle(&f.name));
         self.externs.entry(po.clone()).or_insert_with(|| format!("static {po}: ind inz(*OFF)"));
         po
+    }
+
+    /// A file the program opens itself: an error is status 01216,
+    /// unhandled.
+    pub fn implicit_open(&mut self, f: &File) {
+        let r = self.db_open(f);
+        if f.dev != Dev::Disk {
+            return;
+        }
+        let err = self.b.reg();
+        self.b.ins(format!("{err} = cmp.ge {r}, 1000"));
+        let st = self.b.reg();
+        self.b.ins(format!("{st} = select {err}, 1216, {r}"));
+        self.raise_file_error(f, &st);
     }
 
     /// One database operation statement.
@@ -375,6 +389,8 @@ impl Gen<'_> {
         }
         let by_file = matches!(&target, Expr::Ref { name, steps, .. } if *name == f.name && steps.is_empty());
         self.infds_opcode(&f, base, by_file);
+        self.infds_closed(&f, &status);
+        self.file_error(op, &f, &status);
     }
 
     /// The INFDS operation code: five characters of the operation and
@@ -394,6 +410,27 @@ impl Gen<'_> {
         let p = self.b.reg();
         self.b.ins(format!("{p} = addr {place}"));
         self.b.ins(format!("mov [{p} +15]:char(6), {}", crate::codegen::emit::quote(&text)));
+    }
+
+    /// The status of an operation on a closed file (01211) into the
+    /// INFDS, which the runtime knows only while the file is open.
+    pub fn infds_closed(&mut self, f: &File, status: &str) {
+        let Some(id) = f.infds.as_ref().and_then(|n| self.t.find(self.scope, n)) else { return };
+        let Some(Kind::Ds(di)) = self.t.syms[id].kind.clone() else { return };
+        if self.t.ds_len(di) < 15 {
+            return;
+        }
+        let closed = self.b.reg();
+        self.b.ins(format!("{closed} = cmp.eq {status}, 1211"));
+        let put = self.b.label();
+        let done = self.b.label();
+        self.b.term(format!("brif {closed}, {put}, {done}"));
+        self.b.place(&put);
+        let place = crate::codegen::place_of(self.t, id);
+        let p = self.b.reg();
+        self.b.ins(format!("{p} = addr {place}"));
+        self.b.ins(format!("dec.mov [{p} +10]:zoned(5,0), 1211"));
+        self.b.place(&done);
     }
 
     /// The `dbio` instruction; its status register.
@@ -475,8 +512,6 @@ impl Gen<'_> {
             self.b.ins(format!("{st} = select {err}, {status}, 0"));
             self.b.ins(format!("dec.mov $status, {st}"));
         }
-        // TODO(phase9): an unhandled file error goes to the file's
-        // exception handling (INFSR, the default handler).
         let ind = |g: &mut Self, slot: usize, r: &str| {
             let name = op.resind[slot].clone();
             if !name.is_empty() {
@@ -516,6 +551,33 @@ impl Gen<'_> {
             }
             _ => {}
         }
+    }
+
+    /// An error neither `(E)` nor an error indicator takes: the file's
+    /// number into `$ferr` (for its `INFSR`) and the escape `RNXnnnn`
+    /// of its status, which a `MONITOR`, the `INFSR` or the default
+    /// handler takes.
+    pub fn file_error(&mut self, op: &Op, f: &File, status: &str) {
+        if op.ext.contains('E') || !op.resind[1].is_empty() {
+            return;
+        }
+        self.raise_file_error(f, status);
+    }
+
+    /// The escape of a status of 1000 or more, the file's number in
+    /// `$ferr`.
+    fn raise_file_error(&mut self, f: &File, status: &str) {
+        let k = self.files.iter().position(|x| x.name == f.name && x.scope == f.scope).unwrap_or(0);
+        self.rt_proc("_QRNX_FILEERR", "(byval $status: i32, const $file: char(10))");
+        let err = self.b.reg();
+        self.b.ins(format!("{err} = cmp.ge {status}, 1000"));
+        let raise = self.b.label();
+        let done = self.b.label();
+        self.b.term(format!("brif {err}, {raise}, {done}"));
+        self.b.place(&raise);
+        self.b.ins(format!("store $ferr, {}", k + 1));
+        self.b.ins(format!("callb _QRNX_FILEERR({status}, {})", crate::codegen::emit::quote(&format!("{:<10}", f.name))));
+        self.b.place(&done);
     }
 
     /// The buffer's fields into the program's, then the field
@@ -903,7 +965,15 @@ impl Gen<'_> {
             self.b.ins(format!("store {st}, 1215"));
             self.b.term(format!("br {done}"));
             self.b.place(&no);
-            let r = self.db_open(&f);
+            let mut r = self.db_open(&f);
+            if f.dev == Dev::Disk {
+                // An OPEN that fails: 01217.
+                let err = self.b.reg();
+                self.b.ins(format!("{err} = cmp.ge {r}, 1000"));
+                let m = self.b.reg();
+                self.b.ins(format!("{m} = select {err}, 1217, {r}"));
+                r = m;
+            }
             self.b.ins(format!("store {st}, {r}"));
             self.b.place(&done);
         } else {
@@ -915,6 +985,7 @@ impl Gen<'_> {
         if matches!(f.dev, Dev::Disk | Dev::Workstn | Dev::Special) {
             self.db_result(op, "OPEN", &n, &s, &KeyArg::None);
             self.infds_opcode(&f, "OPEN", true);
+            self.file_error(op, &f, &s);
         }
     }
 

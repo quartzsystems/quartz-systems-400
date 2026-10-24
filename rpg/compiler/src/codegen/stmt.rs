@@ -400,6 +400,15 @@ impl Gen<'_> {
         }
         let rc = self.b.reg();
         self.b.ins(format!("{rc} = callb {}()", Gen::subr_proc(name)));
+        // The subroutine's exception, sent again here.
+        let failed = self.b.reg();
+        self.b.ins(format!("{failed} = cmp.eq {rc}, {}", crate::codegen::exc::rp::FAILED));
+        let resend = self.b.label();
+        let ok = self.b.label();
+        self.b.term(format!("brif {failed}, {resend}, {ok}"));
+        self.b.place(&resend);
+        self.reraise();
+        self.b.place(&ok);
         let cont = self.b.label();
         let back = self.b.label();
         let one = self.b.reg();
@@ -1554,6 +1563,8 @@ impl Gen<'_> {
             mangle(&f.name),
             v.op
         ));
+        // The operation's status (00000) is the last status now.
+        self.b.ins("dec.mov $status, 0");
         if let Some(ind) = &f.oflind {
             let ov = self.overflow_crossed(&f.name, &st);
             let on = self.b.label();
@@ -1975,7 +1986,15 @@ pub fn subroutine_proc(g: &mut Gen<'_>, name: &str, body: &[&Stmt]) {
     if let Some(b) = body.first() {
         g.mark(b.at);
     }
+    // An exception no monitor here takes goes back to the caller as a
+    // return code, which sends it again there: the main procedure's
+    // handlers see its own status, not 00202.
+    g.monitors += 1;
+    let region = format!("S{}", g.monitors);
+    let failed = g.b.label();
+    g.b.ins(format!("monitor {region}, *ALL -> {failed}"));
     calcs(g, &inner);
+    g.b.ins(format!("endmon {region}"));
     let end = body.iter().find(|s| s.op.code == "ENDSR");
     let code = end
         .and_then(|e| match e.op.f2.first() {
@@ -1987,6 +2006,8 @@ pub fn subroutine_proc(g: &mut Gen<'_>, name: &str, body: &[&Stmt]) {
         g.mark(e.at);
     }
     g.b.term(format!("ret {code}"));
+    g.b.place(&failed);
+    g.b.term(format!("ret {}", crate::codegen::exc::rp::FAILED));
     g.in_subr_proc = false;
     let b = std::mem::replace(&mut g.b, saved);
     g.open = saved_open;

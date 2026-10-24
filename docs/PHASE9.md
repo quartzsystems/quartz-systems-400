@@ -169,10 +169,50 @@ Recorded from batch 8 (`b08dsp/`), pub400 V7R5M0.
 
 - Format level identifiers are QS/400's (`DB_FORMAT.md`), not IBM's;
   only the check at open uses them.
-- An I/O error with neither `(E)` nor an error indicator does not yet
-  reach the file's exception handling (`INFSR`, the default handler's
-  inquiry, `CEE9901` at the call): the operation's status is kept and
-  the program goes on. `TODO(phase9)` in `codegen/dbio.rs`.
+- An unhandled file error ends the program through the function check
+  and `CEE9901`, the outcome IBM's default reply gives; the `RNQ1xxx`
+  inquiry itself is not sent (no job log is compared). File errors of
+  a primary-file cycle (`codegen/cycle.rs`) reach no `INFSR` or `*PSSR`
+  yet; the corpus has no case of it.
+
+## Oracle facts: file exceptions
+
+Recorded from the `FEX` members of batch 9 (`b09exc/`), pub400 V7R5M0.
+
+- A file error with no `(E)`, error indicator, `MONITOR` or `INFSR`
+  ends the program: the caller gets `CEE9901`. A `*PSSR` does not run
+  for it (`FEX002`).
+- `INFSR(subr)` runs with the file's INFDS filled (status, `UPDATR`,
+  `WRITER`) and `%STATUS` the file's; `%ERROR` stays off. Its `ENDSR`
+  with a blank return point or `*CANCL` ends the program as above;
+  `*GETIN` and `*DETC` start the next cycle (no primary file).
+  `INFSR(*PSSR)` runs `*PSSR`, whose PSDS status stays 00000 and
+  routine `*DETC`.
+- `MONITOR` takes a file error before `INFSR`. `ON-ERROR 1211`,
+  `*FILE` and `*ALL` take file errors, `*PROGRAM` does not; the PSDS
+  status stays 00000 but its exception identifier (40-46) is the
+  `RNX` message of the status (`RNX1221`). After `ENDMON` `%STATUS` is
+  0.
+- A file error in a subprocedure reaches the caller's `MONITOR` as
+  00202, identifier `RNX1021`; the procedure stops at the operation.
+- An error in a subroutine reaches `INFSR` (`%STATUS` 01021) or
+  `*PSSR` (00102) with its own status.
+- A `WRITE` to a program-described printer that works makes `%STATUS`
+  0: in a `*PSSR` that prints first, `IF %STATUS = 102` is false
+  (`FEX012`; the first version of it looped until its spooled file
+  outgrew the copy file).
+- `OPEN` of a file that does not exist is 01217, `%OPEN` off.
+- A `USROPN` file with no `OPEN` anywhere is `RNF7062` (30).
+- The INFDS after an error taken by `(E)`: 38-45 the record format
+  (`CUSTR`), 46-52 the data management message (`CPF5026` for a
+  duplicate key, `CPF501B` for `UPDATE` without a read, blank for an
+  operation on a closed file). The PSDS names the program and the
+  module at 334-353 (`FEX013    FEX013`).
+- The compile listing's file box names the `EXTDESC` file, not
+  `EXTFILE`'s.
+- A record lock within one job (two opens of the file) could not be
+  captured: the FTP session timed out on that call every time.
+
 ## Oracle facts: moves, strings and arrays
 
 Recorded from batch 5 (`b05move/`) and the `STR`, `ARR` and `BIT`
@@ -476,6 +516,7 @@ Recorded from batch 15 (`b15cov/`, `gen/b15.py`), pub400 V7R5M0.
 - An indicator `*INxx` that nothing sets is not reported (`RNF7030`
   where an expression uses it): no corpus member shows IBM's rule for
   indicators set through display files, calls and `*IN` itself.
+- `RNF7062` (a `USROPN` file without `OPEN`) is not reported.
 
 ## Embedded SQL not yet done
 

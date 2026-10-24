@@ -405,6 +405,9 @@ impl Walk<'_> {
                         TokKind::Name(n) => {
                             if let Some(id) = self.find(n) {
                                 self.sym(id, t.at.line, ' ');
+                            } else if let Some(l) = self.out.labels.get_mut(&(self.scope, n.to_ascii_uppercase())) {
+                                // A subroutine (INFSR).
+                                l.1.push((t.at.line, ' '));
                             } else if self.c.table.recfmts.iter().any(|r| r.name == *n) {
                                 self.out.formats.entry(n.clone()).or_default().push((t.at.line, ' '));
                             }

@@ -47,6 +47,7 @@ pub fn procedures() -> Vec<(&'static str, usize)> {
         ("_QRNX_PSDSINIT", exc::psds_init as *const () as usize),
         ("_QRNX_PSDSERR", exc::psds_err as *const () as usize),
         ("_QRNX_RERAISE", exc::reraise as *const () as usize),
+        ("_QRNX_FILEERR", exc::file_err as *const () as usize),
         ("_QRNX_CHARTONUM", cvt::char_to_num as *const () as usize),
         ("_QRNX_MOVEA", ops::movea as *const () as usize),
         ("_QRNX_ZONE", ops::zone as *const () as usize),

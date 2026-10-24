@@ -190,8 +190,8 @@ the based-on fields the format lacks their `DFT`, else zero or blank,
 never null. Test: `WRITE` through an LF over a PF with an `ALWNULL`
 field without `DFT`, then `DSPPFM` in hex: null or blank?
 
-**Messages.** `NoLockedRecord` carries CPF5035 as a placeholder for the
-condition RPG reports as 01221 (RNX1221); `FileLocked` carries CPF4128.
+**Messages.** `NoLockedRecord` carries CPF501B and `DuplicateKey` CPF5026 (what an RPG
+INFDS shows on pub400 for 01221 and 01021); `FileLocked` carries CPF4128.
 
 **Shared open data path with other usage.** A `SHARE(*YES)` open that
 needs input, output, update or delete the existing path was not opened
