@@ -618,7 +618,7 @@ impl Gen<'_> {
                 || v.kind == Vk::Lit && matches!(v.ty, Ty::Packed(_, 0)) && !v.op.starts_with('-')
         };
         let unsigned = (matches!(va.ty, Ty::Uns(_)) || matches!(vb.ty, Ty::Uns(_))) && uns_like(va) && uns_like(vb);
-        if unsigned && matches!(op, BinOp::Add | BinOp::Sub | BinOp::Mul) {
+        if unsigned && !self.signed_ops && matches!(op, BinOp::Add | BinOp::Sub | BinOp::Mul) {
             let ra = self.int_reg(va)?;
             let rb = self.int_reg(vb)?;
             let r = self.b.reg();
@@ -667,8 +667,8 @@ impl Gen<'_> {
         };
         // Decimals are lost when the limit (63 digits, or 30 when no
         // operand is longer) leaves fewer than both the target's and the
-        // operation's own (a product's sum, a sum's larger; a quotient
-        // has no end of its own); a compared operand has no target.
+        // operation's own (a product's sum, a sum's larger); a compared
+        // operand has no target.
         let natural = match op {
             BinOp::Mul => sa.saturating_add(sb),
             BinOp::Add | BinOp::Sub => sa.max(sb),
@@ -677,7 +677,12 @@ impl Gen<'_> {
         let floor = mode.result_scale + u8::from(mode.half_adjust);
         // Compared, only a quotient's decimals count as lost.
         let quotient = self.b.quotients.contains(&va.op) || self.b.quotients.contains(&vb.op);
-        let wanted = if w.compared {
+        // At the 63-digit limit a quotient's decimals are lost when it
+        // keeps fewer than the dividend or the target has (EXP126,
+        // EXP074); under *RESDECPOS only the target counts (EXP094).
+        let wanted = if op == BinOp::Div && sh.digits == 63 && !w.compared && !mode.resdecpos {
+            sa.max(floor)
+        } else if w.compared {
             if quotient && op != BinOp::Div { natural } else { 0 }
         } else {
             floor.min(natural)

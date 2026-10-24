@@ -1,0 +1,253 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   CYC013
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   CYC013
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1  *; dds: BENCHF                                                                                           000000     000100
+      2  *; sqlfile: BENCHF                                                                                       000000     000200
+      3  * *INZSR in a cycle program: it runs once, and the detail                                                000000     000300
+      4  * calculations before it go on to the next record.                                                       000000     000400
+-     5 FBENCHF    IP   E           K DISK                                                                        000000     000500
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  BENCHF           {lib}/BENCHF                            *
+         * Record format(s) . . . . . :  BENCHR           BENCHR                                      *
+         *--------------------------------------------------------------------------------------------*
+      6 FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)                                                       000000     000600
+-     7 DTOT              S             11P 2                                                                     000000     000700
+      8 DGRPS             S              5P 0                                                                     000000     000800
+      9 DRECS             S              7P 0                                                                     000000     000900
+-    10 IBENCHR        01                                                                                         000000     001000
+     11 I              BGRP                        BGRP          L1                                               000000     001100
+         *--------------------------------------------------------------------------------------------*                     1
+         * RPG record format  . . . . :  BENCHR                                                       *                     1
+         * External format  . . . . . :  BENCHR : {lib}/BENCHF                                    *                     1
+         *--------------------------------------------------------------------------------------------*                     1
+     12=I                             P    1    4 0BKEY                                                                     1000001
+     13=I                             P    5    7 0BGRP          L1                                                         1000002
+     14=I                             P    8   12 2BAMT                                                                     1000003
+-    15 C   01              ADD       BAMT          TOT                                                           000000     001200
+     16 C   01              ADD       1             RECS                                                          000000     001300
+     17 CL1                 ADD       1             GRPS                                                          000000     001400
+     18 C     *INZSR        BEGSR                                                                                 000000     001500
+     19 C                   Z-ADD     1000          GRPS                                                          000000     001600
+     20 C                   ENDSR                                                                                 000000     001700
+-    21 OQSYSPRT   T    L1                  1                                                                     000000     001800
+     22 O                       BGRP          X     10                                                            000000     001900
+     23 O                       TOT           X     30                                                            000000     002000
+     24 OQSYSPRT   T    LR                  1                                                                     000000     002100
+     25 O                                            7 'total'                                                    000000     002200
+     26 O                       RECS          X     40                                                            000000     002300
+     27 O                       GRPS          X     50                                                            000000     002400
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+1{heading} page 3
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+ *RNF7086 00      5 000500  RPG handles blocking for file BENCHF. INFDS is updated only
+                            when blocks of data are transferred.
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-                 O u t p u t   B u f f e r   P o s i t i o n s
+0Line   Start End   Field or Constant
+0Number Pos   Pos
+     22     6    10 BGRP
+     23    20    30 TOT
+     25     3     7 'total'
+     26    34    40 RECS
+     27    46    50 GRPS
+0 * * * * *   E N D   O F   O U T P U T   B U F F E R   P O S I T I O N   *  * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0                    K e y   F i e l d   I n f o r m a t i o n
+0         File           Internal    External
+            Record       field name  field name  Attributes
+0      1  BENCHF
+            BENCHR
+                         BKEY                    PACK      7,0 SIGNED
+0 * * * * *   E N D   O F   K E Y   F I E L D   I N F O R M A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          BENCHF            DISK                    5D
+            BENCHR                                  5D     10
+          QSYSPRT           PRINTER                 6D     21      24
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+ *RNF7031 *INOF             N(1)                    6D
+          *INZSR            BEGSR                  18D
+          BAMT              P(9,2)                 14D     15
+          BGRP              P(5,0)                 13D     22
+ *RNF7031 BKEY              P(7,0)                 12D
+          GRPS              P(5,0)                  8D     17M     19M     27
+          RECS              P(7,0)                  9D     16M     26
+          TOT               P(11,2)                 7D     15M     23
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          01                                       10D     15      16
+          L1                                       13D     17      21
+          LR                                       24
+ *RNF7031 OF                                        6D
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF7031 00      2 The name or indicator is not referenced.
+ *RNF7086 00      1 RPG handles blocking for the file. INFDS is updated only when
+                    blocks of data are transferred.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        3
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        3
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       27
+     Specifications  . . . . . . . . :       23
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        4
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program CYC013 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

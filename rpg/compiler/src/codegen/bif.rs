@@ -87,8 +87,16 @@ impl Gen<'_> {
     }
 
     /// A built-in function.
-    #[allow(clippy::too_many_lines)]
     pub fn bif(&mut self, name: &str, args: &[Expr], w: Want) -> Option<V> {
+        // Only the direct operands of %DIV and %REM are signed.
+        let signed = std::mem::replace(&mut self.signed_ops, matches!(name, "%DIV" | "%REM"));
+        let v = self.bif_of(name, args, w);
+        self.signed_ops = signed;
+        v
+    }
+
+    #[allow(clippy::too_many_lines)]
+    fn bif_of(&mut self, name: &str, args: &[Expr], w: Want) -> Option<V> {
         if let Some(v) = self.db_bif(name, args) {
             return v;
         }

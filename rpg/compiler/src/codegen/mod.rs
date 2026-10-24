@@ -180,6 +180,9 @@ pub struct Gen<'a> {
     /// The right operand of the arithmetic being generated (`RNF7551`
     /// is reported there).
     pub rhs_at: Option<Pos>,
+    /// The operands of `%DIV` and `%REM` are being generated: their
+    /// arithmetic is signed (`EXP127`).
+    pub signed_ops: bool,
     /// Statement numbers already marked.
     pub marked: BTreeSet<u32>,
     /// Emit `debug.stmt` and `debug.var`.
@@ -350,6 +353,7 @@ pub fn module(
         ret: None,
         at: Pos::default(),
         rhs_at: None,
+        signed_ops: false,
         marked: BTreeSet::new(),
         debug: opts.dbgview != "*NONE",
         monitors: 0,

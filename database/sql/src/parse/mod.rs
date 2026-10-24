@@ -235,7 +235,9 @@ impl Parser {
     /// A one- or two-part object name in the naming mode.
     fn object_name(&mut self) -> Result<ObjectName> {
         let first = self.ident()?;
-        let sep = self.separator();
+        // System naming takes the period as well as the slash (V7R5M0,
+        // `rpg/perf/PERF04.sqlrpgle`).
+        let sep = if self.naming == Naming::Sys && self.is_sym(".") { "." } else { self.separator() };
         if !self.eat_sym(sep) {
             return Ok(ObjectName {
                 schema: None,

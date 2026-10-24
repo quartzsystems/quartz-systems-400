@@ -4,7 +4,6 @@
 # fail on them.
 b11sql/* the SQL precompiler's listing and the compile of IBM's generated source (SQL_ variables, QSQROUTE calls) are not produced
 ERR090 the binding directories do not exist: IBM's bind diagnostics section comes from binding, after the compile listing
-EXP114 RNF7551 for a quotient kept to 9 decimals for a 4-decimal target: IBM's division rule is not known (open question)
 LST016 the oracle job's CCSID 273 shows the INDENT('| ') bar as ']' (oracle artifact)
 ERR231 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
 ERR232 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet

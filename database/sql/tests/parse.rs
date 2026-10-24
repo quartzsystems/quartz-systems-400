@@ -350,16 +350,14 @@ fn ddl_and_dml_shapes() {
 
 #[test]
 fn naming_modes() {
-    // *SYS: slash qualifies; a dot after a table is a column.
+    // *SYS: slash qualifies, and so does a period after a schema; a
+    // dot after a correlation name is a column.
     let s = sys("SELECT c.name FROM qstest/cust c");
     let sel = select(&s);
     assert!(
         matches!(&sel.items[0], SelectItem::Expr(Expr::Column(c), _) if c.table.as_ref().unwrap().value == "C")
     );
-    assert!(matches!(
-        parse("SELECT * FROM qstest.cust", Naming::Sys),
-        Err(SqlError::Syntax { .. })
-    ));
+    assert!(parse("SELECT * FROM qstest.cust", Naming::Sys).is_ok());
     // *SQL: dot qualifies.
     let s = sqln("SELECT * FROM qstest.cust");
     assert!(
