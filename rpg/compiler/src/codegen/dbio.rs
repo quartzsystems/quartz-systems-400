@@ -995,7 +995,7 @@ pub fn file_notes(g: &mut Gen<'_>, m: &rpgfront::ast::Module) {
     // A file read only, or written only, is blocked. A file whose
     // description was not found is ignored.
     for f in g.files.iter().filter(|f| {
-        f.dev == Dev::Disk && !f.template && f.input != f.output && !f.update && !f.noblock && !(f.external && f.ext.is_none())
+        f.dev == Dev::Disk && !f.template && f.input != f.output && !f.update && !f.noblock && (!f.external || f.ext.is_some())
     }) {
         let allowed: &[&str] = if f.input { &["READ", "OPEN", "CLOSE", "FEOD"] } else { &["WRITE", "OPEN", "CLOSE", "FEOD"] };
         let names: Vec<String> = std::iter::once(f.name.clone())
