@@ -21,6 +21,9 @@ pub struct Body {
     temps: u32,
     /// Registers made.
     regs: u32,
+    /// Temporaries that hold a quotient (temporary names restart in
+    /// every procedure, so the set does too).
+    pub quotients: std::collections::BTreeSet<String>,
 }
 
 impl Body {

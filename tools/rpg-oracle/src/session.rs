@@ -124,7 +124,7 @@ impl Session {
             bail!("CRTSRCPF failed {cause}");
         }
         self.try_rcmd(&format!("DLTF FILE({lib}/RPGSPL)"));
-        let (ok, cause) = self.rcmd(&format!("CRTPF FILE({lib}/RPGSPL) RCDLEN({SPL_RCDLEN})"))?;
+        let (ok, cause) = self.rcmd(&format!("CRTPF FILE({lib}/RPGSPL) RCDLEN({SPL_RCDLEN}) SIZE(*NOMAX)"))?;
         if !ok {
             bail!("CRTPF failed {cause}");
         }
@@ -320,6 +320,8 @@ impl Session {
             e.name, e.job, e.number
         ))?;
         if !ok {
+            // Deleted all the same, or every later run would meet it.
+            self.try_rcmd(&format!("DLTSPLF FILE({}) JOB({}) SPLNBR({})", e.name, e.job, e.number));
             bail!("CPYSPLF {} {} failed: {}", e.name, e.number, reply.trim());
         }
         let path = self.member_path("RPGSPL", "RPGSPL");

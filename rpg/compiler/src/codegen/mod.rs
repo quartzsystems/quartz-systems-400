@@ -177,6 +177,9 @@ pub struct Gen<'a> {
     pub ret: Option<Ty>,
     /// The statement being generated.
     pub at: Pos,
+    /// The right operand of the arithmetic being generated (`RNF7551`
+    /// is reported there).
+    pub rhs_at: Option<Pos>,
     /// Statement numbers already marked.
     pub marked: BTreeSet<u32>,
     /// Emit `debug.stmt` and `debug.var`.
@@ -221,8 +224,6 @@ pub struct Gen<'a> {
     /// The subprocedure being generated, upper case; empty in the main
     /// procedure.
     pub cur_proc: String,
-    /// Temporaries that hold a quotient.
-    pub quotients: BTreeSet<String>,
     /// The module's input specifications.
     pub inputs: Vec<rpgfront::ast::Input>,
     /// Overflow output is being generated (no fetch inside it).
@@ -348,6 +349,7 @@ pub fn module(
         calcs_end: None,
         ret: None,
         at: Pos::default(),
+        rhs_at: None,
         marked: BTreeSet::new(),
         debug: opts.dbgview != "*NONE",
         monitors: 0,
@@ -369,7 +371,6 @@ pub fn module(
         plists: calls::plists(m),
         bad_subrs: BTreeSet::new(),
         cur_proc: String::new(),
-        quotients: BTreeSet::new(),
         inputs: m.inputs.clone(),
         in_overflow: false,
         used_formats: BTreeSet::new(),

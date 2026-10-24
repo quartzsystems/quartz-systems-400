@@ -1,5 +1,6 @@
 **FREE
-//; cmd: CRTSQLRPGI OBJ({lib}/{name}) SRCFILE({lib}/QRPGLESRC) COMMIT(*NONE) OUTPUT(*PRINT) DBGVIEW(*NONE)
+//; cmd: CRTSQLRPGI OBJ({lib}/{name}) SRCFILE({lib}/QRPGLESRC) COMMIT(*NONE)
+//; cmd+: OUTPUT(*PRINT) DBGVIEW(*NONE)
 // The machine the timings ran on: model, processor feature, processors.
 ctl-opt dftactgrp(*no);
 dcl-f QSYSPRT printer(132);

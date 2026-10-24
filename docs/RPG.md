@@ -119,12 +119,29 @@ opens a new block, so code after `LEAVE` stays valid IR.
 `qdecimal::arith::intermediate` (`DECIMAL.md` §4), the floor being the
 assignment target's decimal positions (one more under `(H)`); integer
 operands (other than `/`) use integer arithmetic with overflow
-checking; a float operand, or `**`, makes the operation float. An
+checking; a float operand, or `**`, makes the operation float.
+`%ABS` of an integer is unsigned, and unsigned operands, alone or with
+literal integers that are not negative, use unsigned arithmetic: a
+negative result is status 103 (`%ABS(I) - 478` with `I = -32`, and
+`895 - %ABS(I)` unmonitored ends the program with `CEE9901`). An
 `EVAL` that overflows its target is status 103 (`MCH1210`); the
 fixed-form arithmetic operations (`ADD`, `SUB`, `MULT`, `DIV`, `Z-ADD`,
 `Z-SUB`) drop high-order digits instead (`dec.mov ... trunc`). RPG
 writes the positive sign `F` in packed and zoned data, so an `RPGLE`
 module's decimal stores do (`ABI.md`, the descriptor's bit 56).
+
+**`RNF7551`** (decimals lost to the 63- or 30-digit limit) is given
+for an operation whose intermediate keeps fewer decimals than it wants:
+assigned, the smaller of the floor and the operation's own (a
+product's sum, a sum's larger; a quotient has none, so only the floor
+counts); compared, only an operation with an operand that is a
+quotient, or was computed from one, wants its own decimals. It is
+reported on the line of the operation's right operand as the parser
+holds it: its operator when it is itself an operation, its first token
+otherwise. So `(V6 + 289) - (V2 /` with `2)`
+on the next line is reported on the first line (the `/`), and
+`(140.22 / 1) -` with `143.96)` on the next on the second; two in one
+statement on different lines are two messages.
 
 **Undefined names.** `RNF7030` once per name, at its first reference;
 `RNF7503` once per statement that references one, at the reference.

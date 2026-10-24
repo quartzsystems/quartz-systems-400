@@ -404,7 +404,8 @@ impl Gen<'_> {
                         let i = self.int_reg(&v)?;
                         let r = self.b.reg();
                         self.b.ins(format!("{r} = abs {i}"));
-                        Some(V::reg(Ty::Int(20), r))
+                        // IBM's %ABS of an integer is unsigned.
+                        Some(V::reg(Ty::Uns(20), r))
                     }
                     t if t.is_numeric() => {
                         let (d, s) = t.shape()?;

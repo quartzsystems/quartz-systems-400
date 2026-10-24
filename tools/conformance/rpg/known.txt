@@ -1,7 +1,5 @@
 # Members whose outcome is known to differ from the oracle's, one per
 # line with the reason; the kit reports them apart and does not fail on
 # them. Each has an entry in docs/RPG_OPEN_QUESTIONS.md or is being worked.
-EXP114 RNF7551 for a quotient kept to 9 decimals for a 4-decimal target: IBM's division rule is not known (open question)
+EXP114 RNF7551 for a quotient kept to 9 decimals for a 4-decimal target: IBM's division rule is not known (open question; EXP126 tests it)
 EXP118 float plus a short decimal: IBM converts 5974.6 to the nearest double here, where longer decimals go toward zero (open question)
-LST014 the oracle outcome holds a CUSTF spooled file: the listing of the dds: step CRTPF, taken as the program's output (oracle tool)
-LST015 the oracle outcome holds a CUSTF spooled file: the listing of the dds: step CRTPF, taken as the program's output (oracle tool)

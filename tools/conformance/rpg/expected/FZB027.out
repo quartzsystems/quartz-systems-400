@@ -1,0 +1,73 @@
+# FZB027 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 3 seq 000300
+diag: RNF3530 00 line 4 seq 000400
+diag: RNF7551 10 line 264 seq 026400
+diag: RNF7057 00 line 298 seq 029800
+diag: RNF7057 00 line 510 seq 051000
+diag: RNF7057 00 line 726 seq 072600
+diag: RNF7057 00 line 740 seq 074000
+diag: RNF7057 00 line 773 seq 077300
+diag: RNF7057 00 line 847 seq 084700
+diag: RNF7057 00 line 925 seq 092500
+diag: RNF7057 00 line 1090 seq 109000
+diag: RNF7057 00 line 1130 seq 113000
+diag: RNF7057 00 line 1305 seq 130500
+diag: RNF7057 00 line 1338 seq 133800
+diag: RNF7057 00 line 1359 seq 135900
+diag: RNF7551 10 line 1466 seq 146600
+diag: RNF7551 10 line 1534 seq 153400
+diag: RNF7057 00 line 1607 seq 160700
+diag: RNF7551 10 line 1623 seq 162300
+diag: RNF7551 10 line 1630 seq 163000
+diag: RNF7057 00 line 2050 seq 205000
+diag: RNF7057 00 line 2098 seq 209800
+diag: RNF7057 00 line 2104 seq 210400
+diag: RNF7551 10 line 2297 seq 229700
+diag: RNF7057 00 line 2308 seq 230800
+diag: RNF7551 10 line 2348 seq 234800
+diag: RNF7057 00 line 2553 seq 255300
+diag: RNF7057 00 line 2625 seq 262500
+diag: RNF7057 00 line 2781 seq 278100
+diag: RNF7057 00 line 2831 seq 283100
+diag: RNF7057 00 line 2914 seq 291400
+run: escape CEE9901
+spool: QSYSPRT
+  |1/1   S0540
+  |1/2   P002 V5 [-554965.62          ]
+  |1/3   P018 V0 -596.000
+  |1/4   P019 V1 [  pad       ]
+  |1/5   P020 V2 1
+  |1/6   P021 V3 [           ]
+  |1/7   P022 V4 1
+  |1/8   P023 V5 [-554965.62          ]
+  |1/9   P024 V6 0
+  |1/10  P025 V7 -897
+  |1/11  P026 V8 []
+  |1/12  S0541
+  |1/13  P002 V0 -48
+  |1/14  P004 V0 0
+  |1/15  P017 V5 406
+  |1/16  P022 V0 0
+  |1/17  P023 V1 .000
+  |1/18  P024 V2 .000
+  |1/19  P025 V3 .00
+  |1/20  P026 V4 []
+  |1/21  P027 V5 406
+  |1/22  S0542
+  |1/23  P011 V1 0
+  |1/24  P013 V4 [R]
+  |1/25  P017 V0 1
+  |1/26  P020 V2 -254516
+  |1/27  P017 V0 1
+  |1/28  P019 E 103
+  |1/29  P020 V2 -254516
+  |1/30  P011 V1 1
+  |1/31  P013 V4 [R]
+  |1/32  P017 V0 1
+  |1/33  P019 E 103
+  |1/34  P020 V2 -254516
+  |1/35  P017 V0 1
+  |1/36  P019 E 103
+  |1/37  P020 V2 -254516

@@ -11,6 +11,7 @@
 
 use qdecimal::arith::{self, Mode};
 use qdecimal::Shape;
+use rpgfront::Diag;
 use rpgfront::ast::{BinOp, Expr, Fig, Lit, Step, UnOp};
 
 use crate::diag::ids;
@@ -497,7 +498,12 @@ impl Gen<'_> {
                 self.concat(&va, &vb)
             }
             BinOp::Add | BinOp::Sub if va.ty == Ty::Ptr || vb.ty == Ty::Ptr => self.ptr_arith(op, &va, &vb),
-            _ => self.arith(op, &va, &vb, w),
+            _ => {
+                self.rhs_at = Some(b.pos());
+                let r = self.arith(op, &va, &vb, w);
+                self.rhs_at = None;
+                r
+            }
         };
         // Operands that do not match: IBM goes on with the left one's
         // type, so an assignment of the result is checked too.
@@ -605,6 +611,28 @@ impl Gen<'_> {
             self.b.ins(format!("{r} = {o} {fa}, {fb}"));
             return Some(V::reg(Ty::Float(8), r));
         }
+        // Unsigned arithmetic: unsigned operands, or one with a literal
+        // integer that is not negative; a negative result is an error.
+        let uns_like = |v: &V| {
+            matches!(v.ty, Ty::Uns(_))
+                || v.kind == Vk::Lit && matches!(v.ty, Ty::Packed(_, 0)) && !v.op.starts_with('-')
+        };
+        let unsigned = (matches!(va.ty, Ty::Uns(_)) || matches!(vb.ty, Ty::Uns(_))) && uns_like(va) && uns_like(vb);
+        if unsigned && matches!(op, BinOp::Add | BinOp::Sub | BinOp::Mul) {
+            let ra = self.int_reg(va)?;
+            let rb = self.int_reg(vb)?;
+            let r = self.b.reg();
+            let o = match op {
+                BinOp::Add => "add.chk",
+                BinOp::Sub => "sub.chk",
+                _ => "mul.chk",
+            };
+            self.b.ins(format!("{r} = {o} {ra}, {rb}"));
+            let c = self.b.reg();
+            self.b.ins(format!("{c} = cvt.u64.chk {r}"));
+            let wide = matches!(va.ty, Ty::Uns(20)) || matches!(vb.ty, Ty::Uns(20));
+            return Some(V::reg(Ty::Uns(if wide { 20 } else { 10 }), r));
+        }
         if va.ty.is_integer() && vb.ty.is_integer() && op != BinOp::Div {
             let ra = self.int_reg(va)?;
             let rb = self.int_reg(vb)?;
@@ -616,14 +644,7 @@ impl Gen<'_> {
             };
             self.b.ins(format!("{r} = {o} {ra}, {rb}"));
             let wide = matches!(va.ty, Ty::Int(20) | Ty::Uns(20)) || matches!(vb.ty, Ty::Int(20) | Ty::Uns(20));
-            let both_uns = matches!(va.ty, Ty::Uns(_)) && matches!(vb.ty, Ty::Uns(_));
-            let ty = match (wide, both_uns) {
-                (true, true) => Ty::Uns(20),
-                (true, false) => Ty::Int(20),
-                (false, true) => Ty::Uns(10),
-                (false, false) => Ty::Int(10),
-            };
-            return Some(V::reg(ty, r));
+            return Some(V::reg(Ty::Int(if wide { 20 } else { 10 }), r));
         }
         // Decimal arithmetic.
         let (da, sa) = Self::dec_shape(va);
@@ -655,18 +676,21 @@ impl Gen<'_> {
         };
         let floor = mode.result_scale + u8::from(mode.half_adjust);
         // Compared, only a quotient's decimals count as lost.
-        let quotient = self.quotients.contains(&va.op) || self.quotients.contains(&vb.op);
+        let quotient = self.b.quotients.contains(&va.op) || self.b.quotients.contains(&vb.op);
         let wanted = if w.compared {
             if quotient && op != BinOp::Div { natural } else { 0 }
         } else {
             floor.min(natural)
         };
         if sh.scale < wanted && (sh.digits == 63 || sh.digits == 30) {
-            self.err(ids::DECIMALS_LOST, 10, sh.scale.to_string());
+            // Reported at the right operand: its operator, or its
+            // first token.
+            let at = self.rhs_at.take().unwrap_or(self.at);
+            self.diags.push(Diag::new(ids::DECIMALS_LOST, 10, at).arg(sh.scale.to_string()));
         }
         let t = self.b.temp(&format!("packed({},{})", sh.digits, sh.scale));
         if op == BinOp::Div || quotient {
-            self.quotients.insert(t.clone());
+            self.b.quotients.insert(t.clone());
         }
         let o = match op {
             BinOp::Add => "dec.add",
