@@ -1313,6 +1313,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ifs"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "rustix",
+ "sec",
+ "store",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "ile"
 version = "0.1.0"
 dependencies = [

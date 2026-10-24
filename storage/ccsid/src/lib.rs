@@ -4,12 +4,15 @@
 
 //! CP037 (EBCDIC, US and Canada) to and from UTF-8, and EBCDIC
 //! collation. The table comes from `cp037.csv` in this crate, written
-//! from the published code page layout.
+//! from the published code page layout. [`conv`] converts between the
+//! other CCSIDs the IFS supports, from the tables in `cp/`.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]
 
+pub mod conv;
 mod cp037;
+mod tables;
 
 use std::cmp::Ordering;
 

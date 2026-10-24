@@ -1,0 +1,277 @@
+CPE3001|A domain error in a math function occurred.
+CPE3002|A range error occurred.
+CPE3003|Data was truncated on an input, output or update operation.
+CPE3004|File is not open.
+CPE3005|File is not opened for read operations.
+CPE3006|Input/output error.
+CPE3007|No such device.
+CPE3008|Cannot get single character for files opened for record I/O.
+CPE3009|File is not opened for write operations.
+CPE3010|The stdin stream cannot be opened.
+CPE3011|The stream stdout could not be opened.
+CPE3012|The stderr stream cannot be opened.
+CPE3013|The positioning parameter in fseek is not correct.
+CPE3014|The object name specified is not correct.
+CPE3015|The type variable specified on the open function is not correct.
+CPE3017|The position specifier is not correct.
+CPE3018|There is no record at specified position.
+CPE3019|Attempted to use ftell on multiple members.
+CPE3020|The current record position is too long for ftell.
+CPE3021|The value specified for the argument is not correct.
+CPE3022|Function parameter in the signal function is not set.
+CPE3025|No such path or directory.
+CPE3026|Record is not found.
+CPE3027|Operation not permitted.
+CPE3028|Message data is not valid.
+CPE3029|Resource busy.
+CPE3040|Option specified is not valid.
+CPE3041|File is not opened for update operations.
+CPE3042|File is not opened for delete operations.
+CPE3043|Number of characters written is shorter than expected record length.
+CPE3044|An invalid length was specified for the key.
+CPE3080|A read operation should not immediately follow a write operation.
+CPE3081|A write operation should not immediately follow a read operation.
+CPE3101|A non-recoverable I/O error occurred.
+CPE3102|A recoverable I/O error occurred.
+CPE3401|Permission denied.
+CPE3403|Not a directory.
+CPE3404|No space available.
+CPE3405|Improper link.
+CPE3406|Operation would have caused the process to be suspended.
+CPE3407|Interrupted function call.
+CPE3408|The address used for an argument was not correct.
+CPE3409|Operation timed out.
+CPE3415|No such device or address
+CPE3417|Socket closed.
+CPE3418|Possible APAR condition or hardware failure.
+CPE3419|Recursive attempt rejected.
+CPE3420|Address already in use.
+CPE3421|Address not available.
+CPE3422|The type of socket is not supported in this protocol family.
+CPE3423|Operation already in progress.
+CPE3424|Connection ended abnormally.
+CPE3425|A remote host refused an attempted connect operation.
+CPE3426|A connection with a remote socket was reset by that socket.
+CPE3427|Operation requires destination address.
+CPE3428|A remote host is not available.
+CPE3429|A route to the remote host is not available.
+CPE3430|Operation in progress.
+CPE3431|A connection has already been established.
+CPE3432|Message size out of range.
+CPE3433|The network is not currently available.
+CPE3434|A socket is connected to a host that is no longer available.
+CPE3435|Cannot reach the destination network.
+CPE3436|There is not enough buffer space for the requested operation.
+CPE3437|The protocol does not support the specified option.
+CPE3438|Requested operation requires a connection.
+CPE3439|The specified descriptor does not reference a socket.
+CPE3440|Operation not supported.
+CPE3441|The socket protocol family is not supported.
+CPE3442|No protocol of the specified type and domain exists.
+CPE3443|The socket type or protocols are not compatible.
+CPE3444|An error indication was sent by the peer program.
+CPE3445|Cannot send data after a shutdown.
+CPE3446|The specified socket type is not supported.
+CPE3447|A remote host did not respond within the timeout period.
+CPE3448|The protocol required to support the specified address family is not available at this time.
+CPE3450|Descriptor not valid.
+CPE3452|Too many open files for this process.
+CPE3453|Too many open files in the system.
+CPE3455|Broken pipe.
+CPE3456|Operation canceled.
+CPE3457|File exists.
+CPE3459|Resource deadlock avoided.
+CPE3460|Storage allocation request failed.
+CPE3462|The synchronization object no longer exists because the owner is no longer running.
+CPE3463|The synchronization object was destroyed, or the object no longer exists.
+CPE3464|Operation terminated.
+CPE3465|No such file or directory.
+CPE3466|Object is already linked to a dead directory.
+CPE3467|Directory empty.
+CPE3468|Maximum link count for a file was exceeded.
+CPE3469|Seek request not supported for object.
+CPE3470|Function not implemented.
+CPE3471|Specified target is a directory.
+CPE3472|Read-only file system.
+CPE3474|Unknown system state.
+CPE3475|Iterator is invalid.
+CPE3476|Iterator is in wrong state for operation.
+CPE3477|Invalid HRI class.
+CPE3478|Invalid HRI subclass.
+CPE3479|Invalid HRI type.
+CPE3480|Data requested is not applicable.
+CPE3481|Invalid HRI request type.
+CPE3482|Invalid HRI resource name.
+CPE3484|A damaged object was encountered.
+CPE3485|A loop exists in the symbolic links.
+CPE3486|A path name is too long.
+CPE3487|No locks available
+CPE3488|Directory not empty.
+CPE3489|System resources not available to complete request.
+CPE3490|Conversion error.
+CPE3491|Argument list too long.
+CPE3492|Conversion stopped due to input character that does not belong to the input codeset.
+CPE3493|Object type mismatch.
+CPE3494|You attempted to reference a directory that is not found or is destroyed.
+CPE3495|You attempted to reference an object that is not found, is destroyed, or is damaged.
+CPE3496|Data space index used as a directory is invalid.
+CPE3497|Object has soft damage.
+CPE3498|User not enrolled in system distribution directory.
+CPE3499|Object is suspended.
+CPE3500|Object is a read only object.
+CPE3501|Hard damage on extended attribute dataspace index.
+CPE3502|Soft damage on extended attribute dataspace index.
+CPE3503|Hard damage on extended attribute dataspace.
+CPE3504|Soft damage on extended attribute dataspace.
+CPE3505|Duplicate extended attribute record.
+CPE3506|Area being read from or written to is locked.
+CPE3507|Object too large.
+CPE3509|The semaphore, shared memory, or message queue identifier is removed from the system.
+CPE3510|The queue does not contain a message of the desired type and (msgflg logically ANDed with IPC_NOWAIT)
+CPE3511|File ID conversion of a directory failed.
+CPE3512|A File ID could not be assigned when linking an object to a directory.
+CPE3513|File handle rejected by server.
+CPE3515|No such process.
+CPE3516|Process not enabled for signals.
+CPE3517|No child process.
+CPE3520|Invalid handle.
+CPE3523|The operation would have exceeded the maximum number of references allowed for a descriptor.
+CPE3524|Function not allowed.
+CPE3525|Object is too large to process.
+CPE3526|Journal damaged.
+CPE3527|Journal inactive.
+CPE3528|Journal space or system storage error.
+CPE3529|Journal is remote.
+CPE353A|Unknown server error
+CPE353B|No address associated with name or no data of requested type
+CPE353C|Unknown resolver error
+CPE3530|New journal receiver is needed.
+CPE3531|New journal is needed.
+CPE3532|Object already journaled.
+CPE3533|Entry too large to send.
+CPE3534|Object is a Datalink object.
+CPE3535|Independent Auxiliary Storage Pool (IASP) is not available
+CPE3536|Inappropriate I/O control operation
+CPE3537|Resolver Error 0 (no error)
+CPE3538|Unknown host
+CPE3539|Host name lookup failure
+CPE3540|An attempt  to write or truncate a file past its soft file size limit was encountered.
+CPE3543|Text file busy.
+CPE3544|ASP Group not set for thread.
+CPE3545|The system call can be restarted.
+CPE3546|Object marked as a scan failure
+CPE3572|The network redundancy group is not active.
+CPFA0AA|Error occurred while attempting to obtain space.
+CPFA0AB|Operation failed for object.  Object is &1.
+CPFA0AC|Directory contains objects. Directory is &1.
+CPFA0AD|Function not supported by file system.
+CPFA0AE|An error occurred while trying to resolve object name.
+CPFA0AF|Problem occurred while setting attributes from parameters.
+CPFA0A0|Object already exists.  Object is &1.
+CPFA0A1|An input or output error occurred.
+CPFA0A2|Information passed to this operation was not valid.
+CPFA0A3|Path name resolution causes looping.
+CPFA0A4|Too many open files for process.
+CPFA0A5|Too many open files.
+CPFA0A6|Number of links exceeds maximum allowed for the file system.
+CPFA0A7|Path name too long.
+CPFA0A8|Operation not allowed in a job running multiple threads.
+CPFA0A9|Object not found.  Object is &1.
+CPFA0BA|OBJAUT must be *NONE if DTAAUT is authorization list or *EXCLUDE.
+CPFA0BB|&1 objects copied.  &2 objects failed.
+CPFA0BC|Value of *NONE cannot be specified for both DTAAUT and OBJAUT parameters.
+CPFA0BD|&1 links removed.  &2 links failed.
+CPFA0BE|&3 objects checked in.  &4 objects failed.
+CPFA0BF|&3 objects checked out.  &4 objects failed.
+CPFA0B0|Request not allowed to operate from one file system to another.
+CPFA0B1|Requested operation not allowed.  Access problem.
+CPFA0B2|No objects satisfy request.
+CPFA0B3|TODIR and TOOBJ parameters were specified.  Only one is allowed.
+CPFA0B4|NEWOBJ parameter cannot start with a slash.
+CPFA0B5|The NEWOBJ parameter cannot contain path.
+CPFA0B6|TOOBJ parameter is not allowed with a pattern in OBJ for CPY.
+CPFA0B7|&3 object links removed.  &4 object links not removed.
+CPFA0B8|&3 objects moved.  &4 objects failed.
+CPFA0B9|Cannot use *INDIR with other values for DTAAUT or OBJAUT.
+CPFA0CA|Value &1 for link type parameter is not valid.
+CPFA0CB|Value &1 for new audit parameter is not valid.
+CPFA0CC|Value &1 for copy operation parameter is not valid
+CPFA0CD|Value &1 for target file owner parameter is not valid.
+CPFA0CE|Error occurred with path name parameter specified.
+CPFA0CF|Error occurred determining the current directory.
+CPFA0C0|Buffer overflow occurred.
+CPFA0C1|CCSID &1 not valid.
+CPFA0C2|Value &1 for follow symbolic links parameter is not valid.
+CPFA0C3|Must specify *SAME as only object authority value.
+CPFA0C4|Object not a file.  Object is &1.
+CPFA0C5|Cannot change directory views parameter.
+CPFA0C6|&1 file system failed to mount.
+CPFA0C7|&1 directory failed to create.
+CPFA0C8|Value &1 for check indicator parameter is not valid.
+CPFA0C9|Value &1 for remove indicator parameter is not valid.
+CPFA0DA|Object is a directory.  Object is &1.
+CPFA0DB|Object not a QSYS.LIB object.  Object is &1.
+CPFA0DC|Object not a QDLS object.  Object is &1.
+CPFA0DD|Function was interrupted.
+CPFA0DE|Object type not valid for request.  Object is &1.
+CPFA0DF|Error reclaiming objects in directories.
+CPFA0D0|CCSID conversion error occurred.
+CPFA0D1|Code page cannot be converted to a CCSID.
+CPFA0D2|TODIR not allowed with TOOBJ.
+CPFA0D3|cmask parameter is not valid.
+CPFA0D4|File system error occurred.  Error number &1.
+CPFA0D5|File system may be unusable.
+CPFA0D6|RCLSTG deleted object &2.
+CPFA0D7|&1 &2 linked in &3 directory as &4.
+CPFA0D8|Object ownership transferred for &1 in &2.
+CPFA0D9|Character string not converted.
+CPFA0EA|Scan key &1 does not exist.
+CPFA0EB|Invalid scan key signature &2 specified.
+CPFA0EC|Object not created, reason code &2.  Object is &1.
+CPFA0ED|&1 option not supported.
+CPFA0EE|Attributes displayed for &1 objects.  &2 objects not displayed.
+CPFA0E0|File ID conversion of a directory failed.
+CPFA0E1|The file ID table is damaged.
+CPFA0E2|System unable to establish a communications connection to a file server.
+CPFA0E3|The requested operation could not be completed.
+CPFA0E4|The communications connection with the file server was abnormally ended.
+CPFA0E5|The communications connection with the file server was abnormally ended.
+CPFA0E6|Object handle rejected by file server.
+CPFA0E7|System cannot establish a communications connection with a file server.
+CPFA0E8|Object has failed a scan.  Object is &1.
+CPFA0E9|Operation failed to access the system scan information.  Reason code &1.
+CPFA0F0|Directory failed to create.  Object is &1.
+CPFA0F1|&1 of &2 object links reclaimed with &3 of &4 problems corrected.
+CPFA0F2|Kernel environment not initialized.
+CPFA030|Object already in use.
+CPFA08A|TABEXPN(*YES) not valid with ENDLINFMT(*FIXED).
+CPFA08B|Path name cannot begin with *.
+CPFA08C|Pattern not allowed in path name directory.
+CPFA08D|Request information value is not valid.
+CPFA08E|More than one name matches pattern.
+CPFA08F|User profile storage limit exceeded.
+CPFA080|Error handling ended before completion.
+CPFA081|Unable to set return value or error code.
+CPFA082|*ADD authority required to owner's user profile.
+CPFA083|Insufficient authority to replace object.  Object is &1.
+CPFA084|The system detected an error that was not handled.
+CPFA085|Home directory not found for user &1.
+CPFA086|Matching quote not found in path name.
+CPFA087|Path name contains null character.
+CPFA088|Path name pattern not valid.
+CPFA089|Pattern not allowed in path name.
+CPFA09A|Errors occurred during directory conversion.
+CPFA09B|File system error occurred.  Interface &1.
+CPFA09C|Not authorized to object.  Object is &1.
+CPFA09D|Error occurred in program &1.
+CPFA09E|Object in use.  Object is &1.
+CPFA09F|Object damaged.  Object is &1.
+CPFA091|Pattern not allowed in user name.
+CPFA092|Path name not converted.
+CPFA093|Name matching pattern not found.
+CPFA094|Path name not specified.
+CPFA095|Stream file not copied.
+CPFA096|Stream file copied to object with truncated records.
+CPFA097|Object not copied.  Object is &1.
+CPFA098|The CCSID of the target file could not be set to match the CCSID of the source file.
+CPFA099|The requested convert directory option cannot be performed.

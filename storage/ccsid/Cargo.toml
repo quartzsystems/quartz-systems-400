@@ -1,6 +1,6 @@
 [package]
 name = "ccsid"
-description = "QS/400 character conversion: CP037 EBCDIC and UTF-8"
+description = "QS/400 character conversion: CP037 EBCDIC, the CCSID tables and Unicode"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

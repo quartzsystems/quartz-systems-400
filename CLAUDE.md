@@ -113,7 +113,8 @@ storage/      the object store and the names and code pages it holds
   store/        object store: src/page/, src/btree/, src/asp/ (units, superblock),
                 src/alloc/ (bitmaps, free tree), src/wal/, txn.rs, store.rs, cache.rs, src/obj/
   qsname/       object, library and member name rules; 10-byte CP037 Name
-  ccsid/        CP037 <-> UTF-8 from cp037.csv (build.rs), EBCDIC collation
+  ccsid/        CP037 <-> UTF-8 from cp037.csv (build.rs), EBCDIC collation; src/conv.rs the
+                CCSID conversions (tables from cp/*.csv, UTF-8, UTF-16, 65535)
 database/     DDS, decimal, files, journals, SQL
   db/           database: src/file/ *FILE attributes, member and dependents tables, LF
                 creation; src/format/ sections and level IDs; src/record/ field values;
@@ -240,12 +241,19 @@ ui/           the display interface
                 (command menus from the inventories), sys/ task menus, pnlgrp/ generated
 devtools/     developer tools, pure logic (drivers in work/qsjob/src/devtools/): seu/, pdm/,
               sda/, dfu/ (DFU and RLU), dbg/ (STRDBG screens), isql/ (STRSQL), sst/
+ifs/          the integrated file system
+  ifs/          src/errno/ IBM errno values and messages, src/path/ paths and folding,
+                src/backend/ (MemBackend, LinuxBackend), src/meta/ the one metadata record
+                (codec, RCLLNK), src/auth/ IFS authority and requirements, src/vfs/ mounts,
+                devices, /QSYS.LIB, /QOPT; src/resolve/ the resolver and casefold index,
+                src/lock/ share modes and byte ranges, src/text/, src/ops/ Ifs and every
+                operation, src/save/; tests/linux-xfs.sh runs the LinuxBackend tests as root
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
               DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md,
               STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, SECURITY.md,
               SEC_OPEN_QUESTIONS.md, PHASE6.md, SYSAPI.md, PHASE7.md, CL.md, CMD.md,
               CMD_OPEN_QUESTIONS.md, PHASE8.md, TN5250.md, DSPF.md, UIM.md, MENUS.md,
-              TOOLS.md, UI_OPEN_QUESTIONS.md, images/
+              TOOLS.md, UI_OPEN_QUESTIONS.md, IFS.md, NET_OPEN_QUESTIONS.md, images/
 ```
 
 ## Commands
@@ -288,6 +296,8 @@ cargo run -p tn5250-driver -- run --target pub400 [--golden DIR --update] SCRIPT
 cargo run -p menus --bin genmenus         # regenerate the command menus in ui/menus/pnlgrp/
 cargo test -p uim -p dspf -p menus        # panel, display-file and menu goldens
 cargo test -p seu -p pdm -p sda -p dfu -p dbg -p isql -p sst   # the developer tools' screens
+cargo test -p ifs                         # the IFS over MemBackend
+wsl -d Ubuntu -u root -- bash ifs/ifs/tests/linux-xfs.sh   # LinuxBackend over an xfs loop image
 ```
 
 Lint the Linux-only crates for the musl target too: their real code is

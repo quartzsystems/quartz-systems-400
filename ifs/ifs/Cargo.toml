@@ -1,0 +1,20 @@
+[package]
+name = "ifs"
+description = "QS/400 integrated file system: namespace, metadata, authority, locks, operations"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+sec = { path = "../../security/sec", version = "0.1.0" }
+store = { path = "../../storage/store", version = "0.1.0" }
+thiserror.workspace = true
+tracing.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+rustix = { version = "1.1.5", features = ["fs"] }
+
+[lints]
+workspace = true
