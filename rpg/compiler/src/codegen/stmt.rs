@@ -1591,6 +1591,7 @@ pub fn subroutine_proc(g: &mut Gen<'_>, name: &str, body: &[&Stmt]) {
         .copied()
         .filter(|s| s.op.code != "BEGSR" && s.op.code != "ENDSR")
         .collect();
+    g.debug_vars(0);
     if let Some(b) = body.first() {
         g.mark(b.at);
     }
@@ -1804,6 +1805,7 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
             init_symbol(g, i);
         }
     }
+    g.debug_vars(scope);
     let stmts: Vec<&Stmt> = p.calcs.iter().collect();
     if let Some(k) = stmts.iter().position(|s| s.op.code == "ON-EXIT") {
         on_exit_body(g, &stmts[..k], stmts[k], &stmts[k + 1..]);

@@ -80,7 +80,8 @@ impl LoadedProgram {
         for (mi, m) in self.modules.iter().enumerate() {
             let base = m.base() as u64;
             if code >= base && code < base + m.len() as u64 {
-                let pc = &self.object.modules[mi].module.code;
+                // The map of the variant loaded: the debug one is larger.
+                let pc = variant(&self.object.modules[mi], self.debug);
                 let off = u32::try_from(code - base).ok()?;
                 let p = pc.proc_at(off)?;
                 return Some((u32::try_from(mi).ok()?, p.index));

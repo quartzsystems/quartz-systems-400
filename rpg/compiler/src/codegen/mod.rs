@@ -15,6 +15,7 @@ pub mod arrays;
 pub mod bif;
 pub mod calls;
 pub mod cycle;
+pub mod debug;
 pub mod dbio;
 pub mod dates;
 pub mod emit;
@@ -537,6 +538,7 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     for (name, body) in &subrs {
         stmt::subroutine_proc(g, name, body);
     }
+    g.debug_vars(0);
     let start = g.b.label();
     let init = g.b.label();
     g.b.ins("%first = load $init_done");

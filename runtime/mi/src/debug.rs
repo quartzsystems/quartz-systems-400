@@ -212,6 +212,33 @@ impl Job {
         let t = TypeDesc::from_word(v.desc.cast_signed())
             .decode()
             .ok_or_else(|| format!("{name}: its type cannot be shown"))?;
+        // A structure or array the compiler also named by part (`DS.SUB`,
+        // `ARR(1)`) shows as its parts, one per line.
+        if mode.is_empty() && t.class() == TypeClass::Aggregate {
+            let up = name.to_ascii_uppercase();
+            let parts: Vec<&DbgVar> = f
+                .debug_vars
+                .iter()
+                .filter(|p| {
+                    let n = p.name.to_ascii_uppercase();
+                    n.strip_prefix(&up).is_some_and(|rest| {
+                        rest.strip_prefix('.').is_some_and(|r| !r.contains('.') && !r.contains('('))
+                            || rest.starts_with('(') && rest.ends_with(')') && !rest.contains('.')
+                    })
+                })
+                .collect();
+            if !parts.is_empty() {
+                let mut lines = Vec::new();
+                for p in parts {
+                    if let Some(pt) = TypeDesc::from_word(p.desc.cast_signed()).decode() {
+                        let len = usize::try_from(pt.size()).unwrap_or(0);
+                        let bytes = crate::storage::view(p.addr, len);
+                        lines.push(format!("{} = {}", p.name, format_value(p, &pt, bytes)));
+                    }
+                }
+                return Ok(lines.join("\n"));
+            }
+        }
         let len = usize::try_from(t.size()).unwrap_or(0);
         let bytes = crate::storage::view(v.addr, len);
         Ok(match mode.as_str() {

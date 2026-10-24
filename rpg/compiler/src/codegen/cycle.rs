@@ -135,6 +135,7 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.subrs.clear();
     g.tags.clear();
     g.open.clear();
+    g.debug_vars(0);
     let files = cycle_files(g);
     let lvl_slots: Vec<(File, Vec<Slot>)> = files.iter().map(|f| (f.clone(), slots(g, f, false))).collect();
     let mt_slots: Vec<(File, Vec<Slot>)> = files.iter().map(|f| (f.clone(), slots(g, f, true))).collect();
