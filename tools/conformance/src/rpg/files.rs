@@ -53,6 +53,8 @@ pub struct KitDb {
     pub displays: Vec<(String, Rc<dspf::DisplayFile>)>,
     /// The printer files, by name.
     pub printers: Vec<(String, Rc<dds::prtf::PrtfDefinition>)>,
+    /// The record locks the job's files and its SQL share.
+    pub locks: db::odp::SharedLocks,
 }
 
 impl KitDb {
@@ -137,7 +139,57 @@ impl KitDb {
             lib,
             displays,
             printers,
+            locks: db::odp::new_shared(),
         })
+    }
+
+    /// A member's `post:` commands that change the store: `CRTJRNRCV`,
+    /// `CRTJRN` and `STRJRNPF` (both images); the rest (`CHGPF
+    /// WAITRCD`, `STRCMTCTL`) have nothing to do here.
+    pub fn post(&self, cmds: &[String]) -> Result<(), String> {
+        use jrn::journal::{CrtJrnOpts, crtjrn};
+        use jrn::rcv::{CrtJrnRcvOpts, crtjrnrcv};
+        let obj = |q: &str| q.rsplit('/').next().unwrap_or(q).to_string();
+        let mut store = self.store.borrow_mut();
+        for cmd in cmds {
+            let up = cmd.trim().to_ascii_uppercase();
+            let verb = up.split_whitespace().next().unwrap_or("");
+            let mut t = store.begin().map_err(s)?;
+            let found = |t: &mut store::txn::Txn<'_>, n: &str, ty| {
+                let ctx = NameContext {
+                    curlib: Some(self.lib),
+                    libl: vec![self.lib],
+                };
+                ops::resolve(t, self.qsys, &ctx, LibSpec::Libl, Name::parse(n).map_err(|_| format!("{n}: not a name"))?, ty)
+                    .map(|f| f.id)
+                    .map_err(s)
+            };
+            match verb {
+                "CRTJRNRCV" => {
+                    let o = CrtJrnRcvOpts {
+                        now: CLOCK,
+                        ..CrtJrnRcvOpts::default()
+                    };
+                    crtjrnrcv(&mut t, self.lib, name(&obj(&super::build::kwd(cmd, "JRNRCV")))?, &o).map_err(s)?;
+                }
+                "CRTJRN" => {
+                    let rcv = found(&mut t, &obj(&super::build::kwd(cmd, "JRNRCV")), jrn::JRNRCV)?;
+                    let o = CrtJrnOpts {
+                        now: CLOCK,
+                        ..CrtJrnOpts::default()
+                    };
+                    crtjrn(&mut t, self.lib, name(&obj(&super::build::kwd(cmd, "JRN")))?, rcv, &o).map_err(s)?;
+                }
+                "STRJRNPF" => {
+                    let file = found(&mut t, &obj(&super::build::kwd(cmd, "FILE")), types::FILE)?;
+                    let j = found(&mut t, &obj(&super::build::kwd(cmd, "JRN")), jrn::JRN)?;
+                    db::journal::strjrnpf(&mut t, JobHandle(1), file, j, true, true, CLOCK).map_err(s)?;
+                }
+                _ => {}
+            }
+            t.commit().map_err(s)?;
+        }
+        Ok(())
     }
 
     /// The files of `QGPL`, by name.
@@ -152,23 +204,29 @@ impl KitDb {
     /// The job's database: a `StoreIo` over this store.
     pub fn io(&self) -> Result<StoreIo, String> {
         let resolve = db::odp::session::resolve_in(name(LIB)?, self.files()?);
-        Ok(StoreIo::new(Box::new(Rc::clone(&self.store)), JobHandle(1), Box::new(resolve)))
+        Ok(StoreIo::with_locks(
+            Box::new(Rc::clone(&self.store)),
+            JobHandle(1),
+            Box::new(resolve),
+            Arc::clone(&self.locks),
+        ))
     }
 
-    /// The job's embedded SQL over the same store.
+    /// The job's embedded SQL over the same store, sharing the record
+    /// locks.
     #[must_use]
     pub fn sql(&self) -> sql::embed::Session {
-        let mut s = sql::embed::Session::new(
-            Box::new(Rc::clone(&self.store)),
+        let mut ctx = SqlContext::with_locks(
             self.qsys,
             JobHandle(1),
             NameContext {
                 curlib: Some(self.lib),
                 libl: vec![self.lib],
             },
+            Arc::clone(&self.locks),
         );
-        s.ctx.now = Some(CLOCK);
-        s
+        ctx.now = Some(CLOCK);
+        sql::embed::Session::with_ctx(Box::new(Rc::clone(&self.store)), ctx)
     }
 
     /// The external descriptions the compiler reads.

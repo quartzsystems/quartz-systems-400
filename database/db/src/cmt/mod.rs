@@ -22,7 +22,7 @@ use crate::file::{FileDesc, MemberEntry};
 use crate::journal::undo::{ChangeReport, MemberMap, undo};
 use crate::journal::{JrnCtx, cycle_entry};
 use crate::member::Member;
-use crate::odp::SharedLocks;
+use crate::odp::{Holder, SharedLocks};
 
 /// `LCKLVL`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -85,10 +85,12 @@ pub struct CommitDef {
     journals: Vec<ObjectId>,
     /// Members changed in the cycle, for the rollback.
     touched: HashMap<(Name, Name, Name), (FileDesc, MemberEntry)>,
-    /// Record locks held until the cycle ends.
-    held: Vec<(ObjectId, u64)>,
+    /// Record locks held until the cycle ends, with their holders.
+    held: Vec<(ObjectId, u64, Holder)>,
     /// Changes made in the cycle.
     changes: u64,
+    /// The definition's owner number in the record lock table.
+    owner: u64,
 }
 
 impl std::fmt::Debug for CommitDef {
@@ -122,7 +124,15 @@ impl CommitDef {
             touched: HashMap::new(),
             held: Vec::new(),
             changes: 0,
+            owner: crate::odp::locks::next_owner(),
         }
+    }
+
+    /// The definition's owner number in the record lock table: its
+    /// paths hold their records together.
+    #[must_use]
+    pub fn owner(&self) -> u64 {
+        self.owner
     }
 
     /// `STRCMTCTL` as a shared handle, with `C SC` in the default journal.
@@ -159,10 +169,16 @@ impl CommitDef {
         self.changes
     }
 
-    /// Record locks held for the cycle.
+    /// Record locks held for the cycle, with their holders.
     #[must_use]
-    pub fn held(&self) -> &[(ObjectId, u64)] {
+    pub fn held(&self) -> &[(ObjectId, u64, Holder)] {
         &self.held
+    }
+
+    /// Whether the cycle holds a record.
+    #[must_use]
+    pub fn holds(&self, member: ObjectId, rrn: u64) -> bool {
+        self.held.iter().any(|(m, r, _)| *m == member && *r == rrn)
     }
 
     fn ctx(&self, now: Option<u64>) -> JrnCtx {
@@ -209,17 +225,17 @@ impl CommitDef {
         Ok(self.cycle)
     }
 
-    /// Keep a record lock until the cycle ends.
-    pub fn hold(&mut self, member: ObjectId, rrn: u64) {
-        if !self.held.contains(&(member, rrn)) {
-            self.held.push((member, rrn));
+    /// Keep a record lock `who` holds until the cycle ends.
+    pub fn hold(&mut self, member: ObjectId, rrn: u64, who: Holder) {
+        if !self.holds(member, rrn) {
+            self.held.push((member, rrn, who));
         }
     }
 
     fn release_locks(&mut self) {
         let mut table = self.locks.lock().expect("lock table");
-        for (member, rrn) in self.held.drain(..) {
-            table.unlock(member, rrn, self.job);
+        for (member, rrn, who) in self.held.drain(..) {
+            table.unlock(member, rrn, who);
         }
     }
 

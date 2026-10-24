@@ -148,6 +148,8 @@ pub struct File {
     pub desc: String,
     /// `EXTMBR`.
     pub member: String,
+    /// `COMMIT`, with its flag's name (empty for none).
+    pub commit: Option<String>,
     /// The device.
     pub dev: Dev,
     /// Input.
@@ -464,6 +466,7 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
         }
     }
     out.noblock = kw(f, "BLOCK").and_then(|k| word_arg(k, 0)).as_deref() == Some("*NO");
+    out.commit = kw(f, "COMMIT").map(|k| word_arg(k, 0).unwrap_or_default().to_ascii_uppercase());
     for k in f.kws.iter().filter(|k| k.name == "SFILE") {
         if let (Some(a), Some(b)) = (word_arg(k, 0), word_arg(k, 1)) {
             out.sfiles.push((a, b));
@@ -471,7 +474,11 @@ pub fn file(f: &FileDecl, scope: usize, ext: &mut dyn ExtFiles, diags: &mut Vec<
     }
     out.obj = match kw(f, "EXTFILE") {
         Some(k) => {
-            let s = str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_default().to_ascii_uppercase();
+            let mut s = str_arg(k, 0).or_else(|| word_arg(k, 0)).unwrap_or_default().to_ascii_uppercase();
+            // EXTFILE(*EXTDESC): the file EXTDESC names.
+            if s == "*EXTDESC" {
+                s = kw(f, "EXTDESC").and_then(|k| str_arg(k, 0)).unwrap_or_else(|| out.name.clone()).to_ascii_uppercase();
+            }
             match s.split_once('/') {
                 Some((l, n)) => (l.to_string(), n.to_string()),
                 None => ("*LIBL".into(), s),

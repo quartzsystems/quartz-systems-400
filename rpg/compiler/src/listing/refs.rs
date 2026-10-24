@@ -637,6 +637,57 @@ pub(crate) fn collect(c: &Compiled) -> Refs {
     w.out
 }
 
+/// Indicators `*IN01`-`*IN99` the program uses and nothing sets: not
+/// defined (`RNF7030` at the first use, `RNF7503` for each free-form
+/// statement using one), as IBM's compiler finds. A resulting
+/// indicator, an input specification, an assignment, `OFLIND`, any use
+/// of the `*IN` array itself and the indicators of an externally
+/// described file's formats set one; a call's argument or a
+/// conditioning indicator does not.
+pub(crate) fn unset_indicators(c: &Compiled) -> Vec<rpgfront::Diag> {
+    use crate::diag::ids;
+    use rpgfront::Diag;
+    let refs = collect(c);
+    // A file with an indicator area (INDARA) sets any of them.
+    if refs.inds.contains_key("*IN") || c.files.iter().any(|f| f.ext.as_ref().is_some_and(|e| e.indara)) {
+        return Vec::new();
+    }
+    let mut by_files = std::collections::BTreeSet::new();
+    for f in &c.files {
+        for r in f.ext.iter().flat_map(|e| e.formats.iter()).filter_map(|r| r.dsp.as_ref()) {
+            by_files.extend(r.option_inds.iter().chain(&r.response_inds).copied());
+        }
+    }
+    let calcs: Vec<&Stmt> = c.module.calcs.iter().chain(c.module.procs.iter().flat_map(|p| p.calcs.iter())).collect();
+    let mut out = Vec::new();
+    for (ind, at) in &refs.inds {
+        let Ok(n) = ind.parse::<u8>() else { continue };
+        if !(1..=99).contains(&n) || by_files.contains(&n) || at.iter().any(|(_, f)| *f != ' ') {
+            continue;
+        }
+        let word = format!("*IN{ind}");
+        let col = |line: u32| {
+            c.read
+                .lines
+                .iter()
+                .find(|l| l.no == line)
+                .and_then(|l| l.text.to_ascii_uppercase().find(&word))
+                .map_or(7, |i| u16::try_from(i + 1).unwrap_or(7))
+        };
+        let mut lines: Vec<u32> = at.iter().map(|(l, _)| *l & !(LATE | GEN)).collect();
+        lines.sort_unstable();
+        lines.dedup();
+        let first = lines[0];
+        out.push(Diag::new(ids::NOT_DEFINED, 30, rpgfront::ast::Pos { line: first, col: col(first) }).arg(word.clone()));
+        for l in lines {
+            if calcs.iter().any(|s| s.at.line == l && !s.fixed && s.cond.is_empty()) {
+                out.push(Diag::new(ids::UNDEFINED_OPERAND, 30, rpgfront::ast::Pos { line: l, col: col(l) }));
+            }
+        }
+    }
+    out
+}
+
 /// Whether a symbol is defined where the table says (a prototype only
 /// when a `DCL-PR` declares it).
 pub(crate) fn has_definition(c: &Compiled, id: SymId) -> bool {

@@ -447,9 +447,16 @@ impl Session {
                 return Err(e);
             }
         };
+        for s in &c.post {
+            let cl = c.fill(s, &lib);
+            let (ok, _, reply) = self.rcmd_text(&cl)?;
+            if !ok {
+                eprintln!("{}: post failed: {cl}: {}", c.name, reply.trim());
+            }
+        }
         // The setup's and the files' compile listings are no part of
         // the outcome (they name the library and the user).
-        if !c.db.is_empty() || !c.setup.is_empty() {
+        if !c.db.is_empty() || !c.setup.is_empty() || !c.post.is_empty() {
             for e in self.spools()? {
                 let _ = self.take_spool(&e);
             }

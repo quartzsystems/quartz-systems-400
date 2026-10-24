@@ -73,6 +73,7 @@ impl Wire for OpenSpec {
         self.lvlchk.put(out);
         self.member.put(out);
         self.actgrp.put(out);
+        self.commit.put(out);
     }
     fn get(d: &mut Dec<'_>) -> Result<Self, WireError> {
         Ok(Self {
@@ -83,6 +84,7 @@ impl Wire for OpenSpec {
             lvlchk: Wire::get(d)?,
             member: Wire::get(d)?,
             actgrp: Wire::get(d)?,
+            commit: Wire::get(d)?,
         })
     }
 }

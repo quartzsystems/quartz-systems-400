@@ -228,3 +228,39 @@ IR004 the cross-reference gives a LIKEDS parameter's subfield references to the 
 IR006 the cross-reference does not count an OVERLAY keyword as a reference of the array it names
 IR007 the rulers and cross-reference around LIKEFILE parameter files (each one's format listed apart) are not matched yet
 IR008 the external description box of a RENAMEd record format shows the RPG name for the external one
+ERR319 listing of a batch 12 indicator member: the RNF7030 placement and cross-reference of an indicator nothing sets not matched yet
+ERR330 listing of a batch 12 indicator member: the RNF7030 placement and cross-reference of an indicator nothing sets not matched yet
+ERR331 listing of a batch 12 indicator member: the RNF7030 placement and cross-reference of an indicator nothing sets not matched yet
+ERR332 listing of a batch 12 indicator member: the RNF7030 placement and cross-reference of an indicator nothing sets not matched yet
+ERR334 listing of a batch 12 indicator member: the RNF7030 placement and cross-reference of an indicator nothing sets not matched yet
+ERR335 listing of a batch 12 indicator member: the RNF7030 placement and cross-reference of an indicator nothing sets not matched yet
+ERR336 listing of a batch 12 indicator member: the RNF7030 placement and cross-reference of an indicator nothing sets not matched yet
+ERR338 listing of a batch 12 indicator member: the RNF7030 placement and cross-reference of an indicator nothing sets not matched yet
+ERR340 listing of a batch 12 indicator member: the RNF7030 placement and cross-reference of an indicator nothing sets not matched yet
+ERR341 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR342 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR344 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR346 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR347 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR348 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR349 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR350 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR351 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR352 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR353 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR354 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR355 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR356 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR357 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR358 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR359 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR360 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR361 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR362 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR363 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR367 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR368 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR369 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+ERR370 listing of a group child read as an operation (RNF3556): its marker and the lines after not matched yet
+FEX015 listing: the output buffer lines of a PREFIX file name the external field after the program's
+IO035 listing: IBM's cross-reference counts COMMIT(flag) as a definition of the flag; ours does not yet

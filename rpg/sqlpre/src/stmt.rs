@@ -177,6 +177,7 @@ impl State<'_> {
             desc: Desc {
                 op,
                 sql_naming: self.opts.sql_naming(),
+                commit: sql::embed::commit_level(&self.opts.commit),
                 ..Desc::default()
             },
             whenever: self.whenever.clone(),

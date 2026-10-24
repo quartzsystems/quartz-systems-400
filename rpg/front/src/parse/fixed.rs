@@ -209,16 +209,24 @@ fn def_spec(b: &mut Builder<'_>, lines: &[&Line], group: bool) -> bool {
     let (name, k) = long_name(lines);
     let l = lines[k];
     let df = f("D");
-    right_adjusted(b, l, df, "from");
-    right_adjusted(b, l, df, "to");
-    right_adjusted(b, l, df, "decimals");
     let c = |n: &str| df.cut(&l.text, n).trim().to_ascii_uppercase();
+    // A special word (`*STATUS`, `*ROUTINE`) may run on into the To
+    // columns.
+    let special = c("from").starts_with('*');
+    let (from, to) = if special {
+        (cut(&l.text, 26, 39).trim().to_ascii_uppercase(), String::new())
+    } else {
+        right_adjusted(b, l, df, "from");
+        right_adjusted(b, l, df, "to");
+        (c("from"), c("to"))
+    };
+    right_adjusted(b, l, df, "decimals");
     let deftype = c("deftype");
     let cols = DefCols {
         ext: c("ext"),
         dstype: c("dstype"),
-        from: c("from"),
-        to: c("to"),
+        from,
+        to,
         ty: c("type"),
         decimals: c("decimals"),
     };

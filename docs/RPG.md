@@ -156,6 +156,11 @@ statement on different lines are two messages.
 
 **Undefined names.** `RNF7030` once per name, at its first reference;
 `RNF7503` once per statement that references one, at the reference.
+An indicator `*IN01`-`*IN99` is undefined the same way when nothing
+sets it (`listing::refs::unset_indicators`, from the cross-reference's
+walk after generation): no resulting indicator, input specification,
+change (`M`), `OFLIND`, use of the `*IN` array, nor a file format's
+indicator or indicator area.
 
 **The cycle.** A cycle-main module's entry procedure runs IBM's cycle:
 initialization (the globals' initial values, the files opened, `1P`
@@ -250,9 +255,15 @@ too); a file without one, or no region at all, leaves it unhandled, so
 the function check and the inquiry end the program with `CEE9901` at
 the caller: `*PSSR` never sees a file error of a file without `INFSR`,
 and the region passes the function check `CPF9999` on unhandled. The
-handler's `ENDSR` return point decides the rest: `*GETIN` and `*DETC`
-(and the other cycle points) go back to the cycle's top, `RETURN` ends
-as `LR` says, blank or `*CANCL` hand the exception on. A file error
+handler's `ENDSR` return point decides the rest (`codegen::exc::Region`,
+shared by both main procedures): without a primary file every cycle
+point goes back to the cycle's top; with one (`codegen/cycle.rs`) the
+handler stores the point in `$cy_rp` and re-enters the region at its
+top, which goes on at `*DETL` (the detail lines), `*GETIN` (the next
+record), `*TOTC`, `*TOTL`, `*OFL` or `*DETC` (the record's fields are
+not moved again). `RETURN` ends as `LR` says, blank or `*CANCL` hand
+the exception on. An `EXSR` of a subroutine with a return point goes
+there too (a subroutine hands the point to its caller). A file error
 leaves the PSDS status as it was (the exception identifier is still
 noted at 40); `%STATUS` is the file's, and an operation on a closed
 file puts 01211 in the INFDS from the generated code (the runtime knows
@@ -393,7 +404,8 @@ digits from bit 8, decimals in the low byte.
 | `_QRNX_SQLIN`, `_QRNX_SQLOUT`, `_QRNX_SQLRUN` | embedded SQL: a statement's host variables, then the statement |
 | `_QRNX_SQLDA` | embedded SQL: the SQLDA of `USING DESCRIPTOR` (inputs or outputs) or of `DESCRIBE` / `PREPARE INTO` |
 | `_QRNX_XMLINTO`, `_QRNX_XMLSAX` | `XML-INTO` (a target's shape, or a `%HANDLER`) and `XML-SAX` (`qrpgrt::xml`) |
-| `_QRNX_COMMIT` | `COMMIT`, `ROLBK` (802 without commitment control) |
+| `_QRNX_COMMIT` | `COMMIT`, `ROLBK` of the job's files' commit definition (`IoSource::commit`; 802 without commitment control) |
+| `_QRNX_CMTOPEN` | before the open of a `COMMIT` file: the open is under commitment control (`COMMIT(flag)`: when the flag is on) |
 | `_QRNX_ALLOC`, `_QRNX_REALLOC` | `ALLOC`, `REALLOC` with RPG's statuses (425, 426) |
 | `_QRNX_SPECIAL` | a `SPECIAL` file's operations, through its `PGMNAME` program |
 | `_QRNX_DTALCK` | `OUT` of a data area this job has not locked (412) |
@@ -582,7 +594,13 @@ request of `stg`): cursors and prepared statements per scope,
 `-501`/`-502`/`-507` for cursor states, `-518` for an unprepared
 statement, `-7007` for `COMMIT`/`ROLLBACK` without commitment
 control, `01003` when a column function left out nulls, multiple-row
-`FETCH` with `SQLERRD(5)` 100 at the last row.
+`FETCH` with `SQLERRD(5)` 100 at the last row. Each descriptor carries
+the program's `COMMIT` option: under `*CHG`, `*CS` or `*ALL` (`*RR`)
+the statement runs under the activation group's commit definition
+(`*SQLn`), which the first statement starts when neither the group nor
+the job has one, so changes need a journaled table (`-7008`) and
+`COMMIT`/`ROLLBACK` end the cycle; under `*NONE` changes are not under
+commitment control even when the job has it.
 
 ## Adding a feature
 

@@ -1,0 +1,38 @@
+# EXC014 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF7086 00 line 4 seq 000400
+run: ok
+spool: QSYSPRT
+  |1/1   det 101
+  |1/2    dl    101
+  |1/3   tot 101
+  |1/4    tl    101
+  |1/5   det 102
+  |1/6    dl    102
+  |1/7   tot 102
+  |1/8    tl    102
+  |1/9   det 103
+  |1/10  pssr 102 *DETC
+  |1/11  tot 103
+  |1/12   tl    103
+  |1/13  det 104
+  |1/14   dl    104
+  |1/15  tot 104
+  |1/16   tl    104
+  |1/17  det 105
+  |1/18   dl    105
+  |1/19  tot 105
+  |1/20   tl    105
+  |1/21  det 106
+  |1/22   dl    106
+  |1/23  tot 106
+  |1/24   tl    106
+  |1/25  det 107
+  |1/26   dl    107
+  |1/27  tot 107
+  |1/28   tl    107
+  |1/29  det 108
+  |1/30   dl    108
+  |1/31  tot 108
+  |1/32   tl    108

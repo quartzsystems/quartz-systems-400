@@ -1,0 +1,12 @@
+# IO032 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 14 seq 001400
+diag: RNF3530 00 line 15 seq 001500
+run: ok
+spool: QSYSPRT
+  |1/1   rolbk update 000125050 0
+  |1/2   commit update 000000200
+  |1/3   rolbk write 0
+  |1/4   rolbk delete 1 Carol Clark
+  |1/5   empty commit 0 0

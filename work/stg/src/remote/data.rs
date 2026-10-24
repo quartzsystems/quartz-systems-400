@@ -236,4 +236,8 @@ impl IoSource for RemoteIo {
     fn close(&mut self, handle: u32) -> IoResult {
         self.link.borrow_mut().with(|l| l.close_file(handle))
     }
+
+    fn commit(&mut self, rollback: bool, actgrp: &str) -> Option<Result<(), IoFail>> {
+        self.link.borrow_mut().with(|l| l.io_commit(rollback, actgrp.to_string()))
+    }
 }

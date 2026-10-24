@@ -1,0 +1,310 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   EXC022
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   EXC022
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1  *; dds: CUSTF                                                                                            000000     000100
+      2  *; sqlfile: CUSTF                                                                                        000000     000200
+      3  * A file error in the cycle: INFSR(FERR), ENDSR *GETIN.                                                  000000     000300
+-     4 FCUSTF     IP   E           K DISK                                                                        000000     000400
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  CUSTF            {lib}/CUSTF                             *
+         * Record format(s) . . . . . :  CUSTR            CUSTR                                       *
+         *--------------------------------------------------------------------------------------------*
+      5 FQSYSPRT   O    F  132        PRINTER OFLIND(*INOF)                                                       000000     000500
+      6 FCUST2     IF   E           K DISK    USROPN EXTDESC('CUSTF')                                             000000     000600
+      7 F                                     EXTFILE(*EXTDESC) RENAME(CUSTR:C2R)                                 000000     000700
+      8 F                                     PREFIX(X_) INFDS(fb) INFSR(FERR)                                    000000     000800
+         *--------------------------------------------------------------------------------------------*
+         *                               RPG name         External name                               *
+         * File name. . . . . . . . . :  CUST2            {lib}/CUSTF                             *
+         * Record format(s) . . . . . :  C2R              CUSTR                                       *
+         *--------------------------------------------------------------------------------------------*
+-     9 Dmsg              S             40                                                                        000000     000900
+     10 Dz                S              3P 0 INZ(0)                                                              000000     001000
+     11 Dr                S              5P 0                                                                     000000     001100
+     12 Dhit              S              3P 0 INZ(0)                                                              000000     001200
+     13 Dpsds            SDS                                                                                      000000     001300
+     14 D pstat             *STATUS                                                                               000000     001400
+     15 D prtn              *ROUTINE                                                                              000000     001500
+     16 Dfb               DS                                                                                      000000     001600
+     17 D fbst              *STATUS                                                                               000000     001700
+     18 D fbop              *OPCODE                                                                               000000     001800
+-    19=ICUSTR                                                                                                              1000001
+         *--------------------------------------------------------------------------------------------*                     1
+         * RPG record format  . . . . :  CUSTR                                                        *                     1
+         * External format  . . . . . :  CUSTR : {lib}/CUSTF                                      *                     1
+         *--------------------------------------------------------------------------------------------*                     1
+     20=I                             P    1    3 0CUSNO                                                                    1000002
+     21=I                             A    4   23  NAME                                                                     1000003
+     22=I                             A   24   35  CITY                                                                     1000004
+     23=I                             P   36   40 2BAL                                                                      1000005
+     24=IC2R                                                                                                                2000001
+         *--------------------------------------------------------------------------------------------*                     2
+         * RPG record format  . . . . :  C2R                                                          *                     2
+         * Prefix . . . . . . . . . . :  X_ : 0                                                       *                     2
+         * External format  . . . . . :  CUSTR : {lib}/CUSTF                                      *                     2
+         *--------------------------------------------------------------------------------------------*                     2
+     25=I                             P    1    3 0X_CUSNO                                                                  2000002
+     26=I                             A    4   23  X_NAME                                                                   2000003
+     27=I                             A   24   35  X_CITY                                                                   2000004
+     28=I                             P   36   40 2X_BAL                                                                    2000005
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+     29   msg = 'det ' + %char(CUSNO);                                                                            000000     001900
+     30   except;                                                                                                 000000     002000
+     31   if CUSNO <= 102 and hit < 2;                                                                  B01       000000     002100
+     32     hit += 1;                                                                                    01       000000     002200
+     33     chain (CUSNO) CUST2;                                                                         01       000000     002300
+     34   endif;                                                                                        E01       000000     002400
+     35   if hit < 0;                                                                                   B01       000000     002500
+     36     open CUST2;                                                                                  01       000000     002600
+     37   endif;                                                                                        E01       000000     002700
+     38 CL0                 EVAL      msg = 'tot ' + %char(CUSNO)                                                 000000     002800
+     39 CL0                 EXCEPT                                                                                000000     002900
+     40   begsr ferr;                                                                                             000000     003000
+     41     msg = 'ferr ' + %char(fbst) + ' ' + fbop + ' ' + prtn;                                                000000     003100
+     42     except;                                                                                               000000     003200
+     43   endsr '*GETIN';                                                                                         000000     003300
+-    44 OQSYSPRT   D   N1P                     1                                                                  000000     003400
+     45 O                                            3 'dl'                                                       000000     003500
+     46 O                       CUSNO         Z     10                                                            000000     003600
+     47 OQSYSPRT   T                           1                                                                  000000     003700
+     48 O                                            3 'tl'                                                       000000     003800
+     49 O                       CUSNO         Z     10                                                            000000     003900
+     50 OQSYSPRT   E                           1                                                                  000000     004000
+     51 O                       msg                 40                                                            000000     004100
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+ *RNF7066 00      6 000600  Record-Format C2R not used for input or output.
+ *RNF7086 00      4 000400  RPG handles blocking for file CUSTF. INFDS is updated only
+                            when blocks of data are transferred.
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-                 O u t p u t   B u f f e r   P o s i t i o n s
+0Line   Start End   Field or Constant
+0Number Pos   Pos
+     45     2     3 'dl'
+     46     6    10 CUSNO
+     48     2     3 'tl'
+     49     6    10 CUSNO
+     51     1    40 MSG
+0 * * * * *   E N D   O F   O U T P U T   B U F F E R   P O S I T I O N   *  * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                    K e y   F i e l d   I n f o r m a t i o n
+0         File           Internal    External
+            Record       field name  field name  Attributes
+0      1  CUSTF
+            CUSTR
+                         CUSNO                   PACK      5,0 SIGNED
+0      3  CUST2
+            C2R is the RPG name of the external format CUSTR.
+                         CUSNO                   PACK      5,0 SIGNED
+0 * * * * *   E N D   O F   K E Y   F I E L D   I N F O R M A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          CUSTF             DISK                    4D
+            CUSTR                                   4D     19
+          CUST2             DISK                    6D     33      36
+            C2R                                     7      24
+          QSYSPRT           PRINTER                 5D     44      47      50
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+ *RNF7031 *INOF             N(1)                    5D
+ *RNF7031 BAL               P(9,2)                 23D
+ *RNF7031 CITY              A(12)                  22D
+          CUSNO             P(5,0)                 20D     29      31      33
+                                                   38      46      49
+          FB                DS(21)                  8      16D
+          FBOP              A(6)                   18D     41
+          FBST              S(5,0)                 17D     41
+          FERR              BEGSR                   8      40D
+          HIT               P(3,0)                 12D     31      32M     35
+          MSG               A(40)                   9D     29M     38M     41M
+                                                   51
+ *RNF7031 NAME              A(20)                  21D
+          PRTN              A(8)                   15D     41
+ *RNF7031 PSDS              DS(36)                 13D
+ *RNF7031 PSTAT             S(5,0)                 14D
+ *RNF7031 R                 P(5,0)                 11D
+ *RNF7031 X_BAL             P(9,2)                 28D
+ *RNF7031 X_CITY            A(12)                  27D
+ *RNF7031 X_CUSNO           P(5,0)                 25D
+ *RNF7031 X_NAME            A(20)                  26D
+ *RNF7031 Z                 P(3,0)                 10D
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+ *RNF7031 OF                                        5D
+          1P                                       44
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+1{heading} page 7
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF7031 00     12 The name or indicator is not referenced.
+ *RNF7066 00      1 Record-Format name of Externally-Described file is not used.
+ *RNF7086 00      1 RPG handles blocking for the file. INFDS is updated only when
+                    blocks of data are transferred.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :       14
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :       14
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       51
+     Specifications  . . . . . . . . :       48
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        3
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program EXC022 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

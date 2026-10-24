@@ -18,6 +18,7 @@ use rpgfront::ast::{Module, Stmt};
 
 use crate::codegen::Gen;
 use crate::codegen::emit::Body;
+use crate::codegen::exc::{Region, rp};
 use crate::codegen::output::Step;
 use crate::codegen::stmt;
 use crate::files::{Dev, File};
@@ -128,6 +129,15 @@ fn level_len(slots: &[Slot], n: u8) -> u32 {
     slots.iter().filter(|s| s.n >= n).map(|s| s.len).sum()
 }
 
+/// Where the handlers' return points go on in the cycle.
+struct Points {
+    getin: String,
+    detc: String,
+    totc: String,
+    totl: String,
+    ofl: String,
+}
+
 /// The main procedure of a module with a primary file.
 pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b = Body::new();
@@ -136,6 +146,11 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.tags.clear();
     g.scan_labels(&m.calcs);
     g.open.clear();
+    let (detail, total): (Vec<&Stmt>, Vec<&Stmt>) = m.calcs.iter().partition(|s| !super::is_total(&s.level));
+    // Where RETURN goes, *INZSR's too: the end, closing when LR is on.
+    let finish = g.b.label();
+    g.main_exit = Some(finish.clone());
+    let (detail, subrs) = super::subroutine_procs(g, &detail);
     g.debug_vars(0);
     let files = cycle_files(g);
     let lvl_slots: Vec<(File, Vec<Slot>)> = files.iter().map(|f| (f.clone(), slots(g, f, false))).collect();
@@ -146,6 +161,7 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b.decls.push("static $cy_first: ind".into());
     g.b.decls.push("static $cy_sel: i32".into());
     g.b.decls.push("static $cy_force: i32 inz(-1)".into());
+    g.b.decls.push("static $cy_rp: i32".into());
     g.b.decls.push(format!("static $cy_lv: char({})", clen.max(1)));
     for f in &files {
         let n = mangle(&f.name);
@@ -178,15 +194,45 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     }
     g.b.place(&start);
     g.b.ins("store $in1p, *ON");
-    let finish = g.b.label();
-    g.main_exit = Some(finish.clone());
-    let (detail, total): (Vec<&Stmt>, Vec<&Stmt>) = m.calcs.iter().partition(|s| !super::is_total(&s.level));
     let outputs = g.outputs.clone();
     let top = g.b.label();
     let end = g.b.label();
     let ret = g.b.label();
     g.b.place(&top);
+    // With *PSSR or an INFSR the cycle is one monitor region; a handler
+    // resumes at its start, which goes on at the return point.
+    let region = Region::of(g, &subrs);
+    let points = Points {
+        getin: g.b.label(),
+        detc: g.b.label(),
+        totc: g.b.label(),
+        totl: g.b.label(),
+        ofl: g.b.label(),
+    };
+    let detl = g.b.label();
+    if let Some(r) = &region {
+        r.open(g);
+        g.exsr_resume = Some((top.clone(), Some("$cy_rp".into())));
+        let p = g.b.reg();
+        g.b.ins(format!("{p} = load $cy_rp"));
+        g.b.ins("store $cy_rp, 0");
+        g.b.term(format!(
+            "switch {p}, [{}: {}, {}: {}, {}: {}, {}: {}, {}: {}], default {detl}",
+            rp::GETIN,
+            points.getin,
+            rp::DETC,
+            points.detc,
+            rp::TOTC,
+            points.totc,
+            rp::TOTL,
+            points.totl,
+            rp::OFL,
+            points.ofl
+        ));
+    }
+    g.b.place(&detl);
     // Heading and detail output.
+    g.psds_routine("*DETL");
     g.output(&outputs, Step::HeadingDetail);
     // Indicators off.
     g.b.ins("store $in1p, *OFF");
@@ -210,6 +256,8 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
         }
     }
     // LR on from the calculations: no record, straight to total time.
+    g.b.place(&points.getin);
+    g.psds_routine("*GETIN");
     let totals = g.b.label();
     let lr_early = g.b.reg();
     g.b.ins(format!("{lr_early} = load $inlr"));
@@ -449,7 +497,11 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b.ins(format!("{first} = load $cy_first"));
     g.b.term(format!("brif {first}, {after_tot}, {tot}"));
     g.b.place(&tot);
+    g.b.place(&points.totc);
+    g.psds_routine("*TOTC");
     total_calcs(g, &total);
+    g.b.place(&points.totl);
+    g.psds_routine("*TOTL");
     g.output(&outputs, Step::Total);
     g.b.place(&after_tot);
     g.b.ins("store $cy_first, *OFF");
@@ -459,6 +511,8 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b.term(format!("brif {lr}, {end}, {detail_l}"));
     g.b.place(&detail_l);
     // Overflow output.
+    g.b.place(&points.ofl);
+    g.psds_routine("*OFL");
     g.overflow_output(&outputs);
     // The record's fields.
     let sel = g.b.reg();
@@ -480,6 +534,8 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
         g.b.place(&skip);
     }
     let done = g.b.label();
+    g.b.place(&points.detc);
+    g.psds_routine("*DETC");
     g.calcs_end = Some(done.clone());
     stmt::calcs(g, &detail);
     g.calcs_end = None;
@@ -494,6 +550,10 @@ pub fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     let lr2 = g.b.reg();
     g.b.ins(format!("{lr2} = load $inlr"));
     g.b.term(format!("brif {lr2}, {end}, {ret}"));
+    if let Some(r) = &region {
+        r.close(g, &top, Some("$cy_rp"), &end, &ret);
+    }
+    g.exsr_resume = None;
     g.b.place(&end);
     g.tofile_arrays();
     g.dtaara_auto(true);

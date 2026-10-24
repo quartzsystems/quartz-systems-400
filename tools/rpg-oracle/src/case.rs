@@ -16,6 +16,9 @@
 //! - `with:` other members the case needs (copy members, modules of a
 //!   service program): `NAME.rpginc` files beside it, uploaded under
 //!   their own names.
+//! - `post:` a command run after the `dds:` and `sql:` steps, before
+//!   the compile (several allowed): `CHGPF`, `STRJRNPF` on the files
+//!   they made.
 //! - `cleanup:` a command run after the call (several allowed): the
 //!   objects the setup made.
 //! - `dds: NAME` a physical, logical, display or printer file created
@@ -58,6 +61,8 @@ pub struct Case {
     pub rcdlen: usize,
     /// Commands before the compile.
     pub setup: Vec<String>,
+    /// Commands after the database steps, before the compile.
+    pub post: Vec<String>,
     /// Commands after the call.
     pub cleanup: Vec<String>,
     /// Other members: name and lines.
@@ -200,6 +205,7 @@ impl Case {
             call: DEFAULT_CALL.into(),
             rcdlen: 112,
             setup: Vec::new(),
+            post: Vec::new(),
             cleanup: Vec::new(),
             with: Vec::new(),
             with_names: Vec::new(),
@@ -221,6 +227,7 @@ impl Case {
                 "run" if value.eq_ignore_ascii_case("no") => c.call.clear(),
                 "rcdlen" => c.rcdlen = value.parse().unwrap_or(112),
                 "setup" => c.setup.push(value),
+                "post" => c.post.push(value),
                 "cleanup" => c.cleanup.push(value),
                 "with" => c
                     .with_names
@@ -337,7 +344,8 @@ mod tests {
         assert_eq!(c.name, "HELLO");
         assert_eq!(c.fill(&c.cmd, "L"), "CRTRPGMOD MODULE(L/HELLO)");
         assert!(c.call.is_empty());
-        let f = Case::parse("x", "      *; rcdlen: 252\n      *; setup: DLTF A\n");
+        let f = Case::parse("x", "      *; rcdlen: 252\n      *; setup: DLTF A\n      *; post: STRJRNPF A\n");
+        assert_eq!(f.post, vec!["STRJRNPF A".to_string()]);
         assert_eq!(f.rcdlen, 252);
         assert_eq!(f.setup, vec!["DLTF A".to_string()]);
         let d = Case::parse("x", "//; dds: CUST\n//; sql: CREATE TABLE {lib}.T2 (A CHAR(1))\n");

@@ -231,7 +231,9 @@ fn commit_and_rollback() {
             (5, "Erin".into())
         ]
     );
-    // A file without a journal cannot change under commitment control.
+    // A file without a journal cannot open under commitment control (as
+    // on the machine), nor change through a path opened without the
+    // session's check.
     let mut t = store.begin().unwrap();
     let plain = file::create_pf(
         &mut t,
@@ -246,21 +248,17 @@ fn commit_and_rollback() {
     .unwrap();
     let mut resolve = resolve_in(name("QSTEST"), vec![(name("PLAIN"), plain)]);
     s.strcmtctl(&mut t, LckLvl::All, None, NOW).unwrap();
-    let p = s
-        .open(
-            &mut t,
-            &FileRef::parse("PLAIN").unwrap(),
-            &mut resolve,
-            with_commit,
-        )
-        .unwrap();
-    let e = p
-        .borrow_mut()
-        .write(&mut t, &record(1, "X"), &[0])
-        .unwrap_err();
+    assert!(matches!(
+        s.open(&mut t, &FileRef::parse("PLAIN").unwrap(), &mut resolve, with_commit.clone()),
+        Err(DbError::CommitNeedsJournal { .. })
+    ));
+    let mut p = odp::Odp::open(&mut t, locks.clone(), plain, with_commit).unwrap();
+    p.set_commit(std::rc::Rc::clone(s.commit_def().unwrap()));
+    let e = p.write(&mut t, &record(1, "X"), &[0]).unwrap_err();
     assert!(matches!(e, DbError::CommitNeedsJournal { .. }));
     assert_eq!(e.msgid(), Some("CPF8351"));
-    assert_eq!(p.borrow().fb.msgid, Some("CPF8351"));
+    assert_eq!(p.fb.msgid, Some("CPF8351"));
+    p.close(&mut t);
     s.end(&mut t);
     t.commit().unwrap();
 }

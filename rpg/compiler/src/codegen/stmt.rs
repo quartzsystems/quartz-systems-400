@@ -431,6 +431,26 @@ impl Gen<'_> {
             self.b.term(format!("br {exit}"));
         }
         self.b.place(&cont);
+        // A return point (`ENDSR '*GETIN'`) goes there after an EXSR too:
+        // a subroutine hands it to its caller, the main procedure resumes
+        // its cycle at the handlers' start.
+        let resume = if self.in_subr_proc { Some((String::new(), None)) } else { self.exsr_resume.clone() };
+        if let Some((top, slot)) = resume {
+            let go = self.b.label();
+            let next = self.b.label();
+            let arms: Vec<String> = crate::codegen::exc::rp::RESUME.iter().map(|c| format!("{c}: {go}")).collect();
+            self.b.term(format!("switch {rc}, [{}], default {next}", arms.join(", ")));
+            self.b.place(&go);
+            if self.in_subr_proc {
+                self.b.term(format!("ret {rc}"));
+            } else {
+                if let Some(s) = slot {
+                    self.b.ins(format!("store {s}, {rc}"));
+                }
+                self.b.term(format!("br {top}"));
+            }
+            self.b.place(&next);
+        }
         if !self.defined_subrs.contains(name) {
             self.called_subrs.insert(name.to_string());
         }
@@ -878,6 +898,10 @@ impl Gen<'_> {
             ) => self.db_op(op, base),
             ("POST" | "ACQ" | "REL" | "NEXT", _) => self.device_op(op, base),
             ("FORCE", _) => self.force_op(op),
+            // A parameter is no indicator (`*IN`, `*INxx`, `*IN(xx)`).
+            ("PARM", _) if matches!(op.result.first(), Some(Expr::Special { word, .. }) if word.starts_with("*IN")) => {
+                self.err(ids::PARM_NOT_INDICATOR, 30, String::new());
+            }
             ("PLIST" | "PARM", _) => {}
             // Declared before generation (`extfiles::define`); the names
             // are referenced here.
@@ -1172,6 +1196,15 @@ impl Gen<'_> {
             && args.len() == 1
         {
             self.set_len(aop, t, &args[0], v);
+            return;
+        }
+        // `*IN = value`: every indicator.
+        if aop == AssignOp::Set && matches!(t, Expr::Special { word, index: None, .. } if word == "*IN") {
+            if let Some(value) = self.expr(v, Want::default()) {
+                for i in 0..99 {
+                    self.assign(&V::place(Ty::Ind, format!("$in.x[{i}]")), &value, false);
+                }
+            }
             return;
         }
         let Some(tv) = self.target(t) else {

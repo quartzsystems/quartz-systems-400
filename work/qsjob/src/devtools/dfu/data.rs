@@ -174,6 +174,7 @@ impl Open {
             lvlchk: None,
             member,
             actgrp: "*DFTACTGRP".into(),
+            commit: false,
         };
         let (handle, info) = io.open(&spec)?;
         Ok(Self { io, handle, info })

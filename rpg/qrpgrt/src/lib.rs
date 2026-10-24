@@ -73,6 +73,7 @@ pub fn procedures() -> Vec<(&'static str, usize)> {
         ("_QRNX_SQLRUN", sql::sql_run as *const () as usize),
         ("_QRNX_SQLDA", sql::sql_da as *const () as usize),
         ("_QRNX_COMMIT", ctl::commit as *const () as usize),
+        ("_QRNX_CMTOPEN", ctl::cmt_open as *const () as usize),
         ("_QRNX_DUMP", ctl::dump as *const () as usize),
         ("_QRNX_ALLOC", ctl::alloc as *const () as usize),
         ("_QRNX_NOHANDLER", ctl::no_handler as *const () as usize),

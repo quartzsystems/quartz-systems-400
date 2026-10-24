@@ -261,7 +261,11 @@ fn group(b: &mut Builder<'_>, its: &[Item], k: usize, st: &FreeStmt, rest: &[Tok
         // A declaration other than a child ends the group by mistake.
         // So does a child of the other kind (`DCL-SUBF` in a prototype).
         let foreign = w == "DCL-SUBF" && kind != DefKind::Ds || w == "DCL-PARM" && kind == DefKind::Ds;
-        if !nested && (w.starts_with("DCL-") && w != "DCL-SUBF" && w != "DCL-PARM" || w == "END-PROC" || foreign) {
+        // So does a free-form operation code: IBM's parser reads a child
+        // named `out` or `read` as a calculation (DCL-PARM and DCL-SUBF
+        // name such children).
+        let opcode = !w.contains('-') && ops::known(&w) && !ops::fixed_only(&w);
+        if !nested && (w.starts_with("DCL-") && w != "DCL-SUBF" && w != "DCL-PARM" || w == "END-PROC" || foreign || opcode) {
             b.diags.push(Diag::new(ids::GROUP_END_MISSING, 20, st.at).arg(end_word.to_string()));
             break;
         }

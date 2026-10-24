@@ -144,6 +144,17 @@ pub enum DbError {
         holder: u64,
     },
 
+    /// Another open data path of the same job holds the record.
+    #[error("record {rrn} of member {member} in file {file} is locked by another open of this job")]
+    RecordLockedInJob {
+        /// File name.
+        file: String,
+        /// Member name.
+        member: String,
+        /// The record.
+        rrn: u64,
+    },
+
     /// Another job holds the file in a conflicting state.
     #[error("file {file} is in use by job {holder}")]
     FileLocked {
@@ -244,6 +255,7 @@ impl DbError {
             Self::PathInvalid { .. } => "CPF5090",
             Self::LevelCheck { .. } => "CPF4131",
             Self::RecordLocked { .. } => "CPF5027",
+            Self::RecordLockedInJob { .. } => "CPF5032",
             Self::FileLocked { .. } => "CPF4128",
             Self::NoLockedRecord { .. } => "CPF501B",
             Self::ShareMismatch { .. } => "CPF4123",

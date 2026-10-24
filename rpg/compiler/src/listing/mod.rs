@@ -28,6 +28,7 @@ use crate::compile::Compiled;
 use crate::ctl::Options;
 
 pub(crate) use page::Out;
+pub(crate) use refs::unset_indicators;
 
 /// Build the listing.
 #[must_use]

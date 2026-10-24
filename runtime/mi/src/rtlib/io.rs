@@ -331,6 +331,7 @@ pub extern "sysv64" fn db_open(env: *mut Env, file: i64, infds: i64, infds_desc:
         }),
         member: None,
         actgrp: actgrp(j),
+        commit: std::mem::take(&mut j.commit_next),
     };
     // Under debug (a program named by STRDBG) with UPDPROD(*NO), a
     // production file is not changed.

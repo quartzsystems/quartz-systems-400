@@ -87,6 +87,9 @@ pub struct SqlContext {
     pub spill: Box<dyn spill::SpillArea>,
     /// A column function left out a null value (SQLSTATE `01003`).
     pub nulls_eliminated: bool,
+    /// Changes are not under commitment control even when the job has
+    /// it (a program precompiled with `COMMIT(*NONE)`).
+    pub no_commit: bool,
 }
 
 impl SqlContext {
@@ -119,6 +122,7 @@ impl SqlContext {
             sort_budget: DEFAULT_SORT_BUDGET,
             spill: Box::new(spill::MemSpill::default()),
             nulls_eliminated: false,
+            no_commit: false,
         }
     }
 
@@ -226,7 +230,7 @@ impl SqlContext {
     /// Open a table for a data change, under commitment control when the
     /// job has it.
     pub fn open(&mut self, txn: &mut Txn<'_>, t: &TableInfo, usage: Usage) -> Result<Odp> {
-        let cmt = self.session.commit_def().cloned();
+        let cmt = if self.no_commit { None } else { self.session.commit_def().cloned() };
         let opts = OpenOpts {
             member: MemberSpec::Name(t.member.name),
             usage,
@@ -514,7 +518,7 @@ impl From<db::DbError> for SqlError {
             D::DuplicateKey { .. } => Self::DuplicateKey {
                 what: e.to_string(),
             },
-            D::RecordLocked { .. } | D::FileLocked { .. } => Self::Locked {
+            D::RecordLocked { .. } | D::RecordLockedInJob { .. } | D::FileLocked { .. } => Self::Locked {
                 what: e.to_string(),
             },
             D::CommitNeedsJournal { .. } => Self::NotJournaled {

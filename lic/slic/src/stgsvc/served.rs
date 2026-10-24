@@ -991,6 +991,10 @@ impl Service for Served<'_> {
         self.lent(|c| c.io.close(handle))
     }
 
+    fn io_commit(&mut self, rollback: bool, actgrp: String) -> Option<Result<(), IoFail>> {
+        self.lent(|c| c.io.commit(rollback, &actgrp))
+    }
+
     fn sql_run(&mut self, scope: String, desc: String, inputs: Vec<(u8, String)>) -> sql::embed::WireReply {
         use sql::embed::{Desc, Embedded, Reply, Request, Session, from_wire};
         let Some(desc) = Desc::decode(&desc) else {

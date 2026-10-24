@@ -179,6 +179,8 @@ ipc::rpc! {
     51 => fn io / Io (handle: u32, req: OwnedRequest) -> IoResult;
     /// Close a file.
     52 => fn close_file / CloseFile (handle: u32) -> IoResult;
+    /// `COMMIT` or `ROLBK` of the job's files (`IoSource::commit`).
+    54 => fn io_commit / IoCommit (rollback: bool, actgrp: String) -> Option<Result<(), IoFail>>;
     /// An embedded SQL statement (`sql::embed`): the scope, the
     /// encoded descriptor and the inputs; the reply in its wire form.
     53 => fn sql_run / SqlRun (scope: String, desc: String, inputs: Vec<(u8, String)>) -> sql::embed::WireReply;

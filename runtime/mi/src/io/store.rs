@@ -76,6 +76,15 @@ impl StoreIo {
         &mut self.session
     }
 
+    /// `STRCMTCTL` for the job, in a transaction of its own.
+    pub fn strcmtctl(&mut self, lcklvl: db::cmt::LckLvl, scope: db::cmt::CmtScope, now: u64) -> db::Result<()> {
+        let mut store = self.store.store();
+        let mut txn = store.begin().map_err(DbError::Store)?;
+        let r = self.session.strcmtctl_in(&mut txn, lcklvl, None, now, scope);
+        txn.commit().map_err(DbError::Store)?;
+        r
+    }
+
     /// End the job's use of the database: open files dropped, an open
     /// commit cycle rolled back, every lock released.
     pub fn end(&mut self) {
@@ -184,6 +193,7 @@ impl IoSource for StoreIo {
             qir::FileUsage::All => Usage::ALL,
         };
         opts.keyed = spec.keyed;
+        opts.commit = spec.commit;
         if let Some(m) = &spec.member {
             opts.member =
                 MemberSpec::Name(Name::parse(m).map_err(|_| IoFail::new(1299, "CPF9815", &[m]))?);
@@ -325,8 +335,14 @@ impl IoSource for StoreIo {
             IoOp::Feod => o.feod(&mut txn).map(|()| None),
         };
         drop(o);
+        // A read refused its record lock names no format (blank in the
+        // INFDS on the machine).
+        let refused = matches!(result, Err(DbError::RecordLocked { .. } | DbError::RecordLockedInJob { .. }));
         let record = result.unwrap_or(None);
         let mut out = Self::result_of(&odp, record, fmt);
+        if refused {
+            out.format = " ".into();
+        }
         if let Err(e) = txn.commit() {
             out.status = db::odp::status::OTHER;
             out.msgid = Some(format!("commit: {e}"));
@@ -347,5 +363,25 @@ impl IoSource for StoreIo {
             let _ = txn.commit();
         }
         IoResult::default()
+    }
+
+    fn commit(&mut self, rollback: bool, actgrp: &str) -> Option<Result<(), IoFail>> {
+        self.session.set_opener(if actgrp.is_empty() { db::odp::ovrdbf::DFTACTGRP } else { actgrp });
+        // Without commitment control the operation is status 00802.
+        if self.session.commit_def().is_none() {
+            return Some(Err(IoFail::new(802, "CPF8350", &[])));
+        }
+        let mut store = self.store.store();
+        let mut txn = match store.begin() {
+            Ok(t) => t,
+            Err(e) => return Some(Err(fail_of(&DbError::Store(e)))),
+        };
+        let r = if rollback {
+            self.session.rollbck(&mut txn, None).map(|_| ())
+        } else {
+            self.session.commit(&mut txn, None).map(|_| ())
+        };
+        let done = txn.commit().map_err(|e| fail_of(&DbError::Store(e)));
+        Some(r.map_err(|e| IoFail::new(802, e.msgid().unwrap_or("CPF8350"), &[])).and(done))
     }
 }

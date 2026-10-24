@@ -53,6 +53,9 @@ pub struct Session {
     cmt: Option<CommitRef>,
     /// `CMTSCOPE(*ACTGRP)` definitions by activation group.
     actgrp_cmt: HashMap<String, CommitRef>,
+    /// The activation group whose definition commitment control uses
+    /// when it is not the opener's (embedded SQL's statements).
+    cmt_group: Option<String>,
     odps: Vec<Weak<RefCell<Odp>>>,
 }
 
@@ -68,8 +71,15 @@ impl Session {
             shared: HashMap::new(),
             cmt: None,
             actgrp_cmt: HashMap::new(),
+            cmt_group: None,
             odps: Vec::new(),
         }
+    }
+
+    /// The activation group whose commit definition is in effect, in
+    /// place of the opener's; `None` goes back to the opener's.
+    pub fn set_cmt_group(&mut self, group: Option<String>) {
+        self.cmt_group = group;
     }
 
     /// The job.
@@ -215,6 +225,13 @@ impl Session {
         }
         if opts.commit && self.commit_def().is_none() {
             return Err(DbError::CommitOpen);
+        }
+        // A file under commitment control must be journaled: the open
+        // fails, not the first change.
+        if opts.commit && desc.attr.journal.is_none() {
+            return Err(DbError::CommitNeedsJournal {
+                file: desc.name().to_string(),
+            });
         }
         let share = opts.share;
         let usage = opts.usage;
@@ -397,13 +414,18 @@ impl Session {
     /// group: its own under `CMTSCOPE(*ACTGRP)`, else the job's.
     #[must_use]
     pub fn commit_def(&self) -> Option<&CommitRef> {
-        self.actgrp_cmt.get(&self.opener).or(self.cmt.as_ref())
+        self.actgrp_cmt.get(self.group()).or(self.cmt.as_ref())
+    }
+
+    /// The activation group commitment control looks at.
+    fn group(&self) -> &str {
+        self.cmt_group.as_deref().unwrap_or(&self.opener)
     }
 
     /// Whose the definition in effect is.
     fn scope_in_effect(&self) -> Option<CmtScope> {
-        if self.actgrp_cmt.contains_key(&self.opener) {
-            Some(CmtScope::ActGrp(self.opener.clone()))
+        if self.actgrp_cmt.contains_key(self.group()) {
+            Some(CmtScope::ActGrp(self.group().to_string()))
         } else {
             self.cmt.as_ref().map(|_| CmtScope::Job)
         }

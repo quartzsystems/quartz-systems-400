@@ -31,7 +31,9 @@ member:
 2. uploads the member as binary data records; the server numbers the
    lines `1.00`, `2.00`, ... with zero change dates, which QS/400's
    kit reproduces;
-3. runs the member's `//; setup:` commands and deletes the spooled
+3. runs the member's `//; setup:` commands, its `dds:`/`sql:` steps
+   (below) and its `//; post:` commands (`CHGPF`, `STRJRNPF` on the
+   files those steps made) and deletes the spooled
    files they leave (their listings are not the member's), then its
    compile command (`//; cmd:`, default `CRTBNDRPG
    ... DBGVIEW(*NONE) OUTPUT(*PRINT)`), at least 10 seconds after the
@@ -171,9 +173,12 @@ Recorded from batch 8 (`b08dsp/`), pub400 V7R5M0.
   only the check at open uses them.
 - An unhandled file error ends the program through the function check
   and `CEE9901`, the outcome IBM's default reply gives; the `RNQ1xxx`
-  inquiry itself is not sent (no job log is compared). File errors of
-  a primary-file cycle (`codegen/cycle.rs`) reach no `INFSR` or `*PSSR`
-  yet; the corpus has no case of it.
+  inquiry itself is not sent (no job log is compared).
+- A record another job holds is waited for `WAITRCD` long by the job
+  process (`stg::remote::RemoteIo`); the kit runs one job, so no
+  member waits. Records read under `LCKLVL(*ALL)` are locked only by
+  paths opened for update, as the oracle shows within one job; a
+  second job's input path is not refused.
 
 ## Oracle facts: file exceptions
 
@@ -210,8 +215,40 @@ Recorded from the `FEX` members of batch 9 (`b09exc/`), pub400 V7R5M0.
   module at 334-353 (`FEX013    FEX013`).
 - The compile listing's file box names the `EXTDESC` file, not
   `EXTFILE`'s.
-- A record lock within one job (two opens of the file) could not be
-  captured: the FTP session timed out on that call every time.
+- A record lock within one job (two opens of one file, `FEX015`-`FEX018`,
+  the file changed to `WAITRCD(1)` in a `post:` step): the second open's
+  read for update fails at once with 01299, not 01218, and `CPF5032` in
+  the INFDS (46-52), the record format there blank; `%ERROR` with
+  `(E)`, the file's `INFSR` (`CHAINF`), `CEE9901` unhandled, and
+  `ON-ERROR 1218` does not take it. A read without a lock (`(N)`)
+  works; `UNLOCK` or `UPDATE` through the holding open frees the
+  record. (01218 and `CPF5027` are another job's lock, after
+  `WAITRCD`.) An earlier version of the members waited the default 60
+  seconds and timed the FTP session out.
+- A cycle program's `*PSSR` or `INFSR` (`EXC014`-`EXC027`) goes on at its
+  `ENDSR` return point: `*DETL` the detail lines of the next cycle,
+  `*GETIN` the next record (the detail lines skipped), `*TOTC` and
+  `*TOTL` total time with the record that failed, then its fields and
+  detail calculations again, `*OFL` the overflow lines and then the
+  same, `*DETC` the detail calculations of the same record; `*CANCL`
+  and blank end the program (`CEE9901`). After an error at total time
+  `*GETIN` reads past the record already read for that cycle. The PSDS
+  routine is `*DETC` for an error in the detail calculations, `*TOTC`
+  at total time. `EXSR *PSSR` with `ENDSR '*GETIN'` goes to `*GETIN`
+  too, not back after the `EXSR`.
+- Fixed-form `D` specifications take a special word (`*ROUTINE`) across
+  the From and To columns.
+- Commitment control (`IO032`-`IO037`, the work library's file
+  journaled in `post:` steps, `STRCMTCTL CMTSCOPE(*JOB)`): `ROLBK` undoes
+  updates, writes and deletes since the last `COMMIT`; `COMMIT` with
+  nothing pending is fine. Opening a `COMMIT` file without commitment
+  control, or one that is not journaled, is 01217; `COMMIT` then is 802.
+  `COMMIT(flag)` decides at the open. Under `LCKLVL(*CHG)` a record
+  changed stays locked to the commit against an open of the job that is
+  not under commitment control (01299), not against another open under
+  the same definition; a record only read for update is freed by the
+  next read. Under `*ALL` a record an input-only file read does not
+  hold up an update open of the same job.
 
 ## Oracle facts: specifications and declarations
 
@@ -336,6 +373,19 @@ Recorded from batch 11 (`b11sql/`), pub400 V7R5M0.
   100.
 - `COMMIT` and `ROLLBACK` under `COMMIT(*NONE)` are `-7007 51009` and
   close nothing.
+- `COMMIT(*CHG)` starts commitment control at the first statement
+  (`SQL050`-`SQL053`, the table journaled in `post:` steps): `ROLLBACK`
+  undoes the updates, inserts and deletes since the last `COMMIT`. Over
+  a table that is not journaled a change is `-7008 55019`, a query
+  works and `COMMIT` and `ROLLBACK` are 0. A row an SQL statement
+  changed stays locked to the commit against the program's own native
+  open of the table (01299); a row a query or a cursor read does not,
+  under `*CHG`, `*CS` or `*ALL` (`SQL052`-`SQL055`).
+- A native read for update of a row with a null value under
+  `ALWNULL(*NO)` is 01299 with `CPF5029` (the first versions of
+  `SQL052`-`SQL054` read such rows); the file is noted `RNF7150` (00)
+  when it is opened for update or output. QS/400 reads the row (null
+  maps do not reach RPG, Blocked); the corpus reads rows without nulls.
 - `PREPARE` reports `-104` and `-204`; `EXECUTE` of a statement whose
   `PREPARE` failed is `-518 07003`.
 - `GET DIAGNOSTICS ... NUMBER` is 1 after a statement that worked.
@@ -484,6 +534,23 @@ Recorded from batch 12 (`b12err/`, ERR230-318), pub400 V7R5M0.
   twice `RNF5013`.
 - A prototype without `EXTPGM` under `DFTACTGRP(*YES)` is `RNF3788`; a
   main interface named other than the program is `RNF3776` (10).
+- An indicator `*IN01`-`*IN99` nothing sets is `RNF7030` at its first
+  use and `RNF7503` for each free-form statement using it
+  (`ERR319`-`ERR340`): in an expression, as a call's argument (by
+  reference or `CONST`), as a fixed-form factor, as a conditioning
+  indicator of a calculation or an output record. It is set by
+  `SETON`/`SETOFF` and any resulting indicator, an assignment
+  (`*IN50 = `, `*IN(n) = ` with any index), `MOVEA` into `*IN(n)`, and by
+  any use of the array itself (`*IN = *OFF`, `CLEAR *IN`, `%ADDR(*IN)`,
+  even `IF *IN(50)`), and by a display file that has it as a response
+  indicator, with `INDARA` or without, `EXFMT` or none. `PARM *IN50` is
+  `RNF5179`.
+- A child of `DCL-PR`, `DCL-PI` or `DCL-DS` named like a free-form
+  operation code (`out`, `in`, `read`, `select`, `eval`, `clear`,
+  `chain`, `return`, `for`, `dsply`, ...; not `add`, `move`, `time`) ends
+  the group: `RNF3556` (20) at the group, the line read as a
+  calculation (whatever that gives), the `END-PR` `RNF0724`
+  (`ERR341`-`ERR370`). `DCL-PARM` and `DCL-SUBF` name them.
 
 ## Oracle facts: coverage of the operations, functions and keywords
 
@@ -596,10 +663,9 @@ Recorded from batch 16 (`b16ir/`), pub400 V7R5M0.
 
 ## Checks not yet made
 
-- An indicator `*INxx` that nothing sets is not reported (`RNF7030`
-  where an expression uses it): no corpus member shows IBM's rule for
-  indicators set through display files, calls and `*IN` itself.
-- `RNF7062` (a `USROPN` file without `OPEN`) is not reported.
+- The follow-on diagnostics of a group child read as an operation
+  (`RNF3556`) are whatever the calculation gives here; some members
+  differ in them (`known.txt`).
 
 ## Embedded SQL not yet done
 
@@ -607,18 +673,15 @@ Recorded from batch 16 (`b16ir/`), pub400 V7R5M0.
   entry returns normally; an escape past it leaves them until the
   activation group ends. A `NOMAIN` module's exported procedures do
   not end them yet (a service program's cursors live with its group).
-- Commitment control: `COMMIT(*CHG)` and the others do not start it;
-  the corpus compiles with `COMMIT(*NONE)` (pub400's work library is
-  not journaled).
+- Commitment control (`SQL050`-`SQL055`): an activation group's commit
+  definition is not committed when the group ends normally (IBM's
+  implicit commit); the corpus ends its units of work itself.
 - `DESCRIBE`: the date length is the `*MDY` job format's (8) whatever
   `DATFMT`; `USING NAMES|LABELS|ANY|BOTH`, `SQLVAR2` entries (LOBs,
   distinct types) and `DESCRIBE TABLE` and `DESCRIBE CURSOR` are not
   done. The SQLDA's generated declarations are not counted in the
   listing's line numbers, nor is `INCLUDE` of a stream file (`'path'`)
   read.
-- `OUT` is an operation code to IBM's free-form parser: a parameter
-  named `out` in a `DCL-PI` is `RNF3556` there and is accepted here
-  (a check not yet made); the corpus avoids it.
 
 ## Blocked
 

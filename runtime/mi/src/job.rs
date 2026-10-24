@@ -144,6 +144,9 @@ pub struct Job {
     /// Commitment control is active (`STRCMTCTL`): RPG's `COMMIT` and
     /// `ROLBK` work only then.
     pub cmtctl: bool,
+    /// The next file opened goes under commitment control (RPG's
+    /// `COMMIT` keyword, set just before the open).
+    pub commit_next: bool,
     /// Call-stack depth: procedures entered and not yet left.
     pub depth: u32,
     /// The deepest the call stack has been.
@@ -250,6 +253,7 @@ impl Job {
             handled: Vec::new(),
             raised: Vec::new(),
             cmtctl: false,
+            commit_next: false,
             depth: 0,
             max_depth: 0,
             autos: Vec::new(),

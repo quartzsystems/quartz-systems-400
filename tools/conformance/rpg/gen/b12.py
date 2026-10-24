@@ -115,6 +115,61 @@ MORE2 = [
     ["dcl-s c char(5);", "c = %subst('abc':9);"],
     ["dcl-s c char(5);", "c = %subst('abc':1:7);"],
     fx("     D a               S              3P 0 DIM(3)", "     C     25            LOOKUP    a                                      01"),
+    # Indicators nothing sets (RNF7030): what counts as setting one.
+    ["if *in50;", "endif;"],
+    ["*in50 = *on;", "if *in50;", "endif;"],
+    fx("     C                   SETON                                        50", "     C     *IN50         IFEQ      '1'", "     C                   ENDIF"),
+    fx("     C                   SETOFF                                       50", "     C     *IN50         IFEQ      '1'", "     C                   ENDIF"),
+    fx("     C     'A'           COMP      'B'                                    50", "     C     *IN50         IFEQ      '1'", "     C                   ENDIF"),
+    ["if *in(50);", "endif;"],
+    ["dcl-s n int(10) inz(50);", "*in(n) = *on;", "if *in50;", "endif;"],
+    ["*in(50) = *on;", "if *in50;", "endif;"],
+    ["*in = *off;", "if *in50;", "endif;"],
+    ["clear *in;", "if *in50;", "endif;"],
+    fx("     C                   MOVEA     '11'          *IN(50)", "     C     *IN51         IFEQ      '1'", "     C                   ENDIF"),
+    fx("     C                   CALL      'X'", "     C                   PARM                    *IN50", "     C     *IN50         IFEQ      '1'", "     C                   ENDIF"),
+    ["dcl-pr p extpgm('X');", "  i ind;", "end-pr;", "p(*in50);", "if *in50;", "endif;"],
+    ["dcl-pr p extpgm('X');", "  i ind const;", "end-pr;", "p(*in50);", "if *in50;", "endif;"],
+    ["dcl-s p pointer;", "p = %addr(*in);", "if *in50;", "endif;"],
+    fx("     C   50              SETON                                        51"),
+    fx("     D x               S              1", "     C                   MOVE      *IN50         x"),
+    fx("     FQSYSPRT   O    F  132        PRINTER", "     C                   EXCEPT", "     OQSYSPRT   E    50                     1", "     O                                            5 'x'"),
+    ["DDS", "B8A", "dcl-f B8A workstn;", "exfmt SCR1;", "if *in03;", "endif;"],
+    ["DDS", "B8A", "dcl-f B8A workstn;", "if *in03;", "endif;"],
+    ["DDS", "B8H", "dcl-f B8H workstn indds(inds);", "dcl-ds inds len(99);", "  ex ind pos(3);", "end-ds;", "exfmt SCR;", "if *in03;", "endif;"],
+    ["DDS", "B8H", "dcl-f B8H workstn;", "exfmt SCR;", "if *in03;", "endif;"],
+    # Parameter and subfield names IBM's free-form parser reads as
+    # operation codes (RNF3556).
+    ["dcl-pr p;", "  out int(10);", "end-pr;"],
+    ["dcl-proc p;", "  dcl-pi *n;", "    out int(10);", "  end-pi;", "end-proc;"],
+    ["dcl-pr p;", "  dcl-parm out int(10);", "end-pr;"],
+    ["dcl-ds d;", "  out int(10);", "end-ds;"],
+    ["dcl-ds d;", "  dcl-subf out int(10);", "end-ds;"],
+    ["dcl-pr p;", "  in int(10);", "end-pr;"],
+    ["dcl-pr p;", "  read char(1);", "end-pr;"],
+    ["dcl-pr p;", "  select int(10);", "end-pr;"],
+    ["dcl-pr p;", "  eval int(10);", "end-pr;"],
+    ["dcl-pr p;", "  clear int(10);", "end-pr;"],
+    ["dcl-pr p;", "  reset int(10);", "end-pr;"],
+    ["dcl-pr p;", "  dump int(10);", "end-pr;"],
+    ["dcl-pr p;", "  test int(10);", "end-pr;"],
+    ["dcl-pr p;", "  callp int(10);", "end-pr;"],
+    ["dcl-pr p;", "  chain int(10);", "end-pr;"],
+    ["dcl-pr p;", "  commit int(10);", "end-pr;"],
+    ["dcl-pr p;", "  return int(10);", "end-pr;"],
+    ["dcl-pr p;", "  leave int(10);", "end-pr;"],
+    ["dcl-pr p;", "  other int(10);", "end-pr;"],
+    ["dcl-pr p;", "  when int(10);", "end-pr;"],
+    ["dcl-pr p;", "  write int(10);", "end-pr;"],
+    ["dcl-pr p;", "  open int(10);", "end-pr;"],
+    ["dcl-pr p;", "  sorta int(10);", "end-pr;"],
+    ["dcl-pr p;", "  add int(10);", "end-pr;"],
+    ["dcl-pr p;", "  move int(10);", "end-pr;"],
+    ["dcl-pr p;", "  time int(10);", "end-pr;"],
+    ["dcl-pr p;", "  begsr int(10);", "end-pr;"],
+    ["dcl-pr p;", "  dsply int(10);", "end-pr;"],
+    ["dcl-pr p;", "  exsr int(10);", "end-pr;"],
+    ["dcl-pr p;", "  for int(10);", "end-pr;"],
 ]
 
 # Appended after the first 89 (their numbers stay): declarations,
@@ -411,6 +466,8 @@ for i, body in enumerate(CASES, 1):
     with open(os.path.join(OUT, name + ".rpgle"), "w", encoding="utf-8", newline="\n") as f:
         if body[0] == "CMD":
             f.write("\n".join(["**FREE", "//; run: no", body[1]] + body[2:] + ["*inlr = *on;"]) + "\n")
+        elif body[0] == "DDS":
+            f.write("\n".join(HEAD[:2] + ["//; dds: " + body[1]] + HEAD[2:] + body[2:] + ["*inlr = *on;"]) + "\n")
         elif body[0] == "FIXED":
             f.write("\n".join(["      *; run: no"] + body[1:]) + "\n")
         else:

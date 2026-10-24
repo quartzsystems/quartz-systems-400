@@ -16,7 +16,7 @@ pub mod session;
 
 pub use feedback::{IoFeedback, status};
 pub use keyarg::KeyArg;
-pub use locks::{RecordLocks, SharedLocks, new_shared};
+pub use locks::{Holder, RecordLocks, Refused, SharedLocks, new_shared};
 pub use ovrdbf::{Override, Position};
 pub use session::{OdpRef, Session};
 
@@ -193,6 +193,8 @@ pub struct Odp {
     /// The feedback.
     pub fb: IoFeedback,
     locks: SharedLocks,
+    /// The path's owner number in the record lock table.
+    owner: u64,
     file_lock: LockState,
     open: bool,
     cmt: Option<CommitRef>,
@@ -318,6 +320,7 @@ impl Odp {
             plan_fmt: None,
             fb,
             locks,
+            owner: locks::next_owner(),
             file_lock,
             open: true,
             cmt: None,
@@ -376,6 +379,13 @@ impl Odp {
     #[must_use]
     pub fn commit_ref(&self) -> Option<&CommitRef> {
         self.cmt.as_ref()
+    }
+
+    /// Who holds the records this path locks: under commitment control
+    /// the definition, which its paths share (as on the machine).
+    fn holder(&self) -> Holder {
+        let owner = self.cmt.as_ref().map_or(self.owner, |c| c.borrow().owner());
+        Holder::new(self.opts.job, owner)
     }
 
     /// The lock level in force, when under commitment control.
@@ -490,13 +500,11 @@ impl Odp {
         let Some((member, k)) = self.locked.take() else {
             return;
         };
+        let who = self.holder();
         match &self.cmt {
-            Some(c) => c.borrow_mut().hold(member, k.rrn),
+            Some(c) => c.borrow_mut().hold(member, k.rrn, who),
             None => {
-                self.locks
-                    .lock()
-                    .expect("lock table")
-                    .unlock(member, k.rrn, self.opts.job);
+                self.locks.lock().expect("lock table").unlock(member, k.rrn, who);
             }
         }
     }
@@ -507,12 +515,9 @@ impl Odp {
         let Some(c) = &self.cmt else {
             return;
         };
-        let _ = self
-            .locks
-            .lock()
-            .expect("lock table")
-            .lock(member, rrn, self.opts.job);
-        c.borrow_mut().hold(member, rrn);
+        let who = self.holder();
+        let _ = self.locks.lock().expect("lock table").lock(member, rrn, who);
+        c.borrow_mut().hold(member, rrn, who);
     }
 
     /// After a commit or rollback: the member is reread, no record is
@@ -522,7 +527,7 @@ impl Odp {
             self.locks
                 .lock()
                 .expect("lock table")
-                .unlock(member, k.rrn, self.opts.job);
+                .unlock(member, k.rrn, self.holder());
         }
         self.member.jrn.commit_cycle = 0;
         self.member.refresh(txn)
@@ -849,13 +854,23 @@ impl Odp {
         }
         let member = self.lock_member(k.format);
         let mut table = self.locks.lock().expect("lock table");
-        if let Err(holder) = table.lock(member, k.rrn, self.opts.job) {
-            return Err(DbError::RecordLocked {
-                file: self.member.file.name().to_string(),
-                member: self.member.name().to_string(),
-                rrn: k.rrn,
-                holder: holder.0,
-            });
+        match table.lock(member, k.rrn, self.holder()) {
+            Ok(()) => {}
+            Err(Refused::Job(holder)) => {
+                return Err(DbError::RecordLocked {
+                    file: self.member.file.name().to_string(),
+                    member: self.member.name().to_string(),
+                    rrn: k.rrn,
+                    holder: holder.0,
+                });
+            }
+            Err(Refused::SameJob) => {
+                return Err(DbError::RecordLockedInJob {
+                    file: self.member.file.name().to_string(),
+                    member: self.member.name().to_string(),
+                    rrn: k.rrn,
+                });
+            }
         }
         self.locked = Some((member, k.clone()));
         Ok(())
@@ -869,10 +884,14 @@ impl Odp {
             return;
         }
         if let Some((member, k)) = self.locked.take() {
+            // A record the cycle changed stays locked to its end.
+            if self.cmt.as_ref().is_some_and(|c| c.borrow().holds(member, k.rrn)) {
+                return;
+            }
             self.locks
                 .lock()
                 .expect("lock table")
-                .unlock(member, k.rrn, self.opts.job);
+                .unlock(member, k.rrn, self.holder());
         }
     }
 

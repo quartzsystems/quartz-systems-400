@@ -14,6 +14,7 @@ use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use db::cmt::{CmtScope, LckLvl};
 use store::Store;
 use store::obj::ops::NameContext;
 use store::obj::{JobHandle, ObjectId};
@@ -120,8 +121,23 @@ pub struct Desc {
     pub sql_naming: bool,
     /// `PREPARE ... INTO`: described as it is prepared.
     pub into: bool,
+    /// The commitment control the program was precompiled with
+    /// (`COMMIT(*CHG|*CS|*ALL|*RR)`); `None` for `*NONE`.
+    pub commit: Option<LckLvl>,
     /// The statement text (the cursor's query for `OPEN`).
     pub text: String,
+}
+
+/// The lock level of a `COMMIT` option: `*CHG` (`*UR`), `*CS`, `*ALL`
+/// (`*RS`) and `*RR` (kept as `*ALL`); `None` for `*NONE` (`*NC`).
+#[must_use]
+pub fn commit_level(opt: &str) -> Option<LckLvl> {
+    match opt.trim().to_ascii_uppercase().as_str() {
+        "*CHG" | "*UR" => Some(LckLvl::Chg),
+        "*CS" => Some(LckLvl::Cs),
+        "*ALL" | "*RS" | "*RR" => Some(LckLvl::All),
+        _ => None,
+    }
 }
 
 impl Desc {
@@ -136,6 +152,12 @@ impl Desc {
                 flags.push(c);
             }
         }
+        flags.push_str(match self.commit {
+            None => "",
+            Some(LckLvl::Chg) => "G",
+            Some(LckLvl::Cs) => "T",
+            Some(LckLvl::All) => "A",
+        });
         format!("{flags};{};{};{}|{}", self.name, self.stmt, self.orient, self.text)
     }
 
@@ -158,6 +180,15 @@ impl Desc {
             rows: rest.contains('R'),
             sql_naming: rest.contains('N'),
             into: rest.contains('D'),
+            commit: if rest.contains('G') {
+                Some(LckLvl::Chg)
+            } else if rest.contains('T') {
+                Some(LckLvl::Cs)
+            } else if rest.contains('A') {
+                Some(LckLvl::All)
+            } else {
+                None
+            },
             text: text.to_string(),
         })
     }
@@ -417,6 +448,28 @@ impl Session {
         }
     }
 
+    /// Commitment control for a statement: under `COMMIT(*CHG|*CS|*ALL)`
+    /// the activation group's definition, started at its first
+    /// statement when neither the group nor the job has one; under
+    /// `*NONE` its changes are not under commitment control.
+    fn commitment(&mut self, req: &Request) -> Option<Reply> {
+        let group = format!("*SQL{}", req.scope.split(':').next().unwrap_or(""));
+        self.ctx.session.set_cmt_group(Some(group.clone()));
+        self.ctx.no_commit = req.desc.commit.is_none();
+        let lcklvl = req.desc.commit?;
+        if self.ctx.session.commit_def().is_some() || matches!(req.desc.op, Op::End | Op::Nothing | Op::Diag) {
+            return None;
+        }
+        let now = self.ctx.clock();
+        let store = &self.store;
+        let mut st = store.store();
+        let r = st.begin().map_err(SqlError::from).and_then(|mut txn| {
+            self.ctx.session.strcmtctl_in(&mut txn, lcklvl, None, now, CmtScope::ActGrp(group)).map_err(SqlError::from)?;
+            txn.commit().map_err(SqlError::from)
+        });
+        r.err().map(|e| Reply::of(Sqlca::from_error(&e)))
+    }
+
     fn run_inner(&mut self, req: &Request) -> Reply {
         let d = &req.desc;
         let naming = d.naming();
@@ -568,7 +621,10 @@ impl Session {
 
 impl Embedded for Session {
     fn run(&mut self, req: &Request) -> Reply {
-        let r = self.run_inner(req);
+        let r = match self.commitment(req) {
+            Some(r) => r,
+            None => self.run_inner(req),
+        };
         if req.desc.op != Op::Diag {
             self.last = r.sqlca.clone();
         }

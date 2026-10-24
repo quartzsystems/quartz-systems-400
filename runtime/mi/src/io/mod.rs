@@ -35,6 +35,8 @@ pub struct OpenSpec {
     pub member: Option<String>,
     /// The activation group opening it, for the overrides that reach it.
     pub actgrp: String,
+    /// Under commitment control (RPG's `COMMIT`).
+    pub commit: bool,
 }
 
 /// A failed open or data operation: the RPG status and the message.
@@ -232,6 +234,11 @@ pub trait IoSource {
     fn io(&mut self, handle: u32, req: &IoRequest<'_>) -> IoResult;
     /// Close.
     fn close(&mut self, handle: u32) -> IoResult;
+    /// `COMMIT` (or, with `rollback`, `ROLBK`) of the commitment
+    /// definition in effect; `None` when the source keeps none.
+    fn commit(&mut self, _rollback: bool, _actgrp: &str) -> Option<Result<(), IoFail>> {
+        None
+    }
 }
 
 /// Data area types.

@@ -838,6 +838,11 @@ sev = 30
 text = "The subroutine has no ENDSR before the next BEGSR; one is assumed."
 
 [[msg]]
+id = "RNF5179"
+sev = 30
+text = "A parameter cannot be an indicator, the indicator array or a table; the PARM is ignored."
+
+[[msg]]
 id = "RNF5232"
 sev = 30
 text = "LEAVE and ITER are allowed only inside a loop; the statement is ignored."
@@ -1425,6 +1430,11 @@ text = "/DEFINE and /UNDEFINE need a condition name."
 id = "RNF0724"
 sev = 30
 text = "A declaration follows the calculations of the main procedure; it is ignored."
+
+[[msg]]
+id = "RNF0725"
+sev = 30
+text = "A declaration follows the calculations of the procedure; it is ignored."
 
 [[msg]]
 id = "RNF0752"

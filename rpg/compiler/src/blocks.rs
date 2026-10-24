@@ -193,9 +193,10 @@ pub fn check_module(m: &rpgfront::ast::Module, files: &[crate::files::File], ctl
         }
     }
     let all: Vec<&Stmt> = m.calcs.iter().chain(m.procs.iter().flat_map(|p| p.calcs.iter())).collect();
-    // ALWNULL(*INPUTONLY): a format with null-capable fields is noted.
-    if ctl.alwnull == "*INPUTONLY" {
-        for f in files {
+    // A format with null-capable fields is noted under
+    // ALWNULL(*INPUTONLY), and under *NO when the file changes records.
+    if ctl.alwnull != "*USRCTL" {
+        for f in files.iter().filter(|f| ctl.alwnull == "*INPUTONLY" || f.update || f.output && f.dev == crate::files::Dev::Disk) {
             for r in f.ext.iter().flat_map(|e| e.formats.iter()).filter(|r| r.fields.iter().any(|x| x.nullable)) {
                 out.push(Diag::new(ids::NULL_CAPABLE_FORMAT, 0, Pos { line: f.def_line, col: 7 }).arg(r.name.clone()));
             }

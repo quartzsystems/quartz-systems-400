@@ -279,6 +279,23 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
             }
         }
     }
+    // So is a group end with no group after a procedure's calculations
+    // (a child read as an operation ended its group).
+    let first_main = module.calcs.first().map(|s| s.at.line);
+    for d in diags.iter_mut().filter(|d| d.msgid == rpgfront::diag::ids::END_NOT_EXPECTED) {
+        let line = d.at.line;
+        match module.procs.iter().find(|p| p.at.line <= line && line <= p.end.line) {
+            Some(p) if p.calcs.first().is_some_and(|s| s.at.line < line) => {
+                d.msgid = crate::diag::ids::OUT_OF_SEQUENCE_PROC;
+                d.severity = 30;
+            }
+            None if first_main.is_some_and(|f| f < line) => {
+                d.msgid = crate::diag::ids::OUT_OF_SEQUENCE;
+                d.severity = 30;
+            }
+            _ => {}
+        }
+    }
     let ctl = ctl::resolve(opts, &module.ctl, &mut diags);
     // A linear module has no main-procedure calculations, and its MAIN
     // procedure is one of its own.
@@ -517,6 +534,17 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         gen_diags.retain(|d| d.msgid != crate::diag::ids::UNBALANCED);
     }
     diags.extend(gen_diags);
+    // Indicators nothing sets, from the references of the whole module.
+    let mut c = Compiled {
+        read,
+        module,
+        table: t,
+        files,
+        diags: diags.clone(),
+        ..Compiled::default()
+    };
+    diags.extend(crate::listing::unset_indicators(&c));
+    let Compiled { read, module, table: t, files, .. } = std::mem::take(&mut c);
     diags.sort();
     diags.dedup();
     let max_severity = diags.iter().map(|d| d.severity).max().unwrap_or(0);

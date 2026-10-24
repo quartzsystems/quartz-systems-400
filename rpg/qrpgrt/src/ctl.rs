@@ -11,13 +11,30 @@ fn job(env: *mut Env) -> &'static mut mi::Job {
     mi::storage::job_of(env)
 }
 
-/// `_QRNX_COMMIT(kind)`: 1 commits, 2 rolls back. Without commitment
-/// control it is status 802.
-pub extern "sysv64" fn commit(env: *mut Env, _argc: i64, _od: i64, _kind: i32) {
+/// `_QRNX_COMMIT(kind)`: 1 commits, 2 rolls back the job's files'
+/// commitment definition. Without commitment control it is status 802.
+pub extern "sysv64" fn commit(env: *mut Env, _argc: i64, _od: i64, kind: i32) {
     let j = job(env);
-    if !j.cmtctl {
-        let _ = j.send_message("RNX0802", "QRNXMSG", "*LIBL", vec![0x40; 40], qir::MsgType::Escape, mi::QueueRef::Same);
+    let group = j
+        .act
+        .frames
+        .last()
+        .and_then(|f| j.act.groups().find(|g| g.id == f.ag))
+        .map_or_else(|| "*DFTACTGRP".to_string(), |g| g.name.clone());
+    let failed = match j.io.as_mut().and_then(|io| io.commit(kind == 2, &group)) {
+        Some(r) => r.is_err(),
+        // A source that keeps no definition: STRCMTCTL decides.
+        None => !j.cmtctl,
+    };
+    if failed {
+        signal(j, 802);
     }
+}
+
+/// `_QRNX_CMTOPEN(on)`: the next file opened is under commitment
+/// control when `on` is not 0 (`COMMIT`, `COMMIT(flag)`).
+pub extern "sysv64" fn cmt_open(env: *mut Env, _argc: i64, _od: i64, on: i32) {
+    job(env).commit_next = on != 0;
 }
 
 /// `_QRNX_DUMP()`: `DUMP` under `DEBUG(*YES)`.

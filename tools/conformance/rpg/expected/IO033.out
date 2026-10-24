@@ -1,0 +1,10 @@
+# IO033 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF7066 00 line 11 seq 001100
+diag: RNF2318 00 line 12 seq 001200
+diag: RNF3530 00 line 13 seq 001300
+run: ok
+spool: QSYSPRT
+  |1/1   open 1217 0
+  |1/2   commit 802

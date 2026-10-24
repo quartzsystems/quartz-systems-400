@@ -175,6 +175,9 @@ pub struct Gen<'a> {
     pub placed_tags: BTreeSet<String>,
     /// Where `RETURN` goes in the main procedure.
     pub main_exit: Option<String>,
+    /// Where an `EXSR` of a subroutine with a return point resumes the
+    /// main procedure: the handlers' start and the slot for the point.
+    pub exsr_resume: Option<(String, Option<String>)>,
     /// Where the calculations before the first subroutine end, when not
     /// at `main_exit` (the cycle goes on to its next record).
     pub calcs_end: Option<String>,
@@ -359,6 +362,7 @@ pub fn module(
         labels: BTreeSet::new(),
         placed_tags: BTreeSet::new(),
         main_exit: None,
+        exsr_resume: None,
         calcs_end: None,
         ret: None,
         at: Pos::default(),
@@ -608,6 +612,26 @@ fn init_proc(g: &mut Gen<'_>) -> String {
     body.finish("proc _qrni_init()", "ret")
 }
 
+/// The main procedure's subroutines as procedures of their own, made
+/// first so the initialization can call `*INZSR`: the mainline left and
+/// the subroutines' names.
+pub fn subroutine_procs<'a>(g: &mut Gen<'_>, detail: &[&'a Stmt]) -> (Vec<&'a Stmt>, Vec<String>) {
+    let (detail, subrs) = stmt::split_subroutines(g, detail);
+    g.subr_procs = true;
+    for (name, body) in &subrs {
+        if g.bad_subrs.contains(&name.to_ascii_uppercase()) {
+            // Its LEAVESRs are outside any subroutine.
+            for s in body.iter().filter(|s| s.op.code == "LEAVESR") {
+                g.at = s.at;
+                g.err(ids::NOT_IN_SUBR, 30, "LEAVESR");
+            }
+            continue;
+        }
+        stmt::subroutine_proc(g, name, body);
+    }
+    (detail, subrs.into_iter().map(|(n, _)| n).collect())
+}
+
 /// The main procedure: the program entry, running the cycle in IBM's
 /// order: heading and detail output (the `1P` output on the first
 /// cycle), total calculations and total output, the end when `LR` is
@@ -626,22 +650,7 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     let finish = g.b.label();
     g.main_exit = Some(finish.clone());
     let (detail, total): (Vec<&Stmt>, Vec<&Stmt>) = m.calcs.iter().partition(|s| !is_total(&s.level));
-    // Subroutines become procedures of their own, made first so the
-    // initialization can call *INZSR.
-    let (detail, subrs) = stmt::split_subroutines(g, &detail);
-    g.subr_procs = true;
-    let has_pssr = subrs.iter().any(|(n, _)| n == "*PSSR");
-    for (name, body) in &subrs {
-        if g.bad_subrs.contains(&name.to_ascii_uppercase()) {
-            // Its LEAVESRs are outside any subroutine.
-            for s in body.iter().filter(|s| s.op.code == "LEAVESR") {
-                g.at = s.at;
-                g.err(ids::NOT_IN_SUBR, 30, "LEAVESR");
-            }
-            continue;
-        }
-        stmt::subroutine_proc(g, name, body);
-    }
+    let (detail, subrs) = subroutine_procs(g, &detail);
     g.debug_vars(0);
     let start = g.b.label();
     let init = g.b.label();
@@ -662,38 +671,12 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     let outputs = g.outputs.clone();
     let top = g.b.label();
     g.b.place(&top);
-    // With a *PSSR or an INFSR, the cycle is one monitor region: program
-    // errors go to *PSSR, file errors to the failing file's INFSR (by
-    // `$ferr`); each handler runs its subroutine and resumes at the top
-    // (re-entering the region) or hands the exception on.
-    let infsrs: Vec<(usize, String)> = g
-        .files
-        .iter()
-        .enumerate()
-        .filter(|(_, f)| f.scope == 0)
-        .filter_map(|(k, f)| {
-            let s = f.infsr.as_ref()?;
-            subrs
-                .iter()
-                .find(|(n, _)| n.eq_ignore_ascii_case(s) && !g.bad_subrs.contains(&n.to_ascii_uppercase()))
-                .map(|(n, _)| (k + 1, n.clone()))
-        })
-        .collect();
-    let pssr_handler = g.b.label();
-    let infsr_handler = g.b.label();
-    let monitored = has_pssr || !infsrs.is_empty();
-    // The function check of an error neither takes goes on to the
-    // default handler, past *PSSR.
-    let fcheck = g.b.label();
-    if monitored {
-        let mut sels = vec![format!("CPF9999 -> {fcheck}")];
-        if has_pssr {
-            sels.push(format!("*PROGRAM -> {pssr_handler}"));
-        }
-        if !infsrs.is_empty() {
-            sels.push(format!("*FILE -> {infsr_handler}"));
-        }
-        g.b.ins(format!("monitor PSSR, {}", sels.join(", ")));
+    // Without a primary file every resuming return point starts the
+    // next cycle.
+    let region = exc::Region::of(g, &subrs);
+    if let Some(r) = &region {
+        r.open(g);
+        g.exsr_resume = Some((top.clone(), None));
     }
     g.psds_routine("*DETL");
     g.output(&outputs, output::Step::HeadingDetail);
@@ -722,55 +705,10 @@ fn main_proc(g: &mut Gen<'_>, m: &Module) -> String {
     g.b.place(&finish);
     g.b.ins("%lr2 = load $inlr");
     g.b.term(format!("brif %lr2, {end}, {ret}"));
-    if monitored {
-        let close = g.b.label();
-        g.b.place(&close);
-        g.b.ins("endmon PSSR");
-        g.b.term("unreachable");
-        let again = g.b.label();
-        let on = g.b.label();
-        // RETURN in the subroutine: the end decided by LR, outside the
-        // region; a blank return point or *CANCL hands the exception on.
-        let finish_out = g.b.label();
-        let returned = |g: &mut Gen<'_>, subr: &str| {
-            let rc = g.b.reg();
-            g.b.ins(format!("{rc} = callb {}()", Gen::subr_proc(subr)));
-            g.b.term(format!(
-                "switch {rc}, [{}: {top}, {}: {top}, {}: {finish_out}], default {on}",
-                exc::rp::GETIN,
-                exc::rp::OTHER,
-                exc::rp::RETURN
-            ));
-        };
-        g.b.place(&fcheck);
-        g.b.term(format!("br {on}"));
-        if has_pssr {
-            g.b.place(&pssr_handler);
-            g.psds_error();
-            returned(g, "*PSSR");
-        }
-        if !infsrs.is_empty() {
-            g.b.place(&infsr_handler);
-            g.psds_error();
-            let k = g.b.reg();
-            g.b.ins(format!("{k} = load $ferr"));
-            let labels: Vec<String> = infsrs.iter().map(|_| g.b.label()).collect();
-            let arms: Vec<String> = infsrs.iter().zip(&labels).map(|((n, _), l)| format!("{n}: {l}")).collect();
-            g.b.term(format!("switch {k}, [{}], default {on}", arms.join(", ")));
-            for ((_, s), l) in infsrs.iter().zip(&labels) {
-                g.b.place(l);
-                returned(g, s);
-            }
-        }
-        g.b.place(&finish_out);
-        g.b.ins("%lr3 = load $inlr");
-        g.b.term(format!("brif %lr3, {end}, {ret}"));
-        g.b.place(&on);
-        g.reraise();
-        g.b.term(format!("br {again}"));
-        g.b.place(&again);
-        g.b.term("ret");
+    if let Some(r) = &region {
+        r.close(g, &top, None, &end, &ret);
     }
+    g.exsr_resume = None;
     g.b.place(&end);
     g.tofile_arrays();
     g.dtaara_auto(true);

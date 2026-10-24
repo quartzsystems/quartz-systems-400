@@ -108,6 +108,10 @@ pub mod ids {
     pub const TABLE_INDEX: &str = "RNF0752";
     /// A declaration after the main procedure's calculations.
     pub const OUT_OF_SEQUENCE: &str = "RNF0724";
+    /// A `PARM` result field that is an indicator or a table.
+    pub const PARM_NOT_INDICATOR: &str = "RNF5179";
+    /// A declaration after a subprocedure's calculations.
+    pub const OUT_OF_SEQUENCE_PROC: &str = "RNF0725";
     /// The external description of a file is not found.
     pub const EXT_NOT_FOUND: &str = "RNF3523";
     /// A feature this release does not compile.

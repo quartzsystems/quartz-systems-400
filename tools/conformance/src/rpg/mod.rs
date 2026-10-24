@@ -447,6 +447,10 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
     } else {
         Some(files::KitDb::build(&case.db).map_err(|e| format!("{}: {e}", case.name))?)
     };
+    if let Some(d) = &db {
+        let post: Vec<String> = case.post.iter().map(|s| case.fill(s, "QGPL")).collect();
+        d.post(&post).map_err(|e| format!("{}: {e}", case.name))?;
+    }
     // The setup's modules, service programs and directories.
     let mut objs = build::Objects::default();
     for s in &case.setup {
@@ -542,9 +546,21 @@ fn call_into(
         let mut job = Job::boxed(Box::new(src));
         job.usrspcs.set_source(Box::new(MemUserSpaces::default()));
         job.data = Some(Box::new(data_areas(case)));
-        job.cmtctl = case.setup.iter().any(|s| s.trim_start().to_ascii_uppercase().starts_with("STRCMTCTL"));
+        // STRCMTCTL in the setup: the job's commitment definition.
+        let strcmtctl = case.setup.iter().chain(&case.post).find(|s| s.trim_start().to_ascii_uppercase().starts_with("STRCMTCTL"));
+        job.cmtctl = strcmtctl.is_some();
         if let Some(d) = db {
-            job.io = Some(Box::new(d.io()?));
+            let mut io = d.io()?;
+            if let Some(cmd) = strcmtctl {
+                let lcklvl = db::cmt::LckLvl::parse(&build::kwd(cmd, "LCKLVL")).unwrap_or_default();
+                let scope = if build::kwd(cmd, "CMTSCOPE") == "*JOB" {
+                    db::cmt::CmtScope::Job
+                } else {
+                    db::cmt::CmtScope::ActGrp(db::odp::ovrdbf::DFTACTGRP.into())
+                };
+                io.strcmtctl(lcklvl, scope, CLOCK).map_err(|e| format!("{}: STRCMTCTL: {e}", case.name))?;
+            }
+            job.io = Some(Box::new(io));
             job.sql = Some(Box::new(d.sql()));
         }
         let mut provider = MemProvider::default();

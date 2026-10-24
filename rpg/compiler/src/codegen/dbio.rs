@@ -157,6 +157,30 @@ impl Gen<'_> {
             self.rt_proc("_QRNX_NOHANDLER", "()");
             self.b.ins("callb _QRNX_NOHANDLER()");
         }
+        // COMMIT: the runtime opens the next file under commitment
+        // control; COMMIT(flag) when the flag is on at the open.
+        if let Some(flag) = f.commit.clone().filter(|_| f.dev == Dev::Disk) {
+            self.rt_proc("_QRNX_CMTOPEN", "(byval $on: i32)");
+            let place = match flag.strip_prefix("*IN") {
+                Some(i) => self.indicator(i).map(|x| x.op),
+                None => self.t.find(self.scope, &flag).filter(|_| !flag.is_empty()).map(|id| crate::codegen::place_of(self.t, id)),
+            };
+            match place {
+                Some(place) => {
+                    let on = self.b.reg();
+                    self.b.ins(format!("{on} = load {place}"));
+                    let (yes, no, done) = (self.b.label(), self.b.label(), self.b.label());
+                    self.b.term(format!("brif {on}, {yes}, {no}"));
+                    self.b.place(&yes);
+                    self.b.ins("callb _QRNX_CMTOPEN(1)");
+                    self.b.term(format!("br {done}"));
+                    self.b.place(&no);
+                    self.b.ins("callb _QRNX_CMTOPEN(0)");
+                    self.b.place(&done);
+                }
+                None => self.b.ins("callb _QRNX_CMTOPEN(1)"),
+            }
+        }
         let r = self.b.reg();
         let infds = if f.dev == Dev::Workstn || f.recno.is_some() {
             match f.infds.as_ref().and_then(|n| self.t.find(self.scope, n)) {

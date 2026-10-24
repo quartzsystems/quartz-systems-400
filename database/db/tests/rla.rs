@@ -393,6 +393,28 @@ fn locks_level_checks_and_logical_reads() {
             .is_some()
     );
     b.close(&mut t);
+    // Two paths of one job: the second is refused at once, 01299 and
+    // CPF5032, as on the machine.
+    let mut c = Odp::open(
+        &mut t,
+        locks.clone(),
+        file,
+        OpenOpts {
+            usage: Usage::UPDATE,
+            ..OpenOpts::input(JobHandle(1))
+        },
+    )
+    .unwrap();
+    a.chain(&mut t, &KeyArg::one(num("7")), true).unwrap();
+    assert!(matches!(
+        c.chain(&mut t, &KeyArg::one(num("7")), true),
+        Err(DbError::RecordLockedInJob { rrn: 4, .. })
+    ));
+    assert_eq!(c.fb.status_code(), "01299");
+    assert_eq!(c.fb.msgid, Some("CPF5032"));
+    a.unlock_op(&mut t).unwrap();
+    assert!(c.chain(&mut t, &KeyArg::one(num("7")), true).unwrap().is_some());
+    c.close(&mut t);
     a.close(&mut t);
     assert!(locks.lock().unwrap().is_empty());
     // A closed path refuses operations with 01211.
