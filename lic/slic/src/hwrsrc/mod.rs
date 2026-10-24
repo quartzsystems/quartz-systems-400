@@ -3,9 +3,10 @@
 // root directory of this project.
 
 //! Hardware resources: a coldplug walk of sysfs plus hotplug events, with
-//! IBM-style resource names assigned in a stable order. Phase 10 turns this
-//! table into WRKHDWRSC.
+//! IBM-style resource names assigned in a stable order. WRKHDWRSC and
+//! DSPHDWRSC show it.
 
+pub mod nic;
 pub mod pci;
 pub mod uevent;
 
@@ -30,6 +31,9 @@ pub enum Kind {
     Optical,
     /// Serial or console port: `CMNnn`.
     Comm,
+    /// Ethernet port of a network function: `CMNnn`, numbered with the
+    /// serial ports.
+    Port,
     /// Keyboard: `KBDnn`.
     Keyboard,
     /// Anything else: `OTHnn`.
@@ -44,7 +48,7 @@ impl Kind {
             Kind::Storage => "DC",
             Kind::Disk => "DD",
             Kind::Optical => "OPT",
-            Kind::Comm => "CMN",
+            Kind::Comm | Kind::Port => "CMN",
             Kind::Keyboard => "KBD",
             Kind::Other => "OTH",
         }
@@ -57,16 +61,19 @@ impl Kind {
         }
     }
 
-    const ALL: [Kind; 8] = [
-        Kind::Bridge,
-        Kind::Lan,
-        Kind::Storage,
-        Kind::Disk,
-        Kind::Optical,
-        Kind::Comm,
-        Kind::Keyboard,
-        Kind::Other,
-    ];
+    /// Index of the name counter; ports and serial ports share one.
+    fn counter(self) -> usize {
+        match self {
+            Kind::Bridge => 0,
+            Kind::Lan => 1,
+            Kind::Storage => 2,
+            Kind::Disk => 3,
+            Kind::Optical => 4,
+            Kind::Comm | Kind::Port => 5,
+            Kind::Keyboard => 6,
+            Kind::Other => 7,
+        }
+    }
 }
 
 /// Whether the device is currently present.
@@ -93,6 +100,10 @@ pub struct Resource {
     pub devpath: String,
     /// Presence.
     pub status: Status,
+    /// Type and model, for network adapters and ports.
+    pub type_model: Option<(&'static str, &'static str)>,
+    /// The port, for `Kind::Port`.
+    pub port: Option<nic::NetPort>,
 }
 
 /// Storage controllers that provide device parity protection. Nothing
@@ -127,6 +138,7 @@ impl Table {
         for name in sorted_dir("/sys/class/block") {
             t.add_block(&name);
         }
+        t.add_ports(Path::new("/sys"));
         for name in sorted_dir("/sys/class/net") {
             t.attach_net(&name);
         }
@@ -159,7 +171,11 @@ impl Table {
                             .clone()
                     }),
                     "block" => self.add_block(&name),
-                    "net" => self.attach_net(&name),
+                    "net" => {
+                        let port = self.add_port(Path::new("/sys"), &name);
+                        self.attach_net(&name);
+                        port
+                    }
                     "tty" => self.add_tty(&name),
                     "input" => self.add_input(&name),
                     _ => None,
@@ -187,7 +203,8 @@ impl Table {
                 s,
                 "{:<9} {:<9} {:<13} {:<17} {}",
                 r.name,
-                format!("{:?}", r.kind),
+                r.type_model
+                    .map_or_else(|| format!("{:?}", r.kind), |(t, m)| format!("{t}-{m}")),
                 format!("{:?}", r.status),
                 r.location,
                 r.description
@@ -203,7 +220,7 @@ impl Table {
         description: String,
         devpath: String,
     ) -> &Resource {
-        let i = Kind::ALL.iter().position(|k| *k == kind).unwrap_or(7);
+        let i = kind.counter();
         self.next[i] += 1;
         let name = format!(
             "{}{:0width$}",
@@ -218,6 +235,8 @@ impl Table {
             description,
             devpath,
             status: Status::Operational,
+            type_model: None,
+            port: None,
         });
         self.resources.last().expect("just pushed")
     }
@@ -243,6 +262,56 @@ impl Table {
         let on = pci::address_in(&devpath).map_or(String::new(), |a| format!(" on {a}"));
         let desc = format!("{name} {mib} MiB{on}");
         Some(self.add(kind, name.to_string(), desc, devpath).name.clone())
+    }
+
+    /// Every Ethernet port under `root`, as `CMNnn` in PCI order.
+    pub fn add_ports(&mut self, root: &Path) {
+        for p in nic::scan(root) {
+            self.push_port(p);
+        }
+    }
+
+    /// One hot-added port.
+    fn add_port(&mut self, root: &Path, ifname: &str) -> Option<String> {
+        let p = nic::scan_one(root, ifname)?;
+        if self.resources.iter().any(|r| r.devpath == p.devpath) {
+            return None;
+        }
+        Some(self.push_port(p))
+    }
+
+    fn push_port(&mut self, p: nic::NetPort) -> String {
+        let tm = (p.family.type_code, p.family.model);
+        if let Some(lan) = self
+            .resources
+            .iter_mut()
+            .find(|r| r.kind == Kind::Lan && r.location == p.pci)
+        {
+            lan.type_model = Some(tm);
+        }
+        let location = if p.dev_port > 0 {
+            format!("{}/{}", p.pci, p.dev_port)
+        } else {
+            p.pci.clone()
+        };
+        let name = self
+            .add(Kind::Port, location, p.description(), p.devpath.clone())
+            .name
+            .clone();
+        let last = self.resources.last_mut().expect("just pushed");
+        last.type_model = Some(tm);
+        last.port = Some(p);
+        name
+    }
+
+    /// Re-read carrier and speed of every port.
+    pub fn refresh_ports(&mut self, root: &Path) {
+        for r in &mut self.resources {
+            if let Some(p) = &mut r.port {
+                p.refresh(root);
+                r.description = p.description();
+            }
+        }
     }
 
     /// A network interface is a port of its PCI function; note it there.
@@ -323,4 +392,62 @@ pub fn devpath_of(sys: &Path) -> Option<String> {
     let real = fs::canonicalize(sys).ok()?;
     let s = real.to_string_lossy();
     s.strip_prefix("/sys").map(str::to_string)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ports_are_cmn_in_pci_order_before_serial_ports() {
+        let root = nic::tests::fake_sysfs(
+            "table",
+            &[
+                ("0000:02:00.0", "e1000e", "eth0", 0, None),
+                ("0000:01:00.0", "virtio_net", "eth1", 0, Some("virtio0")),
+            ],
+        );
+        let mut t = Table::default();
+        t.add(
+            Kind::Lan,
+            "0000:01:00.0".into(),
+            "virtio network".into(),
+            "/devices/pci0000:00/0000:01:00.0".into(),
+        );
+        t.add_ports(&root);
+        t.add(
+            Kind::Comm,
+            "ttyS0".into(),
+            "serial port ttyS0".into(),
+            "/devices/platform/serial8250/tty/ttyS0".into(),
+        );
+        let names: Vec<(&str, &str)> = t
+            .resources
+            .iter()
+            .map(|r| (r.name.as_str(), r.location.as_str()))
+            .collect();
+        assert_eq!(
+            names,
+            [
+                ("LIN01", "0000:01:00.0"),
+                ("CMN01", "0000:01:00.0"),
+                ("CMN02", "0000:02:00.0"),
+                ("CMN03", "ttyS0"),
+            ]
+        );
+        assert_eq!(t.resources[0].type_model, Some(("QN01", "001")));
+        assert_eq!(t.resources[2].type_model, Some(("QN03", "001")));
+        assert_eq!(t.resources[1].kind, Kind::Port);
+        let dump = t.dump();
+        assert!(dump.contains("CMN01     QN01-001"), "{dump}");
+        assert!(dump.contains("Virtio Ethernet port eth1"), "{dump}");
+
+        // Carrier changes show after a refresh; a known port is not re-added.
+        fs::write(root.join("class/net/eth1/carrier"), "0\n").unwrap();
+        t.refresh_ports(&root);
+        assert!(t.resources[1].description.ends_with("no link"));
+        assert!(t.add_port(&root, "eth1").is_none());
+        assert!(t.add_port(&root, "lo").is_none());
+        fs::remove_dir_all(root).unwrap();
+    }
 }

@@ -455,7 +455,7 @@ fn devds(system: &mut System) -> Result<Sys2Data, String> {
 fn kinds(ty: &str) -> (&'static [hwrsrc::Kind], &'static str) {
     use hwrsrc::Kind as K;
     match ty {
-        "*CMN" => (&[K::Bridge, K::Lan, K::Comm], "Communication"),
+        "*CMN" => (&[K::Bridge, K::Lan, K::Comm, K::Port], "Communication"),
         "*STG" => (&[K::Storage, K::Disk, K::Optical], "Storage"),
         "*LWS" => (&[K::Keyboard], "Local Work Station"),
         "*PRC" => (&[K::Bridge], "Processor"),
@@ -467,6 +467,7 @@ fn kinds(ty: &str) -> (&'static [hwrsrc::Kind], &'static str) {
                 K::Disk,
                 K::Optical,
                 K::Comm,
+                K::Port,
                 K::Keyboard,
                 K::Other,
             ],
@@ -484,7 +485,7 @@ fn kind_code(k: hwrsrc::Kind) -> &'static str {
         K::Storage => "STG",
         K::Disk => "DISK",
         K::Optical => "OPT",
-        K::Comm => "CMN",
+        K::Comm | K::Port => "CMN",
         K::Keyboard => "KBD",
         K::Other => "OTH",
     }
@@ -505,7 +506,11 @@ fn hardware(system: &mut System, ty: &str) -> Sys2Data {
         .map(|r| {
             vars(&[
                 ("RSCNAME", r.name.clone()),
-                ("RSCTYPE", kind_code(r.kind).to_string()),
+                (
+                    "RSCTYPE",
+                    r.type_model
+                        .map_or_else(|| kind_code(r.kind).to_string(), |(t, _)| t.to_string()),
+                ),
                 (
                     "RSCSTS",
                     match r.status {

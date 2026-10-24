@@ -65,6 +65,8 @@ members = [
     "rpg/compiler",
     "rpg/qrpgrt",
     "rpg/sqlpre",
+    # Network: the kernel interfaces, TCP/IP configuration, sockets, servers.
+    "net/netlink",
 ]
 
 [workspace.package]

@@ -138,7 +138,10 @@ pub fn reply(system: &mut System, line: &str) -> String {
         ("srcs", []) => system.log.dump(),
         ("srcs", ["table"]) => src_table(),
         ("hist", _) => hist(system),
-        ("hw", _) => format!("{}\n{}", system.hw.dump(), crate::net::dump(&system.links)),
+        ("hw", _) => {
+            system.hw.refresh_ports(std::path::Path::new("/sys"));
+            format!("{}\n{}", system.hw.dump(), crate::net::dump(&system.links))
+        }
         ("lic", _) => lic_dump(system),
         ("sysval", rest) => sysval(system, rest),
         ("mode", [m]) => mode(system, m),

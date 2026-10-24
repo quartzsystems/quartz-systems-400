@@ -89,8 +89,10 @@ then tracks hotplug for the life of PID 1. Names are assigned in PCI
 address order so they are stable across boots: `CMBnn` bridges, `LINnn`
 network functions (interfaces are noted as ports), `DCnn` storage
 controllers, `DDnnn` disks, `OPTnn` optical, `CMNnn` serial ports, `KBDnn`
-keyboards, `OTHnn` everything else. `hw` on the service console prints the
-table and the network links. Phase 10 turns this into WRKHDWRSC.
+keyboards, `OTHnn` everything else. Since Phase 10 each Ethernet port is also
+a `CMNnn` resource, numbered before the serial ports (docs/TCPIP.md,
+"Hardware resources"). `hw` on the service console prints the table and
+the network links; WRKHDWRSC and DSPHDWRSC show it.
 
 ### Clock and network
 
