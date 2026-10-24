@@ -126,7 +126,7 @@ impl Suite {
         entry_wait(s, "crtrpgmod MODULE(RPGTEST/RPGUSE) SRCFILE(RPGTEST/QRPGLESRC)", has(&["Module RPGUSE created"]))?;
         entry_wait(
             s,
-            "crtpgm PGM(RPGTEST/RPGUSE) MODULE(RPGTEST/RPGUSE) BNDSRVPGM(RPGTEST/RPGSRV)",
+            "crtpgm RPGTEST/RPGUSE MODULE(RPGTEST/RPGUSE) BNDSRVPGM(RPGTEST/RPGSRV)",
             has(&["RPGTEST/RPGUSE created"]),
         )?;
         entry_wait(s, "call RPGTEST/RPGUSE", has(&["Bound hello, Quartz"]))?;
