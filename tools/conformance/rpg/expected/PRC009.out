@@ -1,0 +1,13 @@
+# PRC009 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 4 seq 000400
+diag: RNF3530 00 line 5 seq 000500
+run: ok
+spool: QSYSPRT
+  |1/1   7 before   107 changed
+  |1/2   107
+spool: QSYSPRT
+  |1/1   callee parms 2
+spool: QSYSPRT
+  |1/1   callee parms 1

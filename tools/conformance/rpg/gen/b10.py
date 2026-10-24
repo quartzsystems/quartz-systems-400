@@ -284,6 +284,7 @@ INC["PRC009P"] = [
     C(op="IF", f2="n > 1"),
     CX("EVAL", "B = 'changed'"),
     C(op="ENDIF"),
+    CX("EVAL", "*INLR = *ON"),
     C(op="RETURN"),
 ]
 M["PRC009"] = [

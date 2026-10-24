@@ -12,4 +12,5 @@
      C                   IF        n > 1
      C                   EVAL      B = 'changed'
      C                   ENDIF
+     C                   EVAL      *INLR = *ON
      C                   RETURN

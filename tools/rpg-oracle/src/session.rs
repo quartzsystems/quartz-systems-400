@@ -273,6 +273,7 @@ impl Session {
              CAST(CHAR(CREATE_TIMESTAMP) AS CHAR(26) CCSID 37) T \
              FROM QSYS2.OUTPUT_QUEUE_ENTRIES_BASIC \
              WHERE USER_NAME = USER AND SPOOLED_FILE_NAME <> 'QPJOBLOG' \
+             AND STATUS <> 'OPEN' \
              AND CREATE_TIMESTAMP > CURRENT TIMESTAMP - 30 MINUTES ) WITH DATA"
         ))?;
         let rows = self.table("RPGSPLS", 10 + 7 + 28 + 26)?;
@@ -293,12 +294,12 @@ impl Session {
     /// Copy a spooled file's lines and delete it.
     fn take_spool(&mut self, e: &Entry) -> Result<Vec<String>> {
         let lib = self.lib.clone();
-        let (ok, cause) = self.rcmd(&format!(
+        let (ok, _, reply) = self.rcmd_text(&format!(
             "CPYSPLF FILE({}) TOFILE({lib}/RPGSPL) JOB({}) SPLNBR({}) MBROPT(*REPLACE) CTLCHAR(*FCFC)",
             e.name, e.job, e.number
         ))?;
         if !ok {
-            bail!("CPYSPLF {} failed {cause}", e.name);
+            bail!("CPYSPLF {} {} failed: {}", e.name, e.number, reply.trim());
         }
         let path = self.member_path("RPGSPL", "RPGSPL");
         let data = self.ftp.get(&path, true)?;
@@ -458,6 +459,10 @@ impl Session {
             let (ok, cause) = self.rcmd(&c.fill(&c.call, &lib))?;
             self.try_rcmd(&format!("SNDPGMMSG MSG('{end}') TOPGMQ(*SAME)"));
             o.run = if ok { Run::Ok } else { Run::Escape(cause) };
+            // Files a program left open (it returned without LR) close,
+            // so their spooled files can be read; this job only.
+            self.try_rcmd("RCLRSC LVL(*CALLER)");
+            self.try_rcmd("RCLACTGRP ACTGRP(*ELIGIBLE)");
             for e in self.spools()? {
                 let records = self.take_spool(&e)?;
                 if e.name == "QSQ" {
