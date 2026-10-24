@@ -37,6 +37,12 @@ pub(crate) struct Out {
     title: String,
     /// The column rulers the source section repeats under each heading.
     rulers: Option<(String, String)>,
+    /// The `/TITLE` text.
+    pub subtitle: Option<String>,
+    /// `*NOEXPDDS`: generated lines are not printed.
+    pub hide_generated: bool,
+    /// A hidden block's blank line was just printed.
+    pub after_blank: bool,
 }
 
 impl Out {
@@ -47,18 +53,30 @@ impl Out {
             pos: 0,
             title,
             rulers: None,
+            subtitle: None,
+            hide_generated: false,
+            after_blank: false,
         }
     }
 
     fn heading(&mut self) {
         self.page += 1;
+        // A `/TITLE` prints above the heading.
+        let cc = if let Some(t) = &self.subtitle {
+            self.lines.push(format!("1 {t}"));
+            self.pos = 1;
+            ' '
+        } else {
+            self.pos = 0;
+            '1'
+        };
         self.lines.push(format!(
-            "1{:<64}{:<26}Page {:>5}",
+            "{cc}{:<64}{:<26}Page {:>5}",
             format!(" 5770WDS {}  QS/400  RN        QS/400 ILE RPG", release::RELEASE),
             self.title,
             self.page
         ));
-        self.pos = 1;
+        self.pos += 1;
         if let Some((a, b)) = self.rulers.clone() {
             self.lines.push(format!("0{a}"));
             self.lines.push(format!(" {b}"));
@@ -95,7 +113,7 @@ impl Out {
 
     fn put(&mut self, cc: char, text: &str) {
         self.pos += advance(cc);
-        self.lines.push(format!("{cc}{text}").trim_end().to_string());
+        self.lines.push(format!("{cc}{}", text.trim_end()));
     }
 
     /// A new page for a section, with its rulers (the source section's);
@@ -112,13 +130,29 @@ impl Out {
     /// records.
     pub fn change_rulers(&mut self, rulers: (String, String)) {
         self.rulers = Some(rulers.clone());
-        if self.pos + advance('-') > OVERFLOW {
+        // The two records and the line after them must fit.
+        if self.pos + advance('-') + 2 > OVERFLOW {
             // The new page's heading carries them.
             self.heading();
             return;
         }
         self.put('-', &rulers.0);
         self.line(' ', &rulers.1);
+    }
+
+    /// `/EJECT`: the next record starts a page.
+    pub fn eject(&mut self) {
+        self.heading();
+    }
+
+    /// `/SPACE n`: blank lines.
+    pub fn space(&mut self, n: u32) {
+        let mut n = n;
+        while n > 0 {
+            let k = n.min(3);
+            self.line(['?', ' ', '0', '-'][k as usize], "");
+            n -= k;
+        }
     }
 
     /// Whether these are the rulers in force.

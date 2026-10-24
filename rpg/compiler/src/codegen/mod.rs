@@ -454,7 +454,10 @@ pub fn module(
     out.push_str("static $errind: ind\n");
     out.push_str("static $psds_none: char(1)\n");
     out.push_str(&dbio::statics(files, g.t));
-    for (id, s) in g.t.syms.iter().enumerate() {
+    // Pointers BASED declared come before the fields based on them.
+    let mut order: Vec<usize> = (0..g.t.syms.len()).collect();
+    order.sort_by_key(|&i| !(g.t.syms[i].implicit && g.t.syms[i].ty == Ty::Ptr));
+    for (id, s) in order.into_iter().map(|i| (i, &g.t.syms[i])) {
         if s.scope != 0 || s.template || s.parent.is_some() || g.t.entry_ptrs.contains(&id) {
             continue;
         }

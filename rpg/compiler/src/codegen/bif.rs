@@ -915,7 +915,7 @@ impl Gen<'_> {
         }
         // By reference: the argument must be a place of the type.
         if v.kind != Vk::Place {
-            self.err(ids::PARM_TYPE, 30, "");
+            self.err(ids::PARM_NOT_PLACE, 30, "");
             return None;
         }
         let varsize_ok = prm.varsize && v.ty.is_string() == prm.ty.is_string();

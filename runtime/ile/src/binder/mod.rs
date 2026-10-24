@@ -91,6 +91,8 @@ pub struct BindOptions {
     pub export: ExportSpec,
     /// `OPTION(*UNRSLVREF)`: create with unresolved imports.
     pub allow_unresolved: bool,
+    /// `BNDSRVPGM`: service programs bound before any directory.
+    pub bndsrvpgm: Vec<crate::object::BndDirEntry>,
 }
 
 impl BindOptions {
@@ -103,6 +105,7 @@ impl BindOptions {
             entry_module: None,
             export: ExportSpec::All,
             allow_unresolved: false,
+            bndsrvpgm: Vec::new(),
         }
     }
 }

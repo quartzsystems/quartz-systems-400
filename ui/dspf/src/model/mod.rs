@@ -312,6 +312,36 @@ impl DisplayFile {
         self.file.indara.then_some(99)
     }
 
+    /// The texts of a record's response indicators, as a compile
+    /// listing shows them: a key's text, an error message's text or
+    /// identifier, `INDTXT`.
+    #[must_use]
+    pub fn response_texts(&self, r: &Record) -> Vec<(u8, String)> {
+        let mut out: Vec<(u8, String)> = Vec::new();
+        let mut add = |n: u8, t: &str| {
+            if !out.iter().any(|(m, _)| *m == n) {
+                out.push((n, t.to_string()));
+            }
+        };
+        for k in r.keys.iter().chain(&self.file.keys) {
+            if let (Some(n), Some(t)) = (k.ind, &k.text) {
+                add(n, t);
+            }
+        }
+        for f in &r.fields {
+            for e in &f.errmsg {
+                let t = e.text.clone().or_else(|| e.id.as_ref().map(|(id, _)| id.clone()));
+                if let (Some(n), Some(t)) = (e.ind, t) {
+                    add(n, &t);
+                }
+            }
+        }
+        for (n, t) in &self.file.indtxt {
+            add(*n, t);
+        }
+        out
+    }
+
     /// Every indicator and where it is used.
     #[must_use]
     pub fn indicator_usage(&self) -> BTreeMap<u8, IndUse> {

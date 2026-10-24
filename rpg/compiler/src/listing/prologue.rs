@@ -99,8 +99,16 @@ pub(crate) fn prologue(out: &mut Out, o: &Options) {
     if !module && !o.dftactgrp {
         row(out, ' ', 2, "Activation group", actgrp(&o.actgrp, o));
     }
-    let define = if o.define.is_empty() { "*NONE".to_string() } else { o.define.join(" ") };
-    row(out, ' ', 2, "Define condition names", &define);
+    // One condition name to a line.
+    match o.define.split_first() {
+        None => row(out, ' ', 2, "Define condition names", "*NONE"),
+        Some((first, rest)) => {
+            row(out, ' ', 2, "Define condition names", first);
+            for d in rest {
+                out.line(' ', format!("{:39}{d}", ""));
+            }
+        }
+    }
     row(out, ' ', 2, "Enable performance collection", "*PEP");
     row(out, ' ', 2, "Profiling data", "*NOCOL");
     row(out, ' ', 2, "Licensed Internal Code options", "");
@@ -117,7 +125,13 @@ fn actgrp<'a>(g: &'a str, o: &Options) -> &'a str {
 }
 
 fn bnddir(v: &[String]) -> String {
-    if v.is_empty() { "*NONE".into() } else { v.join(" ") }
+    if v.is_empty() {
+        return "*NONE".into();
+    }
+    // In columns of 13.
+    let mut s: String = v.iter().fold(String::new(), |a, d| a + &format!("{d:<13}"));
+    s.truncate(s.trim_end().len());
+    s
 }
 
 /// A row of the options box: the prologue's row inside `*` at 8 and 77.
@@ -174,7 +188,13 @@ pub(crate) fn options_box(out: &mut Out, c: &Compiled, o: &Options) {
         boxrow(out, ' ', "Storage model . . .", if module { "*INHERIT" } else { "*SNGLVL" });
         boxrow(out, ' ', "Binding directory from Command", &bnddir(&o.bnddir));
         let src: Vec<String> = c.ctl.bnddir.iter().filter(|b| !o.bnddir.contains(b)).cloned().collect();
-        boxrow(out, ' ', "Binding directory from Source", &bnddir(&src));
+        let names: Vec<String> = src.iter().map(|b| b.rsplit('/').next().unwrap_or(b).to_string()).collect();
+        boxrow(out, ' ', "Binding directory from Source", &bnddir(&names));
+        // Their libraries, under them.
+        if !src.is_empty() {
+            let libs: Vec<String> = src.iter().map(|b| b.rsplit_once('/').map_or("*LIBL", |(l, _)| l).to_string()).collect();
+            boxrow(out, ' ', "  Library", &format!("  {}", bnddir(&libs)));
+        }
     }
     if !module && !c.ctl.dftactgrp {
         boxrow(out, ' ', "Activation group", actgrp(&c.ctl.actgrp, o));

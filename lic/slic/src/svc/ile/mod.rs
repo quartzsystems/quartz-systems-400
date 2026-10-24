@@ -45,8 +45,8 @@ pub type Shared = Rc<RefCell<Option<Lent>>>;
 pub const HELP: &str = "\
 qir asm LIB/SRCPF MBR MODULE(LIB/M) | qir asm NAME MODULE(LIB/M)   assemble a member or an xfer buffer
 qir check NAME | qir dis LIB/MODULE                                verify a buffer; print a module's IR
-crtpgm LIB/PGM MODULE(LIB/M ...) [BNDDIR(LIB/B ...) ACTGRP(*NEW|*CALLER|NAME) ENTMOD(M) OPTION(*UNRSLVREF) TEXT('..')]
-crtsrvpgm LIB/S MODULE(...) [EXPORT(*ALL|*SRCFILE) SRCFILE(LIB/F) SRCMBR(M) BNDDIR(...) ACTGRP(...) TEXT('..')]
+crtpgm LIB/PGM MODULE(LIB/M ...) [BNDSRVPGM(LIB/S ...) BNDDIR(LIB/B ...) ACTGRP(*NEW|*CALLER|NAME) ENTMOD(M) OPTION(*UNRSLVREF) TEXT('..')]
+crtsrvpgm LIB/S MODULE(...) [BNDSRVPGM(...) EXPORT(*ALL|*SRCFILE) SRCFILE(LIB/F) SRCMBR(M) BNDDIR(...) ACTGRP(...) TEXT('..')]
 updpgm LIB/PGM MODULE(LIB/M ...) | crtbnddir LIB/B | addbnddire LIB/B OBJ((LIB/N *MODULE|*SRVPGM) ...)
 call LIB/PGM ['text' 123 x'C1C2' ...]      run a program; parameters as CL types them
 dsppgm | dspsrvpgm | dspmod | dsppgmref | dspbnddir LIB/NAME

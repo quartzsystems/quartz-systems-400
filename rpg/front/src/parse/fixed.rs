@@ -31,10 +31,20 @@ pub fn opcode_of(text: &str) -> String {
 /// The keyword area of an item's lines from `col` to 80, as one token
 /// stream (literals continue across lines).
 fn keyword_area(b: &mut Builder<'_>, lines: &[&Line], col: usize) -> Vec<Keyword> {
-    let areas: Vec<(u32, String)> = lines
+    let mut areas: Vec<(u32, String)> = lines
         .iter()
         .map(|l| (l.no, cut(&l.text, col, 80).trim_end().to_string()))
         .collect();
+    // A keyword the entry's end (column 80) cuts off is ignored.
+    if let (Some(l), Some((_, t))) = (lines.last(), areas.last_mut()) {
+        let open = t.matches('(').count() > t.matches(')').count();
+        let beyond = !cut(&l.text, 81, 100).trim().is_empty();
+        if open && beyond {
+            let start = t.rfind('(').and_then(|p| t[..p].rfind(' ')).map_or(0, |p| p + 1);
+            t.truncate(start);
+            b.diags.push(Diag::new(ids::KEYWORD_CUT, 20, l.pos(80)));
+        }
+    }
     let segs: Vec<Segment<'_>> = areas
         .iter()
         .map(|(no, t)| Segment {
@@ -407,13 +417,17 @@ fn calc_spec(b: &mut Builder<'_>, lines: &[&Line]) {
         if i == 0 && lv != "AN" && lv != "OR" {
             level.clone_from(&lv);
         }
-        let raw = cf.cut(&c.text, "cond");
-        let ind = cond_ind(&raw);
-        // A conditioning entry that is not N or blank and an indicator
-        // is blanks.
-        let first_ok = raw.starts_with([' ', 'N', 'n']) || raw.is_empty();
-        if ind.as_ref().is_some_and(|i| !first_ok || !valid_indicator(&i.ind)) {
-            b.diags.push(Diag::new(ids::BAD_COND_IND, 20, c.pos(9)));
+        let raw: Vec<char> = cf.cut(&c.text, "cond").chars().collect();
+        let mut ind = cond_ind(&raw.iter().collect::<String>());
+        // Column 9 is N or blank; columns 10-11 an indicator.
+        if raw.first().is_some_and(|ch| *ch != ' ' && !ch.eq_ignore_ascii_case(&'N')) {
+            b.diags.push(Diag::new(ids::COND_NOT, 20, c.pos(9)));
+            ind = cond_ind(&format!(" {}", raw.iter().skip(1).collect::<String>()));
+        }
+        if let Some(x) = &ind
+            && !valid_indicator(&x.ind)
+        {
+            b.diags.push(Diag::new(ids::COND_IND, 20, c.pos(10)));
             continue;
         }
         add_cond(&mut cond, &lv, ind);
@@ -474,7 +488,7 @@ fn calc_spec(b: &mut Builder<'_>, lines: &[&Line]) {
         op.decimals = cf.cut(&l.text, "decimals").trim().to_string();
         if !op.decimals.is_empty() && op.decimals.parse::<u8>().ok().is_none_or(|d| d > 63) {
             b.diags.push(Diag::new(ids::BAD_DECIMALS, 20, l.pos(69)));
-            op.decimals.clear();
+            op.decimals = "0".into();
         }
         op.resind = [
             cf.cut(&l.text, "hi").trim().to_ascii_uppercase(),

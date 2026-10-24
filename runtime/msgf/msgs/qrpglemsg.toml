@@ -370,6 +370,16 @@ text = "File &1 keeps its indicators in a separate area, which the program passe
 vars = ["*CHAR 10"]
 
 [[msg]]
+id = "RNF7341"
+sev = 0
+text = "The subfield is only in the target structure of the EVAL-CORR."
+
+[[msg]]
+id = "RNF7342"
+sev = 0
+text = "The subfield is only in the source structure of the EVAL-CORR."
+
+[[msg]]
 id = "RNF7350"
 sev = 0
 text = "&1 leaves out subfields that have no namesake in the other structure."
@@ -1111,7 +1121,7 @@ text = "The operation needs a result field."
 [[msg]]
 id = "RNF5044"
 sev = 20
-text = "The decimal positions entry must be blank or 0 to 63; it is taken as blank."
+text = "The decimal positions entry must be blank or 0 to 63; it is taken as 0."
 
 [[msg]]
 id = "RNF5048"
@@ -1259,6 +1269,11 @@ text = "&1 needs an array declared with ASCEND or DESCEND."
 vars = ["*CHAR 50"]
 
 [[msg]]
+id = "RNF0609"
+sev = 20
+text = "The keyword is cut off at the end of the entry; it is ignored."
+
+[[msg]]
 id = "RNF0701"
 sev = 30
 text = "The condition of the directive is not valid."
@@ -1267,6 +1282,16 @@ text = "The condition of the directive is not valid."
 id = "RNF0702"
 sev = 30
 text = "/DEFINE and /UNDEFINE need a condition name."
+
+[[msg]]
+id = "RNF0724"
+sev = 30
+text = "A declaration follows the calculations of the main procedure; it is ignored."
+
+[[msg]]
+id = "RNF0752"
+sev = 20
+text = "&1 is a table: it takes no index, and the index is ignored."
 
 [[msg]]
 id = "RNF1506"
@@ -1316,6 +1341,11 @@ sev = 20
 text = "The data type entry is not valid; it is taken as blank."
 
 [[msg]]
+id = "RNF3481"
+sev = 10
+text = "The initial value has more decimal places than the field; the extra digits are dropped."
+
+[[msg]]
 id = "RNF3703"
 sev = 20
 text = "A subfield or parameter appears outside any structure, prototype or interface."
@@ -1362,6 +1392,11 @@ text = "The input field ends past the file's record length; it is ignored."
 id = "RNF5002"
 sev = 20
 text = "A calculation without a control level follows total calculations; the previous level is used."
+
+[[msg]]
+id = "RNF5006"
+sev = 20
+text = "Column 9 holds neither N nor a blank; a blank is assumed."
 
 [[msg]]
 id = "RNF5007"
@@ -1483,6 +1518,11 @@ sev = 30
 text = "The arrays MOVEA moves between differ in type or length; the specification is ignored."
 
 [[msg]]
+id = "RNF7542"
+sev = 30
+text = "The argument for parameter &1 is passed by reference and must be a variable."
+
+[[msg]]
 id = "RNF7565"
 sev = 30
 text = "EVALR needs a fixed-length character or graphic target; &1 is varying."
@@ -1498,3 +1538,5 @@ id = "RNF7602"
 sev = 0
 text = "No EXCEPT operation names the output name &1."
 vars = ["*CHAR 50"]
+
+

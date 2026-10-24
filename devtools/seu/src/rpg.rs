@@ -14,7 +14,7 @@ use rpgfront::{Member, NoIncludes};
 const ERROR: u8 = 20;
 
 /// Diagnostics about other members: the checker reads only this one.
-const ELSEWHERE: &[&str] = &["RNF0023", "RNF0024"];
+const ELSEWHERE: &[&str] = &["RNF0273", "RNF0024"];
 
 /// The first error on a touched record: its index and the message, or
 /// `None` when the touched records are clean.
@@ -103,6 +103,6 @@ mod tests {
         let r = rec(&["     C                   BADOP                                        "]);
         let (at, msg) = check(&r, &[0]).expect("an error");
         assert_eq!(at, 0);
-        assert!(msg.starts_with("RNF5013"), "{msg}");
+        assert!(msg.starts_with("RNF5014"), "{msg}");
     }
 }

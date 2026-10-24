@@ -2,116 +2,60 @@
 # one per line (a member, or batch/*) with the reason; the listing
 # comparison (tests/rpg_listing.rs) reports them apart and does not
 # fail on them.
-b12err/* the compile-error batch: its diagnostics (identifiers, columns) are being written
-BIT006 the EVAL-CORR summary section is not produced yet
-DCL018 references through nested LIKEDS subfields are not tracked per copy
-DCL021 RNF7030 of a LIKE in a qualified structure: its placement and cross-reference entry
-SPEC018 RNF0263 markers should span the whole column field
-DSP001 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP002 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP003 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP004 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP005 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP006 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP007 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP008 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP009 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP010 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP011 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP012 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP013 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP014 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP015 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP016 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP017 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP018 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP019 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP020 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP021 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-DSP022 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-EXP114 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL001 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL002 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL003 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL004 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL005 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL006 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL007 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL008 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL009 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL010 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL011 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL012 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL013 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL014 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL015 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL016 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL017 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL018 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL019 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL020 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL021 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL022 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL023 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL024 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL025 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL026 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL027 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL028 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL029 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL030 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL031 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL032 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-SQL033 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-UCS001 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-UCS002 listing differs since the batch 8, 10, 11 and 12 merges: being worked
-LST001 listing being matched (new member or new outcome)
-LST002 listing being matched (new member or new outcome)
-LST003 listing being matched (new member or new outcome)
-LST004 listing being matched (new member or new outcome)
-LST006 listing being matched (new member or new outcome)
-LST007 listing being matched (new member or new outcome)
-LST008 listing being matched (new member or new outcome)
-LST009 listing being matched (new member or new outcome)
-LST010 listing being matched (new member or new outcome)
-LST012 listing being matched (new member or new outcome)
-LST013 listing being matched (new member or new outcome)
-LST014 listing being matched (new member or new outcome)
-LST015 listing being matched (new member or new outcome)
-LST016 listing being matched (new member or new outcome)
-LST017 listing being matched (new member or new outcome)
-LST019 listing being matched (new member or new outcome)
-LST020 listing being matched (new member or new outcome)
-LST022 listing being matched (new member or new outcome)
-LST023 listing being matched (new member or new outcome)
-LST024 listing being matched (new member or new outcome)
-LST025 listing being matched (new member or new outcome)
-LST026 listing being matched (new member or new outcome)
-LST027 listing being matched (new member or new outcome)
-LST029 listing being matched (new member or new outcome)
-LST030 listing being matched (new member or new outcome)
-LST031 listing being matched (new member or new outcome)
-LST032 listing being matched (new member or new outcome)
-LST033 listing being matched (new member or new outcome)
-LST035 listing being matched (new member or new outcome)
-LST036 listing being matched (new member or new outcome)
-LST037 listing being matched (new member or new outcome)
-LST038 listing being matched (new member or new outcome)
-LST039 listing being matched (new member or new outcome)
-LST040 listing being matched (new member or new outcome)
-SQL034 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
-SQL035 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
-SQL036 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
-SQL037 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
-SQL038 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
-SQL039 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
-SQL040 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
-SQL041 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
-SQL042 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
-SQL043 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
-SQL044 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
-SQL045 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
-SQL046 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
-SQL047 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
-SQL048 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
-SQL049 listing differs as every embedded SQL listing does (SQL001-SQL033): being worked
+b11sql/* the SQL precompiler's listing and the compile of IBM's generated source (SQL_ variables, QSQROUTE calls) are not produced
+ERR090 the binding directories do not exist: IBM's bind diagnostics section comes from binding, after the compile listing
+EXP114 RNF7551 for a quotient kept to 9 decimals for a 4-decimal target: IBM's division rule is not known (open question)
+LST016 the oracle job's CCSID 273 shows the INDENT('| ') bar as ']' (oracle artifact)
+ERR231 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR232 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR233 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR236 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR237 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR238 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR239 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR243 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR245 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR248 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR249 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR251 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR254 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR255 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR256 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR258 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR260 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR262 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR263 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR264 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR265 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR266 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR267 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR270 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR271 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR272 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR273 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR274 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR275 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR276 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR277 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR278 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR279 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR282 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR283 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR284 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR285 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR289 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR290 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR291 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR292 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR293 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR294 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR296 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR299 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR307 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR308 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR309 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR311 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR312 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR313 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR314 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet
+ERR316 listing of a batch 12 member added after the listing work: diagnostic placement not matched yet

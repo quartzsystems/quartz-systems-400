@@ -35,7 +35,7 @@ with columns 6 and 7 blank is free form in columns 8 to 80, and
 columns 81 to 100 are comments. Directives start with `/` in column 7
 (or, in free form, as the first non-blank). `/COPY` nests to
 `COPYNEST` (32); a member already on the copy stack is refused
-(`RNF0024`), a missing one is `RNF0023`. `/DEFINE`, `/UNDEFINE`, `/IF
+(`RNF0024`), a missing one is `RNF0273`. `/DEFINE`, `/UNDEFINE`, `/IF
 [NOT] DEFINED`, `/ELSEIF`, `/ELSE`, `/ENDIF` and `/EOF` follow IBM's
 rules; an `/IF` open at the end of its member is an error.
 

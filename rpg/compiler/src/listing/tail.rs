@@ -18,12 +18,13 @@ use crate::msgs;
 pub(crate) fn additional(out: &mut Out, c: &Compiled) {
     out.new_page(None);
     out.line('0', format!("{:10}{}", "", spaced("Additional Diagnostic Messages")));
-    out.line('0', " Msg id  Sv Number Seq     Message text");
-    let mut ds: Vec<&rpgfront::Diag> = c.diags.iter().filter(|d| source::place(d) == Place::Additional).collect();
+    out.line('0', if c.srcstmt() { " Msg id  Sv   Statement    Message text" } else { " Msg id  Sv Number Seq     Message text" });
+    let mut ds: Vec<&rpgfront::Diag> = c.diags.iter().filter(|d| source::place_in(c, d) == Place::Additional).collect();
     // By line, then in the order IBM's checks find them.
     let rank = |id: &str| match id {
-        "RNF7030" => 0,
-        "RNF7421" | "RNF7551" | "RNF7066" => 1,
+        "RNF7451" => 0,
+        "RNF7030" => 1,
+        "RNF7421" | "RNF7551" | "RNF7066" => 2,
         _ => 5,
     };
     // The file checks come first, unused formats before blocking.
@@ -32,9 +33,10 @@ pub(crate) fn additional(out: &mut Out, c: &Compiled) {
         "RNF7086" => 1,
         _ => 2,
     };
-    ds.sort_by_key(|d| (group(d.msgid), d.at.line, rank(d.msgid)));
+    // The module's own (line 0) last.
+    ds.sort_by_key(|d| (group(d.msgid), if d.at.line == 0 { u32::MAX } else { d.at.line }, rank(d.msgid)));
     for d in ds {
-        let field = format!("{:>6}", if d.at.line == 0 { 0 } else { c.listing_line(d.at.line) });
+        let field = if c.srcstmt() { String::new() } else { format!("{:>6}", if d.at.line == 0 { 0 } else { c.listing_line(d.at.line) }) };
         source::diag_lines(out, d, &field, &source::seq_of(c, d));
     }
     out.end_line(
@@ -52,11 +54,11 @@ pub(crate) fn buffer(out: &mut Out, c: &Compiled) {
     // Each kind of output operation (WRITE, UPDATE) has its own buffer.
     let calcs: Vec<&rpgfront::ast::Stmt> = c.module.calcs.iter().chain(c.module.procs.iter().flat_map(|p| p.calcs.iter())).collect();
     let ops_naming = |fmt: &str| {
-        ["WRITE", "UPDATE"]
+        [&["WRITE", "EXFMT"][..], &["UPDATE"][..]]
             .iter()
-            .filter(|op| {
+            .filter(|ops| {
                 calcs.iter().any(|s| {
-                    s.op.code == **op
+                    ops.contains(&s.op.code.as_str())
                         && s.op.result.is_empty()
                         && s.op.f2.first().or_else(|| s.op.f1.first()).and_then(|e| e.name()).is_some_and(|n| n.eq_ignore_ascii_case(fmt))
                 })
@@ -66,9 +68,12 @@ pub(crate) fn buffer(out: &mut Out, c: &Compiled) {
     };
     let mut generated: Vec<(u32, u32, u32, String)> = Vec::new();
     for (b, first) in plan.iter().zip(&nums.blocks).filter(|(b, _)| b.kind == 'O') {
-        let fmt = b.refs.first().map(|r| r.0.clone()).unwrap_or_default();
-        for _ in 0..ops_naming(&fmt) {
-            generated.extend(b.positions.iter().map(|(k, s, e, n)| (first + k, *s, *e, n.clone())));
+        let mut fmts: Vec<&String> = b.positions.iter().map(|p| &p.0).collect();
+        fmts.dedup();
+        for fmt in fmts {
+            for _ in 0..ops_naming(fmt) {
+                generated.extend(b.positions.iter().filter(|p| p.0 == *fmt).map(|(_, k, s, e, n)| (first + k, *s, *e, n.clone())));
+            }
         }
     }
     if fields.iter().all(|o| o.fields.is_empty()) && generated.is_empty() {
@@ -149,6 +154,13 @@ fn field_width(c: &Compiled, f: &rpgfront::ast::OutputField) -> u32 {
     if name.starts_with("*IN") {
         return 1;
     }
+    if let Some(d) = match name.as_str() {
+        "UDATE" => Some(6),
+        "*DATE" => Some(8),
+        _ => None,
+    } {
+        return if f.edit.is_empty() { u32::from(d) } else { edit_width(d, 0, &f.edit).unwrap_or(u32::from(d)) };
+    }
     let Some(id) = c.table.find(0, &name) else { return 0 };
     let s = &c.table.syms[id];
     if let Some(rpgfront::ast::Expr::Lit(rpgfront::ast::Lit::Char(w), _)) = &f.constant
@@ -184,18 +196,32 @@ fn edit_width(d: u8, s: u8, edit: &str) -> Option<u32> {
 }
 
 pub(crate) fn external(out: &mut Out, c: &Compiled) {
-    let _ = c;
+    let (procs, imported, exported) = super::xref::externals(c);
     out.new_page(None);
     out.line('0', format!("{:22}{}", "", spaced("External References")));
     out.line('0', "      Statically bound procedures:");
     out.line(' ', "         Procedure                            References");
-    out.line(' ', "         No references in the source.");
-    out.line('0', "      Imported fields:");
-    out.line(' ', "         Field             Attributes         Defined");
-    out.line(' ', "         No references in the source.");
-    out.line('0', "      Exported fields:");
-    out.line(' ', "         Field             Attributes         Defined");
-    out.line(' ', "         No references in the source.");
+    for (name, refs) in &procs {
+        let mut chunks = refs.chunks(4);
+        out.line(' ', format!("{:9}{name:<36}{}", "", chunks.next().map(<[String]>::concat).unwrap_or_default()));
+        for ch in chunks {
+            out.line(' ', format!("{:45}{}", "", ch.concat()));
+        }
+    }
+    // IBM leaves the list blank after a second interface it ignored.
+    if procs.is_empty() && !c.diags.iter().any(|d| d.msgid == "RNF3768") {
+        out.line(' ', "         No references in the source.");
+    }
+    for (title, list) in [("      Imported fields:", &imported), ("      Exported fields:", &exported)] {
+        out.line('0', title);
+        out.line(' ', "         Field             Attributes         Defined");
+        for (name, attr, def) in list {
+            out.line(' ', format!("{:9}{name:<18}{attr:<18}{def}", ""));
+        }
+        if list.is_empty() {
+            out.line(' ', "         No references in the source.");
+        }
+    }
     out.end_line('0', format!("{:3}{}", "", "* * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *"));
 }
 
@@ -203,7 +229,7 @@ pub(crate) fn external(out: &mut Out, c: &Compiled) {
 const SUMMARY_AT: usize = 19;
 const SUMMARY_WIDTH: usize = 61;
 
-pub(crate) fn summary(out: &mut Out, c: &Compiled, unref: usize) {
+pub(crate) fn summary(out: &mut Out, c: &Compiled, extra: &[(&'static str, usize)]) {
     out.new_page(None);
     out.line('0', format!("{:26}{}", "", spaced("Message Summary")));
     out.line('0', " Msg id  Sv Number Message text");
@@ -212,8 +238,8 @@ pub(crate) fn summary(out: &mut Out, c: &Compiled, unref: usize) {
     for d in &c.diags {
         *counts.entry((d.severity, d.msgid)).or_default() += 1;
     }
-    if unref > 0 {
-        *counts.entry((0, super::xref::UNREF)).or_default() += unref;
+    for &(id, n) in extra.iter().filter(|(_, n)| *n > 0) {
+        *counts.entry((0, id)).or_default() += n;
     }
     for ((sev, id), n) in counts {
         let text = super::lines::wrap_to(&msgs::summary_text(id), SUMMARY_WIDTH, super::lines::lines(id, true));
@@ -249,14 +275,17 @@ pub(crate) fn final_summary(out: &mut Out, c: &Compiled, o: &Options, unref: usi
 
 /// The source totals: records, specifications, data records, comments.
 fn totals(c: &Compiled) -> (usize, usize, usize, usize) {
-    let made: usize = c.generated.iter().map(|(_, n)| *n as usize).sum();
+    let hidden_gen = c.ctl.option.iter().any(|o| o.eq_ignore_ascii_case("*NOEXPDDS"));
+    let made: usize = if hidden_gen { 0 } else { c.generated.iter().map(|(_, n)| *n as usize).sum() };
     let mut records = made;
     let mut specs = made;
     let mut data = 0;
     let mut comments = 0;
     let info = super::stmts::analyze(&c.read.lines);
+    let mut between = false;
+    let hidden = c.ctl.option.iter().any(|o| o.eq_ignore_ascii_case("*NOSHOWCPY"));
     for (l, inf) in c.read.lines.iter().zip(&info) {
-        if l.class == Class::Skipped {
+        if l.class == Class::Skipped || (l.member > 0 && hidden) || super::unnumbered(l) {
             continue;
         }
         records += 1;
@@ -264,7 +293,16 @@ fn totals(c: &Compiled) -> (usize, usize, usize, usize) {
             Class::Comment => comments += 1,
             // Procedure boundaries are not counted as specifications.
             Class::Spec(_) | Class::Free | Class::Sql => {
-                if !matches!(inf.ty, super::stmts::Ty::Spec('P') | super::stmts::Ty::EndProc) {
+                // Calculations between procedures are ignored.
+                if inf.starts {
+                    match inf.ty {
+                        super::stmts::Ty::EndProc => between = !super::procs_lost(c),
+                        super::stmts::Ty::Spec('P') => between = false,
+                        _ => {}
+                    }
+                }
+                let ignored = between && inf.ty == super::stmts::Ty::Spec('C');
+                if !ignored && !matches!(inf.ty, super::stmts::Ty::Spec('P') | super::stmts::Ty::EndProc) {
                     specs += 1;
                 }
             }

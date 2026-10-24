@@ -1698,6 +1698,12 @@ fn inz_value(g: &mut Gen<'_>, ty: &Ty, dim: u32, place: &str, e: &Expr) {
     if dim == 0 && g.dt_inz(ty, place, e) {
         return;
     }
+    // More decimals than the field keeps: a warning, the rest dropped.
+    if let (Expr::Lit(Lit::Num(n), _), Ty::Packed(_, s) | Ty::Zoned(_, s) | Ty::Bin(_, s)) = (e, ty)
+        && n.split_once('.').is_some_and(|(_, f)| f.trim_end_matches('0').len() > usize::from(*s))
+    {
+        g.err(ids::INZ_DECIMALS, 10, String::new());
+    }
     let Some(v) = g.expr(e, Want::default()) else { return };
     if !inz_fits(ty, &v) {
         g.err(ids::INZ_TOO_LONG, 20, String::new());
@@ -1977,12 +1983,14 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
         }
     }
     // Locals.
-    let local_ids: Vec<SymId> = (0..g.t.syms.len())
+    let mut local_ids: Vec<SymId> = (0..g.t.syms.len())
         .filter(|&i| {
             let s = &g.t.syms[i];
             s.scope == scope && s.parent.is_none() && matches!(s.kind, Some(Kind::Field | Kind::Ds(_)))
         })
         .collect();
+    // Pointers BASED declared come before the fields based on them.
+    local_ids.sort_by_key(|&i| !(g.t.syms[i].implicit && g.t.syms[i].ty == Ty::Ptr));
     for &i in &local_ids {
         let s = g.t.syms[i].clone();
         let ty = g.t.ir_storage(&s);

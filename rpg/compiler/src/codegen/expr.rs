@@ -280,12 +280,23 @@ impl Gen<'_> {
                 // A template has no storage.
                 if sym.template || sym.parent.is_some_and(|p| self.t.syms[p].template) {
                     self.err(ids::TEMPLATE_USED, 30, name.to_string());
+                    // And again for the subfield it qualifies.
+                    if let Some(Step::Field(f)) = steps.first() {
+                        self.err(ids::TEMPLATE_USED, 30, f.to_ascii_uppercase());
+                    }
                     return None;
                 }
                 let mut place = place_of(self.t, id);
                 let mut ty = sym.ty.clone();
                 let mut dim = sym.dim;
                 let mut cur = id;
+                // A table takes no index: it is ignored.
+                let steps = if sym.table && dim > 0 && matches!(steps.first(), Some(Step::Args(_))) {
+                    self.err(ids::TABLE_INDEX, 20, name.to_string());
+                    &steps[1..]
+                } else {
+                    steps
+                };
                 if sym.table && dim > 0 && steps.is_empty() {
                     place = self.table_elem(id, &place);
                     dim = 0;
@@ -313,12 +324,14 @@ impl Gen<'_> {
                                 return None;
                             };
                             // Only a qualified structure qualifies a name.
-                            if cur == id && matches!(sym.kind, Some(Kind::Ds(_))) && !self.t.ds[di].qualified {
+                            if cur == id && matches!(sym.kind, Some(Kind::Ds(_))) && (!self.t.ds[di].qualified || self.t.ds[di].unqualified_array) {
                                 self.err(ids::BAD_QUALIFIED, 30, name.to_string());
                                 return None;
                             }
                             let Some(sid) = self.t.subfield(di, f) else {
-                                self.err(ids::NOT_DEFINED, 30, f.clone());
+                                // Where the name is written, an undefined operand.
+                                let at = self.ref_at;
+                                self.undefined_name(f, at);
                                 return None;
                             };
                             self.t.refer(sid, self.at.line, modify);
@@ -462,8 +475,10 @@ impl Gen<'_> {
         }
         let relational = matches!(op, BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Gt | BinOp::Le | BinOp::Ge);
         let w = if relational { Want { compared: true, ..w } } else { w };
-        let va = self.expr(a, w)?;
-        let vb = self.expr(b, w)?;
+        // Both operands are looked at, so each undefined name is told.
+        let va = self.expr(a, w);
+        let vb = self.expr(b, w);
+        let (va, vb) = (va?, vb?);
         // An operand whose type could not be resolved: its own error
         // was given; the expression is reported as undefined.
         if [&va, &vb].iter().any(|v| v.ty == Ty::Unknown && v.kind == Vk::Place) {

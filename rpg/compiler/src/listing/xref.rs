@@ -44,7 +44,21 @@ fn gen_refs(c: &Compiled) -> GenRefs {
     let mut g = GenRefs::default();
     for (b, first) in plan.iter().zip(&nums.blocks) {
         for (name, k, flag) in &b.defs {
-            g.defs.entry(name.clone()).or_insert(((first + k) | GEN, *flag));
+            match g.defs.get(name) {
+                // A response indicator defined again is changed again.
+                Some(_) if name.starts_with("*IN") => g.refs.entry(name.clone()).or_default().push(((first + k) | GEN, 'M')),
+                // A field another format's input defines again: each
+                // input changes it.
+                Some(_) => {
+                    if let Some(d) = g.defs.get_mut(name) {
+                        d.1 = 'M';
+                    }
+                    g.refs.entry(name.clone()).or_default().push(((first + k) | GEN, 'M'));
+                }
+                None => {
+                    g.defs.insert(name.clone(), ((first + k) | GEN, *flag));
+                }
+            }
         }
         for (name, k) in &b.refs {
             g.refs.entry(name.clone()).or_default().push(((first + k) | GEN, ' '));
@@ -100,18 +114,19 @@ struct Item {
 
 impl Item {
     fn unreferenced(&self) -> bool {
-        self.refs.iter().all(|(_, f)| *f == 'D' || *f == 'd')
+        self.refs.iter().all(|(_, f)| matches!(f, 'D' | 'd' | 'n' | 'm'))
     }
 }
 
 /// Special subroutines are never unreferenced.
 fn always_used(name: &str) -> bool {
-    matches!(name, "*PSSR" | "*INZSR")
+    matches!(name, "*PSSR" | "*INZSR" | "*ENTRY")
 }
 
 /// The cross-reference's content.
 pub(crate) struct Model {
     files: Vec<Item>,
+    proc_files: Vec<Vec<Item>>,
     globals: Vec<Item>,
     procs: Vec<(String, Vec<Item>)>,
     inds: Vec<Item>,
@@ -120,10 +135,17 @@ pub(crate) struct Model {
 impl Model {
     /// How many names are marked unreferenced.
     pub fn unreferenced(&self) -> usize {
-        // Indicators are marked but not counted.
-        let all = self.files.iter().chain(&self.globals).chain(self.procs.iter().flat_map(|p| &p.1));
-        all.map(|i| usize::from(i.msg == UNREF) + i.subs.iter().filter(|s| s.msg == UNREF).count()).sum()
+        // Of the indicators, only those set and never used are counted.
+        let all = self.files.iter().chain(self.proc_files.iter().flatten()).chain(&self.globals).chain(self.procs.iter().flat_map(|p| &p.1)).chain(
+            self.inds.iter().filter(|i| i.refs.iter().all(|(_, f)| *f == 'D')),
+        );
+        all.map(count_unref).sum()
     }
+}
+
+/// An item's unreferenced names, its nested subfields' among them.
+fn count_unref(i: &Item) -> usize {
+    usize::from(i.msg == UNREF) + i.subs.iter().map(count_unref).sum::<usize>()
 }
 
 fn attrs_of(c: &Compiled, s: &Sym) -> Vec<String> {
@@ -155,13 +177,25 @@ fn attrs_of(c: &Compiled, s: &Sym) -> Vec<String> {
     match &s.storage {
         Storage::Based(p) => {
             let p = &c.table.syms[*p];
-            v.push(format!("BASED({})", if p.name.starts_with('_') { "_QRNL_PST+".to_string() } else { p.name.clone() }));
+            let based = if p.name.starts_with("_EP") {
+                "_QRNL_PRM+".to_string()
+            } else if p.name.starts_with('_') {
+                "_QRNL_PST+".to_string()
+            } else {
+                p.name.clone()
+            };
+            v.push(format!("BASED({based})"));
         }
-        Storage::Param if !is_value_param(c, s) => v.push("BASED(_QRNL_PST+)".into()),
+        // A parameter passed by reference, when it is used.
+        // (when the compile got as far as laying out storage).
+        Storage::Param if !is_value_param(c, s) && c.max_severity <= c.ctl.genlvl => v.push("BASED(_QRNL_PST+)".into()),
         _ => {}
     }
     if let Ty::VarChar(_, p) | Ty::VarUcs2(_, p) | Ty::VarGraph(_, p) = &s.ty {
         v.push(format!("VARYING({p})"));
+    }
+    if matches!(s.ty, Ty::Ucs2(_) | Ty::VarUcs2(..)) {
+        v.push("CCSID(13488)".into());
     }
     if s.template {
         v.push("TEMPLATE".into());
@@ -232,29 +266,39 @@ fn item_at(c: &Compiled, w: &Refs, g: &GenRefs, id: usize, depth: usize) -> Item
     };
     let gen_def = g.defs.get(&key).filter(|_| s.implicit && matches!(s.kind, Some(Kind::Field | Kind::Subfield)));
     let generated = gen_def.is_some() || (s.implicit && s.kind == Some(Kind::Field) && g.refs.contains_key(&s.name));
+    let file_field = s.kind == Some(Kind::Field);
     match gen_def {
         Some(d) => refs.push(*d),
+        // A file's output-only field is defined on no line.
+        None if generated => {}
         None if has_definition(c, id) => refs.push((name_line(c, s.def_line), 'D')),
         None => {}
     }
-    if generated {
+    if generated && file_field {
         refs.extend(g.refs.get(&s.name).cloned().unwrap_or_default());
     }
     refs.extend(w.syms.get(&id).cloned().unwrap_or_default());
     sort_refs(c, &mut refs);
+    let attrs = attrs_of(c, s);
     let mut it = Item {
         msg: "",
         name: format!("{:w$}{}", "", display_name(c, s), w = depth * 2),
-        attrs: attrs_of(c, s),
+        attrs,
         refs,
         subs: Vec::new(),
     };
-    if let Some(Kind::Ds(di)) = s.kind
-        && c.table.ds.get(di).is_some_and(|d| d.qualified)
-    {
+    // A qualified structure's subfields, and a nested one's.
+    let nested = match (&s.kind, &s.ty) {
+        (Some(Kind::Ds(di)), _) if c.table.ds.get(*di).is_some_and(|d| d.qualified) => Some(*di),
+        (Some(Kind::Subfield), Ty::Ds(di)) => Some(*di),
+        _ => None,
+    };
+    if let Some(di) = nested {
         for &sf in &c.table.ds[di].subfields {
-            // Copied subfields nothing refers to are not listed.
+            // Copied subfields nothing refers to are not listed, but
+            // counted as unreferenced.
             if !has_definition(c, sf) && w.syms.get(&sf).is_none_or(Vec::is_empty) {
+                it.subs.push(Item { msg: UNREF, name: String::new(), attrs: Vec::new(), refs: Vec::new(), subs: Vec::new() });
                 continue;
             }
             let mut sub = item_at(c, w, g, sf, depth + 1);
@@ -263,10 +307,27 @@ fn item_at(c: &Compiled, w: &Refs, g: &GenRefs, id: usize, depth: usize) -> Item
             }
             it.subs.push(sub);
         }
+        for ((ds, name), refs) in &w.undefined_subs {
+            if *ds == id {
+                it.subs.push(Item {
+                    msg: "RNF7030",
+                    name: format!("{:w$}{name}", "", w = (depth + 1) * 2),
+                    attrs: vec!["**UNDEF**".into()],
+                    refs: refs.clone(),
+                    subs: Vec::new(),
+                });
+            }
+        }
         it.subs.sort_by_key(|s| ebcdic_key(s.name.trim_start()));
     }
-    if s.ty == Ty::Unknown && matches!(s.kind, Some(Kind::Field | Kind::Subfield | Kind::Param)) {
+    // A structure whose LIKEDS failed is itself not defined.
+    let failed_ds = matches!(s.kind, Some(Kind::Ds(_)))
+        && c.diags.iter().any(|d| d.msgid == "RNF7030" && d.at.line == s.def_line && d.args.first().is_some_and(|a| a.eq_ignore_ascii_case(&s.name)));
+    if failed_ds || (s.ty == Ty::Unknown && matches!(s.kind, Some(Kind::Field | Kind::Subfield | Kind::Param))) {
         it.msg = "RNF7030";
+        if failed_ds {
+            it.attrs = vec!["**UNDEF**".into()];
+        }
         return it;
     }
     // A field a calculation defines by its length is in use.
@@ -299,6 +360,8 @@ fn qualified_sub(c: &Compiled, s: &Sym) -> bool {
     s.kind == Some(Kind::Subfield)
         && s.parent.is_some_and(|p| match c.table.syms.get(p).and_then(|p| p.kind.clone()) {
             Some(Kind::Ds(di)) => c.table.ds.get(di).is_some_and(|d| d.qualified),
+            // A nested structure's subfields.
+            Some(Kind::Subfield) => matches!(c.table.syms[p].ty, Ty::Ds(_)),
             _ => false,
         })
 }
@@ -313,13 +376,25 @@ fn scope_items(c: &Compiled, w: &Refs, g: &GenRefs, scope: usize) -> Vec<Item> {
         .map(|(i, s)| (ebcdic_key(&s.name), item(c, w, g, i)))
         .collect();
     if scope == 0 {
-        for (k, refs) in &w.fields {
+        let mut specials: std::collections::BTreeMap<String, Vec<At>> = w.fields.clone();
+        for (k, d) in g.defs.iter().filter(|(k, _)| k.starts_with("*IN")) {
+            specials.entry(k.clone()).or_default().push(*d);
+        }
+        for (k, r) in g.refs.iter().filter(|(k, _)| k.starts_with("*IN")) {
+            specials.entry(k.clone()).or_default().extend(r.iter().copied());
+        }
+        for (k, refs) in &specials {
             let mut refs = refs.clone();
             sort_refs(c, &mut refs);
             let name = if k == "*IN" { "*IN(99)".to_string() } else { k.clone() };
-            let attr = if k.starts_with("PAGE") { "P(4,0)" } else { "N(1)" };
+            let attr = match k.as_str() {
+                "UDATE" => "S(6,0)",
+                "*DATE" => "S(8,0)",
+                p if p.starts_with("PAGE") => "P(4,0)",
+                _ => "N(1)",
+            };
             let ind = k.strip_prefix("*IN").unwrap_or(k);
-            let declared = refs.iter().all(|(_, f)| *f == 'd') && w.inds.get(ind).is_none_or(|v| v.iter().all(|(_, f)| *f == 'd'));
+            let declared = refs.iter().all(|(_, f)| matches!(f, 'd' | 'D')) && w.inds.get(ind).is_none_or(|v| v.iter().all(|(_, f)| *f == 'd'));
             v.push((
                 ebcdic_key(k),
                 Item {
@@ -367,6 +442,35 @@ fn scope_items(c: &Compiled, w: &Refs, g: &GenRefs, scope: usize) -> Vec<Item> {
             },
         ));
     }
+    // Names only a declaration's diagnostic tells of.
+    if scope == 0 {
+        for d in c.diags.iter().filter(|d| d.msgid == "RNF7030") {
+            let Some(name) = d.args.first().map(|a| a.to_ascii_uppercase()) else { continue };
+            let known = c.table.find(0, &name).is_some()
+                || w.undefined.keys().any(|(_, n)| *n == name)
+                || w.undefined_subs.keys().any(|(_, n)| n.eq_ignore_ascii_case(&name))
+                || c.table.syms.iter().any(|s| s.kind == Some(Kind::Subfield) && s.name == name && s.def_line == d.at.line)
+                || name.contains('.');
+            if known || name.is_empty() || v.iter().any(|(k, _)| *k == ebcdic_key(&name)) {
+                continue;
+            }
+            // Defined (and dropped) by its own declaration, or named there.
+            let defines = c.read.lines.iter().find(|l| l.no == d.at.line).is_some_and(|l| {
+                let words: Vec<String> = l.text.split_whitespace().take(2).map(|w| w.trim_end_matches(';').to_ascii_uppercase()).collect();
+                words.len() == 2 && words[0].starts_with("DCL-") && words[1] == name
+            });
+            v.push((
+                ebcdic_key(&name),
+                Item {
+                    msg: "RNF7030",
+                    name: name.clone(),
+                    attrs: vec!["**UNDEF**".into()],
+                    refs: vec![(d.at.line, if defines { 'D' } else { ' ' })],
+                    subs: Vec::new(),
+                },
+            ));
+        }
+    }
     v.sort_by(|a, b| a.0.cmp(&b.0));
     v.dedup_by(|a, b| a.0 == b.0);
     v.into_iter().map(|(_, i)| i).collect()
@@ -393,15 +497,33 @@ fn ind_rank(k: &str) -> u8 {
 }
 
 /// Build the cross-reference.
-pub(crate) fn model(c: &Compiled, unref: bool) -> Model {
+pub(crate) fn model(c: &Compiled) -> Model {
     let w = super::refs::collect(c);
     let g = gen_refs(c);
+    let files = file_items(c, &w, &g, 0);
+    let proc_files = (1..=c.module.procs.len()).map(|k| file_items(c, &w, &g, k)).collect();
+    model_rest(c, &w, &g, files, proc_files)
+}
+
+/// A scope's files and their record formats.
+fn file_items(c: &Compiled, w: &Refs, g: &GenRefs, scope: usize) -> Vec<Item> {
     let mut files = Vec::new();
-    let mut sorted: Vec<&crate::files::File> = c.files.iter().filter(|f| f.scope == 0).collect();
+    let mut sorted: Vec<&crate::files::File> = c.files.iter().filter(|f| f.scope == scope).collect();
     sorted.sort_by_key(|f| ebcdic_key(&f.name));
+    sorted.dedup_by(|a, b| a.name == b.name);
     for f in sorted {
-        let id = c.table.find(0, &f.name);
+        let id = c.table.find(scope, &f.name);
         let mut refs = vec![(f.def_line, 'D')];
+        // A second declaration of the name refers to the first.
+        refs.extend(c.files.iter().filter(|o| o.name == f.name && o.def_line != f.def_line).map(|o| (o.def_line, 'n')));
+        // So does one the compiler refused.
+        if scope == 0 {
+            for d in c.module.files.iter().filter(|d| d.name.eq_ignore_ascii_case(&f.name) && d.at.line != f.def_line) {
+                if !refs.iter().any(|(l, _)| *l == d.at.line) {
+                    refs.push((d.at.line, 'n'));
+                }
+            }
+        }
         if let Some(id) = id {
             refs.extend(w.syms.get(&id).cloned().unwrap_or_default());
         }
@@ -418,7 +540,11 @@ pub(crate) fn model(c: &Compiled, unref: bool) -> Model {
         let by_format = c.table.recfmts.iter().filter(|r| r.file_name == f.name).any(|r| {
             c.table.find(0, &r.name).is_some_and(|id| w.syms.get(&id).is_some_and(|v| !v.is_empty())) || g.refs.contains_key(&r.name)
         });
-        if it.unreferenced() && !cycle && !by_format {
+        let not_found = f.external && f.ext.is_none();
+        // An operation the device does not allow is no use of the file.
+        let severe = |line: u32| c.diags.iter().any(|d| d.at.line == line && matches!(d.msgid, "RNF5276" | "RNF5202"));
+        let unused = it.refs.iter().all(|(l, fl)| matches!(fl, 'D' | 'd' | 'n' | 'm') || severe(*l));
+        if unused && !cycle && !by_format && !not_found {
             it.msg = UNREF;
         }
         for r in c.table.recfmts.iter().filter(|r| r.file_name == f.name) {
@@ -447,23 +573,56 @@ pub(crate) fn model(c: &Compiled, unref: bool) -> Model {
         }
         files.push(it);
     }
-    let globals = scope_items(c, &w, &g, 0);
+    files
+}
+
+fn model_rest(c: &Compiled, w: &Refs, g: &GenRefs, files: Vec<Item>, proc_files: Vec<Vec<Item>>) -> Model {
+    let globals = scope_items(c, w, g, 0);
     let procs = c
         .module
         .procs
         .iter()
         .enumerate()
-        .map(|(k, p)| (p.name.to_ascii_uppercase(), scope_items(c, &w, &g, k + 1)))
+        .map(|(k, p)| (p.name.to_ascii_uppercase(), scope_items(c, w, g, k + 1)))
         .collect();
     // Numbered indicators first, then the others in EBCDIC order.
-    let mut ind_names: Vec<(&String, &Vec<At>)> = w.inds.iter().collect();
+    // Response indicators on generated lines are changed there.
+    let mut all_inds = w.inds.clone();
+    // A display file's separate indicator area defines the indicators.
+    // (without INDDS), on the first generated input line.
+    let indara = c.files.iter().any(|f| f.dev == crate::files::Dev::Workstn && f.indds.is_none() && f.ext.as_ref().is_some_and(|e| e.indara));
+    if indara {
+        let plan = super::genlines::plan(c);
+        let nums = super::source::numbers(c, &plan);
+        if let Some((_, first)) = plan.iter().zip(&nums.blocks).find(|(b, _)| b.kind == 'I') {
+            for (k, v) in &mut all_inds {
+                if k.bytes().all(|b| b.is_ascii_digit()) {
+                    v.push((*first | GEN, 'D'));
+                }
+            }
+        }
+    }
+    for (k, v, flag) in g.defs.iter().map(|(k, d)| (k, vec![*d], 'm')).chain(g.refs.iter().map(|(k, v)| (k, v.clone(), 'n'))) {
+        if let Some(n) = k.strip_prefix("*IN") {
+            all_inds.entry(n.to_string()).or_default().extend(v.iter().map(|(l, f)| (*l, if *f == 'M' { 'm' } else { flag })));
+        }
+    }
+    // One only generated output lines name is referred to as `*IN`.
+    let only_gen: Vec<String> = all_inds.iter().filter(|(_, v)| v.iter().all(|(_, f)| *f == 'n')).map(|(k, _)| k.clone()).collect();
+    for k in only_gen {
+        if let Some(v) = all_inds.remove(&k) {
+            all_inds.entry("*IN".into()).or_default().extend(v.into_iter().map(|(l, _)| (l, ' ')));
+        }
+    }
+    let mut ind_names: Vec<(&String, &Vec<At>)> = all_inds.iter().collect();
     ind_names.sort_by_key(|(k, _)| (ind_rank(k), (*k).clone()));
     let inds = ind_names
         .into_iter()
         .map(|(k, v)| {
             let mut refs = v.clone();
             sort_refs(c, &mut refs);
-            let only_declared = refs.iter().all(|(_, f)| *f == 'd');
+            // Set only (LR aside) is not used.
+            let only_declared = refs.iter().all(|(_, f)| matches!(f, 'd' | 'm' | 'n') || (*f == 'D' && k.as_str() != "LR"));
             Item {
                 msg: if only_declared { UNREF } else { "" },
                 name: k.clone(),
@@ -473,36 +632,30 @@ pub(crate) fn model(c: &Compiled, unref: bool) -> Model {
             }
         })
         .collect();
-    let mut m = Model {
+    Model {
         files,
+        proc_files,
         globals,
         procs,
         inds,
-    };
-    // *NOUNREF lists only what is referred to.
-    if !unref {
-        let keep = |v: &mut Vec<Item>| {
-            v.retain(|i| i.msg != UNREF);
-            for i in v.iter_mut() {
-                i.subs.retain(|s| s.msg != UNREF);
-            }
-        };
-        keep(&mut m.files);
-        keep(&mut m.globals);
-        for p in &mut m.procs {
-            keep(&mut p.1);
-        }
-        keep(&mut m.inds);
     }
-    m
 }
 
 /// A reference in its slot: the line right-aligned, then its flag.
-fn slot(c: &Compiled, (line, flag): At) -> String {
-    format!("{:>7}{}", lno(c, line), flag.to_ascii_uppercase())
+pub(crate) fn slot(c: &Compiled, (line, flag): At) -> String {
+    let flag = if flag == 'n' { ' ' } else { flag.to_ascii_uppercase() };
+    if c.srcstmt() && line & GEN == 0 {
+        let seq = c.stmt_seq(line & !super::refs::LATE);
+        return format!("{seq:>11}{flag}");
+    }
+    format!("{:>7}{flag}", lno(c, line))
 }
 
 fn print(out: &mut Out, c: &Compiled, it: &Item) {
+    // A copied subfield only counted.
+    if it.name.is_empty() && it.attrs.is_empty() && it.refs.is_empty() {
+        return;
+    }
     let refs: Vec<String> = it.refs.iter().map(|r| slot(c, *r)).collect();
     let prefix = if it.msg.is_empty() { String::new() } else { format!("*{}", it.msg) };
     let first_attr = it.attrs.first().cloned().unwrap_or_default();
@@ -558,9 +711,30 @@ pub(crate) fn xref(out: &mut Out, c: &Compiled, m: &Model) {
     for it in &m.globals {
         print(out, c, it);
     }
-    for (name, items) in &m.procs {
-        out.line(' ', format!("      Field References for subprocedure {name}"));
-        out.line('0', "         Field             Attributes         References (D=Defined M=Modified)");
+    for (k, (name, items)) in m.procs.iter().enumerate() {
+        // A procedure declared twice has one heading.
+        if k == 0 || m.procs[k - 1].0 != *name {
+            out.line(' ', format!("      Field References for subprocedure {name}"));
+        }
+        if let Some(fs) = m.proc_files.get(k).filter(|f| !f.is_empty()) {
+            out.line('0', "         File              Device             References (D=Defined)");
+            out.line(' ', "           Record");
+            for it in fs {
+                print(out, c, it);
+            }
+        }
+        // A procedure whose calculations refer to no global name, or
+        // one never ended, has no column headings.
+        let unended = c.diags.iter().any(|d| d.msgid == "RNF1502");
+        let calcs = !unended && c.module.procs.iter().find(|p| p.name.eq_ignore_ascii_case(name)).is_some_and(|p| {
+            let inside = |l: u32| p.calcs.iter().any(|s| s.at.line == l);
+            let refers = |it: &Item| it.refs.iter().any(|(l, _)| inside(*l));
+            m.globals.iter().chain(&m.inds).any(|it| refers(it) || it.subs.iter().any(refers))
+        });
+        let files = m.proc_files.get(k).is_some_and(|f| !f.is_empty());
+        if !items.is_empty() || calcs || files {
+            out.line('0', "         Field             Attributes         References (D=Defined M=Modified)");
+        }
         if items.is_empty() {
             out.line('0', "         No references in the source.");
         }
@@ -574,6 +748,63 @@ pub(crate) fn xref(out: &mut Out, c: &Compiled, m: &Model) {
         print(out, c, it);
     }
     out.end_line('0', format!("{:7}{}", "", "* * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *"));
+}
+
+/// The external references: procedures bound by name (prototypes no
+/// procedure of the module defines) with their references, and the
+/// imported and exported fields with where they are defined.
+/// A field of the external references: name, attributes, where defined.
+pub(crate) type ExtField = (String, String, String);
+/// The external references: bound procedures with their references,
+/// imported fields, exported fields.
+pub(crate) type Externals = (Vec<(String, Vec<String>)>, Vec<ExtField>, Vec<ExtField>);
+
+pub(crate) fn externals(c: &Compiled) -> Externals {
+    let w = super::refs::collect(c);
+    let mut procs = Vec::new();
+    for (id, s) in c.table.syms.iter().enumerate() {
+        let Some(Kind::Proto(pi)) = s.kind else { continue };
+        let p = &c.table.protos[pi];
+        let local = c.module.procs.iter().any(|q| q.name.eq_ignore_ascii_case(&s.name));
+        // A procedure pointer named by EXTPROC is no bound procedure.
+        // EXTPROC as written, even beside EXTPGM.
+        let written = c
+            .module
+            .defs
+            .iter()
+            .chain(c.module.procs.iter().flat_map(|q| q.defs.iter()))
+            .find(|d| d.kind == rpgfront::ast::DefKind::Pr && d.name.eq_ignore_ascii_case(&s.name))
+            .and_then(|d| d.kw("EXTPROC"))
+            .and_then(|k| k.args.first())
+            .map(|a| a.toks.iter().map(rpgfront::lex::Tok::text).collect::<String>())
+            .filter(|t| t.starts_with('\''))
+            .map(|t| t.trim_matches('\'').to_string());
+        let extproc = p.extproc.clone().or(written);
+        if local || (p.extpgm.is_some() && extproc.is_none()) || p.extproc_word {
+            continue;
+        }
+        let name = extproc.unwrap_or_else(|| s.name.clone());
+        let mut refs = vec![(p.def_line, ' ')];
+        refs.extend(w.syms.get(&id).into_iter().flatten().map(|(l, _)| (*l, ' ')));
+        sort_refs(c, &mut refs);
+        let slots = refs.iter().map(|r| slot(c, *r)).collect();
+        procs.push((name, slots));
+    }
+    let fields = |want: Storage| {
+        let mut v: Vec<(Vec<u8>, (String, String, String))> = c
+            .table
+            .syms
+            .iter()
+            .filter(|s| s.storage == want && !s.name.starts_with('_'))
+            .map(|s| {
+                let attr = attrs_of(c, s).first().cloned().unwrap_or_default();
+                (ebcdic_key(&s.name), (s.name.clone(), attr, format!("{:>6}", lno(c, s.def_line))))
+            })
+            .collect();
+        v.sort_by(|a, b| a.0.cmp(&b.0));
+        v.into_iter().map(|(_, x)| x).collect::<Vec<_>>()
+    };
+    (procs, fields(Storage::Import), fields(Storage::Export))
 }
 
 /// The key fields of keyed externally described files.

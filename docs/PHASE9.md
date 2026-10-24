@@ -336,6 +336,28 @@ members known to differ.
   summaries, indicators excepted), fields of files and input
   specifications packed, qualified subfields under their structure.
   The message summary is in severity, then identifier order.
+- **Options.** `*SRCSTMT` heads the rulers "Seq" and "Statement",
+  prints sequence numbers where statement numbers were and in the
+  cross-reference. `INDENT` gives fixed calculations their own ruler,
+  the operation field indented by the given marks per level.
+  `/TITLE` prints above every heading, `/SPACE` and `/EJECT` act and
+  are neither printed nor numbered. `*NOEXPDDS` still numbers the
+  generated lines but prints none of them; `*NOUNREF` hides nothing
+  from the listing. Source binding directories print with a
+  "Library" row under them.
+- **After errors.** IBM goes on with what it can: a bad `LIKE` or
+  `LIKEDS` makes the definition itself `RNF7030` too; decimals over the
+  digits are kept to the digits; a bad length, dimension or prefix
+  takes its limit, 1 or 2; a `LEN` stands though subfields pass it; a
+  subfield named twice still takes its room; an unsigned `LIKE`
+  adjustment is added; a basing pointer nothing declares is declared
+  by `BASED`; a structure array without `QUALIFIED` keeps its
+  subfields under it. A file use the device refuses (`RNF5276`,
+  `RNF5202`) does not count as a use.
+- **EVAL-CORR summary.** After the cross-reference, one summary per
+  pair of structures: its statements, each target subfield, then
+  `RNF7341` (target only) and `RNF7342` (source only), counted in the
+  message summary. Each row's comment is a text (masked).
 
 ## Oracle facts: compile errors
 

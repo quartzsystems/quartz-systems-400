@@ -52,6 +52,19 @@ pub struct Compiled {
 }
 
 impl Compiled {
+    /// `OPTION(*SRCSTMT)`: statements are numbered by their sequence
+    /// numbers.
+    #[must_use]
+    pub fn srcstmt(&self) -> bool {
+        self.ctl.option.iter().any(|o| o.eq_ignore_ascii_case("*SRCSTMT"))
+    }
+
+    /// The sequence number of a source line, as a statement number.
+    #[must_use]
+    pub fn stmt_seq(&self, line: u32) -> String {
+        self.read.lines.iter().find(|l| l.no == line).map(|l| l.seq.clone()).unwrap_or_default()
+    }
+
     /// The listing's number of a source line: generated lines (`=D`,
     /// `=I`, `=O`) are numbered too, lines conditional compilation
     /// leaves out are not.
@@ -61,7 +74,7 @@ impl Compiled {
             .read
             .lines
             .iter()
-            .filter(|l| l.no < line && l.class == rpgfront::reader::Class::Skipped)
+            .filter(|l| l.no < line && (l.class == rpgfront::reader::Class::Skipped || crate::listing::unnumbered(l)))
             .count();
         line + self.generated.iter().filter(|(at, _)| *at <= line).map(|(_, n)| n).sum::<u32>()
             - u32::try_from(skipped).unwrap_or(0)
@@ -133,6 +146,27 @@ fn declare_scope(
     for d in in_dependency_order(defs) {
         decl::declare(&mut cx, d);
     }
+    // A basing pointer nothing declares is declared by BASED.
+    for d in defs {
+        let Some(p) = d.kw("BASED").and_then(|k| decl::word_arg(k, 0)).map(|p| p.to_ascii_uppercase()) else { continue };
+        let Some(id) = cx.t.find(scope, &d.name) else { continue };
+        if p.contains('.') || p.starts_with('*') || cx.t.find(scope, &p).is_some() || matches!(cx.t.syms[id].storage, Storage::Based(_)) {
+            continue;
+        }
+        let ptr = Sym {
+            name: p.clone(),
+            kind: Some(Kind::Field),
+            ty: crate::types::Ty::Ptr,
+            ir: format!("${prefix}{}", mangle(&p)),
+            scope,
+            storage: if scope == 0 { Storage::Static } else { Storage::Auto },
+            implicit: true,
+            ..Sym::default()
+        };
+        if let Ok(ptr) = cx.t.add(ptr) {
+            cx.t.syms[id].storage = Storage::Based(ptr);
+        }
+    }
 }
 
 /// The definitions in source order, except that one a keyword names
@@ -189,7 +223,22 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         defines: predefined(opts).into_iter().chain(opts.define.iter().cloned()).collect(),
         ..ReadOptions::default()
     };
-    let (read, module, mut diags) = rpgfront::front(main, includes, &ropts);
+    let (read, mut module, mut diags) = rpgfront::front(main, includes, &ropts);
+    // A free-form declaration after the main calculations is out of
+    // sequence: ignored, and so is the rest of its line.
+    if let Some(first) = module.calcs.first().map(|s| s.at.line) {
+        let late: Vec<rpgfront::ast::Pos> =
+            module.defs.iter().filter(|d| d.fixed.is_none() && d.at.line > first).map(|d| d.at).collect();
+        module.defs.retain(|d| d.fixed.is_some() || d.at.line <= first);
+        let mut lines: Vec<u32> = Vec::new();
+        for at in late {
+            if !lines.contains(&at.line) {
+                lines.push(at.line);
+                diags.retain(|d| d.at.line != at.line);
+                diags.push(Diag::new(crate::diag::ids::OUT_OF_SEQUENCE, 30, rpgfront::ast::Pos { line: at.line, col: 1 }));
+            }
+        }
+    }
     let ctl = ctl::resolve(opts, &module.ctl, &mut diags);
     // A linear module has no main-procedure calculations, and its MAIN
     // procedure is one of its own.
@@ -401,12 +450,8 @@ pub fn compile(main: Member, includes: &mut dyn Includes, ext: &mut dyn ExtFiles
         qir.clear();
     }
     let max_severity = diags.iter().map(|d| d.severity).max().unwrap_or(0);
-    // *NOEXPDDS lists no generated specifications, so numbers none.
-    let mut generated = if ctl.option.iter().any(|o| o.eq_ignore_ascii_case("*NOEXPDDS")) {
-        Vec::new()
-    } else {
-        crate::extfiles::generated_lines(&module, &files, &t)
-    };
+    // (*NOEXPDDS numbers the generated lines too, though it hides them.)
+    let mut generated = crate::extfiles::generated_lines(&module, &files, &t);
     if let Some(p) = &precompiled {
         let mut firsts = crate::sql::first_calcs(&module, &scopes);
         // An INCLUDE before the first calculation takes the main

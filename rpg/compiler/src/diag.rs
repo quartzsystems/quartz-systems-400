@@ -100,6 +100,14 @@ pub mod ids {
     pub const PARM_COUNT: &str = "RNF7535";
     /// A parameter does not match its prototype.
     pub const PARM_TYPE: &str = "RNF7536";
+    /// An argument for a parameter passed by reference is not a variable.
+    pub const PARM_NOT_PLACE: &str = "RNF7542";
+    /// An initial value has more decimal digits than the field.
+    pub const INZ_DECIMALS: &str = "RNF3481";
+    /// A table's name with an index: the index is ignored.
+    pub const TABLE_INDEX: &str = "RNF0752";
+    /// A declaration after the main procedure's calculations.
+    pub const OUT_OF_SEQUENCE: &str = "RNF0724";
     /// The external description of a file is not found.
     pub const EXT_NOT_FOUND: &str = "RNF3523";
     /// A feature this release does not compile.

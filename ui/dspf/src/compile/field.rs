@@ -254,7 +254,7 @@ pub(crate) fn build(
                 Some(k) => reffld(k, cx, diags)?,
                 None => (name.clone(), cx.ref_file.clone()),
             };
-            let Some((t, l, d)) = referenced(cx, file_ref.as_ref(), &field) else {
+            let Some((t, l, d)) = referenced(cx, file_ref.as_ref(), &field, usage == Usage::Hidden) else {
                 diags.push(ids::ref_not_found(spec.line, &field));
                 return None;
             };
@@ -469,7 +469,7 @@ fn reffld(k: &Keyword, cx: &Cx<'_>, diags: &mut Diagnostics) -> Option<(String, 
 }
 
 /// The shape of a referenced field.
-fn referenced(cx: &Cx<'_>, file: Option<&FileRef>, field: &str) -> Option<(FieldType, u32, u8)> {
+fn referenced(cx: &Cx<'_>, file: Option<&FileRef>, field: &str, hidden: bool) -> Option<(FieldType, u32, u8)> {
     let f = file?;
     let formats = cx.resolver.formats(&f.library, &f.file).ok()??;
     let d = formats
@@ -481,9 +481,10 @@ fn referenced(cx: &Cx<'_>, file: Option<&FileRef>, field: &str) -> Option<(Field
         DataType::Char | DataType::Hex => 'A',
         DataType::Graphic => 'G',
         DataType::DbcsOpen => 'O',
-        DataType::Zoned => 'S',
-        DataType::Packed => 'P',
-        DataType::Binary => 'B',
+        // Only a hidden field keeps them; the screen shows them zoned.
+        DataType::Packed if hidden => 'P',
+        DataType::Binary if hidden => 'B',
+        DataType::Zoned | DataType::Packed | DataType::Binary => 'S',
         DataType::Float => 'F',
         DataType::Date => 'L',
         DataType::Time => 'T',

@@ -205,6 +205,16 @@ impl Gen<'_> {
             };
             let v = if name == "PAGE" || name.starts_with("PAGE") && name.len() == 5 {
                 self.page_field(&name)
+            } else if let Some(fmt) = match name.as_str() {
+                "UDATE" => Some("*MDY"),
+                "*DATE" => Some("*USA"),
+                _ => None,
+            } {
+                // The job date as a number.
+                let at = fld.at;
+                let date = Expr::Bif { name: "%DATE".into(), args: Vec::new(), at };
+                let f = Expr::Special { word: fmt.into(), index: None, at };
+                self.expr(&Expr::Bif { name: "%DEC".into(), args: vec![date, f], at }, Want::default())?
             } else {
                 self.expr(&e, Want::default())?
             };

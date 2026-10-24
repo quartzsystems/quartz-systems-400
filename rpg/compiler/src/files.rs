@@ -93,6 +93,9 @@ pub struct DspLayout {
     pub option_inds: Vec<u8>,
     /// The response indicators at the front of the input buffer.
     pub response_inds: Vec<u8>,
+    /// Texts of response indicators (keys, error messages), for the
+    /// listing.
+    pub ind_texts: Vec<(u8, String)>,
     /// Each field's offset in the output and in the input buffer, by
     /// the format's field index.
     pub offsets: Vec<(Option<u32>, Option<u32>)>,

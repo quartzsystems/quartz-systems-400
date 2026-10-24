@@ -3,20 +3,5 @@
 # them. Each has an entry in docs/RPG_OPEN_QUESTIONS.md or is being worked.
 EXP114 RNF7551 for a quotient kept to 9 decimals for a 4-decimal target: IBM's division rule is not known (open question)
 EXP118 float plus a short decimal: IBM converts 5974.6 to the nearest double here, where longer decimals go toward zero (open question)
-LST004 new listing member: its outcome is being matched
-LST008 new listing member: its outcome is being matched
-LST010 new listing member: its outcome is being matched
-LST013 new listing member: its outcome is being matched
-LST014 new listing member: its outcome is being matched
-LST015 new listing member: its outcome is being matched
-LST023 new listing member: its outcome is being matched
-LST025 new listing member: its outcome is being matched
-LST027 new listing member: its outcome is being matched
-LST029 new listing member: its outcome is being matched
-LST031 new listing member: its outcome is being matched
-LST032 new listing member: its outcome is being matched
-LST033 new listing member: its outcome is being matched
-LST035 new listing member: its outcome is being matched
-LST038 new listing member: its outcome is being matched
-LST039 new listing member: its outcome is being matched
-LST040 new listing member: its outcome is being matched
+LST014 the oracle outcome holds a CUSTF spooled file: the listing of the dds: step CRTPF, taken as the program's output (oracle tool)
+LST015 the oracle outcome holds a CUSTF spooled file: the listing of the dds: step CRTPF, taken as the program's output (oracle tool)

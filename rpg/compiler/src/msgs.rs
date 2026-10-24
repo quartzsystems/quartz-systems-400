@@ -9,6 +9,12 @@ use rpgfront::Diag;
 
 /// The texts.
 const TEXTS: &[(&str, &str)] = &[
+    ("RNF7542", "The argument for parameter &1 is passed by reference and must be a variable."),
+    ("RNF3481", "The initial value has more decimal places than the field; the extra digits are dropped."),
+    ("RNF0752", "&1 is a table: it takes no index, and the index is ignored."),
+    ("RNF0724", "A declaration follows the calculations of the main procedure; it is ignored."),
+    ("RNF5006", "Column 9 holds neither N nor a blank; a blank is assumed."),
+    ("RNF0609", "The keyword is cut off at the end of the entry; it is ignored."),
     ("RNF5318", "The subroutine's name is already the name of something else; the subroutine is ignored."),
     ("RNF5428", "&1 is allowed only inside a subroutine."),
     ("RNF7260", "&1 cannot be the factor 2 of this operation."),
@@ -53,6 +59,8 @@ const TEXTS: &[(&str, &str)] = &[
     ("RNF7078", "The search argument's length or type differs from the file's first key field."),
     ("RNF7086", "Records of the file are read in blocks; its INFDS changes only when a block moves."),
     ("RNF7089", "File &1 keeps its indicators in a separate area, which the program passes on each operation."),
+    ("RNF7341", "The subfield is only in the target structure of the EVAL-CORR."),
+    ("RNF7342", "The subfield is only in the source structure of the EVAL-CORR."),
     ("RNF7350", "&1 leaves out subfields that have no namesake in the other structure."),
     ("RNF7404", "An index or position is out of range."),
     ("RNF7419", "An expression of this type is not allowed here."),
@@ -197,7 +205,7 @@ const TEXTS: &[(&str, &str)] = &[
     ("RNF5014", "Operation code &1 is not valid; the specification is ignored."),
     ("RNF5023", "The operation needs a factor 2."),
     ("RNF5030", "The operation needs a result field."),
-    ("RNF5044", "The decimal positions entry must be blank or 0 to 63; it is taken as blank."),
+    ("RNF5044", "The decimal positions entry must be blank or 0 to 63; it is taken as 0."),
     ("RNF5048", "The operation extender is not valid; it is ignored."),
     ("RNF5051", "The resulting indicator is not valid; it is taken as blank."),
     ("RNF5053", "The operation needs a resulting indicator."),

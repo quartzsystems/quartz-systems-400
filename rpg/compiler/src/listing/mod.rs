@@ -12,6 +12,7 @@
 //! three lines), as the spooled file holds it. The message texts are
 //! ours; the layout, the labels and the section order are IBM's.
 
+mod corr;
 mod page;
 mod prologue;
 mod refs;
@@ -19,6 +20,7 @@ mod source;
 mod stmts;
 mod genlines;
 mod lines;
+mod markers;
 mod tail;
 mod xref;
 
@@ -31,6 +33,12 @@ pub(crate) use page::Out;
 #[must_use]
 pub fn listing(c: &Compiled, o: &Options) -> Vec<String> {
     let mut out = Out::new(format!("{}/{}", o.lib, o.name));
+    source::SRCSTMT.with(|s| s.set(c.srcstmt()));
+    out.hide_generated = c.ctl.option.iter().any(|x| x.eq_ignore_ascii_case("*NOEXPDDS"));
+    out.subtitle = c.read.lines.iter().find_map(|l| match &l.class {
+        rpgfront::reader::Class::Directive(rpgfront::reader::Directive::Title(t)) => Some(t.trim().to_string()),
+        _ => None,
+    });
     prologue::prologue(&mut out, o);
     source::source(&mut out, c, o);
     tail::additional(&mut out, c);
@@ -41,18 +49,37 @@ pub fn listing(c: &Compiled, o: &Options) -> Vec<String> {
     if !has("*NOEXPDDS") {
         xref::keys(&mut out, c);
     }
-    let model = xref::model(c, !has("*NOUNREF"));
+    let model = xref::model(c);
     let xref = !has("*NOXREF");
     if xref {
         xref::xref(&mut out, c, &model);
     }
-    let unref = if xref { model.unreferenced() } else { 0 };
+    corr::summary(&mut out, c);
+    // Unreferenced names are counted whatever the listing shows, and
+    // so are the subfields EVAL-CORR leaves out.
+    let (target_only, source_only) = corr::counts(c);
+    let extra = [(xref::UNREF, model.unreferenced()), ("RNF7341", target_only), ("RNF7342", source_only)];
     if !has("*NOEXT") {
         tail::external(&mut out, c);
     }
-    tail::summary(&mut out, c, unref);
-    tail::final_summary(&mut out, c, o, unref);
+    tail::summary(&mut out, c, &extra);
+    tail::final_summary(&mut out, c, o, extra.iter().map(|(_, n)| n).sum());
     out.lines
+}
+
+/// Whether a line is a listing directive (`/TITLE`, `/SPACE`,
+/// `/EJECT`): the listing acts on it and neither prints nor numbers it.
+#[must_use]
+pub fn unnumbered(l: &rpgfront::reader::Line) -> bool {
+    use rpgfront::reader::{Class, Directive};
+    matches!(l.class, Class::Directive(Directive::Title(_) | Directive::Space(_) | Directive::Eject))
+}
+
+/// Whether IBM lost the procedures: none was declared (a stray
+/// `END-PROC`) or one was declared twice. The statements after them
+/// are then main-procedure statements in error.
+pub(crate) fn procs_lost(c: &crate::compile::Compiled) -> bool {
+    c.module.procs.is_empty() || c.diags.iter().any(|d| d.msgid == "RNF1504")
 }
 
 /// `S o u r c e` from `Source`.

@@ -31,6 +31,8 @@ pub(crate) struct Refs {
     pub inds: BTreeMap<String, Vec<At>>,
     /// Names used and not defined, with their references.
     pub undefined: BTreeMap<(usize, String), Vec<At>>,
+    /// Subfields a qualified name asks for that its structure lacks.
+    pub undefined_subs: BTreeMap<(SymId, String), Vec<At>>,
     /// Record formats named through their file (`FILE.FMT`).
     pub formats: HashMap<String, Vec<At>>,
     /// Subroutines, tags, key and parameter lists and exception
@@ -60,7 +62,7 @@ fn not_names(kw: &str) -> bool {
     matches!(
         kw,
         "EXTNAME" | "EXTFLD" | "EXTFILE" | "EXTMBR" | "EXTPGM" | "PREFIX" | "DATFMT" | "TIMFMT" | "OPTIONS"
-            | "RENAME" | "INCLUDE" | "IGNORE" | "DTAARA" | "CCSID" | "SFILE" | "EXTDESC" | "EXPORT" | "IMPORT"
+            | "RENAME" | "INCLUDE" | "IGNORE" | "DTAARA" | "CCSID" | "EXTDESC" | "EXPORT" | "IMPORT"
             | "OFLIND"
     )
 }
@@ -190,6 +192,8 @@ impl Walk<'_> {
                             ty = sub.map(|s| self.c.table.syms[s].ty.clone());
                             if let Some(sid) = sub {
                                 self.sym(sid, at.line, ' ');
+                            } else if let Some(ds) = id {
+                                self.out.undefined_subs.entry((ds, f.clone())).or_default().push((at.line, ' '));
                             }
                         }
                     }
@@ -200,7 +204,7 @@ impl Walk<'_> {
                 if let Some(i) = index {
                     if let Some(n) = lit_index(i) {
                         // An element set by an assignment is noted last.
-                        let line = if target && self.free { at.line + LATE } else { at.line };
+                        let line = if target { at.line + LATE } else { at.line };
                         self.out.inds.entry(format!("{n:02}")).or_default().push((line, flag));
                     }
                     self.expr(i, false);
@@ -354,7 +358,22 @@ impl Walk<'_> {
             if not_names(&k.name.to_ascii_uppercase()) {
                 continue;
             }
-            for a in &k.args {
+            // LIKE of a subfield qualified by a structure that is not
+            // qualified: the structure is named, and nothing used.
+            if k.name.eq_ignore_ascii_case("LIKE")
+                && let Some(a) = k.args.first()
+                && a.toks.len() >= 3
+                && a.toks[1].text() == "."
+                && let TokKind::Name(h) = &a.toks[0].kind
+                && let Some(id) = self.find(h)
+                && matches!(self.c.table.syms[id].kind, Some(Kind::Ds(i)) if !self.c.table.ds[i].qualified)
+            {
+                self.sym(id, a.toks[0].at.line, 'n');
+                continue;
+            }
+            // SFILE names the format, then the record number field.
+            let skip = usize::from(k.name.eq_ignore_ascii_case("SFILE"));
+            for a in k.args.iter().skip(skip) {
                 for t in &a.toks {
                     match &t.kind {
                         TokKind::Name(n) => {
@@ -378,7 +397,20 @@ impl Walk<'_> {
             self.expr(v, false);
         }
         for ch in &d.children {
-            self.def(ch);
+            // An overlay of its own structure beside POS is dropped.
+            let dropped = self.c.diags.iter().any(|x| x.msgid == "RNF3575" && x.at.line == ch.at.line);
+            let own = |k: &&Keyword| {
+                dropped
+                    && k.name.eq_ignore_ascii_case("OVERLAY")
+                    && k.args.first().and_then(|a| a.toks.first()).is_some_and(|t| matches!(&t.kind, TokKind::Name(n) if n.eq_ignore_ascii_case(&d.name)))
+            };
+            if ch.kws.iter().any(|k| own(&k)) {
+                let mut ch = ch.clone();
+                ch.kws.retain(|k| !own(&k));
+                self.def(&ch);
+            } else {
+                self.def(ch);
+            }
         }
     }
 }
@@ -406,7 +438,7 @@ fn labels(c: &Compiled) -> BTreeMap<(usize, String), (&'static str, Vec<At>)> {
                 _ => continue,
             };
             if let Some(n) = s.op.f1.first().and_then(label_name)
-                && n != "*ENTRY"
+
             {
                 out.insert((scope, n), (what, Vec::new()));
             }
@@ -437,6 +469,39 @@ fn generated_defs(c: &Compiled) -> HashMap<String, u32> {
         }
     }
     out
+}
+
+/// The names of free-form calculations the compiler dropped for an
+/// error: IBM still lists their references.
+fn dropped(w: &mut Walk<'_>) {
+    let c = w.c;
+    let kept: std::collections::HashSet<u32> =
+        c.module.calcs.iter().chain(c.module.procs.iter().flat_map(|p| p.calcs.iter())).map(|s| s.at.line).collect();
+    let info = super::stmts::analyze(&c.read.lines);
+    for (l, inf) in c.read.lines.iter().zip(&info) {
+        if l.member != 0 || !inf.starts || inf.ty != super::stmts::Ty::Spec('C') || kept.contains(&l.no) || !l.fully_free {
+            continue;
+        }
+        // Calculations between procedures are ignored.
+        let in_proc = c.module.procs.iter().any(|p| p.at.line <= l.no && l.no <= p.end.line);
+        if !in_proc && c.module.procs.first().is_some_and(|p| l.no > p.at.line) {
+            continue;
+        }
+        // What follows an ended statement is ignored altogether.
+        if c.diags.iter().any(|d| d.at.line == l.no && d.msgid == "RNF5508") {
+            continue;
+        }
+        let text = l.text.split("//").next().unwrap_or("").to_ascii_uppercase();
+        let words: Vec<&str> = text.split(|ch: char| !(ch.is_ascii_alphanumeric() || "_#@$=*".contains(ch))).filter(|t| !t.is_empty()).collect();
+        let op = words.first().copied().unwrap_or("");
+        let assign = words.get(1) == Some(&"=");
+        let names: Vec<&str> = words.iter().copied().filter(|t| *t != "=" && !t.starts_with('*') && w.find(t).is_some()).collect();
+        let last = names.len().saturating_sub(1);
+        for (k, n) in names.iter().enumerate() {
+            let changed = ((assign || matches!(op, "CLEAR" | "RESET")) && k == 0) || (op == "DSPLY" && k == last.min(2) && k > 0);
+            w.name(n, l.no, if changed { 'M' } else { ' ' });
+        }
+    }
 }
 
 /// Walk the module.
@@ -475,7 +540,9 @@ pub(crate) fn collect(c: &Compiled) -> Refs {
     let free_at = |line: u32| {
         c.read.lines.iter().find(|l| l.no == line).is_some_and(|l| !matches!(l.class, rpgfront::reader::Class::Spec(_)))
     };
-    for s in &m.calcs {
+    // Calculations between procedures are ignored.
+    let first_proc = m.procs.first().map_or(u32::MAX, |p| p.at.line);
+    for s in m.calcs.iter().filter(|s| s.at.line < first_proc) {
         w.free = free_at(s.at.line);
         w.stmt(s);
     }
@@ -488,9 +555,9 @@ pub(crate) fn collect(c: &Compiled) -> Refs {
         for f in &o.fields {
             w.cond_on(&f.cond, f.at.line);
             let name = f.field.to_ascii_uppercase();
-            if name.starts_with("PAGE") && name.len() <= 5 {
+            if (name.starts_with("PAGE") && name.len() <= 5) || name == "UDATE" || name == "*DATE" {
                 w.out.fields.entry(name).or_default().push((f.at.line, ' '));
-            } else if !name.is_empty() && !name.starts_with('*') && !name.starts_with("UDATE") {
+            } else if !name.is_empty() && !name.starts_with('*') {
                 // Blank after clears the field.
                 w.name(&name, f.at.line, if f.blank { 'M' } else { ' ' });
             }
@@ -526,9 +593,11 @@ pub(crate) fn collect(c: &Compiled) -> Refs {
     }
     for ct in &m.ctdata {
         if !ct.name.is_empty() {
-            w.name(&ct.name.to_ascii_uppercase(), ct.at.line, 'M');
+            // Loading the data is no use of the array.
+            w.name(&ct.name.to_ascii_uppercase(), ct.at.line, 'm');
         }
     }
+    dropped(&mut w);
     for f in c.files.iter().filter(|f| !f.auto_overflow) {
         if let Some(of) = &f.oflind {
             w.ind(of, f.def_line, 'd');
@@ -552,6 +621,8 @@ pub(crate) fn has_definition(c: &Compiled, id: SymId) -> bool {
         // Subfields a LIKEDS copies are defined where the original is.
         Some(Kind::Subfield) if s.name.is_empty() => false,
         Some(Kind::Subfield) => s.parent.is_none_or(|p| c.table.syms[p].def_line <= s.def_line),
+        // A basing pointer BASED declares.
+        Some(Kind::Field) if s.implicit && s.def_line == 0 => false,
         _ => true,
     }
 }

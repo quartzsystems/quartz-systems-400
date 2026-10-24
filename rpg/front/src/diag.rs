@@ -70,6 +70,12 @@ pub mod ids {
     pub const COPY_NOT_FOUND: &str = "RNF0273";
     /// A /COPY or /INCLUDE without a member.
     pub const COPY_SYNTAX: &str = "RNF0272";
+    /// Column 9 of a calculation is neither N nor blank.
+    pub const COND_NOT: &str = "RNF5006";
+    /// A conditioning indicator that is no indicator.
+    pub const COND_IND: &str = "RNF5007";
+    /// A keyword cut off at the end of the entry.
+    pub const KEYWORD_CUT: &str = "RNF0609";
     /// /COPY nesting too deep or recursive.
     pub const COPY_NESTING: &str = "RNF0024";
     /// A directive that is not known.
@@ -147,8 +153,6 @@ pub mod ids {
     pub const FACTOR1_NOT_BLANK: &str = "RNF5010";
     /// Data that is not valid in an entry; the valid part is used.
     pub const ENTRY_DATA: &str = "RNF0289";
-    /// A conditioning indicator that is not valid; blanks are used.
-    pub const BAD_COND_IND: &str = "RNF5007";
     /// A blank control level after one that is not; the previous is
     /// used.
     pub const LEVEL_BLANK_AFTER: &str = "RNF5002";

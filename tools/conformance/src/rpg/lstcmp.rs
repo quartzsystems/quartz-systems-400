@@ -19,6 +19,8 @@ const OUR_USER: &str = "QSECOFR";
 const DIAG_TEXT: usize = 28;
 /// Where it starts in the message summary.
 const SUMMARY_TEXT: usize = 20;
+/// Where an EVAL-CORR summary row's comment starts.
+const CORR_TEXT: usize = 28;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Sect {
@@ -26,10 +28,12 @@ enum Sect {
     Diags,
     Summary,
     Final,
+    /// The EVAL-CORR summary: each subfield's comment is a text.
+    Corr,
 }
 
 fn is_heading(l: &str) -> bool {
-    l.starts_with("1{heading}")
+    l.get(1..).is_some_and(|t| t.starts_with("{heading}"))
 }
 
 fn text_of(l: &str) -> &str {
@@ -65,10 +69,22 @@ pub fn normalize(lines: &[String], ours: bool) -> Vec<String> {
     } else {
         lines.iter().map(|l| l.trim_end().to_string()).collect()
     };
+    // A heading under a `/TITLE` line has a blank forms control.
+    let lines: Vec<String> = lines
+        .into_iter()
+        .map(|l| {
+            if !l.starts_with('1') && l.contains("5770WDS") && l.contains("Page") {
+                let page = l.rsplit_once("Page").map(|(_, p)| p.trim().to_string()).unwrap_or_default();
+                format!("{}{{heading}} page {page}", &l[..1])
+            } else {
+                l
+            }
+        })
+        .collect();
     // The oracle pads each page with blank lines up to its footer.
     let mut kept: Vec<String> = Vec::new();
     for l in lines {
-        if is_heading(&l) {
+        if is_heading(&l) || l.starts_with('1') {
             while kept.last().is_some_and(|k| text_of(k).trim().is_empty()) {
                 kept.pop();
             }
@@ -89,13 +105,20 @@ pub fn normalize(lines: &[String], ours: bool) -> Vec<String> {
             sect = Sect::Summary;
         } else if t.starts_with("F i n a l   S u m m a r y") {
             sect = Sect::Final;
+        } else if t.starts_with("E V A L - C O R R   S u m m a r y") {
+            sect = Sect::Corr;
+        } else if t.starts_with("* * * * *   E N D   O F   E V A L - C O R R") {
+            sect = Sect::Other;
+        } else if sect == Sect::Corr && !t.starts_with("EVAL-CORR summary") && l.len() > CORR_TEXT {
+            out.push(format!("{}{{text}}", &l[..CORR_TEXT]));
+            continue;
         } else if t.starts_with("* * * * *   E N D   O F   F I N A L") {
             out.push(l);
             in_text = None;
             continue;
         }
         // A text continued on the next page continues after its heading.
-        if is_heading(&l) || l[1..].starts_with("Line   <") || l[1..].starts_with("Number ") {
+        if is_heading(&l) || text_of(&l).starts_with("Line   <") || text_of(&l).starts_with("Number ") {
             out.push(l);
             continue;
         }

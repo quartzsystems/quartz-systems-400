@@ -127,7 +127,7 @@ impl Suite {
         entry_wait(
             s,
             "crtpgm PGM(RPGTEST/RPGUSE) MODULE(RPGTEST/RPGUSE) BNDSRVPGM(RPGTEST/RPGSRV)",
-            has(&["Program RPGUSE created"]),
+            has(&["RPGTEST/RPGUSE created"]),
         )?;
         entry_wait(s, "call RPGTEST/RPGUSE", has(&["Bound hello, Quartz"]))?;
         sign_off(s)?;

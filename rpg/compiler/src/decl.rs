@@ -99,13 +99,13 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
             .map(|i| int_arg(k, i).or_else(|| k.arg(i).and_then(|a| a.expr.as_ref()).and_then(|e| const_int(cx, e))))
             .collect();
         let n = |i: usize| nums.get(i).copied().flatten();
+        // A prefix size other than 2 or 4 is taken as 2.
+        if matches!(k.name.as_str(), "VARCHAR" | "VARUCS2" | "VARGRAPH") && n(1).is_some_and(|p| p != 2 && p != 4) {
+            let at = k.arg(1).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
+            cx.diags.push(Diag::new(ids::VARYING_PREFIX, 20, at).arg(k.name.clone()));
+        }
         let ty = match k.name.as_str() {
             "CHAR" => Ty::Char(len_ok(cx, k, n(0))?),
-            "VARCHAR" | "VARUCS2" | "VARGRAPH" if n(1).is_some_and(|p| p != 2 && p != 4) => {
-                let at = k.arg(1).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
-                cx.diags.push(Diag::new(ids::VARYING_PREFIX, 20, at).arg(k.name.clone()));
-                return None;
-            }
             "VARCHAR" => Ty::VarChar(len_ok(cx, k, n(0))?, prefix(n(1), n(0))),
             "UCS2" => Ty::Ucs2(len_ok(cx, k, n(0))?),
             "VARUCS2" => Ty::VarUcs2(len_ok(cx, k, n(0))?, prefix(n(1), n(0))),
@@ -130,7 +130,7 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
                 };
                 if scale > digits {
                     diag(cx, ids::SCALE_OVER_DIGITS, 20, k.at, &k.name);
-                    scale = 0;
+                    scale = digits;
                 }
                 match k.name.as_str() {
                     "PACKED" => Ty::Packed(digits, scale),
@@ -224,12 +224,13 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
         (None, Some(t)) => Some(t),
         _ => None,
     };
-    // More decimal positions than digits: none.
+    // More decimal positions than digits: as many as the digits (by
+    // length), else none.
     if let (Some(dc), Some(n)) = (dec, len)
         && !positional_digits_ok(&cols.ty, from.is_some(), n, dc)
     {
         cx.diags.push(Diag::new(ids::SCALE_OVER_DIGITS, 20, d.at));
-        dec = Some(0);
+        dec = Some(if from.is_none() { u8::try_from(n).unwrap_or(0).min(dc) } else { 0 });
     }
     let positional = from.is_some();
     let varying = d.kw("VARYING").is_some();
@@ -368,7 +369,8 @@ fn len_ok(cx: &mut Cx<'_>, k: &Keyword, n: Option<i64>) -> Option<u32> {
         Some(v) if (1..=16_773_104).contains(&v) => u32::try_from(v).ok(),
         Some(v) if v > 16_773_104 => {
             diag(cx, ids::LEN_TOO_BIG, 20, k.at, &k.name);
-            Some(16_773_104)
+            // A varying field's longest leaves room for its prefix.
+            Some(if k.name == "VARCHAR" { 16_773_100 } else { 16_773_104 })
         }
         Some(_) => {
             let id = match k.name.as_str() {
@@ -466,8 +468,12 @@ fn like(cx: &mut Cx<'_>, d: &Def, k: &Keyword) -> Option<Ty> {
         return match sub {
             Some(s) => Some(cx.t.syms[s].ty.clone()),
             None => {
+                // The subfield, the qualified name and the definition
+                // are each not defined.
                 cx.diags.push(Diag::new(ids::BAD_SIMPLE_QUALIFIED, 20, at));
                 diag(cx, ids::NOT_DEFINED, 30, k.at, f);
+                diag(cx, ids::NOT_DEFINED, 30, k.at, &format!("{}.{}", name.to_ascii_uppercase(), f.to_ascii_uppercase()));
+                diag(cx, ids::NOT_DEFINED, 30, k.at, &d.name.to_ascii_uppercase());
                 None
             }
         };
@@ -477,17 +483,18 @@ fn like(cx: &mut Cx<'_>, d: &Def, k: &Keyword) -> Option<Ty> {
         cx.diags.push(Diag::new(ids::LIKE_SELF, 20, at));
     }
     let Some(id) = cx.t.find(cx.scope, &name) else {
+        // And so is the name it would have defined.
         diag(cx, ids::NOT_DEFINED, 30, k.at, &name);
+        diag(cx, ids::NOT_DEFINED, 30, k.at, &d.name.to_ascii_uppercase());
         return None;
     };
     let base = cx.t.syms[id].ty.clone();
-    // The adjustment is signed; without a sign it is ignored.
+    // The adjustment is signed; without a sign IBM adds it.
     let adj = k.arg(1).and_then(|a| {
         let txt: String = a.toks.iter().map(rpgfront::lex::Tok::text).collect();
         if !txt.starts_with(['+', '-']) {
             let at = a.toks.first().map_or(k.at, |t| t.at);
             cx.diags.push(Diag::new(ids::LIKE_SIGN, 20, at));
-            return None;
         }
         txt.parse::<i64>().ok()
     });
@@ -613,6 +620,11 @@ pub fn check_keywords(cx: &mut Cx<'_>, d: &Def, ds: Option<&Def>) -> Def {
         };
         seen.push(n);
         match bad {
+            // A bad external name leaves the keyword without it.
+            Some(x) if x.msgid == ids::EXPORT_PARM => {
+                cx.diags.push(x);
+                keep.push(Keyword { args: Vec::new(), ..k.clone() });
+            }
             Some(x) => cx.diags.push(x),
             None => keep.push(k.clone()),
         }
@@ -764,7 +776,7 @@ fn dim_of(cx: &mut Cx<'_>, d: &Def) -> u32 {
         Some(n) if (1..=16_773_104).contains(&n) => u32::try_from(n).unwrap_or(0),
         Some(_) => {
             diag(cx, ids::DIM_RANGE, 20, k.at, "DIM");
-            0
+            1
         }
         None => {
             // `DIM(%ELEM(x))` and named constants are resolved here.
@@ -836,14 +848,16 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     } else {
         d.name.to_ascii_uppercase()
     };
-    let qualified = d.kw("QUALIFIED").is_some() || d.kw("LIKEDS").is_some() || d.kw("LIKEREC").is_some();
+    let mut qualified = d.kw("QUALIFIED").is_some() || d.kw("LIKEDS").is_some() || d.kw("LIKEREC").is_some();
     let ds_index = cx.t.ds.len();
-    let mut dim = dim_of(cx, d);
-    // An array of structures must be qualified; DIM is ignored.
-    if dim > 0 && !qualified {
+    let dim = dim_of(cx, d);
+    // An array of structures must be qualified; IBM keeps its
+    // subfields to it.
+    let unqualified_array = dim > 0 && !qualified;
+    if unqualified_array {
         let at = d.kw("DIM").map_or(d.at, |k| k.at);
         cx.diags.push(Diag::new(ids::DS_DIM_UNQUALIFIED, 20, at));
-        dim = 0;
+        qualified = true;
     }
     let storage = storage_of(cx, d);
     let ir = ir_name(cx, &name);
@@ -880,6 +894,7 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     let mut ds = Ds {
         len: 0,
         qualified,
+        unqualified_array,
         inz: d.kw("INZ").is_some(),
         occurs,
         psds,
@@ -918,6 +933,7 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     if let Some(other) = like {
         let Some(oid) = cx.t.find(cx.scope, &other) else {
             diag(cx, ids::NOT_DEFINED, 30, d.at, &other);
+            diag(cx, ids::NOT_DEFINED, 30, d.at, &d.name.to_ascii_uppercase());
             return Some(id);
         };
         let Some(Kind::Ds(oi)) = cx.t.syms[oid].kind.clone() else {
@@ -1010,10 +1026,11 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             _ => c,
         };
         let cname = c.name.to_ascii_uppercase();
-        // A subfield named twice in its structure is ignored.
-        if !cname.is_empty() && cname != "*N" && cx.t.ds[ds_index].subfields.iter().any(|&s| cx.t.syms[s].name == cname) {
-            cx.diags.push(Diag::new(ids::SUBFIELD_TWICE, 20, c.at).arg(cname));
-            continue;
+        // A subfield named twice in its structure is ignored, but for
+        // the room it takes.
+        let twice = !cname.is_empty() && cname != "*N" && cx.t.ds[ds_index].subfields.iter().any(|&s| cx.t.syms[s].name == cname);
+        if twice {
+            cx.diags.push(Diag::new(ids::SUBFIELD_TWICE, 20, c.at).arg(cname.clone()));
         }
         let special = crate::extfiles::special_subfield(c, is_psds);
         let ty = match &special {
@@ -1021,6 +1038,8 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             None => type_of(cx, c, true),
         };
         let sdim = dim_of(cx, c);
+        // A nested LIKEDS gets its own copy of the subfields.
+        let mut nested_copy = None;
         let (ty, size) = match ty {
             Some(t) => {
                 let one = cx.t.size(&t);
@@ -1034,7 +1053,19 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
                     && let Some(Kind::Ds(oi)) = cx.t.syms[oid].kind.clone()
                 {
                     let len = cx.t.ds[oi].len;
-                    (Ty::Ds(oi), len * sdim.max(1))
+                    let mut copy = cx.t.ds[oi].clone();
+                    let ni = cx.t.ds.len();
+                    copy.subfields = Vec::new();
+                    cx.t.ds.push(copy);
+                    for s in cx.t.ds[oi].subfields.clone() {
+                        let mut sub = cx.t.syms[s].clone();
+                        sub.scope = cx.scope;
+                        sub.ir = String::new();
+                        let sid = cx.t.add_hidden(sub);
+                        cx.t.ds[ni].subfields.push(sid);
+                    }
+                    nested_copy = Some(ni);
+                    (Ty::Ds(ni), len * sdim.max(1))
                 } else {
                     // A LIKE that names nothing was reported already.
                     if c.kw("LIKE").is_none() {
@@ -1094,6 +1125,12 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
                     overlay_next.insert(key, at + size);
                     at
                 }
+                // In free form IBM places it as if not overlaid.
+                None if target == name && c.fixed.is_none() => {
+                    let at = if is_ptr { next.div_ceil(16) * 16 } else { next };
+                    next = at + size;
+                    at
+                }
                 None => {
                     let key = base_sym.unwrap_or(id);
                     overlay_next.insert(key, base_off + size);
@@ -1113,6 +1150,9 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         end = end.max(offset + size);
         if is_ptr {
             cx.t.ds[ds_index].has_ptr = true;
+        }
+        if twice {
+            continue;
         }
         let sub = Sym {
             name: cname.clone(),
@@ -1136,6 +1176,12 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
         };
         if let Some(s) = sid {
             cx.t.ds[ds_index].subfields.push(s);
+            if let Some(ni) = nested_copy {
+                cx.t.ds[ni].sym = s;
+                for f in cx.t.ds[ni].subfields.clone() {
+                    cx.t.syms[f].parent = Some(s);
+                }
+            }
         }
     }
     // A subfield past a given length.
@@ -1149,8 +1195,8 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
             }
         }
     }
-    let len = len_kw.or(fixed_len).unwrap_or(0).max(end);
-    let len = if len == 0 && d.children.is_empty() { 1 } else { len };
+    // A given length stands even when the subfields pass it.
+    let len = len_kw.or(fixed_len).unwrap_or(end).max(1);
     if d.children.is_empty() && d.kw("EXTNAME").is_none() && d.kw("LIKEREC").is_none() && d.fixed.as_ref().is_none_or(|c| c.ext != "E") {
         diag(cx, ids::DS_NO_SUBFIELDS, 0, d.at, &name);
     }

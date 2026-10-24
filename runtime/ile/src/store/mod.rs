@@ -240,6 +240,10 @@ pub fn bind_in_store(
         listed.push((load_module(txn, id)?, lib));
     }
     let mut dirs = Vec::new();
+    // BNDSRVPGM's service programs come first, as a directory of their own.
+    if !options.bndsrvpgm.is_empty() {
+        dirs.push(BndDir { entries: options.bndsrvpgm.clone() });
+    }
     for d in bnddirs {
         let id = ctx.resolve(txn, d.lib, d.name, types::BNDDIR)?;
         dirs.push(load_bnddir(txn, id)?);
@@ -349,6 +353,7 @@ pub fn updpgm(
             .map(|(mi, _)| old.modules[mi as usize].module.name.clone()),
         export,
         allow_unresolved: false,
+        bndsrvpgm: Vec::new(),
     };
     let lookup = |_: &BndDirEntry| -> Option<Resolved> { None };
     let (program, diags) = bind(BindInput {

@@ -21,7 +21,7 @@ QS/400 DDS compiler
    15.00       A                                  2  2USER
    16.00       A                                  2 71SYSNAME
    17.00       A            CUSNO     R        B  4 15REFFLD(CUSNO) CHECK(RZ)
-       *       A            CUSNO          7P 0B  4 15REFFLD(CUSNO QGPL/CUSTMAST)
+       *       A            CUSNO          7S 0B  4 15REFFLD(CUSNO QGPL/CUSTMAST)
    18.00       A  50                                  DSPATR(PR)
    19.00       A                                      ERRMSG('Customer not found' 90)
    20.00       A                                  4  2'Number . :'
@@ -59,26 +59,26 @@ QS/400 DDS compiler
                                         1   71     8                              TIME
                                         2    2    10                              USER
                                         2   71     8                              SYSNAME
-  CUSNO       P          7    0  B      4   15     8      2      7                REFFLD(CUSNO) CHECK(RZ) DSPATR(PR)<50> ERRMSG('...
+  CUSNO       S          7    0  B      4   15     8      2      7                REFFLD(CUSNO) CHECK(RZ) DSPATR(PR)<50> ERRMSG('...
                                         4    2    10                              'Number . :'
-  CUSNM       A         30       B      5   15    30      6     11                TEXT('Name')
+  CUSNM       A         30       B      5   15    30      9     14                TEXT('Name')
                                         5    2    10                              'Name . . :'
-  BALANCE     S          9    2  O      6   15    13     36                       EDTCDE(J)
+  BALANCE     S          9    2  O      6   15    13     39                       EDTCDE(J)
                                         6    2    10                              'Balance  :'
-  CREDIT      Y          7    2  B      7   15    10     45     41                EDTWRD('   ,   .  ') RANGE(0 99999)
+  CREDIT      Y          7    2  B      7   15    10     48     44                EDTWRD('   ,   .  ') RANGE(0 99999)
                                         7    2    10                              'Credit . :'
-  STATUS      A          1       B      8   15     1     52     48                VALUES('A' 'I' 'D') DFT('A') DSPATR(UL)<N50> CO...
+  STATUS      A          1       B      8   15     1     55     51                VALUES('A' 'I' 'D') DFT('A') DSPATR(UL)<N50> CO...
                                         8    2    10                              'Status . :'
                                         9    2    10                              'Since  . :'
-  SINCE       L          8       B      9   15     8     53     49                DATFMT(*MDY) DATSEP('/')
-  LASTTM      T          8       O      9   26     8     61                       TIMFMT(*HMS)
-  AMOUNT      P          7    0  H                       69     57
-  COUNT       B          9    0  H                       73     61
-  NOTE        A         40       I     11   15    40            65                CHECK(LC) AUTO(RAB) DUP(60) BLANKS(61) CHANGE(6...
+  SINCE       L          8       B      9   15     8     56     52                DATFMT(*MDY) DATSEP('/')
+  LASTTM      T          8       O      9   26     8     64                       TIMFMT(*HMS)
+  AMOUNT      P          7    0  H                       72     60
+  COUNT       B          9    0  H                       76     64
+  NOTE        A         40       I     11   15    40            68                CHECK(LC) AUTO(RAB) DUP(60) BLANKS(61) CHANGE(6...
                                        11    2    10                              'Note . . :'
                                        23    2    20                              'F3=Exit   F12=Cancel' COLOR(BLU)
-  MSG         A         78       O     24    2    78     77                       DSPATR(HI)
-    Output buffer 155 bytes (option indicators 51 50); input buffer 105 bytes (response indicators 03 12 05 90 60 61 62); level identifier FEB91F25E3E86
+  MSG         A         78       O     24    2    78     80                       DSPATR(HI)
+    Output buffer 158 bytes (option indicators 51 50); input buffer 108 bytes (response indicators 03 12 05 90 60 61 62); level identifier 06DE35B01C343
 
   Indicator usage
   Ind  Option at                                 Response at                               Text

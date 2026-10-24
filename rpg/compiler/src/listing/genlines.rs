@@ -40,8 +40,9 @@ pub(crate) struct Block {
     pub refs: Vec<(String, u32)>,
     /// The block is several sources, one per format: where each starts.
     pub starts: Vec<usize>,
-    /// Output fields' buffer positions: line offset, start, end, name.
-    pub positions: Vec<(u32, u32, u32, String)>,
+    /// Output fields' buffer positions: format, line offset, start,
+    /// end, name.
+    pub positions: Vec<(String, u32, u32, u32, String)>,
 }
 
 fn ext_of<'a>(c: &'a Compiled, file: &str) -> Option<&'a ExtFile> {
@@ -252,7 +253,10 @@ fn io_block(c: &Compiled, at: u32, kind: char) -> Block {
         if f.scope != 0 || r.qualified {
             continue;
         }
-        let wanted = if kind == 'I' {
+        let dsp = r.fmt.dsp.as_ref();
+        let wanted = if dsp.is_some() {
+            if kind == 'I' { f.input } else { f.output }
+        } else if kind == 'I' {
             f.input || f.update
         } else {
             (f.output || f.update) && crate::extfiles::written(&c.module, &r.name)
@@ -277,8 +281,54 @@ fn io_block(c: &Compiled, at: u32, kind: char) -> Block {
         }
         rows.push(Row::Box(boxrow("External format", &format!("{} : {lib}/{}", r.fmt.name, f.obj.1))));
         rows.push(Row::Box(rule(8, 101)));
+        // A display or printer format: its indicators first.
+        if let Some(d) = dsp
+            && !f.ext.as_ref().is_some_and(|e| e.indara)
+        {
+            let inds = if kind == 'I' { &d.response_inds } else { &d.option_inds };
+            // In indicator order, each at its place in the buffer.
+            let mut order: Vec<(usize, u8)> = inds.iter().copied().enumerate().collect();
+            order.sort_by_key(|(_, n)| *n);
+            for (k, n) in order {
+                seq += 1;
+                let at = u32::try_from(k + 1).unwrap_or(0);
+                let t = d.ind_texts.iter().find(|(m, _)| *m == n).map_or("", |(_, t)| t.as_str());
+                let name = format!("*IN{n:02}");
+                let text = if kind == 'I' {
+                    format!("I{:24}{:5}N{at:>5}{at:>5}  {name:<32}{t}", "", "")
+                } else {
+                    positions.push((r.name.clone(), no, at, at, name.clone()));
+                    format!("{:<75}{t}", format!("O{:23}{name:<14}{at:>8}N CHAR{:>9}", "", 1))
+                };
+                rows.push(Row::Line(text.trim_end().to_string(), seq));
+                if kind == 'I' {
+                    // An indicator the program also sets for output is changed.
+                    let both = c.table.recfmts.iter().filter(|q| q.file == r.file).any(|q| q.fmt.dsp.as_ref().is_some_and(|e| e.option_inds.contains(&n)));
+                    defs.push((name, no, if both { 'M' } else { 'D' }));
+                } else {
+                    refs.push((name, no));
+                }
+                no += 1;
+            }
+        }
         for (k, x) in r.fmt.fields.iter().enumerate() {
-            let used = if kind == 'I' { matches!(x.usage, 'I' | 'B') } else { matches!(x.usage, 'O' | 'B') };
+            let (used, x) = match dsp {
+                Some(d) => {
+                    let off = d.offsets.get(k).and_then(|o| if kind == 'I' { o.1 } else { o.0 });
+                    let mut y = x.clone();
+                    y.offset = off.unwrap_or(0);
+                    // Display buffers hold numbers zoned.
+                    if let Ty::Packed(dg, sc) = y.ty {
+                        y.ty = Ty::Zoned(dg, sc);
+                    }
+                    (off.is_some(), std::borrow::Cow::Owned(y))
+                }
+                None => {
+                    let used = if kind == 'I' { matches!(x.usage, 'I' | 'B') } else { matches!(x.usage, 'O' | 'B') };
+                    (used, std::borrow::Cow::Borrowed(x))
+                }
+            };
+            let x: &ExtField = &x;
             if !used {
                 continue;
             }
@@ -305,11 +355,17 @@ fn io_block(c: &Compiled, at: u32, kind: char) -> Block {
             };
             rows.push(Row::Line(text, seq));
             if kind == 'I' {
-                let written = (f.output || f.update) && crate::extfiles::written(&c.module, &r.name);
+                let in_output = |q: &crate::extfiles::RecFmt| {
+                    q.file == r.file
+                        && q.fmt.dsp.as_ref().is_some_and(|e| {
+                            q.fmt.fields.iter().zip(&e.offsets).any(|(y, o)| y.name == x.name && o.0.is_some())
+                        })
+                };
+                let written = if dsp.is_some() { c.table.recfmts.iter().any(in_output) } else { (f.output || f.update) && crate::extfiles::written(&c.module, &r.name) };
                 defs.push((name, no, if written { 'M' } else { 'D' }));
             } else {
                 let size = x.ty.size(&|i| c.table.ds_len(i));
-                positions.push((no, x.offset + 1, x.offset + size, name.clone()));
+                positions.push((r.name.clone(), no, x.offset + 1, x.offset + size, name.clone()));
                 refs.push((name, no));
             }
             no += 1;
@@ -337,6 +393,19 @@ pub(crate) fn print(
     cc_first: char,
     rulers: Option<((String, String), (String, String))>,
 ) {
+    // *NOEXPDDS numbers the lines but prints none of them: a structure's
+    // still changes the rulers, an input or output block leaves a blank.
+    if out.hide_generated {
+        if let Some((fixed, back)) = rulers {
+            out.change_rulers(fixed);
+            out.change_rulers(back);
+        } else if b.kind == 'I' {
+            out.line(cc_first, "");
+            out.after_blank = true;
+        }
+        *next_id += u32::try_from(b.starts.len().max(1)).unwrap_or(1);
+        return;
+    }
     let mut no = first;
     let mut id = *next_id;
     let mut cc = cc_first;
@@ -376,7 +445,7 @@ pub(crate) fn file_box(out: &mut Out, c: &Compiled, file: &crate::files::File) {
     out.line(' ', framed(8, &format!(" File name. . . . . . . . . :  {:<17}{}/{}", file.name, e.lib, file.obj.1), 101));
     let fmts: Vec<_> = c.table.recfmts.iter().filter(|r| r.file_name == file.name).collect();
     for (k, r) in fmts.iter().enumerate() {
-        let label = if k == 0 { " Record format(s) . . . . . :" } else { "                            " };
+        let label = if k == 0 { " Record format(s) . . . . . :" } else { "                             " };
         out.line(' ', framed(8, &format!("{label}  {:<17}{}", r.name, r.fmt.name), 101));
     }
     out.line(' ', rule(8, 101));

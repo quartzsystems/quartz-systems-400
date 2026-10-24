@@ -162,7 +162,9 @@ impl SpoolSink for KitSpool {
 pub fn options(case: &Case) -> rpgc::Options {
     let cmd = case.fill(&case.cmd, "QGPL").to_ascii_uppercase();
     let word = |kw: &str| -> Option<String> {
-        let at = cmd.find(&format!("{kw}("))?;
+        // The whole keyword: not ACTGRP inside DFTACTGRP.
+        let pat = format!("{kw}(");
+        let at = cmd.match_indices(&pat).map(|(i, _)| i).find(|&i| i == 0 || !cmd.as_bytes()[i - 1].is_ascii_alphanumeric())?;
         let rest = &cmd[at + kw.len() + 1..];
         let end = rest.find(')')?;
         Some(rest[..end].trim().to_string())
@@ -323,6 +325,14 @@ fn compile_member(case: &Case, db: Option<&files::KitDb>, mbr: &str, module: &st
 /// The diagnostics as the oracle's listing reports them.
 #[must_use]
 pub fn diags(c: &rpgc::Compiled) -> Vec<ODiag> {
+    // Statement numbers are sequence numbers: read them as the oracle
+    // reads IBM's listing.
+    // (and so do diagnostics in copied members: the oracle reads them
+    // against the copy directive's line).
+    let in_copy = c.diags.iter().any(|d| c.read.lines.iter().any(|l| l.no == d.at.line && l.member > 0));
+    if c.srcstmt() || in_copy {
+        return rpg_oracle::listing::diags(&c.listing);
+    }
     let mut out: Vec<ODiag> = c
         .diags
         .iter()
@@ -445,10 +455,12 @@ pub fn run(case: &Case) -> Result<(Outcome, Vec<String>, String), String> {
     }
     let c = compile(case, db.as_ref());
     let notes = notes(&c);
+    // With *NOGEN the command ends normally though nothing is made.
+    let nogen = c.ctl.option.iter().any(|x| x.eq_ignore_ascii_case("*NOGEN")) && c.max_severity <= c.ctl.genlvl;
     let mut o = Outcome {
-        created: c.created,
+        created: c.created || nogen,
         // A module not created is RNS9309, a program RNS9310.
-        cause: if c.created {
+        cause: if c.created || nogen {
             String::new()
         } else if c.sql_failed {
             "SQL9001".into()

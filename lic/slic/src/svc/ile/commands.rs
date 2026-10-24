@@ -264,6 +264,34 @@ fn diag_text(diags: &[ile::Diag]) -> String {
     out
 }
 
+/// `BNDSRVPGM((LIB/S *IMMED|*DEFER) ...)`, or `*NONE`: the service
+/// programs as binding directory entries.
+fn bndsrvpgm(p: &Params) -> Result<Vec<ile::object::BndDirEntry>, String> {
+    let mut out: Vec<ile::object::BndDirEntry> = Vec::new();
+    let srv = p.kw("BNDSRVPGM").unwrap_or_default().replace(['(', ')'], " ");
+    for w in srv.split_whitespace() {
+        let w = w.to_ascii_uppercase();
+        if w == "*DEFER" {
+            if let Some(e) = out.last_mut() {
+                e.defer = true;
+            }
+            continue;
+        }
+        if w.starts_with('*') {
+            continue;
+        }
+        let (lib, name) = w.split_once('/').map_or(("*LIBL", w.as_str()), |(l, n)| (l, n));
+        Name::parse(name).map_err(|e| format!("CPD0078 BNDSRVPGM({w}): {e}"))?;
+        out.push(ile::object::BndDirEntry {
+            name: name.into(),
+            lib: lib.into(),
+            kind: ile::object::BndEntryKind::SrvPgm,
+            defer: false,
+        });
+    }
+    Ok(out)
+}
+
 /// `crtpgm` and `crtsrvpgm`.
 fn crtpgm(system: &mut System, p: &Params, kind: PgmKind) -> Result<String, String> {
     let kw = if kind == PgmKind::SrvPgm { "SRVPGM" } else { "PGM" };
@@ -275,6 +303,7 @@ fn crtpgm(system: &mut System, p: &Params, kind: PgmKind) -> Result<String, Stri
     }
     let bnddirs = spec_list(p, "BNDDIR")?;
     let mut options = BindOptions::new(&name.to_string(), kind);
+    options.bndsrvpgm = bndsrvpgm(p)?;
     options.attr.actgrp = actgrp_of(p);
     options.attr.usrprf = match p.upper("USRPRF").as_deref() {
         None | Some("*USER") => ile::UserProfile::User,

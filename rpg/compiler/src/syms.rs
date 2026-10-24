@@ -143,6 +143,9 @@ pub struct Ds {
     pub psds: bool,
     /// A data-area structure (`U` in column 23 or `DTAARA`).
     pub dtaara: Option<String>,
+    /// An array without `QUALIFIED`: its subfields are its own, yet
+    /// it qualifies no name.
+    pub unqualified_array: bool,
 }
 
 /// A parameter of a prototype or interface.
