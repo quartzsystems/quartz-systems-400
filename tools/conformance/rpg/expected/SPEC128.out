@@ -1,0 +1,15 @@
+# SPEC128 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF7086 00 line 4 seq 000400
+diag: RNF2318 00 line 5 seq 000500
+run: ok
+spool: QSYSPRT
+  |1/1      1    Boston
+  |1/2      2    Chicago
+  |1/3      3    Boston
+  |1/4      4    Denver
+  |1/5      5    Chicago
+  |1/6      6    Denver
+  |1/7      7    Boston
+  |1/8      8    Austin

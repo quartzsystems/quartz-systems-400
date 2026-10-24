@@ -1,0 +1,16 @@
+# DCL075 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 3 seq 000300
+diag: RNF3530 00 line 4 seq 000400
+run: ok
+spool: QSYSPRT
+  |1/1   size 27
+  |1/2   S01 26 0
+  |1/3   S02 8 13
+  |1/4   S03 5 13
+  |1/5   S04 8 13
+  |1/6   S05 1 26
+  |1/7   S06 3 21
+  |1/8   S02 [T07ELSZ6]
+  |1/9   S06 [DKR]

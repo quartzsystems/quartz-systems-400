@@ -1,0 +1,22 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s d1 date inz(*sys);
+dcl-s d2 date(*mdy) inz(*job);
+dcl-s t1 time inz(*sys);
+dcl-s z1 timestamp inz(*sys);
+dcl-s ok ind;
+ok = d1 >= d'2026-01-01' and d1 < d'2100-01-01';
+line = 'sys date ok ' + ok;
+write QSYSPRT line;
+ok = %diff(d1 : d2 : *days) >= -1 and %diff(d1 : d2 : *days) <= 1;
+line = 'job date near ' + ok;
+write QSYSPRT line;
+ok = %date(z1) = d1 or %diff(%date(z1) : d1 : *days) = 1;
+line = 'timestamp date ' + ok;
+write QSYSPRT line;
+ok = t1 >= t'00.00.00';
+line = 'time ok ' + ok;
+write QSYSPRT line;
+*inlr = *on;

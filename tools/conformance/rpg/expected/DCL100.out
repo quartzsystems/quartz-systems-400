@@ -1,0 +1,11 @@
+# DCL100 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 3 seq 000300
+diag: RNF3530 00 line 4 seq 000400
+run: ok
+spool: QSYSPRT
+  |1/1   sys date ok 1
+  |1/2   job date near 1
+  |1/3   timestamp date 1
+  |1/4   time ok 1

@@ -117,6 +117,9 @@ fn write_infds(
     let format = if r.format.is_empty() { &info.format } else { &r.format };
     text(buf, at::RECORD, format);
     text(buf, at::MSGID, r.msgid.as_deref().unwrap_or(""));
+    text(buf, at::ODP_FILE, &info.file);
+    text(buf, at::ODP_LIB, &info.lib);
+    put(buf, at::RECLEN.0, &u16::try_from(info.rec_len).unwrap_or(u16::MAX).to_be_bytes());
     let member = if r.member.is_empty() { &info.member } else { &r.member };
     text(buf, at::MEMBER, member);
     put(buf, at::RRN.0, &u32::try_from(r.rrn).unwrap_or(u32::MAX).to_be_bytes());

@@ -1,0 +1,23 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s a packed(7:3) inz(-.5);
+dcl-s b packed(7:3) inz(+12.25);
+dcl-s c zoned(5:0) inz(-00042);
+dcl-s d float(8) inz(1.25E3);
+dcl-s e float(8) inz(-2e-2);
+dcl-s f float(4) inz(7);
+dcl-s g int(10) inz(-2147483648);
+dcl-s h uns(20) inz(18446744073709551615);
+dcl-s i packed(31:0) inz(9999999999999999999999999999999);
+dcl-s j packed(9:9) inz(.123456789);
+line = %char(a) + ' ' + %char(b) + ' ' + %char(c);
+write QSYSPRT line;
+line = %char(d) + ' ' + %char(e) + ' ' + %char(f);
+write QSYSPRT line;
+line = %char(g) + ' ' + %char(h);
+write QSYSPRT line;
+line = %char(i) + ' ' + %char(j);
+write QSYSPRT line;
+*inlr = *on;

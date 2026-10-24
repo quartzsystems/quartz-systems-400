@@ -1,0 +1,22 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-ds lvl3 qualified template;
+  z char(2) inz('zz');
+end-ds;
+dcl-ds lvl2 qualified template;
+  y int(5) inz(2);
+  in3 likeds(lvl3) inz(*likeds);
+end-ds;
+dcl-ds lvl1 qualified inz;
+  x char(1) inz('x');
+  in2 likeds(lvl2) inz(*likeds);
+end-ds;
+dcl-ds cpy likeds(lvl1) inz(*likeds);
+dcl-ds bare likeds(lvl2);
+line = lvl1.x + ' ' + %char(lvl1.in2.y) + ' ' + lvl1.in2.in3.z + ' ' + %char(%size(lvl1));
+write QSYSPRT line;
+line = cpy.x + ' ' + %char(cpy.in2.y) + ' ' + cpy.in2.in3.z + ' [' + bare.in3.z + ']';
+write QSYSPRT line;
+*inlr = *on;

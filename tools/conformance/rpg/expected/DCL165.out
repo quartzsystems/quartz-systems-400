@@ -1,0 +1,15 @@
+# DCL165 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 3 seq 000300
+diag: RNF3530 00 line 4 seq 000400
+run: ok
+spool: QSYSPRT
+  |1/1   V0 2 2 -9.9
+  |1/2   V1 8 20 -9223372036854775808
+  |1/3   V2 10 10 .0
+  |1/4   V3 15 15 6338.73
+  |1/5   V4 4 +3.0000000E+02
+  |1/6   V5 1 0
+  |1/7   V6 8 40 01 01
+  |1/8   V7 5 5 [     ]

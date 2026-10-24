@@ -1,0 +1,3 @@
+**FREE
+dcl-s incfld char(8) inz('included');
+dcl-c INCK 42;

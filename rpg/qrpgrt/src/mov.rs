@@ -94,7 +94,8 @@ pub fn store_image(addr: u64, d: &Desc, img: &[u8]) -> Result<(), mi::Cond> {
 
 /// The padding byte of a target.
 fn fill(d: &Desc) -> u8 {
-    if d.numeric() { 0xF0 } else { 0x40 }
+    // Indicators pad with '0'.
+    if d.numeric() || d.kind == Kind::Ind { 0xF0 } else { 0x40 }
 }
 
 /// Move `src` into `dst`.

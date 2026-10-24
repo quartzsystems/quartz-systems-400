@@ -1,0 +1,25 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s buf char(30) inz('aaaabbbbccccddddeeeeffffgggghh');
+dcl-s p pointer;
+dcl-ds rec based(p) qualified;
+  a char(4);
+  n zoned(4:0);
+end-ds;
+dcl-ds arr based(p) qualified dim(3);
+  piece char(4);
+end-ds;
+dcl-s one char(1) based(p);
+p = %addr(buf);
+line = rec.a + ' ' + arr(2).piece + ' ' + arr(3).piece + ' ' + one;
+write QSYSPRT line;
+p += 8;
+rec.a = 'XXXX';
+line = buf;
+write QSYSPRT line;
+p = %addr(buf);
+line = one + ' ' + %char(%size(rec)) + ' ' + %char(%size(arr : *all));
+write QSYSPRT line;
+*inlr = *on;

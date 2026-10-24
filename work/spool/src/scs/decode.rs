@@ -17,6 +17,9 @@ use super::{
 pub struct Page {
     /// Line number to text, right-trimmed.
     pub lines: BTreeMap<u16, String>,
+    /// Each line's passes as printed: a carriage return starts another
+    /// over the same line (what `CPYSPLF CTLCHAR(*FCFC)` keeps apart).
+    pub passes: BTreeMap<u16, Vec<String>>,
 }
 
 impl Page {
@@ -53,17 +56,35 @@ impl Default for Format {
 
 struct State {
     pages: Vec<BTreeMap<u16, Vec<char>>>,
+    passes: Vec<BTreeMap<u16, Vec<Vec<char>>>>,
     line: u16,
     col: u16,
     fmt: Format,
+    /// A carriage return since the last character: the next one starts a pass.
+    cr: bool,
 }
 
 impl State {
     fn put(&mut self, ch: char) {
         if self.pages.is_empty() {
             self.pages.push(BTreeMap::new());
+            self.passes.push(BTreeMap::new());
         }
         let col = usize::from(self.col.max(1) - 1);
+        let passes = self.passes.last_mut().expect("a page").entry(self.line.max(1)).or_default();
+        if passes.is_empty() || self.cr && ch != ' ' {
+            passes.push(Vec::new());
+        }
+        if ch != ' ' {
+            self.cr = false;
+        }
+        let pass = passes.last_mut().expect("a pass");
+        if pass.len() <= col {
+            pass.resize(col + 1, ' ');
+        }
+        if pass[col] == ' ' {
+            pass[col] = ch;
+        }
         let page = self.pages.last_mut().expect("a page");
         let row = page.entry(self.line.max(1)).or_default();
         if row.len() <= col {
@@ -76,6 +97,9 @@ impl State {
     }
 
     fn down(&mut self, n: u16) {
+        if n > 0 {
+            self.cr = false;
+        }
         for _ in 0..n {
             if self.line >= self.fmt.len {
                 self.new_page();
@@ -86,7 +110,9 @@ impl State {
     }
 
     fn new_page(&mut self) {
+        self.cr = false;
         self.pages.push(BTreeMap::new());
+        self.passes.push(BTreeMap::new());
         self.line = 1;
         self.col = 1;
     }
@@ -97,9 +123,11 @@ impl State {
 pub fn decode(data: &[u8]) -> (Vec<Page>, Format) {
     let mut st = State {
         pages: Vec::new(),
+        passes: Vec::new(),
         line: 1,
         col: 1,
         fmt: Format::default(),
+        cr: false,
     };
     let mut i = 0;
     let at = |i: usize| data.get(i).copied().unwrap_or(0);
@@ -108,7 +136,10 @@ pub fn decode(data: &[u8]) -> (Vec<Page>, Format) {
         i += 1;
         match b {
             FF => st.new_page(),
-            CR => st.col = 1,
+            CR => {
+                st.col = 1;
+                st.cr = true;
+            }
             NL | IRS => {
                 st.down(1);
                 st.col = 1;
@@ -158,19 +189,14 @@ pub fn decode(data: &[u8]) -> (Vec<Page>, Format) {
             _ => {}
         }
     }
+    let text = |chars: Vec<char>| chars.into_iter().collect::<String>().trim_end().to_string();
     let pages = st
         .pages
         .into_iter()
-        .map(|p| Page {
-            lines: p
-                .into_iter()
-                .map(|(n, chars)| {
-                    (
-                        n,
-                        chars.into_iter().collect::<String>().trim_end().to_string(),
-                    )
-                })
-                .collect(),
+        .zip(st.passes)
+        .map(|(p, passes)| Page {
+            lines: p.into_iter().map(|(n, chars)| (n, text(chars))).collect(),
+            passes: passes.into_iter().map(|(n, v)| (n, v.into_iter().map(text).collect())).collect(),
         })
         .collect();
     (pages, st.fmt)

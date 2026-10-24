@@ -10,6 +10,7 @@
 //! beside the store, for the compiler and the kit's display.
 
 use std::cell::RefCell;
+use std::fmt::Write as _;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -265,6 +266,19 @@ impl ExtFiles for KitExt {
     }
 }
 
+/// A field's `DFT` value as an RPG literal.
+fn dft_literal(v: &dds::DefaultValue) -> Option<String> {
+    match v {
+        dds::DefaultValue::Quoted(q) => Some(format!("'{}'", q.replace('\'', "''"))),
+        dds::DefaultValue::Number(n) => Some(n.clone()),
+        dds::DefaultValue::Hex(h) => Some(h.iter().fold("X'".to_string(), |mut s, b| {
+            let _ = write!(s, "{b:02X}");
+            s
+        }) + "'"),
+        dds::DefaultValue::Null | dds::DefaultValue::Expr(_) => None,
+    }
+}
+
 /// One record format as the compiler sees it.
 #[must_use]
 pub fn format_of(f: &db::FormatDef) -> ExtFormat {
@@ -288,6 +302,7 @@ pub fn format_of(f: &db::FormatDef) -> ExtFormat {
                 },
                 alias: d.alias.clone().unwrap_or_default(),
                 nullable: d.allow_null,
+                default: d.default.as_ref().and_then(dft_literal),
             })
             .collect(),
         keys: r.keys.iter().map(|k| k.name.to_string()).collect(),
@@ -319,6 +334,7 @@ pub fn display_desc(df: &dspf::DisplayFile, lib: &str) -> ExtFile {
                         usage: f.usage.letter(),
                         alias: String::new(),
                         nullable: false,
+                        default: None,
                     })
                     .collect(),
                 keys: Vec::new(),
@@ -372,6 +388,7 @@ pub fn printer_desc(def: &dds::prtf::PrtfDefinition, lib: &str) -> ExtFile {
                     usage: 'O',
                     alias: String::new(),
                     nullable: false,
+                    default: None,
                 });
                 at += u32::try_from(x.buffer_len()).unwrap_or(0);
             }

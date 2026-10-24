@@ -213,6 +213,62 @@ Recorded from the `FEX` members of batch 9 (`b09exc/`), pub400 V7R5M0.
 - A record lock within one job (two opens of the file) could not be
   captured: the FTP session timed out on that call every time.
 
+## Oracle facts: specifications and declarations
+
+Recorded from batches 1 and 2 (`b01spec/`, `b02dcl/`), pub400 V7R5M0.
+
+- Every `H` line continues the control keywords: a keyword's
+  parameter list may go on onto the next line. With `OPTION(*SRCSTMT)`
+  the listing numbers statements by their sequence numbers, and so do
+  the diagnostics (the corpus avoids it).
+- `DECEDIT` sets `%CHAR`'s point and, with `'0.'`/`'0,'`, a zero before
+  it (`0.25`); `%EDITC` and output edit codes take its point and
+  thousands separator. Edit code `Y` follows `DATEDIT`'s order and
+  separator (`*YMD-`: `2026-12-25`, `26-12-25`).
+- `/TITLE`, `/EJECT` and `/SPACE` lines are neither printed nor
+  numbered. In a fully free member `/SPACE`, with or without a count,
+  is `RNF0280` (20) and is listed.
+- A `D`/`P` name continued with `...` is the parts joined as written.
+  Comment and blank lines may sit between an `F` spec's continuation
+  lines. A fixed-form `*FILE`, `*STATUS` keyword starts in column 26.
+- A signed length with `LIKE` in the fixed-form length columns adjusts
+  the length (`+3`); an unsigned one beside `LIKE` is `RNF3435`.
+  `VARYING(4)` gives a 4-byte prefix.
+- An `O` spec constant continues with `+` or `-` in the next line's
+  columns 53-80. A field with blank-after prints first, then blanks.
+  Records without spacing between them overprint: `CPYSPLF` keeps each
+  pass a record of its own (`+` control), so the kit lists each pass.
+- A full-procedural `READ` of a program-described file sets the record
+  identifying indicator of the type read and leaves the others as
+  they were.
+- `TESTB` of one bit takes no "mixed" indicator (`RNF5117`).
+  `ENDDO` factor 2 is a counted `DO`'s increment.
+- In fixed-format source, text in columns 81-100 of a free-form line is
+  `RNF5501` (20) inside a `/FREE` block; outside one only on the lines
+  of a statement that spans lines.
+- `**` with a blank in column 3 starts the next compile-time array's
+  data; the rest of the record is a comment.
+- `INZ(0)` of a field with no integer digits (`bindec(1:1)`) is
+  `RNF3431`. A named constant `*ON` cannot be concatenated
+  (`RNF7421`). A figurative constant (also through a named constant)
+  initializes a varying field to its full length.
+- `ALIGN` puts integer and float subfields on their size (2, 4, 8);
+  binary decimals and varying prefixes are not aligned. Pointers are
+  on 16 with or without it.
+- An indicator takes no `INZ(*HIVAL)` or `*LOVAL` (`RNF3430`). `*USA0`
+  is not a time format for `%CHAR` and `%TIME` (`RNF0599`). An
+  indicator subfield of a structure without `INZ` is a blank until
+  set; a workstation file's `INDDS` is all `0` once opened. `MOVEA(P)`
+  into `*IN` pads with `0`.
+- The open feedback in an `INFDS` holds the file name at 83, the record
+  length (binary) at 125 and the member at 129. A static structure in
+  a subprocedure takes its `INZ` values on the first call. A
+  multiple-occurrence structure's `%ELEM` is its occurrences and
+  `%SIZE(ds:*ALL)` their total.
+- `INZ(*EXTDFT)` takes the file's `DFT` values; an `EXTNAME` structure
+  names its external fields with `EXTFLD` (no parameter keeps the
+  name) to change their `INZ`.
+
 ## Oracle facts: moves, strings and arrays
 
 Recorded from batch 5 (`b05move/`) and the `STR`, `ARR` and `BIT`

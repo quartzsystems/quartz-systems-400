@@ -1,0 +1,25 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s g int(10) inz(5);
+dcl-s i int(10);
+for i = 1 to 3;
+line = %char(bump());
+  write QSYSPRT line;
+endfor;
+line = 'global ' + %char(g);
+write QSYSPRT line;
+*inlr = *on;
+dcl-proc bump;
+  dcl-pi *n int(10) end-pi;
+  dcl-s g int(10) inz(1);
+  dcl-s s int(10) static inz(10);
+  dcl-ds sd static qualified;
+    n int(10) inz(100);
+  end-ds;
+  g += 1;
+  s += 1;
+  sd.n += 10;
+  return g * 10000 + s * 1000 + sd.n;
+end-proc;

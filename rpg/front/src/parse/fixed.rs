@@ -147,7 +147,8 @@ pub fn spec(b: &mut Builder<'_>, spec: &FixedSpec, group: bool) -> bool {
 fn right_adjusted(b: &mut Builder<'_>, l: &Line, form: &Form, field: &str) {
     let Some(fd) = form.field(field) else { return };
     let raw = cut(&l.text, fd.from, fd.to);
-    if !raw.trim().is_empty() && raw.ends_with(' ') {
+    // A special word (`*FILE`, `*STATUS`) starts in the first column.
+    if !raw.trim().is_empty() && raw.ends_with(' ') && !raw.trim_start().starts_with('*') {
         let col = fd.from + raw.len() - raw.trim_start().len();
         b.diags.push(Diag::new(ids::NOT_RIGHT_ADJUSTED, 20, l.pos(u16::try_from(col).unwrap_or(0))));
     }
@@ -687,7 +688,10 @@ fn output_spec(b: &mut Builder<'_>, lines: &[&Line]) {
     let mut cond = Vec::new();
     output_cond(b, l, &mut cond, "");
     out.cond = cond;
-    for x in &lines[1..] {
+    let mut k = 1;
+    while k < lines.len() {
+        let x = lines[k];
+        k += 1;
         let t = &x.text;
         let rel = cut(t, 16, 18).trim().to_ascii_uppercase();
         if rel == "AND" || rel == "OR" {
@@ -706,11 +710,24 @@ fn output_spec(b: &mut Builder<'_>, lines: &[&Line]) {
             format.clear();
         }
         let constant_text = of.cut(t, "constant");
+        // A literal open at the end of the line goes on in the next
+        // lines' constant columns.
+        let mut areas = vec![(x.no, constant_text.trim_end().to_string())];
+        let mut last = x;
+        while areas.iter().map(|(_, a)| a.matches('\'').count()).sum::<usize>() % 2 == 1
+            && k < lines.len()
+            && cut(&lines[k].text, 7, 52).trim().is_empty()
+        {
+            last = lines[k];
+            areas.push((lines[k].no, of.cut(&lines[k].text, "constant").trim_end().to_string()));
+            k += 1;
+        }
         let constant = if constant_text.trim().is_empty() {
             None
         } else {
-            let toks = lex::lex_text(constant_text.trim_end(), x.pos(53), &mut b.diags);
-            expr::expr_all(&toks, x.pos(80), &mut b.diags).or_else(|| Some(Expr::Lit(Lit::Char(constant_text.trim().to_string()), x.pos(53))))
+            let segs: Vec<lex::Segment<'_>> = areas.iter().map(|(no, a)| lex::Segment { line: *no, col: 53, text: a.as_str() }).collect();
+            let toks = lex::lex(&segs, &mut b.diags);
+            expr::expr_all(&toks, last.pos(80), &mut b.diags).or_else(|| Some(Expr::Lit(Lit::Char(constant_text.trim().to_string()), x.pos(53))))
         };
         // A hexadecimal constant needs whole bytes; the field is ignored.
         if let Some(Expr::Lit(Lit::Hex(h), _)) = &constant

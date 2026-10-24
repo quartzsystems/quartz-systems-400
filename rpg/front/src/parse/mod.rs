@@ -60,24 +60,38 @@ pub fn items(read: &Read, diags: &mut Vec<Diag>) -> Vec<Item> {
     let mut free: Vec<usize> = Vec::new();
     let mut pending_cond: Vec<usize> = Vec::new();
     let mut i = 0;
+    // A free-form statement goes on from an earlier line; a /FREE
+    // block is open.
+    let mut open_stmt = false;
+    let mut in_free_block = false;
     while i < lines.len() {
         let l = &lines[i];
         match &l.class {
             Class::Free => {
-                // Free form in fixed-format source ends at column 80.
-                if !l.fully_free && !rpgspecs::cut(&l.text, 81, 100).trim().is_empty() {
+                // Free form in fixed-format source ends at column 80;
+                // IBM reports text past it in a /FREE block, and outside
+                // one on the lines of a statement that takes more than one.
+                let (semi, open_after) = statement_ends(&rpgspecs::cut(&l.text, 8, 80));
+                if !l.fully_free && !rpgspecs::cut(&l.text, 81, 100).trim().is_empty() && (in_free_block || open_stmt || !semi) {
                     diags.push(Diag::new(ids::FREE_COMMENT, 20, l.pos(81)));
                 }
+                open_stmt = if semi { open_after } else { open_stmt || open_after };
                 free.push(i);
                 i += 1;
                 continue;
             }
             Class::Blank | Class::Comment | Class::Skipped | Class::FreeMarker | Class::Directive(_) => {
+                match &l.class {
+                    Class::Directive(crate::reader::Directive::Free) => in_free_block = true,
+                    Class::Directive(crate::reader::Directive::EndFree) => in_free_block = false,
+                    _ => {}
+                }
                 i += 1;
                 continue;
             }
             _ => {}
         }
+        open_stmt = false;
         flush_free(lines, &mut free, &mut out, diags);
         match &l.class {
             Class::Spec(form) => {
@@ -105,6 +119,8 @@ pub fn items(read: &Read, diags: &mut Vec<Diag>) -> Vec<Item> {
                         break;
                     }
                     let cont = match form {
+                        // Every control line goes on with the keywords.
+                        'H' => true,
                         'F' => rpgspecs::cut(&n.text, 7, 43).trim().is_empty(),
                         'D' | 'P' => {
                             if name_cont {
@@ -188,6 +204,30 @@ pub fn items(read: &Read, diags: &mut Vec<Diag>) -> Vec<Item> {
     }
     flush_free(lines, &mut free, &mut out, diags);
     out
+}
+
+/// Whether free-form text holds a semicolon, and whether code follows
+/// the last one (literals and `//` comments aside).
+fn statement_ends(text: &str) -> (bool, bool) {
+    let (mut semi, mut after, mut quote) = (false, false, false);
+    let chars: Vec<char> = text.chars().collect();
+    let mut k = 0;
+    while k < chars.len() {
+        let c = chars[k];
+        if c == '\'' {
+            quote = !quote;
+            after = true;
+        } else if !quote && c == '/' && chars.get(k + 1) == Some(&'/') {
+            break;
+        } else if !quote && c == ';' {
+            semi = true;
+            after = false;
+        } else if c != ' ' {
+            after = true;
+        }
+        k += 1;
+    }
+    (semi, after)
 }
 
 /// A `C` line that holds only conditioning (no operation): it belongs

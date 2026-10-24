@@ -1,0 +1,25 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-ds DS1;
+  S01 timestamp;
+  S02 bindec(8:0) pos(26);
+  S03 uns(5) pos(33);
+  S04 ucs2(6) pos(9);
+  S05 time(*EUR) pos(5);
+end-ds;
+line = 'size ' + %char(%size(DS1));
+write QSYSPRT line;
+line = 'S01 ' + %char(%size(S01)) + ' ' + %char(%addr(S01) - %addr(DS1));
+write QSYSPRT line;
+line = 'S02 ' + %char(%size(S02)) + ' ' + %char(%addr(S02) - %addr(DS1));
+write QSYSPRT line;
+line = 'S03 ' + %char(%size(S03)) + ' ' + %char(%addr(S03) - %addr(DS1));
+write QSYSPRT line;
+line = 'S04 ' + %char(%size(S04)) + ' ' + %char(%addr(S04) - %addr(DS1));
+write QSYSPRT line;
+line = 'S05 ' + %char(%size(S05)) + ' ' + %char(%addr(S05) - %addr(DS1));
+write QSYSPRT line;
+DS1 = 'AHOV29GNU18FMT07ELSZ6DKRY5CJQX4BIPW3AHOV29GNU18FMT07ELSZ6DKR';
+*inlr = *on;

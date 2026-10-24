@@ -352,7 +352,16 @@ member("SPEC017", [
     O_fld("AMOUNT", end="45", edit="1"),
 ])
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import b01more  # noqa: E402
+
+b01more.add(member)
+INCS = b01more.INCS
+
 for name, lines in MEMBERS.items():
     with open(os.path.join(OUT, name + ".rpgle"), "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(lines) + "\n")
+for name, lines in INCS.items():
+    with open(os.path.join(OUT, name + ".rpginc"), "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")
 print(len(MEMBERS), "members")

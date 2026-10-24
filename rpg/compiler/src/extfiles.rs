@@ -204,7 +204,8 @@ pub fn input_type(x: &rpgfront::ast::InputField) -> Option<Ty> {
 }
 
 /// Subfields from a format: name, type, offset.
-pub type ExtSubs = Vec<(String, Ty, u32)>;
+/// An external structure's subfields: name, type, offset, `DFT` value.
+pub type ExtSubs = Vec<(String, Ty, u32, Option<String>)>;
 
 /// Which fields of a format a structure takes.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -239,7 +240,7 @@ pub fn subfields(fm: &ExtFormat, names: Option<&[String]>, which: Which) -> (Ext
     match which {
         Which::All => {
             for (i, f) in fm.fields.iter().enumerate() {
-                out.push((name_of(i), f.ty.clone(), f.offset));
+                out.push((name_of(i), f.ty.clone(), f.offset, f.default.clone()));
             }
             (out, fm.len)
         }
@@ -248,7 +249,7 @@ pub fn subfields(fm: &ExtFormat, names: Option<&[String]>, which: Which) -> (Ext
             for k in &fm.keys {
                 if let Some(i) = fm.fields.iter().position(|f| f.name == *k) {
                     let f = &fm.fields[i];
-                    out.push((name_of(i), f.ty.clone(), at));
+                    out.push((name_of(i), f.ty.clone(), at, f.default.clone()));
                     at += field_len(fm, i);
                 }
             }
@@ -262,7 +263,7 @@ pub fn subfields(fm: &ExtFormat, names: Option<&[String]>, which: Which) -> (Ext
                     _ => matches!(f.usage, 'O' | 'B'),
                 };
                 if ok {
-                    out.push((name_of(i), f.ty.clone(), at));
+                    out.push((name_of(i), f.ty.clone(), at, f.default.clone()));
                     at += field_len(fm, i);
                 }
             }

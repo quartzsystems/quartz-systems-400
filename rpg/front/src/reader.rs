@@ -465,6 +465,10 @@ fn classify(text: &str, fully_free: bool, first: bool, ctdata: bool, free_block:
         return Class::FreeMarker;
     }
     if let Some(rest) = text.strip_prefix("**") {
+        // `**` and a blank: the next array's data; the rest is a comment.
+        if rest.is_empty() || rest.starts_with(' ') {
+            return Class::CtHeader(String::new(), String::new());
+        }
         let rest = rest.trim();
         let up = rest.to_ascii_uppercase();
         let mut words = up.split_whitespace();

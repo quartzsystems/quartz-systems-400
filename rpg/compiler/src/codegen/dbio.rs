@@ -169,6 +169,16 @@ impl Gen<'_> {
             self.b.ins(format!("{ok} = cmp.lt {r}, 1000"));
             self.b.ins(format!("store {po}, {ok}"));
         }
+        // The open sets the INDDS indicators off.
+        if f.dev == Dev::Workstn
+            && let Some(id) = f.indds.as_ref().and_then(|n| self.t.find(self.scope, n))
+            && let Some(Kind::Ds(di)) = self.t.syms[id].kind
+        {
+            let n = self.t.ds[di].len.min(99);
+            let p = self.b.reg();
+            self.b.ins(format!("{p} = addr {}", crate::codegen::place_of(self.t, id)));
+            self.b.ins(format!("mov [{p} +0]:char({n}), {}", crate::codegen::emit::quote(&"0".repeat(n as usize))));
+        }
         r
     }
 
@@ -655,7 +665,7 @@ impl Gen<'_> {
 
     /// The record type of the record in the buffer by the record
     /// identification codes into `$rt_FILE` (-1 for none), and its
-    /// record identifying indicator on (the others off).
+    /// record identifying indicator on.
     pub fn identify(&mut self, f: &File) {
         self.identify_as(f, true);
     }
@@ -667,15 +677,9 @@ impl Gen<'_> {
         let recs = self.records_of(f);
         let p = self.b.reg();
         self.b.ins(format!("{p} = addr $rb_{n}"));
+        // The other record identifying indicators keep their state (the
+        // cycle turns them off itself).
         self.b.ins(format!("store $rt_{n}, -1"));
-        for r in recs.iter().filter(|_| rid) {
-            if !r.rid.is_empty()
-                && r.rid != "**"
-                && let Some(x) = self.indicator(&r.rid.clone())
-            {
-                self.b.ins(format!("store {}, *OFF", x.op));
-            }
-        }
         let done = self.b.label();
         for (k, r) in recs.iter().enumerate() {
             let next = self.b.label();

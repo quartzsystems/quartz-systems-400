@@ -1,0 +1,22 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-c CHR 'text';
+dcl-c NUM -42.5;
+dcl-c HEX x'C8C5E7';
+dcl-c DAT d'2026-01-31';
+dcl-c TIM t'08.15.00';
+dcl-c BIG 123456789012345;
+dcl-c FLT 1.5E2;
+dcl-c ONE const(1);
+dcl-c IND *on;
+dcl-c BLK *blanks;
+dcl-s v varchar(10) inz(BLK);
+dcl-s d date inz(DAT);
+dcl-s f float(8) inz(FLT);
+line = CHR + ' ' + %char(NUM) + ' ' + HEX + ' ' + %char(d) + ' ' + %char(TIM);
+write QSYSPRT line;
+line = %char(BIG + ONE) + ' ' + %char(f) + ' [' + v + '] ' + %char(%len(v));
+write QSYSPRT line;
+*inlr = *on;

@@ -1,0 +1,5 @@
+      /IF NOT DEFINED(SPC101A)
+      /DEFINE SPC101A
+     DGUARD            S             10I 0 INZ(1)
+      /COPY SPC101B
+      /ENDIF

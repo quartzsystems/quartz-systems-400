@@ -616,7 +616,12 @@ impl Gen<'_> {
             }
             ("FOR", _) => self.for_loop(s),
             ("DO", _) => self.counted_do(s),
-            ("ENDDO" | "ENDFOR", _) => self.end_loop(None),
+            ("ENDFOR", _) => self.end_loop(None),
+            // ENDDO's factor 2 is a counted DO's increment.
+            ("ENDDO", _) => {
+                let inc = op.f2.first().cloned();
+                self.end_loop(inc.as_ref());
+            }
             ("END", _) => {
                 if matches!(self.open.last(), Some(Open::If { .. })) {
                     self.end_if();
@@ -730,7 +735,7 @@ impl Gen<'_> {
                     if self.b.is_open() {
                         let exit = self.calcs_end.clone().or_else(|| self.main_exit.clone()).unwrap_or_default();
                         if exit.is_empty() {
-                            self.b.term("ret");
+                            fall_off(self);
                         } else {
                             self.b.term(format!("br {exit}"));
                         }
@@ -1172,7 +1177,9 @@ impl Gen<'_> {
                             AssignOp::Div => BinOp::Div,
                             _ => BinOp::Pow,
                         };
-                        if op == BinOp::Add && (c.ty.is_string() || matches!(c.ty, Ty::Ds(_))) {
+                        if matches!(op, BinOp::Add | BinOp::Sub) && c.ty == Ty::Ptr {
+                            self.ptr_arith(op, &c, &r)
+                        } else if op == BinOp::Add && (c.ty.is_string() || matches!(c.ty, Ty::Ds(_))) {
                             self.expr(&Expr::Binary(BinOp::Add, Box::new(t.clone()), Box::new(v.clone()), self.at), w)
                         } else {
                             self.arith(op, &c, &r, w)
@@ -1688,6 +1695,8 @@ fn default_value(g: &mut Gen<'_>, ty: &Ty, dim: u32, place: &str) {
         t if t.is_datetime() => &Gen::dt_default(t).unwrap_or_default(),
         Ty::Ptr | Ty::ProcPtr | Ty::Object => "",
         Ty::Ds(_) => "",
+        // A varying graphic field is bytes in the IR: its length is zero.
+        Ty::VarGraph(..) => "*ZEROS",
         _ => "*BLANKS",
     };
     let places: Vec<String> = if dim > 0 {
@@ -1725,20 +1734,7 @@ pub fn init_symbol(g: &mut Gen<'_>, id: SymId) {
             for r in 0..reps {
                 let base = if s.dim > 0 { format!("{place}[{r}]") } else { place.clone() };
                 g.b.ins(format!("mov {base}.all_, *BLANKS"));
-                for &sub in &ds.subfields {
-                    let ss = g.t.syms[sub].clone();
-                    let p = format!("{base}.{}", mangle(&ss.name));
-                    match (&ss.inz, ds.inz) {
-                        (Some(Some(e)), _) => inz_value(g, &ss.ty, ss.dim, &p, e),
-                        (Some(None), _) | (None, true) => default_value(g, &ss.ty, ss.dim, &p),
-                        (None, false) => {
-                            // Pointers are null even in a blank structure.
-                            if matches!(ss.ty, Ty::Ptr | Ty::ProcPtr) {
-                                default_value(g, &ss.ty, ss.dim, &p);
-                            }
-                        }
-                    }
-                }
+                init_subfields(g, *di, &base, ds.inz, true);
             }
         }
         Some(Kind::Field) if s.ctdata => {
@@ -1750,6 +1746,38 @@ pub fn init_symbol(g: &mut Gen<'_>, id: SymId) {
             _ => default_value(g, &s.ty, s.dim, &place),
         },
         _ => {}
+    }
+}
+
+/// A structure's subfields at `base`: their INZ values (when `values`),
+/// the types' defaults with the structure's INZ. A LIKEDS subfield is
+/// its structure's subfields, with their values under `INZ(*LIKEDS)`.
+fn init_subfields(g: &mut Gen<'_>, di: usize, base: &str, ds_inz: bool, values: bool) {
+    let ds = g.t.ds[di].clone();
+    for &sub in &ds.subfields {
+        let ss = g.t.syms[sub].clone();
+        let p = format!("{base}.{}", mangle(&ss.name));
+        if let Ty::Ds(oi) = ss.ty {
+            let likeds = values && matches!(&ss.inz, Some(Some(Expr::Special { word, .. })) if word == "*LIKEDS");
+            let inz = likeds || ds_inz || matches!(ss.inz, Some(None));
+            if inz {
+                let places: Vec<String> = if ss.dim > 0 { (0..ss.dim).map(|i| format!("{p}[{i}]")).collect() } else { vec![p] };
+                for q in places {
+                    init_subfields(g, oi, &q, true, likeds);
+                }
+            }
+            continue;
+        }
+        match (&ss.inz, ds_inz) {
+            (Some(Some(e)), _) if values => inz_value(g, &ss.ty, ss.dim, &p, e),
+            (Some(_), _) | (None, true) => default_value(g, &ss.ty, ss.dim, &p),
+            (None, false) => {
+                // Pointers are null even in a blank structure.
+                if matches!(ss.ty, Ty::Ptr | Ty::ProcPtr) {
+                    default_value(g, &ss.ty, ss.dim, &p);
+                }
+            }
+        }
     }
 }
 
@@ -1877,6 +1905,8 @@ fn inz_type_ok(ty: &Ty, e: &Expr) -> bool {
             t => !t.is_numeric(),
         },
         Expr::Lit(Lit::Num(_), _) => ty.is_numeric(),
+        // An indicator takes no *HIVAL or *LOVAL.
+        Expr::Special { word, .. } if *ty == Ty::Ind => !matches!(word.as_str(), "*HIVAL" | "*LOVAL"),
         _ => true,
     }
 }
@@ -1897,7 +1927,16 @@ fn inz_value(g: &mut Gen<'_>, ty: &Ty, dim: u32, place: &str, e: &Expr) {
     {
         g.err(ids::INZ_DECIMALS, 10, String::new());
     }
-    let Some(v) = g.expr(e, Want::default()) else { return };
+    // *USER: the job's user profile.
+    let v = if matches!(e, Expr::Special { word, .. } if word == "*USER") && ty.is_string() {
+        g.rt_proc("_QRNX_USER", "($dst: char(10))");
+        let t = g.b.temp("char(10)");
+        g.b.ins(format!("callb _QRNX_USER({t})"));
+        Some(V::place(Ty::Char(10), t))
+    } else {
+        g.expr(e, Want::default())
+    };
+    let Some(v) = v else { return };
     if !inz_fits(ty, &v) {
         g.err(ids::INZ_TOO_LONG, 20, String::new());
         default_value(g, ty, dim, place);
@@ -1908,9 +1947,24 @@ fn inz_value(g: &mut Gen<'_>, ty: &Ty, dim: u32, place: &str, e: &Expr) {
     } else {
         vec![place.to_string()]
     };
+    // A figurative constant fills a varying field to its maximum length.
+    let v = match (ty, v.fig.is_some()) {
+        (Ty::VarChar(n, _), true) => fill_fixed(g, Ty::Char(*n), &v),
+        (Ty::VarUcs2(n, _), true) => fill_fixed(g, Ty::Ucs2(*n), &v),
+        (Ty::VarGraph(n, _), true) => fill_fixed(g, Ty::Graph(*n), &v),
+        _ => v,
+    };
     for p in places {
         g.assign(&V::place(ty.clone(), p), &v, false);
     }
+}
+
+/// A figurative constant in a temporary of a fixed-length type.
+fn fill_fixed(g: &mut Gen<'_>, ty: Ty, v: &V) -> V {
+    let t = g.b.temp(&g.ir_ty(&ty));
+    let out = V::place(ty, t);
+    g.assign(&out, v, false);
+    out
 }
 
 /// The main procedure's mainline calculations, and its subroutines by
@@ -2138,6 +2192,33 @@ fn on_exit_body(g: &mut Gen<'_>, body: &[&Stmt], at: &Stmt, exit: &[&Stmt]) {
     }
 }
 
+/// Falling off the end of a subprocedure: it returns its type's default.
+fn fall_off(g: &mut Gen<'_>) {
+    match g.ret.clone() {
+        None => g.b.term("ret"),
+        Some(rt) => {
+            let ir = g.ir_ty(&rt);
+            if is_reg_type(&rt) {
+                let r = g.b.reg();
+                let k = match rt {
+                    Ty::Ind => "const.ind *OFF".to_string(),
+                    Ty::Float(4) => "const.f32 0.0e0".to_string(),
+                    Ty::Float(_) => "const.f64 0.0e0".to_string(),
+                    Ty::Ptr => "const.ptr *NULL".to_string(),
+                    Ty::ProcPtr => "const.procptr *NULL".to_string(),
+                    _ => format!("const.{ir} 0"),
+                };
+                g.b.ins(format!("{r} = {k}"));
+                g.b.term(format!("ret {r}"));
+            } else {
+                let t = g.b.temp(&ir);
+                default_value(g, &rt, 0, &t);
+                g.b.term(format!("ret {t}"));
+            }
+        }
+    }
+}
+
 /// A subprocedure.
 pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
     g.b = Body::new();
@@ -2147,6 +2228,9 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
     g.scan_labels(&p.calcs);
     g.open.clear();
     g.main_exit = None;
+    // A subprocedure's subroutines are inline (only the main
+    // procedure's are procedures).
+    g.subr_procs = false;
     let name = p.name.to_ascii_uppercase();
     g.cur_proc.clone_from(&name);
     let proto = g
@@ -2158,10 +2242,14 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
         .or_else(|| g.t.protos.iter().rev().find(|x| x.name == name).cloned());
     g.ret = proto.as_ref().and_then(|x| x.ret.clone());
     let mut params = Vec::new();
+    // The interface's names (a prototype's may be *N).
+    let pi_names: Vec<String> = p.pi.as_ref().map(|d| d.children.iter().map(|c| c.name.clone()).collect()).unwrap_or_default();
     if let Some(pr) = &proto {
-        for prm in &pr.parms {
-            let id = g.t.find_in(scope, &prm.name);
-            let ir = id.map_or_else(|| format!("$p_{}", mangle(&prm.name)), |i| g.t.syms[i].ir.clone());
+        for (k, prm) in pr.parms.iter().enumerate() {
+            let pname = pi_names.get(k).filter(|n| !n.is_empty() && !n.starts_with('*')).map_or_else(|| prm.name.clone(), |n| n.to_ascii_uppercase());
+            let pname = pname.as_str();
+            let id = g.t.find_in(scope, pname);
+            let ir = id.map_or_else(|| format!("$p_{}", mangle(pname)), |i| g.t.syms[i].ir.clone());
             let ty = g.t.ir_type(&prm.ty);
             let ty = if prm.dim > 0 { format!("array[{}] of {ty}", prm.dim) } else { ty };
             let mut s = String::new();
@@ -2210,6 +2298,31 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
             init_symbol(g, i);
         }
     }
+    // Statics the IR cannot initialize (structures, arrays, other
+    // values): on the first call.
+    let once: Vec<SymId> = local_ids
+        .iter()
+        .copied()
+        .filter(|&i| g.t.syms[i].storage == Storage::Static && crate::codegen::static_inz(&g.t.syms[i]).is_empty())
+        .collect();
+    if !once.is_empty() {
+        let flag = format!("$sinit_{}", mangle(&name));
+        g.externs.entry(flag.clone()).or_insert_with(|| format!("static {flag}: i64"));
+        let v = g.b.reg();
+        g.b.ins(format!("{v} = load {flag}"));
+        let first = g.b.reg();
+        g.b.ins(format!("{first} = cmp.eq {v}, 0"));
+        let init = g.b.label();
+        let cont = g.b.label();
+        g.b.term(format!("brif {first}, {init}, {cont}"));
+        g.b.place(&init);
+        for &i in &once {
+            init_symbol(g, i);
+        }
+        g.b.ins(format!("store {flag}, 1"));
+        g.b.term(format!("br {cont}"));
+        g.b.place(&cont);
+    }
     g.debug_vars(scope);
     let stmts: Vec<&Stmt> = p.calcs.iter().collect();
     if let Some(k) = stmts.iter().position(|s| s.op.code == "ON-EXIT") {
@@ -2218,30 +2331,7 @@ pub fn subprocedure(g: &mut Gen<'_>, p: &Proc, scope: usize) -> String {
         calcs(g, &stmts);
     }
     if g.b.is_open() {
-        match g.ret.clone() {
-            None => g.b.term("ret"),
-            Some(rt) => {
-                // Falling off the end returns the type's default.
-                let ir = g.ir_ty(&rt);
-                if is_reg_type(&rt) {
-                    let r = g.b.reg();
-                    let k = match rt {
-                        Ty::Ind => "const.ind *OFF".to_string(),
-                        Ty::Float(4) => "const.f32 0.0e0".to_string(),
-                        Ty::Float(_) => "const.f64 0.0e0".to_string(),
-                        Ty::Ptr => "const.ptr *NULL".to_string(),
-                        Ty::ProcPtr => "const.procptr *NULL".to_string(),
-                        _ => format!("const.{ir} 0"),
-                    };
-                    g.b.ins(format!("{r} = {k}"));
-                    g.b.term(format!("ret {r}"));
-                } else {
-                    let t = g.b.temp(&ir);
-                    default_value(g, &rt, 0, &t);
-                    g.b.term(format!("ret {t}"));
-                }
-            }
-        }
+        fall_off(g);
     }
     finish_subrs(g);
     let export = p.kws.iter().any(|k| k.name == "EXPORT");

@@ -42,6 +42,23 @@ pub fn rows(pages: &[Page]) -> Vec<(u32, u16, String)> {
     out
 }
 
+/// Every pass over every line as `(page, line, text)`, overprints as
+/// rows of their own: what a copy with first-character forms control
+/// shows.
+#[must_use]
+pub fn pass_rows(pages: &[Page]) -> Vec<(u32, u16, String)> {
+    let mut out = Vec::new();
+    for (i, p) in pages.iter().enumerate() {
+        let page = u32::try_from(i + 1).unwrap_or(u32::MAX);
+        for (&n, passes) in &p.passes {
+            for t in passes {
+                out.push((page, n, t.clone()));
+            }
+        }
+    }
+    out
+}
+
 /// One record per printed line, the first character its FCFC control:
 /// `1` the first line of a page (skipping to it), blank, `0` and `-` for
 /// one, two and three lines down, more blank lines as needed.

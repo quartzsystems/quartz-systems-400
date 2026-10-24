@@ -187,7 +187,8 @@ impl Gen<'_> {
             self.b.place(&run);
             Some(skip)
         };
-        // The text and its width.
+        // The text and its width; a field blanked after output.
+        let mut blank = None;
         let (text, width): (String, u32) = if fld.field.is_empty() {
             match &fld.constant {
                 Some(Expr::Lit(Lit::Char(s), _)) => (quote(s), u32::try_from(s.chars().count()).unwrap_or(0)),
@@ -229,7 +230,7 @@ impl Gen<'_> {
             let v = self.as_chars(&v);
             let edited = self.edited(&v, fld)?;
             if fld.blank {
-                self.blank_after(&v);
+                blank = Some(v);
             }
             edited
         };
@@ -247,6 +248,9 @@ impl Gen<'_> {
             let p = self.b.reg();
             self.b.ins(format!("{p} = addr {line}"));
             self.b.ins(format!("mov [{p} +{start}]:char({width}), {text}"));
+        }
+        if let Some(v) = blank {
+            self.blank_after(&v);
         }
         if let Some(s) = skip {
             self.b.place(&s);

@@ -180,3 +180,47 @@ COV133 the display file box's format-name columns
 COV134 the =I line of a display format in a file that does not compile has no format name
 COV103 the external description box of a file whose RAFDATA keyword is refused
 FEX009 the =O block before a free-form procedure lacks its ruler-switch '-' record
+DCL024 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+DCL028 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+DCL041 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+DCL075 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+DCL106 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+DCL121 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+DCL122 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+DCL126 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+DCL127 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+DCL129 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+DCL130 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+DCL144 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+DCL147 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC029 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC034 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC035 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC040 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC053 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC068 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC077 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC081 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC087 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC089 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC093 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC094 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC097 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC100 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC112 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC114 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC118 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC128 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC135 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC136 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC137 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC138 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC139 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC141 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC142 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC143 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC147 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC149 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC151 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC152 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched
+SPEC153 new batch 1/2 member: listing layout (cross-reference, markers, spacing) being matched

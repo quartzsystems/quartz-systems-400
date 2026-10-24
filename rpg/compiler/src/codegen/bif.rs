@@ -162,7 +162,11 @@ impl Gen<'_> {
                     self.err(rpgfront::diag::ids::MISSING_OPERAND, 30, name.to_string());
                     return None;
                 };
-                let n = self.size_of(a)?;
+                let mut n = self.size_of(a)?;
+                // A multiple-occurrence structure: every occurrence.
+                if let Some(occ) = self.occurs_of(a) {
+                    n.1 = occ;
+                }
                 let all = args.get(1).is_some_and(|a| matches!(a, Expr::Special { word, .. } if word == "*ALL"));
                 let n = if all { n.0 * n.1.max(1) } else { n.0 };
                 Some(V::lit(Ty::Packed(10, 0), n.to_string()))
@@ -170,6 +174,9 @@ impl Gen<'_> {
             "%ELEM" => {
                 if let Some(r) = self.elem_bif(args) {
                     return r;
+                }
+                if let Some(occ) = args.first().and_then(|a| self.occurs_of(a)) {
+                    return Some(V::lit(Ty::Packed(10, 0), occ.to_string()));
                 }
                 let v = self.expr(args.first()?, w)?;
                 if v.dim == 0 {
@@ -682,6 +689,19 @@ impl Gen<'_> {
         ));
     }
 
+    /// The occurrences of a multiple-occurrence structure named alone.
+    fn occurs_of(&self, e: &Expr) -> Option<u32> {
+        let Expr::Ref { name, steps, .. } = e else { return None };
+        if !steps.is_empty() {
+            return None;
+        }
+        let id = self.t.find(self.scope, name)?;
+        match self.t.syms[id].kind {
+            Some(crate::syms::Kind::Ds(di)) if self.t.ds[di].occurs > 0 => Some(self.t.ds[di].occurs),
+            _ => None,
+        }
+    }
+
     /// `%CHAR` of a number: IBM's form (no leading zeros, a leading
     /// minus, the `DECEDIT` point) through the runtime library.
     pub fn char_of_number(&mut self, v: &V) -> V {
@@ -695,7 +715,7 @@ impl Gen<'_> {
         let src = self.num_place(v);
         let desc = self.desc_of(&src);
         self.rt_proc("_QRNX_CHARNUM", "($dst: varchar(1) *VARSIZE, $src: bytes(1) *VARSIZE, byval $desc: i64, byval $point: i32)");
-        let point = i32::from(u8::try_from(self.ctl.decedit.0).unwrap_or(b'.'));
+        let point = i32::from(u8::try_from(self.ctl.decedit.0).unwrap_or(b'.')) | (i32::from(self.ctl.lead_zero) << 8);
         self.b.ins(format!("callb _QRNX_CHARNUM({}, {}, {desc}, {point})", t.op, src.op));
         t
     }

@@ -1,0 +1,299 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   DCL053
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   DCL053
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 H DFTACTGRP(*NO)                                                                                          000000     000100
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     2 FQSYSPRT   O    F  132        PRINTER                                                                     000000     000200
+-     3 D line            DS           132                                                                        000000     000300
+ ======>  aaaa
+ *RNF3530 00 a      000300  Data structure LINE has no valid subfields.
+      4 DDS1              DS                  INZ                                                                 000000     000400
+      5 D S01                            5A                                                                       000000     000500
+      6 D S02                             Z                                                                       000000     000600
+      7 D S03                             T   TIMFMT(*EUR)                                                        000000     000700
+      8 D S04                           20I 0                                                                     000000     000800
+      9 D S05                            4C                                                                       000000     000900
+     10 D S06                             Z                                                                       000000     001000
+     11 D S07                            1P 0                                                                     000000     001100
+     12 D S08                             *                                                                       000000     001200
+     13 D S09                            2C                                                                       000000     001300
+     14  /free                                                                                                    000000     001400
+ *RNF2318 00      2 000200  Overflow indicator *INOA is assigned to PRINTER file
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+                            QSYSPRT.
+-    15    line = 'size ' + %char(%size(DS1));                                                                    000000     001500
+     16    write QSYSPRT line;                                                                                    000000     001600
+     17    line = 'S01 ' + %char(%size(S01)) + ' ' + %char(%addr(S01) -                                           000000     001700
+     18    %addr(DS1));                                                                                           000000     001800
+     19    write QSYSPRT line;                                                                                    000000     001900
+     20    line = '  ' + '[' + S01 + ']';                                                                         000000     002000
+     21    write QSYSPRT line;                                                                                    000000     002100
+     22    line = 'S02 ' + %char(%size(S02)) + ' ' + %char(%addr(S02) -                                           000000     002200
+     23    %addr(DS1));                                                                                           000000     002300
+     24    write QSYSPRT line;                                                                                    000000     002400
+     25    line = '  ' + %char(S02);                                                                              000000     002500
+     26    write QSYSPRT line;                                                                                    000000     002600
+     27    line = 'S03 ' + %char(%size(S03)) + ' ' + %char(%addr(S03) -                                           000000     002700
+     28    %addr(DS1));                                                                                           000000     002800
+     29    write QSYSPRT line;                                                                                    000000     002900
+     30    line = '  ' + %char(S03);                                                                              000000     003000
+     31    write QSYSPRT line;                                                                                    000000     003100
+     32    line = 'S04 ' + %char(%size(S04)) + ' ' + %char(%addr(S04) -                                           000000     003200
+     33    %addr(DS1));                                                                                           000000     003300
+     34    write QSYSPRT line;                                                                                    000000     003400
+     35    line = '  ' + %char(S04);                                                                              000000     003500
+     36    write QSYSPRT line;                                                                                    000000     003600
+     37    line = 'S05 ' + %char(%size(S05)) + ' ' + %char(%addr(S05) -                                           000000     003700
+     38    %addr(DS1));                                                                                           000000     003800
+     39    write QSYSPRT line;                                                                                    000000     003900
+     40    line = '  ' + %char(S05);                                                                              000000     004000
+     41    write QSYSPRT line;                                                                                    000000     004100
+     42    line = 'S06 ' + %char(%size(S06)) + ' ' + %char(%addr(S06) -                                           000000     004200
+     43    %addr(DS1));                                                                                           000000     004300
+     44    write QSYSPRT line;                                                                                    000000     004400
+     45    line = '  ' + %char(S06);                                                                              000000     004500
+     46    write QSYSPRT line;                                                                                    000000     004600
+     47    line = 'S07 ' + %char(%size(S07)) + ' ' + %char(%addr(S07) -                                           000000     004700
+     48    %addr(DS1));                                                                                           000000     004800
+     49    write QSYSPRT line;                                                                                    000000     004900
+     50    line = '  ' + %char(S07);                                                                              000000     005000
+     51    write QSYSPRT line;                                                                                    000000     005100
+     52    line = 'S08 ' + %char(%size(S08)) + ' ' + %char(%addr(S08) -                                           000000     005200
+     53    %addr(DS1));                                                                                           000000     005300
+     54    write QSYSPRT line;                                                                                    000000     005400
+     55    line = '  ' + 'ptr';                                                                                   000000     005500
+     56    write QSYSPRT line;                                                                                    000000     005600
+     57    line = 'S09 ' + %char(%size(S09)) + ' ' + %char(%addr(S09) -                                           000000     005700
+     58    %addr(DS1));                                                                                           000000     005800
+     59    write QSYSPRT line;                                                                                    000000     005900
+     60    line = '  ' + %char(S09);                                                                              000000     006000
+     61    write QSYSPRT line;                                                                                    000000     006100
+     62    *inlr = *on;                                                                                           000000     006200
+     63  /end-free                                                                                                000000     006300
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+1{heading} page 4
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 2D     16      19      21
+                                                   24      26      29      31
+                                                   34      36      39      41
+                                                   44      46      49      51
+                                                   54      56      59      61
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   62M
+          DS1               DS(116)                 4D     15      18      23
+                                                   28      33      38      43
+                                                   48      53      58
+          LINE              DS(132)                 3D     15M     16      17M
+                                                   19      20M     21      22M
+                                                   24      25M     26      27M
+                                                   29      30M     31      32M
+                                                   34      35M     36      37M
+                                                   39      40M     41      42M
+                                                   44      45M     46      47M
+                                                   49      50M     51      52M
+                                                   54      55M     56      57M
+                                                   59      60M     61
+          S01               A(5)                    5D     17      17      20
+          S02               Z(26)                   6D     22      22      25
+          S03               T(8*EUR.)               7D     27      27      30
+          S04               I(20,0)                 8D     32      32      35
+          S05               C(4)                    9D     37      37      40
+                            CCSID(13488)
+          S06               Z(26)                  10D     42      42      45
+          S07               P(1,0)                 11D     47      47      50
+          S08               *(16)                  12D     52      52
+          S09               C(2)                   13D     57      57      60
+                            CCSID(13488)
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                       62M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+1{heading} page 6
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        2
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        2
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       63
+     Specifications  . . . . . . . . :       61
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        0
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program DCL053 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

@@ -1,0 +1,21 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-pr getk int(10) end-pr;
+dcl-pr echo varchar(20);
+  *n varchar(20) const;
+end-pr;
+line = %char(getk()) + ' ' + echo('hi');
+write QSYSPRT line;
+*inlr = *on;
+dcl-proc getk;
+  dcl-pi *n int(10) end-pi;
+  return 7;
+end-proc;
+dcl-proc echo;
+  dcl-pi *n varchar(20);
+    s varchar(20) const;
+  end-pi;
+  return s + '!';
+end-proc;

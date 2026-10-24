@@ -415,8 +415,9 @@ fn spooled(spool: &MemSpool) -> Vec<Spooled> {
             let last = fmt.len;
             Spooled {
                 file: f.file.clone(),
-                // Bytes that do not print are blanks on the oracle's copy.
-                lines: spool::view::rows(&pages)
+                // Each overprint pass is a row; bytes that do not print
+                // are blanks on the oracle's copy.
+                lines: spool::view::pass_rows(&pages)
                     .into_iter()
                     .map(|(p, l, t)| (p, l, t.chars().map(|c| if c.is_control() { ' ' } else { c }).collect::<String>()))
                     .filter(|(_, l, t)| !t.trim().is_empty() && (last == 66 || u32::from(last) != u32::from(*l)))

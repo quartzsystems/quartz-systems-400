@@ -45,6 +45,7 @@ pub fn procedures() -> Vec<(&'static str, usize)> {
         ("_QRNX_FLTMIX", natives::flt_mix as *const () as usize),
         ("_QRNX_SQRT", natives::sqrt as *const () as usize),
         ("_QRNX_PSDSINIT", exc::psds_init as *const () as usize),
+        ("_QRNX_USER", exc::user as *const () as usize),
         ("_QRNX_PSDSERR", exc::psds_err as *const () as usize),
         ("_QRNX_RERAISE", exc::reraise as *const () as usize),
         ("_QRNX_FILEERR", exc::file_err as *const () as usize),

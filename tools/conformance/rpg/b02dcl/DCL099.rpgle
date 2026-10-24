@@ -1,0 +1,26 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s t0 timestamp(0) inz(z'2026-03-05-14.30.05');
+dcl-s t3 timestamp(3) inz(z'2026-03-05-14.30.05.123');
+dcl-s t6 timestamp inz(z'2026-03-05-14.30.05.123456');
+dcl-s t9 timestamp(9) inz(z'2026-03-05-14.30.05.123456789');
+dcl-s t12 timestamp(12) inz(z'2026-03-05-14.30.05.123456789012');
+line = %char(t0) + ' ' + %char(%size(t0));
+write QSYSPRT line;
+line = %char(t3) + ' ' + %char(%size(t3));
+write QSYSPRT line;
+line = %char(t6) + ' ' + %char(%size(t6));
+write QSYSPRT line;
+line = %char(t9) + ' ' + %char(%size(t9));
+write QSYSPRT line;
+line = %char(t12) + ' ' + %char(%size(t12));
+write QSYSPRT line;
+t3 = t12;
+t12 = t0;
+line = %char(t3) + ' ' + %char(t12);
+write QSYSPRT line;
+line = %char(t6 : *iso0);
+write QSYSPRT line;
+*inlr = *on;

@@ -1,0 +1,26 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-s buf char(10) inz('0123456789');
+dcl-s p1 pointer inz(%addr(buf));
+dcl-s p2 pointer inz(*null);
+dcl-pr twice int(10);
+  n int(10) value;
+end-pr;
+dcl-s pp pointer(*proc) inz(%paddr(twice));
+dcl-s over char(3) based(p1);
+dcl-pr call int(10) extproc(pp);
+  n int(10) value;
+end-pr;
+dcl-s k1 ind;
+k1 = p2 = *null;
+line = over + ' ' + k1 + ' ' + %char(call(21));
+write QSYSPRT line;
+*inlr = *on;
+dcl-proc twice;
+  dcl-pi *n int(10);
+    n int(10) value;
+  end-pi;
+  return n * 2;
+end-proc;

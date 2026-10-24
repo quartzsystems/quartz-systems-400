@@ -1,0 +1,3 @@
+      * Definitions for SPEC099.
+     DCPYFLD           S             10    INZ('copied')
+     DCPYNUM           S              5  0 INZ(321)

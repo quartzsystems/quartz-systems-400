@@ -1,0 +1,11 @@
+# DCL122 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 3 seq 000300
+diag: RNF3530 00 line 4 seq 000400
+run: ok
+spool: QSYSPRT
+  |1/1   k2k3k1 value 1rst1
+  |1/2   3 2 36
+  |1/3   k1value1rst1 k3value3rst3
+  |1/4   k1value1rst1 k3value3rst3

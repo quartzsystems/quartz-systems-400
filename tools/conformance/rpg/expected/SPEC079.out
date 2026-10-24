@@ -1,0 +1,11 @@
+# SPEC079 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 1 seq 000100
+run: ok
+spool: QSYSPRT
+  |1/3         page     1
+  |1/3       detail
+  |1/5       detail
+  |2/3         page     2
+  |2/3       detail

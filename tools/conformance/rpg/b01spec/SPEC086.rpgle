@@ -1,0 +1,27 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-ds pt qualified template;
+  x int(10);
+  y int(10);
+end-ds;
+dcl-pr mkpt likeds(pt);
+  a int(10) value;
+  b int(10) value;
+end-pr;
+dcl-ds p likeds(pt);
+p = mkpt(3 : 4);
+line = %char(p.x) + ' ' + %char(p.y);
+write QSYSPRT line;
+*inlr = *on;
+dcl-proc mkpt;
+  dcl-pi *n likeds(pt);
+    a int(10) value;
+    b int(10) value;
+  end-pi;
+  dcl-ds r likeds(pt);
+  r.x = a;
+  r.y = b;
+  return r;
+end-proc;

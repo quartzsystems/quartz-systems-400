@@ -1,0 +1,320 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   DCL106
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   DCL106
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 **FREE                                                                                                    000000     000100
+      2 //; dds: DFTF                                                                                             000000     000200
+      3 ctl-opt dftactgrp(*no);                                                                                   000000     000300
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     4 dcl-f QSYSPRT printer(132);                                                                               000000     000400
+-     5 dcl-ds line len(132) end-ds;                                                                              000000     000500
+ ======>       aaaa
+ *RNF3530 00 a      000500  Data structure LINE has no valid subfields.
+      6 dcl-ds d1 extname('DFTF') inz(*extdft) end-ds;                                                            000000     000600
+         *--------------------------------------------------------------------------------------------*                     1
+         * Data structure . . . . . . :  D1                                                           *                     1
+         * External format  . . . . . :  DFTR : {lib}/DFTF                                        *                     1
+         *--------------------------------------------------------------------------------------------*                     1
+-Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+      7=D DCODE                          4A   INZ ('ABCD')                                                                  1000001
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+      8=D DQTY                           5P 0 INZ (42)                                                                      1000002
+      9=D DAMT                           7S 2 INZ (-1.25)                                                                   1000003
+     10=D DNAME                         10A   INZ (*BLANK)                                                                  1000004
+     11=D DCNT                           9B 0 INZ (7)                                                                       1000005
+     12=D DDATE                         10D   DATFMT (*ISO-)                                                                1000006
+     13=D                                     INZ (D'2026-01-15')                                                           1000007
+     14=D DTEXT                         12A   INZ ('dflt')                                                                  1000008
+-Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     15 dcl-ds d2 extname('DFTF') qualified inz end-ds;                                                           000000     000700
+         *--------------------------------------------------------------------------------------------*                     2
+         * Data structure . . . . . . :  D2                                                           *                     2
+         * External format  . . . . . :  DFTR : {lib}/DFTF                                        *                     2
+         *--------------------------------------------------------------------------------------------*                     2
+-Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+     16=D DCODE                          4A                                                                                 2000001
+     17=D DQTY                           5P 0                                                                               2000002
+     18=D DAMT                           7S 2                                                                               2000003
+     19=D DNAME                         10A                                                                                 2000004
+     20=D DCNT                           9B 0                                                                               2000005
+     21=D DDATE                         10D   DATFMT (*ISO-)                                                                2000006
+     22=D DTEXT                         12A                                                                                 2000007
+-Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     23 dcl-ds d3 extname('DFTF') qualified inz(*extdft);                                                         000000     000800
+     24   dqty extfld inz(9);                                                                                     000000     000900
+     25 end-ds;                                                                                                   000000     001000
+         *--------------------------------------------------------------------------------------------*                     3
+         * Data structure . . . . . . :  D3                                                           *                     3
+         * External format  . . . . . :  DFTR : {lib}/DFTF                                        *                     3
+         *--------------------------------------------------------------------------------------------*                     3
+-Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+     26=D DCODE                          4A   INZ ('ABCD')                                                                  3000001
+     27=D DQTY                           5P 0 INZ (9)                                                                       3000002
+     28=D DAMT                           7S 2 INZ (-1.25)                                                                   3000003
+     29=D DNAME                         10A   INZ (*BLANK)                                                                  3000004
+     30=D DCNT                           9B 0 INZ (7)                                                                       3000005
+     31=D DDATE                         10D   DATFMT (*ISO-)                                                                3000006
+     32=D                                     INZ (D'2026-01-15')                                                           3000007
+     33=D DTEXT                         12A   INZ ('dflt')                                                                  3000008
+-Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+ *RNF2318 00      4 000400  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+1{heading} page 4
+0Line   <---------------------- Source Specifications ----------------------------------------------------->  Do  Change Src Seq
+ Number ....+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10  Num Date   Id  Number
+     34 line = dcode + ' ' + %char(dqty) + ' ' + %char(damt) + ' [' + dname + '] ' + %char(dcnt);                 000000     001100
+     35 write QSYSPRT line;                                                                                       000000     001200
+     36 line = %char(ddate) + ' [' + dtext + '] ' + %char(%len(dtext));                                           000000     001300
+     37 write QSYSPRT line;                                                                                       000000     001400
+     38 line = '[' + d2.dcode + '] ' + %char(d2.dqty) + ' ' + %char(d2.ddate) + ' ' +                             000000     001500
+     39   %char(%len(d2.dtext));                                                                                  000000     001600
+     40 write QSYSPRT line;                                                                                       000000     001700
+     41 line = d3.dcode + ' ' + %char(d3.dqty);                                                                   000000     001800
+     42 write QSYSPRT line;                                                                                       000000     001900
+     43 *inlr = *on;                                                                                              000000     002000
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 4D     35      37      40
+                                                   42
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   43M
+          DAMT              S(7,2)                  9D     34
+          DCNT              B(9,0)                 11D     34
+          DCODE             A(4)                    7D     34
+          DDATE             D(10*ISO-)             13D     36
+          DNAME             A(10)                  10D     34
+          DQTY              P(5,0)                  8D     34
+          DTEXT             A(12)                  14D     36      36
+ *RNF7031 D1                DS(50)                  6D
+          D2                DS(50)                 15D     38      38      38
+                                                   39
+ *RNF7031   DAMT            S(7,2)                 18D
+ *RNF7031   DCNT            B(9,0)                 20D
+            DCODE           A(4)                   16D     38
+            DDATE           D(10*ISO-)             21D     38
+ *RNF7031   DNAME           A(10)                  19D
+            DQTY            P(5,0)                 17D     38
+            DTEXT           A(12)                  22D     39
+          D3                DS(50)                 23D     41      41
+ *RNF7031   DAMT            S(7,2)                 28D
+ *RNF7031   DCNT            B(9,0)                 30D
+            DCODE           A(4)                   26D     41
+ *RNF7031   DDATE           D(10*ISO-)             32D
+ *RNF7031   DNAME           A(10)                  29D
+            DQTY            P(5,0)                 27D     41
+ *RNF7031   DTEXT           A(12)                  33D
+          LINE              DS(132)                 5D     34M     35      36M
+                                                   37      38M     40      41M
+                                                   42
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                       43M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+1{heading} page 7
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+ *RNF7031 00      9 The name or indicator is not referenced.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :       11
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :       11
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       43
+     Specifications  . . . . . . . . :       41
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        1
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program DCL106 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

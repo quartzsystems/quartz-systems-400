@@ -1,0 +1,24 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-ds tbl qualified dim(3);
+  row char(12);
+  key char(2) overlay(row);
+  val char(5) overlay(row : *next);
+  rest char(5) overlay(row : *next);
+end-ds;
+tbl(1).row = 'k2value2rst2';
+tbl(2).row = 'k3value3rst3';
+tbl(3).row = 'k1value1rst1';
+line = tbl(1).key + tbl(2).key + tbl(3).key + ' ' + tbl(2).val + ' ' + tbl(3).rest;
+write QSYSPRT line;
+line = %char(%elem(tbl)) + ' ' + %char(%size(tbl.key)) + ' ' + %char(%size(tbl : *all));
+write QSYSPRT line;
+sorta tbl(*).key;
+line = tbl(1).row + ' ' + tbl(3).row;
+write QSYSPRT line;
+sorta(d) tbl(*).val;
+line = tbl(1).row + ' ' + tbl(3).row;
+write QSYSPRT line;
+*inlr = *on;

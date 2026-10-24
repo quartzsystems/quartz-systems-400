@@ -1,0 +1,24 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-ds DS1 qualified align;
+  S01 ind;
+  S02 bindec(3:1);
+  S03 date(*YMD,);
+  S04 varchar(2);
+  S05 ind;
+end-ds;
+line = 'size ' + %char(%size(DS1));
+write QSYSPRT line;
+line = 'S01 ' + %char(%size(DS1.S01)) + ' ' + %char(%addr(DS1.S01) - %addr(DS1));
+write QSYSPRT line;
+line = 'S02 ' + %char(%size(DS1.S02)) + ' ' + %char(%addr(DS1.S02) - %addr(DS1));
+write QSYSPRT line;
+line = 'S03 ' + %char(%size(DS1.S03)) + ' ' + %char(%addr(DS1.S03) - %addr(DS1));
+write QSYSPRT line;
+line = 'S04 ' + %char(%size(DS1.S04)) + ' ' + %char(%addr(DS1.S04) - %addr(DS1));
+write QSYSPRT line;
+line = 'S05 ' + %char(%size(DS1.S05)) + ' ' + %char(%addr(DS1.S05) - %addr(DS1));
+write QSYSPRT line;
+*inlr = *on;

@@ -1,0 +1,6 @@
+# SPEC037 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+run: ok
+spool: QSYSPRT
+  |1/1        total          12.50

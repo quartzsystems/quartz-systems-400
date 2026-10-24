@@ -1,0 +1,10 @@
+     A                                      CCSID(37)
+     A          R DFTR
+     A            DCODE          4A         DFT('ABCD')
+     A            DQTY           5P 0       DFT(42)
+     A            DAMT           7S 2       DFT(-1.25)
+     A            DNAME         10A
+     A            DCNT           9B 0       DFT(7)
+     A            DDATE           L         DATFMT(*ISO) DFT('2026-01-15')
+     A            DTEXT         12A         DFT('dflt')
+     A          K DCODE

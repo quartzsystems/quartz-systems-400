@@ -1,0 +1,231 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   SPEC142
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   SPEC142
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+0                          S o u r c e   L i s t i n g
+-
+      1 FQSYSPRT   O    F  132        PRINTER                                                                     000000     000100
+-     2 DLINE             DS           132                                                                        000000     000200
+ ======> aaaa
+ *RNF3530 00 a      000200  Data structure LINE has no valid subfields.
+      3 DCUSTOMER_NA...                                                                                           000000     000300
+      4 DME_FIELD         S             40    VARYING                                                             000000     000400
+      5 D                                     INZ('a fair+                                                        000000     000500
+      6 D                                       ly long piece of text')                                           000000     000600
+      7 DS...                                                                                                     000000     000700
+      8 DHORTNM           S              9P 2                                                                     000000     000800
+      9 D                                     INZ(3957.57)                                                        000000     000900
+     10 DLONGER_NAME_FOR_A_DATE_VA...                                                                             000000     001000
+     11 DLUE              S              5S 0 INZ(17)                                                             000000     001100
+     12 DTOTAL_AM...                                                                                              000000     001200
+     13 DOUNT_DUE_TODAY   S              3    DIM(3)                                                              000000     001300
+     14 D                                     INZ('ab')                                                           000000     001400
+     15   // a free-form comment                                                                                  000000     001500
+ *RNF2318 00      1 000100  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-    16 C                   eval      LONGER_NAME_FOR_A_DATE_VALUE =                                              000000     001600
+     17 C                                LONGER_NAME_FOR_A_DATE_VALUE * 2 + 1                                     000000     001700
+     18  * a comment line                                                                                         000000     001800
+     19 C                   EVaL      lINe = '[' +                                                                000000     001900
+     20 C                                CuStoMEr_NaMe_FielD                                                      000000     002000
+     21 C                             + '] ' +                                                                    000000     002100
+     22 C                               %cHAr(%LeN(cUStOMER_NamE_FieLd))                                          000000     002200
+     23 c                   WRitE     qsYsprT       lInE                                                          000000     002300
+     24  * a comment line                                                                                         000000     002400
+     25 C                   eval      LINE = %CHAR(SHORTNM) + ' '                                                 000000     002500
+     26 C                               +                                                                         000000     002600
+     27 C                             %CHAR(LONGER_NAME_FOR_A_DATE_VALUE)                                         000000     002700
+     28 C                                + ' ' +                                                                  000000     002800
+     29 C                              %CHAR(%ELEM(TOTAL_AMOUNT_DUE_TODAY))                                       000000     002900
+     30 c                   wRIte     qSYsPRt       lInE                                                          000000     003000
+     31 C                   eval      SHOrtNM = shoRTNM +                                                         000000     003100
+     32 C                                lOngeR_NAmE_FOR_a_dATe_VAluE                                             000000     003200
+     33 C                              / 4                                                                        000000     003300
+     34 C                   EVAL      line =                                       comment area                   000000     003400
+     35 C                              %char(shortnm) +                                                           000000     003500
+     36 C                             ' ' +                                                                       000000     003600
+     37 C                               total_amount_due_today(2)                                                 000000     003700
+     38 C                   WRITE     QSYSPRT       LINE                                                          000000     003800
+     39 C                   eval      *inLR = *on                                                                 000000     003900
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+1{heading} page 3
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 4
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 1D     23      30      38
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   39M
+          CUSTOMER_NAME_FIELD...
+                            A(40)                   3D     20      22
+                            VARYING(2)
+          LINE              DS(132)                 2D     19M     23      25M
+                                                   30      34M     38
+          LONGER_NAME_FOR_A_DATE_VALUE...
+                            S(5,0)                 10D     16M     17      27
+                                                   32
+          SHORTNM           P(9,2)                  7D     25      31M     31
+                                                   35
+          TOTAL_AMOUNT_DUE_TODAY(3)...
+                            A(3)                   12D     29      37
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                       39M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        2
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        2
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       39
+     Specifications  . . . . . . . . :       36
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        3
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program SPEC142 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

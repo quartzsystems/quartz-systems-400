@@ -21,12 +21,13 @@ fn job(env: *mut Env) -> &'static mut mi::Job {
 /// `_QRNX_CHARNUM(dst: varchar, src, desc, point)`: `%CHAR` of a number.
 pub extern "sysv64" fn charnum(env: *mut Env, _argc: i64, _od: i64, dst: i64, src: i64, desc: i64, point: i32) {
     let d = Desc::of(desc);
-    let point = char::from(u8::try_from(point).unwrap_or(b'.'));
+    let zero = point & 0x100 != 0;
+    let point = char::from(u8::try_from(point & 0xff).unwrap_or(b'.'));
     let text = if d.kind == Kind::Float {
         read_f64(src.cast_unsigned(), &d).map(|f| fmt::char_of_float(f, d.len == 4))
     } else {
         match read_num(src.cast_unsigned(), &d) {
-            Ok(v) => d.shape().map(|sh| fmt::char_of(&v, sh, point)),
+            Ok(v) => d.shape().map(|sh| fmt::char_of_dec(&v, sh, point, zero)),
             Err(c) => {
                 job(env).raise(c);
                 return;

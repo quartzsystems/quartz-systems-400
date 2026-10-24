@@ -232,7 +232,9 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
     // A length that is not a number is blanks; a negative one is a
     // LIKE adjustment, no length.
     let adjust = cols.to.strip_prefix('-').is_some_and(|r| !r.is_empty() && r.bytes().all(|b| b.is_ascii_digit()));
-    if !cols.to.is_empty() && to.is_none() && !adjust {
+    // With LIKE, a signed length adjusts the length.
+    let like_adj = cols.to.starts_with(['+', '-']) && d.kw("LIKE").is_some();
+    if !cols.to.is_empty() && to.is_none() && !adjust && !like_adj {
         cx.diags.push(Diag::new(ids::BAD_LEN_ENTRY, 20, d.at));
     }
     let len = match (from, to) {
@@ -261,6 +263,15 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
         cx.diags.push(Diag::new(ids::BAD_TYPE_ENTRY, 20, d.at));
         ""
     };
+    // VARYING(2|4): the prefix; 4 by default past 65535.
+    let vprefix = |n: u32| -> u32 {
+        match d.kw("VARYING").and_then(|k| int_arg(k, 0)) {
+            Some(4) => 4,
+            Some(_) => 2,
+            None if n > 65535 => 4,
+            None => 2,
+        }
+    };
     let code = if ty_col.is_empty() {
         if d.kw("LIKE").is_some() {
             return d.kw("LIKE").and_then(|k| like(cx, d, k));
@@ -287,21 +298,24 @@ pub fn type_of(cx: &mut Cx<'_>, d: &Def, subfield: bool) -> Option<Ty> {
         "A" => {
             let n = need_len(cx)?;
             if varying {
-                let (n, p) = if positional { (n.saturating_sub(2), 2) } else { (n, 2) };
-                Ty::VarChar(n, p)
+                let p = vprefix(n);
+                let n = if positional { n.saturating_sub(p) } else { n };
+                Ty::VarChar(n, u8::try_from(p).unwrap_or(2))
             } else {
                 Ty::Char(n)
             }
         }
         "C" => {
             let n = need_len(cx)?;
-            let n = if positional { n / 2 } else { n };
-            if varying { Ty::VarUcs2(n, 2) } else { Ty::Ucs2(n) }
+            let p = if varying { vprefix(n * 2) } else { 0 };
+            let n = if positional { n.saturating_sub(p) / 2 } else { n };
+            if varying { Ty::VarUcs2(n, u8::try_from(p).unwrap_or(2)) } else { Ty::Ucs2(n) }
         }
         "G" => {
             let n = need_len(cx)?;
-            let n = if positional { n / 2 } else { n };
-            if varying { Ty::VarGraph(n, 2) } else { Ty::Graph(n) }
+            let p = if varying { vprefix(n * 2) } else { 0 };
+            let n = if positional { n.saturating_sub(p) / 2 } else { n };
+            if varying { Ty::VarGraph(n, u8::try_from(p).unwrap_or(2)) } else { Ty::Graph(n) }
         }
         "N" => Ty::Ind,
         "P" => {
@@ -473,6 +487,20 @@ fn prefix(given: Option<i64>, len: Option<i64>) -> u8 {
     }
 }
 
+/// A `DFT` value as an initial value of a field of type `ty`: a date,
+/// time or timestamp's string is a typed literal.
+fn dft_expr(text: &str, ty: &Ty, at: Pos) -> Option<Expr> {
+    let lit = match ty {
+        Ty::Date(..) => format!("D{text}"),
+        Ty::Time(..) => format!("T{text}"),
+        Ty::Timestamp(_) => format!("Z{text}"),
+        _ => text.to_string(),
+    };
+    let mut diags = Vec::new();
+    let toks = rpgfront::lex::lex_text(&lit, at, &mut diags);
+    rpgfront::parse::expr::expr_all(&toks, at, &mut diags).filter(|_| diags.is_empty())
+}
+
 /// `LIKE(name[:adjust])`.
 fn like(cx: &mut Cx<'_>, d: &Def, k: &Keyword) -> Option<Ty> {
     let at = k.arg(0).and_then(|a| a.toks.first()).map_or(k.at, |t| t.at);
@@ -485,18 +513,17 @@ fn like(cx: &mut Cx<'_>, d: &Def, k: &Keyword) -> Option<Ty> {
             _ => None,
         });
         let sub = ds.and_then(|i| cx.t.subfield(i, f)).filter(|_| steps.len() == 1);
-        return match sub {
-            Some(s) => Some(cx.t.syms[s].ty.clone()),
-            None => {
-                // The subfield, the qualified name and the definition
-                // are each not defined.
-                cx.diags.push(Diag::new(ids::BAD_SIMPLE_QUALIFIED, 20, at));
-                diag(cx, ids::NOT_DEFINED, 30, k.at, f);
-                diag(cx, ids::NOT_DEFINED, 30, k.at, &format!("{}.{}", name.to_ascii_uppercase(), f.to_ascii_uppercase()));
-                diag(cx, ids::NOT_DEFINED, 30, k.at, &d.name.to_ascii_uppercase());
-                None
-            }
+        let Some(s) = sub else {
+            // The subfield, the qualified name and the definition are
+            // each not defined.
+            cx.diags.push(Diag::new(ids::BAD_SIMPLE_QUALIFIED, 20, at));
+            diag(cx, ids::NOT_DEFINED, 30, k.at, f);
+            diag(cx, ids::NOT_DEFINED, 30, k.at, &format!("{}.{}", name.to_ascii_uppercase(), f.to_ascii_uppercase()));
+            diag(cx, ids::NOT_DEFINED, 30, k.at, &d.name.to_ascii_uppercase());
+            return None;
         };
+        let base = cx.t.syms[s].ty.clone();
+        return like_adjusted(cx, d, k, base);
     }
     let name = word_arg(k, 0)?;
     if name.eq_ignore_ascii_case(&d.name) {
@@ -509,6 +536,11 @@ fn like(cx: &mut Cx<'_>, d: &Def, k: &Keyword) -> Option<Ty> {
         return None;
     };
     let base = cx.t.syms[id].ty.clone();
+    like_adjusted(cx, d, k, base)
+}
+
+/// A `LIKE` type with its length adjustment.
+fn like_adjusted(cx: &mut Cx<'_>, d: &Def, k: &Keyword, base: Ty) -> Option<Ty> {
     // The adjustment is signed; without a sign IBM adds it.
     let adj = k.arg(1).and_then(|a| {
         let txt: String = a.toks.iter().map(rpgfront::lex::Tok::text).collect();
@@ -518,13 +550,22 @@ fn like(cx: &mut Cx<'_>, d: &Def, k: &Keyword) -> Option<Ty> {
         }
         txt.parse::<i64>().ok()
     });
-    let _ = d;
+    // Fixed form: the adjustment is in the length columns.
+    let adj = adj.or_else(|| {
+        let t = d.fixed.as_ref()?.to.trim();
+        if t.starts_with(['+', '-']) { t.trim_start_matches('+').parse::<i64>().ok() } else { None }
+    });
     Some(match (base, adj) {
         (t, None) => t,
         (Ty::Char(n), Some(a)) => Ty::Char(adjust(n, a)?),
         (Ty::VarChar(n, p), Some(a)) => Ty::VarChar(adjust(n, a)?, p),
         (Ty::Packed(dg, s), Some(a)) => Ty::Packed(u8::try_from(adjust(u32::from(dg), a)?).ok()?, s),
         (Ty::Zoned(dg, s), Some(a)) => Ty::Zoned(u8::try_from(adjust(u32::from(dg), a)?).ok()?, s),
+        (Ty::Bin(dg, s), Some(a)) => Ty::Bin(u8::try_from(adjust(u32::from(dg), a)?).ok()?, s),
+        (Ty::Ucs2(n), Some(a)) => Ty::Ucs2(adjust(n, a)?),
+        (Ty::VarUcs2(n, p), Some(a)) => Ty::VarUcs2(adjust(n, a)?, p),
+        (Ty::Graph(n), Some(a)) => Ty::Graph(adjust(n, a)?),
+        (Ty::VarGraph(n, p), Some(a)) => Ty::VarGraph(adjust(n, a)?, p),
         (t, Some(_)) => t,
     })
 }
@@ -999,7 +1040,23 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
     }
     // EXTNAME and LIKEREC: the format's fields.
     if let Some((subs, len)) = crate::extfiles::ds_subfields(cx, d) {
-        for (n, ty, off) in subs {
+        // INZ(*EXTDFT): each subfield starts at its DFT value.
+        let extdft = d.kw("INZ").and_then(|k| word_arg(k, 0)).is_some_and(|w| w == "*EXTDFT");
+        // An INZ on a subfield the structure names (EXTFLD has renamed it).
+        let mut child_inz: std::collections::HashMap<usize, Option<Expr>> = std::collections::HashMap::new();
+        for c in &d.children {
+            let cname = c.name.to_ascii_uppercase();
+            let Some(i) = subs.iter().position(|s| s.0 == cname) else { continue };
+            if let Some(k) = c.kw("INZ") {
+                child_inz.insert(i, k.arg(0).and_then(|a| a.expr.clone()));
+            }
+        }
+        for (i, (n, ty, off, dft)) in subs.into_iter().enumerate() {
+            let inz = match child_inz.remove(&i) {
+                Some(e) => Some(e),
+                None if extdft => Some(dft.and_then(|t| dft_expr(&t, &ty, d.at))),
+                None => None,
+            };
             let sub = Sym {
                 name: n.clone(),
                 kind: Some(Kind::Subfield),
@@ -1010,6 +1067,7 @@ fn declare_ds(cx: &mut Cx<'_>, d: &Def) -> Option<SymId> {
                 offset: off,
                 def_line: d.at.line,
                 implicit: true,
+                inz,
                 ..Sym::default()
             };
             let sid = if qualified {

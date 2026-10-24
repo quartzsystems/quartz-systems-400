@@ -220,7 +220,13 @@ pub fn lex(segments: &[Segment<'_>], diags: &mut Vec<Diag>) -> Vec<Tok> {
                     j += 1;
                 }
                 // A date or time format's separator before `)`: `*MDY-`, `*HMS&`.
-                if matches!(chars.get(j), Some('/' | '-' | '.' | ',' | '&' | ':'))
+                let base: String = chars[i + 1..j].iter().collect::<String>().to_ascii_uppercase();
+                let format = matches!(
+                    base.as_str(),
+                    "MDY" | "DMY" | "YMD" | "JUL" | "ISO" | "USA" | "EUR" | "JIS" | "HMS" | "CYMD" | "CMDY" | "CDMY" | "LONGJUL"
+                );
+                if format
+                    && matches!(chars.get(j), Some('/' | '-' | '.' | ',' | '&' | ':'))
                     && chars[j + 1..].iter().find(|c| **c != ' ').is_none_or(|c| *c == ')')
                 {
                     j += 1;

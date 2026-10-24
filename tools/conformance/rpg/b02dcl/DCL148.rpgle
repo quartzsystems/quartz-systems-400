@@ -1,0 +1,25 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-pr show varchar(60);
+  c char(6) const;
+  n packed(7:2) const;
+  v varchar(10) const;
+  d date const;
+end-pr;
+dcl-s i int(10) inz(42);
+line = show('ab' : i : 'xy' + 'z' : d'2026-01-02');
+write QSYSPRT line;
+line = show('abcdef' : 1.255 : '' : %date('2026-03-04'));
+write QSYSPRT line;
+*inlr = *on;
+dcl-proc show;
+  dcl-pi *n varchar(60);
+    c char(6) const;
+    n packed(7:2) const;
+    v varchar(10) const;
+    d date const;
+  end-pi;
+  return '[' + c + '] ' + %char(n) + ' [' + v + '] ' + %char(d) + ' ' + %char(%len(v));
+end-proc;

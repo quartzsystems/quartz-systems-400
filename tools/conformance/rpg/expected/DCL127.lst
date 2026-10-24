@@ -1,0 +1,290 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   DCL127
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   DCL127
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+0                          S o u r c e   L i s t i n g
+0     1 H DFTACTGRP(*NO)                                                                                          000000     000100
+      2  *; dds: TYPESF                                                                                           000000     000200
+         *--------------------------------------------------------------------*
+         * Compiler Options in Effect:                                        *
+         *--------------------------------------------------------------------*
+         *  Text 'description' . . . . . . . :                                *
+0        *  Generation severity level  . . . :   10                           *
+         *  Default activation group . . . . :   *NO                          *
+         *  Compiler options . . . . . . . . :   *XREF      *GEN              *
+         *                                       *NOSECLVL  *SHOWCPY          *
+         *                                       *EXPDDS    *EXT              *
+         *                                       *NOSHOWSKP *NOSRCSTMT        *
+         *                                       *DEBUGIO   *UNREF            *
+         *                                       *NOEVENTF                    *
+         *  Optimization level . . . . . . . :   *NONE                        *
+         *  Source listing indentation . . . :   *NONE                        *
+         *  Type conversion options  . . . . :   *NONE                        *
+         *  Sort sequence  . . . . . . . . . :   *HEX                         *
+         *  Language identifier  . . . . . . :   *JOBRUN                      *
+         *  User profile . . . . . . . . . . :   *USER                        *
+         *  Authority  . . . . . . . . . . . :   *LIBCRTAUT                   *
+         *  Truncate numeric . . . . . . . . :   *YES                         *
+         *  Fix numeric  . . . . . . . . . . :   *NONE                        *
+         *  Allow null values  . . . . . . . :   *NO                          *
+         *  Storage model . . .  . . . . . . :   *SNGLVL                      *
+         *  Binding directory from Command . :   *NONE                        *
+         *  Binding directory from Source  . :   *NONE                        *
+         *  Activation group . . . . . . . . :   *STGMDL                      *
+         *  Enable performance collection  . :   *PEP                         *
+         *  Profiling data . . . . . . . . . :   *NOCOL                       *
+         *  Generate program interface . . . :   *NO                          *
+         *  Require prototype for export . . :   *NO                          *
+         *--------------------------------------------------------------------*
+-     3 FQSYSPRT   O    F  132        PRINTER                                                                     000000     000300
+-     4 D line            DS           132                                                                        000000     000400
+ ======>  aaaa
+ *RNF3530 00 a      000400  Data structure LINE has no valid subfields.
+      5 D TY            E DS                  EXTNAME(TYPESF)                                                     000000     000500
+         *--------------------------------------------------------------------------------------------*                     1
+         * Data structure . . . . . . :  TY                                                           *                     1
+         * External format  . . . . . :  TYPR : {lib}/TYPESF                                      *                     1
+         *--------------------------------------------------------------------------------------------*                     1
+      6=D TKEY                           3S 0                                                                               1000001
+      7=D TZON                           7S 2                                                                               1000002
+      8=D TBIN                           9B 0                                                                               1000003
+      9=D TBIN2                          4B 2                                                                               1000004
+     10=D TDATE                         10D   DATFMT (*ISO-)                                                                1000005
+     11=D TTIME                          8T   TIMFMT (*ISO.)                                                                1000006
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+     12=D TSTMP                         26Z                                                                                 1000007
+     13=D TVAR                          20A   VARYING                                                                       1000008
+     14 D TK            E DS                  EXTNAME(TYPESF:*KEY)                                                000000     000600
+     15 D                                     QUALIFIED                                                           000000     000700
+         *--------------------------------------------------------------------------------------------*                     2
+         * Data structure . . . . . . :  TK                                                           *                     2
+         * External format  . . . . . :  TYPR : {lib}/TYPESF                                      *                     2
+         *--------------------------------------------------------------------------------------------*                     2
+     16=D TKEY                           3S 0                                                                               2000001
+     17 D TQ            E DS                  EXTNAME(TYPESF) QUALIFIED                                           000000     000800
+     18 D                                     PREFIX(Q_)                                                          000000     000900
+     19  /free                                                                                                    000000     001000
+         *--------------------------------------------------------------------------------------------*                     3
+         * Data structure . . . . . . :  TQ                                                           *                     3
+         * Prefix . . . . . . . . . . :  Q_ :    0                                                    *                     3
+         * External format  . . . . . :  TYPR : {lib}/TYPESF                                      *                     3
+         *--------------------------------------------------------------------------------------------*                     3
+     20=D Q_TKEY                         3S 0 EXTFLD (TKEY)                                                                 3000001
+     21=D Q_TZON                         7S 2 EXTFLD (TZON)                                                                 3000002
+     22=D Q_TBIN                         9B 0 EXTFLD (TBIN)                                                                 3000003
+     23=D Q_TBIN2                        4B 2 EXTFLD (TBIN2)                                                                3000004
+     24=D Q_TDATE                       10D   EXTFLD (TDATE)                                                                3000005
+     25=D                                     DATFMT (*ISO-)                                                                3000006
+     26=D Q_TTIME                        8T   EXTFLD (TTIME)                                                                3000007
+     27=D                                     TIMFMT (*ISO.)                                                                3000008
+     28=D Q_TSTMP                       26Z   EXTFLD (TSTMP)                                                                3000009
+     29=D Q_TVAR                        20A   EXTFLD (TVAR)                                                                 3000010
+     30=D                                     VARYING                                                                       3000011
+ *RNF2318 00      3 000300  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-    31    line = %char(%size(TY)) + ' ' + %char(%size(TK)) + ' ' +                                               000000     001100
+     32    %char(%size(TQ));                                                                                      000000     001200
+     33    write QSYSPRT line;                                                                                    000000     001300
+     34    line = %char(%size(TDATE)) + ' ' + %char(%size(TTIME)) + ' ' +                                         000000     001400
+     35    %char(%size(TSTMP)) + ' ' +                                                                            000000     001500
+     36    %char(%size(TVAR));                                                                                    000000     001600
+     37    write QSYSPRT line;                                                                                    000000     001700
+     38    line = %char(%size(TBIN)) + ' ' + %char(%size(TBIN2)) + ' ' +                                          000000     001800
+     39    %char(%size(TQ.Q_TZON));                                                                               000000     001900
+     40    write QSYSPRT line;                                                                                    000000     002000
+     41    *inlr = *on;                                                                                           000000     002100
+     42  /end-free                                                                                                000000     002200
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+-
+-
+-
+1{heading} page 4
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 5
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 3D     33      37      40
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                   41M
+          LINE              DS(132)                 4D     31M     33      34M
+                                                   37      38M     40
+          TBIN              B(9,0)                  8D     38
+          TBIN2             B(4,2)                  9D     38
+          TDATE             D(10*ISO-)             10D     34
+          TK                DS(3)                  14D     31
+ *RNF7031   TKEY            S(3,0)                 16D
+ *RNF7031 TKEY              S(3,0)                  6D
+          TQ                DS(82)                 17D     32      39
+ *RNF7031   Q_TBIN          B(9,0)                 22D
+ *RNF7031   Q_TBIN2         B(4,2)                 23D
+ *RNF7031   Q_TDATE         D(10*ISO-)             25D
+ *RNF7031   Q_TKEY          S(3,0)                 20D
+ *RNF7031   Q_TSTMP         Z(26)                  28D
+ *RNF7031   Q_TTIME         T(8*ISO.)              27D
+ *RNF7031   Q_TVAR          A(20)                  30D
+                            VARYING(2)
+            Q_TZON          S(7,2)                 21D     39
+          TSTMP             Z(26)                  12D     35
+          TTIME             T(8*ISO.)              11D     34
+          TVAR              A(20)                  13D     36
+                            VARYING(2)
+          TY                DS(82)                  5D     31
+ *RNF7031 TZON              S(7,2)                  7D
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                       41M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+1{heading} page 6
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 7
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+ *RNF3530 00      1 Data structure has no valid subfields.
+ *RNF7031 00     10 The name or indicator is not referenced.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :       12
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :       12
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       42
+     Specifications  . . . . . . . . :       39
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        1
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program DCL127 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-

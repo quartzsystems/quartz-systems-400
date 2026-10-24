@@ -1,0 +1,9 @@
+# DCL097 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 3 seq 000300
+diag: RNF3530 00 line 4 seq 000400
+run: ok
+spool: QSYSPRT
+  |1/1   03-05-26 2039-12-31 02:30 PM 11.15.00
+  |1/2   8 2026-03-05-14.30.05.123456

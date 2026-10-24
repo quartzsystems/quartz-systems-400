@@ -285,6 +285,10 @@ M["DCL022"] = FREE_HEAD + [
     "end-proc;",
 ]
 
+import b02more  # noqa: E402
+
+b02more.add(M, scalars)
+
 for name, lines in M.items():
     with open(os.path.join(OUT, name + ".rpgle"), "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines) + "\n")

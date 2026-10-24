@@ -151,6 +151,7 @@ impl rpgc::ExtFiles for StoreFiles<'_, '_> {
                             usage: 'B',
                             alias: String::new(),
                             nullable: false,
+                            default: None,
                         })
                         .collect(),
                     keys: Vec::new(),
@@ -227,6 +228,7 @@ pub fn printer_desc(def: &dds::prtf::PrtfDefinition, lib: &str) -> ExtFile {
                     usage: 'O',
                     alias: String::new(),
                     nullable: false,
+                    default: None,
                 });
                 at += u32::try_from(x.buffer_len()).unwrap_or(0);
             }
@@ -298,6 +300,7 @@ pub fn display_desc(df: &dspf::DisplayFile, lib: &str) -> ExtFile {
                         usage: f.usage.letter(),
                         alias: String::new(),
                         nullable: false,
+                        default: None,
                     })
                     .collect(),
                 keys: Vec::new(),

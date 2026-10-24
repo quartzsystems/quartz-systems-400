@@ -532,7 +532,7 @@ impl Gen<'_> {
 
     /// Pointer arithmetic: a pointer plus or minus a number of bytes,
     /// or the bytes between two pointers.
-    fn ptr_arith(&mut self, op: BinOp, va: &V, vb: &V) -> Option<V> {
+    pub fn ptr_arith(&mut self, op: BinOp, va: &V, vb: &V) -> Option<V> {
         if va.ty == Ty::Ptr && vb.ty == Ty::Ptr && op == BinOp::Sub {
             let (p, q) = (self.ptr_reg(va), self.ptr_reg(vb));
             let r = self.b.reg();
@@ -742,7 +742,25 @@ impl Gen<'_> {
         }
         let t = self.b.temp("char(1)");
         match v.kind {
-            Vk::Place => self.b.ins(format!("cvt {t}, {}", v.op)),
+            // A blank byte (an indicator subfield of a structure never
+            // set) stays blank.
+            Vk::Place => {
+                let p = self.b.reg();
+                self.b.ins(format!("{p} = addr {}", v.op));
+                let byte = self.b.reg();
+                self.b.ins(format!("{byte} = load [{p} +0]:u8"));
+                let blank = self.b.reg();
+                self.b.ins(format!("{blank} = cmp.eq {byte}, 64"));
+                let (yes, no, done) = (self.b.label(), self.b.label(), self.b.label());
+                self.b.term(format!("brif {blank}, {yes}, {no}"));
+                self.b.place(&yes);
+                self.b.ins(format!("mov {t}, {}", quote(" ")));
+                self.b.term(format!("br {done}"));
+                self.b.place(&no);
+                self.b.ins(format!("cvt {t}, {}", v.op));
+                self.b.term(format!("br {done}"));
+                self.b.place(&done);
+            }
             Vk::Lit => self.b.ins(format!("mov {t}, {}", if v.op == "*ON" { quote("1") } else { quote("0") })),
             Vk::Reg => {
                 let i = self.b.temp("ind");

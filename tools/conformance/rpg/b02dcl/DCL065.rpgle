@@ -1,0 +1,27 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-ds DS1 qualified;
+  S01 varchar(2);
+  S02 uns(5);
+  S03 time(*HMS,) pos(11);
+  S04 char(6);
+  S05 date(*YMD.);
+end-ds;
+line = 'size ' + %char(%size(DS1));
+write QSYSPRT line;
+line = 'S01 ' + %char(%size(DS1.S01)) + ' ' + %char(%addr(DS1.S01) - %addr(DS1));
+write QSYSPRT line;
+line = 'S02 ' + %char(%size(DS1.S02)) + ' ' + %char(%addr(DS1.S02) - %addr(DS1));
+write QSYSPRT line;
+line = 'S03 ' + %char(%size(DS1.S03)) + ' ' + %char(%addr(DS1.S03) - %addr(DS1));
+write QSYSPRT line;
+line = 'S04 ' + %char(%size(DS1.S04)) + ' ' + %char(%addr(DS1.S04) - %addr(DS1));
+write QSYSPRT line;
+line = 'S05 ' + %char(%size(DS1.S05)) + ' ' + %char(%addr(DS1.S05) - %addr(DS1));
+write QSYSPRT line;
+DS1 = 'AHOV29GNU18FMT07ELSZ6DKRY5CJQX4BIPW3AHOV29GNU18FMT07ELSZ6DKR';
+line = 'S04 [' + DS1.S04 + ']';
+write QSYSPRT line;
+*inlr = *on;

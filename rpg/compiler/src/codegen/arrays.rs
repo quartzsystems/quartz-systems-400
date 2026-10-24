@@ -118,6 +118,25 @@ impl Gen<'_> {
         };
         self.t.refer(id, self.at.line, false);
         let sym = self.t.syms[id].clone();
+        // A qualified structure's array subfield: `DS.ARR`.
+        if sym.dim == 0
+            && let (Ty::Ds(di), [Step::Field(f)]) = (&sym.ty, steps.as_slice())
+            && let Some(sub) = self.t.subfield(*di, f)
+            && self.t.syms[sub].dim > 0
+        {
+            let s = self.t.syms[sub].clone();
+            let size = self.t.size(&s.ty);
+            return Some(Range {
+                base: place_of(self.t, sub),
+                sym: sub,
+                ty: s.ty,
+                stride: size,
+                keyoff: 0,
+                start: "0".into(),
+                count: s.dim.to_string(),
+                dim: s.dim,
+            });
+        }
         if sym.dim == 0 {
             self.err(ids::BAD_EXPRESSION_TYPE, 30, name.clone());
             return None;

@@ -1,0 +1,5 @@
+**FREE
+dcl-s frc varchar(10) inz('free');
+dcl-ds frds qualified;
+  x int(10) inz(9);
+end-ds;

@@ -137,6 +137,12 @@ pub extern "sysv64" fn psds_init(env: *mut Env, _argc: i64, _od: i64, ds: i64, l
     }
 }
 
+/// `_QRNX_USER(dst: char(10))`: the job's user profile, for `*USER`.
+pub extern "sysv64" fn user(env: *mut Env, _argc: i64, _od: i64, dst: i64) {
+    let name = format!("{:<10}", job(env).ident.user);
+    bytes(dst.cast_unsigned(), 10).copy_from_slice(&ebcdic(&name[..10]));
+}
+
 /// `_QRNX_PSDSERR(ds, len, status)`: the exception the last handler
 /// took into the PSDS and the last status.
 pub extern "sysv64" fn psds_err(env: *mut Env, _argc: i64, _od: i64, ds: i64, len: i32, status: i64) {

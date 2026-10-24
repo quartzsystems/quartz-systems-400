@@ -1,0 +1,10 @@
+# SPEC025 V7R5M0 pub400.com
+# captured 2026-10-24 by rpg-oracle
+created: yes
+diag: RNF2318 00 line 3 seq 000300
+diag: RNF7534 10 line 3 seq 000300
+diag: RNF3530 00 line 5 seq 000500
+run: ok
+spool: QSYSPRT
+  |1/1   linear main 1
+  |1/2   linear main 2

@@ -434,6 +434,9 @@ Positions not listed are left as the program initialized them.
 | 71 | 2 | | `*INP` | input code page (display files) |
 | 73 | 2 | | `*OUT` | output code page (display files) |
 | 75 | 2 | | `*MODE` | mode (display files) |
+| 83 | 10 | odpfile | | open feedback: file name |
+| 93 | 10 | odplib | | open feedback: library |
+| 125 | 2 | reclen | | open feedback: record length, binary |
 | 129 | 10 | member | | member open |
 | 397 | 4 | rrn | | relative record number, binary |
 | 401 | key | key | | key of the last record read |

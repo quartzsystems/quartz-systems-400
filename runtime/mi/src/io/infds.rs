@@ -24,6 +24,12 @@ pub const STMT: (usize, usize) = (29, 8);
 pub const RECORD: (usize, usize) = (37, 8);
 /// The message identifier of an error.
 pub const MSGID: (usize, usize) = (45, 7);
+/// The open feedback's file name.
+pub const ODP_FILE: (usize, usize) = (82, 10);
+/// The open feedback's library.
+pub const ODP_LIB: (usize, usize) = (92, 10);
+/// The open feedback's record length, binary.
+pub const RECLEN: (usize, usize) = (124, 2);
 /// The member open.
 pub const MEMBER: (usize, usize) = (128, 10);
 /// The relative record number, binary.
@@ -42,6 +48,9 @@ pub const FIELDS: &[(&str, (usize, usize))] = &[
     ("stmt", STMT),
     ("record", RECORD),
     ("msgid", MSGID),
+    ("odpfile", ODP_FILE),
+    ("odplib", ODP_LIB),
+    ("reclen", RECLEN),
     ("member", MEMBER),
     ("rrn", RRN),
     ("key", KEY),

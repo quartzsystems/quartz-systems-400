@@ -60,6 +60,8 @@ pub struct ExtField {
     pub alias: String,
     /// Null capable.
     pub nullable: bool,
+    /// The `DFT` value as written (`'ABC'`, `42`), for `INZ(*EXTDFT)`.
+    pub default: Option<String>,
 }
 
 /// An external record format.

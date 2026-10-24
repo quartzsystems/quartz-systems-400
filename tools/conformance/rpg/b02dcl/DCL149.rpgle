@@ -1,0 +1,24 @@
+**FREE
+ctl-opt dftactgrp(*no);
+dcl-f QSYSPRT printer(132);
+dcl-ds line len(132) end-ds;
+dcl-pr change;
+  byval int(10) value;
+  byref int(10);
+  ro varchar(5) const;
+end-pr;
+dcl-s a int(10) inz(1);
+dcl-s b int(10) inz(2);
+change(a : b : 'ro');
+line = %char(a) + ' ' + %char(b);
+write QSYSPRT line;
+*inlr = *on;
+dcl-proc change;
+  dcl-pi *n;
+    byval int(10) value;
+    byref int(10);
+    ro varchar(5) const;
+  end-pi;
+  byval = 100;
+  byref = 200 + %len(ro);
+end-proc;

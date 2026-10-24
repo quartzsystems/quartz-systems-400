@@ -11,6 +11,12 @@ use qdecimal::{Decimal, Rounding, Shape};
 /// `%CHAR` of a decimal value held with `shape`'s decimals.
 #[must_use]
 pub fn char_of(v: &Decimal, shape: Shape, point: char) -> String {
+    char_of_dec(v, shape, point, false)
+}
+
+/// `%CHAR` of a number with `DECEDIT`'s point; `zero` puts a `0`
+/// before the point of a fraction (`DECEDIT('0.')`).
+pub fn char_of_dec(v: &Decimal, shape: Shape, point: char, zero: bool) -> String {
     let v = v.rescale(shape.scale, Rounding::Truncate).unwrap_or_else(|_| v.clone());
     let s = v.to_string();
     let (neg, body) = match s.strip_prefix('-') {
@@ -29,7 +35,7 @@ pub fn char_of(v: &Decimal, shape: Shape, point: char) -> String {
     if shape.scale == 0 {
         out.push_str(if int.is_empty() { "0" } else { &int });
     } else {
-        out.push_str(&int);
+        out.push_str(if int.is_empty() && zero { "0" } else { &int });
         out.push(point);
         let mut f = frac;
         while f.len() < usize::from(shape.scale) {

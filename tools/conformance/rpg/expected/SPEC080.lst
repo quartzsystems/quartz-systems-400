@@ -1,0 +1,364 @@
+1{heading} page 1
+0  Command  . . . . . . . . . . . . :   CRTBNDRPG
+     Issued by  . . . . . . . . . . :     {user}
+   Program  . . . . . . . . . . . . :   SPEC080
+     Library  . . . . . . . . . . . :     {lib}
+   Text 'description' . . . . . . . :   *SRCMBRTXT
+0  Source Member  . . . . . . . . . :   SPEC080
+   Source File  . . . . . . . . . . :   QRPGLESRC
+     Library  . . . . . . . . . . . :     {lib}
+     CCSID  . . . . . . . . . . . . :     37
+   Text 'description' . . . . . . . :
+   Last Change  . . . . . . . . . . :   dd-dd-dd  tt:tt:tt
+0  Generation severity level  . . . :   10
+   Default activation group . . . . :   *YES
+   Compiler options . . . . . . . . :   *XREF      *GEN       *NOSECLVL  *SHOWCPY
+                                        *EXPDDS    *EXT       *NOSHOWSKP *NOSRCSTMT
+                                        *DEBUGIO   *UNREF     *NOEVENTF
+   Debugging views  . . . . . . . . :   *NONE
+   Debug encryption key . . . . . . :   *NONE
+   Output . . . . . . . . . . . . . :   *PRINT
+   Optimization level . . . . . . . :   *NONE
+   Source listing indentation . . . :   *NONE
+   Type conversion options  . . . . :   *NONE
+   Sort sequence  . . . . . . . . . :   *HEX
+   Language identifier  . . . . . . :   *JOBRUN
+   Replace program  . . . . . . . . :   *YES
+   User profile . . . . . . . . . . :   *USER
+   Authority  . . . . . . . . . . . :   *LIBCRTAUT
+   Truncate numeric . . . . . . . . :   *YES
+   Fix numeric  . . . . . . . . . . :   *NONE
+   Target release . . . . . . . . . :   *CURRENT
+   Allow null values  . . . . . . . :   *NO
+   Define condition names . . . . . :   *NONE
+   Enable performance collection  . :   *PEP
+   Profiling data . . . . . . . . . :   *NOCOL
+   Licensed Internal Code options . :
+   Generate program interface . . . :   *NO
+   Include directory  . . . . . . . :
+   Preprocessor options . . . . . . :   *NONE
+   Require prototype for export . . :   *NO
+-
+-
+-
+-
+-
+-
+1{heading} page 2
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+0                          S o u r c e   L i s t i n g
+-
+      1 FQSYSPRT   O    F  132        PRINTER                                                                     000000     000100
+-     2 DNEG              S              7  2 INZ(-1234.5)                                                        000000     000200
+      3 DZER              S              7  2 INZ(0)                                                              000000     000300
+      4 DPOS              S              7  2 INZ(3.07)                                                           000000     000400
+ *RNF2318 00      1 000100  Overflow indicator *INOA is assigned to PRINTER file
+                            QSYSPRT.
+-     5 C                   EXCEPT    ED                                                                          000000     000500
+      6 C                   EVAL      *INLR = *ON                                                                 000000     000600
+-     7 OQSYSPRT   E            ED             1                                                                  000000     000700
+      8 O                                            3 '1'                                                        000000     000800
+      9 O                       NEG           1     25                                                            000000     000900
+     10 O                       ZER           1     45                                                            000000     001000
+     11 O                       POS           1     65                                                            000000     001100
+     12 OQSYSPRT   E            ED             1                                                                  000000     001200
+     13 O                                            3 '2'                                                        000000     001300
+     14 O                       NEG           2     25                                                            000000     001400
+     15 O                       ZER           2     45                                                            000000     001500
+     16 O                       POS           2     65                                                            000000     001600
+     17 OQSYSPRT   E            ED             1                                                                  000000     001700
+     18 O                                            3 '3'                                                        000000     001800
+     19 O                       NEG           3     25                                                            000000     001900
+     20 O                       ZER           3     45                                                            000000     002000
+     21 O                       POS           3     65                                                            000000     002100
+     22 OQSYSPRT   E            ED             1                                                                  000000     002200
+     23 O                                            3 '4'                                                        000000     002300
+     24 O                       NEG           4     25                                                            000000     002400
+     25 O                       ZER           4     45                                                            000000     002500
+     26 O                       POS           4     65                                                            000000     002600
+     27 OQSYSPRT   E            ED             1                                                                  000000     002700
+     28 O                                            3 'A'                                                        000000     002800
+     29 O                       NEG           A     25                                                            000000     002900
+     30 O                       ZER           A     45                                                            000000     003000
+     31 O                       POS           A     65                                                            000000     003100
+     32 OQSYSPRT   E            ED             1                                                                  000000     003200
+     33 O                                            3 'B'                                                        000000     003300
+     34 O                       NEG           B     25                                                            000000     003400
+     35 O                       ZER           B     45                                                            000000     003500
+     36 O                       POS           B     65                                                            000000     003600
+     37 OQSYSPRT   E            ED             1                                                                  000000     003700
+     38 O                                            3 'C'                                                        000000     003800
+     39 O                       NEG           C     25                                                            000000     003900
+     40 O                       ZER           C     45                                                            000000     004000
+     41 O                       POS           C     65                                                            000000     004100
+     42 OQSYSPRT   E            ED             1                                                                  000000     004200
+     43 O                                            3 'D'                                                        000000     004300
+1{heading} page 3
+0Line   <---------------------- Source Specifications ----------------------------><---- Comments ----> Do  Page  Change Src Seq
+ Number ....1....+....2....+....3....+....4....+....5....+....6....+....7....+....8....+....9....+...10 Num Line  Date   Id  Number
+     44 O                       NEG           D     25                                                            000000     004400
+     45 O                       ZER           D     45                                                            000000     004500
+     46 O                       POS           D     65                                                            000000     004600
+     47 OQSYSPRT   E            ED             1                                                                  000000     004700
+     48 O                                            3 'J'                                                        000000     004800
+     49 O                       NEG           J     25                                                            000000     004900
+     50 O                       ZER           J     45                                                            000000     005000
+     51 O                       POS           J     65                                                            000000     005100
+     52 OQSYSPRT   E            ED             1                                                                  000000     005200
+     53 O                                            3 'K'                                                        000000     005300
+     54 O                       NEG           K     25                                                            000000     005400
+     55 O                       ZER           K     45                                                            000000     005500
+     56 O                       POS           K     65                                                            000000     005600
+     57 OQSYSPRT   E            ED             1                                                                  000000     005700
+     58 O                                            3 'L'                                                        000000     005800
+     59 O                       NEG           L     25                                                            000000     005900
+     60 O                       ZER           L     45                                                            000000     006000
+     61 O                       POS           L     65                                                            000000     006100
+     62 OQSYSPRT   E            ED             1                                                                  000000     006200
+     63 O                                            3 'M'                                                        000000     006300
+     64 O                       NEG           M     25                                                            000000     006400
+     65 O                       ZER           M     45                                                            000000     006500
+     66 O                       POS           M     65                                                            000000     006600
+     67 OQSYSPRT   E            ED             1                                                                  000000     006700
+     68 O                                            3 'N'                                                        000000     006800
+     69 O                       NEG           N     25                                                            000000     006900
+     70 O                       ZER           N     45                                                            000000     007000
+     71 O                       POS           N     65                                                            000000     007100
+     72 OQSYSPRT   E            ED             1                                                                  000000     007200
+     73 O                                            3 'O'                                                        000000     007300
+     74 O                       NEG           O     25                                                            000000     007400
+     75 O                       ZER           O     45                                                            000000     007500
+     76 O                       POS           O     65                                                            000000     007600
+     77 OQSYSPRT   E            ED             1                                                                  000000     007700
+     78 O                                            3 'P'                                                        000000     007800
+     79 O                       NEG           P     25                                                            000000     007900
+     80 O                       ZER           P     45                                                            000000     008000
+     81 O                       POS           P     65                                                            000000     008100
+     82 OQSYSPRT   E            ED             1                                                                  000000     008200
+     83 O                                            3 'Q'                                                        000000     008300
+     84 O                       NEG           Q     25                                                            000000     008400
+     85 O                       ZER           Q     45                                                            000000     008500
+     86 O                       POS           Q     65                                                            000000     008600
+     87 OQSYSPRT   E            ED             1                                                                  000000     008700
+     88 O                                            3 'X'                                                        000000     008800
+     89 O                       NEG           X     25                                                            000000     008900
+     90 O                       ZER           X     45                                                            000000     009000
+     91 O                       POS           X     65                                                            000000     009100
+     92 OQSYSPRT   E            ED             1                                                                  000000     009200
+     93 O                                            3 'Z'                                                        000000     009300
+     94 O                       NEG           Z     25                                                            000000     009400
+     95 O                       ZER           Z     45                                                            000000     009500
+     96 O                       POS           Z     65                                                            000000     009600
+0       * * * * *   E N D   O F   S O U R C E   * * * * *
+1{heading} page 4
+0          A d d i t i o n a l   D i a g n o s t i c   M e s s a g e s
+0 Msg id  Sv Number Seq     Message text
+0 * * * * *   E N D   O F   A D D I T I O N A L   D I A G N O S T I C   M E S S A G E S   * * * * *
+-                 O u t p u t   B u f f e r   P o s i t i o n s
+0Line   Start End   Field or Constant
+0Number Pos   Pos
+      8     3     3 '1'
+      9    17    25 NEG
+     10    37    45 ZER
+     11    57    65 POS
+     13     3     3 '2'
+     14    17    25 NEG
+     15    37    45 ZER
+     16    57    65 POS
+     18     3     3 '3'
+     19    18    25 NEG
+     20    38    45 ZER
+     21    58    65 POS
+     23     3     3 '4'
+     24    18    25 NEG
+     25    38    45 ZER
+     26    58    65 POS
+     28     3     3 'A'
+     29    15    25 NEG
+     30    35    45 ZER
+     31    55    65 POS
+     33     3     3 'B'
+     34    15    25 NEG
+     35    35    45 ZER
+     36    55    65 POS
+     38     3     3 'C'
+     39    16    25 NEG
+     40    36    45 ZER
+     41    56    65 POS
+     43     3     3 'D'
+     44    16    25 NEG
+     45    36    45 ZER
+     46    56    65 POS
+     48     3     3 'J'
+     49    16    25 NEG
+     50    36    45 ZER
+     51    56    65 POS
+     53     3     3 'K'
+     54    16    25 NEG
+     55    36    45 ZER
+     56    56    65 POS
+     58     3     3 'L'
+     59    17    25 NEG
+     60    37    45 ZER
+     61    57    65 POS
+     63     3     3 'M'
+     64    17    25 NEG
+1{heading} page 5
+0    65    37    45 ZER
+     66    57    65 POS
+     68     3     3 'N'
+     69    16    25 NEG
+     70    36    45 ZER
+     71    56    65 POS
+     73     3     3 'O'
+     74    16    25 NEG
+     75    36    45 ZER
+     76    56    65 POS
+     78     3     3 'P'
+     79    17    25 NEG
+     80    37    45 ZER
+     81    57    65 POS
+     83     3     3 'Q'
+     84    17    25 NEG
+     85    37    45 ZER
+     86    57    65 POS
+     88     3     3 'X'
+     89    19    25 NEG
+     90    39    45 ZER
+     91    59    65 POS
+     93     3     3 'Z'
+     94    19    25 NEG
+     95    39    45 ZER
+     96    59    65 POS
+0 * * * * *   E N D   O F   O U T P U T   B U F F E R   P O S I T I O N   *  * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 6
+0                          C r o s s   R e f e r e n c e
+0      File and Record References:
+0         File              Device             References (D=Defined)
+            Record
+          QSYSPRT           PRINTER                 1D      7      12      17
+                                                   22      27      32      37
+                                                   42      47      52      57
+                                                   62      67      72      77
+                                                   82      87      92
+0      Global Field References:
+0         Field             Attributes         References (D=Defined M=Modified)
+          *INLR             N(1)                    6M
+          ED                EXCEPT                  5       7D     12D     17D
+                                                   22D     27D     32D     37D
+                                                   42D     47D     52D     57D
+                                                   62D     67D     72D     77D
+                                                   82D     87D     92D
+          NEG               P(7,2)                  2D      9      14      19
+                                                   24      29      34      39
+                                                   44      49      54      59
+                                                   64      69      74      79
+                                                   84      89      94
+          POS               P(7,2)                  4D     11      16      21
+                                                   26      31      36      41
+                                                   46      51      56      61
+                                                   66      71      76      81
+                                                   86      91      96
+          ZER               P(7,2)                  3D     10      15      20
+                                                   25      30      35      40
+                                                   45      50      55      60
+                                                   65      70      75      80
+                                                   85      90      95
+0      Indicator References:
+0         Indicator                            References (D=Defined M=Modified)
+          LR                                        6M
+0       * * * * *   E N D   O F   C R O S S   R E F E R E N C E   * * * * *
+-
+-
+-
+-
+-
+1{heading} page 7
+0                      E x t e r n a l   R e f e r e n c e s
+0      Statically bound procedures:
+          Procedure                            References
+          No references in the source.
+0      Imported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0      Exported fields:
+          Field             Attributes         Defined
+          No references in the source.
+0   * * * * *   E N D   O F   E X T E R N A L   R E F E R E N C E S   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 8
+0                          M e s s a g e   S u m m a r y
+0 Msg id  Sv Number Message text
+ *RNF2318 00      1 No overflow indicator is specified; indicator assigned and
+                    automatic skip to 06 generated.
+0       * * * * *   E N D   O F   M E S S A G E   S U M M A R Y   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+1{heading} page 9
+0                            F i n a l   S u m m a r y
+0  Message Totals:
+0    Information  (00) . . . . . . . :        1
+     Warning      (10) . . . . . . . :        0
+     Error        (20) . . . . . . . :        0
+     Severe Error (30+)  . . . . . . :        0
+     ---------------------------------  -------
+     Total . . . . . . . . . . . . . :        1
+-  Source Totals:
+0    Records . . . . . . . . . . . . :       96
+     Specifications  . . . . . . . . :       96
+     Data records  . . . . . . . . . :        0
+     Comments  . . . . . . . . . . . :        0
+0         * * * * *   E N D   O F   F I N A L   S U M M A R Y   * * * * *
+ Program SPEC080 placed in library {lib}. 00 highest severity. Created on dd-dd-dd at tt:tt:tt.
+           * * * * *   E N D   O F   C O M P I L A T I O N   * * * * *
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
