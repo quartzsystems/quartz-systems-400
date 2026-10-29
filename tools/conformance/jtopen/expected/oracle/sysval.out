@@ -1,0 +1,8 @@
+ok   connect
+fail get QSECURITY: NullPointerException: Cannot read field "version" because "this.signonInfo_" is null
+fail get QPWDLVL: NullPointerException: Cannot read field "version" because "this.signonInfo_" is null
+fail get QCCSID: NullPointerException: Cannot read field "version" because "this.signonInfo_" is null
+fail get QLANGID: NullPointerException: Cannot read field "version" because "this.signonInfo_" is null
+fail get QCNTRYID: NullPointerException: Cannot read field "version" because "this.signonInfo_" is null
+fail get QMAXSIGN: NullPointerException: Cannot read field "version" because "this.signonInfo_" is null
+fail get QAUTOVRT: NullPointerException: Cannot read field "version" because "this.signonInfo_" is null

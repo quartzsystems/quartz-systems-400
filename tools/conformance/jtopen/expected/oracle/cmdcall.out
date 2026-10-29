@@ -1,0 +1,16 @@
+ok   connect
+     result=true
+ok   run CHKOBJ OBJ(QSYS/QSYSOPR) OBJTYPE(*MSGQ)
+     result=false
+     msg CPD0031 type=2 sev=30 text=Command SNDPGMMSG not allowed in this setting.
+     msg CPF0001 type=15 sev=30 text=Error found on SNDPGMMSG command.
+ok   run SNDPGMMSG MSG('QS/400 host server trace') TOPGMQ(*SAME) MSGTYPE(*COMP)
+     result=false
+     msg CPF9801 type=15 sev=40 text=Object QSNOSUCH1 in library QSYS not found.
+ok   run CHKOBJ OBJ(QSYS/QSNOSUCH1) OBJTYPE(*PGM)
+     result=false
+     msg CPD0030 type=2 sev=30 text=Command NOSUCHCMD1 in library *LIBL not found.
+     msg CPF0001 type=15 sev=30 text=Error found on NOSUCHCMD1 command.
+ok   run NOSUCHCMD1
+     threadsafe=false
+ok   thread safe default

@@ -5,13 +5,14 @@
 //! `tn5250-driver`: a scripted 5250 display. It connects to QS/400
 //! under QEMU, to the primary oracle or to pub400.com, negotiates like
 //! a real emulator, runs a keystroke script, and captures or compares
-//! screens. `ftp` moves files with the oracle's FTP server.
+//! screens. `ftp` moves files with the oracle's FTP server;
+//! `hostsvr-trace` records a client's host server traffic.
 
 use std::path::PathBuf;
 
 use anyhow::{Context as _, Result, bail};
 use clap::{Parser, Subcommand, ValueEnum};
-use tn5250_driver::{Connect, Encoding, ModelArg, ScriptOptions, Target, env, ftp, session};
+use tn5250_driver::{Connect, Encoding, ModelArg, ScriptOptions, Target, env, ftp, hostsvr, session};
 
 /// Which system to talk to.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, ValueEnum)]
@@ -65,6 +66,31 @@ enum Cmd {
     Ftp(FtpArgs),
     /// Print the environment the targets resolve to (secrets hidden).
     Env,
+    /// Run a client through a recording proxy of the host server ports.
+    HostsvrTrace(HostsvrArgs),
+}
+
+/// Arguments of `hostsvr-trace`.
+#[derive(clap::Args, Debug, Clone)]
+struct HostsvrArgs {
+    /// The system the proxy forwards to.
+    #[arg(long, value_enum, default_value_t = TargetArg::Oracle)]
+    target: TargetArg,
+    /// Where the traces go (`OUT/<server>/<scenario>.trace`).
+    #[arg(long)]
+    out: PathBuf,
+    /// The scenario's name.
+    #[arg(long)]
+    scenario: String,
+    /// The ports to listen on (comma separated).
+    #[arg(long, value_delimiter = ',')]
+    ports: Vec<u16>,
+    /// Milliseconds open connections get to close after the client exits.
+    #[arg(long, default_value_t = 3000)]
+    settle: u64,
+    /// The client command (after `--`).
+    #[arg(last = true)]
+    command: Vec<String>,
 }
 
 /// Arguments of `run`.
@@ -178,6 +204,24 @@ fn main() -> Result<()> {
             let e = env::Env::load()?;
             let creds = e.credentials(args.target.into(), args.host.as_deref())?;
             ftp::run(&args.op, &args.operands, &creds).context("ftp")
+        }
+        Cmd::HostsvrTrace(args) => {
+            if args.target == TargetArg::Pub400 {
+                bail!("pub400 is not recorded by this mode");
+            }
+            let run = hostsvr::TraceRun {
+                target: args.target.into(),
+                out: args.out,
+                scenario: args.scenario,
+                ports: if args.ports.is_empty() {
+                    hostsvr::DEFAULT_PORTS.to_vec()
+                } else {
+                    args.ports
+                },
+                settle: std::time::Duration::from_millis(args.settle),
+                command: args.command,
+            };
+            hostsvr::run(&run).map(|_| ())
         }
         Cmd::Env => {
             let e = env::Env::load()?;

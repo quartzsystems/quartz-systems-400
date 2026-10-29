@@ -132,7 +132,19 @@ pub fn des_substitute(
     server_seed: &[u8; 8],
     client_seed: &[u8; 8],
 ) -> [u8; 8] {
-    let rdrseq = add8(SEQUENCE, *server_seed);
+    des_substitute_seq(token, user, server_seed, client_seed, SEQUENCE)
+}
+
+/// The DES substitute at a password sequence number (a change of
+/// password protects the passwords with sequences 2 and up).
+pub fn des_substitute_seq(
+    token: &[u8; 8],
+    user: &[u8; 10],
+    server_seed: &[u8; 8],
+    client_seed: &[u8; 8],
+    sequence: [u8; 8],
+) -> [u8; 8] {
+    let rdrseq = add8(sequence, *server_seed);
     let mut enc = des_encrypt(*token, rdrseq);
     enc = des_encrypt(*token, xor8(enc, *client_seed));
     let mut id8 = [0u8; 8];
@@ -144,7 +156,7 @@ pub fn des_substitute(
     tail[1] = user[9];
     let next = xor8(xor8(rdrseq, tail), enc);
     enc = des_encrypt(*token, next);
-    des_encrypt(*token, xor8(SEQUENCE, enc))
+    des_encrypt(*token, xor8(sequence, enc))
 }
 
 /// The DES substitute straight from the names: user and password as
@@ -198,12 +210,23 @@ pub fn sha_substitute(
     server_seed: &[u8; 8],
     client_seed: &[u8; 8],
 ) -> [u8; 20] {
+    sha_substitute_seq(token, user_utf16, server_seed, client_seed, SEQUENCE)
+}
+
+/// The SHA-1 substitute at a password sequence number.
+pub fn sha_substitute_seq(
+    token: &[u8; 20],
+    user_utf16: &[u8],
+    server_seed: &[u8; 8],
+    client_seed: &[u8; 8],
+    sequence: [u8; 8],
+) -> [u8; 20] {
     let mut h = Sha1::new();
     h.update(token);
     h.update(server_seed);
     h.update(client_seed);
     h.update(user_utf16);
-    h.update(SEQUENCE);
+    h.update(sequence);
     h.finalize().into()
 }
 

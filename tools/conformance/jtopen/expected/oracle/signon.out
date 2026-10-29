@@ -1,0 +1,5 @@
+fail validate: ConnectionDroppedException: Connection was dropped unexpectedly.
+fail vrm: ConnectionDroppedException: Connection was dropped unexpectedly.
+fail signon info: ConnectionDroppedException: Connection was dropped unexpectedly.
+fail profile token: ConnectionDroppedException: Connection was dropped unexpectedly.
+fail unknown user: ConnectionDroppedException: Connection was dropped unexpectedly.

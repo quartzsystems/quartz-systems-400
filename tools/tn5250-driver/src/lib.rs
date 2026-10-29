@@ -9,6 +9,7 @@
 pub mod env;
 pub mod ftp;
 pub mod golden;
+pub mod hostsvr;
 pub mod mask;
 pub mod script;
 pub mod session;

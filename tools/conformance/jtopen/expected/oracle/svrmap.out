@@ -1,0 +1,7 @@
+fail connect signon: ConnectionDroppedException: Connection was dropped unexpectedly.
+fail connect central: ConnectionDroppedException: Connection was dropped unexpectedly.
+ok   connect command
+ok   connect database
+ok   connect dataqueue
+ok   connect file
+ok   connect print

@@ -1,0 +1,55 @@
+ok   connect
+     product=DB2 UDB for AS/400 version=07.01.0000 V7R1m0
+     cols TABLE_CAT:VARCHAR TABLE_SCHEM:VARCHAR TABLE_NAME:VARCHAR TABLE_TYPE:VARCHAR REMARKS:NVARCHAR TYPE_CAT:VARCHAR TYPE_SCHEM:VARCHAR TYPE_NAME:VARCHAR SELF_REFERENCING_COL_NAME:VARCHAR REF_GENERATION:VARCHAR
+     row |S062B175 |QSYS2 |SYSTABLEDEP |VIEW |null |null |null |null |null |null
+     row |S062B175 |QSYS2 |SYSTABLEINDEXSTAT |VIEW |null |null |null |null |null |null
+     row |S062B175 |QSYS2 |SYSTABLES |VIEW |null |null |null |null |null |null
+     row |S062B175 |QSYS2 |SYSTABLESTAT |VIEW |null |null |null |null |null |null
+     rows=4
+     cols TABLE_CAT:VARCHAR TABLE_SCHEM:VARCHAR TABLE_NAME:VARCHAR COLUMN_NAME:VARCHAR DATA_TYPE:INTEGER TYPE_NAME:VARCHAR COLUMN_SIZE:INTEGER BUFFER_LENGTH:INTEGER DECIMAL_DIGITS:SMALLINT NUM_PREC_RADIX:SMALLINT NULLABLE:SMALLINT REMARKS:NVARCHAR COLUMN_DEF:NVARCHAR SQL_DATA_TYPE:SMALLINT SQL_DATETIME_SUB:SMALLINT CHAR_OCTET_LENGTH:INTEGER ORDINAL_POSITION:INTEGER IS_NULLABLE:VARCHAR SCOPE_CATLOG:VARCHAR SCOPE_SCHEMA:VARCHAR SCOPE_TABLE:VARCHAR SOURCE_DATA_TYPE:SMALLINT IS_AUTOINCREMENT:VARCHAR
+     row |S062B175 |QSYS2 |SYSTABLES |TABLE_NAME |12 |VARCHAR |128 |128 |null |null |0 |null |null |12 |null |128 |1 |NO |null |null |null |null |NO
+     row |S062B175 |QSYS2 |SYSTABLES |TABLE_OWNER |12 |VARCHAR |128 |128 |null |null |0 |null |null |12 |null |128 |2 |NO |null |null |null |null |NO
+     row |S062B175 |QSYS2 |SYSTABLES |TABLE_TYPE |1 |CHAR |1 |1 |null |null |0 |null |null |1 |null |1 |3 |NO |null |null |null |null |NO
+     rows=6
+ok   metadata
+     cols TABLE_NAME:VARCHAR TABLE_TYPE:CHAR COLUMN_COUNT:INTEGER
+     row |AUTHORIZATIONS |V |2
+     row |CATALOG_NAME |V |1
+     row |CHARACTER_SETS |V |8
+     rows=115
+ok   catalog fetch
+     library=QSTEST
+ok   find QSTEST
+ok   create
+     batches=300
+ok   insert batch
+     cols ID:INTEGER NAME:VARCHAR AMT:DECIMAL TS:TIMESTAMP NOTE:CHAR
+     row |1 |ROW 1 |1000.01 |2026-10-24 12:00:00.001000 |N1        
+     row |2 |ROW 2 |1000.02 |2026-10-24 12:00:00.002000 |N2        
+     row |3 |ROW 3 |1000.03 |2026-10-24 12:00:00.003000 |null
+     rows=300
+ok   select all
+     cols ID:INTEGER AMT:DECIMAL
+     row |10 |1000.10
+     row |11 |1000.11
+     row |12 |1000.12
+     row |13 |1000.13
+     row |14 |1000.14
+     rows=5
+ok   select where
+     rows=42
+ok   update
+     rows=50
+ok   delete
+     cols 00001:INTEGER 00002:DECIMAL 00003:VARCHAR
+     row |250 |250313.75 |ROW 99
+     rows=1
+ok   count
+     cols 00001:INTEGER 00002:DOUBLE 00003:CHAR 00004:DATE 00005:BIGINT
+     row |null |1.5 |x   |01/02/26 |9
+     rows=1
+ok   null and types
+fail missing table: AS400JDBCSQLSyntaxErrorException state=42704 code=-204: [SQL0204] HSNOSUCH1 in QSTEST type *FILE not found. Cause . . . . . :   HSNOSUCH1 in QSTEST type *FILE was not found. If the member name is *ALL, the table is not partitioned. If this is an ALTER TABLE statement and the type is *N, a constraint or partition was not found. If this is not an ALTER TABLE statement and the type is *N, a function, procedure, trigger or sequence object was not found. If a function was not found, HSNOSUCH1 is the service program that contains the function.  The function will not be found unless the external name and usage name match exactly.  Examine the job log for a message that gives more details on which function name is being searched for and the name that did not match. Recovery  . . . :   Change the name and try the request again.  If the object is a node group, ensure that the DB2 Multisystem product is installed on your system and create a nodegroup with the CRTNODGRP CL command. If an external function was not found, be sure that the case of the EXTERNAL NAME on the CREATE FUNCTION statement exactly matches the case of the name exported by the service program.
+ok   commit and rollback
+fail procedure: AS400JDBCSQLSyntaxErrorException state=42704 code=-204: [SQL0204] QCMDEXC in QSYS type *N not found. Cause . . . . . :   QCMDEXC in QSYS type *N was not found. If the member name is *ALL, the table is not partitioned. If this is an ALTER TABLE statement and the type is *N, a constraint or partition was not found. If this is not an ALTER TABLE statement and the type is *N, a function, procedure, trigger or sequence object was not found. If a function was not found, QCMDEXC is the service program that contains the function.  The function will not be found unless the external name and usage name match exactly.  Examine the job log for a message that gives more details on which function name is being searched for and the name that did not match. Recovery  . . . :   Change the name and try the request again.  If the object is a node group, ensure that the DB2 Multisystem product is installed on your system and create a nodegroup with the CRTNODGRP CL command. If an external function was not found, be sure that the case of the EXTERNAL NAME on the CREATE FUNCTION statement exactly matches the case of the name exported by the service program.
+ok   drop

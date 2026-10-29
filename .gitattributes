@@ -1,2 +1,6 @@
+# Byte-exact fixtures the tests compare as text.
 # Shell scripts run under Linux from a Windows checkout too.
 *.sh text eol=lf
+*.trace text eol=lf
+*.sht text eol=lf
+*.hex text eol=lf

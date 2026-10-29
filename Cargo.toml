@@ -69,6 +69,7 @@ members = [
     "ifs/ifs",
     # Network: the kernel interfaces, TCP/IP configuration, sockets, servers.
     "net/netlink",
+    "net/hostsvr",
     # QSH: the Qshell command language and its utilities.
     "qsh/qsh",
 ]

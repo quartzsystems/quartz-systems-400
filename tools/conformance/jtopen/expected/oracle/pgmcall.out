@@ -1,0 +1,12 @@
+ok   connect
+     result=true
+     QSECURITY type=C len=2 value=40
+     QPWDLVL type=B len=4 value=0
+     QCCSID type=B len=4 value=65535
+     QMODEL type=C len=4 value=E4A
+ok   QWCRSVAL
+     result=true
+     returned=86 available=86
+     job name=QZRCSRVS type=B
+ok   QUSRJOBI
+fail missing program: ObjectDoesNotExistException: /QSYS.LIB/QSNOPGM1.PGM: Object does not exist.

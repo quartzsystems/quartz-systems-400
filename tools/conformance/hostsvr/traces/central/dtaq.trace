@@ -1,0 +1,9 @@
+# QS/400 host server trace, format 1
+server central 8470
+scenario dtaq
+
+conn 1
+> 1 +7ms frame 28 e000/7001
+  0000  00 00 00 1c 03 00 e0 00  00 00 00 00 00 00 00 00  |......\.........|
+  0010  00 08 70 01 00 00 01 a1  6e ad 3a 69              |.......~>...|
+end 1 +18ms

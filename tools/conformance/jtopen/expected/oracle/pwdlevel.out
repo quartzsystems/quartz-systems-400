@@ -1,0 +1,12 @@
+fail connect signon: ConnectionDroppedException: Connection was dropped unexpectedly.
+     level=passwordLevel_:0
+ok   signon password level
+fail connect central: ConnectionDroppedException: Connection was dropped unexpectedly.
+     level=passwordLevel_:0
+ok   central password level
+ok   connect command
+     level=passwordLevel_:0
+ok   command password level
+ok   connect database
+     level=passwordLevel_:0
+ok   database password level

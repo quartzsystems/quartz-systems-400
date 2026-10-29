@@ -1,0 +1,8 @@
+fail connect: ConnectionDroppedException: Connection was dropped unexpectedly.
+ok   impl
+     ccsid=0
+ok   ccsid from server
+fail table 37 to 13488: ConnectionDroppedException: Connection was dropped unexpectedly.
+fail table 13488 to 37: ConnectionDroppedException: Connection was dropped unexpectedly.
+fail table 273 to 13488: ConnectionDroppedException: Connection was dropped unexpectedly.
+fail table 290 to 1200: ConnectionDroppedException: Connection was dropped unexpectedly.

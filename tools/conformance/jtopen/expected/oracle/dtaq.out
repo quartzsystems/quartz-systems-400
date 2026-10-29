@@ -1,0 +1,16 @@
+ok   connect
+ok   create
+ok   write
+     max=256 fifo=true
+ok   attributes
+     entry=first entry
+ok   peek
+     entry=first entry
+ok   read
+ok   clear
+ok   delete
+ok   keyed create
+ok   keyed write
+     entry=keyed entry
+ok   keyed read
+ok   keyed delete

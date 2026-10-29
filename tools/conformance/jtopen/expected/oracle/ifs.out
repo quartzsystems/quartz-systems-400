@@ -1,0 +1,15 @@
+ok   connect
+     entries=4
+ok   list /home/QSTEST
+     made=true
+ok   mkdir
+ok   write
+     bytes=25
+ok   read
+     length=25 file=true ccsid=1200
+ok   attributes
+     renamed=true
+ok   rename
+     file=true
+     dir=true
+ok   delete
