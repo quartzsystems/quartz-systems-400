@@ -1,0 +1,24 @@
+                        Work with Protocol Table Entries                        
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   5=Display                                                                    
+                                                                                
+                                                 Protocol                       
+ Opt     Protocol                                 number                        
+                                                                                
+         icmp                                           1                       
+         ip                                             0                       
+         tcp                                            6                       
+         udp                                           17                       
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Parameters for options 1 and 4 or command                                      
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F6=Print list   F9=Retrieve   F12=Cancel    
+ F17=Top   F18=Bottom                                                           
+                                                                                

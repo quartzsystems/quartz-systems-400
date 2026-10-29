@@ -1,0 +1,24 @@
+                       Change TCP/IP Attributes (CHGTCPA)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ IP time to live (hop limit)  . . IPTTL          64                             
+ IP QoS enablement  . . . . . . . IPQOSENB       *YES                           
+ IP dead gateway detection:       IPDEADGATE                                    
+   Enablement . . . . . . . . . .                *YES                           
+   Interval . . . . . . . . . . .                2                              
+ ARP cache timeout  . . . . . . . ARPTIMO        15                             
+ Enable ECN . . . . . . . . . . . ECN            *YES                           
+ Network file cache:              NFC                                           
+   Enablement . . . . . . . . . .                *YES                           
+   Cached file timeout  . . . . .                300                            
+   Cache size . . . . . . . . . .                10                             
+ Log protocol errors  . . . . . . LOGPCLERR      *YES                           
+ DHCP unique identifier:          DHCPUNQID                                     
+   Action . . . . . . . . . . . .                *GEN                           
+   Current value  . . . . . . . .                *PENDING                       
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

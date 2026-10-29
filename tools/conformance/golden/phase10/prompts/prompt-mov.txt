@@ -1,0 +1,24 @@
+                                Move Object (MOV)                               
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Object . . . . . . . . . . . . . OBJ                                           
+                                                                                
+ To directory . . . . . . . . . . TODIR          '.'                            
+                                                                                
+ To object  . . . . . . . . . . . TOOBJ                                         
+                                                                                
+ From CCSID . . . . . . . . . . . FROMCCSID      *OBJ                           
+ To CCSID . . . . . . . . . . . . TOCCSID        *OBJ                           
+ Data Format  . . . . . . . . . . DTAFMT         *BINARY                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

@@ -1,0 +1,54 @@
+# qsh: ls -la /QOpenSys/QIBM/ProdData/SC1/OpenSSH /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc /QOpenSys/QIBM/UserData/SC1/OpenSSH /QOpenSys/QIBM/UserData/SC1/OpenSSH/etc /QOpenSys/etc/ssh /QOpenSys/pkgs/etc/ssh /QOpenSys/pkgs/bin/ssh /QOpenSys/pkgs/sbin/sshd /QOpenSys/usr/bin/ssh /QOpenSys/usr/sbin/sshd
+ls: 001-2113 Error found getting information for object /QOpenSys/pkgs/etc/ssh. No such path or directory.
+-rwxr-xr-x  1 QSYS  0                793079 Feb 19  2024 /QOpenSys/pkgs/bin/ssh
+lrwxrwxrwx  1 QSYS  0                    23 Sep 26  2024 /QOpenSys/pkgs/sbin/sshd -> /QOpenSys/pkgs/bin/sshd
+lrwxrwxrwx  1 QSYS  0                    33 Apr 24  2016 /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc -> ../../../UserData/SC1/OpenSSH/etc
+lrwxrwxrwx  1 QSYS  0                    39 Apr 24  2016 /QOpenSys/usr/bin/ssh -> ../../QIBM/ProdData/SC1/OpenSSH/bin/ssh
+lrwxrwxrwx  1 QSYS  0                    41 Apr 24  2016 /QOpenSys/usr/sbin/sshd -> ../../QIBM/ProdData/SC1/OpenSSH/sbin/sshd
+
+/QOpenSys/etc/ssh:
+total: 704 kilobytes
+drwxr-sr-x   2 QSECOFR  0                  8192 Oct 10 14:53 .
+drwxr-sr-x  22 QSYS     0                 40960 Oct 10 14:53 ..
+-rw-r--r--   1 QSYS     0                577388 Feb 19  2024 moduli
+-rw-r--r--   1 QSYS     0                  1484 Feb 19  2024 ssh_config
+-rw-r--r--   1 QSYS     0                  3225 Feb 19  2024 sshd_config
+
+/QOpenSys/QIBM/ProdData/SC1/OpenSSH:
+total: 148 kilobytes
+drwxr-sr-x  7 QSYS     0                  8192 Oct 10 14:52 .
+drwxr-sr-x  5 QSYS     0                  8192 Oct 10 14:52 ..
+drwxr-sr-x  2 QSYS     0                 28672 Oct 19 14:20 bin
+drwx--S---  2 QSECOFR  0                  8192 Sep 30  2019 empty
+lrwxrwxrwx  1 QSYS     0                    33 Apr 24  2016 etc -> ../../../UserData/SC1/OpenSSH/etc
+drwxr-sr-x  2 QSYS     0                 12288 Oct 19 14:20 etc_template
+drwxr-sr-x  2 QSYS     0                 12288 Oct 19 14:20 libexec
+-rwx---r--  1 QSYS     0                 19071 Oct  4  2021 LICENCE
+-rwx---r--  1 QSYS     0                  2847 Oct  4  2021 README
+drwxr-sr-x  2 QSYS     0                 12288 Oct 19 14:20 sbin
+
+/QOpenSys/QIBM/UserData/SC1/OpenSSH:
+total: 40 kilobytes
+drwxr-sr-x  3 QSYS  0                  8192 Apr 24  2016 .
+drwxr-sr-x  4 QSYS  0                  8192 Apr 24  2016 ..
+drwxr-sr-x  2 QSYS  0                 24576 Oct 10 14:53 etc
+
+/QOpenSys/QIBM/UserData/SC1/OpenSSH/etc:
+total: 272 kilobytes
+drwxr-sr-x  2 QSYS     0                 24576 Oct 10 14:53 .
+drwxr-sr-x  3 QSYS     0                  8192 Apr 24  2016 ..
+-rwx---r--  1 QSYS     0                125811 Aug  5  2013 moduli
+-rwx---r--  1 QSYS     0                  1483 Jan  3  2019 ssh_config
+-rw-------  1 QSECOFR  0                   668 Aug 11  2016 ssh_host_dsa_key
+-rw-r--r--  1 QSECOFR  0                   612 Aug 11  2016 ssh_host_dsa_key.pub
+-rw-------  1 QSECOFR  0                   227 Aug 11  2016 ssh_host_ecdsa_key
+-rw-r--r--  1 QSECOFR  0                   184 Aug 11  2016 ssh_host_ecdsa_key.pub
+-rw-------  1 QSECOFR  0                   419 Aug 11  2016 ssh_host_ed25519_key
+-rw-r--r--  1 QSECOFR  0                   104 Aug 11  2016 ssh_host_ed25519_key.pub
+-rw-------  1 QSECOFR  0                   987 Aug 11  2016 ssh_host_key
+-rw-r--r--  1 QSECOFR  0                   652 Aug 11  2016 ssh_host_key.pub
+-rw-------  1 QSECOFR  0                  1675 Aug 11  2016 ssh_host_rsa_key
+-rw-r--r--  1 QSECOFR  0                   404 Aug 11  2016 ssh_host_rsa_key.pub
+-rwx---r--  1 QSYS     0                  3595 Oct 25 18:33 sshd_config
+-rw-r--r--  1 QSECOFR  0                     3 Oct 25 16:14 sshd.pid
+exit=1

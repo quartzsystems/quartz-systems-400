@@ -1,0 +1,24 @@
+                              Display TCP/IP Route                              
+                                                             System:   SYSNAME  
+ Route destination  . . . . . . . . . . :   *DFTROUTE                           
+ Subnet mask  . . . . . . . . . . . . . :   *NONE                               
+ Type of service  . . . . . . . . . . . :   *NORMAL                             
+ Next hop . . . . . . . . . . . . . . . :   185.113.5.253                       
+ Preferred binding interface  . . . . . :   *NONE                               
+ Maximum transmission unit  . . . . . . :   *IFC                                
+ Duplicate route priority . . . . . . . :   5                                   
+ Route metric . . . . . . . . . . . . . :   1                                   
+ Route redistribution . . . . . . . . . :   *NO                                 
+ Text description . . . . . . . . . . . :   *BLANK                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

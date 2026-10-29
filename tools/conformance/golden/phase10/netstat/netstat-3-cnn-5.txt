@@ -1,0 +1,24 @@
+                         Display TCP Connection Status                          
+                                                             System:   SYSNAME  
+ Connection identification:                                                     
+   Remote host name  . . . . . . . . . . . . . . :   LOOPBACK                   
+     Remote internet address . . . . . . . . . . :     N  .N.N.N                
+     Remote port . . . . . . . . . . . . . . . . :     N                        
+   Local host name . . . . . . . . . . . . . . . :   LOOPBACK                   
+     Local internet address  . . . . . . . . . . :     N  .N.N.N                
+     Local port  . . . . . . . . . . . . . . . . :     telnet                   
+   Associated user profile . . . . . . . . . . . :   QTCP                       
+ TCP programming interface information:                                         
+   State . . . . . . . . . . . . . . . . . . . . :   Established                
+   Connection open type  . . . . . . . . . . . . :   Passive                    
+ Timing information:                                                            
+   Idle time . . . . . . . . . . . . . . . . . . :   N  :N :N .N                
+     Last activity date/time . . . . . . . . . . :     MM/DD/YY  HH:MM:SS       
+   Round-trip time . . . . . . . . . . . . . . . :   N,N                        
+   Round-trip variance . . . . . . . . . . . . . :   N,N                        
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+ F3=Exit      F5=Refresh   F6=Print      F8=Display jobs   F9=Command line      
+ F12=Cancel   F14=Display port numbers   F24=More keys                          
+                                                                                

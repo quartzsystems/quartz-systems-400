@@ -50,3 +50,7 @@ A command the pub400 account is not authorized to (`WRKSYSSTS`,
 `WRKOUTQ`, `WRKJOBQ`, `WRKJOBSCDE`, `WRKSYSVAL`) leaves a message
 instead of a panel; those snapshots were removed and the panels wait
 for a system that allows them.
+
+Phase 10's scripts (TCP/IP configuration and status, communications
+resources, the IFS displays, the registration facility, QSH, the
+command prompts) are under `phase10/` with their own README.

@@ -1,0 +1,24 @@
+                         Change FTP Attributes (CHGFTPA)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Autostart servers  . . . . . . . AUTOSTART      *SAME                          
+ Number of initial servers  . . . NBRSVR         *SAME                          
+ Inactivity timeout . . . . . . . INACTTIMO      *SAME                          
+ Coded character set identifier   CCSID          *SAME                          
+ Outgoing EBCDIC/ASCII table:     TBLFTPOUT                                     
+   Outgoing EBCDIC/ASCII table  .                *SAME                          
+     Library  . . . . . . . . . .                                               
+ Incoming ASCII/EBCDIC table:     TBLFTPIN                                      
+   Incoming ASCII/EBCDIC table  .                *SAME                          
+     Library  . . . . . . . . . .                                               
+ Initial name format  . . . . . . NAMEFMT        *SAME                          
+ Initial directory  . . . . . . . CURDIR         *SAME                          
+ Initial list format  . . . . . . LISTFMT        *SAME                          
+ New file CCSID . . . . . . . . . CRTCCSID       *SAME                          
+ Subsystem description  . . . . . SBSD           *SAME                          
+   Library  . . . . . . . . . . .                                               
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Current values could not be retrieved.                                         

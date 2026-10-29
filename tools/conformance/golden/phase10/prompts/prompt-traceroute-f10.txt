@@ -1,0 +1,24 @@
+                         Trace TCP/IP Route (TRACEROUTE)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Remote system  . . . . . . . . . RMTSYS                                        
+                                                                                
+                                                                                
+                                                                                
+ Range of hops to probe:          RANGE                                         
+   Starting probe TTL (hop limit)                1                              
+   Maximum probe TTL (hop limit)                 30                             
+ Probes sent per hop  . . . . . . PROBES         3                              
+ Response wait time . . . . . . . WAITTIME       3                              
+ Packet length (in bytes) . . . . PKTLEN         40                             
+ Output . . . . . . . . . . . . . OUTPUT         *MSG                           
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Address version format . . . . . ADRVERFMT      *CALC                          
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

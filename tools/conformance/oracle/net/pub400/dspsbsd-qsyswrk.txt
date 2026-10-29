@@ -1,0 +1,1441 @@
+# DSPSBSD SBSD(QSYS/QSYSWRK) OUTPUT(*PRINT) -> spooled file QPRTSBSD
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page    1
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                            Operational Attributes
+ Subsystem description  . . . . . . . . . . . . . :   SBSD         QSYSWRK
+   Library  . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum jobs in subsystem  . . . . . . . . . . . :   MAXJOBS      *NOMAX
+ Sign-on display file . . . . . . . . . . . . . . :   SGNDSPF      QDSIGNON
+   Library  . . . . . . . . . . . . . . . . . . . :                  QSYS
+ System library list entry  . . . . . . . . . . . :   SYSLIBLE     *NONE
+ Auxiliary storage pool group . . . . . . . . . . :   ASPGRP       *NONE
+ Workload group . . . . . . . . . . . . . . . . . :   WLCGRP       *NONE
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page    2
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                                Pool Definitions
+   Pool               Storage             Activity
+    ID               Size (M)               Level
+     1                  *BASE
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page    3
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                             Autostart Job Entries
+     Job                Job Description                   Library
+ QCQAJE                    QCQAJE                    QSVMSS
+ QDB2MULTI                 QQQTEMPS                  QSYS
+ QFSIOPJOB                 QFSIOPWK                  QSYS
+ QGLDPUBA                  QGLDPUBA                  QSYS
+ QGLDPUBE                  QGLDPUBE                  QSYS
+ QJOBLOGAJ                 QJOBLOGAJ                 QSYS
+ QMRDBJNFY                 QMRDBJNFY                 QSYS
+ QNEOSOEM                  QNEOJOBD                  QSYS
+ QNSAJE                    QNSAJE                    QSMU
+ QPASUTIL                  QPAUTLSVR                 QSYS
+ QPASVRP                   QPASVR                    QSYS
+ QPDETSRV                  QSRVJOB                   QSYS
+ QPM400                    Q1PJOBD                   QSYS
+ QRMCSRCD                  QRMCSRCD                  QSYS
+ QSYSWRKJOB                QSYSWRK                   QSYS
+ QS9AJE                    QS9AJE                    QSYS
+ QYPSSTRCOL                QYPSPJOBD                 QSYS
+ QZBSEVTM                  QZBSEJBD                  QSYS
+ QZMFECOX                  QZMFEJBD                  QSYS
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page    4
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                                  Work Station Name Entries
+   No work station name entries.
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page    5
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                                  Work Station Type Entries
+   No work station type entries.
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page    6
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                                Job Queue Entries
+   Seq      Job                                  Max        -------------------------Maximum by Priority--------------------------
+   Nbr      Queue                Library        Active           1       2       3       4       5       6       7       8       9
+    10      QSYSNOMAX             QSYS          *NOMAX      *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX
+    20      QPDAUTOPAR            QSYS               5      *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX
+    30      QESAUTON              QSYS               5      *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX
+    40      QNMSVQ                QSYS               5      *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX
+    70      Q1PSCHQ               QSYS               1      *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX
+    80      Q1PSCHQ2              QSYS               1      *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX
+    90      Q1PSCHQ3              QSYS               1      *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX
+   100      QSJINV                QSYS               1      *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX  *NOMAX
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page    7
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                                 Routing Entries
+              Seq                                                Compare                       Start
+              Nbr          Program            Library             Value                         Pos
+               10         QCMD               QSYS            'RUNPTY07'                          1
+               20         QCMD               QSYS            'RUNPTY10'                          1
+               30         QCMD               QSYS            'RUNPTY20'                          1
+               40         QCMD               QSYS            'RUNPTY25'                          1
+               50         QCMD               QSYS            'RUNPTY35'                          1
+               55         QCMD               QSYS            'RUNPTY40'                          1
+               60         QCMD               QSYS            'RUNPTY50'                          1
+              300         *RTGDTA                            'PGMEVOKE'                         29
+              500         QWCJLSVR           QSYS            'QJOBLOGSVR'                        1
+             2120         QZNFNFSD           QSYS            'QNFSNFSD'                          1
+             2121         QZNFBIOD           QSYS            'QNFSBIOD'                          1
+             2122         QZNFMNTD           QSYS            'QNFSMNTD'                          1
+             2123         QZNFRPCD           QSYS            'QNFSRPCD'                          1
+             2124         QZNFNLMD           QSYS            'QNFSNLMD'                          1
+             2125         QZNFNSMD           QSYS            'QNFSNSMD'                          1
+             2126         QZNFGSSD           QSYS            'QNFSGSSD'                          1
+             2127         QZNFRGYD           QSYS            'QNFSRGYD'                          1
+             2150         QTOTSNTP           QSYS            'TOTNTP'                            1
+             2170         QSYEIMMON          QSYS            'QSYEIMMON'                         1
+             2200         QYASPPGM           QSYS            'QYASPPGM'                          1
+             2220         QCMD               QSYS            'QS9PAL'                            1
+             2221         QCMD               QSYS            'QS9PRB'                            1
+             2230         QSVRMEVJ           QSYS            'SERVICERMDRVR'                     1
+             2401         QESISRV            QSYS            'QESISRV'                           1
+             2501         QTMFSRVR           QTCP            'FTPSERVE'                          1
+             2502         QTMSSRCD           QTCP            'SMTPROUT'                          1
+             2503         QTMPLPDC           QTCP            'LPDSERVE'                          1
+             2504         QTGCLSRV           QTCP            'TELNETS'                           1
+             2505         QTOCTCPIP          QSYS            'TCPIP'                             1
+             2506         QTOCETCT           QSYS            'TCPEND'                            1
+             2509         QTMMSRVR           QTCP            'POPSERVE'                          1
+             2510         QTMMSADD           QTCP            'POP3ADDR'                          1
+             2511         QTMXSRVR           QTCP            'REXECSVR'                          1
+             2512         QTMSBRSR           QTCP            'SMTPBRSR'                          1
+             2513         QTMSBRDG           QTCP            'SMTPBRCL'                          1
+             2514         QTMSCLCD           QTCP            'SMTPCLCD'                          1
+             2515         QTOKMAIN           QSYS            'ISASERV'                           1
+             2516         QTOVMAN            QSYS            'VPNCNMGR'                          1
+             2517         QCMD               QSYS            'TELNETD'                           1
+             2518         QTMSSCHD           QTCP            'SMTPSCHD'                          1
+             2519         QTOKMAIN2          QSYS            'V2ISASERV'                         1
+             2520         QTODTFTP           QSYS            'TFTPSERV'                          1
+             2525         QZMFBIGE           QSYS            'ZMFMSF'                            1
+             2526         QCMD               QSYS            'QM36MEDIUM'                        1
+             2527         QCMD               QSYS            'QM36LOW'                           1
+             2528         QCMD               QSYS            'QM36HIGH'                          1
+             2536         QZSCSRVSD          QSYS            'QZSCSRVSD'                         1
+             2537         QZHQSRVD           QSYS            'QZHQSRVD'                          1
+             2538         QNPSERVD           QSYS            'QNPSERVD'                          1
+             2539         QZRCSRVSD          QSYS            'QZRCSRVSD'                         1
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page    8
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                                 Routing Entries
+              Seq                                                Compare                       Start
+              Nbr          Program            Library             Value                         Pos
+             2540         QZSOSGND           QSYS            'QZSOSGND'                          1
+             2541         QZSOSMAPD          QSYS            'QZSOSMAPD'                         1
+             2566         QRWTLSTN           QSYS            'QRWTLSTN'                          1
+             2568         QDBMLSTN           QSYS            'QDBMLSTN'                          1
+             2571         QZDFMSVR           QSYS            'QZDFMSVR'                          1
+             2601         QTOQSRVR           QSYS            'TOQRSVPD'                          1
+             2626         QTISPTSK           QSYS            'QTIRMTSPT'                         1
+             9999         QCMD               QSYS            *ANY
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page    9
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       10
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QCMD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS07
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'RUNPTY07'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   10
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       20
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QCMD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS10
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'RUNPTY10'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   11
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       30
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QCMD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS20
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'RUNPTY20'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   12
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       40
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QCMD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS25
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'RUNPTY25'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   13
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       50
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QCMD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS35
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'RUNPTY35'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   14
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       55
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QCMD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS40
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'RUNPTY40'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *NOGROUP
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :                *NORMAL
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   15
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       60
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QCMD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS50
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'RUNPTY50'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   16
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       300
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          *RTGDTA
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS50
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'PGMEVOKE'
+ Compare start position . . . . . . . . . . . . . . . . . :                29
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   17
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       500
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QWCJLSVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QJOBLOGSVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QJOBLOGSVR'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *NOGROUP
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :                *NORMAL
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   18
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2120
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZNFNFSD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QP0LNFSD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QNFSNFSD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   19
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2121
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZNFBIOD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QP0LBIOD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QNFSBIOD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   20
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2122
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZNFMNTD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QP0LMNTD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QNFSMNTD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   21
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2123
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZNFRPCD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QP0LRPCD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QNFSRPCD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   22
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2124
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZNFNLMD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QP0LLCKD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QNFSNLMD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   23
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2125
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZNFNSMD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QP0LSTATD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QNFSNSMD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   24
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2126
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZNFGSSD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QP0LGSSD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QNFSGSSD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   25
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2127
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZNFRGYD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QP0LRGYD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QNFSRGYD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   26
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2150
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTOTSNTP
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS10
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'TOTNTP'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   27
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2170
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QSYEIMMON
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS20
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QSYEIMMON'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   28
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2200
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QYASPPGM
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS20
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QYASPPGM'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   29
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2220
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QCMD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS50
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       1
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QS9PAL'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   30
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2221
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QCMD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSRVAGTCLS
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSRVAGT
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       10
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QS9PRB'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   31
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2230
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QSVRMEVJ
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS25
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'SERVICERMDRVR'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   32
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2401
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QESISRV
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS20
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       1
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QESISRV'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   33
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2501
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTMFSRVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QTCP
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QTMFTPS
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QTCP
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'FTPSERVE'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   34
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2502
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTMSSRCD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QTCP
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS35
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'SMTPROUT'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   35
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2503
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTMPLPDC
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QTCP
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QTMPLPD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QTCP
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'LPDSERVE'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   36
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2504
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTGCLSRV
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QTCP
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS20
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'TELNETS'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   37
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2505
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTOCTCPIP
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS20
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'TCPIP'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   38
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2506
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTOCETCT
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS20
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'TCPEND'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   39
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2509
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTMMSRVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QTCP
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QTMMPPS
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QTCP
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'POPSERVE'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   40
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2510
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTMMSADD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QTCP
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QTMMADCL
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QTCP
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'POP3ADDR'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   41
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2511
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTMXSRVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QTCP
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS20
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'REXECSVR'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   42
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2512
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTMSBRSR
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QTCP
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS35
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'SMTPBRSR'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   43
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2513
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTMSBRDG
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QTCP
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS35
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'SMTPBRCL'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   44
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2514
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTMSCLCD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QTCP
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS35
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'SMTPCLCD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   45
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2515
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTOKMAIN
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS25
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'ISASERV'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   46
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2516
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTOVMAN
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS25
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'VPNCNMGR'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   47
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2517
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QCMD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS20
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'TELNETD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   48
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2518
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTMSSCHD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QTCP
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS35
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'SMTPSCHD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   49
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2519
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTOKMAIN2
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS25
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'V2ISASERV'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   50
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2520
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTODTFTP
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS25
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'TFTPSERV'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   51
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2525
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZMFBIGE
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS35
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'ZMFMSF'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   52
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2526
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QCMD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS20
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QM36MEDIUM'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   53
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2527
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QCMD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS50
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QM36LOW'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   54
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2528
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QCMD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS10
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QM36HIGH'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   55
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2536
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZSCSRVSD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QCASERVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QGPL
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QZSCSRVSD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   56
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2537
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZHQSRVD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QCASERVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QGPL
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QZHQSRVD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   57
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2538
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QNPSERVD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QCASERVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QGPL
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QNPSERVD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   58
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2539
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZRCSRVSD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QCASERVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QGPL
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QZRCSRVSD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   59
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2540
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZSOSGND
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QCASERVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QGPL
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QZSOSGND'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   60
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2541
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZSOSMAPD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QCASERVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QGPL
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QZSOSMAPD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   61
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2566
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QRWTLSTN
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS20
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QRWTLSTN'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   62
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2568
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QDBMLSTN
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS20
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QDBMLSTN'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   63
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2571
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QZDFMSVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS20
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QZDFMSVR'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   64
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2601
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTOQSRVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS25
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'TOQRSVPD'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   65
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       2626
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QTISPTSK
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS25
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       'QTIRMTSPT'
+ Compare start position . . . . . . . . . . . . . . . . . :                1
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   66
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                              Routing Entry Detail
+ Routing entry sequence number  . . . . . . . . . . . . . :   SEQNBR       9999
+ Program  . . . . . . . . . . . . . . . . . . . . . . . . :   PGM          QCMD
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Class  . . . . . . . . . . . . . . . . . . . . . . . . . :   CLS          QSYSCLS50
+   Library  . . . . . . . . . . . . . . . . . . . . . . . :                  QSYS
+ Maximum active routing steps . . . . . . . . . . . . . . :   MAXACT       *NOMAX
+ Pool identifier  . . . . . . . . . . . . . . . . . . . . :   POOLID       1
+ Compare value  . . . . . . . . . . . . . . . . . . . . . :   CMPVAL       *ANY
+ Thread resources affinity:                                   THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . . :                *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . . :   RSCAFNGRP    *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   67
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                             Communications Entries
+                                         Job                                     Default            Max
+    Device          Mode             Description              Library             User             Active
+ *ALL             QPOPSRVR           QTMMTPS                 QTCP               *SYS               *NOMAX
+ Q1PDEV           Q1PMOD             *USRPRF                                    QUSER              *NOMAX
+ Q1PLOC           Q1PMOD             *USRPRF                                    QPM400             *NOMAX
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   68
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                         Remote Location Name Entries
+     Remote                              Job                                     Default             Max
+    Location        Mode             Description              Library             User             Active
+ Q1PLOC           Q1PMOD             *USRPRF                                    QPM400             *NOMAX
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   69
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                    Prestart Job Entries
+     Program           Library             User Profile
+     QANEAGNT          QSYS                 QUSER
+     QIWVPPJT          QIWS                 QUSER
+     QSQSRVR           QSYS                 QUSER
+     QSRRATBL          QSYS                 QUSER
+     QSRSYNCM          QSYS                 QUSER
+     QTMMSRVR          QTCP                 QTCP
+     QTMSCLCP          QTCP                 QTCP
+     QTMSSRCP          QTCP                 QTCP
+     Q5BWHSRV          QSYS                 QUSER
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   70
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QANEAGNT
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QUSER
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QANEAGNT
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QDFTSVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QGPL
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *NO
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      3
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    2
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      2
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   71
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      *NOMAX
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       200
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QSYSCLS20
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   72
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QIWVPPJT
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QIWS
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QUSER
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QIWVPPJT
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QDFTSVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QGPL
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *YES
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      1
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    1
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      2
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   73
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      *NOMAX
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       200
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QWCPCSUP
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QGPL
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   74
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QSQSRVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QUSER
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QSQSRVR
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QDFTSVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QGPL
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *NO
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      5
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    2
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      2
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   75
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      *NOMAX
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       200
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QSYSCLS20
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   76
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QSRRATBL
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QUSER
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QSRRATBL
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QDFTSVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QGPL
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *NO
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      3
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    2
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      2
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   77
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      5
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       200
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QINTER
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QGPL
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   78
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QSRSYNCM
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QUSER
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QSRSYNCM
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QDFTSVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QGPL
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *NO
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      1
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    1
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      0
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   79
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      1
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       200
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QINTER
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QGPL
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   80
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QTMMSRVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QTCP
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QTCP
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QTPOSNA
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QTMMTPS
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QTCP
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *NO
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      3
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    2
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      2
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   81
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      *NOMAX
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       200
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QTMMPPS
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QTCP
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   82
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QTMSCLCP
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QTCP
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QTCP
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QTSMTPCLTP
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QTMSMTPS
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QUSRSYS
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *NO
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      1
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    1
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      2
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   83
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      256
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       200
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QSYSCLS35
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   84
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          QTMSSRCP
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QTCP
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QTCP
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          QTSMTPSRVP
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QTMSMTPS
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QUSRSYS
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *NO
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      1
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    1
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      2
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   85
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      256
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       200
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QSYSCLS35
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   86
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Program  . . . . . . . . . . . . . . . . . . . . . . . :  PGM          Q5BWHSRV
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+ User profile . . . . . . . . . . . . . . . . . . . . . :  USER         QUSER
+ Job  . . . . . . . . . . . . . . . . . . . . . . . . . :  JOB          Q5BWHSRV
+ Job description  . . . . . . . . . . . . . . . . . . . :  JOBD         QDFTSVR
+   Library  . . . . . . . . . . . . . . . . . . . . . . :                 QGPL
+ Start jobs . . . . . . . . . . . . . . . . . . . . . . :  STRJOBS      *NO
+ Initial number of jobs . . . . . . . . . . . . . . . . :  INLJOBS      1
+ Threshold  . . . . . . . . . . . . . . . . . . . . . . :  THRESHOLD    1
+ Additional number of jobs  . . . . . . . . . . . . . . :  ADLJOBS      2
+                                                   -=* https://pub400.com *=-
+ 5770SS1 V7R5M0  220415               Display Subsystem Description                             26-10-29 21:25:31        Page   87
+ Subsystem description . . . . . . . . . . :   QSYSWRK        Status . . . . :    Active
+                           Prestart Job Entry Detail
+ Maximum number of jobs . . . . . . . . . . . . . . . . :  MAXJOBS      *NOMAX
+ Maximum number of uses . . . . . . . . . . . . . . . . :  MAXUSE       200
+ Wait for job . . . . . . . . . . . . . . . . . . . . . :  WAIT         *YES
+ Pool identifier  . . . . . . . . . . . . . . . . . . . :  POOLID       1
+ Class:
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :  CLS          QSYSCLS20
+     Library  . . . . . . . . . . . . . . . . . . . . . :                 QSYS
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+   Class  . . . . . . . . . . . . . . . . . . . . . . . :               *NONE
+     Number of jobs to use class  . . . . . . . . . . . :                 *CALC
+ Thread resources affinity:                                THDRSCAFN
+   Group  . . . . . . . . . . . . . . . . . . . . . . . :                  *SYSVAL
+   Level  . . . . . . . . . . . . . . . . . . . . . . . :
+ Resources affinity group . . . . . . . . . . . . . . . :  RSCAFNGRP       *NO
+                          * * * * *  E N D  O F  L I S T I N G  * * * * *
+                                                   -=* https://pub400.com *=-

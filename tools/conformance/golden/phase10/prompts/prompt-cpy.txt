@@ -1,0 +1,24 @@
+                                Copy Object (CPY)                               
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Object . . . . . . . . . . . . . OBJ                                           
+                                                                                
+ To directory . . . . . . . . . . TODIR          '.'                            
+                                                                                
+ To object  . . . . . . . . . . . TOOBJ                                         
+                                                                                
+ Symbolic link  . . . . . . . . . SYMLNK         *NO                            
+ From CCSID . . . . . . . . . . . FROMCCSID      *OBJ                           
+ To CCSID . . . . . . . . . . . . TOCCSID        *OBJ                           
+ Data Format  . . . . . . . . . . DTAFMT         *BINARY                        
+ Directory subtree  . . . . . . . SUBTREE        *NODIR                         
+ Replace object . . . . . . . . . REPLACE        *NO                            
+ Owner  . . . . . . . . . . . . . OWNER          *NEW                           
+ Authority  . . . . . . . . . . . AUT            *OBJ                           
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

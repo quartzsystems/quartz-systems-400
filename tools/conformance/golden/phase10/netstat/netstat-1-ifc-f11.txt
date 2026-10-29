@@ -1,0 +1,24 @@
+                       Work with TCP/IP Interface Status                        
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   5=Display details   8=Display associated routes                              
+   12=Work with configuration status   14=Display multicast groups              
+                                                                                
+                                                     Virtual                    
+      Internet         Network             Line      LAN                        
+ Opt  Address          Address          Description  ID                         
+      *IP4DHCP         *                LINETH       *NONE                      
+      127.0.0.1        127.0.0.0        *LOOPBACK    *NONE                      
+      185.113.5.134    185.113.5.0      LINETH       *NONE                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F9=Command line   F11=Display line information    F12=Cancel         
+ F13=Sort by column          F20=Work with IPv6 interfaces   F24=More keys      
+                                                                                

@@ -1,0 +1,85 @@
+# Phase 10: CFGTCP option 21's tables and CFGTCPAPP with each
+# application's menu. Options that open a change prompt directly (5, 10,
+# 13, 16, 17, 19) are captured from Command Entry in prompts-*.tn.
+# Every option is typed only after the menu's "Selection or command"
+# shows; no `continue`.
+wait "Main Menu"
+timeout 60000
+type call qcmd
+key enter
+wait "Command Entry"
+type cfgtcp
+key enter
+wait "Selection or command"
+type 21
+key enter
+wait "Work with protocol table entries"
+type 1
+key enter
+settle 1500
+snap tables-1-service
+key pgdn
+settle 1000
+snap tables-1-service-2
+key f12
+wait "Work with protocol table entries"
+type 2
+key enter
+settle 1500
+snap tables-2-protocol
+key f12
+wait "Work with protocol table entries"
+type 3
+key enter
+settle 1500
+snap tables-3-network
+key f12
+wait "Work with protocol table entries"
+key f12
+wait "22. Configure point-to-point"
+type 20
+key enter
+wait "17. Change REXEC attributes"
+snap cfgtcpapp
+key pgdn
+wait "19. Change SNTP attributes"
+snap cfgtcpapp-2
+key pgup
+wait "17. Change REXEC attributes"
+type 1
+key enter
+settle 1500
+snap cfgtcpapp-1-snmp
+key f12
+wait "17. Change REXEC attributes"
+type 2
+key enter
+settle 1500
+snap cfgtcpapp-2-routed
+key f12
+wait "17. Change REXEC attributes"
+type 4
+key enter
+settle 1500
+snap cfgtcpapp-4-bootp
+key f12
+wait "17. Change REXEC attributes"
+type 11
+key enter
+settle 1500
+snap cfgtcpapp-11-telnet
+key f12
+wait "17. Change REXEC attributes"
+type 12
+key enter
+settle 1500
+snap cfgtcpapp-12-smtp
+key pgdn
+settle 1000
+snap cfgtcpapp-12-smtp-2
+key f12
+wait "17. Change REXEC attributes"
+key f12
+wait "22. Configure point-to-point"
+key f12
+wait "Command Entry"

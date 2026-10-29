@@ -1,0 +1,24 @@
+                               Display Exit Point                               
+                                                             System:   SYSNAME  
+ Exit point . . . . . . . . . . . . . . :   QIBM_QTMF_SERVER_REQ                
+ Exit point format  . . . . . . . . . . :   VLRQ0100                            
+                                                                                
+ Exit point registered  . . . . . . . . :   *YES                                
+ Allow deregister . . . . . . . . . . . :   *YES                                
+ Maximum number of exit programs  . . . :   1                                   
+ Current number of exit programs  . . . :   0                                   
+ Preprocessing for add  . . . . . . . . :   QTMFADDP                            
+   Library  . . . . . . . . . . . . . . :     QTCP                              
+   Format . . . . . . . . . . . . . . . :     ADDP0100                          
+ Preprocessing for remove . . . . . . . :   QTMFRMVP                            
+   Library  . . . . . . . . . . . . . . :     QTCP                              
+   Format . . . . . . . . . . . . . . . :     RMVP0100                          
+ Preprocessing for retrieve . . . . . . :   *NONE                               
+   Library  . . . . . . . . . . . . . . :                                       
+   Format . . . . . . . . . . . . . . . :                                       
+ Allow change . . . . . . . . . . . . . :   *NO                                 
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+                                                                                

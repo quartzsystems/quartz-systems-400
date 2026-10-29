@@ -1,0 +1,24 @@
+                            Change DDM File (CHGDDMF)                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Text 'description' . . . . . . . TEXT           *SAME                          
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Device:                          DEV                                           
+   APPC device description  . . .                *SAME                          
+ Local location . . . . . . . . . LCLLOCNAME     *SAME                          
+ Mode . . . . . . . . . . . . . . MODE           *SAME                          
+ Remote network identifier  . . . RMTNETID       *SAME                          
+ Port number  . . . . . . . . . . PORT           *SAME                          
+ Access method:                   ACCMTH                                        
+   Remote file attribute  . . . .                *SAME                          
+   Local access method  . . . . .                                               
+ Share open data path . . . . . . SHARE          *SAME                          
+ Protected conversation . . . . . PTCCNV         *SAME                          
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter FILE required.                                                       

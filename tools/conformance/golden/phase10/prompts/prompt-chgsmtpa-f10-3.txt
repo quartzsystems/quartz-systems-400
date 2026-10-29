@@ -1,0 +1,24 @@
+                        Change SMTP Attributes (CHGSMTPA)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Override reject connect list . . OVRRJTCNNL     *NO                            
+ Allow bare line feed . . . . . . ALWBARELF      *YES                           
+ Verify identification  . . . . . VFYID          *NO                            
+ Allow authentication . . . . . . ALWAUTH        *NONE                          
+ Verify MSF messages  . . . . . . VFYMSFMSG      *YES                           
+ Verify from user . . . . . . . . VFYFROMUSR     *ALL                           
+ Forwarding mailhub server  . . . FWDHUBSVR      '192.168.77.147'               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Allow e-mail over implicit SSL   ALWIMPSSL      *NO                            
+ Max incoming e-mail messages . . MAXINEMM       *DFT                           
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

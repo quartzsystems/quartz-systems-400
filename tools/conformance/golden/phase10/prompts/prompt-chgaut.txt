@@ -1,0 +1,24 @@
+                            Change Authority (CHGAUT)                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Object . . . . . . . . . . . . . OBJ                                           
+                                                                                
+ User . . . . . . . . . . . . . . USER                                          
+                           + for more values                                    
+ New data authorities . . . . . . DTAAUT         *SAME                          
+ New object authorities . . . . . OBJAUT         *SAME                          
+                           + for more values                                    
+ Authorization list . . . . . . . AUTL                                          
+ Directory subtree  . . . . . . . SUBTREE        *NONE                          
+ Symbolic link  . . . . . . . . . SYMLNK         *NO                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

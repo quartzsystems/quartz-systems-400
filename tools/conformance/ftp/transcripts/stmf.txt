@@ -1,0 +1,183 @@
+# session: stmf
+# source: pub400 V7R5M0, port 21, 2026-10-29
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /home/{user}
+S: 250 "/home/{user}" is current directory.
+C: TYPE A
+S: 200 Representation type is ASCII nonprint.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,211,239).
+C: STOR /home/{user}/qsftp.txt
+S: 150 Sending file to /home/{user}/qsftp.txt
+D> 54 bytes sent
+S: 226 File transfer completed successfully.
+C: TYPE I
+S: 200 Representation type is binary IMAGE.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,185,21).
+C: STOR /home/{user}/qsftp.bin
+S: 150 Sending file to /home/{user}/qsftp.bin
+D> 256 bytes sent
+S: 226 File transfer completed successfully.
+C: SIZE /home/{user}/qsftp.txt
+S: 500 Subcommand SIZE not valid.
+C: SIZE /home/{user}/qsftp.bin
+S: 500 Subcommand SIZE not valid.
+C: MDTM /home/{user}/qsftp.txt
+S: 500 Subcommand MDTM not valid.
+C: MLST /home/{user}/qsftp.txt
+S: 500 Subcommand MLST not valid.
+C: MLST /home/{user}
+S: 500 Subcommand MLST not valid.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,152,101).
+C: MLSD /home/{user}
+S: 500 Subcommand MLSD not valid.
+C: TYPE A
+S: 200 Representation type is ASCII nonprint.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,92,151).
+C: RETR /home/{user}/qsftp.txt
+S: 150 Retrieving file /home/{user}/qsftp.txt
+D: 54 bytes
+D| Quartz FTP probe line 1
+D| second line, 2
+D| 
+D| last line
+S: 226 File transfer completed successfully.
+C: TYPE I
+S: 200 Representation type is binary IMAGE.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,208,38).
+C: RETR /home/{user}/qsftp.txt
+S: 150 Retrieving file /home/{user}/qsftp.txt
+D: 54 bytes (hex)
+D| 51756172747a204654502070726f6265206c696e6520310d0a7365636f6e6420
+D| 6c696e652c20320d0a0d0a6c617374206c696e650d0a
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,161,147).
+C: RETR /home/{user}/qsftp.bin
+S: 150 Retrieving file /home/{user}/qsftp.bin
+D: 256 bytes (hex)
+D| 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+D| 202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f
+D| 404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f
+D| 606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f
+D| 808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f
+D| a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebf
+D| c0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf
+D| e0e1e2e3e4e5e6e7e8e9eaebecedeeeff0f1f2f3f4f5f6f7f8f9fafbfcfdfeff
+S: 226 File transfer completed successfully.
+C: TYPE E
+S: 200 Representation type is EBCDIC nonprint.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,21,159).
+C: RETR /home/{user}/qsftp.txt
+S: 150 Retrieving file /home/{user}/qsftp.txt
+D: 50 bytes (hex)
+D| d8a48199a3a940c6e3d7409799968285409389958540f115a285839695844093
+D| 8995856b40f215159381a2a3409389958515
+S: 226 File transfer completed successfully.
+C: TYPE A
+S: 200 Representation type is ASCII nonprint.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,48,20).
+C: APPE /home/{user}/qsftp.txt
+S: 150 Sending file to /home/{user}/qsftp.txt
+D> 10 bytes sent
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,181,174).
+C: RETR /home/{user}/qsftp.txt
+S: 150 Retrieving file /home/{user}/qsftp.txt
+D: 64 bytes
+D| Quartz FTP probe line 1
+D| second line, 2
+D| 
+D| last line
+D| appended
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,166,150).
+C: STOU /home/{user}/qsftp.txt
+S: 150 Sending file to /home/{user}/qsftp.txt1
+D> 8 bytes sent
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,133,254).
+C: LIST /home/{user}
+S: 125 List started.
+D: 581 bytes
+D| drwxrwx---   2 {user} 0          24576 Oct 22 23:28 qs400
+D| drwxrwxrwx   6 {user} 0           8192 Oct 23 02:52 qstest
+D| -rwxrwx---   1 {user} 0             53 Oct 24 15:22 qsnet.txt
+D| -rwxrwx---   1 {user} 0             64 Oct 29 21:33 qsftp.txt
+D| -rwxrwx---   1 {user} 0            256 Oct 29 21:32 qsftp.bin
+D| -rwxrwx---   1 {user} 0             54 Oct 29 21:28 QSFTPDTA
+D| -rwxrwx---   1 {user} 0             54 Oct 29 21:28 QSFTPDT2.MBR2
+D| -rwxrwx---   1 {user} 0            256 Oct 29 21:28 QSFTPBIN
+D| -rwxrwx---   1 {user} 0              8 Oct 29 21:33 qsftp.txt1
+S: 250 List completed.
+C: RNFR /home/{user}/qsftp.txt
+S: 350  File /home/{user}/qsftp.txt accepted.  Type new name using RNTO command.
+C: RNTO /home/{user}/qsftp2.txt
+S: 250  File renamed as /home/{user}/qsftp2.txt
+C: MKD /home/{user}/qsftpdir
+S: 250  Created directory /home/{user}/qsftpdir
+C: XMKD /home/{user}/qsftpdir
+S: 550  Directory /home/{user}/qsftpdir already exists.  Directory not created.
+C: CWD /home/{user}/qsftpdir
+S: 250 "/home/{user}/qsftpdir" is current directory.
+C: PWD
+S: 257 "/home/{user}/qsftpdir" is current directory.
+C: CDUP
+S: 250 "/home/{user}" is current directory.
+C: RMD /home/{user}/qsftpdir
+S: 250 Deleted directory /home/{user}/qsftpdir
+C: MKD qsftpdir2
+S: 250  Created directory /home/{user}/qsftpdir2
+C: XRMD qsftpdir2
+S: 250 Deleted directory /home/{user}/qsftpdir2
+C: DELE /home/{user}/qsftp2.txt
+S: 250  Deleted file /home/{user}/qsftp2.txt
+C: DELE /home/{user}/qsftp.bin
+S: 250  Deleted file /home/{user}/qsftp.bin
+C: DELE /home/{user}/qsftp.txt
+S: 550  Unable to delete /home/{user}/qsftp.txt
+C: SIZE /home/{user}/nosuch.txt
+S: 500 Subcommand SIZE not valid.
+C: MDTM /home/{user}/nosuch.txt
+S: 500 Subcommand MDTM not valid.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,28,198).
+C: RETR /home/{user}/nosuch.txt
+S: 550  Unable to find file /home/{user}/nosuch.txt
+C: DELE /home/{user}/nosuch.txt
+S: 550  Unable to delete /home/{user}/nosuch.txt
+C: RMD /home/{user}/nosuchdir
+S: 550  Directory /home/{user}/nosuchdir does not exist.  Directory not deleted.
+C: RNFR /home/{user}/nosuch.txt
+S: 550  Unable to find file /home/{user}/nosuch.txt
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,122,117).
+C: NLST /home/{user}
+S: 125 List started.
+D: 75 bytes
+D| qs400/
+D| qstest/
+D| qsnet.txt
+D| QSFTPDTA
+D| QSFTPDT2.MBR2
+D| QSFTPBIN
+D| qsftp.txt1
+S: 250 List completed.
+C: QUIT
+S: 221 QUIT subcommand received.

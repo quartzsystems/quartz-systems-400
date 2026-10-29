@@ -1,0 +1,24 @@
+                         Display TCP Connection Status                          
+                                                             System:   SYSNAME  
+ Connection identification:                                                     
+   Remote host name  . . . . . . . . . . . . . . :                              
+     Remote internet address . . . . . . . . . . :     *                        
+     Remote port . . . . . . . . . . . . . . . . :     *                        
+   Local host name . . . . . . . . . . . . . . . :                              
+     Local internet address  . . . . . . . . . . :     *                        
+     Local port  . . . . . . . . . . . . . . . . :     telnet                   
+   Associated user profile . . . . . . . . . . . :   QTCP                       
+ TCP programming interface information:                                         
+   State . . . . . . . . . . . . . . . . . . . . :   Listen                     
+   Connection open type  . . . . . . . . . . . . :   Passive                    
+ Timing information:                                                            
+   Idle time . . . . . . . . . . . . . . . . . . :   N  :N :N .N                
+     Last activity date/time . . . . . . . . . . :     MM/DD/YY  HH:MM:SS       
+   Round-trip time . . . . . . . . . . . . . . . :   N,N                        
+   Round-trip variance . . . . . . . . . . . . . :   N,N                        
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+ F3=Exit      F5=Refresh   F6=Print      F8=Display jobs   F9=Command line      
+ F12=Cancel   F14=Display port numbers   F24=More keys                          
+                                                                                

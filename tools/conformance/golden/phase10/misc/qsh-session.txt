@@ -1,0 +1,24 @@
+                               QSH Command Entry                                
+                                                                                
+   QOPT                                                                         
+   QSR                                                                          
+   QSYS.LIB                                                                     
+   QTCPTMM                                                                      
+   QXDALISTEN                                                                   
+   Snap.20261001.140145.18.0003.trc                                             
+   temp                                                                         
+   tempdir                                                                      
+   tmp                                                                          
+   usr                                                                          
+   var                                                                          
+   www                                                                          
+   wwwsrv                                                                       
+   $                                                                            
+                                                                                
+ ===>                                                                           
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F6=Print F9=Retrieve F12=Disconnect                                  
+ F13=Clear F17=Top  F18=Bottom  F21=CL command entry                            
+                                                                                

@@ -1,0 +1,24 @@
+                    Display Relational Database Entry Detail                    
+                                                                                
+ Relational database  . . . . . . :   PUB400                                    
+ Remote location:                                                               
+   Remote location  . . . . . . . :   *LOCAL                                    
+     Type . . . . . . . . . . . . :   *IP                                       
+   Port number or service name  . :   *DRDA                                     
+   Remote authentication method:                                                
+     Preferred method . . . . . . :   *USRENCPWD                                
+     Allow lower authentication . :   *ALWLOWER                                 
+   Secure connection  . . . . . . :   *NONE                                     
+   Encryption algorithm . . . . . :   *DES                                      
+ Text . . . . . . . . . . . . . . :   please do not change!                     
+                                                                                
+                                                                                
+ Relational database type . . . . :   *LOCAL                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel                                                           
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

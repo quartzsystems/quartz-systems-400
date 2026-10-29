@@ -1,0 +1,801 @@
+# session: list
+# source: pub400 V7R5M0, port 21, 2026-10-29
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/QSYSINC.LIB
+S: 250 "/QSYS.LIB/QSYSINC.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: SITE LISTFMT 0
+S: 250 Directory listing format (LISTFMT) option set to 0.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,106,119).
+C: LIST
+S: 125 List started.
+D: 285899 bytes
+D| QSYS           143360 26-10-10 00:10:31 *FILE      ARPA
+D| QSYS                                    *MEM       ARPA.INET
+D| QSYS                                    *MEM       ARPA.NAMESER
+D| QSYS                                    *MEM       ARPA.REXEC
+D| QSYS         39321600 26-10-10 00:10:31 *FILE      H
+D| QSYS                                    *MEM       H.ARM4
+D| QSYS                                    *MEM       H.ARM4EXT
+D| QSYS                                    *MEM       H.ASSERT
+D| QSYS                                    *MEM       H.BCD
+D| QSYS                                    *MEM       H.BSE
+D| QSYS                                    *MEM       H.BSEDOS
+D| QSYS                                    *MEM       H.BSEERR
+D| QSYS                                    *MEM       H.CDRCVRT
+D| QSYS                                    *MEM       H.CDRGCCN
+D| QSYS                                    *MEM       H.CDRGESP
+D| QSYS                                    *MEM       H.CDRGRDC
+D| QSYS                                    *MEM       H.CDRSCSP
+D| QSYS                                    *MEM       H.CMC
+D| QSYS                                    *MEM       H.COMPLEX
+D| QSYS                                    *MEM       H.CTYPE
+D| QSYS                                    *MEM       H.CXXABI
+D| QSYS                                    *MEM       H.DECIMAL
+D| QSYS                                    *MEM       H.DELETE
+D| QSYS                                    *MEM       H.DEMANGLE
+D| QSYS                                    *MEM       H.DIRENT
+D| QSYS                                    *MEM       H.DSQCOMMC
+D| QSYS                                    *MEM       H.DTWLE
+D| QSYS                                    *MEM       H.ECACHCMD
+D| QSYS                                    *MEM       H.ECARTCMD
+D| QSYS                                    *MEM       H.ECHGPRF1
+D| QSYS                                    *MEM       H.ECHGRCV1
+D| QSYS                                    *MEM       H.ECHKPWD1
+D| QSYS                                    *MEM       H.ECLRMST
+D| QSYS                                    *MEM       H.ECRTPRF1
+D| QSYS                                    *MEM       H.EDBOPNDB
+D| QSYS                                    *MEM       H.EDCVARY
+D| QSYS                                    *MEM       H.EDLTKR
+D| QSYS                                    *MEM       H.EDLTPRF1
+D| QSYS                                    *MEM       H.EDLTPRF2
+D| QSYS                                    *MEM       H.EDLTRCV1
+D| ... (4222 more lines)
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,131,150).
+C: NLST
+S: 125 List started.
+D: 68273 bytes
+D| ARPA.INET
+D| ARPA.NAMESER
+D| ARPA.REXEC
+D| H.ARM4
+D| H.ARM4EXT
+D| H.ASSERT
+D| H.BCD
+D| H.BSE
+D| H.BSEDOS
+D| H.BSEERR
+D| H.CDRCVRT
+D| H.CDRGCCN
+D| H.CDRGESP
+D| H.CDRGRDC
+D| H.CDRSCSP
+D| H.CMC
+D| H.COMPLEX
+D| H.CTYPE
+D| H.CXXABI
+D| H.DECIMAL
+D| H.DELETE
+D| H.DEMANGLE
+D| H.DIRENT
+D| H.DSQCOMMC
+D| H.DTWLE
+D| H.ECACHCMD
+D| H.ECARTCMD
+D| H.ECHGPRF1
+D| H.ECHGRCV1
+D| H.ECHKPWD1
+D| H.ECLRMST
+D| H.ECRTPRF1
+D| H.EDBOPNDB
+D| H.EDCVARY
+D| H.EDLTKR
+D| H.EDLTPRF1
+D| H.EDLTPRF2
+D| H.EDLTRCV1
+D| H.EIM
+D| H.EIMGEPH
+D| ... (4191 more lines)
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,119,174).
+C: LIST H
+S: 550 Library H not found.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,126,150).
+C: NLST H
+S: 550 Library H not found.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,239,166).
+C: LIST {user}B
+S: 125 List started.
+D: 4958 bytes
+D| {user}       122880 26-10-23 03:20:29 *FILE      {user}B/ACTIVE
+D| {user}                                *MEM       {user}B/ACTIVE.ACTIVE
+D| {user}        32768 26-10-23 03:20:29 *FILE      {user}B/BIGORD
+D| {user}                                *MEM       {user}B/BIGORD.BIGORD
+D| {user}       122880 26-10-23 03:20:29 *FILE      {user}B/CUSBYNAME
+D| {user}                                *MEM       {user}B/CUSBYNAME.CUSBYNAME
+D| {user}       122880 26-10-23 03:20:29 *FILE      {user}B/CUSORD
+D| {user}                                *MEM       {user}B/CUSORD.CUSORD
+D| {user}       172032 26-10-23 03:20:30 *FILE      {user}B/CUSTOMER
+D| {user}                                *MEM       {user}B/CUSTOMER.CUSTOMER
+D| {user}       139264 26-10-23 03:20:29 *FILE      {user}B/EVENTS
+D| {user}                                *MEM       {user}B/EVENTS.EVENTS
+D| {user}       233472 26-10-23 03:20:31 *FILE      {user}B/FFD
+D| {user}                                *MEM       {user}B/FFD.FFD
+D| {user}        45056 26-10-23 03:20:29 *FILE      {user}B/INVENTORY
+D| {user}                                *MEM       {user}B/INVENTORY.INVENTORY
+D| {user}        32768 26-10-23 03:20:31 *FILE      {user}B/JRN
+D| {user}                                *MEM       {user}B/JRN.JRN
+D| {user}        49152 26-10-23 03:20:29 *FILE      {user}B/LOGHIST
+D| {user}                                *MEM       {user}B/LOGHIST.LOGHIST
+D| {user}        32768 26-10-23 03:20:31 *FILE      {user}B/LVLID
+D| {user}                                *MEM       {user}B/LVLID.LVLID
+D| {user}       122880 26-10-23 03:20:29 *FILE      {user}B/NOTES
+D| {user}                                *MEM       {user}B/NOTES.NOTES
+D| {user}       122880 26-10-23 03:20:29 *FILE      {user}B/ORDALL
+D| {user}                                *MEM       {user}B/ORDALL.ORDALL
+D| {user}       122880 26-10-23 03:20:29 *FILE      {user}B/ORDBYCUS
+D| {user}                                *MEM       {user}B/ORDBYCUS.ORDBYCUS
+D| {user}       172032 26-10-23 03:20:29 *FILE      {user}B/ORDERS
+D| {user}                                *MEM       {user}B/ORDERS.ORDERS
+D| {user}        32768 26-10-23 03:20:29 *FILE      {user}B/ORDJOIN
+D| {user}                                *MEM       {user}B/ORDJOIN.ORDJOIN
+D| {user}       147456 26-10-23 03:20:29 *FILE      {user}B/ORDLINE
+D| {user}                                *MEM       {user}B/ORDLINE.ORDLINE
+D| {user}       106496 26-10-23 03:20:29 *FILE      {user}B/PRDBYDESC
+D| {user}                                *MEM       {user}B/PRDBYDESC.PRDBYDESC
+D| {user}       147456 26-10-23 03:20:29 *FILE      {user}B/PRODUCT
+D| {user}                                *MEM       {user}B/PRODUCT.PRODUCT
+D| {user}        53248 26-10-23 03:20:30 *FILE      {user}B/QRES01
+D| {user}                                *MEM       {user}B/QRES01.QRES01
+D| ... (28 more lines)
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,195,182).
+C: NLST {user}B
+S: 125 List started.
+D: 869 bytes
+D| {user}B/ACTIVE.ACTIVE
+D| {user}B/BIGORD.BIGORD
+D| {user}B/CUSBYNAME.CUSBYNAME
+D| {user}B/CUSORD.CUSORD
+D| {user}B/CUSTOMER.CUSTOMER
+D| {user}B/EVENTS.EVENTS
+D| {user}B/FFD.FFD
+D| {user}B/INVENTORY.INVENTORY
+D| {user}B/JRN.JRN
+D| {user}B/LOGHIST.LOGHIST
+D| {user}B/LVLID.LVLID
+D| {user}B/NOTES.NOTES
+D| {user}B/ORDALL.ORDALL
+D| {user}B/ORDBYCUS.ORDBYCUS
+D| {user}B/ORDERS.ORDERS
+D| {user}B/ORDJOIN.ORDJOIN
+D| {user}B/ORDLINE.ORDLINE
+D| {user}B/PRDBYDESC.PRDBYDESC
+D| {user}B/PRODUCT.PRODUCT
+D| {user}B/QRES01.QRES01
+D| {user}B/QRES02.QRES02
+D| {user}B/QRES03.QRES03
+D| {user}B/QRES04.QRES04
+D| {user}B/QRES05.QRES05
+D| {user}B/QRES06.QRES06
+D| {user}B/QRES07.QRES07
+D| {user}B/QRES08.QRES08
+D| {user}B/QRES09.QRES09
+D| {user}B/QRES10.QRES10
+D| {user}B/QRES11.QRES11
+D| {user}B/QRES12.QRES12
+D| {user}B/QSQLSRC.QRESULTS
+D| {user}B/RLALOG.RLALOG
+D| {user}B/TYPES.TYPES
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,170,54).
+C: LIST QSYSINC/H
+S: 125 List started.
+D: 68003 bytes
+D| QSYS         39321600 26-10-10 00:10:31 *FILE      H
+D| QSYS                                    *MEM       H.ARM4
+D| QSYS                                    *MEM       H.ARM4EXT
+D| QSYS                                    *MEM       H.ASSERT
+D| QSYS                                    *MEM       H.BCD
+D| QSYS                                    *MEM       H.BSE
+D| QSYS                                    *MEM       H.BSEDOS
+D| QSYS                                    *MEM       H.BSEERR
+D| QSYS                                    *MEM       H.CDRCVRT
+D| QSYS                                    *MEM       H.CDRGCCN
+D| QSYS                                    *MEM       H.CDRGESP
+D| QSYS                                    *MEM       H.CDRGRDC
+D| QSYS                                    *MEM       H.CDRSCSP
+D| QSYS                                    *MEM       H.CMC
+D| QSYS                                    *MEM       H.COMPLEX
+D| QSYS                                    *MEM       H.CTYPE
+D| QSYS                                    *MEM       H.CXXABI
+D| QSYS                                    *MEM       H.DECIMAL
+D| QSYS                                    *MEM       H.DELETE
+D| QSYS                                    *MEM       H.DEMANGLE
+D| QSYS                                    *MEM       H.DIRENT
+D| QSYS                                    *MEM       H.DSQCOMMC
+D| QSYS                                    *MEM       H.DTWLE
+D| QSYS                                    *MEM       H.ECACHCMD
+D| QSYS                                    *MEM       H.ECARTCMD
+D| QSYS                                    *MEM       H.ECHGPRF1
+D| QSYS                                    *MEM       H.ECHGRCV1
+D| QSYS                                    *MEM       H.ECHKPWD1
+D| QSYS                                    *MEM       H.ECLRMST
+D| QSYS                                    *MEM       H.ECRTPRF1
+D| QSYS                                    *MEM       H.EDBOPNDB
+D| QSYS                                    *MEM       H.EDCVARY
+D| QSYS                                    *MEM       H.EDLTKR
+D| QSYS                                    *MEM       H.EDLTPRF1
+D| QSYS                                    *MEM       H.EDLTPRF2
+D| QSYS                                    *MEM       H.EDLTRCV1
+D| QSYS                                    *MEM       H.EIM
+D| QSYS                                    *MEM       H.EIMGEPH
+D| QSYS                                    *MEM       H.EJOBNTFY
+D| QSYS                                    *MEM       H.EKIBASE
+D| ... (1049 more lines)
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,96,196).
+C: NLST QSYSINC/H
+S: 125 List started.
+D: 12461 bytes
+D| H.ARM4
+D| H.ARM4EXT
+D| H.ASSERT
+D| H.BCD
+D| H.BSE
+D| H.BSEDOS
+D| H.BSEERR
+D| H.CDRCVRT
+D| H.CDRGCCN
+D| H.CDRGESP
+D| H.CDRGRDC
+D| H.CDRSCSP
+D| H.CMC
+D| H.COMPLEX
+D| H.CTYPE
+D| H.CXXABI
+D| H.DECIMAL
+D| H.DELETE
+D| H.DEMANGLE
+D| H.DIRENT
+D| H.DSQCOMMC
+D| H.DTWLE
+D| H.ECACHCMD
+D| H.ECARTCMD
+D| H.ECHGPRF1
+D| H.ECHGRCV1
+D| H.ECHKPWD1
+D| H.ECLRMST
+D| H.ECRTPRF1
+D| H.EDBOPNDB
+D| H.EDCVARY
+D| H.EDLTKR
+D| H.EDLTPRF1
+D| H.EDLTPRF2
+D| H.EDLTRCV1
+D| H.EIM
+D| H.EIMGEPH
+D| H.EJOBNTFY
+D| H.EKIBASE
+D| H.EKICPROC
+D| ... (1048 more lines)
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,245,31).
+C: LIST QSYSINC/H.SOCKET
+S: 125 Member SOCKET not found in file H in library QSYSINC.
+D: 0 bytes
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,79,223).
+C: LIST QSYSINC/H.NOSUCH
+S: 125 Member NOSUCH not found in file H in library QSYSINC.
+D: 0 bytes
+S: 250 List completed.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,84,149).
+C: LIST /home/{user}
+S: 125 List started.
+D: 149 bytes
+D| {user}        24576 26-10-22 23:28:27 *DIR       /home/{user}/qs400/
+D| {user}         8192 26-10-23 02:52:16 *DIR       /home/{user}/qstest/
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,113,15).
+C: NLST /home/{user}
+S: 125 List started.
+D: 47 bytes
+D| /home/{user}/qs400/
+D| /home/{user}/qstest/
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,36,55).
+C: LIST /QSYS.LIB/QSYSINC.LIB/H.FILE
+S: 125 List started.
+D: 77800 bytes
+D| QSYS         39321600 26-10-10 00:10:31 *FILE      H.FILE
+D| QSYS                                    *MEM       H.FILE/ARM4.MBR
+D| QSYS                                    *MEM       H.FILE/ARM4EXT.MBR
+D| QSYS                                    *MEM       H.FILE/ASSERT.MBR
+D| QSYS                                    *MEM       H.FILE/BCD.MBR
+D| QSYS                                    *MEM       H.FILE/BSE.MBR
+D| QSYS                                    *MEM       H.FILE/BSEDOS.MBR
+D| QSYS                                    *MEM       H.FILE/BSEERR.MBR
+D| QSYS                                    *MEM       H.FILE/CDRCVRT.MBR
+D| QSYS                                    *MEM       H.FILE/CDRGCCN.MBR
+D| QSYS                                    *MEM       H.FILE/CDRGESP.MBR
+D| QSYS                                    *MEM       H.FILE/CDRGRDC.MBR
+D| QSYS                                    *MEM       H.FILE/CDRSCSP.MBR
+D| QSYS                                    *MEM       H.FILE/CMC.MBR
+D| QSYS                                    *MEM       H.FILE/COMPLEX.MBR
+D| QSYS                                    *MEM       H.FILE/CTYPE.MBR
+D| QSYS                                    *MEM       H.FILE/CXXABI.MBR
+D| QSYS                                    *MEM       H.FILE/DECIMAL.MBR
+D| QSYS                                    *MEM       H.FILE/DELETE.MBR
+D| QSYS                                    *MEM       H.FILE/DEMANGLE.MBR
+D| QSYS                                    *MEM       H.FILE/DIRENT.MBR
+D| QSYS                                    *MEM       H.FILE/DSQCOMMC.MBR
+D| QSYS                                    *MEM       H.FILE/DTWLE.MBR
+D| QSYS                                    *MEM       H.FILE/ECACHCMD.MBR
+D| QSYS                                    *MEM       H.FILE/ECARTCMD.MBR
+D| QSYS                                    *MEM       H.FILE/ECHGPRF1.MBR
+D| QSYS                                    *MEM       H.FILE/ECHGRCV1.MBR
+D| QSYS                                    *MEM       H.FILE/ECHKPWD1.MBR
+D| QSYS                                    *MEM       H.FILE/ECLRMST.MBR
+D| QSYS                                    *MEM       H.FILE/ECRTPRF1.MBR
+D| QSYS                                    *MEM       H.FILE/EDBOPNDB.MBR
+D| QSYS                                    *MEM       H.FILE/EDCVARY.MBR
+D| QSYS                                    *MEM       H.FILE/EDLTKR.MBR
+D| QSYS                                    *MEM       H.FILE/EDLTPRF1.MBR
+D| QSYS                                    *MEM       H.FILE/EDLTPRF2.MBR
+D| QSYS                                    *MEM       H.FILE/EDLTRCV1.MBR
+D| QSYS                                    *MEM       H.FILE/EIM.MBR
+D| QSYS                                    *MEM       H.FILE/EIMGEPH.MBR
+D| QSYS                                    *MEM       H.FILE/EJOBNTFY.MBR
+D| QSYS                                    *MEM       H.FILE/EKIBASE.MBR
+D| ... (1049 more lines)
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,62,87).
+C: LIST /QOpenSys
+S: 125 List started.
+D: 1230 bytes
+D| QSYS             8192 26-10-09 20:53:00 *DIR       /QOpenSys/QIBM/
+D| QSECOFR         12288 26-10-19 14:20:08 *DIR       /QOpenSys/QSR/
+D| MFRILOT          8192 24-04-22 10:13:45 *DIR       /QOpenSys/Containers/
+D| QSYS            40960 26-10-10 14:53:09 *DIR       /QOpenSys/etc/
+D| RAIPX6           8192 26-10-10 14:53:09 *DIR       /QOpenSys/myApp/
+D| QSYS             8192 24-12-05 16:55:35 *DIR       /QOpenSys/pkgs/
+D| RTORREZ          8192 24-04-20 01:33:26 *DIR       /QOpenSys/rtorrez/
+D| SHIVAM           8192 26-10-10 14:56:21 *DIR       /QOpenSys/s1/
+D| QSYS             8192 24-01-19 20:05:15 *DIR       /QOpenSys/sbin/
+D| SHIVAM           8192 26-10-10 14:56:21 *DIR       /QOpenSys/t1/
+D| SHIVAM           8192 26-10-10 15:00:18 *DIR       /QOpenSys/t1.git/
+D| QSECOFR          8192 26-06-11 21:52:35 *DIR       /QOpenSys/tmp/
+D| QSYS            24576 26-10-10 14:56:21 *DIR       /QOpenSys/usr/
+D| QSYS             8192 26-10-10 15:00:51 *DIR       /QOpenSys/var/
+D| CKOHL             149 24-02-12 14:55:31 *STMF      /QOpenSys/EVFEVENT.
+D| QSYS           122880 26-10-10 15:00:19 *DIR       /QOpenSys/bin/
+D| QSYS            81920 26-10-10 15:00:19 *DIR       /QOpenSys/lib/
+D| QSYS             8192 26-10-10 15:00:51 *DIR       /QOpenSys/lib64/
+S: 250 List completed.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: CWD /QSYS.LIB/QSYSINC.LIB
+S: 250 "/QSYS.LIB/QSYSINC.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: SITE LISTFMT 1
+S: 250 Directory listing format (LISTFMT) option set to 1.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,222,133).
+C: LIST
+S: 125 List started.
+D: 298706 bytes
+D| drwx---r-x   1 QSYS     0         143360 Oct 10 00:10 ARPA
+D| -rwx---r-x   1 QSYS     0          14022 Oct 03 2021  ARPA.INET
+D| -rwx---r-x   1 QSYS     0          53546 Oct 03 2021  ARPA.NAMESER
+D| -rwx---r-x   1 QSYS     0           9840 Oct 03 2021  ARPA.REXEC
+D| drwx---r-x   1 QSYS     0        39321600 Oct 10 00:10 H
+D| -rwx---r-x   1 QSYS     0          72078 Oct 03 2021  H.ARM4
+D| -rwx---r-x   1 QSYS     0          32144 Oct 03 2021  H.ARM4EXT
+D| -rwx---r-x   1 QSYS     0           7298 Oct 03 2021  H.ASSERT
+D| -rwx---r-x   1 QSYS     0         237882 Oct 03 2021  H.BCD
+D| -rwx---r-x   1 QSYS     0           6970 Oct 03 2021  H.BSE
+D| -rwx---r-x   1 QSYS     0          13202 Oct 03 2021  H.BSEDOS
+D| -rwx---r-x   1 QSYS     0           7052 Oct 03 2021  H.BSEERR
+D| -rwx---r-x   1 QSYS     0           5658 Oct 03 2021  H.CDRCVRT
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  H.CDRGCCN
+D| -rwx---r-x   1 QSYS     0           5248 Oct 03 2021  H.CDRGESP
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  H.CDRGRDC
+D| -rwx---r-x   1 QSYS     0           5248 Oct 03 2021  H.CDRSCSP
+D| -rwx---r-x   1 QSYS     0          40180 Oct 03 2021  H.CMC
+D| -rwx---r-x   1 QSYS     0          22304 Oct 03 2021  H.COMPLEX
+D| -rwx---r-x   1 QSYS     0          16154 Oct 03 2021  H.CTYPE
+D| -rwx---r-x   1 QSYS     0          24026 Oct 03 2021  H.CXXABI
+D| -rwx---r-x   1 QSYS     0           5822 Oct 03 2021  H.DECIMAL
+D| -rwx---r-x   1 QSYS     0           3444 Oct 03 2021  H.DELETE
+D| -rwx---r-x   1 QSYS     0          57810 Oct 03 2021  H.DEMANGLE
+D| -rwx---r-x   1 QSYS     0          31160 Oct 03 2021  H.DIRENT
+D| -rwx---r-x   1 QSYS     0          13120 Oct 03 2021  H.DSQCOMMC
+D| -rwx---r-x   1 QSYS     0          22960 Oct 03 2021  H.DTWLE
+D| -rwx---r-x   1 QSYS     0           7708 Oct 03 2021  H.ECACHCMD
+D| -rwx---r-x   1 QSYS     0           7872 Oct 03 2021  H.ECARTCMD
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  H.ECHGPRF1
+D| -rwx---r-x   1 QSYS     0           6970 Oct 03 2021  H.ECHGRCV1
+D| -rwx---r-x   1 QSYS     0           6888 Oct 03 2021  H.ECHKPWD1
+D| -rwx---r-x   1 QSYS     0           6888 Oct 03 2021  H.ECLRMST
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  H.ECRTPRF1
+D| -rwx---r-x   1 QSYS     0           9512 Oct 03 2021  H.EDBOPNDB
+D| -rwx---r-x   1 QSYS     0           5822 Oct 03 2021  H.EDCVARY
+D| -rwx---r-x   1 QSYS     0           6806 Oct 03 2021  H.EDLTKR
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  H.EDLTPRF1
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  H.EDLTPRF2
+D| -rwx---r-x   1 QSYS     0           7380 Oct 03 2021  H.EDLTRCV1
+D| ... (4222 more lines)
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,75,189).
+C: NLST
+S: 125 List started.
+D: 68273 bytes
+D| ARPA.INET
+D| ARPA.NAMESER
+D| ARPA.REXEC
+D| H.ARM4
+D| H.ARM4EXT
+D| H.ASSERT
+D| H.BCD
+D| H.BSE
+D| H.BSEDOS
+D| H.BSEERR
+D| H.CDRCVRT
+D| H.CDRGCCN
+D| H.CDRGESP
+D| H.CDRGRDC
+D| H.CDRSCSP
+D| H.CMC
+D| H.COMPLEX
+D| H.CTYPE
+D| H.CXXABI
+D| H.DECIMAL
+D| H.DELETE
+D| H.DEMANGLE
+D| H.DIRENT
+D| H.DSQCOMMC
+D| H.DTWLE
+D| H.ECACHCMD
+D| H.ECARTCMD
+D| H.ECHGPRF1
+D| H.ECHGRCV1
+D| H.ECHKPWD1
+D| H.ECLRMST
+D| H.ECRTPRF1
+D| H.EDBOPNDB
+D| H.EDCVARY
+D| H.EDLTKR
+D| H.EDLTPRF1
+D| H.EDLTPRF2
+D| H.EDLTRCV1
+D| H.EIM
+D| H.EIMGEPH
+D| ... (4191 more lines)
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,139,174).
+C: LIST H
+S: 550 Library H not found.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,166,21).
+C: NLST H
+S: 550 Library H not found.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,24,86).
+C: LIST {user}B
+S: 125 List started.
+D: 4482 bytes
+D| drwx------   1 {user} 0         122880 Oct 23 03:20 ACTIVE
+D| -rwx------   1 {user} 0              0 Oct 23 03:20 ACTIVE.ACTIVE
+D| drwx------   1 {user} 0          32768 Oct 23 03:20 BIGORD
+D| -rwx------   1 {user} 0              0 Oct 23 03:20 BIGORD.BIGORD
+D| drwx------   1 {user} 0         122880 Oct 23 03:20 CUSBYNAME
+D| -rwx------   1 {user} 0              0 Oct 23 03:20 CUSBYNAME.CUSBYNAME
+D| drwx------   1 {user} 0         122880 Oct 23 03:20 CUSORD
+D| -rwx------   1 {user} 0              0 Oct 23 03:20 CUSORD.CUSORD
+D| drwx------   1 {user} 0         172032 Oct 23 03:20 CUSTOMER
+D| -rwx------   1 {user} 0           1127 Oct 23 03:20 CUSTOMER.CUSTOMER
+D| drwx------   1 {user} 0         139264 Oct 23 03:20 EVENTS
+D| -rwx------   1 {user} 0            249 Oct 23 03:20 EVENTS.EVENTS
+D| drwx------   1 {user} 0         233472 Oct 23 03:20 FFD
+D| -rwx------   1 {user} 0         181560 Oct 23 03:20 FFD.FFD
+D| drwx------   1 {user} 0          45056 Oct 23 03:20 INVENTORY
+D| -rwx------   1 {user} 0            174 Oct 23 03:20 INVENTORY.INVENTORY
+D| drwx------   1 {user} 0          32768 Oct 23 03:20 JRN
+D| -rwx------   1 {user} 0          11577 Oct 23 03:20 JRN.JRN
+D| drwx------   1 {user} 0          49152 Oct 23 03:20 LOGHIST
+D| -rwx------   1 {user} 0            452 Oct 23 03:20 LOGHIST.LOGHIST
+D| drwx------   1 {user} 0          32768 Oct 23 03:20 LVLID
+D| -rwx------   1 {user} 0          10220 Oct 23 03:20 LVLID.LVLID
+D| drwx------   1 {user} 0         122880 Oct 23 03:20 NOTES
+D| -rwx------   1 {user} 0           6204 Oct 23 03:20 NOTES.NOTES
+D| drwx------   1 {user} 0         122880 Oct 23 03:20 ORDALL
+D| -rwx------   1 {user} 0              0 Oct 23 03:20 ORDALL.ORDALL
+D| drwx------   1 {user} 0         122880 Oct 23 03:20 ORDBYCUS
+D| -rwx------   1 {user} 0              0 Oct 23 03:20 ORDBYCUS.ORDBYCUS
+D| drwx------   1 {user} 0         172032 Oct 23 03:20 ORDERS
+D| -rwx------   1 {user} 0            480 Oct 23 03:20 ORDERS.ORDERS
+D| dr-x------   1 {user} 0          32768 Oct 23 03:20 ORDJOIN
+D| -r-x------   1 {user} 0              0 Oct 23 03:20 ORDJOIN.ORDJOIN
+D| drwx------   1 {user} 0         147456 Oct 23 03:20 ORDLINE
+D| -rwx------   1 {user} 0            234 Oct 23 03:20 ORDLINE.ORDLINE
+D| drwx------   1 {user} 0         106496 Oct 23 03:20 PRDBYDESC
+D| -rwx------   1 {user} 0              0 Oct 23 03:20 PRDBYDESC.PRDBYDESC
+D| drwx------   1 {user} 0         147456 Oct 23 03:20 PRODUCT
+D| -rwx------   1 {user} 0            345 Oct 23 03:20 PRODUCT.PRODUCT
+D| drwx------   1 {user} 0          53248 Oct 23 03:20 QRES01
+D| -rwx------   1 {user} 0            966 Oct 23 03:20 QRES01.QRES01
+D| ... (28 more lines)
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,197,7).
+C: NLST {user}B
+S: 125 List started.
+D: 869 bytes
+D| {user}B/ACTIVE.ACTIVE
+D| {user}B/BIGORD.BIGORD
+D| {user}B/CUSBYNAME.CUSBYNAME
+D| {user}B/CUSORD.CUSORD
+D| {user}B/CUSTOMER.CUSTOMER
+D| {user}B/EVENTS.EVENTS
+D| {user}B/FFD.FFD
+D| {user}B/INVENTORY.INVENTORY
+D| {user}B/JRN.JRN
+D| {user}B/LOGHIST.LOGHIST
+D| {user}B/LVLID.LVLID
+D| {user}B/NOTES.NOTES
+D| {user}B/ORDALL.ORDALL
+D| {user}B/ORDBYCUS.ORDBYCUS
+D| {user}B/ORDERS.ORDERS
+D| {user}B/ORDJOIN.ORDJOIN
+D| {user}B/ORDLINE.ORDLINE
+D| {user}B/PRDBYDESC.PRDBYDESC
+D| {user}B/PRODUCT.PRODUCT
+D| {user}B/QRES01.QRES01
+D| {user}B/QRES02.QRES02
+D| {user}B/QRES03.QRES03
+D| {user}B/QRES04.QRES04
+D| {user}B/QRES05.QRES05
+D| {user}B/QRES06.QRES06
+D| {user}B/QRES07.QRES07
+D| {user}B/QRES08.QRES08
+D| {user}B/QRES09.QRES09
+D| {user}B/QRES10.QRES10
+D| {user}B/QRES11.QRES11
+D| {user}B/QRES12.QRES12
+D| {user}B/QSQLSRC.QRESULTS
+D| {user}B/RLALOG.RLALOG
+D| {user}B/TYPES.TYPES
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,254,119).
+C: LIST QSYSINC/H
+S: 125 List started.
+D: 71271 bytes
+D| drwx---r-x   1 QSYS     0        39321600 Oct 10 00:10 H
+D| -rwx---r-x   1 QSYS     0          72078 Oct 03 2021  H.ARM4
+D| -rwx---r-x   1 QSYS     0          32144 Oct 03 2021  H.ARM4EXT
+D| -rwx---r-x   1 QSYS     0           7298 Oct 03 2021  H.ASSERT
+D| -rwx---r-x   1 QSYS     0         237882 Oct 03 2021  H.BCD
+D| -rwx---r-x   1 QSYS     0           6970 Oct 03 2021  H.BSE
+D| -rwx---r-x   1 QSYS     0          13202 Oct 03 2021  H.BSEDOS
+D| -rwx---r-x   1 QSYS     0           7052 Oct 03 2021  H.BSEERR
+D| -rwx---r-x   1 QSYS     0           5658 Oct 03 2021  H.CDRCVRT
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  H.CDRGCCN
+D| -rwx---r-x   1 QSYS     0           5248 Oct 03 2021  H.CDRGESP
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  H.CDRGRDC
+D| -rwx---r-x   1 QSYS     0           5248 Oct 03 2021  H.CDRSCSP
+D| -rwx---r-x   1 QSYS     0          40180 Oct 03 2021  H.CMC
+D| -rwx---r-x   1 QSYS     0          22304 Oct 03 2021  H.COMPLEX
+D| -rwx---r-x   1 QSYS     0          16154 Oct 03 2021  H.CTYPE
+D| -rwx---r-x   1 QSYS     0          24026 Oct 03 2021  H.CXXABI
+D| -rwx---r-x   1 QSYS     0           5822 Oct 03 2021  H.DECIMAL
+D| -rwx---r-x   1 QSYS     0           3444 Oct 03 2021  H.DELETE
+D| -rwx---r-x   1 QSYS     0          57810 Oct 03 2021  H.DEMANGLE
+D| -rwx---r-x   1 QSYS     0          31160 Oct 03 2021  H.DIRENT
+D| -rwx---r-x   1 QSYS     0          13120 Oct 03 2021  H.DSQCOMMC
+D| -rwx---r-x   1 QSYS     0          22960 Oct 03 2021  H.DTWLE
+D| -rwx---r-x   1 QSYS     0           7708 Oct 03 2021  H.ECACHCMD
+D| -rwx---r-x   1 QSYS     0           7872 Oct 03 2021  H.ECARTCMD
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  H.ECHGPRF1
+D| -rwx---r-x   1 QSYS     0           6970 Oct 03 2021  H.ECHGRCV1
+D| -rwx---r-x   1 QSYS     0           6888 Oct 03 2021  H.ECHKPWD1
+D| -rwx---r-x   1 QSYS     0           6888 Oct 03 2021  H.ECLRMST
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  H.ECRTPRF1
+D| -rwx---r-x   1 QSYS     0           9512 Oct 03 2021  H.EDBOPNDB
+D| -rwx---r-x   1 QSYS     0           5822 Oct 03 2021  H.EDCVARY
+D| -rwx---r-x   1 QSYS     0           6806 Oct 03 2021  H.EDLTKR
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  H.EDLTPRF1
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  H.EDLTPRF2
+D| -rwx---r-x   1 QSYS     0           7380 Oct 03 2021  H.EDLTRCV1
+D| -rwx---r-x   1 QSYS     0         142270 Oct 03 2021  H.EIM
+D| -rwx---r-x   1 QSYS     0          12874 Oct 03 2021  H.EIMGEPH
+D| -rwx---r-x   1 QSYS     0           9184 Oct 03 2021  H.EJOBNTFY
+D| -rwx---r-x   1 QSYS     0          15170 Oct 03 2021  H.EKIBASE
+D| ... (1049 more lines)
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,93,21).
+C: NLST QSYSINC/H
+S: 125 List started.
+D: 12461 bytes
+D| H.ARM4
+D| H.ARM4EXT
+D| H.ASSERT
+D| H.BCD
+D| H.BSE
+D| H.BSEDOS
+D| H.BSEERR
+D| H.CDRCVRT
+D| H.CDRGCCN
+D| H.CDRGESP
+D| H.CDRGRDC
+D| H.CDRSCSP
+D| H.CMC
+D| H.COMPLEX
+D| H.CTYPE
+D| H.CXXABI
+D| H.DECIMAL
+D| H.DELETE
+D| H.DEMANGLE
+D| H.DIRENT
+D| H.DSQCOMMC
+D| H.DTWLE
+D| H.ECACHCMD
+D| H.ECARTCMD
+D| H.ECHGPRF1
+D| H.ECHGRCV1
+D| H.ECHKPWD1
+D| H.ECLRMST
+D| H.ECRTPRF1
+D| H.EDBOPNDB
+D| H.EDCVARY
+D| H.EDLTKR
+D| H.EDLTPRF1
+D| H.EDLTPRF2
+D| H.EDLTRCV1
+D| H.EIM
+D| H.EIMGEPH
+D| H.EJOBNTFY
+D| H.EKIBASE
+D| H.EKICPROC
+D| ... (1048 more lines)
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,72,47).
+C: LIST QSYSINC/H.SOCKET
+S: 125 Member SOCKET not found in file H in library QSYSINC.
+D: 0 bytes
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,147,148).
+C: LIST QSYSINC/H.NOSUCH
+S: 125 Member NOSUCH not found in file H in library QSYSINC.
+D: 0 bytes
+S: 250 List completed.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,229,31).
+C: LIST /home/{user}
+S: 125 List started.
+D: 123 bytes
+D| drwxrwx---   2 {user} 0          24576 Oct 22 23:28 qs400
+D| drwxrwxrwx   6 {user} 0           8192 Oct 23 02:52 qstest
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,24,222).
+C: NLST /home/{user}
+S: 125 List started.
+D: 47 bytes
+D| /home/{user}/qs400/
+D| /home/{user}/qstest/
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,125,174).
+C: LIST /QSYS.LIB/QSYSINC.LIB/H.FILE
+S: 125 List started.
+D: 73389 bytes
+D| -rwx---r-x   1 QSYS     0          72078 Oct 03 2021  ARM4.MBR
+D| -rwx---r-x   1 QSYS     0          32144 Oct 03 2021  ARM4EXT.MBR
+D| -rwx---r-x   1 QSYS     0           7298 Oct 03 2021  ASSERT.MBR
+D| -rwx---r-x   1 QSYS     0         237882 Oct 03 2021  BCD.MBR
+D| -rwx---r-x   1 QSYS     0           6970 Oct 03 2021  BSE.MBR
+D| -rwx---r-x   1 QSYS     0          13202 Oct 03 2021  BSEDOS.MBR
+D| -rwx---r-x   1 QSYS     0           7052 Oct 03 2021  BSEERR.MBR
+D| -rwx---r-x   1 QSYS     0           5658 Oct 03 2021  CDRCVRT.MBR
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  CDRGCCN.MBR
+D| -rwx---r-x   1 QSYS     0           5248 Oct 03 2021  CDRGESP.MBR
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  CDRGRDC.MBR
+D| -rwx---r-x   1 QSYS     0           5248 Oct 03 2021  CDRSCSP.MBR
+D| -rwx---r-x   1 QSYS     0          40180 Oct 03 2021  CMC.MBR
+D| -rwx---r-x   1 QSYS     0          22304 Oct 03 2021  COMPLEX.MBR
+D| -rwx---r-x   1 QSYS     0          16154 Oct 03 2021  CTYPE.MBR
+D| -rwx---r-x   1 QSYS     0          24026 Oct 03 2021  CXXABI.MBR
+D| -rwx---r-x   1 QSYS     0           5822 Oct 03 2021  DECIMAL.MBR
+D| -rwx---r-x   1 QSYS     0           3444 Oct 03 2021  DELETE.MBR
+D| -rwx---r-x   1 QSYS     0          57810 Oct 03 2021  DEMANGLE.MBR
+D| -rwx---r-x   1 QSYS     0          31160 Oct 03 2021  DIRENT.MBR
+D| -rwx---r-x   1 QSYS     0          13120 Oct 03 2021  DSQCOMMC.MBR
+D| -rwx---r-x   1 QSYS     0          22960 Oct 03 2021  DTWLE.MBR
+D| -rwx---r-x   1 QSYS     0           7708 Oct 03 2021  ECACHCMD.MBR
+D| -rwx---r-x   1 QSYS     0           7872 Oct 03 2021  ECARTCMD.MBR
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  ECHGPRF1.MBR
+D| -rwx---r-x   1 QSYS     0           6970 Oct 03 2021  ECHGRCV1.MBR
+D| -rwx---r-x   1 QSYS     0           6888 Oct 03 2021  ECHKPWD1.MBR
+D| -rwx---r-x   1 QSYS     0           6888 Oct 03 2021  ECLRMST.MBR
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  ECRTPRF1.MBR
+D| -rwx---r-x   1 QSYS     0           9512 Oct 03 2021  EDBOPNDB.MBR
+D| -rwx---r-x   1 QSYS     0           5822 Oct 03 2021  EDCVARY.MBR
+D| -rwx---r-x   1 QSYS     0           6806 Oct 03 2021  EDLTKR.MBR
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  EDLTPRF1.MBR
+D| -rwx---r-x   1 QSYS     0           5166 Oct 03 2021  EDLTPRF2.MBR
+D| -rwx---r-x   1 QSYS     0           7380 Oct 03 2021  EDLTRCV1.MBR
+D| -rwx---r-x   1 QSYS     0         142270 Oct 03 2021  EIM.MBR
+D| -rwx---r-x   1 QSYS     0          12874 Oct 03 2021  EIMGEPH.MBR
+D| -rwx---r-x   1 QSYS     0           9184 Oct 03 2021  EJOBNTFY.MBR
+D| -rwx---r-x   1 QSYS     0          15170 Oct 03 2021  EKIBASE.MBR
+D| -rwx---r-x   1 QSYS     0           6150 Oct 03 2021  EKICPROC.MBR
+D| ... (1048 more lines)
+S: 250 List completed.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,236,252).
+C: LIST /QOpenSys
+S: 125 List started.
+D: 1122 bytes
+D| drwxr-xr-x   4 QSYS     0           8192 Oct 09 20:53 QIBM
+D| d---rwx---   2 QSECOFR  0          12288 Oct 19 14:20 QSR
+D| drwxrwxrwx   3 MFRILOT  0           8192 Apr 22 2024  Containers
+D| drwxr-xr-x  22 QSYS     0          40960 Oct 10 14:53 etc
+D| drwxrwxrwx   3 RAIPX6   0           8192 Oct 10 14:53 myApp
+D| drwxr-xr-x   8 QSYS     0           8192 Dec 05 2024  pkgs
+D| drwxr-xr-x   2 RTORREZ  0           8192 Apr 20 2024  rtorrez
+D| drwxr-xr-x   3 SHIVAM   0           8192 Oct 10 14:56 s1
+D| drwxr-xr-x   2 QSYS     0           8192 Jan 19 2024  sbin
+D| drwxr-xr-x   3 SHIVAM   0           8192 Oct 10 14:56 t1
+D| drwxr-xr-x   7 SHIVAM   0           8192 Oct 10 15:00 t1.git
+D| drwxr-xr-x   2 QSECOFR  0           8192 Jun 11 21:52 tmp
+D| drwxr-xr-x  16 QSYS     0          24576 Oct 10 14:56 usr
+D| drwxr-xr-x  10 QSYS     0           8192 Oct 10 15:00 var
+D| -rw-r--r--   1 CKOHL    0            149 Feb 12 2024  EVFEVENT.
+D| lrwxrwxrwx   1 QSYS     0              7 Jan 19 2024  bin -> usr/bin
+D| lrwxrwxrwx   1 QSYS     0              7 Jan 19 2024  lib -> usr/lib
+D| lrwxrwxrwx   1 QSYS     0              9 Jan 19 2024  lib64 -> usr/lib64
+S: 250 List completed.
+C: SITE LISTFMT 0
+S: 250 Directory listing format (LISTFMT) option set to 0.
+C: CWD /QSYS.LIB/QSYSINC.LIB
+S: 250 "/QSYS.LIB/QSYSINC.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+# (a listing of QGPL, other users' objects, was cut here)
+C: QUIT
+S: 221 QUIT subcommand received.

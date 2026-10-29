@@ -1,0 +1,24 @@
+                        Work with IPv6 Connection Status                        
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   5=Display details   8=Display jobs                                           
+                                                                                
+                                                                                
+      Remote                     Remote   Local         Idle                    
+ Opt  Address                    Port     Port          Time  State             
+      *                          *        ftp-c >  000:HH:MM  Listen            
+      *                          *        telnet   000:HH:MM  Listen            
+      *                          *        ntp      000:HH:MM  *UDP              
+      *                          *        drda     000:HH:MM  Listen            
+      *                          *        ddm      002:HH:MM  Listen            
+      *                          *        ddm-ssl  000:HH:MM  Listen            
+      *                          *        as-sv >  000:HH:MM  Listen            
+      *                          *        ftps- >  000:HH:MM  Listen            
+      *                          *        telne >  000:HH:MM  Listen            
+      *                          *        ssh      025:HH:MM  Listen            
+      *                          *        3077     003:HH:MM  Listen            
+      *                          *        4000     000:HH:MM  Listen            
+                                                                        More... 
+ F3=Exit      F5=Refresh   F9=Command line   F11=Display connection type        
+ F12=Cancel   F15=Subset   F22=Display entire field   F24=More keys             
+                                                                                

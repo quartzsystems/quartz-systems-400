@@ -1,0 +1,24 @@
+                     Change POP Server Attributes (CHGPOPA)                     
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Autostart servers  . . . . . . . AUTOSTART      *NO                            
+ Number of initial servers  . . . NBRSVR         3                              
+ Inactivity timeout . . . . . . . INACTTIMO      10                             
+ Message split size . . . . . . . MSGSPLIT       *NOMAX                         
+ MIME CCSID:                      MIMECCSID                                     
+   Coded character set identifier                819                            
+   When to use  . . . . . . . . .                *BESTFIT                       
+ Allow secure sockets layer . . . ALWSSL         *YES                           
+ POP3 server bind addresses . . . BNDADR         *ANY                           
+                                                                                
+                           + for more values                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

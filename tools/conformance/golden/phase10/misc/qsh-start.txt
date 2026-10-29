@@ -1,0 +1,24 @@
+                               QSH Command Entry                                
+                                                                                
+   $                                                                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ ===>                                                                           
+                                                                                
+                                                                                
+                                                                                
+ F3=Exit   F6=Print F9=Retrieve F12=Disconnect                                  
+ F13=Clear F17=Top  F18=Bottom  F21=CL command entry                            
+                                                                                

@@ -1,0 +1,24 @@
+                       Work with Registration Information                       
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display exit point   8=Work with exit programs                             
+                                                                                
+                            Exit                                                
+      Exit                  Point                                               
+ Opt  Point                 Format    Registered  Text                          
+      QIBM_QC3_TRN_KSF      TRNK0100     *YES     Translate Keystore            
+      QIBM_QDB_CLOSE        DBCL0100     *YES     Close Database File Exit Prog 
+      QIBM_QDB_OPEN         DBOP0100     *YES     Open Database File Exit Progr 
+      QIBM_QDC_VRYEXIT      PROF0100     *YES     Vary Configuration (VRYCFG) o 
+      QIBM_QDC_VRYEXIT      PRON0100     *YES     Vary Configuration (VRYCFG) o 
+      QIBM_QDC_VRYEXIT      PSOF0200     *YES     Vary Configuration (VRYCFG) o 
+      QIBM_QDC_VRYEXIT      PSON0200     *YES     Vary configuration (VRYCFG) o 
+      QIBM_QGW_NJEOUTBOUND  NJEO0100     *YES                                   
+      QIBM_QHQ_DTAQ         DTAQ0100     *YES     Original Data Queue Server    
+      QIBM_QIMG_TRANSFORMS  XFRM0100     *YES     Exit Point for Image Print Tr 
+      QIBM_QJO_CHG_JRNRCV   CRCV0100     *YES     Change Journal Receiver       
+                                                                        More... 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+                                                                                

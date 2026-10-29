@@ -1,0 +1,24 @@
+                        Start TCP/IP File Transfer (FTP)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Remote system  . . . . . . . . . RMTSYS                                        
+                                                                                
+                                                                                
+                                                                                
+ Internet address . . . . . . . . INTNETADR                                     
+                                                                                
+ Coded character set identifier   CCSID          *DFT                           
+ Port . . . . . . . . . . . . . . PORT           *DFT                           
+ Secure connection  . . . . . . . SECCNN         *DFT                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

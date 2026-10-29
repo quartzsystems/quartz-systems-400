@@ -1,0 +1,24 @@
+                        Work with Service Table Entries                         
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   5=Display                                                                    
+                                                                                
+ Opt  Service                                  Port  Protocol                   
+                                                                                
+      are-http                                12401  TCP                        
+      are-https                               12402  TCP                        
+      are-ias                                 12405  TCP                        
+      are-ias-admin                           12403  TCP                        
+      are-ias-ssl                             12404  TCP                        
+      as-admin-http                            2001  tcp                        
+      as-admin-http                            2001  udp                        
+      as-admin-https                           2010  tcp                        
+      as-admin-https                           2010  udp                        
+      as-admin1-http                           2002  tcp                        
+      as-admin1-http                           2002  udp                        
+                                                                        More... 
+ Parameters for options 1 and 4 or command                                      
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F6=Print list   F9=Retrieve   F12=Cancel    
+ F17=Top   F18=Bottom                                                           
+                                                                                

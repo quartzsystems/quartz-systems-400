@@ -1,0 +1,24 @@
+                        Change TCP/IP Domain (CHGTCPDMN)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Host name  . . . . . . . . . . . HOSTNAME       'WWW'                          
+                                                                                
+ Domain name  . . . . . . . . . . DMNNAME        'PUB400.COM'                   
+                                                                                
+                                                                                
+                                                                                
+ Domain search list . . . . . . . DMNSCHLIST     'RZKH.DE'                      
+                                                                                
+                                                                                
+                                                                                
+ Host name search priority  . . . HOSTSCHPTY     *LOCAL                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

@@ -1,0 +1,24 @@
+                            Work with Exit Programs                             
+                                                                                
+ Exit point:   QIBM_QTMF_SERVER_REQ     Format:   VLRQ0100                      
+                                                                                
+ Type options, press Enter.                                                     
+   1=Add   4=Remove   5=Display   10=Replace                                    
+                                                                                
+               Exit                                                             
+             Program     Exit                                                   
+ Opt          Number     Program        Library                                 
+                                                                                
+                                                                                
+   (No exit programs found.)                                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh   F9=Retrieve   F12=Cancel                    
+                                                                                

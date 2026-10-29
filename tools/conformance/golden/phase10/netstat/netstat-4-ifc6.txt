@@ -1,0 +1,24 @@
+                        Work with IPv6 Interface Status                         
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   5=Display details   8=Display associated IPv6 routes                         
+   12=Work with configuration status   14=Display multicast groups              
+                                                                                
+                                                                                
+      Internet                          Prefix     Line      Interface          
+ Opt  Address                           Length  Description  Status             
+      ::1                                  128  *LOOPBACK    Active             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit      F5=Refresh   F9=Command line   F11=Display Virtual LAN ID         
+ F12=Cancel   F13=Sort by column   F22=Display entire field   F24=More keys     
+                                                                                

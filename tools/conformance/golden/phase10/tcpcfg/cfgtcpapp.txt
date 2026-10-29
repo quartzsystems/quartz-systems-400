@@ -1,0 +1,24 @@
+                         Configure TCP/IP Applications                          
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Configure SNMP agent                                                   
+      2. Configure RouteD                                                       
+                                                                                
+      4. Configure BOOTP                                                        
+      5. Change DDM TCP attributes                                              
+                                                                                
+     10. Change FTP attributes                                                  
+     11. Configure TELNET                                                       
+     12. Configure SMTP                                                         
+     13. Change LPD attributes                                                  
+                                                                                
+     16. Change POP attributes                                                  
+     17. Change REXEC attributes                                                
+                                                                                
+                                                                        More... 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+                                                                                

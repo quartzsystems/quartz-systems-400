@@ -1,0 +1,24 @@
+                      Send TCP/IP Spooled File (SNDTCPSPLF)                     
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Remote system  . . . . . . . . . RMTSYS                                        
+                                                                                
+                                                                                
+                                                                                
+ Printer queue  . . . . . . . . . PRTQ                                          
+                                                                                
+                                                                                
+                                                                                
+ Spooled file . . . . . . . . . . FILE                                          
+ Job name . . . . . . . . . . . . JOB            *                              
+   User . . . . . . . . . . . . .                                               
+   Number . . . . . . . . . . . .                                               
+ Spooled file number  . . . . . . SPLNBR         *ONLY                          
+ Job system name  . . . . . . . . JOBSYSNAME     *ONLY                          
+                                                                                
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

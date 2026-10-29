@@ -1,0 +1,6 @@
+# qsh: uname -a; uname -s; uname -r; uname -v
+OS400 WWW 5 7 0078000EA841
+OS400
+5
+7
+exit=0

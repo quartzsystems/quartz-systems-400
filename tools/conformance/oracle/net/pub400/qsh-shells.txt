@@ -1,0 +1,8 @@
+# qsh: ls -la /usr/bin/qsh /usr/bin/sh /QOpenSys/usr/bin/sh /QOpenSys/usr/bin/bsh /QOpenSys/usr/bin/ksh /QOpenSys/pkgs/bin/bash
+-rwxr-xr-x  1 QSYS  0               6996373 Mar 25  2025 /QOpenSys/pkgs/bin/bash
+lrwxrwxrwx  1 QSYS  0                    38 Apr 23  2016 /QOpenSys/usr/bin/bsh -> ../../QIBM/ProdData/OS400/PASE/bin/bsh
+lrwxrwxrwx  1 QSYS  0                    38 Apr 23  2016 /QOpenSys/usr/bin/ksh -> ../../QIBM/ProdData/OS400/PASE/bin/ksh
+lrwxrwxrwx  1 QSYS  0                    38 Apr 23  2016 /QOpenSys/usr/bin/sh -> ../../QIBM/ProdData/OS400/PASE/bin/ksh
+lrwxrwxrwx  1 QSYS  0                    31 Apr 23  2016 /usr/bin/qsh -> /QSYS.LIB/QSHELL.LIB/QZSHSH.PGM
+lrwxrwxrwx  1 QSYS  0                    31 Apr 23  2016 /usr/bin/sh -> /QSYS.LIB/QSHELL.LIB/QZSHSH.PGM
+exit=0

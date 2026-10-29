@@ -1,0 +1,24 @@
+                            Change DDM File (CHGDDMF)                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ DDM file . . . . . . . . . . . . FILE                                          
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Remote file:                     RMTFILE                                       
+   File . . . . . . . . . . . . .                *SAME                          
+     Library  . . . . . . . . . .                                               
+   Nonstandard file 'name'  . . .                                               
+                                                                                
+                                                                                
+                                                                                
+ Remote location:                 RMTLOCNAME                                    
+   Name or address  . . . . . . .                *SAME                          
+                                                                                
+                                                                                
+                                                                                
+   Type . . . . . . . . . . . . .                *SAME                          
+ Record format level check  . . . LVLCHK         *SAME                          
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

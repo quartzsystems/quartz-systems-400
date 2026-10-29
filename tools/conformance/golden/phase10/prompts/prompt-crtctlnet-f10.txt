@@ -1,0 +1,24 @@
+                      Create Ctl Desc (Network) (CRTCTLNET)                     
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Controller description . . . . . CTLD                                          
+ Online at IPL  . . . . . . . . . ONLINE         *YES                           
+ Attached line  . . . . . . . . . LINE                                          
+ Connection response timer  . . . CNNRSPTMR      170                            
+ Text 'description' . . . . . . . TEXT           *BLANK                         
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Attached devices . . . . . . . . DEV                                           
+                           + for more values                                    
+ Authority  . . . . . . . . . . . AUT            *CHANGE                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

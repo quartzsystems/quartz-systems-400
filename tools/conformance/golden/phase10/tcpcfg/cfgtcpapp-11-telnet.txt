@@ -1,0 +1,24 @@
+                            Configure TCP/IP TELNET                             
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+   Work with associated system values:                                          
+     10. Autoconfigure virtual devices                                          
+     11. Limit security officer device access                                   
+     12. Inactive job time-out                                                  
+     13. Inactive job message queue                                             
+     14. Limit device sessions                                                  
+     15. Action to take for failed sign-on attempts                             
+     16. Maximum sign-on attempts allowed                                       
+     17. Remote sign-on control                                                 
+     18. Device I/O error action                                                
+     19. Time interval before disconnected jobs end                             
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+ (C) COPYRIGHT IBM CORP. 1987, 2021.                                            

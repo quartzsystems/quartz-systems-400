@@ -1,0 +1,24 @@
+                         Display TCP Connection Status                          
+                                                             System:   SYSNAME  
+ Bytes out . . . . . . . . . . . . . . . . . . . :   N                          
+   Outgoing bytes buffered . . . . . . . . . . . :     N                        
+   User send next  . . . . . . . . . . . . . . . :     N                        
+   Send next . . . . . . . . . . . . . . . . . . :     N                        
+   Send unacknowledged . . . . . . . . . . . . . :     N                        
+   Outgoing push number  . . . . . . . . . . . . :     N                        
+   Outgoing urgency number . . . . . . . . . . . :     N                        
+   Outgoing window number  . . . . . . . . . . . :     N                        
+ Bytes in  . . . . . . . . . . . . . . . . . . . :   N                          
+   Incoming bytes buffered . . . . . . . . . . . :     N                        
+   Receive next  . . . . . . . . . . . . . . . . :     N                        
+   User receive next . . . . . . . . . . . . . . :     N                        
+   Incoming push number  . . . . . . . . . . . . :     N                        
+   Incoming urgency number . . . . . . . . . . . :     N                        
+   Incoming window number  . . . . . . . . . . . :     N                        
+                                                                                
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+ F3=Exit      F5=Refresh   F6=Print      F8=Display jobs   F9=Command line      
+ F12=Cancel   F14=Display port numbers   F24=More keys                          
+                                                                                

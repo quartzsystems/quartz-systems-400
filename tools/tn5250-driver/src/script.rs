@@ -27,6 +27,11 @@
 //! echo text
 //! {user}                    in any step: the target's user name, so a
 //!                           script never holds the account itself
+//! {env:NAME}                in any step: the environment variable NAME
+//! pick "TEXT" VALUE         type VALUE into the first input field on
+//!                           the first row showing TEXT (a list option)
+//! seek "TEXT" N [KEY]       press KEY (pgdn) at most N times until TEXT shows
+//!                           (pick and seek: `re:` before TEXT makes it a regex)
 //! continue                  keep going after a failed step (the script
 //!                           still counts as failed at the end)
 //! ```
@@ -168,7 +173,7 @@ pub fn run(s: &mut Session, ctx: &mut Context, text: &str) -> Result<()> {
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
-        let expanded = line.replace("{user}", &ctx.user);
+        let expanded = expand_env(&line.replace("{user}", &ctx.user));
         if let Err(e) = step(s, ctx, &expanded).with_context(|| format!("line {}: {line}", i + 1)) {
             if ctx.continue_on_error {
                 println!("  step failed, going on: {e:#}");
@@ -198,6 +203,59 @@ fn step(s: &mut Session, ctx: &mut Context, line: &str) -> Result<()> {
                 bail!("did not see {want:?}");
             }
             s.settle(Duration::from_millis(150))?;
+        }
+        "pick" => {
+            let (text, value) = match rest.strip_prefix('"') {
+                Some(r) => r.split_once('"').context("pick wants \"TEXT\" VALUE")?,
+                None => rest.split_once(char::is_whitespace).context("pick wants TEXT VALUE")?,
+            };
+            s.wait_unlocked(ctx.timeout)?;
+            let cols = s.term.cols();
+            let row = s
+                .term
+                .text_rows()
+                .iter()
+                .position(|r| matcher(text).is_some_and(|m| m(r)))
+                .with_context(|| format!("no row shows {text:?}"))?;
+            let start = s
+                .term
+                .fields()
+                .iter()
+                .map(|f| f.start)
+                .find(|&a| a / cols == row)
+                .with_context(|| format!("row {} has no input field", row + 1))?;
+            s.term.set_cursor(row + 1, start % cols + 1);
+            check(s.type_str(value.trim())?)?;
+        }
+        "seek" => {
+            let (text, n) = match rest.strip_prefix('"') {
+                Some(r) => r.split_once('"').context("seek wants \"TEXT\" N")?,
+                None => rest.split_once(char::is_whitespace).context("seek wants TEXT N")?,
+            };
+            let mut it = n.split_whitespace();
+            let n: u32 = it
+                .next()
+                .unwrap_or("")
+                .parse()
+                .context("seek wants a page count")?;
+            let k = match it.next() {
+                Some(name) => key_named(name).ok_or_else(|| anyhow!("unknown key {name}"))?,
+                None => Key::PageDown,
+            };
+            let mut found = false;
+            for _ in 0..=n {
+                s.wait_unlocked(ctx.timeout)?;
+                s.settle(Duration::from_millis(500))?;
+                let m = matcher(text).context("a bad regex")?;
+                if s.term.text_rows().iter().any(|r| m(r)) {
+                    found = true;
+                    break;
+                }
+                check(s.key(k)?)?;
+            }
+            if !found {
+                bail!("{text:?} did not show within {n} pages");
+            }
         }
         "unlock" => {
             if !s.wait_unlocked(ctx.timeout)? {
@@ -357,6 +415,37 @@ fn step(s: &mut Session, ctx: &mut Context, line: &str) -> Result<()> {
     Ok(())
 }
 
+/// A row test: a substring, or a regex after `re:`.
+type RowTest = Box<dyn Fn(&str) -> bool>;
+
+fn matcher(text: &str) -> Option<RowTest> {
+    if let Some(p) = text.strip_prefix("re:") {
+        let re = regex::Regex::new(p).ok()?;
+        Some(Box::new(move |r: &str| re.is_match(r)))
+    } else {
+        let t = text.to_string();
+        Some(Box::new(move |r: &str| r.contains(&t)))
+    }
+}
+
+/// Replace each `{env:NAME}` with the variable's value (empty if unset).
+fn expand_env(line: &str) -> String {
+    let mut out = String::new();
+    let mut rest = line;
+    while let Some(i) = rest.find("{env:") {
+        out.push_str(&rest[..i]);
+        let tail = &rest[i + 5..];
+        let Some(j) = tail.find('}') else {
+            out.push_str(&rest[i..]);
+            return out;
+        };
+        out.push_str(&std::env::var(&tail[..j]).unwrap_or_default());
+        rest = &tail[j + 1..];
+    }
+    out.push_str(rest);
+    out
+}
+
 fn check(r: KeyResult) -> Result<()> {
     match r {
         KeyResult::Done | KeyResult::Sent => Ok(()),
@@ -374,6 +463,12 @@ mod tests {
         assert_eq!(key_named("F12"), Some(Key::F(12)));
         assert_eq!(key_named("pgdn"), Some(Key::PageDown));
         assert_eq!(key_named("f25"), None);
+    }
+
+    #[test]
+    fn expands_env() {
+        assert_eq!(expand_env("a {env:QS_DRIVER_NO_SUCH} b"), "a  b");
+        assert_eq!(expand_env("no vars"), "no vars");
     }
 
     #[test]

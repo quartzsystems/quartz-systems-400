@@ -1,0 +1,24 @@
+                         Verify TCP/IP Connection (PING)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Remote system  . . . . . . . . . RMTSYS                                        
+                                                                                
+                                                                                
+                                                                                
+ Remote internet address  . . . . INTNETADR                                     
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Address version format . . . . . ADRVERFMT      *CALC                          
+ Message mode:                    MSGMODE                                       
+   Response message detail  . . .                *VERBOSE                       
+   Summary, if response errors  .                *COMP                          
+ Packet length (in bytes) . . . . PKTLEN         256                            
+ Number of packets  . . . . . . . NBRPKT         5                              
+ Wait time (in seconds) . . . . . WAITTIME       1                              
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

@@ -1,0 +1,24 @@
+                            Display Resource Detail                             
+                                                             System:   SYSNAME  
+ Resource name  . . . . . . . :   CMB09                                         
+ Text . . . . . . . . . . . . :   Comm Processor                                
+ Type-model . . . . . . . . . :   6B03-001                                      
+ Serial number  . . . . . . . :   00-00000                                      
+ Part number  . . . . . . . . :                                                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Location :   U9824.22A.78EA841-V22-C1                                          
+                                                                                
+                                                                                
+ Logical address:                                                               
+  SPD bus:                                                                      
+   System bus                       255                                         
+   System board                     128                                         
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F5=Refresh   F6=Print   F12=Cancel                                   
+                                                                                

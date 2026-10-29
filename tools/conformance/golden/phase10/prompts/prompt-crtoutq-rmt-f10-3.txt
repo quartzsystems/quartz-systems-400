@@ -1,0 +1,24 @@
+                          Create Output Queue (CRTOUTQ)                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Writers to autostart . . . . . . AUTOSTRWTR     *NONE                          
+ Queue for writer messages  . . . MSGQ           QSYSOPR                        
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Connection type  . . . . . . . . CNNTYPE        *SNA                           
+ Destination type . . . . . . . . DESTTYPE       *OS400                         
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Messages pending on other displays.                                            

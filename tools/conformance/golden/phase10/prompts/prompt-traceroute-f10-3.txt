@@ -1,0 +1,24 @@
+                         Trace TCP/IP Route (TRACEROUTE)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Source IP address  . . . . . . . LCLINTNETA     *ANY                           
+                                                                                
+ Base remote port . . . . . . . . RMTPORT        33434                          
+ Lookup host names  . . . . . . . NAMELOOKUP     *YES                           
+ Probing protocol . . . . . . . . PROBEPCL       *ICMP                          
+ Allow fragmentation  . . . . . . FRAGMENT       *TCPA                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Messages pending on other displays.                                            

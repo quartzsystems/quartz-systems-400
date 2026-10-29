@@ -1,0 +1,24 @@
+                       Change TCP/IP Attributes (CHGTCPA)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ TCP keep alive . . . . . . . . . TCPKEEPALV     1                              
+ TCP urgent pointer . . . . . . . TCPURGPTR      *BSD                           
+ TCP receive buffer size  . . . . TCPRCVBUF      131072                         
+ TCP send buffer size . . . . . . TCPSNDBUF      131072                         
+ TCP R1 retransmission count  . . TCPR1CNT       5                              
+ TCP R2 retransmission count  . . TCPR2CNT       10                             
+ TCP minimum retransmit time  . . TCPMINRTM      1000                           
+ TCP time-wait timeout  . . . . . TCPCLOTIMO     30                             
+ TCP close connection message . . TCPCNNMSG      *NONE                          
+ UDP checksum . . . . . . . . . . UDPCKS         *YES                           
+ Path MTU discovery:              IPPATHMTU                                     
+   Enablement . . . . . . . . . .                *YES                           
+   Interval . . . . . . . . . . .                10                             
+ IP datagram forwarding . . . . . IPDTGFWD       *NO                            
+ IP source routing  . . . . . . . IPSRCRTG       *YES                           
+ IP reassembly time-out . . . . . IPRSBTIMO      10                             
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

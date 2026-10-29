@@ -1,0 +1,24 @@
+                Work with Relational Database Directory Entries                 
+                                                                                
+ Position to  . . . . . .                                                       
+                                                                                
+ Type options, press Enter.                                                     
+   1=Add   2=Change   4=Remove   5=Display details   6=Print details            
+                                                                                
+                             Remote                                             
+ Option  Entry               Location                  Text                     
+                                                                                
+         PUB400              *LOCAL                    please do not change|    
+         RZKHCOCKPIT         cockpit.rzkh.de                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F5=Refresh   F6=Print list   F12=Cancel   F22=Display entire field   
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

@@ -1,0 +1,24 @@
+                         Display Default Route Details                          
+                                                             System:   SYSNAME  
+ Route information:                                                             
+   Route destination . . . . . . . :   *DFTROUTE                                
+   Order used  . . . . . . . . . . :   1                                        
+   Next hop  . . . . . . . . . . . :   185.113.5.253                            
+   Type of service . . . . . . . . :   *NORMAL                                  
+   Route available . . . . . . . . :   *YES                                     
+   Route type  . . . . . . . . . . :   *DFTROUTE                                
+   Route source  . . . . . . . . . :   *CFG                                     
+   Change date/time  . . . . . . . :   MM/DD/YY  HH:MM:SS                       
+   Route maximum transmission unit :   1500                                     
+   Duplicate route priority  . . . :   5                                        
+   Text description  . . . . . . . :   *NONE                                    
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Command line   F12=Cancel                              
+                                                                                

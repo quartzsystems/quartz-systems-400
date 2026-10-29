@@ -1,0 +1,24 @@
+                        Work with IPv4 Connection Status                        
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   5=Display details   8=Display jobs                                           
+                                                                                
+                                                                                
+      Remote           Remote  Local            Local                           
+ Opt  Address           Port   Address           Port  Type                     
+      *                     *  *                   21  *TCP                     
+      *                     *  *                   23  *TCP                     
+      *                     *  *                   80  *TCP                     
+      *                     *  *                  123  *UDP                     
+      *                     *  *                  443  *TCP                     
+      *                     *  *                  446  *TCP                     
+      *                     *  *                  447  *TCP                     
+      *                     *  *                  448  *TCP                     
+      *                     *  *                  449  *TCP                     
+      *                     *  *                  657  *TCP                     
+      *                     *  *                  990  *TCP                     
+      *                     *  *                  992  *TCP                     
+                                                                        More... 
+ F3=Exit      F5=Refresh   F9=Command line   F11=Display connection state       
+ F12=Cancel   F15=Subset   F20=Work with IPv6 connections   F24=More keys       
+                                                                                

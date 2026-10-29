@@ -1,0 +1,24 @@
+                         Configure TCP/IP Applications                          
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+     19. Change SNTP attributes                                                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+                                                                                

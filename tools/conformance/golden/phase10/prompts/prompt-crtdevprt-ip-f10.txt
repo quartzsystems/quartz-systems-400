@@ -1,0 +1,24 @@
+                    Create Device Desc (Printer) (CRTDEVPRT)                    
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Device description . . . . . . . DEVD                                          
+ Device class . . . . . . . . . . DEVCLS       > *LAN                           
+ Device type  . . . . . . . . . . TYPE         > 3812                           
+ Device model . . . . . . . . . . MODEL        > 1                              
+ LAN attachment . . . . . . . . . LANATTACH    > *IP                            
+ Port number  . . . . . . . . . . PORT                                          
+ Online at IPL  . . . . . . . . . ONLINE         *YES                           
+ Font:                            FONT                                          
+   Identifier . . . . . . . . . .                                               
+   Point size . . . . . . . . . .                *NONE                          
+ Form feed  . . . . . . . . . . . FORMFEED       *TYPE                          
+ Separator drawer . . . . . . . . SEPDRAWER      *FILE                          
+ Separator program  . . . . . . . SEPPGM         *NONE                          
+   Library  . . . . . . . . . . .                                               
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

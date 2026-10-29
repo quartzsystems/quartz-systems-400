@@ -1,0 +1,24 @@
+                            Create DDM File (CRTDDMF)                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ DDM file . . . . . . . . . . . . FILE                                          
+   Library  . . . . . . . . . . .                  *CURLIB                      
+ Remote file:                     RMTFILE                                       
+   File . . . . . . . . . . . . .                                               
+     Library  . . . . . . . . . .                                               
+   Nonstandard file 'name'  . . .                                               
+                                                                                
+                                                                                
+                                                                                
+ Remote location:                 RMTLOCNAME                                    
+   Name or address  . . . . . . .                                               
+                                                                                
+                                                                                
+                                                                                
+   Type . . . . . . . . . . . . .                *SNA                           
+ Relational database  . . . . . . RDB                                           
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

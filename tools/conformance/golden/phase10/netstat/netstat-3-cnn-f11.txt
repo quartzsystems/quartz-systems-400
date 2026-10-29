@@ -1,0 +1,24 @@
+                        Work with IPv4 Connection Status                        
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   5=Display details   8=Display jobs                                           
+                                                                                
+                                                                                
+      Remote           Remote     Local                                         
+ Opt  Address          Port       Port       User         Bytes Out    Bytes In 
+      *                *          ftp-con >  QTCP                 0           0 
+      *                *          telnet     QTCP                 0           0 
+      *                *          www-http   QTMHHTTP             0           0 
+      *                *          ntp        QNTP             15312       27565 
+      *                *          https      QTMHHTTP             0           0 
+      *                *          drda       QUSER                0           0 
+      *                *          ddm        QUSER                0           0 
+      *                *          ddm-ssl    QUSER                0           0 
+      *                *          as-svrmap  QUSER                0           0 
+      *                *          rmc        QSYS                 0           0 
+      *                *          ftps-co >  QTCP                 0           0 
+      *                *          telnet- >  QTCP                 0           0 
+                                                                        More... 
+ F3=Exit      F5=Refresh   F9=Command line     F11=Display connection type      
+ F12=Cancel   F20=Work with IPv6 connections   F24=More keys                    
+                                                                                

@@ -1,0 +1,24 @@
+                       Change TCP/IP Attributes (CHGTCPA)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ ICMPv6 error msg burst limit . . IP6ERRLMT      10                             
+ ICMPv6 error msg send rate . . . IP6ERRRATE     10                             
+ IPv6 hop limit . . . . . . . . . IP6HOPLMT      64                             
+ IPv6 dup route load sharing  . . IP6DUPRTLS     *RTR                           
+ IPv6 temp addr valid lifetime  . IP6TMPAVL      7,0                            
+ IPv6 temp addr pref lifetime . . IP6TMPAPL      1,0                            
+ IPv6 temp addr excluded prefix:  IP6TMPAXP                                     
+   IPv6 prefix  . . . . . . . . .                *SAME                          
+                                                                                
+   Address prefix length  . . . .                                               
+                           + for more values                                    
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ IP QoS datagram batching . . . . IPQOSBCH       *NORMAL                        
+ IP QoS timer resolution  . . . . IPQOSTMR       100                            
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

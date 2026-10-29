@@ -1,0 +1,24 @@
+                         Change TCP/IP Route (CHGTCPRTE)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Route destination  . . . . . . . RTEDEST                                       
+                                                                                
+ Subnet mask  . . . . . . . . . . SUBNETMASK     *NONE                          
+ Type of service  . . . . . . . . TOS            *NORMAL                        
+ Next hop . . . . . . . . . . . . NEXTHOP                                       
+                                                                                
+ Address prefix length  . . . . . ADRPFXLEN      64                             
+ Preferred binding interface  . . BINDIFC        *NONE                          
+ Binding line description:        BINDLIND                                      
+   Binding line description . . .                                               
+   Virtual LAN identifier . . . .                *NONE                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

@@ -1,0 +1,24 @@
+                               Display Attributes                               
+                                                                                
+ Object . . . . . . :   /home/USERNAME/qsnet.txt                                
+                                                                                
+ Authority collection value . . . . . . :   *NONE                               
+                                                                                
+ Object domain  . . . . . . . . . . . . :   *SYSTEM                             
+                                                                                
+ Number of hard links . . . . . . . . . :   1                                   
+                                                                                
+                                                                                
+ Set effective user ID  . . . . . . . . :   No                                  
+ Set effective group ID . . . . . . . . :   No                                  
+ Restricted rename and unlink . . . . . :   No                                  
+                                                                                
+ Last used date . . . . . . . . . . . . :   MM/DD/YY                            
+ Days used count  . . . . . . . . . . . :   1                                   
+   Reset date . . . . . . . . . . . . . :                                       
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel   F22=Display entire field                                
+                                                                                

@@ -1,0 +1,24 @@
+                              Work with Authority                               
+                                                                                
+ Object . . . . . . . . . . . . :   /home/USERNAME/qsnet.txt                    
+ Type . . . . . . . . . . . . . :   STMF                                        
+ Owner  . . . . . . . . . . . . :   USERNAME                                    
+ Primary group  . . . . . . . . :   *NONE                                       
+ Authorization list . . . . . . :   *NONE                                       
+                                                                                
+ Type options, press Enter.                                                     
+   1=Add user   2=Change user authority   4=Remove user                         
+                                                                                
+                    Data     --Object Authorities--                             
+ Opt  User        Authority  Exist  Mgt  Alter  Ref                             
+                                                                                
+      *PUBLIC     *EXCLUDE                                                      
+      USERNAME    *RWX         X     X     X     X                              
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F5=Refresh      F9=Retrieve                              
+ F11=Display detail data authorities   F12=Cancel   F24=More keys               
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

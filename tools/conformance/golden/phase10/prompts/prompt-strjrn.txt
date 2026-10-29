@@ -1,0 +1,24 @@
+                             Start Journal (STRJRN)                             
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Objects:                         OBJ                                           
+   Name . . . . . . . . . . . . .                                               
+                                                                                
+   Include or omit  . . . . . . .                *INCLUDE                       
+                           + for more values                                    
+ File identifier  . . . . . . . . OBJFID                                        
+                                                                                
+                           + for more values                                    
+                                                                                
+ Journal  . . . . . . . . . . . . JRN                                           
+                                                                                
+ Directory subtree  . . . . . . . SUBTREE        *NONE                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

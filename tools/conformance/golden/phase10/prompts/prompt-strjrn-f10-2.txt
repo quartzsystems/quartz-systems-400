@@ -1,0 +1,24 @@
+                             Start Journal (STRJRN)                             
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Name pattern:                    PATTERN                                       
+   Pattern  . . . . . . . . . . .                *                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+  ...                                                                           
+   Include or omit  . . . . . . .                *INCLUDE                       
+                           + for more values                                    
+ New objects inherit journaling   INHERIT        *NO                            
+ Images . . . . . . . . . . . . . IMAGES         *AFTER                         
+ Omit journal entry . . . . . . . OMTJRNE        *NONE                          
+ Logging level  . . . . . . . . . LOGLVL         *ERRORS                        
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

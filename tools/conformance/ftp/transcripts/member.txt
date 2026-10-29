@@ -1,0 +1,218 @@
+# session: member
+# source: pub400 V7R5M0, port 21, 2026-10-29
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SITE NAMEFMT 0
+S: 550 Current directory requires name format 1.
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: PWD
+S: 257 "{user}B" is current library.
+C: QUOTE RCMD CHKOBJ OBJ({user}B) OBJTYPE(*LIB)
+S: 500 Subcommand QUOT not valid.
+C: RCMD CHKOBJ OBJ({user}B) OBJTYPE(*LIB)
+S: 250 Command CHKOBJ OBJ({user}B) OBJTYPE(*LIB) successful.
+C: RCMD CHKOBJ OBJ({user}B/NOSUCH) OBJTYPE(*FILE)
+S: 550-Error occurred on command CHKOBJ OBJ({user}B/NOSUCH) OBJTYPE(*FILE).
+S: 550 Object NOSUCH in library {user}B not found..
+C: RCMD DSPLIBL
+S: 250 Command DSPLIBL successful.
+C: RCMD NOSUCHCMD
+S: 550-Error occurred on command NOSUCHCMD.
+S: 550 Error found on NOSUCHCMD command..
+C: RCMD CRTSRCPF FILE({user}B/QSFTPSRC) RCDLEN(112) TEXT('ftp probe')
+S: 250 Command CRTSRCPF FILE({user}B/QSFTPSRC) RCDLEN(112) TEXT('ftp probe') successful.
+C: CWD {user}B
+S: 250 "{user}B" is current library.
+C: TYPE A
+S: 200 Representation type is ASCII nonprint.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,125,63).
+C: STOR QSFTPSRC.QSFTP
+S: 150 Sending file to member QSFTP in file QSFTPSRC in library {user}B.
+D> 54 bytes sent
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,97,14).
+C: LIST QSFTPSRC
+S: 550 Library QSFTPSRC not found.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,46,183).
+C: RETR QSFTPSRC.QSFTP
+S: 150 Retrieving member QSFTP in file QSFTPSRC in library {user}B.
+D: 54 bytes
+D| Quartz FTP probe line 1
+D| second line, 2
+D| 
+D| last line
+S: 226 File transfer completed successfully.
+C: TYPE E
+S: 200 Representation type is EBCDIC nonprint.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,200,23).
+C: RETR QSFTPSRC.QSFTP
+S: 150 Retrieving member QSFTP in file QSFTPSRC in library {user}B.
+D: 50 bytes (hex)
+D| d8a48199a3a940c6e3d7409799968285409389958540f115a285839695844093
+D| 8995856b40f215159381a2a3409389958515
+S: 226 File transfer completed successfully.
+C: TYPE A
+S: 200 Representation type is ASCII nonprint.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,199,197).
+C: APPE QSFTPSRC.QSFTP
+S: 150 Sending file to member QSFTP in file QSFTPSRC in library {user}B.
+D> 10 bytes sent
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,143,13).
+C: RETR QSFTPSRC.QSFTP
+S: 150 Retrieving member QSFTP in file QSFTPSRC in library {user}B.
+D: 64 bytes
+D| Quartz FTP probe line 1
+D| second line, 2
+D| 
+D| last line
+D| appended
+S: 226 File transfer completed successfully.
+C: SIZE QSFTPSRC.QSFTP
+S: 500 Subcommand SIZE not valid.
+C: MDTM QSFTPSRC.QSFTP
+S: 500 Subcommand MDTM not valid.
+C: RNFR QSFTPSRC.QSFTP
+S: 350 RNFR member QSFTP in file QSFTPSRC in library {user}B accepted.  Enter new name using RNTO subcommand.
+C: RNTO QSFTPSRC.QSFTP2
+S: 250 Member QSFTP in file QSFTPSRC in library {user}B renamed as {user}B/QSFTPSRC.QSFTP2.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,208,55).
+C: LIST QSFTPSRC
+S: 550 Library QSFTPSRC not found.
+C: DELE QSFTPSRC.QSFTP2
+S: 250 Member QSFTP2 in file QSFTPSRC in library {user}B deleted.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,66,126).
+C: STOR QSFTPDTA
+S: 150 Sending file to member QSFTPDTA in file QSFTPDTA in library {user}B.
+D> 54 bytes sent
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,250,191).
+C: LIST QSFTPDTA
+S: 550 Library QSFTPDTA not found.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,82,111).
+C: RETR QSFTPDTA
+S: 150 Retrieving member QSFTPDTA in file QSFTPDTA in library {user}B.
+D: 54 bytes
+D| Quartz FTP probe line 1
+D| second line, 2
+D| 
+D| last line
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,154,92).
+C: STOR QSFTPDT2.MBR2
+S: 150 Sending file to member MBR2 in file QSFTPDT2 in library {user}B.
+D> 54 bytes sent
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,27,142).
+C: LIST QSFTPDT2
+S: 550 Library QSFTPDT2 not found.
+C: TYPE I
+S: 200 Representation type is binary IMAGE.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,52,143).
+C: RETR QSFTPDTA
+S: 150 Retrieving member QSFTPDTA in file QSFTPDTA in library {user}B.
+D: 92 bytes (hex)
+D| d8a48199a3a940c6e3d7409799968285409389958540f1a28583969584409389
+D| 95856b40f2404040404040404040404040404040404040404040404040404040
+D| 40404040409381a2a340938995854040404040404040404040404040
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,230,159).
+C: STOR QSFTPBIN
+S: 150 Sending file to member QSFTPBIN in file QSFTPBIN in library {user}B.
+D> 256 bytes sent
+S: 226 File transfer completed successfully.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,117,228).
+C: LIST QSFTPBIN
+S: 550 Library QSFTPBIN not found.
+C: TYPE A
+S: 200 Representation type is ASCII nonprint.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,216,54).
+C: RETR NOSUCHF.NOSUCHM
+S: 550 File NOSUCHF in library {user}B not found.
+C: DELE NOSUCHF.NOSUCHM
+S: 550 Not able to delete member NOSUCHM in file NOSUCHF in library {user}B.
+C: SITE NAMEFMT 1
+S: 250  Now using naming format "1".
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,169,247).
+C: LIST /QSYS.LIB/{user}B.LIB/QSFTPSRC.FILE
+S: 125 Member *ALL not found in file QSFTPSRC in library {user}B.
+D: 0 bytes
+S: 250 List completed.
+C: CWD /QSYS.LIB/{user}B.LIB
+S: 250 "/QSYS.LIB/{user}B.LIB" is current library.
+C: SITE NAMEFMT 0
+S: 250  Now using naming format "0".
+C: RCMD DLTF FILE({user}B/QSFTPSRC)
+S: 250 Command DLTF FILE({user}B/QSFTPSRC) successful.
+C: RCMD DLTF FILE({user}B/QSFTPDTA)
+S: 250 Command DLTF FILE({user}B/QSFTPDTA) successful.
+C: RCMD DLTF FILE({user}B/QSFTPDT2)
+S: 250 Command DLTF FILE({user}B/QSFTPDT2) successful.
+C: RCMD DLTF FILE({user}B/QSFTPBIN)
+S: 250 Command DLTF FILE({user}B/QSFTPBIN) successful.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,116,14).
+C: NLST {user}B
+S: 125 List started.
+D: 529 bytes
+D| ACTIVE.ACTIVE
+D| BIGORD.BIGORD
+D| CUSBYNAME.CUSBYNAME
+D| CUSORD.CUSORD
+D| CUSTOMER.CUSTOMER
+D| EVENTS.EVENTS
+D| FFD.FFD
+D| INVENTORY.INVENTORY
+D| JRN.JRN
+D| LOGHIST.LOGHIST
+D| LVLID.LVLID
+D| NOTES.NOTES
+D| ORDALL.ORDALL
+D| ORDBYCUS.ORDBYCUS
+D| ORDERS.ORDERS
+D| ORDJOIN.ORDJOIN
+D| ORDLINE.ORDLINE
+D| PRDBYDESC.PRDBYDESC
+D| PRODUCT.PRODUCT
+D| QRES01.QRES01
+D| QRES02.QRES02
+D| QRES03.QRES03
+D| QRES04.QRES04
+D| QRES05.QRES05
+D| QRES06.QRES06
+D| QRES07.QRES07
+D| QRES08.QRES08
+D| QRES09.QRES09
+D| QRES10.QRES10
+D| QRES11.QRES11
+D| QRES12.QRES12
+D| QSQLSRC.QRESULTS
+D| RLALOG.RLALOG
+D| TYPES.TYPES
+S: 250 List completed.
+C: QUIT
+S: 221 QUIT subcommand received.

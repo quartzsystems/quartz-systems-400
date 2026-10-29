@@ -1,0 +1,24 @@
+                               Display File (DSPF)                              
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Stream file, or  . . . . . . . . STMF                                          
+                                                                                
+ Data base file . . . . . . . . . FILE                                          
+   Library  . . . . . . . . . . .                  *LIBL                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

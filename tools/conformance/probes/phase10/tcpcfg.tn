@@ -1,0 +1,89 @@
+# Phase 10: CFGTCP and its viewers. Read-only: options typed only on the
+# menu (after "Selection or command" shows), lists left with F12, change
+# options (3, 11, 12) are captured as prompts in prompts-*.tn instead.
+# No `continue`: a step that fails ends the run before any Enter can
+# land on the wrong display.
+wait "Main Menu"
+timeout 60000
+type call qcmd
+key enter
+wait "Command Entry"
+type cfgtcp
+key enter
+wait "Selection or command"
+snap cfgtcp
+# 1 Work with TCP/IP interfaces
+type 1
+key enter
+settle 1500
+snap cfgtcp-1-ifc
+key f11
+settle 1000
+snap cfgtcp-1-ifc-f11
+key f11
+settle 1000
+pick "127.0.0.1" 5
+key enter
+settle 1500
+snap cfgtcp-1-ifc-5
+key pgdn
+settle 1000
+snap cfgtcp-1-ifc-5-2
+key f12
+settle 1000
+key f12
+wait "Selection or command"
+# 2 Work with TCP/IP routes
+type 2
+key enter
+settle 1500
+snap cfgtcp-2-rte
+key f11
+settle 1000
+snap cfgtcp-2-rte-f11
+key f11
+settle 1000
+pick "*DFTROUTE" 5
+key enter
+settle 1500
+snap cfgtcp-2-rte-5
+key f12
+settle 1000
+key f12
+wait "Selection or command"
+# 4 Work with TCP/IP port restrictions
+type 4
+key enter
+settle 1500
+snap cfgtcp-4-port
+key f12
+wait "Selection or command"
+# 10 Work with TCP/IP host table entries
+type 10
+key enter
+settle 1500
+snap cfgtcp-10-hte
+pick "127.0.0.1" 5
+key enter
+settle 1500
+snap cfgtcp-10-hte-5
+key f12
+settle 1000
+key f12
+wait "Selection or command"
+# 21 Configure related tables
+type 21
+key enter
+settle 1500
+snap cfgtcp-21-tables
+key f12
+wait "Selection or command"
+# 22 Configure point-to-point TCP/IP
+type 22
+key enter
+settle 1500
+snap cfgtcp-22-ptp
+key f12
+wait "Selection or command"
+key f12
+wait "Command Entry"

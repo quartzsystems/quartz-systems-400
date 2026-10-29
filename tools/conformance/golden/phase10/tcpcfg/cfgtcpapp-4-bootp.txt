@@ -1,0 +1,24 @@
+                             Configure TCP/IP BOOTP                             
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      2. Work with BOOTP table                                                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+                                                                                

@@ -1,0 +1,24 @@
+                     Change Line Desc (Ethernet) (CHGLINETH)                    
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Line description . . . . . . . . LIND         > LINETH                         
+ Resource name  . . . . . . . . . RSRCNAME       CMN04                          
+ Bridge identifier  . . . . . . . BRIDGE         *NONE                          
+ Online at IPL  . . . . . . . . . ONLINE         *YES                           
+ Vary on wait . . . . . . . . . . VRYWAIT        *NOWAIT                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

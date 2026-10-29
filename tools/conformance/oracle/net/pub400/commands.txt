@@ -1,0 +1,238 @@
+-- SELECT COMMAND_LIBRARY, COMMAND_NAME, TEXT_DESCRIPTION FROM QSYS2.COMMAND_INFO WHERE COMMAND_LIBRARY = 'QSYS' AND (COMMAND_NAME LIKE '%TCP%' OR COMMAND_NAME LIKE '%FTP%' OR COMMAND_NAME LIKE '%NTP%' OR COMMAND_NAME LIKE '%LPD%' OR COMMAND_NAME LIKE '%SMTP%' OR COMMAND_NAME LIKE '%DDM%' OR COMMAND_NAME LIKE '%RDB%' OR COMMAND_NAME LIKE '%LIN%' OR COMMAND_NAME LIKE '%CFG%' OR COMMAND_NAME LIKE '%HOSTSVR%' OR COMMAND_NAME LIKE '%CMNTRC%' OR COMMAND_NAME LIKE '%QSH%' OR COMMAND_NAME LIKE '%ENVVAR%' OR COMMAND_NAME LIKE '%LNK%' OR COMMAND_NAME LIKE '%STMF%' OR COMMAND_NAME LIKE '%UDFS%' OR COMMAND_NAME LIKE '%AUT' OR COMMAND_NAME LIKE '%DCM%' OR COMMAND_NAME LIKE '%EXITPGM%' OR COMMAND_NAME LIKE '%IFC%' OR COMMAND_NAME LIKE '%RTE%' OR COMMAND_NAME LIKE '%HTE%' OR COMMAND_NAME LIKE '%PING%' OR COMMAND_NAME IN ('NETSTAT','TRACEROUTE','NSLOOKUP','TELNET','LPR','SNDTCPSPLF','STRRMTWTR','CRTOUTQ','CHGOUTQ','CRTDEVPRT','CHGDEVPRT','CHGPOPA','CHGRXCA','CHKIN','CHKOUT','EDTF','DSPF','CPY','MOV','REN','RNM','DEL','MD','RD','CD','MKDIR','RMDIR','CRTDIR','MOUNT','UNMOUNT','RCLLNK','SAV','RST','CHGATR','CHGOWN','CHGPGP','WRKREGINF','SNDSMTPEMM','VRYCFG','WRKHDWRSC','DSPHDWRSC','CPYTOIMPF','CPYFRMIMPF')) ORDER BY 2
+COMMAND_LIBRARY|COMMAND_NAME|TEXT_DESCRIPTION
+QSYS|ADDCFGLE|Add Configuration List Entries
+QSYS|ADDCMDCRQA|Add Command CRQ Activity
+QSYS|ADDCMNE|Add Communications Entry
+QSYS|ADDDLOAUT|Add DLO Authority
+QSYS|ADDEMLCFGE|Add Configuration Entry
+QSYS|ADDENVVAR|Add Environment Variable
+QSYS|ADDHACFGD|-
+QSYS|ADDLNK|Add Link
+QSYS|ADDMSGD|Add Message Description
+QSYS|ADDOSPFIFC|Add OSPF Interface
+QSYS|ADDOSPFLNK|Add OSPF Virtual Link
+QSYS|ADDRDBDIRE|Add RDB Directory Entry
+QSYS|ADDRIPIFC|Add RIP Interface
+QSYS|ADDSMTPLE|Add SMTP List Entry
+QSYS|ADDSMTPRLE|Add Remote Login Entry
+QSYS|ADDTCPHTE|Add TCP/IP Host Table Entry
+QSYS|ADDTCPIFC|Add TCP/IP Interface
+QSYS|ADDTCPPORT|Add TCP/IP Port Restriction
+QSYS|ADDTCPPTP|Add Point-to-Point Profile
+QSYS|ADDTCPRTE|Add TCP/IP Route
+QSYS|ADDTCPSVR|Add TCP/IP Server
+QSYS|ADDUSRSMTP|Add User SMTP
+QSYS|ANSLIN|Answer Line
+QSYS|APING|Verify APPC Connection
+QSYS|ARPING|Send ARP Request
+QSYS|CD|Change Current Directory
+QSYS|CFGACCWEB|Configure Access for Web
+QSYS|CFGCRGCNR|-
+QSYS|CFGDEVMLB|Configure Device Media Library
+QSYS|CFGGEOMIR|-
+QSYS|CFGPMAGT|Configure PM Agent
+QSYS|CFGPM400|Configure PM Agent
+QSYS|CFGRPDS|Configure VM/MVS Bridge
+QSYS|CFGRTG|Configure Routing Protocols
+QSYS|CFGTCP|Configure TCP/IP
+QSYS|CFGTCPAPP|Configure TCP/IP Applications
+QSYS|CFGTCPBP|Configure TCP/IP BOOTP
+QSYS|CFGTCPFTP|Configure TCP/IP FTP
+QSYS|CFGTCPHTTP|Configure TCP/IP HTTP
+QSYS|CFGTCPLPD|Configure TCP/IP LPD
+QSYS|CFGTCPPTP|Configure Point-to-Point TCPIP
+QSYS|CFGTCPRTD|Configure TCP/IP RouteD
+QSYS|CFGTCPRXC|Configure TCP/IP REXEC
+QSYS|CFGTCPSMTP|Configure TCP/IP SMTP
+QSYS|CFGTCPSNMP|Configure TCP/IP SNMP
+QSYS|CFGTCPTELN|Configure TCP/IP TELNET
+QSYS|CHGATR|Change Attribute
+QSYS|CHGAUT|Change Authority
+QSYS|CHGCFGL|Change Configuration List
+QSYS|CHGCFGLE|Change Cfg List Entries
+QSYS|CHGDDMF|Change DDM File
+QSYS|CHGDDMTCPA|Change DDM TCP/IP Attributes
+QSYS|CHGDEVPRT|Change Device Desc (Printer)
+QSYS|CHGDLOAUT|Change DLO Authority
+QSYS|CHGEMLCFGE|Change Configuration Entry
+QSYS|CHGENVVAR|Change Environment Variable
+QSYS|CHGFTPA|Change FTP Attributes
+QSYS|CHGHACFGD|-
+QSYS|CHGLINASC|Change Line Desc (Async)
+QSYS|CHGLINBSC|Change Line Desc (BSC)
+QSYS|CHGLINETH|Change Line Desc (Ethernet)
+QSYS|CHGLINPPP|Change Line Desc (PPP)
+QSYS|CHGLPDA|Change LPD Attributes
+QSYS|CHGNTPA|Change SNTP Attributes
+QSYS|CHGOSPFIFC|Change OSPF Interface
+QSYS|CHGOSPFLNK|Change OSPF Virtual Link
+QSYS|CHGOUTQ|Change Output Queue
+QSYS|CHGOWN|Change Owner
+QSYS|CHGPGP|Change Primary Group
+QSYS|CHGPOPA|Change POP Server Attributes
+QSYS|CHGPSFCFG|Change PSF Configuration
+QSYS|CHGRDBDIRE|Change RDB Directory Entry
+QSYS|CHGRIPIFC|Change RIP Interface
+QSYS|CHGRXCA|Change REXEC Attributes
+QSYS|CHGSMTPA|Change SMTP Attributes
+QSYS|CHGSMTPRLE|Change Remote Login Entry
+QSYS|CHGSRVCFG|Change Service Configuration
+QSYS|CHGTCPA|Change TCP/IP Attributes
+QSYS|CHGTCPDMN|Change TCP/IP Domain
+QSYS|CHGTCPHTE|Change TCP/IP Host Table Entry
+QSYS|CHGTCPIFC|Change TCP/IP Interface
+QSYS|CHGTCPRTE|Change TCP/IP Route
+QSYS|CHGTCPSVR|Change TCP/IP Server
+QSYS|CHGTFTPA|Change TFTP Attributes
+QSYS|CHGUSRSMTP|Change User SMTP
+QSYS|CHKDNSCFG|Check DNS Configuration
+QSYS|CHKIN|Check In Object
+QSYS|CHKOUT|Check Out Object
+QSYS|CPY|Copy Object
+QSYS|CPYCFGL|Copy Configuration List
+QSYS|CPYFRMIMPF|Copy From Import File
+QSYS|CPYFRMSTMF|Copy From Stream File
+QSYS|CPYTCPHT|Copy TCP/IP Host Table
+QSYS|CPYTOIMPF|Copy To Import File
+QSYS|CPYTOSTMF|Copy To Stream File
+QSYS|CPYVPNCFGF|Copy VPN Configuration File
+QSYS|CRTCFGL|Create Configuration List
+QSYS|CRTCPPMOD|Create C++ Module
+QSYS|CRTDDMF|Create DDM File
+QSYS|CRTDDNSCFG|Create DDNS Configuration
+QSYS|CRTDEVPRT|Create Device Desc (Printer)
+QSYS|CRTDIR|Create Directory
+QSYS|CRTEDTD|Create Edit Description
+QSYS|CRTLINASC|Create Line Desc (Async)
+QSYS|CRTLINBSC|Create Line Desc (BSC)
+QSYS|CRTLINETH|Create Line Desc (Ethernet)
+QSYS|CRTLINPPP|Create Line Desc (PPP)
+QSYS|CRTOUTQ|Create Output Queue
+QSYS|CRTPSFCFG|Create PSF Configuration
+QSYS|CRTRJECFG|Create RJE Configuration
+QSYS|CRTRNDCCFG|Create RNDC Configuration
+QSYS|CRTSRVCFG|Create Service Configuration
+QSYS|CVTNAMSMTP|Convert SMTP Names
+QSYS|DEL|Remove Link
+QSYS|DLTCFGL|Delete Configuration List
+QSYS|DLTLIND|Delete Line Description
+QSYS|DLTPSFCFG|Delete PSF Configuration
+QSYS|DLTRJECFG|Delete RJE Configuration
+QSYS|DLTSRVCFG|Delete Service Configuration
+QSYS|DSPACCAUT|Display Access Code Authority
+QSYS|DSPAUT|Display Authority
+QSYS|DSPCFGL|Display Configuration List
+QSYS|DSPDDMF|Display DDM File
+QSYS|DSPDLOAUT|Display DLO Authority
+QSYS|DSPF|Display File
+QSYS|DSPHACFGD|-
+QSYS|DSPHLPDOC|Display Help Document
+QSYS|DSPLIND|Display Line Description
+QSYS|DSPLNK|Display Object Links
+QSYS|DSPOBJAUT|Display Object Authority
+QSYS|DSPOPCLNK|Display OptiConnect Link Sts
+QSYS|DSPPSFCFG|Display PSF Configuration
+QSYS|DSPRDBDIRE|Display RDB Directory Entries
+QSYS|DSPRJECFG|Display RJE Configuration
+QSYS|DSPUDFS|Display User-Defined FS
+QSYS|EDTDLOAUT|Edit DLO Authority
+QSYS|EDTF|Edit File
+QSYS|EDTOBJAUT|Edit Object Authority
+QSYS|EDTWSOAUT|Edit Workstation Object Aut
+QSYS|ENDCMTCTL|End Commitment Control
+QSYS|ENDLINRCY|End Line Recovery
+QSYS|ENDPRTEML|End Printer Emulation
+QSYS|FTP|Start TCP/IP File Transfer
+QSYS|GRTOBJAUT|Grant Object Authority
+QSYS|GRTUSRAUT|Grant User Authority
+QSYS|GRTWSOAUT|Grant Workstation Object Aut
+QSYS|LNKDTADFN|Link/Unlink Data Definition
+QSYS|LPR|Send TCP/IP Spooled File
+QSYS|MD|Create Directory
+QSYS|MKDIR|Create Directory
+QSYS|MOV|Move Object
+QSYS|MRGTCPHT|Merge TCP/IP Host Table
+QSYS|NDPING|Send Neighbor Solicitation
+QSYS|NETSTAT|Work with TCP/IP Network Sts
+QSYS|NSLOOKUP|Start NSLOOKUP Query
+QSYS|OVRDBF|Override with Data Base File
+QSYS|PING|Verify TCP/IP Connection
+QSYS|PRTCPTRPT|Print Component Report
+QSYS|PRTJOBDAUT|Print JOBD Authority
+QSYS|PRTPUBAUT|Print Publicly Auth Objects
+QSYS|PRTPVTAUT|Print Private Authorities
+QSYS|PRTQAUT|Print Queue Authority
+QSYS|PRTSBSDAUT|Print Subsystem Description
+QSYS|PRTSQLINF|Print SQL Information
+QSYS|PRTTCPPTP|Print Point-to-Point Profile
+QSYS|QSH|Start QSH
+QSYS|RCLDDMCNV|Reclaim DDM Conversations
+QSYS|RCLLNK|Reclaim Object Links
+QSYS|RD|Remove Directory
+QSYS|REN|Rename Object
+QSYS|RMDIR|Remove Directory
+QSYS|RMVCFGLE|Remove Cfg List Entries
+QSYS|RMVDLOAUT|Remove DLO Authority
+QSYS|RMVEMLCFGE|Remove Configuration Entry
+QSYS|RMVENVVAR|Remove Environment Variable
+QSYS|RMVHACFGD|-
+QSYS|RMVLNK|Remove Link
+QSYS|RMVOSPFIFC|Remove OSPF Interface
+QSYS|RMVOSPFLNK|Remove OSPF Virtual Link
+QSYS|RMVRDBDIRE|Remove RDB Directory Entry
+QSYS|RMVRIPIFC|Remove RIP Interface
+QSYS|RMVSMTPLE|Remove SMTP List Entry
+QSYS|RMVSMTPRLE|Remove Remote Login Entry
+QSYS|RMVTCPHTE|Remove TCP/IP Host Table Entry
+QSYS|RMVTCPIFC|Remove TCP/IP Interface
+QSYS|RMVTCPPORT|Remove TCP/IP Port Restriction
+QSYS|RMVTCPPTP|Remove Point-to-Point Profile
+QSYS|RMVTCPRTE|Remove TCP/IP Route
+QSYS|RMVTCPSVR|Remove TCP/IP Server
+QSYS|RMVTCPTBL|Remove TCP/IP Table
+QSYS|RMVUSRSMTP|Remove User SMTP
+QSYS|RNM|Rename Object
+QSYS|RNMTCPHTE|Rename TCP/IP Host Table Entry
+QSYS|RSMLINRCY|Resume Line Recovery
+QSYS|RTVCFGSRC|Retrieve Configuration Source
+QSYS|RTVCFGSTS|Retrieve Configuration Status
+QSYS|RVKACCAUT|Revoke Access Code Authority
+QSYS|RVKOBJAUT|Revoke Object Authority
+QSYS|RVKWSOAUT|Revoke Workstation Object Aut
+QSYS|SAV|Save Object
+QSYS|SAVCFG|Save Configuration
+QSYS|SAVRSTCFG|Save Restore Configuration
+QSYS|SNDSMTPEMM|Send SMTP E-mail Message
+QSYS|SNDTCPSPLF|Send TCP/IP Spooled File
+QSYS|STRDBG|Start Debug
+QSYS|STRDBGSVR|Start Debug Server
+QSYS|STRDBMON|Start Database Monitor
+QSYS|STRDBRDR|Start Data Base Reader
+QSYS|STRIMPSMTP|Start Import for SMTP Users
+QSYS|STRPRTEML|Start Printer Emulation
+QSYS|STRQSH|Start QSH
+QSYS|STRRMTWTR|Start Remote Writer
+QSYS|STRTCPFTP|Start TCP/IP File Transfer
+QSYS|STRTCPTELN|Start TCP/IP Telnet
+QSYS|TELNET|Start TCP/IP Telnet
+QSYS|TRACEROUTE|Trace TCP/IP Route
+QSYS|TRCTCPRTE|Trace TCP/IP Route
+QSYS|VFYSRVCFG|Verify Service Configuration
+QSYS|VFYTCPCNN|Verify TCP/IP Connection
+QSYS|VRYCFG|Vary Configuration
+QSYS|WRKAUT|Work with Authority
+QSYS|WRKCFGL|Work with Configuration Lists
+QSYS|WRKCFGSTS|Work with Configuration Status
+QSYS|WRKDDMF|Work with DDM Files
+QSYS|WRKENVVAR|Work with Environment Var
+QSYS|WRKHACFGD|-
+QSYS|WRKHDWRSC|Work with Hardware Resources
+QSYS|WRKLIND|Work with Line Descriptions
+QSYS|WRKLNK|Work with Object Links
+QSYS|WRKNAMSMTP|Work with Names for SMTP
+QSYS|WRKPSFCFG|Work with PSF Configuration
+QSYS|WRKRDBDIRE|Work with RDB Directory Entry
+QSYS|WRKREGINF|Work with Registration Info
+QSYS|WRKRTDCFG|Work with RouteD Configuration
+QSYS|WRKSMTPEMM|Work with SMTP E-mail Messages
+QSYS|WRKSMTPUSR|Work with All SMTP Users

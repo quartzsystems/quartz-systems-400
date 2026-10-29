@@ -1,0 +1,183 @@
+[[golden]]
+name = "netstat"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat"
+width = 80
+
+[[golden]]
+name = "netstat-1-ifc"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat"
+width = 80
+
+[[golden]]
+name = "netstat-1-ifc-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat"
+width = 80
+
+[[golden]]
+name = "netstat-1-ifc-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat"
+width = 80
+
+[[golden]]
+name = "netstat-1-ifc-5-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat"
+width = 80
+
+[[golden]]
+name = "netstat-2-rte"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat"
+width = 80
+
+[[golden]]
+name = "netstat-2-rte-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat"
+width = 80
+
+[[golden]]
+name = "netstat-2-rte-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat"
+width = 80
+
+[[golden]]
+name = "netstat-3-cnn"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat"
+width = 80
+
+[[golden]]
+name = "netstat-3-cnn-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat"
+width = 80
+
+[[golden]]
+name = "netstat-3-cnn-f14"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat"
+width = 80
+
+[[golden]]
+name = "netstat-3-listen-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat-cnn"
+width = 80
+
+[[golden]]
+name = "netstat-3-listen-5-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat-cnn"
+width = 80
+
+[[golden]]
+name = "netstat-3-listen-5-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat-cnn"
+width = 80
+
+[[golden]]
+name = "netstat-3-listen-8"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat-cnn"
+width = 80
+
+[[golden]]
+name = "netstat-3-cnn-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat-cnn"
+width = 80
+
+[[golden]]
+name = "netstat-3-cnn-5-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat-cnn"
+width = 80
+
+[[golden]]
+name = "netstat-3-cnn-5-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat-cnn"
+width = 80
+
+[[golden]]
+name = "netstat-4-ifc6"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat-cnn"
+width = 80
+
+[[golden]]
+name = "netstat-5-rte6"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat-cnn"
+width = 80
+
+[[golden]]
+name = "netstat-6-cnn6"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat-cnn"
+width = 80
+
+[[golden]]
+name = "netstat-10-status"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat-cnn"
+width = 80
+
+[[golden]]
+name = "netstat-nbrcache-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "netstat-cnn"
+width = 80

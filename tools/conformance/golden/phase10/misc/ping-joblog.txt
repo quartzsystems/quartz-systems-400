@@ -1,0 +1,24 @@
+                              Display All Messages                              
+                                                             System:   SYSNAME  
+ Job . . :   QPADEVNNNN    User . . :   USERNAME      Number . . . :   NNNNNN   
+                                                                                
+     End of file detected for file RZKHLANG in WWWDATA.                         
+            - RETURN        /* RETURN due to end of CL program */               
+   > /*      */                                                                 
+ 3 > call qcmd                                                                  
+ 4 > ping rmtsys(*intnetadr) intnetadr('127.0.0.1')                             
+     Verifying connection to host system *INTNETADR.                            
+     PING reply 1 from 127.0.0.1 took 0 ms. 256 bytes. TTL 64.                  
+     PING reply 2 from 127.0.0.1 took 0 ms. 256 bytes. TTL 64.                  
+     PING reply 3 from 127.0.0.1 took 0 ms. 256 bytes. TTL 64.                  
+     PING reply 4 from 127.0.0.1 took 0 ms. 256 bytes. TTL 64.                  
+     PING reply 5 from 127.0.0.1 took 0 ms. 256 bytes. TTL 64.                  
+     Round-trip (in milliseconds) min/avg/max = 0/0/0.                          
+     Connection verification statistics: 5 of 5 successful (100 %).             
+ 4>> dspjoblog                                                                  
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F5=Refresh   F12=Cancel   F17=Top   F18=Bottom                       
+                                                                                
+                                                                                

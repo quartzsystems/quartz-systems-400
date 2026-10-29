@@ -1,0 +1,110 @@
+# Phase 10: WRKREGINF (options 5 and 8 on the FTP server request exit
+# point), the QSH session (pwd and ls / only, then F3), WRKENVVAR at both
+# levels, WRKRDBDIRE (option 5 on the *LOCAL entry), the TCPADM and
+# CFGTCP menus, and a loopback PING with its messages and job log.
+# Display options only; no `continue`.
+wait "Main Menu"
+timeout 60000
+type call qcmd
+key enter
+wait "Command Entry"
+type wrkreginf
+key enter
+settle 2500
+snap wrkreginf
+key pgdn
+settle 1000
+snap wrkreginf-2
+key f12
+wait "Command Entry"
+type wrkreginf exitpnt(qibm_qtmf_server_req)
+key enter
+settle 2500
+snap wrkreginf-qtmf
+pick "QIBM_QTMF_SERVER_REQ" 5
+key enter
+settle 1500
+snap wrkreginf-qtmf-5
+key f12
+settle 1500
+pick "QIBM_QTMF_SERVER_REQ" 8
+key enter
+settle 1500
+snap wrkreginf-qtmf-8
+key f12
+settle 1500
+key f12
+wait "Command Entry"
+type strqsh
+key enter
+wait "===>"
+snap qsh-start
+type pwd
+key enter
+settle 2500
+type ls /
+key enter
+settle 3000
+snap qsh-session
+key f3
+settle 2000
+wait "Command Entry"
+type wrkenvvar
+key enter
+settle 1500
+snap wrkenvvar
+key f12
+wait "Command Entry"
+type wrkenvvar level(*sys)
+key enter
+settle 1500
+snap wrkenvvar-sys
+key f12
+wait "Command Entry"
+type wrkrdbdire
+key enter
+settle 1500
+snap wrkrdbdire
+pick "*LOCAL" 5
+key enter
+settle 1500
+snap wrkrdbdire-5
+key f12
+settle 1500
+key f12
+wait "Command Entry"
+type go tcpadm
+key enter
+wait "Selection or command"
+snap menu-tcpadm
+key f12
+wait "Command Entry"
+# 2026-10-24: pub400 refuses GO CFGTCP (no authority to the *MENU
+# object; the CFGTCP command itself works): the refusal is the golden.
+type go cfgtcp
+key enter
+settle 1500
+snap menu-cfgtcp-refused
+key eraseinput
+type ping rmtsys(*intnetadr) intnetadr('127.0.0.1')
+key enter
+settle 8000
+wait "Command Entry"
+snap ping-loopback
+key f10
+settle 1500
+snap ping-loopback-f10
+key f10
+settle 1000
+type dspjoblog
+key enter
+settle 2000
+key f10
+settle 1500
+key f18
+settle 1500
+snap ping-joblog +jobnum +device
+key f12
+settle 1000
+key f12
+wait "Command Entry"

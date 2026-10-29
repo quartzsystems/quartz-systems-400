@@ -1,0 +1,69 @@
+# qsh: ls -la /QOpenSys /QOpenSys/usr /QOpenSys/QIBM/ProdData /QOpenSys/pkgs
+/QOpenSys:
+total: 1.892 megabytes
+drwxrwsrwx  16 QSYS     0                356352 Oct 10 14:50 .
+drwxrwsr-x  24 QSYS     0               1392640 Oct 26 19:38 ..
+lrwxrwxrwx   1 QSYS     0                     7 Jan 19  2024 bin -> usr/bin
+drwxrwsrwx   3 MFRILOT  0                  8192 Apr 22  2024 Containers
+drwxr-sr-x  22 QSYS     0                 40960 Oct 10 14:53 etc
+-rw-r--r--   1 CKOHL    0                   149 Feb 12  2024 EVFEVENT.
+lrwxrwxrwx   1 QSYS     0                     7 Jan 19  2024 lib -> usr/lib
+lrwxrwxrwx   1 QSYS     0                     9 Jan 19  2024 lib64 -> usr/lib64
+drwxrwsrwt   3 RAIPX6   0                  8192 Oct 10 14:53 myApp
+drwxr-xr-x   8 QSYS     0                  8192 Dec  5  2024 pkgs
+drwxr-sr-x   4 QSYS     0                  8192 Oct  9 20:53 QIBM
+d---rws---   2 QSECOFR  0                 12288 Oct 19 14:20 QSR
+drwxr-sr-x   2 RTORREZ  0                  8192 Apr 20  2024 rtorrez
+drwxr-sr-x   3 SHIVAM   0                  8192 Oct 10 14:56 s1
+drwxr-sr-x   2 QSYS     0                  8192 Jan 19  2024 sbin
+drwxr-sr-x   3 SHIVAM   0                  8192 Oct 10 14:56 t1
+drwxr-sr-x   7 SHIVAM   0                  8192 Oct 10 15:00 t1.git
+drwxr-sr-x   2 QSECOFR  0                  8192 Jun 11 21:52 tmp
+drwxr-sr-x  16 QSYS     0                 24576 Oct 10 14:56 usr
+drwxr-sr-t  10 QSYS     0                  8192 Oct 10 15:00 var
+
+/QOpenSys/pkgs:
+total: 1.148 megabytes
+drwxr-xr-x   8 QSYS     0                  8192 Dec  5  2024 .
+drwxrwsrwx  16 QSYS     0                356352 Oct 10 14:50 ..
+drwxr-xr-x   2 QSYS     0                405504 Oct 10 15:00 bin
+drwxr-xr-x  57 QSECOFR  0                114688 Oct 10 14:53 include
+drwxr-sr-x  58 QSYS     0                217088 Oct 10 14:53 lib
+drwxr-xr-x   9 QSYS     0                 24576 Oct 10 14:59 libexec
+drwxr-sr-x   2 QSYS     0                  8192 Oct 10 14:59 sbin
+drwxr-xr-x  59 QSYS     0                 40960 Oct 10 14:55 share
+
+/QOpenSys/QIBM/ProdData:
+total: 148 kilobytes
+drwxr-sr-x  12 QSYS  0                 12288 Oct 10 14:47 .
+drwxr-sr-x   4 QSYS  0                  8192 Oct  9 20:53 ..
+drwxr-sr-x  54 QSYS  0                 40960 Oct 13 12:03 C++Compiler
+drwxr-sr-x   4 QSYS  0                  8192 May 10  2022 InfoprintServer
+drwxr-sr-x   5 QSYS  0                  8192 May 10  2022 JavaVM
+drwxr-sr-x   4 QSYS  0                  8192 Jan 26  2020 NetworkAuthenticationEnablement
+drwx--Sr-x  11 QSYS  0                 24576 Oct 10 14:50 OPS
+drwxr-sr-x   7 QSYS  0                  8192 Oct 10 14:48 OS400
+drwxr-sr-x   5 QSYS  0                  8192 Oct 10 14:52 SC1
+drwxr-sr-x   3 QSYS  0                  8192 Jan 26  2020 SOI
+drwxr-sr-x   6 QSYS  0                  8192 Oct 10 14:52 TransformServices
+drwxr-sr-x   6 QSYS  0                  8192 Oct 10 14:52 UME
+
+/QOpenSys/usr:
+total: 772 kilobytes
+drwxr-sr-x  16 QSYS  0                 24576 Oct 10 14:56 .
+drwxrwsrwx  16 QSYS  0                356352 Oct 10 14:50 ..
+drwxr-sr-x   3 QSYS  0                122880 Oct 10 15:00 bin
+drwxr-sr-x   4 QSYS  0                  8192 Apr 23  2016 ccs
+drwxr-sr-x   4 QSYS  0                  8192 Oct 10 15:00 icu4c
+drwxr-sr-x  28 QSYS  0                114688 Oct 10 15:00 include
+drwxr-sr-x   7 QSYS  0                  8192 Apr 24  2016 krb5
+drwxr-sr-x   2 QSYS  0                  8192 Oct 10 15:00 lbin
+drwxr-sr-x   5 QSYS  0                 81920 Oct 10 15:00 lib
+drwxr-sr-x   2 QSYS  0                  8192 Oct 10 15:00 lib64
+drwxr-sr-x   6 QSYS  0                  8192 Apr 24  2016 lpp
+drwxr-sr-x   3 QSYS  0                  8192 Sep  4  2016 pmapi
+drwxr-sr-x   2 QSYS  0                  8192 Oct 10 15:00 sbin
+drwxr-sr-x   3 QSYS  0                  8192 Apr 23  2016 share
+drwxr-sr-x   3 QSYS  0                  8192 Apr 23  2016 vacpp
+drwxr-sr-x   3 QSYS  0                  8192 Aug 24  2025 zlibNX
+exit=0

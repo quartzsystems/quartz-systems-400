@@ -1,0 +1,24 @@
+                          Create Output Queue (CRTOUTQ)                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Output queue . . . . . . . . . . OUTQ                                          
+   Library  . . . . . . . . . . .                  *CURLIB                      
+ Maximum spooled file size:       MAXPAGES                                      
+   Number of pages  . . . . . . .                *NONE                          
+   Starting time  . . . . . . . .                                               
+   Ending time  . . . . . . . . .                                               
+                           + for more values                                    
+ Order of files on queue  . . . . SEQ            *FIFO                          
+ Remote system  . . . . . . . . . RMTSYS       > *INTNETADR                     
+                                                                                
+                                                                                
+                                                                                
+ Remote printer queue . . . . . . RMTPRTQ        *USER                          
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

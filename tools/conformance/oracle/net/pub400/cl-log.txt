@@ -1,0 +1,201 @@
+ERR DLTF FILE({user}B/NETSPL)
+    CPF2105 Object NETSPL in {user}B type *FILE not found.
+OK  CRTPF FILE({user}B/NETSPL) RCDLEN(1000)
+    CPC7301 File NETSPL created in library {user}B.
+    CPC7305 Member NETSPL added to file NETSPL in {user}B.
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYSPLF FILE(QPRTSBSD) TOFILE({user}B/NETSPL) JOB(989066/{user}/QPRTJOB) SPLNBR(7828)
+    CPF3485 628 records copied to file NETSPL in {user}B.
+OK  DLTSPLF FILE(QPRTSBSD) JOB(989066/{user}/QPRTJOB) SPLNBR(7828)
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYSPLF FILE(QPRTSBSD) TOFILE({user}B/NETSPL) JOB(989066/{user}/QPRTJOB) SPLNBR(7829)
+    CPF3485 488 records copied to file NETSPL in {user}B.
+OK  DLTSPLF FILE(QPRTSBSD) JOB(989066/{user}/QPRTJOB) SPLNBR(7829)
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYSPLF FILE(QPRTSBSD) TOFILE({user}B/NETSPL) JOB(989066/{user}/QPRTJOB) SPLNBR(7830)
+    CPF3485 1440 records copied to file NETSPL in {user}B.
+OK  DLTSPLF FILE(QPRTSBSD) JOB(989066/{user}/QPRTJOB) SPLNBR(7830)
+ERR DLTF FILE({user}B/NETFFD)
+    CPF2105 Object NETFFD in {user}B type *FILE not found.
+OK  DSPFFD FILE(QUSRSYS/QATO*) OUTPUT(*OUTFILE) OUTFILE({user}B/NETFFD) OUTMBR(*FIRST *REPLACE)
+    CPF9861 Output file NETFFD created in library {user}B.
+    CPF9862 Member NETFFD added to output file NETFFD in library {user}B.
+    CPF3030 1308 records added to member NETFFD in file NETFFD in {user}B.
+OK  DSPFFD FILE(QUSRSYS/QATM*) OUTPUT(*OUTFILE) OUTFILE({user}B/NETFFD) OUTMBR(*FIRST *ADD)
+    CPF3030 61 records added to member NETFFD in file NETFFD in {user}B.
+ERR DSPFFD FILE(QUSRSYS/QTMS*) OUTPUT(*OUTFILE) OUTFILE({user}B/NETFFD) OUTMBR(*FIRST *ADD)
+    CPF3012 File QTMS* in library QUSRSYS not found.
+OK  DSPFFD FILE(QUSRSYS/QAOK*) OUTPUT(*OUTFILE) OUTFILE({user}B/NETFFD) OUTMBR(*FIRST *ADD)
+    CPF3030 1777 records added to member NETFFD in file NETFFD in {user}B.
+ERR DSPFFD FILE(QUSRSYS/QATG*) OUTPUT(*OUTFILE) OUTFILE({user}B/NETFFD) OUTMBR(*FIRST *ADD)
+    CPF3012 File QATG* in library QUSRSYS not found.
+ERR DSPFFD FILE(QUSRSYS/QTOC*) OUTPUT(*OUTFILE) OUTFILE({user}B/NETFFD) OUTMBR(*FIRST *ADD)
+    CPF3012 File QTOC* in library QUSRSYS not found.
+ERR DSPFFD FILE(QUSRSYS/QTMF*) OUTPUT(*OUTFILE) OUTFILE({user}B/NETFFD) OUTMBR(*FIRST *ADD)
+    CPF3012 File QTMF* in library QUSRSYS not found.
+ERR DSPFFD FILE(QUSRSYS/QTMH*) OUTPUT(*OUTFILE) OUTFILE({user}B/NETFFD) OUTMBR(*FIRST *ADD)
+    CPF3012 File QTMH* in library QUSRSYS not found.
+ERR DSPFFD FILE(QUSRSYS/QATV*) OUTPUT(*OUTFILE) OUTFILE({user}B/NETFFD) OUTMBR(*FIRST *ADD)
+    CPF3012 File QATV* in library QUSRSYS not found.
+OK  DSPFFD FILE(QUSRSYS/QAZS*) OUTPUT(*OUTFILE) OUTFILE({user}B/NETFFD) OUTMBR(*FIRST *ADD)
+    CPF3030 204 records added to member NETFFD in file NETFFD in {user}B.
+OK  DLTF FILE({user}B/NETFFD)
+    CPC2191 Object NETFFD in {user}B type *FILE deleted.
+OK  PING RMTSYS(*INTNETADR) INTNETADR('127.0.0.1')
+    TCP3204 Verifying connection to host system *INTNETADR.
+    TCP3215 PING reply 1 from 127.0.0.1 took 0 ms. 256 bytes. TTL 64.
+    TCP3215 PING reply 2 from 127.0.0.1 took 0 ms. 256 bytes. TTL 64.
+    TCP3215 PING reply 3 from 127.0.0.1 took 0 ms. 256 bytes. TTL 64.
+    TCP3215 PING reply 4 from 127.0.0.1 took 0 ms. 256 bytes. TTL 64.
+    TCP3215 PING reply 5 from 127.0.0.1 took 0 ms. 256 bytes. TTL 64.
+    TCP3211 Round-trip (in milliseconds) min/avg/max = 0/0/0.
+    TCP3210 Connection verification statistics: 5 of 5 successful (100 %).
+OK  PING RMTSYS(*INTNETADR) INTNETADR('127.0.0.1') NBRPKT(1) PKTLEN(64) WAITTIME(1) MSGMODE(*VERBOSE *ESCAPE)
+    TCP3204 Verifying connection to host system *INTNETADR.
+    TCP3215 PING reply 1 from 127.0.0.1 took 0 ms. 64 bytes. TTL 64.
+    TCP3211 Round-trip (in milliseconds) min/avg/max = 0/0/0.
+    TCP3210 Connection verification statistics: 1 of 1 successful (100 %).
+OK  PING RMTSYS(LOOPBACK) NBRPKT(1)
+    TCP3203 Verifying connection to host system LOOPBACK at address 127.0.0.1.
+    TCP3215 PING reply 1 from 127.0.0.1 took 0 ms. 256 bytes. TTL 64.
+    TCP3211 Round-trip (in milliseconds) min/avg/max = 0/0/0.
+    TCP3210 Connection verification statistics: 1 of 1 successful (100 %).
+ERR PING RMTSYS(*INTNETADR) INTNETADR('::1') NBRPKT(1)
+    TCP3202 Unknown host, ::1.
+OK  PING RMTSYS(NO.SUCH.HOST.INVALID) NBRPKT(1)
+    TCP3203 Verifying connection to host system NO.SUCH.HOST.INVALID.RZKH.DE at address 89.31.143.90.
+    TCP3215 PING reply 1 from 89.31.143.90 took 17 ms. 256 bytes. TTL 53.
+    TCP3211 Round-trip (in milliseconds) min/avg/max = 17/17/17.
+    TCP3210 Connection verification statistics: 1 of 1 successful (100 %).
+OK  VFYTCPCNN RMTSYS(*INTNETADR) INTNETADR('127.0.0.1') NBRPKT(1)
+    TCP3204 Verifying connection to host system *INTNETADR.
+    TCP3215 PING reply 1 from 127.0.0.1 took 0 ms. 256 bytes. TTL 64.
+    TCP3211 Round-trip (in milliseconds) min/avg/max = 0/0/0.
+    TCP3210 Connection verification statistics: 1 of 1 successful (100 %).
+ERR CHKOBJ OBJ(QSYS/QTOCNETSTS) OBJTYPE(*PGM)
+    CPF9801 Object QTOCNETSTS in library QSYS not found.
+OK  QSH CMD('(uname -a; uname -s; uname -r; uname -v) > /home/{user}/qsnet.out 2>&1; echo "exit=$?" >> /home/{user}/qsnet.out')
+    QSH0005 Command ended normally with exit status 0.
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYFRMSTMF FROMSTMF('/home/{user}/qsnet.out') TOMBR('/QSYS.LIB/{user}B.LIB/NETSPL.FILE/NETSPL.MBR') MBROPT(*REPLACE) STMFCODPAG(*STMF)
+    CPCA081 Stream file copied to object.
+OK  RMVLNK OBJLNK('/home/{user}/qsnet.out')
+    CPCA089 Link removed.
+OK  QSH CMD('(id) > /home/{user}/qsnet.out 2>&1; echo "exit=$?" >> /home/{user}/qsnet.out')
+    QSH0005 Command ended normally with exit status 0.
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYFRMSTMF FROMSTMF('/home/{user}/qsnet.out') TOMBR('/QSYS.LIB/{user}B.LIB/NETSPL.FILE/NETSPL.MBR') MBROPT(*REPLACE) STMFCODPAG(*STMF)
+    CPCA081 Stream file copied to object.
+OK  RMVLNK OBJLNK('/home/{user}/qsnet.out')
+    CPCA089 Link removed.
+OK  QSH CMD('(env | sort) > /home/{user}/qsnet.out 2>&1; echo "exit=$?" >> /home/{user}/qsnet.out')
+    QSH0005 Command ended normally with exit status 0.
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYFRMSTMF FROMSTMF('/home/{user}/qsnet.out') TOMBR('/QSYS.LIB/{user}B.LIB/NETSPL.FILE/NETSPL.MBR') MBROPT(*REPLACE) STMFCODPAG(*STMF)
+    CPCA081 Stream file copied to object.
+OK  RMVLNK OBJLNK('/home/{user}/qsnet.out')
+    CPCA089 Link removed.
+OK  QSH CMD('(ls -la /usr/bin) > /home/{user}/qsnet.out 2>&1; echo "exit=$?" >> /home/{user}/qsnet.out')
+    QSH0005 Command ended normally with exit status 0.
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYFRMSTMF FROMSTMF('/home/{user}/qsnet.out') TOMBR('/QSYS.LIB/{user}B.LIB/NETSPL.FILE/NETSPL.MBR') MBROPT(*REPLACE) STMFCODPAG(*STMF)
+    CPCA081 Stream file copied to object.
+OK  RMVLNK OBJLNK('/home/{user}/qsnet.out')
+    CPCA089 Link removed.
+OK  QSH CMD('(ls /usr/bin | wc -l) > /home/{user}/qsnet.out 2>&1; echo "exit=$?" >> /home/{user}/qsnet.out')
+    QSH0005 Command ended normally with exit status 0.
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYFRMSTMF FROMSTMF('/home/{user}/qsnet.out') TOMBR('/QSYS.LIB/{user}B.LIB/NETSPL.FILE/NETSPL.MBR') MBROPT(*REPLACE) STMFCODPAG(*STMF)
+    CPCA081 Stream file copied to object.
+OK  RMVLNK OBJLNK('/home/{user}/qsnet.out')
+    CPCA089 Link removed.
+OK  QSH CMD('(ls -la /QOpenSys/usr/bin) > /home/{user}/qsnet.out 2>&1; echo "exit=$?" >> /home/{user}/qsnet.out')
+    QSH0005 Command ended normally with exit status 0.
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYFRMSTMF FROMSTMF('/home/{user}/qsnet.out') TOMBR('/QSYS.LIB/{user}B.LIB/NETSPL.FILE/NETSPL.MBR') MBROPT(*REPLACE) STMFCODPAG(*STMF)
+    CPCA081 Stream file copied to object.
+OK  RMVLNK OBJLNK('/home/{user}/qsnet.out')
+    CPCA089 Link removed.
+OK  QSH CMD('(ls -la /QOpenSys/QIBM/ProdData/OS400/PASE) > /home/{user}/qsnet.out 2>&1; echo "exit=$?" >> /home/{user}/qsnet.out')
+    QSH0005 Command ended normally with exit status 0.
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYFRMSTMF FROMSTMF('/home/{user}/qsnet.out') TOMBR('/QSYS.LIB/{user}B.LIB/NETSPL.FILE/NETSPL.MBR') MBROPT(*REPLACE) STMFCODPAG(*STMF)
+    CPCA081 Stream file copied to object.
+OK  RMVLNK OBJLNK('/home/{user}/qsnet.out')
+    CPCA089 Link removed.
+OK  QSH CMD('(ls -la /QOpenSys/QIBM/ProdData/SC1/OpenSSH /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc /QOpenSys/QIBM/UserData/SC1/OpenSSH /QOpenSys/QIBM/UserData/SC1/OpenSSH/etc /QOpenSys/etc/ssh /QOpenSys/pkgs/etc/ssh /QOpenSys/pkgs/bin/ssh /QOpenSys/pkgs/sbin/sshd /QOpenSys/usr/bin/ssh /QOpenSys/usr/sbin/sshd) > /home/{user}/qsnet.out 2>&1; echo "exit=$?" >> /home/{user}/qsnet.out')
+    QSH0005 Command ended normally with exit status 0.
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYFRMSTMF FROMSTMF('/home/{user}/qsnet.out') TOMBR('/QSYS.LIB/{user}B.LIB/NETSPL.FILE/NETSPL.MBR') MBROPT(*REPLACE) STMFCODPAG(*STMF)
+    CPCA081 Stream file copied to object.
+OK  RMVLNK OBJLNK('/home/{user}/qsnet.out')
+    CPCA089 Link removed.
+OK  QSH CMD('(for f in /QOpenSys/QIBM/UserData/SC1/OpenSSH/etc/sshd_config /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc/sshd_config /QOpenSys/etc/ssh/sshd_config /QOpenSys/pkgs/etc/ssh/sshd_config; do echo "== $f"; grep -v ''^#'' $f | grep -v ''^ *$''; done) > /home/{user}/qsnet.out 2>&1; echo "exit=$?" >> /home/{user}/qsnet.out')
+    QSH0005 Command ended normally with exit status 0.
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYFRMSTMF FROMSTMF('/home/{user}/qsnet.out') TOMBR('/QSYS.LIB/{user}B.LIB/NETSPL.FILE/NETSPL.MBR') MBROPT(*REPLACE) STMFCODPAG(*STMF)
+    CPCA081 Stream file copied to object.
+OK  RMVLNK OBJLNK('/home/{user}/qsnet.out')
+    CPCA089 Link removed.
+OK  QSH CMD('(ls -la /QIBM/UserData/ICSS /QIBM/UserData/ICSS/Cert /QIBM/UserData/ICSS/Cert/Server /QIBM/UserData/ICSS/Cert/CertAuth /QIBM/UserData/ICSS/Cert/SignObject /QIBM/ProdData/ICSS /QIBM/UserData/OS400/DCM) > /home/{user}/qsnet.out 2>&1; echo "exit=$?" >> /home/{user}/qsnet.out')
+    QSH0005 Command ended normally with exit status 0.
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYFRMSTMF FROMSTMF('/home/{user}/qsnet.out') TOMBR('/QSYS.LIB/{user}B.LIB/NETSPL.FILE/NETSPL.MBR') MBROPT(*REPLACE) STMFCODPAG(*STMF)
+    CPCA081 Stream file copied to object.
+OK  RMVLNK OBJLNK('/home/{user}/qsnet.out')
+    CPCA089 Link removed.
+OK  QSH CMD('(ls -la /) > /home/{user}/qsnet.out 2>&1; echo "exit=$?" >> /home/{user}/qsnet.out')
+    QSH0005 Command ended normally with exit status 0.
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYFRMSTMF FROMSTMF('/home/{user}/qsnet.out') TOMBR('/QSYS.LIB/{user}B.LIB/NETSPL.FILE/NETSPL.MBR') MBROPT(*REPLACE) STMFCODPAG(*STMF)
+    CPCA081 Stream file copied to object.
+OK  RMVLNK OBJLNK('/home/{user}/qsnet.out')
+    CPCA089 Link removed.
+OK  QSH CMD('(ls -la /QOpenSys /QOpenSys/usr /QOpenSys/QIBM/ProdData /QOpenSys/pkgs) > /home/{user}/qsnet.out 2>&1; echo "exit=$?" >> /home/{user}/qsnet.out')
+    QSH0005 Command ended normally with exit status 0.
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYFRMSTMF FROMSTMF('/home/{user}/qsnet.out') TOMBR('/QSYS.LIB/{user}B.LIB/NETSPL.FILE/NETSPL.MBR') MBROPT(*REPLACE) STMFCODPAG(*STMF)
+    CPCA081 Stream file copied to object.
+OK  RMVLNK OBJLNK('/home/{user}/qsnet.out')
+    CPCA089 Link removed.
+OK  QSH CMD('(/QOpenSys/usr/bin/netstat -an) > /home/{user}/qsnet.out 2>&1; echo "exit=$?" >> /home/{user}/qsnet.out')
+    QSH0005 Command ended normally with exit status 0.
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYFRMSTMF FROMSTMF('/home/{user}/qsnet.out') TOMBR('/QSYS.LIB/{user}B.LIB/NETSPL.FILE/NETSPL.MBR') MBROPT(*REPLACE) STMFCODPAG(*STMF)
+    CPCA081 Stream file copied to object.
+OK  RMVLNK OBJLNK('/home/{user}/qsnet.out')
+    CPCA089 Link removed.
+OK  QSH CMD('(ls -la /etc /QOpenSys/etc /QIBM/UserData/OS400 /QIBM/ProdData/OS400) > /home/{user}/qsnet.out 2>&1; echo "exit=$?" >> /home/{user}/qsnet.out')
+    QSH0005 Command ended normally with exit status 0.
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYFRMSTMF FROMSTMF('/home/{user}/qsnet.out') TOMBR('/QSYS.LIB/{user}B.LIB/NETSPL.FILE/NETSPL.MBR') MBROPT(*REPLACE) STMFCODPAG(*STMF)
+    CPCA081 Stream file copied to object.
+OK  RMVLNK OBJLNK('/home/{user}/qsnet.out')
+    CPCA089 Link removed.
+OK  QSH CMD('(ls -la /usr/bin/qsh /usr/bin/sh /QOpenSys/usr/bin/sh /QOpenSys/usr/bin/bsh /QOpenSys/usr/bin/ksh /QOpenSys/pkgs/bin/bash) > /home/{user}/qsnet.out 2>&1; echo "exit=$?" >> /home/{user}/qsnet.out')
+    QSH0005 Command ended normally with exit status 0.
+OK  CLRPFM FILE({user}B/NETSPL)
+    CPC3101 Member NETSPL file NETSPL in {user}B cleared.
+OK  CPYFRMSTMF FROMSTMF('/home/{user}/qsnet.out') TOMBR('/QSYS.LIB/{user}B.LIB/NETSPL.FILE/NETSPL.MBR') MBROPT(*REPLACE) STMFCODPAG(*STMF)
+    CPCA081 Stream file copied to object.
+OK  RMVLNK OBJLNK('/home/{user}/qsnet.out')
+    CPCA089 Link removed.
+OK  DLTF FILE({user}B/NETSPL)
+    CPC2191 Object NETSPL in {user}B type *FILE deleted.

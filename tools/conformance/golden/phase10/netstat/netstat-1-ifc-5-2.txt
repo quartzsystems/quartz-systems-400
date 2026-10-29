@@ -1,0 +1,24 @@
+                        Display TCP/IP Interface Status                         
+                                                             System:   SYSNAME  
+ Text description  . . . . . . . :   *NONE                                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Command line   F12=Cancel   F22=Display entire field   
+                                                                                

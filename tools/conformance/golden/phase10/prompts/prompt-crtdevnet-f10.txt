@@ -1,0 +1,24 @@
+                    Create Device Desc (Network) (CRTDEVNET)                    
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Device description . . . . . . . DEVD                                          
+ Device type  . . . . . . . . . . TYPE                                          
+ Online at IPL  . . . . . . . . . ONLINE         *YES                           
+ Attached controller  . . . . . . CTL                                           
+ Text 'description' . . . . . . . TEXT           *BLANK                         
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Authority  . . . . . . . . . . . AUT            *CHANGE                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

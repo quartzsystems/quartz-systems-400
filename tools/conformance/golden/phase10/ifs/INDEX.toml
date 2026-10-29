@@ -1,0 +1,183 @@
+[[golden]]
+name = "wrklnk-root"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs"
+width = 80
+
+[[golden]]
+name = "wrklnk-root-f23"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs"
+width = 80
+
+[[golden]]
+name = "wrklnk-5-root"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-5-root-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-8-root"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-8-root-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-8-root-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-9-root"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-12-root-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-root-contents"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-root-contents-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-5-dir"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-8-dir"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-12-dir-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-home"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-5-stmf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-8-stmf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-8-stmf-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-8-stmf-3"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "wrklnk-9-stmf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "dsplnk-root"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "edtf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80
+
+[[golden]]
+name = "dspf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "ifs-resume"
+width = 80

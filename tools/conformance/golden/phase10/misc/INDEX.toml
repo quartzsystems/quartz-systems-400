@@ -1,0 +1,127 @@
+[[golden]]
+name = "wrkreginf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "misc"
+width = 80
+
+[[golden]]
+name = "wrkreginf-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "misc"
+width = 80
+
+[[golden]]
+name = "wrkreginf-qtmf"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "misc"
+width = 80
+
+[[golden]]
+name = "wrkreginf-qtmf-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "misc"
+width = 80
+
+[[golden]]
+name = "wrkreginf-qtmf-8"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "misc"
+width = 80
+
+[[golden]]
+name = "qsh-start"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "misc"
+width = 80
+
+[[golden]]
+name = "qsh-session"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "misc"
+width = 80
+
+[[golden]]
+name = "wrkenvvar"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "misc"
+width = 80
+
+[[golden]]
+name = "wrkenvvar-sys"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "misc"
+width = 80
+
+[[golden]]
+name = "wrkrdbdire"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "misc"
+width = 80
+
+[[golden]]
+name = "wrkrdbdire-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "misc"
+width = 80
+
+[[golden]]
+name = "menu-tcpadm"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "misc"
+width = 80
+
+[[golden]]
+name = "menu-cfgtcp-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "misc-resume"
+width = 80
+
+[[golden]]
+name = "ping-loopback"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "misc-resume"
+width = 80
+
+[[golden]]
+name = "ping-loopback-f10"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "misc-resume"
+width = 80
+
+[[golden]]
+name = "ping-joblog"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "misc-resume"
+width = 80

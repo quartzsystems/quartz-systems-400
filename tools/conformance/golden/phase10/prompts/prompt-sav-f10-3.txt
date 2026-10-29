@@ -1,0 +1,24 @@
+                                Save Object (SAV)                               
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Output . . . . . . . . . . . . . OUTPUT         *NONE                          
+                                                                                
+ Volume identifier  . . . . . . . VOL            *MOUNTED                       
+                                                                                
+                           + for more values                                    
+                                                                                
+ Label  . . . . . . . . . . . . . LABEL          *GEN                           
+ Optical file . . . . . . . . . . OPTFILE        '*'                            
+                                                                                
+ Sequence number  . . . . . . . . SEQNBR         *END                           
+ File expiration date . . . . . . EXPDATE        *PERM                          
+ End of media option  . . . . . . ENDOPT         *REWIND                        
+ Use optimum block  . . . . . . . USEOPTBLK      *YES                           
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Messages pending on other displays.                                            

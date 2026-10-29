@@ -1,0 +1,24 @@
+                        Change SMTP Attributes (CHGSMTPA)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Delivery status notification:    NFYDLVRY                                      
+   Responsible person . . . . . .                *NONE                          
+                                                                                
+                                                                                
+                                                                                
+ Subsystem description  . . . . . SBSD           QSYSWRK                        
+   Library  . . . . . . . . . . .                  QSYS                         
+ Realtime Blackhole List  . . . . RBLSVR         *NONE                          
+                                                                                
+                                                                                
+                                                                                
+ Allow relayed mail . . . . . . . ALWRLY         *ALL                           
+                           + for more values                                    
+ POP send mail window . . . . . . POPWDW         *NONE                          
+ Interface/domain association . . IFCDMN         *NONE                          
+ Filter mail for virus  . . . . . FTRACN         *NONE                          
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

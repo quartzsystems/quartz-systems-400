@@ -1,0 +1,24 @@
+                        Change SNTP Attributes (CHGNTPA)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Remote system  . . . . . . . . . RMTSYS         *SAME                          
+                                                                                
+                           + for more values                                    
+                                                                                
+ Client autostart . . . . . . . . AUTOSTART      *SAME                          
+ Client poll interval . . . . . . POLLITV        *SAME                          
+ Client minimum adjustment  . . . MINADJ         *SAME                          
+ Client maximum adjustment  . . . MAXADJ         *SAME                          
+ Client adjustment threshold  . . ADJTHLD        *SAME                          
+ Client activity log  . . . . . . ACTLOG         *SAME                          
+ Server autostart . . . . . . . . SVRAUTOSTR     *SAME                          
+ Server activity log  . . . . . . SVRACTLOG      *SAME                          
+ Synchronization required . . . . SYNCRQD        *SAME                          
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Current values could not be retrieved.                                         

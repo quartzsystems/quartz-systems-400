@@ -1,0 +1,24 @@
+                            Display Line Description                   PUB400   
+                                                         MM/DD/YY  HH:MM:SS UTC 
+ Line description . . . . . . . . . :   LIND        LINETH                      
+ Option . . . . . . . . . . . . . . :   OPTION      *BASIC                      
+ Category of line . . . . . . . . . :               *ELAN                       
+                                                                                
+ Maximum frame size . . . . . . . . :   MAXFRAME    1496                        
+ Maximum controllers  . . . . . . . :   MAXCTL      40                          
+ Error threshold level  . . . . . . :   THRESHOLD   *OFF                        
+ Generate test frame  . . . . . . . :   GENTSTFRM   *YES                        
+ Message queue  . . . . . . . . . . :   MSGQ        *SYSVAL                     
+ Current message queue  . . . . . . :               QSYSOPR                     
+   Library  . . . . . . . . . . . . :                 QSYS                      
+ Text . . . . . . . . . . . . . . . :   TEXT        *BLANK                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Nondisplay keywords   F12=Cancel                                 
+                                                                                

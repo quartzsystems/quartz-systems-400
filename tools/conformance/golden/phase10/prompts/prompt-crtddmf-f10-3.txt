@@ -1,0 +1,24 @@
+                            Create DDM File (CRTDDMF)                           
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Text 'description' . . . . . . . TEXT           *BLANK                         
+                                                                                
+                                                                                
+                            Additional Parameters                               
+                                                                                
+ Device:                          DEV                                           
+   APPC device description  . . .                *LOC                           
+ Local location . . . . . . . . . LCLLOCNAME     *LOC                           
+ Mode . . . . . . . . . . . . . . MODE           *NETATR                        
+ Remote network identifier  . . . RMTNETID       *LOC                           
+ Port number  . . . . . . . . . . PORT           *DRDA                          
+ Access method:                   ACCMTH                                        
+   Remote file attribute  . . . .                *RMTFILE                       
+   Local access method  . . . . .                                               
+ Share open data path . . . . . . SHARE          *NO                            
+ Protected conversation . . . . . PTCCNV         *NO                            
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Parameter FILE required.                                                       

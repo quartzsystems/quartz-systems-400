@@ -1,0 +1,24 @@
+                         Display Jobs Using Connection                          
+                                                             System:   SYSNAME  
+ Connection type  . . . . . . :   *TCP                                          
+ Local address  . . . . . . . :   *                                             
+ Local port . . . . . . . . . :   23                                            
+ Remote address . . . . . . . :   *                                             
+ Remote port  . . . . . . . . :   *                                             
+                                                                                
+ Type options, press Enter.                                                     
+   5=Work with job                                                              
+                                                                                
+                                                            Current             
+ Opt     Name           User           Number     Type      User                
+         QTVTELNET      QTCP           NNNNNN     *BCH      QTCP                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F5=Refresh   F6=Print   F9=Command line   F12=Cancel                 
+                                                                                
+                                                                                

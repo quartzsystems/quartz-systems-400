@@ -1,0 +1,24 @@
+                        Configure Point-to-Point TCP/IP                         
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      2. Work with active point-to-point jobs                                   
+                                                                                
+   Modem information options                                                    
+     11. Work with modem information                                            
+                                                                                
+   Other related options:                                                       
+     21. Work with PPP line descriptions                                        
+     22. Work with PPP line description status                                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+                                                                                

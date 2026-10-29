@@ -1,0 +1,24 @@
+                        Display TCP/IP Interface Status                         
+                                                             System:   SYSNAME  
+ Interface host name . . . . . . :   LOOPBACK                                   
+ Internet address  . . . . . . . :   127.0.0.1                                  
+   Subnet mask . . . . . . . . . :     255.0.0.0                                
+   Network address . . . . . . . :     127.0.0.0                                
+   Host address  . . . . . . . . :     0.0.0.1                                  
+   Directed broadcast address  . :     *NONE                                    
+ Interface status  . . . . . . . :   Active                                     
+ Change date/time  . . . . . . . :   MM/DD/YY  HH:MM:SS                         
+ Line description  . . . . . . . :   *LOOPBACK                                  
+   Virtual LAN ID  . . . . . . . :     *NONE                                    
+ Line type . . . . . . . . . . . :   *NONE                                      
+ Associated local interface  . . :   *NONE                                      
+ Type of service . . . . . . . . :   *NORMAL                                    
+ Maximum transmission unit . . . :   576                                        
+ Automatic start . . . . . . . . :   *YES                                       
+ DHCP created  . . . . . . . . . :   *NO                                        
+ Alias name  . . . . . . . . . . :   LOCALHOST                                  
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F6=Print   F9=Command line   F12=Cancel   F22=Display entire field   
+                                                                                

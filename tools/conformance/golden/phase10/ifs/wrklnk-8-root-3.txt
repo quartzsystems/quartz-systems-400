@@ -1,0 +1,24 @@
+                               Display Attributes                               
+                                                                                
+ Object . . . . . . :   /                                                       
+                                                                                
+ Object domain  . . . . . . . . . . . . :   *SYSTEM                             
+                                                                                
+ Number of hard links . . . . . . . . . :   25                                  
+                                                                                
+ Create object auditing . . . . . . . . :   *NOTAVL                             
+ Create object scanning . . . . . . . . :   *YES                                
+ Create run exit program  . . . . . . . :   No                                  
+                                                                                
+ Set effective user ID  . . . . . . . . :   No                                  
+ Set effective group ID . . . . . . . . :   Yes                                 
+ Restricted rename and unlink . . . . . :   No                                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel   F22=Display entire field                                
+                                                                                

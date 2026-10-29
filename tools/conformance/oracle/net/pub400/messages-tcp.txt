@@ -1,0 +1,2138 @@
+-- SELECT MESSAGE_ID, SEVERITY, MESSAGE_DATA_COUNT, MESSAGE_DATA, MESSAGE_TEXT FROM QSYS2.MESSAGE_FILE_DATA WHERE MESSAGE_FILE_LIBRARY = 'QTCP' AND MESSAGE_FILE = 'QTCPMSGF' ORDER BY MESSAGE_ID
+MESSAGE_ID|SEVERITY|MESSAGE_DATA_COUNT|MESSAGE_DATA|MESSAGE_TEXT
+TCPC72C|0|0|-|New List ID
+TCPC72D|0|0|-|User identifier
+TCPC72E|0|0|-|From List ID
+TCPC72F|0|0|-|List description
+TCPC73A|0|0|-|User description
+TCPC73B|0|0|-|Address
+TCPC73C|0|0|-|Output member
+TCPC73D|0|0|-|List ID qualifier
+TCPC73E|0|0|-|List ID
+TCPC73F|0|0|-|Owner
+TCPC74A|0|0|-|Member to receive output
+TCPC74B|0|0|-|Detail
+TCPC74C|0|0|-|Library
+TCPC74D|0|0|-|Output
+TCPC74E|0|0|-|Output file
+TCPC74F|0|0|-|Replace or add records
+TCPC75A|0|0|-|Originating from
+TCPC75B|0|0|-|Successful final state
+TCPC75C|0|0|-|Unsuccessful final state
+TCPC750|0|0|-|Work with SMTP Dist Lists
+TCPC751|0|0|-|Rename SMTP Dist List
+TCPC752|0|0|-|Display SMTP Dist List
+TCPC753|0|0|-|Delete SMTP Dist List
+TCPC754|0|0|-|Create SMTP Dist List
+TCPC755|0|0|-|Job system name
+TCPC756|0|0|-|Spooled file created
+TCPC757|0|0|-|Creation time
+TCPC758|0|0|-|Forwarding to
+TCPC759|0|1|&1 *CHAR *VARY 2|SMTP detected a looping mail condition.
+TCP0445|0|0|-|Creation date
+TCP10AA|10|1|&1 *CHAR 256|Error processing MPUT parameter &1.
+TCP10AB|10|2|&1 *CHAR 10 &2 *CHAR 10|File &1 in library &2 not found.
+TCP10AC|10|2|&1 *CHAR 10 &2 *CHAR 10|File &1 in library &2 destroyed.
+TCP10AD|10|2|&1 *CHAR 10 &2 *CHAR 10|File &1 in library &2 suspended.
+TCP10AE|10|2|&1 *CHAR 10 &2 *CHAR 10|File &1 in library &2 damaged.
+TCP10AF|0|2|&1 *CHAR 10 &2 *CHAR 10|File &1 in library &2 locked.
+TCP10A0|10|2|&1 *CHAR 10 &2 *CHAR 10|Not authorized to access file &1 in library &2.
+TCP10A3|10|1|&1 *BIN 4|Host name exceeds maximum length of &1 bytes.
+TCP10A4|10|0|-|Error running command. Session still active, but connection to server closed.
+TCP10A5|10|0|-|Error occurred when resolving a path name.
+TCP10A6|10|0|-|Valid host name specified, but no address found.
+TCP10A7|10|0|-|Cannot resolve host name at this time.
+TCP10A8|10|0|-|Unable to format Double Byte Character Set data for display.
+TCP10A9|10|0|-|No response received from FTP server.
+TCP10BA|10|1|&1 *CHAR 10|550 Not authorized to access library &1.
+TCP10B0|10|2|&1 *CHAR 256 &2 *CHAR 256|Cannot connect to host &1 at address &2. Try again later.
+TCP10B1|0|3|&1 *CHAR 4 &2 *CHAR 9 &3 *CHAR 8|&3 is off. (&1 subcommand is not sent with &2 subcommands)
+TCP10B2|0|1|&1 *CHAR 68|&1
+TCP10B3|10|0|-|Control connection not available.
+TCP10B4|10|0|-|FTP server is active. Start request is ignored.
+TCP10B7|10|1|&1 *CHAR 10|550 Library &1 not found.
+TCP10E9|0|2|&1 *CHAR 4 &2 *CHAR 4|220 &1 subcommand received.  Log in again with &2 subcommand.
+TCP10F5|10|0|-|Local working directory not established.
+TCP10F6|10|1|&1 *CHAR 256|Local working directory is &1
+TCP100A|20|1|&1 *CHAR 1|A single &1 not permitted within a parameter enclosed by the same delimiter.
+TCP100B|20|1|&1 *CHAR 1|Cannot find closing &1 delimiter for subcommand parameter.
+TCP100C|0|0|-|Enter an FTP subcommand.
+TCP100D|10|0|-|No ports available to establish a session.
+TCP100E|10|18|&1 *CHAR *VARY 4 &2 *CHAR *VARY 4 &3 *CHAR *VARY 4 &4 *CHAR *VARY 4 &5 *CHAR *VARY 4 &6 *CHAR *VARY 4 &7 *CHAR *VARY 4 &8 *CHAR *VARY 4 &9 *CHAR *VARY 4 &10 *CHAR *VARY 4 &11 *CHAR *VARY 4 &12 *CHAR *VARY 4 &13 *CHAR *VARY 4 &14 *CHAR *VARY 4 &15 *CHAR *VARY 4 &16 *CHAR 6 &17 *CHAR 10 &18 *CHAR 10|FTP client job &16/&17/&18 accepted the not trusted certificate from server &15.
+TCP100F|20|0|-|Not enough characters specified. Subcommand not recognized.
+TCP1000|40|0|-|Storage overflow.  Records not added to member.  FTP session ended.
+TCP1002|0|0|-|Verify TCP/IP Connection
+TCP1003|0|0|-|Internet Address, Name
+TCP1004|0|0|-|Packet length (in bytes)
+TCP1005|0|0|-|Number of Packets
+TCP1006|0|0|-|Wait time (in seconds)
+TCP1007|0|0|-|Remote system
+TCP1008|0|0|-|Start TCP/IP File Transfer
+TCP1009|0|0|-|Start SMTP Administration
+TCP101A|10|1|&1 *CHAR 256|Cannot find host &1.
+TCP101B|10|1|&1 *CHAR 9|Current library not defined.  Use the &1 system command to define a current library.
+TCP101C|10|1|&1 *CHAR 10|Could not access library &1.
+TCP101D|10|1|&1 *CHAR 24|Port number specified, &1, must be numeric.
+TCP101E|10|3|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4|Port number &1 not valid.
+TCP101F|0|2|&1 *CHAR 256 &2 *BIN 4|Connecting to remote host &1 using port &2.
+TCP1010|0|0|-|*CURRENT, user profile
+TCP1011|0|0|-|User profile
+TCP1012|0|0|-|Option
+TCP1013|0|0|-|Configure TCP/IP
+TCP1014|0|0|-|Work with Names for SMTP
+TCP1015|0|0|-|Internet address
+TCP1016|0|0|-|Internet Address, Name
+TCP1017|0|0|-|Outgoing ASCII/EBCDIC table
+TCP1018|0|0|-|CL command is too long.
+TCP1019|0|1|&1 *CHAR 256|Already connected to host &1.
+TCP102A|0|0|-|SUNIQUE (store unique) is on.
+TCP102B|0|1|&1 *CHAR 12|Subcommand '&1' not valid.
+TCP102C|0|1|&1 *CHAR 4|For a list of available FTP subcommands, enter subcommand &1.
+TCP102D|10|0|-|Local file access error.
+TCP102E|0|2|&1 *CHAR 4 &2 *CHAR 3|Use of &1 subcommand with &2 is off.
+TCP102F|0|2|&1 *CHAR 4 &2 *CHAR 3|Use of &1 subcommand with &2 is on.
+TCP1020|10|1|&1 *CHAR 256|Not able to connect to remote host name &1.
+TCP1021|0|0|-|No password required.
+TCP1023|0|0|-|Not connected to a FTP server.
+TCP1025|0|0|-|Block mode only used with type EBCDIC.
+TCP1027|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|Member &1 in file &2 in library &3 not found.
+TCP1029|0|0|-|SUNIQUE (store unique) is off.
+TCP103E|0|0|-|The remote server has the following help:
+TCP103F|10|0|-|Not able to establish data connection for DIR or LS.
+TCP1035|0|1|&1 *CHAR 12|Parameter &1 not valid for HELP subcommand.
+TCP1036|0|1|&1 *CHAR 12|You must first connect to a remote host system.
+TCP104A|0|3|&1 *CHAR 4 &2 *CHAR 9 &3 *CHAR 8|&3 is on. (&1 subcommand is sent with &2 subcommands.)
+TCP104B|0|2|&1 *CHAR 64 &2 *BIN 4|Connected to &1.  Port &2 logged on.
+TCP104C|0|1|&1 *BIN 4|Local port is &1.
+TCP104D|0|1|&1 *CHAR 10|Transfer mode is &1.
+TCP104E|0|1|&1 *CHAR 4|Use of &1 subcommand is off.
+TCP104F|0|1|&1 *CHAR 4|Use of &1 subcommand is on.
+TCP1040|0|0|-|Use STRTCPFT <remote site>.
+TCP105D|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|Member &1 in file &2 in library &3 damaged.
+TCP1050|10|1|&1 *CHAR 10|Library &1 does not exist.
+TCP1051|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|Member &1 in file &2 in library &3 already exists.
+TCP1052|0|1|&1 *CHAR 7|Specify &1 as a subcommand option.
+TCP1053|0|0|-|You do not have authority to access local file.
+TCP1058|0|3|&1 *BIN 4 &2 *CHAR 10 &3 *CHAR 10|&1 bytes transferred in &2 seconds. Transfer rate &3 KB/sec.
+TCP1059|20|0|-|The record length of the source and destination files are not compatible.
+TCP106B|0|2|&1 *CHAR 10 &2 *CHAR 10|File &1 in library &2 not a database file.
+TCP106D|20|1|&1 *CHAR 1|Character (&1) is not allowed in object name.
+TCP106E|20|1|&1 *CHAR 1|Character (&1) not allowed at the beginning of object name.
+TCP1061|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|Not authorized to member &1 in file &2 in library &3.
+TCP1062|0|0|-|Not enough storage available.
+TCP1067|0|2|&1 *CHAR 10 &2 *CHAR 10|File &1 in library &2 in use.
+TCP1068|0|0|-|No data transferred.
+TCP109E|0|3|&1 *CHAR 12 &2 *CHAR 4 &3 *CHAR 12|Use subcommand &1.  For more details, enter &2 &3.
+TCP1090|20|2|&1 *CHAR 4 &2 *CHAR 12|You must first issue the &1 subcommand.
+TCP1091|20|1|&1 *CHAR 12|&1 not recognized.  Try the subcommand again.
+TCP1092|10|1|&1 *CHAR 10|Enter login ID (&1):
+TCP1095|10|0|-|File name format not valid.  Use the format: library/file.member or file.member.
+TCP1096|10|2|&1 *CHAR 3 &2 *CHAR 4|Subcommands &1 and &2 not valid in block mode.
+TCP1099|0|2|&1 *CHAR 64 &2 *BIN 4|Connected to &1.  Port &2 not logged on.
+TCP11AA|40|0|-|Timer ended on data connection.
+TCP11AB|20|0|-|503 Already logged on.
+TCP11AC|20|2|&1 *CHAR 4 &2 *CHAR 4|503 &1 subcommand must be preceded by &2 subcommand.
+TCP11AD|20|1|&1 *CHAR 4|501 Password missing in &1 subcommand.
+TCP11AE|20|1|&1 *CHAR 4|530 Maximum number of passwords exceeded.  &1 subcommand disabled.
+TCP11AF|0|1|&1 *CHAR 10|230 &1 logged on.
+TCP11A0|40|0|-|Not able to determine job ID.
+TCP11A1|0|1|&1 *CHAR 70|220- &1.
+TCP11A2|10|2|&1 *CHAR 10 &2 *CHAR 10|550 File &1 in library &2 not found.
+TCP11A3|10|2|&1 *CHAR 10 &2 *CHAR 10|550 Not authorized to file &1 in library &2.
+TCP11A4|40|0|-|Initial passive open failed.
+TCP11A5|0|2|&1 *CHAR 3 &2 *CHAR 10|&1  Data transfer mode remains &2.
+TCP11A6|0|0|-|200 Data transfer mode is stream.
+TCP11A7|0|0|-|200 Data transfer mode is block.
+TCP11A8|10|0|-|504-Compressed mode not valid for this system.  Enter 'B' or 'S'.
+TCP11A9|0|0|-|125 List started.
+TCP11BB|0|1|&1 *CHAR 4|504 &1 subcommand not supported on the server.
+TCP11BC|0|1|&1 *CHAR 4|500 &1 subcommand is only allowed for block or compressed modes.
+TCP11BE|10|2|&1 *CHAR 4 &2 *CHAR 10|550 &1 subcommand failed:  Library &2 not found.
+TCP11BF|10|3|&1 *CHAR 4 &2 *CHAR 10 &3 *CHAR 10|550 &1 subcommand failed: File &2 not found in library &3.
+TCP11B0|10|1|&1 *CHAR 10|530 Log on attempt by user &1 rejected.
+TCP11B1|0|0|-|421 Port not available.  Try request again.
+TCP11B2|0|1|&1 *CHAR 24|227 Entering Passive Mode (&1).
+TCP11B3|10|1|&1 *CHAR 4|501 Internet address not valid in &1 subcommand.
+TCP11B4|10|1|&1 *CHAR 4|501 Port number not valid in &1 subcommand.
+TCP11B5|0|1|&1 *CHAR 4|200 &1 subcommand request successful.
+TCP11B7|0|2|&1 *CHAR 4 &2 *CHAR 256|&1 "&2" is current library.
+TCP11B9|0|1|&1 *CHAR 4|221 &1 subcommand received.
+TCP11CA|10|0|-|550 Redirection file must be a database file.
+TCP11CD|10|1|&1 *CHAR 10|550 Owner of library &1 may not have enough storage.
+TCP11CE|10|1|&1 *BIN 4|550- Renaming attempt failed.  The record length of the new file (&1)
+TCP11CF|10|1|&1 *BIN 4|550 is less than the record length of the original file (&1).
+TCP11C0|10|4|&1 *CHAR 4 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 10|550 &1 failed: Member &2 not found in file &3 in library &4.
+TCP11C1|10|5|&1 *CHAR 4 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 10 &5 *CHAR 10|550 &1 failed:  Not authorized to library &2 or specification &3/&4.&5 is invalid.
+TCP11C2|0|5|&1 *CHAR 4 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 10 &5 *CHAR 4|350 &1 member &2 in file &3 in library &4 accepted.  Enter new name using &5 subcommand.
+TCP11C3|10|2|&1 *CHAR 4 &2 *CHAR 4|503 Subcommand &1 must be preceded by subcommand &2.
+TCP11C4|10|1|&1 *CHAR 4|501 File identifier not recognized in &1 subcommand.
+TCP11C5|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|250 Member &1 in file &2 in library &3 cannot be renamed the same name.
+TCP11C7|10|0|-|550 Renaming attempt failed.
+TCP11C8|10|0|-|550- File not renamed.  File already exists.
+TCP11C9|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|550 You may delete the file using &1 &2/&3 and rename the file.
+TCP11DA|0|1|&1 *BIN 4|211- &1 bytes of control data have transferred.
+TCP11DB|10|0|-|211-There is no current data connection.
+TCP11DC|0|2|&1 *BIN 4 &2 *CHAR 24|211- &1 bytes of user data have been transferred for user &2.
+TCP11DD|0|3|&1 *CHAR 10 &2 *CHAR 6 &3 *CHAR 15|211- session using mode &1, structure &2, type &3 and byte size 8.
+TCP11DE|0|0|-|211- The next data connection will be actively opened.
+TCP11DF|0|3|&1 *CHAR 15 &2 *BIN 4 &3 *CHAR 46|211- to address host &3, port &2 using record format V and record length 80.
+TCP11D0|10|0|-|550 Original member was not deleted.
+TCP11D1|0|6|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 10 &5 *CHAR 10 &6 *CHAR 10|250 Member &1 in file &2 in library &3 renamed as &4/&5.&6.
+TCP11D2|0|0|-|250 File was converted from source physical file to physical file.
+TCP11D3|0|0|-|250 File was converted from physical file to source physical file.
+TCP11D5|0|1|&1 *CHAR 4|504 &1 <file-identifier> not valid.
+TCP11D6|0|1|&1 *CHAR 4|504 &1 subcommand <file-identifier> not allowed during data transfer.
+TCP11D7|0|3|&1 *CHAR 15 &2 *BIN 4 &3 *CHAR 46|211- FTP Server connected to remote address host &3, port &2.
+TCP11D9|0|4|&1 *CHAR 4 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 10|211- There is a &1 subcommand pending for member &2 in file &3 in library &4.
+TCP11EA|0|1|&1 *CHAR 6|200 Representation type is &1 nonprint.
+TCP11EB|0|0|-|200 Representation type is binary IMAGE.
+TCP11EC|0|0|-|200 Local byte size is 8.
+TCP11ED|10|0|-|504 The only byte size allowed is 8.
+TCP11EE|10|1|&1 *CHAR 4|501- Type &1 not valid.  Enter 'I', 'A', 'E', 'B', 'F', or 'C'.
+TCP11EF|10|1|&1 *CHAR 4|530 Maximum number of passwords exceeded.  &1 subcommand disabled.
+TCP11E1|0|2|&1 *CHAR 3 &2 *CHAR 10|&1  Data structure remains &2.
+TCP11E2|0|0|-|250 Data structure is file.
+TCP11E3|0|0|-|504- Page structure not valid.
+TCP11E4|0|0|-|250 Data structure is record.
+TCP11E5|0|1|&1 *CHAR 10|501- Structure &1 not valid.
+TCP11E6|0|0|-|215- IBM i is the remote operating system.
+TCP11E7|0|2|&1 *CHAR 3 &2 *CHAR 15|&1  Representation type remains &2.
+TCP11E9|10|2|&1 *CHAR 20 &2 *CHAR 4|504- Format &1 of subcommand &2 not valid.
+TCP11FB|10|1|&1 *CHAR 10|503- &1 subcommand is not allowed while a data transfer is in progress.
+TCP11FC|10|1|&1 *CHAR 4|503 Use &1 subcommand if you want to end the transfer.
+TCP11F0|10|0|-|501 To sign-on as a different user, first enter the REIN subcommand.
+TCP11F1|10|1|&1 *CHAR 4|501 User name missing from &1 subcommand.
+TCP11F2|10|1|&1 *CHAR 4|501 User name not valid in &1 subcommand.
+TCP11F4|10|0|-|503 You cannot log on while session is ending.
+TCP11F6|10|1|&1 *CHAR 4|500 Subcommand &1 not valid.
+TCP11F7|20|1|&1 *BIN 4|500 Command line too long; maximum length allowed is &1 bytes.
+TCP11F8|10|2|&1 *CHAR 4 &2 *CHAR 4|530 You must first log on with subcommands &1 and &2.
+TCP11F9|10|1|&1 *CHAR 4|530 Complete log on by using subcommand &1.
+TCP110B|40|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|426- Cannot write to member &1 in file &2 in library &3.
+TCP110E|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|426- Cannot read from member &1 in file &2 in library &3.
+TCP110F|0|0|-|Block mode not valid.
+TCP1102|10|0|-|502 SMNT subcommand not implemented.
+TCP1103|0|1|&1 *BIN 4|220 Connection will close if idle more than &1 minutes.
+TCP1104|0|1|&1 *BIN 4|220 Connection will close if idle more than &1 seconds.
+TCP1105|0|0|-|250 List completed.
+TCP1106|0|0|-|226 File transfer completed successfully.
+TCP1107|10|0|-|426 Data transfer ended.
+TCP1109|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|150 Sending file to member &1 in file &2 in library &3.
+TCP1110|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|150 Retrieving member &1 in file &2 in library &3.
+TCP1116|10|1|&1 *BIN 4|426- Record length &1 of destination file too large.
+TCP1117|10|1|&1 *BIN 4|426- Record length &1 of destination file not valid.
+TCP112A|0|0|-|250 Source physical file created.
+TCP112B|10|0|-|550 Library specification not valid.  Library not changed.
+TCP112C|0|1|&1 *CHAR 10|250 Current library changed to &1.
+TCP112D|10|1|&1 *CHAR 6|501  File identifier not valid in &1 subcommand.
+TCP112F|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|550 Not able to delete member &1 in file &2 in library &3.
+TCP1120|0|0|-|503 No account parameters required.
+TCP1121|10|0|-|550  Unable to create member.
+TCP1123|0|0|-|250  Member added.
+TCP1124|0|1|&1 *CHAR 4|202 &1 subcommand not required.
+TCP1125|10|0|-|550  Library specification not valid.  Library not created.
+TCP1126|0|0|-|250 Library created.
+TCP1127|10|0|-|550 Physical file specification not valid.  Physical file not created.
+TCP1128|0|0|-|250 Physical file created.
+TCP1129|10|0|-|550  File specification not valid.  File not created.
+TCP113A|0|0|-|504 Block mode valid with type EBCDIC only.
+TCP113B|10|0|-|550 No current library defined.
+TCP113C|10|0|-|550 Specified file name not unique.  File not stored.
+TCP113D|10|0|-|500 Command not valid.
+TCP113E|10|1|&1 *CHAR 10|550  Library &1 not found.
+TCP113F|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|550  No authorization to access member &1 in file &2 in library &3.
+TCP1130|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|250 Member &1 in file &2 in library &3 deleted.
+TCP1132|10|0|-|550 Not able to delete file.
+TCP1133|0|0|-|250 File deleted.
+TCP1135|10|1|&1 *CHAR 10|550 Not able to delete library &1.
+TCP1136|0|0|-|250 Library deleted.
+TCP1137|30|0|-|501 File must be specified by library/file.member.
+TCP1138|30|1|&1 *CHAR 1|501 Character (&1) not allowed at beginning of name.
+TCP114A|0|1|&1 *CHAR 4|214 Subcommand &1 not valid on this system.
+TCP114B|0|1|&1 *CHAR 4|214 &1 <file-identifier>:  Appends to the file.  A file is created if no file exists.
+TCP114D|0|1|&1 *CHAR 4|214- &1 <library name>:  Creates a library.
+TCP114E|0|1|&1 *CHAR 4|214- Example:  &1<library-name>.
+TCP114F|0|1|&1 *CHAR 4|214- &1 <file name>:  Creates a physical file.
+TCP1141|0|1|&1 *CHAR 4|214- &1: Ends any data transfer in progress.
+TCP1142|0|1|&1 *CHAR 36|214- Commands &1 can be cancelled.
+TCP1143|0|2|&1 *CHAR 4 &2 *CHAR 4|214 &1:  Cancels any pending subcommand &2.
+TCP1144|0|1|&1 *CHAR 4|214 &1 not valid for this system.
+TCP1145|0|1|&1 *CHAR 4|214- &1 <file-identifier>:  Adds member to physical file.
+TCP1146|0|1|&1 *CHAR 4|214- Example:  &1 FILE(library/file) MBR(member).
+TCP1147|0|0|-|214 More information available in Networking category in the IBM i Information Center, http://www.ibm.com/systems/i/infocenter/
+TCP1148|0|1|&1 *CHAR 4|214- &1 <file-identifier>:  Adds a variable-length member to a physical file.
+TCP1149|0|1|&1 *CHAR 4|214- Example:  &1 FILE(library/file) MBR(member).
+TCP115A|0|1|&1 *CHAR 4|214 &1 <command>:  Describes a command. If no command is specified, all commands are listed.
+TCP115B|0|1|&1 *CHAR 256|No database files or members found for subcommand MPUT argument &1.
+TCP115C|0|1|&1 *CHAR 4|214- &1 <library/file.member>:  Supplies list of objects.
+TCP115D|0|0|-|214- Lists owner, sizes, change dates and object type.
+TCP115E|0|0|-|214- Some examples of its use follow:
+TCP115F|0|1|&1 *CHAR 4|214- &1 <library/file.member>:  Provides information about one member only.
+TCP1150|0|1|&1 *CHAR 4|214- Example:  &1 FILE(Library/file) RCDLEN(80) MAXMBRS(*NOMAX).
+TCP1151|0|1|&1 *CHAR 4|214- &1 <file identifier>:  Creates a source physical file.
+TCP1152|0|1|&1 *CHAR 4|214- Example:  &1 FILE(library/file).
+TCP1153|0|1|&1 *CHAR 4|214 &1 <library>:  Changes default library.
+TCP1154|0|1|&1 *CHAR 4|214- &1:  Deletes a file member.
+TCP1155|0|1|&1 *CHAR 4|214 Example:  &1 library/file.member.
+TCP1156|0|1|&1 *CHAR 4|214- &1:  Deletes a file.
+TCP1157|0|1|&1 *CHAR 4|214 Example:  &1 library/file.
+TCP1158|0|1|&1 *CHAR 4|214- &1:  Deletes a library.
+TCP1159|0|1|&1 *CHAR 4|214 Example:  &1 library.
+TCP116A|0|1|&1 *CHAR 4|214 &1 <password>:  Supplies the password of a user.
+TCP116B|0|1|&1 *CHAR 4|214 &1:  Instructs this system to passively open the next data connection.
+TCP116C|0|0|-|214 PORT <IP address, port>: Identifies port on which client will listen for a data connection.
+TCP116D|0|1|&1 *CHAR 3|214 &1:  Returns the name of the current library.
+TCP116E|0|1|&1 *CHAR 4|214- &1: Ends the FTP session.
+TCP116F|0|0|-|214 If a data transfer is in progress it is allowed to complete.
+TCP1160|0|1|&1 *CHAR 4|214- &1 <library/file> or &1 <library/file.*>:  Provides information about all members in file.
+TCP1161|0|1|&1 *CHAR 4|214- &1 <library>:  Provides information about all objects in library.
+TCP1162|0|1|&1 *CHAR 4|214- &1: Provides information about all objects in current library.
+TCP1163|0|1|&1 *CHAR 4|214 &1 <file.*>:  Provides information about all members in file, of current library.
+TCP1164|0|0|-|214 EPRT !<prot>!<addr>!<port>! : Identifies protocol, IP address, and port for the data connection.
+TCP1165|0|1|&1 *CHAR 4|214- &1 <mode-symbol>:  Specifies the data transfer mode.
+TCP1166|0|0|-|214 Default mode is stream.  Stream (S) and block (B) are supported.
+TCP1167|0|2|&1 *CHAR 4 &2 *CHAR 4|214-&1 <file-identifier>:  Similar to subcommand &2, but supplies only file names.
+TCP1168|0|0|-|211- The next data connection will not be actively opened.
+TCP1169|0|1|&1 *CHAR 4|214 &1:  Performs no function but replies 'OK'.
+TCP117A|0|1|&1 *CHAR 4|214 &1:  Describes status of FTP session.
+TCP117B|0|1|&1 *CHAR 4|214- &1 <file name>:  Stores data in file.
+TCP117C|0|0|-|214 If file already exists, delete contents of file.
+TCP117D|0|1|&1 *CHAR 4|214- &1 <file.member>:  Stores data in file.
+TCP117E|0|0|-|214 If file already exists, store file using unique name.
+TCP1170|0|1|&1 *CHAR 4|214- &1:  Ends and then starts the current session again
+TCP1171|0|0|-|214  but allows any data transfer in progress to complete.
+TCP1172|0|0|-|214 Not valid for this system.
+TCP1173|0|1|&1 *CHAR 4|214 &1 marker: restart data transfer at this marker.
+TCP1174|0|1|&1 *CHAR 4|214 &1 <file.member>:  Retrieves data from this member of file.
+TCP1175|0|2|&1 *CHAR 4 &2 *CHAR 4|214- &1 <original file.member> and &2 <new file.member>:
+TCP1176|0|0|-|214- Rename a file.member. The commands must be sent in the specified order.
+TCP1177|0|3|&1 *CHAR 6 &2 *CHAR 4 &3 *CHAR 4|214 Many FTP users have a &1 subcommand that sends &2 and &3 subcommands.
+TCP1178|0|1|&1 *CHAR 4|214 &1 NAMEFMT <0 or 1>: switch between naming formats.
+TCP1179|0|1|&1 *CHAR 4|214 &1: Returns name of remote operating system.
+TCP118A|0|0|-|214- Data structure must be file(F) or record(R).  Mode can be stream (S) or block (B).
+TCP118B|10|1|&1 *CHAR 256|File not found: &1
+TCP118C|0|1|&1 *BIN 4|214- If this connection is not used more than &1 seconds, the session will end.
+TCP118D|0|0|-|214- File identifiers have three components: File, library, and member.
+TCP118E|0|0|-|214- Library and file components are separated by the / delimiter.
+TCP118F|0|0|-|214- File and member components are separated by the . delimiter.
+TCP1181|0|1|&1 *CHAR 4|214- &1 <representation type>:  Default type is ASCII.
+TCP1182|0|0|-|214 Valid data types are ASCII(A), EBCDIC(E), binary IMAGE(I), DB_EBCDIC(F), DB_ASCII(B) or CCSID(C).
+TCP1183|0|1|&1 *CHAR 4|214 &1 <user ID>:  Identifies user.
+TCP1184|0|0|-|214- Server-FTP commands follow:
+TCP1185|0|11|&1 *CHAR 5 &2 *CHAR 5 &3 *CHAR 5 &4 *CHAR 5 &5 *CHAR 5 &6 *CHAR 5 &7 *CHAR 5 &8 *CHAR 5 &9 *CHAR 5 &10 *CHAR 5 &11 *CHAR 5|214- &1, &2, &3, &4, &5, &6, &7, &8, &9, &10, &11,
+TCP1186|0|10|&1 *CHAR 4 &2 *CHAR 4 &3 *CHAR 4 &4 *CHAR 4 &5 *CHAR 4 &6 *CHAR 3 &7 *CHAR 4 &8 *CHAR 4 &9 *CHAR 4 &10 *CHAR 4|214- &1, &2, &3, &4, &5, &6, &7, &8, &9, &10,
+TCP1187|0|10|&1 *CHAR 4 &2 *CHAR 4 &3 *CHAR 4 &4 *CHAR 4 &5 *CHAR 4 &6 *CHAR 4 &7 *CHAR 5 &8 *CHAR 4 &9 *CHAR 3 &10 *CHAR 4|214- &1, &2, &3, &4, &5, &6, &7, &8, &9, &10
+TCP1188|0|10|&1 *CHAR 4 &2 *CHAR 4 &3 *CHAR 4 &4 *CHAR 4 &5 *CHAR 4 &6 *CHAR 4 &7 *CHAR 4 &8 *CHAR 4 &9 *CHAR 4 &10 *CHAR 4|214- &1, &2, &3, &4, &5, &6, &7, &8, &9, &10,
+TCP1189|0|0|-|214- The data representation type may be ASCII(A), EBCDIC(E), binary IMAGE(I),
+TCP119B|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|125 Member &1 not found in file &2 in library &3.
+TCP119E|30|1|&1 *CHAR 1|501 Character (&1) not allowed in object name.
+TCP1190|0|0|-|214- Example:  Library/file.member.
+TCP1191|10|0|-|Mode changed to stream for DIR or LS subcommand. Cannot restore to block.
+TCP1192|0|1|&1 *CHAR 4|214 For information about a specific command, enter &1 <command>.
+TCP1193|10|1|&1 *CHAR 10|125 Library &1 not found.
+TCP1199|10|0|-|Structure changed to file for DIR or LS subcommand. Cannot restore to record.
+TCP12AB|40|0|-|FTP client session initialization failure.
+TCP12AC|0|0|-|File Transfer Protocol
+TCP12AD|0|0|-|Previous FTP subcommands and messages:
+TCP12AE|0|0|-|F3=Exit     F6=Print       F9=Retrieve
+TCP12AF|0|1|&1 *CHAR 256|&1
+TCP12A0|10|2|&1 *CHAR 10 &2 *CHAR 10|426- Unable to open or create target file &1 in library &2.
+TCP12A1|10|1|&1 *CHAR 256|426- Unable to write to destination file &1.
+TCP12A2|10|1|&1 *CHAR 256|426- Unable to open file &1.
+TCP12A4|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|426- Cannot read from member &1 in file &2 in library &3.
+TCP12A5|10|1|&1 *CHAR 256|426- Unable to read data from file &1.
+TCP12A6|0|1|&1 *CHAR 256|&1
+TCP12A7|10|1|&1 *CHAR 256|426- Unable to open or create file &1 to receive data.
+TCP12A8|10|0|-|426- Unable to receive data from TCP/IP.
+TCP12A9|10|0|-|426- Unable to send data to TCP/IP.
+TCP12BB|0|1|&1 *CHAR 256|File system &1 in use.
+TCP12BC|0|1|&1 *CHAR 256|Directory not valid: &1.
+TCP12BD|0|1|&1 *CHAR 256|Directory not found: &1.
+TCP12BE|10|1|&1 *BIN 4|Record length &1 of file too large.
+TCP12BF|10|1|&1 *BIN 4|Record length &1 of file not valid.
+TCP12B0|10|2|&1 *CHAR 10 &2 *CHAR 10|Unable to open or create target file &1 in library &2.
+TCP12B1|10|1|&1 *CHAR 256|Unable to write to file &1
+TCP12B2|10|1|&1 *CHAR 256|Unable to open file &1 to send data.
+TCP12B3|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|Unable to open member &1 in file &2 in library &3 to send data.
+TCP12B4|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|Cannot read from member &1 in file &2 in library &3.
+TCP12B5|10|1|&1 *CHAR 256|Unable to read data from file &1
+TCP12B6|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|Cannot write to member &1 in file &2 in library &3.
+TCP12B7|10|1|&1 *CHAR 256|Unable to open or create file &1 to receive data.
+TCP12B8|10|0|-|Unable to receive data from TCP/IP.
+TCP12B9|10|0|-|Unable to send data to server.
+TCP12CA|30|0|-|File name cannot follow member name.
+TCP12CB|30|0|-|File cannot contain another file.
+TCP12CC|30|0|-|Library name cannot follow file or member name.
+TCP12CD|30|0|-|Only library QSYS can contain other libraries.
+TCP12CE|30|0|-|Object name must be specified before extension.
+TCP12CF|30|0|-|Path-format file name must be specified.
+TCP12C0|30|1|&1 *CHAR 1|Character (&1) not allowed in file name.
+TCP12C1|30|1|&1 *CHAR 5|Specified path name longer than &1 characters.
+TCP12C2|30|0|-|Name must be specified between slash (/) characters.
+TCP12C3|30|0|-|Extension longer than 3 characters.
+TCP12C4|30|0|-|Missing extension in file name.
+TCP12C5|10|2|&1 *CHAR 10 &2 *CHAR 10|426 Unable to clear SAVF &1 in library &2.
+TCP12C6|30|0|-|Unknown file system specified.
+TCP12C7|30|0|-|Unknown extension in database file name.
+TCP12C8|30|0|-|File name must precede member name.
+TCP12C9|30|0|-|Member cannot contain another member.
+TCP12DA|30|0|-|501 File name cannot follow member name.
+TCP12DB|30|0|-|501 File cannot contain another file.
+TCP12DC|30|0|-|501 Library name cannot follow file or member name.
+TCP12DD|30|0|-|501 Only library QSYS can contain other libraries.
+TCP12DE|30|0|-|501 Object name must be specified before extension.
+TCP12DF|30|0|-|501 Path-format file name must be specified.
+TCP12D0|30|1|&1 *CHAR 1|501 Character (&1) not allowed in file name.
+TCP12D1|30|1|&1 *CHAR 5|501 Specified path name longer than &1 characters.
+TCP12D2|30|0|-|501 Name must be specified between slash (/) characters.
+TCP12D3|30|0|-|501 Extension too long in file name; must be between 1 and 3 characters.
+TCP12D4|30|0|-|501 Missing extension in file name.
+TCP12D5|10|2|&1 *CHAR 10 &2 *CHAR 10|Unable to clear SAVF &1 in library &2.
+TCP12D6|30|0|-|501 Unknown file system specified.
+TCP12D7|30|0|-|501 Unknown extension in database file name.
+TCP12D8|30|0|-|501 File name must precede member name.
+TCP12D9|30|0|-|501 Member cannot contain another member.
+TCP12EA|0|1|&1 *CHAR 7|&1 subcommand not recognized by FTP server.
+TCP12EB|0|1|&1 *CHAR 7|&1 mode on.
+TCP12EC|0|1|&1 *CHAR 7|&1 mode off.
+TCP12ED|0|2|&1 *CHAR 7 &2 *CHAR 1|Server &1 is &2.
+TCP12EE|0|1|&1 *CHAR 7|Server &1 has not been set by the FTP client.
+TCP12EF|10|1|&1 *CHAR 256|Path already exists: &1
+TCP12E0|0|1|&1 *CHAR 12|Number of arguments not valid for subcommand &1.
+TCP12E1|20|0|-|Problem resolving an IBM i file name.
+TCP12E2|10|2|&1 *CHAR 10 &2 *CHAR 10|250 Unexpected end of file sequence.  File &1 in library &2 created but may contain incorrect data.
+TCP12E3|10|2|&1 *CHAR 10 &2 *CHAR 10|Unexpected end of file sequence.  File &1 in library &2 may contain incorrect data.
+TCP12E4|10|0|-|Unable to get port for data transfer.
+TCP12E5|10|0|-|Attempt to open connection failed.
+TCP12E6|0|0|-|Not connected to an FTP server.
+TCP12E7|20|1|&1 *CHAR 10|Unknown or unsupported structure: &1.
+TCP12E8|0|1|&1 *CHAR 10|Unknown or unsupported TYPE: &1.
+TCP12E9|0|2|&1 *CHAR 7 &2 *CHAR 1|Client &1 is &2.
+TCP12FA|0|1|&1 *CHAR 256|Directory cannot be accessed because it is in use: &1.
+TCP12FB|0|1|&1 *CHAR 256|Not authorized to directory &1
+TCP12FC|0|1|&1 *CHAR 256|Directory is damaged: &1.
+TCP12FD|0|1|&1 *CHAR 10|Storage needed exceeds maximum limit for user profile &1.
+TCP12FE|0|1|&1 *CHAR 256|System error prevents access to file &1.
+TCP12FF|40|0|-|FTP server error exit.
+TCP12F0|40|0|-|FTP server initialization failure.
+TCP12F1|40|0|-|FTP server unable to set user profile.
+TCP12F3|40|2|&1 *CHAR 24 &2 *BIN 4|FTP server unable to establish control connection.
+TCP12F4|10|0|-|Incorrect socket passed to FTP server.
+TCP12F5|20|0|-|FTP server unable to determine system name.
+TCP12F6|40|1|&1 *BIN 4|FTP server unable to accept connection from remote system.
+TCP12F7|20|0|-|Unable to pass FTP server control socket.
+TCP12F8|40|0|-|Unable to process FTP server queue.
+TCP12F9|20|0|-|Unable to start FTP server job.
+TCP120B|0|2|&1 *CHAR 10 &2 *CHAR 10|211- User is &1.  Working directory is library &2.
+TCP120C|0|0|-|331 Enter password.
+TCP120D|0|2|&1 *CHAR 10 &2 *CHAR 41|220- &1 at &2.
+TCP120F|0|1|&1 *CHAR 256|257  Current directory is "&1".
+TCP1201|10|1|&1 *CHAR 7|550 Cause code is &1; message text not available.
+TCP1202|0|1|&1 *CHAR 256|550 &1.
+TCP1206|10|0|-|426 Closing data connection.  Remote system cannot send data.
+TCP1207|0|0|-|502 List supported only in stream mode.
+TCP1208|20|1|&1 *CHAR 10|501- Transmission mode &1 not valid.
+TCP1209|0|3|&1 *CHAR 4 &2 *CHAR 10 &3 *CHAR 10|550 Subcommand &1 failed.  File &2 in library &3 may not be a valid database file.
+TCP121A|0|0|-|550  No current directory defined.
+TCP121B|0|1|&1 *CHAR 256|550  Unable to create directory &1.
+TCP121C|0|1|&1 *BIN 4|211- NAMEFMT set to &1.
+TCP121D|0|1|&1 *CHAR 1|250  Now using naming format "&1".
+TCP121E|0|0|-|250  Now using "OLD" naming format.
+TCP121F|10|1|&1 *CHAR 4|550  Option on the &1 subcommand not recognized.
+TCP1212|0|1|&1 *DEC 10 0|211- The current data connection transferred &1 bytes.
+TCP1215|0|1|&1 *BIN 4|&1 bytes transferred.
+TCP1216|10|0|-|425 Not able to open data connection.
+TCP1217|0|3|&1 *CHAR 256 &2 *CHAR 256 &3 *BIN 4|Connecting to host &1 at address &2 using port &3.
+TCP1218|0|0|-|200 OK.
+TCP122A|0|1|&1 *CHAR 3|214  &1 <directory name>: Creates a directory.
+TCP122B|0|1|&1 *CHAR 3|214  &1 <directory name>: Removes a directory.
+TCP122C|0|0|-|214- Unsupported commands marked with an *.
+TCP122D|0|0|-|214- Directory levels separated by the / delimiter.
+TCP122E|0|0|-|214- Database files use format: /QSYS.lib/Libname.lib/Fname.file/Mname.mbr
+TCP122F|0|0|-|214- HFS files use format: /ifmname/ifmdependentnamingformat
+TCP1220|0|2|&1 *CHAR 4 &2 *CHAR 256|211- &1 subcommand pending for &2.
+TCP1221|0|1|&1 *BIN 4|211  Current inactivity time-out value set to &1 seconds.
+TCP1222|0|1|&1 *CHAR 30|215  OS/400 is the remote operating system. The TCP/IP version is "&1".
+TCP1223|0|1|&1 *CHAR 256|250  Deleted file &1
+TCP1224|10|1|&1 *CHAR 256|550  Unable to delete &1
+TCP1225|10|2|&1 *CHAR 4 &2 *CHAR 3|550  Cannot use &1 to delete a directory. Use &2.
+TCP1226|10|2|&1 *CHAR 4 &2 *CHAR 3|550  Cannot use &1 to create a directory. Use &2.
+TCP1227|10|1|&1 *CHAR 256|550  Unable to delete directory &1.
+TCP1228|0|0|-|214- Name Format 0 :
+TCP1229|0|0|-|214- Name Format 1 :
+TCP1230|40|1|&1 *CHAR 21|Required system mapping table &1 not found.
+TCP1234|0|0|-|150- Characters that are not recognized in file specification are changed to #.
+TCP1237|0|1|&1 *BIN 4|250 Inactivity time-out set to &1 seconds.
+TCP127B|0|1|&1 *CHAR 256|550  Unable to find directory &1
+TCP127C|0|1|&1 *CHAR 256|550  Unable to find file &1
+TCP127D|0|1|&1 *CHAR 256|550  Not authorized to file &1
+TCP127E|0|2|&1 *CHAR 4 &2 *CHAR 7|550  &1 subcommand failed with specific &2 error code.
+TCP127F|0|2|&1 *CHAR 256 &2 *CHAR 4|350  File &1 accepted.  Type new name using &2 command.
+TCP1273|0|0|-|A list of possible subcommands follows.
+TCP1274|0|2|&1 *CHAR 4 &2 *CHAR 9|SENDSITE is on. (&1 subcommand is sent with &2 subcommand.)
+TCP1275|0|2|&1 *CHAR 4 &2 *CHAR 9|SENDSITE is off. (&1 subcommand is not sent with the &2 subcommand.)
+TCP1277|10|0|-|425 Cannot open data connection.
+TCP1278|10|0|-|550-Renaming attempt failed.
+TCP1279|0|6|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 10 &5 *CHAR 10 &6 *CHAR 10|250- Member &1 in file &2 in library &3 renamed as &4/&5.&6.
+TCP128A|10|1|&1 *CHAR 256|550-Error occurred on command &1.
+TCP128B|0|1|&1 *CHAR 4|214-&1 <seconds>: Sets the inactivity timeout of the FTP session.
+TCP128C|0|1|&1 *CHAR 4|214-Example:  &1 900.
+TCP128D|0|1|&1 *CHAR 4|214-&1: Runs a system command on the remote system.
+TCP128E|0|1|&1 *CHAR 4|214-Example:  &1 ADDLIBLE QUSRSYS.
+TCP128F|0|1|&1 *CHAR 256|250  File cannot be renamed to the same name: &1
+TCP1280|0|4|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 10|250 File &1 in library &2 renamed as &3/&4.
+TCP1281|0|4|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 10|250-File &1 in library &2 renamed as &3/&4.
+TCP1282|0|2|&1 *CHAR 10 &2 *CHAR 10|250 File &1 in library &2 cannot be renamed the same name.
+TCP1283|10|4|&1 *CHAR 4 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 10|550 &1 failed:  Not authorized to library &2 or specification &3/&4 is not valid.
+TCP1284|0|4|&1 *CHAR 4 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 4|350 &1 file &2 in library &3 accepted. Type new name using &4 subcommand.
+TCP1285|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|550 Member &1 in file &2 in library &3 not found.
+TCP1286|10|2|&1 *CHAR 10 &2 *CHAR 10|550 File &1 in library &2 may not be a valid database file.
+TCP1287|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|550 Not authorized to library &1 or to member &2 in file &3 in library &1.
+TCP1288|10|1|&1 *CHAR 70|250 Command &1 successful.
+TCP1289|10|2|&1 *CHAR 35 &2 *CHAR 19|Unable to establish data connection.
+TCP129A|0|1|&1 *CHAR 256|250  Created directory &1
+TCP129B|0|1|&1 *CHAR 256|250 Deleted directory &1
+TCP129C|10|0|-|550- Specified directory does not exist or cannot be accessed.
+TCP129D|0|1|&1 *CHAR 256|250 Current directory changed to &1.
+TCP129E|0|1|&1 *CHAR 256|File system not found: &1.
+TCP129F|0|1|&1 *CHAR 256|FTP user not authorized to file system &1.
+TCP1290|0|0|-|550  You may delete the existing file and then rename.
+TCP1291|0|0|-|504 Binary image transfer is required for file.
+TCP1292|40|0|-|504 Binary image transfer is required for save files.
+TCP1293|10|1|&1 *CHAR 256|426 Unable to open specified directory for &1.
+TCP1294|10|1|&1 *CHAR 256|550 Unable to access file or directory &1
+TCP1295|10|1|&1 *CHAR 256|550  Path does not exist: &1
+TCP1296|10|1|&1 *CHAR 256|550  Not authorized to &1
+TCP1297|10|1|&1 *CHAR 256|550  Not authorized to access directory &1
+TCP1298|10|1|&1 *CHAR 256|125  Could not read contents of directory &1
+TCP1299|10|1|&1 *CHAR 256|125  No files found in directory &1
+TCP130A|0|0|-|Display VT Keyboard Map
+TCP130B|0|0|-|Enter
+TCP130C|0|0|-|Backspace
+TCP130D|0|0|-|Duplicate
+TCP130E|0|0|-|Erase Input
+TCP130F|0|0|-|Error Reset
+TCP1301|0|0|-|5250 Attention
+TCP1302|0|0|-|5250 Help
+TCP1303|0|0|-|Page Down (Roll Up)
+TCP1304|0|0|-|Page Up (Roll Down)
+TCP1305|0|0|-|System Request
+TCP1306|0|0|-|Insert
+TCP1307|0|0|-|Delete
+TCP1308|0|0|-|Set VT Keyboard Map
+TCP1309|0|0|-|Change VT Keyboard Map
+TCP131A|0|0|-|Cursor Right
+TCP131B|0|0|-|Clear Screen
+TCP131C|0|0|-|Test Request
+TCP131D|0|0|-|Toggle Indicator Lights
+TCP131E|0|0|-|Redraw Screen
+TCP131F|0|0|-|F1
+TCP1310|0|0|-|Field Exit
+TCP1311|0|0|-|Field Minus
+TCP1312|0|0|-|Home
+TCP1313|0|0|-|New Line
+TCP1314|0|0|-|Print
+TCP1315|0|0|-|Field Advance
+TCP1316|0|0|-|Field Backspace
+TCP1317|0|0|-|Cursor Up
+TCP1318|0|0|-|Cursor Down
+TCP1319|0|0|-|Cursor Left
+TCP132A|0|0|-|F12
+TCP132B|0|0|-|F13
+TCP132C|0|0|-|F14
+TCP132D|0|0|-|F15
+TCP132E|0|0|-|F16
+TCP132F|0|0|-|F17
+TCP1320|0|0|-|F2
+TCP1321|0|0|-|F3
+TCP1322|0|0|-|F4
+TCP1323|0|0|-|F5
+TCP1324|0|0|-|F6
+TCP1325|0|0|-|F7
+TCP1326|0|0|-|F8
+TCP1327|0|0|-|F9
+TCP1328|0|0|-|F10
+TCP1329|0|0|-|F11
+TCP1330|0|0|-|F18
+TCP1331|0|0|-|F19
+TCP1332|0|0|-|F20
+TCP1333|0|0|-|F21
+TCP1334|0|0|-|F22
+TCP1335|0|0|-|F23
+TCP1336|0|0|-|F24
+TCP1340|40|1|&1 *CHAR 10|&1 command not allowed for this device.
+TCP1341|40|1|&1 *CHAR 10|Value &1 specified for multiple functions.
+TCP1342|40|1|&1 *CHAR 10|Value &1 is not valid.
+TCP1350|0|0|-|Set VT Mapping Tables
+TCP1352|30|0|-|Parameter mismatch between ASCCHRENC and TBLVTIN
+TCP1353|30|0|-|Parameter mismatch between ASCCHRENC and TBLVTOUT
+TCP1400|0|0|-|File Transfer Protocol (FTP)
+TCP1401|0|0|-|Simple Mail Transfer Protocol (SMTP)
+TCP1402|0|0|-|Telnet (Remote terminal logon)
+TCP1403|0|0|-|Customer written application
+TCP1404|0|0|-|Configuration
+TCP1405|0|0|-|Other
+TCP1406|0|0|-|IBM TCP/IP Connectivity Utilities for i
+TCP1407|0|0|-|Line Printer Requester (LPR)
+TCP1408|0|0|-|Line Printer Daemon (LPD)
+TCP1409|0|0|-|Simple Network Management Protocol (SNMP)
+TCP1410|0|0|-|Packet InterNet Groper (PING)
+TCP1411|0|0|-|Network Status (NETSTAT)
+TCP1412|0|0|-|Activation or deactivation
+TCP1413|0|0|-|HyperText Transfer Protocol (HTTP)
+TCP1414|0|0|-|Workstation Gateway (WSG)
+TCP1415|0|0|-|Post Office Protocol (POP)
+TCP1416|0|0|-|Remote Execution (REXEC)
+TCP200E|0|1|&1 *CHAR 24|User ID for postmaster:  &1.
+TCP200F|0|1|&1 *CHAR 24|User ID for looping mail:  &1.
+TCP2000|0|3|&1 *CHAR 1 &2 *CHAR 3 &3 *CHAR 33|IBM i SMTP i&1.&2 on &3.
+TCP2001|0|6|&1 *CHAR 3 &2 *CHAR 2 &3 *CHAR 3 &4 *CHAR 2 &5 *CHAR 8 &6 *CHAR 3|Date: &1, &2 &3 &4 &5 &6.
+TCP2002|0|1|&1 *CHAR 8|User ID of SMTP virtual machine:  &1.
+TCP2003|0|1|&1 *CHAR 24|TCP network domain name:  &1.
+TCP2006|0|1|&1 *CHAR 8|Local network node name:  &1.
+TCP2007|0|1|&1 *CHAR 8|Local domain name:  &1.
+TCP2008|0|1|&1 *CHAR 8|Local subsystem name:  &1.
+TCP201A|0|0|-|Debugging is not enabled.
+TCP201B|0|0|-|Mail logging disabled.
+TCP201E|0|2|&1 *CHAR 10 &2 *CHAR 4|Deliver using &1.  Mailer is &2.
+TCP2010|0|1|&1 *CHAR 64|Mail sent from user &1 cannot be returned.
+TCP2011|0|1|&1 *BIN 4|Port for Server-SMTP:  &1.
+TCP2012|0|1|&1 *BIN 4|Inactivity time-out:  &1 seconds.
+TCP2013|0|1|&1 *BIN 4|Finished open time-out in &1 seconds.
+TCP2014|0|1|&1 *BIN 4|Retry down host systems every &1 minutes.
+TCP2015|0|1|&1 *BIN 4|Return mail after &1 retries.
+TCP2016|0|1|&1 *BIN 4|Maximum length of accepted mail:  &1 bytes.
+TCP2019|0|0|-|Debugging is enabled.
+TCP202A|40|1|&1 *CHAR 19|Default name of configuration file:  &1.
+TCP202B|40|0|-|Member specification not valid.
+TCP202C|40|0|-|File specification not valid.
+TCP202D|40|0|-|Library specification not valid.
+TCP202E|40|0|-|Not able to find SMTP configuration file.
+TCP2020|0|2|&1 *CHAR 8 &2 *CHAR 8|&1 at &2 local addresses.
+TCP2023|0|0|-|Mail from restricted users is deleted.
+TCP2024|0|0|-|Mail from restricted users is returned.
+TCP2025|0|1|&1 *CHAR 8|Mail from restricted users is transferred to &1.
+TCP2026|0|1|&1 *BIN 4|QUIT subcommand already issued.  Connection &1 ignoring data and commands.
+TCP2027|40|1|&1 *CHAR 4|Correct form: &1 library/file.member.
+TCP2028|40|1|&1 *CHAR 4|Where Library, File and Member specify the &1 configuration file.
+TCP203C|40|0|-|Mailer option not valid.
+TCP203D|10|0|-|Reply too long.
+TCP203E|10|0|-|Command too long.
+TCP203F|10|1|&1 *CHAR 4|Command &1 entered with additional values.
+TCP2030|40|0|-|Option in configuration file not valid.
+TCP2031|40|0|-|Log file destination not valid.
+TCP2032|40|0|-|Address in restricted list not valid.
+TCP2033|40|0|-|Local delivery format not valid.
+TCP2034|40|0|-|VM/MVS bridge delivery format not valid.
+TCP2035|40|0|-|Value specified in RESTRICT command not valid.
+TCP2036|40|0|-|Address for mailer not valid.
+TCP2037|40|0|-|Maximum mail bytes value not valid.
+TCP204A|10|1|&1 *CHAR 34|Error in object list. Member &1 damaged.
+TCP204B|10|1|&1 *CHAR 34|Error in object list. Member &1 locked.
+TCP204E|10|1|&1 *CHAR 34|Not authorized to member &1.
+TCP204F|0|3|&1 *CHAR 10 &2 *CHAR 8 &3 *CHAR 8|Restricting Batch SMTP. &1 <&2 § &3>.
+TCP2041|0|3|&1 *CHAR 4 &2 *CHAR 24 &3 *CHAR 24|TCP connection &1 replying to domain &2 &3.
+TCP2043|10|1|&1 *CHAR 24|RCPT TO remote host system &1 not known.
+TCP2044|10|1|&1 *CHAR 24|Mail received from remote host system &1 not recognized.
+TCP2045|0|5|&1 *CHAR 24 &2 *CHAR 24 &3 *CHAR 2 &4 *CHAR 2 &5 *CHAR 13|Received: from &1 by &2 (SMTP Version &3) Release &4 with &5.
+TCP2047|10|1|&1 *CHAR 34|Error in object list.  Member &1 not found.
+TCP2048|10|1|&1 *CHAR 34|Error in object list.  Member &1 destroyed.
+TCP2049|10|1|&1 *CHAR 34|Error in object list.  Member &1 suspended.
+TCP2050|30|1|&1 *CHAR 10|Not able to use SMTP queue &1.
+TCP2051|0|0|-|Errors that do not have error reply codes may exist.
+TCP2052|10|1|&1 *CHAR 4|Command &1 not recognized.
+TCP2053|10|1|&1 *CHAR 24|Retries exhausted while attempting to connect to remote host system &1.
+TCP206A|0|0|-|Not able to resolve recipient's address.
+TCP206B|40|1|&1 *BIN 4|SMTP install not successful.
+TCP206C|40|3|&1 *CHAR 256 &2 *BIN 4 &3 *CHAR 24|Unable to resolve host IP address for &1.
+TCP206D|20|2|&1 *CHAR 256 &2 *CHAR 4|Unable to resolve Mail Router IP address &1.
+TCP206E|40|2|&1 *CHAR 4 &2 *CHAR 24|SMTP received an error from a sockets function.
+TCP206F|40|2|&1 *CHAR 4 &2 *CHAR 24|SMTP received an error resolving a host or domain name.
+TCP2061|40|1|&1 *CHAR 10|SMTP job &1 ended abnormally.
+TCP2062|30|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|SMTP job not able to use file &2.
+TCP2063|20|0|-|SMTP job ended normally.
+TCP2064|30|1|&1 *CHAR 10|SMTP not able to send or receive mail due to &1 protocol problem.
+TCP2065|30|1|&1 *CHAR 10|SMTP job &1 submission failed.
+TCP2066|30|4|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 10|Not able to end SMTP jobs.
+TCP2067|30|0|-|System storage threshold exceeded.
+TCP2068|20|2|&1 *BIN 4 &2 *BIN 4|Queued outgoing distributions: &1 and queued incoming distributions: &2.
+TCP2069|0|0|-|SMTP message forwarding.
+TCP207A|30|1|&1 *CHAR 7|Exception &1 attempting to revoke File Server Object access ID for SMTP.
+TCP207B|40|2|&1 *CHAR 10 &2 *CHAR 7|Unable to retrieve &1 configuration information.
+TCP207C|0|0|-|SMTP detected a looping mail condition.
+TCP207D|30|1|&1 *CHAR 7|System error &1 attempting to retrieve access IDs for SMTP.
+TCP2070|0|0|-|Mail delivered after retries.
+TCP2071|0|1|&1 *CHAR 24|Mail on the retry queue of &1 has been forwarded to nexthop.
+TCP2072|0|0|-|The mail recipients are:
+TCP2073|50|0|-|SMTP Internal Failure.
+TCP2074|40|1|&1 *CHAR 255|Cannot verify host name information. SMTP job ending.
+TCP2075|40|0|-|SMTP initialization not successful.
+TCP2076|40|0|-|Required system mapping table not found.
+TCP2077|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|SMTP daemon job has requested work from a prestart job but the maximum number is already in use.
+TCP2078|30|4|&1 *HEX 2 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 10|An unrecoverable error indication was received while requesting work from a prestart job
+TCP2079|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|Not enough jobs in subsystem to satisfy request for additional prestart jobs.
+TCP2080|10|0|-|252 Cannot VRFY user, but will take message for this user and attempt delivery.
+TCP2081|20|2|&1 *CHAR 8 &2 *CHAR 40|&1 unable to bind to Internet Protocol interface &2.
+TCP2082|20|1|&1 *CHAR 8|&1 unable to bind to any Internet Protocol interface.
+TCP220A|10|2|&1 *CHAR 8 &2 *CHAR 8|550 User &1§&2 not allowed to send mail.
+TCP220B|10|1|&1 *CHAR 25|550 User &1 not recognized.
+TCP220C|10|1|&1 *CHAR 24|550 Host system &1 not known.
+TCP220D|10|1|&1 *CHAR 4|503 &1 must be the first command in session.
+TCP220E|10|0|-|503 Sender already specified.
+TCP220F|10|1|&1 *CHAR 4|Need values after &1 command
+TCP2200|10|0|-|500 Command line too long.
+TCP2201|10|1|&1 *CHAR 64|501 Syntax error.  &1.
+TCP2202|10|1|&1 *CHAR 4|No values needed after command &1.
+TCP2203|0|0|-|250 OK.
+TCP2205|10|0|-|Domain name missing
+TCP2206|10|0|-|Domain name too long
+TCP2207|0|1|&1 *CHAR 8|Spool file origin is &1.
+TCP2208|0|1|&1 *CHAR 24|Domain is &1.
+TCP2209|0|1|&1 *CHAR 24|Remote host system is &1.
+TCP221A|10|1|&1 *CHAR 4|Needs values after &1 command.
+TCP221B|0|0|-|250 Verbose mode on.
+TCP221C|0|0|-|250 Verbose mode off.
+TCP221D|10|2|&1 *CHAR 7 &2 *CHAR 8|Must use subcommands &1 or &2.
+TCP221E|10|1|&1 *CHAR 4|Need values after &1 command.
+TCP221F|10|1|&1 *CHAR 4|502 Command &1 not valid.
+TCP2210|10|1|&1 *CHAR 10|Must use &1 command
+TCP2211|10|0|-|Path too long
+TCP2212|10|0|-|503 Sender must be specified before recipients.
+TCP2213|10|1|&1 *CHAR 4|Needs values after &1 command
+TCP2214|10|1|&1 *CHAR 8|Must use &1 command
+TCP2215|10|0|-|Null recipient not valid
+TCP2216|10|0|-|503 No sender specified.
+TCP2217|10|0|-|503 No recipients specified.
+TCP2218|0|0|-|354 Enter mail body. End mail with a '.' in column 1 on a line by itself.
+TCP2219|0|3|&1 *CHAR 24 &2 *CHAR 2 &3 *CHAR 2|221 &1 running IBM i SMTP i&2.&3. Connection closing.
+TCP222A|0|0|-|214- Identifies remote host system.  Must be used once before the following commands:
+TCP222B|0|4|&1 *CHAR 4 &2 *CHAR 4 &3 *CHAR 4 &4 *CHAR 4|214- &1, &2, &3, or &4 subcommands.
+TCP222C|0|1|&1 *CHAR 4|214- &1 FROM: <Sender path address>
+TCP222D|0|1|&1 *CHAR 4|214- Specifies the sender.  May be used once after &1 command.
+TCP222E|0|1|&1 *CHAR 8|214- &1 <Recipient path address>
+TCP222F|0|0|-|214- Specifies a mail recipient.  May be used after the following commands.
+TCP2220|0|0|-|214- Valid commands are:
+TCP2221|0|7|&1 *CHAR 4 &2 *CHAR 4 &3 *CHAR 4 &4 *CHAR 4 &5 *CHAR 4 &6 *CHAR 4 &7 *CHAR 4|214- &1  &2  &3  &4  &5  &6  &7
+TCP2223|0|0|-|214- Commands not valid are:
+TCP2225|0|0|-|214- Mail forwarding handled by this server.
+TCP2226|0|1|&1 *CHAR 24|214- &1 is running the IBm i operating system.
+TCP2227|0|1|&1 *CHAR 4|214- For more information, enter &1 <topic>.
+TCP2228|0|2|&1 *CHAR 17 &2 *CHAR 24|214- For local information contact &1 § &2.
+TCP2229|0|1|&1 *CHAR 4|214- &1 <Domain name>.
+TCP223B|0|1|&1 *CHAR 4|214- &1   Not valid.
+TCP223C|0|1|&1 *CHAR 4|214- &1 <mode>.
+TCP223D|0|2|&1 *CHAR 2 &2 *CHAR 3|214- in which <mode> is either &1 or &2.
+TCP223E|0|1|&1 *CHAR 2|214- When <mode> is &1, subcommands are echoed to the job log.
+TCP2230|0|4|&1 *CHAR 4 &2 *CHAR 4 &3 *CHAR 4 &4 *CHAR 4|214- &1, &2, &3, &4.
+TCP2231|0|0|-|214- The following data becomes the body of the mail/message.
+TCP2232|0|0|-|214- End mail with a '.' in a column 1 on a line by itself.
+TCP2233|0|0|-|214- Must be used after recipients are specified.
+TCP2234|0|1|&1 *CHAR 4|214- &1:  Resets the state of the SMTP session.
+TCP2235|0|1|&1 *CHAR 4|214- &1:  Ends the SMTP session.
+TCP2236|0|1|&1 *CHAR 4|214- &1:  Specifies no operation.
+TCP2237|0|1|&1 *CHAR 4|214- &1:  Provides help information.
+TCP2238|0|1|&1 *CHAR 4|214- &1 <recipient>:
+TCP2239|0|1|&1 *CHAR 24|214- Verifies that the recipient is valid on domain &1.
+TCP224A|10|0|-|Only list ID or user ID allowed after this command
+TCP224B|10|1|&1 *CHAR 24|550 Mailbox &1 does not exist.
+TCP224C|10|1|&1 *CHAR 24|550 Mailing list &1 does not exist.
+TCP224D|0|3|&1 *CHAR 2 &2 *CHAR 8 &3 *CHAR 24|250 &1 < &2 § &3 >
+TCP224E|0|2|&1 *CHAR 1 &2 *CHAR 124|250 &1<&2>
+TCP224F|10|0|-|Start domain with an alphabetic character
+TCP2240|0|1|&1 *CHAR 4|214- &1 <value>
+TCP2241|0|0|-|214- in which <value> is not a null string.
+TCP2242|0|1|&1 *CHAR 4|214- When verbose mode is set on (using &1 command).
+TCP2243|0|2|&1 *CHAR 4 &2 *CHAR 10|214- The &1 command is used to insert a valid string into the &2 log.
+TCP2245|0|1|&1 *CHAR 4|214- &1:  Returns information about mail queued for delivery.
+TCP2246|10|1|&1 *CHAR 4|504 &1:  Topic not valid.
+TCP2247|10|0|-|214 End of help information.
+TCP2248|10|1|&1 *CHAR 4|500 Command &1 not known.
+TCP2249|10|1|&1 *CHAR 4|Need values after &1 command
+TCP225A|10|0|-|Local part contains syntax error
+TCP225B|10|0|-|Missing domain name
+TCP225C|10|0|-|Quoted string not ended
+TCP225D|10|0|-|Character specifying a carriage return line feed found in quoted text
+TCP225E|10|0|-|Quoted text is a null string
+TCP225F|10|0|-|Double quote expected
+TCP2250|10|0|-|Domain name cannot end with the - delimiter
+TCP2251|10|0|-|Number expected
+TCP2252|10|0|-|Internet address format not valid
+TCP2255|10|0|-|The . delimiter was expected
+TCP2256|10|0|-|End of domain name not expected
+TCP2257|10|1|&1 *HEX 1|&1 expected in path name
+TCP2258|10|0|-|incomplete command
+TCP2259|10|0|-|Special characters only permitted with escape character
+TCP226A|0|0|-|250- Spool queue:
+TCP226B|0|2|&1 *CHAR 15 &2 *CHAR 6|250- Queue for site:  &1 &2.
+TCP226C|0|2|&1 *CHAR 15 &2 *CHAR 6|250- Queue for remote host system:  &1 &2.
+TCP226D|0|2|&1 *CHAR 15 &2 *CHAR 8|250- RETRY QUEUE &1 last tried &2.
+TCP226E|0|0|-|250- Queue of mail that cannot be delivered is empty.
+TCP226F|0|0|-|250- Queue of mail that cannot be delivered:
+TCP2260|10|0|-|Missing user name
+TCP2261|10|0|-|Missing host system name. '§' expected
+TCP2262|10|0|-|'§' expected
+TCP2263|10|0|-|The § delimiter was expected in mail source address.
+TCP2264|10|0|-|The : delimiter expected in path name
+TCP2265|10|0|-|Start path name with the < delimiter
+TCP2266|10|0|-|Path specification not valid
+TCP2267|10|1|&1 *CHAR 1|Delimiter &1 not expected
+TCP2268|0|2|&1 *CHAR 10 &2 *CHAR 10|250- Note &1 to address &2.
+TCP2269|0|0|-|250- Spool queue is empty.
+TCP227B|0|0|-|RCPT TO:
+TCP227C|0|0|-|MAIL FROM:
+TCP227D|0|1|&1 *CHAR 24|250-The following messages list the SMTP queues for host system &1:
+TCP2270|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|&1 &2 connection &3 status set to OPENING.
+TCP2271|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|&1 &2 connection &3 status set to OPEN.
+TCP2272|0|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|&1 &2 connection &3 status set to CLOSING.
+TCP2273|0|2|&1 *CHAR 24 &2 *CHAR 30|220 &1 running IBM i SMTP at &2.
+TCP2275|0|2|&1 *CHAR 2 &2 *CHAR 12|Protocol error:  Character &1 found.  &2 bytes received.
+TCP2276|0|0|-|250 Mail delivered.
+TCP2277|10|0|-|451 Local error in processing.
+TCP2278|10|0|-|552 Mail file too large.
+TCP2279|0|2|&1 *CHAR 24 &2 *CHAR 30|250 &1 &2.
+TCP2280|10|0|-|501 Syntax error in username or hostname.
+TCP2281|40|0|-|Previously existing temporary space missing.
+TCP2282|20|0|-|Duplicate SMTP job started.
+TCP2283|20|2|&1 *CHAR 10 &2 *BIN 2|Connection profile has failed to achieve an acceptable status after 60 seconds.
+TCP2284|30|1|&1 *BIN 4|SMTP scheduler could not send mail to the PPP or SLIP connection
+TCP2285|50|4|&1 *CHAR 6 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 10|SMTP scheduler detected a non-recoverable program error.
+TCP240A|0|0|-|** Text of Mail follows **
+TCP240E|0|0|-|Error in Batch SMTP command sequence.
+TCP240F|0|0|-|Unable to deliver mail to some/all recipients.
+TCP2400|0|0|-|From:
+TCP2401|0|0|-|To:
+TCP2402|0|0|-|To:
+TCP2403|0|0|-|Subject: Undeliverable Mail
+TCP2404|0|1|&1 *CHAR 24|Host &1 not able to deliver mail to following recipient(s):
+TCP2406|0|1|&1 *CHAR 24|Error detected in the software running on &1.
+TCP2407|0|1|&1 *CHAR 24|Mail rejected by &1 with the message:
+TCP2408|0|0|-|If you change the mail and try again, it may work.
+TCP2409|0|1|&1 *CHAR 24|&1 received negative reply from host:
+TCP2410|0|0|-|Reply codes with first digit = '4' or '5' are error replies.
+TCP2411|0|0|-|Subject: NO SUBJECT
+TCP2412|0|1|&1 *CHAR 40|Subject: &1
+TCP2413|0|0|-|From:
+TCP2414|0|0|-|HELO
+TCP2415|0|0|-|MAIL FROM:
+TCP2416|0|0|-|DATA
+TCP2417|0|0|-|QUIT
+TCP2418|0|0|-|RCPT TO:
+TCP2419|0|0|-|RSET
+TCP2420|0|0|-|*** Cannot deliver mail ***
+TCP2421|0|0|-|*** Mail is not Final Form Text ***
+TCP2422|0|0|-|Support ETRN for server
+TCP2424|0|0|-|Support ETRN for client
+TCP2425|0|0|-|Enable client ETRN
+TCP2426|0|0|-|Incoming mail server address
+TCP2427|0|0|-|Mail domain name
+TCP2428|0|0|-|Support 8-bit MIME
+TCP2429|0|0|-|Delivery status notification
+TCP243A|0|0|-|Responsible person
+TCP243B|0|0|-|Subsystem description
+TCP243C|0|0|-|Realtime Blackhole List
+TCP243D|0|0|-|Allow relayed mail
+TCP243E|0|0|-|Interface/domain association
+TCP243F|0|0|-|Filter mail for virus
+TCP2430|0|0|-|Override reject connect list
+TCP2431|0|0|-|Allow bare line feed
+TCP2432|10|1|&1 *BIN 2|User name exceeds maximum length of &1 bytes.
+TCP2433|0|0|-|Verify identification
+TCP2434|40|0|-|Specified user name not valid.
+TCP2435|0|0|-|Allow authentication
+TCP2436|30|0|-|Configuration profile name required.
+TCP2438|10|0|-|The subsystem definition will not take effect until the SMTP server is restarted.
+TCP2439|30|0|-|The number of Realtime Blackhole List servers is limited to three.
+TCP244A|0|0|-|POP3 server bind addresses
+TCP244B|0|0|-|Add User SMTP
+TCP244C|0|0|-|User profile
+TCP244D|0|0|-|SMTP mailbox alias
+TCP244E|0|0|-|SMTP domain alias
+TCP244F|0|0|-|SDD name compatibility
+TCP2440|0|0|-|Forwarding mailhub server
+TCP2442|0|0|-|Verify from user
+TCP2443|0|0|-|Verify MSF messages
+TCP2444|0|0|-|Clear e-mail on start-up
+TCP2445|0|0|-|E-mail directory type
+TCP2446|0|0|-|Authorization requires SSL
+TCP2447|0|0|-|Allow e-mail over implicit SSL
+TCP2448|0|0|-|Max incoming e-mail messages
+TCP2449|0|0|-|Max outgoing e-mail messages
+TCP245A|0|0|-|Work with All SMTP Users
+TCP245B|0|0|-|Work with SMTP E-mail Messages
+TCP245C|0|0|-|E-mail type
+TCP245D|0|0|-|List e-mail by
+TCP245E|0|0|-|E-mail queue
+TCP245F|0|0|-|E-mail address or domain
+TCP2450|0|0|-|SDD address compatibility
+TCP2451|0|0|-|Change User SMTP
+TCP2452|0|0|-|Remove User SMTP
+TCP2453|0|0|-|Add Remote Login Entry
+TCP2454|0|0|-|Change Remote Login Entry
+TCP2455|0|0|-|Remove Remote Login Entry
+TCP2456|0|0|-|User name
+TCP2457|0|0|-|Password
+TCP2458|0|0|-|Domain
+TCP246A|0|0|-|E-mail address
+TCP246B|0|0|-|Type
+TCP246C|0|0|-|File name
+TCP246D|0|0|-|E-mail address or domain
+TCP246E|0|0|-|Start Import for SMTP Users
+TCP246F|0|0|-|SDD user identifier
+TCP2460|0|0|-|Send SMTP E-mail Message
+TCP2461|0|0|-|Recipient
+TCP2462|0|0|-|Subject
+TCP2463|0|0|-|Note
+TCP2464|0|0|-|Attachment
+TCP2465|0|0|-|Character set
+TCP2466|0|0|-|Character set CCSID
+TCP2467|0|0|-|Content type
+TCP2468|0|0|-|S/MIME
+TCP2469|0|0|-|Password
+TCP247A|0|0|-|Character set name
+TCP247B|0|0|-|SMTP server domain alias
+TCP2470|0|0|-|Delete SDD user after import
+TCP2471|0|0|-|User ID
+TCP2472|0|0|-|Address
+TCP2473|0|0|-|Keep until
+TCP2474|0|0|-|Sort e-mail by
+TCP2475|0|0|-|Starting time and date
+TCP2476|0|0|-|Ending time and date
+TCP2477|0|0|-|Date
+TCP2478|0|0|-|Time
+TCP2479|0|0|-|Maximum e-mail message size
+TCP248E|0|0|-|Domain index
+TCP248F|0|0|-|Domain Name
+TCP2480|0|0|-|Used by
+TCP2481|0|0|-|Prefer SMTP Server
+TCP2482|0|0|-|Used by
+TCP2483|0|0|-|Security connect by
+TCP2484|0|0|-|Authentication type
+TCP2485|0|0|-|Connection port
+TCP2486|0|0|-|SMTP log
+TCP2487|0|0|-|User as Originator
+TCP2500|40|1|&1 *CHAR 24|Remote host system name &1 not valid.
+TCP2504|0|0|-|TELNET session ended.  Connection closed.
+TCP2508|0|0|-|Incoming ASCII/EBCDIC table
+TCP2509|0|0|-|Start TCP/IP Telnet
+TCP2510|0|0|-|Control character key
+TCP2511|30|0|-|3270 mapping table parameters not correctly requested.
+TCP2512|0|0|-|Remote system
+TCP2513|0|0|-|*INTNETADR, Name
+TCP2514|0|0|-|Internet address
+TCP2515|0|0|-|1-32767 seconds, *NOMAX
+TCP2516|0|0|-|Timeout wait for host
+TCP2517|0|0|-|Numeric lock keyboard
+TCP2518|0|0|-|Keyboard language type
+TCP2519|0|0|-|Page Down (Roll Up) key
+TCP252A|0|0|-|VT100 AUTOWRAP data feature
+TCP252B|0|0|-|VT100 NEWLINE feature
+TCP252C|0|0|-|ASCII page scroll feature
+TCP252D|0|0|-|ASCII answerback feature
+TCP252E|0|0|-|ASCII tab stops
+TCP252F|0|0|-|Outgoing VT100 table
+TCP2520|0|0|-|Page Up (Roll Down) key
+TCP2521|0|0|-|Handle nulls
+TCP2522|0|0|-|Cursor Select key
+TCP2523|0|0|-|Incoming 3270 mapping table
+TCP2524|0|0|-|Outgoing 3270 mapping table
+TCP2525|0|0|-|Library
+TCP2526|0|0|-|Enable 3270 wide-screen
+TCP2527|0|0|-|Incoming ASCII/EBCDIC table
+TCP2528|0|0|-|Outgoing EBCDIC/ASCII table
+TCP2529|40|3|&1 *CHAR 10 &2 *CHAR 10 &3 *BIN 4|Problem detected with configuration file &1 in library &2.
+TCP253A|0|0|-|Number of 3270 input fields
+TCP2530|20|0|-|Virtual display device ended.  Connection closed.
+TCP2531|20|0|-|No storage available.  Connection closed.
+TCP2532|0|0|-|Incoming VT100 table
+TCP2533|0|0|-|ASCII full screen options
+TCP2534|20|0|-|Not able to complete TELNET initialization.
+TCP2535|0|0|-|Display character attributes
+TCP2536|0|0|-|ASCII full screen draw out
+TCP2537|0|0|-|ASCII full screen draw in
+TCP2538|0|0|-|*NONE, message
+TCP2539|0|0|-|Number of tasks
+TCP2540|0|0|-|*NONE, Name
+TCP2541|40|1|&1 *BIN 4|Parameter &1 must be '0' or '1'.
+TCP2542|40|2|&1 *BIN 4 &2 *CHAR 10|Parameter &1 value '&2' not valid.
+TCP2543|40|3|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4|Parameter &1 attribute at offset &2 not valid.
+TCP2544|40|3|&1 *CHAR 20 &2 *CHAR 8 &3 *CHAR 7|Program for exit point &1 format &2 received exception &3.
+TCP2545|0|1|&1 *CHAR 15|Telnet session has been refused for client address &1.
+TCP2546|0|1|&1 *BIN 4|The TELNET server port not configured.
+TCP2550|0|0|-|Convert SMTP Names
+TCP2551|0|0|-|Configure TCP/IP SMTP
+TCP2552|0|0|-|Change SMTP Attributes
+TCP2553|0|0|-|Coded character set identifier
+TCP2554|0|0|-|ASCII operating mode ID
+TCP2555|0|0|-|Port
+TCP2556|0|0|-|Initial name format
+TCP2557|0|0|-|Initial directory
+TCP2558|0|0|-|Initial list format
+TCP2559|0|0|-|New file CCSID
+TCP256A|0|0|-|Allow secure sockets layer
+TCP256B|0|0|-|Secure connection
+TCP256C|0|0|-|Data protection
+TCP256D|0|0|-|Application identifier
+TCP256E|0|0|-|Kerberos Authentication
+TCP2561|0|0|-|Table type to work with
+TCP2562|0|0|-|Configure TCP/IP TELNET
+TCP2563|0|0|-|Change Telnet Attributes
+TCP2566|0|0|-|Server mapping tables
+TCP2567|0|0|-|Change LPD Attributes
+TCP2568|0|0|-|Change FTP Attributes
+TCP2569|0|0|-|Autostart servers
+TCP257A|0|0|-|System name
+TCP257B|0|0|-|Alias table type
+TCP257C|0|0|-|User ID delimiter
+TCP257D|0|0|-|Mail router
+TCP257E|0|0|-|Change REXEC Attributes
+TCP257F|0|0|-|Journal
+TCP2570|0|0|-|Retries by hour
+TCP2571|0|0|-|Retries by minute
+TCP2572|0|0|-|Number of retries
+TCP2573|0|0|-|Time interval
+TCP2574|0|0|-|Retries by day
+TCP2575|30|0|-|FIREWALL(*YES) will be ignored.
+TCP2576|0|0|-|Retry remote name server
+TCP2577|0|0|-|Automatic registration
+TCP2578|0|0|-|User ID prefix
+TCP2579|0|0|-|Address
+TCP258A|30|0|-|No remote password was provided for the given remote user.
+TCP258B|30|0|-|Parameter mismatch between RMTUSER and RMTPWD.
+TCP2580|0|0|-|Remote virtual display
+TCP2581|0|0|-|Remote user
+TCP2582|0|0|-|Remote password
+TCP2583|0|0|-|Remote password encryption
+TCP2584|0|0|-|Remote initial program
+TCP2585|0|0|-|Remote initial menu
+TCP2586|0|0|-|Remote current library
+TCP2587|0|0|-|Remote keyboard type
+TCP2588|0|0|-|Remote codepage
+TCP2589|0|0|-|Remote character set
+TCP2590|40|1|&1 *BIN 4|Telnet client internal failure.  Reason Code = &1
+TCP2591|10|0|-|No response received from TELNET server.
+TCP2592|40|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 5|Error accessing &1 in library &2.  Object type is &3.
+TCP2593|30|1|&1 *CHAR 10|Device &1 already in use on the remote system
+TCP2594|30|2|&1 *CHAR 10 &2 *CHAR 4|Automatic signon to system &1 failed.  Failure reason is &2.
+TCP2595|10|2|&1 *CHAR 256 &2 *CHAR 256|Cannot connect to host &1 at address &2. Try again later.
+TCP260A|0|0|-|Autostart server
+TCP260B|0|0|-|ASCII fullscreen mapping
+TCP260C|0|0|-|Configure TCP/IP LPD
+TCP260D|0|0|-|Configure TCP/IP FTP
+TCP260E|0|0|-|Number
+TCP260F|0|0|-|Firewall
+TCP2600|0|0|-|Dial-up scheduler
+TCP2601|0|0|-|Process all mail through MSF
+TCP2602|0|0|-|Percent routing character
+TCP2603|30|0|-|Select retry by day or retry by hour. Can not have both.
+TCP2604|30|2|&1 *CHAR 10 &2 *CHAR 10|&1 has a value and &2 is zero.
+TCP2605|0|0|-|Start with SMTP server
+TCP2606|0|0|-|Configuration profile
+TCP2607|0|0|-|Connection time interval
+TCP2608|0|0|-|Connection number
+TCP2609|0|0|-|Checksum on incoming messages
+TCP261A|40|0|-|Remove associated routes before link.
+TCP261B|20|1|&1 *CHAR 10|Link &1 was previously ended.
+TCP261C|0|0|-|Process completed successfully.
+TCP261D|40|0|-|Process did not complete successfully
+TCP261E|0|0|-|1-1440 minutes, *SAME, *NONE
+TCP261F|20|1|&1 *CHAR 10|Link &1 was previously started.
+TCP2611|0|0|-|Configure TCP/IP REXEC
+TCP2612|0|0|-|Default NVT type
+TCP2613|0|0|-|Mapping tables
+TCP2614|0|0|-|Number of initial servers
+TCP2615|0|0|-|Inactivity timeout
+TCP2616|0|0|-|Session keep alive timeout
+TCP2617|0|0|-|Number servers
+TCP2618|0|0|-|Network address
+TCP2619|40|2|&1 *CHAR 10 &2 *CHAR 12|Line &1 is no longer &2.
+TCP262A|10|0|-|The SMTP server must be ended and restarted before the selected keywords will be used.
+TCP262B|40|0|-|Incorrect network address.
+TCP262C|0|0|-|Add TCP/IP Remote System
+TCP262D|40|0|-|Duplicate internet address detected.
+TCP262E|40|0|-|Parameter mismatch between UPDTYPE and object table parameters.
+TCP2620|20|1|&1 *CHAR 10|Severe error detected while starting link &1.
+TCP2621|20|1|&1 *CHAR 10|Link &1 does not exist.
+TCP2622|0|0|-|Allow Transport Layer Security
+TCP263A|0|0|-|Work with TCP/IP Network Sts
+TCP2631|0|0|-|Default TCP/IP mapping table has been applied to the base configuration
+TCP2632|0|0|-|Change TCP/IP Attributes
+TCP2633|40|1|&1 *CHAR 15|Internet address &1 does not exist.
+TCP2634|0|0|-|Remove TCP/IP Remote System
+TCP2635|40|0|-|X.25 parameter for ELAN or TRLAN link not allowed.
+TCP2637|0|0|-|Start TCP/IP Link
+TCP2639|0|0|-|End TCP/IP Connection
+TCP2640|20|0|-|Not able to complete request.  TCP/IP services are not available.
+TCP2641|0|0|-|No connections
+TCP2642|20|0|-|No connections to print.
+TCP2643|0|0|-|TCP/IP connection entries printed.
+TCP2644|0|0|-|TCP/IP connection printed
+TCP2645|20|1|&1 *BIN 2|Connection &1 does not exist.
+TCP2650|0|0|-|TCP/IP link printed
+TCP2653|40|0|-|Network address table is full.
+TCP2654|40|0|-|Link must be ended before issuing this request.
+TCP2655|40|0|-|Maximum number of links exceeded.
+TCP2656|40|0|-|Configuration file member not available.
+TCP2657|0|0|-|IP datagram forwarding
+TCP2658|30|1|&1 *CHAR 50|No interface associated with the internet address '&1'.
+TCP2701|30|1|&1 *CHAR 10|Subsystem QSYSWRK is not active or is being ended.
+TCP3CAA|40|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 20|Exception encountered for FTP exit program &1 in library &2 for exit point &3.
+TCP3CAB|40|4|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 20 &4 *CHAR 8|Cannot find exit program &1 in library &2 for FTP exit point &3 format &4.
+TCP3CAC|40|3|&1 *CHAR 7 &2 *CHAR 20 &3 *CHAR 8|Exception &1 occurred when trying to get information for exit point &2 with format name &3.
+TCP3CAD|20|2|&1 *CHAR 10 &2 *CHAR 10|TYPE &1 not allowed with file system &2.
+TCP3CAE|10|2|&1 *CHAR 10 &2 *CHAR 10|426- TYPE &1 not allowed with file system &2.
+TCP3CAF|0|0|-|230 Guest logon accepted, access restrictions apply.
+TCP3CA0|30|1|&1 *CHAR 10|Home directory not found for user &1.
+TCP3CA1|30|1|&1 *CHAR 10|501 Not able to process home directory for user &1.
+TCP3CA2|30|1|&1 *CHAR 10|Not able to process home directory for user &1.
+TCP3CA3|30|0|-|501 Pattern-matching character not allowed in path name directory.
+TCP3CA4|30|0|-|Pattern-matching character not allowed in path name directory.
+TCP3CA5|30|1|&1 *CHAR 5|501 Path name component too long; limit is &1 characters.
+TCP3CA6|30|1|&1 *CHAR 5|Path name component too long; limit is &1 characters.
+TCP3CA7|30|0|-|553 Cannot rename a file to a different file system.
+TCP3CA8|0|2|&1 *BIN 4 &2 *BIN 4|Client T1 time value set to &1 seconds.
+TCP3CA9|40|2|&1 *CHAR 20 &2 *CHAR 1|Data from exit program for exit point &1 is missing or not valid.
+TCP3CBA|0|1|&1 *CHAR 1024|250 "&1" is current directory.
+TCP3CBB|0|2|&1 *CHAR 20 &2 *CHAR 24|211- &1 bytes of user data have been transferred for user &2.
+TCP3CBC|0|1|&1 *CHAR 20|211- The current data connection transferred &1 bytes.
+TCP3CBD|0|2|&1 *CHAR 8 &2 *CHAR 4|&1 is on.
+TCP3CBE|0|2|&1 *CHAR 8 &2 *CHAR 4|&1 is off.
+TCP3CBF|0|2|&1 *CHAR 8 &2 *CHAR 4|Use of &2 disabled for this server session.
+TCP3CB0|20|0|-|Unable to display command line window.
+TCP3CB1|40|3|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4|Unable to convert data from CCSID &1 to CCSID &2: reason &3.
+TCP3CB2|40|3|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4|426- Unable to convert data from CCSID &1 to CCSID &2: reason &3.
+TCP3CB3|0|1|&1 *BIN 4|Client data connection window size set to &1 KBytes.
+TCP3CB4|10|1|&1 *CHAR 256|550  Path name specifies a directory: &1
+TCP3CB5|30|1|&1 *CHAR 256|550 Remote files not supported for file system &1.
+TCP3CB6|30|1|&1 *CHAR 256|Remote files not supported for file system &1.
+TCP3CB7|0|1|&1 *CHAR 20|&1 bytes transferred.
+TCP3CB8|0|3|&1 *CHAR 20 &2 *CHAR 10 &3 *CHAR 10|&1 bytes transferred in &2 seconds. Transfer rate &3 KB/sec.
+TCP3CB9|0|1|&1 *CHAR 1024|257 "&1" is current directory.
+TCP3CCA|0|1|&1 *CHAR 16|&1 subcommand successful.
+TCP3CCB|0|2|&1 *CHAR 8 &2 *CHAR 10|&1 option set to &2.
+TCP3CCC|40|3|&1 *CHAR 20 &2 *CHAR 8 &3 *CHAR 8|Exit program already exists for exit point &1.
+TCP3CCD|0|0|-|SITE NULLFLDS subcommand not sent to FTP server.
+TCP3CCE|30|0|-|Specified CCSID is not a valid EBCDIC CCSID.
+TCP3CCF|0|0|-|Use of EPRT disabled for this server session.
+TCP3CC0|0|2|&1 *BIN 4 &2 *CHAR 4|Unable to setup for an active data connection to the server, reason code &1.
+TCP3CC1|0|1|&1 *BIN 4|LOCSITE TRIM option set to &1.
+TCP3CC2|0|1|&1 *BIN 4|211- TRIM trailing blanks when sending database files option set to &1.
+TCP3CC3|0|1|&1 *BIN 4|250  TRIM trailing blanks when sending database files option set to &1.
+TCP3CC4|0|1|&1 *CHAR 4|214- &1 TRIM <0, 1, or 2>: Option to remove trailing blanks when sending database files.
+TCP3CC5|0|4|&1 *CHAR 4 &2 *CHAR 4 &3 *CHAR 10 &4 *CHAR 10|&1 &2 &3 option set to &4.
+TCP3CC6|0|2|&1 *CHAR 4 &2 *CHAR 256|&1 SITE LISTFMT <&2>: Options to format LIST information returned to client.
+TCP3CC7|0|3|&1 *CHAR 4 &2 *CHAR 4 &3 *CHAR 10|&1 &2 &3 option not valid.
+TCP3CC8|0|2|&1 *CHAR 4 &2 *CHAR 256|&1 "&2" library created.
+TCP3CC9|0|2|&1 *CHAR 4 &2 *CHAR 256|&1 "&2" directory created.
+TCP3CDA|10|1|&1 *CHAR 4|&1 Reauthentication is prohibited.
+TCP3CDB|10|1|&1 *CHAR 4|&1 Requested security mechanism not available at this time.
+TCP3CDC|0|1|&1 *CHAR 4|&1 Security mechanism accepted; start negotiation.
+TCP3CDD|10|2|&1 *CHAR 4 &2 *BIN 4|&1 Security negotiation failed, connection closed; error code &2.
+TCP3CDE|10|2|&1 *CHAR 4 &2 *CHAR 4|&1 Security mechanism not yet negotiated; must use &2 first.
+TCP3CDF|0|2|&1 *CHAR 4 &2 *CHAR 4|&1 &2 accepted.
+TCP3CD0|30|1|&1 *CHAR 8|Specified &1 value not valid.
+TCP3CD1|0|2|&1 *CHAR 4 &2 *BIN 4|&1 Allow database files with null fields (NULLFLDS) option set to &2.
+TCP3CD2|0|2|&1 *CHAR 4 &2 *BIN 4|&1 Directory listing format (LISTFMT) option set to &2.
+TCP3CD3|30|0|-|501 Specified CCSID is not a valid EBCDIC CCSID.
+TCP3CD4|0|2|&1 *CHAR 4 &2 *CHAR 10|&1 Create new database file CCSID (CRTCCSID) option set to &2.
+TCP3CD5|0|1|&1 *CHAR 4|214- &1 NULLFLDS <0 or 1>: Allow database files with null fields.
+TCP3CD6|0|1|&1 *CHAR 4|214- &1 CRTCCSID <*CALC, *USER, *SYSVAL, 1-65533>: Specify EBCDIC CCSID
+TCP3CD7|0|0|-|214-  used to create new database files for ASCII transfers.
+TCP3CD8|10|2|&1 *CHAR 1024 &2 *CHAR 10|530 Not able to set directory &1 for user &2; logon rejected.
+TCP3CD9|10|2|&1 *CHAR 4 &2 *CHAR 256|&1 Security mechanism not recognized.  LIST=&2
+TCP3CEA|0|0|-|Send Files
+TCP3CEB|0|0|-|Receive Files
+TCP3CEC|0|0|-|CL Commands
+TCP3CED|0|0|-|Create Directory/Library
+TCP3CEE|0|0|-|Delete Directory/Library
+TCP3CEF|0|0|-|Provide access to File Transfer Protocol (FTP).
+TCP3CE0|10|3|&1 *CHAR 4 &2 *CHAR 4 &3 *BIN 4|&1 &2 too large, use the following value.  &2=&3
+TCP3CE1|0|0|-|TCP/IP Utilities for iSeries
+TCP3CE2|0|0|-|File Transfer Protocol (FTP)
+TCP3CE3|0|0|-|FTP Client
+TCP3CE4|0|0|-|FTP Server
+TCP3CE5|0|0|-|Initiate Session
+TCP3CE6|0|0|-|Logon Server
+TCP3CE7|0|0|-|Specific Operations
+TCP3CE8|0|0|-|Specific Operations
+TCP3CE9|0|0|-|Change Directory
+TCP3CFA|0|0|-|Use of client subcommand LCD to change the current directory.
+TCP3CFB|0|0|-|Use of server subcommand CWD to change current directory.
+TCP3CFC|0|0|-|Use of client subcommands PUT, MPUT, and APPEND to send files.
+TCP3CFD|0|0|-|Use of server subcommands STOR, STOU, and APPE to receive files from client.
+TCP3CFE|0|0|-|Use of client subcommands GET and MGET to receive files.
+TCP3CFF|40|0|-|Internal error detected in File Transfer Protocol program.
+TCP3CF0|0|0|-|List Files
+TCP3CF1|0|0|-|Delete Files
+TCP3CF2|0|0|-|Rename Files
+TCP3CF3|0|0|-|Provide access to TCP/IP Utilities for iSeries.
+TCP3CF4|0|0|-|Provide access to the FTP Client.
+TCP3CF5|0|0|-|Provide access to the OS/400 FTP Server.
+TCP3CF6|0|0|-|Start an FTP Client session.  Must be allowed to do other client operations.
+TCP3CF7|0|0|-|Permission to logon to the FTP Server. Must be allowed to use other server operations.
+TCP3CF8|0|0|-|A group of specific FTP Client operations that can be administered.
+TCP3CF9|0|0|-|A group of specific FTP Server operations that can be administered.
+TCP3C0A|0|0|-|Enter account information:
+TCP3C0B|40|0|-|FTP client initialization failure.
+TCP3C0C|40|0|-|Cannot determine if job is DBCS capable.
+TCP3C0D|20|0|-|Error occurred while attempting the CL command.
+TCP3C0F|0|0|-|FTP client TYPE changed.  Server TYPE not changed.
+TCP3C00|10|0|-|CCSID parameter cannot be converted to a number.
+TCP3C01|0|1|&1 *CHAR 6|Using structure &1 to transfer files.
+TCP3C02|0|2|&1 *CHAR 5 &2 *BIN 2|&1 value is &2.
+TCP3C03|0|1|&1 *CHAR 5|&1 is on.
+TCP3C04|0|1|&1 *CHAR 5|&1 is off.
+TCP3C05|0|1|&1 *CHAR 6|Data type is &1.
+TCP3C06|0|2|&1 *CHAR 5 &2 *BIN 4|&1 value is &2.
+TCP3C07|10|0|-|CCSID value not valid or out of range.
+TCP3C08|40|0|-|Problem when trying to retrieve STRTCPFTP parameters.
+TCP3C09|0|0|-|Enter password:
+TCP3C1A|10|1|&1 *CHAR 10|Library &1 does not exist.
+TCP3C1B|10|1|&1 *CHAR 256|Directory does not exist: &1.
+TCP3C1C|10|1|&1 *CHAR 256|Error sending PORT subcommand.
+TCP3C1D|40|0|-|FTP processing cannot continue.
+TCP3C1E|10|0|-|Subcommands DIR and LS not valid with current type.
+TCP3C1F|10|0|-|Could not change to specified directory.
+TCP3C10|0|1|&1 *CHAR 15|200 Representation type is &1.
+TCP3C11|0|1|&1 *BIN 4|200 Representation type is CCSID &1.
+TCP3C12|10|0|-|Subcommands DIR or LS not valid with file structure record.
+TCP3C14|40|2|&1 *BIN 4 &2 *BIN 4|Unable to convert data from CCSID &1 to CCSID &2.
+TCP3C15|10|0|-|Cannot complete DIR or LS subcommand because of CCSID value.
+TCP3C16|10|2|&1 *CHAR 1 &2 *CHAR 10|Format changed to &1 for DIR or LS subcommand. Not able to restore to &2.
+TCP3C17|10|1|&1 *BIN 4|CCSID value &1 not valid or out of range.
+TCP3C18|10|0|-|Directory data cannot be processed for DIR OR LS subcommand.
+TCP3C19|0|1|&1 *CHAR 256|&1
+TCP3C2A|0|0|-|Unable to create space for list information.
+TCP3C2B|0|1|&1 *CHAR 3|250  Debug mode is now &1.
+TCP3C2E|10|2|&1 *CHAR 10 &2 *CHAR 10|550 Unable to determine if specified file &1 in library &2 is a save file.
+TCP3C2F|10|2|&1 *CHAR 10 &2 *CHAR 10|550 Specified file &1 in library &2 is not a save file.
+TCP3C20|40|0|-|550 Unable to create the specified save file.
+TCP3C21|10|0|-|Server did not accept previous password.
+TCP3C22|10|0|-|Server did not accept previous account.
+TCP3C23|10|0|-|550- Specified library does not exist or cannot be accessed.
+TCP3C24|10|0|-|550 Current library not changed.
+TCP3C25|10|0|-|550 Working directory not changed.
+TCP3C26|10|1|&1 *CHAR 7|125  Error when creating space for the list results, error code &1.
+TCP3C27|10|1|&1 *CHAR 7|125  Error on list object operation, error code &1.
+TCP3C28|10|0|-|125  Error on list object operation; results not complete.
+TCP3C29|10|0|-|125  Error when creating space for the list results.
+TCP3C3A|0|0|-|F17=Top    F18=Bottom    F21=CL command line
+TCP3C3B|0|0|-|Recognized synonyms are denoted by '=>'.
+TCP3C3C|0|0|-|Input read from specified override file.
+TCP3C3D|0|0|-|Output redirected to a file.
+TCP3C3E|20|0|-|Not able to display help for this request.
+TCP3C3F|0|0|-|No additional information available.
+TCP3C30|0|2|&1 *CHAR 3 &2 *CHAR 4|&1 &2 subcommand received; no transfer in progress.
+TCP3C31|0|1|&1 *CHAR 4|226 &1 subcommand successful.
+TCP3C32|10|0|-|502 List supported only in ASCII, EBCDIC or binary IMAGE format.
+TCP3C33|10|0|-|502 List supported only in FILE structure.
+TCP3C34|0|2|&1 *CHAR 10 &2 *CHAR 256|211- User is &1.  Working directory is &2
+TCP3C35|10|0|-|Unexpected error retrieving object description.
+TCP3C36|40|0|-|FTP client exit error.
+TCP3C37|10|0|-|426- Translated record length too long for destination file.
+TCP3C38|10|0|-|Translated record length too long for destination file.
+TCP3C39|0|0|-|Function key not allowed.
+TCP3C4A|0|0|-|F3=Exit    F7=Up    F8=Down    F12=Cancel
+TCP3C4B|0|0|-|Press Enter to continue.
+TCP3C4C|20|0|-|Member name missing.  Use the format: library/file.member or file.member.
+TCP3C4D|20|0|-|Subcommand not valid.
+TCP3C4E|0|1|&1 *CHAR 256|Default file name is &1
+TCP3C4F|20|2|&1 *CHAR 10 &2 *CHAR 10|Not able to create save file &1 in library &2.
+TCP3C40|0|0|-|Exit FTP Client
+TCP3C41|0|0|-|Type choice, press Enter.
+TCP3C42|0|0|-|Exit . . .
+TCP3C43|0|0|-|1=Yes
+TCP3C44|0|0|-|2=No
+TCP3C45|0|0|-|F12=Cancel
+TCP3C46|0|0|-|Additional Message Information
+TCP3C47|0|0|-|Message ID
+TCP3C48|20|1|&1 *CHAR 12|Use of subcommand &1 not correct.
+TCP3C49|0|0|-|Severity:
+TCP3C5A|0|1|&1 *CHAR 256|150 Retrieving file &1
+TCP3C5B|10|0|-|550 Current directory requires name format 1.
+TCP3C5C|30|1|&1 *CHAR 256|Specified object name too long: &1.
+TCP3C5D|30|1|&1 *CHAR 256|501 Specified object name too long, limit is 10 characters: &1.
+TCP3C5E|0|7|&1 *CHAR 4 &2 *CHAR 5 &3 *CHAR 5 &4 *CHAR 5 &5 *CHAR 5 &6 *CHAR 5 &7 *CHAR 5|214- &1, &2, &3, &4, &5, &6, &7.
+TCP3C5F|0|1|&1 *CHAR 4|214  &1 <data structure>: Valid structures are file (F) and record (R). Default is file.
+TCP3C50|0|1|&1 *CHAR 256|250  File renamed as &1
+TCP3C51|0|0|-|214- DBCS_ASCII(B), DBCS_EBCDIC(F) or CCSID(C).
+TCP3C52|10|2|&1 *CHAR 10 &2 *CHAR 10|426- Records written to file &1 in library &2 have been truncated. Data in file may not be valid.
+TCP3C53|10|2|&1 *CHAR 10 &2 *CHAR 10|Records written to file &1 in library &2 have been truncated. Data in file may not be valid.
+TCP3C54|30|1|&1 *CHAR 256|Specified file name for QDLS file system too long:  &1
+TCP3C55|30|1|&1 *CHAR 256|501 File name too long; limit is 8 characters: &1
+TCP3C56|30|0|-|501 Missing Control Language command.
+TCP3C57|10|1|&1 *CHAR 256|550  Directory &1 does not exist.  Directory not deleted.
+TCP3C58|10|1|&1 *CHAR 256|550  Directory &1 already exists.  Directory not created.
+TCP3C59|0|1|&1 *CHAR 256|150 Sending file to &1
+TCP3C6A|20|1|&1 *CHAR 7|Error message ID = &1.
+TCP3C6B|10|0|-|No response from remote host; all connections closed.
+TCP3C6C|30|0|-|The File Transfer Protocol configuration file is not valid.
+TCP3C6D|0|1|&1 *CHAR 4|214  &1: Changes working directory to parent directory.
+TCP3C6E|10|1|&1 *BIN 4|426- Record length &1 of file is too large.
+TCP3C6F|10|1|&1 *BIN 4|426- Record length &1 of file is not valid.
+TCP3C60|0|3|&1 *CHAR 3 &2 *CHAR 4 &3 *CHAR 4|&1 &2 subcommand successful; &3 subcommand canceled.
+TCP3C61|10|0|-|550 Directory specified is current directory.  Directory not deleted.
+TCP3C62|20|2|&1 *CHAR 10 &2 *CHAR 10|Not able to determine file type of file &1 in library &2.
+TCP3C63|20|2|&1 *CHAR 10 &2 *CHAR 10|Specified file type does not match type of file &1 in library &2.
+TCP3C64|20|2|&1 *CHAR 10 &2 *CHAR 10|Binary image transfer required for save file &1 in library &2.
+TCP3C65|20|1|&1 *CHAR 256|Binary image transfer required for file &1
+TCP3C66|20|0|-|Number of arguments for a prompted login to the server not correct.
+TCP3C67|0|1|&1 *BIN 4|Reset processing complete. Number of server replies cleared = &1.
+TCP3C68|20|1|&1 *CHAR 10|Object &1 is not a database file.
+TCP3C69|0|0|-|220 Connection will not be closed due to inactivity.
+TCP3C7A|0|0|-|214- Integrated File System files use format: /fsname/fsdependentnamingformat
+TCP3C7B|10|2|&1 *CHAR 7 &2 *CHAR 256|125- Error code &1 on list operation for file &2
+TCP3C7C|10|2|&1 *CHAR 7 &2 *CHAR 256|125- Error code &1 when reading directory &2
+TCP3C7D|10|2|&1 *CHAR 7 &2 *CHAR 7|Error code &1 while trying to retrieve message &2.
+TCP3C7E|10|2|&1 *CHAR 10 &2 *CHAR 10|426- Incorrect data stream received.  File &1 in library &2 may contain incorrect data.
+TCP3C7F|10|2|&1 *CHAR 10 &2 *CHAR 10|Incorrect data stream received.  File &1 in library &2 may contain incorrect data.
+TCP3C70|0|2|&1 *CHAR 10 &2 *CHAR 10|250 File &1 in library &2 deleted.
+TCP3C71|10|2|&1 *CHAR 10 &2 *CHAR 10|550 Not able to delete file &1 in library &2.
+TCP3C72|0|0|-|Local working directory changed to new current library.
+TCP3C73|0|0|-|Message
+TCP3C74|0|0|-|Additional help not available for user entered input.
+TCP3C75|10|2|&1 *BIN 4 &2 *BIN 4|426- Unable to map data from CCSID &1 to CCSID &2.
+TCP3C76|0|0|-|DBCS capable set on.
+TCP3C77|0|0|-|DBCS capable set off.
+TCP3C78|0|0|-|214- Documents (files) stored in folders use format: /QDLS/folder/document.ext
+TCP3C79|0|0|-|214- Integrated File Systems include: "root" (/), QOpenSys, QLANSrv.
+TCP3C8A|30|0|-|Operation not authorized.
+TCP3C8B|10|1|&1 *CHAR 256|Directory name incorrect: &1
+TCP3C8C|10|1|&1 *CHAR 256|No such path or directory: &1
+TCP3C8D|10|1|&1 *CHAR 256|Unable to process due to damage: &1
+TCP3C8E|10|1|&1 *CHAR 256|Access denied to file &1
+TCP3C8F|10|1|&1 *CHAR 256|System resource busy - unable to access &1
+TCP3C80|0|1|&1 *BIN 4|250- File transfer time-out value set to &1 seconds.
+TCP3C81|0|1|&1 *BIN 4|211- File transfer time-out value set to &1 seconds.
+TCP3C82|0|0|-|Enter the client file transfer time-out value in seconds:
+TCP3C83|20|0|-|Time-out value not valid.
+TCP3C84|0|2|&1 *BIN 4 &2 *BIN 4|Client file transfer time-out limit set to &1 seconds.
+TCP3C85|0|0|-|F3=Exit     F6=Print
+TCP3C86|0|1|&1 *CHAR 4|214-&1 <inactivity> <transfer>: Sets server time-out values for this FTP session.
+TCP3C87|0|0|-|214-   <inactivity> is the inactivity time-out in seconds.
+TCP3C88|0|0|-|214-   <transfer> (optional) is the file transfer time-out in seconds.
+TCP3C89|0|0|-|F17=Top    F18=Bottom
+TCP3C9A|0|0|-|331 Guest logon in process, send complete e-mail address as password.
+TCP3C9B|30|0|-|504 File structure required to transfer stream file.
+TCP3C9C|30|0|-|504 Stream mode required to transfer stream file.
+TCP3C9D|10|2|&1 *CHAR 10 &2 *CHAR 10|530 Not able to set library &1 for user &2; logon rejected.
+TCP3C9E|10|0|-|550 Request rejected.
+TCP3C9F|30|1|&1 *CHAR 10|501 Home directory not found for user &1.
+TCP3C93|10|0|-|450 Storage not available to process subcommand.
+TCP3C94|30|1|&1 *CHAR 256|File structure required to transfer stream file &1
+TCP3C95|10|0|-|421 Connection refused.
+TCP3C96|30|1|&1 *BIN 4|Length of FTP client subcommand exceeds maximum limit.
+TCP3C97|40|1|&1 *BIN 4|The FTP Install Exit Program failed.
+TCP3C98|40|4|&1 *CHAR 22 &2 *CHAR 20 &3 *CHAR 8 &4 *CHAR 7|FTP problem with Register or Deregister API during install.
+TCP3C99|0|0|-|ANONYMOUS
+TCP3D0A|0|2|&1 *CHAR 30 &2 *CHAR 10|FTP operation denied by Host Application Administration.
+TCP3D0B|0|2|&1 *CHAR 30 &2 *CHAR 10|FTP operation denied by Host Application Administration.
+TCP3D0C|0|4|&1 *CHAR 30 &2 *CHAR 10 &3 *CHAR 0 &4 *CHAR 256|FTP operation denied by exit program for exit point &1.
+TCP3D00|0|0|-|Use of server subcommand RETR to send files to client.
+TCP3D01|0|0|-|Use of client subcommand SYSCMD to execute CL commands.
+TCP3D02|0|0|-|Use of server subcommand RCMD to execute CL commands.
+TCP3D03|0|0|-|Use of server subcommand MKD to create directories.
+TCP3D04|0|0|-|Use of server subcommand RMD to delete directories.
+TCP3D05|0|0|-|Use of server subcommands LIST and NLST.
+TCP3D06|0|0|-|Use of server subcommand DELE to delete files.
+TCP3D07|0|0|-|Use of server subcommands RNFR, RNTO to rename files.
+TCP3D08|20|3|&1 *CHAR 7 &2 *CHAR 25 &3 *CHAR 30|FTP problem when using the &2 API.
+TCP3D1B|0|1|&1 *CHAR 4|&1 OPTS successful.
+TCP3D1C|10|1|&1 *CHAR 4|&1 OPTS unsuccessful; invalid option specified.
+TCP3D1D|10|1|&1 *CHAR 4|&1 OPTS unsuccessful; specified subcommand not recognized.
+TCP3D1E|10|4|&1 *CHAR 4 &2 *CHAR 4 &3 *CHAR 4 &4 *CHAR 4|&1 &2 &3 not supported by &4 mechanism.
+TCP3D1F|10|1|&1 *CHAR 4|&1 Specified protection mechanism not valid.
+TCP3D10|40|1|&1 *CHAR 4|LOCSITE DTAPROT &1 is not supported when Kerberos is specified.
+TCP3D11|40|1|&1 *CHAR 128|&1
+TCP3D12|40|3|&1 *CHAR 128 &2 *CHAR 20 &3 *CHAR 20|&1 GSSAPI major error &2 GSSAPI minor error &3
+TCP3D13|40|2|&1 *CHAR 20 &2 *CHAR 20|FTP server failed to do Kerberos authentication. GSSAPI major error &1 GSSAPI minor error &2
+TCP3D14|0|1|&1 *CHAR 4|&1 Feature listing follows:
+TCP3D15|0|1|&1 *CHAR 256|&1
+TCP3D16|0|1|&1 *CHAR 4|&1 End of feature listing.
+TCP3D2A|40|3|&1 *CHAR 50 &2 *CHAR 100 &3 *CHAR 7|Unable to complete certificate application registry operation.
+TCP3D2B|40|0|-|FTP server not started due to SSL error.
+TCP3D2C|10|2|&1 *BIN 4 &2 *CHAR 25|Secure connection error, return code &1.
+TCP3D2D|10|1|&1 *CHAR 4|&1 FTP server configuration requires encryption.
+TCP3D2E|10|3|&1 *CHAR 4 &2 *CHAR 4 &3 *CHAR 1|&1 &2 must be &3.
+TCP3D2F|0|1|&1 *CHAR 4|214 &1: Returns list of supported features.
+TCP3D20|10|3|&1 *CHAR 4 &2 *CHAR 4 &3 *CHAR 4|&1 &2 must precede &3.
+TCP3D21|10|2|&1 *CHAR 4 &2 *CHAR 10|&1 User &2 authenticated via client certificate.
+TCP3D22|10|2|&1 *CHAR 4 &2 *CHAR 10|&1 User &2 does not match client certificate.
+TCP3D26|10|2|&1 *CHAR 4 &2 *CHAR 11|&1 Unable to close file.  Error code &2.
+TCP3D27|10|1|&1 *CHAR 11|Unable to close file.  Error code &1.
+TCP3D28|30|2|&1 *CHAR 10 &2 *CHAR 10|Active subsystem &1 not from library &2.
+TCP3D29|10|2|&1 *CHAR 4 &2 *CHAR 4|&1 Privileged port not allowed on &2 subcommand.
+TCP3D3A|10|2|&1 *BIN 4 &2 *CHAR 25|Unable to obtain secure connection.
+TCP3D3B|10|1|&1 *CHAR 1|Data protection level set to &1.
+TCP3D3C|10|1|&1 *BIN 4|Connection is secure.
+TCP3D3D|10|1|&1 *BIN 4|Data protection buffer size set to &1 bytes.
+TCP3D3E|20|1|&1 *BIN 4|Data protection buffer size not changed.
+TCP3D3F|10|1|&1 *CHAR 1|Data protection level preference is &1.
+TCP3D30|0|1|&1 *CHAR 4|214- &1 <mechanism>: Specify security/authentication mechanism.
+TCP3D31|0|0|-|214 Valid mechanisms are TLS-C, TLS-P, TLS, or SSL.
+TCP3D32|0|1|&1 *CHAR 4|214 &1 <command> <option>: Specify FTP command options.
+TCP3D33|0|1|&1 *CHAR 4|214 &1 <size>: Specify protection buffer size (in bytes).
+TCP3D34|0|1|&1 *CHAR 4|214- &1 <level>: Specify data channel protection level.
+TCP3D35|0|0|-|214 Valid protection levels are C (clear) or P (private).
+TCP3D36|10|1|&1 *BIN 4|Security mechanism not available.
+TCP3D37|10|1|&1 *BIN 4|Data protection level not changed.
+TCP3D38|10|0|-|You must have a secure control connection to use this subcommand.
+TCP3D39|10|1|&1 *BIN 4|Security negotiation started.
+TCP3D4A|0|0|-|533 CCC rejected, control connection not protected.
+TCP3D4B|10|2|&1 *CHAR 1 &2 *CHAR 5|522 Extended Passive Failure - network protocol &1 not supported, use &2
+TCP3D4C|0|1|&1 *CHAR 13|229 Entering Extended Passive Mode &1.
+TCP3D4D|10|0|-|501 Extended Passive Failure - syntax error on network protocol.
+TCP3D4E|10|3|&1 *BIN 4 &2 *CHAR *VARY 4 &3 *CHAR *VARY 4|Unable to obtain secure connection.
+TCP3D4F|10|3|&1 *BIN 4 &2 *CHAR *VARY 4 &3 *CHAR *VARY 4|Secure connection error, return code &1.
+TCP3D40|10|1|&1 *CHAR 12|You must first open a connection.
+TCP3D43|10|2|&1 *CHAR 4 &2 *CHAR 10|&1 Not able to set ASP group for user &2; logon rejected.
+TCP3D44|40|0|-|FTP server unable to set ASP group.
+TCP3D45|0|0|-|Clear Command Channel
+TCP3D46|0|0|-|Use of Client subcommand CCC to end encryption of the control connection.
+TCP3D47|0|0|-|Use of Server subcommand CCC to end encryption of the control connection.
+TCP3D48|0|0|-|200 CCC accepted.
+TCP3D49|0|0|-|534 CCC not allowed.
+TCP3D50|10|14|&1 *CHAR *VARY 4 &2 *CHAR *VARY 4 &3 *CHAR *VARY 4 &4 *CHAR *VARY 4 &5 *CHAR *VARY 4 &6 *CHAR *VARY 4 &7 *CHAR *VARY 4 &8 *CHAR *VARY 4 &9 *CHAR *VARY 4 &10 *CHAR *VARY 4 &11 *CHAR *VARY 4 &12 *CHAR *VARY 4 &13 *CHAR *VARY 4 &14 *CHAR *VARY 4|The server's certificate is not signed by a trusted certificate authority.
+TCP3D51|10|1|&1 *CHAR 4|501 Syntax error in arguments for subcommand &1.
+TCP3D52|10|2|&1 *CHAR 1 &2 *CHAR 5|522 Extended Port Failure - network protocol &1 not supported, use &2
+TCP3D53|10|0|-|501 Extended Port Failure - EPRT not allowed after EPSV ALL has been done.
+TCP3D54|10|0|-|501 Port Failure - PORT not allowed after EPSV ALL has been done.
+TCP3D55|10|0|-|501 Passive Failure - PASV not allowed after EPSV ALL has been done.
+TCP3D56|10|1|&1 *CHAR 512|550  Path does not exist or cannot be accessed: &1
+TCP3D57|0|0|-|Allow Untrusted Certificate Prompt
+TCP3D58|0|0|-|Prompt FTP users to accept or reject the server   certificate that is not signed by a trusted CA.
+TCP3D59|10|0|-|Do you want to trust the server's certificate temporarily in this session? (y/n)
+TCP3D60|10|2|&1 *CHAR 45 &2 *CHAR 8|The IP address returned from exit point is ignored.
+TCP300A|10|0|-|Notice type received by TCP/IP not supported.
+TCP300C|0|1|&1 *CHAR 24|Options enabled after reading the TCP/IP configuration file &1.
+TCP300D|0|0|-|Options enabled after reading the command line.
+TCP300F|0|0|-|Checksums are not validated for incoming messages.
+TCP3000|10|0|-|TCP cannot access timer input queue.
+TCP3001|0|1|&1 *CHAR 70|Internal client parameters &1 successfully enabled.
+TCP3002|10|0|-|The message received on TCPQUEUE was not recognized.
+TCP3003|10|0|-|State change was not recognized during attempt to open TCP connection.
+TCP3004|10|0|-|An activity request that was not valid was placed on the TCP/IP job queue.
+TCP3005|10|0|-|Character string not valid.  Numeral found.
+TCP3006|10|0|-|TCPQUEUE does not exist.
+TCP3007|0|2|&1 *BIN 4 &2 *CHAR 16|Datagram size of route decreased to &1 to be compatible with link &2.
+TCP3008|50|0|-|Virtual storage available for TCP/IP is not sufficient to allocate TCP/IP control block pools.
+TCP3009|0|0|-|End the request.  Notify option not valid.
+TCP301A|0|2|&1 *CHAR 15 &2 *CHAR 32|Internet address &1. Network address &2.
+TCP301B|20|1|&1 *CHAR 24|Error found when reading TCP/IP configuration file &1.
+TCP301C|20|0|-|Error found when reading command line.
+TCP301E|0|1|&1 *CHAR 8|Home address &1.
+TCP301F|0|2|&1 *CHAR 15 &2 *CHAR 24|Default home address &1, link &2.
+TCP3010|0|0|-|Valid TCP checksums are required.
+TCP3011|10|0|-|Storage capacity for the notification queue exceeded.
+TCP3014|0|0|-|One local port is reserved.
+TCP3015|0|1|&1 *BIN 4|&1 local ports are reserved.
+TCP3016|0|2|&1 *BIN 4 &2 *CHAR 8|TCP being used on port &1 by client &2.
+TCP3017|0|2|&1 *BIN 4 &2 *CHAR 8|UDP being used on port &1 by client &2.
+TCP3018|0|2|&1 *BIN 4 &2 *CHAR 8|Protocol on port &1 used by client &2 not recognized.
+TCP3019|0|0|-|No local ports have been reserved.
+TCP302A|0|1|&1 *BIN 4|There are &1 known networks.
+TCP302B|0|0|-|There is only one known network.
+TCP302C|0|2|&1 *CHAR 16 &2 *BIN 4|Link &1 with datagram size &2 for the connection on this host system has no subnet.
+TCP302D|0|4|&1 *CHAR 16 &2 *BIN 4 &3 *CHAR 15 &4 *CHAR 15|Link &1 with datagram size &2 has subnet mask &3 with subnet value &4.
+TCP302E|0|1|&1 *CHAR 15|Internet address &1 is a <direct> connection.
+TCP302F|0|2|&1 *CHAR 15 &2 *CHAR 15|&1 is the first hop address for internet address &2.
+TCP3020|0|0|-|Additional internet addresses and link names are used by this host system.
+TCP3021|0|0|-|TCP/IP can translate one internet address to a network-specific address.
+TCP3022|0|1|&1 *BIN 4|TCP/IP can translate &1 internet addresses.
+TCP3023|0|0|-|Following messages will list all devices and links known to this host system.
+TCP3024|0|2|&1 *CHAR 16 &2 *CHAR 10|Link &1 is type &2.
+TCP3025|0|3|&1 *CHAR 16 &2 *CHAR 17 &3 *CHAR 4|Link &1 on previously listed device is type &2 with network number &3.
+TCP3026|0|0|-|Following messages will list TCP/IP data pool sizes.
+TCP3027|0|4|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4 &4 *BIN 4|Data pool size: Activity control block &1, client control block &2, data buffer &3, envelope &4.
+TCP3028|0|2|&1 *CHAR 15 &2 *CHAR 24|Internet address &1. Link &2.
+TCP3029|0|3|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4|SCB &1, TCB &2, UCB &3.
+TCP303A|20|1|&1 *BIN 4|A route definition on line &1 contains a first hop that is not valid.
+TCP303B|20|1|&1 *BIN 4|Route definitions on line &1 contain conflicting subnet masks.
+TCP303C|20|1|&1 *BIN 4|A translate option on line &1 specified an internet address of 0.
+TCP303D|20|1|&1 *BIN 4|Network address translation table on line &1 is filled.
+TCP303E|20|1|&1 *BIN 4|Link definition on line &1 missing required name field.
+TCP303F|20|1|&1 *BIN 4|Link definition on line &1 missing required type field.
+TCP3031|20|1|&1 *BIN 4|Missing fields in route definition on line &1.
+TCP3032|20|1|&1 *BIN 4|Cannot accept additional client names on line &1.
+TCP3033|20|1|&1 *BIN 4|Cannot accept additional home addresses on line &1.
+TCP3034|20|1|&1 *BIN 4|Cannot accept additional port reservations on line &1.
+TCP3035|20|1|&1 *BIN 4|End of TCP configuration file on line &1 not expected.
+TCP3036|20|1|&1 *BIN 4|A route definition on line &1 is defined for a network that does not exist.
+TCP3037|20|1|&1 *BIN 4|Route definition on line &1 not directly accessible.
+TCP3038|20|1|&1 *BIN 4|A route definition on line &1 contains a routing loop.
+TCP3039|20|1|&1 *BIN 4|The number of routes defined on line &1 exceeds the maximum allowed.
+TCP304A|20|1|&1 *BIN 4|Configuration options out of order on line &1.
+TCP304B|20|1|&1 *BIN 4|Local internet address definition on line &1 missing required fields.
+TCP304C|20|1|&1 *BIN 4|Local internet address definition on line &1 contains a link that is not recognized.
+TCP304D|20|1|&1 *BIN 4|Port definition on line &1 contains a port number that is not valid.
+TCP304E|20|1|&1 *BIN 4|A port definition on line &1 is missing required protocol.
+TCP304F|20|1|&1 *BIN 4|A port definition on line &1 contains a protocol that is not valid.
+TCP3040|20|1|&1 *BIN 4|Link definition on line &1 contains a type field that is not valid.
+TCP3041|20|1|&1 *BIN 4|Duplicate link name defined on line &1.
+TCP3042|20|1|&1 *BIN 4|Link in a route definition on line &1 not defined.
+TCP3043|20|1|&1 *BIN 4|A route definition on line &1 contains a datagram size that is not valid.
+TCP3044|20|1|&1 *BIN 4|Subnet mask on line &1 not compatible with network address.
+TCP3045|20|1|&1 *BIN 4|A route definition on line &1 contains a subnet value that is not compatible with subnet mask.
+TCP3046|20|1|&1 *BIN 4|TCP/IP tuning value on line &1 does not have required size parameter.
+TCP3047|20|3|&1 *CHAR 4 &2 *BIN 4 &3 *CHAR 4|Number of &1 control blocks on line &2 exceeds maximum of &3.
+TCP3048|20|1|&1 *BIN 4|Command on line &1 in configuration file not valid.
+TCP3049|20|1|&1 *BIN 4|A Boolean value was specified on line &1 where a TCP option was expected.
+TCP305A|20|2|&1 *BIN 4 &2 *CHAR 24|Command &1 on line &2 in configuration file is not valid.
+TCP305B|0|1|&1 *BIN 4|The device on line &1 was previously stopped.
+TCP305C|20|1|&1 *BIN 4|A link definition on line &1 does not have a required parameter.
+TCP305D|20|1|&1 *BIN 4|A link definition on line &1 contains a value that is not valid.
+TCP305E|20|1|&1 *BIN 4|Internal client parameters on line &1 exceed maximum of 100 characters.
+TCP305F|30|1|&1 *CHAR 10|Not able to use SNADS distribution queue &1.
+TCP3050|20|1|&1 *BIN 4|Port definition on line &1 missing required user ID.
+TCP3051|20|2|&1 *CHAR 8 &2 *BIN 4|A &1 option on line &2 is missing required device name.
+TCP3052|20|2|&1 *CHAR 8 &2 *BIN 4|A &1 option on line &2 contains a device that is not defined.
+TCP3053|0|1|&1 *BIN 4|Device specified in start option on line &1 already started.
+TCP3054|20|1|&1 *BIN 4|Error starting device on line &1.
+TCP3055|20|1|&1 *BIN 4|Network address translation on line &1 does not have required X.25 address.
+TCP3056|20|1|&1 *BIN 4|Network address translation on line &1 does not have required network address.
+TCP3057|20|1|&1 *BIN 4|Network not defined in network address translation on line &1.
+TCP3058|20|2|&1 *CHAR 24 &2 *BIN 4|Command &1 on line &2 not valid.
+TCP3059|20|1|&1 *CHAR 16|Cannot add home address translation entry for link &1.
+TCP306A|20|2|&1 *CHAR 4 &2 *CHAR 21|User-defined &1 outgoing mapping table &2 has not been applied.
+TCP306B|0|1|&1 *CHAR 4|TCP/IP default incoming mapping table for &1 has been applied.
+TCP306C|20|2|&1 *CHAR 4 &2 *CHAR 21|User-defined &1 incoming mapping table &2 has not been applied.
+TCP306D|0|1|&1 *CHAR 94|Assorted parameters processed are &1.
+TCP306E|0|2|&1 *CHAR 4 &2 *CHAR 21|User-defined &1 incoming mapping table &2 has been applied.
+TCP306F|0|1|&1 *CHAR 4|TCP/IP default outgoing mapping table for &1 has been applied.
+TCP3060|10|2|&1 *CHAR 10 &2 *CHAR 10|Not able to send a distribution to user &1 at &2.
+TCP3061|0|0|-|No clients are active, shutting down immediately.
+TCP3062|0|0|-|One active client with one connection in use.
+TCP3063|0|1|&1 *BIN 4|One active client with &1 connections in use.
+TCP3064|0|1|&1 *BIN 4|&1 active clients with one connection in use.
+TCP3065|0|2|&1 *BIN 4 &2 *BIN 4|&1 active clients with &2 connections in use.
+TCP3066|0|1|&1 *BIN 2|Shutdown will delay for &1 seconds so that shutdown notifications may be delivered.
+TCP3067|0|2|&1 *CHAR 8 &2 *CHAR 11|QTCP subsystem shutdown on &1 at &2.
+TCP3068|0|1|&1 *CHAR 11|QTCP subsystem shutdown begin at &1.
+TCP3069|0|2|&1 *CHAR 4 &2 *CHAR 21|User-defined &1 outgoing mapping table &2 has been applied.
+TCP3070|40|0|-|QTCP subsystem initialization failed. Configuration file member not available.
+TCP3071|10|0|-|Length of host system name is greater than 255.
+TCP3072|10|1|&1 *CHAR 67|Label &1 has a length greater than 63.
+TCP3073|0|0|-|Remote name server did not respond to request to resolve host name.
+TCP3101|20|2|&1 *CHAR 10 &2 *CHAR 24|No envelopes available for TCP/IP link &1 to process operation &2.
+TCP3104|20|2|&1 *CHAR 10 &2 *CHAR 15|Routing error on TCP/IP link &1 for internet address &2.
+TCP3105|50|1|&1 *CHAR 10|Connection ID or connection state on TCP/IP link &1 not valid.
+TCP3106|50|1|&1 *CHAR 10|Declaration of DDN logical address failed on TCP/IP link &1.
+TCP3108|20|1|&1 *CHAR 10|Outgoing datagram exceeded 1024 bytes on TCP/IP link &1.
+TCP3110|0|1|&1 *CHAR 10|TCP/IP link &1 started successfully.
+TCP3111|40|1|&1 *CHAR 10|Attempt to start TCP/IP link &1 failed.
+TCP3112|20|2|&1 *CHAR 17 &2 *CHAR 10|SVC to X.25 DTE address &1 cleared.  Line &2 started again.
+TCP3113|20|2|&1 *CHAR 17 &2 *CHAR 10|X.25 packet facility field not valid on SVC to address &1 on link &2. SVC cleared.
+TCP3114|20|2|&1 *CHAR 17 &2 *CHAR 10|Incoming datagram exceeded 2KB on SVC to address &1 on link &2. SVC cleared.
+TCP3115|20|2|&1 *CHAR 17 &2 *CHAR 10|No outgoing or two-way logical channels available for SVC to address &1 on link &2.
+TCP3116|20|2|&1 *CHAR 17 &2 *CHAR 10|Time-out on call to X.25 network address &1 on TCP/IP link &2.
+TCP3117|40|3|&1 *CHAR 10 &2 *CHAR 17 &3 *CHAR 17|DDN configuration error on TCP/IP link &1.
+TCP3118|10|0|-|Incoming call not accepted. No incoming logical channels available.
+TCP3119|20|1|&1 *CHAR 15|No outgoing or two-way logical channels available to open SVC for internet address &1.
+TCP3120|20|1|&1 *CHAR 15|Error adding X.25 remote network address for DDN host internet address &1.
+TCP3122|10|1|&1 *CHAR 10|Outgoing datagram discarded. TCP/IP link &1 not active.
+TCP3123|10|1|&1 *CHAR 10|Internal protocol error on TCP/IP link &1.
+TCP3124|20|1|&1 *CHAR 17|DDN X.25 network address &1 not valid.
+TCP3200|10|0|-|VFYTCPCNN: Remote system name is too long.
+TCP3202|10|1|&1 *CHAR 24|VFYTCPCNN: Unknown host, &1
+TCP3203|0|2|&1 *CHAR 24 &2 *CHAR 15|VFYTCPCNN verifying connection to host system &1 at address &2.
+TCP3204|0|1|&1 *CHAR 24|VFYTCPCNN verifying connection to host system &1.
+TCP3205|0|3|&1 *BIN 4 &2 *CHAR 12 &3 *BIN 4|Connection verification &1 took &2 seconds.  &3 successful connection verifications.
+TCP3206|10|2|&1 *BIN 4 &2 *BIN 4|Remote host did not respond to VFYTCPCNN within &1 seconds for connection verification &2.
+TCP3300|0|0|-|First hop
+TCP3301|0|0|-|Maximum datagram size
+TCP3302|0|0|-|Subnet mask
+TCP3303|0|0|-|Subnet value
+TCP3305|0|0|-|Port
+TCP3306|0|0|-|Application type
+TCP3307|0|0|-|User profile
+TCP3308|0|0|-|Internet address
+TCP3309|0|0|-|Name
+TCP3310|0|0|-|Internet address, *NONE
+TCP3311|0|0|-|Internet address, *HOME
+TCP3312|0|0|-|512-1994, *CALC
+TCP3313|0|0|-|1-65534
+TCP3314|0|0|-|*UDP, *TCP
+TCP3316|0|0|-|Line description
+TCP3318|0|0|-|Network
+TCP3319|0|0|-|Identifier, *DEFAULT
+TCP3320|10|2|&1 *CHAR 6 &2 *CHAR 4|Port &1 not found.
+TCP3321|10|0|-|Route entry not found.
+TCP3322|10|1|&1 *CHAR 15|Subnet mask not valid for network &1.
+TCP3323|10|0|-|Duplicate route entered.
+TCP3324|20|0|-|No remote system information to print.
+TCP3325|0|0|-|No remote system information
+TCP3326|10|0|-|The remote name server will be removed if the server address is blank.
+TCP3327|20|0|-|Maximum number of system names exceeded.
+TCP3328|10|0|-|Port number not valid.
+TCP3329|10|0|-|Associated link not found.  Route entry not added.
+TCP3330|0|0|-|Add TCP/IP Route Entry
+TCP3332|0|0|-|Change TCP/IP Route Entry
+TCP3334|0|0|-|Remove TCP/IP Route Entry
+TCP3336|0|0|-|Address
+TCP3340|0|0|-|TCP/IP configuration file already in use.
+TCP3341|0|0|-|Remote system information printed.
+TCP3342|20|0|-|Character specified for domain name not valid.
+TCP3343|30|1|&1 *CHAR 10|Error when configuring route entry.
+TCP3345|30|0|-|File member PROFILE changed.  Port may be used by standard TCP/IP applications.
+TCP3346|30|0|-|First hop not defined.  Route entry not added.
+TCP3347|30|0|-|Network identifier bytes of subnet mask and subnet value must be zero.
+TCP3348|30|0|-|Other route entries require this route entry.  Route entry not removed.
+TCP3349|30|0|-|Subnet mask and subnet value must be *NONE.
+TCP3350|30|0|-|Specified subnet value is not a subset of the subnet mask.
+TCP3351|20|0|-|The specified user ID and address do not exist in the system directory.
+TCP3352|20|0|-|Value for host name not valid.
+TCP3353|20|0|-|Character specified for SMTP route not valid.
+TCP3354|20|0|-|Specify an SMTP domain.
+TCP3355|20|0|-|Value for domain name not valid.
+TCP3356|0|1|&1 *CHAR 10|Internet address not valid.
+TCP3357|20|0|-|Imbedded blanks found.
+TCP3358|40|0|-|TRLAN parameter for ELAN or X.25 link not allowed.
+TCP3359|20|0|-|Parsed SMTP route not valid.
+TCP3360|30|2|&1 *CHAR 15 &2 *CHAR 15|Network identifier &1 was replaced with &2.
+TCP3361|30|2|&1 *CHAR 15 &2 *CHAR 15|Subnet mask &1 was replaced with &2.
+TCP3362|30|2|&1 *CHAR 15 &2 *CHAR 15|Subnet value &1 was replaced with &2.
+TCP3363|30|3|&1 *CHAR 15 &2 *CHAR 15 &3 *CHAR 15|The route entry with network identifier &1, subnet mask &2, and subnet value &3 has been removed.
+TCP3364|30|3|&1 *CHAR 15 &2 *CHAR 15 &3 *CHAR 15|The route entry with network identifier &1, subnet mask &2, and subnet value &3, has been removed.
+TCP3365|30|4|&1 *CHAR 15 &2 *CHAR 15 &3 *CHAR 15 &4 *CHAR 15|The route entry with network identifier &3, subnet mask &1, and subnet value &4 has been removed.
+TCP3366|30|3|&1 *CHAR 15 &2 *CHAR 15 &3 *CHAR 15|The route entry with network identifier &1, subnet mask &2, and subnet value &3, has been removed.
+TCP3367|10|0|-|An internet address is required.
+TCP3368|40|0|-|The host identifier (ID) of the subnet mask is not valid.
+TCP3369|20|0|-|Unable to execute route parser.
+TCP3370|0|0|-|TCP/IP host table not available for updating.
+TCP3371|10|0|-|A line description is required.
+TCP3372|10|0|-|A network identifier is required.
+TCP3373|10|0|-|The port number is required.
+TCP3374|10|0|-|A user ID and address are required.
+TCP3375|40|0|-|Internet address does not exist.
+TCP3376|40|0|-|SMTP name does not exist.
+TCP3377|10|0|-|TCP/IP host table available for viewing only.  No updating allowed.
+TCP3381|20|0|-|Command attempted while SMTP jobs active.
+TCP3382|20|0|-|WRKNAMSMTP command is active.
+TCP3383|20|1|&1 *CHAR 2|SMTP cannot add remote senders to directory.
+TCP3384|0|0|-|Automatic registration number approaching limit.
+TCP3385|10|0|-|Error occurred while generating user IDs.
+TCP3386|0|0|-|Retrying remote name server access.
+TCP3387|0|2|&1 *CHAR 8 &2 *CHAR 8|Entry added to system distribution directory.
+TCP3388|0|6|&1 *CHAR 8 &2 *CHAR 8 &3 *CHAR 8 &4 *CHAR 8 &5 *CHAR 24 &6 *CHAR 256|Entry added to personal alias table.
+TCP3389|0|4|&1 *CHAR 8 &2 *CHAR 8 &3 *CHAR 24 &4 *CHAR 256|Entry added to system alias table.
+TCP340B|10|0|-|Error in TCP configuration profile.
+TCP340D|10|0|-|Request not queued to TCP.
+TCP340E|10|0|-|Format of mapping table not correct.
+TCP340F|10|0|-|A send is still pending on this connection.
+TCP3402|10|0|-|Connection already closing.
+TCP3404|10|0|-|Length of a user ID or datagram exceeds the maximum allowed.
+TCP3405|10|0|-|Not able to send the specified data.
+TCP3407|10|0|-|Client started TCP/IP service again.
+TCP3408|10|0|-|Requested connection already exists.
+TCP3409|0|0|-|Not able to establish connection with remote host system.
+TCP341A|10|0|-|The local port requested is not available.
+TCP341E|10|0|-|Not enough buffer space available for request.
+TCP341F|10|0|-|Incoming data packet does not contain enough data.
+TCP3416|10|0|-|TCP communication procedure request not valid.
+TCP3417|10|0|-|Format of user ID for SNADS subsystem not valid.
+TCP3418|10|0|-|Buffer address specified on send or receive request not valid.
+TCP3419|0|0|-|Request to end the connection was successful.
+TCP342A|10|0|-|Time-out parameter not valid on TCP request.
+TCP342B|10|0|-|Remote address not specified in active-open request.
+TCP342C|10|0|-|Remote port not specified in active-open request.
+TCP342D|10|0|-|TCP configuration profile does not exist.
+TCP342E|10|0|-|Receive still pending on this connection.
+TCP342F|10|0|-|Remote host system closed connection unexpectedly.
+TCP3420|0|0|-|The internet address to this host system is not local.
+TCP3421|0|0|-|No outstanding TCP notifications for client.
+TCP3422|10|0|-|The requested TCP connection does not exist.
+TCP3423|10|0|-|No TCP/IP service available.
+TCP3424|10|0|-|TCP client service not currently available.
+TCP3425|10|0|-|Connection not open.
+TCP3426|0|0|-|Your request was successfully completed.
+TCP3427|10|0|-|Remote host system rejected the open attempt.
+TCP3428|10|0|-|Specified local address does not exist.
+TCP3429|10|0|-|Initial connection state not valid.  TCP connection not opened.
+TCP343A|10|0|-|Required port not specified.
+TCP343B|10|0|-|UDP has no resources to process the request.
+TCP343C|10|0|-|You are not authorized to use this command.
+TCP343D|10|0|-|Remote host system violated the connection protocol.
+TCP343E|10|0|-|TCP/IP request not valid.
+TCP343F|10|0|-|Specified host system not known.
+TCP3430|10|0|-|Remote host system ended the connection.
+TCP3432|10|0|-|Program error in TCP/IP.
+TCP3434|0|0|-|TCP/IP service is being shut down.
+TCP3435|10|0|-|Remote host system no longer responding.
+TCP3436|10|0|-|No response from remote host system within open time-out.
+TCP3437|10|0|-|Too many open connections exist.
+TCP3438|10|0|-|Specified local address does not exist for UDP.
+TCP3439|10|0|-|Required address not specified.
+TCP344B|0|1|&1 *CHAR 2|FTP default data port:  &1
+TCP344C|0|1|&1 *CHAR 2|FTP control port:  &1
+TCP344D|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|Cannot access member &1 in file &2 in library &3.
+TCP3441|10|0|-|Destination network cannot be reached.
+TCP3447|0|0|-|TCP/IP service ended.
+TCP3448|10|0|-|No TCP connections available.
+TCP3449|10|1|&1 *BIN 4|TCP/IP return code &1 not recognized.
+TCP345A|10|2|&1 *CHAR 24 &2 *BIN 4|Type &1 on line &2 of host names table not known.
+TCP345B|10|1|&1 *BIN 4|No address specified on line &1 of the host names table.
+TCP345D|10|1|&1 *BIN 4|Line &1 of the host names table contains no name field.
+TCP345E|10|2|&1 *BIN 4 &2 *BIN 4|Warning: line &1 has too many names; only the first &2 will be stored.
+TCP345F|30|1|&1 *BIN 4|The host system name on line &1 cannot be found in the site table.
+TCP3450|0|0|-|Start the simple mail transfer protocol (SMTP) job.  Press enter when done.
+TCP3451|20|0|-|Host table conversion already in progress.
+TCP3452|0|6|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4 &4 *BIN 4 &5 *BIN 4 &6 *BIN 4|TCP/IP host table conversion completed successfully.
+TCP3453|10|6|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4 &4 *BIN 4 &5 *BIN 4 &6 *BIN 4|TCP/IP host table conversion ended with errors.
+TCP3454|20|0|-|Host table being used.
+TCP3457|10|1|&1 *BIN 4|Bad address syntax on line &1.
+TCP3458|10|2|&1 *BIN 4 &2 *BIN 4|Line &1 contains &2 fields only.
+TCP3459|10|1|&1 *BIN 4|No type specified on line &1.
+TCP3460|10|1|&1 *CHAR 24|Name &1 is a duplicate.
+TCP3461|10|0|-|Host tables being used.
+TCP3462|10|1|&1 *CHAR 8|Warning:  Name &1 lost.
+TCP3500|0|0|-|Send TCP/IP Spooled File
+TCP3501|0|0|-|Printer queue
+TCP3502|0|0|-|Spooled file
+TCP3503|0|0|-|Job name
+TCP3504|0|0|-|User
+TCP3505|0|0|-|Number
+TCP3506|0|0|-|Spooled file number
+TCP3507|0|0|-|Destination type
+TCP3508|0|0|-|Transform SCS to ASCII
+TCP3509|0|0|-|Manufacturer type and model
+TCP3510|0|0|-|Workstation customizing object
+TCP3511|0|0|-|Library
+TCP3512|0|0|-|Delete file after sending
+TCP3513|0|0|-|Destination-dependent options
+TCP3514|0|0|-|Print separator page
+TCP3515|0|0|-|User data transform
+TCP3600|10|1|&1 *CHAR 10|Spooled file &1 sent.
+TCP3601|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 25|Spooled file &1 received from user &2.
+TCP3602|10|6|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 31 &4 *CHAR 10 &5 *CHAR 10 &6 *CHAR 10|Spooled file &1 received from remote user &2.
+TCP370A|10|1|&1 *CHAR 24|Cannot resolve host name &1.
+TCP370B|10|0|-|Error accessing TCP/IP configuration file.
+TCP370C|10|1|&1 *CHAR 1|Destination-dependent option ignored.
+TCP370D|40|1|&1 *CHAR 255|SNDTCPSPLF cannot verify local host name &1.
+TCP3700|40|5|&1 *CHAR 10 &2 *BIN 2 &3 *CHAR 10 &4 *CHAR 10 &5 *CHAR 6|Send request failed for spooled file &1.
+TCP3701|40|5|&1 *CHAR 10 &2 *BIN 2 &3 *CHAR 10 &4 *CHAR 10 &5 *CHAR 6|Send request failed for spooled file &1.
+TCP3702|40|1|&1 *CHAR 10|Not authorized to spooled file &1.
+TCP3703|40|5|&1 *CHAR 10 &2 *BIN 2 &3 *CHAR 10 &4 *CHAR 10 &5 *CHAR 6|Send request failed.  Spooled file &1 open.
+TCP3704|40|5|&1 *CHAR 10 &2 *BIN 2 &3 *CHAR 10 &4 *CHAR 10 &5 *CHAR 6|Send request failed.  Spooled file &1 not spooled print file.
+TCP3705|40|5|&1 *CHAR 10 &2 *BIN 2 &3 *CHAR 10 &4 *CHAR 10 &5 *CHAR 6|Spooled file &1 not transformed.
+TCP3706|40|5|&1 *CHAR 10 &2 *BIN 2 &3 *CHAR 10 &4 *CHAR 10 &5 *CHAR 6|Spooled file &1 not transformed.
+TCP3707|60|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 6|TCP/IP LPD server job failed.
+TCP3708|40|1|&1 *CHAR 31|Not valid control or data file received by TCP/IP LPD server.
+TCP3709|40|4|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 31 &4 *BIN 2|Request to receive spooled file for user &2 failed.
+TCP371A|40|5|&1 *CHAR 10 &2 *BIN 2 &3 *CHAR 10 &4 *CHAR 10 &5 *CHAR 6|Send request failed for spooled file &1.
+TCP371B|10|0|-|Transform exit program will not process file.
+TCP371C|10|0|-|Transform exit program not found.
+TCP3710|20|4|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 31 &4 *CHAR 1|Unsupported print command received by TCP/IP LPD server.
+TCP3711|40|3|&1 *CHAR 31 &2 *HEX 1 &3 *HEX 1|Unsupported TCP/IP LPD server function requested.
+TCP3712|60|1|&1 *BIN 2|TCP/IP LPD server job failed.
+TCP3713|40|0|-|Spooled file not received.
+TCP3714|40|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 25|Request to receive spooled file for user &2 failed.
+TCP3715|20|1|&1 *CHAR 10|Not authorized to delete spooled file &1.  The spooled file was sent.
+TCP3716|0|2|&1 *CHAR 10 &2 *CHAR 100|End active &1 jobs using command: &2
+TCP3717|0|1|&1 *CHAR 7|Use DSPPTF and enter &1 for SELECT parameter to update PTF status.
+TCP3718|0|2|&1 *CHAR 10 &2 *CHAR 100|Restart &1 jobs using command: &2
+TCP3719|40|5|&1 *CHAR 10 &2 *BIN 2 &3 *CHAR 10 &4 *CHAR 10 &5 *CHAR 6|Send request failed for spooled file &1.
+TCP3720|10|1|&1 *CHAR 10|Library list for user &1 contains one or more libraries that resides in an Independent ASP.
+TCP4101|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|Object &1 of type &2 in library &3 resides in an Independent ASP.
+TCP4401|0|0|-|TCP/IP Information
+TCP4911|40|0|-|No options available.
+TCP499A|40|5|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 10 &5 *BIN 2|Error accessing configuration member.
+TCP499B|40|2|&1 *CHAR 8 &2 *CHAR 5|&1 cannot be used with &2.
+TCP499D|40|1|&1 *BIN 4|CRTCCSID parameter value &1 not valid.
+TCP499E|40|1|&1 *BIN 4|CRTCCSID parameter value &1 not found.
+TCP4991|40|2|&1 *CHAR 10 &2 *CHAR 10|&1 function not valid.
+TCP4992|40|2|&1 *CHAR 10 &2 *CHAR 10|&1 parameter pointer not set to valid value.
+TCP4993|40|1|&1 *BIN 4|CCSID parameter value &1 not valid.
+TCP4994|40|1|&1 *BIN 4|CCSID parameter value &1 not found.
+TCP4995|40|1|&1 *BIN 4|CCSID parameter value &1 not valid.
+TCP4996|40|1|&1 *BIN 4|CCSID parameter value &1 not found.
+TCP4998|40|1|&1 *BIN 4|CCSID parameter value &1 not valid.
+TCP4999|40|1|&1 *BIN 4|CCSID parameter value &1 not found.
+TCP500A|40|0|-|Internal error detected in Post Office Protocol
+TCP500B|40|0|-|Not able to determine job ID.
+TCP500E|10|0|-|POP server unable to accept connection from remote system.
+TCP500F|40|0|-|POP server unable to send data to client.
+TCP5001|40|0|-|POP server initialization failure.
+TCP5002|10|0|-|POP server unable to establish control connection.
+TCP5003|40|0|-|Incorrect socket passed to POP server.
+TCP5004|40|0|-|POP server unable to determine system name.
+TCP5005|40|0|-|Unable to pass POP server control socket.
+TCP5006|40|0|-|Unable to process POP server queue.
+TCP5007|40|0|-|Unable to start POP server job.
+TCP5008|40|0|-|POP server error exit.
+TCP5009|40|1|&1 *CHAR *VARY 2|Required system mapping table &1 not found.
+TCP5010|40|0|-|The POP server configuration file is not valid.
+TCP5011|10|1|&1 *CHAR 256|POP server unable to delete file &1.
+TCP5012|10|1|&1 *CHAR 256|POP server I/O error with file &1.
+TCP5013|40|0|-|POP server unable to allocate system resources.
+TCP5014|30|2|&1 *CHAR 64 &2 *CHAR 255|Cannot deliver mail to an SMTP address that is configured more than once.
+TCP5015|40|2|&1 *BIN 4 &2 *BIN 4|Unable to convert data from CCSID &1 to CCSID &2.
+TCP5016|10|2|&1 *BIN 4 &2 *CHAR 35|Secure connection error, return code &1.
+TCP5017|40|0|-|POP server not started due to TLS/SSL error.
+TCP5018|40|1|&1 *BIN 4|The POP Install Exit Program failed.
+TCP5020|20|4|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 36|Parameter &1 value &2 is not yet supported.
+TCP5051|0|0|-|Change POP Server Attributes
+TCP5052|0|0|-|Message split size
+TCP5053|0|0|-|When to use
+TCP5055|0|0|-|10-65535 seconds, *SAME, *DFT
+TCP5056|0|0|-|32-2048 kilobytes, *SAME...
+TCP5057|0|0|-|MIME CCSID
+TCP5058|0|0|-|Host server connection
+TCP5059|0|0|-|Address book
+TCP506A|30|1|&1 *CHAR *VARY 2|Operation &1 can't be finished.
+TCP506B|30|1|&1 *CHAR 256|Recipient not changed to &1.
+TCP506C|30|1|&1 *CHAR *VARY 2|E-mail recipient &1 not removed.
+TCP506D|30|1|&1 *CHAR 256|Recipient &1 not added to retry queue.
+TCP506E|30|1|&1 *CHAR *VARY 2|Recipient &1 anti-spam filtering not overridden.
+TCP506F|30|2|&1 *CHAR *VARY 2 &2 *CHAR *VARY 2|User &1 not in local SMTP mailbox directory.
+TCP5060|0|0|-|Enabled
+TCP5061|0|0|-|Refresh interval
+TCP5062|0|0|-|15-65535 minutes, *NONE
+TCP5063|0|0|-|POP send mail window
+TCP5064|30|2|&1 *CHAR 10 &2 *BIN 4|SMTP user &1 not changed.
+TCP5065|30|1|&1 *CHAR 10|SMTP user &1 not removed.
+TCP5066|30|2|&1 *CHAR *VARY 2 &2 *CHAR *VARY 2|SDD user &1 with address &2 not imported.
+TCP5067|30|2|&1 *CHAR *VARY 2 &2 *CHAR *VARY 2|SMTP remote logon for user &1 not added.
+TCP5068|30|2|&1 *CHAR *VARY 2 &2 *CHAR *VARY 2|SMTP remote logon for user &1 not changed.
+TCP5069|30|2|&1 *CHAR *VARY 2 &2 *CHAR *VARY 2|SMTP remote logon for user &1 not removed.
+TCP507B|0|1|&1 *CHAR 10|Remote login entry for user &1 successfully added.
+TCP507C|0|1|&1 *CHAR 10|Remote login entry for user &1 successfully changed.
+TCP507D|0|1|&1 *CHAR 10|Remote login entry for user &1 successfully removed.
+TCP5070|30|1|&1 *CHAR *VARY 2|CHGSMTPA DIRTYPE setting is &1.
+TCP5071|30|2|&1 *CHAR 30 &2 *CHAR 7|Amount of email requested exceeds display limit
+TCP5072|30|2|&1 *CHAR 10 &2 *BIN 4|SMTP user &1 not added.
+TCP5073|0|1|&1 *CHAR 10|SMTP user &1 successfully added.
+TCP5074|0|1|&1 *CHAR 10|SMTP user &1 successfully changed.
+TCP5075|0|1|&1 *CHAR 10|SMTP user &1 successfully removed.
+TCP5076|0|3|&1 *CHAR 10 &2 *BIN 4 &3 *BIN 4|Wrong number of elements for &1
+TCP5077|0|1|&1 *CHAR 10|Wrong value for for &1
+TCP5078|0|1|&1 *CHAR 10|The domain for &1 is invalid.
+TCP5079|0|0|-|A keyword was changed that requires DIRTYPE(*SDD).
+TCP508A|30|0|-|File too big.
+TCP508B|0|0|-|Send E-mail
+TCP508C|0|0|-|Send E-mail for *SMTP DIRTYPE
+TCP508D|0|0|-|Add SMTP Dist List Entry
+TCP508E|0|0|-|Remove SMTP Dist List Entry
+TCP508F|0|0|-|Change SMTP Dist List
+TCP5080|0|0|-|A keyword was changed that requires DIRTYPE(*SMTP) or DIRTYPE(*SMTPMSF).
+TCP5081|0|1|&1 *CHAR 10|Keyword &1 was not valid.
+TCP5082|0|0|-|Unable to delete configuration file.
+TCP5083|0|0|-|Unable to copy configuration file from product directory.
+TCP5084|0|0|-|Configuration file version is unsupported.
+TCP5085|0|2|&1 *BIN 4 &2 *BIN 4|Wrong number of arguments for command.
+TCP5086|0|3|&1 *CHAR 50 &2 *BIN 4 &3 *BIN 4|API failed.
+TCP5087|0|1|&1 *BIN 4|Version for config file record was invalid.
+TCP5088|30|0|-|MIME Parsing Error.
+TCP5089|30|0|-|Bare Line Feed Detected.
+TCP509A|30|0|-|No remote login entry found.
+TCP509C|30|2|&1 *CHAR 10 &2 *BIN 4|Remote login entry for user &1 not changed.
+TCP509D|30|2|&1 *CHAR 10 &2 *BIN 4|Remote login entry for user &1 not removed.
+TCP5090|40|1|&1 *CHAR 10|User &1 not enrolled in SMTP Local Mailbox Directory.
+TCP5091|0|0|-|Send E-mail Successful.
+TCP5092|0|0|-|Send E-mail Failed.
+TCP5093|30|1|&1 *CHAR 256|Authority Problem with SMTP File
+TCP5094|30|3|&1 *CHAR 256 &2 *BIN 4 &3 *CHAR 30|Authority Problem with SMTP File
+TCP5095|30|0|-|No SMTP User found.
+TCP5096|30|0|-|User Profile required for this option.
+TCP5097|30|2|&1 *CHAR 8 &2 *CHAR 8|System Directory &1 &2 cannot be converted.
+TCP5098|30|2|&1 *BIN 4 &2 *BIN 4|SMTP Import Finished &1 out of &2 successfully.
+TCP5099|30|0|-|The NOTE keyword is required to have a value.
+TCP5101|30|2|&1 *CHAR 50 &2 *BIN 4|Integrated File System file open failed on file &1
+TCP5102|20|2|&1 *BIN 4 &2 *BIN 4|Integrated File System file Write Failed.
+TCP5103|20|2|&1 *BIN 4 &2 *BIN 4|Integrated File System file read failed.
+TCP5104|20|2|&1 *BIN 4 &2 *CHAR 80|Integrated File System file unlink failed.
+TCP5105|20|2|&1 *BIN 4 &2 *CHAR 80|Integrated File System file link failed.
+TCP5111|40|0|-|Wrong number of parameters passed.
+TCP5112|30|1|&1 *CHAR 80|MIME Note was invalid.
+TCP5113|30|1|&1 *CHAR 80|Partially Formed MIME or Simple mail note
+TCP5114|30|0|-|Attachment Creation failure
+TCP5115|20|0|-|Envelope mail part not provided.
+TCP5116|20|0|-|MIME Parser failed to provide envelope of headers.
+TCP5117|20|2|&1 *HEX 32 &2 *BIN 4|Get Related Default CCSID failure.
+TCP5118|20|1|&1 *HEX 32|Get Encoding Scheme Failure.
+TCP5121|20|0|-|FSO Corrupted, Problem found in Interchange Document Profile
+TCP5122|20|0|-|FSO Corrupted, Problem found in Interchange Document Profile Base Subprofile
+TCP5123|40|0|-|Framework create message failed.
+TCP5124|40|0|-|Unable to open socket and obtain a socket descriptor.
+TCP5125|40|0|-|Unable to process the originator list.
+TCP5126|40|0|-|Unable to process the recipient list.
+TCP5127|40|0|-|Framework change message failed.
+TCP5128|30|1|&1 *CHAR 255|Unable to send non-delivery note.
+TCP520A|10|0|-|Address Book successfully refreshed.
+TCP520B|10|0|-|Address Book refresh was not required.
+TCP520C|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 20|Address Book job ending as configured.
+TCP520F|30|2|&1 *CHAR 6 &2 *CHAR 21|Address Book processing error &1 has occurred.
+TCP5201|40|2|&1 *CHAR 10 &2 *CHAR 10|Error occurred creating object &2 in library &1.
+TCP5202|40|2|&1 *CHAR 10 &2 *CHAR 10|Error occurred accessing object &2 in library &1.
+TCP5203|20|1|&1 *CHAR 21|Unable to obtain exclusive lock on &1.
+TCP5204|20|1|&1 *CHAR 21|Unable to obtain shared lock on &1.
+TCP530A|40|1|&1 *CHAR 7|Severe processing error.
+TCP530B|40|1|&1 *CHAR 256|Error calling openssl with option &1.
+TCP530C|40|2|&1 *CHAR 10 &2 *CHAR 400|Integrated File System File Authority Error
+TCP530D|40|0|-|Password characters invalid.
+TCP530E|40|1|&1 *CHAR 400|Email Address Too Long.
+TCP530F|40|1|&1 *CHAR 400|Email Address Invalid.
+TCP5300|40|2|&1 *BIN 4 &2 *CHAR 256|Required parameter &1 omitted for API.
+TCP5301|40|3|&1 *BIN 4 &2 *CHAR 8 &3 *CHAR 256|Format name &2 is not valid for API on parameter &1.
+TCP5302|40|2|&1 *BIN 4 &2 *CHAR 256|Value for parameter &1 for API not valid.
+TCP5303|40|3|&1 *BIN 4 &2 *BIN 4 &3 *CHAR 256|Error from API.
+TCP5304|40|2|&1 *BIN 4 &2 *CHAR 256|Severe error parsing parameter &1 for API.
+TCP5305|40|2|&1 *BIN 4 &2 *CHAR 400|Integrated File System File Not Found.
+TCP5306|40|4|&1 *BIN 4 &2 *BIN 4 &3 *CHAR 65 &4 *CHAR 400|Error from integrated file system API.
+TCP5307|40|1|&1 *BIN 4|CCSID &1 out of range.
+TCP5308|40|1|&1 *BIN 4|CCSID &1 not supported.
+TCP5309|40|5|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4 &4 *BIN 4 &5 *CHAR 255|Error from Data Conversion API &5
+TCP531A|40|1|&1 *CHAR 100|An error has occurred with the TLS/SSL application.
+TCP531B|40|0|-|The certificate is not signed by a trusted certificate authority.
+TCP5310|40|1|&1 *CHAR 10|User &1 not enrolled in System Distribution Directory.
+TCP5311|40|1|&1 *CHAR 10|User &1 does not have a SMTP userid and SMTP domain.
+TCP5312|40|6|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4 &4 *BIN 4 &5 *BIN 4 &6 *CHAR 10|Data conversion failed when building the MIME document.
+TCP5313|40|4|&1 *BIN 4 &2 *BIN 4 &3 *BIN 4 &4 *CHAR 10|A failure occurred on creating or sending the MIME document.
+TCP5314|40|2|&1 *CHAR 5 &2 *CHAR 7|Required product &2 option &1 not installed.
+TCP5315|40|1|&1 *CHAR 10|User certificate store for user &1 not configured.
+TCP5316|40|2|&1 *CHAR 10 &2 *CHAR 255|Signer certificate not in the user certificate store for user &1.
+TCP5317|40|2|&1 *CHAR 10 &2 *CHAR 255|Recipient certificate not in the user certificate store for user &1.
+TCP5318|40|0|-|Password for User Certificate Store Invalid.
+TCP5319|30|2|&1 *CHAR 30 &2 *CHAR 21|Processing error &1 has occurred.
+TCP5320|40|1|&1 *CHAR 21|FTP subsystem changed, this job will end after the next use.
+TCP5321|30|1|&1 *BIN 4|Error reading record number &1 in SMTP Config file.
+TCP5322|30|0|-|SMTP Config File Version is not supported.
+TCP5323|30|0|-|Alias characters invalid.
+TCP5324|30|1|&1 *CHAR 255|The alias for the email domain '&1' is not enabled.
+TCP5909|20|0|-|Specified host name not valid.
+TCP5910|20|0|-|A system name required for each Internet address.
+TCP6B01|30|1|&1 *CHAR 10|Line &1 in recovery cancel state.
+TCP6B02|20|1|&1 *CHAR 10|Error on line &1 while line was in use.
+TCP6B03|40|1|&1 *CHAR 10|Configuration error detected while starting line &1.
+TCP6B04|40|1|&1 *CHAR 10|Line &1 is being used by another job.
+TCP6B05|40|1|&1 *CHAR 10|Device not allocated while starting line &1.
+TCP6B06|40|1|&1 *CHAR 10|Line &1 not found.
+TCP6B07|40|1|&1 *CHAR 10|Line &1 not in usable state.
+TCP6B08|50|1|&1 *CHAR 10|Internal system error.
+TCP6B09|40|1|&1 *CHAR 10|Link protocol not supported.
+TCP6B10|40|1|&1 *CHAR 10|Line &1 not configured to run link protocol.
+TCP6B11|40|1|&1 *CHAR 10|Configuration error detected while starting line &1.
+TCP6B12|40|2|&1 *CHAR 10 &2 *CHAR 20|Internal system error occurred in program &1.
+TCP77FD|50|0|-|REXEC server initialization failure.
+TCP77FE|50|0|-|REXEC server error exit.
+TCP77FF|50|0|-|Internal error detected in REXEC server program.
+TCP770A|10|0|-|REXEC protocol violation; data received was not valid.
+TCP770B|10|1|&1 *BIN 4|Unable to convert user name; reason code &1.
+TCP770C|10|1|&1 *BIN 4|Unable to convert password; reason code &1.
+TCP770D|10|1|&1 *CHAR 10|Authentication failed for user &1.
+TCP770E|10|1|&1 *CHAR 10|Password missing for user &1.
+TCP770F|10|2|&1 *CHAR 10 &2 *CHAR 10|Unable to set library &1 for user &2.
+TCP7701|40|2|&1 *CHAR 24 &2 *BIN 4|REXEC server unable to establish connection.
+TCP7702|10|0|-|Incorrect socket passed to REXEC server.
+TCP7703|40|2|&1 *CHAR 24 &2 *BIN 4|REXEC server unable to accept connection from remote system.
+TCP7704|20|0|-|Unable to start REXEC server job.
+TCP7705|20|2|&1 *BIN 4 &2 *BIN 4|Unable to convert data from CCSID &1 to CCSID &2.
+TCP7706|20|0|-|Unable to pass REXEC server socket.
+TCP7707|10|0|-|Connection refused.
+TCP7708|10|2|&1 *BIN 4 &2 *BIN 4|Unable to open connection; reason code &1, errno &2.
+TCP7709|10|0|-|Unable to process port value required by REXEC protocol.
+TCP771A|40|3|&1 *CHAR 7 &2 *CHAR 20 &3 *CHAR 8|Exception &1 occurred when trying to get information for exit point &2 with format name &3.
+TCP771B|40|4|&1 *CHAR 22 &2 *CHAR 20 &3 *CHAR 8 &4 *CHAR 7|REXEC problem with Register or Deregister API during install.
+TCP771C|40|1|&1 *BIN 4|The REXEC Install Exit Program failed.
+TCP771D|40|2|&1 *CHAR 20 &2 *CHAR 1|Data from exit program for exit point &1 is missing or not valid.
+TCP771E|40|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 20|Exception encountered for REXEC exit program &1 in library &2 for exit point &3.
+TCP771F|40|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 20|Unable to resolve to exit program &1 in library &2 for REXEC exit point &3.
+TCP7710|0|1|&1 *CHAR 10|User &1 logged in.
+TCP7711|10|1|&1 *BIN 4|Unable to convert command string; reason code &1.
+TCP7712|10|0|-|Missing command.
+TCP7713|10|0|-|Command rejected.
+TCP7714|0|1|&1 *CHAR 4096|Processing command: &1
+TCP7715|10|0|-|Unable to return command results.
+TCP7716|10|2|&1 *CHAR 10 &2 *BIN 4|Unable to process spooled file &1 number &2.
+TCP7717|40|2|&1 *CHAR 20 &2 *CHAR 1|Data from exit program for exit point &1 is missing or not valid.
+TCP7718|40|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 20|Exception encountered for exit program &1 in library &2 for exit point &3.
+TCP7719|40|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 20|Unable to resolve to exit program &1 in library &2 for exit point &3.
+TCP7720|40|3|&1 *CHAR 7 &2 *CHAR 20 &3 *CHAR 8|Exception &1 occurred when trying to get information for exit point &2 with format name &3.
+TCP7721|0|1|&1 *BIN 4|CCSID &1 selected for CCSID(*DFT).
+TCP7722|30|0|-|The REXEC configuration file is not valid.
+TCP7723|10|0|-|Command processing selection exit program error.
+TCP7724|10|0|-|Unable to set home directory.
+TCP7725|10|0|-|Unable to set environment variable.
+TCP7726|10|0|-|Incorrect command or path name specified.
+TCP7727|10|0|-|Qshell interpreter not installed.
+TCP7728|10|2|&1 *CHAR 1024 &2 *CHAR 10|Unable to set directory &1 for user &2.
+TCP7729|10|1|&1 *CHAR 10|Unable to set Auxilliary Storage Pool (ASP) group for user &1.
+TCP8002|50|0|-|User not authorized to access TCP/IP PROFILE.
+TCP8003|50|0|-|TCP/IP PROFILE not found.
+TCP8004|0|0|-|FTP error/informational messages will be written to a spooled file.
+TCP8005|0|0|-|SMTP error/informational messages will be written to a spooled file.
+TCP8006|0|0|-|TCP/IP error/informational messages will be written to a spooled file.
+TCP8007|30|0|-|Start of a line for TCP/IP failed.
+TCP8010|0|0|-|File member used for convert host table is empty.
+TCP90A8|30|0|-|*SECADM special authority required to do requested operation.
+TCP9094|30|0|-|INTNETADR parameter required.
+TCP9095|30|0|-|Parameter mismatch between RMTSYS and INTNETADR
+TCP9096|30|0|-|Values not compatible on TRANSFORM and USRDTATFM parameters.
+TCP9097|30|0|-|Parameter mismatch between SECCNN and DTAPROT.
+TCP9501|0|0|-|Results of host table conversion written in job log.
+TCP9502|40|0|-|Display not shown.
+TCP9503|30|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|File member &1 in library &2 not available.
+TCP9504|10|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|File member &1 in library &2 not found.
+TCP9505|30|3|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10|File &3 in library &2 not available or not found.
+TCP9506|30|1|&1 *CHAR 10|File member &1 changed.
+TCP9507|0|0|-|Host table printed.
+TCP9508|10|0|-|Internet address not valid.
+TCP9509|10|1|&1 *CHAR 10|Line &1 not found.
+TCP9511|10|0|-|Already at top of area.
+TCP9512|10|0|-|Already at bottom of area.
+TCP9513|20|0|-|System name is more than 256 characters.
+TCP9514|20|0|-|Process host table option must be *YES or *NO.
+TCP9515|20|0|-|Duplicate internet address or line name.
+TCP9516|10|0|-|Duplicate system name found.
+TCP9517|30|0|-|Duplicate port entry found.
+TCP9518|20|2|&1 *CHAR 10 &2 *CHAR 6|Line &1 is not valid for TCP/IP.
+TCP9519|20|3|&1 *CHAR 10 &2 *CHAR 6 &3 *CHAR 10|Link protocol &3 is not valid for TCP/IP.
+TCP9520|20|3|&1 *CHAR 10 &2 *CHAR 6 &3 *CHAR 10|Line &1 not configured to run link protocol &3.
+TCP9521|30|0|-|Format of network identifier not correct.
+TCP9522|30|0|-|Value specified for maximum datagram size not valid.
+TCP9523|10|0|-|Format of IOP Address is incorrect.
+TCP9524|20|0|-|Checksum must be Y or N.
+TCP9525|20|0|-|User profile not valid.
+TCP9526|30|1|&1 *CHAR 8|User profile &1 not found.
+TCP9527|10|0|-|Port number must be numeric characters only.
+TCP9528|10|0|-|Application must be *TCP or *UDP.
+TCP9529|20|0|-|Option specified not valid.
+TCP9530|10|0|-|Value specified not valid.
+TCP96AA|0|5|&1 *CHAR 11 &2 *CHAR 40 &3 *CHAR 40 &4 *CHAR 255 &5 *CHAR 512|Entry added to SMTP list type &1.
+TCP96AB|0|5|&1 *CHAR 11 &2 *CHAR 40 &3 *CHAR 40 &4 *CHAR 255 &5 *CHAR 512|Entry removed from SMTP list type &1.
+TCP96AC|30|0|-|FTRDATA value required for specified list type.
+TCP96AD|10|5|&1 *CHAR 11 &2 *CHAR 40 &3 *CHAR 40 &4 *CHAR 255 &5 *CHAR 512|Entry not found in SMTP list type &1.
+TCP96AE|10|5|&1 *CHAR 11 &2 *CHAR 40 &3 *CHAR 40 &4 *CHAR 255 &5 *CHAR 512|Duplicate entry found in SMTP list type &1.
+TCP96AF|30|0|-|FTRDATA value not allowed for specified list type.
+TCP96A2|30|0|-|INTNETADR value required for specified list type.
+TCP96A3|30|0|-|HOSTNAME value required for specified list type.
+TCP96A4|30|0|-|INTNETADR value not allowed for specified list type.
+TCP96A5|30|0|-|SUBNETMASK value not allowed for specified list type.
+TCP96A6|30|0|-|HOSTNAME value not allowed for specified list type.
+TCP96A8|40|0|-|Cannot determine the host and/or domain name of this AS400.
+TCP96A9|40|2|&1 *CHAR 10 &2 *CHAR 10|SMTP server unable to start because subsystem description &1 in library &2 was not found.
+TCP96BA|30|0|-|PASSWORD value not allowed for specified list type.
+TCP96BB|30|0|-|USERNAME value not allowed for specified list type.
+TCP96BC|30|0|-|PASSWORD value not valid.
+TCP96BD|0|7|&1 *CHAR 11 &2 *CHAR 40 &3 *CHAR 40 &4 *CHAR 255 &5 *CHAR 512 &6 *CHAR 80 &7 *CHAR 120|Entry added to SMTP list type &1.
+TCP96BE|0|5|&1 *CHAR 11 &2 *CHAR 40 &3 *CHAR 40 &4 *CHAR 255 &5 *CHAR 512|Entry removed from SMTP list type &1.
+TCP96BF|0|7|&1 *CHAR 11 &2 *CHAR 40 &3 *CHAR 40 &4 *CHAR 255 &5 *CHAR 512 &6 *CHAR 80 &7 *CHAR 128|Entry added to SMTP list type &1.
+TCP96B1|40|0|-|ETRNCLT parameters are not completely defined.
+TCP96B2|40|1|&1 *CHAR 10|A fatal error occurred while trying to configure the Subsystem description.
+TCP96B3|30|2|&1 *CHAR 0 &2 *CHAR 10|The user running the &1 has insufficient authority to the subsystem's library &2.
+TCP96B4|30|3|&1 *CHAR 0 &2 *CHAR 0 &3 *CHAR 10|The user running the &1 has insufficient authority to the subsystem description.
+TCP96B5|40|1|&1 *CHAR 15|Loopback address &1 not valid for *SVRBIND or *CLTBIND interface entry.
+TCP96B6|30|5|&1 *CHAR 10 &2 *CHAR 10 &3 *CHAR 10 &4 *CHAR 10 &5 *BIN 4|SMTP job not able to use file &2.
+TCP96B7|30|0|-|USERNAME value not valid.
+TCP96B8|30|0|-|USERNAME value required for specified list type.
+TCP96B9|30|0|-|PASSWORD value required for specified list type.
+TCP96CA|30|1|&1 *CHAR *VARY 2|Distribution list &1 not changed.
+TCP96CB|30|1|&1 *CHAR *VARY 2|List ID &1 not created in the directory.
+TCP96CC|30|1|&1 *CHAR *VARY 2|No entries added to distribution list &1.
+TCP96CD|30|5|&1 *BIN 2 &2 *BIN 2 &3 *CHAR *VARY 2 &4 *BIN 2 &5 *BIN 2|&1 entries added and &2 lists copied to list &3.  &4 entries not added and &5 lists not copied.
+TCP96CE|30|1|&1 *CHAR *VARY 2|Address &1 is not a valid name.
+TCP96CF|30|1|&1 *CHAR *VARY 2|No entries removed from list &1.
+TCP96C0|30|0|-|PREFIXIP6 value required for specified list type.
+TCP96C1|30|0|-|INETADRIP6 value required for specified list type.
+TCP96C2|30|0|-|PREFIXIP6 value not allowed for specified list type.
+TCP96C3|30|0|-|INETADRIP6 value not allowed for specified list type.
+TCP96C4|30|0|-|Loopback address ::1 not valid for *SVRBINDIPV6 or *CLTBINDIPV6 interface entry.
+TCP96C5|30|1|&1 *CHAR 12|Scoped Address Not Supported For &1.
+TCP96C6|30|1|&1 *CHAR 12|Scoped Address entered for &1 was not a link-local Address.
+TCP96C7|30|1|&1 *CHAR 40|Link-local addresses are not supported for &1.
+TCP96C8|30|1|&1 *CHAR *VARY 2|List ID, &1, cannot be found.
+TCP96C9|30|1|&1 *CHAR *VARY 2|List ID &1 is not a valid name.
+TCP96DA|0|1|&1 *CHAR *VARY 2|List ID &1 cannot be found.
+TCP96DB|0|1|&1 *CHAR *VARY 2|Error while processing IFS file &1.
+TCP96DC|0|0|-|A unknown error has occurred.
+TCP96DD|30|1|&1 *CHAR *VARY 2|User identifier &1 not in distribution list.
+TCP96DE|30|1|&1 *CHAR *VARY 2|Can't use '#' character at the end of &1.
+TCP96DF|30|1|&1 *CHAR *VARY 2|List ID &1 has an identical name with a user profile or alias &1 in local SMTP mailbox directory.
+TCP96D0|30|3|&1 *BIN 2 &2 *CHAR *VARY 2 &3 *BIN 2|&1 entries removed from list &2, &3 entries not removed.
+TCP96D1|30|1|&1 *CHAR *VARY 2|Distribution list &1 not renamed.
+TCP96D2|30|1|&1 *CHAR *VARY 2|New list identifier &1 is not a valid name.
+TCP96D3|0|1|&1 *CHAR *VARY 2|Distribution list &1 successfully created.
+TCP96D4|0|1|&1 *CHAR *VARY 2|Distribution list &1 successfully changed.
+TCP96D5|0|1|&1 *CHAR *VARY 2|Distribution list &1 successfully renamed.
+TCP96D6|30|0|-|List ID required.
+TCP96D7|0|1|&1 *CHAR *VARY 2|Distribution list &1 already existed.
+TCP96D8|0|2|&1 *CHAR *VARY 2 &2 *CHAR *VARY 2|Address &1 in distribution list &2 already existed.
+TCP96E0|30|1|&1 *CHAR *VARY 2|User profile &1 includes character '§'.
+TCP960A|0|0|-|Conversion of SMTP aliases started.
+TCP960B|0|1|&1 *BIN 2|Conversion of SMTP aliases completed successfully.
+TCP960C|0|2|&1 *BIN 2 &2 *BIN 2|Conversion of SMTP aliases completed; however errors occurred.
+TCP960D|40|0|-|Conversion of SMTP aliases already completed.
+TCP960E|20|4|&1 *CHAR 17 &2 *CHAR 24 &3 *CHAR 255 &4 *CHAR 1|SMTP system alias not added.
+TCP960F|40|3|&1 *BIN 2 &2 *BIN 2 &3 *BIN 2|CVTNAMSMTP processing stopped.
+TCP9601|99|0|-|Reply C to cancel CVTNAMSMTP or G to allow it. (C G)
+TCP9602|20|0|-|User ID and address already exists.
+TCP9603|20|0|-|Alias cannot be removed at this time.
+TCP9605|40|0|-|*SECADM special authority required to alter system alias entries.
+TCP9606|0|0|-|Alias changed.
+TCP9607|0|0|-|Names for simple mail transfer protocol (SMTP) printed.
+TCP9608|20|0|-|SMTP user ID and domain or route already exist.
+TCP961A|20|0|-|Value not correct for alias table type.
+TCP9610|0|0|-|WRKNAMSMTP command disabled.
+TCP9615|20|0|-|User not enrolled in system directory.
+TCP9616|20|0|-|Required data missing.
+TCP9617|20|0|-|Specify either an SMTP user ID and domain or an SMTP route
+TCP9618|20|0|-|Value not allowed for address.
+TCP9619|20|0|-|SMTP user name not allowed.
+TCP9620|20|0|-|SMTP route not allowed.
+TCP9621|10|0|-|Format of file, member, or library name not valid.
+TCP9622|10|3|&1 *CHAR 0 &2 *CHAR 0 &3 *CHAR 10|File &3 does not exist.
+TCP9623|10|1|&1 *CHAR 10|File member &1 does not exist.
+TCP9624|10|2|&1 *CHAR 0 &2 *CHAR 10|Library &2 does not exist.
+TCP9625|20|1|&1 *CHAR 10|File &1 does not exist.
+TCP9626|30|0|-|Line names must begin with a character.
+TCP9627|10|0|-|Format of subnet value not correct.
+TCP9628|10|0|-|Format of subnet mask not correct.
+TCP9629|10|0|-|Selection not valid.
+TCP9630|10|0|-|Character value not allowed.
+TCP9631|10|0|-|Port number already used.
+TCP9632|10|0|-|Application already assigned port.
+TCP9633|10|0|-|Format of Simple Mail Transfer Protocol (SMTP) route not correct.
+TCP9634|10|0|-|Errors occurred during host table conversion.
+TCP9635|10|0|-|Warnings occurred during host table conversion.
+TCP9636|20|0|-|Value not allowed for user address.
+TCP9637|10|0|-|SMTP domain not needed.
+TCP9638|10|0|-|SMTP user name not needed.
+TCP9639|10|0|-|Cannot convert host table while it is in use.
+TCP9640|0|0|-|Host table has no entries
+TCP9641|0|0|-|No links
+TCP9642|0|0|-|No route entries
+TCP9643|0|0|-|No names
+TCP9644|0|0|-|No port entries
+TCP9645|10|0|-|Port number may be used by standard TCP/IP applications.
+TCP9650|20|0|-|Combined length of local domain name and host name is greater than 255.
+TCP9660|20|0|-|Host table has no entries to print.
+TCP9661|20|0|-|No links to print.
+TCP9662|20|0|-|No route entries to print.
+TCP9663|20|0|-|No names to print.
+TCP9664|20|0|-|No port entries to print.
+TCP9667|30|0|-|Subnet value must be *NONE when the subnet mask specified is *NONE.
+TCP9668|20|0|-|Remote name server not configured.
+TCP9669|20|0|-|Entry has been removed or changed.
+TCP9670|40|0|-|SMTP distribution not sent.  Wrong number of parameters passed.
+TCP9671|40|1|&1 *CHAR 8|SMTP distribution not sent.  &1 storage allocation failed.
+TCP9672|40|0|-|SMTP distribution not sent.  Data is missing.
+TCP9673|40|3|&1 *CHAR 20 &2 *BIN 2 &3 *BIN 2|SMTP distribution not sent.  Unable to read file information.
+TCP9674|40|3|&1 *CHAR 20 &2 *BIN 2 &3 *BIN 2|SMTP distribution not sent.  Unable to read IFS file.
+TCP9675|40|3|&1 *CHAR 20 &2 *BIN 2 &3 *BIN 2|SMTP distribution not sent.  Unable to open IFS file.
+TCP9676|40|2|&1 *CHAR 20 &2 *BIN 2|SMTP distribution not sent.  Unable to parse data.
+TCP9677|40|0|-|SMTP distribution not sent.  SMTP jobs not active.
+TCP9678|40|2|&1 *CHAR 8 &2 *BIN 2|SMTP distribution not sent.  Unable to write FSO.
+TCP9680|40|0|-|ENQ instruction failed.  SMTP distribution not sent.
+TCP9688|30|0|-|Format of first hop not correct.
+TCP9689|20|0|-|Host table entry not accepted.
+TCP9701|0|0|-|Links printed.
+TCP9702|0|0|-|Port entries printed.
+TCP9703|0|0|-|Route entries printed.
+TCP9704|10|0|-|Removal of default route (*DEFAULT) not allowed.
+TCP9705|10|0|-|Value of *DEFAULT not valid.
+TCP9706|10|0|-|Value specified for first hop not valid.
+TCP9880|20|0|-|Value for local domain name not valid.
+TCP9881|20|0|-|Value for local host name not valid.
+TCP9882|30|0|-|Format of subnet mask not correct.
+TCP9883|30|0|-|Format of subnet value not correct.
+TCP9884|10|0|-|Application must be *AIX or *NIC.
+TCP9904|10|0|-|Cursor not positioned correctly for F4 (Prompt).
+TCP9997|40|0|-|You entered an IPv6 address but IPv6 is not yet supported.

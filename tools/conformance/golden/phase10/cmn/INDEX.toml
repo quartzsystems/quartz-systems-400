@@ -1,0 +1,120 @@
+[[golden]]
+name = "wrkhdwrsc-cmn"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "cmn"
+width = 80
+
+[[golden]]
+name = "wrkhdwrsc-cmn-7"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "cmn"
+width = 80
+
+[[golden]]
+name = "wrkhdwrsc-cmn-7-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "cmn"
+width = 80
+
+[[golden]]
+name = "wrkhdwrsc-cmn-5-refused"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "cmn"
+width = 80
+
+[[golden]]
+name = "wrkhdwrsc-cmn04-7"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "cmn-resume"
+width = 80
+
+[[golden]]
+name = "wrkhdwrsc-cmn04-7-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "cmn-resume"
+width = 80
+
+[[golden]]
+name = "wrkhdwrsc-cmn04-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "cmn-resume"
+width = 80
+
+[[golden]]
+name = "wrklind"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "cmn-resume"
+width = 80
+
+[[golden]]
+name = "dsplind"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "cmn-resume"
+width = 80
+
+[[golden]]
+name = "dsplind-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "cmn-resume"
+width = 80
+
+[[golden]]
+name = "wrkcfgsts-lin"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "cmn-resume"
+width = 80
+
+[[golden]]
+name = "wrkcfgsts-lin-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "cmn-resume"
+width = 80
+
+[[golden]]
+name = "wrkcfgsts-ctl"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "cmn-resume"
+width = 80
+
+[[golden]]
+name = "wrkcfgsts-dev"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "cmn-resume"
+width = 80
+
+[[golden]]
+name = "wrkcfgsts-dev-cmn"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "cmn-resume"
+width = 80
+

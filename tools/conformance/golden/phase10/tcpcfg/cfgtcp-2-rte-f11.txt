@@ -1,0 +1,24 @@
+                            Work with TCP/IP Routes                             
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   5=Display                                                                    
+                                                                                
+      Route            Subnet           Next             Type of                
+ Opt  Destination      Mask             Hop              Service                
+                                                                                
+      *DFTROUTE        *NONE            185.113.5.253    *NORMAL                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit      F5=Refresh   F6=Print list   F11=Display text description         
+ F12=Cancel   F17=Top      F18=Bottom                                           
+                                                                                

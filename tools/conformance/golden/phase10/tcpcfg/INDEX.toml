@@ -1,0 +1,183 @@
+[[golden]]
+name = "cfgtcp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpcfg"
+width = 80
+
+[[golden]]
+name = "cfgtcp-1-ifc"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpcfg"
+width = 80
+
+[[golden]]
+name = "cfgtcp-1-ifc-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpcfg"
+width = 80
+
+[[golden]]
+name = "cfgtcp-1-ifc-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpcfg"
+width = 80
+
+[[golden]]
+name = "cfgtcp-2-rte"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpcfg"
+width = 80
+
+[[golden]]
+name = "cfgtcp-2-rte-f11"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpcfg"
+width = 80
+
+[[golden]]
+name = "cfgtcp-2-rte-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpcfg"
+width = 80
+
+[[golden]]
+name = "cfgtcp-4-port"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpcfg"
+width = 80
+
+[[golden]]
+name = "cfgtcp-10-hte"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpcfg"
+width = 80
+
+[[golden]]
+name = "cfgtcp-10-hte-5"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpcfg"
+width = 80
+
+[[golden]]
+name = "cfgtcp-21-tables"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpcfg"
+width = 80
+
+[[golden]]
+name = "cfgtcp-22-ptp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpcfg"
+width = 80
+
+[[golden]]
+name = "tables-1-service"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpapp"
+width = 80
+
+[[golden]]
+name = "tables-1-service-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpapp"
+width = 80
+
+[[golden]]
+name = "tables-2-protocol"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpapp"
+width = 80
+
+[[golden]]
+name = "tables-3-network"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpapp"
+width = 80
+
+[[golden]]
+name = "cfgtcpapp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpapp"
+width = 80
+
+[[golden]]
+name = "cfgtcpapp-2"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpapp"
+width = 80
+
+[[golden]]
+name = "cfgtcpapp-1-snmp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpapp"
+width = 80
+
+[[golden]]
+name = "cfgtcpapp-2-routed"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpapp"
+width = 80
+
+[[golden]]
+name = "cfgtcpapp-4-bootp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpapp"
+width = 80
+
+[[golden]]
+name = "cfgtcpapp-11-telnet"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpapp"
+width = 80
+
+[[golden]]
+name = "cfgtcpapp-12-smtp"
+source = "pub400"
+release = "V7R5M0"
+date = "2026-10-24"
+script = "tcpapp"
+width = 80

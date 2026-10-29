@@ -1,0 +1,24 @@
+                       Merge TCP/IP Host Table (MRGTCPHT)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ From file  . . . . . . . . . . . FROMFILE                                      
+   Library  . . . . . . . . . . .                  *LIBL                        
+ From member  . . . . . . . . . . FROMMBR        *FIRST                         
+ From object  . . . . . . . . . . FROMOBJ                                       
+                                                                                
+ File format  . . . . . . . . . . FILEFMT        *OPSYS                         
+ Replace host table . . . . . . . REPLACE        *NO                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

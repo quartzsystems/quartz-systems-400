@@ -1,0 +1,24 @@
+                     Create Line Desc (Ethernet) (CRTLINETH)                    
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Line description . . . . . . . . LIND                                          
+ Resource name  . . . . . . . . . RSRCNAME                                      
+ Bridge identifier  . . . . . . . BRIDGE         *NONE                          
+ Online at IPL  . . . . . . . . . ONLINE         *YES                           
+ Vary on wait . . . . . . . . . . VRYWAIT        *NOWAIT                        
+ Aggregate policy:                AGGPCY                                        
+   Standard . . . . . . . . . . .                                               
+   Policy type  . . . . . . . . .                                               
+ Aggregated resource list . . . . AGGRSCL                                       
+                           + for more values                                    
+ Network server description:      NWS                                           
+                                                 *NONE                          
+   Port number  . . . . . . . . .                                               
+ Associated port resource name  . ASSOCPORT      *NONE                          
+ Local adapter address  . . . . . ADPTADR        *ADPT                          
+ Ethernet standard  . . . . . . . ETHSTD         *ETHV2                         
+                                                                        More... 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

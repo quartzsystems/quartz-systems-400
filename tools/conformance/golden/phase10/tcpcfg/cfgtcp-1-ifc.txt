@@ -1,0 +1,24 @@
+                          Work with TCP/IP Interfaces                           
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   5=Display                                                                    
+                                                                                
+      Internet         Subnet              Line      Line                       
+ Opt  Address          Mask             Description  Type                       
+                                                                                
+      *IP4DHCP         *                LINETH       *ELAN                      
+      127.0.0.1        255.0.0.0        *LOOPBACK    *NONE                      
+      185.113.5.134    255.255.255.0    LINETH       *ELAN                      
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit      F5=Refresh   F6=Print list   F11=Display interface status         
+ F12=Cancel   F17=Top      F18=Bottom                                           
+                                                                                

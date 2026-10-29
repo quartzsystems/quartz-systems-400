@@ -1,0 +1,24 @@
+                      Send TCP/IP Spooled File (SNDTCPSPLF)                     
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Spooled file created:            CRTDATE                                       
+   Creation date  . . . . . . . .                *ONLY                          
+   Creation time  . . . . . . . .                                               
+ Destination type . . . . . . . . DESTTYP        *OTHER                         
+ Transform SCS to ASCII . . . . . TRANSFORM      *YES                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Messages pending on other displays.                                            

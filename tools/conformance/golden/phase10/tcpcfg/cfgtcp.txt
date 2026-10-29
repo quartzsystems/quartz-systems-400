@@ -1,0 +1,24 @@
+ CFGTCP                         Configure TCP/IP                                
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Work with TCP/IP interfaces                                            
+      2. Work with TCP/IP routes                                                
+      3. Change TCP/IP attributes                                               
+      4. Work with TCP/IP port restrictions                                     
+                                                                                
+     10. Work with TCP/IP host table entries                                    
+     11. Merge TCP/IP host table                                                
+     12. Change TCP/IP domain information                                       
+                                                                                
+     20. Configure TCP/IP applications                                          
+     21. Configure related tables                                               
+     22. Configure point-to-point TCP/IP                                        
+     23. Load/Unload IP Filter                                                  
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+                                                                                

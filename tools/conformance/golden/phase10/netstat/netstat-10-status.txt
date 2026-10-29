@@ -1,0 +1,24 @@
+                          Display TCP/IP Stack Status                           
+                                                             System:   SYSNAME  
+ IPv4 stack status . . . . . . . . . . . . . :   Active                         
+ IPv6 stack status . . . . . . . . . . . . . :   Active                         
+ Limited mode  . . . . . . . . . . . . . . . :   *NO                            
+ How long active . . . . . . . . . . . . . . :   1128555                        
+ When last started . . . . . . . . . . . . . :   MM/DD/YY  HH:MM:SS             
+ When last ended . . . . . . . . . . . . . . :   MM/DD/YY  HH:MM:SS             
+ Who last started - job name . . . . . . . . :   QSTRTCP                        
+ Who last started - job user . . . . . . . . :   QPGMR                          
+ Who last started - job number . . . . . . . :   090583                         
+ Who last ended - job name . . . . . . . . . :                                  
+ Who last ended - job user . . . . . . . . . :                                  
+ Who last ended - job number . . . . . . . . :                                  
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F5=Refresh   F6=Print list   F9=Command line   F12=Cancel            
+                                                                                

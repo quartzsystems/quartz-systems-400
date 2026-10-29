@@ -1,0 +1,57 @@
+# session: types
+# source: pub400 V7R5M0, port 21, 2026-10-29
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: TYPE A
+S: 200 Representation type is ASCII nonprint.
+C: TYPE A N
+S: 200 Representation type is ASCII nonprint.
+C: TYPE I
+S: 200 Representation type is binary IMAGE.
+C: TYPE E
+S: 200 Representation type is EBCDIC nonprint.
+C: TYPE L 8
+S: 200 Local byte size is 8.
+C: TYPE X
+S: 501-Type  not valid.  Enter 'I', 'A', 'E', 'B', 'F', or 'C'.
+S: 501  Representation type remains EBCDIC NONPRINT.
+C: MODE S
+S: 200 Data transfer mode is stream.
+C: MODE B
+S: 200 Data transfer mode is block.
+C: STRU F
+S: 250 Data structure is file.
+C: STRU R
+S: 250 Data structure is record.
+C: PASV
+S: 227 Entering Passive Mode (185,113,5,134,206,28).
+C: EPSV
+S: 229 Entering Extended Passive Mode (|||64476|)
+C: EPSV ALL
+S: 229 Entering Extended Passive Mode (|||64476|)
+C: REST 0
+S: 504  subcommand not supported on the server.
+C: ALLO 100
+S: 202 ALLO subcommand not required.
+C: ACCT x
+S: 503 No account parameters required.
+C: PBSZ 0
+S: 421 Security negotiation failed, connection closed; error code 524288.
+C: PROT P
+S: 503 PBSZ must precede PROT.
+C: SITE CRTCCSID
+S: 250 Create new database file CCSID (CRTCCSID) option set to *CALC.
+C: SITE TRIM
+S: 250  TRIM trailing blanks when sending database files option set to 1.
+C: SITE TRIM 0
+S: 250  TRIM trailing blanks when sending database files option set to 0.
+C: SITE TRIM 1
+S: 250  TRIM trailing blanks when sending database files option set to 1.
+C: SITE CRTCCSID *CALC
+S: 250 Create new database file CCSID (CRTCCSID) option set to *CALC.
+C: QUIT
+S: 221 QUIT subcommand received.

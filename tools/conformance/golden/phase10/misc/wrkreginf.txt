@@ -1,0 +1,24 @@
+                       Work with Registration Information                       
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display exit point   8=Work with exit programs                             
+                                                                                
+                            Exit                                                
+      Exit                  Point                                               
+ Opt  Point                 Format    Registered  Text                          
+      QIBM_QCA_CHG_COMMAND  CHGC0100     *YES     Change command exit programs  
+      QIBM_QCA_RTV_COMMAND  RTVC0100     *YES     Retrieve command exit program 
+      QIBM_QCQ_AGENT        ENDE0100     *YES                                   
+      QIBM_QCQ_AGENT        STRE0100     *YES                                   
+      QIBM_QCST_ADMDMN      ADMN0100     *YES     Cluster administrative domain 
+      QIBM_QCST_ADMDMN      ADMN0200     *YES     Cluster administrative domain 
+      QIBM_QCST_CLU         QCLU0100     *YES     Cluster node support          
+      QIBM_QCST_CRG         QCLU0100     *YES     Cluster resource group suppor 
+      QIBM_QC3_CLR_MSTKEY   CLMK0100     *YES     Clear Master Key              
+      QIBM_QC3_DLT_KREC     DLKR0100     *YES     Delete Key Record             
+      QIBM_QC3_SET_MSTKEY   STMK0100     *YES     Set Master Key                
+                                                                        More... 
+ Command                                                                        
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+                                                                                

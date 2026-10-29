@@ -1,0 +1,24 @@
+                         Copy To Stream File (CPYTOSTMF)                        
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ From file member or save file  . FROMMBR                                       
+                                                                                
+ To stream file . . . . . . . . . TOSTMF                                        
+                                                                                
+ Stream file option . . . . . . . STMFOPT        *NONE                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

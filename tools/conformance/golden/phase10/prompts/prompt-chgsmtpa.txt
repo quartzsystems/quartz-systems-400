@@ -1,0 +1,24 @@
+                        Change SMTP Attributes (CHGSMTPA)                       
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Autostart server . . . . . . . . AUTOSTART      *NO                            
+ Clear e-mail on start-up . . . . COLDSTART      *NO                            
+ E-mail directory type  . . . . . DIRTYPE        *SMTP                          
+ Retries by minute:               RTYMIN                                        
+   Number of retries  . . . . . .                3                              
+   Time interval  . . . . . . . .                3                              
+ Retries by day:                  RTYDAY                                        
+   Number of retries  . . . . . .                0                              
+   Time interval  . . . . . . . .                0                              
+ Retries by hour:                 RTYHOUR                                       
+   Number of retries  . . . . . .                0                              
+   Time interval  . . . . . . . .                0                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

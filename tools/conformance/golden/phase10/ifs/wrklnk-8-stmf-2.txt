@@ -1,0 +1,24 @@
+                               Display Attributes                               
+                                                                                
+ Object . . . . . . :   /home/USERNAME/qsnet.txt                                
+                                                                                
+ Creation date/time . . . . . . . . . . :   MM/DD/YY  HH:MM:SS                  
+ Last access date/time  . . . . . . . . :   MM/DD/YY  HH:MM:SS                  
+ Data change date/time  . . . . . . . . :   MM/DD/YY  HH:MM:SS                  
+ Attribute change date/time . . . . . . :   MM/DD/YY  HH:MM:SS                  
+                                                                                
+ Size of object data in bytes . . . . . :   53                                  
+ Allocated size of object . . . . . . . :   8192                                
+ File format  . . . . . . . . . . . . . :   *TYPE2                              
+ Size of extended attributes  . . . . . :   0                                   
+ Storage freed  . . . . . . . . . . . . :   No                                  
+ Temporary object . . . . . . . . . . . :   No                                  
+ Disk storage option  . . . . . . . . . :   *NORMAL                             
+ Main storage option  . . . . . . . . . :   *NORMAL                             
+                                                                                
+ Auditing value . . . . . . . . . . . . :   *NOTAVL                             
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F12=Cancel   F22=Display entire field                                
+                                                                                

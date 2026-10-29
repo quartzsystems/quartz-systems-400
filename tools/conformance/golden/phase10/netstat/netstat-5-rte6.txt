@@ -1,0 +1,24 @@
+                         Display IPv6 Route Information                         
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   5=Display details                                                            
+                                                                                
+      Route                 Prefix  Next                  Route                 
+ Opt  Destination           Length  Hop                   Status                
+      ::1                      128  *DIRECT               *ACTIVE               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F5=Refresh   F9=Command line   F11=Display route type   F12=Cancel   
+ F13=Sort by column     F22=Display entire field   F24=More keys                
+                                                                                

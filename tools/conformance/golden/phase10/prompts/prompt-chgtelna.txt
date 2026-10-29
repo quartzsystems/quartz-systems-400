@@ -1,0 +1,24 @@
+                       Change Telnet Attributes (CHGTELNA)                      
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Autostart server . . . . . . . . AUTOSTART      *YES                           
+ Number servers . . . . . . . . . NBRSVR         *CALC                          
+ Number of tasks  . . . . . . . . NBRTASK        *CALC                          
+ Session keep alive timeout . . . TIMMRKTIMO     300                            
+ Enable 3270 wide-screen  . . . . ENBWIDE        *YES                           
+ Number of 3270 input fields  . . NBRFLDS        *DFT                           
+ Default NVT type . . . . . . . . DFTNVTTYPE     *VT100                         
+ Coded character set identifier   CCSID          *MULTINAT                      
+ Outgoing EBCDIC/ASCII table  . . TBLVTOUT       *CCSID                         
+   Library  . . . . . . . . . . .                                               
+ Incoming ASCII/EBCDIC table  . . TBLVTIN        *CCSID                         
+   Library  . . . . . . . . . . .                                               
+ Allow Transport Layer Security   ALWSSL         *YES                           
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

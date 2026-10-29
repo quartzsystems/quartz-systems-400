@@ -1,0 +1,24 @@
+                          Change Output Queue (CHGOUTQ)                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Output queue . . . . . . . . . . OUTQ                                          
+   Library  . . . . . . . . . . .                  *LIBL                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F10=Additional parameters   F12=Cancel      
+ F13=How to use this display        F24=More keys                               
+                                                                                

@@ -1,0 +1,24 @@
+                        Display TCP/IP Route Information                        
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   5=Display details                                                            
+                                                                                
+      Route            Type of         Route  Route      Route                  
+ Opt  Destination      Service          MTU   Type       Source                 
+      127.0.0.0        *NORMAL           576  *DIRECT    *CFG                   
+      185.113.5.0      *NORMAL          1500  *DIRECT    *CFG                   
+      224.0.0.0        *NORMAL          1500  *DIRECT    *CFG                   
+      224.0.0.0        *NORMAL           576  *DIRECT    *CFG                   
+      *DFTROUTE        *NORMAL          1500  *DFTROUTE  *CFG                   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F5=Refresh   F9=Command line   F11=Display route type   F12=Cancel   
+ F13=Sort by column     F20=Display IPv6 routes   F24=More keys                 
+                                                                                

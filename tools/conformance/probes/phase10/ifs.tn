@@ -1,0 +1,134 @@
+# Phase 10: IFS displays. WRKLNK on '/' with options 5, 8, 9 (Work with
+# Authority, left with F12) and 12 on /etc; WRKLNK on the probe stream
+# file in the account's home (put there by FTP before this run and
+# deleted after) with options 5, 8 and 9; DSPLNK; EDTF opened and left
+# with F12 (F3 saves); DSPF. No `continue`; option 4 (remove) and 7
+# (rename) are never typed.
+wait "Main Menu"
+timeout 60000
+type call qcmd
+key enter
+wait "Command Entry"
+type wrklnk '/'
+key enter
+settle 2000
+snap wrklnk-root
+key f23
+settle 1000
+snap wrklnk-root-f23
+key f23
+settle 1000
+pick "re:^\s+/\s+DIR" 5
+key enter
+settle 1500
+snap wrklnk-5-root
+key pgdn
+settle 1000
+snap wrklnk-5-root-2
+key f12
+settle 1500
+pick "re:^\s+/\s+DIR" 8
+key enter
+settle 1500
+snap wrklnk-8-root
+key pgdn
+settle 1000
+snap wrklnk-8-root-2
+key pgdn
+settle 1000
+snap wrklnk-8-root-3
+key f12
+settle 1500
+pick "re:^\s+/\s+DIR" 9
+key enter
+settle 1500
+snap wrklnk-9-root
+key f12
+settle 1500
+# Option 12 on / is refused on V7R5M0 ("not allowed"): that is the
+# golden. The root's contents come from WRKLNK '/*'.
+pick "re:^\s+/\s+DIR" 12
+key enter
+settle 1500
+snap wrklnk-12-root-refused
+key f12
+wait "Command Entry"
+type wrklnk '/*'
+key enter
+settle 2000
+snap wrklnk-root-contents
+key pgdn
+settle 1000
+snap wrklnk-root-contents-2
+key pgup
+settle 1000
+pick "re:^\s+etc\s" 5
+key enter
+settle 1500
+snap wrklnk-5-dir
+key f12
+settle 1500
+pick "re:^\s+etc\s" 8
+key enter
+settle 1500
+snap wrklnk-8-dir
+key f12
+settle 1500
+# Option 12 is refused on a directory too.
+pick "re:^\s+etc\s" 12
+key enter
+settle 1500
+snap wrklnk-12-dir-refused
+key f12
+wait "Command Entry"
+type wrklnk '/home/{user}/qsnet*'
+key enter
+settle 2000
+snap wrklnk-home
+pick "qsnet.txt" 5
+key enter
+settle 1500
+snap wrklnk-5-stmf
+key f12
+settle 1500
+pick "qsnet.txt" 8
+key enter
+settle 1500
+snap wrklnk-8-stmf
+key pgdn
+settle 1000
+snap wrklnk-8-stmf-2
+key pgdn
+settle 1000
+snap wrklnk-8-stmf-3
+key f12
+settle 1500
+pick "qsnet.txt" 9
+key enter
+settle 1500
+snap wrklnk-9-stmf
+key f12
+settle 1500
+key f12
+wait "Command Entry"
+type dsplnk '/'
+key enter
+settle 2000
+snap dsplnk-root
+key f12
+wait "Command Entry"
+type edtf '/home/{user}/qsnet.txt'
+key enter
+settle 2000
+snap edtf
+# F3 is Save/Exit in EDTF; F12 leaves without saving.
+key f12
+settle 1500
+wait "Command Entry"
+type dspf '/home/{user}/qsnet.txt'
+key enter
+settle 2000
+snap dspf
+key f3
+settle 1500
+wait "Command Entry"

@@ -1,0 +1,24 @@
+                          Reclaim Object Links (RCLLNK)                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Object . . . . . . . . . . . . . OBJ                                           
+                                                                                
+ Directory subtree  . . . . . . . SUBTREE        *DIR                           
+ Damaged object option:           DMGOBJOPT                                     
+   Usable objects . . . . . . . .                *KEEP                          
+   Unusable objects . . . . . . .                *DELETE                        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

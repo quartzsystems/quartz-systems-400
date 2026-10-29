@@ -1,0 +1,110 @@
+# Phase 10: communications configuration displays: WRKHDWRSC *CMN with
+# option 7 (resource detail) and 5 (configuration descriptions) on the
+# first resource, WRKLIND with option 5 (DSPLIND) on the first line,
+# WRKCFGSTS for lines, controllers and devices. Display options only;
+# vary on/off and change options are never typed. No `continue`.
+wait "Main Menu"
+timeout 60000
+type call qcmd
+key enter
+wait "Command Entry"
+type wrkhdwrsc type(*cmn)
+key enter
+settle 2000
+snap wrkhdwrsc-cmn
+key f11
+settle 1000
+snap wrkhdwrsc-cmn-f11
+key f11
+settle 1000
+key home
+type 7
+key enter
+settle 1500
+snap wrkhdwrsc-cmn-7
+key pgdn
+settle 1000
+snap wrkhdwrsc-cmn-7-2
+key f12
+settle 1500
+# Option 5 on the first resource (an IOP) is refused: that message is
+# the golden; F5 clears the option.
+key home
+type 5
+key enter
+settle 1500
+snap wrkhdwrsc-cmn-5-refused
+key f5
+settle 1500
+pick "CMN04" 7
+key enter
+settle 1500
+snap wrkhdwrsc-cmn04-7
+key pgdn
+settle 1000
+snap wrkhdwrsc-cmn04-7-2
+key f12
+settle 1500
+pick "CMN04" 5
+key enter
+settle 1500
+snap wrkhdwrsc-cmn04-5
+pick "re:^\s+LINETH" 5
+key enter
+settle 1500
+snap wrkhdwrsc-cmn04-5-5
+key f12
+settle 1500
+key f12
+settle 1500
+key f12
+wait "Command Entry"
+type wrklind
+key enter
+settle 2000
+snap wrklind
+key home
+type 5
+key enter
+settle 1500
+snap dsplind
+key pgdn
+settle 1000
+snap dsplind-2
+key pgdn
+settle 1000
+snap dsplind-3
+key pgdn
+settle 1000
+snap dsplind-4
+key f12
+settle 1500
+key f12
+wait "Command Entry"
+type wrkcfgsts cfgtype(*lin)
+key enter
+settle 2000
+snap wrkcfgsts-lin
+key f11
+settle 1000
+snap wrkcfgsts-lin-f11
+key f12
+wait "Command Entry"
+type wrkcfgsts cfgtype(*ctl)
+key enter
+settle 2000
+snap wrkcfgsts-ctl
+key f12
+wait "Command Entry"
+type wrkcfgsts cfgtype(*dev) cfgd(qpadev*)
+key enter
+settle 2000
+snap wrkcfgsts-dev +device
+key f12
+wait "Command Entry"
+type wrkcfgsts cfgtype(*dev) cfgd(*cmn)
+key enter
+settle 2000
+snap wrkcfgsts-dev-cmn +device
+key f12
+wait "Command Entry"

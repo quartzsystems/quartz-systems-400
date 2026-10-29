@@ -1,0 +1,24 @@
+                         Display TCP Connection Status                          
+                                                             System:   SYSNAME  
+ Retransmission information:                                                    
+   Total retransmissions . . . . . . . . . . . . :   N                          
+   Current retransmissions . . . . . . . . . . . :   N                          
+ Send window information:                                                       
+   Maximum size  . . . . . . . . . . . . . . . . :   N                          
+   Current size  . . . . . . . . . . . . . . . . :   N                          
+   Last update . . . . . . . . . . . . . . . . . :   N                          
+   Last update acknowledged  . . . . . . . . . . :   N                          
+   Congestion window . . . . . . . . . . . . . . :   N                          
+   Slow start threshold  . . . . . . . . . . . . :   N                          
+   Maximum segment size  . . . . . . . . . . . . :   N                          
+ Precedence and security:                                                       
+   Precedence  . . . . . . . . . . . . . . . . . :   N                          
+ Initialization information:                                                    
+   Initial send sequence number  . . . . . . . . :   N                          
+   Initial receive sequence number . . . . . . . :   N                          
+                                                                                
+                                                                         Bottom 
+ Press Enter to continue.                                                       
+ F3=Exit      F5=Refresh   F6=Print      F8=Display jobs   F9=Command line      
+ F12=Cancel   F14=Display port numbers   F24=More keys                          
+                                                                                

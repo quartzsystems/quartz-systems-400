@@ -1,0 +1,24 @@
+                              Display Object Links                              
+                                                                                
+ Directory  . . . . :                                                           
+                                                                                
+ Type options, press Enter.                                                     
+   5=Display   8=Display attributes   9=Display authority                       
+                                                                                
+ Opt   Object link            Type     Attribute    Text                        
+       /                      DIR                                               
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F17=Position to                
+ F22=Display entire field                                                       
+                                                                                

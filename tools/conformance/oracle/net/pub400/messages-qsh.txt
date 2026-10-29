@@ -1,0 +1,14 @@
+-- SELECT MESSAGE_FILE, MESSAGE_ID, SEVERITY, MESSAGE_DATA_COUNT, MESSAGE_DATA, MESSAGE_TEXT FROM QSYS2.MESSAGE_FILE_DATA WHERE MESSAGE_FILE_LIBRARY = 'QSHELL' ORDER BY 1, 2
+MESSAGE_FILE|MESSAGE_ID|SEVERITY|MESSAGE_DATA_COUNT|MESSAGE_DATA|MESSAGE_TEXT
+QZSHMSGF|QSH0001|20|0|-|A terminal session is already active in this job.
+QZSHMSGF|QSH0002|40|2|&1 *BIN 4 &2 *BIN 4|Error found with QSH session, reason code &1, errno &2.
+QZSHMSGF|QSH0003|0|0|-|New QSH session started.
+QZSHMSGF|QSH0004|0|0|-|Current QSH session ended.
+QZSHMSGF|QSH0005|0|1|&1 *BIN 4|Command ended normally with exit status &1.
+QZSHMSGF|QSH0006|0|1|&1 *BIN 4|Command was ended by signal number &1.
+QZSHMSGF|QSH0007|0|0|-|Command was ended by an exception.
+QZSHMSGF|QSH0008|0|1|&1 *CCHAR *VARY 4|QSH is running the command &1.
+QZSHMSGF|QSH0101|40|1|&1 *BIN 4|Descriptor &1 not allocated in job.
+QZSHMSGF|QSH2001|0|0|-|QSH Command Entry
+QZSHMSGF|QSH2002|0|0|-|F3=Exit   F6=Print F9=Retrieve F12=Disconnect
+QZSHMSGF|QSH2003|0|0|-|F13=Clear F17=Top  F18=Bottom  F21=CL command entry

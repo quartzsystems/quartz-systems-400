@@ -1,0 +1,3 @@
+# qsh: id
+uid=56467({user}) gid=0
+exit=0

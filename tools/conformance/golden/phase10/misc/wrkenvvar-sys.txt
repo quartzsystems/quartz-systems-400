@@ -1,0 +1,24 @@
+                       Work with Environment Vars (*SYS)                        
+                                                                                
+ Type options, press Enter.                                                     
+   1=Add   2=Change   4=Remove   5=Display details   6=Print                    
+                                                                                
+ Opt  Name                        Value                                         
+                                                                                
+      PASE_USRGRP_LIMITED         'N'                                           
+      QIBM_PASE_USE_PRESTART_J >  'Y'                                           
+      QIBM_MULTI_THREADED         'Y'                                           
+      JAVA_HOME                   '/QopenSys/QIBM/ProdData/JavaVM/jdk' >        
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Parameters or command                                                          
+ ===>                                                                           
+                                                                                
+ F3=Exit      F4=Prompt        F5=Refresh   F9=Retrieve   F11=Display CCSIDs    
+ F12=Cancel   F16=Print list   F17=Top   F18=Bottom   F22=Display entire field  
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

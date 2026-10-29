@@ -1,0 +1,38 @@
+# qsh: ls -la /QIBM/UserData/ICSS /QIBM/UserData/ICSS/Cert /QIBM/UserData/ICSS/Cert/Server /QIBM/UserData/ICSS/Cert/CertAuth /QIBM/UserData/ICSS/Cert/SignObject /QIBM/ProdData/ICSS /QIBM/UserData/OS400/DCM
+ls: 001-2113 Error found getting information for object /QIBM/UserData/ICSS/Cert/SignObject. No such path or directory.
+ls: 001-2113 Error found getting information for object /QIBM/UserData/OS400/DCM. No such path or directory.
+ls: 001-2108 Error found reading directory /QIBM/UserData/ICSS/Cert/CertAuth. Permission denied.
+/QIBM/ProdData/ICSS:
+total: 76 kilobytes
+drwxr-sr-x   3 QSYS  0                  8192 Oct 10 13:02 .
+drwxr-sr-x  22 QSYS  0                 28672 Oct 15 11:55 ..
+drwxr-sr-x  52 QSYS  0                 40960 Oct 13 12:03 Cert
+
+/QIBM/UserData/ICSS:
+total: 64 kilobytes
+drwx--Sr-x   5 QSYS  0                  8192 Oct 10 13:05 .
+drwxr-sr-x  18 QSYS  0                 24576 Oct 10 20:32 ..
+drwx--Sr-x   2 QSYS  0                  8192 Apr 23  2016 .cssm
+drwx--Sr-x   7 QSYS  0                  8192 Oct 10 13:03 Cert
+drwx--Sr-x   3 QSYS  0                  8192 Apr 23  2016 CertSvcs
+-rwx---r-x   1 QSYS  0                    17 Aug  5  2024 dcm.properties
+
+/QIBM/UserData/ICSS/Cert:
+total: 60 kilobytes
+drwx--Sr-x  7 QSYS  0                  8192 Oct 10 13:03 .
+drwx--Sr-x  5 QSYS  0                  8192 Oct 10 13:05 ..
+drwx--S---  2 QSYS  0                  8192 Oct 10 13:05 CertAuth
+drwx-----x  4 QSYS  0                  8192 Apr 23  2016 Download
+drwx--Sr-x  2 QSYS  0                  8192 Oct 10 13:05 Server
+drwx--S---  2 QSYS  0                  8192 Oct 10 13:05 Signing
+drwx--S---  2 QSYS  0                 12288 Oct 10 13:05 Upload
+
+/QIBM/UserData/ICSS/Cert/CertAuth:
+
+/QIBM/UserData/ICSS/Cert/Server:
+total: 408 kilobytes
+drwx--Sr-x  2 QSYS  0                  8192 Oct 10 13:05 .
+drwx--Sr-x  7 QSYS  0                  8192 Oct 10 13:03 ..
+-rw----r-x  1 QSYS  0                380144 Oct  2 12:39 DEFAULT.KDB
+-rw----r-x  1 QSYS  0                   144 Oct  2 12:39 DEFAULT.RDB
+exit=1

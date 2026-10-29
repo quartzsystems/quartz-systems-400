@@ -1,0 +1,24 @@
+ TCPADM                      TCP/IP Administration                              
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Configure TCP/IP                                                       
+      2. Configure TCP/IP applications                                          
+                                                                                
+      7. Work with TCP/IP network status                                        
+      8. Verify TCP/IP connection                                               
+      9. Start TCP/IP FTP session                                               
+     10. Start TCP/IP TELNET session                                            
+     11. Send TCP/IP spooled file                                               
+                                                                                
+     20. Work with TCP/IP jobs in QSYSWRK subsystem                             
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+ (C) COPYRIGHT IBM CORP. 1980, 2021.                                            

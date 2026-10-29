@@ -1,0 +1,24 @@
+                        Display TCP/IP Route Information                        
+                                                             System:   SYSNAME  
+ Type options, press Enter.                                                     
+   5=Display details                                                            
+                                                                                
+      Route            Subnet           Next               Route                
+ Opt  Destination      Mask             Hop              Available              
+      127.0.0.0        255.0.0.0        *DIRECT            *YES                 
+      185.113.5.0      255.255.255.0    *DIRECT            *YES                 
+      224.0.0.0        240.0.0.0        *DIRECT            *YES                 
+      224.0.0.0        240.0.0.0        *DIRECT            *YES                 
+      *DFTROUTE        *NONE            185.113.5.253      *YES                 
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F5=Refresh   F9=Command line   F11=Display route type   F12=Cancel   
+ F13=Sort by column     F20=Display IPv6 routes   F24=More keys                 
+                                                                                

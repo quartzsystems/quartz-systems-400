@@ -1,0 +1,24 @@
+                          Change Output Queue (CHGOUTQ)                         
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Output queue . . . . . . . . . . OUTQ                                          
+   Library  . . . . . . . . . . .                  *LIBL                        
+ Maximum spooled file size:       MAXPAGES                                      
+   Number of pages  . . . . . . .                *SAME                          
+   Starting time  . . . . . . . .                                               
+   Ending time  . . . . . . . . .                                               
+                           + for more values                                    
+ Order of files on queue  . . . . SEQ            *SAME                          
+ Remote system  . . . . . . . . . RMTSYS         *SAME                          
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

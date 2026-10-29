@@ -1,0 +1,24 @@
+                              Create Directory (MD)                             
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Directory  . . . . . . . . . . . DIR                                           
+                                                                                
+ Public authority for data  . . . DTAAUT         *INDIR                         
+ Public authority for object  . . OBJAUT         *INDIR                         
+                           + for more values                                    
+ Auditing value for objects . . . CRTOBJAUD      *SYSVAL                        
+ Scanning option for objects  . . CRTOBJSCAN     *PARENT                        
+ Restricted rename and unlink . . RSTDRNMUNL     *NO                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

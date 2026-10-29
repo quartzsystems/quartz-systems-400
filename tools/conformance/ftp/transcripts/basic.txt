@@ -1,0 +1,88 @@
+# session: basic
+# source: pub400 V7R5M0, port 21, 2026-10-29
+S: 220-QTCP at PUB400.COM.
+S: 220 Connection will close if idle more than 1666 minutes.
+C: USER {user}
+S: 331 Enter password.
+C: PASS ********
+S: 230 {user} logged on.
+C: SYST
+S: 215  OS/400 is the remote operating system. The TCP/IP version is "V7R5M0".
+C: FEAT
+S: 211-Feature listing follows:
+S:  AUTH TLS
+S:  AUTH GSS
+S:  CCC
+S:  PBSZ
+S:  PROT
+S:  ADAT
+S:  ENC
+S:  MIC
+S:  CONF
+S: 211 End of feature listing.
+C: HELP
+S: 214-Server-FTP commands follow:
+S: 214-Unsupported commands marked with an *.
+S: 214-ABOR, ACCT*, ADDM, ADDV, ALLO*, APPE, AUTH, CDUP, CRTL, CRTP, CRTS,
+S: 214-CWD, DELE, DLTF, DLTL, EPRT, EPSV, FEAT, HELP, LIST, MKD, MODE,
+S: 214-NLST, NOOP, OPTS, PASS, PASV, PBSZ, PORT, PROT, PWD, QUIT, RCMD,
+S: 214-REIN, REST*, RETR, RMD, RNFR, RNTO, SITE, STAT, STOR, STOU, STRU,
+S: 214-SYST,  TIME,  TYPE,  USER,  XCUP,  XCWD,  XMKD.
+S: 214-The data representation type may be ASCII(A), EBCDIC(E), binary IMAGE(I),
+S: 214-DBCS_ASCII(B), DBCS_EBCDIC(F) or CCSID(C).
+S: 214-Data structure must be file(F) or record(R).  Mode can be stream (S) or block (B).
+S: 214-If this connection is not used more than 99999 seconds, the session will end.
+S: 214-Name Format 0 :
+S: 214-File identifiers have three components: File, library, and member.
+S: 214-Library and file components are separated by the / delimiter.
+S: 214-File and member components are separated by the . delimiter.
+S: 214-Example:  Library/file.member.
+S: 214-Name Format 1 :
+S: 214-Directory levels separated by the / delimiter.
+S: 214-Database files use format: /QSYS.lib/Libname.lib/Fname.file/Mname.mbr
+S: 214-Documents (files) stored in folders use format: /QDLS/folder/document.ext
+S: 214-Integrated File Systems include: "root" (/), QOpenSys, QLANSrv.
+S: 214-Integrated File System files use format: /fsname/fsdependentnamingformat
+S: 214 For information about a specific command, enter HELP <command>.
+C: HELP SITE
+S: 214-SITE TRIM <0, 1, or 2>: Option to remove trailing blanks when sending database files.
+S: 214-SITE LISTFMT <0 or 1>: Options to format LIST information returned to client.
+S: 214-SITE NULLFLDS <0 or 1>: Allow database files with null fields.
+S: 214-SITE CRTCCSID <*CALC, *USER, *SYSVAL, 1-65533>: Specify EBCDIC CCSID
+S: 214- used to create new database files for ASCII transfers.
+S: 214 SITE NAMEFMT <0 or 1>: switch between naming formats.
+C: SITE HELP
+S: 550  Option on the SITE subcommand not recognized.
+C: HELP STOR
+S: 214-STOR <file name>:  Stores data in file.
+S: 214 If file already exists, delete contents of file.
+C: STAT
+S: 211-FTP Server connected to remote address host {client}, port 46327.
+S: 211-NAMEFMT set to 1.
+S: 211-TRIM trailing blanks when sending database files option set to 1.
+S: 211-Allow database files with null fields (NULLFLDS) option set to 0.
+S: 211-Create new database file CCSID (CRTCCSID) option set to *CALC.
+S: 211-Directory listing format (LISTFMT) option set to 1.
+S: 211-User is {user}.  Working directory is /home/{user}
+S: 211-2850 bytes of control data have transferred.
+S: 211-There is no current data connection.
+S: 211-The next data connection will be actively opened.
+S: 211-to address host {client}, port 46327 using record format V and record length 80.
+S: 211-File transfer time-out value set to 420 seconds.
+S: 211  Current inactivity time-out value set to 99999 seconds.
+C: PWD
+S: 257 "/home/{user}" is current directory.
+C: XPWD
+S: 257 "/home/{user}" is current directory.
+C: NOOP
+S: 200 OK.
+C: OPTS UTF8 ON
+S: 501 OPTS unsuccessful; specified subcommand not recognized.
+C: XYZZY
+S: 500 Subcommand XYZZ not valid.
+C: SITE
+S: 550  Option on the SITE subcommand not recognized.
+C: SITE NAMEFMT 9
+S: 501 SITE NAMEFMT option not valid.
+C: QUIT
+S: 221 QUIT subcommand received.

@@ -1,0 +1,24 @@
+                      Verify TCP/IP Connection (VFYTCPCNN)                      
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Local internet address . . . . . LCLINTNETA     *ANY                           
+                                                                                
+ Type of service  . . . . . . . . TOS            *NORMAL                        
+ IP time to live (hop limit)  . . IPTTL          *DFT                           
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+ Messages pending on other displays.                                            

@@ -1,0 +1,371 @@
+# qsh: for f in /QOpenSys/QIBM/UserData/SC1/OpenSSH/etc/sshd_config /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc/sshd_config /QOpenSys/etc/ssh/sshd_config /QOpenSys/pkgs/etc/ssh/sshd_config; do echo "== $f"; grep -v '^#' $f | grep -v '^ *$'; done
+== /QOpenSys/QIBM/UserData/SC1/OpenSSH/etc/sshd_config
+#       $OpenBSD: sshd_config,v 1.75 2007/03/19 01:01:29 djm Exp $
+
+# This is the sshd server system-wide configuration file.  See
+# sshd_config(5) for more information.
+
+# This sshd was compiled with PATH=/QOpenSys/usr/bin:/usr/ccs/bin:/QOpenSys/usr/bin/X11:/usr/sbin:.:/usr/bin
+
+# The strategy used for options in the default sshd_config shipped with
+# OpenSSH is to specify options with their default value where
+# possible, but leave them commented.  Uncommented options change a
+# default value.
+
+ Port 2222
+#AddressFamily any
+#ListenAddress 0.0.0.0
+#ListenAddress ::
+
+# Disable legacy (protocol version 1) support in the server for new
+# installations. In future the default will change to require explicit
+# activation of protocol 1
+Protocol 2
+
+# HostKey for protocol version 1
+#HostKey /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc/ssh_host_key
+# HostKeys for protocol version 2
+#HostKey /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc/ssh_host_rsa_key
+#HostKey /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc/ssh_host_dsa_key
+
+# Lifetime and size of ephemeral version 1 server key
+#KeyRegenerationInterval 1h
+#ServerKeyBits 768
+
+# Logging
+# obsoletes QuietMode and FascistLogging
+# slogFacility AUTH
+LogLevel INFO
+# $$$ HOSC 2026-10-26
+SyslogFacility DAEMON
+LogLevel DEBUG
+
+# Authentication:
+
+ LoginGraceTime 5m
+# $$$ HOSC 2022-09-02
+# yes nur bei bedard aktivieren
+ PermitRootLogin no
+#StrictModes yes
+ MaxAuthTries 5
+
+#RSAAuthentication yes
+#PubkeyAuthentication yes
+#AuthorizedKeysFile     .ssh/authorized_keys
+
+# For this to work you will also need host keys in /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc/ssh_known_hosts
+#RhostsRSAAuthentication no
+# similar for protocol version 2
+#HostbasedAuthentication no
+# Change to yes if you don't trust ~/.ssh/known_hosts for
+# RhostsRSAAuthentication and HostbasedAuthentication
+#IgnoreUserKnownHosts no
+# Don't read the user's ~/.rhosts and ~/.shosts files
+#IgnoreRhosts yes
+
+# To disable tunneled clear text passwords, change to no here!
+#PasswordAuthentication yes
+#PermitEmptyPasswords no
+
+# Change to no to disable s/key passwords
+#ChallengeResponseAuthentication yes
+
+# Kerberos options
+#KerberosAuthentication no
+#KerberosOrLocalPasswd yes
+#KerberosTicketCleanup yes
+#KerberosGetAFSToken no
+
+# GSSAPI options
+#GSSAPIAuthentication no
+#GSSAPICleanupCredentials yes
+
+# Set this to 'yes' to enable PAM authentication, account processing,
+# and session processing. If this is enabled, PAM authentication will
+# be allowed through the ChallengeResponseAuthentication and
+# PasswordAuthentication.  Depending on your PAM configuration,
+# PAM authentication via ChallengeResponseAuthentication may bypass
+# the setting of "PermitRootLogin without-password".
+# If you just want the PAM account and session checks to run without
+# PAM authentication, then enable this but set PasswordAuthentication
+# and ChallengeResponseAuthentication to 'no'.
+#UsePAM no
+
+#disabled:
+# AllowTcpForwarding yes
+ GatewayPorts yes
+#disabled:
+# X11Forwarding yes
+#11DisplayOffset 10
+#X11UseLocalhost yes
+#PrintMotd yes
+#PrintLastLog yes
+#TCPKeepAlive yes
+#UseLogin no
+#sePrivilegeSeparation no
+#PermitUserEnvironment no
+#Compression delayed
+#ClientAliveInterval 0
+#ClientAliveCountMax 3
+#UseDNS yes
+#PidFile /var/tmp/sshd.pid
+#MaxStartups 10
+#PermitTunnel no
+
+# no default banner path
+ Banner /_welcome.txt
+
+# override default of no subsystems
+# $HSC 2026-10-25
+Subsystem       sftp    /QOpenSys/QIBM/ProdData/SC1/OpenSSH/libexec/sftp-server -fDAEMON -l DEBUG
+
+# Example of overriding settings on a per-user basis
+#Match User anoncvs
+#       X11Forwarding no
+#       AllowTcpForwarding no
+#       ForceCommand cvs server
+== /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc/sshd_config
+#       $OpenBSD: sshd_config,v 1.75 2007/03/19 01:01:29 djm Exp $
+
+# This is the sshd server system-wide configuration file.  See
+# sshd_config(5) for more information.
+
+# This sshd was compiled with PATH=/QOpenSys/usr/bin:/usr/ccs/bin:/QOpenSys/usr/bin/X11:/usr/sbin:.:/usr/bin
+
+# The strategy used for options in the default sshd_config shipped with
+# OpenSSH is to specify options with their default value where
+# possible, but leave them commented.  Uncommented options change a
+# default value.
+
+ Port 2222
+#AddressFamily any
+#ListenAddress 0.0.0.0
+#ListenAddress ::
+
+# Disable legacy (protocol version 1) support in the server for new
+# installations. In future the default will change to require explicit
+# activation of protocol 1
+Protocol 2
+
+# HostKey for protocol version 1
+#HostKey /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc/ssh_host_key
+# HostKeys for protocol version 2
+#HostKey /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc/ssh_host_rsa_key
+#HostKey /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc/ssh_host_dsa_key
+
+# Lifetime and size of ephemeral version 1 server key
+#KeyRegenerationInterval 1h
+#ServerKeyBits 768
+
+# Logging
+# obsoletes QuietMode and FascistLogging
+# slogFacility AUTH
+LogLevel INFO
+# $$$ HOSC 2026-10-26
+SyslogFacility DAEMON
+LogLevel DEBUG
+
+# Authentication:
+
+ LoginGraceTime 5m
+# $$$ HOSC 2022-09-02
+# yes nur bei bedard aktivieren
+ PermitRootLogin no
+#StrictModes yes
+ MaxAuthTries 5
+
+#RSAAuthentication yes
+#PubkeyAuthentication yes
+#AuthorizedKeysFile     .ssh/authorized_keys
+
+# For this to work you will also need host keys in /QOpenSys/QIBM/ProdData/SC1/OpenSSH/etc/ssh_known_hosts
+#RhostsRSAAuthentication no
+# similar for protocol version 2
+#HostbasedAuthentication no
+# Change to yes if you don't trust ~/.ssh/known_hosts for
+# RhostsRSAAuthentication and HostbasedAuthentication
+#IgnoreUserKnownHosts no
+# Don't read the user's ~/.rhosts and ~/.shosts files
+#IgnoreRhosts yes
+
+# To disable tunneled clear text passwords, change to no here!
+#PasswordAuthentication yes
+#PermitEmptyPasswords no
+
+# Change to no to disable s/key passwords
+#ChallengeResponseAuthentication yes
+
+# Kerberos options
+#KerberosAuthentication no
+#KerberosOrLocalPasswd yes
+#KerberosTicketCleanup yes
+#KerberosGetAFSToken no
+
+# GSSAPI options
+#GSSAPIAuthentication no
+#GSSAPICleanupCredentials yes
+
+# Set this to 'yes' to enable PAM authentication, account processing,
+# and session processing. If this is enabled, PAM authentication will
+# be allowed through the ChallengeResponseAuthentication and
+# PasswordAuthentication.  Depending on your PAM configuration,
+# PAM authentication via ChallengeResponseAuthentication may bypass
+# the setting of "PermitRootLogin without-password".
+# If you just want the PAM account and session checks to run without
+# PAM authentication, then enable this but set PasswordAuthentication
+# and ChallengeResponseAuthentication to 'no'.
+#UsePAM no
+
+#disabled:
+# AllowTcpForwarding yes
+ GatewayPorts yes
+#disabled:
+# X11Forwarding yes
+#11DisplayOffset 10
+#X11UseLocalhost yes
+#PrintMotd yes
+#PrintLastLog yes
+#TCPKeepAlive yes
+#UseLogin no
+#sePrivilegeSeparation no
+#PermitUserEnvironment no
+#Compression delayed
+#ClientAliveInterval 0
+#ClientAliveCountMax 3
+#UseDNS yes
+#PidFile /var/tmp/sshd.pid
+#MaxStartups 10
+#PermitTunnel no
+
+# no default banner path
+ Banner /_welcome.txt
+
+# override default of no subsystems
+# $HSC 2026-10-25
+Subsystem       sftp    /QOpenSys/QIBM/ProdData/SC1/OpenSSH/libexec/sftp-server -fDAEMON -l DEBUG
+
+# Example of overriding settings on a per-user basis
+#Match User anoncvs
+#       X11Forwarding no
+#       AllowTcpForwarding no
+#       ForceCommand cvs server
+== /QOpenSys/etc/ssh/sshd_config
+#       $OpenBSD: sshd_config,v 1.103 2018/04/09 20:41:22 tj Exp $
+
+# This is the sshd server system-wide configuration file.  See
+# sshd_config(5) for more information.
+
+# This sshd was compiled with PATH=/QOpenSys/usr/bin:/usr/ccs/bin:/QOpenSys/usr/bin/X11:/usr/sbin:/usr/bin:/QOpenSys/pkgs/bin
+
+# The strategy used for options in the default sshd_config shipped with
+# OpenSSH is to specify options with their default value where
+# possible, but leave them commented.  Uncommented options override the
+# default value.
+
+#Port 22
+#AddressFamily any
+#ListenAddress 0.0.0.0
+#ListenAddress ::
+
+#HostKey /QOpenSys/etc/ssh/ssh_host_rsa_key
+#HostKey /QOpenSys/etc/ssh/ssh_host_ecdsa_key
+#HostKey /QOpenSys/etc/ssh/ssh_host_ed25519_key
+
+# Ciphers and keying
+#RekeyLimit default none
+
+# Logging
+#SyslogFacility AUTH
+#LogLevel INFO
+
+# Authentication:
+
+#LoginGraceTime 2m
+#PermitRootLogin prohibit-password
+#StrictModes yes
+#MaxAuthTries 6
+#MaxSessions 10
+
+#PubkeyAuthentication yes
+
+# The default is to check both .ssh/authorized_keys and .ssh/authorized_keys2
+# but this is overridden so installations will only check .ssh/authorized_keys
+AuthorizedKeysFile      .ssh/authorized_keys
+
+#AuthorizedPrincipalsFile none
+
+#AuthorizedKeysCommand none
+#AuthorizedKeysCommandUser nobody
+
+# For this to work you will also need host keys in /QOpenSys/etc/ssh/ssh_known_hosts
+#HostbasedAuthentication no
+# Change to yes if you don't trust ~/.ssh/known_hosts for
+# HostbasedAuthentication
+#IgnoreUserKnownHosts no
+# Don't read the user's ~/.rhosts and ~/.shosts files
+#IgnoreRhosts yes
+
+# To disable tunneled clear text passwords, change to no here!
+#PasswordAuthentication yes
+#PermitEmptyPasswords no
+
+# Change to no to disable s/key passwords
+#ChallengeResponseAuthentication yes
+
+# Kerberos options
+#KerberosAuthentication no
+#KerberosOrLocalPasswd yes
+#KerberosTicketCleanup yes
+#KerberosGetAFSToken no
+
+# GSSAPI options
+#GSSAPIAuthentication no
+#GSSAPICleanupCredentials yes
+
+# Set this to 'yes' to enable PAM authentication, account processing,
+# and session processing. If this is enabled, PAM authentication will
+# be allowed through the ChallengeResponseAuthentication and
+# PasswordAuthentication.  Depending on your PAM configuration,
+# PAM authentication via ChallengeResponseAuthentication may bypass
+# the setting of "PermitRootLogin without-password".
+# If you just want the PAM account and session checks to run without
+# PAM authentication, then enable this but set PasswordAuthentication
+# and ChallengeResponseAuthentication to 'no'.
+#UsePAM no
+
+#AllowAgentForwarding yes
+#AllowTcpForwarding yes
+#GatewayPorts no
+#X11Forwarding no
+#X11DisplayOffset 10
+#X11UseLocalhost yes
+#PermitTTY yes
+#PrintMotd yes
+#PrintLastLog yes
+#TCPKeepAlive yes
+#PermitUserEnvironment no
+#Compression delayed
+#ClientAliveInterval 0
+#ClientAliveCountMax 3
+#UseDNS no
+#PidFile /tmp/sshd.pid
+#MaxStartups 10:30:100
+#PermitTunnel no
+#ChrootDirectory none
+#VersionAddendum none
+
+# no default banner path
+#Banner none
+
+# override default of no subsystems
+Subsystem       sftp    /QOpenSys/pkgs/libexec/sftp-server
+
+# Example of overriding settings on a per-user basis
+#Match User anoncvs
+#       X11Forwarding no
+#       AllowTcpForwarding no
+#       PermitTTY no
+#       ForceCommand cvs server
+== /QOpenSys/pkgs/etc/ssh/sshd_config
+grep: 001-2113 Error found getting information for object /QOpenSys/pkgs/etc/ssh/sshd_config. No such path or directory.
+exit=1

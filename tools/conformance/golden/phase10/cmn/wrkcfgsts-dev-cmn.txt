@@ -1,0 +1,24 @@
+                         Work with Configuration Status                PUB400   
+                                                         MM/DD/YY  HH:MM:SS UTC 
+ Position to  . . . . .                Starting characters                      
+                                                                                
+ Type options, press Enter.                                                     
+   1=Vary on   2=Vary off   5=Work with job        8=Work with description      
+   9=Display mode status    10=Location path ...   13=Work with APPN status...  
+                                                                                
+ Opt  Description       Status                -------------Job--------------    
+      LINETTCP          VARIED OFF                                              
+      LINETTCP00        ACTIVE                QTCPWRK     QSYS        090579    
+      QYCTSOC           VARIED OFF                                              
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                         Bottom 
+ Parameters or command                                                          
+ ===>                                                                           
+ F3=Exit   F4=Prompt   F12=Cancel   F23=More options   F24=More keys            
+                                                                                
+                                                                                

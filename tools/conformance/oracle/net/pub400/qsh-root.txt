@@ -1,0 +1,32 @@
+# qsh: ls -la /
+total: 103.984 megabytes
+-rw-r--r--      1 HOLLE    0                   503 Jun 16  2019 _welcome.txt
+drwxrwsr-x     24 QSYS     0               1392640 Oct 26 19:38 .
+drwxrwsr-x     24 QSYS     0               1392640 Oct 26 19:38 ..
+lrwxrwxrwx      1 QSYS     0                     8 Sep  4  2016 bin -> /usr/bin
+drwxrwsr-x      5 QSYS     0                 40960 Oct 10 13:06 dev
+drwxr-sr-x      4 QSYS     0                  8192 Oct 10 13:06 etc
+drwxrws---      2 QSECOFR  0                  8192 Oct 10 13:06 fb400temp
+drwxrwsrwx  65535 QSYS     0              24326144 Oct 29 21:23 home
+drwxrws---      3 QSECOFR  0                  8192 Oct 24 19:31 imgclg
+drwxrws---      3 QSECOFR  0                  8192 Oct 10 14:46 instancecache
+lrwxrwxrwx      1 QSYS     0                     8 Sep  4  2016 lib -> /usr/lib
+lrwxrwxrwx      1 QSYS     0                    10 Sep  4  2016 lib64 -> /usr/lib64
+drwx--S---      3 QSYS     0                  8192 Oct 10 23:24 qmgtools
+drwx---rwx     56 QDOC     0                 20480              QDLS
+drwx---rwx      2 QSYS     0                  2272 Oct 25 16:08 QFileSvr.400
+drwxr-sr-x      7 QSYS     0                  8192 Oct 10 13:00 QIBM
+d------r-x      2 QDFTOWN  0                  1728 Oct 25 16:08 QNTC
+drwxrwsrwx     16 QSYS     0                356352 Oct 10 14:50 QOpenSys
+drwxrwxrwx      2 QDFTOWN  0                  4096              QOPT
+d-----S---      3 QSECOFR  0                 12288 Oct 25 15:53 QSR
+drwx---r-x  65535 QSYS     0              78503936 Oct 29 21:26 QSYS.LIB
+drwxrws---     13 QTCP     0                  8192 Oct 10 13:04 QTCPTMM
+srwxrwx---      1 QUSER    0                     0 Oct 25 16:14 QXDALISTEN
+drwxrwsr-x      2 QSECOFR  0                  8192 Aug 19  2022 temp
+drwxrwsrwt     11 QSYS     0                303104 Oct 29 21:22 tmp
+drwxr-sr-x      3 QSYS     0                  8192 Oct 10 14:50 usr
+drwxr-sr-t      4 QSYS     0                  8192 Oct 10 14:50 var
+d---rwsr-x      4 QSYS     0                  8192 Oct 10 14:46 www
+drwxrws---      6 QSECOFR  0                  8192 Oct 10 14:46 wwwsrv
+exit=0

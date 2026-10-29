@@ -1,0 +1,24 @@
+                       Change TCP/IP Interface (CHGTCPIFC)                      
+                                                                                
+ Type choices, press Enter.                                                     
+                                                                                
+ Internet address . . . . . . . . INTNETADR    > '127.0.0.1'                    
+                                                                                
+ Line description:                LIND                                          
+   Line description . . . . . . .                *SAME                          
+   Virtual LAN identifier . . . .                                               
+ Subnet mask  . . . . . . . . . . SUBNETMASK     *SAME                          
+ Alias name . . . . . . . . . . . ALIASNAME      *SAME                          
+ Associated local interface . . . LCLIFC         *SAME                          
+ Type of service  . . . . . . . . TOS            *SAME                          
+ Maximum transmission unit  . . . MTU            *SAME                          
+ Autostart  . . . . . . . . . . . AUTOSTART      *SAME                          
+ Preferred interfaces . . . . . . PREFIFC        *SAME                          
+                           + for more values                                    
+ Text 'description' . . . . . . . TEXT           *SAME                          
+                                                                                
+ DHCP client identifier . . . . . DHCPCLTID      *SAME                          
+                                                                         Bottom 
+ F3=Exit   F4=Prompt   F5=Refresh   F12=Cancel   F13=How to use this display    
+ F24=More keys                                                                  
+                                                                                

@@ -1,0 +1,24 @@
+                            Display Line Description                   PUB400   
+                                                         MM/DD/YY  HH:MM:SS UTC 
+ Line description . . . . . . . . . :   LIND        LINETH                      
+ Option . . . . . . . . . . . . . . :   OPTION      *BASIC                      
+ Category of line . . . . . . . . . :               *ELAN                       
+                                                                                
+ Resource name  . . . . . . . . . . :   RSRCNAME    CMN04                       
+ Bridge identifier  . . . . . . . . :   BRIDGE      *NONE                       
+ Online at IPL  . . . . . . . . . . :   ONLINE      *YES                        
+ Vary on wait . . . . . . . . . . . :   VRYWAIT     *NOWAIT                     
+ Network controller . . . . . . . . :   NETCTL      LINETNET02                  
+ Local adapter address  . . . . . . :   ADPTADR     26A46507FE0A                
+ Exchange identifier  . . . . . . . :   EXCHID      056D610F                    
+ Ethernet standard  . . . . . . . . :   ETHSTD      *ETHV2                      
+ Line speed . . . . . . . . . . . . :   LINESPEED   *AUTO                       
+ Current line speed . . . . . . . . :               *AUTO                       
+ Duplex . . . . . . . . . . . . . . :   DUPLEX      *AUTO                       
+ Current duplex . . . . . . . . . . :               *AUTO                       
+ Serviceability options . . . . . . :   SRVOPT      *NONE                       
+                                                                        More... 
+ Press Enter to continue.                                                       
+                                                                                
+ F3=Exit   F11=Nondisplay keywords   F12=Cancel                                 
+                                                                                

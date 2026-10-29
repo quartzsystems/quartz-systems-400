@@ -1,0 +1,24 @@
+                        Work with TCP/IP Network Status                         
+                                                             System:   SYSNAME  
+ Select one of the following:                                                   
+                                                                                
+      1. Work with IPv4 interface status                                        
+      2. Display IPv4 route information                                         
+      3. Work with IPv4 connection status                                       
+      4. Work with IPv6 interface status                                        
+      5. Display IPv6 route information                                         
+      6. Work with IPv6 connection status                                       
+                                                                                
+     10. Display TCP/IP stack status                                            
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+ Selection or command                                                           
+ ===>                                                                           
+                                                                                
+ F3=Exit   F4=Prompt   F9=Retrieve   F12=Cancel                                 
+                                                                                
