@@ -237,6 +237,12 @@ pub struct Job {
     /// Told when the call stack drops below `ovr_top`: that level's
     /// overrides go.
     pub ovr_end: Option<JobHook>,
+    /// Descriptors: sockets and IFS files in one numbering.
+    pub fds: crate::fd::FdTable,
+    /// `errno`, what `__errno()` points at.
+    pub errno: crate::fd::ErrnoCell,
+    /// `h_errno`, what `__h_errno()` points at.
+    pub h_errno: crate::fd::ErrnoCell,
     next_key: u32,
     env: Box<Env>,
 }
@@ -291,6 +297,9 @@ impl Job {
             cmdexc: None,
             ovr_top: 0,
             ovr_end: None,
+            fds: crate::fd::FdTable::new(),
+            errno: crate::fd::ErrnoCell::default(),
+            h_errno: crate::fd::ErrnoCell::default(),
             next_key: 1,
             env: Box::new(Env {
                 statics: std::ptr::null_mut(),

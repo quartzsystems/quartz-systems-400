@@ -10,6 +10,7 @@
 
 pub mod lang;
 pub mod signature;
+pub mod sysproc;
 
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
@@ -449,7 +450,10 @@ fn resolve_one(
         }
     }
     if kind == ExportKind::Proc
-        && (SYSTEM_PROCS.contains(&name) || PRIVILEGED_PROCS.contains(&name) || name.starts_with(RPG_RUNTIME_PREFIX))
+        && (SYSTEM_PROCS.contains(&name)
+            || PRIVILEGED_PROCS.contains(&name)
+            || name.starts_with(RPG_RUNTIME_PREFIX)
+            || sysproc::is_system_srvpgm_proc(name))
     {
         return ImportTarget::System;
     }

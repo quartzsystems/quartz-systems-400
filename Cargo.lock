@@ -2542,6 +2542,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "sockets"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "ifs",
+ "netlink",
+ "rustix",
+ "socket2",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "spki"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2710,10 +2723,12 @@ dependencies = [
  "ipc",
  "mi",
  "msgf",
+ "netlink",
  "qdecimal",
  "qir",
  "release",
  "sec",
+ "sockets",
  "spool",
  "sysval",
  "thiserror",

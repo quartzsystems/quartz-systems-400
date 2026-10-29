@@ -73,6 +73,7 @@ members = [
     "net/hostsvr",
     "net/certs",
     "net/tls",
+    "net/sockets",
     # QSH: the Qshell command language and its utilities.
     "qsh/qsh",
     "qsh/qsh-utils",

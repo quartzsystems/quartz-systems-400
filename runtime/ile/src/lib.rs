@@ -22,6 +22,7 @@ pub mod store;
 
 pub use binder::lang::{BinderSource, ExportBlock, parse_binder_source};
 pub use binder::signature::{Signature, signature_of};
+pub use binder::sysproc::{SYSTEM_SRVPGM_PROCS, is_system_srvpgm_proc, system_srvpgm};
 pub use binder::{BindInput, BindOptions, Diag, ExportSpec, Severity, bind};
 pub use error::{IleError, Result};
 pub use object::{

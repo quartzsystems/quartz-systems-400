@@ -1,0 +1,22 @@
+[package]
+name = "sockets"
+description = "QS/400 sockets and resolver: IBM's socket API semantics, structure layouts and constants over the Linux kernel, the port restriction check, descriptor passing and a stub DNS resolver"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+ifs = { path = "../../ifs/ifs", version = "0.1.0" }
+netlink = { path = "../../net/netlink", version = "0.1.0" }
+thiserror.workspace = true
+tracing.workspace = true
+
+[target.'cfg(target_os = "linux")'.dependencies]
+rustix = { version = "1.1.5", features = ["net", "event", "time"] }
+# SO_MARK, which rustix 1.1 has no setter for; pure Rust.
+socket2 = { version = "0.6.5", features = ["all"] }
+
+[lints]
+workspace = true

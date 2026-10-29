@@ -19,6 +19,7 @@ pub mod debug;
 pub mod dump;
 pub mod except;
 pub mod exec;
+pub mod fd;
 pub mod heap;
 pub mod io;
 pub mod job;

@@ -40,6 +40,7 @@ mod db;
 mod job;
 mod misc;
 mod msg;
+pub mod net;
 mod obj;
 pub mod param;
 pub mod picture;
@@ -77,11 +78,14 @@ pub fn programs() -> Vec<(&'static str, ApiFn)> {
     v
 }
 
-/// Every bound procedure of `QLEAWI` this crate adds, by export name,
+/// Every bound procedure this crate adds (`QLEAWI`'s, then the C-style
+/// socket, descriptor and resolver calls of [`net`]), by export name,
 /// with its code address.
 #[must_use]
 pub fn procedures() -> Vec<(&'static str, usize)> {
-    cee::procedures()
+    let mut v = cee::procedures();
+    v.extend(net::procedures());
+    v
 }
 
 /// Names of the `QLEAWI` exports, the runtime's own included, as the
@@ -109,6 +113,8 @@ pub fn install(job: &mut Job, provider: SharedProvider) {
     }
     for (name, addr) in procedures() {
         job.act.system.insert(name.to_string(), addr);
+        // RPG upper-cases an EXTPROC name it was not given quoted.
+        job.act.system.insert(name.to_ascii_uppercase(), addr);
     }
     // The provider is kept for the bound procedures that need it.
     PROVIDERS.with(|m| {
@@ -134,4 +140,5 @@ pub fn uninstall(job: &Job) {
     PROVIDERS.with(|m| {
         m.borrow_mut().remove(&(std::ptr::from_ref(job) as usize));
     });
+    net::drop_state(job);
 }

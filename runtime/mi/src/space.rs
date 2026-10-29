@@ -339,6 +339,18 @@ impl Spaces {
         Ok(n)
     }
 
+    /// The native address a pointer addresses and the bytes from there
+    /// to the end of its space, for a native API that is handed a
+    /// pointer and must not read past what it addresses.
+    pub fn extent(&self, p: FatPtr) -> Result<(u64, u64), Cond> {
+        let s = self.space_of(p)?;
+        let n = s.native(p);
+        if n < s.lo || n >= s.hi {
+            return Err(Cond::Mch0601);
+        }
+        Ok((n, s.hi - n))
+    }
+
     /// The pointer `n` bytes on; one past the end is allowed, as the
     /// machine allows, but not beyond.
     pub fn add(&self, p: FatPtr, n: i64) -> Result<FatPtr, Cond> {
@@ -395,6 +407,8 @@ mod tests {
         assert_eq!(sp.deref(fr).unwrap(), 5000);
         assert_eq!(sp.add(fr, 8).unwrap().offset, 8);
         assert_eq!(sp.add(fr, 9), Err(Cond::Mch0601));
+        assert_eq!(sp.extent(st), Ok((1010, 90)), "a static space covers its area");
+        assert_eq!(sp.extent(sp.add(fr, 8).unwrap()), Err(Cond::Mch0601));
         assert_eq!(sp.diff(sp.add(st, 20).unwrap(), st).unwrap(), 20);
         assert_eq!(sp.diff(st, fr), Err(Cond::Mch0601));
         sp.leave(2);

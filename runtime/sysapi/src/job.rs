@@ -69,7 +69,7 @@ fn job_head(j: &Job, out: &mut Out) {
     out.char(8, 10, &j.ident.name);
     out.char(18, 10, &j.ident.user);
     out.char(28, 6, &j.ident.number);
-    out.char(34, 16, "");
+    out.bytes(34, &crate::net::internal_job_id(j));
     out.char(50, 10, "*ACTIVE");
     out.ch(60, 'B');
     out.ch(61, ' ');
