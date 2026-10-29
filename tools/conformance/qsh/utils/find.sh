@@ -1,0 +1,40 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# find: primaries, operators, -exec, -ok, errors, /QSYS.LIB.
+
+probe all 'find data'
+probe dot 'cd data/sub; find .'
+probe name 'find data -name "*.txt"'
+probe type-d 'find data -type d'
+probe type-l 'find data -type l'
+probe type-bad 'find data -type q'
+probe not 'find data/sub ! -name "*.txt"'
+probe or 'find data -name "csv*" -o -name "dup*"'
+probe parens 'find data \( -name "csv*" -o -name "dup*" \) -type f'
+probe path 'find data -path "*/inner/*"'
+probe prune 'find data -name sub -prune -o -print'
+probe depth 'find data/sub -depth'
+probe size 'find data -type f -size 1'
+probe size-c 'find data -type f -size -7c'
+probe mtime 'find data -mtime +365'
+probe newer 'find data -newer data/old.txt -name "w*"'
+probe user 'find data -user $LOGNAME -name "c*"'
+probe perm 'chmod 600 data/csv.txt; find data -perm 600'
+probe perm-all 'find . -perm -755'
+probe links 'find data/sub -links 3'
+probe exec 'find data/sub -name "*.txt" -exec cat {} \;'
+probe exec-plus 'find data/sub -type f -exec echo files: {} +'
+probe exec-missing 'find data/sub -name deep.txt -exec nosuchcmd {} \;'
+probe ok-no 'echo n | find data/sub -name deep.txt -ok rm {} \;; ls data/sub'
+probe missing 'find nosuch'
+probe no-path 'find -name x'
+probe bad-primary 'find data -bogus'
+probe missing-arg 'find data -name'
+probe unmatched 'find data \( -name x'
+probe follow 'find -L data -type f -name link'
+probe trailing-slash 'find data/sub/inner/'
+probe qsys-lib 'find /QSYS.LIB/QGPL.LIB -name "Q*.FILE" | head -3'
+probe qsys-lib-type 'find /QSYS.LIB/QGPL.LIB -type f | head -3'
+finish

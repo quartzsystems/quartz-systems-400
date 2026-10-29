@@ -4,8 +4,8 @@ Qshell is written from scratch in Rust. No existing shell, coreutils or
 shell-utilities code or crate is used or ported; behavior follows the
 POSIX shell specification and Qshell's documented and observed
 behavior. This document has two parts: the command language (this
-section, crate `qsh/qsh`) and the utilities (added with the
-`qsh-utils` crates).
+section, crate `qsh/qsh`) and the utilities (crate
+`qsh/qsh-utils`).
 
 ## Language
 
@@ -205,7 +205,9 @@ the language:
 - files (absolute paths): `open(path, OpenFlags, mode) -> Fd`, `stat`,
   `lstat`, `read_dir`, `access`, `realpath`, `case_insensitive(dir)`,
   `chdir`, and for utilities `mkdir rmdir unlink rename link symlink
-  readlink chmod chown utimes` (default `ENOSYS`);
+  readlink chmod chown utimes statfs` (default `ENOSYS`), and the
+  names and IDs of users and groups, `processes`, `nodename`, `machine`
+  and `sleep` (see Utilities);
 - `pipe`;
 - processes: `spawn(SpawnRequest) -> Box<dyn Child>` (a utility thread
   or a child job), `fork(name, body) -> Box<dyn Child>` (shell code
@@ -312,3 +314,161 @@ with `QIBM_QSH_CMD_OUTPUT=FILE=` under `/home/QSTEST`, copied to a
     collate by CCSID).
 14. Arithmetic width (64-bit assumed) and whether variables holding
     expressions are evaluated recursively.
+
+## Utilities
+
+### Crate layout
+
+`qsh/qsh-utils` (package `qsh-utils`): every utility is written from
+scratch (no uutils, busybox, coreutils-derived crate or ported GNU/BSD
+code) as a `fn(&mut UtilCtx) -> i32`, a `qsh::sys::Utility` that reaches
+the system only through `Sys` (no `std::fs`, no `unsafe`).
+`qsh_utils::register(&mut Registry)` adds them all under `/usr/bin`;
+`UTILITIES` lists them by name and `lookup(name)` finds one.
+
+| Module | What |
+|---|---|
+| `common/` | `args.rs` POSIX option parsing (clusters, attached arguments, `--`, the old `-5`/`+2` forms); `io.rs` opening operands (`-` is standard input), buffered lines, `Out` (buffered output that notices a closed pipe), `confirm`; `time.rs` the civil calendar, POSIX `TZ` strings and `strftime`; `mode.rs` symbolic and octal modes and the `ls -l` mode string; `walk.rs` tree walks with pre/post visits, pruning, `-H`/`-L`/`-x` and loop detection; `exec.rs` `PATH` search and `Sys::spawn`, a script (`ENOEXEC`) going to `/usr/bin/sh` as `execvp` does |
+| `regex/` | POSIX basic and extended regular expressions over bytes (`parse.rs` the tree, `mod.rs` the compiled program and a backtracking matcher that keeps the leftmost-longest match; without back-references a visited set keeps it linear) |
+| `file/` | `cat chmod chgrp chown cp df du find ln ls mkdir mv rm rmdir touch` |
+| `text/` | `cut expand grep egrep fgrep head iconv od paste sed sort split tail tee tr uniq wc`; `sed/` is `parse.rs` (the script) and `exec.rs` (the cycle) |
+| `proc/` | `basename date dirname echo env ps sleep true false uname xargs` |
+
+Messages are `name: text` on standard error, the text Quartz-written
+(the system's `errno` text after a path). Statuses are POSIX: 0, 1 for
+a failure, 2 for usage (`grep`, `sort`, `sed` input errors: 2), 126/127
+when a program cannot run or is not found, `xargs` 123/124/125.
+
+### Sys additions
+
+`Stat` gained `nlink` and `blocks` (512-byte units). `Sys` gained, with
+defaults so other systems need not implement them: `statfs(path) ->
+FsInfo` (`df`), `user_name`/`group_name`/`user_id`/`group_id` (`ls -l`,
+`chown`, `find -user`), `processes() -> Vec<ProcInfo>` (`ps`: job,
+status, function, device, CPU time, arguments), `nodename`, `machine`
+(`uname`) and `sleep`. `HostSys` implements `symlink`, `chmod`, `chown`
+and `utimes`; `MemSys` implements all of them plus test setters
+(`set_user`, `set_group`, `set_owner`, `set_fsinfo`, `add_process`,
+`set_nodename`, `make_object` for a `/QSYS.LIB` object that is neither
+library, file nor member: type `Other`, not openable, `EOPNOTSUPP`). A
+`SysError` wrapped in an `io::Error` now converts back to itself, so
+utilities report the system's `errno` after a failed read or write.
+
+### /QSYS.LIB
+
+Utilities see `/QSYS.LIB` only through `Sys` paths: names are
+`NAME.TYPE` in any case, libraries and files are directories, members
+are files whose records read as lines, other objects are type `Other`
+(shown by `ls -l` with type `-`, counted as `f` by `find -type`) and
+refuse `open`. `cat`, `cp`, `grep`, `wc`, `sort` read members like any
+file.
+
+### Status
+
+Every utility below is implemented; "probe" is the script under
+`tools/conformance/qsh/utils/` for the oracle run (each sources
+`_lib.sh`, which builds the corpus's seeded tree under a scratch
+directory and removes it).
+
+| Utility | Status | Probe |
+|---|---|---|
+| `basename`, `dirname` | done | `basename.sh`, `dirname.sh` |
+| `cat` | done | `cat.sh` |
+| `chmod` | done (octal, symbolic, `-R`) | `chmod.sh` |
+| `chown`, `chgrp` | done (`-R`, `-h` accepted) | `chown.sh`, `chgrp.sh` |
+| `cp` | done (`-fipRr -HLP`) | `cp.sh` |
+| `cut` | done | `cut.sh` |
+| `date` | done (display only; setting is refused) | `date.sh` |
+| `df` | done (`-kP`, `-t` accepted) | `df.sh` |
+| `du` | done (`-askx -HL`) | `du.sh` |
+| `echo`, `true`, `false` | done (as programs for `xargs`/`find -exec`) | - |
+| `env` | done | `env.sh` |
+| `expand` | done | `expand.sh` |
+| `find` | done (`-name -path -type -size -mtime -atime -ctime -newer -user -group -nouser -nogroup -perm -links -prune -print -exec -ok -depth -xdev -true -false`, `! -a -o ( )`, `-H -L`) | `find.sh` |
+| `grep`, `egrep`, `fgrep` | done (`-EFclqhHinsvx -e -f`) | `grep.sh` |
+| `head`, `tail` | done (`tail -f` reads to end of file and stops) | `head.sh`, `tail.sh` |
+| `iconv` | done (CCSID tables of `ccsid::conv`) | `iconv.sh` |
+| `ln` | done | `ln.sh` |
+| `ls` | done (`-1ACFLRSadfgiklmnopqrstux`) | `ls.sh` |
+| `mkdir`, `rmdir`, `rm`, `mv`, `touch` | done | `mkdir.sh`, `rmdir.sh`, `rm.sh`, `mv.sh`, `touch.sh` |
+| `od` | done (`-t` types, `-A -j -N -v`, `-bcdosx`) | `od.sh` |
+| `paste` | done | `paste.sh` |
+| `ps` | done (`-aAdefl -o -p -u -g -G -t`) | `ps.sh` |
+| `sed` | done (the full POSIX language) | `sed.sh` |
+| `sleep` | done | `sleep.sh` |
+| `sort` | done (`-cmou -bdfinr -t -k`) | `sort.sh` |
+| `split` | done | `split.sh` |
+| `tee` | done | `tee.sh` |
+| `tr` | done | `tr.sh` |
+| `uname` | done | `uname.sh` |
+| `uniq` | done | `uniq.sh` |
+| `wc` | done | `wc.sh` |
+| `xargs` | done | `xargs.sh` |
+
+### Formats
+
+| Utility | Output |
+|---|---|
+| `ls -l` | mode, link count right-aligned one column past the widest, owner and group each left-aligned in 8, size right-aligned in 14, `Mon DD HH:MM` within six months else `Mon DD  YYYY`, name, ` -> target` (from the 7.5 capture of `ls -la /usr/bin`); a directory listing starts `total: N kilobytes` below a megabyte, `total: N.NNN megabytes` (or gigabytes) above |
+| `ls` | one name a line unless standard output is a terminal (`-C`, `COLUMNS` or 80 wide) |
+| `df` | `Filesystem 512-blocks Used Available Capacity Mounted on` (`1024-blocks` with `-k`), capacity rounded up |
+| `du` | `blocks<TAB>path`, 512-byte blocks, `-k` kilobytes rounded up, a hard link counted once |
+| `ps` | default `PID DEVICE TIME FUNCTION STATUS JOBID`; `-f` `USER PID PPID DEVICE TIME COMMAND`; `-l` `UID PID PPID DEVICE TIME FUNCTION STATUS JOBID`; `TIME` `[[dd-]hh:]mm:ss`; `-o` keywords `pid ppid pgid user uid group gid tty device time etime comm args jobid jobname jobuser jobnumber status function nice pcpu vsz`, `key=header` renames |
+| `uname` | `-s` `OS400`, `-n` the system name, `-r` the release and `-v` the version digits of the `release` crate's `VxRyMz` (`V1R0M0`: `0` and `1`, as `V7R5M0` prints `5` and `7`), `-m` the machine; `-a` all five |
+| `date` | `%a %b %e %H:%M:%S %Z %Y`, the `TZ` zone (POSIX `TZ` strings) or UTC |
+| `wc` | each count right-aligned in 8, then ` name`; `total` for several |
+| `uniq -c` | count right-aligned in 4, a space, the line |
+| `od` | addresses 7 octal digits (`-A d` 7 decimal, `-A x` 6 hex), multi-byte units in big-endian order as the system prints them, `*` for repeated lines |
+| `head`, `tail` | `==> name <==` before each of several files, a blank line between |
+| `grep` | `name:` before lines when several files, `(standard input)` as the name of `-` |
+
+### Tests
+
+- `tests/corpus/*.sht`: 853 cases over the seeded `MemSys` (a tree
+  under `/home/QSHUSER` with data files, a hidden file, a link, an old
+  file owned by `QSYS`, raw-byte files, a `/QSYS.LIB` library with a
+  source file, member, program and data area, and `/usr/bin/sh` running
+  scripts in the same system), one file per group of utilities;
+  `QSH_UPDATE_CORPUS=1` rewrites the expectations, `QSH_CORPUS_ONLY=x`
+  runs matching cases.
+- `tests/regex.rs`: a table of POSIX spans, groups, errors, case
+  folding, `find_all` stepping, pathological patterns that must finish,
+  and 4,000 random patterns checked against a brute-force matcher plus
+  20,000 random patterns that must not panic.
+- `tests/torture.rs`: `sort` with each key and flag combination against
+  a reference sort over random records, numeric sorting against a float
+  reference, `sed` scripts against string references, a 100,000-byte
+  line, 20,000 lines and pathological loops.
+
+### Open questions (utilities)
+
+None of these was checked on the system; the probes ask each.
+
+| # | Utility | Question | Assumed |
+|---|---|---|---|
+| 1 | all | Qshell's messages carry an identifier (`001-xxxx`); which, and the exact form | `name: text` without an identifier |
+| 2 | `ls -l` | whether the 8/8/14 widths are fixed or grow; owner names over 8; the group column for named groups | fixed minimums, longer names widen the line |
+| 3 | `ls -l` | the `total:` line's base (1024 or 1000), rounding, the unit names past a gigabyte; whether `-s` without `-l` prints it | 1024, rounded up, `gigabytes`; the same line |
+| 4 | `ls` | `/QSYS.LIB` objects: the type letter, size and permissions shown, and `-F` marks | `-`, the object's size, no mark |
+| 5 | `ls -lF` | whether a link shows `@` before ` -> ` | no |
+| 6 | `df` | header and column widths, the file system names (`/dev/QASP01`, `/QSYS.LIB`), what `-t` does | as in Formats; `-t` ignored |
+| 7 | `du` | tab or blanks between the count and the path | tab |
+| 8 | `ps` | default columns, `-f`/`-l` sets, `TIME` format, keyword names for job fields | as in Formats |
+| 9 | `uname` | `-m` (serial or machine type) and `-v`/`-r` digits for `V1R0M0` | `0000000` from `Sys::machine`; `0` and `1` |
+| 10 | `date` | the zone when `TZ` is unset (Qshell uses `QTIMZON`); `%c` `%x` `%X` forms | UTC; POSIX locale forms |
+| 11 | `od` | byte order of multi-byte units; float digits | big-endian; C's `%e` with 6 or 15 digits |
+| 12 | `wc` | field widths and separators | `%8d` each, then a space and the name |
+| 13 | `sort` | collation: bytes or the job's CCSID order | bytes |
+| 14 | `sed` | `N` on the last line (POSIX: quit without printing; GNU prints); whether `n`/`N` clear the `t` flag; `l` folding width; statuses for script errors (1) and missing input (2) | POSIX for all |
+| 15 | `grep` | status when a file is missing and a line matched | 2 (0 with `-q`) |
+| 16 | `xargs` | the default command-line size; `-p` reads standard input (not `/dev/tty`) | 4096; standard input |
+| 17 | `iconv` | the code set names Qshell accepts and `-l`'s form | `IBMCCSIDnnnnn`, `IBM-nnn`, `CPnnn`, `UTF-8`, `ISO8859-1` and numbers; `-l` lists `IBMCCSIDnnnnn` |
+| 18 | `touch` | `-a` (the system keeps one time through `Sys::utimes`) | `-a` and `-m` both set the modification time |
+| 19 | `tail -f` | following a file that grows | reads to end of file and stops |
+| 20 | `chown` | whether names fold case and numbers name profiles | profile names in any case; numbers as IDs |
+| 21 | `echo` | whether `/usr/bin/echo` takes `-n` and the same escapes as the builtin | yes |
+| 22 | `cp`, `mv` | `-i` prompt text and whether prompts go to standard error | `name: replace x? ` on standard error |
+
+The shell's `printf` writes an octal escape above `\177` as the UTF-8
+of that code point, not as one byte (`printf '\351'` is `c3 a9`), so
+the corpus keeps raw bytes in seeded files.

@@ -1,0 +1,528 @@
+### ls lists names one a line when not a terminal
+cd data; ls
+--- out
+csv.txt
+dup.txt
+empty.txt
+fruits.txt
+link
+mixed.txt
+nonl.txt
+nums.txt
+old.txt
+people.txt
+sub
+tabs.txt
+words.txt
+
+### ls -a shows dot entries
+cd data; ls -a
+--- out
+.
+..
+.hidden
+csv.txt
+dup.txt
+empty.txt
+fruits.txt
+link
+mixed.txt
+nonl.txt
+nums.txt
+old.txt
+people.txt
+sub
+tabs.txt
+words.txt
+
+### ls -A shows hidden names but not dot and dot-dot
+cd data; ls -A
+--- out
+.hidden
+csv.txt
+dup.txt
+empty.txt
+fruits.txt
+link
+mixed.txt
+nonl.txt
+nums.txt
+old.txt
+people.txt
+sub
+tabs.txt
+words.txt
+
+### ls of a file operand
+ls data/fruits.txt
+--- out
+data/fruits.txt
+
+### ls of several files sorts them
+cd data; ls words.txt fruits.txt csv.txt
+--- out
+csv.txt
+fruits.txt
+words.txt
+
+### ls files before directories with headers
+cd data; ls fruits.txt sub
+--- out
+fruits.txt
+
+sub:
+deep.txt
+inner
+
+### ls of two directories has headers
+cd data; ls sub sub/inner
+--- out
+sub:
+deep.txt
+inner
+
+sub/inner:
+leaf
+
+### ls -d lists the directory itself
+ls -d data
+--- out
+data
+
+### ls -1 one a line
+cd data/sub; ls -1
+--- out
+deep.txt
+inner
+
+### ls -C columns
+cd data; ls -C
+--- out
+csv.txt     fruits.txt  nonl.txt    people.txt  words.txt
+dup.txt     link        nums.txt    sub
+empty.txt   mixed.txt   old.txt     tabs.txt
+
+### ls -C with a narrow COLUMNS
+cd data; COLUMNS=30 ls -C
+--- out
+csv.txt     nums.txt
+dup.txt     old.txt
+empty.txt   people.txt
+fruits.txt  sub
+link        tabs.txt
+mixed.txt   words.txt
+nonl.txt
+
+### ls -x across
+cd data; COLUMNS=30 ls -x
+--- out
+csv.txt     dup.txt
+empty.txt   fruits.txt
+link        mixed.txt
+nonl.txt    nums.txt
+old.txt     people.txt
+sub         tabs.txt
+words.txt
+
+### ls -m stream
+cd data; ls -m
+--- out
+csv.txt, dup.txt, empty.txt, fruits.txt, link, mixed.txt, nonl.txt, nums.txt,
+old.txt, people.txt, sub, tabs.txt, words.txt
+
+### ls -m with a narrow width
+cd data; COLUMNS=25 ls -m
+--- out
+csv.txt, dup.txt,
+empty.txt, fruits.txt,
+link, mixed.txt,
+nonl.txt, nums.txt,
+old.txt, people.txt, sub,
+tabs.txt, words.txt
+
+### ls -F classifies
+cd data; ls -F; ls -F ../bin
+--- out
+csv.txt
+dup.txt
+empty.txt
+fruits.txt
+link@
+mixed.txt
+nonl.txt
+nums.txt
+old.txt
+people.txt
+sub/
+tabs.txt
+words.txt
+tool*
+
+### ls -p marks directories
+cd data; ls -p
+--- out
+csv.txt
+dup.txt
+empty.txt
+fruits.txt
+link
+mixed.txt
+nonl.txt
+nums.txt
+old.txt
+people.txt
+sub/
+tabs.txt
+words.txt
+
+### ls -r reverses
+cd data; ls -r
+--- out
+words.txt
+tabs.txt
+sub
+people.txt
+old.txt
+nums.txt
+nonl.txt
+mixed.txt
+link
+fruits.txt
+empty.txt
+dup.txt
+csv.txt
+
+### ls -t sorts by time, newest first
+cd data; ls -t
+--- out
+csv.txt
+dup.txt
+empty.txt
+fruits.txt
+mixed.txt
+nonl.txt
+nums.txt
+people.txt
+sub
+tabs.txt
+words.txt
+old.txt
+link
+
+### ls -tr oldest first
+cd data; ls -tr | head -3
+--- out
+link
+old.txt
+words.txt
+
+### ls -S sorts by size
+cd data; ls -S | head -4
+--- out
+people.txt
+words.txt
+mixed.txt
+fruits.txt
+
+### ls -R recurses
+cd data; ls -R sub
+--- out
+sub:
+deep.txt
+inner
+
+sub/inner:
+leaf
+
+### ls -l long format
+cd data; ls -l
+--- out
+total: 6 kilobytes
+-rw-r--r--  1 QSHUSER  0                    18 May 28 20:26 csv.txt
+-rw-r--r--  1 QSHUSER  0                    14 May 28 20:26 dup.txt
+-rw-r--r--  1 QSHUSER  0                     0 May 28 20:26 empty.txt
+-rw-r--r--  1 QSHUSER  0                    20 May 28 20:26 fruits.txt
+lrwxrwxrwx  1 QSHUSER  0                    10 Jan  1  1970 link -> fruits.txt
+-rw-r--r--  1 QSHUSER  0                    26 May 28 20:26 mixed.txt
+-rw-r--r--  1 QSHUSER  0                    10 May 28 20:26 nonl.txt
+-rw-r--r--  1 QSHUSER  0                    16 May 28 20:26 nums.txt
+-rw-r--r--  1 QSYS     QSHGRP                4 Sep 13  2020 old.txt
+-rw-r--r--  1 QSHUSER  0                    45 May 28 20:26 people.txt
+drwxr-xr-x  3 QSHUSER  0                     2 May 28 20:26 sub
+-rw-r--r--  1 QSHUSER  0                    12 May 28 20:26 tabs.txt
+-rw-r--r--  1 QSHUSER  0                    44 May 28 20:26 words.txt
+
+### ls -l of one file has no total
+ls -l data/fruits.txt
+--- out
+-rw-r--r--  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### ls -l shows the link target
+ls -l data/link
+--- out
+lrwxrwxrwx  1 QSHUSER  0                    10 Jan  1  1970 data/link -> fruits.txt
+
+### ls -lL follows the link
+ls -lL data/link
+--- out
+-rw-r--r--  1 QSHUSER  0                    20 May 28 20:26 data/link
+
+### ls -ld of a directory
+ls -ld data/sub
+--- out
+drwxr-xr-x  3 QSHUSER  0                     2 May 28 20:26 data/sub
+
+### ls -la includes dot entries
+cd data/sub; ls -la
+--- out
+total: 2 kilobytes
+drwxr-xr-x  3 QSHUSER  0                     2 May 28 20:26 .
+drwxr-xr-x  3 QSHUSER  0                     2 May 28 20:26 ..
+-rw-r--r--  1 QSHUSER  0                     5 May 28 20:26 deep.txt
+drwxr-xr-x  2 QSHUSER  0                     1 May 28 20:26 inner
+
+### ls -ln numeric owner and group
+ls -ln data/old.txt data/fruits.txt
+--- out
+-rw-r--r--  1 100      0                    20 May 28 20:26 data/fruits.txt
+-rw-r--r--  1 0        50                    4 Sep 13  2020 data/old.txt
+
+### ls -lg leaves out the owner
+ls -lg data/old.txt
+--- out
+-rw-r--r--  1 QSHGRP                4 Sep 13  2020 data/old.txt
+
+### ls -lo leaves out the group
+ls -lo data/old.txt
+--- out
+-rw-r--r--  1 QSYS                  4 Sep 13  2020 data/old.txt
+
+### ls -n alone is long
+ls -n data/csv.txt
+--- out
+-rw-r--r--  1 100      0                    18 May 28 20:26 data/csv.txt
+
+### ls -l date of an old file shows the year
+ls -l data/old.txt
+--- out
+-rw-r--r--  1 QSYS     QSHGRP                4 Sep 13  2020 data/old.txt
+
+### ls -l of an executable
+ls -l bin/tool
+--- out
+-rwxr-xr-x  1 QSHUSER  0                     0 May 28 20:26 bin/tool
+
+### ls -lF
+ls -lF bin data/link
+--- out
+lrwxrwxrwx  1 QSHUSER  0                    10 Jan  1  1970 data/link -> fruits.txt
+
+bin:
+total: 0 kilobytes
+-rwxr-xr-x  1 QSHUSER  0                     0 May 28 20:26 tool*
+
+### ls -i shows file IDs
+cd data; ls -i fruits.txt | sed 's/[0-9][0-9]*/N/'
+--- out
+      N fruits.txt
+
+### ls -s shows blocks
+cd data; ls -s fruits.txt nums.txt
+--- out
+   1 fruits.txt
+   1 nums.txt
+
+### ls -s on a directory has a total
+cd data; ls -s sub
+--- out
+total: 1 kilobytes
+   1 deep.txt
+   1 inner
+
+### ls -sk
+cd data; ls -sk words.txt
+--- out
+   1 words.txt
+
+### ls -l total line
+cd data/sub; ls -l
+--- out
+total: 1 kilobytes
+-rw-r--r--  1 QSHUSER  0                     5 May 28 20:26 deep.txt
+drwxr-xr-x  2 QSHUSER  0                     1 May 28 20:26 inner
+
+### ls of a missing file
+ls data/nosuch
+--- err
+ls: data/nosuch: No such path or directory.
+--- status
+1
+
+### ls with a missing and a present operand
+ls data/nosuch data/fruits.txt
+--- out
+data/fruits.txt
+--- err
+ls: data/nosuch: No such path or directory.
+--- status
+1
+
+### ls an unknown option
+ls -Z
+--- err
+ls: Option -Z is not valid.
+--- status
+2
+
+### ls of /QSYS.LIB library shows object types
+ls /QSYS.LIB/QGPL.LIB
+--- out
+CFG.DTAARA
+HELLO.PGM
+QCLSRC.FILE
+
+### ls -l of a library shows objects as files and files as directories
+ls -l /QSYS.LIB/QGPL.LIB
+--- out
+total: 5 kilobytes
+-rwx------  1 QSYS     0                   512 May 28 20:26 CFG.DTAARA
+-rwx------  1 QSYS     0                  4096 May 28 20:26 HELLO.PGM
+drwxr-xr-x  2 QSHUSER  0                     1 May 28 20:26 QCLSRC.FILE
+
+### ls -F of a library
+ls -F /QSYS.LIB/QGPL.LIB
+--- out
+CFG.DTAARA
+HELLO.PGM
+QCLSRC.FILE/
+
+### ls of a source physical file lists members
+ls /QSYS.LIB/QGPL.LIB/QCLSRC.FILE
+--- out
+HELLO.MBR
+
+### ls of QSYS.LIB in lower case
+ls /qsys.lib/qgpl.lib/qclsrc.file
+--- out
+HELLO.MBR
+
+### ls -d of a QSYS.LIB file
+ls -d /QSYS.LIB/QGPL.LIB/QCLSRC.FILE
+--- out
+/QSYS.LIB/QGPL.LIB/QCLSRC.FILE
+
+### ls of /QOpenSys
+ls /QOpenSys
+--- out
+etc
+usr
+
+### ls with TZ shifts the time
+TZ=EST5EDT ls -l data/fruits.txt
+--- out
+-rw-r--r--  1 QSHUSER  0                    20 May 28 16:26 data/fruits.txt
+
+### ls -l of an empty directory
+mkdir e; ls -l e
+--- out
+total: 0 kilobytes
+
+### ls -a of an empty directory
+mkdir e; ls -a e
+--- out
+.
+..
+
+### ls of the root shows top directories
+ls /
+--- out
+QOpenSys
+QSYS.LIB
+dev
+home
+tmp
+usr
+
+### ls -l of a file with a long owner name
+cd data; ls -l old.txt
+--- out
+-rw-r--r--  1 QSYS     QSHGRP                4 Sep 13  2020 old.txt
+
+### ls -q hides control characters
+cd data; ls -q
+--- out
+csv.txt
+dup.txt
+empty.txt
+fruits.txt
+link
+mixed.txt
+nonl.txt
+nums.txt
+old.txt
+people.txt
+sub
+tabs.txt
+words.txt
+
+### ls -lt combines
+cd data; ls -lt sub old.txt fruits.txt
+--- out
+-rw-r--r--  1 QSHUSER  0                    20 May 28 20:26 fruits.txt
+-rw-r--r--  1 QSYS     QSHGRP                4 Sep 13  2020 old.txt
+
+sub:
+total: 1 kilobytes
+-rw-r--r--  1 QSHUSER  0                     5 May 28 20:26 deep.txt
+drwxr-xr-x  2 QSHUSER  0                     1 May 28 20:26 inner
+
+### ls -1 overrides -l when last
+cd data/sub; ls -l -1
+--- out
+deep.txt
+inner
+
+### ls -l overrides -1 when last
+cd data/sub; ls -1 -l
+--- out
+total: 1 kilobytes
+-rw-r--r--  1 QSHUSER  0                     5 May 28 20:26 deep.txt
+drwxr-xr-x  2 QSHUSER  0                     1 May 28 20:26 inner
+
+### ls through a link to a directory
+ln -s data/sub lsub; ls lsub
+--- out
+deep.txt
+inner
+
+### ls -l of a link to a directory does not enter it
+ln -s data/sub lsub; ls -l lsub
+--- out
+lrwxrwxrwx  1 QSHUSER  0                     8 Sep 21 14:13 lsub -> data/sub
+
+### ls -d on several
+cd data; ls -d sub fruits.txt
+--- out
+fruits.txt
+sub
+
+### ls -R lists nested headers
+ls -R data/sub
+--- out
+data/sub:
+deep.txt
+inner
+
+data/sub/inner:
+leaf
+
+### ls with -- ends options
+ls -- data/sub
+--- out
+deep.txt
+inner
+
+### ls after chmod shows the new mode
+chmod 640 data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-r-----  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt

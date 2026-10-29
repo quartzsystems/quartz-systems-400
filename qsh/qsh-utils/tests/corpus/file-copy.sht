@@ -1,0 +1,341 @@
+### cp a file
+cp data/fruits.txt f2; cat f2
+--- out
+apple
+banana
+cherry
+
+### cp into a directory
+mkdir d; cp data/fruits.txt d; ls d; cat d/fruits.txt
+--- out
+fruits.txt
+apple
+banana
+cherry
+
+### cp several files into a directory
+mkdir d; cp data/fruits.txt data/csv.txt d; ls d
+--- out
+csv.txt
+fruits.txt
+
+### cp several files to a non-directory
+cp data/fruits.txt data/csv.txt data/words.txt
+--- err
+cp: data/words.txt: The path is not a directory.
+--- status
+1
+
+### cp replaces an existing file
+cp data/fruits.txt f; cp data/csv.txt f; cat f
+--- out
+x,1,b
+y,2,a
+z,3,c
+
+### cp a directory without -R
+cp data/sub x
+--- err
+cp: data/sub: The target is a directory.
+--- status
+1
+
+### cp -R a tree
+cp -R data/sub s2; ls -R s2
+--- out
+s2:
+deep.txt
+inner
+
+s2/inner:
+leaf
+
+### cp -r a tree into an existing directory
+mkdir d; cp -r data/sub d; ls -R d
+--- out
+d:
+sub
+
+d/sub:
+deep.txt
+inner
+
+d/sub/inner:
+leaf
+
+### cp -R keeps a symbolic link as a link
+mkdir d; cp -R data/link d; ls -l d
+--- out
+total: 1 kilobytes
+lrwxrwxrwx  1 QSHUSER  0                    10 Sep 21 14:13 link -> fruits.txt
+
+### cp follows a link without -R
+cp data/link f; ls -l f; cat f
+--- out
+-rw-r--r--  1 QSHUSER  0                    20 Sep 21 14:13 f
+apple
+banana
+cherry
+
+### cp -p keeps the time
+cp -p data/old.txt o; ls -l o
+--- out
+-rw-r--r--  1 QSYS     QSHGRP                4 Sep 13  2020 o
+
+### cp without -p takes the time now
+cp data/old.txt o; ls -l o
+--- out
+-rw-r--r--  1 QSHUSER  0                     4 Sep 21 14:13 o
+
+### cp -p keeps the mode
+chmod 640 data/fruits.txt; cp -p data/fruits.txt f; ls -l f
+--- out
+-rw-r-----  1 QSHUSER  0                    20 May 28 20:26 f
+
+### cp without -p applies the umask
+chmod 666 data/fruits.txt; umask 077; cp data/fruits.txt f; ls -l f
+--- out
+-rw-------  1 QSHUSER  0                    20 Sep 21 14:13 f
+
+### cp a file onto itself
+cp data/fruits.txt data/fruits.txt
+--- err
+cp: data/fruits.txt and data/fruits.txt are the same file.
+--- status
+1
+
+### cp a missing source
+cp data/nosuch x
+--- err
+cp: data/nosuch: No such path or directory.
+--- status
+1
+
+### cp needs two operands
+cp data/fruits.txt
+--- err
+cp: A source and a target are needed.
+--- status
+2
+
+### cp -i declines
+cp data/csv.txt f; cp -i data/fruits.txt f; cat f
+--- in
+n
+--- out
+x,1,b
+y,2,a
+z,3,c
+--- err -n
+cp: replace f? 
+
+### cp -i accepts
+cp data/csv.txt f; cp -i data/fruits.txt f; cat f
+--- in
+y
+--- out
+apple
+banana
+cherry
+--- err -n
+cp: replace f? 
+
+### cp -f replaces a read-only file
+cp data/csv.txt f; chmod 444 f; cp -f data/fruits.txt f; cat f
+--- out
+apple
+banana
+cherry
+
+### cp without -f fails on a read-only file
+cp data/csv.txt f; chmod 444 f; cp data/fruits.txt f
+--- err
+cp: f: Permission is denied.
+--- status
+1
+
+### cp a QSYS.LIB member to a stream file
+cp /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR hello.txt; cat hello.txt
+--- out
+PGM
+ENDPGM
+
+### cp -R into its own subtree target name
+cp -R data/sub data/sub2; ls data/sub2
+--- out
+deep.txt
+inner
+
+### cp to a missing directory
+cp data/fruits.txt nodir/x
+--- err
+cp: nodir/x: No such path or directory.
+--- status
+1
+
+### mv a file
+mv data/fruits.txt f; ls data | grep -c fruits; cat f
+--- out
+0
+apple
+banana
+cherry
+
+### mv into a directory
+mkdir d; mv data/fruits.txt d; ls d
+--- out
+fruits.txt
+
+### mv several into a directory
+mkdir d; mv data/fruits.txt data/csv.txt d; ls d
+--- out
+csv.txt
+fruits.txt
+
+### mv several to a non-directory
+mv data/fruits.txt data/csv.txt data/words.txt
+--- err
+mv: data/words.txt: The path is not a directory.
+--- status
+1
+
+### mv a directory
+mv data/sub s; ls -R s
+--- out
+s:
+deep.txt
+inner
+
+s/inner:
+leaf
+
+### mv replaces a file
+mv data/csv.txt data/fruits.txt; cat data/fruits.txt; ls data/csv.txt
+--- out
+x,1,b
+y,2,a
+z,3,c
+--- err
+ls: data/csv.txt: No such path or directory.
+--- status
+1
+
+### mv a file onto itself
+mv data/fruits.txt data/fruits.txt
+--- err
+mv: data/fruits.txt and data/fruits.txt are the same file.
+--- status
+1
+
+### mv a missing source
+mv data/nosuch x
+--- err
+mv: data/nosuch: No such path or directory.
+--- status
+1
+
+### mv a file onto a directory name inside it
+mkdir -p d/fruits.txt; mv data/fruits.txt d
+--- err
+mv: d/fruits.txt: The target is a directory.
+--- status
+1
+
+### mv -i declines
+mv -i data/csv.txt data/fruits.txt; cat data/fruits.txt
+--- in
+n
+--- out
+apple
+banana
+cherry
+--- err -n
+mv: replace data/fruits.txt? 
+
+### mv -f does not ask
+mv -i -f data/csv.txt data/fruits.txt; cat data/fruits.txt
+--- out
+x,1,b
+y,2,a
+z,3,c
+
+### mv needs two operands
+mv x
+--- err
+mv: A source and a target are needed.
+--- status
+2
+
+### mv keeps the time
+mv data/old.txt o; ls -l o
+--- out
+-rw-r--r--  1 QSYS     QSHGRP                4 Sep 13  2020 o
+
+### ln makes a hard link
+ln data/fruits.txt h; cat h; ls -l data/fruits.txt
+--- out
+apple
+banana
+cherry
+-rw-r--r--  2 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### ln -s makes a symbolic link
+ln -s data/fruits.txt s; ls -l s; cat s
+--- out
+lrwxrwxrwx  1 QSHUSER  0                    15 Sep 21 14:13 s -> data/fruits.txt
+apple
+banana
+cherry
+
+### ln -s dangling
+ln -s nowhere s; ls -l s; cat s
+--- out
+lrwxrwxrwx  1 QSHUSER  0                     7 Sep 21 14:13 s -> nowhere
+--- err
+cat: s: No such path or directory.
+--- status
+1
+
+### ln into a directory
+mkdir d; ln -s ../data/fruits.txt d; ls -l d; cat d/fruits.txt
+--- out
+total: 1 kilobytes
+lrwxrwxrwx  1 QSHUSER  0                    18 Sep 21 14:13 fruits.txt -> ../data/fruits.txt
+apple
+banana
+cherry
+
+### ln an existing target
+ln -s data/fruits.txt s; ln -s data/csv.txt s
+--- err
+ln: s: The file already exists.
+--- status
+1
+
+### ln -f replaces
+ln -s data/fruits.txt s; ln -sf data/csv.txt s; cat s
+--- out
+x,1,b
+y,2,a
+z,3,c
+
+### ln several to a non-directory
+ln data/fruits.txt data/csv.txt x
+--- err
+ln: x: The path is not a directory.
+--- status
+1
+
+### ln a missing source
+ln data/nosuch h
+--- err
+ln: data/nosuch: No such path or directory.
+--- status
+1
+
+### ln needs two operands
+ln x
+--- err
+ln: A source and a target are needed.
+--- status
+2

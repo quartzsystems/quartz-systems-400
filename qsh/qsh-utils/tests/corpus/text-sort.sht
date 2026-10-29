@@ -1,0 +1,452 @@
+### sort lines
+sort data/words.txt
+--- out
+jumps over
+the lazy dog
+the quick brown fox
+
+### sort byte order puts capitals first
+sort data/mixed.txt
+--- out
+Apple
+Cherry
+apple
+banana
+
+### sort -f folds case
+sort -f data/mixed.txt
+--- out
+Apple
+apple
+banana
+Cherry
+
+### sort -r reverses
+sort -r data/fruits.txt
+--- out
+cherry
+banana
+apple
+
+### sort -n numbers
+sort -n data/nums.txt
+--- out
+-5
+2.5
+9
+10
+100
+
+### sort -nr
+sort -nr data/nums.txt
+--- out
+100
+10
+9
+2.5
+-5
+
+### sort without -n compares text
+sort data/nums.txt
+--- out
+-5
+10
+100
+2.5
+9
+
+### sort -u drops duplicates
+sort -u data/dup.txt
+--- out
+a
+b
+c
+d
+
+### sort -u with -f keeps the first of equal keys
+sort -uf data/mixed.txt
+--- out
+Apple
+banana
+Cherry
+
+### sort -k a field
+sort -k 2 data/people.txt
+--- out
+dave 19 ny
+bob 25 ny
+carol 25 sf
+alice 30 la
+
+### sort -k with -n
+sort -k 2n data/people.txt
+--- out
+dave 19 ny
+bob 25 ny
+carol 25 sf
+alice 30 la
+
+### sort -k2,2n then a second key
+sort -k 2,2n -k 1,1 data/people.txt
+--- out
+dave 19 ny
+bob 25 ny
+carol 25 sf
+alice 30 la
+
+### sort -k with -r on one key
+sort -k 2,2nr -k 1,1 data/people.txt
+--- out
+alice 30 la
+bob 25 ny
+carol 25 sf
+dave 19 ny
+
+### sort -k3 with ties broken by the whole line
+sort -k 3,3 data/people.txt
+--- out
+alice 30 la
+bob 25 ny
+dave 19 ny
+carol 25 sf
+
+### sort -t separator
+sort -t, -k 2 data/csv.txt
+--- out
+x,1,b
+y,2,a
+z,3,c
+
+### sort -t with a reversed key
+sort -t, -k3r data/csv.txt
+--- out
+z,3,c
+x,1,b
+y,2,a
+
+### sort -t numeric key
+printf 'a:10\nb:9\nc:100\n' | sort -t: -k2n
+--- out
+b:9
+a:10
+c:100
+
+### sort -k start character
+printf 'xa2\nyb1\nzc3\n' | sort -k 1.3
+--- out
+yb1
+xa2
+zc3
+
+### sort -k with an end character
+printf 'ab9\nab1\naa5\n' | sort -k 1.1,1.2
+--- out
+aa5
+ab1
+ab9
+
+### sort -b ignores leading blanks
+printf '  b\na\n c\n' | sort -b
+--- out
+a
+  b
+ c
+
+### sort without -b counts blanks
+printf '  b\na\n c\n' | sort
+--- out
+  b
+ c
+a
+
+### sort -k with b on the key
+printf 'x   b\nx a\nx  c\n' | sort -k 2b
+--- out
+x a
+x   b
+x  c
+
+### sort -k without b includes blanks before the field
+printf 'x   b\nx a\nx  c\n' | sort -k 2
+--- out
+x   b
+x  c
+x a
+
+### sort -d dictionary order
+printf 'b-c\nb.a\nbb\n' | sort -d
+--- out
+b.a
+bb
+b-c
+
+### sort -i ignores non-printing
+printf 'b\001a\nba\nbb\n' | sort -i | od -c | head -2
+--- out
+0000000   b 001   a  \n   b   a  \n   b   b  \n
+0000012
+
+### sort -c sorted input
+sort -c data/fruits.txt; echo $?
+--- out
+0
+
+### sort -c unsorted input
+sort -c data/words.txt; echo $?
+--- out
+1
+--- err
+sort: data/words.txt: line 2 is out of order: jumps over
+
+### sort -cu with duplicates
+sort -cu data/dup.txt; echo $?
+--- out
+1
+--- err
+sort: data/dup.txt: line 2 is out of order: a
+
+### sort -o output file
+sort -o out data/words.txt; cat out
+--- out
+jumps over
+the lazy dog
+the quick brown fox
+
+### sort -o onto its input
+sort -o data/words.txt data/words.txt; cat data/words.txt
+--- out
+jumps over
+the lazy dog
+the quick brown fox
+
+### sort -m merges
+sort -m data/fruits.txt data/csv.txt
+--- out
+apple
+banana
+cherry
+x,1,b
+y,2,a
+z,3,c
+
+### sort several files
+sort data/fruits.txt data/dup.txt
+--- out
+a
+a
+apple
+b
+banana
+c
+c
+c
+cherry
+d
+
+### sort standard input
+sort
+--- in
+c
+a
+b
+--- out
+a
+b
+c
+
+### sort a missing file
+sort data/nosuch
+--- err
+sort: data/nosuch: No such path or directory.
+--- status
+2
+
+### sort a bad key
+sort -k 0 data/fruits.txt
+--- err
+sort: The key 0 is not valid.
+--- status
+2
+
+### sort a key with char 0
+sort -k 1.0 data/fruits.txt
+--- err
+sort: The key 1.0 is not valid.
+--- status
+2
+
+### sort a bad separator
+sort -t ab data/fruits.txt
+--- err
+sort: The separator must be one character.
+--- status
+2
+
+### sort an unknown option
+sort -Q data/fruits.txt
+--- err
+sort: Option -Q is not valid.
+--- status
+2
+
+### sort numbers with signs and decimals
+printf '1.5\n-2\n+3\n.5\n-0.5\n0\n' | sort -n
+--- out
+-2
+-0.5
+0
+.5
+1.5
++3
+
+### sort numbers with leading blanks
+printf '  10\n9\n 100\n' | sort -n
+--- out
+9
+  10
+ 100
+
+### sort non-numbers as zero
+printf 'x\n1\n-1\ny\n' | sort -n
+--- out
+-1
+x
+y
+1
+
+### sort -n with equal values falls back to text
+printf 'b 1\na 1\n' | sort -n
+--- out
+a 1
+b 1
+
+### sort -n -u keeps one of each value
+printf '01\n1\n2\n' | sort -nu
+--- out
+01
+2
+
+### sort a line without a final newline
+sort data/nonl.txt data/fruits.txt
+--- out
+apple
+banana
+cherry
+no newline
+
+### sort empty lines first
+printf 'b\n\na\n' | sort
+--- out
+
+a
+b
+
+### sort an empty file
+sort data/empty.txt; echo $?
+--- out
+0
+
+### sort -k past the end of the line
+printf 'a\nb x\n' | sort -k 2
+--- out
+a
+b x
+
+### sort -k field and character past the field
+printf 'a bc\na bb\n' | sort -k 2.5
+--- out
+a bb
+a bc
+
+### sort -r applies to the last resort
+printf 'a\nA\n' | sort -fr
+--- out
+a
+A
+
+### sort a key flag does not take global flags
+printf '2 b\n10 a\n' | sort -n -k 2
+--- out
+10 a
+2 b
+
+### sort a key without flags takes global flags
+printf 'x 2\ny 10\n' | sort -n -k 2
+--- out
+x 2
+y 10
+
+### sort -t with empty fields
+printf 'a,,3\nb,1,2\n' | sort -t, -k2
+--- out
+a,,3
+b,1,2
+
+### sort -k1,1 -u keeps the first line of each key
+printf 'a 2\na 1\nb 3\n' | sort -k1,1 -u
+--- out
+a 2
+b 3
+
+### sort is stable with -u off and equal keys
+printf 'b 1\na 1\n' | sort -k2,2
+--- out
+a 1
+b 1
+
+### sort many lines
+i=50; while [ $i -gt 0 ]; do echo $i; i=$((i-1)); done | sort -n | head -3
+--- out
+1
+2
+3
+
+### sort -n large numbers
+printf '12345678901234567890\n9\n' | sort -n
+--- out
+9
+12345678901234567890
+
+### sort -n negative zero equals zero
+printf -- '-0\n0\n' | sort -n -u
+--- out
+-0
+
+### sort -f with -u folds duplicates
+printf 'a\nA\nb\n' | sort -f -u
+--- out
+a
+b
+
+### sort -M is not an option
+sort -M data/fruits.txt
+--- err
+sort: Option -M is not valid.
+--- status
+2
+
+### sort -k with several characters
+printf 'ab:cd\nab:ca\n' | sort -t: -k2.2,2.2
+--- out
+ab:ca
+ab:cd
+
+### sort a QSYS.LIB member
+sort /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR
+--- out
+ENDPGM
+PGM
+
+### sort -k two flags
+printf 'b 2\nA 2\na 10\n' | sort -k2,2n -k1,1f
+--- out
+A 2
+b 2
+a 10
+
+### sort -c reports the line
+printf 'a\nc\nb\n' | sort -c
+--- err
+sort: -: line 3 is out of order: b
+--- status
+1

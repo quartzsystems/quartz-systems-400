@@ -1,0 +1,889 @@
+### sed s first match
+sed 's/a/X/' data/fruits.txt
+--- out
+Xpple
+bXnana
+cherry
+
+### sed s global
+sed 's/a/X/g' data/fruits.txt
+--- out
+Xpple
+bXnXnX
+cherry
+
+### sed s nth match
+sed 's/a/X/2' data/fruits.txt
+--- out
+apple
+banXna
+cherry
+
+### sed s nth and after
+sed 's/a/X/2g' data/fruits.txt
+--- out
+apple
+banXnX
+cherry
+
+### sed s with ampersand
+sed 's/an/[&]/g' data/fruits.txt
+--- out
+apple
+b[an][an]a
+cherry
+
+### sed s escaped ampersand
+sed 's/an/\&/' data/fruits.txt
+--- out
+apple
+b&ana
+cherry
+
+### sed s groups
+echo 'john smith' | sed 's/\(.*\) \(.*\)/\2, \1/'
+--- out
+smith, john
+
+### sed s with another delimiter
+echo /usr/bin | sed 's|/|:|g'
+--- out
+:usr:bin
+
+### sed s escaped delimiter
+echo a/b | sed 's/\//-/'
+--- out
+a-b
+
+### sed s newline in the replacement
+echo 'a,b' | sed 's/,/\
+/'
+--- out
+a
+b
+
+### sed s backslash n in the replacement
+echo 'a,b' | sed 's/,/\n/'
+--- out
+a
+b
+
+### sed s with p and -n
+sed -n 's/an/AN/p' data/fruits.txt
+--- out
+bANana
+
+### sed s with w file
+sed -n 's/e/E/w changed' data/fruits.txt; cat changed
+--- out
+applE
+chErry
+
+### sed s empty matches
+echo abc | sed 's/x*/-/g'
+--- out
+-a-b-c-
+
+### sed s empty match after a match
+echo baaac | sed 's/a*/x/g'
+--- out
+xbxcx
+
+### sed s anchored
+sed 's/^/> /' data/fruits.txt
+--- out
+> apple
+> banana
+> cherry
+
+### sed s at the end
+sed 's/$/;/' data/fruits.txt
+--- out
+apple;
+banana;
+cherry;
+
+### sed s with ERE -E
+echo 'aaa bbb' | sed -E 's/(a+) (b+)/\2 \1/'
+--- out
+bbb aaa
+
+### sed s with -r
+echo 'abc' | sed -r 's/b?c/X/'
+--- out
+aX
+
+### sed s case of an empty regex reuses the last
+sed -n '/an/s//AN/p' data/fruits.txt
+--- out
+bANana
+
+### sed s bad count
+sed 's/a/b/0' data/fruits.txt
+--- err
+sed: The s count must be above zero.
+--- status
+1
+
+### sed s not terminated
+sed 's/a/b' data/fruits.txt
+--- err
+sed: The command is not complete.
+--- status
+1
+
+### sed s unknown flag
+sed 's/a/b/q' data/fruits.txt
+--- err
+sed: The s flag q is not valid.
+--- status
+1
+
+### sed p prints twice
+sed p data/fruits.txt
+--- out
+apple
+apple
+banana
+banana
+cherry
+cherry
+
+### sed -n p prints once
+sed -n p data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### sed d deletes
+sed '2d' data/fruits.txt
+--- out
+apple
+cherry
+
+### sed line ranges
+seq() { i=$1; while [ $i -le $2 ]; do echo $i; i=$((i+1)); done; }; seq 1 6 | sed -n '2,4p'
+--- out
+2
+3
+4
+
+### sed a range to the last line
+sed -n '2,$p' data/fruits.txt
+--- out
+banana
+cherry
+
+### sed a regex range
+sed -n '/apple/,/banana/p' data/fruits.txt
+--- out
+apple
+banana
+
+### sed a range that does not close
+sed -n '/banana/,/nomatch/p' data/fruits.txt
+--- out
+banana
+cherry
+
+### sed a range whose end is before its start
+seq() { i=$1; while [ $i -le $2 ]; do echo $i; i=$((i+1)); done; }; seq 1 5 | sed -n '3,1p'
+--- out
+3
+
+### sed negated address
+sed '2!d' data/fruits.txt
+--- out
+banana
+
+### sed negated range
+sed '1,2!s/^/x/' data/fruits.txt
+--- out
+apple
+banana
+xcherry
+
+### sed last line address
+sed -n '$p' data/fruits.txt
+--- out
+cherry
+
+### sed last line over several files
+sed -n '$p' data/fruits.txt data/csv.txt
+--- out
+z,3,c
+
+### sed line numbers run across files
+sed -n '4p' data/fruits.txt data/csv.txt
+--- out
+x,1,b
+
+### sed = prints line numbers
+sed = data/fruits.txt
+--- out
+1
+apple
+2
+banana
+3
+cherry
+
+### sed -n = with $ counts lines
+sed -n '$=' data/words.txt
+--- out
+3
+
+### sed q quits
+sed 2q data/fruits.txt
+--- out
+apple
+banana
+
+### sed q with a status
+sed '1q5' data/fruits.txt; echo $?
+--- out
+apple
+5
+
+### sed a appends
+sed '1a\
+after one' data/fruits.txt
+--- out
+apple
+after one
+banana
+cherry
+
+### sed a one-line form
+sed '$a the end' data/fruits.txt
+--- out
+apple
+banana
+cherry
+the end
+
+### sed i inserts
+sed '2i\
+before two' data/fruits.txt
+--- out
+apple
+before two
+banana
+cherry
+
+### sed c changes
+sed '2c\
+changed' data/fruits.txt
+--- out
+apple
+changed
+cherry
+
+### sed c on a range changes once
+sed '1,2c\
+both' data/fruits.txt
+--- out
+both
+cherry
+
+### sed a with several lines
+sed '1a\
+first\
+second' data/fruits.txt
+--- out
+apple
+first
+second
+banana
+cherry
+
+### sed y translates
+sed 'y/abc/xyz/' data/fruits.txt
+--- out
+xpple
+yxnxnx
+zherry
+
+### sed y lengths differ
+sed 'y/ab/x/' data/fruits.txt
+--- err
+sed: The y strings differ in length.
+--- status
+1
+
+### sed y with escapes
+printf 'a b\n' | sed 'y/ /\n/'
+--- out
+a
+b
+
+### sed hold and get
+sed -n 'h;n;G;p' data/fruits.txt
+--- out
+banana
+apple
+
+### sed reverse lines with the hold space
+sed -n '1!G;h;$p' data/fruits.txt
+--- out
+cherry
+banana
+apple
+
+### sed x exchanges
+sed 'x' data/fruits.txt
+--- out
+
+apple
+banana
+
+### sed H appends to hold
+sed -n 'H;${x;p}' data/fruits.txt
+--- out
+
+apple
+banana
+cherry
+
+### sed g copies hold
+sed '1h;3g' data/fruits.txt
+--- out
+apple
+banana
+apple
+
+### sed N joins lines
+sed 'N;s/\n/+/' data/dup.txt
+--- out
+a+a
+b+c
+c+c
+
+### sed N on the last line quits without printing
+sed 'N;s/\n/+/' data/fruits.txt
+--- out
+apple+banana
+
+### sed $!N guards the last line
+sed '$!N;s/\n/+/' data/fruits.txt
+--- out
+apple+banana
+cherry
+
+### sed P and D
+printf 'a\nb\nc\n' | sed -n 'N;P;D'
+--- out
+a
+b
+
+### sed D restarts without reading
+printf '1\n2\n3\n4\n' | sed '$!N;P;D'
+--- out
+1
+2
+3
+4
+
+### sed n prints and reads
+sed -n 'n;p' data/dup.txt
+--- out
+a
+c
+c
+
+### sed n on the last line
+sed 'n;d' data/fruits.txt
+--- out
+apple
+cherry
+
+### sed b branches to a label
+sed ':a;s/a//;ta' data/fruits.txt
+--- out
+pple
+bnn
+cherry
+
+### sed b to the end
+sed '/apple/b;s/./X/' data/fruits.txt
+--- out
+apple
+Xanana
+Xherry
+
+### sed b with a label skipping commands
+sed -n '/banana/bskip;p;:skip' data/fruits.txt
+--- out
+apple
+cherry
+
+### sed t only after a substitution
+sed 's/an/AN/;tdone;s/$/!/;:done' data/fruits.txt
+--- out
+apple!
+bANana
+cherry!
+
+### sed t is cleared when n reads a line
+printf 'ab\ncd\n' | sed -n 's/a/A/;n;tx;p;d;:x;s/^/yes /p'
+--- out
+cd
+
+### sed an undefined label
+sed 'bnowhere' data/fruits.txt
+--- err
+sed: The label nowhere is not defined.
+--- status
+1
+
+### sed blocks
+sed -n '/an/{s/a/A/;p}' data/fruits.txt
+--- out
+bAnana
+
+### sed nested blocks
+sed -n '1,2{/ban/{p}}' data/fruits.txt
+--- out
+banana
+
+### sed block with negation
+sed '2!{s/^/-/}' data/fruits.txt
+--- out
+-apple
+banana
+-cherry
+
+### sed unmatched brace
+sed '{p' data/fruits.txt
+--- err
+sed: A { has no matching }.
+--- status
+1
+
+### sed extra brace
+sed 'p}' data/fruits.txt
+--- err
+sed: A } has no matching {.
+--- status
+1
+
+### sed l lists
+printf 'a\tb\\\001\n' | sed -n l
+--- out
+a\tb\\\001$
+
+### sed l folds long lines
+printf '%080d\n' 0 | sed -n l
+--- out
+000000000000000000000000000000000000000000000000000000000000000000000\
+00000000000$
+
+### sed r reads a file after the line
+sed '1r data/csv.txt' data/fruits.txt
+--- out
+apple
+x,1,b
+y,2,a
+z,3,c
+banana
+cherry
+
+### sed r a missing file is ignored
+sed '1r nosuch' data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### sed w writes lines
+sed -n '/an/w out' data/fruits.txt; cat out
+--- out
+banana
+
+### sed w to /dev/stdout
+sed -n '1w /dev/stdout' data/fruits.txt
+--- out
+apple
+
+### sed several -e
+sed -e 's/a/1/' -e 's/b/2/' data/fruits.txt
+--- out
+1pple
+21nana
+cherry
+
+### sed -e joins lines of a and text
+sed -e '1a\' -e 'added' data/fruits.txt
+--- out
+apple
+added
+banana
+cherry
+
+### sed -f a script file
+printf 's/a/A/g\n2d\n' > script; sed -f script data/fruits.txt
+--- out
+Apple
+cherry
+
+### sed -f a missing script
+sed -f nosuch data/fruits.txt
+--- err
+sed: nosuch: No such path or directory.
+--- status
+1
+
+### sed #n first line is -n
+printf '#n\n2p\n' > script; sed -f script data/fruits.txt
+--- out
+banana
+
+### sed comments
+sed '# a comment
+s/a/A/ # trailing' data/fruits.txt
+--- out
+Apple
+bAnana
+cherry
+
+### sed semicolons and spaces
+sed -n ' 1 p ; 3 p ' data/fruits.txt
+--- out
+apple
+cherry
+
+### sed an unknown command
+sed 'k' data/fruits.txt
+--- err
+sed: The command k is not known.
+--- status
+1
+
+### sed a missing command
+sed '1' data/fruits.txt
+--- err
+sed: A command is missing.
+--- status
+1
+
+### sed text after a command
+sed 'pq' data/fruits.txt
+--- err
+sed: Unexpected text after the command: q.
+--- status
+1
+
+### sed no script
+sed
+--- err
+sed: A script is needed.
+--- status
+2
+
+### sed a missing file
+sed p data/nosuch
+--- err
+sed: data/nosuch: No such path or directory.
+--- status
+2
+
+### sed a missing and a present file
+sed -n p data/nosuch data/fruits.txt
+--- out
+apple
+banana
+cherry
+--- err
+sed: data/nosuch: No such path or directory.
+--- status
+2
+
+### sed from standard input
+sed 's/o/0/g'
+--- in
+foo
+boo
+--- out
+f00
+b00
+
+### sed keeps a missing last newline
+sed 's/no/NO/' data/nonl.txt; echo '|'
+--- out
+NO newline|
+
+### sed a regex address with another delimiter
+sed -n '\,an,p' data/fruits.txt
+--- out
+banana
+
+### sed a regex with a bracket and the delimiter
+echo 'a/b' | sed 's/[/]/X/'
+--- out
+aXb
+
+### sed addresses with a step of two ranges
+seq() { i=$1; while [ $i -le $2 ]; do echo $i; i=$((i+1)); done; }; seq 1 10 | sed -n '/2/,/4/p;/7/,/8/p'
+--- out
+2
+3
+4
+7
+8
+
+### sed a range restarts after it ends
+printf 'a\nx\nb\na\nx\nb\n' | sed -n '/a/,/b/p'
+--- out
+a
+x
+b
+a
+x
+b
+
+### sed a range starting on the last line
+sed -n '3,/x/p' data/fruits.txt
+--- out
+cherry
+
+### sed s with a class
+echo 'a1b22c333' | sed 's/[[:digit:]]\{2,\}/#/g'
+--- out
+a1b#c#
+
+### sed s with a back-reference in the pattern
+printf 'abab\nabcd\n' | sed -n '/\(ab\)\1/p'
+--- out
+abab
+
+### sed s on the whole pattern space after N
+printf 'a\nb\n' | sed 'N;s/^/[/;s/$/]/'
+--- out
+[a
+b]
+
+### sed caret does not match after a newline
+printf 'a\nb\n' | sed 'N;s/^b/X/'
+--- out
+a
+b
+
+### sed dollar does not match before a newline
+printf 'a\nb\n' | sed 'N;s/a$/X/'
+--- out
+a
+b
+
+### sed a newline in the pattern
+printf 'a\nb\n' | sed 'N;s/a\nb/joined/'
+--- out
+joined
+
+### sed i before c
+sed -e '2i\' -e 'ins' -e '2c\' -e 'chg' data/fruits.txt
+--- out
+apple
+ins
+chg
+cherry
+
+### sed a then d still appends
+sed -e '1a\' -e 'after' -e '1d' data/fruits.txt
+--- out
+after
+banana
+cherry
+
+### sed q flushes appended text
+sed -e '1a\' -e 'appended' -e '1q' data/fruits.txt
+--- out
+apple
+appended
+
+### sed = then q
+sed -n '2{=;q}' data/fruits.txt
+--- out
+2
+
+### sed G on an empty hold space adds a blank line
+sed G data/fruits.txt
+--- out
+apple
+
+banana
+
+cherry
+
+
+### sed double spacing removed
+sed G data/fruits.txt | sed '/^$/d'
+--- out
+apple
+banana
+cherry
+
+### sed join every line
+sed ':a;N;$!ba;s/\n/,/g' data/fruits.txt
+--- out
+apple,banana,cherry
+
+### sed print the last two lines
+sed '$!N;$!D' data/words.txt
+--- out
+jumps over
+the lazy dog
+
+### sed delete trailing blanks
+printf 'a  \nb\t\n' | sed 's/[[:blank:]]*$//' | od -c | head -1
+--- out
+0000000   a  \n   b  \n
+
+### sed count lines like wc
+sed -n '$=' data/dup.txt
+--- out
+7
+
+### sed remove duplicate adjacent lines
+sed '$!N;/^\(.*\)\n\1$/!P;D' data/dup.txt
+--- out
+a
+b
+c
+d
+
+### sed reverse each line
+printf 'abc\nxy\n' | sed '/\n/!G;s/\(.\)\(.*\n\)/&\2\1/;//D;s/.//'
+--- out
+cba
+yx
+
+### sed the tac idiom over a file
+sed '1!G;h;$!d' data/fruits.txt
+--- out
+cherry
+banana
+apple
+
+### sed number lines like cat -n
+sed = data/fruits.txt | sed 'N;s/\n/ /'
+--- out
+1 apple
+2 banana
+3 cherry
+
+### sed s ERE alternation
+sed -E 's/apple|cherry/fruit/' data/fruits.txt
+--- out
+fruit
+banana
+fruit
+
+### sed s ERE literal parentheses
+echo '(x)' | sed -E 's/\(x\)/y/'
+--- out
+y
+
+### sed s BRE parentheses are literal
+echo '(x)' | sed 's/(x)/y/'
+--- out
+y
+
+### sed s case-sensitive by default
+sed 's/APPLE/x/' data/mixed.txt
+--- out
+Apple
+banana
+Cherry
+apple
+
+### sed y with the delimiter escaped
+echo 'a/b' | sed 'y/\//|/'
+--- out
+a|b
+
+### sed s replacement with a group that did not take part
+echo 'ac' | sed -E 's/a(b)?c/[\1]/'
+--- out
+[]
+
+### sed s the nth match past the last does nothing
+echo 'aaa' | sed 's/a/X/4'
+--- out
+aaa
+
+### sed address 0 is not valid
+sed -n '0p' data/fruits.txt
+--- err
+sed: Line 0 is not a valid address.
+--- status
+1
+
+### sed a label after a block close
+sed -n '/x/b end
+p
+:end' data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### sed s with p and w together
+sed -n 's/apple/APPLE/pw out' data/fruits.txt; cat out
+--- out
+APPLE
+APPLE
+
+### sed w the same file twice keeps both lines
+sed -n -e '1w out' -e '3w out' data/fruits.txt; cat out
+--- out
+apple
+cherry
+
+### sed c with ! address
+sed '2!c\
+other' data/fruits.txt
+--- out
+other
+banana
+other
+
+### sed i on the last line
+sed '$i\
+penultimate' data/fruits.txt
+--- out
+apple
+banana
+penultimate
+cherry
+
+### sed -n with no output commands
+sed -n 's/a/b/' data/fruits.txt; echo "[$?]"
+--- out
+[0]
+
+### sed an empty script copies
+sed '' data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### sed a script of only a comment
+sed '#hello' data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### sed into a closed pipe
+sed p data/words.txt | head -1
+--- out
+the quick brown fox
+
+### sed empty regex with no previous
+sed 's//x/' data/fruits.txt
+--- err
+sed: No previous regular expression.
+--- status
+1

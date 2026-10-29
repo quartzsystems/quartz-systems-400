@@ -1,0 +1,560 @@
+### basename a path
+basename /usr/bin/ls
+--- out
+ls
+
+### basename a trailing slash
+basename /usr/lib/
+--- out
+lib
+
+### basename a suffix
+basename /a/b/file.txt .txt
+--- out
+file
+
+### basename the suffix is the whole name
+basename .txt .txt
+--- out
+.txt
+
+### basename of slashes
+basename ///
+--- out
+/
+
+### basename of an empty string
+basename ''
+--- out
+
+
+### basename without operands
+basename
+--- err
+basename: A string and an optional suffix are needed.
+--- status
+2
+
+### basename too many operands
+basename a b c
+--- err
+basename: A string and an optional suffix are needed.
+--- status
+2
+
+### basename a QSYS.LIB path
+basename /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR .MBR
+--- out
+HELLO
+
+### basename with --
+basename -- -x
+--- out
+-x
+
+### dirname a path
+dirname /usr/bin/ls
+--- out
+/usr/bin
+
+### dirname a name without slashes
+dirname file
+--- out
+.
+
+### dirname a trailing slash
+dirname /usr/lib/
+--- out
+/usr
+
+### dirname of the root
+dirname /
+--- out
+/
+
+### dirname of a top name
+dirname /usr
+--- out
+/
+
+### dirname of doubled slashes
+dirname //a//b//
+--- out
+//a
+
+### dirname without an operand
+dirname
+--- err
+dirname: One string is needed.
+--- status
+2
+
+### dirname a relative path
+dirname a/b/c
+--- out
+a/b
+
+### date default format in UTC
+date
+--- out
+Mon Sep 21 14:13:20 UTC 2026
+
+### date -u
+date -u
+--- out
+Mon Sep 21 14:13:20 UTC 2026
+
+### date with a format
+date '+%Y-%m-%d %H:%M:%S'
+--- out
+2026-09-21 14:13:20
+
+### date with a TZ
+TZ=EST5EDT date
+--- out
+Mon Sep 21 10:13:20 EDT 2026
+
+### date with a far zone
+TZ='<+09>-9' date '+%H %Z %z'
+--- out
+23 +09 +0900
+
+### date format letters
+date '+%a %A %b %B %d %e %j %m %y %C %u %w %U %W %V %G'
+--- out
+Mon Monday Sep September 21 21 264 09 26 20 1 1 38 38 39 2026
+
+### date format time letters
+date '+%I %p %M %S %r %R %T %D %F %n%t%%'
+--- out
+02 PM 13 20 02:13:20 PM 14:13 14:13:20 09/21/26 2026-09-21 
+	%
+
+### date %s seconds
+date '+%s'
+--- out
+1790000000
+
+### date %c %x %X
+date '+%c|%x|%X'
+--- out
+Mon Sep 21 14:13:20 2026|09/21/26|14:13:20
+
+### date setting is refused
+date 010112002020
+--- err
+date: Setting the date is not permitted.
+--- status
+1
+
+### date too many operands
+date +%Y +%m
+--- err
+date: Too many operands.
+--- status
+2
+
+### date an unknown option
+date -k
+--- err
+date: Option -k is not valid.
+--- status
+2
+
+### date an unknown format letter is kept
+date '+%Q'
+--- out
+%Q
+
+### env prints the environment
+env | sort
+--- out
+HOME=/home/QSHUSER
+LOGNAME=QSHUSER
+PWD=/home/QSHUSER
+
+### env -i empty
+env -i; echo "[$?]"
+--- out
+[0]
+
+### env with an assignment runs a utility
+env FOO=bar env | grep FOO
+--- out
+FOO=bar
+
+### env -i with assignments
+env -i A=1 B=2 env
+--- out
+A=1
+B=2
+
+### env replaces a variable
+env HOME=/tmp env | grep '^HOME='
+--- out
+HOME=/tmp
+
+### env a missing utility
+env nosuchcmd
+--- err
+env: nosuchcmd: not found.
+--- status
+127
+
+### env runs a utility with arguments
+env basename /a/b
+--- out
+b
+
+### env -i loses PATH but finds by path
+env -i /usr/bin/basename /x/y
+--- out
+y
+
+### env exit status passes through
+env sh -c 'exit 3'; echo $?
+--- out
+3
+
+### ps default columns
+ps
+--- out
+PID DEVICE  TIME FUNCTION   STATUS JOBID
+100 -      00:01 PGM-QZSHSH RUN    000123/QSHUSER/QZSHSH
+101 -      01:05 PGM-ls     RUN    000124/QSHUSER/QP0ZSPWP
+
+### ps -f
+ps -f
+--- out
+USER    PID PPID DEVICE  TIME COMMAND
+QSHUSER 100    1 -      00:01 qsh
+QSHUSER 101  100 -      01:05 /usr/bin/ls -l
+
+### ps -l
+ps -l
+--- out
+UID PID PPID DEVICE  TIME FUNCTION   STATUS JOBID
+100 100    1 -      00:01 PGM-QZSHSH RUN    000123/QSHUSER/QZSHSH
+100 101  100 -      01:05 PGM-ls     RUN    000124/QSHUSER/QP0ZSPWP
+
+### ps -o
+ps -o pid,ppid,user,args
+--- out
+PID PPID USER    COMMAND
+100    1 QSHUSER qsh
+101  100 QSHUSER /usr/bin/ls -l
+
+### ps -o with headers renamed
+ps -o pid=ID -o comm=CMD
+--- out
+ ID CMD
+100 qsh
+101 ls
+
+### ps -o with empty headers
+ps -o pid= -o jobname=
+--- out
+100 QZSHSH
+101 QP0ZSPWP
+
+### ps -p selects
+ps -p 101
+--- out
+PID DEVICE  TIME FUNCTION STATUS JOBID
+101 -      01:05 PGM-ls   RUN    000124/QSHUSER/QP0ZSPWP
+
+### ps -u selects by user
+ps -u QSHUSER -o pid,user
+--- out
+PID USER
+100 QSHUSER
+101 QSHUSER
+
+### ps -u a user with none
+ps -u QSYS
+--- out
+PID DEVICE TIME FUNCTION STATUS JOBID
+
+### ps -o job columns
+ps -o jobnumber,jobuser,jobname,status,function
+--- out
+JOBNUMBER JOBUSER JOBNAME  STATUS FUNCTION
+000123    QSHUSER QZSHSH   RUN    PGM-QZSHSH
+000124    QSHUSER QP0ZSPWP RUN    PGM-ls
+
+### ps -o time
+ps -o pid,time
+--- out
+PID  TIME
+100 00:01
+101 01:05
+
+### ps a bad format
+ps -o nosuch
+--- err
+ps: The format nosuch is not valid.
+--- status
+2
+
+### ps an unknown option
+ps -Z
+--- err
+ps: Option -Z is not valid.
+--- status
+2
+
+### ps -e
+ps -e -o pid
+--- out
+PID
+100
+101
+
+### ps -A
+ps -A -o pid,device
+--- out
+PID DEVICE
+100 -
+101 -
+
+### sleep zero
+sleep 0; echo $?
+--- out
+0
+
+### sleep advances the clock
+date +%s; sleep 5; date +%s
+--- out
+1790000000
+1790000005
+
+### sleep a bad number
+sleep abc
+--- err
+sleep: abc is not a valid number.
+--- status
+2
+
+### sleep without an operand
+sleep
+--- err
+sleep: A number of seconds is needed.
+--- status
+2
+
+### sleep a negative number
+sleep -1
+--- err
+sleep: -1 is not a valid number.
+--- status
+2
+
+### uname
+uname
+--- out
+OS400
+
+### uname -s
+uname -s
+--- out
+OS400
+
+### uname -n
+uname -n
+--- out
+QS400
+
+### uname -r and -v
+uname -r; uname -v
+--- out
+0
+1
+
+### uname -m
+uname -m
+--- out
+0000000
+
+### uname -a
+uname -a
+--- out
+OS400 QS400 0 1 0000000
+
+### uname -sn
+uname -sn
+--- out
+OS400 QS400
+
+### uname an operand
+uname x
+--- err
+uname: No operands are taken.
+--- status
+2
+
+### uname an unknown option
+uname -p
+--- err
+uname: Option -p is not valid.
+--- status
+2
+
+### xargs default runs echo
+printf 'a b\nc\n' | xargs
+--- out
+a b c
+
+### xargs a utility
+printf 'a\nb\n' | xargs echo got
+--- out
+got a b
+
+### xargs -n
+printf '1 2 3 4 5\n' | xargs -n 2 echo
+--- out
+1 2
+3 4
+5
+
+### xargs -L
+printf 'a b\nc\nd e f\n' | xargs -L 2 echo
+--- out
+a b c
+d e f
+
+### xargs -I
+printf 'one\n  two words\n' | xargs -I {} echo '[{}]'
+--- out
+[one]
+[two words]
+
+### xargs -I with several places
+printf 'x\n' | xargs -I % echo % and %
+--- out
+x and x
+
+### xargs quotes
+printf '"a b" c\n' | xargs -n 1 echo
+--- out
+a b
+c
+
+### xargs single quotes and backslashes
+printf "'q r' s\\\\ t\n" | xargs -n 1 echo
+--- out
+q r
+s t
+
+### xargs an unterminated quote
+printf '"abc\n' | xargs echo
+--- err
+xargs: A quote is not closed.
+--- status
+1
+
+### xargs -t traces
+printf 'a\n' | xargs -t echo
+--- out
+a
+--- err
+echo a
+
+### xargs -E end of input
+printf 'a b STOP c\n' | xargs -E STOP echo
+--- out
+a b
+
+### xargs -s size limits
+printf 'aaaa bbbb cccc\n' | xargs -s 15 echo
+--- out
+aaaa bbbb
+cccc
+
+### xargs an argument too long for -s
+printf 'aaaaaaaaaaaaaaaaaaaa\n' | xargs -s 10 echo
+--- err
+xargs: An argument is longer than the command line size.
+--- status
+1
+
+### xargs no input runs once
+printf '' | xargs echo none; echo $?
+--- out
+none
+0
+
+### xargs a missing utility
+printf 'a\n' | xargs nosuchcmd
+--- err
+xargs: nosuchcmd: not found.
+--- status
+127
+
+### xargs a failing utility is 123
+printf 'a\n' | xargs sh -c 'exit 1'; echo $?
+--- out
+123
+
+### xargs a utility ending 255 is 124
+printf 'a\n' | xargs sh -c 'exit 255'; echo $?
+--- out
+124
+--- err
+xargs: sh: ended with status 255.
+
+### xargs a bad -n
+printf 'a\n' | xargs -n 0 echo
+--- err
+xargs: 0 is not a valid number.
+--- status
+2
+
+### xargs with find
+find data/sub -type f | xargs wc -l
+--- out
+       1 data/sub/deep.txt
+       1 data/sub/inner/leaf
+       2 total
+
+### xargs -p declines
+printf 'a\n' | xargs -p echo
+--- err -n
+echo a?...
+
+### echo as a program
+/usr/bin/echo a 'b\tc'
+--- out
+a b	c
+
+### echo -n as a program
+/usr/bin/echo -n x; /usr/bin/echo y
+--- out
+xy
+
+### true and false as programs
+/usr/bin/true; echo $?; /usr/bin/false; echo $?
+--- out
+0
+1
+
+### xargs runs a script with the shell
+printf 'echo script got $1\n' > s.sh; chmod +x s.sh; echo arg | xargs ./s.sh
+--- out
+script got arg
+
+### find -exec runs a script
+printf 'echo seen $1\n' > s.sh; chmod +x s.sh; find data/sub -name deep.txt -exec ./s.sh {} \;
+--- out
+seen data/sub/deep.txt
+
+### env runs a script
+printf 'echo X=$X\n' > s.sh; chmod +x s.sh; env X=1 ./s.sh
+--- out
+X=1
+
+### xargs a file that cannot be run
+echo > s.sh; echo a | xargs ./s.sh
+--- err
+xargs: ./s.sh: cannot be run.
+--- status
+126

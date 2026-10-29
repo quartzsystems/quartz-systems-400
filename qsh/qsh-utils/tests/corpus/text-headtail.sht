@@ -1,0 +1,237 @@
+### head default ten lines
+i=1; while [ $i -le 15 ]; do echo $i; i=$((i+1)); done | head
+--- out
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+
+### head -n
+head -n 2 data/fruits.txt
+--- out
+apple
+banana
+
+### head -n 0
+head -n 0 data/fruits.txt; echo '[end]'
+--- out
+[end]
+
+### head -number
+head -1 data/fruits.txt
+--- out
+apple
+
+### head -c bytes
+head -c 7 data/fruits.txt; echo '|'
+--- out
+apple
+b|
+
+### head more lines than the file
+head -n 50 data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### head several files with headers
+head -n 1 data/fruits.txt data/csv.txt
+--- out
+==> data/fruits.txt <==
+apple
+
+==> data/csv.txt <==
+x,1,b
+
+### head a missing file
+head data/nosuch data/fruits.txt
+--- out
+
+==> data/fruits.txt <==
+apple
+banana
+cherry
+--- err
+head: data/nosuch: No such path or directory.
+--- status
+1
+
+### head a bad count
+head -n x data/fruits.txt
+--- err
+head: x is not a valid number.
+--- status
+2
+
+### head a negative count
+head -n -2 data/fruits.txt
+--- err
+head: -2 is not a valid number.
+--- status
+2
+
+### head of a file without a newline
+head data/nonl.txt; echo '|'
+--- out
+no newline|
+
+### head from standard input
+head -n 2
+--- in
+a
+b
+c
+--- out
+a
+b
+
+### head -c 0
+head -c 0 data/fruits.txt; echo '[x]'
+--- out
+[x]
+
+### head an unknown option
+head -q data/fruits.txt
+--- err
+head: Option -q is not valid.
+--- status
+2
+
+### head of an empty file
+head data/empty.txt; echo $?
+--- out
+0
+
+### tail default ten lines
+i=1; while [ $i -le 15 ]; do echo $i; i=$((i+1)); done | tail
+--- out
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+
+### tail -n
+tail -n 2 data/fruits.txt
+--- out
+banana
+cherry
+
+### tail -n +2 from the second line
+tail -n +2 data/fruits.txt
+--- out
+banana
+cherry
+
+### tail +2 old form
+tail +2 data/fruits.txt
+--- out
+banana
+cherry
+
+### tail -number
+tail -1 data/fruits.txt
+--- out
+cherry
+
+### tail -c bytes
+tail -c 4 data/fruits.txt
+--- out
+rry
+
+### tail -c +3
+tail -c +3 data/csv.txt
+--- out
+1,b
+y,2,a
+z,3,c
+
+### tail -n 0
+tail -n 0 data/fruits.txt; echo '[end]'
+--- out
+[end]
+
+### tail more lines than the file
+tail -n 20 data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### tail of a file without a newline
+tail -n 1 data/nonl.txt; echo '|'
+--- out
+no newline|
+
+### tail several files
+tail -n 1 data/fruits.txt data/csv.txt
+--- out
+==> data/fruits.txt <==
+cherry
+
+==> data/csv.txt <==
+z,3,c
+
+### tail a missing file
+tail data/nosuch
+--- err
+tail: data/nosuch: No such path or directory.
+--- status
+1
+
+### tail a bad count
+tail -n abc data/fruits.txt
+--- err
+tail: abc is not a valid number.
+--- status
+2
+
+### tail from standard input
+tail -n 1
+--- in
+a
+b
+--- out
+b
+
+### tail -f ends at end of file
+tail -f -n 1 data/fruits.txt
+--- out
+cherry
+
+### tail -n +0 is the whole file
+tail -n +0 data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### tail -c of a file with more bytes asked
+tail -c 100 data/csv.txt
+--- out
+x,1,b
+y,2,a
+z,3,c
+
+### tail of an empty file
+tail data/empty.txt; echo $?
+--- out
+0
+
+### tail -n with a last line lacking a newline
+printf 'a\nb\nc' | tail -n 2; echo '|'
+--- out
+b
+c|

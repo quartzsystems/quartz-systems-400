@@ -1,0 +1,409 @@
+### grep a word
+grep an data/fruits.txt
+--- out
+banana
+
+### grep no match is status 1
+grep zzz data/fruits.txt
+--- status
+1
+
+### grep from standard input
+grep b
+--- in
+abc
+xyz
+cba
+--- out
+abc
+cba
+
+### grep -v inverts
+grep -v an data/fruits.txt
+--- out
+apple
+cherry
+
+### grep -c counts
+grep -c a data/fruits.txt
+--- out
+2
+
+### grep -c with no match prints zero
+grep -c zzz data/fruits.txt
+--- out
+0
+--- status
+1
+
+### grep -i ignores case
+grep -i apple data/mixed.txt
+--- out
+Apple
+apple
+
+### grep -n numbers lines
+grep -n e data/fruits.txt
+--- out
+1:apple
+3:cherry
+
+### grep -l lists files
+grep -l the data/words.txt data/fruits.txt data/people.txt
+--- out
+data/words.txt
+
+### grep -q is quiet
+grep -q cherry data/fruits.txt; echo $?
+--- out
+0
+
+### grep -x whole lines
+grep -x apple data/mixed.txt
+--- out
+apple
+
+### grep several files prefixes names
+grep a data/fruits.txt data/csv.txt
+--- out
+data/fruits.txt:apple
+data/fruits.txt:banana
+data/csv.txt:y,2,a
+
+### grep -h drops names
+grep -h a data/fruits.txt data/csv.txt
+--- out
+apple
+banana
+y,2,a
+
+### grep -H adds a name for one file
+grep -H cherry data/fruits.txt
+--- out
+data/fruits.txt:cherry
+
+### grep -e several patterns
+grep -e apple -e cherry data/fruits.txt
+--- out
+apple
+cherry
+
+### grep -f patterns from a file
+printf 'ban\nche\n' > pats; grep -f pats data/fruits.txt
+--- out
+banana
+cherry
+
+### grep a missing file
+grep a data/nosuch data/fruits.txt
+--- out
+data/fruits.txt:apple
+data/fruits.txt:banana
+--- err
+grep: data/nosuch: No such path or directory.
+--- status
+2
+
+### grep -s suppresses file errors
+grep -s a data/nosuch data/fruits.txt
+--- out
+data/fruits.txt:apple
+data/fruits.txt:banana
+--- status
+2
+
+### grep a missing file only
+grep a data/nosuch
+--- err
+grep: data/nosuch: No such path or directory.
+--- status
+2
+
+### grep -q with an error and a match is 0
+grep -q a data/nosuch data/fruits.txt; echo $?
+--- out
+0
+--- err
+grep: data/nosuch: No such path or directory.
+
+### grep without a pattern
+grep
+--- err
+grep: A pattern is needed.
+--- status
+2
+
+### grep an unknown option
+grep -Z a data/fruits.txt
+--- err
+grep: Option -Z is not valid.
+--- status
+2
+
+### grep a bad pattern
+grep 'a[' data/fruits.txt
+--- err
+grep: The pattern has an unmatched [.
+--- status
+2
+
+### grep BRE anchors
+grep '^b' data/fruits.txt; grep 'y$' data/fruits.txt
+--- out
+banana
+cherry
+
+### grep BRE dot and star
+grep 'b.*n' data/fruits.txt
+--- out
+banana
+
+### grep BRE literal plus
+echo 'a+b' | grep 'a+b'
+--- out
+a+b
+
+### grep BRE interval
+printf 'ab\naab\naaab\n' | grep -x 'a\{2,\}b'
+--- out
+aab
+aaab
+
+### grep BRE group and back-reference
+printf 'abab\nabba\nxyxy\n' | grep '\(..\)\1'
+--- out
+abab
+xyxy
+
+### grep BRE bracket class
+printf 'a1\nbb\n3c\n' | grep '[[:digit:]]'
+--- out
+a1
+3c
+
+### grep BRE negated bracket
+printf 'abc\n123\n' | grep '^[^0-9]*$'
+--- out
+abc
+
+### grep -E alternation
+grep -E 'apple|cherry' data/fruits.txt
+--- out
+apple
+cherry
+
+### grep -E plus and question
+printf 'ac\nabc\nabbc\n' | grep -E '^ab+c$'; printf 'ac\nabc\nabbc\n' | grep -E '^ab?c$'
+--- out
+abc
+abbc
+ac
+abc
+
+### grep -E groups
+printf 'abab\nab\n' | grep -E -x '(ab){2}'
+--- out
+abab
+
+### grep -E braces literal when not an interval
+echo 'a{x' | grep -E 'a{x'
+--- out
+a{x
+
+### egrep is grep -E
+egrep 'an|rr' data/fruits.txt
+--- out
+banana
+cherry
+
+### grep -F fixed strings
+echo 'a.c abc' | grep -F 'a.c'; echo 'abc' | grep -F 'a.c'; echo $?
+--- out
+a.c abc
+1
+
+### fgrep is grep -F
+printf 'x*y\nxy\n' | fgrep '*'
+--- out
+x*y
+
+### grep -F -i
+printf 'HELLO\nhello\nbye\n' | grep -Fi hello
+--- out
+HELLO
+hello
+
+### grep -F -x
+printf 'ab\nabc\n' | grep -Fx ab
+--- out
+ab
+
+### grep -c several files
+grep -c a data/fruits.txt data/csv.txt
+--- out
+data/fruits.txt:2
+data/csv.txt:1
+
+### grep -n with names
+grep -n ch data/fruits.txt data/mixed.txt
+--- out
+data/fruits.txt:3:cherry
+
+### grep -l with standard input
+echo hit | grep -l hit
+--- out
+(standard input)
+
+### grep an empty pattern matches everything
+grep '' data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### grep -v empty pattern matches nothing
+grep -v '' data/fruits.txt
+--- status
+1
+
+### grep the last line without a newline
+grep new data/nonl.txt
+--- out
+no newline
+
+### grep an empty file
+grep a data/empty.txt
+--- status
+1
+
+### grep with -- before a dash pattern
+printf -- '-x\ny\n' | grep -- -x
+--- out
+-x
+
+### grep -E with an anchored alternation
+printf 'cat\nconcat\ndog\n' | grep -E '^(cat|dog)$'
+--- out
+cat
+dog
+
+### grep -i with a bracket range
+printf 'Q\nq\nz\n' | grep -i '[p-r]'
+--- out
+Q
+q
+
+### grep -E star after a group
+printf 'x\nxababy\n' | grep -E 'x(ab)*y'
+--- out
+xababy
+
+### grep an escaped dot
+printf '.\na\n' | grep -c '\.'
+--- out
+1
+
+### grep the star at the start is literal
+printf '*a\nb\n' | grep '*a'
+--- out
+*a
+
+### grep a star after a leading caret is literal
+printf '*a\na\n' | grep '^*a'
+--- out
+*a
+
+### grep a caret not at the start is literal in a BRE
+printf 'a^b\nab\n' | grep 'a^b'
+--- out
+a^b
+
+### grep a dollar not at the end is literal in a BRE
+printf 'a$b\nab\n' | grep 'a$b'
+--- out
+a$b
+
+### grep a pipeline with head
+grep -n . data/words.txt | head -2
+--- out
+1:the quick brown fox
+2:jumps over
+
+### grep -q in a pipeline stops early
+yes() { while :; do echo y; done; }; yes | grep -q y; echo $?
+--- out
+0
+
+### grep a tab
+grep '	' data/tabs.txt | head -1
+--- out
+a	b	c
+
+### grep -E an empty alternative
+printf 'a\nb\n' | grep -E -c 'a|'
+--- out
+2
+
+### grep a back-reference with -i
+printf 'abAB\n' | grep -i '\(ab\)\1'
+--- out
+abAB
+
+### grep -e with a pattern starting with a dash
+printf -- '-n\nx\n' | grep -e -n
+--- out
+-n
+
+### grep -f with an empty file matches nothing
+: > none; grep -f none data/fruits.txt; echo $?
+--- out
+1
+
+### grep a QSYS.LIB member
+grep END /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR
+--- out
+ENDPGM
+
+### grep -c -v
+grep -cv a data/fruits.txt
+--- out
+1
+
+### grep -l -v
+grep -lv apple data/fruits.txt data/empty.txt
+--- out
+data/fruits.txt
+
+### grep -n -v
+grep -nv an data/fruits.txt
+--- out
+1:apple
+3:cherry
+
+### grep a directory operand
+grep a data/sub
+--- err
+grep: data/sub: The target is a directory.
+--- status
+2
+
+### grep -i -x
+printf 'APPLE\napples\n' | grep -ix apple
+--- out
+APPLE
+
+### grep -E a class with a range
+printf 'a-1\nb_2\n' | grep -E '^[a-z][-_][0-9]$'
+--- out
+a-1
+b_2
+
+### grep a closing bracket first in a list
+printf ']\na\n' | grep '[]]'
+--- out
+]
+
+### grep -E nested groups
+printf 'abcabc\nabc\n' | grep -E -x '((a)(b)c){2}'
+--- out
+abcabc

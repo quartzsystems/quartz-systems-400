@@ -1,0 +1,213 @@
+### chmod octal
+chmod 600 data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-------  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### chmod u+x
+chmod u+x data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rwxr--r--  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### chmod go-r
+chmod go-r data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-------  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### chmod a=rw
+chmod a=rw data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-rw-rw-  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### chmod +x applies the umask
+umask 027; chmod +x data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rwxr-xr--  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### chmod =r
+chmod =r data/fruits.txt; ls -l data/fruits.txt
+--- out
+-r--r--r--  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### chmod with several clauses
+chmod u=rwx,g=rx,o= data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rwxr-x---  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### chmod u=g copies bits
+chmod 654 data/fruits.txt; chmod u=g data/fruits.txt; ls -l data/fruits.txt
+--- out
+-r-xr-xr--  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### chmod setuid and sticky
+chmod 4755 data/fruits.txt; ls -l data/fruits.txt; chmod 1777 data/sub; ls -ld data/sub
+--- out
+-rwsr-xr-x  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+drwxrwxrwt  3 QSHUSER  0                     2 May 28 20:26 data/sub
+
+### chmod setgid without execute shows S
+chmod 2644 data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-r-Sr--  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### chmod sticky without execute shows T
+chmod 1644 data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-r--r-T  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### chmod a+X only for directories and executables
+chmod 644 data/fruits.txt; chmod a+X data/fruits.txt data/sub; ls -l data/fruits.txt; ls -ld data/sub
+--- out
+-rw-r--r--  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+drwxr-xr-x  3 QSHUSER  0                     2 May 28 20:26 data/sub
+
+### chmod -w as a mode, not an option
+chmod -w data/fruits.txt; ls -l data/fruits.txt
+--- out
+-r--r--r--  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### chmod -R
+chmod -R go= data/sub; ls -ld data/sub data/sub/inner data/sub/deep.txt data/sub/inner/leaf
+--- out
+drwx------  3 QSHUSER  0                     2 May 28 20:26 data/sub
+-rw-------  1 QSHUSER  0                     5 May 28 20:26 data/sub/deep.txt
+drwx------  2 QSHUSER  0                     1 May 28 20:26 data/sub/inner
+-rw-------  1 QSHUSER  0                     5 May 28 20:26 data/sub/inner/leaf
+
+### chmod a bad mode
+chmod 999 data/fruits.txt
+--- err
+chmod: The mode 999 is not valid.
+--- status
+2
+
+### chmod a bad symbolic mode
+chmod u+q data/fruits.txt
+--- err
+chmod: The mode u+q is not valid.
+--- status
+2
+
+### chmod without a file
+chmod 644
+--- err
+chmod: A mode and a file name are needed.
+--- status
+2
+
+### chmod a missing file
+chmod 644 data/nosuch
+--- err
+chmod: data/nosuch: No such path or directory.
+--- status
+1
+
+### chmod several files, one missing
+chmod 600 data/nosuch data/csv.txt; ls -l data/csv.txt
+--- out
+-rw-------  1 QSHUSER  0                    18 May 28 20:26 data/csv.txt
+--- err
+chmod: data/nosuch: No such path or directory.
+
+### chmod through a symbolic link changes the target
+chmod 600 data/link; ls -l data/fruits.txt
+--- out
+-rw-------  1 QSHUSER  0                    20 May 28 20:26 data/fruits.txt
+
+### chown to a named user
+chown QSYS data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-r--r--  1 QSYS     0                    20 May 28 20:26 data/fruits.txt
+
+### chown to user and group
+chown QSYS:QSHGRP data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-r--r--  1 QSYS     QSHGRP               20 May 28 20:26 data/fruits.txt
+
+### chown to a numeric user
+chown 0 data/fruits.txt; ls -ln data/fruits.txt
+--- out
+-rw-r--r--  1 0        0                    20 May 28 20:26 data/fruits.txt
+
+### chown names in any case
+chown qsys data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-r--r--  1 QSYS     0                    20 May 28 20:26 data/fruits.txt
+
+### chown group only with a colon
+chown :QSHGRP data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-r--r--  1 QSHUSER  QSHGRP               20 May 28 20:26 data/fruits.txt
+
+### chown an unknown user
+chown NOSUCHUSR data/fruits.txt
+--- err
+chown: NOSUCHUSR: The user is not known.
+--- status
+1
+
+### chown an unknown group
+chown QSYS:NOGRP data/fruits.txt
+--- err
+chown: NOGRP: The group is not known.
+--- status
+1
+
+### chown a missing file
+chown QSYS data/nosuch
+--- err
+chown: data/nosuch: No such path or directory.
+--- status
+1
+
+### chown -R
+chown -R QSYS data/sub; ls -l data/sub; ls -ld data/sub
+--- out
+total: 1 kilobytes
+-rw-r--r--  1 QSYS     0                     5 May 28 20:26 deep.txt
+drwxr-xr-x  2 QSYS     0                     1 May 28 20:26 inner
+drwxr-xr-x  3 QSYS     0                     2 May 28 20:26 data/sub
+
+### chown without operands
+chown
+--- err
+chown: An owner and a file name are needed.
+--- status
+2
+
+### chgrp by name
+chgrp QSHGRP data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-r--r--  1 QSHUSER  QSHGRP               20 May 28 20:26 data/fruits.txt
+
+### chgrp by number
+chgrp 50 data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-r--r--  1 QSHUSER  QSHGRP               20 May 28 20:26 data/fruits.txt
+
+### chgrp an unknown group
+chgrp NOGRP data/fruits.txt
+--- err
+chgrp: NOGRP: The group is not known.
+--- status
+1
+
+### chgrp -R
+chgrp -R QSHGRP data/sub; ls -l data/sub
+--- out
+total: 1 kilobytes
+-rw-r--r--  1 QSHUSER  QSHGRP                5 May 28 20:26 deep.txt
+drwxr-xr-x  2 QSHUSER  QSHGRP                1 May 28 20:26 inner
+
+### chgrp a missing file
+chgrp QSHGRP data/nosuch
+--- err
+chgrp: data/nosuch: No such path or directory.
+--- status
+1
+
+### chgrp needs two operands
+chgrp QSHGRP
+--- err
+chgrp: A group and a file name are needed.
+--- status
+2

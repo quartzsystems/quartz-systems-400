@@ -17,8 +17,8 @@ use std::time::Duration;
 use super::stream::{Fd, Null, Stream};
 use super::util::{Registry, UtilCtx, Utility};
 use super::{
-    Access, Child, Errno, FileType, Limit, OpenFlags, SigAction, SpawnRequest, Stat, Sys, SysError,
-    WaitStatus,
+    Access, Child, Errno, FileType, FsInfo, Limit, OpenFlags, ProcInfo, SigAction, SpawnRequest,
+    Stat, Sys, SysError, WaitStatus,
 };
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
@@ -31,6 +31,9 @@ enum Kind {
     File(Arc<Mutex<Vec<u8>>>),
     Symlink(String),
     Null,
+    /// A `/QSYS.LIB` object that is not a library, file or member:
+    /// its size.
+    Object(u64),
 }
 
 #[derive(Clone)]
@@ -39,7 +42,12 @@ struct Node {
     mode: u32,
     mtime: i64,
     parent: usize,
+    uid: u32,
+    gid: u32,
 }
+
+/// The user ID files are made with in a `MemSys` (`QSHUSER`).
+pub const MEM_UID: u32 = 100;
 
 struct Fs {
     nodes: Vec<Node>,
@@ -60,6 +68,8 @@ impl Fs {
                 mode: 0o755,
                 mtime: 0,
                 parent: 0,
+                uid: 0,
+                gid: 0,
             }],
         }
     }
@@ -172,11 +182,26 @@ impl Fs {
             mode,
             mtime,
             parent: dir,
+            uid: MEM_UID,
+            gid: 0,
         });
         if let Kind::Dir(entries) = &mut self.nodes[dir].kind {
             entries.insert(name.to_string(), i);
         }
         i
+    }
+
+    /// How many directory entries name a node.
+    fn links_to(&self, i: usize) -> u32 {
+        let n = self
+            .nodes
+            .iter()
+            .filter_map(|n| match &n.kind {
+                Kind::Dir(e) => Some(e.values().filter(|&&v| v == i).count()),
+                _ => None,
+            })
+            .sum::<usize>();
+        u32::try_from(n.max(1)).unwrap_or(u32::MAX)
     }
 
     fn stat_of(&self, i: usize) -> Stat {
@@ -186,16 +211,29 @@ impl Fs {
             Kind::File(d) => (FileType::File, lock(d).len() as u64),
             Kind::Symlink(t) => (FileType::Symlink, t.len() as u64),
             Kind::Null => (FileType::Char, 0),
+            Kind::Object(n) => (FileType::Other, *n),
+        };
+        let nlink = match &n.kind {
+            Kind::Dir(e) => {
+                let sub = e
+                    .values()
+                    .filter(|&&v| matches!(self.nodes[v].kind, Kind::Dir(_)))
+                    .count();
+                u32::try_from(2 + sub).unwrap_or(u32::MAX)
+            }
+            _ => self.links_to(i),
         };
         Stat {
             ftype,
             mode: n.mode,
             size,
-            uid: 0,
-            gid: 0,
+            uid: n.uid,
+            gid: n.gid,
             mtime: n.mtime,
             ino: i as u64 + 1,
             dev: 1,
+            nlink,
+            blocks: size.div_ceil(512),
         }
     }
 }
@@ -346,6 +384,11 @@ struct Inner {
     clock: Mutex<Duration>,
     limits: Mutex<HashMap<(u8, bool), Option<u64>>>,
     spawned: Mutex<Vec<Vec<String>>>,
+    users: Mutex<BTreeMap<u32, String>>,
+    groups: Mutex<BTreeMap<u32, String>>,
+    fsinfo: Mutex<FsInfo>,
+    procs: Mutex<Vec<ProcInfo>>,
+    nodename: Mutex<String>,
 }
 
 /// The in-memory system.
@@ -384,6 +427,32 @@ impl MemSys {
             clock: Mutex::new(Duration::from_secs(1_790_000_000)),
             limits: Mutex::new(HashMap::new()),
             spawned: Mutex::new(Vec::new()),
+            users: Mutex::new(BTreeMap::from([
+                (0, "QSYS".to_string()),
+                (MEM_UID, "QSHUSER".to_string()),
+            ])),
+            groups: Mutex::new(BTreeMap::from([(50, "QSHGRP".to_string())])),
+            fsinfo: Mutex::new(FsInfo {
+                name: "/dev/QASP01".to_string(),
+                mounted_on: "/".to_string(),
+                block_size: 4096,
+                blocks: 1_000_000,
+                free: 600_000,
+                avail: 600_000,
+            }),
+            procs: Mutex::new(vec![ProcInfo {
+                pid: MEM_PID,
+                ppid: 1,
+                pgid: MEM_PID,
+                uid: MEM_UID,
+                job: "000123/QSHUSER/QZSHSH".to_string(),
+                status: "RUN".to_string(),
+                function: "PGM-QZSHSH".to_string(),
+                device: "-".to_string(),
+                cpu: Duration::from_millis(1250),
+                args: vec!["qsh".to_string()],
+            }]),
+            nodename: Mutex::new("QS400".to_string()),
         }));
         for d in [
             "/dev",
@@ -487,6 +556,17 @@ impl MemSys {
         fs.add(d, &name, Kind::Symlink(target.to_string()), 0o777, 0);
     }
 
+    /// Make a `/QSYS.LIB` object (`*PGM`, `*DTAARA`, ...) of a size: it
+    /// reports type `Other` and cannot be opened.
+    pub fn make_object(&self, path: &str, size: u64) {
+        self.mkdir_p(&parent_path(path));
+        let t = self.now_secs();
+        let mut fs = lock(&self.0.fs);
+        let (d, _, name) = fs.parent_of(path).expect("parent");
+        let i = fs.add(d, &name, Kind::Object(size), 0o700, t);
+        fs.nodes[i].uid = 0;
+    }
+
     /// Register a utility at a path; the path becomes an executable file.
     pub fn register(&self, path: &str, u: Arc<dyn Utility>) {
         self.write_file(path, b"");
@@ -539,6 +619,40 @@ impl MemSys {
     /// caught.
     pub fn raise(&self, pid: i32, sig: i32) {
         lock(&self.0.signals).entry(pid).or_default().push(sig);
+    }
+
+    /// Name a user ID.
+    pub fn set_user(&self, uid: u32, name: &str) {
+        lock(&self.0.users).insert(uid, name.to_string());
+    }
+
+    /// Name a group ID.
+    pub fn set_group(&self, gid: u32, name: &str) {
+        lock(&self.0.groups).insert(gid, name.to_string());
+    }
+
+    /// Set a path's owner and group.
+    pub fn set_owner(&self, path: &str, uid: u32, gid: u32) {
+        let mut fs = lock(&self.0.fs);
+        if let Ok((i, _)) = fs.resolve(path, true, 0) {
+            fs.nodes[i].uid = uid;
+            fs.nodes[i].gid = gid;
+        }
+    }
+
+    /// Set what `statfs` reports.
+    pub fn set_fsinfo(&self, info: FsInfo) {
+        *lock(&self.0.fsinfo) = info;
+    }
+
+    /// Add a process for `ps`.
+    pub fn add_process(&self, p: ProcInfo) {
+        lock(&self.0.procs).push(p);
+    }
+
+    /// Set the system's name.
+    pub fn set_nodename(&self, name: &str) {
+        *lock(&self.0.nodename) = name.to_string();
     }
 
     fn alloc_pid(&self) -> i32 {
@@ -637,6 +751,7 @@ impl Sys for MemSys {
                 }))
             }
             Kind::Symlink(_) => Err(Errno::ELOOP.into()),
+            Kind::Object(_) => Err(Errno::EOPNOTSUPP.into()),
         }
     }
 
@@ -794,6 +909,57 @@ impl Sys for MemSys {
         let (i, _) = fs.resolve(path, true, 0)?;
         fs.nodes[i].mtime = mtime;
         Ok(())
+    }
+
+    fn chown(&self, path: &str, uid: Option<u32>, gid: Option<u32>) -> Result<(), SysError> {
+        let mut fs = lock(&self.0.fs);
+        let (i, _) = fs.resolve(path, true, 0)?;
+        if let Some(u) = uid {
+            fs.nodes[i].uid = u;
+        }
+        if let Some(g) = gid {
+            fs.nodes[i].gid = g;
+        }
+        Ok(())
+    }
+
+    fn statfs(&self, path: &str) -> Result<FsInfo, SysError> {
+        self.stat(path)?;
+        Ok(lock(&self.0.fsinfo).clone())
+    }
+
+    fn user_name(&self, uid: u32) -> Option<String> {
+        lock(&self.0.users).get(&uid).cloned()
+    }
+
+    fn group_name(&self, gid: u32) -> Option<String> {
+        lock(&self.0.groups).get(&gid).cloned()
+    }
+
+    fn user_id(&self, name: &str) -> Option<u32> {
+        lock(&self.0.users)
+            .iter()
+            .find(|(_, v)| v.eq_ignore_ascii_case(name))
+            .map(|(k, _)| *k)
+    }
+
+    fn group_id(&self, name: &str) -> Option<u32> {
+        lock(&self.0.groups)
+            .iter()
+            .find(|(_, v)| v.eq_ignore_ascii_case(name))
+            .map(|(k, _)| *k)
+    }
+
+    fn processes(&self) -> Result<Vec<ProcInfo>, SysError> {
+        Ok(lock(&self.0.procs).clone())
+    }
+
+    fn nodename(&self) -> String {
+        lock(&self.0.nodename).clone()
+    }
+
+    fn sleep(&self, d: Duration) {
+        self.advance(d);
     }
 
     fn spawn(&self, req: SpawnRequest) -> Result<Box<dyn Child>, SysError> {

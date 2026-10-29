@@ -1,0 +1,83 @@
+# Copyright (C), 2026 Quartz Systems. Some rights reserved. This work is
+# licensed under the terms of the MIT license which can be found in the
+# root directory of this project.
+#
+# sed: the command language, addresses, the cycle and its edge cases,
+# messages and statuses.
+
+probe s 'sed s/a/X/ data/fruits.txt'
+probe s-g 'sed s/a/X/g data/fruits.txt'
+probe s-nth 'sed s/a/X/2 data/fruits.txt'
+probe s-nth-g 'sed s/a/X/2g data/fruits.txt'
+probe s-amp 'sed "s/an/[&]/g" data/fruits.txt'
+probe s-groups 'echo "john smith" | sed "s/\(.*\) \(.*\)/\2, \1/"'
+probe s-delim 'echo /usr/bin | sed "s|/|:|g"'
+probe s-newline 'echo a,b | sed "s/,/\\
+/"'
+probe s-backslash-n 'echo a,b | sed "s/,/\n/"'
+probe s-p 'sed -n s/an/AN/p data/fruits.txt'
+probe s-w 'sed -n "s/e/E/w changed" data/fruits.txt; cat changed'
+probe s-empty-matches 'echo abc | sed "s/x*/-/g"; echo baaac | sed "s/a*/x/g"'
+probe s-bracket-delim 'echo a/b | sed "s/[/]/X/"'
+probe s-flag-bad 'sed s/a/b/q data/fruits.txt'
+probe s-count-zero 'sed s/a/b/0 data/fruits.txt'
+probe s-incomplete 'sed s/a/b data/fruits.txt'
+probe s-no-previous 'sed "s//x/" data/fruits.txt'
+probe ere 'echo "aaa bbb" | sed -E "s/(a+) (b+)/\2 \1/"'
+probe ere-r 'echo abc | sed -r "s/b?c/X/"'
+probe ranges 'sed -n 2,3p data/dup.txt; sed -n "/apple/,/banana/p" data/fruits.txt'
+probe range-backwards 'sed -n 3,1p data/dup.txt'
+probe range-open 'sed -n "/banana/,/nomatch/p" data/fruits.txt'
+probe address-zero 'sed -n 0p data/fruits.txt'
+probe negate 'sed 2!d data/fruits.txt'
+probe last 'sed -n "\$p" data/fruits.txt data/csv.txt'
+probe lineno 'sed = data/fruits.txt; sed -n "\$=" data/words.txt'
+probe quit 'sed 2q data/fruits.txt'
+probe quit-status 'sed 1q5 data/fruits.txt; echo $?'
+probe append 'sed "1a\\
+after one" data/fruits.txt'
+probe append-one-line 'sed "\$a the end" data/fruits.txt'
+probe insert 'sed "2i\\
+before two" data/fruits.txt'
+probe change 'sed "2c\\
+changed" data/fruits.txt'
+probe change-range 'sed "1,2c\\
+both" data/fruits.txt'
+probe change-negated 'sed "2!c\\
+other" data/fruits.txt'
+probe y 'sed y/abc/xyz/ data/fruits.txt'
+probe y-bad 'sed y/ab/x/ data/fruits.txt'
+probe hold 'sed -n "h;n;G;p" data/fruits.txt'
+probe tac 'sed -n "1!G;h;\$p" data/fruits.txt'
+probe exchange 'sed x data/fruits.txt'
+probe N-last 'sed "N;s/\n/+/" data/fruits.txt'
+probe N-guard 'sed "\$!N;s/\n/+/" data/fruits.txt'
+probe P-D 'printf "1\n2\n3\n4\n" | sed "\$!N;P;D"'
+probe n-last 'sed "n;d" data/fruits.txt'
+probe t-after-n 'printf "ab\ncd\n" | sed -n "s/a/A/;n;tx;p;d;:x;s/^/yes /p"'
+probe t-loop 'sed ":a;s/a//;ta" data/fruits.txt'
+probe branch-label 'sed -n "/banana/bskip;p;:skip" data/fruits.txt'
+probe label-missing 'sed bnowhere data/fruits.txt'
+probe blocks 'sed -n "/an/{s/a/A/;p;}" data/fruits.txt; sed -n "1,2{/ban/{p}}" data/fruits.txt'
+probe brace-unmatched 'sed "{p" data/fruits.txt; sed "p}" data/fruits.txt'
+probe list 'printf "a\tb\\\\\001\n" | sed -n l'
+probe list-fold 'printf "%080d\n" 0 | sed -n l'
+probe read 'sed "1r data/csv.txt" data/fruits.txt; sed "1r nosuch" data/fruits.txt'
+probe write-stdout 'sed -n "1w /dev/stdout" data/fruits.txt'
+probe e-joins 'sed -e "1a\\" -e added data/fruits.txt'
+probe f-script 'printf "#n\n2p\n" > script; sed -f script data/fruits.txt'
+probe f-missing 'sed -f nosuch data/fruits.txt'
+probe comments 'sed "# c
+s/a/A/ # trailing" data/fruits.txt'
+probe unknown 'sed k data/fruits.txt'
+probe missing-command 'sed 1 data/fruits.txt'
+probe trailing-text 'sed pq data/fruits.txt'
+probe usage 'sed'
+probe missing-file 'sed -n p data/nosuch data/fruits.txt'
+probe no-newline 'sed s/no/NO/ data/nonl.txt; echo "|"'
+probe dollar-in-N 'printf "a\nb\n" | sed "N;s/a\$/X/"; printf "a\nb\n" | sed "N;s/^b/X/"'
+probe G-empty 'sed G data/fruits.txt'
+probe join 'sed ":a;N;\$!ba;s/\n/,/g" data/fruits.txt'
+probe a-then-d 'sed -e "1a\\" -e after -e 1d data/fruits.txt'
+probe a-then-q 'sed -e "1a\\" -e appended -e 1q data/fruits.txt'
+finish

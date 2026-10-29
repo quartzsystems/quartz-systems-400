@@ -50,6 +50,7 @@ errnos! {
     EEXIST = 3457, "The file already exists.";
     ENOMEM = 3460, "Storage could not be allocated.";
     ESPIPE = 3469, "The object cannot seek.";
+    EOPNOTSUPP = 3440, "The operation is not supported.";
     ENOSYS = 3470, "The function is not available.";
     EISDIR = 3471, "The target is a directory.";
     EROFS = 3472, "The file system is read-only.";
@@ -93,6 +94,9 @@ impl From<Errno> for SysError {
 impl From<io::Error> for SysError {
     fn from(e: io::Error) -> Self {
         use io::ErrorKind as K;
+        if let Some(inner) = e.get_ref().and_then(|r| r.downcast_ref::<SysError>()) {
+            return *inner;
+        }
         let errno = match e.kind() {
             K::NotFound => Errno::ENOENT,
             K::PermissionDenied => Errno::EACCES,

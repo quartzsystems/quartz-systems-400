@@ -1,0 +1,359 @@
+### mkdir one
+mkdir d; ls -ld d
+--- out
+drwxr-xr-x  2 QSHUSER  0                     0 Sep 21 14:13 d
+
+### mkdir several
+mkdir a b c; ls -d a b c
+--- out
+a
+b
+c
+
+### mkdir applies the umask
+umask 077; mkdir d; ls -ld d
+--- out
+drwx------  2 QSHUSER  0                     0 Sep 21 14:13 d
+
+### mkdir -m mode
+mkdir -m 700 d; ls -ld d
+--- out
+drwx------  2 QSHUSER  0                     0 Sep 21 14:13 d
+
+### mkdir -m symbolic
+mkdir -m u=rwx,go=rx d; ls -ld d
+--- out
+drwxr-xr-x  2 QSHUSER  0                     0 Sep 21 14:13 d
+
+### mkdir -m a bad mode
+mkdir -m zz d
+--- err
+mkdir: The mode zz is not valid.
+--- status
+2
+
+### mkdir an existing directory
+mkdir data
+--- err
+mkdir: data: The file already exists.
+--- status
+1
+
+### mkdir with a missing parent
+mkdir x/y
+--- err
+mkdir: x/y: No such path or directory.
+--- status
+1
+
+### mkdir -p makes parents
+mkdir -p x/y/z; ls -R x
+--- out
+x:
+y
+
+x/y:
+z
+
+x/y/z:
+
+### mkdir -p an existing directory is fine
+mkdir -p data/sub; echo $?
+--- out
+0
+
+### mkdir -p through a file fails
+mkdir -p data/fruits.txt/x
+--- err
+mkdir: data/fruits.txt/x: The path is not a directory.
+--- status
+1
+
+### mkdir needs an operand
+mkdir
+--- err
+mkdir: A directory name is needed.
+--- status
+2
+
+### mkdir in QOpenSys keeps case
+mkdir /QOpenSys/Mixed; ls /QOpenSys
+--- out
+Mixed
+etc
+usr
+
+### rmdir an empty directory
+mkdir d; rmdir d; ls -d d
+--- err
+ls: d: No such path or directory.
+--- status
+1
+
+### rmdir a directory that is not empty
+rmdir data/sub
+--- err
+rmdir: data/sub: The directory is not empty.
+--- status
+1
+
+### rmdir a missing directory
+rmdir nosuch
+--- err
+rmdir: nosuch: No such path or directory.
+--- status
+1
+
+### rmdir a file
+rmdir data/fruits.txt
+--- err
+rmdir: data/fruits.txt: The path is not a directory.
+--- status
+1
+
+### rmdir -p removes parents
+mkdir -p x/y/z; rmdir -p x/y/z; ls -d x
+--- err
+ls: x: No such path or directory.
+--- status
+1
+
+### rmdir -p stops at a parent that is not empty
+mkdir -p x/y/z x/k; rmdir -p x/y/z; ls x
+--- out
+k
+--- err
+rmdir: x: The directory is not empty.
+
+### rmdir several
+mkdir a b; rmdir a b; ls -d a b
+--- err
+ls: a: No such path or directory.
+ls: b: No such path or directory.
+--- status
+1
+
+### rmdir needs an operand
+rmdir
+--- err
+rmdir: A directory name is needed.
+--- status
+2
+
+### rm a file
+rm data/fruits.txt; ls data/fruits.txt
+--- err
+ls: data/fruits.txt: No such path or directory.
+--- status
+1
+
+### rm several files
+rm data/fruits.txt data/csv.txt; ls data
+--- out
+dup.txt
+empty.txt
+link
+mixed.txt
+nonl.txt
+nums.txt
+old.txt
+people.txt
+sub
+tabs.txt
+words.txt
+
+### rm a missing file
+rm data/nosuch
+--- err
+rm: data/nosuch: No such path or directory.
+--- status
+1
+
+### rm -f a missing file is quiet
+rm -f data/nosuch; echo $?
+--- out
+0
+
+### rm -f with no operands
+rm -f; echo $?
+--- out
+0
+
+### rm without operands
+rm
+--- err
+rm: A file name is needed.
+--- status
+2
+
+### rm a directory without -r
+rm data/sub
+--- err
+rm: data/sub: The target is a directory.
+--- status
+1
+
+### rm -r a tree
+rm -r data/sub; ls data
+--- out
+csv.txt
+dup.txt
+empty.txt
+fruits.txt
+link
+mixed.txt
+nonl.txt
+nums.txt
+old.txt
+people.txt
+tabs.txt
+words.txt
+
+### rm -R a tree
+rm -R data; ls
+--- out
+bin
+raw
+
+### rm -i declines
+rm -i data/fruits.txt; ls data/fruits.txt
+--- in
+n
+--- out
+data/fruits.txt
+--- err -n
+rm: remove data/fruits.txt? 
+
+### rm -i accepts
+rm -i data/fruits.txt; ls data/fruits.txt
+--- in
+y
+--- err
+rm: remove data/fruits.txt? ls: data/fruits.txt: No such path or directory.
+--- status
+1
+
+### rm dot is refused
+rm -r .
+--- err
+rm: .: This path cannot be removed.
+--- status
+1
+
+### rm dot-dot is refused
+rm -r data/..
+--- err
+rm: data/..: This path cannot be removed.
+--- status
+1
+
+### rm a symbolic link leaves the target
+rm data/link; cat data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### rm -rf a missing tree
+rm -rf nosuch; echo $?
+--- out
+0
+
+### rm -fi asks
+rm -f -i data/fruits.txt; echo $?
+--- in
+n
+--- out
+0
+--- err -n
+rm: remove data/fruits.txt? 
+
+### touch makes a file
+touch new; ls -l new
+--- out
+-rw-r--r--  1 QSHUSER  0                     0 Sep 21 14:13 new
+
+### touch keeps the contents
+touch data/fruits.txt; cat data/fruits.txt; ls -l data/fruits.txt
+--- out
+apple
+banana
+cherry
+-rw-r--r--  1 QSHUSER  0                    20 Sep 21 14:13 data/fruits.txt
+
+### touch -c does not create
+touch -c nofile; ls nofile
+--- err
+ls: nofile: No such path or directory.
+--- status
+1
+
+### touch -t sets a time
+touch -t 202001021530 data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-r--r--  1 QSHUSER  0                    20 Jan  2  2020 data/fruits.txt
+
+### touch -t with century and seconds
+touch -t 199912312359.59 data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-r--r--  1 QSHUSER  0                    20 Dec 31  1999 data/fruits.txt
+
+### touch -t two-digit year
+touch -t 6901010000 data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-r--r--  1 QSHUSER  0                    20 Jan  1  1969 data/fruits.txt
+
+### touch -t month and day only
+touch -t 03041200 data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-r--r--  1 QSHUSER  0                    20 Mar  4  2026 data/fruits.txt
+
+### touch -t bad
+touch -t 2020130100 data/fruits.txt
+--- err
+touch: The time 2020130100 is not valid.
+--- status
+2
+
+### touch -r copies the time
+touch -r data/old.txt data/fruits.txt; ls -l data/fruits.txt
+--- out
+-rw-r--r--  1 QSHUSER  0                    20 Sep 13  2020 data/fruits.txt
+
+### touch -r a missing reference
+touch -r nosuch data/fruits.txt
+--- err
+touch: nosuch: No such path or directory.
+--- status
+1
+
+### touch -a and -m are accepted
+touch -a -m data/fruits.txt; echo $?
+--- out
+0
+
+### touch in a missing directory
+touch nodir/x
+--- err
+touch: nodir/x: No such path or directory.
+--- status
+1
+
+### touch needs an operand
+touch
+--- err
+touch: A file name is needed.
+--- status
+2
+
+### touch several
+touch a b c; ls a b c
+--- out
+a
+b
+c
+
+### touch applies the umask
+umask 077; touch t; ls -l t
+--- out
+-rw-------  1 QSHUSER  0                     0 Sep 21 14:13 t

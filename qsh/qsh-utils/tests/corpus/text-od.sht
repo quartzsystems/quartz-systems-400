@@ -1,0 +1,287 @@
+### od default octal words
+printf 'abcd' | od
+--- out
+0000000  060542  061544
+0000004
+
+### od -c characters
+od -c data/fruits.txt
+--- out
+0000000   a   p   p   l   e  \n   b   a   n   a   n   a  \n   c   h   e
+0000020   r   r   y  \n
+0000024
+
+### od -b octal bytes
+printf 'AB' | od -b
+--- out
+0000000 101 102
+0000002
+
+### od -x hex words
+printf 'abcd' | od -x
+--- out
+0000000  6162  6364
+0000004
+
+### od -d unsigned decimal words
+printf 'abcd' | od -d
+--- out
+0000000 24930 25444
+0000004
+
+### od -s signed words
+od -s raw/ff.bin
+--- out
+0000000      -1  -32768     256
+0000005
+
+### od -o
+printf 'ab' | od -o
+--- out
+0000000  060542
+0000002
+
+### od -t x1
+printf 'hello' | od -t x1
+--- out
+0000000 68 65 6c 6c 6f
+0000005
+
+### od -t u1
+printf 'hello' | od -t u1
+--- out
+0000000 104 101 108 108 111
+0000005
+
+### od -t d1 signed bytes
+od -t d1 raw/ff.bin
+--- out
+0000000   -1   -1 -128    0    1
+0000005
+
+### od -t x4
+printf 'abcdefgh' | od -t x4
+--- out
+0000000    61626364    65666768
+0000010
+
+### od -t o2
+printf 'ab' | od -t o2
+--- out
+0000000  060542
+0000002
+
+### od -t a named characters
+printf 'a\tb\n\000 ' | od -t a
+--- out
+0000000   a  ht   b  nl nul  sp
+0000006
+
+### od -t c escapes
+printf '\a\b\f\r\v\001' | od -t c
+--- out
+0000000  \a  \b  \f  \r  \v 001
+0000006
+
+### od several types
+printf 'ab' | od -t x1 -t c
+--- out
+0000000  61  62
+          a   b
+0000002
+
+### od -A d
+printf 'abcdefghijklmnopq' | od -A d -t x1
+--- out
+0000000 61 62 63 64 65 66 67 68 69 6a 6b 6c 6d 6e 6f 70
+0000016 71
+0000017
+
+### od -A x
+printf 'abcdefghijklmnopq' | od -A x -t x1
+--- out
+000000 61 62 63 64 65 66 67 68 69 6a 6b 6c 6d 6e 6f 70
+000010 71
+000011
+
+### od -A n
+printf 'abc' | od -A n -t x1
+--- out
+ 61 62 63
+
+### od -j skip
+printf 'abcdef' | od -j 2 -t c
+--- out
+0000002   c   d   e   f
+0000006
+
+### od -N count
+printf 'abcdef' | od -N 3 -t c
+--- out
+0000000   a   b   c
+0000003
+
+### od -j and -N
+printf 'abcdef' | od -j 1 -N 2 -t c
+--- out
+0000001   b   c
+0000003
+
+### od -j past the end
+printf 'ab' | od -j 5
+--- err
+od: The offset is past the end of the input.
+--- status
+1
+
+### od repeated lines are starred
+printf '%032d' 0 | od -t x1
+--- out
+0000000 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30
+*
+0000040
+
+### od -v shows every line
+printf '%032d' 0 | od -v -t x1
+--- out
+0000000 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30
+0000020 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30
+0000040
+
+### od an odd byte count in words
+printf 'abc' | od -x
+--- out
+0000000  6162  6300
+0000003
+
+### od of an empty input
+od data/empty.txt
+--- out
+0000000
+
+### od a bad type
+od -t z data/fruits.txt
+--- err
+od: The type z is not valid.
+--- status
+2
+
+### od a bad base
+od -A q data/fruits.txt
+--- err
+od: The address base q is not valid.
+--- status
+2
+
+### od a missing file
+od data/nosuch
+--- out
+0000000
+--- err
+od: data/nosuch: No such path or directory.
+--- status
+1
+
+### od -t f8
+od -t f8 raw/one.f8
+--- out
+0000000   1.000000000000000e+00
+0000010
+
+### od -t x2 two lines
+printf 'abcdefghijklmnopqrst' | od -t x2
+--- out
+0000000  6162  6364  6566  6768  696a  6b6c  6d6e  6f70
+0000020  7172  7374
+0000024
+
+### od -t u4
+printf '\000\000\001\000' | od -t u4
+--- out
+0000000         256
+0000004
+
+### od -t d2 negative
+od -t d2 raw/ff.bin
+--- out
+0000000      -1  -32768     256
+0000005
+
+### od -j with a hex offset
+printf 'abcdefghijklmnopqrstu' | od -j 0x10 -t c
+--- out
+0000020   q   r   s   t   u
+0000025
+
+### od of two files is one stream
+od -c data/nonl.txt data/empty.txt
+--- out
+0000000   n   o       n   e   w   l   i   n   e
+0000012
+
+### iconv to EBCDIC
+printf 'AB' | iconv -f UTF-8 -t IBM-037 | od -t x1
+--- out
+0000000 c1 c2
+0000002
+
+### iconv from EBCDIC
+iconv -f 37 -t 1208 raw/ebcdic.txt
+--- out
+AB
+
+### iconv by CCSID names
+printf 'hi' | iconv -f IBMCCSID01208 -t IBMCCSID00037 | od -t x1
+--- out
+0000000 88 89
+0000002
+
+### iconv a round trip
+iconv -f UTF-8 -t CP037 data/fruits.txt | iconv -f CP037 -t UTF-8
+--- out
+apple
+banana
+cherry
+
+### iconv Latin-1 to UTF-8
+iconv -f ISO8859-1 -t UTF-8 raw/latin1.txt | od -t x1
+--- out
+0000000 c3 a9 0a
+0000003
+
+### iconv UTF-8 to Latin-1
+printf 'é\n' | iconv -f UTF-8 -t ISO8859-1 | od -t x1
+--- out
+0000000 e9 0a
+0000002
+
+### iconv an unknown code set
+echo x | iconv -f NOPE -t UTF-8
+--- err
+iconv: A conversion from NOPE to UTF-8 is not available.
+--- status
+1
+
+### iconv without -f
+echo x | iconv -t UTF-8
+--- err
+iconv: Both -f and -t are needed.
+--- status
+2
+
+### iconv a missing file
+iconv -f UTF-8 -t 37 data/nosuch
+--- err
+iconv: data/nosuch: No such path or directory.
+--- status
+1
+
+### iconv -l lists some CCSIDs
+iconv -l | grep -c IBMCCSID00037
+--- out
+1
+
+### iconv of an empty file
+iconv -f UTF-8 -t 37 data/empty.txt | wc -c
+--- out
+       0

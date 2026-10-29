@@ -1868,6 +1868,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "qsh-utils"
+version = "0.1.0"
+dependencies = [
+ "ccsid",
+ "qsh",
+ "release",
+ "thiserror",
+]
+
+[[package]]
 name = "qsjob"
 version = "0.1.0"
 dependencies = [

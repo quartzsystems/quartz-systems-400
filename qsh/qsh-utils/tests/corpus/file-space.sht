@@ -1,0 +1,119 @@
+### df of the root
+df
+--- out
+Filesystem           512-blocks       Used  Available Capacity Mounted on
+/dev/QASP01             8000000    3200000    4800000      40% /
+
+### df -k
+df -k
+--- out
+Filesystem           1024-blocks       Used  Available Capacity Mounted on
+/dev/QASP01             4000000    1600000    2400000      40% /
+
+### df of a path
+df data
+--- out
+Filesystem           512-blocks       Used  Available Capacity Mounted on
+/dev/QASP01             8000000    3200000    4800000      40% /
+
+### df -P
+df -P /
+--- out
+Filesystem           512-blocks       Used  Available Capacity Mounted on
+/dev/QASP01             8000000    3200000    4800000      40% /
+
+### df of several paths on one file system
+df data /tmp
+--- out
+Filesystem           512-blocks       Used  Available Capacity Mounted on
+/dev/QASP01             8000000    3200000    4800000      40% /
+
+### df of a missing path
+df nosuch
+--- out
+Filesystem           512-blocks       Used  Available Capacity Mounted on
+--- err
+df: nosuch: No such path or directory.
+--- status
+1
+
+### df an unknown option
+df -z
+--- err
+df: Option -z is not valid.
+--- status
+2
+
+### du of a tree
+du data/sub
+--- out
+2	data/sub/inner
+4	data/sub
+
+### du -k
+du -k data
+--- out
+1	data/sub/inner
+2	data/sub
+9	data
+
+### du -s
+du -s data
+--- out
+17	data
+
+### du -a lists files too
+du -a data/sub
+--- out
+1	data/sub/deep.txt
+1	data/sub/inner/leaf
+2	data/sub/inner
+4	data/sub
+
+### du of a file
+du data/words.txt
+--- out
+1	data/words.txt
+
+### du of dot
+cd data/sub; du
+--- out
+2	./inner
+4	.
+
+### du -a and -s together
+du -a -s data
+--- err
+du: -a and -s cannot both be given.
+--- status
+2
+
+### du of a missing path
+du nosuch
+--- err
+du: nosuch: No such path or directory.
+--- status
+1
+
+### du counts a hard link once
+mkdir d; cp data/words.txt d/w; ln d/w d/h; du -a d
+--- out
+1	d/h
+2	d
+
+### du -sk
+du -sk data
+--- out
+9	data
+
+### du of several operands
+du -s data/sub data/sub/inner
+--- out
+4	data/sub
+2	data/sub/inner
+
+### du of a big file
+dd=0; i=0; while [ $i -lt 40 ]; do echo 'a line of text that is long enough to count' >> big; i=$((i+1)); done; du big; du -k big
+--- out
+4	big
+2	big

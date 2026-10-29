@@ -1,0 +1,492 @@
+### expand default tabs
+expand data/tabs.txt
+--- out
+a       b       c
+1       2       3
+
+### expand -t width
+expand -t 4 data/tabs.txt
+--- out
+a   b   c
+1   2   3
+
+### expand -t list
+printf 'a\tb\tc\td\n' | expand -t 3,7
+--- out
+a  b   c d
+
+### expand past the last stop is one space
+printf 'a\tb\tc\td\n' | expand -t 2,4
+--- out
+a b c d
+
+### expand a bad list
+expand -t 4,2 data/tabs.txt
+--- err
+expand: The tab list 4,2 is not valid.
+--- status
+2
+
+### expand -t 0 is not valid
+expand -t 0 data/tabs.txt
+--- err
+expand: The tab list 0 is not valid.
+--- status
+2
+
+### expand backspace moves back
+printf 'ab\b\tc\n' | expand | od -c | head -2
+--- out
+0000000   a   b  \b                               c  \n
+0000014
+
+### expand from standard input
+expand -t 2
+--- in
+	x
+--- out
+  x
+
+### expand a missing file
+expand data/nosuch
+--- err
+expand: data/nosuch: No such path or directory.
+--- status
+1
+
+### paste two files side by side
+paste data/fruits.txt data/csv.txt
+--- out
+apple	x,1,b
+banana	y,2,a
+cherry	z,3,c
+
+### paste -d
+paste -d: data/fruits.txt data/csv.txt
+--- out
+apple:x,1,b
+banana:y,2,a
+cherry:z,3,c
+
+### paste -d with a list cycles
+paste -d ':,' data/fruits.txt data/csv.txt data/dup.txt
+--- out
+apple:x,1,b,a
+banana:y,2,a,a
+cherry:z,3,c,b
+:,c
+:,c
+:,c
+:,d
+
+### paste -s serial
+paste -s data/fruits.txt
+--- out
+apple	banana	cherry
+
+### paste -s -d
+paste -s -d, data/fruits.txt data/csv.txt
+--- out
+apple,banana,cherry
+x,1,b,y,2,a,z,3,c
+
+### paste uneven files
+paste data/fruits.txt data/dup.txt
+--- out
+apple	a
+banana	a
+cherry	b
+	c
+	c
+	c
+	d
+
+### paste standard input twice
+paste - -
+--- in
+a
+b
+c
+d
+e
+--- out
+a	b
+c	d
+e	
+
+### paste -d with escapes
+paste -d '\t\n' data/fruits.txt data/csv.txt
+--- out
+apple	x,1,b
+banana	y,2,a
+cherry	z,3,c
+
+### paste -d '\0' joins without a delimiter
+paste -d '\0' data/fruits.txt data/csv.txt
+--- out
+applex,1,b
+bananay,2,a
+cherryz,3,c
+
+### paste a missing file
+paste data/nosuch data/fruits.txt
+--- out
+	apple
+	banana
+	cherry
+--- err
+paste: data/nosuch: No such path or directory.
+--- status
+1
+
+### tee copies to files
+echo hello | tee t1 t2; cat t1 t2
+--- out
+hello
+hello
+hello
+
+### tee -a appends
+echo one > t; echo two | tee -a t; cat t
+--- out
+two
+one
+two
+
+### tee with no files
+echo just | tee
+--- out
+just
+
+### tee to a missing directory
+echo x | tee nodir/f
+--- out
+x
+--- err
+tee: nodir/f: No such path or directory.
+--- status
+1
+
+### tee into a pipe
+printf 'a\nb\n' | tee t | wc -l; cat t
+--- out
+       2
+a
+b
+
+### tee -i is accepted
+echo i | tee -i t; cat t
+--- out
+i
+i
+
+### tr lower to upper
+tr a-z A-Z < data/fruits.txt
+--- out
+APPLE
+BANANA
+CHERRY
+
+### tr classes
+tr '[:lower:]' '[:upper:]' < data/fruits.txt
+--- out
+APPLE
+BANANA
+CHERRY
+
+### tr -d deletes
+tr -d 'aeiou' < data/fruits.txt
+--- out
+ppl
+bnn
+chrry
+
+### tr -s squeezes
+echo 'aaa  bbb   ccc' | tr -s ' '
+--- out
+aaa bbb ccc
+
+### tr -s with translation
+echo 'aabbcc' | tr -s 'abc' 'xyz'
+--- out
+xyz
+
+### tr -c complements
+echo 'a1b2c3' | tr -c '0-9\n' '#'
+--- out
+#1#2#3
+
+### tr -cd keeps only digits
+echo 'a1b2c3' | tr -cd '0-9'; echo
+--- out
+123
+
+### tr -ds deletes and squeezes
+echo 'aabbccdd' | tr -ds 'a' 'b'
+--- out
+bccdd
+
+### tr short second string repeats its last byte
+echo 'abcdef' | tr 'a-f' 'xy'
+--- out
+xyyyyy
+
+### tr escapes
+printf 'a b\n' | tr ' ' '\n'
+--- out
+a
+b
+
+### tr octal escapes
+echo 'abc' | tr 'b' '\101'
+--- out
+aAc
+
+### tr a repeat in the second string
+echo 'abcdef' | tr 'a-f' '[x*]'
+--- out
+xxxxxx
+
+### tr a counted repeat
+echo 'abcdef' | tr 'a-f' '[x*2]yz'
+--- out
+xxyzzz
+
+### tr a range out of order
+echo x | tr 'z-a' 'A'
+--- err
+tr: The range is not in ascending order.
+--- status
+2
+
+### tr without strings
+tr
+--- err
+tr: The number of strings is not right.
+--- status
+2
+
+### tr -d with two strings
+echo x | tr -d a b
+--- err
+tr: The number of strings is not right.
+--- status
+2
+
+### tr a bad class
+echo x | tr '[:nope:]' 'a'
+--- err
+tr: The class nope is not valid.
+--- status
+2
+
+### tr newlines to spaces
+tr '\n' ' ' < data/fruits.txt; echo
+--- out
+apple banana cherry 
+
+### tr equivalence class
+echo 'banana' | tr '[=a=]' 'o'
+--- out
+bonono
+
+### tr -s on newlines
+printf 'a\n\n\nb\n' | tr -s '\n'
+--- out
+a
+b
+
+### tr a repeat in the first string
+echo x | tr '[a*]' 'b'
+--- err
+tr: A repeat is only valid in the second string.
+--- status
+2
+
+### uniq collapses repeats
+uniq data/dup.txt
+--- out
+a
+b
+c
+d
+
+### uniq -c counts
+uniq -c data/dup.txt
+--- out
+   2 a
+   1 b
+   3 c
+   1 d
+
+### uniq -d only repeated
+uniq -d data/dup.txt
+--- out
+a
+c
+
+### uniq -u only unique
+uniq -u data/dup.txt
+--- out
+b
+d
+
+### uniq -f skips fields
+printf 'x a\ny a\nz b\n' | uniq -f 1
+--- out
+x a
+z b
+
+### uniq -s skips characters
+printf 'xa\nya\nzb\n' | uniq -s 1
+--- out
+xa
+zb
+
+### uniq old -n form
+printf 'x a\ny a\nz b\n' | uniq -1
+--- out
+x a
+z b
+
+### uniq old +n form
+printf 'xa\nya\nzb\n' | uniq +1
+--- out
+xa
+zb
+
+### uniq with an output file
+uniq data/dup.txt out; cat out
+--- out
+a
+b
+c
+d
+
+### uniq a missing file
+uniq data/nosuch
+--- err
+uniq: data/nosuch: No such path or directory.
+--- status
+1
+
+### uniq too many operands
+uniq a b c
+--- err
+uniq: Too many operands.
+--- status
+2
+
+### uniq a last line without a newline
+printf 'a\na' | uniq
+--- out
+a
+
+### uniq -c -d
+uniq -c -d data/dup.txt
+--- out
+   2 a
+   3 c
+
+### uniq of an empty input
+uniq data/empty.txt; echo $?
+--- out
+0
+
+### uniq a bad -f value
+uniq -f x data/dup.txt
+--- err
+uniq: x is not a valid number.
+--- status
+2
+
+### split by lines
+i=1; while [ $i -le 5 ]; do echo $i; i=$((i+1)); done > f; split -l 2 f; ls x*; cat xaa; cat xac
+--- out
+xaa
+xab
+xac
+1
+2
+5
+
+### split default is 1000 lines
+i=1; while [ $i -le 1001 ]; do echo $i; i=$((i+1)); done > f; split f; wc -l xaa xab
+--- out
+    1000 xaa
+       1 xab
+    1001 total
+
+### split -b bytes
+printf 'abcdefgh' > f; split -b 3 f; cat xaa; echo; cat xac; echo
+--- out
+abc
+gh
+
+### split -b with k
+i=0; while [ $i -lt 30 ]; do echo 'a line of text that is long enough to count'; i=$((i+1)); done > f; split -b 1k f; wc -c xaa xab
+--- out
+    1024 xaa
+     296 xab
+    1320 total
+
+### split with a prefix
+split -l 1 data/fruits.txt part; ls part*
+--- out
+partaa
+partab
+partac
+
+### split -a suffix length
+split -a 3 -l 1 data/fruits.txt; ls x*
+--- out
+xaaa
+xaab
+xaac
+
+### split old -n form
+split -2 data/fruits.txt; cat xab
+--- out
+cherry
+
+### split from standard input
+split -l 1 - p; cat paa; cat pab
+--- in
+one
+two
+--- out
+one
+two
+
+### split runs out of suffixes
+i=1; while [ $i -le 30 ]; do echo $i; i=$((i+1)); done > f; split -a 1 -l 1 f; ls x* | wc -l
+--- out
+      26
+--- err
+split: The suffix length is too short for the pieces.
+
+### split a missing file
+split data/nosuch
+--- err
+split: data/nosuch: No such path or directory.
+--- status
+1
+
+### split a bad count
+split -l 0 data/fruits.txt
+--- err
+split: 0 is not a valid number.
+--- status
+2
+
+### split too many operands
+split a b c
+--- err
+split: Too many operands.
+--- status
+2
+
+### split an empty file makes nothing
+split data/empty.txt; ls x* 2>&1 | head -1
+--- out
+ls: x*: No such path or directory.

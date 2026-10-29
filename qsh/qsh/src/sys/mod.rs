@@ -85,6 +85,52 @@ pub struct Stat {
     pub ino: u64,
     /// File system ID.
     pub dev: u64,
+    /// Number of links.
+    pub nlink: u32,
+    /// Storage allocated, in 512-byte blocks.
+    pub blocks: u64,
+}
+
+/// What `statfs` reports about a file system.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FsInfo {
+    /// The file system's name (`/dev/QASP01`, `/QSYS.LIB`).
+    pub name: String,
+    /// Where it is mounted.
+    pub mounted_on: String,
+    /// Block size in bytes.
+    pub block_size: u64,
+    /// Blocks in all.
+    pub blocks: u64,
+    /// Blocks free.
+    pub free: u64,
+    /// Blocks free to the job.
+    pub avail: u64,
+}
+
+/// One process for `ps`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProcInfo {
+    /// Process ID.
+    pub pid: i32,
+    /// Parent process ID.
+    pub ppid: i32,
+    /// Process group ID.
+    pub pgid: i32,
+    /// The user it runs as.
+    pub uid: u32,
+    /// The qualified job name (`123456/USER/NAME`).
+    pub job: String,
+    /// The job's status (`RUN`, `MSGW`, ...).
+    pub status: String,
+    /// The current function (`CMD-QSH`, `PGM-QZSHSH`, ...).
+    pub function: String,
+    /// The device (terminal) or `-`.
+    pub device: String,
+    /// CPU time used.
+    pub cpu: Duration,
+    /// The arguments, the program first.
+    pub args: Vec<String>,
 }
 
 /// What `access` checks.
@@ -290,6 +336,47 @@ pub trait Sys: Send + Sync {
     fn utimes(&self, path: &str, mtime: i64) -> Result<(), SysError> {
         let _ = (path, mtime);
         Err(Errno::ENOSYS.into())
+    }
+    /// The file system holding a path.
+    fn statfs(&self, path: &str) -> Result<FsInfo, SysError> {
+        let _ = path;
+        Err(Errno::ENOSYS.into())
+    }
+    /// The name of a user ID (`ls -l`), if known.
+    fn user_name(&self, uid: u32) -> Option<String> {
+        let _ = uid;
+        None
+    }
+    /// The name of a group ID, if known.
+    fn group_name(&self, gid: u32) -> Option<String> {
+        let _ = gid;
+        None
+    }
+    /// The ID of a user name (`chown`), if known.
+    fn user_id(&self, name: &str) -> Option<u32> {
+        let _ = name;
+        None
+    }
+    /// The ID of a group name (`chgrp`), if known.
+    fn group_id(&self, name: &str) -> Option<u32> {
+        let _ = name;
+        None
+    }
+    /// The processes `ps` may list.
+    fn processes(&self) -> Result<Vec<ProcInfo>, SysError> {
+        Err(Errno::ENOSYS.into())
+    }
+    /// The system's name (`uname -n`).
+    fn nodename(&self) -> String {
+        "QS400".to_string()
+    }
+    /// The machine identifier (`uname -m`).
+    fn machine(&self) -> String {
+        "0000000".to_string()
+    }
+    /// Wait for a duration (`sleep`).
+    fn sleep(&self, d: Duration) {
+        std::thread::sleep(d);
     }
     /// A pipe: (read end, write end).
     fn pipe(&self) -> Result<(Fd, Fd), SysError> {

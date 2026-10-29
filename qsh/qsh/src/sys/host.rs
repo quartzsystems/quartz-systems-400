@@ -100,6 +100,8 @@ impl HostSys {
             mtime: 0,
             ino: 0,
             dev: 0,
+            nlink: 1,
+            blocks: 0,
         })
     }
 
@@ -135,12 +137,20 @@ fn stat_of(m: &fs::Metadata) -> Stat {
         .and_then(|d| i64::try_from(d.as_secs()).ok())
         .unwrap_or(0);
     #[cfg(unix)]
-    let (mode, uid, gid, ino, dev) = {
+    let (mode, uid, gid, ino, dev, nlink, blocks) = {
         use std::os::unix::fs::MetadataExt;
-        (m.mode() & 0o7777, m.uid(), m.gid(), m.ino(), m.dev())
+        (
+            m.mode() & 0o7777,
+            m.uid(),
+            m.gid(),
+            m.ino(),
+            m.dev(),
+            u32::try_from(m.nlink()).unwrap_or(u32::MAX),
+            m.blocks(),
+        )
     };
     #[cfg(not(unix))]
-    let (mode, uid, gid, ino, dev) = {
+    let (mode, uid, gid, ino, dev, nlink, blocks) = {
         let base = if m.permissions().readonly() {
             0o555
         } else {
@@ -156,6 +166,8 @@ fn stat_of(m: &fs::Metadata) -> Stat {
             0,
             0,
             0,
+            1,
+            m.len().div_ceil(512),
         )
     };
     Stat {
@@ -167,6 +179,8 @@ fn stat_of(m: &fs::Metadata) -> Stat {
         mtime,
         ino,
         dev,
+        nlink,
+        blocks,
     }
 }
 
@@ -343,6 +357,64 @@ impl Sys for HostSys {
         Ok(fs::read_link(self.host_path(path))?
             .to_string_lossy()
             .into_owned())
+    }
+
+    fn symlink(&self, target: &str, path: &str) -> Result<(), SysError> {
+        let hp = self.host_path(path);
+        #[cfg(unix)]
+        {
+            Ok(std::os::unix::fs::symlink(target, hp)?)
+        }
+        #[cfg(windows)]
+        {
+            let abs = if target.starts_with('/') {
+                self.host_path(target)
+            } else {
+                hp.parent().map_or_else(PathBuf::new, Path::to_path_buf).join(target)
+            };
+            if abs.is_dir() {
+                Ok(std::os::windows::fs::symlink_dir(target, hp)?)
+            } else {
+                Ok(std::os::windows::fs::symlink_file(target, hp)?)
+            }
+        }
+        #[cfg(not(any(unix, windows)))]
+        {
+            let _ = (target, hp);
+            Err(Errno::ENOSYS.into())
+        }
+    }
+
+    fn chmod(&self, path: &str, mode: u32) -> Result<(), SysError> {
+        let hp = self.host_path(path);
+        #[cfg(unix)]
+        let perm = std::os::unix::fs::PermissionsExt::from_mode(mode & 0o7777);
+        #[cfg(not(unix))]
+        let perm = {
+            let mut p = fs::metadata(&hp)?.permissions();
+            p.set_readonly(mode & 0o200 == 0);
+            p
+        };
+        Ok(fs::set_permissions(hp, perm)?)
+    }
+
+    fn chown(&self, path: &str, uid: Option<u32>, gid: Option<u32>) -> Result<(), SysError> {
+        let hp = self.host_path(path);
+        #[cfg(unix)]
+        {
+            Ok(std::os::unix::fs::chown(hp, uid, gid)?)
+        }
+        #[cfg(not(unix))]
+        {
+            let _ = (hp, uid, gid);
+            Err(Errno::ENOSYS.into())
+        }
+    }
+
+    fn utimes(&self, path: &str, mtime: i64) -> Result<(), SysError> {
+        let f = File::options().write(true).open(self.host_path(path))?;
+        let t = UNIX_EPOCH + Duration::from_secs(u64::try_from(mtime).unwrap_or(0));
+        Ok(f.set_modified(t)?)
     }
 
     fn spawn(&self, req: SpawnRequest) -> Result<Box<dyn Child>, SysError> {

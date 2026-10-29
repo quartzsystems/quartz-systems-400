@@ -1,0 +1,136 @@
+### cat one file
+cat data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### cat several files in order
+cat data/fruits.txt data/dup.txt
+--- out
+apple
+banana
+cherry
+a
+a
+b
+c
+c
+c
+d
+
+### cat standard input
+cat
+--- in
+from stdin
+--- out
+from stdin
+
+### cat dash is standard input between files
+cat data/nonl.txt - data/empty.txt
+--- in
+middle
+--- out
+no newlinemiddle
+
+### cat a file without a final newline
+cat data/nonl.txt; echo '|'
+--- out
+no newline|
+
+### cat an empty file
+cat data/empty.txt; echo "[$?]"
+--- out
+[0]
+
+### cat a missing file goes on with the rest
+cat data/nosuch data/fruits.txt
+--- out
+apple
+banana
+cherry
+--- err
+cat: data/nosuch: No such path or directory.
+--- status
+1
+
+### cat a directory is an error
+cat data
+--- err
+cat: data: The target is a directory.
+--- status
+1
+
+### cat -u is accepted
+cat -u data/fruits.txt
+--- out
+apple
+banana
+cherry
+
+### cat an unknown option
+cat -z data/fruits.txt
+--- err
+cat: Option -z is not valid.
+--- status
+2
+
+### cat through a symbolic link
+cat data/link
+--- out
+apple
+banana
+cherry
+
+### cat a member of a QSYS.LIB file
+cat /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR
+--- out
+PGM
+ENDPGM
+
+### cat a member, names in any case
+cat /qsys.lib/qgpl.lib/qclsrc.file/hello.mbr
+--- out
+PGM
+ENDPGM
+
+### cat a QSYS.LIB program is refused
+cat /QSYS.LIB/QGPL.LIB/HELLO.PGM
+--- err
+cat: /QSYS.LIB/QGPL.LIB/HELLO.PGM: The operation is not supported.
+--- status
+1
+
+### cat into a pipe that closes
+cat data/words.txt data/words.txt | head -1
+--- out
+the quick brown fox
+
+### cat with absolute path
+cat /home/QSHUSER/data/sub/deep.txt
+--- out
+deep
+
+### cat of a file in /QOpenSys
+cat /QOpenSys/etc/profile
+--- out
+# profile
+
+### cat names are case-sensitive under /QOpenSys
+cat /qopensys/etc/PROFILE
+--- err
+cat: /qopensys/etc/PROFILE: No such path or directory.
+--- status
+1
+
+### cat of a hidden file
+cat data/.hidden
+--- out
+hidden
+
+### cat with -- ends options
+cat -- data/fruits.txt
+--- out
+apple
+banana
+cherry

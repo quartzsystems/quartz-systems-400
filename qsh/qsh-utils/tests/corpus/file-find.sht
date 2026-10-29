@@ -1,0 +1,379 @@
+### find prints every path
+find data
+--- out
+data
+data/.hidden
+data/csv.txt
+data/dup.txt
+data/empty.txt
+data/fruits.txt
+data/link
+data/mixed.txt
+data/nonl.txt
+data/nums.txt
+data/old.txt
+data/people.txt
+data/sub
+data/sub/deep.txt
+data/sub/inner
+data/sub/inner/leaf
+data/tabs.txt
+data/words.txt
+
+### find of dot
+cd data/sub; find .
+--- out
+.
+./deep.txt
+./inner
+./inner/leaf
+
+### find -name
+find data -name '*.txt'
+--- out
+data/csv.txt
+data/dup.txt
+data/empty.txt
+data/fruits.txt
+data/mixed.txt
+data/nonl.txt
+data/nums.txt
+data/old.txt
+data/people.txt
+data/sub/deep.txt
+data/tabs.txt
+data/words.txt
+
+### find -name matches the last component only
+find data -name 'sub*'
+--- out
+data/sub
+
+### find -name with a bracket
+find data -name '[cd]*'
+--- out
+data
+data/csv.txt
+data/dup.txt
+data/sub/deep.txt
+
+### find -type d
+find data -type d
+--- out
+data
+data/sub
+data/sub/inner
+
+### find -type f
+find data/sub -type f
+--- out
+data/sub/deep.txt
+data/sub/inner/leaf
+
+### find -type l
+find data -type l
+--- out
+data/link
+
+### find -type with a bad letter
+find data -type q
+--- err
+find: The type q is not valid.
+--- status
+2
+
+### find ! -name
+find data/sub ! -name '*.txt'
+--- out
+data/sub
+data/sub/inner
+data/sub/inner/leaf
+
+### find -o
+find data -name 'csv*' -o -name 'dup*'
+--- out
+data/csv.txt
+data/dup.txt
+
+### find parentheses
+find data \( -name 'csv*' -o -name 'dup*' \) -type f
+--- out
+data/csv.txt
+data/dup.txt
+
+### find -a explicit
+find data -type f -a -name 'n*'
+--- out
+data/nonl.txt
+data/nums.txt
+
+### find -path
+find data -path '*/inner/*'
+--- out
+data/sub/inner/leaf
+
+### find -prune
+find data -name sub -prune -o -print
+--- out
+data
+data/.hidden
+data/csv.txt
+data/dup.txt
+data/empty.txt
+data/fruits.txt
+data/link
+data/mixed.txt
+data/nonl.txt
+data/nums.txt
+data/old.txt
+data/people.txt
+data/tabs.txt
+data/words.txt
+
+### find -depth lists contents before the directory
+find data/sub -depth
+--- out
+data/sub/deep.txt
+data/sub/inner/leaf
+data/sub/inner
+data/sub
+
+### find -size in blocks
+find data -type f -size 1
+--- out
+data/.hidden
+data/csv.txt
+data/dup.txt
+data/fruits.txt
+data/mixed.txt
+data/nonl.txt
+data/nums.txt
+data/old.txt
+data/people.txt
+data/sub/deep.txt
+data/sub/inner/leaf
+data/tabs.txt
+data/words.txt
+
+### find -size in bytes
+find data -type f -size -7c
+--- out
+data/empty.txt
+data/old.txt
+data/sub/deep.txt
+data/sub/inner/leaf
+
+### find -size more than
+find data -type f -size +20c
+--- out
+data/mixed.txt
+data/people.txt
+data/words.txt
+
+### find -mtime old files
+find data -mtime +365
+--- out
+data/link
+data/old.txt
+
+### find -mtime recent files
+find data -type f -mtime -200 -name 'f*'
+--- out
+data/fruits.txt
+
+### find -newer
+find data -newer data/old.txt -name 'w*'
+--- out
+data/words.txt
+
+### find -newer a missing file
+find data -newer nosuch
+--- err
+find: nosuch: No such path or directory.
+--- status
+2
+
+### find -user
+find data -user QSYS
+--- out
+data/old.txt
+
+### find -user by number
+find data -user 100 -name 'c*'
+--- out
+data/csv.txt
+
+### find -group
+find data -group QSHGRP
+--- out
+data/old.txt
+
+### find -nouser
+chown 777 data/csv.txt; find data -nouser
+--- out
+data/csv.txt
+
+### find -perm exact
+chmod 600 data/csv.txt; find data -perm 600
+--- out
+data/csv.txt
+
+### find -perm all bits
+find . -perm -755
+--- out
+.
+./bin
+./bin/tool
+./data
+./data/link
+./data/sub
+./data/sub/inner
+./raw
+
+### find -links
+find data/sub -links 3
+--- out
+data/sub
+
+### find -exec with semicolon
+find data/sub -name '*.txt' -exec cat {} \;
+--- out
+deep
+
+### find -exec status filters
+find data -name 'f*' -exec grep -q an {} \; -print
+--- out
+data/fruits.txt
+
+### find -exec plus batches
+find data/sub -type f -exec echo files: {} +
+--- out
+files: data/sub/deep.txt data/sub/inner/leaf
+
+### find -exec a missing command
+find data/sub -name deep.txt -exec nosuchcmd {} \;
+--- err
+find: nosuchcmd: not found.
+--- status
+1
+
+### find -ok declines
+find data/sub -name deep.txt -ok rm {} \;; ls data/sub
+--- in
+n
+--- out
+deep.txt
+inner
+--- err -n
+rm data/sub/deep.txt ? 
+
+### find -ok accepts
+find data/sub -name deep.txt -ok rm {} \;; ls data/sub
+--- in
+y
+--- out
+inner
+--- err -n
+rm data/sub/deep.txt ? 
+
+### find -print explicit suppresses the default
+find data/sub -name '*.txt' -print -print
+--- out
+data/sub/deep.txt
+data/sub/deep.txt
+
+### find a missing path
+find nosuch
+--- err
+find: nosuch: No such path or directory.
+--- status
+1
+
+### find a missing and a present path
+find nosuch data/sub/inner
+--- out
+data/sub/inner
+data/sub/inner/leaf
+--- err
+find: nosuch: No such path or directory.
+--- status
+1
+
+### find without a path
+find -name x
+--- err
+find: A path is needed.
+--- status
+2
+
+### find an unknown primary
+find data -bogus
+--- err
+find: The expression -bogus is not known.
+--- status
+2
+
+### find a primary without its argument
+find data -name
+--- err
+find: -name needs an argument.
+--- status
+2
+
+### find an unmatched parenthesis
+find data \( -name x
+--- err
+find: A ( has no matching ).
+--- status
+2
+
+### find -true and -false
+find data/sub -false -o -true -name 'i*'
+--- out
+data/sub/inner
+
+### find under QSYS.LIB
+find /QSYS.LIB/QGPL.LIB
+--- out
+/QSYS.LIB/QGPL.LIB
+/QSYS.LIB/QGPL.LIB/CFG.DTAARA
+/QSYS.LIB/QGPL.LIB/HELLO.PGM
+/QSYS.LIB/QGPL.LIB/QCLSRC.FILE
+/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR
+
+### find -type f under QSYS.LIB includes objects
+find /QSYS.LIB/QGPL.LIB -type f
+--- out
+/QSYS.LIB/QGPL.LIB/CFG.DTAARA
+/QSYS.LIB/QGPL.LIB/HELLO.PGM
+/QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR
+
+### find -name is case-sensitive
+find data -name 'FRUITS*'
+
+### find -L follows links
+find -L data -type f -name link
+--- out
+data/link
+
+### find without -L a link is a link
+find data -type f -name link
+
+### find -xdev is accepted
+find data/sub -xdev -type d
+--- out
+data/sub
+data/sub/inner
+
+### find several paths
+find data/sub/inner data/sub/deep.txt
+--- out
+data/sub/inner
+data/sub/inner/leaf
+data/sub/deep.txt
+
+### find with a trailing slash on the path
+find data/sub/inner/
+--- out
+data/sub/inner/
+data/sub/inner/leaf

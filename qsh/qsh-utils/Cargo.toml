@@ -1,0 +1,16 @@
+[package]
+name = "qsh-utils"
+description = "QS/400 Qshell utilities: files, text, shell and process, over the Sys seam"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+qsh = { path = "../qsh", version = "0.1.0" }
+release = { path = "../../lic/release", version = "0.1.0" }
+ccsid = { path = "../../storage/ccsid", version = "0.1.0" }
+thiserror.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,279 @@
+### cut -c a range
+cut -c 2-4 data/fruits.txt
+--- out
+ppl
+ana
+her
+
+### cut -c a list
+cut -c 1,3 data/fruits.txt
+--- out
+ap
+bn
+ce
+
+### cut -c open ranges
+cut -c -2 data/fruits.txt; cut -c 4- data/fruits.txt
+--- out
+ap
+ba
+ch
+le
+ana
+rry
+
+### cut -b bytes
+cut -b 1-3 data/csv.txt
+--- out
+x,1
+y,2
+z,3
+
+### cut -f with -d
+cut -d, -f2 data/csv.txt
+--- out
+1
+2
+3
+
+### cut -f several fields
+cut -d, -f1,3 data/csv.txt
+--- out
+x,b
+y,a
+z,c
+
+### cut -f a range of fields
+cut -d, -f2- data/csv.txt
+--- out
+1,b
+2,a
+3,c
+
+### cut -f with tabs by default
+cut -f2 data/tabs.txt
+--- out
+b
+2
+
+### cut -f lines without the delimiter pass through
+printf 'a,b\nnone\n' | cut -d, -f2
+--- out
+b
+none
+
+### cut -s drops lines without the delimiter
+printf 'a,b\nnone\n' | cut -s -d, -f2
+--- out
+b
+
+### cut -f past the last field
+cut -d, -f5 data/csv.txt
+--- out
+
+
+
+
+### cut -f keeps empty fields
+echo 'a,,c' | cut -d, -f2,3
+--- out
+,c
+
+### cut without a list
+cut data/fruits.txt
+--- err
+cut: One of -b, -c or -f is needed.
+--- status
+2
+
+### cut with two lists
+cut -c1 -f1 data/fruits.txt
+--- err
+cut: One of -b, -c or -f is needed.
+--- status
+2
+
+### cut a bad list
+cut -c 0 data/fruits.txt
+--- err
+cut: The list 0 is not valid.
+--- status
+2
+
+### cut a decreasing range
+cut -c 3-1 data/fruits.txt
+--- err
+cut: The list 3-1 is not valid.
+--- status
+2
+
+### cut a long delimiter
+cut -d ab -f1 data/fruits.txt
+--- err
+cut: The delimiter must be one character.
+--- status
+2
+
+### cut a missing file
+cut -c1 data/nosuch
+--- err
+cut: data/nosuch: No such path or directory.
+--- status
+1
+
+### cut from standard input
+cut -c 1
+--- in
+xy
+zw
+--- out
+x
+z
+
+### cut -c characters with UTF-8
+printf 'héllo\n' | cut -c 2 | od -An -tx1
+--- out
+ c3 a9 0a
+
+### cut -b on UTF-8 takes a byte
+printf 'héllo\n' | cut -b 2 | od -An -tx1
+--- out
+ c3 0a
+
+### cut overlapping ranges
+cut -c 1-3,2-4 data/fruits.txt
+--- out
+appl
+bana
+cher
+
+### cut -f with a space delimiter
+cut -d ' ' -f 2 data/people.txt
+--- out
+25
+30
+25
+19
+
+### cut a list with spaces
+cut -c '1 3' data/fruits.txt
+--- out
+ap
+bn
+ce
+
+### cut of a file without a final newline
+cut -c 1-2 data/nonl.txt
+--- out
+no
+
+### wc all counts
+wc data/words.txt
+--- out
+       3       9      44 data/words.txt
+
+### wc -l
+wc -l data/fruits.txt
+--- out
+       3 data/fruits.txt
+
+### wc -w
+wc -w data/words.txt
+--- out
+       9 data/words.txt
+
+### wc -c
+wc -c data/fruits.txt
+--- out
+      20 data/fruits.txt
+
+### wc -m counts characters
+printf 'hé\n' | wc -m
+--- out
+       3
+
+### wc -c counts bytes
+printf 'hé\n' | wc -c
+--- out
+       4
+
+### wc -lw
+wc -lw data/words.txt
+--- out
+       3       9 data/words.txt
+
+### wc several files with a total
+wc data/fruits.txt data/csv.txt
+--- out
+       3       3      20 data/fruits.txt
+       3       3      18 data/csv.txt
+       6       6      38 total
+
+### wc from standard input has no name
+wc
+--- in
+one two
+three
+--- out
+       2       3      14
+
+### wc dash names standard input
+echo a b | wc - data/fruits.txt
+--- out
+       1       2       4 -
+       3       3      20 data/fruits.txt
+       4       5      24 total
+
+### wc of a file without a newline
+wc data/nonl.txt
+--- out
+       0       2      10 data/nonl.txt
+
+### wc of an empty file
+wc data/empty.txt
+--- out
+       0       0       0 data/empty.txt
+
+### wc a missing file
+wc data/nosuch data/fruits.txt
+--- out
+       3       3      20 data/fruits.txt
+       3       3      20 total
+--- err
+wc: data/nosuch: No such path or directory.
+--- status
+1
+
+### wc -cm last wins
+printf 'hé\n' | wc -c -m
+--- out
+       3
+
+### wc an unknown option
+wc -x
+--- err
+wc: Option -x is not valid.
+--- status
+2
+
+### wc counts words split by tabs
+wc -w data/tabs.txt
+--- out
+       6 data/tabs.txt
+
+### wc -l of a QSYS.LIB member
+wc -l /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR
+--- out
+       2 /QSYS.LIB/QGPL.LIB/QCLSRC.FILE/HELLO.MBR
+
+### wc of only blanks
+printf '   \n\t\n' | wc
+--- out
+       2       0       6
+
+### wc of a directory
+wc data/sub
+--- err
+wc: data/sub: The target is a directory.
+--- status
+1
