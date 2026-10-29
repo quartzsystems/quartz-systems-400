@@ -15,10 +15,12 @@
 //! 56  TLVs: tag u16, len u32, data
 //! ```
 //!
-//! IPL history records are stored as TLVs with a reserved tag.
+//! IPL history records, activity log entries and key slots are stored as
+//! TLVs with reserved tags.
 
 pub mod header;
 pub mod history;
+pub mod keyslot;
 pub mod pal;
 pub mod tlv;
 
@@ -27,8 +29,9 @@ use crc::{CRC_32_ISCSI, Crc};
 use crate::error::LicError;
 use header::Header;
 use history::IplHistory;
+use keyslot::{KeyPurpose, KeySlot};
 use pal::{PAL_MAX, PalEntry};
-use tlv::{TAG_HISTORY, TAG_PAL, TAG_USER_MIN, Tlv};
+use tlv::{TAG_HISTORY, TAG_KEYSLOT, TAG_PAL, TAG_USER_MIN, Tlv};
 
 /// Record magic.
 pub const MAGIC: [u8; 8] = *b"QS400LIC";
@@ -56,6 +59,8 @@ pub struct Record {
     pub history: Vec<IplHistory>,
     /// The product activity log, oldest first, at most `PAL_MAX`.
     pub pal: Vec<PalEntry>,
+    /// Key slots, at most one per purpose.
+    pub keys: Vec<KeySlot>,
     /// Everything else, by tag. Tags below `TAG_USER_MIN` are reserved.
     pub tlvs: Vec<Tlv>,
 }
@@ -68,8 +73,29 @@ impl Record {
             header: Header::new(install_time),
             history: Vec::new(),
             pal: Vec::new(),
+            keys: Vec::new(),
             tlvs: Vec::new(),
         }
+    }
+
+    /// The key slot for `purpose`, if one exists.
+    pub fn key_slot(&self, purpose: KeyPurpose) -> Option<&KeySlot> {
+        self.keys.iter().find(|k| k.purpose == purpose)
+    }
+
+    /// Replace or add the slot for `slot.purpose`.
+    pub fn set_key_slot(&mut self, slot: KeySlot) {
+        match self.keys.iter_mut().find(|k| k.purpose == slot.purpose) {
+            Some(k) => *k = slot,
+            None => self.keys.push(slot),
+        }
+    }
+
+    /// Remove the slot for `purpose`. Returns whether one existed.
+    pub fn remove_key_slot(&mut self, purpose: KeyPurpose) -> bool {
+        let before = self.keys.len();
+        self.keys.retain(|k| k.purpose != purpose);
+        before != self.keys.len()
     }
 
     /// Append an activity log entry, dropping the oldest beyond `PAL_MAX`.
@@ -127,7 +153,7 @@ impl Record {
         put_u64(&mut out, self.sequence);
         self.header.encode(&mut out);
 
-        let count = self.history.len() + self.pal.len() + self.tlvs.len();
+        let count = self.history.len() + self.pal.len() + self.keys.len() + self.tlvs.len();
         put_u32(
             &mut out,
             u32::try_from(count).map_err(|_| LicError::TooLarge {
@@ -146,6 +172,13 @@ impl Record {
             Tlv {
                 tag: TAG_PAL,
                 data: e.encode(),
+            }
+            .encode(&mut out);
+        }
+        for k in &self.keys {
+            Tlv {
+                tag: TAG_KEYSLOT,
+                data: k.encode(),
             }
             .encode(&mut out);
         }
@@ -200,6 +233,7 @@ impl Record {
             header,
             history: Vec::new(),
             pal: Vec::new(),
+            keys: Vec::new(),
             tlvs: Vec::new(),
         };
         let mut r = Reader::new(&bytes[FIXED_LEN..len]);
@@ -209,6 +243,12 @@ impl Record {
                 rec.history.push(IplHistory::decode(&t.data)?);
             } else if t.tag == TAG_PAL {
                 rec.pal.push(PalEntry::decode(&t.data)?);
+            } else if t.tag == TAG_KEYSLOT {
+                let k = KeySlot::decode(&t.data)?;
+                if rec.key_slot(k.purpose).is_some() {
+                    return Err(LicError::Malformed("duplicate key slot"));
+                }
+                rec.keys.push(k);
             } else {
                 rec.tlvs.push(t);
             }
@@ -355,6 +395,62 @@ mod tests {
             r.set_tlv(2, vec![]),
             Err(LicError::ReservedTag(2))
         ));
+    }
+
+    #[test]
+    fn key_slots_round_trip_and_replace() {
+        let mut r = sample();
+        assert!(r.key_slot(KeyPurpose::CertStash).is_none());
+        let slot = KeySlot {
+            purpose: KeyPurpose::CertStash,
+            generation: 1,
+            created: 99,
+            key: [7u8; 32],
+        };
+        r.set_key_slot(slot.clone());
+        let back = Record::decode(&r.encode().unwrap()).unwrap();
+        assert_eq!(back, r);
+        assert_eq!(back.key_slot(KeyPurpose::CertStash), Some(&slot));
+        // The key never shows in debug output.
+        assert!(!format!("{slot:?}").contains("7, 7"));
+
+        let mut next = slot.clone();
+        next.generation = 2;
+        next.key = [8u8; 32];
+        r.set_key_slot(next);
+        assert_eq!(r.keys.len(), 1);
+        assert_eq!(r.key_slot(KeyPurpose::CertStash).unwrap().generation, 2);
+        assert!(r.remove_key_slot(KeyPurpose::CertStash));
+        assert!(!r.remove_key_slot(KeyPurpose::CertStash));
+    }
+
+    #[test]
+    fn bad_key_slots_are_malformed() {
+        let mut r = Record::new(0);
+        r.set_key_slot(KeySlot {
+            purpose: KeyPurpose::CertStash,
+            generation: 1,
+            created: 0,
+            key: [1u8; 32],
+        });
+        let good = r.encode().unwrap();
+        // Slot data starts after the fixed part and the 6-byte TLV head.
+        for (at, what) in [(FIXED_LEN + 6, "version"), (FIXED_LEN + 7, "purpose")] {
+            let mut bytes = good.clone();
+            bytes[at] = 0xEE;
+            let crc = CRC32C.checksum(&bytes[CRC_START..]);
+            bytes[CRC_OFFSET..CRC_OFFSET + 4].copy_from_slice(&crc.to_le_bytes());
+            assert!(Record::decode(&bytes).is_err(), "{what}");
+        }
+        // Two slots for one purpose.
+        r.keys.push(r.keys[0].clone());
+        assert!(Record::decode(&r.encode().unwrap()).is_err());
+    }
+
+    #[test]
+    fn reserved_key_slot_tag_is_refused_as_a_user_tlv() {
+        let mut r = Record::new(0);
+        assert!(r.set_tlv(tlv::TAG_KEYSLOT, vec![]).is_err());
     }
 
     #[test]

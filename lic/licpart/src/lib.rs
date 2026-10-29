@@ -10,8 +10,9 @@
 //! already stale; a read takes the newest copy whose CRC verifies.
 //!
 //! What lives here is what the IPL needs before the object store is
-//! open: slots, keylock, history, and the IPL subset of the system
-//! values. Everything else is in the store.
+//! open: slots, keylock, history, the IPL subset of the system values,
+//! and the key slots that seal secrets kept elsewhere. Everything else
+//! is in the store.
 
 #![forbid(unsafe_code)]
 
@@ -23,6 +24,7 @@ mod part;
 pub use error::LicError;
 pub use format::header::{Header, IplMode, IplType, Slot};
 pub use format::history::{IplHistory, Outcome};
+pub use format::keyslot::{KEY_BYTES, KEYSLOT_VERSION, KeyPurpose, KeySlot};
 pub use format::pal::{PAL_MAX, PalEntry, Severity};
 pub use format::tlv::{TAG_USER_MIN, Tlv};
 pub use format::{FORMAT_VERSION, HISTORY_MAX, Record, SLOT_BYTES};

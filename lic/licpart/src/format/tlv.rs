@@ -11,6 +11,8 @@ use crate::format::{Reader, put_u16, put_u32};
 pub(crate) const TAG_HISTORY: u16 = 0x0002;
 /// Reserved: one product activity log entry.
 pub(crate) const TAG_PAL: u16 = 0x0003;
+/// Reserved: one key slot.
+pub(crate) const TAG_KEYSLOT: u16 = 0x0004;
 /// First tag available to other crates. Lower tags are reserved here.
 pub const TAG_USER_MIN: u16 = 0x0100;
 

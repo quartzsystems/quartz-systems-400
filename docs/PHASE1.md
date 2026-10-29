@@ -152,8 +152,11 @@ Header: `ipl_in_progress u8`, `last_ipl_type u8` (A B D), `last_ipl_mode u8`
 none, 1 normal, 2 manual), 2 reserved, `ipl_count u32`, `abnormal_count
 u32`, `install_time u64`. TLV tags below `0x0100` are reserved; `0x0002`
 holds one IPL history record (28 bytes: start, end, type, mode, slot,
-final SRC as 8 ASCII bytes, outcome), at most 16 kept. `0x0100` holds the
-system value overrides.
+final SRC as 8 ASCII bytes, outcome), at most 16 kept. `0x0004` holds one
+key slot (Phase 10: `slot_version u8` = 1, `purpose u8` (1 = the
+certificate stores' password stash), `generation u32`, `created u64`,
+`key` 32 bytes), at most one per purpose; see docs/CERTS.md. `0x0100`
+holds the system value overrides.
 
 First boot: both copies invalid, `init` writes the defaults with
 `install_time`. A partition with one valid copy is never reinitialized.

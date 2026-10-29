@@ -71,6 +71,8 @@ members = [
     # Network: the kernel interfaces, TCP/IP configuration, sockets, servers.
     "net/netlink",
     "net/hostsvr",
+    "net/certs",
+    "net/tls",
     # QSH: the Qshell command language and its utilities.
     "qsh/qsh",
 ]
@@ -120,6 +122,12 @@ opt-level = 3
 [profile.test.package.argon2]
 opt-level = 3
 [profile.test.package.blake2]
+opt-level = 3
+
+# RSA key generation and TLS handshakes in the certificate and TLS tests.
+[profile.dev.package.graviola]
+opt-level = 3
+[profile.test.package.graviola]
 opt-level = 3
 
 # Release profile is shared by the image binaries and the host tools.

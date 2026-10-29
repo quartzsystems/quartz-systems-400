@@ -273,3 +273,52 @@ maximum one program, change not allowed. 146 points in all
 - FTP `MLST`/`MLSD`/`SIZE`/`MDTM`: not implemented on V7R5M0.
 - PING of `::1` fails on pub400 (`TCP3202 Unknown host`): no IPv6
   address is configured beyond the loopback interface.
+
+## Certificates
+
+1. **Application ID names.** The shipped list in `certs::apps::SHIPPED`
+   is from IBM's documentation, not read from a system: DCM is web-only
+   and neither oracle exposes its admin port. Least certain:
+   `QIBM_QTMS_SMTP_CLIENT`, `QIBM_QRW_SERVER_DDM_DRDA` and
+   `QIBM_QRW_CLIENT_DDM_DRDA` (IBM also writes `QIBM_QRW_SERVER_DDM`),
+   `QIBM_QSO_LPD_SERVER`, `QIBM_QTOC_NTP_CLIENT`, `QIBM_QTOB_VPN_IKE`.
+   Settle with `QSYS2.CERTIFICATE_USAGE_INFO` (7.4 and later) over JDBC
+   on pub400, or `QsyListAppInfo`-style listing from the registration
+   facility (`WRKREGINF` shows the exit points, not the IDs).
+2. **Host server IDs.** `QIBM_OS400_QZBS_SVR_*` for central, database,
+   data queue, network print, remote command, sign-on and file. IBM i
+   7.5 may add `QIBM_OS400_QZBS_SVR_DDM`-style IDs; check the same view.
+3. **The local CA's paths.** The CA store is
+   `/QIBM/UserData/ICSS/Cert/CertAuth/DEFAULT.KDB` and its exported
+   certificate `DEFAULT.TXT` beside it. The primary oracle shows the
+   `CertAuth` directory but not its contents to a QSTEST user; confirm
+   the file names with `QSYS2.IFS_OBJECT_STATISTICS` as a user with
+   `*ALLOBJ`, or leave as is.
+4. **Stash file extension.** A store's password is stashed beside it as
+   `.RDB`, the name DCM uses for `DEFAULT.RDB`. Real `.RDB` files are
+   IBM's request database, not the stash (IBM's stash is `.STH` on
+   other platforms and internal on IBM i). The name is only ours to
+   pick; nothing reads it but QS/400.
+5. **Default store password expiry and rules.** DCM enforces a password
+   expiration interval on stores; QS/400 does not expire them. Settle
+   when the web admin UI is built.
+6. **`gsk_environment_close` with sockets open.** Here
+   `GSK_NORMAL_ENVIRONMENT_CLOSE` frees the handle at once and lets open
+   sockets run on; `GSK_DELAYED_ENVIRONMENT_CLOSE` keeps the handle until
+   the last socket closes and answers `gsk_secure_soc_open` with
+   `GSK_PENDING_CLOSE_ERROR` (the header lists 109 among the `_open`
+   codes). Settle with a small C or RPG program on pub400 calling
+   `gsk_secure_soc_open` after each kind of close.
+7. **`GSK_*_CIPHER_SPECS_EX` with unknown names.** IBM documents a
+   comma-separated list of IANA names. QS/400 drops names it does not
+   know or cannot negotiate and keeps the rest; IBM may answer
+   `GSK_ATTRIBUTE_INVALID_LENGTH` or ignore the whole value. Probe with
+   `gsk_attribute_set_buffer` on pub400.
+8. **Client authentication from both the program and the application.**
+   When a program names `GSK_SERVER_SESSION` but its application ID is
+   set to require client certificates, QS/400 requires them (the stricter
+   wins). IBM may let the application ID setting override the program's
+   either way.
+9. **`GSK_CONNECT_CIPHER_SPEC` for TLS 1.3 and ECDHE suites.** The old
+   two-digit form cannot express `0x13nn` or `0xC0nn` codes; QS/400
+   returns the low byte. IBM may return blanks or an error.

@@ -1,0 +1,21 @@
+[package]
+name = "tls"
+description = "QS/400 TLS engine over rustls and graviola, with the GSKit and SSL_ API semantics"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+certs = { path = "../../net/certs", version = "0.1.0" }
+rustls = { version = "0.23.46", default-features = false, features = ["std", "tls12"] }
+rustls-graviola = "0.4.0"
+webpki = { package = "rustls-webpki", version = "0.103.16", default-features = false, features = ["std"] }
+x509-cert = { version = "0.3.0", features = ["pem"] }
+sha2.workspace = true
+sha1 = "0.11.0"
+pem-rfc7468 = { version = "1.0.0", features = ["alloc"] }
+
+[lints]
+workspace = true
