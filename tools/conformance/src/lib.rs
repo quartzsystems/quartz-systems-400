@@ -15,6 +15,7 @@ pub mod cmdkit;
 pub mod db;
 mod dst;
 mod error;
+mod ifs;
 mod load;
 mod phase2;
 mod phase5;

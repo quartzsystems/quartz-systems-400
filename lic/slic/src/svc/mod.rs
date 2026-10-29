@@ -61,6 +61,7 @@ usrspc rd LIB/NAME OFFSET [LEN] | wr LIB/NAME OFFSET TEXT
 rclstg [*CHECK]      reclaim storage (*ALL default), or verify only
 chkstg               checksum sweep of every allocated page
 txn stats            transaction, WAL and cache counters
+ifs                  the IFS mount, its capacity and free space
 ";
 
 /// Help for the database commands, after the general list.
@@ -142,6 +143,7 @@ pub fn reply(system: &mut System, line: &str) -> String {
             system.hw.refresh_ports(std::path::Path::new("/sys"));
             format!("{}\n{}", system.hw.dump(), crate::net::dump(&system.links))
         }
+        ("ifs", _) => crate::ipl::ifs::report(),
         ("lic", _) => lic_dump(system),
         ("sysval", rest) => sysval(system, rest),
         ("mode", [m]) => mode(system, m),

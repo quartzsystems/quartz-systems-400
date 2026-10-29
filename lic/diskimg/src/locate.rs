@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
 use crate::Error;
-use crate::plan::{ASP1_TYPE_GUID, LIC_TYPE_GUID};
+use crate::plan::{ASP1_TYPE_GUID, IFS_TYPE_GUID, LIC_TYPE_GUID};
 
 const SYS_BLOCK: &str = "/sys/class/block";
 
@@ -27,7 +27,7 @@ pub struct DiskInfo {
     pub bytes: u64,
     /// Model string from sysfs, or empty.
     pub model: String,
-    /// Whether a QS/400 LIC or ASP partition is already on it.
+    /// Whether a QS/400 LIC, IFS or ASP partition is already on it.
     pub has_qs400: bool,
 }
 
@@ -104,7 +104,7 @@ pub fn whole_disks() -> Result<Vec<DiskInfo>, Error> {
         let dev = Path::new("/dev").join(&name);
         let has_qs400 = types_on(&dev).is_ok_and(|t| {
             t.iter()
-                .any(|g| *g == LIC_TYPE_GUID || *g == ASP1_TYPE_GUID)
+                .any(|g| *g == LIC_TYPE_GUID || *g == ASP1_TYPE_GUID || *g == IFS_TYPE_GUID)
         });
         out.push(DiskInfo {
             name,
@@ -143,6 +143,18 @@ pub fn first_of_type(guid: Uuid) -> Result<PathBuf, Error> {
         .into_iter()
         .next()
         .ok_or(Error::NotFound(guid))
+}
+
+/// The IFS partition: the one on the same disk as `beside` (the LIC
+/// partition) when there is one, else the first in disk name order.
+pub fn ifs(beside: Option<&Path>) -> Result<PathBuf, Error> {
+    let all = partitions_of_type(IFS_TYPE_GUID)?;
+    let home = beside.and_then(disk_of);
+    all.iter()
+        .find(|p| home.is_some() && disk_of(p) == home)
+        .or(all.first())
+        .cloned()
+        .ok_or(Error::NotFound(IFS_TYPE_GUID))
 }
 
 /// Whole disk names (block devices without a `partition` attribute).

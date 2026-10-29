@@ -42,6 +42,9 @@ pub enum Error {
         /// Its message.
         detail: String,
     },
+    /// The IFS filesystem could not be made.
+    #[error("IFS: {0}")]
+    Ifs(#[from] xfsfmt::Error),
     /// No partition of the requested type.
     #[error("no partition of type {0}")]
     NotFound(uuid::Uuid),

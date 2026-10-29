@@ -2,8 +2,10 @@
 // licensed under the terms of the MIT license which can be found in the
 // root directory of this project.
 
-//! Power down: D1001000, LIC bookkeeping, sync, unmount, D1001090, reboot.
+//! Power down: D1001000, LIC bookkeeping, the IFS, sync, unmount,
+//! D1001090, reboot.
 
+use crate::ipl::ifs;
 use crate::ipl::lic;
 use crate::ipl::park;
 use crate::ipl::storage;
@@ -48,6 +50,8 @@ pub fn down_ending(system: &mut System, restart: bool, immediate: bool, delay: u
     }
     crate::procs::end_all(system, immediate, delay);
     storage::close(system);
+    // The service has ended, so nothing holds the IFS any more.
+    ifs::unmount(system);
     lic::shutdown(system, &src::PWRDWN_STARTED);
     if let Some((part, _)) = system.lic.take() {
         drop(part); // closes the partition before unmounting /dev

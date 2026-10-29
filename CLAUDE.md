@@ -107,7 +107,8 @@ lic/          Licensed Internal Code: IPL, platform, console, DST, disks
   console/      font/qs400-9x16.txt, src/fb/ framebuffer, src/keyboard/, screens
   svctools/     DST screens and the installer's: src/ui/ screen kit, panel.rs runner,
                 src/dst/ (disk/, environment, tools, security), src/install/, src/users/
-  diskimg/      GPT layout (ESP, LIC, ASP1), FAT volumes, partition lookup; build + installer
+  diskimg/      GPT layout (ESP, LIC, IFS, ASP1), FAT volumes, partition lookup, the IFS
+                partition and its RCLSTG migration (migrate.rs); build + installer
   blockdev/     BlockDev trait, AlignedBuf, Linux O_DIRECT backend, MemBlockDev with faults
 storage/      the object store and the names and code pages it holds
   store/        object store: src/page/, src/btree/, src/asp/ (units, superblock),
@@ -248,6 +249,7 @@ ifs/          the integrated file system
                 devices, /QSYS.LIB, /QOPT; src/resolve/ the resolver and casefold index,
                 src/lock/ share modes and byte ranges, src/text/, src/ops/ Ifs and every
                 operation, src/save/; tests/linux-xfs.sh runs the LinuxBackend tests as root
+  xfsfmt/       a pure-Rust mkfs for the XFS v5 root (docs/IFS.md "Disk format")
 docs/         ARCHITECTURE.md, PHASE0.md, PHASE1.md, PHASE2.md, PHASE3.md, STORE_FORMAT.md,
               DST.md, DB_FORMAT.md, DB_OPEN_QUESTIONS.md, DECIMAL.md, QIR.md, ABI.md, ILE.md, MSGF.md, ILE_OPEN_QUESTIONS.md,
               STORAGE_SERVICE.md, WORKMGMT.md, WM_OPEN_QUESTIONS.md, PHASE5.md, SECURITY.md,
@@ -310,7 +312,8 @@ Service console (serial, dev builds): `help`, `srcs [table]`, `hist`, `hw`,
 `lic`, `sysval NAME [VALUE]`, `mode manual|normal`, `screen`, `pwrdwn
 [restart]`, `release`; store: `asp`, `lib ls`, `obj ls|crt|dlt|rnm|mov|dsp|bench`,
 `dtaara get|set`, `dtaq snd|rcv`, `usrspc rd|wr`, `rclstg [*CHECK]`, `chkstg`,
-`txn stats`, `unit add|rmv`, `mirror start|stop|suspend|resume|replace|status`,
+`txn stats`, `ifs` (the IFS mount at /run/qs400/ifs, capacity, free space),
+`unit add|rmv`, `mirror start|stop|suspend|resume|replace|status`,
 `key NAME`, `type TEXT` (`QTEMP/NAME` addresses the temporary ASP); database:
 `xfer put|get|ls|rm` (named line buffers pushed over serial), `crtpf`, `crtlf`,
 `dltf`, `addpfm`, `rmvm`, `clrpfm`, `rgzpfm`, `cpyf`, `cpytoimpf`, `cpyfrmimpf`,

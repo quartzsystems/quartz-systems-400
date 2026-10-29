@@ -765,6 +765,7 @@ dependencies = [
  "gpt",
  "thiserror",
  "uuid",
+ "xfsfmt",
 ]
 
 [[package]]
@@ -2444,6 +2445,7 @@ dependencies = [
  "sysval",
  "tn5250",
  "uim",
+ "uuid",
  "wm",
 ]
 
@@ -3252,6 +3254,15 @@ dependencies = [
  "signature",
  "spki",
  "tls_codec",
+]
+
+[[package]]
+name = "xfsfmt"
+version = "0.1.0"
+dependencies = [
+ "crc",
+ "thiserror",
+ "uuid",
 ]
 
 [[package]]

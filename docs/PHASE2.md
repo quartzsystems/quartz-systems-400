@@ -188,7 +188,9 @@ Without a store (media IPL, no disk) the LIC record is used as before.
 `QS400-ASP1` (type GUID `3c5a9d7e-2b41-4c6f-9e08-515334304131`) to the
 end, 4 KiB aligned. The layout lives in `diskimg`, which the installer
 uses on a real disk. The image is sparse; the hashes in `build disk`
-and `build manifest` read the whole 4 GiB.
+and `build manifest` read the whole 4 GiB. Phase 10 puts the
+`QS400-IFS` partition (an xfs filesystem for the IFS root) between the
+LIC partition and ASP1; see docs/IFS.md, "Disk format".
 
 ## Install media and the installer
 

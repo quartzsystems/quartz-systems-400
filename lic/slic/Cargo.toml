@@ -15,6 +15,7 @@ store = { path = "../../storage/store", version = "0.1.0" }
 sec = { path = "../../security/sec", version = "0.1.0" }
 blockdev = { path = "../../lic/blockdev", version = "0.1.0" }
 diskimg = { path = "../../lic/diskimg", version = "0.1.0" }
+uuid.workspace = true
 qsname = { path = "../../storage/qsname", version = "0.1.0" }
 svctools = { path = "../../lic/svctools", version = "0.1.0" }
 db = { path = "../../database/db", version = "0.1.0" }

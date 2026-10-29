@@ -117,6 +117,135 @@ is the view's answer (the Phase 6 search) mapped to `*RWX` as below.
 
 ## Disk format
 
+The IFS root (`/`, and `/QOpenSys` beneath it) lives on an xfs
+filesystem in its own GPT partition. Everything in this section sits
+below the path resolver: the partition, the filesystem `xfsfmt` writes
+into it, and how `slic` mounts it.
+
+### The partition
+
+| | |
+|---|---|
+| Name | `QS400-IFS` (also the filesystem label) |
+| Type GUID | `90afa14f-9e50-4da1-99ae-515334304946` (Quartz, generated once) |
+| GPT entry | 4 (ASP1 keeps entry 3, as on disks laid out before the IFS) |
+| On disk | ESP, LIC, **IFS**, ASP1 |
+| Size | a quarter of the space after the LIC partition, clamped to 512 MiB .. 256 GiB, in whole 4 KiB |
+
+The 4 GiB development image gets 943.5 MiB; the smallest disk the
+layout accepts (`diskimg::MIN_DISK_BYTES`, about 898 MiB) gets 512 MiB.
+`diskimg::Plan` lays it out, `diskimg::write_image` formats it (the
+built image and the installer both), `diskimg::locate::ifs` finds it,
+preferring the one on the same disk as the LIC partition.
+
+### The filesystem
+
+`ifs/xfsfmt` is a pure-Rust mkfs. It writes an empty, clean XFS v5
+filesystem onto any `Write + Seek` device:
+
+```rust
+let geo = xfsfmt::format(&mut dev, bytes, &xfsfmt::Options::new(uuid, time))?;
+let info = xfsfmt::probe(&mut dev)?; // Some(Info { uuid, label, dblocks, .. })
+```
+
+| Choice | Value |
+|---|---|
+| Version | 5 (`versionnum` 0xb4a5, plus SECTORBIT with 4 KiB sectors) |
+| Features | CRCs, ftype (incompat), bigtime (incompat), finobt and inobtcount (ro-compat). No rmapbt, reflink, sparse inodes, nrext64, exchange, parent pointers, metadir, quotas, realtime. |
+| Block | 4096 bytes; directory blocks the same |
+| Inode | 512 bytes, 8 per block, chunks of 64 aligned to 4 blocks |
+| Sector | 512 by default, 4096 by option (`Options::sector_size`); the log uses the same |
+| AGs | 16 MiB each below 128 MiB; otherwise 4, more once one would pass 1 TiB. All AGs equal; blocks short of a whole AG at the end go unused. |
+| Log | internal, in AG `agcount / 2` right after its btree roots: the larger of 1/2048 of the filesystem and 10 MiB (64 MiB at 300 MiB and up), at most 1 GiB. Well above the kernel's computed minimum for this geometry. |
+| Root | inode 96: AG 0 block 12, where `xfs_repair` computes mkfs would put it. The chunk also holds the empty realtime bitmap (97, `NEWRTBM`) and summary (98) inodes. |
+| Label | `QS400-IFS` |
+| UUID | given: `51533430-0000-4000-8000-000000000006` in built images (`Guids::FIXED.ifs_fs`), random at install |
+
+Each AG: superblock, AGF, AGI and AGFL in sectors 0 to 3; then one leaf
+each for the free space btrees (by block, by size) and the inode and
+free inode btrees; four blocks on the AG free list (slots 1 to 4, as
+mkfs leaves them); the rest free. Secondary superblocks are copies of
+the primary, as the kernel's own growfs writes them. The root directory
+is short form with no entries and its parent itself. Every metadata
+block carries the filesystem UUID, its owner and address, LSN 0 and a
+CRC-32C.
+
+The log is cleared and holds one cycle-1 record at its first block: an
+unmount record (transaction ID `0xb0c0d0d0`, the userspace mark), its
+first word packed into the header's cycle data, the record CRC left
+zero as mkfs leaves it. The kernel finds the head there and mounts
+without recovery.
+
+The order of writes protects a device that held a filesystem before:
+the old primary superblock is zeroed first and the new one written
+last, after a flush, so an interrupted format never mounts.
+
+Determinism: the output depends only on the size and the options. The
+built image passes a fixed UUID, the build's `SOURCE_DATE_EPOCH` as the
+root's creation time, and `zeroed` (a new image file reads as zeros, so
+the log is not written out and the image stays sparse). The installer
+passes a random UUID, the current time, and clears the log.
+
+### Mounting
+
+At IPL `slic` mounts the partition as xfs at `/run/qs400/ifs`
+(`nosuid,nodev,noexec`) just before the storage service starts; the
+service inherits the mount namespace. A D IPL from the media does not
+mount it, since it may repartition the disk. At power down it is
+unmounted once the service has ended and the store is closed; the
+installer unmounts it before writing a disk. Neither a missing nor an
+unmountable IFS stops the IPL.
+
+| Code | Phase | Meaning |
+|---|---|---|
+| C6001012 | OS | IFS mounted |
+| A6001270 | attention | IFS partition missing (IPL continues) |
+| A6001275 | attention | IFS mount failed (IPL continues) |
+| D1001012 | power down | IFS unmounted |
+
+The service console's `svc.ifs` prints the mount, the label and UUID,
+and the capacity and free space from `statvfs`. DST's `Work with
+Licensed Internal Code` display shows the partition, its size and
+whether it is mounted; IBM's disk configuration displays describe ASP
+units, which the IFS partition is not, so it is not shown there.
+
+### Disks laid out before the IFS
+
+RCLSTG (without `*CHECK`) adds the partition to a load source that has
+none, when at least 512 MiB is unused after its last partition (a disk
+that has grown): the filesystem is written into the unused space first,
+then the partition table is rewritten for the disk's present size with
+every existing entry unchanged and the IFS in the first free entry from
+4. The kernel sees it at the next IPL, which mounts it. `RCLSTG
+*CHECK` only reports whether the partition is there.
+
+BLOCKED(phase10): when the disk has no such space, RCLSTG says so and
+changes nothing. Making room by shrinking ASP1 would need the store to
+give back the tail of its unit (it can truncate a span only when the
+tail is free, as mirroring does) and the kernel to resize a partition
+that is in use (`BLKPG`, a new unsafe ioctl); neither is in place.
+
+### Kernel
+
+`CONFIG_XFS_FS=y` was already required. Nothing else is: the
+filesystem uses no ACLs (`XFS_POSIX_ACL` stays off), no quotas and no
+realtime volume, and v5 needs no option beyond what `XFS_FS` selects.
+
+### Verification
+
+- `cargo test -p xfsfmt`: CRC-32C, field offsets against
+  `xfs_format.h`/`xfs_log_format.h`, and the superblock, AGF, root inode
+  and log record byte for byte against `mkfs.xfs` 6.18 for the same
+  geometry and UUID; geometry and determinism tests.
+- `tools/conformance/xfs/verify.sh build|check DIR` (Linux, `check` as
+  root with xfsprogs): images of 64 MiB, 512 MiB, 1 GiB, 20 GiB (sparse)
+  and an odd size, at both sector sizes, must pass `xfs_repair -n`,
+  mount read-write with no kernel complaint, take file traffic (a large
+  file, 500 small ones, hard and symbolic links, xattrs, renames,
+  deletes), unmount, pass `xfs_repair -n` again and remount.
+- QEMU step 59 (`59 IFS mount`): C6001012 in the SRC log and `svc.ifs`
+  showing a read-write xfs at `/run/qs400/ifs` with plausible capacity.
+
 ## Metadata
 
 Everything QS/400 decides about an object lives in one record in the

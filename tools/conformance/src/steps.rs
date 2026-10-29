@@ -41,6 +41,7 @@ pub const SRC_SEQUENCE: &[&str] = &[
     "SRC C6001000",
     "SRC C6001005",
     "SRC C6001010",
+    "SRC C6001012",
     "SRC C6001030",
     "SRC C6001040",
     "SRC C6001050",
@@ -496,6 +497,7 @@ impl Suite {
         reports.push(self.step(&mut s, "56 RPG program", Self::rpg_program)?);
         reports.push(self.step(&mut s, "57 RPG embedded SQL", Self::rpg_sql)?);
         reports.push(self.step(&mut s, "58 RPG service program", Self::rpg_service_program)?);
+        reports.push(self.step(&mut s, "59 IFS mount", Self::ifs_mount)?);
         s.command("pwrdwn", CMD).ok();
         s.wait_exit(Duration::from_secs(15));
         drop(s);

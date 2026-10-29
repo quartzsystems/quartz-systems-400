@@ -1,0 +1,15 @@
+[package]
+name = "xfsfmt"
+description = "QS/400 IFS disk format: a pure-Rust mkfs for an empty XFS v5 filesystem"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+crc.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

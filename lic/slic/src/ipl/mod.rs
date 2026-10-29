@@ -9,6 +9,7 @@ pub mod clock;
 pub mod cmdline;
 pub mod display;
 pub mod dst;
+pub mod ifs;
 pub mod install;
 pub mod lic;
 pub mod link;
@@ -340,6 +341,9 @@ fn os_phase(system: &mut System, rx: &mpsc::Receiver<Event>, tx: &mpsc::Sender<E
         }
         install::finish(system);
     }
+    // The IFS root's filesystem, mounted before the storage service
+    // starts so the service inherits it.
+    ifs::mount(system);
     // The storage service takes the store over; from here on the jobs
     // and the console reach it through the service.
     if system.storage.is_some()

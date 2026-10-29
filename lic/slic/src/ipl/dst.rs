@@ -423,6 +423,7 @@ impl DstEnv for Env<'_> {
                 format!("{y:04}-{mo:02}-{d:02} {hh:02}:{mm:02}:{ss:02}"),
             ));
         }
+        info.extend(crate::ipl::ifs::lic_info());
         info
     }
 

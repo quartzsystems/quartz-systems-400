@@ -83,6 +83,8 @@ pub const ASP_INITIALIZED: Src = src("C6001007", "ASP 1 initialized", Phase::Os)
 pub const RCLSTG_REQUIRED: Src = src("C6001008", "Reclaim storage required", Phase::Os);
 /// System values loaded.
 pub const SYSVALS_LOADED: Src = src("C6001010", "System values loaded", Phase::Os);
+/// The IFS filesystem mounted.
+pub const IFS_MOUNTED: Src = src("C6001012", "IFS mounted", Phase::Os);
 /// The storage service process took over the store.
 pub const STG_STARTED: Src = src("C6001015", "Storage management service started", Phase::Os);
 /// Startup program skipped: `QSTRUPPGM(*NONE)`, or no store.
@@ -150,6 +152,10 @@ pub const MIRROR_FAILED: Src = src(
 );
 /// Disks beyond the load source belong to no ASP yet.
 pub const DISK_NOT_CONFIGURED: Src = src("A6001260", "Disk unit not configured", Phase::Attention);
+/// No IFS partition on any disk; the IPL goes on without the IFS.
+pub const IFS_MISSING: Src = src("A6001270", "IFS partition missing", Phase::Attention);
+/// The IFS partition would not mount; the IPL goes on without it.
+pub const IFS_MOUNT_FAILED: Src = src("A6001275", "IFS mount failed", Phase::Attention);
 /// slic panicked.
 pub const PANIC: Src = src("B1001000", "slic panic", Phase::Fatal);
 /// LIC partition not found.
@@ -177,6 +183,8 @@ pub const STG_ENDED: Src = src("B1001060", "Storage management service ended", P
 pub const PWRDWN_STARTED: Src = src("D1001000", "Power down started", Phase::PowerDown);
 /// Store checkpointed and closed.
 pub const STORE_CLOSED: Src = src("D1001010", "Object store closed", Phase::PowerDown);
+/// The IFS filesystem unmounted.
+pub const IFS_UNMOUNTED: Src = src("D1001012", "IFS unmounted", Phase::PowerDown);
 /// Power down complete.
 pub const PWRDWN_COMPLETE: Src = src("D1001090", "Power down complete", Phase::PowerDown);
 
@@ -202,6 +210,7 @@ pub const TABLE: &[Src] = &[
     ASP_INITIALIZED,
     RCLSTG_REQUIRED,
     SYSVALS_LOADED,
+    IFS_MOUNTED,
     STG_STARTED,
     STRUP_SKIPPED,
     SYSJOBS_STARTED,
@@ -223,6 +232,8 @@ pub const TABLE: &[Src] = &[
     DISK_NOT_CONFIGURED,
     MIRROR_MISSING,
     MIRROR_FAILED,
+    IFS_MISSING,
+    IFS_MOUNT_FAILED,
     PANIC,
     LIC_NOT_FOUND,
     LIC_UNREADABLE,
@@ -234,6 +245,7 @@ pub const TABLE: &[Src] = &[
     SBS_ENDED,
     SYSJOBS_ENDED,
     STORE_CLOSED,
+    IFS_UNMOUNTED,
     PWRDWN_COMPLETE,
 ];
 
